@@ -1,0 +1,56 @@
+✔ live board lanes are status-based, exclude drafts, and keep waitlists distinct from closed decisions (0.625208ms)
+✔ List/Kanban toggle preserves the same filtered server data and does not mutate or reload it (180.725208ms)
+✔ drawer status writes send expectedStatus, reject stale outcomes, and refresh canonical offer state (84.07175ms)
+✔ read/review access alone never exposes enabled round moves or decision buttons (67.240458ms)
+✔ evaluation save updates both presentations and explicit round movement reloads anonymous identity (65.097042ms)
+✔ an identified applicant without current panel authority has no review editor or blocking review draft (65.760458ms)
+✔ decision groups use persisted status, exclude drafts, and keep waitlists out of Pending (0.096958ms)
+✔ Decisions reuses expected-status mutations and moves saved outcomes between groups (82.934166ms)
+✔ Decisions preserves stale failures and hides mutation controls from anonymous reviewers (129.457375ms)
+✔ Kanban round moves reject stale data and share the refreshed anonymous projection with List (69.32225ms)
+✔ Kanban decisions use expected status and appear in List after server reload (75.090875ms)
+✔ drawer renders stable-ID review with historical label when current name is Panel (179.129167ms)
+✔ drawer renders stable-ID review with historical label when current name is Review (72.705416ms)
+✔ drawer legacy label compatibility, roundId=null (64.753209ms)
+✔ drawer legacy label compatibility, roundId=undefined (62.676666ms)
+✔ drawer legacy label compatibility, roundId=different-round (63.08425ms)
+✔ moving from the drawer locates the target-round review by stable ID despite an old label (67.060959ms)
+✔ rejected applicants leave active queues and remain in the deliberate retained-history tab (133.757708ms)
+✔ recruitment review comes before filter toggles and is absent from Decisions (109.498375ms)
+✔ quick review saves expected-status decisions and advances only after success (108.488333ms)
+✔ quick review preserves the candidate after a rejected stale write and skips without publishing (89.572916ms)
+✔ review-only users cannot start quick review or move board candidates (56.375125ms)
+✔ board drops require an explicit outcome and preserve expected status (54.628916ms)
+✔ decision status stays unchanged until the server acknowledges publication (54.238083ms)
+✔ page reader remains usable after React development effect cleanup and setup replay (54.194541ms)
+✖ one mounted complete summary set is retained; every refresh and owner/scope change starts fresh authority (6.076125ms)
+✖ pending scopes drain once and dispatch only the latest; stale completions and setters cannot replace a newer result (3.903417ms)
+✔ validated initial summaries avoid a duplicate read, while unvalidated data stays hidden; replay and denial retain fresh-read behavior (5.022167ms)
+✔ all four selected resources start their guarded read alongside code loading and never reuse another visit (37.058375ms)
+✔ late navigation/session/account results cannot reveal a previous projection; retry makes a fresh request (7.45575ms)
+✔ Demo and unresolved Demo initialization never dispatch a live selected-tab request (7.097083ms)
+✔ club, privacy and support authority changes hide content and fence earlier reads (7.305792ms)
+ℹ tests 32
+ℹ suites 0
+ℹ pass 30
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2202.077
+
+✖ failing tests:
+
+test at tests/resident-pipeline.test.cjs:11:1
+✖ one mounted complete summary set is retained; every refresh and owner/scope change starts fresh authority (6.076125ms)
+  TypeError [Error]: oldSetter is not a function
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/resident-pipeline.test.cjs:13:248)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+
+test at tests/resident-pipeline.test.cjs:16:1
+✖ pending scopes drain once and dispatch only the latest; stale completions and setters cannot replace a newer result (3.903417ms)
+  TypeError [Error]: original.setData is not a function
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/resident-pipeline.test.cjs:17:505)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)

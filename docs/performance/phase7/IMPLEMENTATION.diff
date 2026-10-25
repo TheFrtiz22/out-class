@@ -1,0 +1,563 @@
+diff --git a/components/selected-club-workspace.tsx b/components/selected-club-workspace.tsx
+index cda7ddf..442b60f 100644
+--- a/components/selected-club-workspace.tsx
++++ b/components/selected-club-workspace.tsx
+@@ -25 +25 @@ export async function loadSelectedClubWorkspace(kind: SelectedClubWorkspaceKind,
+-        readWorkspace<Awaited<ReturnType<typeof import("@/actions/crm").getClubPipelinePage>>>("pipelinePage", [clubId, { mode, genderCounts: false }]),
++        readWorkspace<Awaited<ReturnType<typeof import("@/actions/crm").getClubPipelineList>>>("pipelineList", [clubId, { genderCounts: false }]),
+diff --git a/components/views/leader-dashboard/live-leader-workspace.tsx b/components/views/leader-dashboard/live-leader-workspace.tsx
+index 5278625..a22a23d 100644
+--- a/components/views/leader-dashboard/live-leader-workspace.tsx
++++ b/components/views/leader-dashboard/live-leader-workspace.tsx
+@@ -3,2 +3,2 @@ import "@/components/product/operational-dashboard.css"
+-import type { PipelinePageQuery, PipelineCursor } from "@/lib/pipeline-page"
+-import { serializedWorkspaceRead } from "@/lib/serialized-workspace-read"
++import { pagePipeline, pipelinePageQuery, type PipelinePageQuery, type PipelineCursor } from "@/lib/pipeline-page"
++import { useResidentPipeline } from "@/hooks/use-resident-pipeline"
+@@ -35 +35 @@ import { BoardDecisionMode } from "@/components/live-voting/board-decision-mode"
+-import { getClubPipelinePage, getClubPipelineSelection, moveApplicantRound, setApplicationStatus, reconsiderRejectedApplication, revokeRecruitmentOffer } from "@/lib/workspace-api"
++import { getClubPipelineList, getClubPipelineSelection, moveApplicantRound, setApplicationStatus, reconsiderRejectedApplication, revokeRecruitmentOffer } from "@/lib/workspace-api"
+@@ -63 +63,2 @@ import { Badge } from "@/components/ui/badge"
+-type Pipeline = Awaited<ReturnType<typeof getClubPipelinePage>>
++type Summary = Awaited<ReturnType<typeof getClubPipelineList>>
++type Pipeline = ReturnType<typeof pagePipeline>
+@@ -74 +75 @@ const average = (app: Candidate) =>
+-export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, rejectedOnly = false, initialData, onData, validatedInitialData = false }: { validatedInitialData?: boolean; scoped?: boolean; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: { clubId: string; pipeline: Pipeline }; onData?: (clubId: string, data: Pipeline | null) => void }) {
++export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, rejectedOnly = false, initialData, onData, validatedInitialData = false }: { validatedInitialData?: boolean; scoped?: boolean; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: { clubId: string; pipeline: Summary }; onData?: (clubId: string, data: Pipeline | null) => void }) {
+@@ -134 +135 @@ export function ApplicantReviewPreview({ clubId, applicationId, onClose, onChang
+-function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false, initialData = null, onData, preview, validatedInitialData = false }: { validatedInitialData?: boolean; preview?: { applicationId: string; onClose: () => void; onChanged: () => void; onNext?: () => void }; membership: ExtendedMembership; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: Pipeline | null; onData?: (data: Pipeline | null) => void }) {
++function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false, initialData = null, onData, preview, validatedInitialData = false }: { validatedInitialData?: boolean; preview?: { applicationId: string; onClose: () => void; onChanged: () => void; onNext?: () => void }; membership: ExtendedMembership; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: Summary | null; onData?: (data: Pipeline | null) => void }) {
+@@ -139,5 +140 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  const authority = useMemo(() => ({ user: auth.user, readAuthority: auth.readAuthority, support: auth.isImpersonating, membership, demoReady: demo.ready, demoEnabled: demo.isDemoEnabled }), [auth.user, auth.readAuthority, auth.isImpersonating, membership, demo.ready, demo.isDemoEnabled])
+-  const pageAuthority = useRef(authority), latestAuthority = useRef(authority)
+-  latestAuthority.current = authority
+-  const [rawListData, setData] = useState<Pipeline | null>(initialData)
+-  const listData = pageAuthority.current === authority ? rawListData : null
++  const authority = useMemo(() => ({ user: auth.user, readAuthority: auth.readAuthority, support: auth.isImpersonating, loading: auth.loading, membership, demoReady: demo.ready, demoEnabled: demo.isDemoEnabled }), [auth.user, auth.readAuthority, auth.isImpersonating, auth.loading, membership, demo.ready, demo.isDemoEnabled])
+@@ -145 +141,0 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  const [listLoading, setLoading] = useState(!initialData)
+@@ -149 +144,0 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  const [acceptedKey, setAcceptedKey] = useState<string | null>(null)
+@@ -179 +173,0 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  const firstRead = useRef(validatedInitialData && !!initialData)
+@@ -181,10 +174,0 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  const data = previewId ? detail.pipeline : listData
+-  const loading = previewId ? !detail.pipeline && !detail.error : listLoading
+-  const retained = useRef(data), publish = useRef(onData)
+-  retained.current = data
+-  publish.current = onData
+-  useEffect(() => { if (!previewId) publish.current?.(listData) }, [listData, previewId])
+-  const roundsForReview = useRef(data?.rounds)
+-  roundsForReview.current = data?.rounds
+-  const heading = useRef<HTMLHeadingElement>(null)
+-  const search = useRef<HTMLInputElement>(null)
+@@ -198 +182 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  const selectionKey = JSON.stringify(readQuery)
++  const selectionKey = JSON.stringify([membership.clubId, membership.id, membership.userId, readQuery])
+@@ -202,0 +187,8 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
++  const serverFilter = useMemo(() => ({ ...(round ? { roundId: round } : {}),
++    ...(gender ? { gender: gender as (typeof genderValues)[number] } : {}), genderCounts: showGenderCounts,
++  }), [round, gender, showGenderCounts])
++  const { data: summaries, loading: listLoading, error: readError, setData, isCurrent } = useResidentPipeline({
++    clubId: membership.clubId, filter: serverFilter, revision, authority,
++    enabled: !previewId && demo.ready && !auth.loading && !!auth.user, initialData, validatedInitialData,
++  })
++  const latestAuthority = useRef(authority); latestAuthority.current = authority
+@@ -204,7 +196 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  const initialKey = useRef(requestKey), latestRequest = useRef(requestKey)
+-  latestRequest.current = requestKey
+-  const acceptedPage = useRef({ key: acceptedKey, data: listData })
+-  acceptedPage.current = { key: acceptedKey, data: listData }
+-  const pageReady = !!previewId || acceptedKey === requestKey || acceptedKey === null && validatedInitialData && initialKey.current === requestKey
+-  const updating = !previewId && (!pageReady || !listData)
+-  const busy = writing || updating
++  const latestRequest = useRef(requestKey); latestRequest.current = requestKey
+@@ -212,19 +198,23 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  const latestPageLoad = useRef({ clubId: membership.clubId, pageQuery, requestKey, authority })
+-  latestPageLoad.current = { clubId: membership.clubId, pageQuery, requestKey, authority }
+-  // Drain an obsolete read before dispatching only the latest selection. A
+-  // browser abort cannot reliably cancel SQL already executing on the server.
+-  const pageReader = useRef<ReturnType<typeof serializedWorkspaceRead> | null>(null)
+-  useEffect(() => {
+-    const reader = serializedWorkspaceRead(async () => {
+-      const request = latestPageLoad.current
+-      try { return { ...request, data: await getClubPipelinePage(request.clubId, request.pageQuery), failed: false } }
+-      catch { return { ...request, data: null, failed: true } }
+-    }, result => {
+-      if (latestRequest.current !== result.requestKey || latestAuthority.current !== result.authority) return
+-      pageAuthority.current = result.authority
+-      setData(result.data); setAcceptedKey(result.requestKey); setLoading(false)
+-      if (result.failed) setError("Couldn’t load this club’s applicants. Please try again.")
+-    }, () => {})
+-    pageReader.current = reader
+-    return () => { reader.dispose(); if (pageReader.current === reader) pageReader.current = null }
+-  }, [])
++  const projection = useMemo(() => {
++    if (!summaries) return null
++    const scope = JSON.stringify([membership.clubId, membership.id, selectionKey])
++    const parsed = pipelinePageQuery.safeParse(pageQuery)
++    return { invalid: !parsed.success, data: pagePipeline(summaries, parsed.success ? parsed.data : {}, membership.id, membership.userId, scope) }
++  }, [summaries, pageQuery, membership.clubId, membership.id, membership.userId, selectionKey])
++  const listData = projection?.data ?? null
++  const invalidFilter = projection?.invalid ?? false
++  const pageReady = !!previewId || !!listData && !listLoading && !invalidFilter
++  const updating = !previewId && (!pageReady && !invalidFilter || !listData)
++  const busy = writing || updating || invalidFilter
++  const data = previewId ? detail.pipeline : listData
++  const loading = previewId ? !detail.pipeline && !detail.error : listLoading
++  const publish = useRef(onData)
++  publish.current = onData
++  useEffect(() => { if (!previewId) publish.current?.(listData) }, [listData, previewId])
++  const roundsForReview = useRef(data?.rounds)
++  roundsForReview.current = data?.rounds
++  const heading = useRef<HTMLHeadingElement>(null)
++  const search = useRef<HTMLInputElement>(null)
++  useEffect(() => { setError("") }, [authority, revision, serverFilter])
++  const selectionRequestKey = JSON.stringify([selectionKey, revision])
++  const latestSelectionRequest = useRef(selectionRequestKey); latestSelectionRequest.current = selectionRequestKey
+@@ -233 +223 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-    if (latestAuthority.current !== authority) throw new Error("Applicant selection changed")
++    if (latestAuthority.current !== authority || latestSelectionRequest.current !== selectionRequestKey) throw new Error("Applicant selection changed")
+@@ -235,11 +225 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  }, [membership.clubId, readQuery, authority])
+-  useEffect(() => {
+-    if (previewId || !demo.ready || auth.loading || !auth.user) return
+-    if (firstRead.current) { firstRead.current = false; setAcceptedKey(requestKey); return }
+-    // A drawer boundary may already have fetched this exact page. Do not
+-    // dispatch it again when its cursor becomes the visible page position.
+-    if (acceptedPage.current.key === requestKey && acceptedPage.current.data) return
+-    setLoading(!retained.current)
+-    setError("")
+-    void pageReader.current?.refresh()
+-  }, [membership.clubId, requestKey, pageQuery, previewId, authority, demo.ready, auth.loading, auth.user, pageReader])
++  }, [membership.clubId, readQuery, authority, selectionRequestKey])
+@@ -339,0 +320,3 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
++    const adjacentPage = listData ? pagePipeline(summaries!, { ...readQuery, cursor: next }, membership.id, membership.userId, pageInfo!.scope) : null
++    const target = direction === 1 ? adjacentPage?.applications[0] : adjacentPage?.applications.at(-1)
++    if (!target) return
+@@ -343,8 +326,3 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-      const key = selectionKey, owner = authority
+-      const result = await getClubPipelinePage(membership.clubId, { ...readQuery, cursor: next })
+-      if (latestAuthority.current !== owner || latestRequest.current !== requestKey) return
+-      pageAuthority.current = owner; setData(result)
+-      const nextKey = JSON.stringify([key, next, revision])
+-      setAcceptedKey(nextKey); setPosition({ key, cursor: next })
+-      const target = direction === 1 ? result.applications[0] : result.applications.at(-1)
+-      if (target) open(target, true)
++      if (!isCurrent()) return
++      setPosition({ key: selectionKey, cursor: next })
++      open(target, true)
+@@ -353,0 +332 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
++
+@@ -459,2 +438,3 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-      const refreshed = await getClubPipelinePage(membership.clubId, pageQuery)
+-      setData(refreshed)
++      if (!isCurrent()) throw new Error("Applicant scope changed")
++      const refreshed = await getClubPipelineList(membership.clubId, serverFilter)
++      if (!setData(refreshed)) throw new Error("Applicant scope changed")
+@@ -462,0 +443 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
++      if (!isCurrent()) throw error
+@@ -529 +510 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  if (!data || error)
++  if (!data || error || readError)
+@@ -532,2 +513,2 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-        <p>{error || (previewId && detail.error ? "Couldn’t load this applicant. Your access may have changed." : "No data available.")}</p>
+-        <Button variant="outline" onClick={() => { setPosition(null); setRevision((value) => value + 1) }}>
++        <p>{error || (readError ? "Couldn’t load this club’s applicants. Your access may have changed." : previewId && detail.error ? "Couldn’t load this applicant. Your access may have changed." : "No data available.")}</p>
++        <Button variant="outline" onClick={() => { setError(""); setPosition(null); setRevision((value) => value + 1) }}>
+@@ -732 +713 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-      {updating ? <p role="status" aria-live="polite">Updating applicants…</p> : !filtered.length ? <p role="status" className="border-y py-10 text-sm text-muted-foreground">{baseTotal ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No rejected applications. Published rejections appear here with their history preserved." : "Submitted applications will appear here. Student drafts stay private."}</p> : decisionsOnly ? <LiveDecisionList applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} laneCounts={listData?.facets.lanes} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
++      {invalidFilter ? <p role="alert">Enter filters within the displayed numeric ranges.</p> : updating ? <p role="status" aria-live="polite">Updating applicants…</p> : !filtered.length ? <p role="status" className="border-y py-10 text-sm text-muted-foreground">{baseTotal ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No rejected applications. Published rejections appear here with their history preserved." : "Submitted applications will appear here. Student drafts stay private."}</p> : decisionsOnly ? <LiveDecisionList applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} laneCounts={listData?.facets.lanes} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
+diff --git a/hooks/use-resident-pipeline.ts b/hooks/use-resident-pipeline.ts
+new file mode 100644
+index 0000000..3fbd633
+--- /dev/null
++++ b/hooks/use-resident-pipeline.ts
+@@ -0,0 +1,53 @@
++"use client"
++
++import { useCallback, useEffect, useMemo, useRef, useState } from "react"
++import { getClubPipelineList } from "@/lib/workspace-api"
++import { serializedWorkspaceRead } from "@/lib/serialized-workspace-read"
++
++type Summary = Awaited<ReturnType<typeof getClubPipelineList>>
++type Filter = Pick<NonNullable<Parameters<typeof getClubPipelineList>[1]>, "roundId" | "gender" | "genderCounts">
++
++/** Already released summaries belong to one mounted authority/scope. No data or
++ * successful authorization survives a visit, owner change or explicit refresh. */
++export function useResidentPipeline({ clubId, filter, revision, authority, enabled, initialData, validatedInitialData }: {
++  clubId: string; filter: Filter; revision: number; authority: object; enabled: boolean;
++  initialData: Summary | null; validatedInitialData: boolean;
++}) {
++  const scope = JSON.stringify(filter)
++  const owner = useMemo(() => ({ clubId, scope, revision, authority, enabled }), [clubId, scope, revision, authority, enabled])
++  const [result, setResult] = useState<{ owner: object; data: Summary | null; failed: boolean } | null>(
++    enabled && validatedInitialData && initialData ? { owner, data: initialData, failed: false } : null,
++  )
++  const latest = useRef({ owner, clubId, filter }), accepted = useRef(result)
++  latest.current = { owner, clubId, filter }; accepted.current = result
++  const reader = useRef<ReturnType<typeof serializedWorkspaceRead> | null>(null)
++  const mounted = useRef(false)
++  useEffect(() => {
++    mounted.current = true
++    const instance = serializedWorkspaceRead(async () => {
++      const request = latest.current
++      if (!request.owner.enabled) return { owner: request.owner, data: null, failed: false }
++      try { return { owner: request.owner, data: await getClubPipelineList(request.clubId, request.filter), failed: false } }
++      catch { return { owner: request.owner, data: null, failed: true } }
++    }, value => {
++      if (mounted.current && latest.current.owner === value.owner) setResult(value)
++    }, () => {})
++    reader.current = instance
++    return () => { mounted.current = false; instance.dispose(); if (reader.current === instance) reader.current = null }
++  }, [])
++  useEffect(() => {
++    if (!enabled || accepted.current?.owner === owner) return
++    void reader.current?.refresh()
++  }, [owner, enabled])
++  // Async mutation/read completions retain their captured owner. They cannot
++  // replace a newer account, club, privacy, server-filter or refresh result.
++  const isCurrent = useCallback(() => mounted.current && latest.current.owner === owner, [owner])
++  const setData = useCallback((value: Summary | null | ((previous: Summary | null) => Summary | null)) => {
++    if (!mounted.current || latest.current.owner !== owner) return false
++    setResult(previous => mounted.current && latest.current.owner === owner ? { owner, failed: false,
++      data: typeof value === "function" ? value(previous?.owner === owner ? previous.data : null) : value } : previous)
++    return true
++  }, [owner])
++  const current = enabled && result?.owner === owner ? result : null
++  return { data: current?.data ?? null, loading: !current, error: current?.failed ?? false, setData, isCurrent }
++}
+diff --git a/scripts/navigation-loader-audit.cjs b/scripts/navigation-loader-audit.cjs
+index 458a29b..9f82a42 100644
+--- a/scripts/navigation-loader-audit.cjs
++++ b/scripts/navigation-loader-audit.cjs
+@@ -53 +53 @@ async function main(){
+-  if(process.argv.includes('--pipeline-study')){assert.ok(['phase3','phase4','phase5','phase6'].some(phase=>output.startsWith(path.resolve('docs/performance',phase)+path.sep)));assert.ok(!fs.existsSync(output));assert.ok(results.every(r=>r.samples?.length===20),'Every planned loader sample is required');}
++  if(process.argv.includes('--pipeline-study')){assert.ok(['phase3','phase4','phase5','phase6','phase7'].some(phase=>output.startsWith(path.resolve('docs/performance',phase)+path.sep)));assert.ok(!fs.existsSync(output));assert.ok(results.every(r=>r.samples?.length===20),'Every planned loader sample is required');}
+diff --git a/scripts/navigation-phase7-interactions.cjs b/scripts/navigation-phase7-interactions.cjs
+new file mode 100644
+index 0000000..50cef0d
+--- /dev/null
++++ b/scripts/navigation-phase7-interactions.cjs
+@@ -0,0 +1,37 @@
++// Additional warm interactions on the same frozen builds/cohorts as the primary
++// harness. No interception, seeded delay, mutation, or benchmark-only app path.
++const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{performance}=require('node:perf_hooks'),{chromium}=require('playwright');
++const local=require('./navigation-phase7-local.cjs'),{Actor}=require('../tests/helpers/onboarding-e2e.cjs'),{safeRoute}=require('./navigation-audit.cjs');
++async function main(){
++ const out=path.resolve(process.argv.find(a=>a.startsWith('--out='))?.slice(6)||'');assert.ok(out.startsWith(path.join(local.repo,'docs/performance/phase7')+path.sep)&&!fs.existsSync(out));
++ const f=JSON.parse(fs.readFileSync(path.join(local.root,'navigation-fixture.json'))),size=f.counts.applicantsInMeasuredClub||100;assert.ok(size>=1000);
++ const actor=new Actor(local.config());await actor.signIn(f.email,f.password);const browser=await chromium.launch({headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage(),requests=[],pending=new Set(),errors=[],samples=[];
++ page.on('pageerror',e=>errors.push(e.name));page.on('request',r=>{const row={request:r,route:safeRoute(r.url()),type:r.resourceType(),start:performance.now(),end:null,status:null,bytes:null};requests.push(row);if(row.type!=='eventsource')pending.add(r)});
++ page.on('response',r=>{const row=requests.find(q=>q.request===r.request());if(row){row.status=r.status();row.serverTiming=r.headers()['server-timing']||null;row.traceId=r.headers()['x-outclass-trace-id']||null}});
++ page.on('requestfinished',r=>{pending.delete(r);const row=requests.find(q=>q.request===r);if(row){row.end=performance.now();row.timing=r.timing();void r.sizes().then(s=>row.bytes=s.responseBodySize).catch(()=>{})}});page.on('requestfailed',r=>{pending.delete(r);const row=requests.find(q=>q.request===r);if(row){row.end=performance.now();row.failed=true}});
++ async function drain(){const until=performance.now()+10000;while(pending.size&&performance.now()<until)await new Promise(r=>setTimeout(r,20));assert.equal(pending.size,0,'Unfinished non-SSE request');await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))))}
++ async function capture(kind,index,target,action){
++  await drain();const offset=requests.length,errorOffset=errors.length,start=performance.now();let failed=null,meaningfulMs=null,marks=null,driverElapsedMs=null;
++  await page.evaluate(({target,event})=>{
++   const state={start:0,ready:0,scheduled:false,origin:performance.timeOrigin};window.__phase7Paint=state;
++   const check=()=>{if(!state.start||state.scheduled)return;const found=[...document.querySelectorAll('.oc-live-pipeline [data-applicant-id]')].some(e=>e.getClientRects().length&&e.textContent.includes(target));if(!found)return;state.scheduled=true;requestAnimationFrame(()=>requestAnimationFrame(()=>{state.ready=performance.now()}))};
++   const begin=()=>{if(!state.start)state.start=performance.now();queueMicrotask(check)};
++   document.addEventListener(event,begin,true);const observer=new MutationObserver(check);observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true});state.check=check;state.cleanup=()=>{observer.disconnect();document.removeEventListener(event,begin,true)};
++  },{target,event:kind==='next-page'?'click':'input'});
++  try{await action();await page.evaluate(()=>window.__phase7Paint.check());await page.waitForFunction(()=>window.__phase7Paint.ready>0,null,{timeout:30000});marks=await page.evaluate(()=>{const s=window.__phase7Paint;s.cleanup();return{start:s.start,ready:s.ready,origin:s.origin}});meaningfulMs=marks.ready-marks.start;driverElapsedMs=performance.now()-start;await drain()}catch(e){failed=e.name;process.exitCode=1;await page.evaluate(()=>window.__phase7Paint.cleanup()).catch(()=>{})}
++  const origin=marks?marks.origin+marks.start:performance.timeOrigin+start;
++  const rows=requests.slice(offset).map(r=>({route:r.route,type:r.type,startMs:performance.timeOrigin+r.start-origin,endMs:r.end===null?null:performance.timeOrigin+r.end-origin,status:r.status,failed:!!r.failed,encodedBodyBytes:r.bytes,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart:null,transferMs:r.timing?.responseEnd>=0&&r.timing?.responseStart>=0?r.timing.responseEnd-r.timing.responseStart:null,serverTiming:r.serverTiming,traceId:r.traceId}));
++  samples.push({kind,index,warmup:index===0,condition:'warm',failed,meaningfulMs,driverElapsedMs,requestCount:rows.length,encodedBodyBytes:rows.every(r=>Number.isFinite(r.encodedBodyBytes))?rows.reduce((n,r)=>n+r.encodedBodyBytes,0):null,pageErrors:errors.slice(errorOffset),requests:rows});
++ }
++ try{
++  await page.goto(local.config().appUrl+'/club/'+f.clubIds[0]+'/workspace?section=recruitment&tool=applicants');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await page.waitForLoadState('networkidle');await drain();const pager=page.getByRole('navigation',{name:'Applicant pages',exact:true}),search=page.getByRole('textbox',{name:'Search applicants',exact:true}),last='Scale Student '+String(size-1).padStart(5,'0');
++  for(let i=0;i<6;i++){
++   await capture('next-page',i,'Scale Student 00100',()=>pager.getByRole('button',{name:'Next applicant page',exact:true}).click());
++   await pager.getByRole('button',{name:'Previous applicant page',exact:true}).click();await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await drain();
++   await capture('distant-search',i,last,()=>search.fill(last));
++   assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),1);assert.equal(await search.evaluate(e=>document.activeElement===e),true);
++   await search.fill('');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await drain();
++  }
++ }finally{fs.mkdirSync(path.dirname(out),{recursive:true});fs.writeFileSync(out,JSON.stringify({buildId:fs.readFileSync(path.join(local.dist,'BUILD_ID'),'utf8').trim(),size,planned:12,samples,errors,interpretation:'Warm interactions only. Browser event timestamp to MutationObserver content predicate plus two animation frames; driver polling/dispatch is excluded from meaningfulMs and separately retained as driverElapsedMs. Initial preparation, restoration and one warmup per interaction excluded from measured distribution. All failures retained; no retries.'},null,2)+'\n');await context.close();await browser.close()}
++}
++if(require.main===module)main().catch(e=>{console.error(e.name+': interaction study failed');process.exitCode=1});
+diff --git a/scripts/navigation-phase7-local.cjs b/scripts/navigation-phase7-local.cjs
+new file mode 100644
+index 0000000..fe070cb
+--- /dev/null
++++ b/scripts/navigation-phase7-local.cjs
+@@ -0,0 +1,12 @@
++// Lifecycle helper restricted to this chat's owned, disposable navigation fixture.
++const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),assert=require('node:assert/strict'),{spawn,spawnSync,execFileSync}=require('node:child_process'),{randomUUID}=require('node:crypto');
++const repo=path.resolve(__dirname,'..'),root=path.join(os.tmpdir(),'outclass-onboarding-e2e'),dist=path.join(repo,'.next-publish');
++const config=()=>require('../tests/helpers/onboarding-e2e.cjs').readConfig(path.join(root,'config.json'));
++function privateRoot(){const location=fs.readFileSync('/tmp/outclass-phase7-builds-path','utf8');assert.ok(location.startsWith(path.join(os.tmpdir(),'outclass-phase7-builds-')));assert.ok(fs.existsSync(location));return location}
++function environment(){const c=config(),s=c.status;assert.equal(c.buildDir,dist);const db=new URL(s.DB_URL);db.searchParams.set('connection_limit','8');return{...process.env,NEXT_PUBLIC_ENABLE_MICROSOFT_AUTH:'false',DATABASE_URL:db.href,POSTGRES_PRISMA_URL:db.href,POSTGRES_URL:db.href,POSTGRES_URL_NON_POOLING:db.href,NEXT_PUBLIC_SUPABASE_URL:s.API_URL,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:s.PUBLISHABLE_KEY,NEXT_PUBLIC_SUPABASE_ANON_KEY:s.ANON_KEY,SUPABASE_SECRET_KEY:s.SECRET_KEY,SUPABASE_SERVICE_ROLE_KEY:s.SERVICE_ROLE_KEY,OUTCLASS_PUBLISH_BUILD:'1',OUTCLASS_SITE_URL:c.appUrl,OUTCLASS_PLATFORM_ADMIN_IDS:c.admin.id,SMTP_HOST:'127.0.0.1',SMTP_PORT:'55325',SMTP_USER:'local-test',SMTP_PASSWORD:'local-test',SMTP_FROM_EMAIL:'outclass@virginia.edu',CRON_SECRET:randomUUID(),NODE_EXTRA_CA_CERTS:path.join(root,'mailpit-cert.pem'),COMMUNICATIONS_EMAIL_ENABLED:'true',RESEND_API_KEY:'',RESEND_FROM_EMAIL:''}}
++async function stop(){const listener=spawnSync('lsof',['-tiTCP:3107','-sTCP:LISTEN'],{encoding:'utf8'}).stdout.trim();if(!listener)return;const pid=fs.readFileSync(path.join(root,'server.pid'),'utf8').trim();assert.equal(listener,pid);assert.ok(execFileSync('lsof',['-a','-p',pid,'-d','cwd','-Fn'],{encoding:'utf8'}).split('\n').includes('n'+repo));process.kill(Number(pid),'SIGTERM');for(let n=0;n<100;n++){if(!spawnSync('lsof',['-tiTCP:3107','-sTCP:LISTEN'],{encoding:'utf8'}).stdout.trim())return;await new Promise(r=>setTimeout(r,50))}throw Error('Owned app failed to stop')}
++function snapshot(name){assert.ok(['baseline','pilot','pilot2','candidate'].includes(name));const target=path.join(privateRoot(),name);assert.ok(!fs.existsSync(target));fs.cpSync(dist,target,{recursive:true});return fs.readFileSync(path.join(target,'BUILD_ID'),'utf8').trim()}
++async function start(name,diagnose=false){assert.ok(['baseline','pilot','pilot2','candidate'].includes(name));const source=path.join(privateRoot(),name);assert.ok(fs.existsSync(path.join(source,'BUILD_ID')));await stop();fs.rmSync(dist,{recursive:true});fs.cpSync(source,dist,{recursive:true});const fd=fs.openSync(path.join(root,'phase7-server.log'),'a'),args=diagnose?['--require','./scripts/navigation-http-diagnostics.cjs']:[];args.push('node_modules/next/dist/bin/next','start','-p','3107','-H','127.0.0.1');const app=spawn(process.execPath,args,{cwd:repo,env:{...environment(),OUTCLASS_PHASE_TRACE:diagnose?'1':'0',OUTCLASS_NAVIGATION_HTTP_DIAGNOSTICS:diagnose?'1':'0'},detached:true,stdio:['ignore',fd,fd]});fs.closeSync(fd);app.unref();fs.writeFileSync(path.join(root,'server.pid'),String(app.pid));for(let n=0;n<100;n++){try{if((await fetch(config().appUrl,{signal:AbortSignal.timeout(1000)})).ok)return}catch{}await new Promise(r=>setTimeout(r,200))}throw Error('Owned app did not become ready')}
++async function build(){await stop();const fd=fs.openSync(path.join(root,'phase7-build.log'),'w');const result=spawnSync('npm',['run','build'],{cwd:repo,env:environment(),stdio:['ignore',fd,fd]});fs.closeSync(fd);assert.equal(result.status,0,'Inspect owned build log');}
++module.exports={repo,root,dist,config,privateRoot,environment,stop,start,snapshot,build};
++if(require.main===module)(async()=>{const [command,name]=process.argv.slice(2);if(command==='stop')await stop();else if(command==='start')await start(name,process.argv.includes('--diagnose'));else if(command==='snapshot')console.log(snapshot(name));else if(command==='build')await build();else throw Error('Unknown local lifecycle command')})().catch(error=>{console.error(error.name+': '+error.message.split('\n')[0]);process.exitCode=1});
+diff --git a/scripts/navigation-phase7-study.cjs b/scripts/navigation-phase7-study.cjs
+new file mode 100644
+index 0000000..630bb4f
+--- /dev/null
++++ b/scripts/navigation-phase7-study.cjs
+@@ -0,0 +1,34 @@
++// Fixed, local-only comparison. Frozen builds and every planned outcome are retained.
++const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{spawn,spawnSync}=require('node:child_process'),{createHash}=require('node:crypto');
++const local=require('./navigation-phase7-local.cjs'),repo=local.repo,evidence=path.join(repo,'docs/performance/phase7');
++const hash=b=>createHash('sha256').update(b).digest('hex');
++async function main(){
++ const out=path.resolve(repo,process.argv.find(a=>a.startsWith('--out='))?.slice(6)||'docs/performance/phase7/comparison');assert.ok(out.startsWith(evidence+path.sep)&&!fs.existsSync(out));fs.mkdirSync(out);
++ const planBytes=fs.readFileSync(path.join(evidence,'PLAN.json')),plan=JSON.parse(planBytes);fs.writeFileSync(path.join(out,'PLAN.json'),planBytes);
++ const manifests=Object.fromEntries(['baseline','candidate'].map(name=>[name,JSON.parse(fs.readFileSync(path.join(evidence,name.toUpperCase()+'_SOURCE.json')))]));
++ for(const name of ['baseline','candidate'])assert.equal(fs.readFileSync(path.join(local.privateRoot(),name,'BUILD_ID'),'utf8').trim(),manifests[name].buildId);
++ for(const [file,digest]of Object.entries(manifests.candidate.files))assert.equal(hash(fs.readFileSync(path.join(repo,file))),digest,file);
++ const protocol={startedAt:new Date().toISOString(),baseline:plan.baseline,planSha256:hash(planBytes),toolHashes:Object.fromEntries(['navigation-audit.cjs','navigation-http-diagnostics.cjs','navigation-phase7-local.cjs','navigation-phase7-study.cjs','navigation-phase7-interactions.cjs','navigation-loader-audit.cjs','pipeline-scale-fixture.cjs'].map(name=>[name,hash(fs.readFileSync(path.join(repo,'scripts',name)))])),buildIds:Object.fromEntries(Object.entries(manifests).map(([name,m])=>[name,m.buildId])),completed:[],failures:[],poolLimitPerClient:8,fixtureStrategy:'Independent cohort per size, identical within each cohort/build pair',complete:false};
++ let phase='starting';const system=[];let previous=require('node:os').cpus().reduce((a,c)=>({idle:a.idle+c.times.idle,total:a.total+Object.values(c.times).reduce((n,v)=>n+v,0)}),{idle:0,total:0});const monitor=setInterval(()=>{const os=require('node:os'),next=os.cpus().reduce((a,c)=>({idle:a.idle+c.times.idle,total:a.total+Object.values(c.times).reduce((n,v)=>n+v,0)}),{idle:0,total:0});system.push({at:new Date().toISOString(),phase,cpuBusyPercent:+(100*(1-(next.idle-previous.idle)/(next.total-previous.total))).toFixed(2),load:os.loadavg(),freeMemoryMiB:Math.round(os.freemem()/1048576)});previous=next},1000);
++ const save=()=>fs.writeFileSync(path.join(out,'PROTOCOL.json'),JSON.stringify(protocol,null,2)+'\n');save();
++ async function fixture(size){
++  await local.stop();const current=path.join(local.root,'navigation-fixture.json'),marker=path.join(local.root,'phase3-enriched-count.json'),target=path.join(local.privateRoot(),'fixture-'+size+'.json');
++  if(!fs.existsSync(target)){
++   if(fs.existsSync(current)){const f=JSON.parse(fs.readFileSync(current)),existing=f.counts.applicantsInMeasuredClub||100;const saved=path.join(local.privateRoot(),'fixture-'+existing+'.json');if(!fs.existsSync(saved))fs.copyFileSync(current,saved);fs.rmSync(current);}
++   // Credential-file rebinding only. No database rows are removed or rewritten.
++   fs.rmSync(marker,{force:true});const seed=spawnSync(process.execPath,['scripts/navigation-audit.cjs','--seed'],{cwd:repo,encoding:'utf8'});assert.equal(seed.status,0,'Reserved fixture signup failed');await require('./pipeline-scale-fixture.cjs').scaleFixture(size);fs.copyFileSync(current,target);
++  }
++  fs.copyFileSync(target,current);const f=JSON.parse(fs.readFileSync(current));assert.equal(f.counts.applicantsInMeasuredClub||100,size);const db=new(require('@prisma/client').PrismaClient)({datasourceUrl:local.config().status.DB_URL});try{assert.equal(await db.application.count({where:{clubId:f.clubIds[0]}}),size)}finally{await db.$disconnect()}
++ }
++ async function collect(directory,samples){
++  const fd=fs.openSync(path.join(local.root,'phase7-benchmark.log'),'a');const child=spawn(process.execPath,['scripts/navigation-audit.cjs','--phase2','--phase3','--cold-warm','--record-failures','--source-diagnostics','--samples='+samples,'--out='+directory],{cwd:repo,env:local.environment(),stdio:['ignore',fd,fd]});const status=await new Promise((resolve,reject)=>{child.once('error',reject);child.once('close',resolve)});fs.closeSync(fd);const result={status};
++  const file=path.join(directory,'browser-samples.json');assert.ok(fs.existsSync(file),'Every block must emit all outcomes');const data=JSON.parse(fs.readFileSync(file));assert.equal(data.samples.length,samples*4,'No missing or replacement rows');assert.ok([0,1].includes(result.status));assert.equal(result.status,data.failures.length?1:0);protocol.completed.push({directory:path.relative(out,directory),planned:samples*4,observed:data.samples.length,failures:data.failures.length});save();
++ }
++ try{for(const size of plan.measurement.cohorts){phase='fixture-'+size;await fixture(size);for(const[pair,order]of plan.measurement.blocks.entries())for(const[position,letter]of[...order].entries()){
++  const variant=letter==='B'?'baseline':'candidate';phase=`${size}-${pair}-${letter}-start`;await local.start(variant);const stem=path.join(out,`size-${size}-pair-${pair+1}-${position+1}-${letter}`);phase=`${size}-${pair}-${letter}-warmup`;await collect(stem+'-warmup',1);phase=`${size}-${pair}-${letter}-measure`;await collect(stem+'-measure',5);if(size>=1000){phase=`${size}-${pair}-${letter}-interactions`;const fd=fs.openSync(path.join(local.root,'phase7-interactions.log'),'a'),r=spawnSync(process.execPath,['scripts/navigation-phase7-interactions.cjs','--out='+stem+'-interactions.json'],{cwd:repo,env:local.environment(),stdio:['ignore',fd,fd]});fs.closeSync(fd);const d=JSON.parse(fs.readFileSync(stem+'-interactions.json'));assert.equal(d.samples.length,12);assert.ok([0,1].includes(r.status));protocol.interactions??=[];protocol.interactions.push({file:path.relative(out,stem+'-interactions.json'),planned:12,observed:d.samples.length,failed:d.samples.filter(s=>s.failed).length});save()}console.log(`Completed ${size}, pair ${pair+1}, ${letter}; all planned outcomes retained.`);
++ }await local.stop();const fd=fs.openSync(path.join(local.root,'phase7-loaders.log'),'a'),probe=spawnSync(process.execPath,['scripts/navigation-loader-audit.cjs','--pipeline-study','--out='+path.join(out,`size-${size}-candidate-loaders.json`)],{cwd:repo,env:local.environment(),stdio:['ignore',fd,fd]});fs.closeSync(fd);assert.equal(probe.status,0);const loaded=JSON.parse(fs.readFileSync(path.join(out,`size-${size}-candidate-loaders.json`))),list=loaded.results.find(r=>r.name==='pipelineList');assert.ok(list.samples.every(s=>s.queries.every(q=>q.detailColumnsInSelect.length===0)),'List SQL still reads omitted detail columns');const beforeFd=fs.openSync(path.join(local.root,'phase7-loaders.log'),'a'),before=spawnSync(process.execPath,['scripts/navigation-loader-audit.cjs','--pipeline-study','--source-ref='+plan.baseline,'--out='+path.join(out,`size-${size}-baseline-loaders.json`)],{cwd:repo,env:local.environment(),stdio:['ignore',beforeFd,beforeFd]});fs.closeSync(beforeFd);assert.equal(before.status,0);
++ }protocol.complete=true;protocol.completedAt=new Date().toISOString();save();
++ }catch(error){protocol.failures.push({name:error.name,message:error.message.split('\n')[0]});save();throw error}
++ finally{clearInterval(monitor);await local.stop();fs.writeFileSync(path.join(out,'SYSTEM.json'),JSON.stringify(system,null,2)+'\n');protocol.applicationStopped=true;save();}
++}
++if(require.main===module)main().catch(e=>{console.error(e.name+': '+e.message.split('\n')[0]);process.exitCode=1});
+diff --git a/scripts/summarize-navigation-phase7.cjs b/scripts/summarize-navigation-phase7.cjs
+new file mode 100644
+index 0000000..d5249ce
+--- /dev/null
++++ b/scripts/summarize-navigation-phase7.cjs
+@@ -0,0 +1,96 @@
++const fs = require('node:fs');
++const path = require('node:path');
++const assert = require('node:assert/strict');
++const { distribution } = require('./navigation-audit.cjs');
++const { enrich } = require('./summarize-pipeline-navigation.cjs');
++const { summarizeGroup } = require('./summarize-pipeline-stress.cjs');
++
++function sourceMetrics(row) {
++  const source = row.preparation;
++  assert.ok(source, 'Source observations are required for every outcome');
++  const requests = source.requests.filter(r => r.type !== 'eventsource');
++  const scripts = requests.filter(r => r.type === 'script');
++  const completeBytes = requests.every(r => Number.isFinite(r.encodedBodyBytes));
++  return {
++    meaningfulMs: source.meaningfulMs,
++    elapsedIncludingDrainMs: source.elapsedMs,
++    documentTtfbMs: source.dom?.document?.ttfbMs ?? null,
++    requestCount: source.requests.length,
++    nonSsePending: requests.filter(r => r.pending).length,
++    logoRequestCount: requests.filter(r => r.route.startsWith('/logos/')).length,
++    httpErrors: requests.filter(r => r.status >= 400).length,
++    encodedBodyBytes: completeBytes ? requests.reduce((n,r) => n+r.encodedBodyBytes,0) : null,
++    scriptBytes: scripts.every(r => Number.isFinite(r.encodedBodyBytes)) ? scripts.reduce((n,r) => n+r.encodedBodyBytes,0) : null,
++  };
++}
++function describe(rows) {
++  const result = summarizeGroup(rows);
++  const successful = rows.filter(r => !r.failed);
++  assert.ok(successful.map(enrich).every(r => r.readCount === 1), 'Each successful selected list/detail navigation requires exactly one fresh read');
++  const source = rows.map(sourceMetrics);
++  const sourceMetricsNames = Object.keys(source[0]);
++  const transfer = successful.map(r => r.requests.find(q => /^\/api\/workspace\?kind=pipeline(?:List|Page)?$/.test(q.route))?.transferMs);
++  return {
++    ...result,
++    readTransferMs: distribution(transfer),
++    timedHttpErrors: successful.flatMap(r => r.requests).filter(r => r.status >= 400).length,
++    pendingSourceObservations: source.filter(r => r.nonSsePending > 0).length,
++    source: {
++      planned: rows.length,
++      successful: source.filter(r => Number.isFinite(r.meaningfulMs)).length,
++      latencyInterpretation: source.every(r => Number.isFinite(r.meaningfulMs)) ? 'All planned source preparations; visible DOM content predicate, before background drain.' : 'Successful source preparations only; full-cohort source p95 is not established.',
++      ...Object.fromEntries(sourceMetricsNames.map(name => [name, distribution(source.map(r => r[name]))])),
++    },
++  };
++}
++function summarize(root) {
++  const protocol = JSON.parse(fs.readFileSync(path.join(root,'PROTOCOL.json')));
++  assert.equal(protocol.complete, true);
++  assert.equal(protocol.failures.length, 0, 'Fatal collection failures must be reported separately');
++  assert.equal(protocol.completed.length, 24);
++  const entries = protocol.completed.map(block => {
++    const m = /^size-(100|1000|5000)-pair-([12])-([12])-([AB])-(measure|warmup)$/.exec(block.directory);
++    assert.ok(m, 'Unexpected block');
++    const data = JSON.parse(fs.readFileSync(path.join(root,block.directory,'browser-samples.json')));
++    assert.equal(data.samples.length, block.planned);
++    assert.equal(data.samples.filter(r=>r.failed).length, block.failures);
++    return {size:Number(m[1]),pair:Number(m[2]),variant:m[4],phase:m[5],samples:data.samples};
++  });
++  const measured = entries.filter(e=>e.phase==='measure');
++  const warmups = entries.filter(e=>e.phase==='warmup').flatMap(e=>e.samples);
++  const groups = [];
++  for (const size of [100,1000,5000]) for (const route of ['recruiting → applicants','applicants → applicantDetail']) for (const condition of ['cold','warm']) {
++    const group = {size,path:route,condition};
++    for (const variant of ['B','A']) group[variant]=describe(measured.filter(e=>e.size===size&&e.variant===variant).flatMap(e=>e.samples).filter(r=>r.path===route&&r.condition===condition));
++    group.pairedMedians = [1,2].map(pair=>Object.fromEntries(['B','A'].map(variant=>[variant,distribution(measured.find(e=>e.size===size&&e.pair===pair&&e.variant===variant).samples.filter(r=>r.path===route&&r.condition===condition&&!r.failed).map(r=>r.meaningfulMs))])));
++    groups.push(group);
++  }
++  const all = measured.flatMap(e=>e.samples);
++  return {
++    protocol: {baseline:protocol.baseline,buildIds:protocol.buildIds,planned:all.length+warmups.length,measured:all.length,warmups:warmups.length,failedMeasured:all.filter(r=>r.failed).length,failedWarmups:warmups.filter(r=>r.failed).length,pageErrors:all.reduce((n,r)=>n+(r.pageErrorCount||0),0),timedSuccessfulHttpErrors:all.filter(r=>!r.failed).flatMap(r=>r.requests).filter(r=>r.status>=400).length,sourceHttpErrorsByVariant:Object.fromEntries(['B','A'].map(variant=>[variant,measured.filter(e=>e.variant===variant).flatMap(e=>e.samples).reduce((n,r)=>n+sourceMetrics(r).httpErrors,0)])),percentiles:'Nearest rank, n=10 per build/path/condition; p95 equals maximum. Local descriptive evidence, not a production percentile estimate.'},
++    groups,
++    interactions: summarizeInteractions(root, protocol),
++    failures: measured.flatMap(e=>e.samples.filter(r=>r.failed).map(r=>({size:e.size,variant:e.variant,path:r.path,condition:r.condition,index:r.index,stage:r.stage,diagnostic:r.diagnostic,preparation:r.preparation,error:r.error}))),
++  };
++}
++function summarizeInteractions(root, protocol) {
++  assert.equal(protocol.interactions.length, 8);
++  const blocks=protocol.interactions.map(block=>{
++    const m=/^size-(1000|5000)-pair-([12])-([12])-([AB])-interactions.json$/.exec(block.file);assert.ok(m);
++    const data=JSON.parse(fs.readFileSync(path.join(root,block.file)));assert.equal(data.samples.length,12);
++    return {size:Number(m[1]),variant:m[4],samples:data.samples};
++  });
++  const groups=[];
++  for(const size of [1000,5000])for(const kind of ['next-page','distant-search']){
++    const group={size,kind,condition:'warm'};
++    for(const variant of ['B','A']){
++      const all=blocks.filter(b=>b.size===size&&b.variant===variant).flatMap(b=>b.samples).filter(r=>r.kind===kind&&!r.warmup);assert.equal(all.length,10);
++      const successful=all.filter(r=>!r.failed),enriched=successful.map(enrich);
++      group[variant]={planned:all.length,successful:successful.length,failed:all.length-successful.length,pageErrors:all.flatMap(r=>r.pageErrors).length,httpErrors:all.flatMap(r=>r.requests).filter(r=>r.status>=400).length,interpretation:successful.length===10?'All planned warm observations. Nearest-rank p95 equals maximum at n=10.':'Successful observations only; full-cohort p95 is not established.',...Object.fromEntries(['meaningfulMs','driverElapsedMs','requestCount','encodedBodyBytes','readCount','readStartMs','readTtfbMs','readServerMs','databaseMs','serializationMs','readBodyBytes'].map(metric=>[metric,distribution(enriched.map(r=>r[metric]))]))};
++    }
++    groups.push(group);
++  }
++  return {planned:96,warmups:16,measured:80,failed:blocks.flatMap(b=>b.samples).filter(r=>r.failed).length,groups};
++}
++module.exports = {sourceMetrics,describe,summarize};
++if(require.main===module){const root=path.resolve(process.argv.find(a=>a.startsWith('--out='))?.slice(6)||'docs/performance/phase7/comparison'),result=summarize(root);fs.writeFileSync(path.join(root,'COMPARISON.json'),JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify(result.groups.map(g=>({size:g.size,path:g.path,condition:g.condition,before:g.B.meaningfulMs,after:g.A.meaningfulMs,failures:[g.B.failed,g.A.failed]})),null,2));}
+diff --git a/tests/live-applicant-views.test.cjs b/tests/live-applicant-views.test.cjs
+index 56c1b62..b43acaa 100644
+--- a/tests/live-applicant-views.test.cjs
++++ b/tests/live-applicant-views.test.cjs
+@@ -8 +8 @@ function compile(file, mocks = {}, extra = '') {
+-  new Function('require', 'module', 'exports', 'window', 'requestAnimationFrame', code)(name => mocks[name] || (name==='@/hooks/use-editor-draft'?require('./helpers/autosave-ui-harness.cjs').draftStub:name.startsWith('@/lib/') ? compile(name.replace('@/', '') + '.ts') : name.startsWith('@/') || name.startsWith('./') ? new Proxy({}, { get: (_, key) => String(key) }) : require(name)), mod, mod.exports, { addEventListener(){}, removeEventListener(){}, confirm(){ return true } }, () => {})
++  new Function('require', 'module', 'exports', 'window', 'requestAnimationFrame', 'cancelAnimationFrame', code)(name => mocks[name] || (name==='@/hooks/use-editor-draft'?require('./helpers/autosave-ui-harness.cjs').draftStub:name==='@/hooks/use-resident-pipeline'?compile('hooks/use-resident-pipeline.ts',mocks):name.startsWith('@/lib/') ? compile(name.replace('@/', '') + '.ts') : name.startsWith('@/') || name.startsWith('./') ? new Proxy({}, { get: (_, key) => String(key) }) : require(name)), mod, mod.exports, { addEventListener(){}, removeEventListener(){}, confirm(){ return true } }, () => {}, () => {})
+@@ -35 +35 @@ function harness(permissions = ['applications.review','applicants.identify','dec
+-  return {calls,api,lookups,replayEffects(){for(const cleanup of cleanups.values())cleanup?.();cleanups.clear();for(const [slot,setup]of setups)cleanups.set(slot,setup())},addCandidate(app){pipeline.applications.push({...structuredClone(pipeline.applications[0]),...app})},setCanEvaluate(value){pipeline.applications[0].canEvaluate=value},addRound(round){pipeline.rounds.push(round)},setEvaluations(evaluations){pipeline.applications[0].evaluations=evaluations},renameRound(name){pipeline.rounds[0].name=name},setServerRound(roundId){pipeline.applications[0].roundId=roundId},setServerStatus(status){pipeline.applications[0].status=status},render(){for(let step=0;step<20;step++){changed=false;index=0;const tree=C({membership,decisionsOnly,rejectedOnly});while(effects.length){const [slot,setup]=effects.shift();cleanups.get(slot)?.();cleanups.set(slot,setup())}if(!changed)return tree}throw Error('Component failed to settle')}}
++  return {calls,api,lookups,setViewer(id){auth.user={id};membership.id=id;membership.userId=id},replayEffects(){for(const cleanup of cleanups.values())cleanup?.();cleanups.clear();for(const [slot,setup]of setups)cleanups.set(slot,setup())},addCandidate(app){pipeline.applications.push({...structuredClone(pipeline.applications[0]),...app})},setCanEvaluate(value){pipeline.applications[0].canEvaluate=value},addRound(round){pipeline.rounds.push(round)},setEvaluations(evaluations){pipeline.applications[0].evaluations=evaluations},renameRound(name){pipeline.rounds[0].name=name},setServerRound(roundId){pipeline.applications[0].roundId=roundId},setServerStatus(status){pipeline.applications[0].status=status},render(){for(let step=0;step<20;step++){changed=false;index=0;const tree=C({membership,decisionsOnly,rejectedOnly});while(effects.length){const [slot,setup]=effects.shift();cleanups.get(slot)?.();cleanups.set(slot,setup())}if(!changed)return tree}throw Error('Component failed to settle')}}
+@@ -183,0 +184,4 @@ test('page reader remains usable after React development effect cleanup and setu
++
++test('a different membership identity resets the resident page cursor before fresh summaries render',async()=>{
++ const h=harness(),id=n=>`123e4567-e89b-12d3-a456-${String(n).padStart(12,'0')}`;for(let i=0;i<201;i++)h.addCandidate({id:id(i)});h.render();await flush();let tree=h.render();nodes(tree).find(n=>n.props?.['aria-label']==='Next applicant page').props.onClick();tree=h.render();assert.equal(nodes(tree).find(n=>n.type==='p'&&Array.isArray(n.props?.children)&&n.props.children[0]==='Page ').props.children[1],2);h.setViewer(id(999));h.render();await flush();assert.doesNotThrow(()=>{tree=h.render()});assert.equal(nodes(tree).find(n=>n.type==='p'&&Array.isArray(n.props?.children)&&n.props.children[0]==='Page ').props.children[1],1);assert.equal(h.calls.filter(c=>c[0]==='load').length,2);
++});
+diff --git a/tests/navigation-phase2-e2e.test.cjs b/tests/navigation-phase2-e2e.test.cjs
+index 99c2d71..e89afad 100644
+--- a/tests/navigation-phase2-e2e.test.cjs
++++ b/tests/navigation-phase2-e2e.test.cjs
+@@ -12 +12 @@ test('selected tabs request authorized data while code is still loading, then co
+- const f=await fixture(),browser=await chromium.launch({headless:true});try{for(const[kind,tour,label,text]of cases)await t.test(kind,async()=>{const c=await context(browser,f),page=await c.newPage();let unblock,codeStarted,reads=0;const blocked=[],errors=[];page.on('pageerror',e=>errors.push(e.name));try{await open(page,f,kind==='pipeline');const seen=new Promise(resolve=>unblock=resolve);page.on('request',r=>{const u=new URL(r.url());if(u.pathname==='/api/workspace'&&u.searchParams.get('kind')===(kind==='pipeline'?'pipelinePage':kind)){reads++;unblock();}});const pendingCode=new Promise(resolve=>codeStarted=resolve);const gate=route=>{blocked.push(route);codeStarted()};await page.route('**/_next/static/chunks/*.js',gate);await select(page,tour);await Promise.race([Promise.all([seen,pendingCode]),new Promise((_,reject)=>setTimeout(()=>reject(Error('Data waited for the blocked code chunk')),3000))]);assert.ok(blocked.length,'The selected component really has an unresolved chunk');assert.equal(await page.getByRole('status').filter({hasText:'Loading workspace…'}).count(),1);await Promise.all(blocked.splice(0).map(r=>r.continue()));await page.unroute('**/_next/static/chunks/*.js',gate);await page.locator(`section[aria-label="${label}"]`).getByText(text,{exact:true}).first().waitFor();assert.equal(reads,1);assert.deepEqual(errors,[]);}finally{await page.unroute('**/_next/static/chunks/*.js');await Promise.allSettled(blocked.map(r=>r.continue()));await c.close();}});}finally{await browser.close();}
++ const f=await fixture(),browser=await chromium.launch({headless:true});try{for(const[kind,tour,label,text]of cases)await t.test(kind,async()=>{const c=await context(browser,f),page=await c.newPage();let unblock,codeStarted,reads=0;const blocked=[],errors=[];page.on('pageerror',e=>errors.push(e.name));try{await open(page,f,kind==='pipeline');const seen=new Promise(resolve=>unblock=resolve);page.on('request',r=>{const u=new URL(r.url());if(u.pathname==='/api/workspace'&&u.searchParams.get('kind')===(kind==='pipeline'?'pipelineList':kind)){reads++;unblock();}});const pendingCode=new Promise(resolve=>codeStarted=resolve);const gate=route=>{blocked.push(route);codeStarted()};await page.route('**/_next/static/chunks/*.js',gate);await select(page,tour);await Promise.race([Promise.all([seen,pendingCode]),new Promise((_,reject)=>setTimeout(()=>reject(Error('Data waited for the blocked code chunk')),3000))]);assert.ok(blocked.length,'The selected component really has an unresolved chunk');assert.equal(await page.getByRole('status').filter({hasText:'Loading workspace…'}).count(),1);await Promise.all(blocked.splice(0).map(r=>r.continue()));await page.unroute('**/_next/static/chunks/*.js',gate);await page.locator(`section[aria-label="${label}"]`).getByText(text,{exact:true}).first().waitFor();assert.equal(reads,1);assert.deepEqual(errors,[]);}finally{await page.unroute('**/_next/static/chunks/*.js');await Promise.allSettled(blocked.map(r=>r.continue()));await c.close();}});}finally{await browser.close();}
+diff --git a/tests/navigation-phase3-e2e.test.cjs b/tests/navigation-phase3-e2e.test.cjs
+index a8cf729..1445120 100644
+--- a/tests/navigation-phase3-e2e.test.cjs
++++ b/tests/navigation-phase3-e2e.test.cjs
+@@ -17 +17 @@ test('applicant list avoids detail reads; closing a pending detail fences it fro
+- try{page.on('pageerror',e=>errors.push(e.name));page.on('request',r=>{const u=new URL(r.url());if(u.pathname==='/api/workspace')reads.push(u.searchParams.get('kind'))});await page.goto(f.config.appUrl+'/club/'+f.data.clubIds[0]+'/workspace?section=recruitment&tool=applicants');await page.locator('.oc-live-pipeline').getByText('Audit Student 000',{exact:true}).first().waitFor();assert.ok(reads.filter(k=>k==='pipelinePage').length>=1,'initial session/bootstrap replacement may require another live read');assert.equal(reads.includes('pipeline'),false);
++ try{page.on('pageerror',e=>errors.push(e.name));page.on('request',r=>{const u=new URL(r.url());if(u.pathname==='/api/workspace')reads.push(u.searchParams.get('kind'))});await page.goto(f.config.appUrl+'/club/'+f.data.clubIds[0]+'/workspace?section=recruitment&tool=applicants');await page.locator('.oc-live-pipeline').getByText('Audit Student 000',{exact:true}).first().waitFor();assert.ok(reads.filter(k=>k==='pipelineList').length>=1,'initial session/bootstrap replacement may require another live read');assert.equal(reads.includes('pipeline'),false);
+@@ -25 +25 @@ test('fresh applicant detail preserves an autosaved review draft across close an
+-test('large applicant server pages preserve whole-list search/counts with a fresh read per page',{skip:!configFile},async(t)=>{const f=await fixture();if((f.data.counts.applicantsInMeasuredClub||100)<1000){t.skip('Requires the registered large fixture');return;}const browser=await chromium.launch({headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...f.actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage();let reads=0;try{page.on('request',r=>{if(new URL(r.url()).searchParams.get('kind')==='pipelinePage')reads++});await page.goto(f.config.appUrl+'/club/'+f.data.clubIds[0]+'/workspace?section=recruitment&tool=applicants');const pages=page.getByRole('navigation',{name:'Applicant pages',exact:true});await pages.waitFor();assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),100);await page.waitForLoadState('networkidle');const initialReads=reads;await pages.getByRole('button',{name:'Next applicant page',exact:true}).click();await page.getByText('Scale Student 00100',{exact:true}).first().waitFor();assert.match(await pages.innerText(),/Page 2 of/);assert.equal(reads,initialReads+1);const search=page.getByRole('textbox',{name:'Search applicants',exact:true});const last='Scale Student '+String(f.data.counts.applicantsInMeasuredClub-1).padStart(5,'0');await search.fill(last);await page.getByText(last,{exact:true}).first().waitFor();assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),1);assert.equal(await pages.count(),0);await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));assert.equal(await search.evaluate(el=>document.activeElement===el),true,'filtering keeps keyboard focus');await search.fill('');await pages.waitFor();assert.match(await pages.innerText(),/Page 1 of/);assert.equal(reads,initialReads+3)}finally{await context.close();await browser.close()}});
++test('resident applicant summaries preserve whole-list search/counts without another read per page',{skip:!configFile},async(t)=>{const f=await fixture();if((f.data.counts.applicantsInMeasuredClub||100)<1000){t.skip('Requires the registered large fixture');return;}const browser=await chromium.launch({headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...f.actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage();let reads=0;try{page.on('request',r=>{if(new URL(r.url()).searchParams.get('kind')==='pipelineList')reads++});await page.goto(f.config.appUrl+'/club/'+f.data.clubIds[0]+'/workspace?section=recruitment&tool=applicants');const pages=page.getByRole('navigation',{name:'Applicant pages',exact:true});await pages.waitFor();assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),100);await page.waitForLoadState('networkidle');const initialReads=reads;await pages.getByRole('button',{name:'Next applicant page',exact:true}).click();await page.getByText('Scale Student 00100',{exact:true}).first().waitFor();assert.match(await pages.innerText(),/Page 2 of/);assert.equal(reads,initialReads);const search=page.getByRole('textbox',{name:'Search applicants',exact:true});const last='Scale Student '+String(f.data.counts.applicantsInMeasuredClub-1).padStart(5,'0');await search.fill(last);await page.getByText(last,{exact:true}).first().waitFor();assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),1);assert.equal(await pages.count(),0);await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));assert.equal(await search.evaluate(el=>document.activeElement===el),true,'filtering keeps keyboard focus');await search.fill('');await pages.waitFor();assert.match(await pages.innerText(),/Page 1 of/);assert.equal(reads,initialReads)}finally{await context.close();await browser.close()}});
+diff --git a/tests/navigation-phase5-e2e.test.cjs b/tests/navigation-phase5-e2e.test.cjs
+index dc67039..3596cc0 100644
+--- a/tests/navigation-phase5-e2e.test.cjs
++++ b/tests/navigation-phase5-e2e.test.cjs
+@@ -26 +26 @@ test('server pages and explicit selections preserve complete authorized sets, pr
+-test('page boundaries use one fresh page read, full quick-review/voting selection survives pagination and reopen validates again',{skip:!configFile,timeout:120000},async t=>{
++test('resident page boundaries avoid summary reads, full quick-review/voting selection survives pagination and reopen validates again',{skip:!configFile,timeout:120000},async t=>{
+@@ -28,2 +28,2 @@ test('page boundaries use one fresh page read, full quick-review/voting selectio
+- try{page.on('dialog',d=>d.accept());page.on('pageerror',e=>errors.push(e.name));page.on('request',r=>{if(new URL(r.url()).pathname==='/api/workspace')reads.push(new URL(r.url()).searchParams.get('kind'))});await page.goto(f.config.appUrl+'/club/'+f.club+'/workspace?section=recruitment&tool=applicants');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await page.waitForLoadState('networkidle');assert.ok(reads.filter(k=>k==='pipelinePage').length>=1);assert.equal(reads.includes('pipelineSelection'),false);
+-  await page.getByRole('button',{name:/Audit Student 099.*Open applicant/}).click();await page.getByRole('heading',{name:'Audit Student 099',exact:true}).waitFor();const before=reads.filter(k=>k==='pipelinePage').length;await page.getByRole('button',{name:'Next applicant',exact:true}).click();await page.getByRole('heading',{name:'Scale Student 00100',exact:true}).waitFor();assert.equal(reads.filter(k=>k==='pipelinePage').length,before+1,'drawer boundary must not dispatch the fetched page twice');await page.getByRole('button',{name:'Previous applicant',exact:true}).click();await page.getByRole('heading',{name:'Audit Student 099',exact:true}).waitFor();await page.getByRole('button',{name:'Close',exact:true}).click();await page.locator('[data-slot=sheet-content]').waitFor({state:'hidden'});
++ try{page.on('dialog',d=>d.accept());page.on('pageerror',e=>errors.push(e.name));page.on('request',r=>{if(new URL(r.url()).pathname==='/api/workspace')reads.push(new URL(r.url()).searchParams.get('kind'))});await page.goto(f.config.appUrl+'/club/'+f.club+'/workspace?section=recruitment&tool=applicants');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await page.waitForLoadState('networkidle');assert.ok(reads.filter(k=>k==='pipelineList').length>=1);assert.equal(reads.includes('pipelineSelection'),false);
++  await page.getByRole('button',{name:/Audit Student 099.*Open applicant/}).click();await page.getByRole('heading',{name:'Audit Student 099',exact:true}).waitFor();const before=reads.filter(k=>k==='pipelineList').length;await page.getByRole('button',{name:'Next applicant',exact:true}).click();await page.getByRole('heading',{name:'Scale Student 00100',exact:true}).waitFor();assert.equal(reads.filter(k=>k==='pipelineList').length,before,'drawer boundary must reuse already released summaries');await page.getByRole('button',{name:'Previous applicant',exact:true}).click();await page.getByRole('heading',{name:'Audit Student 099',exact:true}).waitFor();await page.getByRole('button',{name:'Close',exact:true}).click();await page.locator('[data-slot=sheet-content]').waitFor({state:'hidden'});
+@@ -35,4 +35,4 @@ test('page boundaries use one fresh page read, full quick-review/voting selectio
+-test('rapid global searches coalesce obsolete reads, retain keyboard focus and never show a late previous selection',{skip:!configFile,timeout:90000},async t=>{
+- const f=await fixture();if((f.data.counts.applicantsInMeasuredClub||100)<1000)return t.skip('Requires the registered large fixture');const browser=await chromium.launch({headless:true}),c=await context(browser,f),page=await c.newPage(),errors=[],submitted=[];let held,release;
+- try{page.on('request',r=>{const u=new URL(r.url());if(u.searchParams.get('kind')==='pipelinePage')submitted.push(JSON.parse(u.searchParams.get('args'))[1].query)});page.on('pageerror',e=>errors.push(e.name));await page.goto(f.config.appUrl+'/club/'+f.club+'/workspace?section=recruitment&tool=applicants');const search=page.getByRole('textbox',{name:'Search applicants',exact:true});await page.getByText('Audit Student 000',{exact:true}).first().waitFor();const started=new Promise(r=>held=r);await page.route('**/api/workspace?kind=pipelinePage&*',async route=>{const args=JSON.parse(new URL(route.request().url()).searchParams.get('args'));if(args[1].query==='Audit Student 000'){const response=await route.fetch();release=()=>route.fulfill({response}).catch(()=>{});held();}else await route.continue()});await search.fill('Audit Student 000');await started;const last='Scale Student '+String(f.data.counts.applicantsInMeasuredClub-1).padStart(5,'0');await search.fill('intermediate query');await search.fill(last);await release();await page.getByText(last,{exact:true}).first().waitFor();await page.unroute('**/api/workspace?kind=pipelinePage&*');await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));assert.equal(await search.evaluate(el=>document.activeElement===el),true);assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),1);assert.equal(await page.getByText('Audit Student 000',{exact:true}).count(),0);assert.equal(submitted.includes('intermediate query'),false,'intermediate filters never dispatch while an earlier read is pending');assert.deepEqual(errors,[]);
+- }finally{if(release)await release();await c.close();await browser.close()}
++test('rapid resident searches preserve focus and the latest selection without another summary read',{skip:!configFile,timeout:90000},async t=>{
++ const f=await fixture();if((f.data.counts.applicantsInMeasuredClub||100)<1000)return t.skip('Requires the registered large fixture');const browser=await chromium.launch({headless:true}),c=await context(browser,f),page=await c.newPage(),errors=[],submitted=[];
++ try{page.on('request',r=>{const u=new URL(r.url());if(['pipelinePage','pipelineList'].includes(u.searchParams.get('kind')))submitted.push(u.searchParams.get('kind'))});page.on('pageerror',e=>errors.push(e.name));await page.goto(f.config.appUrl+'/club/'+f.club+'/workspace?section=recruitment&tool=applicants');const search=page.getByRole('textbox',{name:'Search applicants',exact:true});await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await page.waitForLoadState('networkidle');const initial=submitted.length,last='Scale Student '+String(f.data.counts.applicantsInMeasuredClub-1).padStart(5,'0');await search.fill('Audit Student 000');await search.fill('intermediate query');await search.fill(last);await page.getByText(last,{exact:true}).first().waitFor();await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));assert.equal(await search.evaluate(el=>document.activeElement===el),true);assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),1);assert.equal(await page.getByText('Audit Student 000',{exact:true}).count(),0);assert.equal(submitted.length,initial,'local searches do not dispatch a summary request');assert.deepEqual(errors,[]);
++ }finally{await c.close();await browser.close()}
+diff --git a/tests/navigation-phase7-e2e.test.cjs b/tests/navigation-phase7-e2e.test.cjs
+new file mode 100644
+index 0000000..f732195
+--- /dev/null
++++ b/tests/navigation-phase7-e2e.test.cjs
+@@ -0,0 +1,26 @@
++const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
++const {PrismaClient}=require('@prisma/client'),{chromium}=require('playwright'),{Actor,readConfig}=require('./helpers/onboarding-e2e.cjs');
++const configFile=process.env.OUTCLASS_ONBOARDING_E2E_CONFIG;
++async function fixture(){const config=readConfig(configFile),data=JSON.parse(fs.readFileSync(path.join(path.dirname(configFile),'navigation-fixture.json'))),actor=new Actor(config);await actor.signIn(data.email,data.password);return{config,data,actor,club:data.clubIds[0]}}
++async function open(browser,f){const c=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...f.actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await c.newPage();await page.goto(f.config.appUrl+'/club/'+f.club+'/workspace?section=recruitment&tool=applicants');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await page.waitForLoadState('networkidle');return{c,page}}
++test('resident navigation remains bounded, local controls make no summary request and refresh hides old data until fresh privacy validation',{skip:!configFile,timeout:120000},async t=>{
++ const f=await fixture();if((f.data.counts.applicantsInMeasuredClub||100)<1000)return t.skip('Requires the registered large fixture');const browser=await chromium.launch({headless:true}),db=new PrismaClient({datasourceUrl:f.config.status.DB_URL}),round=await db.pipelineRound.findFirstOrThrow({where:{clubId:f.club,type:'APPLICATION_REVIEW'}}),{c,page}=await open(browser,f),reads=[],errors=[];let release;
++ try{page.on('request',r=>{const u=new URL(r.url());if(u.pathname==='/api/workspace')reads.push(u.searchParams.get('kind'))});page.on('pageerror',e=>errors.push(e.name));assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),100);
++  const pager=page.getByRole('navigation',{name:'Applicant pages',exact:true}),search=page.getByRole('textbox',{name:'Search applicants',exact:true});await pager.getByRole('button',{name:'Next applicant page',exact:true}).click();await page.getByText('Scale Student 00100',{exact:true}).first().waitFor();await page.getByRole('combobox',{name:'Sort applicants',exact:true}).selectOption('gpa');const last='Scale Student '+String(f.data.counts.applicantsInMeasuredClub-1).padStart(5,'0');await search.fill(last);await page.getByText(last,{exact:true}).first().waitFor();assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),1);await search.fill('');await page.getByRole('combobox',{name:'Sort applicants',exact:true}).selectOption('name');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await page.locator('.oc-pipeline-filters summary').click();const gpa=page.getByLabel('GPA greater than',{exact:true});await gpa.fill('5');await page.getByRole('alert').filter({hasText:'Enter filters within the displayed numeric ranges.'}).waitFor();assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),0);await gpa.fill('');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();assert.equal(reads.filter(k=>['pipelineList','pipelinePage'].includes(k)).length,0,'released summaries serve all local page/filter/sort interactions');
++  await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:true}});let seen;const held=new Promise(r=>seen=r);await page.route('**/api/workspace?kind=pipelineList&*',async route=>{const response=await route.fetch();release=()=>route.fulfill({response});seen()});await page.getByRole('button',{name:'Refresh',exact:true}).click();await held;assert.equal(await page.locator('[data-applicant-id]').count(),0,'a refresh cannot expose the previous successful summary set');await release();await page.unroute('**/api/workspace?kind=pipelineList&*');await page.getByRole('textbox',{name:'Search applicants',exact:true}).waitFor();assert.equal(reads.filter(k=>k==='pipelineList').length,1);assert.equal(await page.getByText('Audit Student 000',{exact:true}).count(),0);await page.getByRole('textbox',{name:'Search applicants',exact:true}).fill('Scale Student');await page.getByText('No applicants match these filters.',{exact:true}).waitFor();assert.deepEqual(errors,[]);
++ }finally{if(release)await release().catch(()=>{});await c.close();await browser.close();await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:round.anonymousReview}});await db.$disconnect()}
++});
++test('every explicit resident refresh rejects revoked membership, disabled accounts and revoked live sessions',{skip:!configFile,timeout:180000},async t=>{
++ const f=await fixture(),db=new PrismaClient({datasourceUrl:f.config.status.DB_URL}),browser=await chromium.launch({headless:true}),member=await db.clubMember.findUniqueOrThrow({where:{userId_clubId:{userId:f.data.userId,clubId:f.club}}}),backups=await db.clubMember.findMany({where:{clubId:{in:f.data.clubIds},userId:{not:f.data.userId}},distinct:['clubId']});
++ try{assert.equal(backups.length,f.data.clubIds.length);for(const backup of backups)await db.clubMember.update({where:{id:backup.id},data:{isOwner:true,accessRole:'OWNER'}});
++  for(const reason of ['membership','account','session'])await t.test(reason,async()=>{
++   const {c,page}=await open(browser,f);const statuses=[];page.on('response',r=>{if(new URL(r.url()).searchParams.get('kind')==='pipelineList')statuses.push(r.status())});
++   try{
++    if(reason==='membership')await db.clubMember.update({where:{id:member.id},data:{isOwner:false,accessRole:'MEMBER',permissions:[],interviewOffices:[]}});
++    if(reason==='account')await db.user.update({where:{id:f.data.userId},data:{disabledAt:new Date()}});
++    if(reason==='session')await f.actor.client.auth.signOut({scope:'local'});
++    await page.getByRole('button',{name:'Refresh',exact:true}).click();await page.getByRole('alert').filter({hasText:/Couldn.t load this club.s applicants/}).waitFor();assert.equal(await page.locator('[data-applicant-id]').count(),0);assert.deepEqual(statuses,[reason==='membership'?403:401]);
++   }finally{await c.close();if(reason==='membership')await db.clubMember.update({where:{id:member.id},data:{isOwner:member.isOwner,accessRole:member.accessRole,permissions:member.permissions,interviewOffices:member.interviewOffices}});if(reason==='account')await db.user.update({where:{id:f.data.userId},data:{disabledAt:null}})}
++  });
++ }finally{await browser.close();for(const backup of backups)await db.clubMember.update({where:{id:backup.id},data:{isOwner:backup.isOwner,accessRole:backup.accessRole}});await db.$disconnect()}
++});
+diff --git a/tests/resident-pipeline.test.cjs b/tests/resident-pipeline.test.cjs
+new file mode 100644
+index 0000000..6d138b9
+--- /dev/null
++++ b/tests/resident-pipeline.test.cjs
+@@ -0,0 +1,26 @@
++const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript');
++const {load}=require('./helpers/voting-harness.cjs');
++const tick=async()=>{for(let i=0;i<30;i++)await Promise.resolve()};
++function setup(){
++ const slots=[],effects=[],setups=new Map(),cleanups=new Map(),requests=[];let index=0,changed=false;
++ const react={useState(value){const i=index++;if(!(i in slots))slots[i]=value;return[slots[i],next=>{const v=typeof next==='function'?next(slots[i]):next;changed||=!Object.is(v,slots[i]);slots[i]=v}]},useRef(value){return slots[index++]??={current:value}},useMemo(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i].deps[j]))slots[i]={deps,value:fn()};return slots[i].value},useCallback(fn,deps){return react.useMemo(()=>fn,deps)},useEffect(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;setups.set(i,fn);effects.push([i,fn])}}};
++ const mod={exports:{}};new Function('require','module','exports',ts.transpileModule(fs.readFileSync('hooks/use-resident-pipeline.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(name=>name==='react'?react:name==='@/lib/workspace-api'?{getClubPipelineList:(club,filter)=>new Promise((resolve,reject)=>requests.push({club,filter,resolve,reject}))}:name.startsWith('@/')?load(name.slice(2)+'.ts'):require(name),mod,mod.exports);
++ return{requests,render(props){let result;for(let step=0;step<20;step++){index=0;changed=false;result=mod.exports.useResidentPipeline(props);for(const[i,fn]of effects.splice(0)){cleanups.get(i)?.();cleanups.set(i,fn())}if(!changed)return result}throw Error('Hook failed to settle')},replay(){for(const fn of cleanups.values())fn?.();cleanups.clear();for(const[i,fn]of setups)cleanups.set(i,fn())},cleanup(){for(const fn of cleanups.values())fn?.()}};
++}
++const props=()=>({clubId:'club',filter:{genderCounts:false},revision:0,authority:{},enabled:true,initialData:null,validatedInitialData:false});
++test('one mounted complete summary set is retained; every refresh and owner/scope change starts fresh authority',async()=>{
++ const h=setup();let p=props();assert.equal(h.render(p).data,null);assert.equal(h.requests.length,1);h.requests[0].resolve({marker:'first'});await tick();let value=h.render(p);assert.equal(value.data.marker,'first');for(let i=0;i<10;i++)h.render({...p,filter:{genderCounts:false}});assert.equal(h.requests.length,1);
++ const oldSetter=value.setData;for(const change of [{revision:1},{clubId:'other'},{filter:{roundId:'new-round',genderCounts:true}},{authority:{}},{enabled:false},{enabled:true}]){p={...p,...change};assert.equal(h.render(p).data,null);assert.equal(oldSetter({marker:'stale'}),false);const pending=h.requests.at(-1);if(p.enabled){pending.resolve({marker:'fresh'});await tick();assert.equal(h.render(p).data.marker,'fresh')}}
++ assert.equal(h.requests.length,6);h.cleanup();assert.equal(value.isCurrent(),false);
++});
++test('pending scopes drain once and dispatch only the latest; stale completions and setters cannot replace a newer result',async()=>{
++ const h=setup();let p=props();const original=h.render(p);for(let i=1;i<21;i++){p={...p,filter:{roundId:String(i),genderCounts:false}};assert.equal(h.render(p).data,null)}assert.equal(h.requests.length,1);h.requests[0].resolve({marker:'obsolete'});await tick();assert.equal(h.requests.length,2);assert.equal(h.requests[1].filter.roundId,'20');assert.equal(h.render(p).data,null);h.requests[1].resolve({marker:'current'});await tick();assert.equal(h.render(p).data.marker,'current');assert.equal(original.setData({marker:'stale'}),false);assert.equal(h.render(p).data.marker,'current');h.cleanup();
++});
++test('validated initial summaries avoid a duplicate read, while unvalidated data stays hidden; replay and denial retain fresh-read behavior',async()=>{
++ const h=setup();let p={...props(),initialData:{marker:'validated'},validatedInitialData:true};assert.equal(h.render(p).data.marker,'validated');assert.equal(h.requests.length,0);h.replay();assert.equal(h.render(p).data.marker,'validated');assert.equal(h.requests.length,0);p={...p,revision:1};assert.equal(h.render(p).data,null);assert.equal(h.requests.length,1);h.requests[0].reject(Error('revoked'));await tick();assert.equal(h.render(p).error,true);assert.equal(h.render(p).data,null);h.cleanup();
++ const untrusted=setup(),q={...props(),initialData:{marker:'unvalidated'}};assert.equal(untrusted.render(q).data,null);assert.equal(untrusted.requests.length,1);untrusted.cleanup();untrusted.requests[0].resolve({marker:'late'});await tick();
++});
++
++test('a queued read never dispatches while the current scope is disabled',async()=>{
++ const h=setup();let p=props();h.render(p);p={...p,revision:1};h.render(p);p={...p,enabled:false};h.render(p);h.requests[0].resolve({marker:'obsolete'});await tick();assert.equal(h.requests.length,1);assert.equal(h.render(p).data,null);p={...p,enabled:true};h.render(p);assert.equal(h.requests.length,2);h.requests[1].resolve({marker:'fresh'});await tick();assert.equal(h.render(p).data.marker,'fresh');h.cleanup();
++});
+diff --git a/tests/selected-workspace-loader.test.cjs b/tests/selected-workspace-loader.test.cjs
+index d41a9fa..82a38d8 100644
+--- a/tests/selected-workspace-loader.test.cjs
++++ b/tests/selected-workspace-loader.test.cjs
+@@ -12 +12 @@ test('all four selected resources start their guarded read alongside code loadin
+- const f=setup();for(const kind of ['members','pipeline','tasks','announcements']){const pending=f.loadSelectedClubWorkspace(kind,'club');await tick();assert.equal(f.requests.length,f.modules.length);const r=f.requests.at(-1);assert.equal(r.kind,kind==='pipeline'?'pipelinePage':kind);assert.deepEqual(r.args,kind==='pipeline'?['club',{mode:'applicants',genderCounts:false}]:['club']);r.resolve({fixture:true});assert.equal((await pending).kind,kind)}
++ const f=setup();for(const kind of ['members','pipeline','tasks','announcements']){const pending=f.loadSelectedClubWorkspace(kind,'club');await tick();assert.equal(f.requests.length,f.modules.length);const r=f.requests.at(-1);assert.equal(r.kind,kind==='pipeline'?'pipelineList':kind);assert.deepEqual(r.args,kind==='pipeline'?['club',{genderCounts:false}]:['club']);r.resolve({fixture:true});assert.equal((await pending).kind,kind)}

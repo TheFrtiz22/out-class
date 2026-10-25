@@ -1,0 +1,20 @@
+✖ a different membership identity resets the resident page cursor before fresh summaries render (166.417667ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 336.241666
+
+✖ failing tests:
+
+test at tests/live-applicant-views.test.cjs:185:1
+✖ a different membership identity resets the resident page cursor before fresh summaries render (166.417667ms)
+  ReferenceError [Error]: cancelAnimationFrame is not defined
+      at eval (eval at compile (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:8:3), <anonymous>:215:22)
+      at Object.render (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:35:902)
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:186:433)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)

@@ -1,0 +1,171 @@
+
+> my-v0-project@0.1.0 prebuild
+> node scripts/check-release-database.cjs --vercel-production-build && npm run pdf:assets
+
+Release database check applies only to Vercel production builds; skipping in this environment.
+
+> my-v0-project@0.1.0 pdf:assets
+> node scripts/copy-pdfjs-assets.cjs
+
+
+> my-v0-project@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.27
+   - Experiments (use with caution):
+     · serverActions
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 17.2s
+   Linting and checking validity of types ...
+
+./app/platform/login/page.tsx
+83:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/app-shell.tsx
+140:6  Warning: React Hook useEffect has missing dependencies: 'demo' and 'router'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/club-logo.tsx
+61:7  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/club-workspace.tsx
+131:6  Warning: React Hook useEffect has a missing dependency: 'selectClub'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/clubs/marketing-profile.tsx
+18:179  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+36:511  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+39:241  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/clubs/profile-image-input.tsx
+39:168  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/qr/meeting-check-in.tsx
+40:6  Warning: React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/shell/navigation-search.tsx
+89:6  Warning: React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/views/application-tracker-view.tsx
+124:6  Warning: React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/views/club-management-portal-view.tsx
+148:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/views/interview-workspace-view.tsx
+32:6  Warning: React Hook useEffect has missing dependencies: 'activeClubId', 'scoped', and 'setClubId'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+196:6  Warning: React Hook useEffect has missing dependencies: 'leaderFocus?.applicantId' and 'recoveryKey'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+236:6  Warning: React Hook useEffect has a missing dependency: 'active'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+242:6  Warning: React Hook useEffect has missing dependencies: 'choose' and 'queue'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/views/leader-dashboard/live-leader-workspace.tsx
+284:6  Warning: React Hook useEffect has missing dependencies: 'decisionsOnly' and 'open'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/views/leader-dashboard-view.tsx
+99:53  Warning: React Hook useMemo has a missing dependency: 'stageName'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/views/unified-student-profile-view.tsx
+59:6  Warning: React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./lib/application-state.tsx
+177:6  Warning: React Hook useEffect has a missing dependency: 'serverApps'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./lib/club-customization.tsx
+22:6  Warning: React Hook useEffect has a missing dependency: 'storageKey'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+26:6  Warning: React Hook useEffect has a missing dependency: 'storageKey'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+   Collecting page data ...
+   Generating static pages (0/64) ...
+   Generating static pages (16/64)
+   Generating static pages (32/64)
+   Generating static pages (48/64)
+ ✓ Generating static pages (64/64)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                    Size  First Load JS  Revalidate  Expire
+┌ ƒ /                                         652 B         240 kB
+├ ƒ /_not-found                               227 B         105 kB
+├ ƒ /about                                    671 B         194 kB
+├ ƒ /api/application-attachments              227 B         105 kB
+├ ƒ /api/auth/logout                          227 B         105 kB
+├ ƒ /api/auth/password-recovery               227 B         105 kB
+├ ƒ /api/auth/student-claim                   227 B         105 kB
+├ ƒ /api/club-assets                          227 B         105 kB
+├ ƒ /api/communications/stream                227 B         105 kB
+├ ƒ /api/decision-letter-assets               227 B         105 kB
+├ ƒ /api/demo                                 227 B         105 kB
+├ ƒ /api/event-flyers                         227 B         105 kB
+├ ƒ /api/internal/invitation-delivery         227 B         105 kB
+├ ƒ /api/internal/notification-delivery       227 B         105 kB
+├ ƒ /api/internal/scheduled-communications    227 B         105 kB
+├ ƒ /api/interview-resumes                    227 B         105 kB
+├ ƒ /api/platform/elevation                   227 B         105 kB
+├ ƒ /api/platform/eligibility                 227 B         105 kB
+├ ƒ /api/platform/view-as                     227 B         105 kB
+├ ƒ /api/platform/view-as/blocked             227 B         105 kB
+├ ƒ /api/profile-photos                       227 B         105 kB
+├ ƒ /api/recruiting-resumes                   227 B         105 kB
+├ ƒ /api/resumes                              227 B         105 kB
+├ ƒ /api/school-requests                      227 B         105 kB
+├ ƒ /api/users/me                             227 B         105 kB
+├ ƒ /api/workspace                            227 B         105 kB
+├ ○ /apple-icon                               227 B         105 kB
+├ ƒ /applications/[applicationId]/decision  9.08 kB         312 kB
+├ ƒ /auth/callback                            227 B         105 kB
+├ ƒ /auth/microsoft                           227 B         105 kB
+├ ƒ /auth/student-claim                     2.09 kB         116 kB
+├ ƒ /check-in                               7.19 kB         307 kB
+├ ƒ /club-access/[clubId]                   8.05 kB         267 kB
+├ ƒ /club-claims/[clubId]                   2.11 kB         120 kB
+├ ƒ /club/[clubId]                          35.2 kB         497 kB
+├ ƒ /club/[clubId]/tasks                      227 B         105 kB
+├ ƒ /club/[clubId]/workspace                34.4 kB         524 kB
+├ ƒ /corkboard                              19.5 kB         410 kB
+├ ƒ /decisions                                227 B         105 kB
+├ ƒ /design-system                          19.8 kB         377 kB
+├ ƒ /forgot-password                          145 B         206 kB
+├ ○ /icon                                     227 B         105 kB
+├ ƒ /interviews                               227 B         105 kB
+├ ƒ /interviews/book                          10 kB         378 kB
+├ ƒ /invitations/[id]                       4.39 kB         135 kB
+├ ƒ /live-voting                              185 B         196 kB
+├ ƒ /login                                  10.8 kB         335 kB
+├ ○ /manifest.webmanifest                     227 B         105 kB
+├ ƒ /meetings                               7.11 kB         409 kB
+├ ƒ /meetings/[id]                          7.12 kB         409 kB
+├ ƒ /platform                                 167 B         108 kB
+├ ƒ /platform/[section]                     13.5 kB         227 kB
+├ ƒ /platform/claims                        2.51 kB         120 kB
+├ ƒ /platform/clubs                         12.8 kB         363 kB
+├ ƒ /platform/events                         5.6 kB         219 kB
+├ ƒ /platform/login                         7.26 kB         266 kB
+├ ƒ /platform/school-requests               2.71 kB         199 kB
+├ ƒ /platform/view-as                         170 B         108 kB
+├ ƒ /preview                                9.91 kB         485 kB
+├ ƒ /request-school                         3.75 kB         210 kB
+├ ƒ /reset-password                           144 B         206 kB
+├ ○ /robots.txt                               227 B         105 kB
+├ ƒ /saved-clubs                            10.1 kB         430 kB
+├ ƒ /settings                                 170 B         108 kB
+├ ƒ /settings/account                       1.84 kB         116 kB
+├ ƒ /settings/availability                  13.7 kB         206 kB
+├ ƒ /settings/interviews                    7.16 kB         138 kB
+├ ƒ /settings/notifications                  5.1 kB         185 kB
+├ ƒ /settings/organizations                 13.4 kB         282 kB
+├ ƒ /settings/profile                         21 kB         415 kB
+├ ƒ /signup                                 32.2 kB         382 kB
+├ ○ /sitemap.xml                              227 B         105 kB         10m      1y
+├ ƒ /uva                                    3.06 kB         196 kB
+├ ƒ /vote                                     185 B         196 kB
+└ ƒ /voting/[sessionId]/join                13.6 kB         317 kB
++ First Load JS shared by all                105 kB
+  ├ chunks/03fab609-5a0bb1698bb53e17.js     54.2 kB
+  ├ chunks/5991-729b7ca8a33f4c5b.js         46.3 kB
+  └ other shared chunks (total)              4.2 kB
+
+
+ƒ Middleware                                95.2 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand

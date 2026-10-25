@@ -1,0 +1,12 @@
+{
+  "excludedWholeCollection": "comparison",
+  "outcomes": 384,
+  "measured": 320,
+  "warmups": 64,
+  "loaderSamples": 600,
+  "buildId": "4WH_XCOwyx8OSUZoE_RbM",
+  "reason": "A local page cursor could outlive a changed membership identity and throw when fresh summaries rendered. Regression reproduced; reset fix requires a new frozen build and complete repeat. All original rows retained; none substituted.",
+  "source": "PRELIMINARY_SOURCE.json",
+  "implementation": "PRELIMINARY_IMPLEMENTATION.diff",
+  "finalCollection": "comparison-final"
+}

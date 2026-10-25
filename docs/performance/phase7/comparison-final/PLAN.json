@@ -1,0 +1,54 @@
+{
+  "baseline": "fa115be61a67aa10d3324d89e98c37b30118ea58",
+  "scope": "Compare the existing narrow complete-summary GET with server response pagination, using resident already-released summaries for local page/search/sort/filter interactions; preserve fresh reads for visits, authority changes, protected details, explicit selections, server-only gender scopes and refresh.",
+  "knownLimit": "Initial full-summary response and browser data grow with N; no authorization is cached between requests, no protected details retained as summary data. Database scan remains O(N).",
+  "measurement": {
+    "cohorts": [
+      100,
+      1000,
+      5000
+    ],
+    "blocks": [
+      "BA",
+      "AB"
+    ],
+    "samplesPerBlockPathCondition": 5,
+    "warmupsPerBlockPathCondition": 1,
+    "paths": [
+      "applicants",
+      "applicantDetail"
+    ],
+    "conditions": [
+      "cold",
+      "warm"
+    ],
+    "powerControl": "Temporary local caffeinate, verify no Sleep within accepted collection. Exclude whole collection if suspended; retain all rows."
+  },
+  "security": "Live identity/session/account/membership/capabilities on every GET, same no-store/Cookie handling and Demo isolation; mutations and voting snapshots unchanged.",
+  "acceptance": [
+    "Global filtered totals and facets; stable IDs break sort ties",
+    "Cursor cannot authorize or cross a selection/club/actor scope; every request reauthorizes",
+    "Full quick-review and voting selection is explicit and complete, never limited to current page",
+    "Rapid filters/navigation fence stale results; preserve drafts and keyboard focus",
+    "No unsupported claim of hosted or multi-client performance",
+    "Resident summaries are discarded/fenced on club, identity/session, support, privacy, Demo or mounted-visit changes",
+    "Refresh and server-scope reads repeat live validation; quick review/voting selection remain explicit fresh reads",
+    "Measure initial payload/latency regressions along with restored interaction latency; do not hide transfer cost"
+  ],
+  "publication": "Local commit only; no push/merge/deployment authorized for this phase.",
+  "additionalInteractions": {
+    "cohorts": [
+      1000,
+      5000
+    ],
+    "paths": [
+      "next-page",
+      "distant-search"
+    ],
+    "condition": "warm",
+    "blocks": "same BA/AB blocks as primary navigation",
+    "warmupsPerBuildBlockPath": 1,
+    "measuredPerBuildBlockPath": 5,
+    "noSyntheticGates": true
+  }
+}

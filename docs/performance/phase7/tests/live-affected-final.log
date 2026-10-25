@@ -1,0 +1,30 @@
+▶ selected tabs request authorized data while code is still loading, then consume it exactly once
+  ✔ members (675.561333ms)
+  ✔ pipeline (680.799ms)
+  ✔ tasks (438.603916ms)
+  ✔ announcements (434.692541ms)
+✔ selected tabs request authorized data while code is still loading, then consume it exactly once (2551.670375ms)
+✔ rapid selected-tab changes fence late results and a revoked revisit never reveals the old directory (824.600917ms)
+✔ pointer and mobile touch navigation retain one fresh read, usable content and responsive layout (1070.990166ms)
+✔ pipeline list/detail GETs retain live auth, strict arguments, masking and exact list parity (1859.604ms)
+✔ applicant list avoids detail reads; closing a pending detail fences it from the next candidate (1364.541583ms)
+✔ fresh applicant detail preserves an autosaved review draft across close and reopen (1437.263958ms)
+✔ resident applicant summaries preserve whole-list search/counts without another read per page (1234.535458ms)
+✔ server pages and explicit selections preserve complete authorized sets, privacy and live revocation (2450.190583ms)
+✔ resident page boundaries avoid summary reads, full quick-review/voting selection survives pagination and reopen validates again (5651.058416ms)
+✔ rapid resident searches preserve focus and the latest selection without another summary read (1139.828834ms)
+✔ editable review drafts survive the 100/101 server-page boundary and return navigation (1557.437375ms)
+✔ resident navigation remains bounded, local controls make no summary request and refresh hides old data until fresh privacy validation (1734.1825ms)
+▶ every explicit resident refresh rejects revoked membership, disabled accounts and revoked live sessions
+  ✔ membership (1004.067959ms)
+  ✔ account (1036.6895ms)
+  ✔ session (1101.866416ms)
+✔ every explicit resident refresh rejects revoked membership, disabled accounts and revoked live sessions (3320.237125ms)
+ℹ tests 20
+ℹ suites 0
+ℹ pass 20
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 28316.33425

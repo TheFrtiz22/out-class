@@ -1,0 +1,52 @@
+✖ a different membership identity resets the resident page cursor before fresh summaries render (169.039666ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 346.758167
+
+✖ failing tests:
+
+test at tests/live-applicant-views.test.cjs:185:1
+✖ a different membership identity resets the resident page cursor before fresh summaries render (169.039666ms)
+  AssertionError [ERR_ASSERTION]: Got unwanted exception.
+  Actual message: "[
+    {
+      "code": "custom",
+      "path": [
+        "cursor"
+      ],
+      "message": "Applicant selection changed. Restart pagination."
+    }
+  ]"
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:186:463)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: ZodError: [
+      {
+        "code": "custom",
+        "path": [
+          "cursor"
+        ],
+        "message": "Applicant selection changed. Restart pagination."
+      }
+    ]
+        at pagePipeline (eval at compile (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:8:3), <anonymous>:67:15)
+        at eval (eval at compile (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:8:3), <anonymous>:154:83)
+        at useMemo (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:27:404)
+        at ClubWorkspace (eval at compile (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:8:3), <anonymous>:149:44)
+        at Object.render (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:35:782)
+        at /Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:186:488
+        at getActual (node:assert:580:5)
+        at strict.doesNotThrow (node:assert:748:32)
+        at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:186:463)
+        at async Test.run (node:internal/test_runner/test:1409:7),
+    expected: undefined,
+    operator: 'doesNotThrow',
+    diff: 'simple'
+  }

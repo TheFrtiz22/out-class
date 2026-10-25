@@ -1,0 +1,254 @@
+[
+  {
+    "size": 100,
+    "path": "recruiting → applicants",
+    "condition": "cold",
+    "before": {
+      "samples": 10,
+      "p50": 70.3,
+      "p95": 80,
+      "max": 80
+    },
+    "after": {
+      "samples": 10,
+      "p50": 66.4,
+      "p95": 77.9,
+      "max": 77.9
+    },
+    "failures": [
+      0,
+      0
+    ]
+  },
+  {
+    "size": 100,
+    "path": "recruiting → applicants",
+    "condition": "warm",
+    "before": {
+      "samples": 10,
+      "p50": 56.9,
+      "p95": 63.5,
+      "max": 63.5
+    },
+    "after": {
+      "samples": 10,
+      "p50": 58.9,
+      "p95": 63.6,
+      "max": 63.6
+    },
+    "failures": [
+      0,
+      0
+    ]
+  },
+  {
+    "size": 100,
+    "path": "applicants → applicantDetail",
+    "condition": "cold",
+    "before": {
+      "samples": 10,
+      "p50": 79.3,
+      "p95": 80.4,
+      "max": 80.4
+    },
+    "after": {
+      "samples": 10,
+      "p50": 79.6,
+      "p95": 81.2,
+      "max": 81.2
+    },
+    "failures": [
+      0,
+      0
+    ]
+  },
+  {
+    "size": 100,
+    "path": "applicants → applicantDetail",
+    "condition": "warm",
+    "before": {
+      "samples": 10,
+      "p50": 96.9,
+      "p95": 98.4,
+      "max": 98.4
+    },
+    "after": {
+      "samples": 10,
+      "p50": 97.4,
+      "p95": 112.8,
+      "max": 112.8
+    },
+    "failures": [
+      0,
+      0
+    ]
+  },
+  {
+    "size": 1000,
+    "path": "recruiting → applicants",
+    "condition": "cold",
+    "before": {
+      "samples": 10,
+      "p50": 99.4,
+      "p95": 105.6,
+      "max": 105.6
+    },
+    "after": {
+      "samples": 10,
+      "p50": 100.3,
+      "p95": 115.3,
+      "max": 115.3
+    },
+    "failures": [
+      0,
+      0
+    ]
+  },
+  {
+    "size": 1000,
+    "path": "recruiting → applicants",
+    "condition": "warm",
+    "before": {
+      "samples": 10,
+      "p50": 91.2,
+      "p95": 105.7,
+      "max": 105.7
+    },
+    "after": {
+      "samples": 10,
+      "p50": 92.2,
+      "p95": 105.7,
+      "max": 105.7
+    },
+    "failures": [
+      0,
+      0
+    ]
+  },
+  {
+    "size": 1000,
+    "path": "applicants → applicantDetail",
+    "condition": "cold",
+    "before": {
+      "samples": 10,
+      "p50": 79.9,
+      "p95": 84.3,
+      "max": 84.3
+    },
+    "after": {
+      "samples": 10,
+      "p50": 79.7,
+      "p95": 81.3,
+      "max": 81.3
+    },
+    "failures": [
+      0,
+      0
+    ]
+  },
+  {
+    "size": 1000,
+    "path": "applicants → applicantDetail",
+    "condition": "warm",
+    "before": {
+      "samples": 10,
+      "p50": 97.5,
+      "p95": 212.1,
+      "max": 212.1
+    },
+    "after": {
+      "samples": 10,
+      "p50": 97.1,
+      "p95": 97.8,
+      "max": 97.8
+    },
+    "failures": [
+      0,
+      0
+    ]
+  },
+  {
+    "size": 5000,
+    "path": "recruiting → applicants",
+    "condition": "cold",
+    "before": {
+      "samples": 10,
+      "p50": 223.4,
+      "p95": 234.3,
+      "max": 234.3
+    },
+    "after": {
+      "samples": 10,
+      "p50": 242.8,
+      "p95": 267,
+      "max": 267
+    },
+    "failures": [
+      0,
+      0
+    ]
+  },
+  {
+    "size": 5000,
+    "path": "recruiting → applicants",
+    "condition": "warm",
+    "before": {
+      "samples": 10,
+      "p50": 207.3,
+      "p95": 220,
+      "max": 220
+    },
+    "after": {
+      "samples": 10,
+      "p50": 227.7,
+      "p95": 240.2,
+      "max": 240.2
+    },
+    "failures": [
+      0,
+      0
+    ]
+  },
+  {
+    "size": 5000,
+    "path": "applicants → applicantDetail",
+    "condition": "cold",
+    "before": {
+      "samples": 10,
+      "p50": 83.3,
+      "p95": 98,
+      "max": 98
+    },
+    "after": {
+      "samples": 10,
+      "p50": 96.5,
+      "p95": 97.2,
+      "max": 97.2
+    },
+    "failures": [
+      0,
+      0
+    ]
+  },
+  {
+    "size": 5000,
+    "path": "applicants → applicantDetail",
+    "condition": "warm",
+    "before": {
+      "samples": 10,
+      "p50": 96.2,
+      "p95": 99.1,
+      "max": 99.1
+    },
+    "after": {
+      "samples": 10,
+      "p50": 85.4,
+      "p95": 98.5,
+      "max": 98.5
+    },
+    "failures": [
+      0,
+      0
+    ]
+  }
+]

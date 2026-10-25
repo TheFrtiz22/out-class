@@ -1,0 +1,226 @@
+diff --git a/components/selected-club-workspace.tsx b/components/selected-club-workspace.tsx
+index cda7ddf..442b60f 100644
+--- a/components/selected-club-workspace.tsx
++++ b/components/selected-club-workspace.tsx
+@@ -25 +25 @@ export async function loadSelectedClubWorkspace(kind: SelectedClubWorkspaceKind,
+-        readWorkspace<Awaited<ReturnType<typeof import("@/actions/crm").getClubPipelinePage>>>("pipelinePage", [clubId, { mode, genderCounts: false }]),
++        readWorkspace<Awaited<ReturnType<typeof import("@/actions/crm").getClubPipelineList>>>("pipelineList", [clubId, { genderCounts: false }]),
+diff --git a/components/views/leader-dashboard/live-leader-workspace.tsx b/components/views/leader-dashboard/live-leader-workspace.tsx
+index 5278625..a1aabbc 100644
+--- a/components/views/leader-dashboard/live-leader-workspace.tsx
++++ b/components/views/leader-dashboard/live-leader-workspace.tsx
+@@ -3,2 +3,2 @@ import "@/components/product/operational-dashboard.css"
+-import type { PipelinePageQuery, PipelineCursor } from "@/lib/pipeline-page"
+-import { serializedWorkspaceRead } from "@/lib/serialized-workspace-read"
++import { pagePipeline, pipelinePageQuery, type PipelinePageQuery, type PipelineCursor } from "@/lib/pipeline-page"
++import { useResidentPipeline } from "@/hooks/use-resident-pipeline"
+@@ -35 +35 @@ import { BoardDecisionMode } from "@/components/live-voting/board-decision-mode"
+-import { getClubPipelinePage, getClubPipelineSelection, moveApplicantRound, setApplicationStatus, reconsiderRejectedApplication, revokeRecruitmentOffer } from "@/lib/workspace-api"
++import { getClubPipelineList, getClubPipelineSelection, moveApplicantRound, setApplicationStatus, reconsiderRejectedApplication, revokeRecruitmentOffer } from "@/lib/workspace-api"
+@@ -63 +63,2 @@ import { Badge } from "@/components/ui/badge"
+-type Pipeline = Awaited<ReturnType<typeof getClubPipelinePage>>
++type Summary = Awaited<ReturnType<typeof getClubPipelineList>>
++type Pipeline = ReturnType<typeof pagePipeline>
+@@ -74 +75 @@ const average = (app: Candidate) =>
+-export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, rejectedOnly = false, initialData, onData, validatedInitialData = false }: { validatedInitialData?: boolean; scoped?: boolean; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: { clubId: string; pipeline: Pipeline }; onData?: (clubId: string, data: Pipeline | null) => void }) {
++export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, rejectedOnly = false, initialData, onData, validatedInitialData = false }: { validatedInitialData?: boolean; scoped?: boolean; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: { clubId: string; pipeline: Summary }; onData?: (clubId: string, data: Pipeline | null) => void }) {
+@@ -134 +135 @@ export function ApplicantReviewPreview({ clubId, applicationId, onClose, onChang
+-function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false, initialData = null, onData, preview, validatedInitialData = false }: { validatedInitialData?: boolean; preview?: { applicationId: string; onClose: () => void; onChanged: () => void; onNext?: () => void }; membership: ExtendedMembership; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: Pipeline | null; onData?: (data: Pipeline | null) => void }) {
++function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false, initialData = null, onData, preview, validatedInitialData = false }: { validatedInitialData?: boolean; preview?: { applicationId: string; onClose: () => void; onChanged: () => void; onNext?: () => void }; membership: ExtendedMembership; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: Summary | null; onData?: (data: Pipeline | null) => void }) {
+@@ -139,5 +140 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  const authority = useMemo(() => ({ user: auth.user, readAuthority: auth.readAuthority, support: auth.isImpersonating, membership, demoReady: demo.ready, demoEnabled: demo.isDemoEnabled }), [auth.user, auth.readAuthority, auth.isImpersonating, membership, demo.ready, demo.isDemoEnabled])
+-  const pageAuthority = useRef(authority), latestAuthority = useRef(authority)
+-  latestAuthority.current = authority
+-  const [rawListData, setData] = useState<Pipeline | null>(initialData)
+-  const listData = pageAuthority.current === authority ? rawListData : null
++  const authority = useMemo(() => ({ user: auth.user, readAuthority: auth.readAuthority, support: auth.isImpersonating, loading: auth.loading, membership, demoReady: demo.ready, demoEnabled: demo.isDemoEnabled }), [auth.user, auth.readAuthority, auth.isImpersonating, auth.loading, membership, demo.ready, demo.isDemoEnabled])
+@@ -145 +141,0 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  const [listLoading, setLoading] = useState(!initialData)
+@@ -149 +144,0 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  const [acceptedKey, setAcceptedKey] = useState<string | null>(null)
+@@ -179 +173,0 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  const firstRead = useRef(validatedInitialData && !!initialData)
+@@ -181,10 +174,0 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  const data = previewId ? detail.pipeline : listData
+-  const loading = previewId ? !detail.pipeline && !detail.error : listLoading
+-  const retained = useRef(data), publish = useRef(onData)
+-  retained.current = data
+-  publish.current = onData
+-  useEffect(() => { if (!previewId) publish.current?.(listData) }, [listData, previewId])
+-  const roundsForReview = useRef(data?.rounds)
+-  roundsForReview.current = data?.rounds
+-  const heading = useRef<HTMLHeadingElement>(null)
+-  const search = useRef<HTMLInputElement>(null)
+@@ -202,0 +187,8 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
++  const serverFilter = useMemo(() => ({ ...(round ? { roundId: round } : {}),
++    ...(gender ? { gender: gender as (typeof genderValues)[number] } : {}), genderCounts: showGenderCounts,
++  }), [round, gender, showGenderCounts])
++  const { data: summaries, loading: listLoading, error: readError, setData, isCurrent } = useResidentPipeline({
++    clubId: membership.clubId, filter: serverFilter, revision, authority,
++    enabled: !previewId && demo.ready && !auth.loading && !!auth.user, initialData, validatedInitialData,
++  })
++  const latestAuthority = useRef(authority); latestAuthority.current = authority
+@@ -204,7 +196 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  const initialKey = useRef(requestKey), latestRequest = useRef(requestKey)
+-  latestRequest.current = requestKey
+-  const acceptedPage = useRef({ key: acceptedKey, data: listData })
+-  acceptedPage.current = { key: acceptedKey, data: listData }
+-  const pageReady = !!previewId || acceptedKey === requestKey || acceptedKey === null && validatedInitialData && initialKey.current === requestKey
+-  const updating = !previewId && (!pageReady || !listData)
+-  const busy = writing || updating
++  const latestRequest = useRef(requestKey); latestRequest.current = requestKey
+@@ -212,19 +198,23 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  const latestPageLoad = useRef({ clubId: membership.clubId, pageQuery, requestKey, authority })
+-  latestPageLoad.current = { clubId: membership.clubId, pageQuery, requestKey, authority }
+-  // Drain an obsolete read before dispatching only the latest selection. A
+-  // browser abort cannot reliably cancel SQL already executing on the server.
+-  const pageReader = useRef<ReturnType<typeof serializedWorkspaceRead> | null>(null)
+-  useEffect(() => {
+-    const reader = serializedWorkspaceRead(async () => {
+-      const request = latestPageLoad.current
+-      try { return { ...request, data: await getClubPipelinePage(request.clubId, request.pageQuery), failed: false } }
+-      catch { return { ...request, data: null, failed: true } }
+-    }, result => {
+-      if (latestRequest.current !== result.requestKey || latestAuthority.current !== result.authority) return
+-      pageAuthority.current = result.authority
+-      setData(result.data); setAcceptedKey(result.requestKey); setLoading(false)
+-      if (result.failed) setError("Couldn’t load this club’s applicants. Please try again.")
+-    }, () => {})
+-    pageReader.current = reader
+-    return () => { reader.dispose(); if (pageReader.current === reader) pageReader.current = null }
+-  }, [])
++  const projection = useMemo(() => {
++    if (!summaries) return null
++    const scope = JSON.stringify([membership.clubId, membership.id, selectionKey])
++    const parsed = pipelinePageQuery.safeParse(pageQuery)
++    return { invalid: !parsed.success, data: pagePipeline(summaries, parsed.success ? parsed.data : {}, membership.id, membership.userId, scope) }
++  }, [summaries, pageQuery, membership.clubId, membership.id, membership.userId, selectionKey])
++  const listData = projection?.data ?? null
++  const invalidFilter = projection?.invalid ?? false
++  const pageReady = !!previewId || !!listData && !listLoading && !invalidFilter
++  const updating = !previewId && (!pageReady && !invalidFilter || !listData)
++  const busy = writing || updating || invalidFilter
++  const data = previewId ? detail.pipeline : listData
++  const loading = previewId ? !detail.pipeline && !detail.error : listLoading
++  const publish = useRef(onData)
++  publish.current = onData
++  useEffect(() => { if (!previewId) publish.current?.(listData) }, [listData, previewId])
++  const roundsForReview = useRef(data?.rounds)
++  roundsForReview.current = data?.rounds
++  const heading = useRef<HTMLHeadingElement>(null)
++  const search = useRef<HTMLInputElement>(null)
++  useEffect(() => { setError("") }, [authority, revision, serverFilter])
++  const selectionRequestKey = JSON.stringify([selectionKey, revision])
++  const latestSelectionRequest = useRef(selectionRequestKey); latestSelectionRequest.current = selectionRequestKey
+@@ -233 +223 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-    if (latestAuthority.current !== authority) throw new Error("Applicant selection changed")
++    if (latestAuthority.current !== authority || latestSelectionRequest.current !== selectionRequestKey) throw new Error("Applicant selection changed")
+@@ -235,11 +225 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  }, [membership.clubId, readQuery, authority])
+-  useEffect(() => {
+-    if (previewId || !demo.ready || auth.loading || !auth.user) return
+-    if (firstRead.current) { firstRead.current = false; setAcceptedKey(requestKey); return }
+-    // A drawer boundary may already have fetched this exact page. Do not
+-    // dispatch it again when its cursor becomes the visible page position.
+-    if (acceptedPage.current.key === requestKey && acceptedPage.current.data) return
+-    setLoading(!retained.current)
+-    setError("")
+-    void pageReader.current?.refresh()
+-  }, [membership.clubId, requestKey, pageQuery, previewId, authority, demo.ready, auth.loading, auth.user, pageReader])
++  }, [membership.clubId, readQuery, authority, selectionRequestKey])
+@@ -339,0 +320,3 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
++    const adjacentPage = listData ? pagePipeline(summaries!, { ...readQuery, cursor: next }, membership.id, membership.userId, pageInfo!.scope) : null
++    const target = direction === 1 ? adjacentPage?.applications[0] : adjacentPage?.applications.at(-1)
++    if (!target) return
+@@ -343,8 +326,3 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-      const key = selectionKey, owner = authority
+-      const result = await getClubPipelinePage(membership.clubId, { ...readQuery, cursor: next })
+-      if (latestAuthority.current !== owner || latestRequest.current !== requestKey) return
+-      pageAuthority.current = owner; setData(result)
+-      const nextKey = JSON.stringify([key, next, revision])
+-      setAcceptedKey(nextKey); setPosition({ key, cursor: next })
+-      const target = direction === 1 ? result.applications[0] : result.applications.at(-1)
+-      if (target) open(target, true)
++      if (!isCurrent()) return
++      setPosition({ key: selectionKey, cursor: next })
++      open(target, true)
+@@ -353,0 +332 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
++
+@@ -459,2 +438,3 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-      const refreshed = await getClubPipelinePage(membership.clubId, pageQuery)
+-      setData(refreshed)
++      if (!isCurrent()) throw new Error("Applicant scope changed")
++      const refreshed = await getClubPipelineList(membership.clubId, serverFilter)
++      if (!setData(refreshed)) throw new Error("Applicant scope changed")
+@@ -462,0 +443 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
++      if (!isCurrent()) throw error
+@@ -529 +510 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  if (!data || error)
++  if (!data || error || readError)
+@@ -532,2 +513,2 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-        <p>{error || (previewId && detail.error ? "Couldn’t load this applicant. Your access may have changed." : "No data available.")}</p>
+-        <Button variant="outline" onClick={() => { setPosition(null); setRevision((value) => value + 1) }}>
++        <p>{error || (readError ? "Couldn’t load this club’s applicants. Your access may have changed." : previewId && detail.error ? "Couldn’t load this applicant. Your access may have changed." : "No data available.")}</p>
++        <Button variant="outline" onClick={() => { setError(""); setPosition(null); setRevision((value) => value + 1) }}>
+@@ -732 +713 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-      {updating ? <p role="status" aria-live="polite">Updating applicants…</p> : !filtered.length ? <p role="status" className="border-y py-10 text-sm text-muted-foreground">{baseTotal ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No rejected applications. Published rejections appear here with their history preserved." : "Submitted applications will appear here. Student drafts stay private."}</p> : decisionsOnly ? <LiveDecisionList applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} laneCounts={listData?.facets.lanes} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
++      {invalidFilter ? <p role="alert">Enter filters within the displayed numeric ranges.</p> : updating ? <p role="status" aria-live="polite">Updating applicants…</p> : !filtered.length ? <p role="status" className="border-y py-10 text-sm text-muted-foreground">{baseTotal ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No rejected applications. Published rejections appear here with their history preserved." : "Submitted applications will appear here. Student drafts stay private."}</p> : decisionsOnly ? <LiveDecisionList applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} laneCounts={listData?.facets.lanes} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
+diff --git a/hooks/use-resident-pipeline.ts b/hooks/use-resident-pipeline.ts
+new file mode 100644
+index 0000000..3fbd633
+--- /dev/null
++++ b/hooks/use-resident-pipeline.ts
+@@ -0,0 +1,53 @@
++"use client"
++
++import { useCallback, useEffect, useMemo, useRef, useState } from "react"
++import { getClubPipelineList } from "@/lib/workspace-api"
++import { serializedWorkspaceRead } from "@/lib/serialized-workspace-read"
++
++type Summary = Awaited<ReturnType<typeof getClubPipelineList>>
++type Filter = Pick<NonNullable<Parameters<typeof getClubPipelineList>[1]>, "roundId" | "gender" | "genderCounts">
++
++/** Already released summaries belong to one mounted authority/scope. No data or
++ * successful authorization survives a visit, owner change or explicit refresh. */
++export function useResidentPipeline({ clubId, filter, revision, authority, enabled, initialData, validatedInitialData }: {
++  clubId: string; filter: Filter; revision: number; authority: object; enabled: boolean;
++  initialData: Summary | null; validatedInitialData: boolean;
++}) {
++  const scope = JSON.stringify(filter)
++  const owner = useMemo(() => ({ clubId, scope, revision, authority, enabled }), [clubId, scope, revision, authority, enabled])
++  const [result, setResult] = useState<{ owner: object; data: Summary | null; failed: boolean } | null>(
++    enabled && validatedInitialData && initialData ? { owner, data: initialData, failed: false } : null,
++  )
++  const latest = useRef({ owner, clubId, filter }), accepted = useRef(result)
++  latest.current = { owner, clubId, filter }; accepted.current = result
++  const reader = useRef<ReturnType<typeof serializedWorkspaceRead> | null>(null)
++  const mounted = useRef(false)
++  useEffect(() => {
++    mounted.current = true
++    const instance = serializedWorkspaceRead(async () => {
++      const request = latest.current
++      if (!request.owner.enabled) return { owner: request.owner, data: null, failed: false }
++      try { return { owner: request.owner, data: await getClubPipelineList(request.clubId, request.filter), failed: false } }
++      catch { return { owner: request.owner, data: null, failed: true } }
++    }, value => {
++      if (mounted.current && latest.current.owner === value.owner) setResult(value)
++    }, () => {})
++    reader.current = instance
++    return () => { mounted.current = false; instance.dispose(); if (reader.current === instance) reader.current = null }
++  }, [])
++  useEffect(() => {
++    if (!enabled || accepted.current?.owner === owner) return
++    void reader.current?.refresh()
++  }, [owner, enabled])
++  // Async mutation/read completions retain their captured owner. They cannot
++  // replace a newer account, club, privacy, server-filter or refresh result.
++  const isCurrent = useCallback(() => mounted.current && latest.current.owner === owner, [owner])
++  const setData = useCallback((value: Summary | null | ((previous: Summary | null) => Summary | null)) => {
++    if (!mounted.current || latest.current.owner !== owner) return false
++    setResult(previous => mounted.current && latest.current.owner === owner ? { owner, failed: false,
++      data: typeof value === "function" ? value(previous?.owner === owner ? previous.data : null) : value } : previous)
++    return true
++  }, [owner])
++  const current = enabled && result?.owner === owner ? result : null
++  return { data: current?.data ?? null, loading: !current, error: current?.failed ?? false, setData, isCurrent }
++}

@@ -1,0 +1,56 @@
+{
+  "ordinary": {
+    "total": 1438,
+    "passed": 1386,
+    "failed": 0,
+    "skipped": 52,
+    "gatedSkips": "Existing environment-gated suites plus the two new Phase 7 parents. All selected live suites run separately without skips."
+  },
+  "liveAuthNavigationSettings": {
+    "total": 56,
+    "passed": 56,
+    "failed": 0,
+    "skipped": 0,
+    "candidateBuildId": "Ih7Qnx4wmsAnHfp6IZ4Q9",
+    "log": "tests/live-final.log"
+  },
+  "newLiveTests": {
+    "totalIncludingSubtests": 5,
+    "passed": 5,
+    "failed": 0
+  },
+  "baselineProvisioning": {
+    "passed": 38,
+    "failed": 0,
+    "skipped": 0
+  },
+  "nativeConcurrency": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0
+  },
+  "migrations": {
+    "freshAndLegacy": 57,
+    "rlsTables": 78,
+    "browserRolesDenied": true
+  },
+  "lint": {
+    "errors": 0,
+    "existingWarnings": 22
+  },
+  "typecheck": "passed",
+  "productionBuild": "passed",
+  "candidateBuildId": "Ih7Qnx4wmsAnHfp6IZ4Q9",
+  "focusedComponentAndResidentChecks": {
+    "total": 34,
+    "passed": 34,
+    "failed": 0
+  },
+  "developmentFailures": "The new hook test harness initially invoked useCallback callbacks instead of retaining them; corrected in the test mock. The real account-disable fixture initially assigned a backup owner in only one of two clubs; corrected to preserve the real ownership safeguard in both. No product code or security rule was changed for either fixture correction. Final ordinary and live suites pass; logs retained. The cursor regression fixture needed numeric JSX child inspection and a cancelAnimationFrame mock before reproducing the real prior membership cursor error. That product bug is fixed and its regression passes; the whole preliminary measurement is excluded.",
+  "liveAffectedFinal": {
+    "totalIncludingSubtests": 20,
+    "passed": 20,
+    "failed": 0,
+    "skipped": 0
+  }
+}

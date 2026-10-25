@@ -1,0 +1,38 @@
+✔ resident navigation remains bounded, local controls make no summary request and refresh hides old data until fresh privacy validation (2232.159458ms)
+▶ every explicit resident refresh rejects revoked membership, disabled accounts and revoked live sessions
+  ✔ membership (1048.055458ms)
+  ✖ account (961.89875ms)
+  ✔ session (1098.884125ms)
+✖ every explicit resident refresh rejects revoked membership, disabled accounts and revoked live sessions (3294.880208ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 3
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5730.6125
+
+✖ failing tests:
+
+test at tests/navigation-phase7-e2e.test.cjs:16:66
+✖ account (961.89875ms)
+  PrismaClientUnknownRequestError:
+  Invalid `db.user.update()` invocation in
+  /Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/navigation-phase7-e2e.test.cjs:20:41
+
+    17 const {c,page}=await open(browser,f);const statuses=[];page.on('response',r=>{if(new URL(r.url()).searchParams.get('kind')==='pipelineList')statuses.push(r.status())});
+    18 try{
+    19  if(reason==='membership')await db.clubMember.update({where:{id:member.id},data:{isOwner:false,accessRole:'MEMBER',permissions:[],interviewOffices:[]}});
+  → 20  if(reason==='account')await db.user.update(
+  Error occurred during query execution:
+  ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Assign another active owner before suspending this account", severity: "ERROR", detail: None, column: None, hint: None }), transient: false })
+      at ei.handleRequestError (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client/runtime/library.js:121:7458)
+      at ei.handleAndLogRequestError (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client/runtime/library.js:121:6593)
+      at ei.request (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client/runtime/library.js:121:6300)
+      at async a (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client/runtime/library.js:130:9551)
+      at async TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/navigation-phase7-e2e.test.cjs:20:27)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/navigation-phase7-e2e.test.cjs:16:58)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)

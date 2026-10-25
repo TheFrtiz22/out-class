@@ -1,0 +1,14 @@
+✔ resident navigation remains bounded, local controls make no summary request and refresh hides old data until fresh privacy validation (2050.529458ms)
+▶ every explicit resident refresh rejects revoked membership, disabled accounts and revoked live sessions
+  ✔ membership (1029.174291ms)
+  ✔ account (1030.799709ms)
+  ✔ session (1130.715584ms)
+✔ every explicit resident refresh rejects revoked membership, disabled accounts and revoked live sessions (3376.265334ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5626.953
