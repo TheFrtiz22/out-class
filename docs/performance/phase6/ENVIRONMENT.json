@@ -1,0 +1,20 @@
+{
+  "recordedAt": "2026-10-25T02:22:10.632Z",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "cpuModel": "Apple M5",
+  "cpuCount": 10,
+  "memoryGiB": 16,
+  "node": "26.9.0",
+  "packages": {
+    "next": "15.5.27",
+    "react": "19.2.0",
+    "@prisma/client": "6.19.3",
+    "@supabase/supabase-js": "2.116.0",
+    "@supabase/ssr": "0.12.7",
+    "playwright": "1.64.0"
+  },
+  "poolLimitPerClient": 8,
+  "studyConcurrentBrowsers": 1,
+  "productionInfrastructureChanges": false
+}

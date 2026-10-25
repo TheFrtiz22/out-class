@@ -1,0 +1,31 @@
+✖ narrow summaries retain canonical filtering, score barriers and fresh assignment/privacy authority over real HTTP (2898.28025ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3165.998542
+
+✖ failing tests:
+
+test at tests/navigation-phase6-e2e.test.cjs:5:1
+✖ narrow summaries retain canonical filtering, score barriers and fresh assignment/privacy authority over real HTTP (2898.28025ms)
+  PrismaClientUnknownRequestError:
+  Invalid `db.interviewPanelAssignment.deleteMany()` invocation in
+  /Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/navigation-phase6-e2e.test.cjs:35:112
+
+    32   for(const query of queries){const page=await read('pipelinePage',query);assert.deepEqual(page,pagePipeline(canonical,query,member.id,f.userId,page.page.scope));assert.deepEqual(await read('pipelineSelection',query),completePipelineSelection(canonical,query,member.id,f.userId))}
+    33  }
+    34 }finally{
+  → 35  await db.interviewPanelAssignment.deleteMany(
+  Error occurred during query execution:
+  ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Submitted evaluation is immutable", severity: "ERROR", detail: None, column: None, hint: None }), transient: false })
+      at ei.handleRequestError (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client/runtime/library.js:121:7458)
+      at ei.handleAndLogRequestError (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client/runtime/library.js:121:6593)
+      at ei.request (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client/runtime/library.js:121:6300)
+      at async a (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client/runtime/library.js:130:9551)
+      at async TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/navigation-phase6-e2e.test.cjs:35:92)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)

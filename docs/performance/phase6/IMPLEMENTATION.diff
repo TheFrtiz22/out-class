@@ -1,0 +1,554 @@
+diff --git a/actions/crm.ts b/actions/crm.ts
+index a6d455c..ba9b422 100644
+--- a/actions/crm.ts
++++ b/actions/crm.ts
+@@ -4 +4,2 @@ import { createHash } from "node:crypto";
+-import { pipelineListProjection } from "@/lib/pipeline-list";
++import { pipelineSummarySelect, pipelineSummaryProjection } from "@/lib/pipeline-summary";
++import { applicationReviewVisibility } from "@/lib/application-review-visibility";
+@@ -22 +23 @@ import { hasPermission } from "@/lib/permissions";
+-import { prisma } from "@/utils/prisma";
++import { prisma, type AppTransactionClient } from "@/utils/prisma";
+@@ -26,2 +26,0 @@ import { revalidatePath } from "next/cache";
+-import { interviewCapabilities } from "@/lib/interview-access";
+-import { submittedScoreSummary } from "@/lib/interview-review-summary";
+@@ -36 +35 @@ export async function getClubPipelineList(clubId: string, input: z.infer<typeof
+-  return pipelineListProjection((await readClubPipeline(clubId, input, true)).pipeline);
++  return (await readClubPipelineSummaries(clubId, input)).pipeline;
+@@ -41 +40 @@ export async function getClubPipelinePage(clubId: string, input: PipelinePageQue
+-  const { pipeline, membership } = await readClubPipeline(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: query.genderCounts }, true);
++  const { pipeline, membership } = await readClubPipelineSummaries(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: query.genderCounts });
+@@ -44 +43 @@ export async function getClubPipelinePage(clubId: string, input: PipelinePageQue
+-  return pagePipeline(pipelineListProjection(pipeline), query, membership.id, membership.userId, scope);
++  return pagePipeline(pipeline, query, membership.id, membership.userId, scope);
+@@ -50,2 +49,2 @@ export async function getClubPipelineSelection(clubId: string, input: PipelinePa
+-  const { pipeline, membership } = await readClubPipeline(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: false }, true);
+-  return completePipelineSelection(pipelineListProjection(pipeline), query, membership.id, membership.userId);
++  const { pipeline, membership } = await readClubPipelineSummaries(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: false });
++  return completePipelineSelection(pipeline, query, membership.id, membership.userId);
+@@ -54 +53,32 @@ export async function getClubPipelineSelection(clubId: string, input: PipelinePa
+-async function readClubPipeline(clubId: string, input: z.infer<typeof pipelineFilter>, listOnly = false) {
++async function readClubPipeline(clubId: string, input: z.infer<typeof pipelineFilter>) {
++  return readPipeline(clubId, input, async (tx, where, membership) => {
++    const applications = await tx.application.findMany({ where, include: {
++      recruitmentOffer: { select: { status: true, expiresAt: true } },
++      round: true,
++      evaluations: { omit: { notes: true, applicantQuestions: true } },
++      interviewAssignments: { where: { revokedAt: null }, include: { member: true } },
++      student: { include: { studentProfile: { include: { experiences: true } } } },
++      answers: { include: { question: true } },
++      bookings: { include: { slot: true } },
++    } });
++    return applications.map(raw => {
++        const { caps, ownSubmitted, assigned, roundScore, evaluations } = applicationReviewVisibility(raw, membership);
++        const safe = { ...raw }; delete (safe as Partial<typeof raw>).interviewAssignments;
++        const app = { ...safe, evaluations: evaluations.map(e => ({ ...e, notes: null, applicantQuestions: null })) };
++        const projected = !hasPermission(membership, "applicants.identify") || app.round.anonymousReview ? anonymousApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay)) : identifiedApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay), "crm");
++        const canEvaluate = !ownSubmitted && raw.studentId !== membership.userId && (raw.round.anonymousReview ? hasPermission(membership, "applications.review") : caps.participate && assigned);
++        return { ...projected, canEvaluate, publicationGuard:decisionPublicationGuard(raw), recruitmentOffer: raw.recruitmentOffer ?? null, roundScore };
++    });
++  });
++}
++
++async function readClubPipelineSummaries(clubId: string, input: z.infer<typeof pipelineFilter>) {
++  return readPipeline(clubId, input, async (tx, where, membership) => {
++    const applications = await tx.application.findMany({ where, select: pipelineSummarySelect });
++    return applications.map(app => pipelineSummaryProjection(app, membership));
++  });
++}
++
++type PipelineMembership = Awaited<ReturnType<typeof requireClubPermission>>["membership"];
++async function readPipeline<T>(clubId: string, input: z.infer<typeof pipelineFilter>,
++  load: (tx: AppTransactionClient, where: Prisma.ApplicationWhereInput, membership: PipelineMembership) => Promise<T[]>) {
+@@ -86,32 +116 @@ async function readClubPipeline(clubId: string, input: z.infer<typeof pipelineFi
+-    const commonInclude = {
+-      recruitmentOffer: { select: { status: true, expiresAt: true } },
+-      round: true,
+-      evaluations: { omit: { notes: true, applicantQuestions: true } },
+-      interviewAssignments: { where: { revokedAt: null }, include: { member: true } },
+-    } satisfies Prisma.ApplicationInclude;
+-    const applications = listOnly
+-      ? (await tx.application.findMany({ where: applicationWhere,
+-          omit: { anonymousReviewText: true },
+-          include: {
+-          ...commonInclude, student: { include: { studentProfile: { omit: {
+-            bio: true, linkedinUrl: true, resumeUrl: true, headshotUrl: true,
+-            scholarStatus: true, highSchool: true, pronouns: true,
+-          } } } },
+-        } })).map(raw => ({
+-          ...raw, anonymousReviewText: null, answers: [], bookings: [],
+-          // Internal normalization for the shared privacy projector. These
+-          // relations are omitted from SQL and from the list wire contract.
+-          student: { ...raw.student, studentProfile: raw.student.studentProfile ? {
+-            ...raw.student.studentProfile, experiences: [],
+-            // Inert detail values are internal to the canonical privacy projector;
+-            // the explicit list DTO cannot expose or consume them.
+-            bio: null, linkedinUrl: null, resumeUrl: null, headshotUrl: null,
+-            scholarStatus: null, highSchool: null, pronouns: null,
+-          } : null },
+-        }))
+-      : await tx.application.findMany({ where: applicationWhere, include: {
+-          ...commonInclude,
+-          student: { include: { studentProfile: { include: { experiences: true } } } },
+-          answers: { include: { question: true } },
+-          bookings: { include: { slot: true } },
+-        } });
++    const applications = await load(tx, applicationWhere, membership);
+@@ -126,13 +125 @@ async function readClubPipeline(clubId: string, input: z.infer<typeof pipelineFi
+-      applications: applications.map(raw => {
+-        const ownSubmitted = raw.evaluations.some(e => e.interviewerId === membership.id && e.roundId === raw.roundId && e.submittedAt);
+-        const assignments = raw.interviewAssignments || [];
+-        const assigned = assignments.some(a => a.roundId === raw.roundId && a.memberId === membership.id);
+-        const caps = interviewCapabilities(membership);
+-        const canSeeRound = raw.studentId !== membership.userId && ((caps.readClosing && !assigned) || caps.participate && assigned && ownSubmitted);
+-        const roundScore = canSeeRound ? submittedScoreSummary(raw.evaluations.filter(e => e.roundId === raw.roundId), assignments.filter(a => a.roundId === raw.roundId && interviewCapabilities(a.member).participate).map(a => a.memberId)) : null;
+-        const safe = { ...raw }; delete (safe as Partial<typeof raw>).interviewAssignments;
+-        const app = { ...safe, evaluations: raw.evaluations.filter(e => raw.studentId !== membership.userId && e.submittedAt && (caps.participate && e.interviewerId === membership.id && assignments.some(a => a.memberId === membership.id && a.roundId === e.roundId) || canSeeRound && (e.roundId === raw.roundId || caps.readClosing))).map(e => ({ ...e, notes: null, applicantQuestions: null })) };
+-        const projected = !hasPermission(membership, "applicants.identify") || app.round.anonymousReview ? anonymousApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay)) : identifiedApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay), "crm");
+-        const canEvaluate = !ownSubmitted && raw.studentId !== membership.userId && (raw.round.anonymousReview ? hasPermission(membership, "applications.review") : caps.participate && assigned);
+-        return { ...projected, canEvaluate, publicationGuard:decisionPublicationGuard(raw), recruitmentOffer: raw.recruitmentOffer ?? null, roundScore };
+-      }),
++      applications,
+diff --git a/lib/anonymous-review.ts b/lib/anonymous-review.ts
+index cb7c6e9..9e3047d 100644
+--- a/lib/anonymous-review.ts
++++ b/lib/anonymous-review.ts
+@@ -22,0 +23,7 @@ export function anonymousApplicantLabel(applicationId: string) {
++/** Same anonymous list identity for detail and narrow summary reads. */
++export function anonymousListProfile(applicationId: string, p: (({ academicYear: string } | { gradYear: number; transferStudent?: boolean }) & { gpa?: number | null; satScore?: number | null; actScore?: number | null }) | null) {
++  return { firstName: "Applicant", lastName: anonymousApplicantLabel(applicationId).slice("Applicant ".length), major: "",
++    academicYear: p ? ("academicYear" in p ? p.academicYear : academicYear(p)) : "Year unavailable",
++    gpa: supportedGpa(p?.gpa), satScore: p?.satScore ?? null, actScore: p?.actScore ?? null };
++}
++
+@@ -28 +35 @@ export function anonymousApplication(
+-  const label = anonymousApplicantLabel(app.id).slice("Applicant ".length);
++  const summary = anonymousListProfile(app.id, p);
+@@ -49,2 +56,2 @@ export function anonymousApplication(
+-        firstName: "Applicant",
+-        lastName: label,
++        firstName: summary.firstName,
++        lastName: summary.lastName,
+@@ -53,2 +60,2 @@ export function anonymousApplication(
+-        major: "",
+-        academicYear: p ? ("academicYear" in p ? p.academicYear : academicYear(p)) : "Year unavailable",
++        major: summary.major,
++        academicYear: summary.academicYear,
+@@ -56,3 +63,3 @@ export function anonymousApplication(
+-        gpa: supportedGpa(p?.gpa),
+-        satScore: p?.satScore ?? null,
+-        actScore: p?.actScore ?? null,
++        gpa: summary.gpa,
++        satScore: summary.satScore,
++        actScore: summary.actScore,
+diff --git a/lib/application-review-visibility.ts b/lib/application-review-visibility.ts
+new file mode 100644
+index 0000000..fcaa4d1
+--- /dev/null
++++ b/lib/application-review-visibility.ts
+@@ -0,0 +1,22 @@
++import { interviewCapabilities } from "@/lib/interview-access";
++import { submittedScoreSummary } from "@/lib/interview-review-summary";
++import type { ClubAccess } from "@/lib/permissions";
++
++type Review = { interviewerId: string; roundId: string | null; submittedAt: Date | null; score: number };
++type Assignment = { memberId: string; roundId: string; member: ClubAccess };
++type Viewer = ClubAccess & { id: string; userId: string };
++
++/** Shared by full detail and summary reads. No drafts or hidden scores escape. */
++export function applicationReviewVisibility<T extends Review>(app: {
++  studentId: string; roundId: string; evaluations: T[]; interviewAssignments: Assignment[];
++}, membership: Viewer) {
++  const caps = interviewCapabilities(membership);
++  const assignments = app.interviewAssignments || [];
++  const ownSubmitted = app.evaluations.some(e => e.interviewerId === membership.id && e.roundId === app.roundId && e.submittedAt);
++  const assigned = assignments.some(a => a.roundId === app.roundId && a.memberId === membership.id);
++  const canSeeRound = app.studentId !== membership.userId && ((caps.readClosing && !assigned) || caps.participate && assigned && ownSubmitted);
++  const roundScore = canSeeRound ? submittedScoreSummary(app.evaluations.filter(e => e.roundId === app.roundId), assignments.filter(a => a.roundId === app.roundId && interviewCapabilities(a.member).participate).map(a => a.memberId)) : null;
++  const evaluations = app.evaluations.filter(e => app.studentId !== membership.userId && e.submittedAt &&
++    (caps.participate && e.interviewerId === membership.id && assignments.some(a => a.memberId === membership.id && a.roundId === e.roundId) || canSeeRound && (e.roundId === app.roundId || caps.readClosing)));
++  return { caps, ownSubmitted, assigned, roundScore, evaluations };
++}
+diff --git a/lib/pipeline-summary.ts b/lib/pipeline-summary.ts
+new file mode 100644
+index 0000000..5437f00
+--- /dev/null
++++ b/lib/pipeline-summary.ts
+@@ -0,0 +1,37 @@
++import type { Prisma } from "@prisma/client";
++import { anonymousListProfile } from "@/lib/anonymous-review";
++import { recruitmentListProfile } from "@/lib/recruitment-profile";
++import { applicationReviewVisibility } from "@/lib/application-review-visibility";
++import { hasPermission, type ClubAccess } from "@/lib/permissions";
++
++/** Database allowlist, independent of future application/profile schema fields.
++ * The complete metadata set is still read to preserve global privacy-aware
++ * filtering/order/counts. Detail, offer, private draft and member content is not. */
++export const pipelineSummarySelect = {
++  id: true, roundId: true, status: true, studentId: true,
++  round: { select: { anonymousReview: true } },
++  student: { select: { email: true, studentProfile: { select: {
++    firstName: true, lastName: true, major: true, gradYear: true,
++    transferStudent: true, gpa: true, satScore: true, actScore: true,
++  } } } },
++  evaluations: { where: { submittedAt: { not: null } }, select: {
++    interviewerId: true, roundId: true, submittedAt: true, score: true,
++  } },
++  interviewAssignments: { where: { revokedAt: null }, select: {
++    memberId: true, roundId: true, member: { select: { status: true, isOwner: true, permissions: true } },
++  } },
++} satisfies Prisma.ApplicationSelect;
++
++type Summary = Prisma.ApplicationGetPayload<{ select: typeof pipelineSummarySelect }>;
++export function pipelineSummaryProjection(app: Summary, membership: ClubAccess & { id: string; userId: string }) {
++  const anonymous = !hasPermission(membership, "applicants.identify") || app.round.anonymousReview;
++  const { evaluations, roundScore } = applicationReviewVisibility(app, membership);
++  return {
++    id: app.id, roundId: app.roundId, status: app.status,
++    studentId: anonymous ? `anonymous-${app.id}` : app.studentId,
++    student: { email: anonymous ? "" : app.student.email,
++      studentProfile: anonymous ? anonymousListProfile(app.id, app.student.studentProfile) :
++        app.student.studentProfile ? recruitmentListProfile(app.student.studentProfile) : null },
++    evaluations: evaluations.map(e => ({ interviewerId: e.interviewerId })), roundScore,
++  };
++}
+diff --git a/lib/recruitment-profile.ts b/lib/recruitment-profile.ts
+index f467013..5f404f7 100644
+--- a/lib/recruitment-profile.ts
++++ b/lib/recruitment-profile.ts
+@@ -21,0 +22,6 @@ export type RecruitmentProfile = Omit<FullStudentProfile, "gradYear" | "highScho
++/** Shared fields for the full profile and the database summary projection. */
++export function recruitmentListProfile(p: Pick<FullStudentProfile, "firstName" | "lastName" | "major" | "gradYear" | "transferStudent" | "gpa" | "satScore" | "actScore">) {
++  return { firstName: p.firstName, lastName: p.lastName, major: p.major,
++    academicYear: academicYear(p), gpa: supportedGpa(p.gpa), satScore: p.satScore, actScore: p.actScore };
++}
++
+@@ -23,0 +30 @@ export function recruitmentProfile(p: FullStudentProfile, genderVisible = false)
++  const summary = recruitmentListProfile(p);
+@@ -25,3 +32,3 @@ export function recruitmentProfile(p: FullStudentProfile, genderVisible = false)
+-    id: p.id, userId: p.userId, firstName: p.firstName, lastName: p.lastName, computingId: p.computingId,
+-    major: p.major, scholarStatus: p.scholarStatus, gpa: supportedGpa(p.gpa), satScore: p.satScore,
+-    actScore: p.actScore, actEnglish: p.actEnglish, actMath: p.actMath, actReading: p.actReading, actScience: p.actScience,
++    id: p.id, userId: p.userId, firstName: summary.firstName, lastName: summary.lastName, computingId: p.computingId,
++    major: summary.major, scholarStatus: p.scholarStatus, gpa: summary.gpa, satScore: summary.satScore,
++    actScore: summary.actScore, actEnglish: p.actEnglish, actMath: p.actMath, actReading: p.actReading, actScience: p.actScience,
+@@ -29 +36 @@ export function recruitmentProfile(p: FullStudentProfile, genderVisible = false)
+-    experiences: p.experiences, academicYear: academicYear(p), gender: genderVisible ? p.gender : null,
++    experiences: p.experiences, academicYear: summary.academicYear, gender: genderVisible ? p.gender : null,
+diff --git a/scripts/navigation-loader-audit.cjs b/scripts/navigation-loader-audit.cjs
+index 09dc5d6..458a29b 100644
+--- a/scripts/navigation-loader-audit.cjs
++++ b/scripts/navigation-loader-audit.cjs
+@@ -5 +5,4 @@ const fs=require('node:fs'),path=require('node:path'),os=require('node:os');
+-const assert=require('node:assert/strict'),ts=require('typescript');
++const assert=require('node:assert/strict'),ts=require('typescript'),{execFileSync}=require('node:child_process');
++const sourceRef=process.argv.find(a=>a.startsWith('--source-ref='))?.slice(13);
++if(sourceRef){assert.match(sourceRef,/^[a-f0-9]{40}$/);execFileSync('git',['merge-base','--is-ancestor',sourceRef,'HEAD']);}
++function sourceFile(file){return sourceRef?execFileSync('git',['show',sourceRef+':'+path.relative(process.cwd(),file)],{encoding:'utf8',maxBuffer:10000000}):fs.readFileSync(file,'utf8');}
+@@ -28 +31 @@ async function main(){
+-  const compiled=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText;
++  const compiled=ts.transpileModule(sourceFile(file),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText;
+@@ -50,2 +53,2 @@ async function main(){
+-  if(process.argv.includes('--pipeline-study')){assert.ok(['phase3','phase4','phase5'].some(phase=>output.startsWith(path.resolve('docs/performance',phase)+path.sep)));assert.ok(!fs.existsSync(output));assert.ok(results.every(r=>r.samples?.length===20),'Every planned loader sample is required');}
+-  fs.mkdirSync(path.dirname(output),{recursive:true});fs.writeFileSync(output,JSON.stringify({generatedAt:new Date().toISOString(),environment:'original TypeScript loaders, real local Auth/PostgreSQL; Next cookie context adapted; outside RSC cache dispatcher',limitations:['Not Next HTTP latency or production timing.','Provider durations measure headers, not body consumption.','Prisma event duration is engine-reported integer milliseconds, not application phase attribution.','No support-session/demo behavior profiled.'],results},null,2));
++  if(process.argv.includes('--pipeline-study')){assert.ok(['phase3','phase4','phase5','phase6'].some(phase=>output.startsWith(path.resolve('docs/performance',phase)+path.sep)));assert.ok(!fs.existsSync(output));assert.ok(results.every(r=>r.samples?.length===20),'Every planned loader sample is required');}
++  fs.mkdirSync(path.dirname(output),{recursive:true});fs.writeFileSync(output,JSON.stringify({generatedAt:new Date().toISOString(),sourceRef:sourceRef||'working-tree',environment:'original TypeScript loaders, real local Auth/PostgreSQL; Next cookie context adapted; outside RSC cache dispatcher',limitations:['Not Next HTTP latency or production timing.','Provider durations measure headers, not body consumption.','Prisma event duration is engine-reported integer milliseconds, not application phase attribution.','No support-session/demo behavior profiled.'],results},null,2));
+diff --git a/scripts/navigation-phase6-interactions.cjs b/scripts/navigation-phase6-interactions.cjs
+new file mode 100644
+index 0000000..02f6503
+--- /dev/null
++++ b/scripts/navigation-phase6-interactions.cjs
+@@ -0,0 +1,37 @@
++// Additional warm interactions on the same frozen builds/cohorts as the primary
++// harness. No interception, seeded delay, mutation, or benchmark-only app path.
++const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{performance}=require('node:perf_hooks'),{chromium}=require('playwright');
++const local=require('./navigation-phase6-local.cjs'),{Actor}=require('../tests/helpers/onboarding-e2e.cjs'),{safeRoute}=require('./navigation-audit.cjs');
++async function main(){
++ const out=path.resolve(process.argv.find(a=>a.startsWith('--out='))?.slice(6)||'');assert.ok(out.startsWith(path.join(local.repo,'docs/performance/phase6')+path.sep)&&!fs.existsSync(out));
++ const f=JSON.parse(fs.readFileSync(path.join(local.root,'navigation-fixture.json'))),size=f.counts.applicantsInMeasuredClub||100;assert.ok(size>=1000);
++ const actor=new Actor(local.config());await actor.signIn(f.email,f.password);const browser=await chromium.launch({headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage(),requests=[],pending=new Set(),errors=[],samples=[];
++ page.on('pageerror',e=>errors.push(e.name));page.on('request',r=>{const row={request:r,route:safeRoute(r.url()),type:r.resourceType(),start:performance.now(),end:null,status:null,bytes:null};requests.push(row);if(row.type!=='eventsource')pending.add(r)});
++ page.on('response',r=>{const row=requests.find(q=>q.request===r.request());if(row){row.status=r.status();row.serverTiming=r.headers()['server-timing']||null;row.traceId=r.headers()['x-outclass-trace-id']||null}});
++ page.on('requestfinished',r=>{pending.delete(r);const row=requests.find(q=>q.request===r);if(row){row.end=performance.now();row.timing=r.timing();void r.sizes().then(s=>row.bytes=s.responseBodySize).catch(()=>{})}});page.on('requestfailed',r=>{pending.delete(r);const row=requests.find(q=>q.request===r);if(row){row.end=performance.now();row.failed=true}});
++ async function drain(){const until=performance.now()+10000;while(pending.size&&performance.now()<until)await new Promise(r=>setTimeout(r,20));assert.equal(pending.size,0,'Unfinished non-SSE request');await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))))}
++ async function capture(kind,index,target,action){
++  await drain();const offset=requests.length,errorOffset=errors.length,start=performance.now();let failed=null,meaningfulMs=null,marks=null,driverElapsedMs=null;
++  await page.evaluate(({target,event})=>{
++   const state={start:0,ready:0,scheduled:false,origin:performance.timeOrigin};window.__phase6Paint=state;
++   const check=()=>{if(!state.start||state.scheduled)return;const found=[...document.querySelectorAll('.oc-live-pipeline [data-applicant-id]')].some(e=>e.getClientRects().length&&e.textContent.includes(target));if(!found)return;state.scheduled=true;requestAnimationFrame(()=>requestAnimationFrame(()=>{state.ready=performance.now()}))};
++   const begin=()=>{if(!state.start)state.start=performance.now();queueMicrotask(check)};
++   document.addEventListener(event,begin,true);const observer=new MutationObserver(check);observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true});state.check=check;state.cleanup=()=>{observer.disconnect();document.removeEventListener(event,begin,true)};
++  },{target,event:kind==='next-page'?'click':'input'});
++  try{await action();await page.evaluate(()=>window.__phase6Paint.check());await page.waitForFunction(()=>window.__phase6Paint.ready>0,null,{timeout:30000});marks=await page.evaluate(()=>{const s=window.__phase6Paint;s.cleanup();return{start:s.start,ready:s.ready,origin:s.origin}});meaningfulMs=marks.ready-marks.start;driverElapsedMs=performance.now()-start;await drain()}catch(e){failed=e.name;process.exitCode=1;await page.evaluate(()=>window.__phase6Paint.cleanup()).catch(()=>{})}
++  const origin=marks?marks.origin+marks.start:performance.timeOrigin+start;
++  const rows=requests.slice(offset).map(r=>({route:r.route,type:r.type,startMs:performance.timeOrigin+r.start-origin,endMs:r.end===null?null:performance.timeOrigin+r.end-origin,status:r.status,failed:!!r.failed,encodedBodyBytes:r.bytes,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart:null,transferMs:r.timing?.responseEnd>=0&&r.timing?.responseStart>=0?r.timing.responseEnd-r.timing.responseStart:null,serverTiming:r.serverTiming,traceId:r.traceId}));
++  samples.push({kind,index,warmup:index===0,condition:'warm',failed,meaningfulMs,driverElapsedMs,requestCount:rows.length,encodedBodyBytes:rows.every(r=>Number.isFinite(r.encodedBodyBytes))?rows.reduce((n,r)=>n+r.encodedBodyBytes,0):null,pageErrors:errors.slice(errorOffset),requests:rows});
++ }
++ try{
++  await page.goto(local.config().appUrl+'/club/'+f.clubIds[0]+'/workspace?section=recruitment&tool=applicants');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await page.waitForLoadState('networkidle');await drain();const pager=page.getByRole('navigation',{name:'Applicant pages',exact:true}),search=page.getByRole('textbox',{name:'Search applicants',exact:true}),last='Scale Student '+String(size-1).padStart(5,'0');
++  for(let i=0;i<6;i++){
++   await capture('next-page',i,'Scale Student 00100',()=>pager.getByRole('button',{name:'Next applicant page',exact:true}).click());
++   await pager.getByRole('button',{name:'Previous applicant page',exact:true}).click();await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await drain();
++   await capture('distant-search',i,last,()=>search.fill(last));
++   assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),1);assert.equal(await search.evaluate(e=>document.activeElement===e),true);
++   await search.fill('');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await drain();
++  }
++ }finally{fs.mkdirSync(path.dirname(out),{recursive:true});fs.writeFileSync(out,JSON.stringify({buildId:fs.readFileSync(path.join(local.dist,'BUILD_ID'),'utf8').trim(),size,planned:12,samples,errors,interpretation:'Warm interactions only. Browser event timestamp to MutationObserver content predicate plus two animation frames; driver polling/dispatch is excluded from meaningfulMs and separately retained as driverElapsedMs. Initial preparation, restoration and one warmup per interaction excluded from measured distribution. All failures retained; no retries.'},null,2)+'\n');await context.close();await browser.close()}
++}
++if(require.main===module)main().catch(e=>{console.error(e.name+': interaction study failed');process.exitCode=1});
+diff --git a/scripts/navigation-phase6-local.cjs b/scripts/navigation-phase6-local.cjs
+new file mode 100644
+index 0000000..42f0b03
+--- /dev/null
++++ b/scripts/navigation-phase6-local.cjs
+@@ -0,0 +1,12 @@
++// Lifecycle helper restricted to this chat's owned, disposable navigation fixture.
++const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),assert=require('node:assert/strict'),{spawn,spawnSync,execFileSync}=require('node:child_process'),{randomUUID}=require('node:crypto');
++const repo=path.resolve(__dirname,'..'),root=path.join(os.tmpdir(),'outclass-onboarding-e2e'),dist=path.join(repo,'.next-publish');
++const config=()=>require('../tests/helpers/onboarding-e2e.cjs').readConfig(path.join(root,'config.json'));
++function privateRoot(){const location=fs.readFileSync('/tmp/outclass-phase6-builds-path','utf8');assert.ok(location.startsWith(path.join(os.tmpdir(),'outclass-phase6-builds-')));assert.ok(fs.existsSync(location));return location}
++function environment(){const c=config(),s=c.status;assert.equal(c.buildDir,dist);const db=new URL(s.DB_URL);db.searchParams.set('connection_limit','8');return{...process.env,NEXT_PUBLIC_ENABLE_MICROSOFT_AUTH:'false',DATABASE_URL:db.href,POSTGRES_PRISMA_URL:db.href,POSTGRES_URL:db.href,POSTGRES_URL_NON_POOLING:db.href,NEXT_PUBLIC_SUPABASE_URL:s.API_URL,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:s.PUBLISHABLE_KEY,NEXT_PUBLIC_SUPABASE_ANON_KEY:s.ANON_KEY,SUPABASE_SECRET_KEY:s.SECRET_KEY,SUPABASE_SERVICE_ROLE_KEY:s.SERVICE_ROLE_KEY,OUTCLASS_PUBLISH_BUILD:'1',OUTCLASS_SITE_URL:c.appUrl,OUTCLASS_PLATFORM_ADMIN_IDS:c.admin.id,SMTP_HOST:'127.0.0.1',SMTP_PORT:'55325',SMTP_USER:'local-test',SMTP_PASSWORD:'local-test',SMTP_FROM_EMAIL:'outclass@virginia.edu',CRON_SECRET:randomUUID(),NODE_EXTRA_CA_CERTS:path.join(root,'mailpit-cert.pem'),COMMUNICATIONS_EMAIL_ENABLED:'true',RESEND_API_KEY:'',RESEND_FROM_EMAIL:''}}
++async function stop(){const listener=spawnSync('lsof',['-tiTCP:3107','-sTCP:LISTEN'],{encoding:'utf8'}).stdout.trim();if(!listener)return;const pid=fs.readFileSync(path.join(root,'server.pid'),'utf8').trim();assert.equal(listener,pid);assert.ok(execFileSync('lsof',['-a','-p',pid,'-d','cwd','-Fn'],{encoding:'utf8'}).split('\n').includes('n'+repo));process.kill(Number(pid),'SIGTERM');for(let n=0;n<100;n++){if(!spawnSync('lsof',['-tiTCP:3107','-sTCP:LISTEN'],{encoding:'utf8'}).stdout.trim())return;await new Promise(r=>setTimeout(r,50))}throw Error('Owned app failed to stop')}
++function snapshot(name){assert.ok(['baseline','pilot','pilot2','candidate'].includes(name));const target=path.join(privateRoot(),name);assert.ok(!fs.existsSync(target));fs.cpSync(dist,target,{recursive:true});return fs.readFileSync(path.join(target,'BUILD_ID'),'utf8').trim()}
++async function start(name,diagnose=false){assert.ok(['baseline','pilot','pilot2','candidate'].includes(name));const source=path.join(privateRoot(),name);assert.ok(fs.existsSync(path.join(source,'BUILD_ID')));await stop();fs.rmSync(dist,{recursive:true});fs.cpSync(source,dist,{recursive:true});const fd=fs.openSync(path.join(root,'phase6-server.log'),'a'),args=diagnose?['--require','./scripts/navigation-http-diagnostics.cjs']:[];args.push('node_modules/next/dist/bin/next','start','-p','3107','-H','127.0.0.1');const app=spawn(process.execPath,args,{cwd:repo,env:{...environment(),OUTCLASS_PHASE_TRACE:diagnose?'1':'0',OUTCLASS_NAVIGATION_HTTP_DIAGNOSTICS:diagnose?'1':'0'},detached:true,stdio:['ignore',fd,fd]});fs.closeSync(fd);app.unref();fs.writeFileSync(path.join(root,'server.pid'),String(app.pid));for(let n=0;n<100;n++){try{if((await fetch(config().appUrl,{signal:AbortSignal.timeout(1000)})).ok)return}catch{}await new Promise(r=>setTimeout(r,200))}throw Error('Owned app did not become ready')}
++async function build(){await stop();const fd=fs.openSync(path.join(root,'phase6-build.log'),'w');const result=spawnSync('npm',['run','build'],{cwd:repo,env:environment(),stdio:['ignore',fd,fd]});fs.closeSync(fd);assert.equal(result.status,0,'Inspect owned build log');}
++module.exports={repo,root,dist,config,privateRoot,environment,stop,start,snapshot,build};
++if(require.main===module)(async()=>{const [command,name]=process.argv.slice(2);if(command==='stop')await stop();else if(command==='start')await start(name,process.argv.includes('--diagnose'));else if(command==='snapshot')console.log(snapshot(name));else if(command==='build')await build();else throw Error('Unknown local lifecycle command')})().catch(error=>{console.error(error.name+': '+error.message.split('\n')[0]);process.exitCode=1});
+diff --git a/scripts/navigation-phase6-study.cjs b/scripts/navigation-phase6-study.cjs
+new file mode 100644
+index 0000000..b513e41
+--- /dev/null
++++ b/scripts/navigation-phase6-study.cjs
+@@ -0,0 +1,34 @@
++// Fixed, local-only comparison. Frozen builds and every planned outcome are retained.
++const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{spawn,spawnSync}=require('node:child_process'),{createHash}=require('node:crypto');
++const local=require('./navigation-phase6-local.cjs'),repo=local.repo,evidence=path.join(repo,'docs/performance/phase6');
++const hash=b=>createHash('sha256').update(b).digest('hex');
++async function main(){
++ const out=path.resolve(repo,process.argv.find(a=>a.startsWith('--out='))?.slice(6)||'docs/performance/phase6/comparison');assert.ok(out.startsWith(evidence+path.sep)&&!fs.existsSync(out));fs.mkdirSync(out);
++ const planBytes=fs.readFileSync(path.join(evidence,'PLAN.json')),plan=JSON.parse(planBytes);fs.writeFileSync(path.join(out,'PLAN.json'),planBytes);
++ const manifests=Object.fromEntries(['baseline','candidate'].map(name=>[name,JSON.parse(fs.readFileSync(path.join(evidence,name.toUpperCase()+'_SOURCE.json')))]));
++ for(const name of ['baseline','candidate'])assert.equal(fs.readFileSync(path.join(local.privateRoot(),name,'BUILD_ID'),'utf8').trim(),manifests[name].buildId);
++ for(const [file,digest]of Object.entries(manifests.candidate.files))assert.equal(hash(fs.readFileSync(path.join(repo,file))),digest,file);
++ const protocol={startedAt:new Date().toISOString(),baseline:plan.baseline,planSha256:hash(planBytes),toolHashes:Object.fromEntries(['navigation-audit.cjs','navigation-http-diagnostics.cjs','navigation-phase6-local.cjs','navigation-phase6-study.cjs','navigation-phase6-interactions.cjs','navigation-loader-audit.cjs','pipeline-scale-fixture.cjs'].map(name=>[name,hash(fs.readFileSync(path.join(repo,'scripts',name)))])),buildIds:Object.fromEntries(Object.entries(manifests).map(([name,m])=>[name,m.buildId])),completed:[],failures:[],poolLimitPerClient:8,fixtureStrategy:'Independent cohort per size, identical within each cohort/build pair',complete:false};
++ let phase='starting';const system=[];let previous=require('node:os').cpus().reduce((a,c)=>({idle:a.idle+c.times.idle,total:a.total+Object.values(c.times).reduce((n,v)=>n+v,0)}),{idle:0,total:0});const monitor=setInterval(()=>{const os=require('node:os'),next=os.cpus().reduce((a,c)=>({idle:a.idle+c.times.idle,total:a.total+Object.values(c.times).reduce((n,v)=>n+v,0)}),{idle:0,total:0});system.push({at:new Date().toISOString(),phase,cpuBusyPercent:+(100*(1-(next.idle-previous.idle)/(next.total-previous.total))).toFixed(2),load:os.loadavg(),freeMemoryMiB:Math.round(os.freemem()/1048576)});previous=next},1000);
++ const save=()=>fs.writeFileSync(path.join(out,'PROTOCOL.json'),JSON.stringify(protocol,null,2)+'\n');save();
++ async function fixture(size){
++  await local.stop();const current=path.join(local.root,'navigation-fixture.json'),marker=path.join(local.root,'phase3-enriched-count.json'),target=path.join(local.privateRoot(),'fixture-'+size+'.json');
++  if(!fs.existsSync(target)){
++   if(fs.existsSync(current)){const f=JSON.parse(fs.readFileSync(current)),existing=f.counts.applicantsInMeasuredClub||100;const saved=path.join(local.privateRoot(),'fixture-'+existing+'.json');if(!fs.existsSync(saved))fs.copyFileSync(current,saved);fs.rmSync(current);}
++   // Credential-file rebinding only. No database rows are removed or rewritten.
++   fs.rmSync(marker,{force:true});const seed=spawnSync(process.execPath,['scripts/navigation-audit.cjs','--seed'],{cwd:repo,encoding:'utf8'});assert.equal(seed.status,0,'Reserved fixture signup failed');await require('./pipeline-scale-fixture.cjs').scaleFixture(size);fs.copyFileSync(current,target);
++  }
++  fs.copyFileSync(target,current);const f=JSON.parse(fs.readFileSync(current));assert.equal(f.counts.applicantsInMeasuredClub||100,size);const db=new(require('@prisma/client').PrismaClient)({datasourceUrl:local.config().status.DB_URL});try{assert.equal(await db.application.count({where:{clubId:f.clubIds[0]}}),size)}finally{await db.$disconnect()}
++ }
++ async function collect(directory,samples){
++  const fd=fs.openSync(path.join(local.root,'phase6-benchmark.log'),'a');const child=spawn(process.execPath,['scripts/navigation-audit.cjs','--phase2','--phase3','--cold-warm','--record-failures','--source-diagnostics','--samples='+samples,'--out='+directory],{cwd:repo,env:local.environment(),stdio:['ignore',fd,fd]});const status=await new Promise((resolve,reject)=>{child.once('error',reject);child.once('close',resolve)});fs.closeSync(fd);const result={status};
++  const file=path.join(directory,'browser-samples.json');assert.ok(fs.existsSync(file),'Every block must emit all outcomes');const data=JSON.parse(fs.readFileSync(file));assert.equal(data.samples.length,samples*4,'No missing or replacement rows');assert.ok([0,1].includes(result.status));assert.equal(result.status,data.failures.length?1:0);protocol.completed.push({directory:path.relative(out,directory),planned:samples*4,observed:data.samples.length,failures:data.failures.length});save();
++ }
++ try{for(const size of plan.measurement.cohorts){phase='fixture-'+size;await fixture(size);for(const[pair,order]of plan.measurement.blocks.entries())for(const[position,letter]of[...order].entries()){
++  const variant=letter==='B'?'baseline':'candidate';phase=`${size}-${pair}-${letter}-start`;await local.start(variant);const stem=path.join(out,`size-${size}-pair-${pair+1}-${position+1}-${letter}`);phase=`${size}-${pair}-${letter}-warmup`;await collect(stem+'-warmup',1);phase=`${size}-${pair}-${letter}-measure`;await collect(stem+'-measure',5);if(size>=1000){phase=`${size}-${pair}-${letter}-interactions`;const fd=fs.openSync(path.join(local.root,'phase6-interactions.log'),'a'),r=spawnSync(process.execPath,['scripts/navigation-phase6-interactions.cjs','--out='+stem+'-interactions.json'],{cwd:repo,env:local.environment(),stdio:['ignore',fd,fd]});fs.closeSync(fd);const d=JSON.parse(fs.readFileSync(stem+'-interactions.json'));assert.equal(d.samples.length,12);assert.ok([0,1].includes(r.status));protocol.interactions??=[];protocol.interactions.push({file:path.relative(out,stem+'-interactions.json'),planned:12,observed:d.samples.length,failed:d.samples.filter(s=>s.failed).length});save()}console.log(`Completed ${size}, pair ${pair+1}, ${letter}; all planned outcomes retained.`);
++ }await local.stop();const fd=fs.openSync(path.join(local.root,'phase6-loaders.log'),'a'),probe=spawnSync(process.execPath,['scripts/navigation-loader-audit.cjs','--pipeline-study','--out='+path.join(out,`size-${size}-candidate-loaders.json`)],{cwd:repo,env:local.environment(),stdio:['ignore',fd,fd]});fs.closeSync(fd);assert.equal(probe.status,0);const loaded=JSON.parse(fs.readFileSync(path.join(out,`size-${size}-candidate-loaders.json`))),list=loaded.results.find(r=>r.name==='pipelineList');assert.ok(list.samples.every(s=>s.queries.every(q=>q.detailColumnsInSelect.length===0)),'List SQL still reads omitted detail columns');const beforeFd=fs.openSync(path.join(local.root,'phase6-loaders.log'),'a'),before=spawnSync(process.execPath,['scripts/navigation-loader-audit.cjs','--pipeline-study','--source-ref='+plan.baseline,'--out='+path.join(out,`size-${size}-baseline-loaders.json`)],{cwd:repo,env:local.environment(),stdio:['ignore',beforeFd,beforeFd]});fs.closeSync(beforeFd);assert.equal(before.status,0);
++ }protocol.complete=true;protocol.completedAt=new Date().toISOString();save();
++ }catch(error){protocol.failures.push({name:error.name,message:error.message.split('\n')[0]});save();throw error}
++ finally{clearInterval(monitor);await local.stop();fs.writeFileSync(path.join(out,'SYSTEM.json'),JSON.stringify(system,null,2)+'\n');protocol.applicationStopped=true;save();}
++}
++if(require.main===module)main().catch(e=>{console.error(e.name+': '+e.message.split('\n')[0]);process.exitCode=1});
+diff --git a/scripts/summarize-navigation-phase6.cjs b/scripts/summarize-navigation-phase6.cjs
+new file mode 100644
+index 0000000..dedcd86
+--- /dev/null
++++ b/scripts/summarize-navigation-phase6.cjs
+@@ -0,0 +1,96 @@
++const fs = require('node:fs');
++const path = require('node:path');
++const assert = require('node:assert/strict');
++const { distribution } = require('./navigation-audit.cjs');
++const { enrich } = require('./summarize-pipeline-navigation.cjs');
++const { summarizeGroup } = require('./summarize-pipeline-stress.cjs');
++
++function sourceMetrics(row) {
++  const source = row.preparation;
++  assert.ok(source, 'Source observations are required for every outcome');
++  const requests = source.requests.filter(r => r.type !== 'eventsource');
++  const scripts = requests.filter(r => r.type === 'script');
++  const completeBytes = requests.every(r => Number.isFinite(r.encodedBodyBytes));
++  return {
++    meaningfulMs: source.meaningfulMs,
++    elapsedIncludingDrainMs: source.elapsedMs,
++    documentTtfbMs: source.dom?.document?.ttfbMs ?? null,
++    requestCount: source.requests.length,
++    nonSsePending: requests.filter(r => r.pending).length,
++    logoRequestCount: requests.filter(r => r.route.startsWith('/logos/')).length,
++    httpErrors: requests.filter(r => r.status >= 400).length,
++    encodedBodyBytes: completeBytes ? requests.reduce((n,r) => n+r.encodedBodyBytes,0) : null,
++    scriptBytes: scripts.every(r => Number.isFinite(r.encodedBodyBytes)) ? scripts.reduce((n,r) => n+r.encodedBodyBytes,0) : null,
++  };
++}
++function describe(rows) {
++  const result = summarizeGroup(rows);
++  const successful = rows.filter(r => !r.failed);
++  assert.ok(successful.map(enrich).every(r => r.readCount === 1), 'Each successful selected list/detail navigation requires exactly one fresh read');
++  const source = rows.map(sourceMetrics);
++  const sourceMetricsNames = Object.keys(source[0]);
++  const transfer = successful.map(r => r.requests.find(q => /^\/api\/workspace\?kind=pipeline(?:List|Page)?$/.test(q.route))?.transferMs);
++  return {
++    ...result,
++    readTransferMs: distribution(transfer),
++    timedHttpErrors: successful.flatMap(r => r.requests).filter(r => r.status >= 400).length,
++    pendingSourceObservations: source.filter(r => r.nonSsePending > 0).length,
++    source: {
++      planned: rows.length,
++      successful: source.filter(r => Number.isFinite(r.meaningfulMs)).length,
++      latencyInterpretation: source.every(r => Number.isFinite(r.meaningfulMs)) ? 'All planned source preparations; visible DOM content predicate, before background drain.' : 'Successful source preparations only; full-cohort source p95 is not established.',
++      ...Object.fromEntries(sourceMetricsNames.map(name => [name, distribution(source.map(r => r[name]))])),
++    },
++  };
++}
++function summarize(root) {
++  const protocol = JSON.parse(fs.readFileSync(path.join(root,'PROTOCOL.json')));
++  assert.equal(protocol.complete, true);
++  assert.equal(protocol.failures.length, 0, 'Fatal collection failures must be reported separately');
++  assert.equal(protocol.completed.length, 24);
++  const entries = protocol.completed.map(block => {
++    const m = /^size-(100|1000|5000)-pair-([12])-([12])-([AB])-(measure|warmup)$/.exec(block.directory);
++    assert.ok(m, 'Unexpected block');
++    const data = JSON.parse(fs.readFileSync(path.join(root,block.directory,'browser-samples.json')));
++    assert.equal(data.samples.length, block.planned);
++    assert.equal(data.samples.filter(r=>r.failed).length, block.failures);
++    return {size:Number(m[1]),pair:Number(m[2]),variant:m[4],phase:m[5],samples:data.samples};
++  });
++  const measured = entries.filter(e=>e.phase==='measure');
++  const warmups = entries.filter(e=>e.phase==='warmup').flatMap(e=>e.samples);
++  const groups = [];
++  for (const size of [100,1000,5000]) for (const route of ['recruiting → applicants','applicants → applicantDetail']) for (const condition of ['cold','warm']) {
++    const group = {size,path:route,condition};
++    for (const variant of ['B','A']) group[variant]=describe(measured.filter(e=>e.size===size&&e.variant===variant).flatMap(e=>e.samples).filter(r=>r.path===route&&r.condition===condition));
++    group.pairedMedians = [1,2].map(pair=>Object.fromEntries(['B','A'].map(variant=>[variant,distribution(measured.find(e=>e.size===size&&e.pair===pair&&e.variant===variant).samples.filter(r=>r.path===route&&r.condition===condition&&!r.failed).map(r=>r.meaningfulMs))])));
++    groups.push(group);
++  }
++  const all = measured.flatMap(e=>e.samples);
++  return {
++    protocol: {baseline:protocol.baseline,buildIds:protocol.buildIds,planned:all.length+warmups.length,measured:all.length,warmups:warmups.length,failedMeasured:all.filter(r=>r.failed).length,failedWarmups:warmups.filter(r=>r.failed).length,pageErrors:all.reduce((n,r)=>n+(r.pageErrorCount||0),0),timedSuccessfulHttpErrors:all.filter(r=>!r.failed).flatMap(r=>r.requests).filter(r=>r.status>=400).length,sourceHttpErrorsByVariant:Object.fromEntries(['B','A'].map(variant=>[variant,measured.filter(e=>e.variant===variant).flatMap(e=>e.samples).reduce((n,r)=>n+sourceMetrics(r).httpErrors,0)])),percentiles:'Nearest rank, n=10 per build/path/condition; p95 equals maximum. Local descriptive evidence, not a production percentile estimate.'},
++    groups,
++    interactions: summarizeInteractions(root, protocol),
++    failures: measured.flatMap(e=>e.samples.filter(r=>r.failed).map(r=>({size:e.size,variant:e.variant,path:r.path,condition:r.condition,index:r.index,stage:r.stage,diagnostic:r.diagnostic,preparation:r.preparation,error:r.error}))),
++  };
++}
++function summarizeInteractions(root, protocol) {
++  assert.equal(protocol.interactions.length, 8);
++  const blocks=protocol.interactions.map(block=>{
++    const m=/^size-(1000|5000)-pair-([12])-([12])-([AB])-interactions.json$/.exec(block.file);assert.ok(m);
++    const data=JSON.parse(fs.readFileSync(path.join(root,block.file)));assert.equal(data.samples.length,12);
++    return {size:Number(m[1]),variant:m[4],samples:data.samples};
++  });
++  const groups=[];
++  for(const size of [1000,5000])for(const kind of ['next-page','distant-search']){
++    const group={size,kind,condition:'warm'};
++    for(const variant of ['B','A']){
++      const all=blocks.filter(b=>b.size===size&&b.variant===variant).flatMap(b=>b.samples).filter(r=>r.kind===kind&&!r.warmup);assert.equal(all.length,10);
++      const successful=all.filter(r=>!r.failed),enriched=successful.map(enrich);
++      group[variant]={planned:all.length,successful:successful.length,failed:all.length-successful.length,pageErrors:all.flatMap(r=>r.pageErrors).length,httpErrors:all.flatMap(r=>r.requests).filter(r=>r.status>=400).length,interpretation:successful.length===10?'All planned warm observations. Nearest-rank p95 equals maximum at n=10.':'Successful observations only; full-cohort p95 is not established.',...Object.fromEntries(['meaningfulMs','driverElapsedMs','requestCount','encodedBodyBytes','readCount','readStartMs','readTtfbMs','readServerMs','databaseMs','serializationMs','readBodyBytes'].map(metric=>[metric,distribution(enriched.map(r=>r[metric]))]))};
++    }
++    groups.push(group);
++  }
++  return {planned:96,warmups:16,measured:80,failed:blocks.flatMap(b=>b.samples).filter(r=>r.failed).length,groups};
++}
++module.exports = {sourceMetrics,describe,summarize};
++if(require.main===module){const root=path.resolve(process.argv.find(a=>a.startsWith('--out='))?.slice(6)||'docs/performance/phase6/comparison'),result=summarize(root);fs.writeFileSync(path.join(root,'COMPARISON.json'),JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify(result.groups.map(g=>({size:g.size,path:g.path,condition:g.condition,before:g.B.meaningfulMs,after:g.A.meaningfulMs,failures:[g.B.failed,g.A.failed]})),null,2));}
+diff --git a/tests/crm-photo-authorization.test.cjs b/tests/crm-photo-authorization.test.cjs
+index d2417b9..43de894 100644
+--- a/tests/crm-photo-authorization.test.cjs
++++ b/tests/crm-photo-authorization.test.cjs
+@@ -34 +34 @@ function fixture() {
+-      findMany: async ({ where, include, omit }) => { state.pipelineOmit=omit; state.pipelineQuery=include; if(state.pipelineError)throw state.pipelineError; return (state.pipelineReads++, matches(where)) && (!where.round || app.round.anonymousReview) ? [app] : []; },
++      findMany: async ({ where, include, omit, select }) => { state.pipelineOmit=omit; state.pipelineQuery=include; state.pipelineSelect=select; if(state.pipelineError)throw state.pipelineError; return (state.pipelineReads++, matches(where)) && (!where.round || app.round.anonymousReview) ? [app] : []; },
+@@ -156,2 +156,7 @@ for (const reader of ['getClubPipeline', 'getClubPipelineList', 'getClubPipeline
+-test('list query omits detail relations while canonical detail still includes them',async()=>{
+- const f=fixture();await f.crm.getClubPipelineList(clubId);assert.equal(f.state.pipelineQuery.answers,undefined);assert.equal(f.state.pipelineQuery.bookings,undefined);assert.deepEqual(f.state.pipelineOmit,{anonymousReviewText:true});assert.deepEqual(f.state.pipelineQuery.student.include.studentProfile.omit,{bio:true,linkedinUrl:true,resumeUrl:true,headshotUrl:true,scholarStatus:true,highSchool:true,pronouns:true});
++test('summary database allowlist excludes detail/offer/member content and reads only submitted reviews',async()=>{
++ const f=fixture();await f.crm.getClubPipelineList(clubId);const selected=f.state.pipelineSelect;
++ assert.deepEqual(Object.keys(selected).sort(),['evaluations','id','interviewAssignments','round','roundId','status','student','studentId']);
++ assert.deepEqual(selected.evaluations,{where:{submittedAt:{not:null}},select:{interviewerId:true,roundId:true,submittedAt:true,score:true}});
++ assert.deepEqual(selected.interviewAssignments,{where:{revokedAt:null},select:{memberId:true,roundId:true,member:{select:{status:true,isOwner:true,permissions:true}}}});
++ assert.deepEqual(selected.student.select.studentProfile.select,{firstName:true,lastName:true,major:true,gradYear:true,transferStudent:true,gpa:true,satScore:true,actScore:true});
++ assert.deepEqual(selected.round,{select:{anonymousReview:true}});
+@@ -167,0 +173,30 @@ test('page cursors bind the freshly authorized projection and selection reads co
++
++test('narrow database summaries match canonical full privacy across viewer, profile and review states',async()=>{
++ const f=fixture(),project=load('lib/pipeline-list.ts').pipelineListProjection;
++ const member={status:'ACTIVE',isOwner:false,permissions:['applications.review','applicants.identify']};
++ const originalProfile=structuredClone(f.app.student.studentProfile);
++ let comparisons=0;
++ for(const anonymous of [false,true])for(const profile of [originalProfile,null,{...originalProfile,gpa:5,transferStudent:true}])for(const self of [false,true])for(const role of ['identified','reviewer','participant','president'])for(const submitted of [false,true]){
++  f.state.actor=self?owner:reader;f.state.permissions=role==='identified'?['applicants.identify']:role==='reviewer'?['applications.review']:['applications.review','applicants.identify'];f.state.offices=role==='president'?['PRESIDENT']:[];
++  f.app.round.anonymousReview=anonymous;f.app.student.studentProfile=profile;
++  f.app.interviewAssignments=[{roundId,memberId:id(7),member},{roundId,memberId:id(9),member:{...member,status:'SUSPENDED'}},{roundId:id(99),memberId:id(7),member}];
++  f.app.evaluations=[{roundId,interviewerId:id(7),submittedAt:submitted?new Date():null,score:8},{roundId,interviewerId:id(8),submittedAt:new Date(),score:6},{roundId:id(99),interviewerId:id(8),submittedAt:new Date(),score:9}];
++  const canonical=project(await f.crm.getClubPipeline(clubId));assert.deepEqual(await f.crm.getClubPipelineList(clubId),canonical);
++  assert.deepEqual((await f.crm.getClubPipelinePage(clubId)).applications,canonical.applications);comparisons++;
++ }
++ assert.equal(comparisons,96);
++});
++
++test('summary scores preserve submission barrier, self exclusion, inactive assignments and historical review visibility',async()=>{
++ const f=fixture();f.state.permissions=['applications.review','applicants.identify'];
++ const active={status:'ACTIVE',permissions:f.state.permissions},inactive={...active,status:'SUSPENDED'};
++ f.app.interviewAssignments=[{roundId,memberId:id(7),member:active},{roundId,memberId:id(8),member:inactive}];
++ f.app.evaluations=[{roundId,interviewerId:id(7),submittedAt:null,score:10},{roundId,interviewerId:id(9),submittedAt:new Date(),score:6},{roundId:id(99),interviewerId:id(9),submittedAt:new Date(),score:9}];
++ const row=async()=>(await f.crm.getClubPipelineList(clubId)).applications[0];
++ assert.equal((await row()).roundScore,null);assert.deepEqual((await row()).evaluations,[]);
++ f.state.offices=['PRESIDENT'];assert.equal((await row()).roundScore,null,'office does not bypass assigned reviewer submission');
++ f.app.evaluations[0].submittedAt=new Date();let r=await row();assert.deepEqual(r.roundScore,{average:8,submitted:2,required:2,provisional:false});assert.equal(r.evaluations.length,3);
++ f.state.offices=[];r=await row();assert.equal(r.evaluations.length,2,'ordinary assigned reviewer cannot see another round');
++ f.app.interviewAssignments.push({roundId,memberId:id(10),member:active});assert.equal((await row()).roundScore.provisional,true);
++ f.state.actor=owner;assert.equal((await row()).roundScore,null);assert.deepEqual((await row()).evaluations,[]);
++});
+diff --git a/tests/navigation-phase6-e2e.test.cjs b/tests/navigation-phase6-e2e.test.cjs
+new file mode 100644
+index 0000000..04eddd2
+--- /dev/null
++++ b/tests/navigation-phase6-e2e.test.cjs
+@@ -0,0 +1,42 @@
++// Real HTTP/Auth/database parity; only the reserved disposable fixture is used.
++const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
++const {PrismaClient}=require('@prisma/client'),{Actor,readConfig}=require('./helpers/onboarding-e2e.cjs'),{load}=require('./helpers/voting-harness.cjs');
++const configFile=process.env.OUTCLASS_ONBOARDING_E2E_CONFIG;
++test('narrow summaries retain canonical filtering, score barriers and fresh assignment/privacy authority over real HTTP',{skip:!configFile,timeout:180000},async()=>{
++ const config=readConfig(configFile),f=JSON.parse(fs.readFileSync(path.join(path.dirname(configFile),'navigation-fixture.json'))),club=f.clubIds[1],actor=new Actor(config);await actor.signIn(f.email,f.password);
++ const db=new PrismaClient({datasourceUrl:config.status.DB_URL}),decode=load('lib/workspace-wire.ts').decodeWorkspaceData,project=load('lib/pipeline-list.ts').pipelineListProjection,{pagePipeline,completePipelineSelection}=load('lib/pipeline-page.ts');
++ const member=await db.clubMember.findUniqueOrThrow({where:{userId_clubId:{userId:f.userId,clubId:club}}}),backup=await db.clubMember.findFirstOrThrow({where:{clubId:club,userId:{not:f.userId}}}),round=await db.pipelineRound.findFirstOrThrow({where:{clubId:club,type:'APPLICATION_REVIEW'}}),history=await db.pipelineRound.findFirstOrThrow({where:{clubId:club,type:'INTERVIEW'}}),app=await db.application.findFirstOrThrow({where:{clubId:club,studentId:{not:backup.userId},evaluations:{none:{}}}});
++ const reviews=[],assignments=[];
++ async function read(kind,q={}){const response=await actor.request('/api/workspace?'+new URLSearchParams({kind,args:JSON.stringify([club,q])}));assert.equal(response.status,200,kind);assert.equal(response.headers.get('cache-control'),'private, no-store');assert.match(response.headers.get('vary'),/Cookie/);return decode(await response.json())}
++ try{
++  await db.clubMember.update({where:{id:backup.id},data:{isOwner:true,accessRole:'OWNER'}});
++  for(const m of [member,backup])assignments.push(await db.interviewPanelAssignment.create({data:{applicationId:app.id,roundId:round.id,memberId:m.id,grantedBy:f.userId}}));
++  for(const [m,r,score,submittedAt]of [[member,round,10,null],[backup,round,6,new Date()],[backup,history,9,new Date()]])reviews.push(await db.evaluation.create({data:{applicationId:app.id,interviewerId:m.id,roundId:r.id,round:r.name,score,submittedAt,notes:'PRIVATE PHASE 6 CANARY'}}));
++  const scenarios=[
++   {anonymous:false,office:[],permissions:['applications.review','applicants.identify'],submitted:false,revoked:false},
++   {anonymous:false,office:['PRESIDENT'],permissions:['applications.review','applicants.identify'],submitted:false,revoked:false},
++   {anonymous:false,office:[],permissions:['applications.review','applicants.identify'],submitted:true,revoked:false},
++   {anonymous:false,office:['PRESIDENT'],permissions:['applications.review','applicants.identify'],submitted:true,revoked:true},
++   {anonymous:true,office:[],permissions:['applications.review'],submitted:true,revoked:false},
++  ];
++  let published=false;
++  for(const s of scenarios){
++   await db.clubMember.update({where:{id:member.id},data:{isOwner:false,accessRole:'MEMBER',permissions:s.permissions,interviewOffices:s.office}});
++   await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:s.anonymous}});
++   if(s.submitted && !published){await db.evaluation.update({where:{id:reviews[0].id},data:{submittedAt:new Date()}});published=true}
++   await db.interviewPanelAssignment.update({where:{id:assignments[0].id},data:{revokedAt:s.revoked?new Date():null}});
++   const canonical=project(await read('pipeline'));assert.deepEqual(await read('pipelineList'),canonical);
++   const target=canonical.applications.find(a=>a.id===app.id);
++   if(!s.submitted || s.anonymous){assert.equal(target.roundScore,null);assert.deepEqual(target.evaluations,[])}
++   else assert.equal(target.roundScore.average,8);
++   const queries=[{},...['name','round','year','gpa','sat','act','status','score'].map(sort=>({sort,descending:true})),{rating:7},{review:'mine'},{review:'unreviewed'},{query:'Audit Student 099'},{major:'Economics'},{year:canonical.applications[0].student.studentProfile.academicYear},{query:'PRIVATE PHASE 6 CANARY'}];
++   for(const query of queries){const page=await read('pipelinePage',query);assert.deepEqual(page,pagePipeline(canonical,query,member.id,f.userId,page.page.scope));assert.deepEqual(await read('pipelineSelection',query),completePipelineSelection(canonical,query,member.id,f.userId))}
++  }
++ }finally{
++  // Published reviews are immutable history. Retain them until fixture teardown.
++  await db.interviewPanelAssignment.updateMany({where:{id:{in:assignments.map(a=>a.id)}},data:{revokedAt:new Date()}});
++  await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:round.anonymousReview}});
++  await db.clubMember.update({where:{id:member.id},data:{isOwner:member.isOwner,accessRole:member.accessRole,permissions:member.permissions,interviewOffices:member.interviewOffices}});
++  await db.clubMember.update({where:{id:backup.id},data:{isOwner:backup.isOwner,accessRole:backup.accessRole}});await db.$disconnect();
++ }
++});

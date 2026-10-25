@@ -1,0 +1,31 @@
+✔ CRM identification-only reader retrieves the exact photo returned by canonical CRM (571.786875ms)
+✔ CRM photo denies unrelated application, foreign club and draft application (174.688792ms)
+✔ CRM photo denies missing identification permission, revoked membership and anonymous rounds (288.835042ms)
+✔ ordinary reviewer photo context still requires explicitly enabled round photo (185.715459ms)
+✔ photo proxy retains unauthenticated denial and owner access (169.003542ms)
+✔ CRM context rejects conflicting scopes and mismatched stored photo paths (144.575875ms)
+✔ CRM photo uses one narrow read, never the pipeline, and denies inactive membership and disabled actor (140.052959ms)
+✔ evaluation capability follows current panel assignment, anonymous review and self-review rules (144.887833ms)
+✔ pipeline failure diagnostics identify the failing phase without serializing private exception content (159.684541ms)
+✔ getClubPipeline repeats authorization and masks anonymous/self/foreign rows (146.759958ms)
+✔ getClubPipelineList repeats authorization and masks anonymous/self/foreign rows (167.7885ms)
+✔ getClubPipelinePage repeats authorization and masks anonymous/self/foreign rows (195.048ms)
+✔ summary database allowlist excludes detail/offer/member content and reads only submitted reviews (166.81575ms)
+✔ page cursors bind the freshly authorized projection and selection reads contain no identities (155.680542ms)
+✔ narrow database summaries match canonical full privacy across viewer, profile and review states (189.355667ms)
+✔ summary scores preserve submission barrier, self exclusion, inactive assignments and historical review visibility (164.249875ms)
+✔ pipeline list allowlist preserves filtering/ordering fields and excludes all detail content (1.870625ms)
+✔ anonymous list runs after canonical masking and never restores identity or withheld fields (72.692042ms)
+✔ server pages bound rows and preserve all matches, facets and complete selections beyond 100 (14.588125ms)
+✔ all academic/review/decision filters apply globally before paging; totals remain global (1.279542ms)
+✔ anonymous identity/major and hidden scores cannot affect search, facets, ordering or review filters (40.949041ms)
+✔ every sort has deterministic ID ties, missing-last semantics and reversible page navigation (7.825083ms)
+✔ cursor positions cannot cross selection scope; lost anchors reset safely and at-cursors locate any matching page (1.485958ms)
+ℹ tests 23
+ℹ suites 0
+ℹ pass 23
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3338.939584

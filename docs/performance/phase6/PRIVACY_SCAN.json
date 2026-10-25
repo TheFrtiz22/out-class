@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "knownFixtureValuesChecked": 27,
+  "matchedFiles": [],
+  "includes": "Private fixture/config JSON values matching credentials, email and actor/club identifiers; no values exported.",
+  "logNormalizationFiles": 23,
+  "finalCandidateSourceFilesVerified": 908
+}

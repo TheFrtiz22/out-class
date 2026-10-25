@@ -2,7 +2,10 @@
 // Framework cookies/redirects and support-session resolution are adapted; Auth,
 // session revocation SQL, account reads, permission gates and Prisma queries are real.
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os');
-const assert=require('node:assert/strict'),ts=require('typescript');
+const assert=require('node:assert/strict'),ts=require('typescript'),{execFileSync}=require('node:child_process');
+const sourceRef=process.argv.find(a=>a.startsWith('--source-ref='))?.slice(13);
+if(sourceRef){assert.match(sourceRef,/^[a-f0-9]{40}$/);execFileSync('git',['merge-base','--is-ancestor',sourceRef,'HEAD']);}
+function sourceFile(file){return sourceRef?execFileSync('git',['show',sourceRef+':'+path.relative(process.cwd(),file)],{encoding:'utf8',maxBuffer:10000000}):fs.readFileSync(file,'utf8');}
 const {performance}=require('node:perf_hooks');
 const {PrismaClient}=require('@prisma/client');
 const {Actor,readConfig}=require('../tests/helpers/onboarding-e2e.cjs');
@@ -25,7 +28,7 @@ async function main(){
  function load(file){
   file=path.resolve(file);if(file===path.resolve('utils/prisma.ts'))return mocks['@/utils/prisma'];if(cache[file])return cache[file].exports;
   const mod={exports:{}};cache[file]=mod;
-  const compiled=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText;
+  const compiled=ts.transpileModule(sourceFile(file),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText;
   new Function('require','module','exports',compiled)(name=>{if(Object.hasOwn(mocks,name))return mocks[name];if(name==='server-only')return{};if(name.startsWith('@/')||name.startsWith('.')){let target=name.startsWith('@/')?path.resolve(name.slice(2)):path.resolve(path.dirname(file),name);for(const suffix of ['','.ts','.tsx','/index.ts'])if(fs.existsSync(target+suffix)&&fs.statSync(target+suffix).isFile())return load(target+suffix);throw Error('Missing local dependency '+name);}return require(name);},mod,mod.exports);
   return mod.exports;
  }
@@ -47,8 +50,8 @@ async function main(){
    }catch(e){results.push({name,file,fn,unavailable:e.name+': '+String(e.message).split('\n').filter(Boolean).at(-1)});console.log(name+': unavailable');}
   }
   const output=process.argv.includes('--pipeline-study')?path.resolve(process.argv.find(a=>a.startsWith('--out='))?.slice(6)||''):path.resolve('docs/performance/evidence/loader-samples.json');
-  if(process.argv.includes('--pipeline-study')){assert.ok(['phase3','phase4','phase5'].some(phase=>output.startsWith(path.resolve('docs/performance',phase)+path.sep)));assert.ok(!fs.existsSync(output));assert.ok(results.every(r=>r.samples?.length===20),'Every planned loader sample is required');}
-  fs.mkdirSync(path.dirname(output),{recursive:true});fs.writeFileSync(output,JSON.stringify({generatedAt:new Date().toISOString(),environment:'original TypeScript loaders, real local Auth/PostgreSQL; Next cookie context adapted; outside RSC cache dispatcher',limitations:['Not Next HTTP latency or production timing.','Provider durations measure headers, not body consumption.','Prisma event duration is engine-reported integer milliseconds, not application phase attribution.','No support-session/demo behavior profiled.'],results},null,2));
+  if(process.argv.includes('--pipeline-study')){assert.ok(['phase3','phase4','phase5','phase6'].some(phase=>output.startsWith(path.resolve('docs/performance',phase)+path.sep)));assert.ok(!fs.existsSync(output));assert.ok(results.every(r=>r.samples?.length===20),'Every planned loader sample is required');}
+  fs.mkdirSync(path.dirname(output),{recursive:true});fs.writeFileSync(output,JSON.stringify({generatedAt:new Date().toISOString(),sourceRef:sourceRef||'working-tree',environment:'original TypeScript loaders, real local Auth/PostgreSQL; Next cookie context adapted; outside RSC cache dispatcher',limitations:['Not Next HTTP latency or production timing.','Provider durations measure headers, not body consumption.','Prisma event duration is engine-reported integer milliseconds, not application phase attribution.','No support-session/demo behavior profiled.'],results},null,2));
  }finally{global.fetch=originalFetch;await db.$disconnect();}
 }
 if(require.main===module)main().catch(e=>{console.error(e.name);process.exitCode=1;});

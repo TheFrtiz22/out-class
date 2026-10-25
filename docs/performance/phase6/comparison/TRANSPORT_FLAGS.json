@@ -1,0 +1,317 @@
+{
+  "primaryFlagCount": 22,
+  "interactionFlagCount": 0,
+  "counts": {
+    "timed": {
+      "B": {
+        "measure": 10,
+        "warmup": 2
+      },
+      "A": {
+        "measure": 6,
+        "warmup": 4
+      }
+    },
+    "source": {
+      "B": {
+        "measure": 0,
+        "warmup": 0
+      },
+      "A": {
+        "measure": 0,
+        "warmup": 0
+      }
+    }
+  },
+  "allPrimaryFlagsHttp200": true,
+  "allPrimaryFlagsHavePositiveCapturedBytes": true,
+  "flags": [
+    {
+      "block": "size-100-pair-1-1-B-warmup",
+      "variant": "B",
+      "phase": "warmup",
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "scope": "timed",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "encodedBodyBytes": 81,
+      "failedOutcome": false
+    },
+    {
+      "block": "size-100-pair-1-1-B-measure",
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "index": 1,
+      "scope": "timed",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "encodedBodyBytes": 81,
+      "failedOutcome": false
+    },
+    {
+      "block": "size-100-pair-1-1-B-measure",
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 3,
+      "scope": "timed",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "encodedBodyBytes": 81,
+      "failedOutcome": false
+    },
+    {
+      "block": "size-100-pair-1-1-B-measure",
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 4,
+      "scope": "timed",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "encodedBodyBytes": 81,
+      "failedOutcome": false
+    },
+    {
+      "block": "size-100-pair-1-2-A-warmup",
+      "variant": "A",
+      "phase": "warmup",
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "scope": "timed",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "encodedBodyBytes": 81,
+      "failedOutcome": false
+    },
+    {
+      "block": "size-100-pair-1-2-A-measure",
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "scope": "timed",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "encodedBodyBytes": 81,
+      "failedOutcome": false
+    },
+    {
+      "block": "size-100-pair-1-2-A-measure",
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "scope": "timed",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "encodedBodyBytes": 86,
+      "failedOutcome": false
+    },
+    {
+      "block": "size-100-pair-2-1-A-warmup",
+      "variant": "A",
+      "phase": "warmup",
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "scope": "timed",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "encodedBodyBytes": 81,
+      "failedOutcome": false
+    },
+    {
+      "block": "size-100-pair-2-1-A-measure",
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "index": 1,
+      "scope": "timed",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "encodedBodyBytes": 81,
+      "failedOutcome": false
+    },
+    {
+      "block": "size-100-pair-2-2-B-measure",
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "scope": "timed",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "encodedBodyBytes": 81,
+      "failedOutcome": false
+    },
+    {
+      "block": "size-100-pair-2-2-B-measure",
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 4,
+      "scope": "timed",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "encodedBodyBytes": 81,
+      "failedOutcome": false
+    },
+    {
+      "block": "size-1000-pair-1-1-B-measure",
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 1,
+      "scope": "timed",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "encodedBodyBytes": 81,
+      "failedOutcome": false
+    },
+    {
+      "block": "size-1000-pair-1-2-A-measure",
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "index": 4,
+      "scope": "timed",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "encodedBodyBytes": 81,
+      "failedOutcome": false
+    },
+    {
+      "block": "size-1000-pair-2-1-A-measure",
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "scope": "timed",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "encodedBodyBytes": 81,
+      "failedOutcome": false
+    },
+    {
+      "block": "size-1000-pair-2-2-B-measure",
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "scope": "timed",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "encodedBodyBytes": 86,
+      "failedOutcome": false
+    },
+    {
+      "block": "size-1000-pair-2-2-B-measure",
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 4,
+      "scope": "timed",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "encodedBodyBytes": 81,
+      "failedOutcome": false
+    },
+    {
+      "block": "size-5000-pair-1-1-B-warmup",
+      "variant": "B",
+      "phase": "warmup",
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "scope": "timed",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "encodedBodyBytes": 81,
+      "failedOutcome": false
+    },
+    {
+      "block": "size-5000-pair-1-1-B-measure",
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "index": 3,
+      "scope": "timed",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "encodedBodyBytes": 81,
+      "failedOutcome": false
+    },
+    {
+      "block": "size-5000-pair-2-1-A-warmup",
+      "variant": "A",
+      "phase": "warmup",
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "scope": "timed",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "encodedBodyBytes": 81,
+      "failedOutcome": false
+    },
+    {
+      "block": "size-5000-pair-2-1-A-warmup",
+      "variant": "A",
+      "phase": "warmup",
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "scope": "timed",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "encodedBodyBytes": 81,
+      "failedOutcome": false
+    },
+    {
+      "block": "size-5000-pair-2-1-A-measure",
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "scope": "timed",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "encodedBodyBytes": 86,
+      "failedOutcome": false
+    },
+    {
+      "block": "size-5000-pair-2-2-B-measure",
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 3,
+      "scope": "timed",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "encodedBodyBytes": 81,
+      "failedOutcome": false
+    }
+  ],
+  "interactionFlags": []
+}

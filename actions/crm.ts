@@ -1,7 +1,8 @@
 "use server";
 import type { Prisma } from "@prisma/client";
 import { createHash } from "node:crypto";
-import { pipelineListProjection } from "@/lib/pipeline-list";
+import { pipelineSummarySelect, pipelineSummaryProjection } from "@/lib/pipeline-summary";
+import { applicationReviewVisibility } from "@/lib/application-review-visibility";
 import { pagePipeline, completePipelineSelection, pipelinePageQuery, pipelineSelectionKey, type PipelinePageQuery } from "@/lib/pipeline-page";
 import {decisionPublicationGuard} from "@/lib/decision-publication-guard";
 import { clubWriteTransaction } from "@/utils/club-write-transaction";
@@ -19,12 +20,10 @@ import {
   validateAnonymousText,
 } from "@/lib/anonymous-review";
 import { hasPermission } from "@/lib/permissions";
-import { prisma } from "@/utils/prisma";
+import { prisma, type AppTransactionClient } from "@/utils/prisma";
 import { requireClubPermission } from "@/utils/auth";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { interviewCapabilities } from "@/lib/interview-access";
-import { submittedScoreSummary } from "@/lib/interview-review-summary";
 
 const pipelineFilter = z.object({ applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), gender: z.enum(genderValues).optional(), genderCounts: z.boolean().optional() }).strict();
 export async function getClubPipeline(clubId: string, input: z.infer<typeof pipelineFilter> = {}) {
@@ -33,25 +32,56 @@ export async function getClubPipeline(clubId: string, input: z.infer<typeof pipe
 
 /** Same live authority and privacy projection; detail collections are read only on opening. */
 export async function getClubPipelineList(clubId: string, input: z.infer<typeof pipelineFilter> = {}) {
-  return pipelineListProjection((await readClubPipeline(clubId, input, true)).pipeline);
+  return (await readClubPipelineSummaries(clubId, input)).pipeline;
 }
 
 export async function getClubPipelinePage(clubId: string, input: PipelinePageQuery = {}) {
   const query = pipelinePageQuery.parse(input);
-  const { pipeline, membership } = await readClubPipeline(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: query.genderCounts }, true);
+  const { pipeline, membership } = await readClubPipelineSummaries(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: query.genderCounts });
   // Scope binding only. The cursor never bypasses the live guard or projection.
   const scope = createHash("sha256").update(JSON.stringify([clubId, membership, pipeline.rounds, pipelineSelectionKey(query)])).digest("hex");
-  return pagePipeline(pipelineListProjection(pipeline), query, membership.id, membership.userId, scope);
+  return pagePipeline(pipeline, query, membership.id, membership.userId, scope);
 }
 
 /** Explicit whole-selection read for quick review and voting, without identities. */
 export async function getClubPipelineSelection(clubId: string, input: PipelinePageQuery = {}) {
   const query = pipelinePageQuery.omit({ cursor: true }).parse(input);
-  const { pipeline, membership } = await readClubPipeline(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: false }, true);
-  return completePipelineSelection(pipelineListProjection(pipeline), query, membership.id, membership.userId);
+  const { pipeline, membership } = await readClubPipelineSummaries(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: false });
+  return completePipelineSelection(pipeline, query, membership.id, membership.userId);
 }
 
-async function readClubPipeline(clubId: string, input: z.infer<typeof pipelineFilter>, listOnly = false) {
+async function readClubPipeline(clubId: string, input: z.infer<typeof pipelineFilter>) {
+  return readPipeline(clubId, input, async (tx, where, membership) => {
+    const applications = await tx.application.findMany({ where, include: {
+      recruitmentOffer: { select: { status: true, expiresAt: true } },
+      round: true,
+      evaluations: { omit: { notes: true, applicantQuestions: true } },
+      interviewAssignments: { where: { revokedAt: null }, include: { member: true } },
+      student: { include: { studentProfile: { include: { experiences: true } } } },
+      answers: { include: { question: true } },
+      bookings: { include: { slot: true } },
+    } });
+    return applications.map(raw => {
+        const { caps, ownSubmitted, assigned, roundScore, evaluations } = applicationReviewVisibility(raw, membership);
+        const safe = { ...raw }; delete (safe as Partial<typeof raw>).interviewAssignments;
+        const app = { ...safe, evaluations: evaluations.map(e => ({ ...e, notes: null, applicantQuestions: null })) };
+        const projected = !hasPermission(membership, "applicants.identify") || app.round.anonymousReview ? anonymousApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay)) : identifiedApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay), "crm");
+        const canEvaluate = !ownSubmitted && raw.studentId !== membership.userId && (raw.round.anonymousReview ? hasPermission(membership, "applications.review") : caps.participate && assigned);
+        return { ...projected, canEvaluate, publicationGuard:decisionPublicationGuard(raw), recruitmentOffer: raw.recruitmentOffer ?? null, roundScore };
+    });
+  });
+}
+
+async function readClubPipelineSummaries(clubId: string, input: z.infer<typeof pipelineFilter>) {
+  return readPipeline(clubId, input, async (tx, where, membership) => {
+    const applications = await tx.application.findMany({ where, select: pipelineSummarySelect });
+    return applications.map(app => pipelineSummaryProjection(app, membership));
+  });
+}
+
+type PipelineMembership = Awaited<ReturnType<typeof requireClubPermission>>["membership"];
+async function readPipeline<T>(clubId: string, input: z.infer<typeof pipelineFilter>,
+  load: (tx: AppTransactionClient, where: Prisma.ApplicationWhereInput, membership: PipelineMembership) => Promise<T[]>) {
   const filter = pipelineFilter.parse(input);
   // Only members can view the pipeline
   const { membership } = await requireClubPermission(clubId, [], { allowSuspendedRead: true });
@@ -83,38 +113,7 @@ async function readClubPipeline(clubId: string, input: z.infer<typeof pipelineFi
       ...where,
       ...(filter.gender ? { student: { studentProfile: { gender: filter.gender } } } : {}),
     };
-    const commonInclude = {
-      recruitmentOffer: { select: { status: true, expiresAt: true } },
-      round: true,
-      evaluations: { omit: { notes: true, applicantQuestions: true } },
-      interviewAssignments: { where: { revokedAt: null }, include: { member: true } },
-    } satisfies Prisma.ApplicationInclude;
-    const applications = listOnly
-      ? (await tx.application.findMany({ where: applicationWhere,
-          omit: { anonymousReviewText: true },
-          include: {
-          ...commonInclude, student: { include: { studentProfile: { omit: {
-            bio: true, linkedinUrl: true, resumeUrl: true, headshotUrl: true,
-            scholarStatus: true, highSchool: true, pronouns: true,
-          } } } },
-        } })).map(raw => ({
-          ...raw, anonymousReviewText: null, answers: [], bookings: [],
-          // Internal normalization for the shared privacy projector. These
-          // relations are omitted from SQL and from the list wire contract.
-          student: { ...raw.student, studentProfile: raw.student.studentProfile ? {
-            ...raw.student.studentProfile, experiences: [],
-            // Inert detail values are internal to the canonical privacy projector;
-            // the explicit list DTO cannot expose or consume them.
-            bio: null, linkedinUrl: null, resumeUrl: null, headshotUrl: null,
-            scholarStatus: null, highSchool: null, pronouns: null,
-          } : null },
-        }))
-      : await tx.application.findMany({ where: applicationWhere, include: {
-          ...commonInclude,
-          student: { include: { studentProfile: { include: { experiences: true } } } },
-          answers: { include: { question: true } },
-          bookings: { include: { slot: true } },
-        } });
+    const applications = await load(tx, applicationWhere, membership);
     phase = "counts";
     const counts = filter.genderCounts ? await tx.application.groupBy({ by: ["studentId"], where }) : [];
     const profiles = filter.genderCounts ? await tx.studentProfile.groupBy({ by: ["gender"], where: { userId: { in: counts.map(c => c.studentId) } }, _count: true }) : [];
@@ -123,19 +122,7 @@ async function readClubPipeline(clubId: string, input: z.infer<typeof pipelineFi
     const pipeline = {
       rounds: rounds.map(r => ({ id: r.id, name: r.name, order: r.order, type: r.type, anonymousReview: r.anonymousReview, genderVisible: hasPermission(membership, "applications.review") && genderVisibility(r.applicantDisplay) })),
       genderCounts: filter.genderCounts ? genderValues.map(gender => ({ gender, count: profiles.find(p => p.gender === gender)?._count ?? 0 })) : null,
-      applications: applications.map(raw => {
-        const ownSubmitted = raw.evaluations.some(e => e.interviewerId === membership.id && e.roundId === raw.roundId && e.submittedAt);
-        const assignments = raw.interviewAssignments || [];
-        const assigned = assignments.some(a => a.roundId === raw.roundId && a.memberId === membership.id);
-        const caps = interviewCapabilities(membership);
-        const canSeeRound = raw.studentId !== membership.userId && ((caps.readClosing && !assigned) || caps.participate && assigned && ownSubmitted);
-        const roundScore = canSeeRound ? submittedScoreSummary(raw.evaluations.filter(e => e.roundId === raw.roundId), assignments.filter(a => a.roundId === raw.roundId && interviewCapabilities(a.member).participate).map(a => a.memberId)) : null;
-        const safe = { ...raw }; delete (safe as Partial<typeof raw>).interviewAssignments;
-        const app = { ...safe, evaluations: raw.evaluations.filter(e => raw.studentId !== membership.userId && e.submittedAt && (caps.participate && e.interviewerId === membership.id && assignments.some(a => a.memberId === membership.id && a.roundId === e.roundId) || canSeeRound && (e.roundId === raw.roundId || caps.readClosing))).map(e => ({ ...e, notes: null, applicantQuestions: null })) };
-        const projected = !hasPermission(membership, "applicants.identify") || app.round.anonymousReview ? anonymousApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay)) : identifiedApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay), "crm");
-        const canEvaluate = !ownSubmitted && raw.studentId !== membership.userId && (raw.round.anonymousReview ? hasPermission(membership, "applications.review") : caps.participate && assigned);
-        return { ...projected, canEvaluate, publicationGuard:decisionPublicationGuard(raw), recruitmentOffer: raw.recruitmentOffer ?? null, roundScore };
-      }),
+      applications,
     };
     return { pipeline, membership };
   }, { isolationLevel: "RepeatableRead" });

@@ -1,0 +1,51 @@
+{
+  "baseline": "3e3b81c040671c32c188215d04ab780560e97ed0",
+  "scope": "Narrow authorized applicant database hydration without changing page/selection semantics, remote identity, live session or mutation authority.",
+  "knownLimit": "Complete privacy-aware global filtering/order/counts remains O(N). Measure narrowing database fields/relations, not bounded SQL pagination.",
+  "measurement": {
+    "cohorts": [
+      100,
+      1000,
+      5000
+    ],
+    "blocks": [
+      "BA",
+      "AB"
+    ],
+    "samplesPerBlockPathCondition": 5,
+    "warmupsPerBlockPathCondition": 1,
+    "paths": [
+      "applicants",
+      "applicantDetail"
+    ],
+    "conditions": [
+      "cold",
+      "warm"
+    ],
+    "powerControl": "Temporary local caffeinate, verify no Sleep within accepted collection. Exclude whole collection if suspended; retain all rows."
+  },
+  "security": "Live identity/session/account/membership/capabilities on every GET, same no-store/Cookie handling and Demo isolation; mutations and voting snapshots unchanged.",
+  "acceptance": [
+    "Global filtered totals and facets; stable IDs break sort ties",
+    "Cursor cannot authorize or cross a selection/club/actor scope; every request reauthorizes",
+    "Full quick-review and voting selection is explicit and complete, never limited to current page",
+    "Rapid filters/navigation fence stale results; preserve drafts and keyboard focus",
+    "No unsupported claim of hosted or multi-client performance"
+  ],
+  "publication": "Local commit only; no push/merge/deployment authorized for this phase.",
+  "additionalInteractions": {
+    "cohorts": [
+      1000,
+      5000
+    ],
+    "paths": [
+      "next-page",
+      "distant-search"
+    ],
+    "condition": "warm",
+    "blocks": "same BA/AB blocks as primary navigation",
+    "warmupsPerBuildBlockPath": 1,
+    "measuredPerBuildBlockPath": 5,
+    "noSyntheticGates": true
+  }
+}

@@ -1,0 +1,94 @@
+
+> my-v0-project@0.1.0 prebuild
+> node scripts/check-release-database.cjs --vercel-production-build && npm run pdf:assets
+
+Release database check applies only to Vercel production builds; skipping in this environment.
+
+> my-v0-project@0.1.0 pdf:assets
+> node scripts/copy-pdfjs-assets.cjs
+
+
+> my-v0-project@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.27
+   - Experiments (use with caution):
+     · serverActions
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 29.3s
+   Linting and checking validity of types ...
+
+./app/platform/login/page.tsx
+83:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/app-shell.tsx
+140:6  Warning: React Hook useEffect has missing dependencies: 'demo' and 'router'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/club-logo.tsx
+61:7  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/club-workspace.tsx
+131:6  Warning: React Hook useEffect has a missing dependency: 'selectClub'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/clubs/marketing-profile.tsx
+18:179  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+36:511  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+39:241  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/clubs/profile-image-input.tsx
+39:168  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/qr/meeting-check-in.tsx
+40:6  Warning: React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/shell/navigation-search.tsx
+89:6  Warning: React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/views/application-tracker-view.tsx
+124:6  Warning: React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/views/club-management-portal-view.tsx
+148:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/views/interview-workspace-view.tsx
+32:6  Warning: React Hook useEffect has missing dependencies: 'activeClubId', 'scoped', and 'setClubId'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+196:6  Warning: React Hook useEffect has missing dependencies: 'leaderFocus?.applicantId' and 'recoveryKey'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+236:6  Warning: React Hook useEffect has a missing dependency: 'active'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+242:6  Warning: React Hook useEffect has missing dependencies: 'choose' and 'queue'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/views/leader-dashboard/live-leader-workspace.tsx
+304:6  Warning: React Hook useEffect has missing dependencies: 'decisionsOnly' and 'open'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/views/leader-dashboard-view.tsx
+99:53  Warning: React Hook useMemo has a missing dependency: 'stageName'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/views/unified-student-profile-view.tsx
+59:6  Warning: React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./lib/application-state.tsx
+177:6  Warning: React Hook useEffect has a missing dependency: 'serverApps'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./lib/club-customization.tsx
+22:6  Warning: React Hook useEffect has a missing dependency: 'storageKey'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+26:6  Warning: React Hook useEffect has a missing dependency: 'storageKey'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+Failed to compile.
+
+./actions/crm.ts:116:37
+Type error: Argument of type 'Omit<DynamicClientExtensionThis<TypeMap<InternalArgs & { result: {}; model: {}; query: {}; client: {}; }, {}>, TypeMapCb<PrismaClientOptions>, { result: {}; model: {}; query: {}; client: {}; }>, "$transaction" | ... 3 more ... | "$extends">' is not assignable to parameter of type 'TransactionClient'.
+  The types of 'user.findUnique' are incompatible between these types.
+    Type '<A extends UserFindUniqueArgs<InternalArgs & { result: {}; model: {}; query: {}; client: {}; }>>(args: Exact<A, UserFindUniqueArgs<InternalArgs & { result: {}; model: {}; query: {}; client: {}; }>>) => DynamicModelExtensionFluentApi<...> & PrismaPromise<...>' is not assignable to type '<T extends UserFindUniqueArgs>(args: SelectSubset<T, UserFindUniqueArgs<DefaultArgs>>) => Prisma__UserClient<GetFindResult<$UserPayload<DefaultArgs>, T, PrismaClientOptions> | null, null, DefaultArgs, PrismaClientOptions>'.
+      Types of parameters 'args' and 'args' are incompatible.
+        Type 'SelectSubset<T, UserFindUniqueArgs<DefaultArgs>>' is not assignable to type 'Exact<T, UserFindUniqueArgs<InternalArgs & { result: {}; model: {}; query: {}; client: {}; }>>'.
+          Type 'SelectSubset<T, UserFindUniqueArgs<DefaultArgs>>' is not assignable to type 'T extends Narrowable ? T : never'.
+
+  114 |       ...(filter.gender ? { student: { studentProfile: { gender: filter.gender } } } : {}),
+  115 |     };
+> 116 |     const applications = await load(tx, applicationWhere, membership);
+      |                                     ^
+  117 |     phase = "counts";
+  118 |     const counts = filter.genderCounts ? await tx.application.groupBy({ by: ["studentId"], where }) : [];
+  119 |     const profiles = filter.genderCounts ? await tx.studentProfile.groupBy({ by: ["gender"], where: { userId: { in: counts.map(c => c.studentId) } }, _count: true }) : [];
+Next.js build worker exited with code: 1 and signal: null

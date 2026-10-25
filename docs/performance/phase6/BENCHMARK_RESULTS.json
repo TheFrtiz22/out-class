@@ -1,0 +1,25 @@
+{
+  "baseline": "3e3b81c040671c32c188215d04ab780560e97ed0",
+  "buildIds": {
+    "baseline": "FRwn8Sm2LWVT0ljRgVk1x",
+    "candidate": "-QrsvxQPKeDo79kHAoieb"
+  },
+  "accepted": {
+    "browserOutcomes": 384,
+    "measured": 320,
+    "warmups": 64,
+    "failedOutcomes": 0,
+    "httpErrors": 0,
+    "pageErrors": 0,
+    "noSleepEvents": true,
+    "primary": "comparison/COMPARISON.json",
+    "powerAudit": "comparison/POWER_AUDIT.json",
+    "rawProtocol": "comparison/PROTOCOL.json",
+    "transportFlags": "comparison/TRANSPORT_FLAGS.json",
+    "http200AbortFlags": 22,
+    "rawLoaderSamples": 600
+  },
+  "excludedCollections": [],
+  "interpretation": "Matched Phase 5/6 local comparison; n=10 per browser group, nearest-rank p95 is maximum. Cold browser target visit, not deployment cold start. Database/ORM hydration narrowed, metadata rows remain O(N).",
+  "recommendation": "Keep narrower projection, hold accumulated pagination publication; compare full-summary versus paged transport before next release decision."
+}

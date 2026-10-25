@@ -1,0 +1,43 @@
+{
+  "ordinary": {
+    "total": 1431,
+    "passed": 1381,
+    "failed": 0,
+    "skipped": 50,
+    "gatedSkips": "Environment-gated existing suites and Phase 6 real HTTP test; all selected live suites run separately without skips."
+  },
+  "liveAuthNavigationSettings": {
+    "total": 51,
+    "passed": 51,
+    "failed": 0,
+    "skipped": 0
+  },
+  "baselineProvisioning": {
+    "passed": 38,
+    "failed": 0,
+    "skipped": 0
+  },
+  "nativeConcurrency": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0
+  },
+  "migrations": {
+    "freshAndLegacy": 57,
+    "rlsTables": 78,
+    "browserRolesDenied": true
+  },
+  "lint": {
+    "errors": 0,
+    "existingWarnings": 22
+  },
+  "typecheck": "passed after using the existing AppTransactionClient type for the instrumented client",
+  "productionBuild": "passed",
+  "candidateBuildId": "-QrsvxQPKeDo79kHAoieb",
+  "regressions": {
+    "canonicalSummaryMatrix": 96,
+    "freshLivePrivacyAssignmentAndSubmissionScenarios": 5,
+    "sorts": 8
+  },
+  "developmentFailures": "Initial typecheck/build used the base Prisma transaction type instead of the app extension type; corrected without changing runtime behavior. New parity fixture attempted to update/delete immutable published review history; corrected to publish once, retain history until teardown and restore membership/round state. Final 51 live tests pass on the same frozen app build."
+}

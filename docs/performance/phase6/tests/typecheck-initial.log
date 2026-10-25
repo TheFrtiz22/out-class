@@ -1,0 +1,10 @@
+
+> my-v0-project@0.1.0 typecheck
+> tsc --noEmit
+
+actions/crm.ts(117,37): error TS2345: Argument of type 'Omit<DynamicClientExtensionThis<TypeMap<InternalArgs & { result: {}; model: {}; query: {}; client: {}; }, {}>, TypeMapCb<PrismaClientOptions>, { result: {}; model: {}; query: {}; client: {}; }>, "$connect" | ... 3 more ... | "$extends">' is not assignable to parameter of type 'TransactionClient'.
+  The types of 'studentProfile.findUnique' are incompatible between these types.
+    Type '<A extends StudentProfileFindUniqueArgs<InternalArgs & { result: {}; model: {}; query: {}; client: {}; }>>(args: Exact<A, StudentProfileFindUniqueArgs<InternalArgs & { ...; }>>) => DynamicModelExtensionFluentApi<...> & PrismaPromise<...>' is not assignable to type '<T extends StudentProfileFindUniqueArgs>(args: SelectSubset<T, StudentProfileFindUniqueArgs<DefaultArgs>>) => Prisma__StudentProfileClient<GetFindResult<...> | null, null, DefaultArgs, PrismaClientOptions>'.
+      Types of parameters 'args' and 'args' are incompatible.
+        Type 'SelectSubset<T, StudentProfileFindUniqueArgs<DefaultArgs>>' is not assignable to type 'Exact<T, StudentProfileFindUniqueArgs<InternalArgs & { result: {}; model: {}; query: {}; client: {}; }>>'.
+          Type 'SelectSubset<T, StudentProfileFindUniqueArgs<DefaultArgs>>' is not assignable to type 'T extends Narrowable ? T : never'.
