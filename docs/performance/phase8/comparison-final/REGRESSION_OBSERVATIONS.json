@@ -1,0 +1,149 @@
+{
+  "interpretation": "Maximum rows retained without replacement. Initial list serialization/transfer grows with the complete summary; unchanged detail endpoints have local timing variation, not a demonstrated optimization. Correlation of individual server spans does not establish a causal host diagnosis.",
+  "peaks": [
+    {
+      "file": "size-100-pair-2-2-B-measure/browser-samples.json",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 2,
+      "variant": "B",
+      "phase": "measure",
+      "meaningfulMs": 100.69999998807907,
+      "readTtfbMs": 50.678999999999995,
+      "serverTiming": "identity;dur=41.34, database;dur=5.85, live_session;dur=0.49, transaction_acquire;dur=0.43, transaction;dur=5.26, compression;dur=0.13, serialization;dur=0.28, total;dur=48.91",
+      "readBytes": 1863
+    },
+    {
+      "file": "size-100-pair-1-2-A-measure/browser-samples.json",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 4,
+      "variant": "A",
+      "phase": "measure",
+      "meaningfulMs": 227,
+      "readTtfbMs": 144.543,
+      "serverTiming": "identity;dur=86.93, database;dur=33.11, live_session;dur=2.68, transaction_acquire;dur=2.21, transaction;dur=27.88, compression;dur=0.49, serialization;dur=0.88, total;dur=128.31",
+      "readBytes": 1863
+    },
+    {
+      "file": "size-1000-pair-1-1-B-measure/browser-samples.json",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 2,
+      "variant": "B",
+      "phase": "measure",
+      "meaningfulMs": 172.79999999701977,
+      "readTtfbMs": 113.274,
+      "serverTiming": "identity;dur=78.61, database;dur=24.15, live_session;dur=1.67, transaction_acquire;dur=1.52, transaction;dur=22.25, compression;dur=0.65, serialization;dur=1.14, total;dur=110.44",
+      "readBytes": 1880
+    },
+    {
+      "file": "size-1000-pair-1-2-A-measure/browser-samples.json",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 2,
+      "variant": "A",
+      "phase": "measure",
+      "meaningfulMs": 113.5,
+      "readTtfbMs": 57.817,
+      "serverTiming": "identity;dur=48.22, database;dur=5.46, live_session;dur=0.59, transaction_acquire;dur=0.42, transaction;dur=4.78, compression;dur=0.14, serialization;dur=0.27, total;dur=55.59",
+      "readBytes": 1880
+    },
+    {
+      "file": "size-5000-pair-1-1-B-measure/browser-samples.json",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 0,
+      "variant": "B",
+      "phase": "measure",
+      "meaningfulMs": 297.09999999403954,
+      "readTtfbMs": 252.072,
+      "serverTiming": "identity;dur=20.91, database;dur=152.67, live_session;dur=0.52, transaction_acquire;dur=0.38, transaction;dur=178.58, compression;dur=17.35, serialization;dur=49.19, total;dur=250.47",
+      "readBytes": 353488
+    },
+    {
+      "file": "size-5000-pair-1-2-A-measure/browser-samples.json",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 3,
+      "variant": "A",
+      "phase": "measure",
+      "meaningfulMs": 341.70000000298023,
+      "readTtfbMs": 307.47700000000003,
+      "serverTiming": "identity;dur=62.17, database;dur=187.95, live_session;dur=1.35, transaction_acquire;dur=1.20, transaction;dur=235.74, compression;dur=0.23, serialization;dur=0.56, total;dur=304.40",
+      "readBytes": 7246
+    },
+    {
+      "file": "size-5000-pair-2-2-B-measure/browser-samples.json",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 0,
+      "variant": "B",
+      "phase": "measure",
+      "meaningfulMs": 391.40000000596046,
+      "readTtfbMs": 351.02000000000004,
+      "serverTiming": "identity;dur=41.50, database;dur=227.91, live_session;dur=0.94, transaction_acquire;dur=0.77, transaction;dur=282.76, compression;dur=7.19, serialization;dur=20.21, total;dur=347.38",
+      "readBytes": 353488
+    },
+    {
+      "file": "size-5000-pair-1-2-A-measure/browser-samples.json",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 0,
+      "variant": "A",
+      "phase": "measure",
+      "meaningfulMs": 438,
+      "readTtfbMs": 398.33,
+      "serverTiming": "identity;dur=66.30, database;dur=281.46, live_session;dur=0.77, transaction_acquire;dur=1.09, transaction;dur=324.30, compression;dur=1.10, serialization;dur=1.46, total;dur=395.44",
+      "readBytes": 7246
+    },
+    {
+      "file": "size-5000-pair-2-2-B-measure/browser-samples.json",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "variant": "B",
+      "phase": "measure",
+      "meaningfulMs": 103,
+      "readTtfbMs": 51.274,
+      "serverTiming": "identity;dur=35.40, database;dur=11.97, live_session;dur=0.68, transaction_acquire;dur=0.46, transaction;dur=11.35, compression;dur=0.13, serialization;dur=0.27, total;dur=49.19",
+      "readBytes": 1868
+    },
+    {
+      "file": "size-5000-pair-2-1-A-measure/browser-samples.json",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 2,
+      "variant": "A",
+      "phase": "measure",
+      "meaningfulMs": 134.09999999403954,
+      "readTtfbMs": 70.527,
+      "serverTiming": "identity;dur=56.69, database;dur=8.34, live_session;dur=1.24, transaction_acquire;dur=0.78, transaction;dur=7.20, compression;dur=0.15, serialization;dur=0.31, total;dur=67.57",
+      "readBytes": 1868
+    },
+    {
+      "file": "size-5000-pair-2-2-B-measure/browser-samples.json",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 3,
+      "variant": "B",
+      "phase": "measure",
+      "meaningfulMs": 172.29999999701977,
+      "readTtfbMs": 106.646,
+      "serverTiming": "identity;dur=57.26, database;dur=41.32, live_session;dur=7.36, transaction_acquire;dur=2.85, transaction;dur=32.04, compression;dur=0.29, serialization;dur=0.53, total;dur=104.16",
+      "readBytes": 1868
+    },
+    {
+      "file": "size-5000-pair-2-1-A-measure/browser-samples.json",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 2,
+      "variant": "A",
+      "phase": "measure",
+      "meaningfulMs": 113.19999998807907,
+      "readTtfbMs": 57.534,
+      "serverTiming": "identity;dur=44.55, database;dur=7.55, live_session;dur=0.72, transaction_acquire;dur=0.43, transaction;dur=7.15, compression;dur=0.17, serialization;dur=0.38, total;dur=54.71",
+      "readBytes": 1868
+    }
+  ]
+}

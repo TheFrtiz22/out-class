@@ -1,0 +1,311 @@
+✔ live board lanes are status-based, exclude drafts, and keep waitlists distinct from closed decisions (1.145333ms)
+✖ List/Kanban toggle preserves the same filtered server data and does not mutate or reload it (308.540709ms)
+✖ drawer status writes send expectedStatus, reject stale outcomes, and refresh canonical offer state (108.567042ms)
+✖ read/review access alone never exposes enabled round moves or decision buttons (105.208541ms)
+✖ evaluation save updates both presentations and explicit round movement reloads anonymous identity (78.684084ms)
+✖ an identified applicant without current panel authority has no review editor or blocking review draft (87.357833ms)
+✔ decision groups use persisted status, exclude drafts, and keep waitlists out of Pending (0.333375ms)
+✖ Decisions reuses expected-status mutations and moves saved outcomes between groups (83.734875ms)
+✖ Decisions preserves stale failures and hides mutation controls from anonymous reviewers (172.662583ms)
+✖ Kanban round moves reject stale data and share the refreshed anonymous projection with List (99.424666ms)
+✖ Kanban decisions use expected status and appear in List after server reload (107.289167ms)
+✖ drawer renders stable-ID review with historical label when current name is Panel (82.704625ms)
+✖ drawer renders stable-ID review with historical label when current name is Review (67.619125ms)
+✖ drawer legacy label compatibility, roundId=null (67.156833ms)
+✖ drawer legacy label compatibility, roundId=undefined (61.068959ms)
+✖ drawer legacy label compatibility, roundId=different-round (60.399833ms)
+✖ moving from the drawer locates the target-round review by stable ID despite an old label (81.29625ms)
+✖ rejected applicants leave active queues and remain in the deliberate retained-history tab (131.123792ms)
+✖ recruitment review comes before filter toggles and is absent from Decisions (136.641833ms)
+✖ quick review saves expected-status decisions and advances only after success (96.43675ms)
+✖ quick review preserves the candidate after a rejected stale write and skips without publishing (190.752417ms)
+✖ review-only users cannot start quick review or move board candidates (93.609ms)
+✖ board drops require an explicit outcome and preserve expected status (127.559167ms)
+✖ decision status stays unchanged until the server acknowledges publication (74.926292ms)
+✖ page reader remains usable after React development effect cleanup and setup replay (74.480792ms)
+✖ a different membership identity resets the page cursor before fresh summaries render (81.039417ms)
+✔ page owners fence stale completions/setters and drain rapid query changes to the latest only (69.77075ms)
+✔ validated initial pages avoid duplication; invalid filters keep controls editable and never dispatch (56.219708ms)
+✔ authority and refresh changes hide all earlier pages; queued disabled scopes never dispatch (44.29025ms)
+✔ an adjacent freshly authorized page is adopted once, while obsolete handoffs cannot replace a newer owner (30.6675ms)
+✔ bounded summary hydration retains exact canonical privacy, facets, locale ordering, filters and cursor behavior (107.681459ms)
+✔ review and score dependencies retain the complete canonical path, including a zero rating threshold (5.02725ms)
+✔ empty pages avoid hydration; scope mismatch and missing planned rows fail closed (1.33225ms)
+✖ all four selected resources start their guarded read alongside code loading and never reuse another visit (62.311042ms)
+✖ late navigation/session/account results cannot reveal a previous projection; retry makes a fresh request (17.570333ms)
+✖ Demo and unresolved Demo initialization never dispatch a live selected-tab request (10.007416ms)
+✖ club, privacy and support authority changes hide content and fence earlier reads (5.811ms)
+ℹ tests 37
+ℹ suites 0
+ℹ pass 9
+ℹ fail 28
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2848.772333
+
+✖ failing tests:
+
+test at tests/live-applicant-views.test.cjs:39:1
+✖ List/Kanban toggle preserves the same filtered server data and does not mutate or reload it (308.540709ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'props')
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:41:26)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at tests/live-applicant-views.test.cjs:48:1
+✖ drawer status writes send expectedStatus, reject stale outcomes, and refresh canonical offer state (108.567042ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'props')
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:49:76)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at tests/live-applicant-views.test.cjs:54:1
+✖ read/review access alone never exposes enabled round moves or decision buttons (105.208541ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'props')
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:55:99)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at tests/live-applicant-views.test.cjs:58:1
+✖ evaluation save updates both presentations and explicit round movement reloads anonymous identity (78.684084ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'props')
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:59:76)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at tests/live-applicant-views.test.cjs:67:1
+✖ an identified applicant without current panel authority has no review editor or blocking review draft (87.357833ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'props')
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:69:13)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at tests/live-applicant-views.test.cjs:88:1
+✖ Decisions reuses expected-status mutations and moves saved outcomes between groups (83.734875ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'props')
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:91:21)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at tests/live-applicant-views.test.cjs:98:1
+✖ Decisions preserves stale failures and hides mutation controls from anonymous reviewers (172.662583ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'props')
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:99:98)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at tests/live-applicant-views.test.cjs:105:1
+✖ Kanban round moves reject stale data and share the refreshed anonymous projection with List (99.424666ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'props')
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:107:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at tests/live-applicant-views.test.cjs:124:1
+✖ Kanban decisions use expected status and appear in List after server reload (107.289167ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'props')
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:126:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at tests/live-applicant-views.test.cjs:136:38
+✖ drawer renders stable-ID review with historical label when current name is Panel (82.704625ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'props')
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:138:57)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at tests/live-applicant-views.test.cjs:136:38
+✖ drawer renders stable-ID review with historical label when current name is Review (67.619125ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'props')
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:138:57)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at tests/live-applicant-views.test.cjs:140:57
+✖ drawer legacy label compatibility, roundId=null (67.156833ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'props')
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:141:178)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at tests/live-applicant-views.test.cjs:140:57
+✖ drawer legacy label compatibility, roundId=undefined (61.068959ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'props')
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:141:178)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at tests/live-applicant-views.test.cjs:140:57
+✖ drawer legacy label compatibility, roundId=different-round (60.399833ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'props')
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:141:178)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at tests/live-applicant-views.test.cjs:144:1
+✖ moving from the drawer locates the target-round review by stable ID despite an old label (81.29625ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'props')
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:145:238)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at tests/live-applicant-views.test.cjs:148:1
+✖ rejected applicants leave active queues and remain in the deliberate retained-history tab (131.123792ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'props')
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:150:184)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at tests/live-applicant-views.test.cjs:153:1
+✖ recruitment review comes before filter toggles and is absent from Decisions (136.641833ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+
+    assert.ok(all.findIndex(n=>n.props?.['aria-label']==='Recruitment review')<all.findIndex(n=>n.props?.['aria-label']==='Applicant view'))
+
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:155:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/live-applicant-views.test.cjs:158:1
+✖ quick review saves expected-status decisions and advances only after success (96.43675ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'props')
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:160:29)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at tests/live-applicant-views.test.cjs:164:1
+✖ quick review preserves the candidate after a rejected stale write and skips without publishing (190.752417ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'props')
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:165:92)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at tests/live-applicant-views.test.cjs:167:1
+✖ review-only users cannot start quick review or move board candidates (93.609ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'props')
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:168:161)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at tests/live-applicant-views.test.cjs:170:1
+✖ board drops require an explicit outcome and preserve expected status (127.559167ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'props')
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:171:86)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at tests/live-applicant-views.test.cjs:176:1
+✖ decision status stays unchanged until the server acknowledges publication (74.926292ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'props')
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:177:75)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at tests/live-applicant-views.test.cjs:183:1
+✖ page reader remains usable after React development effect cleanup and setup replay (74.480792ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+
+    assert.ok(view(tree))
+
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:183:171)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/live-applicant-views.test.cjs:185:1
+✖ a different membership identity resets the page cursor before fresh summaries render (81.039417ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'props')
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:186:244)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at tests/selected-workspace-loader.test.cjs:11:1
+✖ all four selected resources start their guarded read alongside code loading and never reuse another visit (62.311042ms)
+  Error: Cannot find module '@/lib/workspace-read-diagnostics'
+  Require stack:
+  - /Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/selected-workspace-loader.test.cjs
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1591:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1145:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1169:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1196:12)
+      at Module._load (node:internal/modules/cjs/loader:1368:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.require (node:internal/modules/cjs/loader:1701:12)
+      at require (node:internal/modules/helpers:316:16)
+      at /Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/selected-workspace-loader.test.cjs:8:487
+      at eval (eval at setup (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/selected-workspace-loader.test.cjs:8:25), <anonymous>:12:38) {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: [ '/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/selected-workspace-loader.test.cjs' ]
+  }
+
+test at tests/selected-workspace-loader.test.cjs:15:1
+✖ late navigation/session/account results cannot reveal a previous projection; retry makes a fresh request (17.570333ms)
+  Error: Cannot find module '@/lib/workspace-read-diagnostics'
+  Require stack:
+  - /Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/selected-workspace-loader.test.cjs
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1591:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1145:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1169:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1196:12)
+      at Module._load (node:internal/modules/cjs/loader:1368:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.require (node:internal/modules/cjs/loader:1701:12)
+      at require (node:internal/modules/helpers:316:16)
+      at /Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/selected-workspace-loader.test.cjs:8:487
+      at eval (eval at setup (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/selected-workspace-loader.test.cjs:8:25), <anonymous>:12:38) {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: [ '/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/selected-workspace-loader.test.cjs' ]
+  }
+
+test at tests/selected-workspace-loader.test.cjs:21:1
+✖ Demo and unresolved Demo initialization never dispatch a live selected-tab request (10.007416ms)
+  Error: Cannot find module '@/lib/workspace-read-diagnostics'
+  Require stack:
+  - /Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/selected-workspace-loader.test.cjs
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1591:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1145:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1169:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1196:12)
+      at Module._load (node:internal/modules/cjs/loader:1368:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.require (node:internal/modules/cjs/loader:1701:12)
+      at require (node:internal/modules/helpers:316:16)
+      at /Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/selected-workspace-loader.test.cjs:8:487
+      at eval (eval at setup (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/selected-workspace-loader.test.cjs:8:25), <anonymous>:12:38) {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: [ '/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/selected-workspace-loader.test.cjs' ]
+  }
+
+test at tests/selected-workspace-loader.test.cjs:25:1
+✖ club, privacy and support authority changes hide content and fence earlier reads (5.811ms)
+  Error: Cannot find module '@/lib/workspace-read-diagnostics'
+  Require stack:
+  - /Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/selected-workspace-loader.test.cjs
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1591:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1145:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1169:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1196:12)
+      at Module._load (node:internal/modules/cjs/loader:1368:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.require (node:internal/modules/cjs/loader:1701:12)
+      at require (node:internal/modules/helpers:316:16)
+      at /Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/selected-workspace-loader.test.cjs:8:487
+      at eval (eval at setup (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/selected-workspace-loader.test.cjs:8:25), <anonymous>:12:38) {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: [ '/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/selected-workspace-loader.test.cjs' ]
+  }

@@ -1,0 +1,23 @@
+{
+  "passed": true,
+  "knownFixtureValuesConsidered": 37,
+  "credentialAndActorClubValuesChecked": 35,
+  "permittedPublicLocalServiceLocators": 2,
+  "locatorExplanation": "Only the reserved local project name and loopback app origin are permitted in lifecycle code/provision logs; neither is a credential or actor/club identity. All credential/actor/club values remain checked.",
+  "matchedFiles": [],
+  "includes": "Private config/fixture JSON credential, URL, email and actor/club identity values; sensitive values not exported. Raw response bodies are not recorded by the harness.",
+  "logNormalizationFiles": 9,
+  "finalCandidateSourceFilesVerified": 912,
+  "additionalCredentialPatternScan": {
+    "passed": true,
+    "patterns": [
+      "privateKey",
+      "supabaseSecret",
+      "jwt"
+    ],
+    "matchedFiles": []
+  },
+  "postCleanupPatternScanPassed": true,
+  "additionalLogNormalizationFiles": 0,
+  "scanTiming": "Known 35 credential/actor/club values checked before private fixture cleanup. Subsequent additions contain runner descriptions, cleanup state, aggregate analysis and evidence; final generic credential-pattern scan passed."
+}

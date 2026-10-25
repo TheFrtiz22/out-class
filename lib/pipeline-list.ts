@@ -2,6 +2,13 @@ import type { getClubPipeline } from "@/actions/crm"
 
 type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
 
+/** Relation plans may return visible references in different orders. Preserve
+ * multiplicity while making the narrow contract independent of SQL row order. */
+export function pipelineReviewerReferences(reviews: readonly { interviewerId: string }[]) {
+  return reviews.map(review => ({ interviewerId: review.interviewerId })).sort((a, b) =>
+    a.interviewerId < b.interviewerId ? -1 : a.interviewerId > b.interviewerId ? 1 : 0)
+}
+
 /** Run only after the canonical per-applicant privacy and score projection. */
 export function pipelineListProjection(data: Pipeline) {
   return {
@@ -19,7 +26,7 @@ export function pipelineListProjection(data: Pipeline) {
             satScore: profile.satScore, actScore: profile.actScore,
           } : null,
         },
-        evaluations: app.evaluations.map(e => ({ interviewerId: e.interviewerId })),
+        evaluations: pipelineReviewerReferences(app.evaluations),
         roundScore: app.roundScore,
       }
     }),

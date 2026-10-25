@@ -1,0 +1,43 @@
+recruitment.pipeline.read.failure {
+  code: 'other',
+  phase: 'applications',
+  elapsedMs: 0,
+  acquisitionMs: 0,
+  transactionMs: 0
+}
+✔ CRM identification-only reader retrieves the exact photo returned by canonical CRM (479.971167ms)
+✔ CRM photo denies unrelated application, foreign club and draft application (191.028459ms)
+✔ CRM photo denies missing identification permission, revoked membership and anonymous rounds (199.375875ms)
+✔ ordinary reviewer photo context still requires explicitly enabled round photo (198.896125ms)
+✔ photo proxy retains unauthenticated denial and owner access (216.366375ms)
+✔ CRM context rejects conflicting scopes and mismatched stored photo paths (178.855083ms)
+✔ CRM photo uses one narrow read, never the pipeline, and denies inactive membership and disabled actor (174.047125ms)
+✔ evaluation capability follows current panel assignment, anonymous review and self-review rules (170.794959ms)
+✔ pipeline failure diagnostics identify the failing phase without serializing private exception content (182.345584ms)
+✔ getClubPipeline repeats authorization and masks anonymous/self/foreign rows (173.478458ms)
+✔ getClubPipelineList repeats authorization and masks anonymous/self/foreign rows (185.420625ms)
+✔ getClubPipelinePage repeats authorization and masks anonymous/self/foreign rows (173.96825ms)
+✔ summary database allowlist excludes detail/offer/member content and reads only submitted reviews (176.567083ms)
+✔ page cursors bind the freshly authorized projection and selection reads contain no identities (174.048291ms)
+✔ narrow database summaries match canonical full privacy across viewer, profile and review states (173.116542ms)
+✔ summary scores preserve submission barrier, self exclusion, inactive assignments and historical review visibility (171.54ms)
+✔ page owners fence stale completions/setters and drain rapid query changes to the latest only (52.085833ms)
+✔ validated initial pages avoid duplication; invalid filters keep controls editable and never dispatch (31.398542ms)
+✔ authority and refresh changes hide all earlier pages; queued disabled scopes never dispatch (29.223542ms)
+✔ an adjacent freshly authorized page is adopted once, while obsolete handoffs cannot replace a newer owner (29.850042ms)
+✔ an invalid filter after queued reads retains editable metadata without dispatching or releasing obsolete rows (30.812208ms)
+✔ an authority change while filters are invalid reacquires safe metadata before showing editable controls (21.502042ms)
+✔ an adopted adjacent page cannot resurrect an old owner when the query is left and revisited (26.813333ms)
+✔ bounded summary hydration retains exact canonical privacy, facets, locale ordering, filters and cursor behavior (121.115792ms)
+✔ review and score dependencies retain the complete canonical path, including a zero rating threshold (4.868875ms)
+✔ empty pages avoid relation reads and scope mismatches fail closed (1.00775ms)
+✔ visible reviewer references are independent of relation query order and retain repeated references (2.465416ms)
+✔ submitted score arithmetic is deterministic across query plans without changing contributors or authority (1.995417ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 28
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3421.847875

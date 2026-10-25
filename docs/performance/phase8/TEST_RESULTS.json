@@ -1,0 +1,46 @@
+{
+  "buildId": "2ErH_X2IQiaRUYcsy3aBo",
+  "ordinary": {
+    "total": 1455,
+    "passed": 1401,
+    "failed": 0,
+    "skipped": 54,
+    "gateNote": "Environment-gated suites are reported separately; not every gated suite was exercised."
+  },
+  "liveAuthNavigationSettings": {
+    "total": 58,
+    "passed": 58,
+    "failed": 0,
+    "skipped": 0
+  },
+  "focused": {
+    "total": 73,
+    "passed": 73,
+    "failed": 0
+  },
+  "nativeSecurityConcurrency": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0
+  },
+  "provisioning": {
+    "passed": 38,
+    "failed": 0
+  },
+  "migrations": {
+    "freshAndLegacy": 57,
+    "rlsTablesWithBrowserRoleDenial": 78
+  },
+  "typecheck": "passed",
+  "productionBuild": "passed",
+  "lint": {
+    "errors": 0,
+    "existingWarnings": 22
+  },
+  "realDatabaseParity": {
+    "cohort": 5000,
+    "page": 100,
+    "equalToCanonical": true
+  },
+  "development": "Retained failing regressions cover queued invalid input, invalid input across authority changes, one-shot adjacent owner reuse, SQL relation ordering and floating-point summation. Test mocks were extended for new relation queries/diagnostics. The native suite correctly rejected the wrong disposable database; its existing dedicated runner subsequently passed all three suites. No safeguard was bypassed."
+}

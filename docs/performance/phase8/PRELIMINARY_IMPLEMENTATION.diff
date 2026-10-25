@@ -1,0 +1,255 @@
+diff --git a/actions/crm.ts b/actions/crm.ts
+index ba9b422..7c8d8f8 100644
+--- a/actions/crm.ts
++++ b/actions/crm.ts
+@@ -3,0 +4 @@ import { createHash } from "node:crypto";
++import { readPipelinePage } from "@/lib/pipeline-page-read";
+@@ -6 +7 @@ import { applicationReviewVisibility } from "@/lib/application-review-visibility
+-import { pagePipeline, completePipelineSelection, pipelinePageQuery, pipelineSelectionKey, type PipelinePageQuery } from "@/lib/pipeline-page";
++import { completePipelineSelection, pipelinePageQuery, pipelineSelectionKey, type PipelinePageQuery } from "@/lib/pipeline-page";
+@@ -40,4 +41,7 @@ export async function getClubPipelinePage(clubId: string, input: PipelinePageQue
+-  const { pipeline, membership } = await readClubPipelineSummaries(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: query.genderCounts });
+-  // Scope binding only. The cursor never bypasses the live guard or projection.
+-  const scope = createHash("sha256").update(JSON.stringify([clubId, membership, pipeline.rounds, pipelineSelectionKey(query)])).digest("hex");
+-  return pagePipeline(pipeline, query, membership.id, membership.userId, scope);
++  const { pipeline } = await readPipeline(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: query.genderCounts }, async (tx, where, membership, rounds) => {
++    // Scope binding only. Both ranking and bounded hydration share this fresh
++    // guarded Repeatable Read snapshot; the cursor never grants authority.
++    const scope = createHash("sha256").update(JSON.stringify([clubId, membership, rounds, pipelineSelectionKey(query)])).digest("hex");
++    return readPipelinePage(tx, where, membership, rounds, query, scope);
++  });
++  return { ...pipeline.applications, rounds: pipeline.rounds, genderCounts: pipeline.genderCounts };
+@@ -84 +88 @@ async function readPipeline<T>(clubId: string, input: z.infer<typeof pipelineFil
+-  load: (tx: AppTransactionClient, where: Prisma.ApplicationWhereInput, membership: PipelineMembership) => Promise<T[]>) {
++  load: (tx: AppTransactionClient, where: Prisma.ApplicationWhereInput, membership: PipelineMembership, rounds: { id: string; name: string; order: number; type: string; anonymousReview: boolean; genderVisible: boolean }[]) => Promise<T>) {
+@@ -116 +120,2 @@ async function readPipeline<T>(clubId: string, input: z.infer<typeof pipelineFil
+-    const applications = await load(tx, applicationWhere, membership);
++    const projectedRounds = rounds.map(r => ({ id: r.id, name: r.name, order: r.order, type: r.type, anonymousReview: r.anonymousReview, genderVisible: hasPermission(membership, "applications.review") && genderVisibility(r.applicantDisplay) }));
++    const applications = await load(tx, applicationWhere, membership, projectedRounds);
+@@ -123 +128 @@ async function readPipeline<T>(clubId: string, input: z.infer<typeof pipelineFil
+-      rounds: rounds.map(r => ({ id: r.id, name: r.name, order: r.order, type: r.type, anonymousReview: r.anonymousReview, genderVisible: hasPermission(membership, "applications.review") && genderVisibility(r.applicantDisplay) })),
++      rounds: projectedRounds,
+diff --git a/components/selected-club-workspace.tsx b/components/selected-club-workspace.tsx
+index 442b60f..162b031 100644
+--- a/components/selected-club-workspace.tsx
++++ b/components/selected-club-workspace.tsx
+@@ -3 +3 @@
+-import { useEffect, useMemo, useState } from "react"
++import { useEffect, useMemo, useRef, useState } from "react"
+@@ -5,0 +6 @@ import { useDemoMode } from "@/contexts/demo-context"
++import { recordWorkspaceRead } from "@/lib/workspace-read-diagnostics"
+@@ -25 +26 @@ export async function loadSelectedClubWorkspace(kind: SelectedClubWorkspaceKind,
+-        readWorkspace<Awaited<ReturnType<typeof import("@/actions/crm").getClubPipelineList>>>("pipelineList", [clubId, { genderCounts: false }]),
++        readWorkspace<Awaited<ReturnType<typeof import("@/actions/crm").getClubPipelinePage>>>("pipelinePage", [clubId, { mode, genderCounts: false }]),
+@@ -58,0 +60 @@ export function SelectedClubWorkspace({ kind, clubId, privacyScope, personalOnly
++  const lastRead = useRef<typeof owner | null>(null)
+@@ -60,0 +63,2 @@ export function SelectedClubWorkspace({ kind, clubId, privacyScope, personalOnly
++    recordWorkspaceRead("selected", lastRead.current ? (Object.keys(owner) as (keyof typeof owner)[]).filter(key => lastRead.current![key] !== owner[key]) : ["mount"])
++    lastRead.current = owner
+diff --git a/components/views/leader-dashboard/live-leader-workspace.tsx b/components/views/leader-dashboard/live-leader-workspace.tsx
+index a22a23d..295d64d 100644
+--- a/components/views/leader-dashboard/live-leader-workspace.tsx
++++ b/components/views/leader-dashboard/live-leader-workspace.tsx
+@@ -3,2 +3,2 @@ import "@/components/product/operational-dashboard.css"
+-import { pagePipeline, pipelinePageQuery, type PipelinePageQuery, type PipelineCursor } from "@/lib/pipeline-page"
+-import { useResidentPipeline } from "@/hooks/use-resident-pipeline"
++import { type PipelinePageQuery, type PipelineCursor } from "@/lib/pipeline-page"
++import { usePipelinePage } from "@/hooks/use-pipeline-page"
+@@ -35 +35 @@ import { BoardDecisionMode } from "@/components/live-voting/board-decision-mode"
+-import { getClubPipelineList, getClubPipelineSelection, moveApplicantRound, setApplicationStatus, reconsiderRejectedApplication, revokeRecruitmentOffer } from "@/lib/workspace-api"
++import { getClubPipelinePage, getClubPipelineSelection, moveApplicantRound, setApplicationStatus, reconsiderRejectedApplication, revokeRecruitmentOffer } from "@/lib/workspace-api"
+@@ -63,2 +63 @@ import { Badge } from "@/components/ui/badge"
+-type Summary = Awaited<ReturnType<typeof getClubPipelineList>>
+-type Pipeline = ReturnType<typeof pagePipeline>
++type Pipeline = Awaited<ReturnType<typeof getClubPipelinePage>>
+@@ -75 +74 @@ const average = (app: Candidate) =>
+-export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, rejectedOnly = false, initialData, onData, validatedInitialData = false }: { validatedInitialData?: boolean; scoped?: boolean; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: { clubId: string; pipeline: Summary }; onData?: (clubId: string, data: Pipeline | null) => void }) {
++export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, rejectedOnly = false, initialData, onData, validatedInitialData = false }: { validatedInitialData?: boolean; scoped?: boolean; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: { clubId: string; pipeline: Pipeline }; onData?: (clubId: string, data: Pipeline | null) => void }) {
+@@ -135 +134 @@ export function ApplicantReviewPreview({ clubId, applicationId, onClose, onChang
+-function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false, initialData = null, onData, preview, validatedInitialData = false }: { validatedInitialData?: boolean; preview?: { applicationId: string; onClose: () => void; onChanged: () => void; onNext?: () => void }; membership: ExtendedMembership; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: Summary | null; onData?: (data: Pipeline | null) => void }) {
++function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false, initialData = null, onData, preview, validatedInitialData = false }: { validatedInitialData?: boolean; preview?: { applicationId: string; onClose: () => void; onChanged: () => void; onNext?: () => void }; membership: ExtendedMembership; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: Pipeline | null; onData?: (data: Pipeline | null) => void }) {
+@@ -187,5 +186,3 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  const serverFilter = useMemo(() => ({ ...(round ? { roundId: round } : {}),
+-    ...(gender ? { gender: gender as (typeof genderValues)[number] } : {}), genderCounts: showGenderCounts,
+-  }), [round, gender, showGenderCounts])
+-  const { data: summaries, loading: listLoading, error: readError, setData, isCurrent } = useResidentPipeline({
+-    clubId: membership.clubId, filter: serverFilter, revision, authority,
++  const pageQuery = useMemo(() => ({ ...readQuery, ...(cursor ? { cursor } : {}) }), [readQuery, cursor])
++  const { data: listData, loading: listLoading, ready, invalid: invalidFilter, error: readError, setData, acceptPage, isCurrent } = usePipelinePage({
++    clubId: membership.clubId, query: pageQuery, revision, authority,
+@@ -197,10 +194 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  const pageQuery = useMemo(() => ({ ...readQuery, ...(cursor ? { cursor } : {}) }), [readQuery, cursor])
+-  const projection = useMemo(() => {
+-    if (!summaries) return null
+-    const scope = JSON.stringify([membership.clubId, membership.id, selectionKey])
+-    const parsed = pipelinePageQuery.safeParse(pageQuery)
+-    return { invalid: !parsed.success, data: pagePipeline(summaries, parsed.success ? parsed.data : {}, membership.id, membership.userId, scope) }
+-  }, [summaries, pageQuery, membership.clubId, membership.id, membership.userId, selectionKey])
+-  const listData = projection?.data ?? null
+-  const invalidFilter = projection?.invalid ?? false
+-  const pageReady = !!previewId || !!listData && !listLoading && !invalidFilter
++  const pageReady = !!previewId || ready
+@@ -213 +201 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  useEffect(() => { if (!previewId) publish.current?.(listData) }, [listData, previewId])
++  useEffect(() => { if (!previewId) publish.current?.(pageReady ? listData : null) }, [listData, pageReady, previewId])
+@@ -218 +206 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  useEffect(() => { setError("") }, [authority, revision, serverFilter])
++  useEffect(() => { setError("") }, [authority, revision, pageQuery])
+@@ -320,3 +307,0 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-    const adjacentPage = listData ? pagePipeline(summaries!, { ...readQuery, cursor: next }, membership.id, membership.userId, pageInfo!.scope) : null
+-    const target = direction === 1 ? adjacentPage?.applications[0] : adjacentPage?.applications.at(-1)
+-    if (!target) return
+@@ -326,0 +312,3 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
++      const nextQuery = { ...readQuery, cursor: next }
++      const adjacentPage = await getClubPipelinePage(membership.clubId, nextQuery)
++      if (!acceptPage(adjacentPage, nextQuery)) return
+@@ -328 +316,2 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-      open(target, true)
++      const target = direction === 1 ? adjacentPage.applications[0] : adjacentPage.applications.at(-1)
++      if (target) open(target, true)
+@@ -439 +428 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-      const refreshed = await getClubPipelineList(membership.clubId, serverFilter)
++      const refreshed = await getClubPipelinePage(membership.clubId, pageQuery)
+diff --git a/contexts/auth-context.tsx b/contexts/auth-context.tsx
+index 48c3514..f2ef6f0 100644
+--- a/contexts/auth-context.tsx
++++ b/contexts/auth-context.tsx
+@@ -1 +1,2 @@
+-"use client";
++"use client"
++import { recordWorkspaceRead } from "@/lib/workspace-read-diagnostics";
+@@ -49 +50 @@ export function AuthProvider({ children, initialUser = null, isImpersonating = f
+-      if (token !== undefined ? next !== token : event !== "INITIAL_SESSION") setReadAuthority({});
++      if (token !== undefined ? next !== token : event !== "INITIAL_SESSION") { recordWorkspaceRead("auth", [event.toLowerCase()]); setReadAuthority({}); }
+diff --git a/hooks/use-pipeline-page.ts b/hooks/use-pipeline-page.ts
+new file mode 100644
+index 0000000..dd9e9ab
+--- /dev/null
++++ b/hooks/use-pipeline-page.ts
+@@ -0,0 +1,66 @@
++"use client"
++
++import { useCallback, useEffect, useMemo, useRef, useState } from "react"
++import { getClubPipelinePage } from "@/lib/workspace-api"
++import { pipelinePageQuery, type PipelinePageQuery } from "@/lib/pipeline-page"
++import { recordWorkspaceRead } from "@/lib/workspace-read-diagnostics"
++import { serializedWorkspaceRead } from "@/lib/serialized-workspace-read"
++
++type Page = Awaited<ReturnType<typeof getClubPipelinePage>>
++type Context = { clubId: string; authority: object; revision: number; enabled: boolean }
++type Owner = { context: Context; scope: string }
++type Result = { owner: Owner; data: Page | null; failed: boolean }
++const key = (query: PipelinePageQuery) => JSON.stringify(pipelinePageQuery.parse(query))
++
++/** One fresh page per selection. Retained metadata keeps controls editable;
++ * earlier rows stay hidden until the current owner has a validated response. */
++export function usePipelinePage({ clubId, query, revision, authority, enabled, initialData, validatedInitialData }: {
++  clubId: string; query: PipelinePageQuery; revision: number; authority: object; enabled: boolean;
++  initialData: Page | null; validatedInitialData: boolean;
++}) {
++  const parsed = pipelinePageQuery.safeParse(query)
++  const scope = parsed.success ? JSON.stringify(parsed.data) : "invalid"
++  const valid = parsed.success
++  const context = useMemo(() => ({ clubId, authority, revision, enabled }), [clubId, authority, revision, enabled])
++  // A boundary read may supply the next page before its cursor is selected.
++  // Adopt that exact response once, without dispatching the same guarded GET.
++  const prepared = useRef<Owner | null>(null)
++  const owner = useMemo(() => prepared.current?.context === context && prepared.current.scope === scope ? prepared.current : { context, scope }, [context, scope])
++  const [result, setResult] = useState<Result | null>(enabled && valid && validatedInitialData && initialData ? { owner, data: initialData, failed: false } : null)
++  const latest = useRef({ owner, query, valid }), accepted = useRef(result), mounted = useRef(false)
++  latest.current = { owner, query, valid }; accepted.current = result
++  const reader = useRef<ReturnType<typeof serializedWorkspaceRead> | null>(null)
++  useEffect(() => {
++    mounted.current = true
++    const instance = serializedWorkspaceRead(async () => {
++      const request = latest.current
++      if (!request.owner.context.enabled || !request.valid) return { owner: request.owner, data: null, failed: false }
++      recordWorkspaceRead("page", ["dispatch"])
++      try { return { owner: request.owner, data: await getClubPipelinePage(request.owner.context.clubId, request.query), failed: false } }
++      catch { return { owner: request.owner, data: null, failed: true } }
++    }, value => { if (mounted.current && latest.current.owner === value.owner) setResult(value) }, () => {})
++    reader.current = instance
++    return () => { mounted.current = false; instance.dispose(); if (reader.current === instance) reader.current = null }
++  }, [])
++  useEffect(() => {
++    if (enabled && valid && accepted.current?.owner !== owner) void reader.current?.refresh()
++  }, [owner, enabled, valid])
++  const isCurrent = useCallback(() => mounted.current && latest.current.owner === owner, [owner])
++  const setData = useCallback((value: Page | null | ((previous: Page | null) => Page | null)) => {
++    if (!mounted.current || latest.current.owner !== owner) return false
++    setResult(previous => mounted.current && latest.current.owner === owner ? { owner, failed: false,
++      data: typeof value === "function" ? value(previous?.owner === owner ? previous.data : null) : value } : previous)
++    return true
++  }, [owner])
++  const acceptPage = useCallback((data: Page, next: PipelinePageQuery) => {
++    if (!mounted.current || latest.current.owner !== owner) return false
++    const nextScope = key(next)
++    const nextOwner = nextScope === owner.scope ? owner : { context, scope: nextScope }
++    prepared.current = nextOwner; setResult({ owner: nextOwner, data, failed: false })
++    return true
++  }, [context, owner])
++  const retained = enabled && result?.owner.context === context ? result : null
++  const current = retained?.owner === owner ? retained : null
++  return { data: retained?.data ?? null, ready: !!current?.data && valid, invalid: !valid,
++    loading: !retained && !current?.failed, error: current?.failed ?? false, setData, acceptPage, isCurrent }
++}
+diff --git a/lib/pipeline-page-read.ts b/lib/pipeline-page-read.ts
+new file mode 100644
+index 0000000..c70c400
+--- /dev/null
++++ b/lib/pipeline-page-read.ts
+@@ -0,0 +1,39 @@
++import { APPLICANT_PAGE_SIZE } from "@/lib/applicant-pagination"
++import { pagePipeline, type PipelinePageQuery } from "@/lib/pipeline-page"
++import { pipelineSummarySelect, pipelineSummaryProjection } from "@/lib/pipeline-summary"
++import type { Prisma } from "@prisma/client"
++import type { AppTransactionClient } from "@/utils/prisma"
++import type { ClubAccess } from "@/lib/permissions"
++
++// Ranking does not need review/assignment collections unless the requested
++// filter or sort observes them. Keep canonical JS collation/privacy semantics.
++const { evaluations: _evaluations, interviewAssignments: _assignments, ...metadataSelect } = pipelineSummarySelect
++export const pipelinePageMetadataSelect = metadataSelect
++export function requiresCompleteReviewMetadata(query: PipelinePageQuery) {
++  return query.review !== undefined || query.rating !== undefined || query.sort === "score"
++}
++
++type Member = ClubAccess & { id: string; userId: string }
++type Rounds = ReturnType<typeof pagePipeline>["rounds"]
++export async function readPipelinePage(tx: AppTransactionClient, where: Prisma.ApplicationWhereInput,
++  member: Member, rounds: Rounds, query: PipelinePageQuery, scope: string) {
++  const project = (app: Parameters<typeof pipelineSummaryProjection>[0]) => pipelineSummaryProjection(app, member)
++  if (requiresCompleteReviewMetadata(query)) {
++    const all = await tx.application.findMany({ where, select: pipelineSummarySelect })
++    return pagePipeline({ rounds, genderCounts: null, applications: all.map(project) }, query, member.id, member.userId, scope)
++  }
++  const metadata = await tx.application.findMany({ where, select: pipelinePageMetadataSelect })
++  // Empty review collections are internal ranking placeholders only. This path
++  // is never used for a review/score-dependent selector or returned as content.
++  const ranked = metadata.map(app => project({ ...app, evaluations: [], interviewAssignments: [] }))
++  const page = pagePipeline({ rounds, genderCounts: null, applications: ranked }, query, member.id, member.userId, scope)
++  if (!page.applications.length) return page
++  const ids = page.applications.map(app => app.id)
++  const hydrated = await tx.application.findMany({
++    where: { AND: [where, { id: { in: ids } }] }, take: APPLICANT_PAGE_SIZE, select: pipelineSummarySelect,
++  })
++  const summaries = new Map(hydrated.map(app => [app.id, project(app)]))
++  // The caller holds one Repeatable Read snapshot for planning and hydration.
++  if (ids.some(id => !summaries.has(id))) throw new Error("Applicant page changed during hydration.")
++  return { ...page, applications: ids.map(id => summaries.get(id)!) }
++}
+diff --git a/lib/workspace-read-diagnostics.ts b/lib/workspace-read-diagnostics.ts
+new file mode 100644
+index 0000000..5d84473
+--- /dev/null
++++ b/lib/workspace-read-diagnostics.ts
+@@ -0,0 +1,9 @@
++// Local observers receive only fixed event labels, never identities, tokens,
++// cookies, filter values, request arguments or authorization results. No buffer.
++export const workspaceReadCauses = ["mount", "dispatch", "user", "readAuthority", "isImpersonating", "clubId", "kind", "privacyScope", "retry", "mode", "demoReady", "demoEnabled", "initial_session", "signed_in", "signed_out", "token_refreshed", "user_updated", "mfa_challenge_verified", "password_recovery"] as const
++export function recordWorkspaceRead(kind: "auth" | "selected" | "page", causes: readonly string[]) {
++  if (typeof window === "undefined" || typeof CustomEvent === "undefined" || typeof window.dispatchEvent !== "function") return
++  if (!["auth", "selected", "page"].includes(kind)) return
++  const safe = causes.filter(cause => workspaceReadCauses.includes(cause as typeof workspaceReadCauses[number]))
++  try { window.dispatchEvent(new CustomEvent("outclass:workspace-read", { detail: { kind, causes: safe } })) } catch { /* Diagnostics must never block an authority change or a read. */ }
++}

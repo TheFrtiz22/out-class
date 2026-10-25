@@ -1,4 +1,5 @@
-"use client";
+"use client"
+import { recordWorkspaceRead } from "@/lib/workspace-read-diagnostics";
 
 import { createClient } from "@/utils/supabase/client";
 import { hasWorkspace } from "@/lib/permissions";
@@ -46,7 +47,7 @@ export function AuthProvider({ children, initialUser = null, isImpersonating = f
     let token: string | undefined;
     const { data: { subscription } } = createClient().auth.onAuthStateChange((event, session) => {
       const next = session?.access_token ?? "";
-      if (token !== undefined ? next !== token : event !== "INITIAL_SESSION") setReadAuthority({});
+      if (token !== undefined ? next !== token : event !== "INITIAL_SESSION") { recordWorkspaceRead("auth", [event.toLowerCase()]); setReadAuthority({}); }
       token = next;
     });
     return () => subscription.unsubscribe();

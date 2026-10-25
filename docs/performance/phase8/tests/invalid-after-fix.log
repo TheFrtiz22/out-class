@@ -1,0 +1,14 @@
+✔ page owners fence stale completions/setters and drain rapid query changes to the latest only (29.924917ms)
+✔ validated initial pages avoid duplication; invalid filters keep controls editable and never dispatch (49.36625ms)
+✔ authority and refresh changes hide all earlier pages; queued disabled scopes never dispatch (29.80525ms)
+✔ an adjacent freshly authorized page is adopted once, while obsolete handoffs cannot replace a newer owner (55.390458ms)
+✔ an invalid filter after queued reads retains editable metadata without dispatching or releasing obsolete rows (61.905625ms)
+✔ an authority change while filters are invalid reacquires safe metadata before showing editable controls (50.687333ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 599.435416

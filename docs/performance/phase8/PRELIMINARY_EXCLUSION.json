@@ -1,0 +1,11 @@
+{
+  "directory": "comparison",
+  "candidateBuildId": "JzTscjpWBml7caBmuqMve",
+  "status": "Completed and excluded in full.",
+  "reason": "Review found queued invalid input could remove filter controls and authority changes with invalid filters could remain blocked. Regression tests reproduce both. Unit regression execution overlaps this already-excluded collection. No rows are pooled with the corrected repeat.",
+  "finalDestination": "comparison-final",
+  "browserOutcomes": 384,
+  "measuredBrowserOutcomes": 320,
+  "warmups": 64,
+  "loaderSamples": 600
+}

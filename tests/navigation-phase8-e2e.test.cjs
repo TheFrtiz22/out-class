@@ -1,0 +1,30 @@
+// Reserved disposable fixture only. No application or production .env is read.
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const {PrismaClient}=require('@prisma/client'),{Actor,readConfig}=require('./helpers/onboarding-e2e.cjs'),{load}=require('./helpers/voting-harness.cjs');
+const configFile=process.env.OUTCLASS_ONBOARDING_E2E_CONFIG;
+test('real Repeatable Read planning bounds hydrated summaries and stays consistent across a concurrent profile update',{skip:!configFile,timeout:120000},async()=>{
+ const config=readConfig(configFile),f=JSON.parse(fs.readFileSync(path.join(path.dirname(configFile),'navigation-fixture.json'))),actor=new Actor(config);await actor.signIn(f.email,f.password);
+ const db=new PrismaClient({datasourceUrl:config.status.DB_URL}),clubId=f.clubIds[0],decode=load('lib/workspace-wire.ts').decodeWorkspaceData,{readPipelinePage}=load('lib/pipeline-page-read.ts'),{pagePipeline}=load('lib/pipeline-page.ts');
+ let profile;
+ try{
+  const response=await actor.request('/api/workspace?'+new URLSearchParams({kind:'pipelineList',args:JSON.stringify([clubId,{genderCounts:false}])}));assert.equal(response.status,200);const canonical=decode(await response.json());
+  const membership=await db.clubMember.findUniqueOrThrow({where:{userId_clubId:{userId:f.userId,clubId}}});const target=canonical.applications[0];profile=await db.studentProfile.findUniqueOrThrow({where:{userId:target.studentId}});const calls=[];let changed=false;
+  const page=await db.$transaction(async tx=>{
+   const wrapped={...tx,application:{...tx.application,async findMany(options){const records=await tx.application.findMany(options);calls.push({table:'application',rows:records.length,reviews:!!options.select.evaluations});if(!changed){changed=true;await db.studentProfile.update({where:{id:profile.id},data:{major:'Phase 8 concurrent profile canary',gpa:3.7}})}return records}},evaluation:{...tx.evaluation,async findMany(options){assert.deepEqual(options.where.application,{clubId,status:{not:'DRAFTING'}});calls.push({table:'evaluation',applicationIds:options.where.applicationId.in.length});return tx.evaluation.findMany(options)}},interviewPanelAssignment:{...tx.interviewPanelAssignment,async findMany(options){assert.deepEqual(options.where.application,{clubId,status:{not:'DRAFTING'}});calls.push({table:'assignment',applicationIds:options.where.applicationId.in.length});return tx.interviewPanelAssignment.findMany(options)}}};
+   return readPipelinePage(wrapped,{clubId,status:{not:'DRAFTING'}},membership,canonical.rounds,{},'phase8-snapshot');
+  },{isolationLevel:'RepeatableRead'});
+  assert.deepEqual(page,pagePipeline(canonical,{},membership.id,membership.userId,'phase8-snapshot'));assert.deepEqual(calls,[{table:'application',rows:canonical.applications.length,reviews:false},{table:'evaluation',applicationIds:Math.min(100,canonical.applications.length)},{table:'assignment',applicationIds:Math.min(100,canonical.applications.length)}]);assert.equal((await db.studentProfile.findUniqueOrThrow({where:{id:profile.id}})).major,'Phase 8 concurrent profile canary');
+  const fresh=await actor.request('/api/workspace?'+new URLSearchParams({kind:'pipelinePage',args:JSON.stringify([clubId,{}])}));assert.equal(fresh.status,200);const updated=decode(await fresh.json());assert.ok(updated.facets.majors.includes('Phase 8 concurrent profile canary'));assert.equal(updated.applications.find(a=>a.id===target.id).student.studentProfile.gpa,3.7);assert.equal(fresh.headers.get('cache-control'),'private, no-store');assert.match(fresh.headers.get('vary'),/Cookie/);
+ }finally{if(profile)await db.studentProfile.update({where:{id:profile.id},data:{major:profile.major,gpa:profile.gpa}});await db.$disconnect()}
+});
+
+const {chromium}=require('playwright');
+test('queued invalid numeric filters remain editable after obsolete page reads drain',{skip:!configFile,timeout:90000},async()=>{
+ const config=readConfig(configFile),f=JSON.parse(fs.readFileSync(path.join(path.dirname(configFile),'navigation-fixture.json'))),actor=new Actor(config);await actor.signIn(f.email,f.password);const browser=await chromium.launch({headless:true}),context=await browser.newContext({storageState:{cookies:[...actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage();let release;
+ try{
+  await page.goto(config.appUrl+'/club/'+f.clubIds[0]+'/workspace?section=recruitment&tool=applicants');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await page.waitForLoadState('networkidle');await page.locator('.oc-pipeline-filters summary').click();const search=page.getByRole('textbox',{name:'Search applicants',exact:true}),gpa=page.getByLabel('GPA greater than',{exact:true});let seen;const held=new Promise(r=>seen=r);
+  await page.route('**/api/workspace?kind=pipelinePage&*',async route=>{const q=JSON.parse(new URL(route.request().url()).searchParams.get('args'))[1];if(q.query==='Audit Student 000'){const response=await route.fetch();release=()=>route.fulfill({response});seen()}else await route.continue()});
+  await search.fill('Audit Student 000');await held;await search.fill('obsolete queued filter');await gpa.fill('5');await release();await page.waitForLoadState('networkidle');await page.getByRole('alert').filter({hasText:'Enter filters within the displayed numeric ranges.'}).waitFor();assert.equal(await gpa.isVisible(),true);assert.equal(await gpa.inputValue(),'5');assert.equal(await page.locator('[data-applicant-id]').count(),0);
+  await page.unroute('**/api/workspace?kind=pipelinePage&*');await search.fill('');await gpa.fill('');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),100);
+ }finally{if(release)await release().catch(()=>{});await context.close();await browser.close()}
+});

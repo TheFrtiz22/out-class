@@ -1,0 +1,181 @@
+{
+  "startedAt": "2026-10-25T19:41:04.650Z",
+  "networkProfile": {
+    "latencyMs": 80,
+    "downloadBytesPerSecond": 200000,
+    "uploadBytesPerSecond": 93750,
+    "cpuSlowdown": 4
+  },
+  "cohorts": [
+    1000,
+    5000
+  ],
+  "blocks": [
+    "BA",
+    "AB"
+  ],
+  "buildIds": {
+    "baseline": "Lsl-8JTqPmyIg_NfO4ook",
+    "candidate": "2ErH_X2IQiaRUYcsy3aBo"
+  },
+  "planSha256": "1be8fcadb4b03eca5fd7da2de37ade9887160c98c4525865d134242c7e583f33",
+  "tools": {
+    "navigation-phase8-supplement.cjs": "de3d8bf2c08c678a89e9d01e2a6d2918b9cbd4679c34d7987a3f9b5f707ccff0",
+    "navigation-phase8-concurrency.cjs": "8cb2dc4728ac31b426793b7976bc551482b2d6bf438fb4a47648143678d56ab8",
+    "navigation-phase8-constrained-interactions.cjs": "d4731b8a4edd50dc5c1d108f99f23fc156378c6234a603b1136807fd09bb14a2",
+    "navigation-audit.cjs": "a93a753e7cea42391f1d277249e7c8b43f9d333ac1789ee0cb0c7fe786027430",
+    "navigation-phase8-local.cjs": "e3c9e0dca0e85f6e301021dd6862e5654f2d223773aa5e5ea6f229e617a3581d"
+  },
+  "completed": [
+    {
+      "directory": "size-1000-pair-1-1-B-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-1-1-B-measure",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-1-2-A-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-1-2-A-measure",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-2-1-A-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-2-1-A-measure",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-2-2-B-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-2-2-B-measure",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "directory": "size-5000-pair-1-1-B-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failed": 0
+    },
+    {
+      "directory": "size-5000-pair-1-1-B-measure",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "directory": "size-5000-pair-1-2-A-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failed": 0
+    },
+    {
+      "directory": "size-5000-pair-1-2-A-measure",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "directory": "size-5000-pair-2-1-A-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failed": 0
+    },
+    {
+      "directory": "size-5000-pair-2-1-A-measure",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "directory": "size-5000-pair-2-2-B-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failed": 0
+    },
+    {
+      "directory": "size-5000-pair-2-2-B-measure",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    }
+  ],
+  "failures": [],
+  "complete": true,
+  "interactions": [
+    {
+      "file": "size-1000-pair-1-1-B-interactions.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "file": "size-1000-pair-1-2-A-interactions.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "file": "size-1000-pair-2-1-A-interactions.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "file": "size-1000-pair-2-2-B-interactions.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "file": "size-5000-pair-1-1-B-interactions.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "file": "size-5000-pair-1-2-A-interactions.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "file": "size-5000-pair-2-1-A-interactions.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "file": "size-5000-pair-2-2-B-interactions.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    }
+  ],
+  "completedAt": "2026-10-25T20:00:56.972Z",
+  "applicationStopped": true
+}

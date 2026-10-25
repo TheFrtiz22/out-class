@@ -1,0 +1,43 @@
+{
+  "conditions": "Separate constrained browser and local bounded HTTP read bursts, never pooled with the unthrottled primary. No application changes.",
+  "cohorts": [
+    1000,
+    5000
+  ],
+  "blocks": [
+    "BA",
+    "AB"
+  ],
+  "networkProfile": {
+    "latencyMs": 80,
+    "downloadBytesPerSecond": 200000,
+    "uploadBytesPerSecond": 93750,
+    "cpuSlowdown": 4
+  },
+  "initialPaths": [
+    "applicants",
+    "applicantDetail"
+  ],
+  "initialConditions": [
+    "cold",
+    "warm"
+  ],
+  "measuredPerBuildBlockPathCondition": 3,
+  "warmupsPerBuildBlockPathCondition": 1,
+  "interactions": [
+    "next-page",
+    "distant-search"
+  ],
+  "interactionMeasuredPerBuildBlockPath": 5,
+  "interactionWarmupsPerBuildBlockPath": 1,
+  "httpReaders": [
+    1,
+    2,
+    4
+  ],
+  "httpWaves": {
+    "measured": 5,
+    "warmup": 1
+  },
+  "reason": "Measure the added live page/search GET under the same constrained network/CPU profile as initial entry; all planned outcomes retained without retries."
+}

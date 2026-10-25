@@ -9,7 +9,7 @@ function load(file, mocks, globals = {}) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true },
   }).outputText
   new Function("require", "module", "exports", ...Object.keys(globals), code)(
-    name => name in mocks ? mocks[name] : require(name), mod, mod.exports, ...Object.values(globals),
+    name => name in mocks ? mocks[name] : name === "@/lib/workspace-read-diagnostics" ? {recordWorkspaceRead(){}} : require(name), mod, mod.exports, ...Object.values(globals),
   )
   return mod.exports
 }

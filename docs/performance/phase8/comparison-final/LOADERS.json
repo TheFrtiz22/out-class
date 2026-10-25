@@ -1,0 +1,518 @@
+{
+  "total": 600,
+  "groups": [
+    {
+      "file": "size-100-baseline-loaders.json",
+      "name": "pipeline",
+      "samples": 20,
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 34.232,
+        "p95": 44.23,
+        "max": 49.156
+      },
+      "queryCounts": {
+        "18": 20
+      },
+      "remoteIdentityCounts": {
+        "1": 20
+      }
+    },
+    {
+      "file": "size-100-baseline-loaders.json",
+      "name": "pipelineList",
+      "samples": 20,
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 22.513,
+        "p95": 32.911,
+        "max": 38.578
+      },
+      "queryCounts": {
+        "13": 20
+      },
+      "remoteIdentityCounts": {
+        "1": 20
+      }
+    },
+    {
+      "file": "size-100-baseline-loaders.json",
+      "name": "pipelinePage",
+      "samples": 20,
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 25.66,
+        "p95": 31.6,
+        "max": 32.451
+      },
+      "queryCounts": {
+        "13": 20
+      },
+      "remoteIdentityCounts": {
+        "1": 20
+      }
+    },
+    {
+      "file": "size-100-baseline-loaders.json",
+      "name": "pipelineSelection",
+      "samples": 20,
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 29.966,
+        "p95": 39.819,
+        "max": 40.904
+      },
+      "queryCounts": {
+        "13": 20
+      },
+      "remoteIdentityCounts": {
+        "1": 20
+      }
+    },
+    {
+      "file": "size-100-baseline-loaders.json",
+      "name": "pipelineDetail",
+      "samples": 20,
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 23.403,
+        "p95": 27.6,
+        "max": 28.331
+      },
+      "queryCounts": {
+        "18": 20
+      },
+      "remoteIdentityCounts": {
+        "1": 20
+      }
+    },
+    {
+      "file": "size-100-candidate-loaders.json",
+      "name": "pipeline",
+      "samples": 20,
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 34.023,
+        "p95": 44.787,
+        "max": 59.726
+      },
+      "queryCounts": {
+        "18": 20
+      },
+      "remoteIdentityCounts": {
+        "1": 20
+      }
+    },
+    {
+      "file": "size-100-candidate-loaders.json",
+      "name": "pipelineList",
+      "samples": 20,
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 22.562,
+        "p95": 24.44,
+        "max": 35.968
+      },
+      "queryCounts": {
+        "13": 20
+      },
+      "remoteIdentityCounts": {
+        "1": 20
+      }
+    },
+    {
+      "file": "size-100-candidate-loaders.json",
+      "name": "pipelinePage",
+      "samples": 20,
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 30.795,
+        "p95": 48.581,
+        "max": 50.5
+      },
+      "queryCounts": {
+        "13": 20
+      },
+      "remoteIdentityCounts": {
+        "1": 20
+      }
+    },
+    {
+      "file": "size-100-candidate-loaders.json",
+      "name": "pipelineSelection",
+      "samples": 20,
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 27.169,
+        "p95": 29.722,
+        "max": 31.902
+      },
+      "queryCounts": {
+        "13": 20
+      },
+      "remoteIdentityCounts": {
+        "1": 20
+      }
+    },
+    {
+      "file": "size-100-candidate-loaders.json",
+      "name": "pipelineDetail",
+      "samples": 20,
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 23.933,
+        "p95": 26.988,
+        "max": 27.92
+      },
+      "queryCounts": {
+        "18": 20
+      },
+      "remoteIdentityCounts": {
+        "1": 20
+      }
+    },
+    {
+      "file": "size-1000-baseline-loaders.json",
+      "name": "pipeline",
+      "samples": 20,
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 136.085,
+        "p95": 147.153,
+        "max": 160.601
+      },
+      "queryCounts": {
+        "18": 20
+      },
+      "remoteIdentityCounts": {
+        "1": 20
+      }
+    },
+    {
+      "file": "size-1000-baseline-loaders.json",
+      "name": "pipelineList",
+      "samples": 20,
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 44.994,
+        "p95": 49.124,
+        "max": 52.008
+      },
+      "queryCounts": {
+        "13": 20
+      },
+      "remoteIdentityCounts": {
+        "1": 20
+      }
+    },
+    {
+      "file": "size-1000-baseline-loaders.json",
+      "name": "pipelinePage",
+      "samples": 20,
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 45.919,
+        "p95": 50.833,
+        "max": 57.698
+      },
+      "queryCounts": {
+        "13": 20
+      },
+      "remoteIdentityCounts": {
+        "1": 20
+      }
+    },
+    {
+      "file": "size-1000-baseline-loaders.json",
+      "name": "pipelineSelection",
+      "samples": 20,
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 45.221,
+        "p95": 53.578,
+        "max": 62.343
+      },
+      "queryCounts": {
+        "13": 20
+      },
+      "remoteIdentityCounts": {
+        "1": 20
+      }
+    },
+    {
+      "file": "size-1000-baseline-loaders.json",
+      "name": "pipelineDetail",
+      "samples": 20,
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 22.859,
+        "p95": 28.908,
+        "max": 29.439
+      },
+      "queryCounts": {
+        "18": 20
+      },
+      "remoteIdentityCounts": {
+        "1": 20
+      }
+    },
+    {
+      "file": "size-1000-candidate-loaders.json",
+      "name": "pipeline",
+      "samples": 20,
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 135.233,
+        "p95": 148.631,
+        "max": 153.695
+      },
+      "queryCounts": {
+        "18": 20
+      },
+      "remoteIdentityCounts": {
+        "1": 20
+      }
+    },
+    {
+      "file": "size-1000-candidate-loaders.json",
+      "name": "pipelineList",
+      "samples": 20,
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 44.262,
+        "p95": 48.692,
+        "max": 51.066
+      },
+      "queryCounts": {
+        "13": 20
+      },
+      "remoteIdentityCounts": {
+        "1": 20
+      }
+    },
+    {
+      "file": "size-1000-candidate-loaders.json",
+      "name": "pipelinePage",
+      "samples": 20,
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 54.943,
+        "p95": 89.215,
+        "max": 129.431
+      },
+      "queryCounts": {
+        "13": 20
+      },
+      "remoteIdentityCounts": {
+        "1": 20
+      }
+    },
+    {
+      "file": "size-1000-candidate-loaders.json",
+      "name": "pipelineSelection",
+      "samples": 20,
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 45.926,
+        "p95": 51.557,
+        "max": 56.274
+      },
+      "queryCounts": {
+        "13": 20
+      },
+      "remoteIdentityCounts": {
+        "1": 20
+      }
+    },
+    {
+      "file": "size-1000-candidate-loaders.json",
+      "name": "pipelineDetail",
+      "samples": 20,
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 22.946,
+        "p95": 31.335,
+        "max": 31.74
+      },
+      "queryCounts": {
+        "18": 20
+      },
+      "remoteIdentityCounts": {
+        "1": 20
+      }
+    },
+    {
+      "file": "size-5000-baseline-loaders.json",
+      "name": "pipeline",
+      "samples": 20,
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 645.168,
+        "p95": 769.436,
+        "max": 799.999
+      },
+      "queryCounts": {
+        "18": 19,
+        "19": 1
+      },
+      "remoteIdentityCounts": {
+        "1": 20
+      }
+    },
+    {
+      "file": "size-5000-baseline-loaders.json",
+      "name": "pipelineList",
+      "samples": 20,
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 159.729,
+        "p95": 209.276,
+        "max": 213.781
+      },
+      "queryCounts": {
+        "13": 20
+      },
+      "remoteIdentityCounts": {
+        "1": 20
+      }
+    },
+    {
+      "file": "size-5000-baseline-loaders.json",
+      "name": "pipelinePage",
+      "samples": 20,
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 160.318,
+        "p95": 179.88,
+        "max": 185.533
+      },
+      "queryCounts": {
+        "13": 20
+      },
+      "remoteIdentityCounts": {
+        "1": 20
+      }
+    },
+    {
+      "file": "size-5000-baseline-loaders.json",
+      "name": "pipelineSelection",
+      "samples": 20,
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 151.856,
+        "p95": 163.301,
+        "max": 168.477
+      },
+      "queryCounts": {
+        "13": 20
+      },
+      "remoteIdentityCounts": {
+        "1": 20
+      }
+    },
+    {
+      "file": "size-5000-baseline-loaders.json",
+      "name": "pipelineDetail",
+      "samples": 20,
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 21.887,
+        "p95": 25.848,
+        "max": 26.374
+      },
+      "queryCounts": {
+        "18": 20
+      },
+      "remoteIdentityCounts": {
+        "1": 20
+      }
+    },
+    {
+      "file": "size-5000-candidate-loaders.json",
+      "name": "pipeline",
+      "samples": 20,
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 649.411,
+        "p95": 793.548,
+        "max": 868.711
+      },
+      "queryCounts": {
+        "18": 19,
+        "19": 1
+      },
+      "remoteIdentityCounts": {
+        "1": 20
+      }
+    },
+    {
+      "file": "size-5000-candidate-loaders.json",
+      "name": "pipelineList",
+      "samples": 20,
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 157.492,
+        "p95": 190.82,
+        "max": 192.783
+      },
+      "queryCounts": {
+        "13": 20
+      },
+      "remoteIdentityCounts": {
+        "1": 20
+      }
+    },
+    {
+      "file": "size-5000-candidate-loaders.json",
+      "name": "pipelinePage",
+      "samples": 20,
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 191.004,
+        "p95": 210.648,
+        "max": 219.952
+      },
+      "queryCounts": {
+        "13": 20
+      },
+      "remoteIdentityCounts": {
+        "1": 20
+      }
+    },
+    {
+      "file": "size-5000-candidate-loaders.json",
+      "name": "pipelineSelection",
+      "samples": 20,
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 153.882,
+        "p95": 180.786,
+        "max": 206.199
+      },
+      "queryCounts": {
+        "13": 20
+      },
+      "remoteIdentityCounts": {
+        "1": 20
+      }
+    },
+    {
+      "file": "size-5000-candidate-loaders.json",
+      "name": "pipelineDetail",
+      "samples": 20,
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 21.652,
+        "p95": 28.022,
+        "max": 29.133
+      },
+      "queryCounts": {
+        "18": 20
+      },
+      "remoteIdentityCounts": {
+        "1": 20
+      }
+    }
+  ],
+  "interpretation": "Real local Auth/DB loaders outside HTTP/RSC dispatcher; elapsed times are separate from browser latency and no row was removed. Counts include transaction control statements and occasionally an additional initial setup statement."
+}

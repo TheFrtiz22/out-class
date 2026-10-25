@@ -1,0 +1,38 @@
+✔ page owners fence stale completions/setters and drain rapid query changes to the latest only (31.564417ms)
+✔ validated initial pages avoid duplication; invalid filters keep controls editable and never dispatch (27.763083ms)
+✔ authority and refresh changes hide all earlier pages; queued disabled scopes never dispatch (26.161625ms)
+✔ an adjacent freshly authorized page is adopted once, while obsolete handoffs cannot replace a newer owner (20.675958ms)
+✔ an invalid filter after queued reads retains editable metadata without dispatching or releasing obsolete rows (19.407792ms)
+✔ an authority change while filters are invalid reacquires safe metadata before showing editable controls (16.670625ms)
+✖ an adopted adjacent page cannot resurrect an old owner when the query is left and revisited (22.552459ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 6
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 402.454875
+
+✖ failing tests:
+
+test at tests/pipeline-page-owner.test.cjs:32:1
+✖ an adopted adjacent page cannot resurrect an old owner when the query is left and revisited (22.552459ms)
+  AssertionError [ERR_ASSERTION]: revisiting must validate again rather than resurrecting the handoff
+
+  true !== false
+
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/pipeline-page-owner.test.cjs:33:366)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

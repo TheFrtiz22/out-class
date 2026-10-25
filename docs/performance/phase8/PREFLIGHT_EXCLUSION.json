@@ -1,0 +1,5 @@
+{
+  "file": "preflight-concurrency.json",
+  "outcomes": 42,
+  "reason": "Collector validation before planned final supplemental collection; not pooled with final measurements. No application change from preflight results."
+}

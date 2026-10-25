@@ -1,3 +1,4 @@
+import { pipelineReviewerReferences } from "@/lib/pipeline-list";
 import type { Prisma } from "@prisma/client";
 import { anonymousListProfile } from "@/lib/anonymous-review";
 import { recruitmentListProfile } from "@/lib/recruitment-profile";
@@ -32,6 +33,6 @@ export function pipelineSummaryProjection(app: Summary, membership: ClubAccess &
     student: { email: anonymous ? "" : app.student.email,
       studentProfile: anonymous ? anonymousListProfile(app.id, app.student.studentProfile) :
         app.student.studentProfile ? recruitmentListProfile(app.student.studentProfile) : null },
-    evaluations: evaluations.map(e => ({ interviewerId: e.interviewerId })), roundScore,
+    evaluations: pipelineReviewerReferences(evaluations), roundScore,
   };
 }

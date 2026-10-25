@@ -1,0 +1,1121 @@
+diff --git a/actions/crm.ts b/actions/crm.ts
+index ba9b422..7c8d8f8 100644
+--- a/actions/crm.ts
++++ b/actions/crm.ts
+@@ -1,9 +1,10 @@
+ "use server";
+ import type { Prisma } from "@prisma/client";
+ import { createHash } from "node:crypto";
++import { readPipelinePage } from "@/lib/pipeline-page-read";
+ import { pipelineSummarySelect, pipelineSummaryProjection } from "@/lib/pipeline-summary";
+ import { applicationReviewVisibility } from "@/lib/application-review-visibility";
+-import { pagePipeline, completePipelineSelection, pipelinePageQuery, pipelineSelectionKey, type PipelinePageQuery } from "@/lib/pipeline-page";
++import { completePipelineSelection, pipelinePageQuery, pipelineSelectionKey, type PipelinePageQuery } from "@/lib/pipeline-page";
+ import {decisionPublicationGuard} from "@/lib/decision-publication-guard";
+ import { clubWriteTransaction } from "@/utils/club-write-transaction";
+ import { publishRecruitmentDecision } from "@/utils/recruitment-offers";
+@@ -37,10 +38,13 @@ export async function getClubPipelineList(clubId: string, input: z.infer<typeof
+
+ export async function getClubPipelinePage(clubId: string, input: PipelinePageQuery = {}) {
+   const query = pipelinePageQuery.parse(input);
+-  const { pipeline, membership } = await readClubPipelineSummaries(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: query.genderCounts });
+-  // Scope binding only. The cursor never bypasses the live guard or projection.
+-  const scope = createHash("sha256").update(JSON.stringify([clubId, membership, pipeline.rounds, pipelineSelectionKey(query)])).digest("hex");
+-  return pagePipeline(pipeline, query, membership.id, membership.userId, scope);
++  const { pipeline } = await readPipeline(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: query.genderCounts }, async (tx, where, membership, rounds) => {
++    // Scope binding only. Both ranking and bounded hydration share this fresh
++    // guarded Repeatable Read snapshot; the cursor never grants authority.
++    const scope = createHash("sha256").update(JSON.stringify([clubId, membership, rounds, pipelineSelectionKey(query)])).digest("hex");
++    return readPipelinePage(tx, where, membership, rounds, query, scope);
++  });
++  return { ...pipeline.applications, rounds: pipeline.rounds, genderCounts: pipeline.genderCounts };
+ }
+
+ /** Explicit whole-selection read for quick review and voting, without identities. */
+@@ -81,7 +85,7 @@ async function readClubPipelineSummaries(clubId: string, input: z.infer<typeof p
+
+ type PipelineMembership = Awaited<ReturnType<typeof requireClubPermission>>["membership"];
+ async function readPipeline<T>(clubId: string, input: z.infer<typeof pipelineFilter>,
+-  load: (tx: AppTransactionClient, where: Prisma.ApplicationWhereInput, membership: PipelineMembership) => Promise<T[]>) {
++  load: (tx: AppTransactionClient, where: Prisma.ApplicationWhereInput, membership: PipelineMembership, rounds: { id: string; name: string; order: number; type: string; anonymousReview: boolean; genderVisible: boolean }[]) => Promise<T>) {
+   const filter = pipelineFilter.parse(input);
+   // Only members can view the pipeline
+   const { membership } = await requireClubPermission(clubId, [], { allowSuspendedRead: true });
+@@ -113,14 +117,15 @@ async function readPipeline<T>(clubId: string, input: z.infer<typeof pipelineFil
+       ...where,
+       ...(filter.gender ? { student: { studentProfile: { gender: filter.gender } } } : {}),
+     };
+-    const applications = await load(tx, applicationWhere, membership);
++    const projectedRounds = rounds.map(r => ({ id: r.id, name: r.name, order: r.order, type: r.type, anonymousReview: r.anonymousReview, genderVisible: hasPermission(membership, "applications.review") && genderVisibility(r.applicantDisplay) }));
++    const applications = await load(tx, applicationWhere, membership, projectedRounds);
+     phase = "counts";
+     const counts = filter.genderCounts ? await tx.application.groupBy({ by: ["studentId"], where }) : [];
+     const profiles = filter.genderCounts ? await tx.studentProfile.groupBy({ by: ["gender"], where: { userId: { in: counts.map(c => c.studentId) } }, _count: true }) : [];
+
+     phase = "projection-or-commit";
+     const pipeline = {
+-      rounds: rounds.map(r => ({ id: r.id, name: r.name, order: r.order, type: r.type, anonymousReview: r.anonymousReview, genderVisible: hasPermission(membership, "applications.review") && genderVisibility(r.applicantDisplay) })),
++      rounds: projectedRounds,
+       genderCounts: filter.genderCounts ? genderValues.map(gender => ({ gender, count: profiles.find(p => p.gender === gender)?._count ?? 0 })) : null,
+       applications,
+     };
+diff --git a/components/selected-club-workspace.tsx b/components/selected-club-workspace.tsx
+index 442b60f..162b031 100644
+--- a/components/selected-club-workspace.tsx
++++ b/components/selected-club-workspace.tsx
+@@ -1,8 +1,9 @@
+ "use client"
+
+-import { useEffect, useMemo, useState } from "react"
++import { useEffect, useMemo, useRef, useState } from "react"
+ import { useAuth } from "@/contexts/auth-context"
+ import { useDemoMode } from "@/contexts/demo-context"
++import { recordWorkspaceRead } from "@/lib/workspace-read-diagnostics"
+ import { readWorkspace } from "@/lib/workspace-read"
+ import { Button } from "@/components/ui/button"
+
+@@ -22,7 +23,7 @@ export async function loadSelectedClubWorkspace(kind: SelectedClubWorkspaceKind,
+     case "pipeline": {
+       const [module, data] = await Promise.all([
+         import("@/components/views/leader-dashboard/live-leader-workspace"),
+-        readWorkspace<Awaited<ReturnType<typeof import("@/actions/crm").getClubPipelineList>>>("pipelineList", [clubId, { genderCounts: false }]),
++        readWorkspace<Awaited<ReturnType<typeof import("@/actions/crm").getClubPipelinePage>>>("pipelinePage", [clubId, { mode, genderCounts: false }]),
+       ])
+       return { kind, module, data } as const
+     }
+@@ -56,8 +57,11 @@ export function SelectedClubWorkspace({ kind, clubId, privacyScope, personalOnly
+   const mode = rejectedOnly ? "rejected" : decisionsOnly ? "decisions" : "applicants"
+   const owner = useMemo(() => ({ user, readAuthority, isImpersonating, clubId, kind, privacyScope, retry, mode, demoReady: demo.ready, demoEnabled: demo.isDemoEnabled }), [user, readAuthority, isImpersonating, clubId, kind, privacyScope, retry, mode, demo.ready, demo.isDemoEnabled])
+   const [result, setResult] = useState<{ owner: object; value?: Loaded; failed?: boolean } | null>(null)
++  const lastRead = useRef<typeof owner | null>(null)
+   useEffect(() => {
+     if (!demo.ready || demo.isDemoEnabled || loading || !user) return
++    recordWorkspaceRead("selected", lastRead.current ? (Object.keys(owner) as (keyof typeof owner)[]).filter(key => lastRead.current![key] !== owner[key]) : ["mount"])
++    lastRead.current = owner
+     let current = true
+     void loadSelectedClubWorkspace(kind, clubId, mode).then(value => {
+       if (current) setResult({ owner, value })
+diff --git a/components/views/leader-dashboard/live-leader-workspace.tsx b/components/views/leader-dashboard/live-leader-workspace.tsx
+index a22a23d..295d64d 100644
+--- a/components/views/leader-dashboard/live-leader-workspace.tsx
++++ b/components/views/leader-dashboard/live-leader-workspace.tsx
+@@ -1,7 +1,7 @@
+ "use client"
+ import "@/components/product/operational-dashboard.css"
+-import { pagePipeline, pipelinePageQuery, type PipelinePageQuery, type PipelineCursor } from "@/lib/pipeline-page"
+-import { useResidentPipeline } from "@/hooks/use-resident-pipeline"
++import { type PipelinePageQuery, type PipelineCursor } from "@/lib/pipeline-page"
++import { usePipelinePage } from "@/hooks/use-pipeline-page"
+ import { usePipelineApplicant } from "@/hooks/use-pipeline-applicant"
+ import { useEditorDraft } from "@/hooks/use-editor-draft"
+ import { AutosaveStatus } from "@/components/ui/autosave-status"
+@@ -32,7 +32,7 @@ import { WorkspaceLoading } from "@/components/workspace-loading"
+ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+ import { ChevronLeft, ChevronRight, RefreshCw, Search } from "@/components/icons"
+ import { BoardDecisionMode } from "@/components/live-voting/board-decision-mode"
+-import { getClubPipelineList, getClubPipelineSelection, moveApplicantRound, setApplicationStatus, reconsiderRejectedApplication, revokeRecruitmentOffer } from "@/lib/workspace-api"
++import { getClubPipelinePage, getClubPipelineSelection, moveApplicantRound, setApplicationStatus, reconsiderRejectedApplication, revokeRecruitmentOffer } from "@/lib/workspace-api"
+ import { submitEvaluation } from "@/lib/workspace-api"
+ import { useApplicationState } from "@/lib/application-state"
+ import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
+@@ -60,8 +60,7 @@ import {
+ } from "@/components/ui/dialog"
+ import { Badge } from "@/components/ui/badge"
+
+-type Summary = Awaited<ReturnType<typeof getClubPipelineList>>
+-type Pipeline = ReturnType<typeof pagePipeline>
++type Pipeline = Awaited<ReturnType<typeof getClubPipelinePage>>
+ type Candidate = Pipeline["applications"][number]
+ const selectStyle =
+   "h-9 max-w-full rounded-md border border-border bg-background px-2 text-sm focus-visible:outline-2 focus-visible:outline-ring"
+@@ -72,7 +71,7 @@ const name = (app: Candidate) =>
+ const average = (app: Candidate) =>
+   app.roundScore?.average ?? null
+
+-export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, rejectedOnly = false, initialData, onData, validatedInitialData = false }: { validatedInitialData?: boolean; scoped?: boolean; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: { clubId: string; pipeline: Summary }; onData?: (clubId: string, data: Pipeline | null) => void }) {
++export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, rejectedOnly = false, initialData, onData, validatedInitialData = false }: { validatedInitialData?: boolean; scoped?: boolean; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: { clubId: string; pipeline: Pipeline }; onData?: (clubId: string, data: Pipeline | null) => void }) {
+   const { user, activeClubId, selectClub } = useAuth()
+   const demo = useDemoMode()
+   const { leaderFocus } = useApplicationState()
+@@ -132,7 +131,7 @@ export function ApplicantReviewPreview({ clubId, applicationId, onClose, onChang
+   return <ClubWorkspace key={applicationId} membership={membership} preview={{ applicationId, onClose, onChanged, onNext }} />
+ }
+
+-function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false, initialData = null, onData, preview, validatedInitialData = false }: { validatedInitialData?: boolean; preview?: { applicationId: string; onClose: () => void; onChanged: () => void; onNext?: () => void }; membership: ExtendedMembership; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: Summary | null; onData?: (data: Pipeline | null) => void }) {
++function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false, initialData = null, onData, preview, validatedInitialData = false }: { validatedInitialData?: boolean; preview?: { applicationId: string; onClose: () => void; onChanged: () => void; onNext?: () => void }; membership: ExtendedMembership; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: Pipeline | null; onData?: (data: Pipeline | null) => void }) {
+   const previewId = preview?.applicationId
+   const demo = useDemoMode()
+   const { leaderFocus, clearLeaderFocus } = useApplicationState()
+@@ -184,38 +183,27 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+   // A changed filter starts a new selection. Clearing that filter later must
+   // not resurrect the previous selection's page cursor.
+   useEffect(() => { if (position && position.key !== selectionKey) setPosition(null) }, [position, selectionKey])
+-  const serverFilter = useMemo(() => ({ ...(round ? { roundId: round } : {}),
+-    ...(gender ? { gender: gender as (typeof genderValues)[number] } : {}), genderCounts: showGenderCounts,
+-  }), [round, gender, showGenderCounts])
+-  const { data: summaries, loading: listLoading, error: readError, setData, isCurrent } = useResidentPipeline({
+-    clubId: membership.clubId, filter: serverFilter, revision, authority,
++  const pageQuery = useMemo(() => ({ ...readQuery, ...(cursor ? { cursor } : {}) }), [readQuery, cursor])
++  const { data: listData, loading: listLoading, ready, invalid: invalidFilter, error: readError, setData, acceptPage, isCurrent } = usePipelinePage({
++    clubId: membership.clubId, query: pageQuery, revision, authority,
+     enabled: !previewId && demo.ready && !auth.loading && !!auth.user, initialData, validatedInitialData,
+   })
+   const latestAuthority = useRef(authority); latestAuthority.current = authority
+   const requestKey = JSON.stringify([selectionKey, cursor, revision])
+   const latestRequest = useRef(requestKey); latestRequest.current = requestKey
+-  const pageQuery = useMemo(() => ({ ...readQuery, ...(cursor ? { cursor } : {}) }), [readQuery, cursor])
+-  const projection = useMemo(() => {
+-    if (!summaries) return null
+-    const scope = JSON.stringify([membership.clubId, membership.id, selectionKey])
+-    const parsed = pipelinePageQuery.safeParse(pageQuery)
+-    return { invalid: !parsed.success, data: pagePipeline(summaries, parsed.success ? parsed.data : {}, membership.id, membership.userId, scope) }
+-  }, [summaries, pageQuery, membership.clubId, membership.id, membership.userId, selectionKey])
+-  const listData = projection?.data ?? null
+-  const invalidFilter = projection?.invalid ?? false
+-  const pageReady = !!previewId || !!listData && !listLoading && !invalidFilter
++  const pageReady = !!previewId || ready
+   const updating = !previewId && (!pageReady && !invalidFilter || !listData)
+   const busy = writing || updating || invalidFilter
+   const data = previewId ? detail.pipeline : listData
+   const loading = previewId ? !detail.pipeline && !detail.error : listLoading
+   const publish = useRef(onData)
+   publish.current = onData
+-  useEffect(() => { if (!previewId) publish.current?.(listData) }, [listData, previewId])
++  useEffect(() => { if (!previewId) publish.current?.(pageReady ? listData : null) }, [listData, pageReady, previewId])
+   const roundsForReview = useRef(data?.rounds)
+   roundsForReview.current = data?.rounds
+   const heading = useRef<HTMLHeadingElement>(null)
+   const search = useRef<HTMLInputElement>(null)
+-  useEffect(() => { setError("") }, [authority, revision, serverFilter])
++  useEffect(() => { setError("") }, [authority, revision, pageQuery])
+   const selectionRequestKey = JSON.stringify([selectionKey, revision])
+   const latestSelectionRequest = useRef(selectionRequestKey); latestSelectionRequest.current = selectionRequestKey
+   const loadSelection = useCallback(async () => {
+@@ -317,15 +305,16 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+     if (adjacent) { open(adjacent); return }
+     const next = direction === 1 ? pageInfo?.next : pageInfo?.previous
+     if (!next) return
+-    const adjacentPage = listData ? pagePipeline(summaries!, { ...readQuery, cursor: next }, membership.id, membership.userId, pageInfo!.scope) : null
+-    const target = direction === 1 ? adjacentPage?.applications[0] : adjacentPage?.applications.at(-1)
+-    if (!target) return
+     mutating.current = true; setBusy(true)
+     try {
+       if (canEvaluate && (draftSave.dirty || draftSave.saving)) await draftSave.flush()
+       if (!isCurrent()) return
++      const nextQuery = { ...readQuery, cursor: next }
++      const adjacentPage = await getClubPipelinePage(membership.clubId, nextQuery)
++      if (!acceptPage(adjacentPage, nextQuery)) return
+       setPosition({ key: selectionKey, cursor: next })
+-      open(target, true)
++      const target = direction === 1 ? adjacentPage.applications[0] : adjacentPage.applications.at(-1)
++      if (target) open(target, true)
+     } catch { setMessage("Couldn’t load the next applicant. Your review stays open.") }
+     finally { mutating.current = false; setBusy(false) }
+   }
+@@ -436,7 +425,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+     await setApplicationStatus({ clubId: membership.clubId, applicationId: app.id, status, expectedStatus: app.status === "DRAFTING" ? undefined : app.status })
+     try {
+       if (!isCurrent()) throw new Error("Applicant scope changed")
+-      const refreshed = await getClubPipelineList(membership.clubId, serverFilter)
++      const refreshed = await getClubPipelinePage(membership.clubId, pageQuery)
+       if (!setData(refreshed)) throw new Error("Applicant scope changed")
+       return refreshed
+     } catch (error) {
+diff --git a/contexts/auth-context.tsx b/contexts/auth-context.tsx
+index 48c3514..f2ef6f0 100644
+--- a/contexts/auth-context.tsx
++++ b/contexts/auth-context.tsx
+@@ -1,4 +1,5 @@
+-"use client";
++"use client"
++import { recordWorkspaceRead } from "@/lib/workspace-read-diagnostics";
+
+ import { createClient } from "@/utils/supabase/client";
+ import { hasWorkspace } from "@/lib/permissions";
+@@ -46,7 +47,7 @@ export function AuthProvider({ children, initialUser = null, isImpersonating = f
+     let token: string | undefined;
+     const { data: { subscription } } = createClient().auth.onAuthStateChange((event, session) => {
+       const next = session?.access_token ?? "";
+-      if (token !== undefined ? next !== token : event !== "INITIAL_SESSION") setReadAuthority({});
++      if (token !== undefined ? next !== token : event !== "INITIAL_SESSION") { recordWorkspaceRead("auth", [event.toLowerCase()]); setReadAuthority({}); }
+       token = next;
+     });
+     return () => subscription.unsubscribe();
+diff --git a/hooks/use-pipeline-page.ts b/hooks/use-pipeline-page.ts
+new file mode 100644
+index 0000000..5678721
+--- /dev/null
++++ b/hooks/use-pipeline-page.ts
+@@ -0,0 +1,74 @@
++"use client"
++
++import { useCallback, useEffect, useMemo, useRef, useState } from "react"
++import { getClubPipelinePage } from "@/lib/workspace-api"
++import { pipelinePageQuery, type PipelinePageQuery } from "@/lib/pipeline-page"
++import { recordWorkspaceRead } from "@/lib/workspace-read-diagnostics"
++import { serializedWorkspaceRead } from "@/lib/serialized-workspace-read"
++
++type Page = Awaited<ReturnType<typeof getClubPipelinePage>>
++type Context = { clubId: string; authority: object; revision: number; enabled: boolean }
++type Owner = { context: Context; scope: string }
++type Result = { owner: Owner; data: Page | null; failed: boolean }
++const key = (query: PipelinePageQuery) => JSON.stringify(pipelinePageQuery.parse(query))
++
++/** One fresh page per selection. Retained metadata keeps controls editable;
++ * earlier rows stay hidden until the current owner has a validated response. */
++export function usePipelinePage({ clubId, query, revision, authority, enabled, initialData, validatedInitialData }: {
++  clubId: string; query: PipelinePageQuery; revision: number; authority: object; enabled: boolean;
++  initialData: Page | null; validatedInitialData: boolean;
++}) {
++  const parsed = pipelinePageQuery.safeParse(query)
++  const scope = parsed.success ? JSON.stringify(parsed.data) : "invalid"
++  const valid = parsed.success
++  const context = useMemo(() => ({ clubId, authority, revision, enabled }), [clubId, authority, revision, enabled])
++  // A boundary read may supply the next page before its cursor is selected.
++  // Adopt that exact response once, without dispatching the same guarded GET.
++  const prepared = useRef<Owner | null>(null)
++  const owner = useMemo(() => prepared.current?.context === context && prepared.current.scope === scope ? prepared.current : { context, scope }, [context, scope])
++  const [result, setResult] = useState<Result | null>(enabled && valid && validatedInitialData && initialData ? { owner, data: initialData, failed: false } : null)
++  const latest = useRef({ owner, query, valid }), accepted = useRef(result), mounted = useRef(false)
++  latest.current = { owner, query, valid }; accepted.current = result
++  // A prepared owner is a one-render handoff, not a lookup cache. Consume it
++  // on commit, including when another query wins before it can be adopted.
++  useEffect(() => { prepared.current = null }, [owner])
++  const reader = useRef<ReturnType<typeof serializedWorkspaceRead> | null>(null)
++  useEffect(() => {
++    mounted.current = true
++    const instance = serializedWorkspaceRead(async () => {
++      const request = latest.current
++      if (!request.owner.context.enabled) return null
++      // Invalid input must not overwrite the last editable metadata. A changed
++      // authority has none: validate a default page before showing controls,
++      // while keeping all applicant rows hidden until the input is valid.
++      if (!request.valid && accepted.current?.owner.context === request.owner.context && accepted.current.data) return null
++      recordWorkspaceRead("page", ["dispatch"])
++      try { return { owner: request.owner, data: await getClubPipelinePage(request.owner.context.clubId, request.valid ? request.query : {}), failed: false } }
++      catch { return { owner: request.owner, data: null, failed: true } }
++    }, value => { if (value && mounted.current && latest.current.owner === value.owner) setResult(value) }, () => {})
++    reader.current = instance
++    return () => { mounted.current = false; instance.dispose(); if (reader.current === instance) reader.current = null }
++  }, [])
++  useEffect(() => {
++    const hasMetadata = accepted.current?.owner.context === context && !!accepted.current.data
++    if (enabled && (valid || !hasMetadata) && accepted.current?.owner !== owner) void reader.current?.refresh()
++  }, [owner, context, enabled, valid])
++  const isCurrent = useCallback(() => mounted.current && latest.current.owner === owner, [owner])
++  const setData = useCallback((value: Page | null | ((previous: Page | null) => Page | null)) => {
++    if (!mounted.current || latest.current.owner !== owner) return false
++    setResult(previous => mounted.current && latest.current.owner === owner ? { owner, failed: false,
++      data: typeof value === "function" ? value(previous?.owner === owner ? previous.data : null) : value } : previous)
++    return true
++  }, [owner])
++  const acceptPage = useCallback((data: Page, next: PipelinePageQuery) => {
++    if (!mounted.current || latest.current.owner !== owner) return false
++    const nextScope = key(next)
++    const nextOwner = nextScope === owner.scope ? owner : { context, scope: nextScope }
++    prepared.current = nextOwner; setResult({ owner: nextOwner, data, failed: false })
++    return true
++  }, [context, owner])
++  const retained = enabled && result?.owner.context === context ? result : null
++  const current = retained?.owner === owner ? retained : null
++  return { data: retained?.data ?? null, ready: !!current?.data && valid, invalid: !valid,
++    loading: !retained && !current?.failed, error: current?.failed ?? false, setData, acceptPage, isCurrent }
++}
+diff --git a/lib/interview-review-summary.ts b/lib/interview-review-summary.ts
+index d6d4c12..7af1879 100644
+--- a/lib/interview-review-summary.ts
++++ b/lib/interview-review-summary.ts
+@@ -15,6 +15,9 @@ export function submittedScoreSummary(reviews: { interviewerId: string; score: n
+   const submitted = new Map<string, number>();
+   for (const r of reviews) if (r.submittedAt && Number.isFinite(r.score) && r.score >= 1 && r.score <= 10 && !submitted.has(r.interviewerId)) submitted.set(r.interviewerId, r.score);
+   const required = new Set([...assignedIds, ...submitted.keys()]).size;
+-  return { average: submitted.size ? [...submitted.values()].reduce((a,b) => a+b,0) / submitted.size : null, submitted: submitted.size, required, provisional: assignedIds.some(id => !submitted.has(id)) };
++  // Keep the existing contributor/validation rules, but sum in stable member
++  // order so a different SQL plan cannot change floating-point rounding.
++  const ordered = [...submitted].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0);
++  return { average: submitted.size ? ordered.reduce((sum, [, score]) => sum + score, 0) / submitted.size : null, submitted: submitted.size, required, provisional: assignedIds.some(id => !submitted.has(id)) };
+ }
+ export function formatAverage(score: number | null) { return score === null ? "Not scored" : new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(score); }
+diff --git a/lib/pipeline-list.ts b/lib/pipeline-list.ts
+index f82ea0e..f610065 100644
+--- a/lib/pipeline-list.ts
++++ b/lib/pipeline-list.ts
+@@ -2,6 +2,13 @@ import type { getClubPipeline } from "@/actions/crm"
+
+ type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
+
++/** Relation plans may return visible references in different orders. Preserve
++ * multiplicity while making the narrow contract independent of SQL row order. */
++export function pipelineReviewerReferences(reviews: readonly { interviewerId: string }[]) {
++  return reviews.map(review => ({ interviewerId: review.interviewerId })).sort((a, b) =>
++    a.interviewerId < b.interviewerId ? -1 : a.interviewerId > b.interviewerId ? 1 : 0)
++}
++
+ /** Run only after the canonical per-applicant privacy and score projection. */
+ export function pipelineListProjection(data: Pipeline) {
+   return {
+@@ -19,7 +26,7 @@ export function pipelineListProjection(data: Pipeline) {
+             satScore: profile.satScore, actScore: profile.actScore,
+           } : null,
+         },
+-        evaluations: app.evaluations.map(e => ({ interviewerId: e.interviewerId })),
++        evaluations: pipelineReviewerReferences(app.evaluations),
+         roundScore: app.roundScore,
+       }
+     }),
+diff --git a/lib/pipeline-page-read.ts b/lib/pipeline-page-read.ts
+new file mode 100644
+index 0000000..9c614c3
+--- /dev/null
++++ b/lib/pipeline-page-read.ts
+@@ -0,0 +1,55 @@
++import { pagePipeline, type PipelinePageQuery } from "@/lib/pipeline-page"
++import { pipelineSummarySelect, pipelineSummaryProjection } from "@/lib/pipeline-summary"
++import type { Prisma } from "@prisma/client"
++import type { AppTransactionClient } from "@/utils/prisma"
++import type { ClubAccess } from "@/lib/permissions"
++
++// Ranking does not need review/assignment collections unless the requested
++// filter or sort observes them. Keep canonical JS collation/privacy semantics.
++const { evaluations: _evaluations, interviewAssignments: _assignments, ...metadataSelect } = pipelineSummarySelect
++export const pipelinePageMetadataSelect = metadataSelect
++export function requiresCompleteReviewMetadata(query: PipelinePageQuery) {
++  return query.review !== undefined || query.rating !== undefined || query.sort === "score"
++}
++
++type Member = ClubAccess & { id: string; userId: string }
++type Rounds = ReturnType<typeof pagePipeline>["rounds"]
++export async function readPipelinePage(tx: AppTransactionClient, where: Prisma.ApplicationWhereInput,
++  member: Member, rounds: Rounds, query: PipelinePageQuery, scope: string) {
++  const project = (app: Parameters<typeof pipelineSummaryProjection>[0]) => pipelineSummaryProjection(app, member)
++  if (requiresCompleteReviewMetadata(query)) {
++    const all = await tx.application.findMany({ where, select: pipelineSummarySelect })
++    return pagePipeline({ rounds, genderCounts: null, applications: all.map(project) }, query, member.id, member.userId, scope)
++  }
++  const metadata = await tx.application.findMany({ where, select: pipelinePageMetadataSelect })
++  // Empty review collections are internal ranking placeholders only. This path
++  // is never used for a review/score-dependent selector or returned as content.
++  const ranked = metadata.map(app => project({ ...app, evaluations: [], interviewAssignments: [] }))
++  const page = pagePipeline({ rounds, genderCounts: null, applications: ranked }, query, member.id, member.userId, scope)
++  if (!page.applications.length) return page
++  const ids = page.applications.map(app => app.id)
++  // Scalar metadata is already part of this same Repeatable Read snapshot.
++  // Read only the selected applicants' dependent collections, retaining the
++  // complete application predicate on each relation query as defense in depth.
++  const evaluations = await tx.evaluation.findMany({
++    where: { applicationId: { in: ids }, application: where, submittedAt: { not: null } },
++    select: { applicationId: true, ...pipelineSummarySelect.evaluations.select },
++  })
++  const assignments = await tx.interviewPanelAssignment.findMany({
++    where: { applicationId: { in: ids }, application: where, revokedAt: null },
++    select: { applicationId: true, ...pipelineSummarySelect.interviewAssignments.select },
++  })
++  function group<T extends { applicationId: string }>(records: T[]) {
++    const grouped = new Map<string, T[]>()
++    for (const record of records) {
++      const list = grouped.get(record.applicationId)
++      if (list) list.push(record); else grouped.set(record.applicationId, [record])
++    }
++    return grouped
++  }
++  const reviewsById = group(evaluations), assignmentsById = group(assignments)
++  const metadataById = new Map(metadata.map(app => [app.id, app]))
++  return { ...page, applications: ids.map(id => project({ ...metadataById.get(id)!,
++    evaluations: reviewsById.get(id) ?? [], interviewAssignments: assignmentsById.get(id) ?? [],
++  })) }
++}
+diff --git a/lib/pipeline-summary.ts b/lib/pipeline-summary.ts
+index 5437f00..3aa52f9 100644
+--- a/lib/pipeline-summary.ts
++++ b/lib/pipeline-summary.ts
+@@ -1,3 +1,4 @@
++import { pipelineReviewerReferences } from "@/lib/pipeline-list";
+ import type { Prisma } from "@prisma/client";
+ import { anonymousListProfile } from "@/lib/anonymous-review";
+ import { recruitmentListProfile } from "@/lib/recruitment-profile";
+@@ -32,6 +33,6 @@ export function pipelineSummaryProjection(app: Summary, membership: ClubAccess &
+     student: { email: anonymous ? "" : app.student.email,
+       studentProfile: anonymous ? anonymousListProfile(app.id, app.student.studentProfile) :
+         app.student.studentProfile ? recruitmentListProfile(app.student.studentProfile) : null },
+-    evaluations: evaluations.map(e => ({ interviewerId: e.interviewerId })), roundScore,
++    evaluations: pipelineReviewerReferences(evaluations), roundScore,
+   };
+ }
+diff --git a/lib/workspace-read-diagnostics.ts b/lib/workspace-read-diagnostics.ts
+new file mode 100644
+index 0000000..5d84473
+--- /dev/null
++++ b/lib/workspace-read-diagnostics.ts
+@@ -0,0 +1,9 @@
++// Local observers receive only fixed event labels, never identities, tokens,
++// cookies, filter values, request arguments or authorization results. No buffer.
++export const workspaceReadCauses = ["mount", "dispatch", "user", "readAuthority", "isImpersonating", "clubId", "kind", "privacyScope", "retry", "mode", "demoReady", "demoEnabled", "initial_session", "signed_in", "signed_out", "token_refreshed", "user_updated", "mfa_challenge_verified", "password_recovery"] as const
++export function recordWorkspaceRead(kind: "auth" | "selected" | "page", causes: readonly string[]) {
++  if (typeof window === "undefined" || typeof CustomEvent === "undefined" || typeof window.dispatchEvent !== "function") return
++  if (!["auth", "selected", "page"].includes(kind)) return
++  const safe = causes.filter(cause => workspaceReadCauses.includes(cause as typeof workspaceReadCauses[number]))
++  try { window.dispatchEvent(new CustomEvent("outclass:workspace-read", { detail: { kind, causes: safe } })) } catch { /* Diagnostics must never block an authority change or a read. */ }
++}
+diff --git a/scripts/navigation-audit.cjs b/scripts/navigation-audit.cjs
+index d6bf6c7..b439149 100644
+--- a/scripts/navigation-audit.cjs
++++ b/scripts/navigation-audit.cjs
+@@ -88,6 +88,13 @@ function routes(f) {
+   };
+ }
+ function installBrowserObservers(options) {
++  window.__workspaceReadEvents = [];
++  const readCauses = new Set(['mount','dispatch','user','readAuthority','isImpersonating','clubId','kind','privacyScope','retry','mode','demoReady','demoEnabled','initial_session','signed_in','signed_out','token_refreshed','user_updated','mfa_challenge_verified','password_recovery']);
++  window.addEventListener('outclass:workspace-read', event => {
++    const value=event.detail;if(!value||!['auth','selected','page'].includes(value.kind)||!Array.isArray(value.causes))return;
++    if(window.__workspaceReadEvents.length===256)window.__workspaceReadEvents.shift();
++    window.__workspaceReadEvents.push({atMs:performance.now(),kind:value.kind,causes:value.causes.filter(c=>readCauses.has(c))});
++  });
+   window.__navAudit={longTasks:[],commits:[],hydration:[],domMismatches:[],phase:'initial'};
+   if(options?.diagnoseHydration)window.__captureHydrationDom=(fiber,node)=>{
+     const describe=n=>!n?null:{nodeType:n.nodeType,tag:n.nodeType===1?n.tagName.toLowerCase():n.nodeType===8?'comment':'text',classes:n.nodeType===1?[...n.classList].filter(c=>c.startsWith('oc-')):[],suspense:n.nodeType===8&&/^[/$?!~&]{1,6}$/.test(n.data)?n.data:null};
+@@ -162,6 +169,12 @@ async function main() {
+       });
+     }
+     await cdp.send('Performance.enable');
++    if(process.argv.includes('--constrained-network')) {
++      assert.equal(config.appUrl,'http://127.0.0.1:3107','Network profiling is reserved for this disposable local fixture');
++      await cdp.send('Network.enable');
++      await cdp.send('Network.emulateNetworkConditions',{offline:false,latency:80,downloadThroughput:200000,uploadThroughput:93750,connectionType:'cellular4g'});
++      await cdp.send('Emulation.setCPUThrottlingRate',{rate:4});
++    }
+     const requests=[],pending=new Set(),pageErrors=[],wire=[];
+     if(process.argv.includes('--phase3')) {
+       await cdp.send('Network.enable');
+@@ -197,7 +210,9 @@ async function main() {
+       const nav = performance.getEntriesByType("navigation")[0];
+       return { readyState: document.readyState, opening: text.includes("Opening club workspace…"), selectedLoading: text.includes("Loading workspace…"), pipeline: !!document.querySelector(".oc-live-pipeline"), accessUnavailable: text.includes("Club workspace unavailable"), alerts: document.querySelectorAll('[role="alert"]').length, document: nav ? {ttfbMs:nav.responseStart, domContentLoadedMs:nav.domContentLoadedEventEnd} : null };
+     }).catch(() => null);
+-    return { elapsedMs: Date.now()-started, meaningfulMs:s.sourceReadyMs??null, dom, requests: s.requests.map(r => ({route:r.route,type:r.type,method:r.method,status:r.status,failed:!!r.failed,pending:r.end===null,startMs:r.start-started,endMs:r.end===null?null:r.end-started,traceId:r.traceId||null,serverTiming:r.serverTiming||null,encodedBodyBytes:r.bytes,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart-r.timing.requestStart:null,transferMs:r.timing?.responseEnd>=0?r.timing.responseEnd-r.timing.responseStart:null})) };
++    const heap=Object.fromEntries((await s.cdp.send('Performance.getMetrics')).metrics.map(m=>[m.name,m.value]));
++    const authorityEvents=await s.page.evaluate(()=>window.__workspaceReadEvents||[]);
++    return { elapsedMs: Date.now()-started, meaningfulMs:s.sourceReadyMs??null, dom, heapUsedBytes:heap.JSHeapUsedSize,heapTotalBytes:heap.JSHeapTotalSize,authorityEvents, requests: s.requests.map(r => ({route:r.route,type:r.type,method:r.method,status:r.status,failed:!!r.failed,pending:r.end===null,startMs:r.start-started,endMs:r.end===null?null:r.end-started,traceId:r.traceId||null,serverTiming:r.serverTiming||null,encodedBodyBytes:r.bytes,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart-r.timing.requestStart:null,transferMs:r.timing?.responseEnd>=0?r.timing.responseEnd-r.timing.responseStart:null})) };
+   }
+   async function open(s,id) {
+     const started=Date.now();
+@@ -314,7 +329,7 @@ async function main() {
+       }
+       return {route:r.route,type:r.type,method:r.method,status:r.status,serverTiming:r.serverTiming||null,traceId:r.traceId||null,startMs:r.start-clickWall,endMs:r.end===null?null:r.end-clickWall,encodedBodyBytes,failed:r.failed||false,failureReason:r.failureReason||null,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart-r.timing.requestStart:null,transferMs:r.timing?.responseEnd>=0?r.timing.responseEnd-r.timing.responseStart:null,...(process.argv.includes('--phase3')?{bodyBytesSource}:{})};
+     });
+-    const row={...(s.preparation?{preparation:s.preparation}:{}),path:from+' → '+to,condition,index,clickToUrlMs:marks.url?marks.url-marks.click:null,meaningfulMs:marks.ready-marks.click,interactiveMs:marks.interactive?marks.interactive-marks.click:null,networkCompleteMs:Math.max(0,...rows.filter(r=>r.type!=='eventsource').map(r=>r.endMs||0)),requestCount:rows.length,encodedBodyBytes:rows.reduce((n,r)=>n+(r.encodedBodyBytes||0),0),scriptMs:(afterMetrics.ScriptDuration-beforeMetrics.ScriptDuration)*1000,taskMs:(afterMetrics.TaskDuration-beforeMetrics.TaskDuration)*1000,layoutMs:(afterMetrics.LayoutDuration-beforeMetrics.LayoutDuration)*1000,longTasks:marks.longTasks,reactCommitCount:marks.commits,reactRenderDurationMs:null,requests:rows};
++    const row={...(s.preparation?{preparation:s.preparation}:{}),path:from+' → '+to,condition,index,clickToUrlMs:marks.url?marks.url-marks.click:null,meaningfulMs:marks.ready-marks.click,interactiveMs:marks.interactive?marks.interactive-marks.click:null,networkCompleteMs:Math.max(0,...rows.filter(r=>r.type!=='eventsource').map(r=>r.endMs||0)),requestCount:rows.length,encodedBodyBytes:rows.reduce((n,r)=>n+(r.encodedBodyBytes||0),0),scriptMs:(afterMetrics.ScriptDuration-beforeMetrics.ScriptDuration)*1000,taskMs:(afterMetrics.TaskDuration-beforeMetrics.TaskDuration)*1000,layoutMs:(afterMetrics.LayoutDuration-beforeMetrics.LayoutDuration)*1000,longTasks:marks.longTasks,reactCommitCount:marks.commits,reactRenderDurationMs:null,heapBeforeBytes:beforeMetrics.JSHeapUsedSize,heapAfterBytes:afterMetrics.JSHeapUsedSize,authorityEvents:await s.page.evaluate(()=>window.__workspaceReadEvents||[]),requests:rows};
+     if(process.argv.includes('--diagnose-hydration')){const diagnostic=await page.evaluate(()=>({hydration:window.__navAudit.hydration,dom:window.__navAudit.domMismatches}));row.hydration=diagnostic.hydration;row.hydrationDom=diagnostic.dom;}
+     if(active){row.pageErrorCount=s.pageErrors.length;row.pageErrorKinds=[...s.pageErrors];row.participant=s.participant;row.wave=index;row.renderedRooms=await page.locator('section[aria-label="Interview rooms"] li').count();row.openInterviewLinks=await page.locator('section[aria-label="Interview rooms"]').getByRole('link',{name:'Open interview',exact:true}).count();}
+     if(process.argv.includes('--phase2')){row.pageErrorCount=s.pageErrors.length;row.pageErrorKinds=[...s.pageErrors];row.inputMethod=process.argv.includes('--phase3')&&to==='applicantDetail'?'pointer':'keyboard';row.initialScriptBytes=s.requests.slice(0,startIndex).filter(r=>r.type==='script').reduce((n,r)=>n+(r.bytes||0),0);}
+@@ -393,7 +408,7 @@ async function main() {
+         }
+       } catch(e){failures.push({path:from+' → '+to,condition,error:String(e.message).slice(0,1800)});console.log('UNAVAILABLE '+from+' → '+to+' '+condition+': '+String(e.message).slice(0,800));if(shared)console.log('Fixture UI diagnostics: '+await shared.page.locator('body').innerText().then(s=>s.slice(0,1800)).catch(()=>''));}
+       finally {if(shared)await shared.context.close();}
+-      fs.writeFileSync(path.join(outDir,outputStem+'-samples.json'),JSON.stringify({environment:'local Next production build + disposable local Supabase',fixture:fixture.counts,sampleCount,metricsNotes:{meaningfulMs:'DOM content predicate followed by two requestAnimationFrame callbacks; paint proxy, not screenshot timing',interactiveMs:'first enabled visible control after content predicate; no mutation is invoked',requestOffsets:'relative to captured DOM click timestamp',networkCompleteMs:'observed non-SSE requests drained after useful content; includes background traffic',cpu:'CDP delta through settle, so includes post-content background work',react:'production commit notifications only; profiler render durations unavailable'},samples:allSamples,failures},null,2));
++      fs.writeFileSync(path.join(outDir,outputStem+'-samples.json'),JSON.stringify({environment:'local Next production build + disposable local Supabase',fixture:fixture.counts,sampleCount,metricsNotes:{profile:process.argv.includes('--constrained-network')?'Local CDP 80ms latency, 1.6Mbps down/0.75Mbps up, CPU4x':'Local unthrottled',meaningfulMs:'DOM content predicate followed by two requestAnimationFrame callbacks; paint proxy, not screenshot timing',interactiveMs:'first enabled visible control after content predicate; no mutation is invoked',requestOffsets:'relative to captured DOM click timestamp',networkCompleteMs:'observed non-SSE requests drained after useful content; includes background traffic',cpu:'CDP delta through settle, so includes post-content background work',react:'production commit notifications only; profiler render durations unavailable'},samples:allSamples,failures},null,2));
+     }
+     const groups=[...new Set(allSamples.map(s=>s.path+'|'+s.condition))].map(key=>{const samples=allSamples.filter(s=>s.path+'|'+s.condition===key);return{path:samples[0].path,condition:samples[0].condition,meaningfulMs:distribution(samples.map(s=>s.meaningfulMs)),interactiveMs:distribution(samples.map(s=>s.interactiveMs)),clickToUrlMs:distribution(samples.map(s=>s.clickToUrlMs)),networkCompleteMs:distribution(samples.map(s=>s.networkCompleteMs)),scriptMs:distribution(samples.map(s=>s.scriptMs)),taskMs:distribution(samples.map(s=>s.taskMs)),requestCount:distribution(samples.map(s=>s.requestCount)),encodedBodyBytes:distribution(samples.map(s=>s.encodedBodyBytes))};});
+     fs.writeFileSync(path.join(outDir,outputStem+'-summary.json'),JSON.stringify({generatedAt:new Date().toISOString(),sampleCount,groups,failures},null,2));
+diff --git a/scripts/navigation-loader-audit.cjs b/scripts/navigation-loader-audit.cjs
+index 9f82a42..6506c9d 100644
+--- a/scripts/navigation-loader-audit.cjs
++++ b/scripts/navigation-loader-audit.cjs
+@@ -50,7 +50,7 @@ async function main(){
+    }catch(e){results.push({name,file,fn,unavailable:e.name+': '+String(e.message).split('\n').filter(Boolean).at(-1)});console.log(name+': unavailable');}
+   }
+   const output=process.argv.includes('--pipeline-study')?path.resolve(process.argv.find(a=>a.startsWith('--out='))?.slice(6)||''):path.resolve('docs/performance/evidence/loader-samples.json');
+-  if(process.argv.includes('--pipeline-study')){assert.ok(['phase3','phase4','phase5','phase6','phase7'].some(phase=>output.startsWith(path.resolve('docs/performance',phase)+path.sep)));assert.ok(!fs.existsSync(output));assert.ok(results.every(r=>r.samples?.length===20),'Every planned loader sample is required');}
++  if(process.argv.includes('--pipeline-study')){assert.ok(['phase3','phase4','phase5','phase6','phase7','phase8'].some(phase=>output.startsWith(path.resolve('docs/performance',phase)+path.sep)));assert.ok(!fs.existsSync(output));assert.ok(results.every(r=>r.samples?.length===20),'Every planned loader sample is required');}
+   fs.mkdirSync(path.dirname(output),{recursive:true});fs.writeFileSync(output,JSON.stringify({generatedAt:new Date().toISOString(),sourceRef:sourceRef||'working-tree',environment:'original TypeScript loaders, real local Auth/PostgreSQL; Next cookie context adapted; outside RSC cache dispatcher',limitations:['Not Next HTTP latency or production timing.','Provider durations measure headers, not body consumption.','Prisma event duration is engine-reported integer milliseconds, not application phase attribution.','No support-session/demo behavior profiled.'],results},null,2));
+  }finally{global.fetch=originalFetch;await db.$disconnect();}
+ }
+diff --git a/scripts/navigation-phase8-concurrency.cjs b/scripts/navigation-phase8-concurrency.cjs
+new file mode 100644
+index 0000000..6d5f4ad
+--- /dev/null
++++ b/scripts/navigation-phase8-concurrency.cjs
+@@ -0,0 +1,16 @@
++// Bounded real HTTP bursts against the reserved fixture. No auth/cache shortcuts.
++const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),http=require('node:http'),{performance}=require('node:perf_hooks'),{gunzipSync}=require('node:zlib'),{PrismaClient}=require('@prisma/client');
++const local=require('./navigation-phase8-local.cjs'),{Actor}=require('../tests/helpers/onboarding-e2e.cjs');
++async function main(){
++ const out=path.resolve(process.argv.find(a=>a.startsWith('--out='))?.slice(6)||''),kind=process.argv.find(a=>a.startsWith('--kind='))?.slice(7);assert.ok(out.startsWith(path.join(local.repo,'docs/performance/phase8')+path.sep)&&!fs.existsSync(out));assert.ok(['pipelinePage','pipelineList'].includes(kind));
++ const fixture=JSON.parse(fs.readFileSync(path.join(local.root,'navigation-fixture.json'))),actor=new Actor(local.config());await actor.signIn(fixture.email,fixture.password);const url=new URL(local.config().appUrl+'/api/workspace?'+new URLSearchParams({kind,args:JSON.stringify([fixture.clubIds[0],{genderCounts:false}])}));assert.equal(url.origin,'http://127.0.0.1:3107');
++ const poolUrl=new URL(local.config().status.DB_URL);poolUrl.searchParams.set('connection_limit','1');const monitor=new PrismaClient({datasourceUrl:poolUrl.href}),agent=new http.Agent({keepAlive:true,maxSockets:4}),samples=[],poolSamples=[];let monitoring=true;
++ const origin=performance.now(),poll=(async()=>{while(monitoring){const [row]=await monitor.$queryRaw`SELECT count(*)::int AS connections, count(*) FILTER (WHERE state='active')::int AS active, count(*) FILTER (WHERE state='idle in transaction')::int AS idle_in_transaction, count(*) FILTER (WHERE wait_event_type='Lock')::int AS lock_waiting FROM pg_stat_activity WHERE datname=current_database() AND usename=current_user AND backend_type='client backend' AND pid<>pg_backend_pid()`;poolSamples.push({offsetMs:performance.now()-origin,...row});await new Promise(r=>setTimeout(r,25))}})();
++ async function read(concurrency,wave,index){return new Promise(resolve=>{
++  const start=performance.now();const request=http.get(url,{agent,headers:{cookie:actor.cookieHeader(),'accept-encoding':'gzip'}},response=>{const ttfbMs=performance.now()-start,chunks=[];response.on('data',chunk=>chunks.push(chunk));response.on('end',()=>{const body=Buffer.concat(chunks);let valid=false,count=null;try{const data=JSON.parse((response.headers['content-encoding']==='gzip'?gunzipSync(body):body).toString()).data;valid=Array.isArray(data.applications);count=data.applications?.length}catch{}const row={concurrency,wave,index,warmup:wave===0,startOffsetMs:start-origin,endOffsetMs:performance.now()-origin,elapsedMs:performance.now()-start,ttfbMs,status:response.statusCode,encodedBodyBytes:body.length,applicationCount:count,serverTiming:response.headers['server-timing']||null,traceId:response.headers['x-outclass-trace-id']||null,privateNoStore:response.headers['cache-control']==='private, no-store',cookieSensitive:/Cookie/.test(response.headers.vary||''),failed:!valid||response.statusCode!==200};samples.push(row);resolve()})});
++  request.setTimeout(30000,()=>request.destroy());request.once('error',e=>{samples.push({concurrency,wave,index,warmup:wave===0,failed:true,startOffsetMs:start-origin,endOffsetMs:performance.now()-origin,error:e.name,elapsedMs:performance.now()-start});resolve()});
++ })}
++ try{for(const concurrency of [1,2,4])for(let wave=0;wave<6;wave++)await Promise.all(Array.from({length:concurrency},(_,index)=>read(concurrency,wave,index)));assert.equal(samples.length,42);assert.ok(samples.every(r=>r.privateNoStore&&r.cookieSensitive&&!r.failed));}
++ finally{monitoring=false;await poll;await monitor.$disconnect();agent.destroy();fs.writeFileSync(out,JSON.stringify({buildId:fs.readFileSync(path.join(local.dist,'BUILD_ID'),'utf8').trim(),size:fixture.counts.applicantsInMeasuredClub,kind,poolLimitPerClient:8,maxConcurrentHttp:4,poolSampling:'25ms same-role aggregates excluding monitor; SQL text/identities never recorded. Count includes unrelated same-role background sessions if present.','sampleUnit':'One HTTP initial-list read, not a local resident interaction. Each burst shares a wave; not independent percentiles.',samples,poolSamples},null,2)+'\n')}
++}
++if(require.main===module)main().catch(e=>{console.error(e.name+': bounded HTTP study failed');process.exitCode=1});
+diff --git a/scripts/navigation-phase8-constrained-interactions.cjs b/scripts/navigation-phase8-constrained-interactions.cjs
+new file mode 100644
+index 0000000..cedcba4
+--- /dev/null
++++ b/scripts/navigation-phase8-constrained-interactions.cjs
+@@ -0,0 +1,38 @@
++// Additional warm interactions on the same frozen builds/cohorts as the primary
++// harness. No interception, seeded delay, mutation, or benchmark-only app path.
++const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{performance}=require('node:perf_hooks'),{chromium}=require('playwright');
++const local=require('./navigation-phase8-local.cjs'),{Actor}=require('../tests/helpers/onboarding-e2e.cjs'),{safeRoute}=require('./navigation-audit.cjs');
++async function main(){
++ const out=path.resolve(process.argv.find(a=>a.startsWith('--out='))?.slice(6)||'');assert.ok(out.startsWith(path.join(local.repo,'docs/performance/phase8')+path.sep)&&!fs.existsSync(out));
++ const f=JSON.parse(fs.readFileSync(path.join(local.root,'navigation-fixture.json'))),size=f.counts.applicantsInMeasuredClub||100;assert.ok(size>=1000);
++ const actor=new Actor(local.config());await actor.signIn(f.email,f.password);const browser=await chromium.launch({headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage(),requests=[],pending=new Set(),errors=[],samples=[];
++ const cdp=await context.newCDPSession(page);assert.equal(local.config().appUrl,'http://127.0.0.1:3107');await cdp.send('Network.enable');await cdp.send('Network.emulateNetworkConditions',{offline:false,latency:80,downloadThroughput:200000,uploadThroughput:93750,connectionType:'cellular4g'});await cdp.send('Emulation.setCPUThrottlingRate',{rate:4});
++ page.on('pageerror',e=>errors.push(e.name));page.on('request',r=>{const row={request:r,route:safeRoute(r.url()),type:r.resourceType(),start:performance.now(),end:null,status:null,bytes:null};requests.push(row);if(row.type!=='eventsource')pending.add(r)});
++ page.on('response',r=>{const row=requests.find(q=>q.request===r.request());if(row){row.status=r.status();row.serverTiming=r.headers()['server-timing']||null;row.traceId=r.headers()['x-outclass-trace-id']||null}});
++ page.on('requestfinished',r=>{pending.delete(r);const row=requests.find(q=>q.request===r);if(row){row.end=performance.now();row.timing=r.timing();void r.sizes().then(s=>row.bytes=s.responseBodySize).catch(()=>{})}});page.on('requestfailed',r=>{pending.delete(r);const row=requests.find(q=>q.request===r);if(row){row.end=performance.now();row.failed=true}});
++ async function drain(){const until=performance.now()+10000;while(pending.size&&performance.now()<until)await new Promise(r=>setTimeout(r,20));assert.equal(pending.size,0,'Unfinished non-SSE request');await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))))}
++ async function capture(kind,index,target,action){
++  await drain();const offset=requests.length,errorOffset=errors.length,start=performance.now();let failed=null,meaningfulMs=null,marks=null,driverElapsedMs=null;
++  await page.evaluate(({target,event})=>{
++   const state={start:0,ready:0,scheduled:false,origin:performance.timeOrigin};window.__phase8Paint=state;
++   const check=()=>{if(!state.start||state.scheduled)return;const found=[...document.querySelectorAll('.oc-live-pipeline [data-applicant-id]')].some(e=>e.getClientRects().length&&e.textContent.includes(target));if(!found)return;state.scheduled=true;requestAnimationFrame(()=>requestAnimationFrame(()=>{state.ready=performance.now()}))};
++   const begin=()=>{if(!state.start)state.start=performance.now();queueMicrotask(check)};
++   document.addEventListener(event,begin,true);const observer=new MutationObserver(check);observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true});state.check=check;state.cleanup=()=>{observer.disconnect();document.removeEventListener(event,begin,true)};
++  },{target,event:kind==='next-page'?'click':'input'});
++  try{await action();await page.evaluate(()=>window.__phase8Paint.check());await page.waitForFunction(()=>window.__phase8Paint.ready>0,null,{timeout:30000});marks=await page.evaluate(()=>{const s=window.__phase8Paint;s.cleanup();return{start:s.start,ready:s.ready,origin:s.origin}});meaningfulMs=marks.ready-marks.start;driverElapsedMs=performance.now()-start;await drain()}catch(e){failed=e.name;process.exitCode=1;await page.evaluate(()=>window.__phase8Paint.cleanup()).catch(()=>{})}
++  const origin=marks?marks.origin+marks.start:performance.timeOrigin+start;
++  const rows=requests.slice(offset).map(r=>({route:r.route,type:r.type,startMs:performance.timeOrigin+r.start-origin,endMs:r.end===null?null:performance.timeOrigin+r.end-origin,status:r.status,failed:!!r.failed,encodedBodyBytes:r.bytes,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart:null,transferMs:r.timing?.responseEnd>=0&&r.timing?.responseStart>=0?r.timing.responseEnd-r.timing.responseStart:null,serverTiming:r.serverTiming,traceId:r.traceId}));
++  samples.push({kind,index,warmup:index===0,condition:'warm',failed,meaningfulMs,driverElapsedMs,requestCount:rows.length,encodedBodyBytes:rows.every(r=>Number.isFinite(r.encodedBodyBytes))?rows.reduce((n,r)=>n+r.encodedBodyBytes,0):null,pageErrors:errors.slice(errorOffset),requests:rows});
++ }
++ try{
++  await page.goto(local.config().appUrl+'/club/'+f.clubIds[0]+'/workspace?section=recruitment&tool=applicants');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await page.waitForLoadState('networkidle');await drain();const pager=page.getByRole('navigation',{name:'Applicant pages',exact:true}),search=page.getByRole('textbox',{name:'Search applicants',exact:true}),last='Scale Student '+String(size-1).padStart(5,'0');
++  for(let i=0;i<6;i++){
++   await capture('next-page',i,'Scale Student 00100',()=>pager.getByRole('button',{name:'Next applicant page',exact:true}).click());
++   await pager.getByRole('button',{name:'Previous applicant page',exact:true}).click();await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await drain();
++   await capture('distant-search',i,last,()=>search.fill(last));
++   assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),1);assert.equal(await search.evaluate(e=>document.activeElement===e),true);
++   await search.fill('');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await drain();
++  }
++ }finally{fs.mkdirSync(path.dirname(out),{recursive:true});fs.writeFileSync(out,JSON.stringify({buildId:fs.readFileSync(path.join(local.dist,'BUILD_ID'),'utf8').trim(),size,planned:12,samples,errors,interpretation:'Local constrained profile: 80ms latency, 1.6Mbps down/0.75Mbps up, CPU4x. Warm interactions only. Browser event timestamp to MutationObserver content predicate plus two animation frames; driver polling/dispatch is excluded from meaningfulMs and separately retained as driverElapsedMs. Initial preparation, restoration and one warmup per interaction excluded from measured distribution. All failures retained; no retries.'},null,2)+'\n');await context.close();await browser.close()}
++}
++if(require.main===module)main().catch(e=>{console.error(e.name+': interaction study failed');process.exitCode=1});
+diff --git a/scripts/navigation-phase8-interactions.cjs b/scripts/navigation-phase8-interactions.cjs
+new file mode 100644
+index 0000000..0530930
+--- /dev/null
++++ b/scripts/navigation-phase8-interactions.cjs
+@@ -0,0 +1,37 @@
++// Additional warm interactions on the same frozen builds/cohorts as the primary
++// harness. No interception, seeded delay, mutation, or benchmark-only app path.
++const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{performance}=require('node:perf_hooks'),{chromium}=require('playwright');
++const local=require('./navigation-phase8-local.cjs'),{Actor}=require('../tests/helpers/onboarding-e2e.cjs'),{safeRoute}=require('./navigation-audit.cjs');
++async function main(){
++ const out=path.resolve(process.argv.find(a=>a.startsWith('--out='))?.slice(6)||'');assert.ok(out.startsWith(path.join(local.repo,'docs/performance/phase8')+path.sep)&&!fs.existsSync(out));
++ const f=JSON.parse(fs.readFileSync(path.join(local.root,'navigation-fixture.json'))),size=f.counts.applicantsInMeasuredClub||100;assert.ok(size>=1000);
++ const actor=new Actor(local.config());await actor.signIn(f.email,f.password);const browser=await chromium.launch({headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage(),requests=[],pending=new Set(),errors=[],samples=[];
++ page.on('pageerror',e=>errors.push(e.name));page.on('request',r=>{const row={request:r,route:safeRoute(r.url()),type:r.resourceType(),start:performance.now(),end:null,status:null,bytes:null};requests.push(row);if(row.type!=='eventsource')pending.add(r)});
++ page.on('response',r=>{const row=requests.find(q=>q.request===r.request());if(row){row.status=r.status();row.serverTiming=r.headers()['server-timing']||null;row.traceId=r.headers()['x-outclass-trace-id']||null}});
++ page.on('requestfinished',r=>{pending.delete(r);const row=requests.find(q=>q.request===r);if(row){row.end=performance.now();row.timing=r.timing();void r.sizes().then(s=>row.bytes=s.responseBodySize).catch(()=>{})}});page.on('requestfailed',r=>{pending.delete(r);const row=requests.find(q=>q.request===r);if(row){row.end=performance.now();row.failed=true}});
++ async function drain(){const until=performance.now()+10000;while(pending.size&&performance.now()<until)await new Promise(r=>setTimeout(r,20));assert.equal(pending.size,0,'Unfinished non-SSE request');await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))))}
++ async function capture(kind,index,target,action){
++  await drain();const offset=requests.length,errorOffset=errors.length,start=performance.now();let failed=null,meaningfulMs=null,marks=null,driverElapsedMs=null;
++  await page.evaluate(({target,event})=>{
++   const state={start:0,ready:0,scheduled:false,origin:performance.timeOrigin};window.__phase8Paint=state;
++   const check=()=>{if(!state.start||state.scheduled)return;const found=[...document.querySelectorAll('.oc-live-pipeline [data-applicant-id]')].some(e=>e.getClientRects().length&&e.textContent.includes(target));if(!found)return;state.scheduled=true;requestAnimationFrame(()=>requestAnimationFrame(()=>{state.ready=performance.now()}))};
++   const begin=()=>{if(!state.start)state.start=performance.now();queueMicrotask(check)};
++   document.addEventListener(event,begin,true);const observer=new MutationObserver(check);observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true});state.check=check;state.cleanup=()=>{observer.disconnect();document.removeEventListener(event,begin,true)};
++  },{target,event:kind==='next-page'?'click':'input'});
++  try{await action();await page.evaluate(()=>window.__phase8Paint.check());await page.waitForFunction(()=>window.__phase8Paint.ready>0,null,{timeout:30000});marks=await page.evaluate(()=>{const s=window.__phase8Paint;s.cleanup();return{start:s.start,ready:s.ready,origin:s.origin}});meaningfulMs=marks.ready-marks.start;driverElapsedMs=performance.now()-start;await drain()}catch(e){failed=e.name;process.exitCode=1;await page.evaluate(()=>window.__phase8Paint.cleanup()).catch(()=>{})}
++  const origin=marks?marks.origin+marks.start:performance.timeOrigin+start;
++  const rows=requests.slice(offset).map(r=>({route:r.route,type:r.type,startMs:performance.timeOrigin+r.start-origin,endMs:r.end===null?null:performance.timeOrigin+r.end-origin,status:r.status,failed:!!r.failed,encodedBodyBytes:r.bytes,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart:null,transferMs:r.timing?.responseEnd>=0&&r.timing?.responseStart>=0?r.timing.responseEnd-r.timing.responseStart:null,serverTiming:r.serverTiming,traceId:r.traceId}));
++  samples.push({kind,index,warmup:index===0,condition:'warm',failed,meaningfulMs,driverElapsedMs,requestCount:rows.length,encodedBodyBytes:rows.every(r=>Number.isFinite(r.encodedBodyBytes))?rows.reduce((n,r)=>n+r.encodedBodyBytes,0):null,pageErrors:errors.slice(errorOffset),requests:rows});
++ }
++ try{
++  await page.goto(local.config().appUrl+'/club/'+f.clubIds[0]+'/workspace?section=recruitment&tool=applicants');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await page.waitForLoadState('networkidle');await drain();const pager=page.getByRole('navigation',{name:'Applicant pages',exact:true}),search=page.getByRole('textbox',{name:'Search applicants',exact:true}),last='Scale Student '+String(size-1).padStart(5,'0');
++  for(let i=0;i<6;i++){
++   await capture('next-page',i,'Scale Student 00100',()=>pager.getByRole('button',{name:'Next applicant page',exact:true}).click());
++   await pager.getByRole('button',{name:'Previous applicant page',exact:true}).click();await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await drain();
++   await capture('distant-search',i,last,()=>search.fill(last));
++   assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),1);assert.equal(await search.evaluate(e=>document.activeElement===e),true);
++   await search.fill('');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await drain();
++  }
++ }finally{fs.mkdirSync(path.dirname(out),{recursive:true});fs.writeFileSync(out,JSON.stringify({buildId:fs.readFileSync(path.join(local.dist,'BUILD_ID'),'utf8').trim(),size,planned:12,samples,errors,interpretation:'Warm interactions only. Browser event timestamp to MutationObserver content predicate plus two animation frames; driver polling/dispatch is excluded from meaningfulMs and separately retained as driverElapsedMs. Initial preparation, restoration and one warmup per interaction excluded from measured distribution. All failures retained; no retries.'},null,2)+'\n');await context.close();await browser.close()}
++}
++if(require.main===module)main().catch(e=>{console.error(e.name+': interaction study failed');process.exitCode=1});
+diff --git a/scripts/navigation-phase8-local.cjs b/scripts/navigation-phase8-local.cjs
+new file mode 100644
+index 0000000..3309292
+--- /dev/null
++++ b/scripts/navigation-phase8-local.cjs
+@@ -0,0 +1,12 @@
++// Lifecycle helper restricted to this chat's owned, disposable navigation fixture.
++const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),assert=require('node:assert/strict'),{spawn,spawnSync,execFileSync}=require('node:child_process'),{randomUUID}=require('node:crypto');
++const repo=path.resolve(__dirname,'..'),root=path.join(os.tmpdir(),'outclass-onboarding-e2e'),dist=path.join(repo,'.next-publish');
++const config=()=>require('../tests/helpers/onboarding-e2e.cjs').readConfig(path.join(root,'config.json'));
++function privateRoot(){const location=fs.readFileSync('/tmp/outclass-phase8-builds-path','utf8');assert.ok(location.startsWith(path.join(os.tmpdir(),'outclass-phase8-builds-')));assert.ok(fs.existsSync(location));return location}
++function environment(){const c=config(),s=c.status;assert.equal(c.buildDir,dist);const db=new URL(s.DB_URL);db.searchParams.set('connection_limit','8');return{...process.env,NEXT_PUBLIC_ENABLE_MICROSOFT_AUTH:'false',DATABASE_URL:db.href,POSTGRES_PRISMA_URL:db.href,POSTGRES_URL:db.href,POSTGRES_URL_NON_POOLING:db.href,NEXT_PUBLIC_SUPABASE_URL:s.API_URL,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:s.PUBLISHABLE_KEY,NEXT_PUBLIC_SUPABASE_ANON_KEY:s.ANON_KEY,SUPABASE_SECRET_KEY:s.SECRET_KEY,SUPABASE_SERVICE_ROLE_KEY:s.SERVICE_ROLE_KEY,OUTCLASS_PUBLISH_BUILD:'1',OUTCLASS_SITE_URL:c.appUrl,OUTCLASS_PLATFORM_ADMIN_IDS:c.admin.id,SMTP_HOST:'127.0.0.1',SMTP_PORT:'55325',SMTP_USER:'local-test',SMTP_PASSWORD:'local-test',SMTP_FROM_EMAIL:'outclass@virginia.edu',CRON_SECRET:randomUUID(),NODE_EXTRA_CA_CERTS:path.join(root,'mailpit-cert.pem'),COMMUNICATIONS_EMAIL_ENABLED:'true',RESEND_API_KEY:'',RESEND_FROM_EMAIL:''}}
++async function stop(){const listener=spawnSync('lsof',['-tiTCP:3107','-sTCP:LISTEN'],{encoding:'utf8'}).stdout.trim();if(!listener)return;const pid=fs.readFileSync(path.join(root,'server.pid'),'utf8').trim();assert.equal(listener,pid);assert.ok(execFileSync('lsof',['-a','-p',pid,'-d','cwd','-Fn'],{encoding:'utf8'}).split('\n').includes('n'+repo));process.kill(Number(pid),'SIGTERM');for(let n=0;n<100;n++){if(!spawnSync('lsof',['-tiTCP:3107','-sTCP:LISTEN'],{encoding:'utf8'}).stdout.trim())return;await new Promise(r=>setTimeout(r,50))}throw Error('Owned app failed to stop')}
++function snapshot(name){assert.ok(['baseline','pilot','pilot2','candidate'].includes(name));const target=path.join(privateRoot(),name);assert.ok(!fs.existsSync(target));fs.cpSync(dist,target,{recursive:true});return fs.readFileSync(path.join(target,'BUILD_ID'),'utf8').trim()}
++async function start(name,diagnose=false){assert.ok(['baseline','pilot','pilot2','candidate'].includes(name));const source=path.join(privateRoot(),name);assert.ok(fs.existsSync(path.join(source,'BUILD_ID')));await stop();fs.rmSync(dist,{recursive:true});fs.cpSync(source,dist,{recursive:true});const fd=fs.openSync(path.join(root,'phase8-server.log'),'a'),args=diagnose?['--require','./scripts/navigation-http-diagnostics.cjs']:[];args.push('node_modules/next/dist/bin/next','start','-p','3107','-H','127.0.0.1');const app=spawn(process.execPath,args,{cwd:repo,env:{...environment(),OUTCLASS_PHASE_TRACE:diagnose?'1':'0',OUTCLASS_NAVIGATION_HTTP_DIAGNOSTICS:diagnose?'1':'0'},detached:true,stdio:['ignore',fd,fd]});fs.closeSync(fd);app.unref();fs.writeFileSync(path.join(root,'server.pid'),String(app.pid));for(let n=0;n<100;n++){try{if((await fetch(config().appUrl,{signal:AbortSignal.timeout(1000)})).ok)return}catch{}await new Promise(r=>setTimeout(r,200))}throw Error('Owned app did not become ready')}
++async function build(){await stop();const fd=fs.openSync(path.join(root,'phase8-build.log'),'w');const result=spawnSync('npm',['run','build'],{cwd:repo,env:environment(),stdio:['ignore',fd,fd]});fs.closeSync(fd);assert.equal(result.status,0,'Inspect owned build log');}
++module.exports={repo,root,dist,config,privateRoot,environment,stop,start,snapshot,build};
++if(require.main===module)(async()=>{const [command,name]=process.argv.slice(2);if(command==='stop')await stop();else if(command==='start')await start(name,process.argv.includes('--diagnose'));else if(command==='snapshot')console.log(snapshot(name));else if(command==='build')await build();else throw Error('Unknown local lifecycle command')})().catch(error=>{console.error(error.name+': '+error.message.split('\n')[0]);process.exitCode=1});
+diff --git a/scripts/navigation-phase8-study.cjs b/scripts/navigation-phase8-study.cjs
+new file mode 100644
+index 0000000..64baa0d
+--- /dev/null
++++ b/scripts/navigation-phase8-study.cjs
+@@ -0,0 +1,34 @@
++// Fixed, local-only comparison. Frozen builds and every planned outcome are retained.
++const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{spawn,spawnSync}=require('node:child_process'),{createHash}=require('node:crypto');
++const local=require('./navigation-phase8-local.cjs'),repo=local.repo,evidence=path.join(repo,'docs/performance/phase8');
++const hash=b=>createHash('sha256').update(b).digest('hex');
++async function main(){
++ const out=path.resolve(repo,process.argv.find(a=>a.startsWith('--out='))?.slice(6)||'docs/performance/phase8/comparison');assert.ok(out.startsWith(evidence+path.sep)&&!fs.existsSync(out));fs.mkdirSync(out);
++ const planBytes=fs.readFileSync(path.join(evidence,'PLAN.json')),plan=JSON.parse(planBytes);fs.writeFileSync(path.join(out,'PLAN.json'),planBytes);
++ const manifests=Object.fromEntries(['baseline','candidate'].map(name=>[name,JSON.parse(fs.readFileSync(path.join(evidence,name.toUpperCase()+'_SOURCE.json')))]));
++ for(const name of ['baseline','candidate'])assert.equal(fs.readFileSync(path.join(local.privateRoot(),name,'BUILD_ID'),'utf8').trim(),manifests[name].buildId);
++ for(const [file,digest]of Object.entries(manifests.candidate.files))assert.equal(hash(fs.readFileSync(path.join(repo,file))),digest,file);
++ const protocol={startedAt:new Date().toISOString(),baseline:plan.baseline,planSha256:hash(planBytes),toolHashes:Object.fromEntries(['navigation-audit.cjs','navigation-http-diagnostics.cjs','navigation-phase8-local.cjs','navigation-phase8-study.cjs','navigation-phase8-interactions.cjs','navigation-loader-audit.cjs','pipeline-scale-fixture.cjs'].map(name=>[name,hash(fs.readFileSync(path.join(repo,'scripts',name)))])),buildIds:Object.fromEntries(Object.entries(manifests).map(([name,m])=>[name,m.buildId])),completed:[],failures:[],poolLimitPerClient:8,fixtureStrategy:'Independent cohort per size, identical within each cohort/build pair',complete:false};
++ let phase='starting';const system=[];let previous=require('node:os').cpus().reduce((a,c)=>({idle:a.idle+c.times.idle,total:a.total+Object.values(c.times).reduce((n,v)=>n+v,0)}),{idle:0,total:0});const monitor=setInterval(()=>{const os=require('node:os'),next=os.cpus().reduce((a,c)=>({idle:a.idle+c.times.idle,total:a.total+Object.values(c.times).reduce((n,v)=>n+v,0)}),{idle:0,total:0});system.push({at:new Date().toISOString(),phase,cpuBusyPercent:+(100*(1-(next.idle-previous.idle)/(next.total-previous.total))).toFixed(2),load:os.loadavg(),freeMemoryMiB:Math.round(os.freemem()/1048576)});previous=next},1000);
++ const save=()=>fs.writeFileSync(path.join(out,'PROTOCOL.json'),JSON.stringify(protocol,null,2)+'\n');save();
++ async function fixture(size){
++  await local.stop();const current=path.join(local.root,'navigation-fixture.json'),marker=path.join(local.root,'phase3-enriched-count.json'),target=path.join(local.privateRoot(),'fixture-'+size+'.json');
++  if(!fs.existsSync(target)){
++   if(fs.existsSync(current)){const f=JSON.parse(fs.readFileSync(current)),existing=f.counts.applicantsInMeasuredClub||100;const saved=path.join(local.privateRoot(),'fixture-'+existing+'.json');if(!fs.existsSync(saved))fs.copyFileSync(current,saved);fs.rmSync(current);}
++   // Credential-file rebinding only. No database rows are removed or rewritten.
++   fs.rmSync(marker,{force:true});const seed=spawnSync(process.execPath,['scripts/navigation-audit.cjs','--seed'],{cwd:repo,encoding:'utf8'});assert.equal(seed.status,0,'Reserved fixture signup failed');await require('./pipeline-scale-fixture.cjs').scaleFixture(size);fs.copyFileSync(current,target);
++  }
++  fs.copyFileSync(target,current);const f=JSON.parse(fs.readFileSync(current));assert.equal(f.counts.applicantsInMeasuredClub||100,size);const db=new(require('@prisma/client').PrismaClient)({datasourceUrl:local.config().status.DB_URL});try{assert.equal(await db.application.count({where:{clubId:f.clubIds[0]}}),size)}finally{await db.$disconnect()}
++ }
++ async function collect(directory,samples){
++  const fd=fs.openSync(path.join(local.root,'phase8-benchmark.log'),'a');const child=spawn(process.execPath,['scripts/navigation-audit.cjs','--phase2','--phase3','--cold-warm','--record-failures','--source-diagnostics','--samples='+samples,'--out='+directory],{cwd:repo,env:local.environment(),stdio:['ignore',fd,fd]});const status=await new Promise((resolve,reject)=>{child.once('error',reject);child.once('close',resolve)});fs.closeSync(fd);const result={status};
++  const file=path.join(directory,'browser-samples.json');assert.ok(fs.existsSync(file),'Every block must emit all outcomes');const data=JSON.parse(fs.readFileSync(file));assert.equal(data.samples.length,samples*4,'No missing or replacement rows');assert.ok([0,1].includes(result.status));assert.equal(result.status,data.failures.length?1:0);protocol.completed.push({directory:path.relative(out,directory),planned:samples*4,observed:data.samples.length,failures:data.failures.length});save();
++ }
++ try{for(const size of plan.measurement.cohorts){phase='fixture-'+size;await fixture(size);for(const[pair,order]of plan.measurement.blocks.entries())for(const[position,letter]of[...order].entries()){
++  const variant=letter==='B'?'baseline':'candidate';phase=`${size}-${pair}-${letter}-start`;await local.start(variant);const stem=path.join(out,`size-${size}-pair-${pair+1}-${position+1}-${letter}`);phase=`${size}-${pair}-${letter}-warmup`;await collect(stem+'-warmup',1);phase=`${size}-${pair}-${letter}-measure`;await collect(stem+'-measure',5);if(size>=1000){phase=`${size}-${pair}-${letter}-interactions`;const fd=fs.openSync(path.join(local.root,'phase8-interactions.log'),'a'),r=spawnSync(process.execPath,['scripts/navigation-phase8-interactions.cjs','--out='+stem+'-interactions.json'],{cwd:repo,env:local.environment(),stdio:['ignore',fd,fd]});fs.closeSync(fd);const d=JSON.parse(fs.readFileSync(stem+'-interactions.json'));assert.equal(d.samples.length,12);assert.ok([0,1].includes(r.status));protocol.interactions??=[];protocol.interactions.push({file:path.relative(out,stem+'-interactions.json'),planned:12,observed:d.samples.length,failed:d.samples.filter(s=>s.failed).length});save()}console.log(`Completed ${size}, pair ${pair+1}, ${letter}; all planned outcomes retained.`);
++ }await local.stop();const fd=fs.openSync(path.join(local.root,'phase8-loaders.log'),'a'),probe=spawnSync(process.execPath,['scripts/navigation-loader-audit.cjs','--pipeline-study','--out='+path.join(out,`size-${size}-candidate-loaders.json`)],{cwd:repo,env:local.environment(),stdio:['ignore',fd,fd]});fs.closeSync(fd);assert.equal(probe.status,0);const loaded=JSON.parse(fs.readFileSync(path.join(out,`size-${size}-candidate-loaders.json`))),list=loaded.results.find(r=>r.name==='pipelineList');assert.ok(list.samples.every(s=>s.queries.every(q=>q.detailColumnsInSelect.length===0)),'List SQL still reads omitted detail columns');const beforeFd=fs.openSync(path.join(local.root,'phase8-loaders.log'),'a'),before=spawnSync(process.execPath,['scripts/navigation-loader-audit.cjs','--pipeline-study','--source-ref='+plan.baseline,'--out='+path.join(out,`size-${size}-baseline-loaders.json`)],{cwd:repo,env:local.environment(),stdio:['ignore',beforeFd,beforeFd]});fs.closeSync(beforeFd);assert.equal(before.status,0);
++ }protocol.complete=true;protocol.completedAt=new Date().toISOString();save();
++ }catch(error){protocol.failures.push({name:error.name,message:error.message.split('\n')[0]});save();throw error}
++ finally{clearInterval(monitor);await local.stop();fs.writeFileSync(path.join(out,'SYSTEM.json'),JSON.stringify(system,null,2)+'\n');protocol.applicationStopped=true;save();}
++}
++if(require.main===module)main().catch(e=>{console.error(e.name+': '+e.message.split('\n')[0]);process.exitCode=1});
+diff --git a/scripts/navigation-phase8-supplement.cjs b/scripts/navigation-phase8-supplement.cjs
+new file mode 100644
+index 0000000..5cf41aa
+--- /dev/null
++++ b/scripts/navigation-phase8-supplement.cjs
+@@ -0,0 +1,11 @@
++const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{spawnSync}=require('node:child_process'),{createHash}=require('node:crypto'),local=require('./navigation-phase8-local.cjs');
++async function main(){
++ const out=path.resolve(process.argv.find(a=>a.startsWith('--out='))?.slice(6)||'docs/performance/phase8/supplement');assert.ok(out.startsWith(path.join(local.repo,'docs/performance/phase8')+path.sep)&&!fs.existsSync(out));fs.mkdirSync(out);const protocol={startedAt:new Date().toISOString(),networkProfile:{latencyMs:80,downloadBytesPerSecond:200000,uploadBytesPerSecond:93750,cpuSlowdown:4},cohorts:[1000,5000],blocks:['BA','AB'],buildIds:{},planSha256:createHash('sha256').update(fs.readFileSync(path.join(local.repo,'docs/performance/phase8/SUPPLEMENT_PLAN.json'))).digest('hex'),tools:Object.fromEntries(['navigation-phase8-supplement.cjs','navigation-phase8-concurrency.cjs','navigation-phase8-constrained-interactions.cjs','navigation-audit.cjs','navigation-phase8-local.cjs'].map(f=>[f,createHash('sha256').update(fs.readFileSync(path.join(local.repo,'scripts',f))).digest('hex')])),completed:[],failures:[],complete:false};const save=()=>fs.writeFileSync(path.join(out,'PROTOCOL.json'),JSON.stringify(protocol,null,2)+'\n');save();
++ try{for(const size of protocol.cohorts){await local.stop();fs.copyFileSync(path.join(local.privateRoot(),'fixture-'+size+'.json'),path.join(local.root,'navigation-fixture.json'));for(const[pair,order]of protocol.blocks.entries())for(const[position,variant]of [...order].entries()){
++  const build=variant==='B'?'baseline':'candidate';await local.start(build);protocol.buildIds[build]=fs.readFileSync(path.join(local.dist,'BUILD_ID'),'utf8').trim();
++  const stem=`size-${size}-pair-${pair+1}-${position+1}-${variant}`;for(const[phase,n]of[['warmup',1],['measure',3]]){const directory=path.join(out,stem+'-'+phase),fd=fs.openSync(path.join(local.root,'phase8-constrained.log'),'a'),r=spawnSync(process.execPath,['scripts/navigation-audit.cjs','--phase2','--phase3','--cold-warm','--record-failures','--source-diagnostics','--constrained-network','--samples='+n,'--out='+directory],{cwd:local.repo,env:local.environment(),stdio:['ignore',fd,fd]});fs.closeSync(fd);const data=JSON.parse(fs.readFileSync(path.join(directory,'browser-samples.json')));assert.equal(data.samples.length,n*4);assert.ok([0,1].includes(r.status));assert.equal(r.status,data.failures.length?1:0);protocol.completed.push({directory:stem+'-'+phase,planned:n*4,observed:data.samples.length,failed:data.failures.length});save()}
++  const interactionFile=stem+'-interactions.json',interactionFd=fs.openSync(path.join(local.root,'phase8-constrained-interactions.log'),'a'),interaction=spawnSync(process.execPath,['scripts/navigation-phase8-constrained-interactions.cjs','--out='+path.join(out,interactionFile)],{cwd:local.repo,env:local.environment(),stdio:['ignore',interactionFd,interactionFd]});fs.closeSync(interactionFd);const interactionData=JSON.parse(fs.readFileSync(path.join(out,interactionFile)));assert.equal(interactionData.samples.length,12);assert.ok([0,1].includes(interaction.status));protocol.interactions??=[];protocol.interactions.push({file:interactionFile,planned:12,observed:interactionData.samples.length,failed:interactionData.samples.filter(r=>r.failed).length});save();
++  const fd=fs.openSync(path.join(local.root,'phase8-concurrency.log'),'a'),r=spawnSync(process.execPath,['scripts/navigation-phase8-concurrency.cjs','--kind='+(variant==='B'?'pipelineList':'pipelinePage'),'--out='+path.join(out,stem+'-concurrency.json')],{cwd:local.repo,env:local.environment(),stdio:['ignore',fd,fd]});fs.closeSync(fd);assert.equal(r.status,0);console.log(`Completed constrained browser and bounded HTTP: ${size}, pair ${pair+1}, ${variant}`);
++ }}protocol.complete=true;protocol.completedAt=new Date().toISOString();save()}catch(e){protocol.failures.push({name:e.name,message:e.message.split('\n')[0]});save();throw e}finally{await local.stop();protocol.applicationStopped=true;save()}
++}
++if(require.main===module)main().catch(e=>{console.error(e.name+': supplemental study failed');process.exitCode=1});
+diff --git a/scripts/summarize-navigation-phase8.cjs b/scripts/summarize-navigation-phase8.cjs
+new file mode 100644
+index 0000000..a100f06
+--- /dev/null
++++ b/scripts/summarize-navigation-phase8.cjs
+@@ -0,0 +1,96 @@
++const fs = require('node:fs');
++const path = require('node:path');
++const assert = require('node:assert/strict');
++const { distribution } = require('./navigation-audit.cjs');
++const { enrich } = require('./summarize-pipeline-navigation.cjs');
++const { summarizeGroup } = require('./summarize-pipeline-stress.cjs');
++
++function sourceMetrics(row) {
++  const source = row.preparation;
++  assert.ok(source, 'Source observations are required for every outcome');
++  const requests = source.requests.filter(r => r.type !== 'eventsource');
++  const scripts = requests.filter(r => r.type === 'script');
++  const completeBytes = requests.every(r => Number.isFinite(r.encodedBodyBytes));
++  return {
++    meaningfulMs: source.meaningfulMs,
++    elapsedIncludingDrainMs: source.elapsedMs,
++    documentTtfbMs: source.dom?.document?.ttfbMs ?? null,
++    requestCount: source.requests.length,
++    nonSsePending: requests.filter(r => r.pending).length,
++    logoRequestCount: requests.filter(r => r.route.startsWith('/logos/')).length,
++    httpErrors: requests.filter(r => r.status >= 400).length,
++    encodedBodyBytes: completeBytes ? requests.reduce((n,r) => n+r.encodedBodyBytes,0) : null,
++    scriptBytes: scripts.every(r => Number.isFinite(r.encodedBodyBytes)) ? scripts.reduce((n,r) => n+r.encodedBodyBytes,0) : null,
++  };
++}
++function describe(rows) {
++  const result = summarizeGroup(rows);
++  const successful = rows.filter(r => !r.failed);
++  assert.ok(successful.map(enrich).every(r => r.readCount === 1), 'Each successful selected list/detail navigation requires exactly one fresh read');
++  const source = rows.map(sourceMetrics);
++  const sourceMetricsNames = Object.keys(source[0]);
++  const transfer = successful.map(r => r.requests.find(q => /^\/api\/workspace\?kind=pipeline(?:List|Page)?$/.test(q.route))?.transferMs);
++  return {
++    ...result,
++    readTransferMs: distribution(transfer),
++    timedHttpErrors: successful.flatMap(r => r.requests).filter(r => r.status >= 400).length,
++    pendingSourceObservations: source.filter(r => r.nonSsePending > 0).length,
++    source: {
++      planned: rows.length,
++      successful: source.filter(r => Number.isFinite(r.meaningfulMs)).length,
++      latencyInterpretation: source.every(r => Number.isFinite(r.meaningfulMs)) ? 'All planned source preparations; visible DOM content predicate, before background drain.' : 'Successful source preparations only; full-cohort source p95 is not established.',
++      ...Object.fromEntries(sourceMetricsNames.map(name => [name, distribution(source.map(r => r[name]))])),
++    },
++  };
++}
++function summarize(root) {
++  const protocol = JSON.parse(fs.readFileSync(path.join(root,'PROTOCOL.json')));
++  assert.equal(protocol.complete, true);
++  assert.equal(protocol.failures.length, 0, 'Fatal collection failures must be reported separately');
++  assert.equal(protocol.completed.length, 24);
++  const entries = protocol.completed.map(block => {
++    const m = /^size-(100|1000|5000)-pair-([12])-([12])-([AB])-(measure|warmup)$/.exec(block.directory);
++    assert.ok(m, 'Unexpected block');
++    const data = JSON.parse(fs.readFileSync(path.join(root,block.directory,'browser-samples.json')));
++    assert.equal(data.samples.length, block.planned);
++    assert.equal(data.samples.filter(r=>r.failed).length, block.failures);
++    return {size:Number(m[1]),pair:Number(m[2]),variant:m[4],phase:m[5],samples:data.samples};
++  });
++  const measured = entries.filter(e=>e.phase==='measure');
++  const warmups = entries.filter(e=>e.phase==='warmup').flatMap(e=>e.samples);
++  const groups = [];
++  for (const size of [100,1000,5000]) for (const route of ['recruiting → applicants','applicants → applicantDetail']) for (const condition of ['cold','warm']) {
++    const group = {size,path:route,condition};
++    for (const variant of ['B','A']) group[variant]=describe(measured.filter(e=>e.size===size&&e.variant===variant).flatMap(e=>e.samples).filter(r=>r.path===route&&r.condition===condition));
++    group.pairedMedians = [1,2].map(pair=>Object.fromEntries(['B','A'].map(variant=>[variant,distribution(measured.find(e=>e.size===size&&e.pair===pair&&e.variant===variant).samples.filter(r=>r.path===route&&r.condition===condition&&!r.failed).map(r=>r.meaningfulMs))])));
++    groups.push(group);
++  }
++  const all = measured.flatMap(e=>e.samples);
++  return {
++    protocol: {baseline:protocol.baseline,buildIds:protocol.buildIds,planned:all.length+warmups.length,measured:all.length,warmups:warmups.length,failedMeasured:all.filter(r=>r.failed).length,failedWarmups:warmups.filter(r=>r.failed).length,pageErrors:all.reduce((n,r)=>n+(r.pageErrorCount||0),0),timedSuccessfulHttpErrors:all.filter(r=>!r.failed).flatMap(r=>r.requests).filter(r=>r.status>=400).length,sourceHttpErrorsByVariant:Object.fromEntries(['B','A'].map(variant=>[variant,measured.filter(e=>e.variant===variant).flatMap(e=>e.samples).reduce((n,r)=>n+sourceMetrics(r).httpErrors,0)])),percentiles:'Nearest rank, n=10 per build/path/condition; p95 equals maximum. Local descriptive evidence, not a production percentile estimate.'},
++    groups,
++    interactions: summarizeInteractions(root, protocol),
++    failures: measured.flatMap(e=>e.samples.filter(r=>r.failed).map(r=>({size:e.size,variant:e.variant,path:r.path,condition:r.condition,index:r.index,stage:r.stage,diagnostic:r.diagnostic,preparation:r.preparation,error:r.error}))),
++  };
++}
++function summarizeInteractions(root, protocol) {
++  assert.equal(protocol.interactions.length, 8);
++  const blocks=protocol.interactions.map(block=>{
++    const m=/^size-(1000|5000)-pair-([12])-([12])-([AB])-interactions.json$/.exec(block.file);assert.ok(m);
++    const data=JSON.parse(fs.readFileSync(path.join(root,block.file)));assert.equal(data.samples.length,12);
++    return {size:Number(m[1]),variant:m[4],samples:data.samples};
++  });
++  const groups=[];
++  for(const size of [1000,5000])for(const kind of ['next-page','distant-search']){
++    const group={size,kind,condition:'warm'};
++    for(const variant of ['B','A']){
++      const all=blocks.filter(b=>b.size===size&&b.variant===variant).flatMap(b=>b.samples).filter(r=>r.kind===kind&&!r.warmup);assert.equal(all.length,10);
++      const successful=all.filter(r=>!r.failed),enriched=successful.map(enrich);
++      group[variant]={planned:all.length,successful:successful.length,failed:all.length-successful.length,pageErrors:all.flatMap(r=>r.pageErrors).length,httpErrors:all.flatMap(r=>r.requests).filter(r=>r.status>=400).length,interpretation:successful.length===10?'All planned warm observations. Nearest-rank p95 equals maximum at n=10.':'Successful observations only; full-cohort p95 is not established.',...Object.fromEntries(['meaningfulMs','driverElapsedMs','requestCount','encodedBodyBytes','readCount','readStartMs','readTtfbMs','readServerMs','databaseMs','serializationMs','readBodyBytes'].map(metric=>[metric,distribution(enriched.map(r=>r[metric]))]))};
++    }
++    groups.push(group);
++  }
++  return {planned:96,warmups:16,measured:80,failed:blocks.flatMap(b=>b.samples).filter(r=>r.failed).length,groups};
++}
++module.exports = {sourceMetrics,describe,summarize};
++if(require.main===module){const root=path.resolve(process.argv.find(a=>a.startsWith('--out='))?.slice(6)||'docs/performance/phase8/comparison'),result=summarize(root);fs.writeFileSync(path.join(root,'COMPARISON.json'),JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify(result.groups.map(g=>({size:g.size,path:g.path,condition:g.condition,before:g.B.meaningfulMs,after:g.A.meaningfulMs,failures:[g.B.failed,g.A.failed]})),null,2));}
+diff --git a/tests/crm-photo-authorization.test.cjs b/tests/crm-photo-authorization.test.cjs
+index 43de894..5dd361a 100644
+--- a/tests/crm-photo-authorization.test.cjs
++++ b/tests/crm-photo-authorization.test.cjs
+@@ -25,7 +25,7 @@ function fixture() {
+       return { user: { id: state.actor }, membership: membership() };
+     }
+   };
+-  const matches = where => where.clubId === app.clubId && (!where.id || where.id === app.id) && app.status !== 'DRAFTING';
++  const matches = where => where.AND ? where.AND.every(matches) : (!where.clubId || where.clubId === app.clubId) && (!where.id || typeof where.id === 'object' ? !where.id || where.id.in.includes(app.id) : where.id === app.id) && app.status !== 'DRAFTING';
+   const tx = {
+     $queryRaw: async()=>[],
+     user: { findUnique: async()=>({disabledAt:state.disabled?new Date():null}) },
+@@ -34,6 +34,8 @@ function fixture() {
+       findMany: async ({ where, include, omit, select }) => { state.pipelineOmit=omit; state.pipelineQuery=include; state.pipelineSelect=select; if(state.pipelineError)throw state.pipelineError; return (state.pipelineReads++, matches(where)) && (!where.round || app.round.anonymousReview) ? [app] : []; },
+       findFirst: async ({ where, select }) => { if(select)state.narrowReads++; return matches(where) ? app : null; }
+     },
++    evaluation: {findMany:async ({where})=>matches(where.application) && where.applicationId.in.includes(app.id) ? app.evaluations.filter(e=>e.submittedAt).map(e=>({...e,applicationId:app.id})):[]},
++    interviewPanelAssignment: {findMany:async ({where})=>matches(where.application) && where.applicationId.in.includes(app.id) ? app.interviewAssignments.map(e=>({...e,applicationId:app.id})):[]},
+     clubMember: { findFirst: async () => membership(), findUnique: async({where})=>state.clubAccess && where.userId_clubId.clubId===clubId ? membership():null },
+     applicantObservation: { findMany: async () => [] }
+   };
+diff --git a/tests/live-applicant-views.test.cjs b/tests/live-applicant-views.test.cjs
+index b43acaa..55bc976 100644
+--- a/tests/live-applicant-views.test.cjs
++++ b/tests/live-applicant-views.test.cjs
+@@ -5,7 +5,7 @@ const ts = require('typescript')
+ function compile(file, mocks = {}, extra = '') {
+   const mod = { exports: {} }
+   const code = ts.transpileModule(fs.readFileSync(file, 'utf8') + extra, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText
+-  new Function('require', 'module', 'exports', 'window', 'requestAnimationFrame', 'cancelAnimationFrame', code)(name => mocks[name] || (name==='@/hooks/use-editor-draft'?require('./helpers/autosave-ui-harness.cjs').draftStub:name==='@/hooks/use-resident-pipeline'?compile('hooks/use-resident-pipeline.ts',mocks):name.startsWith('@/lib/') ? compile(name.replace('@/', '') + '.ts') : name.startsWith('@/') || name.startsWith('./') ? new Proxy({}, { get: (_, key) => String(key) }) : require(name)), mod, mod.exports, { addEventListener(){}, removeEventListener(){}, confirm(){ return true } }, () => {}, () => {})
++  new Function('require', 'module', 'exports', 'window', 'requestAnimationFrame', 'cancelAnimationFrame', code)(name => mocks[name] || (name==='@/hooks/use-editor-draft'?require('./helpers/autosave-ui-harness.cjs').draftStub:name==='@/hooks/use-pipeline-page'?compile('hooks/use-pipeline-page.ts',mocks):name.startsWith('@/lib/') ? compile(name.replace('@/', '') + '.ts') : name.startsWith('@/') || name.startsWith('./') ? new Proxy({}, { get: (_, key) => String(key) }) : require(name)), mod, mod.exports, { addEventListener(){}, removeEventListener(){}, confirm(){ return true } }, () => {}, () => {})
+   return mod.exports
+ }
+ const { applicantLane } = compile('lib/applicant-board.ts')
+@@ -182,6 +182,6 @@ test('decision status stays unchanged until the server acknowledges publication'
+
+ test('page reader remains usable after React development effect cleanup and setup replay',async()=>{const h=harness();h.render();await flush();let tree=h.render();assert.ok(view(tree));h.replayEffects();button(tree,'Refresh').props.onClick();h.render();await flush();tree=h.render();assert.ok(view(tree),'effect setup must create a usable reader after disposal');assert.equal(h.calls.filter(c=>c[0]==='load').length,2,'explicit refresh still performs fresh authorization after effect replay')});
+
+-test('a different membership identity resets the resident page cursor before fresh summaries render',async()=>{
+- const h=harness(),id=n=>`123e4567-e89b-12d3-a456-${String(n).padStart(12,'0')}`;for(let i=0;i<201;i++)h.addCandidate({id:id(i)});h.render();await flush();let tree=h.render();nodes(tree).find(n=>n.props?.['aria-label']==='Next applicant page').props.onClick();tree=h.render();assert.equal(nodes(tree).find(n=>n.type==='p'&&Array.isArray(n.props?.children)&&n.props.children[0]==='Page ').props.children[1],2);h.setViewer(id(999));h.render();await flush();assert.doesNotThrow(()=>{tree=h.render()});assert.equal(nodes(tree).find(n=>n.type==='p'&&Array.isArray(n.props?.children)&&n.props.children[0]==='Page ').props.children[1],1);assert.equal(h.calls.filter(c=>c[0]==='load').length,2);
++test('a different membership identity resets the page cursor before fresh summaries render',async()=>{
++ const h=harness(),id=n=>`123e4567-e89b-12d3-a456-${String(n).padStart(12,'0')}`;for(let i=0;i<201;i++)h.addCandidate({id:id(i)});h.render();await flush();let tree=h.render();nodes(tree).find(n=>n.props?.['aria-label']==='Next applicant page').props.onClick();h.render();await flush();tree=h.render();assert.equal(nodes(tree).find(n=>n.type==='p'&&Array.isArray(n.props?.children)&&n.props.children[0]==='Page ').props.children[1],2);h.setViewer(id(999));h.render();await flush();assert.doesNotThrow(()=>{tree=h.render()});assert.equal(nodes(tree).find(n=>n.type==='p'&&Array.isArray(n.props?.children)&&n.props.children[0]==='Page ').props.children[1],1);assert.equal(h.calls.filter(c=>c[0]==='load').length,3);
+ });
+diff --git a/tests/loading-experience.test.cjs b/tests/loading-experience.test.cjs
+index bf8ee4f..7f16fc1 100644
+--- a/tests/loading-experience.test.cjs
++++ b/tests/loading-experience.test.cjs
+@@ -9,7 +9,7 @@ function load(file, mocks, globals = {}) {
+     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true },
+   }).outputText
+   new Function("require", "module", "exports", ...Object.keys(globals), code)(
+-    name => name in mocks ? mocks[name] : require(name), mod, mod.exports, ...Object.values(globals),
++    name => name in mocks ? mocks[name] : name === "@/lib/workspace-read-diagnostics" ? {recordWorkspaceRead(){}} : require(name), mod, mod.exports, ...Object.values(globals),
+   )
+   return mod.exports
+ }
+diff --git a/tests/navigation-phase2-e2e.test.cjs b/tests/navigation-phase2-e2e.test.cjs
+index e89afad..99c2d71 100644
+--- a/tests/navigation-phase2-e2e.test.cjs
++++ b/tests/navigation-phase2-e2e.test.cjs
+@@ -9,7 +9,7 @@ async function context(browser,f,options={}){return browser.newContext({viewport
+ async function open(page,f,recruiting=false){await page.goto(f.config.appUrl+'/club/'+f.data.clubIds[0]+'/workspace?section='+(recruiting?'recruitment&tool=overview':'overview'));await page.locator(recruiting?'.oc-command-recruiting':'.oc-command-club').filter({visible:true}).first().getByRole('button',{name:'Refresh overview',exact:true}).waitFor();}
+ async function select(page,tour){let link=page.locator(`[data-tour="nav-${tour}"]`).filter({visible:true}).first();if(!await link.count()&&tour==='applicants'){const group=page.getByRole('button',{name:'Applicants',exact:true}).filter({visible:true}).first();await group.focus();await page.keyboard.press('ArrowRight');link=page.locator(`[data-tour="nav-${tour}"]`).filter({visible:true}).first();}await link.focus();await page.keyboard.press('Enter');}
+ test('selected tabs request authorized data while code is still loading, then consume it exactly once', {skip:!configFile},async t=>{
+- const f=await fixture(),browser=await chromium.launch({headless:true});try{for(const[kind,tour,label,text]of cases)await t.test(kind,async()=>{const c=await context(browser,f),page=await c.newPage();let unblock,codeStarted,reads=0;const blocked=[],errors=[];page.on('pageerror',e=>errors.push(e.name));try{await open(page,f,kind==='pipeline');const seen=new Promise(resolve=>unblock=resolve);page.on('request',r=>{const u=new URL(r.url());if(u.pathname==='/api/workspace'&&u.searchParams.get('kind')===(kind==='pipeline'?'pipelineList':kind)){reads++;unblock();}});const pendingCode=new Promise(resolve=>codeStarted=resolve);const gate=route=>{blocked.push(route);codeStarted()};await page.route('**/_next/static/chunks/*.js',gate);await select(page,tour);await Promise.race([Promise.all([seen,pendingCode]),new Promise((_,reject)=>setTimeout(()=>reject(Error('Data waited for the blocked code chunk')),3000))]);assert.ok(blocked.length,'The selected component really has an unresolved chunk');assert.equal(await page.getByRole('status').filter({hasText:'Loading workspace…'}).count(),1);await Promise.all(blocked.splice(0).map(r=>r.continue()));await page.unroute('**/_next/static/chunks/*.js',gate);await page.locator(`section[aria-label="${label}"]`).getByText(text,{exact:true}).first().waitFor();assert.equal(reads,1);assert.deepEqual(errors,[]);}finally{await page.unroute('**/_next/static/chunks/*.js');await Promise.allSettled(blocked.map(r=>r.continue()));await c.close();}});}finally{await browser.close();}
++ const f=await fixture(),browser=await chromium.launch({headless:true});try{for(const[kind,tour,label,text]of cases)await t.test(kind,async()=>{const c=await context(browser,f),page=await c.newPage();let unblock,codeStarted,reads=0;const blocked=[],errors=[];page.on('pageerror',e=>errors.push(e.name));try{await open(page,f,kind==='pipeline');const seen=new Promise(resolve=>unblock=resolve);page.on('request',r=>{const u=new URL(r.url());if(u.pathname==='/api/workspace'&&u.searchParams.get('kind')===(kind==='pipeline'?'pipelinePage':kind)){reads++;unblock();}});const pendingCode=new Promise(resolve=>codeStarted=resolve);const gate=route=>{blocked.push(route);codeStarted()};await page.route('**/_next/static/chunks/*.js',gate);await select(page,tour);await Promise.race([Promise.all([seen,pendingCode]),new Promise((_,reject)=>setTimeout(()=>reject(Error('Data waited for the blocked code chunk')),3000))]);assert.ok(blocked.length,'The selected component really has an unresolved chunk');assert.equal(await page.getByRole('status').filter({hasText:'Loading workspace…'}).count(),1);await Promise.all(blocked.splice(0).map(r=>r.continue()));await page.unroute('**/_next/static/chunks/*.js',gate);await page.locator(`section[aria-label="${label}"]`).getByText(text,{exact:true}).first().waitFor();assert.equal(reads,1);assert.deepEqual(errors,[]);}finally{await page.unroute('**/_next/static/chunks/*.js');await Promise.allSettled(blocked.map(r=>r.continue()));await c.close();}});}finally{await browser.close();}
+ });
+ test('rapid selected-tab changes fence late results and a revoked revisit never reveals the old directory',{skip:!configFile},async()=>{
+  const f=await fixture(),browser=await chromium.launch({headless:true}),c=await context(browser,f),page=await c.newPage();let release;try{await open(page,f);let received;const held=new Promise(resolve=>received=resolve);const gate=async route=>{const response=await route.fetch();release=()=>route.fulfill({response});received();};await page.route('**/api/workspace?kind=members&*',gate);await select(page,'members');await held;await select(page,'tasks');await page.getByText('Audit Task',{exact:true}).first().waitFor();await release();await page.unroute('**/api/workspace?kind=members&*',gate);assert.equal(await page.locator('section[aria-label="Members"]').count(),0);await select(page,'members');await page.getByRole('button',{name:'Member details · Audit Student 000',exact:true}).waitFor();await select(page,'overview');await page.locator('.oc-command-club').filter({visible:true}).first().waitFor();assert.equal((await f.actor.client.auth.signOut({scope:'local'})).error,null);await page.evaluate(()=>{window.__phase2Revealed=false;new MutationObserver(()=>{if([...document.querySelectorAll('button')].some(e=>e.getClientRects().length&&e.getAttribute('aria-label')==='Member details · Audit Student 000'))window.__phase2Revealed=true}).observe(document.body,{subtree:true,childList:true,attributes:true})});await select(page,'members');await page.getByRole('alert').filter({hasText:'Could not load this workspace.'}).waitFor();assert.equal(await page.evaluate(()=>window.__phase2Revealed),false);assert.equal(await page.getByRole('button',{name:'Member details · Audit Student 000',exact:true}).count(),0);}finally{if(release)await release().catch(()=>{});await c.close();await browser.close();}
+diff --git a/tests/navigation-phase3-e2e.test.cjs b/tests/navigation-phase3-e2e.test.cjs
+index 1445120..57336e5 100644
+--- a/tests/navigation-phase3-e2e.test.cjs
++++ b/tests/navigation-phase3-e2e.test.cjs
+@@ -14,7 +14,7 @@ test('pipeline list/detail GETs retain live auth, strict arguments, masking and
+  }finally{for(const member of backups)await db.clubMember.update({where:{id:member.id},data:{isOwner:member.isOwner,accessRole:member.accessRole}});await db.$disconnect()}
+ });
+ test('applicant list avoids detail reads; closing a pending detail fences it from the next candidate',{skip:!configFile},async()=>{const f=await fixture(),browser=await chromium.launch({headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...f.actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage();const reads=[],errors=[];let release;
+- try{page.on('pageerror',e=>errors.push(e.name));page.on('request',r=>{const u=new URL(r.url());if(u.pathname==='/api/workspace')reads.push(u.searchParams.get('kind'))});await page.goto(f.config.appUrl+'/club/'+f.data.clubIds[0]+'/workspace?section=recruitment&tool=applicants');await page.locator('.oc-live-pipeline').getByText('Audit Student 000',{exact:true}).first().waitFor();assert.ok(reads.filter(k=>k==='pipelineList').length>=1,'initial session/bootstrap replacement may require another live read');assert.equal(reads.includes('pipeline'),false);
++ try{page.on('pageerror',e=>errors.push(e.name));page.on('request',r=>{const u=new URL(r.url());if(u.pathname==='/api/workspace')reads.push(u.searchParams.get('kind'))});await page.goto(f.config.appUrl+'/club/'+f.data.clubIds[0]+'/workspace?section=recruitment&tool=applicants');await page.locator('.oc-live-pipeline').getByText('Audit Student 000',{exact:true}).first().waitFor();assert.ok(reads.filter(k=>k==='pipelinePage').length>=1,'initial session/bootstrap replacement may require another live read');assert.equal(reads.includes('pipeline'),false);
+  let received;const held=new Promise(resolve=>received=resolve);const gate=async route=>{const response=await route.fetch();release=()=>route.fulfill({response});received()};await page.route('**/api/workspace?kind=pipeline&*',gate);await page.locator('[data-applicant-id]').filter({visible:true}).first().click();await held;assert.equal(await page.getByText('Loading applicant…',{exact:true}).count(),1);const sheet=page.locator('[data-slot="sheet-content"]');await sheet.getByRole('button',{name:'Close',exact:true}).click();await release();await page.unroute('**/api/workspace?kind=pipeline&*',gate);await page.locator('[data-applicant-id]').filter({visible:true}).nth(1).click();await sheet.getByRole('heading',{name:'Audit Student 001',exact:true}).waitFor();assert.equal(await sheet.getByRole('heading',{name:'Audit Student 000',exact:true}).count(),0);assert.equal(reads.filter(k=>k==='pipeline').length,2);assert.deepEqual(errors,[]);
+  }finally{if(release)await release().catch(()=>{});await context.close();await browser.close()}
+ });
+@@ -22,4 +22,4 @@ test('fresh applicant detail preserves an autosaved review draft across close an
+  try{await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:true}});await page.goto(f.config.appUrl+'/club/'+clubId+'/workspace?section=recruitment&tool=applicants');const candidate=page.locator(`[data-applicant-id="${app.id}"]`).filter({visible:true}).first();await page.getByRole('textbox',{name:'Search applicants',exact:true}).fill(load('lib/anonymous-review.ts').anonymousApplicantLabel(app.id));await candidate.click();const score=page.getByLabel('Score (1–10)',{exact:true}),notes=page.getByLabel('Overall evaluation feedback',{exact:true});await score.waitFor();await page.waitForFunction(()=>!document.getElementById('review-score').disabled);await score.fill('8');await notes.fill('Phase 3 disposable draft continuity');await notes.blur();await page.locator('[data-slot="sheet-content"]').getByRole('button',{name:'Close',exact:true}).click();await page.locator('[data-slot="sheet-content"]').waitFor({state:'hidden'});await candidate.click();await page.waitForFunction(()=>document.getElementById('review-notes')?.value==='Phase 3 disposable draft continuity');assert.equal(await score.inputValue(),'8');
+  }finally{await context.close();await browser.close();await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:round.anonymousReview}});await db.editorDraft.deleteMany({where:{userId:f.data.userId}});await db.$disconnect()}
+ });
+-test('resident applicant summaries preserve whole-list search/counts without another read per page',{skip:!configFile},async(t)=>{const f=await fixture();if((f.data.counts.applicantsInMeasuredClub||100)<1000){t.skip('Requires the registered large fixture');return;}const browser=await chromium.launch({headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...f.actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage();let reads=0;try{page.on('request',r=>{if(new URL(r.url()).searchParams.get('kind')==='pipelineList')reads++});await page.goto(f.config.appUrl+'/club/'+f.data.clubIds[0]+'/workspace?section=recruitment&tool=applicants');const pages=page.getByRole('navigation',{name:'Applicant pages',exact:true});await pages.waitFor();assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),100);await page.waitForLoadState('networkidle');const initialReads=reads;await pages.getByRole('button',{name:'Next applicant page',exact:true}).click();await page.getByText('Scale Student 00100',{exact:true}).first().waitFor();assert.match(await pages.innerText(),/Page 2 of/);assert.equal(reads,initialReads);const search=page.getByRole('textbox',{name:'Search applicants',exact:true});const last='Scale Student '+String(f.data.counts.applicantsInMeasuredClub-1).padStart(5,'0');await search.fill(last);await page.getByText(last,{exact:true}).first().waitFor();assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),1);assert.equal(await pages.count(),0);await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));assert.equal(await search.evaluate(el=>document.activeElement===el),true,'filtering keeps keyboard focus');await search.fill('');await pages.waitFor();assert.match(await pages.innerText(),/Page 1 of/);assert.equal(reads,initialReads)}finally{await context.close();await browser.close()}});
++test('paged applicants preserve whole-list search/counts with one fresh read per interaction',{skip:!configFile},async(t)=>{const f=await fixture();if((f.data.counts.applicantsInMeasuredClub||100)<1000){t.skip('Requires the registered large fixture');return;}const browser=await chromium.launch({headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...f.actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage();let reads=0;try{page.on('request',r=>{if(new URL(r.url()).searchParams.get('kind')==='pipelinePage')reads++});await page.goto(f.config.appUrl+'/club/'+f.data.clubIds[0]+'/workspace?section=recruitment&tool=applicants');const pages=page.getByRole('navigation',{name:'Applicant pages',exact:true});await pages.waitFor();assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),100);await page.waitForLoadState('networkidle');const initialReads=reads;await pages.getByRole('button',{name:'Next applicant page',exact:true}).click();await page.getByText('Scale Student 00100',{exact:true}).first().waitFor();assert.match(await pages.innerText(),/Page 2 of/);assert.equal(reads,initialReads+1);const search=page.getByRole('textbox',{name:'Search applicants',exact:true});const last='Scale Student '+String(f.data.counts.applicantsInMeasuredClub-1).padStart(5,'0');await search.fill(last);await page.getByText(last,{exact:true}).first().waitFor();assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),1);assert.equal(await pages.count(),0);await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));assert.equal(await search.evaluate(el=>document.activeElement===el),true,'filtering keeps keyboard focus');await search.fill('');await pages.waitFor();assert.match(await pages.innerText(),/Page 1 of/);assert.equal(reads,initialReads+3)}finally{await context.close();await browser.close()}});
+diff --git a/tests/navigation-phase5-e2e.test.cjs b/tests/navigation-phase5-e2e.test.cjs
+index 3596cc0..4e0cbe6 100644
+--- a/tests/navigation-phase5-e2e.test.cjs
++++ b/tests/navigation-phase5-e2e.test.cjs
+@@ -23,19 +23,19 @@ test('server pages and explicit selections preserve complete authorized sets, pr
+   const cookie=f.actor.cookieHeader();await f.actor.client.auth.signOut({scope:'local'});for(const kind of ['pipelinePage','pipelineSelection'])assert.equal((await read(f,kind,{},f.club,cookie)).status,401);
+  }finally{for(const m of backups)await db.clubMember.update({where:{id:m.id},data:{isOwner:m.isOwner,accessRole:m.accessRole}});await db.$disconnect()}
+ });
+-test('resident page boundaries avoid summary reads, full quick-review/voting selection survives pagination and reopen validates again',{skip:!configFile,timeout:120000},async t=>{
++test('fresh page boundaries avoid duplicate reads, full quick-review/voting selection survives pagination and reopen validates again',{skip:!configFile,timeout:120000},async t=>{
+  const f=await fixture();if((f.data.counts.applicantsInMeasuredClub||100)<1000)return t.skip('Requires the registered large fixture');const browser=await chromium.launch({headless:true}),c=await context(browser,f),page=await c.newPage(),reads=[],errors=[];
+- try{page.on('dialog',d=>d.accept());page.on('pageerror',e=>errors.push(e.name));page.on('request',r=>{if(new URL(r.url()).pathname==='/api/workspace')reads.push(new URL(r.url()).searchParams.get('kind'))});await page.goto(f.config.appUrl+'/club/'+f.club+'/workspace?section=recruitment&tool=applicants');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await page.waitForLoadState('networkidle');assert.ok(reads.filter(k=>k==='pipelineList').length>=1);assert.equal(reads.includes('pipelineSelection'),false);
+-  await page.getByRole('button',{name:/Audit Student 099.*Open applicant/}).click();await page.getByRole('heading',{name:'Audit Student 099',exact:true}).waitFor();const before=reads.filter(k=>k==='pipelineList').length;await page.getByRole('button',{name:'Next applicant',exact:true}).click();await page.getByRole('heading',{name:'Scale Student 00100',exact:true}).waitFor();assert.equal(reads.filter(k=>k==='pipelineList').length,before,'drawer boundary must reuse already released summaries');await page.getByRole('button',{name:'Previous applicant',exact:true}).click();await page.getByRole('heading',{name:'Audit Student 099',exact:true}).waitFor();await page.getByRole('button',{name:'Close',exact:true}).click();await page.locator('[data-slot=sheet-content]').waitFor({state:'hidden'});
++ try{page.on('dialog',d=>d.accept());page.on('pageerror',e=>errors.push(e.name));page.on('request',r=>{if(new URL(r.url()).pathname==='/api/workspace')reads.push(new URL(r.url()).searchParams.get('kind'))});await page.goto(f.config.appUrl+'/club/'+f.club+'/workspace?section=recruitment&tool=applicants');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await page.waitForLoadState('networkidle');assert.ok(reads.filter(k=>k==='pipelinePage').length>=1);assert.equal(reads.includes('pipelineSelection'),false);
++  await page.getByRole('button',{name:/Audit Student 099.*Open applicant/}).click();await page.getByRole('heading',{name:'Audit Student 099',exact:true}).waitFor();const before=reads.filter(k=>k==='pipelinePage').length;await page.getByRole('button',{name:'Next applicant',exact:true}).click();await page.getByRole('heading',{name:'Scale Student 00100',exact:true}).waitFor();assert.equal(reads.filter(k=>k==='pipelinePage').length,before+1,'drawer boundary fetches one page and adopts it without a duplicate');await page.getByRole('button',{name:'Previous applicant',exact:true}).click();await page.getByRole('heading',{name:'Audit Student 099',exact:true}).waitFor();await page.getByRole('button',{name:'Close',exact:true}).click();await page.locator('[data-slot=sheet-content]').waitFor({state:'hidden'});
+   await page.getByRole('button',{name:'Next applicant page',exact:true}).click();await page.getByText('Scale Student 00100',{exact:true}).first().waitFor();await page.getByRole('button',{name:'Quick review',exact:true}).click();await page.getByText(`Quick review · ${f.data.counts.applicantsInMeasuredClub} remaining`,{exact:true}).waitFor();await page.getByRole('heading',{name:'Audit Student 000',exact:true}).waitFor();assert.equal(reads.filter(k=>k==='pipelineSelection').length,1);await page.getByRole('button',{name:'Skip',exact:true}).click();await page.getByRole('heading',{name:'Audit Student 001',exact:true}).waitFor();await page.getByRole('button',{name:'Close',exact:true}).click();await page.locator('[data-slot=sheet-content]').waitFor({state:'hidden'});
+   for(let visit=0;visit<2;visit++){let release,seen;const held=new Promise(r=>seen=r);if(visit===1)await page.route('**/api/workspace?kind=pipelineSelection&*',async route=>{const response=await route.fetch();release=()=>route.fulfill({response});seen()});await page.getByRole('button',{name:'Start voting',exact:true}).click();if(visit===1){await held;assert.equal(await page.getByRole('combobox',{name:/^Recruitment round/}).count(),0,'prior successful selection stays hidden until this visit validates');await release();await page.unroute('**/api/workspace?kind=pipelineSelection&*')}const round=page.getByRole('combobox',{name:/^Recruitment round/});await round.waitFor();const options=await round.locator('option').evaluateAll(nodes=>nodes.map(n=>({value:n.value,text:n.textContent})));await round.selectOption(options.find(n=>n.text==='Applied').value);const pool=page.getByRole('group',{name:'Candidate pool · all submitted candidates unless selected below',exact:true});await pool.waitFor();assert.equal(await pool.getByRole('checkbox').count(),f.data.counts.applicantsInMeasuredClub);const setup=page.getByRole('dialog',{name:'New voting session',exact:true});await setup.getByRole('button',{name:'Done',exact:true}).click();await setup.waitFor({state:'hidden'});const stage=page.locator('.oc-voting-stage');await stage.getByRole('button',{name:'Close',exact:true}).click();await stage.waitFor({state:'hidden'});}
+   assert.equal(reads.filter(k=>k==='pipelineSelection').length,4,'every voting visit revalidates the complete set');assert.deepEqual(errors,[]);
+  }finally{await c.close();await browser.close()}
+ });
+-test('rapid resident searches preserve focus and the latest selection without another summary read',{skip:!configFile,timeout:90000},async t=>{
+- const f=await fixture();if((f.data.counts.applicantsInMeasuredClub||100)<1000)return t.skip('Requires the registered large fixture');const browser=await chromium.launch({headless:true}),c=await context(browser,f),page=await c.newPage(),errors=[],submitted=[];
+- try{page.on('request',r=>{const u=new URL(r.url());if(['pipelinePage','pipelineList'].includes(u.searchParams.get('kind')))submitted.push(u.searchParams.get('kind'))});page.on('pageerror',e=>errors.push(e.name));await page.goto(f.config.appUrl+'/club/'+f.club+'/workspace?section=recruitment&tool=applicants');const search=page.getByRole('textbox',{name:'Search applicants',exact:true});await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await page.waitForLoadState('networkidle');const initial=submitted.length,last='Scale Student '+String(f.data.counts.applicantsInMeasuredClub-1).padStart(5,'0');await search.fill('Audit Student 000');await search.fill('intermediate query');await search.fill(last);await page.getByText(last,{exact:true}).first().waitFor();await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));assert.equal(await search.evaluate(el=>document.activeElement===el),true);assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),1);assert.equal(await page.getByText('Audit Student 000',{exact:true}).count(),0);assert.equal(submitted.length,initial,'local searches do not dispatch a summary request');assert.deepEqual(errors,[]);
+- }finally{await c.close();await browser.close()}
++test('rapid global searches coalesce obsolete reads, retain keyboard focus and never show a late previous selection',{skip:!configFile,timeout:90000},async t=>{
++ const f=await fixture();if((f.data.counts.applicantsInMeasuredClub||100)<1000)return t.skip('Requires the registered large fixture');const browser=await chromium.launch({headless:true}),c=await context(browser,f),page=await c.newPage(),errors=[],submitted=[];let held,release;
++ try{page.on('request',r=>{const u=new URL(r.url());if(u.searchParams.get('kind')==='pipelinePage')submitted.push(JSON.parse(u.searchParams.get('args'))[1].query)});page.on('pageerror',e=>errors.push(e.name));await page.goto(f.config.appUrl+'/club/'+f.club+'/workspace?section=recruitment&tool=applicants');const search=page.getByRole('textbox',{name:'Search applicants',exact:true});await page.getByText('Audit Student 000',{exact:true}).first().waitFor();const started=new Promise(r=>held=r);await page.route('**/api/workspace?kind=pipelinePage&*',async route=>{const args=JSON.parse(new URL(route.request().url()).searchParams.get('args'));if(args[1].query==='Audit Student 000'){const response=await route.fetch();release=()=>route.fulfill({response}).catch(()=>{});held();}else await route.continue()});await search.fill('Audit Student 000');await started;const last='Scale Student '+String(f.data.counts.applicantsInMeasuredClub-1).padStart(5,'0');await search.fill('intermediate query');await search.fill(last);await release();await page.getByText(last,{exact:true}).first().waitFor();await page.unroute('**/api/workspace?kind=pipelinePage&*');await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));assert.equal(await search.evaluate(el=>document.activeElement===el),true);assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),1);assert.equal(await page.getByText('Audit Student 000',{exact:true}).count(),0);assert.equal(submitted.includes('intermediate query'),false,'intermediate filters never dispatch while an earlier read is pending');assert.deepEqual(errors,[]);
++ }finally{if(release)await release();await c.close();await browser.close()}
+ });
+ test('editable review drafts survive the 100/101 server-page boundary and return navigation',{skip:!configFile,timeout:120000},async t=>{
+  const f=await fixture();if((f.data.counts.applicantsInMeasuredClub||100)<1000)return t.skip('Requires the registered large fixture');const db=new PrismaClient({datasourceUrl:f.config.status.DB_URL}),round=await db.pipelineRound.findFirstOrThrow({where:{clubId:f.club,type:'APPLICATION_REVIEW'}}),browser=await chromium.launch({headless:true}),c=await context(browser,f),page=await c.newPage();const existing=await db.editorDraft.findMany({where:{userId:f.data.userId}});assert.equal(existing.length,0,'Only an empty owned draft namespace may be used');
+diff --git a/tests/navigation-phase7-e2e.test.cjs b/tests/navigation-phase7-e2e.test.cjs
+index f732195..ae301c5 100644
+--- a/tests/navigation-phase7-e2e.test.cjs
++++ b/tests/navigation-phase7-e2e.test.cjs
+@@ -3,18 +3,18 @@ const {PrismaClient}=require('@prisma/client'),{chromium}=require('playwright'),
+ const configFile=process.env.OUTCLASS_ONBOARDING_E2E_CONFIG;
+ async function fixture(){const config=readConfig(configFile),data=JSON.parse(fs.readFileSync(path.join(path.dirname(configFile),'navigation-fixture.json'))),actor=new Actor(config);await actor.signIn(data.email,data.password);return{config,data,actor,club:data.clubIds[0]}}
+ async function open(browser,f){const c=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...f.actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await c.newPage();await page.goto(f.config.appUrl+'/club/'+f.club+'/workspace?section=recruitment&tool=applicants');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await page.waitForLoadState('networkidle');return{c,page}}
+-test('resident navigation remains bounded, local controls make no summary request and refresh hides old data until fresh privacy validation',{skip:!configFile,timeout:120000},async t=>{
++test('paged navigation remains bounded, invalid filters make no request and refresh hides old data until fresh privacy validation',{skip:!configFile,timeout:120000},async t=>{
+  const f=await fixture();if((f.data.counts.applicantsInMeasuredClub||100)<1000)return t.skip('Requires the registered large fixture');const browser=await chromium.launch({headless:true}),db=new PrismaClient({datasourceUrl:f.config.status.DB_URL}),round=await db.pipelineRound.findFirstOrThrow({where:{clubId:f.club,type:'APPLICATION_REVIEW'}}),{c,page}=await open(browser,f),reads=[],errors=[];let release;
+  try{page.on('request',r=>{const u=new URL(r.url());if(u.pathname==='/api/workspace')reads.push(u.searchParams.get('kind'))});page.on('pageerror',e=>errors.push(e.name));assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),100);
+-  const pager=page.getByRole('navigation',{name:'Applicant pages',exact:true}),search=page.getByRole('textbox',{name:'Search applicants',exact:true});await pager.getByRole('button',{name:'Next applicant page',exact:true}).click();await page.getByText('Scale Student 00100',{exact:true}).first().waitFor();await page.getByRole('combobox',{name:'Sort applicants',exact:true}).selectOption('gpa');const last='Scale Student '+String(f.data.counts.applicantsInMeasuredClub-1).padStart(5,'0');await search.fill(last);await page.getByText(last,{exact:true}).first().waitFor();assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),1);await search.fill('');await page.getByRole('combobox',{name:'Sort applicants',exact:true}).selectOption('name');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await page.locator('.oc-pipeline-filters summary').click();const gpa=page.getByLabel('GPA greater than',{exact:true});await gpa.fill('5');await page.getByRole('alert').filter({hasText:'Enter filters within the displayed numeric ranges.'}).waitFor();assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),0);await gpa.fill('');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();assert.equal(reads.filter(k=>['pipelineList','pipelinePage'].includes(k)).length,0,'released summaries serve all local page/filter/sort interactions');
+-  await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:true}});let seen;const held=new Promise(r=>seen=r);await page.route('**/api/workspace?kind=pipelineList&*',async route=>{const response=await route.fetch();release=()=>route.fulfill({response});seen()});await page.getByRole('button',{name:'Refresh',exact:true}).click();await held;assert.equal(await page.locator('[data-applicant-id]').count(),0,'a refresh cannot expose the previous successful summary set');await release();await page.unroute('**/api/workspace?kind=pipelineList&*');await page.getByRole('textbox',{name:'Search applicants',exact:true}).waitFor();assert.equal(reads.filter(k=>k==='pipelineList').length,1);assert.equal(await page.getByText('Audit Student 000',{exact:true}).count(),0);await page.getByRole('textbox',{name:'Search applicants',exact:true}).fill('Scale Student');await page.getByText('No applicants match these filters.',{exact:true}).waitFor();assert.deepEqual(errors,[]);
++  const pager=page.getByRole('navigation',{name:'Applicant pages',exact:true}),search=page.getByRole('textbox',{name:'Search applicants',exact:true});await pager.getByRole('button',{name:'Next applicant page',exact:true}).click();await page.getByText('Scale Student 00100',{exact:true}).first().waitFor();await page.getByRole('combobox',{name:'Sort applicants',exact:true}).selectOption('gpa');const last='Scale Student '+String(f.data.counts.applicantsInMeasuredClub-1).padStart(5,'0');await search.fill(last);await page.getByText(last,{exact:true}).first().waitFor();assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),1);await search.fill('');await page.getByRole('combobox',{name:'Sort applicants',exact:true}).selectOption('name');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await page.locator('.oc-pipeline-filters summary').click();const gpa=page.getByLabel('GPA greater than',{exact:true});await gpa.fill('5');await page.getByRole('alert').filter({hasText:'Enter filters within the displayed numeric ranges.'}).waitFor();assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),0);await gpa.fill('');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();assert.equal(reads.filter(k=>['pipelineList','pipelinePage'].includes(k)).length>=5,true,'valid page/filter/sort interactions revalidate through the page endpoint');
++  await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:true}});let seen;const held=new Promise(r=>seen=r);await page.route('**/api/workspace?kind=pipelinePage&*',async route=>{const response=await route.fetch();release=()=>route.fulfill({response});seen()});await page.getByRole('button',{name:'Refresh',exact:true}).click();await held;assert.equal(await page.locator('[data-applicant-id]').count(),0,'a refresh cannot expose the previous successful summary set');await release();await page.unroute('**/api/workspace?kind=pipelinePage&*');await page.getByRole('textbox',{name:'Search applicants',exact:true}).waitFor();assert.equal(reads.filter(k=>k==='pipelinePage').length>=6,true);assert.equal(await page.getByText('Audit Student 000',{exact:true}).count(),0);await page.getByRole('textbox',{name:'Search applicants',exact:true}).fill('Scale Student');await page.getByText('No applicants match these filters.',{exact:true}).waitFor();assert.deepEqual(errors,[]);
+  }finally{if(release)await release().catch(()=>{});await c.close();await browser.close();await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:round.anonymousReview}});await db.$disconnect()}
+ });
+-test('every explicit resident refresh rejects revoked membership, disabled accounts and revoked live sessions',{skip:!configFile,timeout:180000},async t=>{
++test('every explicit page refresh rejects revoked membership, disabled accounts and revoked live sessions',{skip:!configFile,timeout:180000},async t=>{
+  const f=await fixture(),db=new PrismaClient({datasourceUrl:f.config.status.DB_URL}),browser=await chromium.launch({headless:true}),member=await db.clubMember.findUniqueOrThrow({where:{userId_clubId:{userId:f.data.userId,clubId:f.club}}}),backups=await db.clubMember.findMany({where:{clubId:{in:f.data.clubIds},userId:{not:f.data.userId}},distinct:['clubId']});
+  try{assert.equal(backups.length,f.data.clubIds.length);for(const backup of backups)await db.clubMember.update({where:{id:backup.id},data:{isOwner:true,accessRole:'OWNER'}});
+   for(const reason of ['membership','account','session'])await t.test(reason,async()=>{
+-   const {c,page}=await open(browser,f);const statuses=[];page.on('response',r=>{if(new URL(r.url()).searchParams.get('kind')==='pipelineList')statuses.push(r.status())});
++   const {c,page}=await open(browser,f);const statuses=[];page.on('response',r=>{if(new URL(r.url()).searchParams.get('kind')==='pipelinePage')statuses.push(r.status())});
+    try{
+     if(reason==='membership')await db.clubMember.update({where:{id:member.id},data:{isOwner:false,accessRole:'MEMBER',permissions:[],interviewOffices:[]}});
+     if(reason==='account')await db.user.update({where:{id:f.data.userId},data:{disabledAt:new Date()}});
+diff --git a/tests/navigation-phase8-e2e.test.cjs b/tests/navigation-phase8-e2e.test.cjs
+new file mode 100644
+index 0000000..cb9280d
+--- /dev/null
++++ b/tests/navigation-phase8-e2e.test.cjs
+@@ -0,0 +1,30 @@
++// Reserved disposable fixture only. No application or production .env is read.
++const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
++const {PrismaClient}=require('@prisma/client'),{Actor,readConfig}=require('./helpers/onboarding-e2e.cjs'),{load}=require('./helpers/voting-harness.cjs');
++const configFile=process.env.OUTCLASS_ONBOARDING_E2E_CONFIG;
++test('real Repeatable Read planning bounds hydrated summaries and stays consistent across a concurrent profile update',{skip:!configFile,timeout:120000},async()=>{
++ const config=readConfig(configFile),f=JSON.parse(fs.readFileSync(path.join(path.dirname(configFile),'navigation-fixture.json'))),actor=new Actor(config);await actor.signIn(f.email,f.password);
++ const db=new PrismaClient({datasourceUrl:config.status.DB_URL}),clubId=f.clubIds[0],decode=load('lib/workspace-wire.ts').decodeWorkspaceData,{readPipelinePage}=load('lib/pipeline-page-read.ts'),{pagePipeline}=load('lib/pipeline-page.ts');
++ let profile;
++ try{
++  const response=await actor.request('/api/workspace?'+new URLSearchParams({kind:'pipelineList',args:JSON.stringify([clubId,{genderCounts:false}])}));assert.equal(response.status,200);const canonical=decode(await response.json());
++  const membership=await db.clubMember.findUniqueOrThrow({where:{userId_clubId:{userId:f.userId,clubId}}});const target=canonical.applications[0];profile=await db.studentProfile.findUniqueOrThrow({where:{userId:target.studentId}});const calls=[];let changed=false;
++  const page=await db.$transaction(async tx=>{
++   const wrapped={...tx,application:{...tx.application,async findMany(options){const records=await tx.application.findMany(options);calls.push({table:'application',rows:records.length,reviews:!!options.select.evaluations});if(!changed){changed=true;await db.studentProfile.update({where:{id:profile.id},data:{major:'Phase 8 concurrent profile canary',gpa:3.7}})}return records}},evaluation:{...tx.evaluation,async findMany(options){assert.deepEqual(options.where.application,{clubId,status:{not:'DRAFTING'}});calls.push({table:'evaluation',applicationIds:options.where.applicationId.in.length});return tx.evaluation.findMany(options)}},interviewPanelAssignment:{...tx.interviewPanelAssignment,async findMany(options){assert.deepEqual(options.where.application,{clubId,status:{not:'DRAFTING'}});calls.push({table:'assignment',applicationIds:options.where.applicationId.in.length});return tx.interviewPanelAssignment.findMany(options)}}};
++   return readPipelinePage(wrapped,{clubId,status:{not:'DRAFTING'}},membership,canonical.rounds,{},'phase8-snapshot');
++  },{isolationLevel:'RepeatableRead'});
++  assert.deepEqual(page,pagePipeline(canonical,{},membership.id,membership.userId,'phase8-snapshot'));assert.deepEqual(calls,[{table:'application',rows:canonical.applications.length,reviews:false},{table:'evaluation',applicationIds:Math.min(100,canonical.applications.length)},{table:'assignment',applicationIds:Math.min(100,canonical.applications.length)}]);assert.equal((await db.studentProfile.findUniqueOrThrow({where:{id:profile.id}})).major,'Phase 8 concurrent profile canary');
++  const fresh=await actor.request('/api/workspace?'+new URLSearchParams({kind:'pipelinePage',args:JSON.stringify([clubId,{}])}));assert.equal(fresh.status,200);const updated=decode(await fresh.json());assert.ok(updated.facets.majors.includes('Phase 8 concurrent profile canary'));assert.equal(updated.applications.find(a=>a.id===target.id).student.studentProfile.gpa,3.7);assert.equal(fresh.headers.get('cache-control'),'private, no-store');assert.match(fresh.headers.get('vary'),/Cookie/);
++ }finally{if(profile)await db.studentProfile.update({where:{id:profile.id},data:{major:profile.major,gpa:profile.gpa}});await db.$disconnect()}
++});
++
++const {chromium}=require('playwright');
++test('queued invalid numeric filters remain editable after obsolete page reads drain',{skip:!configFile,timeout:90000},async()=>{
++ const config=readConfig(configFile),f=JSON.parse(fs.readFileSync(path.join(path.dirname(configFile),'navigation-fixture.json'))),actor=new Actor(config);await actor.signIn(f.email,f.password);const browser=await chromium.launch({headless:true}),context=await browser.newContext({storageState:{cookies:[...actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage();let release;
++ try{
++  await page.goto(config.appUrl+'/club/'+f.clubIds[0]+'/workspace?section=recruitment&tool=applicants');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await page.waitForLoadState('networkidle');await page.locator('.oc-pipeline-filters summary').click();const search=page.getByRole('textbox',{name:'Search applicants',exact:true}),gpa=page.getByLabel('GPA greater than',{exact:true});let seen;const held=new Promise(r=>seen=r);
++  await page.route('**/api/workspace?kind=pipelinePage&*',async route=>{const q=JSON.parse(new URL(route.request().url()).searchParams.get('args'))[1];if(q.query==='Audit Student 000'){const response=await route.fetch();release=()=>route.fulfill({response});seen()}else await route.continue()});
++  await search.fill('Audit Student 000');await held;await search.fill('obsolete queued filter');await gpa.fill('5');await release();await page.waitForLoadState('networkidle');await page.getByRole('alert').filter({hasText:'Enter filters within the displayed numeric ranges.'}).waitFor();assert.equal(await gpa.isVisible(),true);assert.equal(await gpa.inputValue(),'5');assert.equal(await page.locator('[data-applicant-id]').count(),0);
++  await page.unroute('**/api/workspace?kind=pipelinePage&*');await search.fill('');await gpa.fill('');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),100);
++ }finally{if(release)await release().catch(()=>{});await context.close();await browser.close()}
++});
+diff --git a/tests/pipeline-page-owner.test.cjs b/tests/pipeline-page-owner.test.cjs
+new file mode 100644
+index 0000000..a427987
+--- /dev/null
++++ b/tests/pipeline-page-owner.test.cjs
+@@ -0,0 +1,34 @@
++const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript');
++const {load}=require('./helpers/voting-harness.cjs');
++const tick=async()=>{for(let i=0;i<30;i++)await Promise.resolve()};
++function setup(){
++ const slots=[],effects=[],setups=new Map(),cleanups=new Map(),requests=[];let index=0,changed=false;
++ const react={useState(value){const i=index++;if(!(i in slots))slots[i]=value;return[slots[i],next=>{const v=typeof next==='function'?next(slots[i]):next;changed||=!Object.is(v,slots[i]);slots[i]=v}]},useRef(value){return slots[index++]??={current:value}},useMemo(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i].deps[j]))slots[i]={deps,value:fn()};return slots[i].value},useCallback(fn,deps){return react.useMemo(()=>fn,deps)},useEffect(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;setups.set(i,fn);effects.push([i,fn])}}};
++ const mod={exports:{}};new Function('require','module','exports',ts.transpileModule(fs.readFileSync('hooks/use-pipeline-page.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(name=>name==='react'?react:name==='@/lib/workspace-api'?{getClubPipelinePage:(club,query)=>new Promise((resolve,reject)=>requests.push({club,query,resolve,reject}))}:name.startsWith('@/')?load(name.slice(2)+'.ts'):require(name),mod,mod.exports);
++ return{requests,render(props){let result;for(let step=0;step<20;step++){index=0;changed=false;result=mod.exports.usePipelinePage(props);for(const[i,fn]of effects.splice(0)){cleanups.get(i)?.();cleanups.set(i,fn())}if(!changed)return result}throw Error('Hook failed to settle')},replay(){for(const fn of cleanups.values())fn?.();cleanups.clear();for(const[i,fn]of setups)cleanups.set(i,fn())},cleanup(){for(const fn of cleanups.values())fn?.()}};
++}
++const props=()=>({clubId:'club',query:{},revision:0,authority:{},enabled:true,initialData:null,validatedInitialData:false});
++test('page owners fence stale completions/setters and drain rapid query changes to the latest only',async()=>{
++ const h=setup();let p=props();const old=h.render(p);for(let i=0;i<20;i++){p={...p,query:{query:String(i)}};assert.equal(h.render(p).ready,false)}assert.equal(h.requests.length,1);h.requests[0].resolve({marker:'obsolete'});await tick();assert.equal(h.requests.length,2);assert.equal(h.requests[1].query.query,'19');assert.equal(h.render(p).data,null);h.requests[1].resolve({marker:'current'});await tick();let value=h.render(p);assert.equal(value.ready,true);assert.equal(value.data.marker,'current');assert.equal(old.setData({marker:'stale'}),false);
++ const previous=value;p={...p,query:{query:'different'}};value=h.render(p);assert.equal(value.data.marker,'current','only prior metadata is retained to keep controls editable');assert.equal(value.ready,false,'prior rows cannot render for the changed query');p={...p,query:{query:'19'}};h.render(p);assert.equal(previous.isCurrent(),false,'returning to a query must create a fresh owner');h.cleanup();
++});
++test('validated initial pages avoid duplication; invalid filters keep controls editable and never dispatch',async()=>{
++ const h=setup();let p={...props(),initialData:{marker:'validated'},validatedInitialData:true};let v=h.render(p);assert.equal(v.ready,true);assert.equal(h.requests.length,0);h.replay();assert.equal(h.render(p).ready,true);p={...p,query:{gpa:5}};v=h.render(p);assert.equal(v.invalid,true);assert.equal(v.data.marker,'validated');assert.equal(v.ready,false);assert.equal(h.requests.length,0);p={...p,query:{gpa:3}};h.render(p);assert.equal(h.requests.length,1);h.requests[0].reject(Error('revoked'));await tick();v=h.render(p);assert.equal(v.error,true);assert.equal(v.loading,false);assert.equal(v.data,null);h.cleanup();
++});
++test('authority and refresh changes hide all earlier pages; queued disabled scopes never dispatch',async()=>{
++ const h=setup();let p={...props(),initialData:{marker:'initial'},validatedInitialData:true};const old=h.render(p);p={...p,revision:1};assert.equal(h.render(p).data,null);assert.equal(old.setData({marker:'stale'}),false);assert.equal(h.requests.length,1);p={...p,authority:{}};h.render(p);p={...p,enabled:false};assert.equal(h.render(p).data,null);h.requests[0].resolve({marker:'obsolete'});await tick();assert.equal(h.requests.length,1);p={...p,enabled:true};h.render(p);assert.equal(h.requests.length,2);h.requests[1].resolve({marker:'fresh'});await tick();assert.equal(h.render(p).ready,true);h.cleanup();
++});
++test('an adjacent freshly authorized page is adopted once, while obsolete handoffs cannot replace a newer owner',async()=>{
++ const h=setup();let p={...props(),initialData:{marker:'first'},validatedInitialData:true};const old=h.render(p);const next={query:'next'};assert.equal(old.acceptPage({marker:'second'},next),true);p={...p,query:next};let value=h.render(p);assert.equal(value.ready,true);assert.equal(value.data.marker,'second');assert.equal(h.requests.length,0,'handing off the fetched boundary must not dispatch it again');assert.equal(old.acceptPage({marker:'stale'},{query:'wrong'}),false);p={...p,revision:1};assert.equal(h.render(p).data,null);assert.equal(h.requests.length,1);h.cleanup();
++});
++
++test('an invalid filter after queued reads retains editable metadata without dispatching or releasing obsolete rows',async()=>{
++ const h=setup();let p={...props(),initialData:{marker:'initial'},validatedInitialData:true};h.render(p);p={...p,query:{query:'pending'}};h.render(p);p={...p,query:{query:'queued'}};h.render(p);p={...p,query:{gpa:5}};h.render(p);h.requests[0].resolve({marker:'obsolete'});await tick();const value=h.render(p);assert.equal(value.invalid,true);assert.equal(value.ready,false);assert.equal(value.data?.marker,'initial','controls must retain only prior metadata while invalid');assert.equal(value.loading,false);assert.equal(h.requests.length,1);h.cleanup();
++});
++test('an authority change while filters are invalid reacquires safe metadata before showing editable controls',async()=>{
++ const h=setup();let p={...props(),initialData:{marker:'initial'},validatedInitialData:true};h.render(p);p={...p,query:{gpa:5}};h.render(p);p={...p,authority:{}};assert.equal(h.render(p).data,null);assert.equal(h.requests.length,1,'new authority must validate rather than remaining stuck behind invalid input');assert.deepEqual(h.requests[0].query,{});h.requests[0].resolve({marker:'fresh-controls'});await tick();const value=h.render(p);assert.equal(value.data.marker,'fresh-controls');assert.equal(value.invalid,true);assert.equal(value.ready,false);assert.equal(value.loading,false);h.cleanup();
++});
++
++test('an adopted adjacent page cannot resurrect an old owner when the query is left and revisited',async()=>{
++ const h=setup();let p={...props(),initialData:{marker:'first'},validatedInitialData:true};const first=h.render(p);const next={query:'adopted'};first.acceptPage({marker:'adopted'},next);p={...p,query:next};const adopted=h.render(p);assert.equal(adopted.ready,true);p={...p,query:{query:'different'}};h.render(p);p={...p,query:next};const revisit=h.render(p);assert.equal(revisit.ready,false,'revisiting must validate again rather than resurrecting the handoff');assert.equal(adopted.isCurrent(),false);h.requests[0].resolve({marker:'obsolete'});await tick();assert.equal(h.requests.length,2);h.requests[1].resolve({marker:'fresh-revisit'});await tick();assert.equal(h.render(p).data.marker,'fresh-revisit');h.cleanup();
++});
+diff --git a/tests/pipeline-page-read.test.cjs b/tests/pipeline-page-read.test.cjs
+new file mode 100644
+index 0000000..f95f051
+--- /dev/null
++++ b/tests/pipeline-page-read.test.cjs
+@@ -0,0 +1,25 @@
++const {test}=require('node:test'),assert=require('node:assert/strict');
++const {load,uuid}=require('./helpers/voting-harness.cjs');
++const {readPipelinePage,pipelinePageMetadataSelect,requiresCompleteReviewMetadata}=load('lib/pipeline-page-read.ts');
++const {pipelineSummaryProjection,pipelineSummarySelect}=load('lib/pipeline-summary.ts'),{pagePipeline}=load('lib/pipeline-page.ts');
++const round=uuid(700),viewer=uuid(701),student=uuid(702),rounds=[{id:round,name:'Round',order:0,type:'APPLICATION_REVIEW',anonymousReview:false,genderVisible:false}];
++const member={id:viewer,userId:student,isOwner:true,status:'ACTIVE',interviewOffices:['PRESIDENT']};
++const raw=Array.from({length:251},(_,i)=>({id:uuid(1000+i),roundId:round,status:['SUBMITTED','INTERVIEWING','ACCEPTED','REJECTED','WAITLISTED'][i%5],studentId:i===0?student:uuid(2000+i),round:{anonymousReview:i%3===0},student:{email:`visible${i}@example.invalid`,studentProfile:i%7?{firstName:['Éva','李','Ann','ann','Zoe'][i%5],lastName:'Student '+i,major:i%2?'Math':'Physics',gradYear:2027+i%9,transferStudent:!!(i%2),gpa:i%4?3.4:null,satScore:1300+i%200,actScore:30}:null},evaluations:[{interviewerId:uuid(800),roundId:round,score:8,submittedAt:new Date()}],interviewAssignments:[]}));
++function database(records=raw){const calls=[];return{calls,application:{async findMany(options){calls.push({table:'application',...options});if(options.select===pipelinePageMetadataSelect)return records.map(({evaluations,interviewAssignments,...metadata})=>metadata);return records}},evaluation:{async findMany(options){calls.push({table:'evaluation',...options});return records.filter(a=>options.where.applicationId.in.includes(a.id)).flatMap(a=>a.evaluations.filter(e=>e.submittedAt).map(e=>({...e,applicationId:a.id}))) }},interviewPanelAssignment:{async findMany(options){calls.push({table:'assignment',...options});return records.filter(a=>options.where.applicationId.in.includes(a.id)).flatMap(a=>a.interviewAssignments.map(e=>({...e,applicationId:a.id})))}}}}
++
++const expected=(q,m=member)=>pagePipeline({rounds,genderCounts:null,applications:raw.map(a=>pipelineSummaryProjection(a,m))},q,m.id,m.userId,'scope');
++test('bounded summary hydration retains exact canonical privacy, facets, locale ordering, filters and cursor behavior',async()=>{
++ for(const m of [member,{...member,isOwner:false,permissions:['applications.review']}])for(const q of [{},...['name','round','year','gpa','sat','act','status'].flatMap(sort=>[{sort},{sort,descending:true}]),{gpa:3},{sat:1300},{act:20},{major:'Math'},{query:'student 20'},{mode:'decisions',decisionGroup:'accepted'},{mode:'rejected'}]){
++  const tx=database(),before=expected(q,m),after=await readPipelinePage(tx,{clubId:'club'},m,rounds,q,'scope');assert.deepEqual(after,before);assert.equal(tx.calls[0].select,pipelinePageMetadataSelect);if(before.applications.length){assert.equal(tx.calls.length,3);for(const call of tx.calls.slice(1)){assert.deepEqual(call.where.application,{clubId:'club'});assert.equal(call.where.applicationId.in.length,before.applications.length);assert.ok(call.where.applicationId.in.length<=100)}}
++  if(before.page.next){const tx2=database(),next={...q,cursor:before.page.next};assert.deepEqual(await readPipelinePage(tx2,{clubId:'club'},m,rounds,next,'scope'),expected(next,m))}
++ }
++ assert.equal('evaluations'in pipelinePageMetadataSelect,false);assert.equal('interviewAssignments'in pipelinePageMetadataSelect,false);
++});
++test('review and score dependencies retain the complete canonical path, including a zero rating threshold',async()=>{
++ for(const q of [{review:'mine'},{review:'unreviewed'},{rating:0},{rating:7},{sort:'score'}]){assert.equal(requiresCompleteReviewMetadata(q),true);const tx=database();assert.deepEqual(await readPipelinePage(tx,{clubId:'club'},member,rounds,q,'scope'),expected(q));assert.equal(tx.calls.length,1);assert.deepEqual(tx.calls[0].select,pipelineSummarySelect)}
++});
++test('empty pages avoid relation reads and scope mismatches fail closed',async()=>{
++ const tx=database();assert.deepEqual(await readPipelinePage(tx,{},member,rounds,{query:'no-match'},'scope'),expected({query:'no-match'}));assert.equal(tx.calls.length,1);
++ await assert.rejects(()=>readPipelinePage(database(),{},member,rounds,{cursor:{id:raw[0].id,direction:'after',scope:'other'}},'scope'),/Restart pagination/);
++
++});
+diff --git a/tests/review-summary-determinism.test.cjs b/tests/review-summary-determinism.test.cjs
+new file mode 100644
+index 0000000..b319971
+--- /dev/null
++++ b/tests/review-summary-determinism.test.cjs
+@@ -0,0 +1,7 @@
++const {test}=require('node:test'),assert=require('node:assert/strict'),{load}=require('./helpers/voting-harness.cjs');
++test('visible reviewer references are independent of relation query order and retain repeated references',()=>{
++ const {pipelineListProjection}=load('lib/pipeline-list.ts');const app={id:'app',roundId:'round',status:'SUBMITTED',studentId:'student',student:{email:'visible@example.invalid',studentProfile:null},evaluations:[{interviewerId:'z'},{interviewerId:'a'},{interviewerId:'a'}],roundScore:null};const data=evaluations=>pipelineListProjection({rounds:[],genderCounts:null,applications:[{...app,evaluations}]}).applications[0].evaluations;assert.deepEqual(data(app.evaluations),data([...app.evaluations].reverse()));assert.equal(data(app.evaluations).length,3);
++});
++test('submitted score arithmetic is deterministic across query plans without changing contributors or authority',()=>{
++ const {submittedScoreSummary}=load('lib/interview-review-summary.ts');const records=[{interviewerId:'a',score:1.1,submittedAt:'2026-10-01'},{interviewerId:'b',score:1.1,submittedAt:'2026-10-01'},{interviewerId:'c',score:8.1,submittedAt:'2026-10-01'}];assert.deepEqual(submittedScoreSummary(records,['a','b','c','pending']),submittedScoreSummary([...records].reverse(),['a','b','c','pending']));const result=submittedScoreSummary(records,['a','b','c','pending']);assert.equal(result.submitted,3);assert.equal(result.required,4);assert.equal(result.provisional,true);
++});
+diff --git a/tests/selected-workspace-loader.test.cjs b/tests/selected-workspace-loader.test.cjs
+index 82a38d8..d0afa93 100644
+--- a/tests/selected-workspace-loader.test.cjs
++++ b/tests/selected-workspace-loader.test.cjs
+@@ -2,14 +2,14 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
+ const tick=async()=>{for(let n=0;n<30;n++)await Promise.resolve()};
+ function setup(){
+  const state=[],effects=[],cleanups=new Map();let cursor=0,user={id:'one'},epoch={},support=false,demo={ready:true,isDemoEnabled:false};const requests=[],modules=[];
+- const hooks={useState(initial){const i=cursor++;if(!(i in state))state[i]=initial;return[state[i],v=>state[i]=typeof v==='function'?v(state[i]):v]},useMemo(fn,deps){const i=cursor++;if(!state[i]||deps.some((d,j)=>d!==state[i].deps[j]))state[i]={deps,value:fn()};return state[i].value},useEffect(fn,deps){const i=cursor++;if(!state[i]||deps.some((d,j)=>d!==state[i][j])){state[i]=deps;effects.push([i,fn])}}};
++ const hooks={useRef(initial){return state[cursor++]??={current:initial}},useState(initial){const i=cursor++;if(!(i in state))state[i]=initial;return[state[i],v=>state[i]=typeof v==='function'?v(state[i]):v]},useMemo(fn,deps){const i=cursor++;if(!state[i]||deps.some((d,j)=>d!==state[i].deps[j]))state[i]={deps,value:fn()};return state[i].value},useEffect(fn,deps){const i=cursor++;if(!state[i]||deps.some((d,j)=>d!==state[i][j])){state[i]=deps;effects.push([i,fn])}}};
+  const readWorkspace=(kind,args)=>new Promise((resolve,reject)=>requests.push({kind,args,resolve,reject}));
+- const mocks={react:hooks,'@/contexts/auth-context':{useAuth:()=>({user,readAuthority:epoch,isImpersonating:support,loading:false})},'@/contexts/demo-context':{useDemoMode:()=>demo},'@/lib/workspace-read':{readWorkspace},'@/components/ui/button':{Button:'Button'}};
++ const mocks={react:hooks,'@/lib/workspace-read-diagnostics':{recordWorkspaceRead(){}},'@/contexts/auth-context':{useAuth:()=>({user,readAuthority:epoch,isImpersonating:support,loading:false})},'@/contexts/demo-context':{useDemoMode:()=>demo},'@/lib/workspace-read':{readWorkspace},'@/components/ui/button':{Button:'Button'}};
+  const mod={exports:{}};new Function('require','module','exports',ts.transpileModule(fs.readFileSync('components/selected-club-workspace.tsx','utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText)(name=>{if(name in mocks)return mocks[name];if(name.startsWith('@/components/')){modules.push(name);return{ClubMembers:'Members',ClubTasks:'Tasks',ClubAnnouncements:'Announcements',LiveLeaderWorkspace:'Pipeline'}}return require(name)},mod,mod.exports);
+  return{...mod.exports,requests,modules,render(props){cursor=0;return mod.exports.SelectedClubWorkspace(props)},async flush(){for(const[i,fn]of effects.splice(0)){cleanups.get(i)?.();cleanups.set(i,fn())}await tick()},setUser(v){user=v},rotate(){epoch={}},setDemo(v){demo=v},setSupport(v){support=v},cleanup(){for(const fn of cleanups.values())fn?.()}};
+ }
+ test('all four selected resources start their guarded read alongside code loading and never reuse another visit',async()=>{
+- const f=setup();for(const kind of ['members','pipeline','tasks','announcements']){const pending=f.loadSelectedClubWorkspace(kind,'club');await tick();assert.equal(f.requests.length,f.modules.length);const r=f.requests.at(-1);assert.equal(r.kind,kind==='pipeline'?'pipelineList':kind);assert.deepEqual(r.args,kind==='pipeline'?['club',{genderCounts:false}]:['club']);r.resolve({fixture:true});assert.equal((await pending).kind,kind)}
++ const f=setup();for(const kind of ['members','pipeline','tasks','announcements']){const pending=f.loadSelectedClubWorkspace(kind,'club');await tick();assert.equal(f.requests.length,f.modules.length);const r=f.requests.at(-1);assert.equal(r.kind,kind==='pipeline'?'pipelinePage':kind);assert.deepEqual(r.args,kind==='pipeline'?['club',{mode:'applicants',genderCounts:false}]:['club']);r.resolve({fixture:true});assert.equal((await pending).kind,kind)}
+  const pending=f.loadSelectedClubWorkspace('members','club');await tick();assert.equal(f.requests.length,5);f.requests.at(-1).reject(Error('revoked'));await assert.rejects(pending,/revoked/);
+ });
+ test('late navigation/session/account results cannot reveal a previous projection; retry makes a fresh request',async()=>{
+diff --git a/tests/workspace-read-diagnostics.test.cjs b/tests/workspace-read-diagnostics.test.cjs
+new file mode 100644
+index 0000000..a53b105
+--- /dev/null
++++ b/tests/workspace-read-diagnostics.test.cjs
+@@ -0,0 +1,8 @@
++const {test}=require('node:test'),assert=require('node:assert/strict'),{load}=require('./helpers/voting-harness.cjs');
++test('workspace diagnostics expose fixed cause labels and no arbitrary identifiers, filters or values',()=>{
++ const records=[],previous=global.window;global.window={dispatchEvent(event){records.push(event)}};
++ try{const {recordWorkspaceRead}=load('lib/workspace-read-diagnostics.ts');recordWorkspaceRead('selected',['mount','user','private-actor-id','token=secret','query=private']);assert.deepEqual(records.map(e=>({type:e.type,detail:e.detail})),[{type:'outclass:workspace-read',detail:{kind:'selected',causes:['mount','user']}}]);recordWorkspaceRead('arbitrary',['mount']);assert.equal(records.length,1)}finally{global.window=previous}
++});
++test('diagnostics do not buffer events or require a browser',()=>{const {recordWorkspaceRead}=load('lib/workspace-read-diagnostics.ts');assert.doesNotThrow(()=>recordWorkspaceRead('auth',['signed_in']))});
++
++test("a failing diagnostic observer cannot block authentication or read ownership",()=>{const prior=global.window;global.window={dispatchEvent(){throw Error("observer failure")}};try{assert.doesNotThrow(()=>load("lib/workspace-read-diagnostics.ts").recordWorkspaceRead("auth",["signed_out"]))}finally{global.window=prior}});

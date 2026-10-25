@@ -1,0 +1,70 @@
+{
+  "baseline": "d89d15a91106fd465ca8358abaaaba4f4a5c7226",
+  "scope": "Compare Phase 7 resident complete summaries against fresh server pages with bounded summary hydration. Exact canonical JavaScript filtering/order/facets; lightweight ranking scan remains O(N). Score/review-dependent selectors retain full canonical path.",
+  "constraints": "Every actual GET repeats remote identity, live session/account/membership checks; private no-store/Cookie/Demo isolation unchanged. No production infrastructure/schema/index/dependency or publication changes.",
+  "measurement": {
+    "cohorts": [
+      100,
+      1000,
+      5000
+    ],
+    "blocks": [
+      "BA",
+      "AB"
+    ],
+    "samplesPerBlockPathCondition": 5,
+    "warmupsPerBlockPathCondition": 1,
+    "paths": [
+      "applicants",
+      "applicantDetail"
+    ],
+    "conditions": [
+      "cold",
+      "warm"
+    ],
+    "powerControl": "Temporary caffeinate, no actual sleep in accepted interval; retain/exclude entire interrupted set."
+  },
+  "additionalInteractions": {
+    "cohorts": [
+      1000,
+      5000
+    ],
+    "paths": [
+      "next-page",
+      "distant-search"
+    ],
+    "warmupsPerBuildBlockPath": 1,
+    "measuredPerBuildBlockPath": 5
+  },
+  "additionalValidation": "Local network/CPU limits and bounded concurrent readers. Preserve exact canonical authority/privacy/selection/draft parity. No hosted production claims.",
+  "publication": "Local commit only; publication held pending evidence.",
+  "supplement": {
+    "cohorts": [
+      1000,
+      5000
+    ],
+    "blocks": [
+      "BA",
+      "AB"
+    ],
+    "network": {
+      "latencyMs": 80,
+      "downloadBytesPerSecond": 200000,
+      "uploadBytesPerSecond": 93750,
+      "cpuSlowdown": 4
+    },
+    "browserMeasuredPerBuildBlockPathCondition": 3,
+    "browserWarmupsPerBuildBlockPathCondition": 1,
+    "httpConcurrentReaders": [
+      1,
+      2,
+      4
+    ],
+    "httpMeasuredWavesPerBuildBlockLevel": 5,
+    "httpWarmupWavesPerBuildBlockLevel": 1,
+    "httpIdentity": "Same verified fixture actor, no successful authorization reuse; each request repeats live guards.",
+    "poolLimitPerClient": 8
+  },
+  "tradeoff": "Candidate restores a fresh page GET for page/search interactions; baseline resident interactions reuse already released summaries. Report both request/latency and freshness differences.",
+  "implementationDetail": "Reuse same-snapshot scalar metadata; restrict review/assignment relation queries to at most 100 selected application IDs with complete application predicates. Do not reread profiles/rounds for hydration. Global ranking remains O(N)."
+}

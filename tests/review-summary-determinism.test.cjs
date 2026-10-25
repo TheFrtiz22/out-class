@@ -1,0 +1,7 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),{load}=require('./helpers/voting-harness.cjs');
+test('visible reviewer references are independent of relation query order and retain repeated references',()=>{
+ const {pipelineListProjection}=load('lib/pipeline-list.ts');const app={id:'app',roundId:'round',status:'SUBMITTED',studentId:'student',student:{email:'visible@example.invalid',studentProfile:null},evaluations:[{interviewerId:'z'},{interviewerId:'a'},{interviewerId:'a'}],roundScore:null};const data=evaluations=>pipelineListProjection({rounds:[],genderCounts:null,applications:[{...app,evaluations}]}).applications[0].evaluations;assert.deepEqual(data(app.evaluations),data([...app.evaluations].reverse()));assert.equal(data(app.evaluations).length,3);
+});
+test('submitted score arithmetic is deterministic across query plans without changing contributors or authority',()=>{
+ const {submittedScoreSummary}=load('lib/interview-review-summary.ts');const records=[{interviewerId:'a',score:1.1,submittedAt:'2026-10-01'},{interviewerId:'b',score:1.1,submittedAt:'2026-10-01'},{interviewerId:'c',score:8.1,submittedAt:'2026-10-01'}];assert.deepEqual(submittedScoreSummary(records,['a','b','c','pending']),submittedScoreSummary([...records].reverse(),['a','b','c','pending']));const result=submittedScoreSummary(records,['a','b','c','pending']);assert.equal(result.submitted,3);assert.equal(result.required,4);assert.equal(result.provisional,true);
+});

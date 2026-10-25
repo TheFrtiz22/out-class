@@ -1,0 +1,26 @@
+{
+  "comparison-final": {
+    "browserOutcomes": 384,
+    "measuredBrowserOutcomes": 320,
+    "warmups": 64,
+    "failedBrowserOutcomes": 0,
+    "pageErrors": 0,
+    "httpErrors": 0,
+    "flaggedRequests": 310,
+    "failedRequests": 22,
+    "pendingRequests": 288,
+    "extraSourceReadOutcomes": 3
+  },
+  "supplement": {
+    "browserOutcomes": 224,
+    "measuredBrowserOutcomes": 176,
+    "warmups": 48,
+    "failedBrowserOutcomes": 0,
+    "pageErrors": 0,
+    "httpErrors": 0,
+    "flaggedRequests": 130,
+    "failedRequests": 0,
+    "pendingRequests": 130,
+    "extraSourceReadOutcomes": 64
+  }
+}

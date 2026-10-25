@@ -1,0 +1,133 @@
+✔ live board lanes are status-based, exclude drafts, and keep waitlists distinct from closed decisions (0.524291ms)
+✔ List/Kanban toggle preserves the same filtered server data and does not mutate or reload it (251.682167ms)
+✔ drawer status writes send expectedStatus, reject stale outcomes, and refresh canonical offer state (116.482417ms)
+✔ read/review access alone never exposes enabled round moves or decision buttons (77.003334ms)
+✔ evaluation save updates both presentations and explicit round movement reloads anonymous identity (105.200625ms)
+✔ an identified applicant without current panel authority has no review editor or blocking review draft (75.762792ms)
+✔ decision groups use persisted status, exclude drafts, and keep waitlists out of Pending (0.081667ms)
+✔ Decisions reuses expected-status mutations and moves saved outcomes between groups (113.485084ms)
+✔ Decisions preserves stale failures and hides mutation controls from anonymous reviewers (179.114ms)
+✔ Kanban round moves reject stale data and share the refreshed anonymous projection with List (118.522167ms)
+✔ Kanban decisions use expected status and appear in List after server reload (95.079625ms)
+✔ drawer renders stable-ID review with historical label when current name is Panel (78.710542ms)
+✔ drawer renders stable-ID review with historical label when current name is Review (99.032833ms)
+✔ drawer legacy label compatibility, roundId=null (72.135709ms)
+✔ drawer legacy label compatibility, roundId=undefined (66.496417ms)
+✔ drawer legacy label compatibility, roundId=different-round (69.096584ms)
+✔ moving from the drawer locates the target-round review by stable ID despite an old label (71.398916ms)
+✔ rejected applicants leave active queues and remain in the deliberate retained-history tab (134.666416ms)
+✔ recruitment review comes before filter toggles and is absent from Decisions (133.654833ms)
+✔ quick review saves expected-status decisions and advances only after success (152.637ms)
+✔ quick review preserves the candidate after a rejected stale write and skips without publishing (90.903542ms)
+✔ review-only users cannot start quick review or move board candidates (64.297542ms)
+✔ board drops require an explicit outcome and preserve expected status (75.845292ms)
+✔ decision status stays unchanged until the server acknowledges publication (95.002208ms)
+✔ page reader remains usable after React development effect cleanup and setup replay (79.926ms)
+✖ a different membership identity resets the resident page cursor before fresh summaries render (95.735958ms)
+✔ bounded summary hydration retains exact canonical privacy, facets, locale ordering, filters and cursor behavior (96.63175ms)
+✖ review and score dependencies retain the complete canonical path, including a zero rating threshold (0.958417ms)
+✔ empty pages avoid hydration; scope mismatch and missing planned rows fail closed (1.301ms)
+✔ server pages bound rows and preserve all matches, facets and complete selections beyond 100 (21.035875ms)
+✔ all academic/review/decision filters apply globally before paging; totals remain global (1.322917ms)
+✔ anonymous identity/major and hidden scores cannot affect search, facets, ordering or review filters (24.918041ms)
+✔ every sort has deterministic ID ties, missing-last semantics and reversible page navigation (7.702ms)
+✔ cursor positions cannot cross selection scope; lost anchors reset safely and at-cursors locate any matching page (1.01375ms)
+✔ all four selected resources start their guarded read alongside code loading and never reuse another visit (32.982333ms)
+✔ late navigation/session/account results cannot reveal a previous projection; retry makes a fresh request (10.3565ms)
+✔ Demo and unresolved Demo initialization never dispatch a live selected-tab request (7.697792ms)
+✔ club, privacy and support authority changes hide content and fence earlier reads (7.09325ms)
+ℹ tests 38
+ℹ suites 0
+ℹ pass 36
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2734.338291
+
+✖ failing tests:
+
+test at tests/live-applicant-views.test.cjs:185:1
+✖ a different membership identity resets the resident page cursor before fresh summaries render (95.735958ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  3 !== 2
+
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/live-applicant-views.test.cjs:186:664)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 3,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/pipeline-page-read.test.cjs:17:1
+✖ review and score dependencies retain the complete canonical path, including a zero rating threshold (0.958417ms)
+  AssertionError [ERR_ASSERTION]: Values have same structure but are not reference-equal:
+
+  ... Skipped lines
+  {
+    evaluations: {
+      select: {
+        interviewerId: true,
+        roundId: true,
+        score: true,
+        submittedAt: true
+      },
+      where: {
+        submittedAt: {
+          not: null
+        }
+      }
+    },
+    id: true,
+    interviewAssignments: {
+      select: {
+        member: {
+          select: {
+            isOwner: true,
+            permissions: true,
+            status: true
+          }
+        },
+        memberId: true,
+        roundId: true
+      },
+      where: {
+        revokedAt: null
+      }
+    },
+    round: {
+      select: {
+        anonymousReview: true
+      }
+    },
+    roundId: true,
+    status: true,
+    student: {
+      select: {
+        email: true,
+        studentProfile: {
+          select: {
+            actScore: true,
+            firstName: true,
+            gpa: true,
+            gradYear: true,
+            lastName: true,
+            major: true,
+            satScore: true,
+  ...}
+
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/pipeline-page-read.test.cjs:18:304)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { id: true, roundId: true, status: true, studentId: true, round: { select: [Object] }, student: { select: [Object] }, evaluations: { where: [Object], select: [Object] }, interviewAssignments: { where: [Object], select: [Object] } },
+    expected: { id: true, roundId: true, status: true, studentId: true, round: { select: [Object] }, student: { select: [Object] }, evaluations: { where: [Object], select: [Object] }, interviewAssignments: { where: [Object], select: [Object] } },
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

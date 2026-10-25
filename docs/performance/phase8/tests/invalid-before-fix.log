@@ -1,0 +1,56 @@
+✔ page owners fence stale completions/setters and drain rapid query changes to the latest only (34.949166ms)
+✔ validated initial pages avoid duplication; invalid filters keep controls editable and never dispatch (28.188625ms)
+✔ authority and refresh changes hide all earlier pages; queued disabled scopes never dispatch (25.535167ms)
+✔ an adjacent freshly authorized page is adopted once, while obsolete handoffs cannot replace a newer owner (21.389375ms)
+✖ an invalid filter after queued reads retains editable metadata without dispatching or releasing obsolete rows (21.118875ms)
+✖ an authority change while filters are invalid reacquires safe metadata before showing editable controls (18.807333ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 4
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 435.802375
+
+✖ failing tests:
+
+test at tests/pipeline-page-owner.test.cjs:25:1
+✖ an invalid filter after queued reads retains editable metadata without dispatching or releasing obsolete rows (21.118875ms)
+  AssertionError [ERR_ASSERTION]: controls must retain only prior metadata while invalid
+  + actual - expected
+
+  + undefined
+  - 'initial'
+
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/pipeline-page-owner.test.cjs:26:382)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'initial',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/pipeline-page-owner.test.cjs:28:1
+✖ an authority change while filters are invalid reacquires safe metadata before showing editable controls (18.807333ms)
+  AssertionError [ERR_ASSERTION]: new authority must validate rather than remaining stuck behind invalid input
+
+  0 !== 1
+
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/pipeline-page-owner.test.cjs:29:206)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

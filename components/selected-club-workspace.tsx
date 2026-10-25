@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useDemoMode } from "@/contexts/demo-context"
+import { recordWorkspaceRead } from "@/lib/workspace-read-diagnostics"
 import { readWorkspace } from "@/lib/workspace-read"
 import { Button } from "@/components/ui/button"
 
@@ -22,7 +23,7 @@ export async function loadSelectedClubWorkspace(kind: SelectedClubWorkspaceKind,
     case "pipeline": {
       const [module, data] = await Promise.all([
         import("@/components/views/leader-dashboard/live-leader-workspace"),
-        readWorkspace<Awaited<ReturnType<typeof import("@/actions/crm").getClubPipelineList>>>("pipelineList", [clubId, { genderCounts: false }]),
+        readWorkspace<Awaited<ReturnType<typeof import("@/actions/crm").getClubPipelinePage>>>("pipelinePage", [clubId, { mode, genderCounts: false }]),
       ])
       return { kind, module, data } as const
     }
@@ -56,8 +57,11 @@ export function SelectedClubWorkspace({ kind, clubId, privacyScope, personalOnly
   const mode = rejectedOnly ? "rejected" : decisionsOnly ? "decisions" : "applicants"
   const owner = useMemo(() => ({ user, readAuthority, isImpersonating, clubId, kind, privacyScope, retry, mode, demoReady: demo.ready, demoEnabled: demo.isDemoEnabled }), [user, readAuthority, isImpersonating, clubId, kind, privacyScope, retry, mode, demo.ready, demo.isDemoEnabled])
   const [result, setResult] = useState<{ owner: object; value?: Loaded; failed?: boolean } | null>(null)
+  const lastRead = useRef<typeof owner | null>(null)
   useEffect(() => {
     if (!demo.ready || demo.isDemoEnabled || loading || !user) return
+    recordWorkspaceRead("selected", lastRead.current ? (Object.keys(owner) as (keyof typeof owner)[]).filter(key => lastRead.current![key] !== owner[key]) : ["mount"])
+    lastRead.current = owner
     let current = true
     void loadSelectedClubWorkspace(kind, clubId, mode).then(value => {
       if (current) setResult({ owner, value })
