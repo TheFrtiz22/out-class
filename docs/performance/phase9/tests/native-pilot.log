@@ -1,0 +1,11 @@
+✔ real Repeatable Read planning bounds hydrated summaries and stays consistent across a concurrent profile update (429.274583ms)
+✔ queued invalid numeric filters remain editable after obsolete page reads drain (2023.319375ms)
+✔ native metadata JOIN preserves complete Prisma predicates, nullable profiles and unknown-scope fallback (226.347958ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3291.485958

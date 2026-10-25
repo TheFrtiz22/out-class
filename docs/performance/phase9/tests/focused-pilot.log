@@ -1,0 +1,37 @@
+recruitment.pipeline.read.failure {
+  code: 'other',
+  phase: 'applications',
+  elapsedMs: 0,
+  acquisitionMs: 0,
+  transactionMs: 0
+}
+✔ CRM identification-only reader retrieves the exact photo returned by canonical CRM (431.163792ms)
+✔ CRM photo denies unrelated application, foreign club and draft application (257.574542ms)
+✔ CRM photo denies missing identification permission, revoked membership and anonymous rounds (276.043125ms)
+✔ ordinary reviewer photo context still requires explicitly enabled round photo (242.9445ms)
+✔ photo proxy retains unauthenticated denial and owner access (225.527959ms)
+✔ CRM context rejects conflicting scopes and mismatched stored photo paths (237.45825ms)
+✔ CRM photo uses one narrow read, never the pipeline, and denies inactive membership and disabled actor (239.727208ms)
+✔ evaluation capability follows current panel assignment, anonymous review and self-review rules (297.893ms)
+✔ pipeline failure diagnostics identify the failing phase without serializing private exception content (241.738833ms)
+✔ getClubPipeline repeats authorization and masks anonymous/self/foreign rows (222.413958ms)
+✔ getClubPipelineList repeats authorization and masks anonymous/self/foreign rows (215.727958ms)
+✔ getClubPipelinePage repeats authorization and masks anonymous/self/foreign rows (212.303334ms)
+✔ summary database allowlist excludes detail/offer/member content and reads only submitted reviews (210.96ms)
+✔ page cursors bind the freshly authorized projection and selection reads contain no identities (221.650291ms)
+✔ narrow database summaries match canonical full privacy across viewer, profile and review states (219.830333ms)
+✔ summary scores preserve submission barrier, self exclusion, inactive assignments and historical review visibility (210.382541ms)
+✔ metadata join recognizes the complete guard scope and binds every value without SQL interpolation (1.009291ms)
+✔ unknown, nested, incomplete or changed predicates retain the exact original Prisma scope (0.633583ms)
+✔ one metadata join reconstructs only the original scalar allowlist and preserves a missing profile (0.132458ms)
+✔ bounded summary hydration retains exact canonical privacy, facets, locale ordering, filters and cursor behavior (90.274917ms)
+✔ review and score dependencies retain the complete canonical path, including a zero rating threshold (3.391416ms)
+✔ empty pages avoid relation reads and scope mismatches fail closed (1.997167ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4952.981666

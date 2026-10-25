@@ -1,13 +1,13 @@
 import { pagePipeline, type PipelinePageQuery } from "@/lib/pipeline-page"
 import { pipelineSummarySelect, pipelineSummaryProjection } from "@/lib/pipeline-summary"
+import { readPipelineMetadata } from "@/lib/pipeline-metadata-read"
+export { pipelinePageMetadataSelect } from "@/lib/pipeline-metadata-read"
 import type { Prisma } from "@prisma/client"
 import type { AppTransactionClient } from "@/utils/prisma"
 import type { ClubAccess } from "@/lib/permissions"
 
 // Ranking does not need review/assignment collections unless the requested
 // filter or sort observes them. Keep canonical JS collation/privacy semantics.
-const { evaluations: _evaluations, interviewAssignments: _assignments, ...metadataSelect } = pipelineSummarySelect
-export const pipelinePageMetadataSelect = metadataSelect
 export function requiresCompleteReviewMetadata(query: PipelinePageQuery) {
   return query.review !== undefined || query.rating !== undefined || query.sort === "score"
 }
@@ -21,7 +21,7 @@ export async function readPipelinePage(tx: AppTransactionClient, where: Prisma.A
     const all = await tx.application.findMany({ where, select: pipelineSummarySelect })
     return pagePipeline({ rounds, genderCounts: null, applications: all.map(project) }, query, member.id, member.userId, scope)
   }
-  const metadata = await tx.application.findMany({ where, select: pipelinePageMetadataSelect })
+  const metadata = await readPipelineMetadata(tx, where)
   // Empty review collections are internal ranking placeholders only. This path
   // is never used for a review/score-dependent selector or returned as content.
   const ranked = metadata.map(app => project({ ...app, evaluations: [], interviewAssignments: [] }))

@@ -1,0 +1,56 @@
+{
+  "buildId": "5VpZztU4YDOYGkpRc-HX0",
+  "ordinary": {
+    "total": 1460,
+    "passed": 1405,
+    "failed": 0,
+    "skipped": 55,
+    "gateNote": "Optional environment-gated suites reported separately; not every optional suite exercised."
+  },
+  "liveUniqueCoverage": {
+    "uniqueCases": 59,
+    "passed": 59,
+    "failed": 0,
+    "initial": {
+      "total": 59,
+      "passed": 54,
+      "skipped": 5,
+      "reason": "Large-list cases required the registered 1000-applicant fixture."
+    },
+    "largeFollowup": {
+      "total": 5,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "scope": "Only the five previously skipped large-list cases, without repeating successful Auth/settings cases."
+    }
+  },
+  "nativeMetadataParity": {
+    "scopes": 86,
+    "injectionShapedScopeReturnedNoRows": true,
+    "nullableProfiles": true,
+    "archivedRounds": true,
+    "unknownPredicateFallback": true,
+    "rolledBack": true
+  },
+  "nativeSecurityConcurrency": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0
+  },
+  "provisioning": {
+    "passed": 38,
+    "failed": 0
+  },
+  "migrations": {
+    "freshAndLegacy": 57,
+    "rlsTablesWithBrowserRoleDenial": 78
+  },
+  "typecheck": "passed",
+  "productionBuild": "passed",
+  "lint": {
+    "errors": 0,
+    "existingWarnings": 22
+  },
+  "development": "Two test fixture corrections for selector identity/native nullable fields and a database-rejected gender fixture; application/constraints unchanged. Sanitized failure logs retained."
+}

@@ -1,0 +1,42 @@
+{
+  "baseline": "febb9cfd40b29d8e175a8d7c0c10fc6245f57dbe",
+  "scope": "One backend experiment: replace recognized scalar metadata relation fan-out with a parameterized same-snapshot JOIN. Exact scope recognition; unfamiliar predicates use the existing Prisma path. Existing canonical privacy/filter/order/facet functions remain authoritative.",
+  "constraints": "No auth cache, GET/owner/freshness changes, production infrastructure/schema/index/dependency or publication changes.",
+  "measurement": {
+    "cohorts": [
+      100,
+      1000,
+      5000
+    ],
+    "blocks": [
+      "BA",
+      "AB"
+    ],
+    "samplesPerBlockPathCondition": 5,
+    "warmupsPerBlockPathCondition": 1,
+    "paths": [
+      "applicants",
+      "applicantDetail"
+    ],
+    "conditions": [
+      "cold",
+      "warm"
+    ],
+    "powerControl": "Temporary caffeinate; exclude entire interrupted collection."
+  },
+  "additionalInteractions": {
+    "cohorts": [
+      1000,
+      5000
+    ],
+    "paths": [
+      "next-page",
+      "distant-search"
+    ],
+    "warmupsPerBuildBlockPath": 1,
+    "measuredPerBuildBlockPath": 5
+  },
+  "additionalValidation": "Same constrained network/CPU and bounded 1/2/4 HTTP reads as Phase 8; all planned rows retained. Full existing QA plus raw-query scope/native parity regressions.",
+  "publication": "Local commit only; report regressions and hold if not a clear replacement.",
+  "hypothesis": "Avoid four scalar metadata relation statements and large per-user IN lists with one parameterized join. Ranking remains O(N), related page hydration stays bounded at 100; later interactions still require fresh live GETs."
+}

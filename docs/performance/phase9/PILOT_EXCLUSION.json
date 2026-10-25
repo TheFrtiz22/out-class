@@ -1,0 +1,9 @@
+{
+  "files": [
+    "pilot-baseline-loaders.json",
+    "pilot-candidate-loaders.json"
+  ],
+  "loaderSamples": 200,
+  "reason": "Exploratory loader check before final QA and BA/AB collection, never pooled with accepted observations. No application change after this pilot.",
+  "candidateBuildId": "5VpZztU4YDOYGkpRc-HX0"
+}

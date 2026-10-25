@@ -1,0 +1,77 @@
+recruitment.pipeline.read.failure {
+  code: 'other',
+  phase: 'applications',
+  elapsedMs: 1,
+  acquisitionMs: 0,
+  transactionMs: 1
+}
+✔ CRM identification-only reader retrieves the exact photo returned by canonical CRM (440.8595ms)
+✔ CRM photo denies unrelated application, foreign club and draft application (263.8835ms)
+✔ CRM photo denies missing identification permission, revoked membership and anonymous rounds (274.927875ms)
+✔ ordinary reviewer photo context still requires explicitly enabled round photo (236.016042ms)
+✔ photo proxy retains unauthenticated denial and owner access (382.742834ms)
+✔ CRM context rejects conflicting scopes and mismatched stored photo paths (294.938709ms)
+✔ CRM photo uses one narrow read, never the pipeline, and denies inactive membership and disabled actor (268.41975ms)
+✔ evaluation capability follows current panel assignment, anonymous review and self-review rules (216.236666ms)
+✔ pipeline failure diagnostics identify the failing phase without serializing private exception content (224.67975ms)
+✔ getClubPipeline repeats authorization and masks anonymous/self/foreign rows (210.738334ms)
+✔ getClubPipelineList repeats authorization and masks anonymous/self/foreign rows (213.708625ms)
+✔ getClubPipelinePage repeats authorization and masks anonymous/self/foreign rows (230.293583ms)
+✔ summary database allowlist excludes detail/offer/member content and reads only submitted reviews (217.756583ms)
+✔ page cursors bind the freshly authorized projection and selection reads contain no identities (394.447875ms)
+✖ narrow database summaries match canonical full privacy across viewer, profile and review states (266.761375ms)
+✔ summary scores preserve submission barrier, self exclusion, inactive assignments and historical review visibility (254.932708ms)
+✔ metadata join recognizes the complete guard scope and binds every value without SQL interpolation (1.041292ms)
+✔ unknown, nested, incomplete or changed predicates retain the exact original Prisma scope (0.631125ms)
+✔ one metadata join reconstructs only the original scalar allowlist and preserves a missing profile (0.133625ms)
+✔ bounded summary hydration retains exact canonical privacy, facets, locale ordering, filters and cursor behavior (94.216125ms)
+✔ review and score dependencies retain the complete canonical path, including a zero rating threshold (4.7785ms)
+✔ empty pages avoid relation reads and scope mismatches fail closed (1.057625ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 21
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5475.650666
+
+✖ failing tests:
+
+test at tests/crm-photo-authorization.test.cjs:183:1
+✖ narrow database summaries match canonical full privacy across viewer, profile and review states (266.761375ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+
+    [
+      {
+        evaluations: [],
+        id: '123e4567-e89b-12d3-a456-000000000004',
+        roundId: '123e4567-e89b-12d3-a456-000000000005',
+  ...
+            academicYear: 'Third Year',
+  +         actScore: null,
+  -         actScore: undefined,
+            firstName: 'Student',
+            gpa: null,
+            lastName: 'Fixture',
+            major: 'Math',
+  +         satScore: null
+  -         satScore: undefined
+          }
+        },
+        studentId: '123e4567-e89b-12d3-a456-000000000001'
+      }
+    ]
+
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/crm-photo-authorization.test.cjs:194:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ { id: '123e4567-e89b-12d3-a456-000000000004', roundId: '123e4567-e89b-12d3-a456-000000000005', status: 'SUBMITTED', studentId: '123e4567-e89b-12d3-a456-000000000001', student: [Object], evaluations: [], roundScore: null } ],
+    expected: [ { id: '123e4567-e89b-12d3-a456-000000000004', roundId: '123e4567-e89b-12d3-a456-000000000005', status: 'SUBMITTED', studentId: '123e4567-e89b-12d3-a456-000000000001', student: [Object], evaluations: [], roundScore: null } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

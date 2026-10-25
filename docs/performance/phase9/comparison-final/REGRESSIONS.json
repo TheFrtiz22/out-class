@@ -1,0 +1,110 @@
+[
+  {
+    "size": 100,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "stage": "initial",
+    "before": {
+      "samples": 10,
+      "p50": 64.1,
+      "p95": 77.2,
+      "max": 77.2
+    },
+    "after": {
+      "samples": 10,
+      "p50": 64.8,
+      "p95": 111.3,
+      "max": 111.3
+    }
+  },
+  {
+    "size": 100,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "stage": "initial",
+    "before": {
+      "samples": 10,
+      "p50": 84,
+      "p95": 112.7,
+      "max": 112.7
+    },
+    "after": {
+      "samples": 10,
+      "p50": 80.7,
+      "p95": 112.9,
+      "max": 112.9
+    }
+  },
+  {
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "stage": "initial",
+    "before": {
+      "samples": 10,
+      "p50": 127.8,
+      "p95": 135.2,
+      "max": 135.2
+    },
+    "after": {
+      "samples": 10,
+      "p50": 97.2,
+      "p95": 162.7,
+      "max": 162.7
+    }
+  },
+  {
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "stage": "initial",
+    "before": {
+      "samples": 10,
+      "p50": 80,
+      "p95": 113.7,
+      "max": 113.7
+    },
+    "after": {
+      "samples": 10,
+      "p50": 95.9,
+      "p95": 216.2,
+      "max": 216.2
+    }
+  },
+  {
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "stage": "initial",
+    "before": {
+      "samples": 10,
+      "p50": 101.8,
+      "p95": 134.9,
+      "max": 134.9
+    },
+    "after": {
+      "samples": 10,
+      "p50": 98.8,
+      "p95": 479.6,
+      "max": 479.6
+    }
+  },
+  {
+    "size": 1000,
+    "kind": "next-page",
+    "condition": "warm",
+    "stage": "interaction",
+    "before": {
+      "samples": 10,
+      "p50": 130.2,
+      "p95": 201.4,
+      "max": 201.4
+    },
+    "after": {
+      "samples": 10,
+      "p50": 96,
+      "p95": 237,
+      "max": 237
+    }
+  }
+]

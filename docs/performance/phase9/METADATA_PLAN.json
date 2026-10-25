@@ -1,0 +1,126 @@
+{
+  "cohort": 5000,
+  "scope": "Candidate scalar metadata only, before accepted navigation collection; local synthetic cohort, no authorization or HTTP timing claim.",
+  "planningMs": 3.271,
+  "executionMs": 25.283,
+  "plan": {
+    "Node Type": "Hash Join",
+    "Join Type": "Inner",
+    "Plan Rows": 5000,
+    "Actual Rows": 5000,
+    "Actual Loops": 1,
+    "Actual Startup Time": 10.818,
+    "Actual Total Time": 24.817,
+    "Shared Hit Blocks": 1268,
+    "Shared Read Blocks": 0,
+    "Plans": [
+      {
+        "Node Type": "Hash Join",
+        "Join Type": "Inner",
+        "Plan Rows": 5000,
+        "Actual Rows": 5000,
+        "Actual Loops": 1,
+        "Actual Startup Time": 10.28,
+        "Actual Total Time": 23.082,
+        "Shared Hit Blocks": 1264,
+        "Shared Read Blocks": 0,
+        "Plans": [
+          {
+            "Node Type": "Hash Join",
+            "Join Type": "Right",
+            "Plan Rows": 6244,
+            "Actual Rows": 6244,
+            "Actual Loops": 1,
+            "Actual Startup Time": 5.939,
+            "Actual Total Time": 16.906,
+            "Shared Hit Blocks": 1108,
+            "Shared Read Blocks": 0,
+            "Plans": [
+              {
+                "Node Type": "Seq Scan",
+                "Relation Name": "StudentProfile",
+                "Plan Rows": 6233,
+                "Actual Rows": 6233,
+                "Actual Loops": 1,
+                "Actual Startup Time": 0.011,
+                "Actual Total Time": 8.977,
+                "Shared Hit Blocks": 1006,
+                "Shared Read Blocks": 0
+              },
+              {
+                "Node Type": "Hash",
+                "Plan Rows": 6244,
+                "Actual Rows": 6244,
+                "Actual Loops": 1,
+                "Actual Startup Time": 5.836,
+                "Actual Total Time": 5.836,
+                "Shared Hit Blocks": 102,
+                "Shared Read Blocks": 0,
+                "Plans": [
+                  {
+                    "Node Type": "Seq Scan",
+                    "Relation Name": "User",
+                    "Plan Rows": 6244,
+                    "Actual Rows": 6244,
+                    "Actual Loops": 1,
+                    "Actual Startup Time": 0.015,
+                    "Actual Total Time": 1.798,
+                    "Shared Hit Blocks": 102,
+                    "Shared Read Blocks": 0
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "Node Type": "Hash",
+            "Plan Rows": 5000,
+            "Actual Rows": 5000,
+            "Actual Loops": 1,
+            "Actual Startup Time": 4.208,
+            "Actual Total Time": 4.208,
+            "Shared Hit Blocks": 156,
+            "Shared Read Blocks": 0,
+            "Plans": [
+              {
+                "Node Type": "Seq Scan",
+                "Relation Name": "Application",
+                "Plan Rows": 5000,
+                "Actual Rows": 5000,
+                "Actual Loops": 1,
+                "Actual Startup Time": 0.031,
+                "Actual Total Time": 2.082,
+                "Shared Hit Blocks": 156,
+                "Shared Read Blocks": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "Node Type": "Hash",
+        "Plan Rows": 220,
+        "Actual Rows": 14,
+        "Actual Loops": 1,
+        "Actual Startup Time": 0.052,
+        "Actual Total Time": 0.052,
+        "Shared Hit Blocks": 1,
+        "Shared Read Blocks": 0,
+        "Plans": [
+          {
+            "Node Type": "Seq Scan",
+            "Relation Name": "PipelineRound",
+            "Plan Rows": 220,
+            "Actual Rows": 14,
+            "Actual Loops": 1,
+            "Actual Startup Time": 0.039,
+            "Actual Total Time": 0.041,
+            "Shared Hit Blocks": 1,
+            "Shared Read Blocks": 0
+          }
+        ]
+      }
+    ]
+  },
+  "privacy": "Allowlisted plan node types/table/index names, row/loop counts, timings and buffer counters. SQL, predicate values/conditions and applicant bodies omitted."
+}

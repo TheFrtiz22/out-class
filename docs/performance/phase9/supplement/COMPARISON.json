@@ -1,0 +1,4716 @@
+{
+  "protocol": {
+    "plannedBrowser": 224,
+    "primaryBrowser": 128,
+    "interactionBrowser": 96,
+    "measuredBrowser": 176,
+    "warmupBrowser": 48,
+    "failedBrowser": 0,
+    "pageErrors": 0,
+    "httpOutcomes": 336,
+    "measuredHttp": 280,
+    "warmupHttp": 56,
+    "httpFailed": 0,
+    "percentiles": "Initial navigation n=6, interactions n=10; nearest rank p95=max. HTTP burst completion uses 10 waves; requests within a wave are correlated. Complete HTTP time includes gzip decode/JSON validation in one Node client. Pool counts are nominal 25ms same-role samples, not proof of maximum possible concurrency or production saturation."
+  },
+  "groups": [
+    {
+      "size": 1000,
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "B": {
+        "planned": 6,
+        "successful": 6,
+        "failed": 0,
+        "sourceFailures": 0,
+        "preparationFailures": 0,
+        "measuredFailures": 0,
+        "latencyInterpretation": "All six planned measured attempts; nearest-rank p95 is the maximum at n=6.",
+        "meaningfulMs": {
+          "samples": 6,
+          "p50": 450.2,
+          "p95": 484.1,
+          "max": 484.1
+        },
+        "interactiveMs": {
+          "samples": 6,
+          "p50": 451.5,
+          "p95": 485.7,
+          "max": 485.7
+        },
+        "networkCompleteMs": {
+          "samples": 6,
+          "p50": 331,
+          "p95": 337.8,
+          "max": 337.8
+        },
+        "requestCount": {
+          "samples": 6,
+          "p50": 5,
+          "p95": 5,
+          "max": 5
+        },
+        "encodedBodyBytes": {
+          "samples": 6,
+          "p50": 39982,
+          "p95": 39982,
+          "max": 39982
+        },
+        "initialScriptBytes": {
+          "samples": 6,
+          "p50": 543405,
+          "p95": 543405,
+          "max": 543405
+        },
+        "scriptMs": {
+          "samples": 6,
+          "p50": 109.05,
+          "p95": 137.88,
+          "max": 137.88
+        },
+        "taskMs": {
+          "samples": 6,
+          "p50": 414.55,
+          "p95": 510.76,
+          "max": 510.76
+        },
+        "readStartMs": {
+          "samples": 6,
+          "p50": 27.3,
+          "p95": 43.8,
+          "max": 43.8
+        },
+        "readTtfbMs": {
+          "samples": 6,
+          "p50": 135.42,
+          "p95": 158.77,
+          "max": 158.77
+        },
+        "readServerMs": {
+          "samples": 6,
+          "p50": 110.98,
+          "p95": 146.24,
+          "max": 146.24
+        },
+        "identityMs": {
+          "samples": 6,
+          "p50": 35.75,
+          "p95": 51.56,
+          "max": 51.56
+        },
+        "databaseMs": {
+          "samples": 6,
+          "p50": 58.63,
+          "p95": 70,
+          "max": 70
+        },
+        "acquisitionMs": {
+          "samples": 6,
+          "p50": 0.59,
+          "p95": 1.46,
+          "max": 1.46
+        },
+        "serializationMs": {
+          "samples": 6,
+          "p50": 0.71,
+          "p95": 0.94,
+          "max": 0.94
+        },
+        "readBodyBytes": {
+          "samples": 6,
+          "p50": 7267,
+          "p95": 7267,
+          "max": 7267
+        },
+        "readCount": {
+          "samples": 6,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "successfulCycleCancellationCount": {
+          "samples": 6,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "source": {
+          "meaningfulMs": {
+            "samples": 6,
+            "p50": 5960,
+            "p95": 6813,
+            "max": 6813
+          },
+          "elapsedIncludingDrainMs": {
+            "samples": 6,
+            "p50": 6107,
+            "p95": 6902,
+            "max": 6902
+          },
+          "documentTtfbMs": {
+            "samples": 6,
+            "p50": 59.3,
+            "p95": 78.6,
+            "max": 78.6
+          },
+          "requestCount": {
+            "samples": 6,
+            "p50": 59,
+            "p95": 59,
+            "max": 59
+          },
+          "nonSsePending": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "logoRequestCount": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "httpErrors": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "encodedBodyBytes": {
+            "samples": 6,
+            "p50": 1038164,
+            "p95": 1038165,
+            "max": 1038165
+          },
+          "scriptBytes": {
+            "samples": 6,
+            "p50": 543405,
+            "p95": 543405,
+            "max": 543405
+          }
+        },
+        "heapAfterBytes": {
+          "samples": 6,
+          "p50": 11958188,
+          "p95": 12033036,
+          "max": 12033036
+        },
+        "sourceHeapBytes": {
+          "samples": 6,
+          "p50": 23700704,
+          "p95": 33401392,
+          "max": 33401392
+        }
+      },
+      "A": {
+        "planned": 6,
+        "successful": 6,
+        "failed": 0,
+        "sourceFailures": 0,
+        "preparationFailures": 0,
+        "measuredFailures": 0,
+        "latencyInterpretation": "All six planned measured attempts; nearest-rank p95 is the maximum at n=6.",
+        "meaningfulMs": {
+          "samples": 6,
+          "p50": 451.5,
+          "p95": 456.5,
+          "max": 456.5
+        },
+        "interactiveMs": {
+          "samples": 6,
+          "p50": 453.4,
+          "p95": 458.1,
+          "max": 458.1
+        },
+        "networkCompleteMs": {
+          "samples": 6,
+          "p50": 327.4,
+          "p95": 328.9,
+          "max": 328.9
+        },
+        "requestCount": {
+          "samples": 6,
+          "p50": 5,
+          "p95": 5,
+          "max": 5
+        },
+        "encodedBodyBytes": {
+          "samples": 6,
+          "p50": 39982,
+          "p95": 39982,
+          "max": 39982
+        },
+        "initialScriptBytes": {
+          "samples": 6,
+          "p50": 543405,
+          "p95": 543405,
+          "max": 543405
+        },
+        "scriptMs": {
+          "samples": 6,
+          "p50": 110.75,
+          "p95": 115.2,
+          "max": 115.2
+        },
+        "taskMs": {
+          "samples": 6,
+          "p50": 403.84,
+          "p95": 429.31,
+          "max": 429.31
+        },
+        "readStartMs": {
+          "samples": 6,
+          "p50": 28.6,
+          "p95": 29.4,
+          "max": 29.4
+        },
+        "readTtfbMs": {
+          "samples": 6,
+          "p50": 114.79,
+          "p95": 121.94,
+          "max": 121.94
+        },
+        "readServerMs": {
+          "samples": 6,
+          "p50": 56.61,
+          "p95": 87.88,
+          "max": 87.88
+        },
+        "identityMs": {
+          "samples": 6,
+          "p50": 28.8,
+          "p95": 46.9,
+          "max": 46.9
+        },
+        "databaseMs": {
+          "samples": 6,
+          "p50": 20.31,
+          "p95": 29.86,
+          "max": 29.86
+        },
+        "acquisitionMs": {
+          "samples": 6,
+          "p50": 0.55,
+          "p95": 1.46,
+          "max": 1.46
+        },
+        "serializationMs": {
+          "samples": 6,
+          "p50": 0.82,
+          "p95": 8.57,
+          "max": 8.57
+        },
+        "readBodyBytes": {
+          "samples": 6,
+          "p50": 7267,
+          "p95": 7267,
+          "max": 7267
+        },
+        "readCount": {
+          "samples": 6,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "successfulCycleCancellationCount": {
+          "samples": 6,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "source": {
+          "meaningfulMs": {
+            "samples": 6,
+            "p50": 5875,
+            "p95": 5922,
+            "max": 5922
+          },
+          "elapsedIncludingDrainMs": {
+            "samples": 6,
+            "p50": 5995,
+            "p95": 6038,
+            "max": 6038
+          },
+          "documentTtfbMs": {
+            "samples": 6,
+            "p50": 54.3,
+            "p95": 66.3,
+            "max": 66.3
+          },
+          "requestCount": {
+            "samples": 6,
+            "p50": 59,
+            "p95": 59,
+            "max": 59
+          },
+          "nonSsePending": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "logoRequestCount": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "httpErrors": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "encodedBodyBytes": {
+            "samples": 6,
+            "p50": 1038165,
+            "p95": 1038167,
+            "max": 1038167
+          },
+          "scriptBytes": {
+            "samples": 6,
+            "p50": 543405,
+            "p95": 543405,
+            "max": 543405
+          }
+        },
+        "heapAfterBytes": {
+          "samples": 6,
+          "p50": 11844524,
+          "p95": 12024372,
+          "max": 12024372
+        },
+        "sourceHeapBytes": {
+          "samples": 6,
+          "p50": 19800512,
+          "p95": 30401020,
+          "max": 30401020
+        }
+      }
+    },
+    {
+      "size": 1000,
+      "path": "recruiting → applicants",
+      "condition": "warm",
+      "B": {
+        "planned": 6,
+        "successful": 6,
+        "failed": 0,
+        "sourceFailures": 0,
+        "preparationFailures": 0,
+        "measuredFailures": 0,
+        "latencyInterpretation": "All six planned measured attempts; nearest-rank p95 is the maximum at n=6.",
+        "meaningfulMs": {
+          "samples": 6,
+          "p50": 225.1,
+          "p95": 257.9,
+          "max": 257.9
+        },
+        "interactiveMs": {
+          "samples": 6,
+          "p50": 226.5,
+          "p95": 259.7,
+          "max": 259.7
+        },
+        "networkCompleteMs": {
+          "samples": 6,
+          "p50": 144.3,
+          "p95": 172.4,
+          "max": 172.4
+        },
+        "requestCount": {
+          "samples": 6,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "encodedBodyBytes": {
+          "samples": 6,
+          "p50": 7267,
+          "p95": 7267,
+          "max": 7267
+        },
+        "initialScriptBytes": {
+          "samples": 6,
+          "p50": 575303,
+          "p95": 575303,
+          "max": 575303
+        },
+        "scriptMs": {
+          "samples": 6,
+          "p50": 53.57,
+          "p95": 66.57,
+          "max": 66.57
+        },
+        "taskMs": {
+          "samples": 6,
+          "p50": 176.93,
+          "p95": 199.81,
+          "max": 199.81
+        },
+        "readStartMs": {
+          "samples": 6,
+          "p50": 15.2,
+          "p95": 32.4,
+          "max": 32.4
+        },
+        "readTtfbMs": {
+          "samples": 6,
+          "p50": 85.84,
+          "p95": 103.08,
+          "max": 103.08
+        },
+        "readServerMs": {
+          "samples": 6,
+          "p50": 62.49,
+          "p95": 87.61,
+          "max": 87.61
+        },
+        "identityMs": {
+          "samples": 6,
+          "p50": 25.27,
+          "p95": 40.59,
+          "max": 40.59
+        },
+        "databaseMs": {
+          "samples": 6,
+          "p50": 29.66,
+          "p95": 41.47,
+          "max": 41.47
+        },
+        "acquisitionMs": {
+          "samples": 6,
+          "p50": 0.47,
+          "p95": 0.51,
+          "max": 0.51
+        },
+        "serializationMs": {
+          "samples": 6,
+          "p50": 0.63,
+          "p95": 0.9,
+          "max": 0.9
+        },
+        "readBodyBytes": {
+          "samples": 6,
+          "p50": 7267,
+          "p95": 7267,
+          "max": 7267
+        },
+        "readCount": {
+          "samples": 6,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "successfulCycleCancellationCount": {
+          "samples": 6,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "source": {
+          "meaningfulMs": {
+            "samples": 6,
+            "p50": 5890,
+            "p95": 6157,
+            "max": 6157
+          },
+          "elapsedIncludingDrainMs": {
+            "samples": 6,
+            "p50": 6006,
+            "p95": 6273,
+            "max": 6273
+          },
+          "documentTtfbMs": {
+            "samples": 6,
+            "p50": 73.4,
+            "p95": 95.4,
+            "max": 95.4
+          },
+          "requestCount": {
+            "samples": 6,
+            "p50": 59,
+            "p95": 59,
+            "max": 59
+          },
+          "nonSsePending": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "logoRequestCount": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "httpErrors": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "encodedBodyBytes": {
+            "samples": 6,
+            "p50": 1038164,
+            "p95": 1038165,
+            "max": 1038165
+          },
+          "scriptBytes": {
+            "samples": 6,
+            "p50": 543405,
+            "p95": 543405,
+            "max": 543405
+          }
+        },
+        "heapAfterBytes": {
+          "samples": 6,
+          "p50": 19432296,
+          "p95": 19476296,
+          "max": 19476296
+        },
+        "sourceHeapBytes": {
+          "samples": 6,
+          "p50": 25980148,
+          "p95": 34114952,
+          "max": 34114952
+        }
+      },
+      "A": {
+        "planned": 6,
+        "successful": 6,
+        "failed": 0,
+        "sourceFailures": 0,
+        "preparationFailures": 0,
+        "measuredFailures": 0,
+        "latencyInterpretation": "All six planned measured attempts; nearest-rank p95 is the maximum at n=6.",
+        "meaningfulMs": {
+          "samples": 6,
+          "p50": 221.8,
+          "p95": 697.4,
+          "max": 697.4
+        },
+        "interactiveMs": {
+          "samples": 6,
+          "p50": 223.3,
+          "p95": 698.3,
+          "max": 698.3
+        },
+        "networkCompleteMs": {
+          "samples": 6,
+          "p50": 141.7,
+          "p95": 596.8,
+          "max": 596.8
+        },
+        "requestCount": {
+          "samples": 6,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "encodedBodyBytes": {
+          "samples": 6,
+          "p50": 7267,
+          "p95": 7267,
+          "max": 7267
+        },
+        "initialScriptBytes": {
+          "samples": 6,
+          "p50": 575303,
+          "p95": 575303,
+          "max": 575303
+        },
+        "scriptMs": {
+          "samples": 6,
+          "p50": 56.29,
+          "p95": 110.83,
+          "max": 110.83
+        },
+        "taskMs": {
+          "samples": 6,
+          "p50": 175.78,
+          "p95": 415.71,
+          "max": 415.71
+        },
+        "readStartMs": {
+          "samples": 6,
+          "p50": 16.2,
+          "p95": 129.8,
+          "max": 129.8
+        },
+        "readTtfbMs": {
+          "samples": 6,
+          "p50": 86.9,
+          "p95": 506,
+          "max": 506
+        },
+        "readServerMs": {
+          "samples": 6,
+          "p50": 42.56,
+          "p95": 346.28,
+          "max": 346.28
+        },
+        "identityMs": {
+          "samples": 6,
+          "p50": 21.31,
+          "p95": 270.92,
+          "max": 270.92
+        },
+        "databaseMs": {
+          "samples": 6,
+          "p50": 14.63,
+          "p95": 54.18,
+          "max": 54.18
+        },
+        "acquisitionMs": {
+          "samples": 6,
+          "p50": 0.52,
+          "p95": 1.87,
+          "max": 1.87
+        },
+        "serializationMs": {
+          "samples": 6,
+          "p50": 0.65,
+          "p95": 1.65,
+          "max": 1.65
+        },
+        "readBodyBytes": {
+          "samples": 6,
+          "p50": 7267,
+          "p95": 7267,
+          "max": 7267
+        },
+        "readCount": {
+          "samples": 6,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "successfulCycleCancellationCount": {
+          "samples": 6,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "source": {
+          "meaningfulMs": {
+            "samples": 6,
+            "p50": 5997,
+            "p95": 7250,
+            "max": 7250
+          },
+          "elapsedIncludingDrainMs": {
+            "samples": 6,
+            "p50": 6114,
+            "p95": 7340,
+            "max": 7340
+          },
+          "documentTtfbMs": {
+            "samples": 6,
+            "p50": 65.4,
+            "p95": 148.1,
+            "max": 148.1
+          },
+          "requestCount": {
+            "samples": 6,
+            "p50": 59,
+            "p95": 59,
+            "max": 59
+          },
+          "nonSsePending": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "logoRequestCount": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "httpErrors": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "encodedBodyBytes": {
+            "samples": 6,
+            "p50": 1038166,
+            "p95": 1038167,
+            "max": 1038167
+          },
+          "scriptBytes": {
+            "samples": 6,
+            "p50": 543405,
+            "p95": 543405,
+            "max": 543405
+          }
+        },
+        "heapAfterBytes": {
+          "samples": 6,
+          "p50": 19326228,
+          "p95": 19454688,
+          "max": 19454688
+        },
+        "sourceHeapBytes": {
+          "samples": 6,
+          "p50": 25190844,
+          "p95": 32766616,
+          "max": 32766616
+        }
+      }
+    },
+    {
+      "size": 1000,
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "B": {
+        "planned": 6,
+        "successful": 6,
+        "failed": 0,
+        "sourceFailures": 0,
+        "preparationFailures": 0,
+        "measuredFailures": 0,
+        "latencyInterpretation": "All six planned measured attempts; nearest-rank p95 is the maximum at n=6.",
+        "meaningfulMs": {
+          "samples": 6,
+          "p50": 264,
+          "p95": 596.5,
+          "max": 596.5
+        },
+        "interactiveMs": {
+          "samples": 6,
+          "p50": 264.1,
+          "p95": 598.9,
+          "max": 598.9
+        },
+        "networkCompleteMs": {
+          "samples": 6,
+          "p50": 357.5,
+          "p95": 888.6,
+          "max": 888.6
+        },
+        "requestCount": {
+          "samples": 6,
+          "p50": 4,
+          "p95": 4,
+          "max": 4
+        },
+        "encodedBodyBytes": {
+          "samples": 6,
+          "p50": 2783,
+          "p95": 2783,
+          "max": 2783
+        },
+        "initialScriptBytes": {
+          "samples": 6,
+          "p50": 575303,
+          "p95": 575303,
+          "max": 575303
+        },
+        "scriptMs": {
+          "samples": 6,
+          "p50": 72.94,
+          "p95": 91.9,
+          "max": 91.9
+        },
+        "taskMs": {
+          "samples": 6,
+          "p50": 273.59,
+          "p95": 374.14,
+          "max": 374.14
+        },
+        "readStartMs": {
+          "samples": 6,
+          "p50": 104.1,
+          "p95": 105.9,
+          "max": 105.9
+        },
+        "readTtfbMs": {
+          "samples": 6,
+          "p50": 91.49,
+          "p95": 389.66,
+          "max": 389.66
+        },
+        "readServerMs": {
+          "samples": 6,
+          "p50": 48.78,
+          "p95": 378.4,
+          "max": 378.4
+        },
+        "identityMs": {
+          "samples": 6,
+          "p50": 33.22,
+          "p95": 95.93,
+          "max": 95.93
+        },
+        "databaseMs": {
+          "samples": 6,
+          "p50": 8.31,
+          "p95": 225.94,
+          "max": 225.94
+        },
+        "acquisitionMs": {
+          "samples": 6,
+          "p50": 0.41,
+          "p95": 3.48,
+          "max": 3.48
+        },
+        "serializationMs": {
+          "samples": 6,
+          "p50": 0.33,
+          "p95": 3.05,
+          "max": 3.05
+        },
+        "readBodyBytes": {
+          "samples": 6,
+          "p50": 1881,
+          "p95": 1881,
+          "max": 1881
+        },
+        "readCount": {
+          "samples": 6,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "successfulCycleCancellationCount": {
+          "samples": 6,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "source": {
+          "meaningfulMs": {
+            "samples": 6,
+            "p50": 6121,
+            "p95": 6177,
+            "max": 6177
+          },
+          "elapsedIncludingDrainMs": {
+            "samples": 6,
+            "p50": 6238,
+            "p95": 6296,
+            "max": 6296
+          },
+          "documentTtfbMs": {
+            "samples": 6,
+            "p50": 61.8,
+            "p95": 81.8,
+            "max": 81.8
+          },
+          "requestCount": {
+            "samples": 6,
+            "p50": 64,
+            "p95": 64,
+            "max": 64
+          },
+          "nonSsePending": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "logoRequestCount": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "httpErrors": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "encodedBodyBytes": {
+            "samples": 6,
+            "p50": 1084435,
+            "p95": 1084435,
+            "max": 1084435
+          },
+          "scriptBytes": {
+            "samples": 6,
+            "p50": 575303,
+            "p95": 575303,
+            "max": 575303
+          }
+        },
+        "heapAfterBytes": {
+          "samples": 6,
+          "p50": 20313864,
+          "p95": 20531728,
+          "max": 20531728
+        },
+        "sourceHeapBytes": {
+          "samples": 6,
+          "p50": 13796204,
+          "p95": 14043112,
+          "max": 14043112
+        }
+      },
+      "A": {
+        "planned": 6,
+        "successful": 6,
+        "failed": 0,
+        "sourceFailures": 0,
+        "preparationFailures": 0,
+        "measuredFailures": 0,
+        "latencyInterpretation": "All six planned measured attempts; nearest-rank p95 is the maximum at n=6.",
+        "meaningfulMs": {
+          "samples": 6,
+          "p50": 265.5,
+          "p95": 677.4,
+          "max": 677.4
+        },
+        "interactiveMs": {
+          "samples": 6,
+          "p50": 265.9,
+          "p95": 677.6,
+          "max": 677.6
+        },
+        "networkCompleteMs": {
+          "samples": 6,
+          "p50": 369.4,
+          "p95": 798.5,
+          "max": 798.5
+        },
+        "requestCount": {
+          "samples": 6,
+          "p50": 4,
+          "p95": 4,
+          "max": 4
+        },
+        "encodedBodyBytes": {
+          "samples": 6,
+          "p50": 2783,
+          "p95": 2783,
+          "max": 2783
+        },
+        "initialScriptBytes": {
+          "samples": 6,
+          "p50": 575303,
+          "p95": 575303,
+          "max": 575303
+        },
+        "scriptMs": {
+          "samples": 6,
+          "p50": 80.05,
+          "p95": 105.42,
+          "max": 105.42
+        },
+        "taskMs": {
+          "samples": 6,
+          "p50": 288.96,
+          "p95": 498.25,
+          "max": 498.25
+        },
+        "readStartMs": {
+          "samples": 6,
+          "p50": 108.5,
+          "p95": 158.9,
+          "max": 158.9
+        },
+        "readTtfbMs": {
+          "samples": 6,
+          "p50": 90.35,
+          "p95": 448.38,
+          "max": 448.38
+        },
+        "readServerMs": {
+          "samples": 6,
+          "p50": 48.2,
+          "p95": 433.22,
+          "max": 433.22
+        },
+        "identityMs": {
+          "samples": 6,
+          "p50": 31.65,
+          "p95": 385.66,
+          "max": 385.66
+        },
+        "databaseMs": {
+          "samples": 6,
+          "p50": 11.06,
+          "p95": 33.19,
+          "max": 33.19
+        },
+        "acquisitionMs": {
+          "samples": 6,
+          "p50": 0.54,
+          "p95": 1.67,
+          "max": 1.67
+        },
+        "serializationMs": {
+          "samples": 6,
+          "p50": 0.34,
+          "p95": 0.67,
+          "max": 0.67
+        },
+        "readBodyBytes": {
+          "samples": 6,
+          "p50": 1881,
+          "p95": 1881,
+          "max": 1881
+        },
+        "readCount": {
+          "samples": 6,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "successfulCycleCancellationCount": {
+          "samples": 6,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "source": {
+          "meaningfulMs": {
+            "samples": 6,
+            "p50": 6152,
+            "p95": 6533,
+            "max": 6533
+          },
+          "elapsedIncludingDrainMs": {
+            "samples": 6,
+            "p50": 6282,
+            "p95": 6670,
+            "max": 6670
+          },
+          "documentTtfbMs": {
+            "samples": 6,
+            "p50": 64.5,
+            "p95": 192.2,
+            "max": 192.2
+          },
+          "requestCount": {
+            "samples": 6,
+            "p50": 64,
+            "p95": 64,
+            "max": 64
+          },
+          "nonSsePending": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "logoRequestCount": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "httpErrors": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "encodedBodyBytes": {
+            "samples": 6,
+            "p50": 1084437,
+            "p95": 1084437,
+            "max": 1084437
+          },
+          "scriptBytes": {
+            "samples": 6,
+            "p50": 575303,
+            "p95": 575303,
+            "max": 575303
+          }
+        },
+        "heapAfterBytes": {
+          "samples": 6,
+          "p50": 18593856,
+          "p95": 19955600,
+          "max": 19955600
+        },
+        "sourceHeapBytes": {
+          "samples": 6,
+          "p50": 11972256,
+          "p95": 13475232,
+          "max": 13475232
+        }
+      }
+    },
+    {
+      "size": 1000,
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "B": {
+        "planned": 6,
+        "successful": 6,
+        "failed": 0,
+        "sourceFailures": 0,
+        "preparationFailures": 0,
+        "measuredFailures": 0,
+        "latencyInterpretation": "All six planned measured attempts; nearest-rank p95 is the maximum at n=6.",
+        "meaningfulMs": {
+          "samples": 6,
+          "p50": 251.6,
+          "p95": 254.6,
+          "max": 254.6
+        },
+        "interactiveMs": {
+          "samples": 6,
+          "p50": 252.9,
+          "p95": 254.8,
+          "max": 254.8
+        },
+        "networkCompleteMs": {
+          "samples": 6,
+          "p50": 343.4,
+          "p95": 382.4,
+          "max": 382.4
+        },
+        "requestCount": {
+          "samples": 6,
+          "p50": 4,
+          "p95": 4,
+          "max": 4
+        },
+        "encodedBodyBytes": {
+          "samples": 6,
+          "p50": 2783,
+          "p95": 2783,
+          "max": 2783
+        },
+        "initialScriptBytes": {
+          "samples": 6,
+          "p50": 575303,
+          "p95": 575303,
+          "max": 575303
+        },
+        "scriptMs": {
+          "samples": 6,
+          "p50": 64.04,
+          "p95": 69.73,
+          "max": 69.73
+        },
+        "taskMs": {
+          "samples": 6,
+          "p50": 305.26,
+          "p95": 308.97,
+          "max": 308.97
+        },
+        "readStartMs": {
+          "samples": 6,
+          "p50": 96.5,
+          "p95": 102.4,
+          "max": 102.4
+        },
+        "readTtfbMs": {
+          "samples": 6,
+          "p50": 89.59,
+          "p95": 93.18,
+          "max": 93.18
+        },
+        "readServerMs": {
+          "samples": 6,
+          "p50": 38.04,
+          "p95": 50.26,
+          "max": 50.26
+        },
+        "identityMs": {
+          "samples": 6,
+          "p50": 30.17,
+          "p95": 39.75,
+          "max": 39.75
+        },
+        "databaseMs": {
+          "samples": 6,
+          "p50": 6.75,
+          "p95": 8.85,
+          "max": 8.85
+        },
+        "acquisitionMs": {
+          "samples": 6,
+          "p50": 0.43,
+          "p95": 0.47,
+          "max": 0.47
+        },
+        "serializationMs": {
+          "samples": 6,
+          "p50": 0.3,
+          "p95": 0.34,
+          "max": 0.34
+        },
+        "readBodyBytes": {
+          "samples": 6,
+          "p50": 1881,
+          "p95": 1881,
+          "max": 1881
+        },
+        "readCount": {
+          "samples": 6,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "successfulCycleCancellationCount": {
+          "samples": 6,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "source": {
+          "meaningfulMs": {
+            "samples": 6,
+            "p50": 6144,
+            "p95": 6660,
+            "max": 6660
+          },
+          "elapsedIncludingDrainMs": {
+            "samples": 6,
+            "p50": 6243,
+            "p95": 6759,
+            "max": 6759
+          },
+          "documentTtfbMs": {
+            "samples": 6,
+            "p50": 58.9,
+            "p95": 527.9,
+            "max": 527.9
+          },
+          "requestCount": {
+            "samples": 6,
+            "p50": 64,
+            "p95": 64,
+            "max": 64
+          },
+          "nonSsePending": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "logoRequestCount": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "httpErrors": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "encodedBodyBytes": {
+            "samples": 6,
+            "p50": 1084435,
+            "p95": 1084435,
+            "max": 1084435
+          },
+          "scriptBytes": {
+            "samples": 6,
+            "p50": 575303,
+            "p95": 575303,
+            "max": 575303
+          }
+        },
+        "heapAfterBytes": {
+          "samples": 6,
+          "p50": 26484900,
+          "p95": 28242332,
+          "max": 28242332
+        },
+        "sourceHeapBytes": {
+          "samples": 6,
+          "p50": 11954276,
+          "p95": 13827524,
+          "max": 13827524
+        }
+      },
+      "A": {
+        "planned": 6,
+        "successful": 6,
+        "failed": 0,
+        "sourceFailures": 0,
+        "preparationFailures": 0,
+        "measuredFailures": 0,
+        "latencyInterpretation": "All six planned measured attempts; nearest-rank p95 is the maximum at n=6.",
+        "meaningfulMs": {
+          "samples": 6,
+          "p50": 249.8,
+          "p95": 265,
+          "max": 265
+        },
+        "interactiveMs": {
+          "samples": 6,
+          "p50": 249.9,
+          "p95": 265.1,
+          "max": 265.1
+        },
+        "networkCompleteMs": {
+          "samples": 6,
+          "p50": 350,
+          "p95": 734.6,
+          "max": 734.6
+        },
+        "requestCount": {
+          "samples": 6,
+          "p50": 4,
+          "p95": 4,
+          "max": 4
+        },
+        "encodedBodyBytes": {
+          "samples": 6,
+          "p50": 2783,
+          "p95": 2783,
+          "max": 2783
+        },
+        "initialScriptBytes": {
+          "samples": 6,
+          "p50": 575303,
+          "p95": 575303,
+          "max": 575303
+        },
+        "scriptMs": {
+          "samples": 6,
+          "p50": 64.4,
+          "p95": 79.25,
+          "max": 79.25
+        },
+        "taskMs": {
+          "samples": 6,
+          "p50": 293.83,
+          "p95": 388.05,
+          "max": 388.05
+        },
+        "readStartMs": {
+          "samples": 6,
+          "p50": 96.2,
+          "p95": 105.6,
+          "max": 105.6
+        },
+        "readTtfbMs": {
+          "samples": 6,
+          "p50": 89.57,
+          "p95": 93.06,
+          "max": 93.06
+        },
+        "readServerMs": {
+          "samples": 6,
+          "p50": 36.3,
+          "p95": 48.04,
+          "max": 48.04
+        },
+        "identityMs": {
+          "samples": 6,
+          "p50": 27.68,
+          "p95": 38.51,
+          "max": 38.51
+        },
+        "databaseMs": {
+          "samples": 6,
+          "p50": 6.62,
+          "p95": 11.96,
+          "max": 11.96
+        },
+        "acquisitionMs": {
+          "samples": 6,
+          "p50": 0.46,
+          "p95": 0.58,
+          "max": 0.58
+        },
+        "serializationMs": {
+          "samples": 6,
+          "p50": 0.33,
+          "p95": 0.43,
+          "max": 0.43
+        },
+        "readBodyBytes": {
+          "samples": 6,
+          "p50": 1881,
+          "p95": 1881,
+          "max": 1881
+        },
+        "readCount": {
+          "samples": 6,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "successfulCycleCancellationCount": {
+          "samples": 6,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "source": {
+          "meaningfulMs": {
+            "samples": 6,
+            "p50": 6123,
+            "p95": 6287,
+            "max": 6287
+          },
+          "elapsedIncludingDrainMs": {
+            "samples": 6,
+            "p50": 6239,
+            "p95": 6410,
+            "max": 6410
+          },
+          "documentTtfbMs": {
+            "samples": 6,
+            "p50": 62.3,
+            "p95": 237.8,
+            "max": 237.8
+          },
+          "requestCount": {
+            "samples": 6,
+            "p50": 64,
+            "p95": 64,
+            "max": 64
+          },
+          "nonSsePending": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "logoRequestCount": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "httpErrors": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "encodedBodyBytes": {
+            "samples": 6,
+            "p50": 1084437,
+            "p95": 1084437,
+            "max": 1084437
+          },
+          "scriptBytes": {
+            "samples": 6,
+            "p50": 575303,
+            "p95": 575303,
+            "max": 575303
+          }
+        },
+        "heapAfterBytes": {
+          "samples": 6,
+          "p50": 26485536,
+          "p95": 28479804,
+          "max": 28479804
+        },
+        "sourceHeapBytes": {
+          "samples": 6,
+          "p50": 11954860,
+          "p95": 14024560,
+          "max": 14024560
+        }
+      }
+    },
+    {
+      "size": 5000,
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "B": {
+        "planned": 6,
+        "successful": 6,
+        "failed": 0,
+        "sourceFailures": 0,
+        "preparationFailures": 0,
+        "measuredFailures": 0,
+        "latencyInterpretation": "All six planned measured attempts; nearest-rank p95 is the maximum at n=6.",
+        "meaningfulMs": {
+          "samples": 6,
+          "p50": 449.3,
+          "p95": 779.6,
+          "max": 779.6
+        },
+        "interactiveMs": {
+          "samples": 6,
+          "p50": 450.5,
+          "p95": 780.1,
+          "max": 780.1
+        },
+        "networkCompleteMs": {
+          "samples": 6,
+          "p50": 328,
+          "p95": 635.7,
+          "max": 635.7
+        },
+        "requestCount": {
+          "samples": 6,
+          "p50": 5,
+          "p95": 5,
+          "max": 5
+        },
+        "encodedBodyBytes": {
+          "samples": 6,
+          "p50": 39954,
+          "p95": 39954,
+          "max": 39954
+        },
+        "initialScriptBytes": {
+          "samples": 6,
+          "p50": 543405,
+          "p95": 543405,
+          "max": 543405
+        },
+        "scriptMs": {
+          "samples": 6,
+          "p50": 106.62,
+          "p95": 122.37,
+          "max": 122.37
+        },
+        "taskMs": {
+          "samples": 6,
+          "p50": 411.88,
+          "p95": 472.07,
+          "max": 472.07
+        },
+        "readStartMs": {
+          "samples": 6,
+          "p50": 26.3,
+          "p95": 29.8,
+          "max": 29.8
+        },
+        "readTtfbMs": {
+          "samples": 6,
+          "p50": 189.44,
+          "p95": 569.79,
+          "max": 569.79
+        },
+        "readServerMs": {
+          "samples": 6,
+          "p50": 176.45,
+          "p95": 558.64,
+          "max": 558.64
+        },
+        "identityMs": {
+          "samples": 6,
+          "p50": 27.4,
+          "p95": 40.31,
+          "max": 40.31
+        },
+        "databaseMs": {
+          "samples": 6,
+          "p50": 108.84,
+          "p95": 137.21,
+          "max": 137.21
+        },
+        "acquisitionMs": {
+          "samples": 6,
+          "p50": 0.5,
+          "p95": 0.63,
+          "max": 0.63
+        },
+        "serializationMs": {
+          "samples": 6,
+          "p50": 0.74,
+          "p95": 327.48,
+          "max": 327.48
+        },
+        "readBodyBytes": {
+          "samples": 6,
+          "p50": 7239,
+          "p95": 7239,
+          "max": 7239
+        },
+        "readCount": {
+          "samples": 6,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "successfulCycleCancellationCount": {
+          "samples": 6,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "source": {
+          "meaningfulMs": {
+            "samples": 6,
+            "p50": 5890,
+            "p95": 5960,
+            "max": 5960
+          },
+          "elapsedIncludingDrainMs": {
+            "samples": 6,
+            "p50": 6005,
+            "p95": 6044,
+            "max": 6044
+          },
+          "documentTtfbMs": {
+            "samples": 6,
+            "p50": 56.3,
+            "p95": 70.1,
+            "max": 70.1
+          },
+          "requestCount": {
+            "samples": 6,
+            "p50": 59,
+            "p95": 59,
+            "max": 59
+          },
+          "nonSsePending": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "logoRequestCount": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "httpErrors": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "encodedBodyBytes": {
+            "samples": 6,
+            "p50": 1038150,
+            "p95": 1038150,
+            "max": 1038150
+          },
+          "scriptBytes": {
+            "samples": 6,
+            "p50": 543405,
+            "p95": 543405,
+            "max": 543405
+          }
+        },
+        "heapAfterBytes": {
+          "samples": 6,
+          "p50": 11796000,
+          "p95": 11834124,
+          "max": 11834124
+        },
+        "sourceHeapBytes": {
+          "samples": 6,
+          "p50": 15530492,
+          "p95": 31339624,
+          "max": 31339624
+        }
+      },
+      "A": {
+        "planned": 6,
+        "successful": 6,
+        "failed": 0,
+        "sourceFailures": 0,
+        "preparationFailures": 0,
+        "measuredFailures": 0,
+        "latencyInterpretation": "All six planned measured attempts; nearest-rank p95 is the maximum at n=6.",
+        "meaningfulMs": {
+          "samples": 6,
+          "p50": 457.6,
+          "p95": 501.3,
+          "max": 501.3
+        },
+        "interactiveMs": {
+          "samples": 6,
+          "p50": 459,
+          "p95": 502.9,
+          "max": 502.9
+        },
+        "networkCompleteMs": {
+          "samples": 6,
+          "p50": 330.4,
+          "p95": 331.6,
+          "max": 331.6
+        },
+        "requestCount": {
+          "samples": 6,
+          "p50": 5,
+          "p95": 5,
+          "max": 5
+        },
+        "encodedBodyBytes": {
+          "samples": 6,
+          "p50": 39954,
+          "p95": 39954,
+          "max": 39954
+        },
+        "initialScriptBytes": {
+          "samples": 6,
+          "p50": 543405,
+          "p95": 543405,
+          "max": 543405
+        },
+        "scriptMs": {
+          "samples": 6,
+          "p50": 116.47,
+          "p95": 123.04,
+          "max": 123.04
+        },
+        "taskMs": {
+          "samples": 6,
+          "p50": 427.98,
+          "p95": 483.79,
+          "max": 483.79
+        },
+        "readStartMs": {
+          "samples": 6,
+          "p50": 28.4,
+          "p95": 31.5,
+          "max": 31.5
+        },
+        "readTtfbMs": {
+          "samples": 6,
+          "p50": 144.67,
+          "p95": 236.06,
+          "max": 236.06
+        },
+        "readServerMs": {
+          "samples": 6,
+          "p50": 126.79,
+          "p95": 224.49,
+          "max": 224.49
+        },
+        "identityMs": {
+          "samples": 6,
+          "p50": 35.82,
+          "p95": 47.37,
+          "max": 47.37
+        },
+        "databaseMs": {
+          "samples": 6,
+          "p50": 53.88,
+          "p95": 155.08,
+          "max": 155.08
+        },
+        "acquisitionMs": {
+          "samples": 6,
+          "p50": 0.46,
+          "p95": 0.73,
+          "max": 0.73
+        },
+        "serializationMs": {
+          "samples": 6,
+          "p50": 0.85,
+          "p95": 4.67,
+          "max": 4.67
+        },
+        "readBodyBytes": {
+          "samples": 6,
+          "p50": 7239,
+          "p95": 7239,
+          "max": 7239
+        },
+        "readCount": {
+          "samples": 6,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "successfulCycleCancellationCount": {
+          "samples": 6,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "source": {
+          "meaningfulMs": {
+            "samples": 6,
+            "p50": 5910,
+            "p95": 5955,
+            "max": 5955
+          },
+          "elapsedIncludingDrainMs": {
+            "samples": 6,
+            "p50": 6049,
+            "p95": 6076,
+            "max": 6076
+          },
+          "documentTtfbMs": {
+            "samples": 6,
+            "p50": 58.1,
+            "p95": 69.7,
+            "max": 69.7
+          },
+          "requestCount": {
+            "samples": 6,
+            "p50": 59,
+            "p95": 59,
+            "max": 59
+          },
+          "nonSsePending": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "logoRequestCount": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "httpErrors": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "encodedBodyBytes": {
+            "samples": 6,
+            "p50": 1038151,
+            "p95": 1038152,
+            "max": 1038152
+          },
+          "scriptBytes": {
+            "samples": 6,
+            "p50": 543405,
+            "p95": 543405,
+            "max": 543405
+          }
+        },
+        "heapAfterBytes": {
+          "samples": 6,
+          "p50": 11833848,
+          "p95": 11961048,
+          "max": 11961048
+        },
+        "sourceHeapBytes": {
+          "samples": 6,
+          "p50": 17116480,
+          "p95": 35585028,
+          "max": 35585028
+        }
+      }
+    },
+    {
+      "size": 5000,
+      "path": "recruiting → applicants",
+      "condition": "warm",
+      "B": {
+        "planned": 6,
+        "successful": 6,
+        "failed": 0,
+        "sourceFailures": 0,
+        "preparationFailures": 0,
+        "measuredFailures": 0,
+        "latencyInterpretation": "All six planned measured attempts; nearest-rank p95 is the maximum at n=6.",
+        "meaningfulMs": {
+          "samples": 6,
+          "p50": 298,
+          "p95": 845.6,
+          "max": 845.6
+        },
+        "interactiveMs": {
+          "samples": 6,
+          "p50": 299.4,
+          "p95": 846.2,
+          "max": 846.2
+        },
+        "networkCompleteMs": {
+          "samples": 6,
+          "p50": 218.5,
+          "p95": 744.4,
+          "max": 744.4
+        },
+        "requestCount": {
+          "samples": 6,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "encodedBodyBytes": {
+          "samples": 6,
+          "p50": 7239,
+          "p95": 7239,
+          "max": 7239
+        },
+        "initialScriptBytes": {
+          "samples": 6,
+          "p50": 575303,
+          "p95": 575303,
+          "max": 575303
+        },
+        "scriptMs": {
+          "samples": 6,
+          "p50": 54.62,
+          "p95": 86.84,
+          "max": 86.84
+        },
+        "taskMs": {
+          "samples": 6,
+          "p50": 183.27,
+          "p95": 295.38,
+          "max": 295.38
+        },
+        "readStartMs": {
+          "samples": 6,
+          "p50": 16.5,
+          "p95": 19.3,
+          "max": 19.3
+        },
+        "readTtfbMs": {
+          "samples": 6,
+          "p50": 162.66,
+          "p95": 691.96,
+          "max": 691.96
+        },
+        "readServerMs": {
+          "samples": 6,
+          "p50": 153.36,
+          "p95": 681.79,
+          "max": 681.79
+        },
+        "identityMs": {
+          "samples": 6,
+          "p50": 25.19,
+          "p95": 51.4,
+          "max": 51.4
+        },
+        "databaseMs": {
+          "samples": 6,
+          "p50": 99.19,
+          "p95": 268.17,
+          "max": 268.17
+        },
+        "acquisitionMs": {
+          "samples": 6,
+          "p50": 0.51,
+          "p95": 0.61,
+          "max": 0.61
+        },
+        "serializationMs": {
+          "samples": 6,
+          "p50": 0.65,
+          "p95": 3.39,
+          "max": 3.39
+        },
+        "readBodyBytes": {
+          "samples": 6,
+          "p50": 7239,
+          "p95": 7239,
+          "max": 7239
+        },
+        "readCount": {
+          "samples": 6,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "successfulCycleCancellationCount": {
+          "samples": 6,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "source": {
+          "meaningfulMs": {
+            "samples": 6,
+            "p50": 5887,
+            "p95": 5990,
+            "max": 5990
+          },
+          "elapsedIncludingDrainMs": {
+            "samples": 6,
+            "p50": 6004,
+            "p95": 6138,
+            "max": 6138
+          },
+          "documentTtfbMs": {
+            "samples": 6,
+            "p50": 65.8,
+            "p95": 76.6,
+            "max": 76.6
+          },
+          "requestCount": {
+            "samples": 6,
+            "p50": 59,
+            "p95": 59,
+            "max": 59
+          },
+          "nonSsePending": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "logoRequestCount": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "httpErrors": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "encodedBodyBytes": {
+            "samples": 6,
+            "p50": 1038149,
+            "p95": 1038150,
+            "max": 1038150
+          },
+          "scriptBytes": {
+            "samples": 6,
+            "p50": 543405,
+            "p95": 543405,
+            "max": 543405
+          }
+        },
+        "heapAfterBytes": {
+          "samples": 6,
+          "p50": 19424508,
+          "p95": 19483956,
+          "max": 19483956
+        },
+        "sourceHeapBytes": {
+          "samples": 6,
+          "p50": 19681276,
+          "p95": 28062684,
+          "max": 28062684
+        }
+      },
+      "A": {
+        "planned": 6,
+        "successful": 6,
+        "failed": 0,
+        "sourceFailures": 0,
+        "preparationFailures": 0,
+        "measuredFailures": 0,
+        "latencyInterpretation": "All six planned measured attempts; nearest-rank p95 is the maximum at n=6.",
+        "meaningfulMs": {
+          "samples": 6,
+          "p50": 221.1,
+          "p95": 287.2,
+          "max": 287.2
+        },
+        "interactiveMs": {
+          "samples": 6,
+          "p50": 222.6,
+          "p95": 288.9,
+          "max": 288.9
+        },
+        "networkCompleteMs": {
+          "samples": 6,
+          "p50": 144.9,
+          "p95": 199.5,
+          "max": 199.5
+        },
+        "requestCount": {
+          "samples": 6,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "encodedBodyBytes": {
+          "samples": 6,
+          "p50": 7239,
+          "p95": 7239,
+          "max": 7239
+        },
+        "initialScriptBytes": {
+          "samples": 6,
+          "p50": 575303,
+          "p95": 575303,
+          "max": 575303
+        },
+        "scriptMs": {
+          "samples": 6,
+          "p50": 59.07,
+          "p95": 69.64,
+          "max": 69.64
+        },
+        "taskMs": {
+          "samples": 6,
+          "p50": 177.62,
+          "p95": 209.05,
+          "max": 209.05
+        },
+        "readStartMs": {
+          "samples": 6,
+          "p50": 16.4,
+          "p95": 21.5,
+          "max": 21.5
+        },
+        "readTtfbMs": {
+          "samples": 6,
+          "p50": 88.89,
+          "p95": 139.58,
+          "max": 139.58
+        },
+        "readServerMs": {
+          "samples": 6,
+          "p50": 77.39,
+          "p95": 128.12,
+          "max": 128.12
+        },
+        "identityMs": {
+          "samples": 6,
+          "p50": 24.9,
+          "p95": 37.61,
+          "max": 37.61
+        },
+        "databaseMs": {
+          "samples": 6,
+          "p50": 31.01,
+          "p95": 49.56,
+          "max": 49.56
+        },
+        "acquisitionMs": {
+          "samples": 6,
+          "p50": 0.59,
+          "p95": 0.83,
+          "max": 0.83
+        },
+        "serializationMs": {
+          "samples": 6,
+          "p50": 1.29,
+          "p95": 12,
+          "max": 12
+        },
+        "readBodyBytes": {
+          "samples": 6,
+          "p50": 7239,
+          "p95": 7239,
+          "max": 7239
+        },
+        "readCount": {
+          "samples": 6,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "successfulCycleCancellationCount": {
+          "samples": 6,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "source": {
+          "meaningfulMs": {
+            "samples": 6,
+            "p50": 5926,
+            "p95": 6088,
+            "max": 6088
+          },
+          "elapsedIncludingDrainMs": {
+            "samples": 6,
+            "p50": 6042,
+            "p95": 6235,
+            "max": 6235
+          },
+          "documentTtfbMs": {
+            "samples": 6,
+            "p50": 63.7,
+            "p95": 69.3,
+            "max": 69.3
+          },
+          "requestCount": {
+            "samples": 6,
+            "p50": 59,
+            "p95": 59,
+            "max": 59
+          },
+          "nonSsePending": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "logoRequestCount": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "httpErrors": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "encodedBodyBytes": {
+            "samples": 6,
+            "p50": 1038152,
+            "p95": 1038152,
+            "max": 1038152
+          },
+          "scriptBytes": {
+            "samples": 6,
+            "p50": 543405,
+            "p95": 543405,
+            "max": 543405
+          }
+        },
+        "heapAfterBytes": {
+          "samples": 6,
+          "p50": 19409804,
+          "p95": 19421292,
+          "max": 19421292
+        },
+        "sourceHeapBytes": {
+          "samples": 6,
+          "p50": 15119672,
+          "p95": 28671864,
+          "max": 28671864
+        }
+      }
+    },
+    {
+      "size": 5000,
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "B": {
+        "planned": 6,
+        "successful": 6,
+        "failed": 0,
+        "sourceFailures": 0,
+        "preparationFailures": 0,
+        "measuredFailures": 0,
+        "latencyInterpretation": "All six planned measured attempts; nearest-rank p95 is the maximum at n=6.",
+        "meaningfulMs": {
+          "samples": 6,
+          "p50": 270.8,
+          "p95": 284.1,
+          "max": 284.1
+        },
+        "interactiveMs": {
+          "samples": 6,
+          "p50": 271.3,
+          "p95": 284.9,
+          "max": 284.9
+        },
+        "networkCompleteMs": {
+          "samples": 6,
+          "p50": 361.9,
+          "p95": 379.1,
+          "max": 379.1
+        },
+        "requestCount": {
+          "samples": 6,
+          "p50": 4,
+          "p95": 4,
+          "max": 4
+        },
+        "encodedBodyBytes": {
+          "samples": 6,
+          "p50": 2781,
+          "p95": 2781,
+          "max": 2781
+        },
+        "initialScriptBytes": {
+          "samples": 6,
+          "p50": 575303,
+          "p95": 575303,
+          "max": 575303
+        },
+        "scriptMs": {
+          "samples": 6,
+          "p50": 82.95,
+          "p95": 87.1,
+          "max": 87.1
+        },
+        "taskMs": {
+          "samples": 6,
+          "p50": 299.3,
+          "p95": 314.12,
+          "max": 314.12
+        },
+        "readStartMs": {
+          "samples": 6,
+          "p50": 111.9,
+          "p95": 123.2,
+          "max": 123.2
+        },
+        "readTtfbMs": {
+          "samples": 6,
+          "p50": 88.31,
+          "p95": 92.07,
+          "max": 92.07
+        },
+        "readServerMs": {
+          "samples": 6,
+          "p50": 53.91,
+          "p95": 61.02,
+          "max": 61.02
+        },
+        "identityMs": {
+          "samples": 6,
+          "p50": 33.37,
+          "p95": 39.81,
+          "max": 39.81
+        },
+        "databaseMs": {
+          "samples": 6,
+          "p50": 15.48,
+          "p95": 23.85,
+          "max": 23.85
+        },
+        "acquisitionMs": {
+          "samples": 6,
+          "p50": 0.45,
+          "p95": 0.66,
+          "max": 0.66
+        },
+        "serializationMs": {
+          "samples": 6,
+          "p50": 0.31,
+          "p95": 0.74,
+          "max": 0.74
+        },
+        "readBodyBytes": {
+          "samples": 6,
+          "p50": 1878,
+          "p95": 1878,
+          "max": 1878
+        },
+        "readCount": {
+          "samples": 6,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "successfulCycleCancellationCount": {
+          "samples": 6,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "source": {
+          "meaningfulMs": {
+            "samples": 6,
+            "p50": 6176,
+            "p95": 6899,
+            "max": 6899
+          },
+          "elapsedIncludingDrainMs": {
+            "samples": 6,
+            "p50": 6275,
+            "p95": 7000,
+            "max": 7000
+          },
+          "documentTtfbMs": {
+            "samples": 6,
+            "p50": 57.9,
+            "p95": 79.8,
+            "max": 79.8
+          },
+          "requestCount": {
+            "samples": 6,
+            "p50": 64,
+            "p95": 64,
+            "max": 64
+          },
+          "nonSsePending": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "logoRequestCount": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "httpErrors": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "encodedBodyBytes": {
+            "samples": 6,
+            "p50": 1084364,
+            "p95": 1084364,
+            "max": 1084364
+          },
+          "scriptBytes": {
+            "samples": 6,
+            "p50": 575303,
+            "p95": 575303,
+            "max": 575303
+          }
+        },
+        "heapAfterBytes": {
+          "samples": 6,
+          "p50": 18179268,
+          "p95": 18227736,
+          "max": 18227736
+        },
+        "sourceHeapBytes": {
+          "samples": 6,
+          "p50": 10591868,
+          "p95": 10628980,
+          "max": 10628980
+        }
+      },
+      "A": {
+        "planned": 6,
+        "successful": 6,
+        "failed": 0,
+        "sourceFailures": 0,
+        "preparationFailures": 0,
+        "measuredFailures": 0,
+        "latencyInterpretation": "All six planned measured attempts; nearest-rank p95 is the maximum at n=6.",
+        "meaningfulMs": {
+          "samples": 6,
+          "p50": 280.2,
+          "p95": 298,
+          "max": 298
+        },
+        "interactiveMs": {
+          "samples": 6,
+          "p50": 280.4,
+          "p95": 298.7,
+          "max": 298.7
+        },
+        "networkCompleteMs": {
+          "samples": 6,
+          "p50": 366.8,
+          "p95": 388.9,
+          "max": 388.9
+        },
+        "requestCount": {
+          "samples": 6,
+          "p50": 4,
+          "p95": 4,
+          "max": 4
+        },
+        "encodedBodyBytes": {
+          "samples": 6,
+          "p50": 2781,
+          "p95": 2781,
+          "max": 2781
+        },
+        "initialScriptBytes": {
+          "samples": 6,
+          "p50": 575303,
+          "p95": 575303,
+          "max": 575303
+        },
+        "scriptMs": {
+          "samples": 6,
+          "p50": 82.43,
+          "p95": 94.53,
+          "max": 94.53
+        },
+        "taskMs": {
+          "samples": 6,
+          "p50": 300.98,
+          "p95": 343.15,
+          "max": 343.15
+        },
+        "readStartMs": {
+          "samples": 6,
+          "p50": 112.5,
+          "p95": 133.9,
+          "max": 133.9
+        },
+        "readTtfbMs": {
+          "samples": 6,
+          "p50": 87,
+          "p95": 89.15,
+          "max": 89.15
+        },
+        "readServerMs": {
+          "samples": 6,
+          "p50": 49.7,
+          "p95": 73.52,
+          "max": 73.52
+        },
+        "identityMs": {
+          "samples": 6,
+          "p50": 32.02,
+          "p95": 58.95,
+          "max": 58.95
+        },
+        "databaseMs": {
+          "samples": 6,
+          "p50": 11.18,
+          "p95": 30.4,
+          "max": 30.4
+        },
+        "acquisitionMs": {
+          "samples": 6,
+          "p50": 0.57,
+          "p95": 0.84,
+          "max": 0.84
+        },
+        "serializationMs": {
+          "samples": 6,
+          "p50": 0.32,
+          "p95": 0.49,
+          "max": 0.49
+        },
+        "readBodyBytes": {
+          "samples": 6,
+          "p50": 1878,
+          "p95": 1878,
+          "max": 1878
+        },
+        "readCount": {
+          "samples": 6,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "successfulCycleCancellationCount": {
+          "samples": 6,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "source": {
+          "meaningfulMs": {
+            "samples": 6,
+            "p50": 6184,
+            "p95": 6511,
+            "max": 6511
+          },
+          "elapsedIncludingDrainMs": {
+            "samples": 6,
+            "p50": 6281,
+            "p95": 6628,
+            "max": 6628
+          },
+          "documentTtfbMs": {
+            "samples": 6,
+            "p50": 61.1,
+            "p95": 102,
+            "max": 102
+          },
+          "requestCount": {
+            "samples": 6,
+            "p50": 64,
+            "p95": 64,
+            "max": 64
+          },
+          "nonSsePending": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "logoRequestCount": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "httpErrors": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "encodedBodyBytes": {
+            "samples": 6,
+            "p50": 1084365,
+            "p95": 1084365,
+            "max": 1084365
+          },
+          "scriptBytes": {
+            "samples": 6,
+            "p50": 575303,
+            "p95": 575303,
+            "max": 575303
+          }
+        },
+        "heapAfterBytes": {
+          "samples": 6,
+          "p50": 18202364,
+          "p95": 18591848,
+          "max": 18591848
+        },
+        "sourceHeapBytes": {
+          "samples": 6,
+          "p50": 10611352,
+          "p95": 11969528,
+          "max": 11969528
+        }
+      }
+    },
+    {
+      "size": 5000,
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "B": {
+        "planned": 6,
+        "successful": 6,
+        "failed": 0,
+        "sourceFailures": 0,
+        "preparationFailures": 0,
+        "measuredFailures": 0,
+        "latencyInterpretation": "All six planned measured attempts; nearest-rank p95 is the maximum at n=6.",
+        "meaningfulMs": {
+          "samples": 6,
+          "p50": 245.6,
+          "p95": 285.9,
+          "max": 285.9
+        },
+        "interactiveMs": {
+          "samples": 6,
+          "p50": 246.6,
+          "p95": 286.6,
+          "max": 286.6
+        },
+        "networkCompleteMs": {
+          "samples": 6,
+          "p50": 339.2,
+          "p95": 385.7,
+          "max": 385.7
+        },
+        "requestCount": {
+          "samples": 6,
+          "p50": 4,
+          "p95": 4,
+          "max": 4
+        },
+        "encodedBodyBytes": {
+          "samples": 6,
+          "p50": 2781,
+          "p95": 2781,
+          "max": 2781
+        },
+        "initialScriptBytes": {
+          "samples": 6,
+          "p50": 575303,
+          "p95": 575303,
+          "max": 575303
+        },
+        "scriptMs": {
+          "samples": 6,
+          "p50": 64.37,
+          "p95": 82.18,
+          "max": 82.18
+        },
+        "taskMs": {
+          "samples": 6,
+          "p50": 299.61,
+          "p95": 367.65,
+          "max": 367.65
+        },
+        "readStartMs": {
+          "samples": 6,
+          "p50": 95.1,
+          "p95": 127.7,
+          "max": 127.7
+        },
+        "readTtfbMs": {
+          "samples": 6,
+          "p50": 88.12,
+          "p95": 97.43,
+          "max": 97.43
+        },
+        "readServerMs": {
+          "samples": 6,
+          "p50": 40.48,
+          "p95": 93.34,
+          "max": 93.34
+        },
+        "identityMs": {
+          "samples": 6,
+          "p50": 33.16,
+          "p95": 77.56,
+          "max": 77.56
+        },
+        "databaseMs": {
+          "samples": 6,
+          "p50": 6.08,
+          "p95": 13.02,
+          "max": 13.02
+        },
+        "acquisitionMs": {
+          "samples": 6,
+          "p50": 0.46,
+          "p95": 0.92,
+          "max": 0.92
+        },
+        "serializationMs": {
+          "samples": 6,
+          "p50": 0.29,
+          "p95": 0.37,
+          "max": 0.37
+        },
+        "readBodyBytes": {
+          "samples": 6,
+          "p50": 1878,
+          "p95": 1878,
+          "max": 1878
+        },
+        "readCount": {
+          "samples": 6,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "successfulCycleCancellationCount": {
+          "samples": 6,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "source": {
+          "meaningfulMs": {
+            "samples": 6,
+            "p50": 6239,
+            "p95": 6952,
+            "max": 6952
+          },
+          "elapsedIncludingDrainMs": {
+            "samples": 6,
+            "p50": 6336,
+            "p95": 7056,
+            "max": 7056
+          },
+          "documentTtfbMs": {
+            "samples": 6,
+            "p50": 56.9,
+            "p95": 68,
+            "max": 68
+          },
+          "requestCount": {
+            "samples": 6,
+            "p50": 64,
+            "p95": 64,
+            "max": 64
+          },
+          "nonSsePending": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "logoRequestCount": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "httpErrors": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "encodedBodyBytes": {
+            "samples": 6,
+            "p50": 1084364,
+            "p95": 1084364,
+            "max": 1084364
+          },
+          "scriptBytes": {
+            "samples": 6,
+            "p50": 575303,
+            "p95": 575303,
+            "max": 575303
+          }
+        },
+        "heapAfterBytes": {
+          "samples": 6,
+          "p50": 26088864,
+          "p95": 26182452,
+          "max": 26182452
+        },
+        "sourceHeapBytes": {
+          "samples": 6,
+          "p50": 10604588,
+          "p95": 10660124,
+          "max": 10660124
+        }
+      },
+      "A": {
+        "planned": 6,
+        "successful": 6,
+        "failed": 0,
+        "sourceFailures": 0,
+        "preparationFailures": 0,
+        "measuredFailures": 0,
+        "latencyInterpretation": "All six planned measured attempts; nearest-rank p95 is the maximum at n=6.",
+        "meaningfulMs": {
+          "samples": 6,
+          "p50": 241.1,
+          "p95": 269.8,
+          "max": 269.8
+        },
+        "interactiveMs": {
+          "samples": 6,
+          "p50": 241.3,
+          "p95": 270.2,
+          "max": 270.2
+        },
+        "networkCompleteMs": {
+          "samples": 6,
+          "p50": 344.5,
+          "p95": 379.5,
+          "max": 379.5
+        },
+        "requestCount": {
+          "samples": 6,
+          "p50": 4,
+          "p95": 4,
+          "max": 4
+        },
+        "encodedBodyBytes": {
+          "samples": 6,
+          "p50": 2781,
+          "p95": 2781,
+          "max": 2781
+        },
+        "initialScriptBytes": {
+          "samples": 6,
+          "p50": 575303,
+          "p95": 575303,
+          "max": 575303
+        },
+        "scriptMs": {
+          "samples": 6,
+          "p50": 60.82,
+          "p95": 72.85,
+          "max": 72.85
+        },
+        "taskMs": {
+          "samples": 6,
+          "p50": 293.44,
+          "p95": 330.26,
+          "max": 330.26
+        },
+        "readStartMs": {
+          "samples": 6,
+          "p50": 92.4,
+          "p95": 110.5,
+          "max": 110.5
+        },
+        "readTtfbMs": {
+          "samples": 6,
+          "p50": 86.23,
+          "p95": 92.44,
+          "max": 92.44
+        },
+        "readServerMs": {
+          "samples": 6,
+          "p50": 42.79,
+          "p95": 65.49,
+          "max": 65.49
+        },
+        "identityMs": {
+          "samples": 6,
+          "p50": 32.56,
+          "p95": 52.26,
+          "max": 52.26
+        },
+        "databaseMs": {
+          "samples": 6,
+          "p50": 7.87,
+          "p95": 10.74,
+          "max": 10.74
+        },
+        "acquisitionMs": {
+          "samples": 6,
+          "p50": 0.41,
+          "p95": 0.62,
+          "max": 0.62
+        },
+        "serializationMs": {
+          "samples": 6,
+          "p50": 0.29,
+          "p95": 0.44,
+          "max": 0.44
+        },
+        "readBodyBytes": {
+          "samples": 6,
+          "p50": 1878,
+          "p95": 1878,
+          "max": 1878
+        },
+        "readCount": {
+          "samples": 6,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "successfulCycleCancellationCount": {
+          "samples": 6,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "source": {
+          "meaningfulMs": {
+            "samples": 6,
+            "p50": 6162,
+            "p95": 6221,
+            "max": 6221
+          },
+          "elapsedIncludingDrainMs": {
+            "samples": 6,
+            "p50": 6268,
+            "p95": 6383,
+            "max": 6383
+          },
+          "documentTtfbMs": {
+            "samples": 6,
+            "p50": 57.6,
+            "p95": 62.8,
+            "max": 62.8
+          },
+          "requestCount": {
+            "samples": 6,
+            "p50": 64,
+            "p95": 64,
+            "max": 64
+          },
+          "nonSsePending": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "logoRequestCount": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "httpErrors": {
+            "samples": 6,
+            "p50": 0,
+            "p95": 0,
+            "max": 0
+          },
+          "encodedBodyBytes": {
+            "samples": 6,
+            "p50": 1084365,
+            "p95": 1084365,
+            "max": 1084365
+          },
+          "scriptBytes": {
+            "samples": 6,
+            "p50": 575303,
+            "p95": 575303,
+            "max": 575303
+          }
+        },
+        "heapAfterBytes": {
+          "samples": 6,
+          "p50": 26141872,
+          "p95": 26548496,
+          "max": 26548496
+        },
+        "sourceHeapBytes": {
+          "samples": 6,
+          "p50": 10646788,
+          "p95": 11969828,
+          "max": 11969828
+        }
+      }
+    }
+  ],
+  "interactions": [
+    {
+      "size": 1000,
+      "kind": "next-page",
+      "B": {
+        "planned": 10,
+        "successful": 10,
+        "failed": 0,
+        "pageErrors": 0,
+        "httpErrors": 0,
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 203,
+          "p95": 283.3,
+          "max": 283.3
+        },
+        "driverElapsedMs": {
+          "samples": 10,
+          "p50": 290.37,
+          "p95": 460.05,
+          "max": 460.05
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "readCount": {
+          "samples": 10,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "encodedBodyBytes": {
+          "samples": 10,
+          "p50": 7923,
+          "p95": 7923,
+          "max": 7923
+        },
+        "readTtfbMs": {
+          "samples": 10,
+          "p50": 87.78,
+          "p95": 148.07,
+          "max": 148.07
+        },
+        "readServerMs": {
+          "samples": 10,
+          "p50": 76.2,
+          "p95": 130.16,
+          "max": 130.16
+        },
+        "databaseMs": {
+          "samples": 10,
+          "p50": 43.27,
+          "p95": 65.47,
+          "max": 65.47
+        },
+        "serializationMs": {
+          "samples": 10,
+          "p50": 0.63,
+          "p95": 1.06,
+          "max": 1.06
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 7923,
+          "p95": 7923,
+          "max": 7923
+        }
+      },
+      "A": {
+        "planned": 10,
+        "successful": 10,
+        "failed": 0,
+        "pageErrors": 0,
+        "httpErrors": 0,
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 204.4,
+          "p95": 425.9,
+          "max": 425.9
+        },
+        "driverElapsedMs": {
+          "samples": 10,
+          "p50": 304.24,
+          "p95": 540.32,
+          "max": 540.32
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "readCount": {
+          "samples": 10,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "encodedBodyBytes": {
+          "samples": 10,
+          "p50": 7923,
+          "p95": 7923,
+          "max": 7923
+        },
+        "readTtfbMs": {
+          "samples": 10,
+          "p50": 86.94,
+          "p95": 286.04,
+          "max": 286.04
+        },
+        "readServerMs": {
+          "samples": 10,
+          "p50": 69.83,
+          "p95": 270.5,
+          "max": 270.5
+        },
+        "databaseMs": {
+          "samples": 10,
+          "p50": 31.16,
+          "p95": 151.88,
+          "max": 151.88
+        },
+        "serializationMs": {
+          "samples": 10,
+          "p50": 0.62,
+          "p95": 0.81,
+          "max": 0.81
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 7923,
+          "p95": 7923,
+          "max": 7923
+        }
+      }
+    },
+    {
+      "size": 1000,
+      "kind": "distant-search",
+      "B": {
+        "planned": 10,
+        "successful": 10,
+        "failed": 0,
+        "pageErrors": 0,
+        "httpErrors": 0,
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 126.3,
+          "p95": 135.6,
+          "max": 135.6
+        },
+        "driverElapsedMs": {
+          "samples": 10,
+          "p50": 167.3,
+          "p95": 184.32,
+          "max": 184.32
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "readCount": {
+          "samples": 10,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "encodedBodyBytes": {
+          "samples": 10,
+          "p50": 762,
+          "p95": 762,
+          "max": 762
+        },
+        "readTtfbMs": {
+          "samples": 10,
+          "p50": 87.3,
+          "p95": 98.5,
+          "max": 98.5
+        },
+        "readServerMs": {
+          "samples": 10,
+          "p50": 54.55,
+          "p95": 88.97,
+          "max": 88.97
+        },
+        "databaseMs": {
+          "samples": 10,
+          "p50": 20.82,
+          "p95": 31.8,
+          "max": 31.8
+        },
+        "serializationMs": {
+          "samples": 10,
+          "p50": 0.21,
+          "p95": 0.26,
+          "max": 0.26
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 762,
+          "p95": 762,
+          "max": 762
+        }
+      },
+      "A": {
+        "planned": 10,
+        "successful": 10,
+        "failed": 0,
+        "pageErrors": 0,
+        "httpErrors": 0,
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 125.7,
+          "p95": 608.5,
+          "max": 608.5
+        },
+        "driverElapsedMs": {
+          "samples": 10,
+          "p50": 168.01,
+          "p95": 651.76,
+          "max": 651.76
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "readCount": {
+          "samples": 10,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "encodedBodyBytes": {
+          "samples": 10,
+          "p50": 762,
+          "p95": 762,
+          "max": 762
+        },
+        "readTtfbMs": {
+          "samples": 10,
+          "p50": 88.22,
+          "p95": 569.17,
+          "max": 569.17
+        },
+        "readServerMs": {
+          "samples": 10,
+          "p50": 44.39,
+          "p95": 548.72,
+          "max": 548.72
+        },
+        "databaseMs": {
+          "samples": 10,
+          "p50": 7.94,
+          "p95": 336.3,
+          "max": 336.3
+        },
+        "serializationMs": {
+          "samples": 10,
+          "p50": 0.22,
+          "p95": 1.9,
+          "max": 1.9
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 762,
+          "p95": 762,
+          "max": 762
+        }
+      }
+    },
+    {
+      "size": 5000,
+      "kind": "next-page",
+      "B": {
+        "planned": 10,
+        "successful": 10,
+        "failed": 0,
+        "pageErrors": 0,
+        "httpErrors": 0,
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 339.9,
+          "p95": 417.2,
+          "max": 417.2
+        },
+        "driverElapsedMs": {
+          "samples": 10,
+          "p50": 425.42,
+          "p95": 524.2,
+          "max": 524.2
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "readCount": {
+          "samples": 10,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "encodedBodyBytes": {
+          "samples": 10,
+          "p50": 7921,
+          "p95": 7921,
+          "max": 7921
+        },
+        "readTtfbMs": {
+          "samples": 10,
+          "p50": 225.49,
+          "p95": 266.54,
+          "max": 266.54
+        },
+        "readServerMs": {
+          "samples": 10,
+          "p50": 219.25,
+          "p95": 257.28,
+          "max": 257.28
+        },
+        "databaseMs": {
+          "samples": 10,
+          "p50": 164.34,
+          "p95": 198.17,
+          "max": 198.17
+        },
+        "serializationMs": {
+          "samples": 10,
+          "p50": 0.49,
+          "p95": 0.67,
+          "max": 0.67
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 7921,
+          "p95": 7921,
+          "max": 7921
+        }
+      },
+      "A": {
+        "planned": 10,
+        "successful": 10,
+        "failed": 0,
+        "pageErrors": 0,
+        "httpErrors": 0,
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 304.5,
+          "p95": 738.7,
+          "max": 738.7
+        },
+        "driverElapsedMs": {
+          "samples": 10,
+          "p50": 405.27,
+          "p95": 949.75,
+          "max": 949.75
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "readCount": {
+          "samples": 10,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "encodedBodyBytes": {
+          "samples": 10,
+          "p50": 7921,
+          "p95": 7921,
+          "max": 7921
+        },
+        "readTtfbMs": {
+          "samples": 10,
+          "p50": 174.35,
+          "p95": 582.33,
+          "max": 582.33
+        },
+        "readServerMs": {
+          "samples": 10,
+          "p50": 168.23,
+          "p95": 561.51,
+          "max": 561.51
+        },
+        "databaseMs": {
+          "samples": 10,
+          "p50": 125.9,
+          "p95": 364.77,
+          "max": 364.77
+        },
+        "serializationMs": {
+          "samples": 10,
+          "p50": 0.52,
+          "p95": 2.88,
+          "max": 2.88
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 7921,
+          "p95": 7921,
+          "max": 7921
+        }
+      }
+    },
+    {
+      "size": 5000,
+      "kind": "distant-search",
+      "B": {
+        "planned": 10,
+        "successful": 10,
+        "failed": 0,
+        "pageErrors": 0,
+        "httpErrors": 0,
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 167.4,
+          "p95": 581.5,
+          "max": 581.5
+        },
+        "driverElapsedMs": {
+          "samples": 10,
+          "p50": 201.48,
+          "p95": 641.19,
+          "max": 641.19
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "readCount": {
+          "samples": 10,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "encodedBodyBytes": {
+          "samples": 10,
+          "p50": 759,
+          "p95": 759,
+          "max": 759
+        },
+        "readTtfbMs": {
+          "samples": 10,
+          "p50": 127.01,
+          "p95": 544.27,
+          "max": 544.27
+        },
+        "readServerMs": {
+          "samples": 10,
+          "p50": 122.71,
+          "p95": 536.36,
+          "max": 536.36
+        },
+        "databaseMs": {
+          "samples": 10,
+          "p50": 76.71,
+          "p95": 377.65,
+          "max": 377.65
+        },
+        "serializationMs": {
+          "samples": 10,
+          "p50": 0.21,
+          "p95": 0.63,
+          "max": 0.63
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 759,
+          "p95": 759,
+          "max": 759
+        }
+      },
+      "A": {
+        "planned": 10,
+        "successful": 10,
+        "failed": 0,
+        "pageErrors": 0,
+        "httpErrors": 0,
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 132.2,
+          "p95": 212.6,
+          "max": 212.6
+        },
+        "driverElapsedMs": {
+          "samples": 10,
+          "p50": 168.92,
+          "p95": 277.64,
+          "max": 277.64
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "readCount": {
+          "samples": 10,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "encodedBodyBytes": {
+          "samples": 10,
+          "p50": 759,
+          "p95": 759,
+          "max": 759
+        },
+        "readTtfbMs": {
+          "samples": 10,
+          "p50": 89.73,
+          "p95": 169.13,
+          "max": 169.13
+        },
+        "readServerMs": {
+          "samples": 10,
+          "p50": 74.01,
+          "p95": 157.69,
+          "max": 157.69
+        },
+        "databaseMs": {
+          "samples": 10,
+          "p50": 23.54,
+          "p95": 93.45,
+          "max": 93.45
+        },
+        "serializationMs": {
+          "samples": 10,
+          "p50": 0.22,
+          "p95": 0.56,
+          "max": 0.56
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 759,
+          "p95": 759,
+          "max": 759
+        }
+      }
+    }
+  ],
+  "concurrent": [
+    {
+      "size": 1000,
+      "readers": 1,
+      "B": {
+        "requests": 10,
+        "failed": 0,
+        "burstCompletionMs": {
+          "samples": 10,
+          "p50": 62.86,
+          "p95": 81.04,
+          "max": 81.04
+        },
+        "requestElapsedMs": {
+          "samples": 10,
+          "p50": 62.86,
+          "p95": 81.04,
+          "max": 81.04
+        },
+        "ttfbMs": {
+          "samples": 10,
+          "p50": 62.56,
+          "p95": 80.75,
+          "max": 80.75
+        },
+        "encodedBodyBytes": {
+          "samples": 10,
+          "p50": 7254,
+          "p95": 7254,
+          "max": 7254
+        },
+        "applicationCount": {
+          "samples": 10,
+          "p50": 100,
+          "p95": 100,
+          "max": 100
+        },
+        "serverPhases": {
+          "identity": {
+            "samples": 10,
+            "p50": 18.47,
+            "p95": 30.99,
+            "max": 30.99
+          },
+          "live_session": {
+            "samples": 10,
+            "p50": 0.45,
+            "p95": 1.06,
+            "max": 1.06
+          },
+          "database": {
+            "samples": 10,
+            "p50": 37.31,
+            "p95": 46.78,
+            "max": 46.78
+          },
+          "transaction_acquire": {
+            "samples": 10,
+            "p50": 0.42,
+            "p95": 0.65,
+            "max": 0.65
+          },
+          "transaction": {
+            "samples": 10,
+            "p50": 40.54,
+            "p95": 50.51,
+            "max": 50.51
+          },
+          "serialization": {
+            "samples": 10,
+            "p50": 0.43,
+            "p95": 0.64,
+            "max": 0.64
+          },
+          "compression": {
+            "samples": 10,
+            "p50": 0.21,
+            "p95": 0.23,
+            "max": 0.23
+          },
+          "total": {
+            "samples": 10,
+            "p50": 61.17,
+            "p95": 78.53,
+            "max": 78.53
+          }
+        }
+      },
+      "A": {
+        "requests": 10,
+        "failed": 0,
+        "burstCompletionMs": {
+          "samples": 10,
+          "p50": 51.99,
+          "p95": 63.49,
+          "max": 63.49
+        },
+        "requestElapsedMs": {
+          "samples": 10,
+          "p50": 51.99,
+          "p95": 63.49,
+          "max": 63.49
+        },
+        "ttfbMs": {
+          "samples": 10,
+          "p50": 51.69,
+          "p95": 63.16,
+          "max": 63.16
+        },
+        "encodedBodyBytes": {
+          "samples": 10,
+          "p50": 7254,
+          "p95": 7254,
+          "max": 7254
+        },
+        "applicationCount": {
+          "samples": 10,
+          "p50": 100,
+          "p95": 100,
+          "max": 100
+        },
+        "serverPhases": {
+          "identity": {
+            "samples": 10,
+            "p50": 19.59,
+            "p95": 30.15,
+            "max": 30.15
+          },
+          "live_session": {
+            "samples": 10,
+            "p50": 0.44,
+            "p95": 0.65,
+            "max": 0.65
+          },
+          "database": {
+            "samples": 10,
+            "p50": 25.76,
+            "p95": 27.26,
+            "max": 27.26
+          },
+          "transaction_acquire": {
+            "samples": 10,
+            "p50": 0.41,
+            "p95": 0.7,
+            "max": 0.7
+          },
+          "transaction": {
+            "samples": 10,
+            "p50": 27.36,
+            "p95": 29.63,
+            "max": 29.63
+          },
+          "serialization": {
+            "samples": 10,
+            "p50": 0.56,
+            "p95": 2.89,
+            "max": 2.89
+          },
+          "compression": {
+            "samples": 10,
+            "p50": 0.21,
+            "p95": 2.38,
+            "max": 2.38
+          },
+          "total": {
+            "samples": 10,
+            "p50": 50.28,
+            "p95": 61.1,
+            "max": 61.1
+          }
+        }
+      }
+    },
+    {
+      "size": 1000,
+      "readers": 2,
+      "B": {
+        "requests": 20,
+        "failed": 0,
+        "burstCompletionMs": {
+          "samples": 10,
+          "p50": 73.94,
+          "p95": 95.03,
+          "max": 95.03
+        },
+        "requestElapsedMs": {
+          "samples": 20,
+          "p50": 71.89,
+          "p95": 91.47,
+          "max": 95.03
+        },
+        "ttfbMs": {
+          "samples": 20,
+          "p50": 71.7,
+          "p95": 91.15,
+          "max": 94.79
+        },
+        "encodedBodyBytes": {
+          "samples": 20,
+          "p50": 7254,
+          "p95": 7254,
+          "max": 7254
+        },
+        "applicationCount": {
+          "samples": 20,
+          "p50": 100,
+          "p95": 100,
+          "max": 100
+        },
+        "serverPhases": {
+          "identity": {
+            "samples": 20,
+            "p50": 20.81,
+            "p95": 41.63,
+            "max": 43.62
+          },
+          "live_session": {
+            "samples": 20,
+            "p50": 0.54,
+            "p95": 0.97,
+            "max": 1.18
+          },
+          "database": {
+            "samples": 20,
+            "p50": 43.07,
+            "p95": 49.61,
+            "max": 55.32
+          },
+          "transaction_acquire": {
+            "samples": 20,
+            "p50": 0.39,
+            "p95": 0.65,
+            "max": 1.31
+          },
+          "transaction": {
+            "samples": 20,
+            "p50": 45.83,
+            "p95": 52.74,
+            "max": 58.51
+          },
+          "serialization": {
+            "samples": 20,
+            "p50": 0.43,
+            "p95": 0.49,
+            "max": 0.5
+          },
+          "compression": {
+            "samples": 20,
+            "p50": 0.2,
+            "p95": 0.22,
+            "max": 0.26
+          },
+          "total": {
+            "samples": 20,
+            "p50": 69.57,
+            "p95": 88.81,
+            "max": 93.56
+          }
+        }
+      },
+      "A": {
+        "requests": 20,
+        "failed": 0,
+        "burstCompletionMs": {
+          "samples": 10,
+          "p50": 59.9,
+          "p95": 123.3,
+          "max": 123.3
+        },
+        "requestElapsedMs": {
+          "samples": 20,
+          "p50": 59.56,
+          "p95": 122.59,
+          "max": 123.2
+        },
+        "ttfbMs": {
+          "samples": 20,
+          "p50": 59.3,
+          "p95": 122.04,
+          "max": 122.69
+        },
+        "encodedBodyBytes": {
+          "samples": 20,
+          "p50": 7254,
+          "p95": 7254,
+          "max": 7254
+        },
+        "applicationCount": {
+          "samples": 20,
+          "p50": 100,
+          "p95": 100,
+          "max": 100
+        },
+        "serverPhases": {
+          "identity": {
+            "samples": 20,
+            "p50": 22.18,
+            "p95": 70.59,
+            "max": 72.49
+          },
+          "live_session": {
+            "samples": 20,
+            "p50": 0.57,
+            "p95": 1.19,
+            "max": 1.53
+          },
+          "database": {
+            "samples": 20,
+            "p50": 29.04,
+            "p95": 37.07,
+            "max": 39.15
+          },
+          "transaction_acquire": {
+            "samples": 20,
+            "p50": 0.46,
+            "p95": 0.86,
+            "max": 0.96
+          },
+          "transaction": {
+            "samples": 20,
+            "p50": 30.67,
+            "p95": 42.58,
+            "max": 43.37
+          },
+          "serialization": {
+            "samples": 20,
+            "p50": 0.47,
+            "p95": 1.42,
+            "max": 1.51
+          },
+          "compression": {
+            "samples": 20,
+            "p50": 0.2,
+            "p95": 0.83,
+            "max": 0.85
+          },
+          "total": {
+            "samples": 20,
+            "p50": 56.89,
+            "p95": 119.35,
+            "max": 120
+          }
+        }
+      }
+    },
+    {
+      "size": 1000,
+      "readers": 4,
+      "B": {
+        "requests": 40,
+        "failed": 0,
+        "burstCompletionMs": {
+          "samples": 10,
+          "p50": 97.76,
+          "p95": 118.9,
+          "max": 118.9
+        },
+        "requestElapsedMs": {
+          "samples": 40,
+          "p50": 91.28,
+          "p95": 112.12,
+          "max": 118.79
+        },
+        "ttfbMs": {
+          "samples": 40,
+          "p50": 90.94,
+          "p95": 111.83,
+          "max": 118.51
+        },
+        "encodedBodyBytes": {
+          "samples": 40,
+          "p50": 7254,
+          "p95": 7254,
+          "max": 7254
+        },
+        "applicationCount": {
+          "samples": 40,
+          "p50": 100,
+          "p95": 100,
+          "max": 100
+        },
+        "serverPhases": {
+          "identity": {
+            "samples": 40,
+            "p50": 29.75,
+            "p95": 36.74,
+            "max": 38.82
+          },
+          "live_session": {
+            "samples": 40,
+            "p50": 0.64,
+            "p95": 2.42,
+            "max": 3
+          },
+          "database": {
+            "samples": 40,
+            "p50": 51.48,
+            "p95": 67.1,
+            "max": 73.56
+          },
+          "transaction_acquire": {
+            "samples": 40,
+            "p50": 0.75,
+            "p95": 1.73,
+            "max": 3
+          },
+          "transaction": {
+            "samples": 40,
+            "p50": 54.84,
+            "p95": 70.81,
+            "max": 75.11
+          },
+          "serialization": {
+            "samples": 40,
+            "p50": 0.4,
+            "p95": 0.76,
+            "max": 0.99
+          },
+          "compression": {
+            "samples": 40,
+            "p50": 0.19,
+            "p95": 0.4,
+            "max": 0.47
+          },
+          "total": {
+            "samples": 40,
+            "p50": 88.91,
+            "p95": 108.3,
+            "max": 114.55
+          }
+        }
+      },
+      "A": {
+        "requests": 40,
+        "failed": 0,
+        "burstCompletionMs": {
+          "samples": 10,
+          "p50": 82.32,
+          "p95": 107.74,
+          "max": 107.74
+        },
+        "requestElapsedMs": {
+          "samples": 40,
+          "p50": 77.93,
+          "p95": 98.44,
+          "max": 107.61
+        },
+        "ttfbMs": {
+          "samples": 40,
+          "p50": 77.7,
+          "p95": 98.04,
+          "max": 107.4
+        },
+        "encodedBodyBytes": {
+          "samples": 40,
+          "p50": 7254,
+          "p95": 7254,
+          "max": 7254
+        },
+        "applicationCount": {
+          "samples": 40,
+          "p50": 100,
+          "p95": 100,
+          "max": 100
+        },
+        "serverPhases": {
+          "identity": {
+            "samples": 40,
+            "p50": 35.09,
+            "p95": 52,
+            "max": 56.6
+          },
+          "live_session": {
+            "samples": 40,
+            "p50": 0.7,
+            "p95": 1.69,
+            "max": 3.62
+          },
+          "database": {
+            "samples": 40,
+            "p50": 34.9,
+            "p95": 43.36,
+            "max": 45.15
+          },
+          "transaction_acquire": {
+            "samples": 40,
+            "p50": 0.78,
+            "p95": 2.12,
+            "max": 2.62
+          },
+          "transaction": {
+            "samples": 40,
+            "p50": 35.71,
+            "p95": 43.86,
+            "max": 45.85
+          },
+          "serialization": {
+            "samples": 40,
+            "p50": 0.47,
+            "p95": 0.86,
+            "max": 1.34
+          },
+          "compression": {
+            "samples": 40,
+            "p50": 0.24,
+            "p95": 0.45,
+            "max": 0.56
+          },
+          "total": {
+            "samples": 40,
+            "p50": 75.51,
+            "p95": 95.38,
+            "max": 103.82
+          }
+        }
+      }
+    },
+    {
+      "size": 5000,
+      "readers": 1,
+      "B": {
+        "requests": 10,
+        "failed": 0,
+        "burstCompletionMs": {
+          "samples": 10,
+          "p50": 211.14,
+          "p95": 343.84,
+          "max": 343.84
+        },
+        "requestElapsedMs": {
+          "samples": 10,
+          "p50": 211.14,
+          "p95": 343.84,
+          "max": 343.84
+        },
+        "ttfbMs": {
+          "samples": 10,
+          "p50": 210.76,
+          "p95": 343.5,
+          "max": 343.5
+        },
+        "encodedBodyBytes": {
+          "samples": 10,
+          "p50": 7226,
+          "p95": 7226,
+          "max": 7226
+        },
+        "applicationCount": {
+          "samples": 10,
+          "p50": 100,
+          "p95": 100,
+          "max": 100
+        },
+        "serverPhases": {
+          "identity": {
+            "samples": 10,
+            "p50": 23.91,
+            "p95": 115.72,
+            "max": 115.72
+          },
+          "live_session": {
+            "samples": 10,
+            "p50": 0.42,
+            "p95": 2.62,
+            "max": 2.62
+          },
+          "database": {
+            "samples": 10,
+            "p50": 167.87,
+            "p95": 209.75,
+            "max": 209.75
+          },
+          "transaction_acquire": {
+            "samples": 10,
+            "p50": 0.4,
+            "p95": 0.86,
+            "max": 0.86
+          },
+          "transaction": {
+            "samples": 10,
+            "p50": 184.83,
+            "p95": 227.97,
+            "max": 227.97
+          },
+          "serialization": {
+            "samples": 10,
+            "p50": 0.48,
+            "p95": 1.23,
+            "max": 1.23
+          },
+          "compression": {
+            "samples": 10,
+            "p50": 0.21,
+            "p95": 0.71,
+            "max": 0.71
+          },
+          "total": {
+            "samples": 10,
+            "p50": 209.26,
+            "p95": 341.49,
+            "max": 341.49
+          }
+        }
+      },
+      "A": {
+        "requests": 10,
+        "failed": 0,
+        "burstCompletionMs": {
+          "samples": 10,
+          "p50": 348.52,
+          "p95": 1046.84,
+          "max": 1046.84
+        },
+        "requestElapsedMs": {
+          "samples": 10,
+          "p50": 348.52,
+          "p95": 1046.84,
+          "max": 1046.84
+        },
+        "ttfbMs": {
+          "samples": 10,
+          "p50": 347.11,
+          "p95": 1045.4,
+          "max": 1045.4
+        },
+        "encodedBodyBytes": {
+          "samples": 10,
+          "p50": 7226,
+          "p95": 7226,
+          "max": 7226
+        },
+        "applicationCount": {
+          "samples": 10,
+          "p50": 100,
+          "p95": 100,
+          "max": 100
+        },
+        "serverPhases": {
+          "identity": {
+            "samples": 10,
+            "p50": 54.97,
+            "p95": 237,
+            "max": 237
+          },
+          "live_session": {
+            "samples": 10,
+            "p50": 1.76,
+            "p95": 2.87,
+            "max": 2.87
+          },
+          "database": {
+            "samples": 10,
+            "p50": 201.46,
+            "p95": 951.06,
+            "max": 951.06
+          },
+          "transaction_acquire": {
+            "samples": 10,
+            "p50": 0.83,
+            "p95": 1.42,
+            "max": 1.42
+          },
+          "transaction": {
+            "samples": 10,
+            "p50": 226.41,
+            "p95": 1009.18,
+            "max": 1009.18
+          },
+          "serialization": {
+            "samples": 10,
+            "p50": 1.06,
+            "p95": 4.7,
+            "max": 4.7
+          },
+          "compression": {
+            "samples": 10,
+            "p50": 0.4,
+            "p95": 1.71,
+            "max": 1.71
+          },
+          "total": {
+            "samples": 10,
+            "p50": 343.57,
+            "p95": 1040.9,
+            "max": 1040.9
+          }
+        }
+      }
+    },
+    {
+      "size": 5000,
+      "readers": 2,
+      "B": {
+        "requests": 20,
+        "failed": 0,
+        "burstCompletionMs": {
+          "samples": 10,
+          "p50": 287.82,
+          "p95": 976.05,
+          "max": 976.05
+        },
+        "requestElapsedMs": {
+          "samples": 20,
+          "p50": 280.14,
+          "p95": 935.55,
+          "max": 975.97
+        },
+        "ttfbMs": {
+          "samples": 20,
+          "p50": 279.89,
+          "p95": 935.16,
+          "max": 975.65
+        },
+        "encodedBodyBytes": {
+          "samples": 20,
+          "p50": 7226,
+          "p95": 7226,
+          "max": 7226
+        },
+        "applicationCount": {
+          "samples": 20,
+          "p50": 100,
+          "p95": 100,
+          "max": 100
+        },
+        "serverPhases": {
+          "identity": {
+            "samples": 20,
+            "p50": 31.53,
+            "p95": 180.52,
+            "max": 184.23
+          },
+          "live_session": {
+            "samples": 20,
+            "p50": 0.81,
+            "p95": 1.77,
+            "max": 3.36
+          },
+          "database": {
+            "samples": 20,
+            "p50": 224.04,
+            "p95": 668.95,
+            "max": 698.11
+          },
+          "transaction_acquire": {
+            "samples": 20,
+            "p50": 0.48,
+            "p95": 1.22,
+            "max": 1.24
+          },
+          "transaction": {
+            "samples": 20,
+            "p50": 251.69,
+            "p95": 744.3,
+            "max": 785.27
+          },
+          "serialization": {
+            "samples": 20,
+            "p50": 0.49,
+            "p95": 1.5,
+            "max": 2.41
+          },
+          "compression": {
+            "samples": 20,
+            "p50": 0.21,
+            "p95": 0.55,
+            "max": 0.85
+          },
+          "total": {
+            "samples": 20,
+            "p50": 278.63,
+            "p95": 933.19,
+            "max": 972.93
+          }
+        }
+      },
+      "A": {
+        "requests": 20,
+        "failed": 0,
+        "burstCompletionMs": {
+          "samples": 10,
+          "p50": 192.95,
+          "p95": 204.57,
+          "max": 204.57
+        },
+        "requestElapsedMs": {
+          "samples": 20,
+          "p50": 185.64,
+          "p95": 204.4,
+          "max": 204.57
+        },
+        "ttfbMs": {
+          "samples": 20,
+          "p50": 185.33,
+          "p95": 203.96,
+          "max": 204.25
+        },
+        "encodedBodyBytes": {
+          "samples": 20,
+          "p50": 7226,
+          "p95": 7226,
+          "max": 7226
+        },
+        "applicationCount": {
+          "samples": 20,
+          "p50": 100,
+          "p95": 100,
+          "max": 100
+        },
+        "serverPhases": {
+          "identity": {
+            "samples": 20,
+            "p50": 26.46,
+            "p95": 42.55,
+            "max": 43
+          },
+          "live_session": {
+            "samples": 20,
+            "p50": 0.55,
+            "p95": 2.14,
+            "max": 2.49
+          },
+          "database": {
+            "samples": 20,
+            "p50": 138.53,
+            "p95": 151.95,
+            "max": 153.43
+          },
+          "transaction_acquire": {
+            "samples": 20,
+            "p50": 0.5,
+            "p95": 0.77,
+            "max": 1.13
+          },
+          "transaction": {
+            "samples": 20,
+            "p50": 149.5,
+            "p95": 163.71,
+            "max": 164.51
+          },
+          "serialization": {
+            "samples": 20,
+            "p50": 0.46,
+            "p95": 0.56,
+            "max": 1.54
+          },
+          "compression": {
+            "samples": 20,
+            "p50": 0.21,
+            "p95": 0.27,
+            "max": 0.61
+          },
+          "total": {
+            "samples": 20,
+            "p50": 181.96,
+            "p95": 201.33,
+            "max": 202.66
+          }
+        }
+      }
+    },
+    {
+      "size": 5000,
+      "readers": 4,
+      "B": {
+        "requests": 40,
+        "failed": 0,
+        "burstCompletionMs": {
+          "samples": 10,
+          "p50": 361.7,
+          "p95": 600.66,
+          "max": 600.66
+        },
+        "requestElapsedMs": {
+          "samples": 40,
+          "p50": 318.56,
+          "p95": 549.89,
+          "max": 600.56
+        },
+        "ttfbMs": {
+          "samples": 40,
+          "p50": 318.24,
+          "p95": 549.58,
+          "max": 600.26
+        },
+        "encodedBodyBytes": {
+          "samples": 40,
+          "p50": 7226,
+          "p95": 7226,
+          "max": 7226
+        },
+        "applicationCount": {
+          "samples": 40,
+          "p50": 100,
+          "p95": 100,
+          "max": 100
+        },
+        "serverPhases": {
+          "identity": {
+            "samples": 40,
+            "p50": 32.63,
+            "p95": 80.11,
+            "max": 83.94
+          },
+          "live_session": {
+            "samples": 40,
+            "p50": 0.75,
+            "p95": 4.1,
+            "max": 6.26
+          },
+          "database": {
+            "samples": 40,
+            "p50": 259.86,
+            "p95": 433.62,
+            "max": 479.86
+          },
+          "transaction_acquire": {
+            "samples": 40,
+            "p50": 0.57,
+            "p95": 1.35,
+            "max": 11.41
+          },
+          "transaction": {
+            "samples": 40,
+            "p50": 282.6,
+            "p95": 454.99,
+            "max": 505.07
+          },
+          "serialization": {
+            "samples": 40,
+            "p50": 0.52,
+            "p95": 1.08,
+            "max": 1.35
+          },
+          "compression": {
+            "samples": 40,
+            "p50": 0.22,
+            "p95": 0.47,
+            "max": 1.14
+          },
+          "total": {
+            "samples": 40,
+            "p50": 316.15,
+            "p95": 544.78,
+            "max": 594.56
+          }
+        }
+      },
+      "A": {
+        "requests": 40,
+        "failed": 0,
+        "burstCompletionMs": {
+          "samples": 10,
+          "p50": 286.56,
+          "p95": 893.46,
+          "max": 893.46
+        },
+        "requestElapsedMs": {
+          "samples": 40,
+          "p50": 286.45,
+          "p95": 744.68,
+          "max": 893.36
+        },
+        "ttfbMs": {
+          "samples": 40,
+          "p50": 286.16,
+          "p95": 744.48,
+          "max": 892.82
+        },
+        "encodedBodyBytes": {
+          "samples": 40,
+          "p50": 7226,
+          "p95": 7226,
+          "max": 7226
+        },
+        "applicationCount": {
+          "samples": 40,
+          "p50": 100,
+          "p95": 100,
+          "max": 100
+        },
+        "serverPhases": {
+          "identity": {
+            "samples": 40,
+            "p50": 46.19,
+            "p95": 305.97,
+            "max": 332.69
+          },
+          "live_session": {
+            "samples": 40,
+            "p50": 0.95,
+            "p95": 12.65,
+            "max": 80.84
+          },
+          "database": {
+            "samples": 40,
+            "p50": 200.3,
+            "p95": 661.95,
+            "max": 818.54
+          },
+          "transaction_acquire": {
+            "samples": 40,
+            "p50": 0.86,
+            "p95": 6.2,
+            "max": 8.15
+          },
+          "transaction": {
+            "samples": 40,
+            "p50": 212.88,
+            "p95": 681.53,
+            "max": 838.79
+          },
+          "serialization": {
+            "samples": 40,
+            "p50": 0.67,
+            "p95": 2.38,
+            "max": 10.52
+          },
+          "compression": {
+            "samples": 40,
+            "p50": 0.26,
+            "p95": 0.97,
+            "max": 9.41
+          },
+          "total": {
+            "samples": 40,
+            "p50": 282.98,
+            "p95": 740.93,
+            "max": 886.98
+          }
+        }
+      }
+    }
+  ],
+  "pools": {
+    "1000": {
+      "B": {
+        "connections": {
+          "samples": 112,
+          "p50": 10,
+          "p95": 10,
+          "max": 10
+        },
+        "active": {
+          "samples": 112,
+          "p50": 0,
+          "p95": 3,
+          "max": 4
+        },
+        "idle_in_transaction": {
+          "samples": 112,
+          "p50": 0,
+          "p95": 3,
+          "max": 4
+        },
+        "lock_waiting": {
+          "samples": 112,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        }
+      },
+      "A": {
+        "connections": {
+          "samples": 93,
+          "p50": 9,
+          "p95": 9,
+          "max": 9
+        },
+        "active": {
+          "samples": 93,
+          "p50": 0,
+          "p95": 2,
+          "max": 4
+        },
+        "idle_in_transaction": {
+          "samples": 93,
+          "p50": 0,
+          "p95": 2,
+          "max": 4
+        },
+        "lock_waiting": {
+          "samples": 93,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        }
+      }
+    },
+    "5000": {
+      "B": {
+        "connections": {
+          "samples": 433,
+          "p50": 9,
+          "p95": 9,
+          "max": 9
+        },
+        "active": {
+          "samples": 433,
+          "p50": 1,
+          "p95": 3,
+          "max": 4
+        },
+        "idle_in_transaction": {
+          "samples": 433,
+          "p50": 1,
+          "p95": 4,
+          "max": 4
+        },
+        "lock_waiting": {
+          "samples": 433,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        }
+      },
+      "A": {
+        "connections": {
+          "samples": 398,
+          "p50": 9,
+          "p95": 9,
+          "max": 9
+        },
+        "active": {
+          "samples": 398,
+          "p50": 1,
+          "p95": 4,
+          "max": 4
+        },
+        "idle_in_transaction": {
+          "samples": 398,
+          "p50": 0,
+          "p95": 2,
+          "max": 4
+        },
+        "lock_waiting": {
+          "samples": 398,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        }
+      }
+    }
+  }
+}

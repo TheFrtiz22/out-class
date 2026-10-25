@@ -13,7 +13,7 @@ function fixture() {
   const state = { actor: reader, permissions: ['applicants.identify'], anonymous: false, clubAccess: true, downloads: 0, status: 'ACTIVE', disabled: false, narrowReads: 0, pipelineReads: 0 };
   const app = { id: applicationId, clubId, studentId: owner, status: 'SUBMITTED', roundId,
     round: { id: roundId, name: 'Review', anonymousReview: false, applicantDisplay: { version: 1, fields: ['name'] } },
-    student: { id: owner, email: 'owner@virginia.edu', studentProfile: { id: id(6), userId: owner, firstName: 'Student', lastName: 'Fixture', computingId: 'fixture', major: 'Math', gradYear: 2028, headshotUrl: `${owner}/photo.png`, experiences: [] } },
+    student: { id: owner, email: 'owner@virginia.edu', studentProfile: { id: id(6), userId: owner, firstName: 'Student', lastName: 'Fixture', computingId: 'fixture', major: 'Math', gradYear: 2028, transferStudent: false, gpa: null, satScore: null, actScore: null, headshotUrl: `${owner}/photo.png`, experiences: [] } },
     evaluations: [], interviewAssignments: [], answers: [], bookings: [] };
   const permissions = load('lib/permissions.ts');
   const membership = () => ({ id: id(7), userId: state.actor, status: state.status, permissions: state.permissions, isOwner: state.isOwner, interviewOffices: state.offices || [] });
@@ -27,7 +27,14 @@ function fixture() {
   };
   const matches = where => where.AND ? where.AND.every(matches) : (!where.clubId || where.clubId === app.clubId) && (!where.id || typeof where.id === 'object' ? !where.id || where.id.in.includes(app.id) : where.id === app.id) && app.status !== 'DRAFTING';
   const tx = {
-    $queryRaw: async()=>[],
+    $queryRaw: async query=>{
+      if (!query.text?.includes('FROM "Application" a')) return [];
+      if(state.pipelineError)throw state.pipelineError;
+      state.pipelineReads++;
+      if(query.values[0]!==app.clubId || app.status==='DRAFTING' || query.text.includes('r."anonymousReview" = TRUE')&&!app.round.anonymousReview)return[];
+      const p=app.student.studentProfile;
+      return[{id:app.id,roundId:app.roundId,studentId:app.studentId,status:app.status,anonymousReview:app.round.anonymousReview,email:app.student.email,hasProfile:!!p,firstName:p?.firstName??null,lastName:p?.lastName??null,major:p?.major??null,gradYear:p?.gradYear??null,transferStudent:p?.transferStudent??false,gpa:p?.gpa??null,satScore:p?.satScore??null,actScore:p?.actScore??null}];
+    },
     user: { findUnique: async()=>({disabledAt:state.disabled?new Date():null}) },
     pipelineRound: { findMany: async () => [app.round] },
     application: {

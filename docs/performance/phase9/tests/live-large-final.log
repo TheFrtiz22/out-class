@@ -1,0 +1,13 @@
+✔ paged applicants preserve whole-list search/counts with one fresh read per interaction (2364.910917ms)
+✔ fresh page boundaries avoid duplicate reads, full quick-review/voting selection survives pagination and reopen validates again (6022.597875ms)
+✔ rapid global searches coalesce obsolete reads, retain keyboard focus and never show a late previous selection (771.240708ms)
+✔ editable review drafts survive the 100/101 server-page boundary and return navigation (1600.83075ms)
+✔ paged navigation remains bounded, invalid filters make no request and refresh hides old data until fresh privacy validation (2534.9005ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 14353.725167

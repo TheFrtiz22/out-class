@@ -1,0 +1,1265 @@
+{
+  "interpretation": "Timed work and point-in-time JS heap observations without forced GC; source and after heaps cannot establish retained application memory.",
+  "groups": [
+    {
+      "size": 100,
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "B": {
+        "scriptMs": {
+          "samples": 10,
+          "p50": 21.968,
+          "p95": 25.407,
+          "max": 25.407
+        },
+        "taskMs": {
+          "samples": 10,
+          "p50": 59.885,
+          "p95": 64.705,
+          "max": 64.705
+        },
+        "layoutMs": {
+          "samples": 10,
+          "p50": 5.98,
+          "p95": 6.5,
+          "max": 6.5
+        },
+        "heapBeforeBytes": {
+          "samples": 10,
+          "p50": 9161004,
+          "p95": 16099688,
+          "max": 16099688
+        },
+        "heapAfterBytes": {
+          "samples": 10,
+          "p50": 13965916,
+          "p95": 18528344,
+          "max": 18528344
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 5,
+          "p95": 5,
+          "max": 5
+        },
+        "networkCompleteMs": {
+          "samples": 10,
+          "p50": 48.4,
+          "p95": 60.9,
+          "max": 60.9
+        },
+        "sourceHeapBytes": {
+          "samples": 10,
+          "p50": 9150640,
+          "p95": 16089324,
+          "max": 16089324
+        }
+      },
+      "A": {
+        "scriptMs": {
+          "samples": 10,
+          "p50": 22.041,
+          "p95": 22.616,
+          "max": 22.616
+        },
+        "taskMs": {
+          "samples": 10,
+          "p50": 61.08,
+          "p95": 65.357,
+          "max": 65.357
+        },
+        "layoutMs": {
+          "samples": 10,
+          "p50": 5.934,
+          "p95": 6.248,
+          "max": 6.248
+        },
+        "heapBeforeBytes": {
+          "samples": 10,
+          "p50": 9164500,
+          "p95": 9690200,
+          "max": 9690200
+        },
+        "heapAfterBytes": {
+          "samples": 10,
+          "p50": 13961532,
+          "p95": 14147444,
+          "max": 14147444
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 5,
+          "p95": 5,
+          "max": 5
+        },
+        "networkCompleteMs": {
+          "samples": 10,
+          "p50": 44.6,
+          "p95": 49.5,
+          "max": 49.5
+        },
+        "sourceHeapBytes": {
+          "samples": 10,
+          "p50": 9154136,
+          "p95": 9679836,
+          "max": 9679836
+        }
+      }
+    },
+    {
+      "size": 100,
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "B": {
+        "scriptMs": {
+          "samples": 10,
+          "p50": 11.32,
+          "p95": 12.105,
+          "max": 12.105
+        },
+        "taskMs": {
+          "samples": 10,
+          "p50": 34.795,
+          "p95": 38.336,
+          "max": 38.336
+        },
+        "layoutMs": {
+          "samples": 10,
+          "p50": 4.365,
+          "p95": 4.968,
+          "max": 4.968
+        },
+        "heapBeforeBytes": {
+          "samples": 10,
+          "p50": 15014936,
+          "p95": 15444296,
+          "max": 15444296
+        },
+        "heapAfterBytes": {
+          "samples": 10,
+          "p50": 15267648,
+          "p95": 18182152,
+          "max": 18182152
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "networkCompleteMs": {
+          "samples": 10,
+          "p50": 41,
+          "p95": 43.4,
+          "max": 43.4
+        },
+        "sourceHeapBytes": {
+          "samples": 10,
+          "p50": 9154352,
+          "p95": 9654400,
+          "max": 9654400
+        }
+      },
+      "A": {
+        "scriptMs": {
+          "samples": 10,
+          "p50": 11.202,
+          "p95": 11.786,
+          "max": 11.786
+        },
+        "taskMs": {
+          "samples": 10,
+          "p50": 34.678,
+          "p95": 49.543,
+          "max": 49.543
+        },
+        "layoutMs": {
+          "samples": 10,
+          "p50": 4.287,
+          "p95": 5.057,
+          "max": 5.057
+        },
+        "heapBeforeBytes": {
+          "samples": 10,
+          "p50": 15056348,
+          "p95": 15339176,
+          "max": 15339176
+        },
+        "heapAfterBytes": {
+          "samples": 10,
+          "p50": 15255400,
+          "p95": 15314520,
+          "max": 15314520
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "networkCompleteMs": {
+          "samples": 10,
+          "p50": 38.9,
+          "p95": 44,
+          "max": 44
+        },
+        "sourceHeapBytes": {
+          "samples": 10,
+          "p50": 9168664,
+          "p95": 9625596,
+          "max": 9625596
+        }
+      }
+    },
+    {
+      "size": 100,
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "B": {
+        "scriptMs": {
+          "samples": 10,
+          "p50": 19.334,
+          "p95": 22.42,
+          "max": 22.42
+        },
+        "taskMs": {
+          "samples": 10,
+          "p50": 86.226,
+          "p95": 128.066,
+          "max": 128.066
+        },
+        "layoutMs": {
+          "samples": 10,
+          "p50": 2.129,
+          "p95": 2.255,
+          "max": 2.255
+        },
+        "heapBeforeBytes": {
+          "samples": 10,
+          "p50": 12743436,
+          "p95": 13707024,
+          "max": 13707024
+        },
+        "heapAfterBytes": {
+          "samples": 10,
+          "p50": 15136904,
+          "p95": 19181260,
+          "max": 19181260
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 4,
+          "p95": 4,
+          "max": 4
+        },
+        "networkCompleteMs": {
+          "samples": 10,
+          "p50": 122.1,
+          "p95": 186.8,
+          "max": 186.8
+        },
+        "sourceHeapBytes": {
+          "samples": 10,
+          "p50": 12727532,
+          "p95": 13691204,
+          "max": 13691204
+        }
+      },
+      "A": {
+        "scriptMs": {
+          "samples": 10,
+          "p50": 18.427,
+          "p95": 19.983,
+          "max": 19.983
+        },
+        "taskMs": {
+          "samples": 10,
+          "p50": 84.497,
+          "p95": 95.861,
+          "max": 95.861
+        },
+        "layoutMs": {
+          "samples": 10,
+          "p50": 2.007,
+          "p95": 2.211,
+          "max": 2.211
+        },
+        "heapBeforeBytes": {
+          "samples": 10,
+          "p50": 12958656,
+          "p95": 20076844,
+          "max": 20076844
+        },
+        "heapAfterBytes": {
+          "samples": 10,
+          "p50": 14994804,
+          "p95": 26455332,
+          "max": 26455332
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 4,
+          "p95": 4,
+          "max": 4
+        },
+        "networkCompleteMs": {
+          "samples": 10,
+          "p50": 118.5,
+          "p95": 173.1,
+          "max": 173.1
+        },
+        "sourceHeapBytes": {
+          "samples": 10,
+          "p50": 12942836,
+          "p95": 20061024,
+          "max": 20061024
+        }
+      }
+    },
+    {
+      "size": 100,
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "B": {
+        "scriptMs": {
+          "samples": 10,
+          "p50": 18.273,
+          "p95": 22.159,
+          "max": 22.159
+        },
+        "taskMs": {
+          "samples": 10,
+          "p50": 84.398,
+          "p95": 98.756,
+          "max": 98.756
+        },
+        "layoutMs": {
+          "samples": 10,
+          "p50": 1.438,
+          "p95": 1.749,
+          "max": 1.749
+        },
+        "heapBeforeBytes": {
+          "samples": 10,
+          "p50": 17660428,
+          "p95": 17770704,
+          "max": 17770704
+        },
+        "heapAfterBytes": {
+          "samples": 10,
+          "p50": 16108204,
+          "p95": 21100492,
+          "max": 21100492
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 4,
+          "p95": 4,
+          "max": 4
+        },
+        "networkCompleteMs": {
+          "samples": 10,
+          "p50": 134.7,
+          "p95": 226.3,
+          "max": 226.3
+        },
+        "sourceHeapBytes": {
+          "samples": 10,
+          "p50": 12927528,
+          "p95": 13415688,
+          "max": 13415688
+        }
+      },
+      "A": {
+        "scriptMs": {
+          "samples": 10,
+          "p50": 17.621,
+          "p95": 18.894,
+          "max": 18.894
+        },
+        "taskMs": {
+          "samples": 10,
+          "p50": 81.889,
+          "p95": 84.984,
+          "max": 84.984
+        },
+        "layoutMs": {
+          "samples": 10,
+          "p50": 1.389,
+          "p95": 1.5,
+          "max": 1.5
+        },
+        "heapBeforeBytes": {
+          "samples": 10,
+          "p50": 17707704,
+          "p95": 17784632,
+          "max": 17784632
+        },
+        "heapAfterBytes": {
+          "samples": 10,
+          "p50": 16073844,
+          "p95": 21148780,
+          "max": 21148780
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 4,
+          "p95": 4,
+          "max": 4
+        },
+        "networkCompleteMs": {
+          "samples": 10,
+          "p50": 127.5,
+          "p95": 146.2,
+          "max": 146.2
+        },
+        "sourceHeapBytes": {
+          "samples": 10,
+          "p50": 13184076,
+          "p95": 13302624,
+          "max": 13302624
+        }
+      }
+    },
+    {
+      "size": 1000,
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "B": {
+        "scriptMs": {
+          "samples": 10,
+          "p50": 22.467,
+          "p95": 25.875,
+          "max": 25.875
+        },
+        "taskMs": {
+          "samples": 10,
+          "p50": 63.386,
+          "p95": 73.839,
+          "max": 73.839
+        },
+        "layoutMs": {
+          "samples": 10,
+          "p50": 6.291,
+          "p95": 6.732,
+          "max": 6.732
+        },
+        "heapBeforeBytes": {
+          "samples": 10,
+          "p50": 9158816,
+          "p95": 17599948,
+          "max": 17599948
+        },
+        "heapAfterBytes": {
+          "samples": 10,
+          "p50": 13900488,
+          "p95": 14195024,
+          "max": 14195024
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 5,
+          "p95": 5,
+          "max": 5
+        },
+        "networkCompleteMs": {
+          "samples": 10,
+          "p50": 97.3,
+          "p95": 110.5,
+          "max": 110.5
+        },
+        "sourceHeapBytes": {
+          "samples": 10,
+          "p50": 9148452,
+          "p95": 17589596,
+          "max": 17589596
+        }
+      },
+      "A": {
+        "scriptMs": {
+          "samples": 10,
+          "p50": 23.29,
+          "p95": 25.411,
+          "max": 25.411
+        },
+        "taskMs": {
+          "samples": 10,
+          "p50": 64.243,
+          "p95": 75.82,
+          "max": 75.82
+        },
+        "layoutMs": {
+          "samples": 10,
+          "p50": 6.171,
+          "p95": 6.843,
+          "max": 6.843
+        },
+        "heapBeforeBytes": {
+          "samples": 10,
+          "p50": 9163636,
+          "p95": 12649464,
+          "max": 12649464
+        },
+        "heapAfterBytes": {
+          "samples": 10,
+          "p50": 13978688,
+          "p95": 15068736,
+          "max": 15068736
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 5,
+          "p95": 5,
+          "max": 5
+        },
+        "networkCompleteMs": {
+          "samples": 10,
+          "p50": 59.2,
+          "p95": 128.3,
+          "max": 128.3
+        },
+        "sourceHeapBytes": {
+          "samples": 10,
+          "p50": 9153272,
+          "p95": 12639100,
+          "max": 12639100
+        }
+      }
+    },
+    {
+      "size": 1000,
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "B": {
+        "scriptMs": {
+          "samples": 10,
+          "p50": 12.205,
+          "p95": 17.215,
+          "max": 17.215
+        },
+        "taskMs": {
+          "samples": 10,
+          "p50": 39.6,
+          "p95": 66.318,
+          "max": 66.318
+        },
+        "layoutMs": {
+          "samples": 10,
+          "p50": 4.442,
+          "p95": 8.463,
+          "max": 8.463
+        },
+        "heapBeforeBytes": {
+          "samples": 10,
+          "p50": 15194420,
+          "p95": 22052980,
+          "max": 22052980
+        },
+        "heapAfterBytes": {
+          "samples": 10,
+          "p50": 15383720,
+          "p95": 18202868,
+          "max": 18202868
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "networkCompleteMs": {
+          "samples": 10,
+          "p50": 89,
+          "p95": 165.7,
+          "max": 165.7
+        },
+        "sourceHeapBytes": {
+          "samples": 10,
+          "p50": 9133016,
+          "p95": 16343624,
+          "max": 16343624
+        }
+      },
+      "A": {
+        "scriptMs": {
+          "samples": 10,
+          "p50": 11.842,
+          "p95": 12.684,
+          "max": 12.684
+        },
+        "taskMs": {
+          "samples": 10,
+          "p50": 36.743,
+          "p95": 42.666,
+          "max": 42.666
+        },
+        "layoutMs": {
+          "samples": 10,
+          "p50": 4.425,
+          "p95": 4.995,
+          "max": 4.995
+        },
+        "heapBeforeBytes": {
+          "samples": 10,
+          "p50": 15013504,
+          "p95": 15605600,
+          "max": 15605600
+        },
+        "heapAfterBytes": {
+          "samples": 10,
+          "p50": 15289004,
+          "p95": 18569420,
+          "max": 18569420
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "networkCompleteMs": {
+          "samples": 10,
+          "p50": 48.7,
+          "p95": 86,
+          "max": 86
+        },
+        "sourceHeapBytes": {
+          "samples": 10,
+          "p50": 9152832,
+          "p95": 22938236,
+          "max": 22938236
+        }
+      }
+    },
+    {
+      "size": 1000,
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "B": {
+        "scriptMs": {
+          "samples": 10,
+          "p50": 19.194,
+          "p95": 21.635,
+          "max": 21.635
+        },
+        "taskMs": {
+          "samples": 10,
+          "p50": 84.334,
+          "p95": 101.97,
+          "max": 101.97
+        },
+        "layoutMs": {
+          "samples": 10,
+          "p50": 1.969,
+          "p95": 2.334,
+          "max": 2.334
+        },
+        "heapBeforeBytes": {
+          "samples": 10,
+          "p50": 12913012,
+          "p95": 16471228,
+          "max": 16471228
+        },
+        "heapAfterBytes": {
+          "samples": 10,
+          "p50": 14961068,
+          "p95": 19231800,
+          "max": 19231800
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 4,
+          "p95": 4,
+          "max": 4
+        },
+        "networkCompleteMs": {
+          "samples": 10,
+          "p50": 118.4,
+          "p95": 197.9,
+          "max": 197.9
+        },
+        "sourceHeapBytes": {
+          "samples": 10,
+          "p50": 12897108,
+          "p95": 16455408,
+          "max": 16455408
+        }
+      },
+      "A": {
+        "scriptMs": {
+          "samples": 10,
+          "p50": 19.351,
+          "p95": 37.529,
+          "max": 37.529
+        },
+        "taskMs": {
+          "samples": 10,
+          "p50": 86.975,
+          "p95": 158.742,
+          "max": 158.742
+        },
+        "layoutMs": {
+          "samples": 10,
+          "p50": 2.023,
+          "p95": 5.21,
+          "max": 5.21
+        },
+        "heapBeforeBytes": {
+          "samples": 10,
+          "p50": 13280292,
+          "p95": 16339332,
+          "max": 16339332
+        },
+        "heapAfterBytes": {
+          "samples": 10,
+          "p50": 14889204,
+          "p95": 17177672,
+          "max": 17177672
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 4,
+          "p95": 4,
+          "max": 4
+        },
+        "networkCompleteMs": {
+          "samples": 10,
+          "p50": 123.2,
+          "p95": 556.4,
+          "max": 556.4
+        },
+        "sourceHeapBytes": {
+          "samples": 10,
+          "p50": 13264472,
+          "p95": 16323512,
+          "max": 16323512
+        }
+      }
+    },
+    {
+      "size": 1000,
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "B": {
+        "scriptMs": {
+          "samples": 10,
+          "p50": 17.936,
+          "p95": 19.937,
+          "max": 19.937
+        },
+        "taskMs": {
+          "samples": 10,
+          "p50": 83.514,
+          "p95": 96.205,
+          "max": 96.205
+        },
+        "layoutMs": {
+          "samples": 10,
+          "p50": 1.408,
+          "p95": 1.589,
+          "max": 1.589
+        },
+        "heapBeforeBytes": {
+          "samples": 10,
+          "p50": 15799500,
+          "p95": 19517808,
+          "max": 19517808
+        },
+        "heapAfterBytes": {
+          "samples": 10,
+          "p50": 20317960,
+          "p95": 21216468,
+          "max": 21216468
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 4,
+          "p95": 4,
+          "max": 4
+        },
+        "networkCompleteMs": {
+          "samples": 10,
+          "p50": 144.6,
+          "p95": 177.2,
+          "max": 177.2
+        },
+        "sourceHeapBytes": {
+          "samples": 10,
+          "p50": 14098508,
+          "p95": 16469676,
+          "max": 16469676
+        }
+      },
+      "A": {
+        "scriptMs": {
+          "samples": 10,
+          "p50": 18.094,
+          "p95": 37.892,
+          "max": 37.892
+        },
+        "taskMs": {
+          "samples": 10,
+          "p50": 85.07,
+          "p95": 157.54,
+          "max": 157.54
+        },
+        "layoutMs": {
+          "samples": 10,
+          "p50": 1.481,
+          "p95": 1.802,
+          "max": 1.802
+        },
+        "heapBeforeBytes": {
+          "samples": 10,
+          "p50": 17628472,
+          "p95": 18285204,
+          "max": 18285204
+        },
+        "heapAfterBytes": {
+          "samples": 10,
+          "p50": 16062868,
+          "p95": 20732952,
+          "max": 20732952
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 4,
+          "p95": 4,
+          "max": 4
+        },
+        "networkCompleteMs": {
+          "samples": 10,
+          "p50": 134,
+          "p95": 562.6,
+          "max": 562.6
+        },
+        "sourceHeapBytes": {
+          "samples": 10,
+          "p50": 13326428,
+          "p95": 28551860,
+          "max": 28551860
+        }
+      }
+    },
+    {
+      "size": 5000,
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "B": {
+        "scriptMs": {
+          "samples": 10,
+          "p50": 23.648,
+          "p95": 25.566,
+          "max": 25.566
+        },
+        "taskMs": {
+          "samples": 10,
+          "p50": 67.674,
+          "p95": 75.056,
+          "max": 75.056
+        },
+        "layoutMs": {
+          "samples": 10,
+          "p50": 6.346,
+          "p95": 6.996,
+          "max": 6.996
+        },
+        "heapBeforeBytes": {
+          "samples": 10,
+          "p50": 9155700,
+          "p95": 24358112,
+          "max": 24358112
+        },
+        "heapAfterBytes": {
+          "samples": 10,
+          "p50": 14086876,
+          "p95": 15151240,
+          "max": 15151240
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 5,
+          "p95": 5,
+          "max": 5
+        },
+        "networkCompleteMs": {
+          "samples": 10,
+          "p50": 140.2,
+          "p95": 174.6,
+          "max": 174.6
+        },
+        "sourceHeapBytes": {
+          "samples": 10,
+          "p50": 9145348,
+          "p95": 24347748,
+          "max": 24347748
+        }
+      },
+      "A": {
+        "scriptMs": {
+          "samples": 10,
+          "p50": 22.139,
+          "p95": 26.574,
+          "max": 26.574
+        },
+        "taskMs": {
+          "samples": 10,
+          "p50": 62.737,
+          "p95": 69.074,
+          "max": 69.074
+        },
+        "layoutMs": {
+          "samples": 10,
+          "p50": 6.097,
+          "p95": 6.476,
+          "max": 6.476
+        },
+        "heapBeforeBytes": {
+          "samples": 10,
+          "p50": 9147240,
+          "p95": 9955640,
+          "max": 9955640
+        },
+        "heapAfterBytes": {
+          "samples": 10,
+          "p50": 13952080,
+          "p95": 14051816,
+          "max": 14051816
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 5,
+          "p95": 5,
+          "max": 5
+        },
+        "networkCompleteMs": {
+          "samples": 10,
+          "p50": 67.7,
+          "p95": 81.7,
+          "max": 81.7
+        },
+        "sourceHeapBytes": {
+          "samples": 10,
+          "p50": 9136876,
+          "p95": 9945288,
+          "max": 9945288
+        }
+      }
+    },
+    {
+      "size": 5000,
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "B": {
+        "scriptMs": {
+          "samples": 10,
+          "p50": 12.577,
+          "p95": 13.867,
+          "max": 13.867
+        },
+        "taskMs": {
+          "samples": 10,
+          "p50": 41.035,
+          "p95": 49.831,
+          "max": 49.831
+        },
+        "layoutMs": {
+          "samples": 10,
+          "p50": 4.506,
+          "p95": 5.978,
+          "max": 5.978
+        },
+        "heapBeforeBytes": {
+          "samples": 10,
+          "p50": 15293464,
+          "p95": 15402668,
+          "max": 15402668
+        },
+        "heapAfterBytes": {
+          "samples": 10,
+          "p50": 15396340,
+          "p95": 15458628,
+          "max": 15458628
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "networkCompleteMs": {
+          "samples": 10,
+          "p50": 139,
+          "p95": 240.7,
+          "max": 240.7
+        },
+        "sourceHeapBytes": {
+          "samples": 10,
+          "p50": 9124664,
+          "p95": 9172952,
+          "max": 9172952
+        }
+      },
+      "A": {
+        "scriptMs": {
+          "samples": 10,
+          "p50": 11.349,
+          "p95": 11.512,
+          "max": 11.512
+        },
+        "taskMs": {
+          "samples": 10,
+          "p50": 34.524,
+          "p95": 37.403,
+          "max": 37.403
+        },
+        "layoutMs": {
+          "samples": 10,
+          "p50": 4.303,
+          "p95": 4.585,
+          "max": 4.585
+        },
+        "heapBeforeBytes": {
+          "samples": 10,
+          "p50": 14997692,
+          "p95": 15273768,
+          "max": 15273768
+        },
+        "heapAfterBytes": {
+          "samples": 10,
+          "p50": 15264648,
+          "p95": 18293052,
+          "max": 18293052
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "networkCompleteMs": {
+          "samples": 10,
+          "p50": 59.6,
+          "p95": 65.8,
+          "max": 65.8
+        },
+        "sourceHeapBytes": {
+          "samples": 10,
+          "p50": 9138740,
+          "p95": 11367548,
+          "max": 11367548
+        }
+      }
+    },
+    {
+      "size": 5000,
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "B": {
+        "scriptMs": {
+          "samples": 10,
+          "p50": 20.697,
+          "p95": 22.395,
+          "max": 22.395
+        },
+        "taskMs": {
+          "samples": 10,
+          "p50": 84.326,
+          "p95": 97.198,
+          "max": 97.198
+        },
+        "layoutMs": {
+          "samples": 10,
+          "p50": 1.913,
+          "p95": 2.197,
+          "max": 2.197
+        },
+        "heapBeforeBytes": {
+          "samples": 10,
+          "p50": 11236000,
+          "p95": 11853700,
+          "max": 11853700
+        },
+        "heapAfterBytes": {
+          "samples": 10,
+          "p50": 17093948,
+          "p95": 17944292,
+          "max": 17944292
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 4,
+          "p95": 4,
+          "max": 4
+        },
+        "networkCompleteMs": {
+          "samples": 10,
+          "p50": 122.7,
+          "p95": 240.8,
+          "max": 240.8
+        },
+        "sourceHeapBytes": {
+          "samples": 10,
+          "p50": 11220180,
+          "p95": 11837880,
+          "max": 11837880
+        }
+      },
+      "A": {
+        "scriptMs": {
+          "samples": 10,
+          "p50": 18.6,
+          "p95": 21.12,
+          "max": 21.12
+        },
+        "taskMs": {
+          "samples": 10,
+          "p50": 83.603,
+          "p95": 88.364,
+          "max": 88.364
+        },
+        "layoutMs": {
+          "samples": 10,
+          "p50": 1.968,
+          "p95": 2.125,
+          "max": 2.125
+        },
+        "heapBeforeBytes": {
+          "samples": 10,
+          "p50": 13319552,
+          "p95": 16589908,
+          "max": 16589908
+        },
+        "heapAfterBytes": {
+          "samples": 10,
+          "p50": 17045460,
+          "p95": 19310400,
+          "max": 19310400
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 4,
+          "p95": 4,
+          "max": 4
+        },
+        "networkCompleteMs": {
+          "samples": 10,
+          "p50": 114.6,
+          "p95": 150,
+          "max": 150
+        },
+        "sourceHeapBytes": {
+          "samples": 10,
+          "p50": 13303732,
+          "p95": 16574088,
+          "max": 16574088
+        }
+      }
+    },
+    {
+      "size": 5000,
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "B": {
+        "scriptMs": {
+          "samples": 10,
+          "p50": 17.983,
+          "p95": 19.741,
+          "max": 19.741
+        },
+        "taskMs": {
+          "samples": 10,
+          "p50": 83.988,
+          "p95": 88.427,
+          "max": 88.427
+        },
+        "layoutMs": {
+          "samples": 10,
+          "p50": 1.422,
+          "p95": 1.505,
+          "max": 1.505
+        },
+        "heapBeforeBytes": {
+          "samples": 10,
+          "p50": 15080912,
+          "p95": 15667896,
+          "max": 15667896
+        },
+        "heapAfterBytes": {
+          "samples": 10,
+          "p50": 20486156,
+          "p95": 21108048,
+          "max": 21108048
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 4,
+          "p95": 4,
+          "max": 4
+        },
+        "networkCompleteMs": {
+          "samples": 10,
+          "p50": 131,
+          "p95": 155.7,
+          "max": 155.7
+        },
+        "sourceHeapBytes": {
+          "samples": 10,
+          "p50": 11228896,
+          "p95": 12703456,
+          "max": 12703456
+        }
+      },
+      "A": {
+        "scriptMs": {
+          "samples": 10,
+          "p50": 17.793,
+          "p95": 18.089,
+          "max": 18.089
+        },
+        "taskMs": {
+          "samples": 10,
+          "p50": 83.401,
+          "p95": 84.303,
+          "max": 84.303
+        },
+        "layoutMs": {
+          "samples": 10,
+          "p50": 1.362,
+          "p95": 1.433,
+          "max": 1.433
+        },
+        "heapBeforeBytes": {
+          "samples": 10,
+          "p50": 15072448,
+          "p95": 18575836,
+          "max": 18575836
+        },
+        "heapAfterBytes": {
+          "samples": 10,
+          "p50": 20483120,
+          "p95": 20552836,
+          "max": 20552836
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 4,
+          "p95": 4,
+          "max": 4
+        },
+        "networkCompleteMs": {
+          "samples": 10,
+          "p50": 129,
+          "p95": 139.2,
+          "max": 139.2
+        },
+        "sourceHeapBytes": {
+          "samples": 10,
+          "p50": 11247520,
+          "p95": 16410852,
+          "max": 16410852
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,5565 @@
+{
+  "counts": {
+    "browserOutcomes": 224,
+    "measuredBrowserOutcomes": 176,
+    "warmups": 48,
+    "failedBrowserOutcomes": 0,
+    "pageErrors": 0,
+    "httpErrors": 0,
+    "flaggedRequests": 128,
+    "failedRequests": 0,
+    "pendingRequests": 128,
+    "extraSourceReadOutcomes": 64
+  },
+  "interpretation": "Includes all planned warmups and measurements. Pending source SSE is intentional. Failed transport after HTTP 200 remains flagged; status 200 does not establish full consumption. No rows excluded.",
+  "groupedFlags": [
+    {
+      "variant": "A",
+      "phase": "measure",
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "count": 48
+    },
+    {
+      "variant": "A",
+      "phase": "warmup",
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "count": 16
+    },
+    {
+      "variant": "B",
+      "phase": "measure",
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "count": 48
+    },
+    {
+      "variant": "B",
+      "phase": "warmup",
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "count": 16
+    }
+  ],
+  "extraSourceReads": [
+    {
+      "file": "size-1000-pair-1-1-B-warmup/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5668,
+          "endMs": 5891,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5849,
+          "endMs": 6030,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5582.5,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5627,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5760.700000017881,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-1-1-B-warmup/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5691,
+          "endMs": 5979,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5872,
+          "endMs": 6050,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5599.799999982119,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5651.799999982119,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5784.299999982119,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-1-1-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5670,
+          "endMs": 5894,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5848,
+          "endMs": 6028,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5583.5,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5629.100000023842,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5760.700000017881,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-1-1-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 1,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5713,
+          "endMs": 5961,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5893,
+          "endMs": 6082,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5611.699999988079,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5674,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5799.4000000059605,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-1-1-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 2,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5668,
+          "endMs": 5909,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5849,
+          "endMs": 6029,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5584.0999999940395,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5628.5,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5760.300000011921,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-1-1-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5669,
+          "endMs": 5916,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5857,
+          "endMs": 6035,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5588.699999988079,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5635.0999999940395,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5764.0999999940395,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-1-1-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 1,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5692,
+          "endMs": 5986,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5879,
+          "endMs": 6067,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5605,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5660.300000011921,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5776.700000017881,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-1-1-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 2,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5670,
+          "endMs": 5893,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5848,
+          "endMs": 6029,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5584,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5628.0999999940395,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5760.0999999940395,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-1-2-A-warmup/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5832,
+          "endMs": 6125,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 6028,
+          "endMs": 6208,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5752.5,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5804.200000017881,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5925.800000011921,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-1-2-A-warmup/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5683,
+          "endMs": 5901,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5848,
+          "endMs": 6028,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5580.899999976158,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5625.699999988079,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5767.699999988079,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-1-2-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5670,
+          "endMs": 5899,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5856,
+          "endMs": 6036,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5582.300000011921,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5633.5,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5764.800000011921,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-1-2-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 1,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5846,
+          "endMs": 6310,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 6183,
+          "endMs": 6419,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5669.199999988079,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5727.5999999940395,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5915.299999982119,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-1-2-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 2,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5787,
+          "endMs": 6010,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5966,
+          "endMs": 6146,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5699.0999999940395,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5743.5,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5874.399999976158,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-1-2-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5670,
+          "endMs": 5895,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5850,
+          "endMs": 6029,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5584,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5629.5999999940395,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5760.0999999940395,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-1-2-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 1,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5670,
+          "endMs": 5892,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5849,
+          "endMs": 6029,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5582.200000017881,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5625.5,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5760.700000017881,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-1-2-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 2,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5670,
+          "endMs": 5902,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5856,
+          "endMs": 6036,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5585.0999999940395,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5632.399999976158,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5760.899999976158,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-2-1-A-warmup/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5760,
+          "endMs": 6048,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5941,
+          "endMs": 6089,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5608.0999999940395,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5667.300000011921,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5844.199999988079,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-2-1-A-warmup/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5669,
+          "endMs": 5901,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5856,
+          "endMs": 6037,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5587.399999976158,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5633.799999982119,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5762.0999999940395,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-2-1-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5759,
+          "endMs": 6051,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5940,
+          "endMs": 6096,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5608.699999988079,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5684.0999999940395,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5844.699999988079,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-2-1-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 1,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5683,
+          "endMs": 5916,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5871,
+          "endMs": 6051,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5595.899999976158,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5645.899999976158,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5777.899999976158,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-2-1-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 2,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5668,
+          "endMs": 5899,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5856,
+          "endMs": 6036,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5588.799999982119,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5634,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5760.5999999940395,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-2-1-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5721,
+          "endMs": 5938,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5886,
+          "endMs": 6066,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5606.9000000059605,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5663.5,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5805.299999982119,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-2-1-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 1,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5842,
+          "endMs": 6094,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 6021,
+          "endMs": 6199,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5744.5999999940395,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5793.699999988079,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5930.5999999940395,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-2-1-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 2,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5753,
+          "endMs": 6036,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5911,
+          "endMs": 6067,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5587.4000000059605,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5638.4000000059605,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5822,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-2-2-B-warmup/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5683,
+          "endMs": 5923,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5863,
+          "endMs": 6052,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5600.300000011921,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5649.700000017881,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5768.200000017881,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-2-2-B-warmup/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5730,
+          "endMs": 5976,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5901,
+          "endMs": 6080,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5625.5,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5677.5999999940395,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5823.800000011921,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-2-2-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5668,
+          "endMs": 5899,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5856,
+          "endMs": 6036,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5589,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5635.899999976158,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5760.0999999940395,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-2-2-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 1,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5670,
+          "endMs": 5897,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5850,
+          "endMs": 6029,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5583.9000000059605,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5627.5999999940395,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5759.5,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-2-2-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 2,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5669,
+          "endMs": 5899,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5855,
+          "endMs": 6035,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5584.9000000059605,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5630.300000011921,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5760.0999999940395,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-2-2-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 6128,
+          "endMs": 6392,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 6361,
+          "endMs": 6564,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 6041.699999988079,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 6091.9000000059605,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 6216.4000000059605,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-2-2-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 1,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5685,
+          "endMs": 5915,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5864,
+          "endMs": 6051,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5599.799999982119,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5649.5,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5768.5999999940395,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-1000-pair-2-2-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 2,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5692,
+          "endMs": 5977,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5866,
+          "endMs": 6051,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5588.5,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5640.0999999940395,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5777.4000000059605,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-1-1-B-warmup/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5722,
+          "endMs": 6005,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5868,
+          "endMs": 6089,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5584.5999999940395,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5630.300000011921,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5765.800000011921,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-1-1-B-warmup/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5683,
+          "endMs": 5991,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5872,
+          "endMs": 6065,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5601.5999999940395,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5645.5,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5775.4000000059605,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-1-1-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 6235,
+          "endMs": 6750,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 6510,
+          "endMs": 6801,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5679.5,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5759.699999988079,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5991.199999988079,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-1-1-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 1,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5745,
+          "endMs": 6075,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5919,
+          "endMs": 6133,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5615.5999999940395,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5684.199999988079,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5828.4000000059605,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-1-1-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 2,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5677,
+          "endMs": 5976,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5872,
+          "endMs": 6082,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5589.5,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5638.699999988079,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5768,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-1-1-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5880,
+          "endMs": 6619,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 6128,
+          "endMs": 6562,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5640.600000023842,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5731.600000023842,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5951,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-1-1-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 1,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5993,
+          "endMs": 6712,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 6114,
+          "endMs": 6824,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5611.5,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5680.299999982119,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5903.299999982119,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-1-1-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 2,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5676,
+          "endMs": 6021,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5873,
+          "endMs": 6147,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5589.5,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5638.5,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5767.5999999940395,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-1-2-A-warmup/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5708,
+          "endMs": 6006,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5879,
+          "endMs": 6044,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5589.0999999940395,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5638.699999988079,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5790.699999988079,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-1-2-A-warmup/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5730,
+          "endMs": 6029,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5920,
+          "endMs": 6119,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5599.800000011921,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5663.300000011921,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5816.100000023842,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-1-2-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5669,
+          "endMs": 5984,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5868,
+          "endMs": 6089,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5588,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5639.799999982119,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5761.299999982119,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-1-2-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 1,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5676,
+          "endMs": 5916,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5863,
+          "endMs": 6096,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5594.4000000059605,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5647.800000011921,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5768.699999988079,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-1-2-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 2,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5684,
+          "endMs": 5920,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5871,
+          "endMs": 6050,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5600.800000011921,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5653.5999999940395,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5775.5,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-1-2-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5678,
+          "endMs": 6007,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5898,
+          "endMs": 6052,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5591.9000000059605,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5648.5999999940395,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5784.200000017881,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-1-2-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 1,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5684,
+          "endMs": 5940,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5864,
+          "endMs": 6053,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5598,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5650.9000000059605,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5770.4000000059605,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-1-2-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 2,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5684,
+          "endMs": 5999,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5873,
+          "endMs": 6096,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5597.5,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5644.5,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5768.299999982119,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-2-1-A-warmup/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5691,
+          "endMs": 5977,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5870,
+          "endMs": 6051,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5595.0999999940395,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5645.4000000059605,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5784.299999982119,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-2-1-A-warmup/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5699,
+          "endMs": 6015,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5910,
+          "endMs": 6059,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5605.199999988079,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5658.9000000059605,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5792.5999999940395,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-2-1-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5707,
+          "endMs": 6082,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5894,
+          "endMs": 6089,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5599.699999988079,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5648.4000000059605,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5792.5999999940395,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-2-1-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 1,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5894,
+          "endMs": 6532,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 6116,
+          "endMs": 6398,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5671.700000017881,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5761.600000023842,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5963.600000023842,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-2-1-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 2,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5684,
+          "endMs": 6287,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5880,
+          "endMs": 6157,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5589.800000011921,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5646.9000000059605,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5769,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-2-1-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5700,
+          "endMs": 6021,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5896,
+          "endMs": 6134,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5615.199999988079,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5667.9000000059605,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5806.5999999940395,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-2-1-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 1,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5685,
+          "endMs": 5983,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5872,
+          "endMs": 6073,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5597,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5641.4000000059605,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5768,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-2-1-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 2,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5670,
+          "endMs": 5992,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5858,
+          "endMs": 6028,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5582.5999999940395,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5625.800000011921,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5753.0999999940395,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-2-2-B-warmup/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5693,
+          "endMs": 6142,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5939,
+          "endMs": 6194,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5583.5,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5632.200000017881,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5777.4000000059605,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-2-2-B-warmup/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5669,
+          "endMs": 5968,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5865,
+          "endMs": 6036,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5584.199999988079,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5636.699999988079,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5760.199999988079,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-2-2-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5685,
+          "endMs": 6000,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5874,
+          "endMs": 6074,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5599,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5642.200000017881,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5767.300000011921,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-2-2-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 1,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5692,
+          "endMs": 6007,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5867,
+          "endMs": 6088,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5584.300000011921,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5635.200000017881,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5777,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-2-2-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 2,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5669,
+          "endMs": 5964,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5855,
+          "endMs": 6059,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5585.199999988079,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5632,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5760.199999988079,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-2-2-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5669,
+          "endMs": 5963,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5857,
+          "endMs": 6058,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5586.199999988079,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5633.799999982119,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5760.5,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-2-2-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 1,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5669,
+          "endMs": 6007,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5855,
+          "endMs": 6141,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5583.700000017881,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5627.200000017881,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5760.300000011921,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "size-5000-pair-2-2-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 2,
+      "reads": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5745,
+          "endMs": 6156,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        },
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "startMs": 5916,
+          "endMs": 6254,
+          "status": 200,
+          "failed": false,
+          "pending": false
+        }
+      ],
+      "authorityEvents": [
+        {
+          "atMs": 5596.9000000059605,
+          "kind": "auth",
+          "causes": [
+            "signed_in"
+          ]
+        },
+        {
+          "atMs": 5659.199999988079,
+          "kind": "selected",
+          "causes": [
+            "mount"
+          ]
+        },
+        {
+          "atMs": 5833,
+          "kind": "selected",
+          "causes": [
+            "readAuthority"
+          ]
+        }
+      ]
+    }
+  ],
+  "flags": [
+    {
+      "file": "size-1000-pair-1-1-B-warmup/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "warmup",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-1-B-warmup/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "warmup",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-1-B-warmup/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-1-B-warmup/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-1-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-1-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-1-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-1-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-1-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-1-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-1-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-1-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-1-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-1-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-1-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-1-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-2-A-warmup/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "warmup",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-2-A-warmup/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "warmup",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-2-A-warmup/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-2-A-warmup/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-2-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-2-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-2-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-2-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-2-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-2-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-2-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-2-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-2-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-2-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-2-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-1-2-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-1-A-warmup/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "warmup",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-1-A-warmup/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "warmup",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-1-A-warmup/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-1-A-warmup/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-1-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-1-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-1-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-1-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-1-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-1-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-1-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-1-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-1-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-1-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-1-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-1-A-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-2-B-warmup/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "warmup",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-2-B-warmup/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "warmup",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-2-B-warmup/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-2-B-warmup/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-2-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-2-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-2-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-2-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-2-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-2-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-2-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-2-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-2-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-2-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-2-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-1000-pair-2-2-B-measure/browser-samples.json",
+      "size": 1000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-1-B-warmup/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "warmup",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-1-B-warmup/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "warmup",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-1-B-warmup/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-1-B-warmup/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-1-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-1-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-1-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-1-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-1-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-1-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-1-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-1-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-1-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-1-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-1-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-1-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-2-A-warmup/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "warmup",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-2-A-warmup/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "warmup",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-2-A-warmup/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-2-A-warmup/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-2-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-2-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-2-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-2-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-2-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-2-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-2-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-2-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-2-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-2-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-2-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-1-2-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-1-A-warmup/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "warmup",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-1-A-warmup/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "warmup",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-1-A-warmup/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-1-A-warmup/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-1-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-1-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-1-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-1-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-1-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-1-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-1-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-1-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-1-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-1-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-1-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-1-A-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "A",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-2-B-warmup/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "warmup",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-2-B-warmup/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "warmup",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-2-B-warmup/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-2-B-warmup/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "warmup",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-2-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-2-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-2-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-2-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-2-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-2-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-2-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-2-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-2-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-2-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-2-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 1,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    },
+    {
+      "file": "size-5000-pair-2-2-B-measure/browser-samples.json",
+      "size": 5000,
+      "variant": "B",
+      "phase": "measure",
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "index": 2,
+      "stage": "source",
+      "route": "/api/communications/stream",
+      "type": "eventsource",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "pending": true,
+      "failureReason": null,
+      "encodedBodyBytes": null
+    }
+  ]
+}

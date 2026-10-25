@@ -1,0 +1,121 @@
+recruitment.pipeline.read.failure {
+  code: 'other',
+  phase: 'applications',
+  elapsedMs: 0,
+  acquisitionMs: 0,
+  transactionMs: 0
+}
+✔ CRM identification-only reader retrieves the exact photo returned by canonical CRM (450.92925ms)
+✔ CRM photo denies unrelated application, foreign club and draft application (261.481666ms)
+✔ CRM photo denies missing identification permission, revoked membership and anonymous rounds (256.905083ms)
+✔ ordinary reviewer photo context still requires explicitly enabled round photo (257.588667ms)
+✔ photo proxy retains unauthenticated denial and owner access (250.423958ms)
+✔ CRM context rejects conflicting scopes and mismatched stored photo paths (413.384917ms)
+✔ CRM photo uses one narrow read, never the pipeline, and denies inactive membership and disabled actor (251.888083ms)
+✔ evaluation capability follows current panel assignment, anonymous review and self-review rules (218.236333ms)
+✔ pipeline failure diagnostics identify the failing phase without serializing private exception content (216.914ms)
+✔ getClubPipeline repeats authorization and masks anonymous/self/foreign rows (211.751541ms)
+✔ getClubPipelineList repeats authorization and masks anonymous/self/foreign rows (213.613625ms)
+✔ getClubPipelinePage repeats authorization and masks anonymous/self/foreign rows (220.532375ms)
+✔ summary database allowlist excludes detail/offer/member content and reads only submitted reviews (226.639625ms)
+✔ page cursors bind the freshly authorized projection and selection reads contain no identities (220.667959ms)
+✖ narrow database summaries match canonical full privacy across viewer, profile and review states (213.257458ms)
+✔ summary scores preserve submission barrier, self exclusion, inactive assignments and historical review visibility (213.770625ms)
+✔ metadata join recognizes the complete guard scope and binds every value without SQL interpolation (0.973458ms)
+✔ unknown, nested, incomplete or changed predicates retain the exact original Prisma scope (0.608667ms)
+✔ one metadata join reconstructs only the original scalar allowlist and preserves a missing profile (0.12825ms)
+✖ bounded summary hydration retains exact canonical privacy, facets, locale ordering, filters and cursor behavior (15.266417ms)
+✔ review and score dependencies retain the complete canonical path, including a zero rating threshold (6.078917ms)
+✔ empty pages avoid relation reads and scope mismatches fail closed (1.202458ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 20
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4951.670583
+
+✖ failing tests:
+
+test at tests/crm-photo-authorization.test.cjs:183:1
+✖ narrow database summaries match canonical full privacy across viewer, profile and review states (213.257458ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+
+    [
+      {
+        evaluations: [],
+        id: '123e4567-e89b-12d3-a456-000000000004',
+        roundId: '123e4567-e89b-12d3-a456-000000000005',
+  ...
+            academicYear: 'Third Year',
+  +         actScore: null,
+  -         actScore: undefined,
+            firstName: 'Student',
+            gpa: null,
+            lastName: 'Fixture',
+            major: 'Math',
+  +         satScore: null
+  -         satScore: undefined
+          }
+        },
+        studentId: '123e4567-e89b-12d3-a456-000000000001'
+      }
+    ]
+
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/crm-photo-authorization.test.cjs:194:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ { id: '123e4567-e89b-12d3-a456-000000000004', roundId: '123e4567-e89b-12d3-a456-000000000005', status: 'SUBMITTED', studentId: '123e4567-e89b-12d3-a456-000000000001', student: [Object], evaluations: [], roundScore: null } ],
+    expected: [ { id: '123e4567-e89b-12d3-a456-000000000004', roundId: '123e4567-e89b-12d3-a456-000000000005', status: 'SUBMITTED', studentId: '123e4567-e89b-12d3-a456-000000000001', student: [Object], evaluations: [], roundScore: null } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/pipeline-page-read.test.cjs:11:1
+✖ bounded summary hydration retains exact canonical privacy, facets, locale ordering, filters and cursor behavior (15.266417ms)
+  AssertionError [ERR_ASSERTION]: Values have same structure but are not reference-equal:
+
+  {
+    id: true,
+    round: {
+      select: {
+        anonymousReview: true
+      }
+    },
+    roundId: true,
+    status: true,
+    student: {
+      select: {
+        email: true,
+        studentProfile: {
+          select: {
+            actScore: true,
+            firstName: true,
+            gpa: true,
+            gradYear: true,
+            lastName: true,
+            major: true,
+            satScore: true,
+            transferStudent: true
+          }
+        }
+      }
+    },
+    studentId: true
+  }
+
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/pipeline-page-read.test.cjs:13:150)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { id: true, roundId: true, status: true, studentId: true, round: { select: [Object] }, student: { select: [Object] } },
+    expected: { id: true, roundId: true, status: true, studentId: true, round: { select: [Object] }, student: { select: [Object] } },
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

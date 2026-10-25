@@ -1,0 +1,93 @@
+{
+  "interpretation": "Maximum planned measured interaction per group retained, without replacement or a causal host diagnosis.",
+  "peaks": [
+    {
+      "file": "size-1000-pair-1-1-B-interactions.json",
+      "size": 1000,
+      "kind": "next-page",
+      "variant": "B",
+      "index": 2,
+      "meaningfulMs": 201.39999997615814,
+      "readTtfbMs": 159.102,
+      "serverTiming": "identity;dur=63.83, database;dur=75.71, live_session;dur=1.12, transaction_acquire;dur=0.85, transaction;dur=83.39, compression;dur=0.31, serialization;dur=0.71, total;dur=152.53",
+      "encodedBodyBytes": 7923
+    },
+    {
+      "file": "size-1000-pair-2-1-A-interactions.json",
+      "size": 1000,
+      "kind": "next-page",
+      "variant": "A",
+      "index": 4,
+      "meaningfulMs": 237,
+      "readTtfbMs": 197.141,
+      "serverTiming": "identity;dur=130.15, database;dur=49.78, live_session;dur=3.02, transaction_acquire;dur=1.28, transaction;dur=48.02, compression;dur=0.33, serialization;dur=0.80, total;dur=190.43",
+      "encodedBodyBytes": 7923
+    },
+    {
+      "file": "size-1000-pair-1-1-B-interactions.json",
+      "size": 1000,
+      "kind": "distant-search",
+      "variant": "B",
+      "index": 1,
+      "meaningfulMs": 303.69999998807907,
+      "readTtfbMs": 276.448,
+      "serverTiming": "identity;dur=174.24, database;dur=82.92, live_session;dur=10.70, transaction_acquire;dur=1.44, transaction;dur=60.55, compression;dur=0.19, serialization;dur=0.31, total;dur=266.70",
+      "encodedBodyBytes": 762
+    },
+    {
+      "file": "size-1000-pair-2-1-A-interactions.json",
+      "size": 1000,
+      "kind": "distant-search",
+      "variant": "A",
+      "index": 1,
+      "meaningfulMs": 144.09999999403954,
+      "readTtfbMs": 114.335,
+      "serverTiming": "identity;dur=95.45, database;dur=11.78, live_session;dur=2.21, transaction_acquire;dur=0.45, transaction;dur=11.38, compression;dur=0.13, serialization;dur=0.23, total;dur=111.22",
+      "encodedBodyBytes": 762
+    },
+    {
+      "file": "size-5000-pair-1-1-B-interactions.json",
+      "size": 5000,
+      "kind": "next-page",
+      "variant": "B",
+      "index": 4,
+      "meaningfulMs": 394.09999999403954,
+      "readTtfbMs": 359.02,
+      "serverTiming": "identity;dur=108.94, database;dur=208.51, live_session;dur=2.87, transaction_acquire;dur=1.34, transaction;dur=236.41, compression;dur=0.23, serialization;dur=0.50, total;dur=353.46",
+      "encodedBodyBytes": 7921
+    },
+    {
+      "file": "size-5000-pair-2-1-A-interactions.json",
+      "size": 5000,
+      "kind": "next-page",
+      "variant": "A",
+      "index": 1,
+      "meaningfulMs": 285.30000001192093,
+      "readTtfbMs": 255.234,
+      "serverTiming": "identity;dur=30.62, database;dur=200.14, live_session;dur=0.62, transaction_acquire;dur=0.46, transaction;dur=216.41, compression;dur=2.51, serialization;dur=2.93, total;dur=252.20",
+      "encodedBodyBytes": 7921
+    },
+    {
+      "file": "size-5000-pair-1-1-B-interactions.json",
+      "size": 5000,
+      "kind": "distant-search",
+      "variant": "B",
+      "index": 3,
+      "meaningfulMs": 260.40000000596046,
+      "readTtfbMs": 225.17,
+      "serverTiming": "identity;dur=25.88, database;dur=175.19, live_session;dur=0.52, transaction_acquire;dur=0.40, transaction;dur=194.97, compression;dur=0.13, serialization;dur=0.24, total;dur=222.99",
+      "encodedBodyBytes": 759
+    },
+    {
+      "file": "size-5000-pair-2-1-A-interactions.json",
+      "size": 5000,
+      "kind": "distant-search",
+      "variant": "A",
+      "index": 3,
+      "meaningfulMs": 94.30000001192093,
+      "readTtfbMs": 58.129,
+      "serverTiming": "identity;dur=28.87, database;dur=19.90, live_session;dur=0.46, transaction_acquire;dur=0.43, transaction;dur=25.34, compression;dur=0.09, serialization;dur=0.18, total;dur=56.16",
+      "encodedBodyBytes": 759
+    }
+  ]
+}

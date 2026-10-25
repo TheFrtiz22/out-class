@@ -1,0 +1,23 @@
+{
+  "base": "febb9cfd40b29d8e175a8d7c0c10fc6245f57dbe",
+  "files": [
+    "lib/pipeline-metadata-read.ts",
+    "lib/pipeline-page-read.ts",
+    "scripts/navigation-loader-audit.cjs",
+    "scripts/navigation-phase9-concurrency.cjs",
+    "scripts/navigation-phase9-constrained-interactions.cjs",
+    "scripts/navigation-phase9-interactions.cjs",
+    "scripts/navigation-phase9-local.cjs",
+    "scripts/navigation-phase9-study.cjs",
+    "scripts/navigation-phase9-supplement.cjs",
+    "scripts/summarize-navigation-phase9.cjs",
+    "tests/crm-photo-authorization.test.cjs",
+    "tests/navigation-phase8-e2e.test.cjs",
+    "tests/navigation-phase9-e2e.test.cjs",
+    "tests/pipeline-metadata-read.test.cjs",
+    "tests/pipeline-page-read.test.cjs"
+  ],
+  "sha256": "a1a8a020be86e976937366bc439928f8157487407c10c6c940432fd5eb093575",
+  "scope": "Two application files, benchmark collectors and regression tests; evidence/report separate.",
+  "format": "Unified diff; empty context-line space normalized; reverse application checked against current implementation."
+}
