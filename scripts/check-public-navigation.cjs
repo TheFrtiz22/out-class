@@ -104,6 +104,33 @@ async function check() {
     }
     assert.deepEqual(errors, [])
     console.log('PASS public destinations and unchanged login/signup routes; no browser errors')
+
+    // The merged perspective control stays in the tablet header while its
+    // shared glass material grows around the disclosure underneath it.
+    for (const [width, height] of [[768, 1024], [1024, 768], [1099, 800]]) {
+      await page.setViewportSize({ width, height })
+      await page.goto(baseURL, { waitUntil: 'networkidle' })
+      await page.evaluate(() => {
+        const sentinel = document.querySelector('.oc-journey-handoff-sentinel')
+        scrollTo({ top: sentinel.getBoundingClientRect().top + scrollY, behavior: 'instant' })
+      })
+      await page.waitForFunction(() => document.querySelector('.oc-public-nav').dataset.journey === 'true')
+      await page.waitForTimeout(450)
+      const perspective = page.locator('.oc-public-journey-desktop')
+      const before = await perspective.boundingBox()
+      await page.locator('.oc-public-menu-toggle').click()
+      await page.waitForTimeout(450)
+      assert.deepEqual(await perspective.boundingBox(), before, `${width}px: merged perspective stays anchored while the drawer opens`)
+      assert.equal(await perspective.evaluate(el => {
+        const control = el.getBoundingClientRect(), row = el.closest('.oc-public-nav-row').getBoundingClientRect()
+        return control.top >= row.top && control.bottom <= row.bottom
+      }), true, `${width}px: perspective stays inside the header row`)
+      await page.keyboard.press('Escape')
+      await page.waitForTimeout(450)
+      assert.deepEqual(await perspective.boundingBox(), before, `${width}px: closing the drawer preserves the perspective position`)
+    }
+    assert.deepEqual(errors, [])
+    console.log('PASS tablet merged perspective stays in its header row through disclosure opening and dismissal')
   } finally { await browser.close() }
 }
 check().catch(error => { console.error(error); process.exitCode = 1 })

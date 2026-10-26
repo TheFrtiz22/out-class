@@ -20,6 +20,9 @@ test('browser: expanding dock, shared motion, safe flyouts, permissions, keyboar
   await page.goto(route(),{waitUntil:'networkidle'});await expanded(false)
   assert.equal(await dock.evaluate(el=>el.getBoundingClientRect().width),80)
   const brand=dock.getByRole('button',{name:'OutClass home',exact:true})
+  const orangeC=brand.locator('.oc-dock-letter-c')
+  assert.equal(await orangeC.evaluate(el=>getComputedStyle(el).fill),'rgb(242, 101, 34)')
+  await orangeC.evaluate(el=>el.dataset.mountProbe='retained')
   assert.equal(await brand.locator('img,rect,text').count(),0,'transparent vector letters replace the boxed icon and duplicate text')
   assert.equal(await brand.locator('svg').count(),1)
   assert.equal(await brand.locator('.oc-dock-letter-out').evaluate(el=>getComputedStyle(el).opacity),'0')
@@ -32,6 +35,8 @@ test('browser: expanding dock, shared motion, safe flyouts, permissions, keyboar
   assert.equal(await dock.evaluate(el=>el.getBoundingClientRect().width),272)
   assert.equal(await brand.locator('.oc-dock-letter-out').evaluate(el=>getComputedStyle(el).opacity),'1')
   assert.equal(await brand.locator('.oc-dock-letter-c').evaluate(el=>new DOMMatrix(getComputedStyle(el).transform).e),0,'the same C unlinks into its wordmark position')
+  assert.equal(await orangeC.getAttribute('data-mount-probe'),'retained')
+  assert.equal(await orangeC.evaluate(el=>getComputedStyle(el).fill),'rgb(242, 101, 34)','orange C stays correct after expansion')
   assert.deepEqual(await mainBounds(),stableBounds)
   assert.equal(await page.locator('main').getAttribute('data-mount-probe'),'retained')
   assert.equal(requests.length,initialRequests,'expansion and hover make zero additional network requests')
@@ -40,7 +45,7 @@ test('browser: expanding dock, shared motion, safe flyouts, permissions, keyboar
   assert.ok(scales[1]>1.12&&scales[1]<=1.2);assert.ok(scales[0]>1&&scales[0]<scales[1]);assert.ok(scales[2]>1&&scales[2]<scales[1])
   assert.equal(await dock.locator('.oc-dock-hover-highlight').count(),1)
   const beforeHighlight=await dock.locator('.oc-dock-hover-highlight').boundingBox()
-  assert.equal(await flyout().evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(20, 45, 69)')
+  assert.equal(await flyout().evaluate(el=>getComputedStyle(el).backgroundColor),'rgba(17, 39, 61, 0.97)')
   assert.equal(await flyout().getByRole('link').count(),4)
   await capture('after-expanded-flyout')
   // A slow traverse through the physical gap exercises the actual hover bridge.
@@ -136,6 +141,11 @@ test('browser: expanding dock, shared motion, safe flyouts, permissions, keyboar
   assert.equal(await dock.evaluate(el=>getComputedStyle(el).transitionDuration),'0s')
   assert.equal(await applicants.locator('.oc-dock-icon').evaluate(el=>getComputedStyle(el).transform),'none')
   assert.equal(await flyout().evaluate(el=>getComputedStyle(el).animationName),'none')
+  await page.emulateMedia({contrast:'more'})
+  assert.equal(await dock.locator('.oc-dock-rail').evaluate(el=>getComputedStyle(el).backdropFilter),'none')
+  assert.equal(await dock.locator('.oc-dock-rail').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(20, 45, 69)')
+  assert.equal(await flyout().evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(20, 45, 69)')
+  await page.emulateMedia({contrast:'no-preference'})
   let axe=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','best-practice']).analyze()
   assert.deepEqual(axe.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)})),[])
   await page.emulateMedia({forcedColors:'active'});await expect(applicants).toBeVisible();assert.notEqual(await dock.getByRole('link',{name:'Overview',exact:true}).evaluate(el=>getComputedStyle(el, '::before').backgroundColor),'rgba(0, 0, 0, 0)')
@@ -153,6 +163,20 @@ test('browser: expanding dock, shared motion, safe flyouts, permissions, keyboar
    await page.keyboard.press('Escape');await drawer.waitFor({state:'hidden'})
   }
   const touchContext=await browser.newContext({hasTouch:true,viewport:{width:1280,height:900}}),touch=await touchContext.newPage();await touch.goto(route(),{waitUntil:'networkidle'});await touch.getByRole('button',{name:'Applicants',exact:true}).tap();await expect(touch.locator('aside.oc-expanding-dock')).toHaveAttribute('data-dock-expanded','true');await touch.getByRole('dialog',{name:'Applicants navigation'}).getByRole('link',{name:'Rejected Applicants',exact:true}).tap();await touch.waitForURL('**tool=rejected');await touchContext.close();
+  // Exercise the solid default by making only the blur enhancement guard false.
+  const fallbackContext=await browser.newContext({viewport:{width:1440,height:900}})
+  await fallbackContext.route('**/styles.css',async route=>{
+   const response=await route.fetch(),css=await response.text()
+   const guard='@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)))'
+   assert.ok(css.includes(guard))
+   await route.fulfill({response,body:css.replace(guard,'@supports (outclass-glass: unsupported)')})
+  })
+  const fallback=await fallbackContext.newPage();await fallback.goto(route(),{waitUntil:'networkidle'})
+  assert.equal(await fallback.locator('.oc-dock-rail').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(20, 45, 69)')
+  assert.equal(await fallback.locator('.oc-dock-rail').evaluate(el=>getComputedStyle(el).backdropFilter),'none')
+  await fallback.getByRole('button',{name:'Applicants',exact:true}).focus();await fallback.keyboard.press('ArrowRight')
+  await expect(fallback.getByRole('dialog',{name:'Applicants navigation'}).getByRole('link').first()).toBeFocused()
+  await fallbackContext.close()
   assert.deepEqual(errors,[])
  }finally{await browser?.close();await fixture.close()}
 })

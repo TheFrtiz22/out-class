@@ -8,29 +8,32 @@
     height: calc(100dvh - var(--support-banner-height, 0px) - 32px);
     overflow: visible;
     z-index: 30;
-    transition: width 300ms var(--oc-floating-ease);
+    transition: width var(--oc-glass-move) var(--oc-floating-ease);
   }
   [data-product-shell] > div > aside.oc-expanding-dock[data-dock-expanded="true"] { width: 272px; }
   .oc-dock-rail {
+    position: relative;
+    isolation: isolate;
     display: flex;
     flex-direction: column;
     height: 100%;
     min-width: 0;
     overflow: hidden;
     padding: 12px 9px;
-    background: color-mix(in srgb, var(--oc-rail) 97%, transparent);
+    background: var(--oc-glass-navy-material);
     color: var(--oc-rail-text);
-    border: 1px solid rgb(255 255 255 / 14%);
-    border-radius: 22px;
-    box-shadow: 0 10px 30px rgb(20 45 69 / 14%), inset 0 1px 0 rgb(255 255 255 / 10%);
-    -webkit-backdrop-filter: blur(16px);
-    backdrop-filter: blur(16px);
+    border: 1px solid var(--oc-glass-navy-edge);
+    border-radius: 28px;
+    box-shadow: var(--oc-glass-navy-depth);
+    -webkit-backdrop-filter: var(--oc-glass-navy-filter);
+    backdrop-filter: var(--oc-glass-navy-filter);
   }
+  .oc-dock-rail::after { content: ""; position: absolute; inset: 1px; border: 1px solid rgb(220 238 255 / 7%); border-top-color: rgb(220 238 255 / 17%); border-bottom-color: rgb(4 15 29 / 24%); border-radius: 26px; pointer-events: none; }
   .oc-dock-brand { display: flex; align-items: center; min-height: 52px; flex-shrink: 0; margin-bottom: 10px; border-radius: 12px; text-align: left; }
   .oc-dock-brand-art { display: block; width: 220px; height: 52px; flex: 0 0 220px; pointer-events: none; }
   .oc-dock-brand-art svg { display: block; width: 220px; height: 52px; overflow: visible; }
   .oc-dock-brand-art path { fill: #fff9f1; }
-  .oc-dock-brand-art .oc-dock-letter-c { fill: #f26522; transform: translate(-153px,20px); transition: transform 300ms var(--oc-floating-ease); }
+  .oc-dock-brand-art .oc-dock-letter-c { fill: #f26522; transform: translate(-153px,20px); transition: transform var(--oc-glass-move) var(--oc-floating-ease); }
   .oc-dock-letter-out, .oc-dock-letter-class { opacity: 0; transform: translateX(-12px); transition: opacity 120ms ease, transform 260ms var(--oc-floating-ease); }
   .oc-dock-brand-art .oc-dock-letter-class { fill: #f26522; }
   [data-dock-expanded="true"] .oc-dock-letter-c { transform: translate(0,0); }
@@ -51,14 +54,14 @@
   .oc-dock-rail nav :is(a,button):is(:hover,[aria-current="page"],[data-active="true"]) { color: var(--oc-rail-text); background: transparent; }
   .oc-dock-rail nav :is([aria-current="page"],[data-active="true"])::before { content: ""; position: absolute; left: 0; top: 16px; bottom: 16px; width: 3px; border-radius: 3px; background: var(--brand-orange); }
   .oc-dock-rail nav [aria-current="page"]::after { display: none; }
-  .oc-dock-icon { display: grid; place-items: center; width: 60px; flex: 0 0 60px; transform: scale(1); transform-origin: center; transition: transform 280ms var(--oc-floating-ease); }
+  .oc-dock-icon { display: grid; place-items: center; width: 60px; flex: 0 0 60px; transform: scale(1); transform-origin: center; transition: transform 240ms var(--oc-floating-ease); }
   .oc-dock-icon > :is(svg,[data-slot="avatar"]) { width: 22px; height: 22px; }
   .oc-dock-rail nav :is([aria-current="page"],[data-active="true"]) .oc-dock-icon > svg { color: var(--brand-orange); }
   .oc-dock-item-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .oc-dock-preview { margin-inline: auto 10px; }
   .oc-dock-chevron { margin-left: auto; margin-right: 14px; flex-shrink: 0; transition: transform 220ms var(--oc-floating-ease); }
   .oc-dock-group-trigger[aria-expanded="true"] .oc-dock-chevron { transform: translateX(3px); color: var(--oc-rail-text); }
-  .oc-dock-hover-highlight { position: absolute; z-index: -1; inset: 0 0 auto; height: 48px; opacity: 0; border-radius: 13px; background: var(--oc-rail-selected); pointer-events: none; transform: translateY(var(--dock-hover-y, 0px)); transition: transform 300ms var(--oc-floating-ease), height 240ms var(--oc-floating-ease), opacity 140ms ease; }
+  .oc-dock-hover-highlight { position: absolute; z-index: -1; inset: 0 0 auto; height: 48px; opacity: 0; border: 1px solid rgb(219 237 255 / 14%); border-radius: 13px; background: linear-gradient(135deg, rgb(212 232 252 / 14%), rgb(154 191 225 / 5%)); box-shadow: inset 0 1px 0 rgb(232 243 255 / 12%), 0 2px 5px rgb(4 16 30 / 10%); pointer-events: none; transform: translateY(var(--dock-hover-y, 0px)); transition: transform var(--oc-glass-move) var(--oc-floating-ease), height 240ms var(--oc-floating-ease), opacity var(--oc-glass-quick) ease; }
   .oc-dock-section-heading, .oc-dock-rail .oc-dock-item-label, .oc-dock-preview, .oc-dock-chevron {
     opacity: 0; transform: translateX(-7px); transition: opacity 160ms ease, transform 260ms var(--oc-floating-ease);
   }
@@ -68,6 +71,7 @@
   @media (hover: hover) and (pointer: fine) {
     .oc-dock-rail [data-magnify="current"] .oc-dock-icon { transform: scale(1.17); }
     .oc-dock-rail [data-magnify="neighbor"] .oc-dock-icon { transform: scale(1.065); }
+    .oc-dock-rail [data-magnify="outer"] .oc-dock-icon { transform: scale(1.02); }
   }
   @supports (transition-timing-function: linear(0, 1)) {
     [data-product-shell] > div > aside.oc-expanding-dock, .oc-dock-hover-highlight, .oc-dock-icon { transition-timing-function: var(--oc-floating-spring); }
@@ -76,9 +80,10 @@
 /* Portaled above the header, below dialogs. No dependency on a scroll container or shell ancestry. */
 .oc-dock-flyout {
   z-index: 45; width: 256px; max-width: calc(100vw - 24px); max-height: var(--radix-popover-content-available-height);
-  overflow: visible; padding: 8px; color: var(--oc-rail-text); background: var(--oc-rail); border: 1px solid rgb(255 255 255 / 16%); border-radius: 18px;
-  box-shadow: 0 10px 30px rgb(20 45 69 / 17%), inset 0 1px 0 rgb(255 255 255 / 7%);
-  animation: oc-dock-flyout-in 160ms cubic-bezier(.22,1,.36,1);
+  overflow: visible; padding: 8px; color: var(--oc-rail-text); background: var(--oc-glass-navy-frosted-material); border: 1px solid var(--oc-glass-navy-edge); border-radius: 20px;
+  box-shadow: var(--oc-glass-navy-depth);
+  -webkit-backdrop-filter: var(--oc-glass-navy-filter); backdrop-filter: var(--oc-glass-navy-filter);
+  animation: oc-dock-flyout-in var(--oc-glass-quick) var(--oc-glass-ease);
 }
 .oc-dock-flyout[data-state="closed"] { animation: none; pointer-events: none; }
 .oc-dock-flyout::before { content: ""; position: absolute; top: -8px; bottom: -8px; left: -22px; width: 24px; }

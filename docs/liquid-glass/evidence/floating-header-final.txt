@@ -1,0 +1,11 @@
+PASS automatic dock expansion, delayed collapse and constant content reservation
+FIXTURE READY http://127.0.0.1:56893
+PASS floating layout and route-derived selection after tab changes and browser back/forward
+PASS one global search, both keyboard shortcuts, authorized record UI, and result navigation
+PASS existing inbox destination and reactive unread/invitation indicator
+PASS portaled account menu while scrolling and preserved header club switching
+PASS search failure remains visible and page navigation remains available
+PASS six permission roles and ten desktop/tablet/mobile widths
+PASS long single-mode labels wrap without crowding mobile utilities
+PASS mobile account menu and existing drawer close correctly on desktop resize
+PASS existing avatar, reduced motion, sign-out redirect, and no browser errors

@@ -36,7 +36,7 @@ if (!suite || process.argv.length !== 3) {
   console.error("Usage: node scripts/run-disposable-postgres.cjs security|events");
   process.exit(2);
 }
-const image = "ghcr.io/supabase/postgres:17.11.0.002@sha256:0450166354dc9c1d25f0322ac8b580774d4fb0184d2b087f6e4fe9499c66cf53";
+const { ensurePostgresImage } = require('../tests/helpers/local-postgres-image.cjs');
 function command(cmd, args, options = {}) {
   const result = spawnSync(cmd, args, {
     encoding: "utf8",
@@ -81,6 +81,7 @@ function cleanup() {
     spawnSync("docker", ["rm", "-f", suite.container], { stdio: "ignore" });
 }
 try {
+  const image = ensurePostgresImage();
   const init = [
     "set -eu",
     "mkdir /tmp/fixturedb",
