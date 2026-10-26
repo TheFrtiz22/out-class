@@ -67,11 +67,19 @@ jobs:
   native-application-transactions:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: read
     steps:
       - uses: actions/checkout@v4
         with:
           # The negative controls load the original deployed transaction paths.
           fetch-depth: 0
+      - name: Authenticate public container pulls
+        env:
+          GHCR_ACTOR: ${{ github.actor }}
+          GHCR_READ_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: printf '%s' "$GHCR_READ_TOKEN" | docker login ghcr.io --username "$GHCR_ACTOR" --password-stdin
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:

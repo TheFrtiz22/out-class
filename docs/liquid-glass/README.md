@@ -50,6 +50,8 @@ Evidence includes 79 navigation regression tests; dock/workspace selector browse
 
 One Chrome diagonal-pointer assertion timed out while the production build and both browser engines ran concurrently. The same final dock suite passed when rerun by itself; its intent delay and pointer bridge were not changed. This timing-sensitive suite should run apart from CPU-heavy build work. Validation logs are retained in `evidence/`.
 
+The native database CI jobs authenticate public container pulls with the built-in, ephemeral `GITHUB_TOKEN`, scoped to `contents: read` and `packages: read` only on those jobs. This follows [GitHub's registry authentication guidance](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry) and avoids relying on anonymous pulls after repeated registry throttling blocked tests before execution. Pinned image digests and test commands are unchanged; no stored secrets or production credentials were added.
+
 The isolated server intentionally has no production auth/database/mail connection. Public build/runtime reads therefore use the application's existing unavailable-data fallback. Real authenticated database integration is outside this visual change; existing authorization code is unchanged.
 
 ### Performance observations

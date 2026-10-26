@@ -32,6 +32,9 @@ jobs:
     name: Native PostgreSQL / ${{ matrix.suite }}
     runs-on: ubuntu-latest
     timeout-minutes: 50
+    permissions:
+      contents: read
+      packages: read
     strategy:
       fail-fast: false
       matrix:
@@ -40,6 +43,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Scheduler baseline compares against a reviewed historical commit.
+      - name: Authenticate public container pulls
+        env:
+          GHCR_ACTOR: ${{ github.actor }}
+          GHCR_READ_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: printf '%s' "$GHCR_READ_TOKEN" | docker login ghcr.io --username "$GHCR_ACTOR" --password-stdin
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
