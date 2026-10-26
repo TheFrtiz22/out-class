@@ -1,0 +1,5 @@
+PASS desktop links, rolling hover, stable metrics, and visible keyboard focus
+PASS ten viewport sizes from 320px to 1440px
+PASS mobile keyboard opening, tab order, Escape, outside dismissal, resizing, and no content shift
+PASS short tablet layout, reduced motion, native fragments, current link, scroll surface, and zero header layout shifts
+PASS public destinations and unchanged login/signup routes; no browser errors

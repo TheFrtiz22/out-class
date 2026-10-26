@@ -27,6 +27,7 @@ function headerHarness({ pathname = '/', hash = '', scrollY = 0 } = {}) {
     'next/link': { __esModule: true, default: 'a' },
     '@/components/outclass-logo': { OutClassLogo: 'Logo' },
     '@/components/ui/button': { Button: 'Button' },
+    '@/components/icons': { Menu: 'Menu', X: 'X' },
     './rolling-navigation-label': { RollingNavigationLabel },
     './perspective-switcher': { PerspectiveSwitcher: 'PerspectiveSwitcher' },
   }, { window, document })

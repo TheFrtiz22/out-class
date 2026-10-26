@@ -1,0 +1,41 @@
+[
+  {
+    "width": 1440,
+    "state": "hero",
+    "violations": 0
+  },
+  {
+    "width": 1440,
+    "state": "light",
+    "violations": 0
+  },
+  {
+    "width": 1440,
+    "state": "dark",
+    "violations": 0
+  },
+  {
+    "width": 390,
+    "state": "hero",
+    "violations": 0
+  },
+  {
+    "width": 390,
+    "state": "light",
+    "violations": 0
+  },
+  {
+    "width": 390,
+    "state": "dark",
+    "violations": 0
+  },
+  {
+    "stickyInformationDrawer": "no content shift; Escape restores focus"
+  },
+  {
+    "reducedTransparency": "solid public material, no backdrop filter"
+  },
+  {
+    "reducedTransparency": "solid navy dock, no backdrop filter"
+  }
+]
