@@ -1,0 +1,20 @@
+{
+  "completed": true,
+  "at": "2026-10-26T19:03:33.394464+00:00",
+  "sourceFilesVerified": 913,
+  "applicationChangesThisPhase": 0,
+  "candidateBuildId": "HbO5MM7Mc45LPU0Atg1Z-",
+  "ownedAppStopped": true,
+  "ownedLocalContainersAndVolumesRemoved": true,
+  "unrelatedContainersPresent": 21,
+  "unrelatedContainerStatesUnchanged": true,
+  "unrelatedServiceDifferencesPreserved": [],
+  "originalCheckoutNotModifiedByPhase13": true,
+  "externalCheckoutChangesPreserved": true,
+  "originalObservation": "ORIGINAL_CHECKOUT_OBSERVATION.json",
+  "mainUnchanged": true,
+  "priorInactiveFixtureDirectoryRestored": true,
+  "ownedPrivateCredentialsAndBuildSnapshotsRemoved": true,
+  "powerControl": "Temporary awake assertions only; no persistent settings changes.",
+  "publication": "No push, PR, merge or deployment."
+}

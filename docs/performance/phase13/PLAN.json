@@ -1,0 +1,108 @@
+{
+  "baseline": "327f7de5d8dad3381f0db258956d0b8b6424a6af",
+  "scope": "Controlled confirmation of Phase12 and independent local server-tail diagnosis; application code unchanged from983e7c3. Baseline uses the exact two Phase11 application files. No new application optimization without isolated evidence.",
+  "targets": [],
+  "hypothesis": "Phase12 removes already-obsolete startup reads. Prior warm-list/identity tails may reflect concurrent host work; test on explicitly idle host, then separately correlate local Auth HTTP dispatch, event loop and aggregate DB wait state. No causal claim from phase spans alone.",
+  "constraints": "No successful authorization/data cache, auth-event suppression, unverified identity authority, GET transport/query/policy change, production configuration/schema/index/dependency changes or publication. Phase10 fonts and Phase11 code deferral retained.",
+  "cohorts": [
+    1000,
+    5000
+  ],
+  "profiles": [
+    "local",
+    "80ms latency, 200000 B/s down, 93750 B/s up, CPU4x"
+  ],
+  "blocks": [
+    "BA",
+    "AB"
+  ],
+  "warmupsPerBuildBlockPathCondition": 1,
+  "samplesPerBuildBlockPathCondition": 5,
+  "mainPaths": [
+    "applicants",
+    "applicantDetail"
+  ],
+  "conditions": [
+    "cold",
+    "warm"
+  ],
+  "plannedBrowserOutcomes": 384,
+  "plannedWarmInteractionOutcomes": 192,
+  "plannedNativeHttpOutcomes": 336,
+  "deferredFeatureCost": {
+    "cohort": 1000,
+    "profile": "constrained",
+    "paths": [
+      "overview \u2192 settingsProfile",
+      "overview \u2192 meetings",
+      "recruiting \u2192 scheduledDecisions",
+      "settingsApplication \u2192 rounds"
+    ],
+    "conditions": [
+      "cold",
+      "warm"
+    ],
+    "warmupsPerBuildBlockPathCondition": 1,
+    "samplesPerBuildBlockPathCondition": 3,
+    "plannedOutcomes": 128,
+    "groupN": 6,
+    "p95": "nearest rank maximum",
+    "readiness": "Settings actual public-profile form, fixture meeting data, empty scheduled list after fetch, and anonymous-review controls. Anonymous review uses its existing Settings/Application link; warm return uses browser history. Decisions group/details summary open before timed action."
+  },
+  "pilot": "One excluded candidate live GET verifies loopback instrumentation correlation and private Cookie-sensitive response. Existing readiness collectors unchanged after67 live cases. Preflight setup rejections are retained separately.",
+  "primaryMetric": "Full preceding source document useful-content time plus captured requests/script/body bytes and separate subsequent click timing. No readiness clock change. Bounded drains, incomplete background transport flags, fonts/FCP/CLS retained.",
+  "power": "User-confirmed open lid and idle host. Earlier user authorization permits battery. Record each whole profile initial power source and low-power mode0, require consistency for both variants, temporary awake assertion and actual sleep audit. Zero-outcome AC guard rejection retained separately; no timing rows were removed.",
+  "publication": "No push, PR, merge or deployment. Report causal limits and inherited Settings/review first-use risks.",
+  "phase": "13",
+  "candidate": "983e7c3955f935fa62174e3bfbb008ee93bebade",
+  "hostControl": {
+    "confirmedIdleWindow": true,
+    "existingDevServerPort3111": "Preserved; may stay resident only while idle. Monitor cumulative foreign dev CPU and original checkout state.",
+    "samplingSeconds": 5,
+    "invalidateWholeProfileIf": [
+      "actual sleep/wake interruption",
+      "foreign build/test runner observed during measurement",
+      "foreign Next dev CPU grows more than1 CPU-second in any60-second window",
+      "original checkout HEAD or porcelain status changes",
+      "collector/plan/application/dependency version hashes change",
+      "Recorded initial power source changes within a profile, or low-power mode differs from0"
+    ],
+    "failurePolicy": "Stop or retain whole profile as invalid; never replace individual slow rows. Diagnostics are separate from timing samples.",
+    "baseline": "Each complete profile records the original checkout state immediately before its first sample. Changes during preparation are recorded and preserved; any later change within that profile invalidates it."
+  },
+  "diagnostics": {
+    "applicationChanges": false,
+    "separateFromAcceptedBenchmarks": true,
+    "observables": [
+      "loopback Auth HTTP created/send/headers/end timing with incoming non-sensitive request IDs and existing workspace trace ID",
+      "process-level event-loop delay, event-loop utilization and CPU in overlapping request windows",
+      "bounded1/2/4 authenticated API reads plus25ms aggregate DB states excluding monitor",
+      "read-only metadata EXPLAIN facts, no SQL values or rows exported"
+    ],
+    "limitations": "HTTP send-to-headers is network+provider+scheduling, not isolated provider execution. DB state samples cannot assign exact per-request pool wait. Instrumented probes are excluded from accepted navigation quantiles.",
+    "cases": [
+      {
+        "size": 1000,
+        "variant": "baseline"
+      },
+      {
+        "size": 1000,
+        "variant": "candidate"
+      },
+      {
+        "size": 5000,
+        "variant": "candidate"
+      },
+      {
+        "size": 5000,
+        "variant": "baseline"
+      }
+    ],
+    "plannedOutcomes": {
+      "nativeHttp": 168,
+      "directIdentity": 56,
+      "browser": 16,
+      "readOnlyMetadataPlans": 4
+    }
+  }
+}

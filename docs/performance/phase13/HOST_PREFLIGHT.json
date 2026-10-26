@@ -1,0 +1,61 @@
+{
+  "scope": "5-second read-only samples. Process families and numeric CPU only; command lines, arguments, environment and secrets never exported. Sampling may miss brief external work; idle-host agreement is additional evidence, not proof of exclusive access.",
+  "rootProcessTracked": true,
+  "originalBaseline": {
+    "head": "09f312dc9dedf0084ad0f3f1c2a537856f38bd84",
+    "statusSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "foreignDevCpuRule": "More than1 cumulative CPU-second observed within60 seconds, including worker descendants, invalidates the whole profile.",
+  "valid": true,
+  "violations": [],
+  "samples": [
+    {
+      "at": "2026-10-26T18:12:07.747Z",
+      "phase": "starting",
+      "cpuBusyPercent": 100,
+      "freeMemoryMiB": 216,
+      "powerSource": "AC Power",
+      "batteryPercent": 100,
+      "lowPowerMode": 0,
+      "foreignProcesses": [],
+      "originalHead": "09f312dc9dedf0084ad0f3f1c2a537856f38bd84",
+      "originalStatusSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "at": "2026-10-26T18:12:12.838Z",
+      "phase": "starting",
+      "cpuBusyPercent": 66.006,
+      "freeMemoryMiB": 237,
+      "powerSource": "AC Power",
+      "batteryPercent": 100,
+      "lowPowerMode": 0,
+      "foreignProcesses": [],
+      "originalHead": "09f312dc9dedf0084ad0f3f1c2a537856f38bd84",
+      "originalStatusSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "at": "2026-10-26T18:12:17.840Z",
+      "phase": "starting",
+      "cpuBusyPercent": 55.164,
+      "freeMemoryMiB": 347,
+      "powerSource": "AC Power",
+      "batteryPercent": 100,
+      "lowPowerMode": 0,
+      "foreignProcesses": [],
+      "originalHead": "09f312dc9dedf0084ad0f3f1c2a537856f38bd84",
+      "originalStatusSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "at": "2026-10-26T18:12:18.852Z",
+      "phase": "starting",
+      "cpuBusyPercent": 30.716,
+      "freeMemoryMiB": 414,
+      "powerSource": "AC Power",
+      "batteryPercent": 100,
+      "lowPowerMode": 0,
+      "foreignProcesses": [],
+      "originalHead": "09f312dc9dedf0084ad0f3f1c2a537856f38bd84",
+      "originalStatusSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

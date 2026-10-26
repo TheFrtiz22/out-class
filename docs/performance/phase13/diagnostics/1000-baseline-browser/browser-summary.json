@@ -1,0 +1,215 @@
+{
+  "generatedAt": "2026-10-26T18:57:18.284Z",
+  "sampleCount": 1,
+  "groups": [
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "meaningfulMs": {
+        "samples": 1,
+        "p50": 621.1,
+        "p95": 621.1,
+        "max": 621.1
+      },
+      "interactiveMs": {
+        "samples": 1,
+        "p50": 622.6,
+        "p95": 622.6,
+        "max": 622.6
+      },
+      "clickToUrlMs": {
+        "samples": 1,
+        "p50": 1.8,
+        "p95": 1.8,
+        "max": 1.8
+      },
+      "networkCompleteMs": {
+        "samples": 1,
+        "p50": 476.2,
+        "p95": 476.2,
+        "max": 476.2
+      },
+      "scriptMs": {
+        "samples": 1,
+        "p50": 134.4,
+        "p95": 134.4,
+        "max": 134.4
+      },
+      "taskMs": {
+        "samples": 1,
+        "p50": 426.89,
+        "p95": 426.89,
+        "max": 426.89
+      },
+      "requestCount": {
+        "samples": 1,
+        "p50": 9,
+        "p95": 9,
+        "max": 9
+      },
+      "encodedBodyBytes": {
+        "samples": 1,
+        "p50": 56905,
+        "p95": 56905,
+        "max": 56905
+      }
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "warm",
+      "meaningfulMs": {
+        "samples": 1,
+        "p50": 227.9,
+        "p95": 227.9,
+        "max": 227.9
+      },
+      "interactiveMs": {
+        "samples": 1,
+        "p50": 229.9,
+        "p95": 229.9,
+        "max": 229.9
+      },
+      "clickToUrlMs": {
+        "samples": 1,
+        "p50": 0.8,
+        "p95": 0.8,
+        "max": 0.8
+      },
+      "networkCompleteMs": {
+        "samples": 1,
+        "p50": 141.8,
+        "p95": 141.8,
+        "max": 141.8
+      },
+      "scriptMs": {
+        "samples": 1,
+        "p50": 62.69,
+        "p95": 62.69,
+        "max": 62.69
+      },
+      "taskMs": {
+        "samples": 1,
+        "p50": 213.18,
+        "p95": 213.18,
+        "max": 213.18
+      },
+      "requestCount": {
+        "samples": 1,
+        "p50": 1,
+        "p95": 1,
+        "max": 1
+      },
+      "encodedBodyBytes": {
+        "samples": 1,
+        "p50": 7254,
+        "p95": 7254,
+        "max": 7254
+      }
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "meaningfulMs": {
+        "samples": 1,
+        "p50": 313.5,
+        "p95": 313.5,
+        "max": 313.5
+      },
+      "interactiveMs": {
+        "samples": 1,
+        "p50": 314.8,
+        "p95": 314.8,
+        "max": 314.8
+      },
+      "clickToUrlMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "networkCompleteMs": {
+        "samples": 1,
+        "p50": 509,
+        "p95": 509,
+        "max": 509
+      },
+      "scriptMs": {
+        "samples": 1,
+        "p50": 107.68,
+        "p95": 107.68,
+        "max": 107.68
+      },
+      "taskMs": {
+        "samples": 1,
+        "p50": 391.29,
+        "p95": 391.29,
+        "max": 391.29
+      },
+      "requestCount": {
+        "samples": 1,
+        "p50": 4,
+        "p95": 4,
+        "max": 4
+      },
+      "encodedBodyBytes": {
+        "samples": 1,
+        "p50": 2772,
+        "p95": 2772,
+        "max": 2772
+      }
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "meaningfulMs": {
+        "samples": 1,
+        "p50": 266.7,
+        "p95": 266.7,
+        "max": 266.7
+      },
+      "interactiveMs": {
+        "samples": 1,
+        "p50": 267.6,
+        "p95": 267.6,
+        "max": 267.6
+      },
+      "clickToUrlMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "networkCompleteMs": {
+        "samples": 1,
+        "p50": 379.9,
+        "p95": 379.9,
+        "max": 379.9
+      },
+      "scriptMs": {
+        "samples": 1,
+        "p50": 77.57,
+        "p95": 77.57,
+        "max": 77.57
+      },
+      "taskMs": {
+        "samples": 1,
+        "p50": 340.74,
+        "p95": 340.74,
+        "max": 340.74
+      },
+      "requestCount": {
+        "samples": 1,
+        "p50": 4,
+        "p95": 4,
+        "max": 4
+      },
+      "encodedBodyBytes": {
+        "samples": 1,
+        "p50": 2772,
+        "p95": 2772,
+        "max": 2772
+      }
+    }
+  ],
+  "failures": []
+}

@@ -1,0 +1,7 @@
+{
+  "at": "2026-10-26T17:42:22.406122+00:00",
+  "source": "https://supabase.com/changelog.md",
+  "sha256": "45528009025b8ad8487ccb73f7c769b66d4b0e7aa4560157047899dcb5b5a006",
+  "breakingChangeMentions": 24,
+  "scope": "No SDK/Auth feature or dependency change. Pinned local source and unchanged remote getUser/live-session checks reviewed."
+}

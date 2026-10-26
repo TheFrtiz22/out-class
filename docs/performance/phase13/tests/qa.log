@@ -1,0 +1,5 @@
+seed-qa passed
+scale-qa passed
+unit passed
+migrations passed
+AssertionError: security failed; inspect private log

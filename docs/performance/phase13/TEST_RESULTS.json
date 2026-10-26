@@ -1,0 +1,64 @@
+{
+  "applicationChangesThisPhase": 0,
+  "ordinary": {
+    "total": 1474,
+    "passed": 1411,
+    "failed": 0,
+    "skipped": 63,
+    "cancelled": 0
+  },
+  "live": {
+    "total": 67,
+    "passed": 67,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "nativeSecurityConcurrency": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "provisioning": {
+    "total": 38,
+    "passed": 38,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "finalFocusedDiagnostics": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "migrations": {
+    "freshAndLegacy": 57,
+    "rlsTablesWithBrowserDenial": 78
+  },
+  "productionBuilds": "Both frozen baseline and candidate passed",
+  "typecheck": "passed",
+  "lint": {
+    "errors": 0,
+    "existingWarnings": 22
+  },
+  "newOrdinaryCases": 3,
+  "newLiveCases": 0,
+  "optionalGates": "63 environment-gated ordinary skips; selected live/native suites exercised separately. Counts overlap and must not be added.",
+  "initialNativeGuardRejection": {
+    "total": 3,
+    "passed": 0,
+    "failed": 3,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "developmentHistory": [
+    "Initial native suite received the general disposable URL. Three database-name guards refused before connection/test SQL. Dedicated runner then passes3 cases. No assertions changed.",
+    "Excluded preflight setup issues and final native trace proof are preserved in PREFLIGHT_DEVELOPMENT.json and DIAGNOSTIC_PREFLIGHT.json.",
+    "The zero-outcome startup power rejection remains separate; matched initial power mode was declared before accepted timings.",
+    "Full ordinary suite passed1411 with the initial diagnostic tests; final focused3 and lint reruns verify the refined trace observer and same unchanged application."
+  ]
+}

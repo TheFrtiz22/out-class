@@ -1,0 +1,19 @@
+{
+  "implementationBase": "983e7c3",
+  "applicationChangesThisPhase": 0,
+  "files": [
+    "scripts/navigation-phase13-local.cjs",
+    "scripts/navigation-phase13-study.cjs",
+    "scripts/navigation-phase13-interactions.cjs",
+    "scripts/navigation-phase13-constrained-interactions.cjs",
+    "scripts/navigation-phase13-concurrency.cjs",
+    "scripts/navigation-phase13-host-monitor.cjs",
+    "scripts/navigation-phase13-server-diagnostics.cjs",
+    "scripts/navigation-phase13-diagnose.cjs",
+    "tests/navigation-phase13-diagnostics.test.cjs"
+  ],
+  "sha256": "0bb3e83662c1bfa557d94431c8ff54ab9035413c8488937898b6f09bcae08afa",
+  "reverseApplyCheck": true,
+  "confirmedApplicationComparison": "CONFIRMED_PHASE12_APPLICATION.diff",
+  "confirmedApplicationComparisonSha256": "2f7073b60f3f3584c718b093aaea3ecabc87357174d282488585b3ffc009ee85"
+}

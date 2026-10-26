@@ -1,0 +1,333 @@
+{
+  "buildId": "FJlbO_nyh2c0U6fcP8a90",
+  "size": 5000,
+  "planned": 12,
+  "samples": [
+    {
+      "kind": "next-page",
+      "index": 0,
+      "warmup": true,
+      "condition": "warm",
+      "failed": null,
+      "meaningfulMs": 244.90000000596046,
+      "driverElapsedMs": 334.62979100000007,
+      "requestCount": 1,
+      "encodedBodyBytes": 7969,
+      "pageErrors": [],
+      "requests": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "type": "fetch",
+          "startMs": 5.256591796875,
+          "endMs": 217.738525390625,
+          "status": 200,
+          "failed": false,
+          "encodedBodyBytes": 7969,
+          "ttfbMs": 213.296,
+          "transferMs": 0.3990000000000009,
+          "serverTiming": "identity;dur=45.40, database;dur=146.89, live_session;dur=1.22, transaction_acquire;dur=0.69, transaction;dur=160.17, compression;dur=0.22, serialization;dur=0.69, total;dur=209.61",
+          "traceId": "ab96e6c1-ab08-4773-b0e7-30b96e54d40e"
+        }
+      ]
+    },
+    {
+      "kind": "distant-search",
+      "index": 0,
+      "warmup": true,
+      "condition": "warm",
+      "failed": null,
+      "meaningfulMs": 143.80000001192093,
+      "driverElapsedMs": 168.712,
+      "requestCount": 1,
+      "encodedBodyBytes": 759,
+      "pageErrors": [],
+      "requests": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "type": "fetch",
+          "startMs": 3.7333984375,
+          "endMs": 118.251708984375,
+          "status": 200,
+          "failed": false,
+          "encodedBodyBytes": 759,
+          "ttfbMs": 114.989,
+          "transferMs": 0.340999999999994,
+          "serverTiming": "identity;dur=53.33, database;dur=38.28, live_session;dur=0.76, transaction_acquire;dur=0.76, transaction;dur=56.36, compression;dur=0.18, serialization;dur=0.29, total;dur=112.68",
+          "traceId": "9b3ae678-384d-4d52-9e4a-269e20e5c861"
+        }
+      ]
+    },
+    {
+      "kind": "next-page",
+      "index": 1,
+      "warmup": false,
+      "condition": "warm",
+      "failed": null,
+      "meaningfulMs": 245.90000000596046,
+      "driverElapsedMs": 350.06637500000033,
+      "requestCount": 1,
+      "encodedBodyBytes": 7969,
+      "pageErrors": [],
+      "requests": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "type": "fetch",
+          "startMs": 7.052734375,
+          "endMs": 215.67626953125,
+          "status": 200,
+          "failed": false,
+          "encodedBodyBytes": 7969,
+          "ttfbMs": 210.23,
+          "transferMs": 0.7650000000000148,
+          "serverTiming": "identity;dur=30.18, database;dur=161.25, live_session;dur=0.76, transaction_acquire;dur=0.54, transaction;dur=171.44, compression;dur=0.22, serialization;dur=0.48, total;dur=205.13",
+          "traceId": "56544fc4-b608-41f3-81d8-3e4344daaa45"
+        }
+      ]
+    },
+    {
+      "kind": "distant-search",
+      "index": 1,
+      "warmup": false,
+      "condition": "warm",
+      "failed": null,
+      "meaningfulMs": 109.59999999403954,
+      "driverElapsedMs": 133.66479100000015,
+      "requestCount": 1,
+      "encodedBodyBytes": 759,
+      "pageErrors": [],
+      "requests": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "type": "fetch",
+          "startMs": 8.913818359375,
+          "endMs": 77.87255859375,
+          "status": 200,
+          "failed": false,
+          "encodedBodyBytes": 759,
+          "ttfbMs": 74.276,
+          "transferMs": 0.487000000000009,
+          "serverTiming": "identity;dur=26.80, database;dur=24.73, live_session;dur=0.54, transaction_acquire;dur=0.53, transaction;dur=33.19, compression;dur=0.16, serialization;dur=0.26, total;dur=63.46",
+          "traceId": "bc1d6a83-1387-4af3-b54c-f6ded50cbadc"
+        }
+      ]
+    },
+    {
+      "kind": "next-page",
+      "index": 2,
+      "warmup": false,
+      "condition": "warm",
+      "failed": null,
+      "meaningfulMs": 213.89999997615814,
+      "driverElapsedMs": 301.7270000000003,
+      "requestCount": 1,
+      "encodedBodyBytes": 7969,
+      "pageErrors": [],
+      "requests": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "type": "fetch",
+          "startMs": 5.721435546875,
+          "endMs": 191.153076171875,
+          "status": 200,
+          "failed": false,
+          "encodedBodyBytes": 7969,
+          "ttfbMs": 185.435,
+          "transferMs": 0.4989999999999952,
+          "serverTiming": "identity;dur=22.75, database;dur=146.19, live_session;dur=0.77, transaction_acquire;dur=0.78, transaction;dur=155.89, compression;dur=0.78, serialization;dur=1.63, total;dur=183.19",
+          "traceId": "374e3f48-edf4-41ea-9d4f-e21f27ce0edb"
+        }
+      ]
+    },
+    {
+      "kind": "distant-search",
+      "index": 2,
+      "warmup": false,
+      "condition": "warm",
+      "failed": null,
+      "meaningfulMs": 127.19999998807907,
+      "driverElapsedMs": 155.63666699999976,
+      "requestCount": 1,
+      "encodedBodyBytes": 759,
+      "pageErrors": [],
+      "requests": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "type": "fetch",
+          "startMs": 3.646240234375,
+          "endMs": 101.20166015625,
+          "status": 200,
+          "failed": false,
+          "encodedBodyBytes": 759,
+          "ttfbMs": 98.165,
+          "transferMs": 0.34499999999999886,
+          "serverTiming": "identity;dur=47.16, database;dur=25.89, live_session;dur=0.76, transaction_acquire;dur=0.46, transaction;dur=36.00, compression;dur=0.14, serialization;dur=0.25, total;dur=87.39",
+          "traceId": "63135cdc-2aaa-4bf7-9394-fb706d1f9883"
+        }
+      ]
+    },
+    {
+      "kind": "next-page",
+      "index": 3,
+      "warmup": false,
+      "condition": "warm",
+      "failed": null,
+      "meaningfulMs": 212.90000000596046,
+      "driverElapsedMs": 301.50937500000055,
+      "requestCount": 1,
+      "encodedBodyBytes": 7969,
+      "pageErrors": [],
+      "requests": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "type": "fetch",
+          "startMs": 3.6005859375,
+          "endMs": 182.903564453125,
+          "status": 200,
+          "failed": false,
+          "encodedBodyBytes": 7969,
+          "ttfbMs": 179.454,
+          "transferMs": 0.44899999999998386,
+          "serverTiming": "identity;dur=29.88, database;dur=130.77, live_session;dur=0.68, transaction_acquire;dur=0.70, transaction;dur=141.16, compression;dur=1.66, serialization;dur=1.95, total;dur=176.51",
+          "traceId": "2cad94ed-894b-4345-8bca-59961e5b1625"
+        }
+      ]
+    },
+    {
+      "kind": "distant-search",
+      "index": 3,
+      "warmup": false,
+      "condition": "warm",
+      "failed": null,
+      "meaningfulMs": 110.5,
+      "driverElapsedMs": 133.99316699999963,
+      "requestCount": 1,
+      "encodedBodyBytes": 759,
+      "pageErrors": [],
+      "requests": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "type": "fetch",
+          "startMs": 3.63720703125,
+          "endMs": 78.959716796875,
+          "status": 200,
+          "failed": false,
+          "encodedBodyBytes": 759,
+          "ttfbMs": 75.794,
+          "transferMs": 0.3850000000000051,
+          "serverTiming": "identity;dur=31.50, database;dur=30.80, live_session;dur=0.52, transaction_acquire;dur=0.43, transaction;dur=40.13, compression;dur=0.12, serialization;dur=0.24, total;dur=73.84",
+          "traceId": "1a1aac9e-36d6-4bdc-9b1f-a74224b6bd7d"
+        }
+      ]
+    },
+    {
+      "kind": "next-page",
+      "index": 4,
+      "warmup": false,
+      "condition": "warm",
+      "failed": null,
+      "meaningfulMs": 199.09999999403954,
+      "driverElapsedMs": 284.4726249999994,
+      "requestCount": 1,
+      "encodedBodyBytes": 7969,
+      "pageErrors": [],
+      "requests": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "type": "fetch",
+          "startMs": 3.684814453125,
+          "endMs": 172.389892578125,
+          "status": 200,
+          "failed": false,
+          "encodedBodyBytes": 7969,
+          "ttfbMs": 168.907,
+          "transferMs": 0.3509999999999991,
+          "serverTiming": "identity;dur=33.74, database;dur=119.97, live_session;dur=0.98, transaction_acquire;dur=0.49, transaction;dur=129.67, compression;dur=0.22, serialization;dur=0.49, total;dur=166.70",
+          "traceId": "8f62e701-2dfa-4a64-bc8d-74c6e8844c23"
+        }
+      ]
+    },
+    {
+      "kind": "distant-search",
+      "index": 4,
+      "warmup": false,
+      "condition": "warm",
+      "failed": null,
+      "meaningfulMs": 93.59999999403954,
+      "driverElapsedMs": 117.26683400000002,
+      "requestCount": 1,
+      "encodedBodyBytes": 759,
+      "pageErrors": [],
+      "requests": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "type": "fetch",
+          "startMs": 3.991455078125,
+          "endMs": 62.863037109375,
+          "status": 200,
+          "failed": false,
+          "encodedBodyBytes": 759,
+          "ttfbMs": 59.767,
+          "transferMs": 0.41899999999999693,
+          "serverTiming": "identity;dur=27.19, database;dur=20.57, live_session;dur=0.69, transaction_acquire;dur=0.49, transaction;dur=27.15, compression;dur=0.11, serialization;dur=0.21, total;dur=56.96",
+          "traceId": "f94220ab-187c-496a-8e24-11762436b7b8"
+        }
+      ]
+    },
+    {
+      "kind": "next-page",
+      "index": 5,
+      "warmup": false,
+      "condition": "warm",
+      "failed": null,
+      "meaningfulMs": 179.80000001192093,
+      "driverElapsedMs": 267.55883300000005,
+      "requestCount": 1,
+      "encodedBodyBytes": 7969,
+      "pageErrors": [],
+      "requests": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "type": "fetch",
+          "startMs": 3.34619140625,
+          "endMs": 158.02001953125,
+          "status": 200,
+          "failed": false,
+          "encodedBodyBytes": 7969,
+          "ttfbMs": 154.993,
+          "transferMs": 0.382000000000005,
+          "serverTiming": "identity;dur=26.39, database;dur=116.71, live_session;dur=0.62, transaction_acquire;dur=0.49, transaction;dur=123.86, compression;dur=0.21, serialization;dur=0.43, total;dur=152.92",
+          "traceId": "35e5caae-c2a2-4369-854a-5f7cab81ce5c"
+        }
+      ]
+    },
+    {
+      "kind": "distant-search",
+      "index": 5,
+      "warmup": false,
+      "condition": "warm",
+      "failed": null,
+      "meaningfulMs": 93.90000000596046,
+      "driverElapsedMs": 117.02329199999986,
+      "requestCount": 1,
+      "encodedBodyBytes": 759,
+      "pageErrors": [],
+      "requests": [
+        {
+          "route": "/api/workspace?kind=pipelinePage",
+          "type": "fetch",
+          "startMs": 3.881591796875,
+          "endMs": 61.492919921875,
+          "status": 200,
+          "failed": false,
+          "encodedBodyBytes": 759,
+          "ttfbMs": 58.015,
+          "transferMs": 0.47399999999999665,
+          "serverTiming": "identity;dur=26.80, database;dur=21.29, live_session;dur=0.67, transaction_acquire;dur=0.45, transaction;dur=26.49, compression;dur=0.12, serialization;dur=0.20, total;dur=55.68",
+          "traceId": "1c672ac6-cd73-497a-bb33-89a89e819279"
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "interpretation": "Warm interactions only. Browser event timestamp to MutationObserver content predicate plus two animation frames; driver polling/dispatch is excluded from meaningfulMs and separately retained as driverElapsedMs. Initial preparation, restoration and one warmup per interaction excluded from measured distribution. All failures retained; no retries."
+}

@@ -1,0 +1,71 @@
+{
+  "acceptedPerformanceData": false,
+  "status": 200,
+  "privateNoStore": true,
+  "cookieSensitive": true,
+  "traceCorrelationVerified": true,
+  "timeline": {
+    "event": "phase13.request",
+    "at": "2026-10-26T18:12:12.729Z",
+    "requestId": "14555dc0-3a1f-4fbc-9760-fb53c439702b",
+    "category": "pipelinePage",
+    "stage": "finish",
+    "status": 200,
+    "traceId": "c40f519d-23f8-46b6-9db2-0a4c3f2c02ec",
+    "elapsedMs": 142.58391700000038,
+    "auth": [
+      {
+        "category": "auth_user",
+        "startMs": 9.86725000000024,
+        "status": 200,
+        "failed": false,
+        "createdToSendMs": 1.7634579999999005,
+        "sendToHeadersMs": 29.87920800000029,
+        "headersToEndMs": 0.3338340000000244,
+        "totalMs": 31.976916000000074
+      }
+    ],
+    "processWindow": {
+      "cpuUserMs": 48.626,
+      "cpuSystemMs": 14.082,
+      "eventLoopUtilization": 0.2659857613068036,
+      "interpretation": "Process-wide deltas over overlapping request windows; not exclusive per-request CPU."
+    }
+  },
+  "phases": {
+    "event": "workspace.phases",
+    "traceId": "c40f519d-23f8-46b6-9db2-0a4c3f2c02ec",
+    "status": 200,
+    "totalMs": 136.58,
+    "phases": {
+      "identity": {
+        "count": 1,
+        "ms": 35.28
+      },
+      "database": {
+        "count": 7,
+        "ms": 82.16
+      },
+      "live_session": {
+        "count": 1,
+        "ms": 18.54
+      },
+      "transaction_acquire": {
+        "count": 1,
+        "ms": 1.4
+      },
+      "transaction": {
+        "count": 1,
+        "ms": 67.07
+      },
+      "compression": {
+        "count": 1,
+        "ms": 0.33
+      },
+      "serialization": {
+        "count": 1,
+        "ms": 1.07
+      }
+    }
+  }
+}

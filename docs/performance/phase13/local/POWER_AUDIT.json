@@ -1,0 +1,9 @@
+{
+  "startedAt": "2026-10-26T18:19:29.809Z",
+  "completedAt": "2026-10-26T18:23:57.834Z",
+  "control": "Temporary caffeinate -dimsu assertion, no persistent settings changed.",
+  "source": "Read-only macOS power log, actual Sleep/Wake/DarkWake timestamps/categories; scheduled wake requests excluded.",
+  "events": [],
+  "noSleepEvents": true,
+  "acceptedPowerInterval": true
+}

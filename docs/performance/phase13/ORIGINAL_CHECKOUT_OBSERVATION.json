@@ -1,0 +1,15 @@
+{
+  "initialHead": "4dadbdb6886a51e2f42afdc8cc710485ec425792",
+  "initialStatus": "",
+  "beforeOwnedCleanup": {
+    "head": "09f312dc9dedf0084ad0f3f1c2a537856f38bd84",
+    "status": ""
+  },
+  "afterOwnedCleanup": {
+    "head": "09f312dc9dedf0084ad0f3f1c2a537856f38bd84",
+    "status": ""
+  },
+  "changedSincePreparation": true,
+  "changedDuringOwnedCleanup": false,
+  "policy": "Phase13 never writes, resets or switches the original checkout or stops its services. External changes are recorded and preserved. Each timing profile independently records and monitors its original-checkout baseline."
+}

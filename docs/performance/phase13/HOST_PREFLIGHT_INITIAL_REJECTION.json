@@ -1,0 +1,51 @@
+{
+  "scope": "5-second read-only samples. Process families and numeric CPU only; command lines, arguments, environment and secrets never exported. Sampling may miss brief external work; idle-host agreement is additional evidence, not proof of exclusive access.",
+  "rootProcessTracked": true,
+  "foreignDevCpuRule": "More than1 cumulative CPU-second observed within60 seconds, including worker descendants, invalidates the whole profile.",
+  "valid": false,
+  "violations": [
+    {
+      "at": "2026-10-26T18:01:31.181Z",
+      "code": "original_checkout_changed",
+      "phase": "starting"
+    }
+  ],
+  "samples": [
+    {
+      "at": "2026-10-26T18:01:31.106Z",
+      "phase": "starting",
+      "cpuBusyPercent": 100,
+      "freeMemoryMiB": 88,
+      "powerSource": "AC Power",
+      "batteryPercent": 97,
+      "lowPowerMode": 0,
+      "foreignProcesses": [],
+      "originalHead": "3735140d2cc4e1123c0cc0b0d976d549fbf18aa5",
+      "originalStatusSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "at": "2026-10-26T18:01:36.202Z",
+      "phase": "starting",
+      "cpuBusyPercent": 32.45,
+      "freeMemoryMiB": 114,
+      "powerSource": "AC Power",
+      "batteryPercent": 97,
+      "lowPowerMode": 0,
+      "foreignProcesses": [],
+      "originalHead": "3735140d2cc4e1123c0cc0b0d976d549fbf18aa5",
+      "originalStatusSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "at": "2026-10-26T18:01:39.667Z",
+      "phase": "starting",
+      "cpuBusyPercent": 31.203,
+      "freeMemoryMiB": 262,
+      "powerSource": "AC Power",
+      "batteryPercent": 97,
+      "lowPowerMode": 0,
+      "foreignProcesses": [],
+      "originalHead": "3735140d2cc4e1123c0cc0b0d976d549fbf18aa5",
+      "originalStatusSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

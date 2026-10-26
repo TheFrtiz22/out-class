@@ -1,0 +1,66 @@
+{
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "node": "v26.9.0",
+  "next": "15.5.27",
+  "react": "19.2.0",
+  "prisma": "6.19.3",
+  "supabaseCli": "2.119.0",
+  "appPort": 3107,
+  "localSupabasePorts": [
+    55321,
+    55322,
+    55324,
+    55325
+  ],
+  "poolLimitPerClient": 8,
+  "temporaryPowerAssertion": "caffeinate -dimsu during accepted runs; no persistent settings",
+  "networkProfile": {
+    "latencyMs": 80,
+    "downBytesPerSecond": 200000,
+    "upBytesPerSecond": 93750,
+    "cpuSlowdown": 4
+  },
+  "fonts": {
+    "app/fonts/libre-caslon-text/libre-caslon-text-italic-variable.woff2": {
+      "bytes": 62892,
+      "sha256": "5e38560b144a9b8a092e125d08b405887ac425b2915f8c3338d96fc602a5602a"
+    },
+    "app/fonts/libre-caslon-text/libre-caslon-text-variable.woff2": {
+      "bytes": 57596,
+      "sha256": "5a828f4790661d83c653f40022afeb290e8a2aa91b7d469f67d51b3d7e2d49f3"
+    },
+    "app/fonts/source-sans-3/source-sans-3-upright.woff2": {
+      "bytes": 170188,
+      "sha256": "5f16566f7a40d39b339ad26be151fa5a1ab1f0c2574c7a2e619765584a1acbd8"
+    },
+    "app/fonts/source-sans-3/source-sans-3-italic.woff2": {
+      "bytes": 137996,
+      "sha256": "b4959abc0569392f87c6c6ac612f90e3fe0104d283724189b7d8b6f61af347d3"
+    }
+  },
+  "sourceDefinition": "Fresh browser source navigation precedes timed click. Cold/warm label describes destination visit, not a cached initial document. No readiness predicates were changed.",
+  "publication": "No push, PR, merge or deployment.",
+  "applicationChange": "None: all913 application files match Phase12. Repeat Phase11-versus-Phase12; instrumented diagnosis remains separate.",
+  "fontsRetainedFromPhase10": true,
+  "deferredFeatureCostProfile": "1000 applicants, constrained only; n6 per build/path/condition.",
+  "playwright": "1.64.0",
+  "phase11ModulesRetained": true,
+  "ordinaryQaExecution": "All QA and builds finished before measurement. Full ordinary1411 passed/63 skips, live67/67; dedicated native security3/3. No experiment-launched builds/tests during collection.",
+  "localAuthSdkEvidence": {
+    "installedSource": "node_modules/.pnpm/@supabase+auth-js@2.116.0/node_modules/@supabase/auth-js/src/GoTrueClient.ts",
+    "scope": "Pinned SDK initialization notification queue, _emitInitialSession and _notifyAllSubscribers inspected. No SDK change or event suppression."
+  },
+  "phase": "13",
+  "power": "Record initial source and low-power mode0 per profile; both variants remain on that source. Earlier user consent permits battery. Temporary awake assertion and actual sleep audit; no persistent settings change.",
+  "existingForeignDevServer": "Port3111 preserved; sampled CPU including workers must remain below predeclared threshold. Process samples may miss brief work. Original checkout baseline recorded separately at the start of each profile; preparation changes preserved.",
+  "sources": [
+    {
+      "title": "Undici diagnostics channels",
+      "url": "https://github.com/nodejs/undici/blob/main/docs/docs/api/DiagnosticsChannel.md"
+    },
+    {
+      "title": "Supabase remotely verified getUser",
+      "url": "https://supabase.com/docs/reference/javascript/auth-getuser"
+    }
+  ]
+}

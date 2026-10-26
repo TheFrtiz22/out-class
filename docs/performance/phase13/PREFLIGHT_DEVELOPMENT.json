@@ -1,0 +1,8 @@
+{
+  "acceptedPerformanceData": false,
+  "initialIssues": [
+    "Host preflight compared against preparation-time original checkout rather than its own measurement-start state; original unrelated commits occurred during preparation. Profile now records its own initial checkout snapshot, with the same strict no-change-during-profile rule.",
+    "Next response wrappers do not retain this header in getHeader and can replace writeHead. Two excluded setup probes captured Auth HTTP but lacked the existing trace UUID. Observer now reads only the non-sensitive UUID from the existing sanitized workspace.phases log within the same incoming AsyncLocalStorage context; it does not change response handling or inspect raw headers."
+  ],
+  "verification": "Focused guard/privacy/concurrent-context tests plus native preflight required before any timing collection."
+}

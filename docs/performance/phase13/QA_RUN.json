@@ -1,0 +1,96 @@
+{
+  "startedAt": "2026-10-26T17:51:39.917Z",
+  "ordinaryFileConcurrency": 2,
+  "checks": [
+    {
+      "name": "seed-qa",
+      "startedAt": "2026-10-26T17:51:39.960Z",
+      "completedAt": "2026-10-26T17:51:40.912Z",
+      "status": 0,
+      "signal": null
+    },
+    {
+      "name": "scale-qa",
+      "startedAt": "2026-10-26T17:51:40.913Z",
+      "completedAt": "2026-10-26T17:51:41.505Z",
+      "status": 0,
+      "signal": null
+    },
+    {
+      "name": "unit",
+      "startedAt": "2026-10-26T17:51:41.505Z",
+      "completedAt": "2026-10-26T17:54:56.377Z",
+      "status": 0,
+      "signal": null
+    },
+    {
+      "name": "migrations",
+      "startedAt": "2026-10-26T17:54:56.386Z",
+      "completedAt": "2026-10-26T17:54:57.404Z",
+      "status": 0,
+      "signal": null
+    },
+    {
+      "name": "security",
+      "startedAt": "2026-10-26T17:54:57.405Z",
+      "completedAt": "2026-10-26T17:54:57.898Z",
+      "status": 1,
+      "signal": null,
+      "resolvedBy": "security-disposable"
+    },
+    {
+      "name": "security-disposable",
+      "startedAt": "2026-10-26T17:57:26.012Z",
+      "completedAt": "2026-10-26T17:57:38.578Z",
+      "status": 0,
+      "signal": null
+    },
+    {
+      "name": "typecheck",
+      "startedAt": "2026-10-26T17:57:38.602Z",
+      "completedAt": "2026-10-26T17:57:40.437Z",
+      "status": 0,
+      "signal": null
+    },
+    {
+      "name": "lint",
+      "startedAt": "2026-10-26T17:57:40.438Z",
+      "completedAt": "2026-10-26T17:57:46.719Z",
+      "status": 0,
+      "signal": null
+    },
+    {
+      "name": "live",
+      "startedAt": "2026-10-26T17:57:46.719Z",
+      "completedAt": "2026-10-26T17:59:15.893Z",
+      "status": 0,
+      "signal": null
+    },
+    {
+      "name": "diagnostics-focused-final",
+      "startedAt": "2026-10-26T18:17:02.530Z",
+      "completedAt": "2026-10-26T18:17:02.725Z",
+      "status": 0
+    },
+    {
+      "name": "lint-final",
+      "startedAt": "2026-10-26T18:17:02.725Z",
+      "completedAt": "2026-10-26T18:17:09.247Z",
+      "status": 0
+    },
+    {
+      "name": "diagnostics-focused-final",
+      "startedAt": "2026-10-26T18:19:22.931Z",
+      "completedAt": "2026-10-26T18:19:23.157Z",
+      "status": 0
+    },
+    {
+      "name": "lint-final",
+      "startedAt": "2026-10-26T18:19:23.157Z",
+      "completedAt": "2026-10-26T18:19:29.735Z",
+      "status": 0
+    }
+  ],
+  "complete": true,
+  "completedAt": "2026-10-26T18:19:29.735Z"
+}

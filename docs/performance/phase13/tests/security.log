@@ -1,0 +1,64 @@
+✖ native collaboration: ordered simultaneous picks, revision conflicts, exact queue advancement, invitations and revocation (1.936708ms)
+✖ native PostgreSQL interview transactions: independent drafts, simultaneous finish, annotations, revocation and immutable anonymous reopening (0.748334ms)
+✖ native PostgreSQL: concurrent claims, duplicate imports, email delivery, and owner suspensions (0.721125ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 0
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 421.686167
+
+✖ failing tests:
+
+test at tests/interview-collaboration-native.test.cjs:4:1
+✖ native collaboration: ordered simultaneous picks, revision conflicts, exact queue advancement, invitations and revocation (1.936708ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+
+    assert.ok(['localhost','127.0.0.1'].includes(url.hostname)&&url.pathname==='/outclass_security_test')
+
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/interview-collaboration-native.test.cjs:5:40)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/interview-native-concurrency.test.cjs:18:1
+✖ native PostgreSQL interview transactions: independent drafts, simultaneous finish, annotations, revocation and immutable anonymous reopening (0.748334ms)
+  AssertionError [ERR_ASSERTION]: Requires disposable local outclass_security_test
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/interview-native-concurrency.test.cjs:19:40)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/onboarding-concurrency.test.cjs:6:1
+✖ native PostgreSQL: concurrent claims, duplicate imports, email delivery, and owner suspensions (0.721125ms)
+  AssertionError [ERR_ASSERTION]: Only an isolated local outclass_security_test database is allowed
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/onboarding-concurrency.test.cjs:8:9)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

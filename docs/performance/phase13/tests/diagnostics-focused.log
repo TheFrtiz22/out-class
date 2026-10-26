@@ -1,0 +1,11 @@
+✔ diagnostic preload stays disabled by default and refuses hosted or unreserved Auth endpoints (4.877542ms)
+✔ concurrent diagnostic timelines retain only numeric timings, fixed labels and non-sensitive trace IDs (11.47875ms)
+✔ host control includes foreign development workers and strips private arguments while excluding the complete benchmark process tree (0.650083ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 207.473458

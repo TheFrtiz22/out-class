@@ -1,0 +1,9 @@
+{
+  "accepted": false,
+  "directory": "excluded-power-startup-1",
+  "browserOutcomes": 0,
+  "interactionOutcomes": 0,
+  "httpOutcomes": 0,
+  "reason": "Power changed from preparation AC to Battery before the first profile started. Guard rejected before application start or any outcome.",
+  "resolution": "Earlier user authorization to continue on battery remains in force. Before collecting data, require one recorded consistent source and low-power mode0 within each entire profile. Both variants in each profile use that same condition; any observed in-profile change invalidates it. No existing timing rows selected or removed."
+}

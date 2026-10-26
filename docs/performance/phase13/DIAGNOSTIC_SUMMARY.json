@@ -1,0 +1,2130 @@
+{
+  "acceptedPerformanceData": false,
+  "scope": "Four separate instrumented cases. Native groups n5/10/20 measured requests, direct SDK groups n2/4/8. Nearest-rank p95 is often a maximum. SDK wall time includes response parsing; Auth HTTP phases do not isolate provider CPU. Process-window CPU overlaps requests; histogram summaries are maxima of1-second windows, not whole-run p95. Role aggregates and representative plans cannot prove per-request pool wait.",
+  "cases": [
+    {
+      "size": 1000,
+      "variant": "baseline",
+      "file": "diagnostics/1000-baseline.json",
+      "groups": [
+        {
+          "concurrency": 1,
+          "nativeMeasured": 5,
+          "metrics": {
+            "elapsedMs": {
+              "n": 5,
+              "p50": 37.67433400000027,
+              "p95": 54.33999999999969,
+              "max": 54.33999999999969
+            },
+            "ttfbMs": {
+              "n": 5,
+              "p50": 37.37545900000032,
+              "p95": 54.08387499999981,
+              "max": 54.08387499999981
+            },
+            "encodedBodyBytes": {
+              "n": 5,
+              "p50": 7241,
+              "p95": 7241,
+              "max": 7241
+            },
+            "auth_createdToSendMs": {
+              "n": 5,
+              "p50": 0.04774999999995089,
+              "p95": 0.08054199999992306,
+              "max": 0.08054199999992306
+            },
+            "auth_sendToHeadersMs": {
+              "n": 5,
+              "p50": 20.61841699999991,
+              "p95": 22.839334000000008,
+              "max": 22.839334000000008
+            },
+            "auth_headersToEndMs": {
+              "n": 5,
+              "p50": 0.08333399999992253,
+              "p95": 0.09645799999998417,
+              "max": 0.09645799999998417
+            },
+            "auth_totalMs": {
+              "n": 5,
+              "p50": 20.7662499999999,
+              "p95": 22.965625000000045,
+              "max": 22.965625000000045
+            },
+            "server_identityMs": {
+              "n": 5,
+              "p50": 21.17,
+              "p95": 23.37,
+              "max": 23.37
+            },
+            "server_databaseMs": {
+              "n": 5,
+              "p50": 9.27,
+              "p95": 26.54,
+              "max": 26.54
+            },
+            "server_live_sessionMs": {
+              "n": 5,
+              "p50": 0.46,
+              "p95": 0.58,
+              "max": 0.58
+            },
+            "server_transaction_acquireMs": {
+              "n": 5,
+              "p50": 0.39,
+              "p95": 0.45,
+              "max": 0.45
+            },
+            "server_transactionMs": {
+              "n": 5,
+              "p50": 12.2,
+              "p95": 28.1,
+              "max": 28.1
+            },
+            "server_compressionMs": {
+              "n": 5,
+              "p50": 0.26,
+              "p95": 0.29,
+              "max": 0.29
+            },
+            "server_serializationMs": {
+              "n": 5,
+              "p50": 0.57,
+              "p95": 0.87,
+              "max": 0.87
+            },
+            "identitySpanMinusCapturedHttpMs": {
+              "n": 5,
+              "p50": 0.46483300000011596,
+              "p95": 0.619792000000043,
+              "max": 0.619792000000043
+            },
+            "processWindow_cpuUserMs": {
+              "n": 5,
+              "p50": 15.306,
+              "p95": 28.733,
+              "max": 28.733
+            },
+            "processWindow_cpuSystemMs": {
+              "n": 5,
+              "p50": 1.881,
+              "p95": 3.225,
+              "max": 3.225
+            },
+            "processWindow_eventLoopUtilization": {
+              "n": 5,
+              "p50": 0.23027345267464444,
+              "p95": 0.3005543260798411,
+              "max": 0.3005543260798411
+            }
+          },
+          "directSdkGetUserMs": {
+            "n": 2,
+            "p50": 18.374125000000276,
+            "p95": 21.523999999999887,
+            "max": 21.523999999999887
+          }
+        },
+        {
+          "concurrency": 2,
+          "nativeMeasured": 10,
+          "metrics": {
+            "elapsedMs": {
+              "n": 10,
+              "p50": 51.519166999999925,
+              "p95": 67.82416700000022,
+              "max": 67.82416700000022
+            },
+            "ttfbMs": {
+              "n": 10,
+              "p50": 51.21412499999997,
+              "p95": 67.55425000000014,
+              "max": 67.55425000000014
+            },
+            "encodedBodyBytes": {
+              "n": 10,
+              "p50": 7241,
+              "p95": 7241,
+              "max": 7241
+            },
+            "auth_createdToSendMs": {
+              "n": 10,
+              "p50": 0.05308300000001509,
+              "p95": 1.7338330000000042,
+              "max": 1.7338330000000042
+            },
+            "auth_sendToHeadersMs": {
+              "n": 10,
+              "p50": 19.345166999999947,
+              "p95": 28.860542000000123,
+              "max": 28.860542000000123
+            },
+            "auth_headersToEndMs": {
+              "n": 10,
+              "p50": 0.049042000000099506,
+              "p95": 0.14391700000010132,
+              "max": 0.14391700000010132
+            },
+            "auth_totalMs": {
+              "n": 10,
+              "p50": 19.566542000000027,
+              "p95": 30.176625000000058,
+              "max": 30.176625000000058
+            },
+            "server_identityMs": {
+              "n": 10,
+              "p50": 20.17,
+              "p95": 30.69,
+              "max": 30.69
+            },
+            "server_databaseMs": {
+              "n": 10,
+              "p50": 25.72,
+              "p95": 31.48,
+              "max": 31.48
+            },
+            "server_live_sessionMs": {
+              "n": 10,
+              "p50": 0.5,
+              "p95": 0.76,
+              "max": 0.76
+            },
+            "server_transaction_acquireMs": {
+              "n": 10,
+              "p50": 0.42,
+              "p95": 0.6,
+              "max": 0.6
+            },
+            "server_transactionMs": {
+              "n": 10,
+              "p50": 27.26,
+              "p95": 32.64,
+              "max": 32.64
+            },
+            "server_compressionMs": {
+              "n": 10,
+              "p50": 0.22,
+              "p95": 0.38,
+              "max": 0.38
+            },
+            "server_serializationMs": {
+              "n": 10,
+              "p50": 0.47,
+              "p95": 1.1,
+              "max": 1.1
+            },
+            "identitySpanMinusCapturedHttpMs": {
+              "n": 10,
+              "p50": 0.28174999999986383,
+              "p95": 0.603457999999975,
+              "max": 0.603457999999975
+            },
+            "processWindow_cpuUserMs": {
+              "n": 10,
+              "p50": 28.831,
+              "p95": 101.624,
+              "max": 101.624
+            },
+            "processWindow_cpuSystemMs": {
+              "n": 10,
+              "p50": 2.568,
+              "p95": 4.474,
+              "max": 4.474
+            },
+            "processWindow_eventLoopUtilization": {
+              "n": 10,
+              "p50": 0.26635139231151206,
+              "p95": 0.4686064639154261,
+              "max": 0.4686064639154261
+            }
+          },
+          "directSdkGetUserMs": {
+            "n": 4,
+            "p50": 21.50412499999993,
+            "p95": 23.19574999999986,
+            "max": 23.19574999999986
+          }
+        },
+        {
+          "concurrency": 4,
+          "nativeMeasured": 20,
+          "metrics": {
+            "elapsedMs": {
+              "n": 20,
+              "p50": 57.88149999999996,
+              "p95": 74.23283399999991,
+              "max": 79.80891700000029
+            },
+            "ttfbMs": {
+              "n": 20,
+              "p50": 57.66229199999998,
+              "p95": 74.04774999999972,
+              "max": 79.5786250000001
+            },
+            "encodedBodyBytes": {
+              "n": 20,
+              "p50": 7241,
+              "p95": 7241,
+              "max": 7241
+            },
+            "auth_createdToSendMs": {
+              "n": 20,
+              "p50": 0.08425000000011096,
+              "p95": 1.8176250000001346,
+              "max": 2.590167000000065
+            },
+            "auth_sendToHeadersMs": {
+              "n": 20,
+              "p50": 25.033083000000033,
+              "p95": 27.239166999999952,
+              "max": 27.492915999999923
+            },
+            "auth_headersToEndMs": {
+              "n": 20,
+              "p50": 0.03499999999985448,
+              "p95": 0.10362500000019281,
+              "max": 0.11037499999997635
+            },
+            "auth_totalMs": {
+              "n": 20,
+              "p50": 25.92945899999995,
+              "p95": 28.678499999999985,
+              "max": 29.172333999999864
+            },
+            "server_identityMs": {
+              "n": 20,
+              "p50": 26.14,
+              "p95": 28.95,
+              "max": 29.35
+            },
+            "server_databaseMs": {
+              "n": 20,
+              "p50": 28.85,
+              "p95": 40.82,
+              "max": 42.63
+            },
+            "server_live_sessionMs": {
+              "n": 20,
+              "p50": 0.65,
+              "p95": 0.98,
+              "max": 1.12
+            },
+            "server_transaction_acquireMs": {
+              "n": 20,
+              "p50": 0.63,
+              "p95": 2.15,
+              "max": 2.43
+            },
+            "server_transactionMs": {
+              "n": 20,
+              "p50": 29.06,
+              "p95": 43.49,
+              "max": 45.55
+            },
+            "server_compressionMs": {
+              "n": 20,
+              "p50": 0.2,
+              "p95": 0.63,
+              "max": 1.97
+            },
+            "server_serializationMs": {
+              "n": 20,
+              "p50": 0.43,
+              "p95": 1.1,
+              "max": 2.19
+            },
+            "identitySpanMinusCapturedHttpMs": {
+              "n": 20,
+              "p50": 0.2346250000000616,
+              "p95": 0.4464580000000673,
+              "max": 0.57770799999982
+            },
+            "processWindow_cpuUserMs": {
+              "n": 20,
+              "p50": 42.063,
+              "p95": 129.938,
+              "max": 130.597
+            },
+            "processWindow_cpuSystemMs": {
+              "n": 20,
+              "p50": 4.352,
+              "p95": 7.969,
+              "max": 8.117
+            },
+            "processWindow_eventLoopUtilization": {
+              "n": 20,
+              "p50": 0.35477601622058935,
+              "p95": 0.5763193395057938,
+              "max": 0.576319437337753
+            }
+          },
+          "directSdkGetUserMs": {
+            "n": 8,
+            "p50": 37.05445899999995,
+            "p95": 40.748541999999816,
+            "max": 40.748541999999816
+          }
+        }
+      ],
+      "correlation": {
+        "nativeRequests": 42,
+        "matchedRequestTimelines": 42,
+        "requestsWithAuthTimeline": 42
+      },
+      "queryPlan": {
+        "label": "Representative existing owner metadata JOIN, complete club/non-draft predicate; values/rows/SQL text not exported.",
+        "planningMs": 3.619,
+        "executionMs": 11.711,
+        "plan": {
+          "nodeType": "Nested Loop",
+          "actualRows": 1000,
+          "actualLoops": 1,
+          "actualTotalTimeMs": 11.291,
+          "sharedHitBlocks": 3153,
+          "sharedReadBlocks": 0,
+          "children": [
+            {
+              "nodeType": "Nested Loop",
+              "actualRows": 1000,
+              "actualLoops": 1,
+              "actualTotalTimeMs": 10.641,
+              "sharedHitBlocks": 3148,
+              "sharedReadBlocks": 0,
+              "children": [
+                {
+                  "nodeType": "Hash Join",
+                  "actualRows": 1000,
+                  "actualLoops": 1,
+                  "actualTotalTimeMs": 4.956,
+                  "sharedHitBlocks": 148,
+                  "sharedReadBlocks": 0,
+                  "children": [
+                    {
+                      "nodeType": "Seq Scan",
+                      "actualRows": 7345,
+                      "actualLoops": 1,
+                      "actualTotalTimeMs": 1.693,
+                      "sharedHitBlocks": 120,
+                      "sharedReadBlocks": 0,
+                      "children": []
+                    },
+                    {
+                      "nodeType": "Hash",
+                      "actualRows": 1000,
+                      "actualLoops": 1,
+                      "actualTotalTimeMs": 1.553,
+                      "sharedHitBlocks": 28,
+                      "sharedReadBlocks": 0,
+                      "children": [
+                        {
+                          "nodeType": "Bitmap Heap Scan",
+                          "actualRows": 1000,
+                          "actualLoops": 1,
+                          "actualTotalTimeMs": 0.844,
+                          "sharedHitBlocks": 28,
+                          "sharedReadBlocks": 0,
+                          "children": [
+                            {
+                              "nodeType": "Bitmap Index Scan",
+                              "actualRows": 1000,
+                              "actualLoops": 1,
+                              "actualTotalTimeMs": 0.118,
+                              "sharedHitBlocks": 2,
+                              "sharedReadBlocks": 0,
+                              "children": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "nodeType": "Index Scan",
+                  "actualRows": 1,
+                  "actualLoops": 1000,
+                  "actualTotalTimeMs": 0.005,
+                  "sharedHitBlocks": 3000,
+                  "sharedReadBlocks": 0,
+                  "children": []
+                }
+              ]
+            },
+            {
+              "nodeType": "Memoize",
+              "actualRows": 1,
+              "actualLoops": 1000,
+              "actualTotalTimeMs": 0,
+              "sharedHitBlocks": 2,
+              "sharedReadBlocks": 0,
+              "children": [
+                {
+                  "nodeType": "Index Scan",
+                  "actualRows": 1,
+                  "actualLoops": 1,
+                  "actualTotalTimeMs": 0.061,
+                  "sharedHitBlocks": 2,
+                  "sharedReadBlocks": 0,
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "poolAggregateMaxima": {
+        "app_role": {
+          "connections": 9,
+          "active": 5,
+          "idle_in_transaction": 3,
+          "lock_waiting": 0,
+          "io_waiting": 0,
+          "lwlock_waiting": 0,
+          "client_waiting": 9
+        },
+        "auth_role": {
+          "connections": 3,
+          "active": 3,
+          "idle_in_transaction": 0,
+          "lock_waiting": 0,
+          "io_waiting": 0,
+          "lwlock_waiting": 0,
+          "client_waiting": 2
+        },
+        "other_role": {
+          "connections": 9,
+          "active": 1,
+          "idle_in_transaction": 0,
+          "lock_waiting": 0,
+          "io_waiting": 0,
+          "lwlock_waiting": 0,
+          "client_waiting": 9
+        }
+      },
+      "eventLoopIntervals": 26,
+      "maxOneSecondP95DelayMs": 563.085311,
+      "maxRecordedEventLoopDelayMs": 563.085311,
+      "incomingAuthTimelineCount": 127,
+      "incomingAuthIncompleteTimelines": 0,
+      "allIncomingAuthHttpTotalMs": {
+        "n": 127,
+        "p50": 32.21195799999987,
+        "p95": 187.7042500000025,
+        "max": 261.0741250000028
+      },
+      "largestAuthTimeline": {
+        "requestId": "4ac037c9-e396-451d-9bfa-11fc0d86e5f1",
+        "traceId": "985570fc-c9de-41be-b094-6c22e977b5c1",
+        "category": "pipelinePage",
+        "at": "2026-10-26T18:57:10.643Z",
+        "auth": {
+          "category": "auth_user",
+          "startMs": 2.658208000000741,
+          "status": 200,
+          "failed": false,
+          "createdToSendMs": 0.0317090000025928,
+          "sendToHeadersMs": 260.96045799999774,
+          "headersToEndMs": 0.08179200000085984,
+          "totalMs": 261.0741250000028
+        }
+      },
+      "instrumentedBrowserOutcomes": 4
+    },
+    {
+      "size": 1000,
+      "variant": "candidate",
+      "file": "diagnostics/1000-candidate.json",
+      "groups": [
+        {
+          "concurrency": 1,
+          "nativeMeasured": 5,
+          "metrics": {
+            "elapsedMs": {
+              "n": 5,
+              "p50": 67.08266600000024,
+              "p95": 90.9809580000001,
+              "max": 90.9809580000001
+            },
+            "ttfbMs": {
+              "n": 5,
+              "p50": 66.79491600000028,
+              "p95": 90.56054200000017,
+              "max": 90.56054200000017
+            },
+            "encodedBodyBytes": {
+              "n": 5,
+              "p50": 7241,
+              "p95": 7241,
+              "max": 7241
+            },
+            "auth_createdToSendMs": {
+              "n": 5,
+              "p50": 0.07416699999998855,
+              "p95": 0.12200000000007094,
+              "max": 0.12200000000007094
+            },
+            "auth_sendToHeadersMs": {
+              "n": 5,
+              "p50": 37.35679200000004,
+              "p95": 56.621624999999995,
+              "max": 56.621624999999995
+            },
+            "auth_headersToEndMs": {
+              "n": 5,
+              "p50": 0.12454099999990831,
+              "p95": 0.24654099999997925,
+              "max": 0.24654099999997925
+            },
+            "auth_totalMs": {
+              "n": 5,
+              "p50": 37.640540999999985,
+              "p95": 56.81095899999991,
+              "max": 56.81095899999991
+            },
+            "server_identityMs": {
+              "n": 5,
+              "p50": 38.95,
+              "p95": 57.83,
+              "max": 57.83
+            },
+            "server_databaseMs": {
+              "n": 5,
+              "p50": 18.63,
+              "p95": 30.91,
+              "max": 30.91
+            },
+            "server_live_sessionMs": {
+              "n": 5,
+              "p50": 0.81,
+              "p95": 1.29,
+              "max": 1.29
+            },
+            "server_transaction_acquireMs": {
+              "n": 5,
+              "p50": 0.56,
+              "p95": 1.12,
+              "max": 1.12
+            },
+            "server_transactionMs": {
+              "n": 5,
+              "p50": 22.47,
+              "p95": 32.51,
+              "max": 32.51
+            },
+            "server_compressionMs": {
+              "n": 5,
+              "p50": 0.31,
+              "p95": 0.39,
+              "max": 0.39
+            },
+            "server_serializationMs": {
+              "n": 5,
+              "p50": 0.64,
+              "p95": 1.31,
+              "max": 1.31
+            },
+            "identitySpanMinusCapturedHttpMs": {
+              "n": 5,
+              "p50": 0.6944159999998192,
+              "p95": 1.3094590000000181,
+              "max": 1.3094590000000181
+            },
+            "processWindow_cpuUserMs": {
+              "n": 5,
+              "p50": 23.718,
+              "p95": 39.399,
+              "max": 39.399
+            },
+            "processWindow_cpuSystemMs": {
+              "n": 5,
+              "p50": 2.973,
+              "p95": 5.957,
+              "max": 5.957
+            },
+            "processWindow_eventLoopUtilization": {
+              "n": 5,
+              "p50": 0.22565334576107993,
+              "p95": 0.285341177691104,
+              "max": 0.285341177691104
+            }
+          },
+          "directSdkGetUserMs": {
+            "n": 2,
+            "p50": 20.76020900000003,
+            "p95": 25.667999999999665,
+            "max": 25.667999999999665
+          }
+        },
+        {
+          "concurrency": 2,
+          "nativeMeasured": 10,
+          "metrics": {
+            "elapsedMs": {
+              "n": 10,
+              "p50": 88.93520799999988,
+              "p95": 130.49033400000008,
+              "max": 130.49033400000008
+            },
+            "ttfbMs": {
+              "n": 10,
+              "p50": 88.65050000000019,
+              "p95": 129.644542,
+              "max": 129.644542
+            },
+            "encodedBodyBytes": {
+              "n": 10,
+              "p50": 7241,
+              "p95": 7241,
+              "max": 7241
+            },
+            "auth_createdToSendMs": {
+              "n": 10,
+              "p50": 0.04454099999998107,
+              "p95": 5.644625000000133,
+              "max": 5.644625000000133
+            },
+            "auth_sendToHeadersMs": {
+              "n": 10,
+              "p50": 41.328832999999804,
+              "p95": 59.39641699999993,
+              "max": 59.39641699999993
+            },
+            "auth_headersToEndMs": {
+              "n": 10,
+              "p50": 0.052957999999989624,
+              "p95": 0.430625000000191,
+              "max": 0.430625000000191
+            },
+            "auth_totalMs": {
+              "n": 10,
+              "p50": 47.29837499999985,
+              "p95": 59.45708300000001,
+              "max": 59.45708300000001
+            },
+            "server_identityMs": {
+              "n": 10,
+              "p50": 48.23,
+              "p95": 59.7,
+              "max": 59.7
+            },
+            "server_databaseMs": {
+              "n": 10,
+              "p50": 33.93,
+              "p95": 60.69,
+              "max": 60.69
+            },
+            "server_live_sessionMs": {
+              "n": 10,
+              "p50": 0.72,
+              "p95": 1.54,
+              "max": 1.54
+            },
+            "server_transaction_acquireMs": {
+              "n": 10,
+              "p50": 0.67,
+              "p95": 1.23,
+              "max": 1.23
+            },
+            "server_transactionMs": {
+              "n": 10,
+              "p50": 37.42,
+              "p95": 62.47,
+              "max": 62.47
+            },
+            "server_compressionMs": {
+              "n": 10,
+              "p50": 0.24,
+              "p95": 2.17,
+              "max": 2.17
+            },
+            "server_serializationMs": {
+              "n": 10,
+              "p50": 0.57,
+              "p95": 2.82,
+              "max": 2.82
+            },
+            "identitySpanMinusCapturedHttpMs": {
+              "n": 10,
+              "p50": 0.4401250000001369,
+              "p95": 0.931625000000146,
+              "max": 0.931625000000146
+            },
+            "processWindow_cpuUserMs": {
+              "n": 10,
+              "p50": 32.803,
+              "p95": 56.659,
+              "max": 56.659
+            },
+            "processWindow_cpuSystemMs": {
+              "n": 10,
+              "p50": 5.132,
+              "p95": 9.066,
+              "max": 9.066
+            },
+            "processWindow_eventLoopUtilization": {
+              "n": 10,
+              "p50": 0.215529372512396,
+              "p95": 0.3214178369417888,
+              "max": 0.3214178369417888
+            }
+          },
+          "directSdkGetUserMs": {
+            "n": 4,
+            "p50": 30.076708999999937,
+            "p95": 30.750332999999955,
+            "max": 30.750332999999955
+          }
+        },
+        {
+          "concurrency": 4,
+          "nativeMeasured": 20,
+          "metrics": {
+            "elapsedMs": {
+              "n": 20,
+              "p50": 66.6944999999996,
+              "p95": 73.79512500000055,
+              "max": 74.4913749999996
+            },
+            "ttfbMs": {
+              "n": 20,
+              "p50": 66.44941599999947,
+              "p95": 73.23683299999993,
+              "max": 74.25970899999993
+            },
+            "encodedBodyBytes": {
+              "n": 20,
+              "p50": 7241,
+              "p95": 7241,
+              "max": 7241
+            },
+            "auth_createdToSendMs": {
+              "n": 20,
+              "p50": 0.07308400000010806,
+              "p95": 1.8751250000000255,
+              "max": 2.0142080000000533
+            },
+            "auth_sendToHeadersMs": {
+              "n": 20,
+              "p50": 27.35375000000022,
+              "p95": 34.05058400000007,
+              "max": 45.50470799999994
+            },
+            "auth_headersToEndMs": {
+              "n": 20,
+              "p50": 0.03945900000007896,
+              "p95": 0.08212499999990541,
+              "max": 0.0900419999998121
+            },
+            "auth_totalMs": {
+              "n": 20,
+              "p50": 28.008499999999913,
+              "p95": 35.01583299999993,
+              "max": 46.5442079999998
+            },
+            "server_identityMs": {
+              "n": 20,
+              "p50": 28.49,
+              "p95": 35.19,
+              "max": 46.77
+            },
+            "server_databaseMs": {
+              "n": 20,
+              "p50": 31.56,
+              "p95": 36.54,
+              "max": 36.62
+            },
+            "server_live_sessionMs": {
+              "n": 20,
+              "p50": 0.64,
+              "p95": 1.71,
+              "max": 2.06
+            },
+            "server_transaction_acquireMs": {
+              "n": 20,
+              "p50": 0.69,
+              "p95": 1.89,
+              "max": 2.09
+            },
+            "server_transactionMs": {
+              "n": 20,
+              "p50": 31.05,
+              "p95": 37.14,
+              "max": 37.66
+            },
+            "server_compressionMs": {
+              "n": 20,
+              "p50": 0.2,
+              "p95": 0.83,
+              "max": 0.98
+            },
+            "server_serializationMs": {
+              "n": 20,
+              "p50": 0.43,
+              "p95": 1.09,
+              "max": 1.18
+            },
+            "identitySpanMinusCapturedHttpMs": {
+              "n": 20,
+              "p50": 0.22670900000006355,
+              "p95": 0.4887090000002168,
+              "max": 0.6228750000002385
+            },
+            "processWindow_cpuUserMs": {
+              "n": 20,
+              "p50": 41.85,
+              "p95": 50.781,
+              "max": 51.583
+            },
+            "processWindow_cpuSystemMs": {
+              "n": 20,
+              "p50": 5.279,
+              "p95": 5.907,
+              "max": 5.996
+            },
+            "processWindow_eventLoopUtilization": {
+              "n": 20,
+              "p50": 0.32500330443326775,
+              "p95": 0.37306270215164483,
+              "max": 0.4078838302158982
+            }
+          },
+          "directSdkGetUserMs": {
+            "n": 8,
+            "p50": 32.640625,
+            "p95": 37.207917000000634,
+            "max": 37.207917000000634
+          }
+        }
+      ],
+      "correlation": {
+        "nativeRequests": 42,
+        "matchedRequestTimelines": 42,
+        "requestsWithAuthTimeline": 42
+      },
+      "queryPlan": {
+        "label": "Representative existing owner metadata JOIN, complete club/non-draft predicate; values/rows/SQL text not exported.",
+        "planningMs": 3.489,
+        "executionMs": 14.283,
+        "plan": {
+          "nodeType": "Nested Loop",
+          "actualRows": 1000,
+          "actualLoops": 1,
+          "actualTotalTimeMs": 13.957,
+          "sharedHitBlocks": 3153,
+          "sharedReadBlocks": 0,
+          "children": [
+            {
+              "nodeType": "Nested Loop",
+              "actualRows": 1000,
+              "actualLoops": 1,
+              "actualTotalTimeMs": 13.158,
+              "sharedHitBlocks": 3148,
+              "sharedReadBlocks": 0,
+              "children": [
+                {
+                  "nodeType": "Hash Join",
+                  "actualRows": 1000,
+                  "actualLoops": 1,
+                  "actualTotalTimeMs": 4.952,
+                  "sharedHitBlocks": 148,
+                  "sharedReadBlocks": 0,
+                  "children": [
+                    {
+                      "nodeType": "Seq Scan",
+                      "actualRows": 7345,
+                      "actualLoops": 1,
+                      "actualTotalTimeMs": 1.818,
+                      "sharedHitBlocks": 120,
+                      "sharedReadBlocks": 0,
+                      "children": []
+                    },
+                    {
+                      "nodeType": "Hash",
+                      "actualRows": 1000,
+                      "actualLoops": 1,
+                      "actualTotalTimeMs": 1.686,
+                      "sharedHitBlocks": 28,
+                      "sharedReadBlocks": 0,
+                      "children": [
+                        {
+                          "nodeType": "Bitmap Heap Scan",
+                          "actualRows": 1000,
+                          "actualLoops": 1,
+                          "actualTotalTimeMs": 1.253,
+                          "sharedHitBlocks": 28,
+                          "sharedReadBlocks": 0,
+                          "children": [
+                            {
+                              "nodeType": "Bitmap Index Scan",
+                              "actualRows": 1000,
+                              "actualLoops": 1,
+                              "actualTotalTimeMs": 0.118,
+                              "sharedHitBlocks": 2,
+                              "sharedReadBlocks": 0,
+                              "children": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "nodeType": "Index Scan",
+                  "actualRows": 1,
+                  "actualLoops": 1000,
+                  "actualTotalTimeMs": 0.008,
+                  "sharedHitBlocks": 3000,
+                  "sharedReadBlocks": 0,
+                  "children": []
+                }
+              ]
+            },
+            {
+              "nodeType": "Memoize",
+              "actualRows": 1,
+              "actualLoops": 1000,
+              "actualTotalTimeMs": 0,
+              "sharedHitBlocks": 2,
+              "sharedReadBlocks": 0,
+              "children": [
+                {
+                  "nodeType": "Index Scan",
+                  "actualRows": 1,
+                  "actualLoops": 1,
+                  "actualTotalTimeMs": 0.048,
+                  "sharedHitBlocks": 2,
+                  "sharedReadBlocks": 0,
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "poolAggregateMaxima": {
+        "app_role": {
+          "connections": 9,
+          "active": 4,
+          "idle_in_transaction": 4,
+          "lock_waiting": 0,
+          "io_waiting": 0,
+          "lwlock_waiting": 0,
+          "client_waiting": 9
+        },
+        "auth_role": {
+          "connections": 4,
+          "active": 3,
+          "idle_in_transaction": 0,
+          "lock_waiting": 0,
+          "io_waiting": 0,
+          "lwlock_waiting": 0,
+          "client_waiting": 2
+        },
+        "other_role": {
+          "connections": 9,
+          "active": 0,
+          "idle_in_transaction": 0,
+          "lock_waiting": 0,
+          "io_waiting": 0,
+          "lwlock_waiting": 0,
+          "client_waiting": 9
+        }
+      },
+      "eventLoopIntervals": 26,
+      "maxOneSecondP95DelayMs": 532.414463,
+      "maxRecordedEventLoopDelayMs": 532.414463,
+      "incomingAuthTimelineCount": 124,
+      "incomingAuthIncompleteTimelines": 0,
+      "allIncomingAuthHttpTotalMs": {
+        "n": 124,
+        "p50": 36.919207999999344,
+        "p95": 149.23633399999926,
+        "max": 276.71004099999845
+      },
+      "largestAuthTimeline": {
+        "requestId": "710886fb-73b9-47ed-b172-76e3b07b6911",
+        "traceId": null,
+        "category": "api_other",
+        "at": "2026-10-26T18:57:40.614Z",
+        "auth": {
+          "category": "auth_user",
+          "startMs": 4.598833000000013,
+          "status": 200,
+          "failed": false,
+          "createdToSendMs": 7.545915999999124,
+          "sendToHeadersMs": 269.0386670000007,
+          "headersToEndMs": 0.12525000000096043,
+          "totalMs": 276.71004099999845
+        }
+      },
+      "instrumentedBrowserOutcomes": 4
+    },
+    {
+      "size": 5000,
+      "variant": "candidate",
+      "file": "diagnostics/5000-candidate.json",
+      "groups": [
+        {
+          "concurrency": 1,
+          "nativeMeasured": 5,
+          "metrics": {
+            "elapsedMs": {
+              "n": 5,
+              "p50": 62.246458000000075,
+              "p95": 149.20441699999992,
+              "max": 149.20441699999992
+            },
+            "ttfbMs": {
+              "n": 5,
+              "p50": 61.94225000000006,
+              "p95": 148.9298749999998,
+              "max": 148.9298749999998
+            },
+            "encodedBodyBytes": {
+              "n": 5,
+              "p50": 7238,
+              "p95": 7238,
+              "max": 7238
+            },
+            "auth_createdToSendMs": {
+              "n": 5,
+              "p50": 0.045666999999866675,
+              "p95": 0.06958299999996598,
+              "max": 0.06958299999996598
+            },
+            "auth_sendToHeadersMs": {
+              "n": 5,
+              "p50": 21.757124999999974,
+              "p95": 25.106458999999973,
+              "max": 25.106458999999973
+            },
+            "auth_headersToEndMs": {
+              "n": 5,
+              "p50": 0.10712499999999636,
+              "p95": 0.14750000000003638,
+              "max": 0.14750000000003638
+            },
+            "auth_totalMs": {
+              "n": 5,
+              "p50": 21.917582999999922,
+              "p95": 25.289375000000064,
+              "max": 25.289375000000064
+            },
+            "server_identityMs": {
+              "n": 5,
+              "p50": 22.41,
+              "p95": 25.74,
+              "max": 25.74
+            },
+            "server_databaseMs": {
+              "n": 5,
+              "p50": 19.59,
+              "p95": 114.93,
+              "max": 114.93
+            },
+            "server_live_sessionMs": {
+              "n": 5,
+              "p50": 0.64,
+              "p95": 0.87,
+              "max": 0.87
+            },
+            "server_transaction_acquireMs": {
+              "n": 5,
+              "p50": 0.45,
+              "p95": 0.59,
+              "max": 0.59
+            },
+            "server_transactionMs": {
+              "n": 5,
+              "p50": 32.81,
+              "p95": 123.51,
+              "max": 123.51
+            },
+            "server_compressionMs": {
+              "n": 5,
+              "p50": 0.26,
+              "p95": 1.22,
+              "max": 1.22
+            },
+            "server_serializationMs": {
+              "n": 5,
+              "p50": 0.59,
+              "p95": 1.55,
+              "max": 1.55
+            },
+            "identitySpanMinusCapturedHttpMs": {
+              "n": 5,
+              "p50": 0.45062499999993477,
+              "p95": 0.556292000000056,
+              "max": 0.556292000000056
+            },
+            "processWindow_cpuUserMs": {
+              "n": 5,
+              "p50": 46.49,
+              "p95": 72.089,
+              "max": 72.089
+            },
+            "processWindow_cpuSystemMs": {
+              "n": 5,
+              "p50": 4.011,
+              "p95": 5.45,
+              "max": 5.45
+            },
+            "processWindow_eventLoopUtilization": {
+              "n": 5,
+              "p50": 0.34430164804546975,
+              "p95": 0.36398020442946477,
+              "max": 0.36398020442946477
+            }
+          },
+          "directSdkGetUserMs": {
+            "n": 2,
+            "p50": 18.342500000000655,
+            "p95": 20.444375000000036,
+            "max": 20.444375000000036
+          }
+        },
+        {
+          "concurrency": 2,
+          "nativeMeasured": 10,
+          "metrics": {
+            "elapsedMs": {
+              "n": 10,
+              "p50": 159.6127919999999,
+              "p95": 190.00641700000006,
+              "max": 190.00641700000006
+            },
+            "ttfbMs": {
+              "n": 10,
+              "p50": 159.31958399999985,
+              "p95": 189.701458,
+              "max": 189.701458
+            },
+            "encodedBodyBytes": {
+              "n": 10,
+              "p50": 7238,
+              "p95": 7238,
+              "max": 7238
+            },
+            "auth_createdToSendMs": {
+              "n": 10,
+              "p50": 0.029749999999921783,
+              "p95": 0.06562499999995453,
+              "max": 0.06562499999995453
+            },
+            "auth_sendToHeadersMs": {
+              "n": 10,
+              "p50": 21.57400000000007,
+              "p95": 26.734583000000157,
+              "max": 26.734583000000157
+            },
+            "auth_headersToEndMs": {
+              "n": 10,
+              "p50": 0.038875000000189175,
+              "p95": 0.09404199999994489,
+              "max": 0.09404199999994489
+            },
+            "auth_totalMs": {
+              "n": 10,
+              "p50": 21.682166999999936,
+              "p95": 26.797000000000025,
+              "max": 26.797000000000025
+            },
+            "server_identityMs": {
+              "n": 10,
+              "p50": 22.1,
+              "p95": 27.04,
+              "max": 27.04
+            },
+            "server_databaseMs": {
+              "n": 10,
+              "p50": 121.86,
+              "p95": 144.76,
+              "max": 144.76
+            },
+            "server_live_sessionMs": {
+              "n": 10,
+              "p50": 0.46,
+              "p95": 0.61,
+              "max": 0.61
+            },
+            "server_transaction_acquireMs": {
+              "n": 10,
+              "p50": 0.42,
+              "p95": 0.85,
+              "max": 0.85
+            },
+            "server_transactionMs": {
+              "n": 10,
+              "p50": 131.87,
+              "p95": 158.67,
+              "max": 158.67
+            },
+            "server_compressionMs": {
+              "n": 10,
+              "p50": 0.25,
+              "p95": 1.58,
+              "max": 1.58
+            },
+            "server_serializationMs": {
+              "n": 10,
+              "p50": 0.51,
+              "p95": 1.85,
+              "max": 1.85
+            },
+            "identitySpanMinusCapturedHttpMs": {
+              "n": 10,
+              "p50": 0.3168750000001985,
+              "p95": 0.46816700000000466,
+              "max": 0.46816700000000466
+            },
+            "processWindow_cpuUserMs": {
+              "n": 10,
+              "p50": 61.577,
+              "p95": 87.311,
+              "max": 87.311
+            },
+            "processWindow_cpuSystemMs": {
+              "n": 10,
+              "p50": 7.405,
+              "p95": 9.008,
+              "max": 9.008
+            },
+            "processWindow_eventLoopUtilization": {
+              "n": 10,
+              "p50": 0.2090123521331378,
+              "p95": 0.5269501915266798,
+              "max": 0.5269501915266798
+            }
+          },
+          "directSdkGetUserMs": {
+            "n": 4,
+            "p50": 19.576708999999937,
+            "p95": 21.066917000000103,
+            "max": 21.066917000000103
+          }
+        },
+        {
+          "concurrency": 4,
+          "nativeMeasured": 20,
+          "metrics": {
+            "elapsedMs": {
+              "n": 20,
+              "p50": 168.91600000000017,
+              "p95": 218.59616600000027,
+              "max": 243.98050000000057
+            },
+            "ttfbMs": {
+              "n": 20,
+              "p50": 168.667375,
+              "p95": 218.29391599999963,
+              "max": 243.69608299999982
+            },
+            "encodedBodyBytes": {
+              "n": 20,
+              "p50": 7238,
+              "p95": 7238,
+              "max": 7238
+            },
+            "auth_createdToSendMs": {
+              "n": 20,
+              "p50": 0.07529100000010658,
+              "p95": 1.8714580000000751,
+              "max": 2.330832999999984
+            },
+            "auth_sendToHeadersMs": {
+              "n": 20,
+              "p50": 25.95295900000019,
+              "p95": 36.16170800000009,
+              "max": 37.09633399999984
+            },
+            "auth_headersToEndMs": {
+              "n": 20,
+              "p50": 0.034166999999797554,
+              "p95": 0.08895899999970425,
+              "max": 0.1044170000000122
+            },
+            "auth_totalMs": {
+              "n": 20,
+              "p50": 26.89395800000011,
+              "p95": 37.27162499999986,
+              "max": 37.28625000000011
+            },
+            "server_identityMs": {
+              "n": 20,
+              "p50": 27.1,
+              "p95": 37.65,
+              "max": 37.75
+            },
+            "server_databaseMs": {
+              "n": 20,
+              "p50": 128.59,
+              "p95": 174.9,
+              "max": 195.34
+            },
+            "server_live_sessionMs": {
+              "n": 20,
+              "p50": 0.61,
+              "p95": 1.56,
+              "max": 2.18
+            },
+            "server_transaction_acquireMs": {
+              "n": 20,
+              "p50": 0.69,
+              "p95": 1.33,
+              "max": 1.73
+            },
+            "server_transactionMs": {
+              "n": 20,
+              "p50": 135.57,
+              "p95": 185.21,
+              "max": 211.13
+            },
+            "server_compressionMs": {
+              "n": 20,
+              "p50": 0.21,
+              "p95": 0.87,
+              "max": 1.37
+            },
+            "server_serializationMs": {
+              "n": 20,
+              "p50": 0.49,
+              "p95": 1.43,
+              "max": 1.62
+            },
+            "identitySpanMinusCapturedHttpMs": {
+              "n": 20,
+              "p50": 0.21508300000004965,
+              "p95": 0.4783750000001419,
+              "max": 0.4989589999999602
+            },
+            "processWindow_cpuUserMs": {
+              "n": 20,
+              "p50": 119.032,
+              "p95": 202.828,
+              "max": 203.187
+            },
+            "processWindow_cpuSystemMs": {
+              "n": 20,
+              "p50": 16.542,
+              "p95": 27.157,
+              "max": 27.271
+            },
+            "processWindow_eventLoopUtilization": {
+              "n": 20,
+              "p50": 0.4300643759396932,
+              "p95": 0.6926589788712918,
+              "max": 0.6957944291223522
+            }
+          },
+          "directSdkGetUserMs": {
+            "n": 8,
+            "p50": 26.207290999999714,
+            "p95": 27.053541999999652,
+            "max": 27.053541999999652
+          }
+        }
+      ],
+      "correlation": {
+        "nativeRequests": 42,
+        "matchedRequestTimelines": 42,
+        "requestsWithAuthTimeline": 42
+      },
+      "queryPlan": {
+        "label": "Representative existing owner metadata JOIN, complete club/non-draft predicate; values/rows/SQL text not exported.",
+        "planningMs": 2.123,
+        "executionMs": 23.012,
+        "plan": {
+          "nodeType": "Hash Join",
+          "actualRows": 5000,
+          "actualLoops": 1,
+          "actualTotalTimeMs": 22.645,
+          "sharedHitBlocks": 1486,
+          "sharedReadBlocks": 0,
+          "children": [
+            {
+              "nodeType": "Hash Join",
+              "actualRows": 5000,
+              "actualLoops": 1,
+              "actualTotalTimeMs": 21.863,
+              "sharedHitBlocks": 1482,
+              "sharedReadBlocks": 0,
+              "children": [
+                {
+                  "nodeType": "Hash Join",
+                  "actualRows": 7345,
+                  "actualLoops": 1,
+                  "actualTotalTimeMs": 16.196,
+                  "sharedHitBlocks": 1299,
+                  "sharedReadBlocks": 0,
+                  "children": [
+                    {
+                      "nodeType": "Seq Scan",
+                      "actualRows": 7334,
+                      "actualLoops": 1,
+                      "actualTotalTimeMs": 10.434,
+                      "sharedHitBlocks": 1179,
+                      "sharedReadBlocks": 0,
+                      "children": []
+                    },
+                    {
+                      "nodeType": "Hash",
+                      "actualRows": 7345,
+                      "actualLoops": 1,
+                      "actualTotalTimeMs": 4.214,
+                      "sharedHitBlocks": 120,
+                      "sharedReadBlocks": 0,
+                      "children": [
+                        {
+                          "nodeType": "Seq Scan",
+                          "actualRows": 7345,
+                          "actualLoops": 1,
+                          "actualTotalTimeMs": 2.012,
+                          "sharedHitBlocks": 120,
+                          "sharedReadBlocks": 0,
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "nodeType": "Hash",
+                  "actualRows": 5000,
+                  "actualLoops": 1,
+                  "actualTotalTimeMs": 4.201,
+                  "sharedHitBlocks": 183,
+                  "sharedReadBlocks": 0,
+                  "children": [
+                    {
+                      "nodeType": "Seq Scan",
+                      "actualRows": 5000,
+                      "actualLoops": 1,
+                      "actualTotalTimeMs": 2.959,
+                      "sharedHitBlocks": 183,
+                      "sharedReadBlocks": 0,
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "nodeType": "Hash",
+              "actualRows": 18,
+              "actualLoops": 1,
+              "actualTotalTimeMs": 0.037,
+              "sharedHitBlocks": 1,
+              "sharedReadBlocks": 0,
+              "children": [
+                {
+                  "nodeType": "Seq Scan",
+                  "actualRows": 18,
+                  "actualLoops": 1,
+                  "actualTotalTimeMs": 0.011,
+                  "sharedHitBlocks": 1,
+                  "sharedReadBlocks": 0,
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "poolAggregateMaxima": {
+        "app_role": {
+          "connections": 9,
+          "active": 6,
+          "idle_in_transaction": 4,
+          "lock_waiting": 0,
+          "io_waiting": 0,
+          "lwlock_waiting": 0,
+          "client_waiting": 9
+        },
+        "auth_role": {
+          "connections": 3,
+          "active": 3,
+          "idle_in_transaction": 0,
+          "lock_waiting": 0,
+          "io_waiting": 0,
+          "lwlock_waiting": 0,
+          "client_waiting": 2
+        },
+        "other_role": {
+          "connections": 9,
+          "active": 0,
+          "idle_in_transaction": 0,
+          "lock_waiting": 0,
+          "io_waiting": 0,
+          "lwlock_waiting": 0,
+          "client_waiting": 9
+        }
+      },
+      "eventLoopIntervals": 28,
+      "maxOneSecondP95DelayMs": 38.305791,
+      "maxRecordedEventLoopDelayMs": 504.627199,
+      "incomingAuthTimelineCount": 125,
+      "incomingAuthIncompleteTimelines": 0,
+      "allIncomingAuthHttpTotalMs": {
+        "n": 125,
+        "p50": 31.724874999999884,
+        "p95": 98.32099999999991,
+        "max": 392.5815829999992
+      },
+      "largestAuthTimeline": {
+        "requestId": "7d00b75c-ba54-4580-a918-1b30bea75196",
+        "traceId": "e676b7d0-41d5-4092-a5ee-bbcf5f75b1fb",
+        "category": "corkboard",
+        "at": "2026-10-26T18:58:03.115Z",
+        "auth": {
+          "category": "auth_user",
+          "startMs": 5.277583999999479,
+          "status": 200,
+          "failed": false,
+          "createdToSendMs": 4.897124999999505,
+          "sendToHeadersMs": 387.6570410000004,
+          "headersToEndMs": 0.02729199999885168,
+          "totalMs": 392.5815829999992
+        }
+      },
+      "instrumentedBrowserOutcomes": 4
+    },
+    {
+      "size": 5000,
+      "variant": "baseline",
+      "file": "diagnostics/5000-baseline.json",
+      "groups": [
+        {
+          "concurrency": 1,
+          "nativeMeasured": 5,
+          "metrics": {
+            "elapsedMs": {
+              "n": 5,
+              "p50": 62.41758299999992,
+              "p95": 184.85520799999995,
+              "max": 184.85520799999995
+            },
+            "ttfbMs": {
+              "n": 5,
+              "p50": 62.135957999999846,
+              "p95": 183.89333299999998,
+              "max": 183.89333299999998
+            },
+            "encodedBodyBytes": {
+              "n": 5,
+              "p50": 7238,
+              "p95": 7238,
+              "max": 7238
+            },
+            "auth_createdToSendMs": {
+              "n": 5,
+              "p50": 0.0444159999999556,
+              "p95": 0.10254200000008495,
+              "max": 0.10254200000008495
+            },
+            "auth_sendToHeadersMs": {
+              "n": 5,
+              "p50": 23.036499999999933,
+              "p95": 25.280042000000094,
+              "max": 25.280042000000094
+            },
+            "auth_headersToEndMs": {
+              "n": 5,
+              "p50": 0.08950000000004366,
+              "p95": 0.09983399999987341,
+              "max": 0.09983399999987341
+            },
+            "auth_totalMs": {
+              "n": 5,
+              "p50": 23.172833999999966,
+              "p95": 25.395041999999876,
+              "max": 25.395041999999876
+            },
+            "server_identityMs": {
+              "n": 5,
+              "p50": 23.64,
+              "p95": 25.8,
+              "max": 25.8
+            },
+            "server_databaseMs": {
+              "n": 5,
+              "p50": 18.23,
+              "p95": 142.24,
+              "max": 142.24
+            },
+            "server_live_sessionMs": {
+              "n": 5,
+              "p50": 0.5,
+              "p95": 0.66,
+              "max": 0.66
+            },
+            "server_transaction_acquireMs": {
+              "n": 5,
+              "p50": 0.43,
+              "p95": 0.5,
+              "max": 0.5
+            },
+            "server_transactionMs": {
+              "n": 5,
+              "p50": 31.66,
+              "p95": 153.28,
+              "max": 153.28
+            },
+            "server_compressionMs": {
+              "n": 5,
+              "p50": 0.27,
+              "p95": 3.87,
+              "max": 3.87
+            },
+            "server_serializationMs": {
+              "n": 5,
+              "p50": 0.58,
+              "p95": 4.87,
+              "max": 4.87
+            },
+            "identitySpanMinusCapturedHttpMs": {
+              "n": 5,
+              "p50": 0.4671660000000344,
+              "p95": 0.7004580000000153,
+              "max": 0.7004580000000153
+            },
+            "processWindow_cpuUserMs": {
+              "n": 5,
+              "p50": 39.024,
+              "p95": 60.329,
+              "max": 60.329
+            },
+            "processWindow_cpuSystemMs": {
+              "n": 5,
+              "p50": 4.909,
+              "p95": 5.791,
+              "max": 5.791
+            },
+            "processWindow_eventLoopUtilization": {
+              "n": 5,
+              "p50": 0.34580495261368455,
+              "p95": 0.35873805933820363,
+              "max": 0.35873805933820363
+            }
+          },
+          "directSdkGetUserMs": {
+            "n": 2,
+            "p50": 17.580667000000176,
+            "p95": 22.390292000000045,
+            "max": 22.390292000000045
+          }
+        },
+        {
+          "concurrency": 2,
+          "nativeMeasured": 10,
+          "metrics": {
+            "elapsedMs": {
+              "n": 10,
+              "p50": 158.34570799999983,
+              "p95": 176.38975000000028,
+              "max": 176.38975000000028
+            },
+            "ttfbMs": {
+              "n": 10,
+              "p50": 157.99454200000037,
+              "p95": 175.745042,
+              "max": 175.745042
+            },
+            "encodedBodyBytes": {
+              "n": 10,
+              "p50": 7238,
+              "p95": 7238,
+              "max": 7238
+            },
+            "auth_createdToSendMs": {
+              "n": 10,
+              "p50": 0.03949999999986176,
+              "p95": 1.8285000000000764,
+              "max": 1.8285000000000764
+            },
+            "auth_sendToHeadersMs": {
+              "n": 10,
+              "p50": 20.286583999999948,
+              "p95": 31.488959000000023,
+              "max": 31.488959000000023
+            },
+            "auth_headersToEndMs": {
+              "n": 10,
+              "p50": 0.047625000000152795,
+              "p95": 0.15137499999991633,
+              "max": 0.15137499999991633
+            },
+            "auth_totalMs": {
+              "n": 10,
+              "p50": 20.421499999999924,
+              "p95": 32.384207999999944,
+              "max": 32.384207999999944
+            },
+            "server_identityMs": {
+              "n": 10,
+              "p50": 20.89,
+              "p95": 32.66,
+              "max": 32.66
+            },
+            "server_databaseMs": {
+              "n": 10,
+              "p50": 122.66,
+              "p95": 133.33,
+              "max": 133.33
+            },
+            "server_live_sessionMs": {
+              "n": 10,
+              "p50": 0.55,
+              "p95": 0.97,
+              "max": 0.97
+            },
+            "server_transaction_acquireMs": {
+              "n": 10,
+              "p50": 0.4,
+              "p95": 0.69,
+              "max": 0.69
+            },
+            "server_transactionMs": {
+              "n": 10,
+              "p50": 131.52,
+              "p95": 148.07,
+              "max": 148.07
+            },
+            "server_compressionMs": {
+              "n": 10,
+              "p50": 0.25,
+              "p95": 2.35,
+              "max": 2.35
+            },
+            "server_serializationMs": {
+              "n": 10,
+              "p50": 0.54,
+              "p95": 2.79,
+              "max": 2.79
+            },
+            "identitySpanMinusCapturedHttpMs": {
+              "n": 10,
+              "p50": 0.2999170000002245,
+              "p95": 0.7587500000000631,
+              "max": 0.7587500000000631
+            },
+            "processWindow_cpuUserMs": {
+              "n": 10,
+              "p50": 65.966,
+              "p95": 144.546,
+              "max": 144.546
+            },
+            "processWindow_cpuSystemMs": {
+              "n": 10,
+              "p50": 10.167,
+              "p95": 23.973,
+              "max": 23.973
+            },
+            "processWindow_eventLoopUtilization": {
+              "n": 10,
+              "p50": 0.2610124108494629,
+              "p95": 0.5687278008387594,
+              "max": 0.5687278008387594
+            }
+          },
+          "directSdkGetUserMs": {
+            "n": 4,
+            "p50": 21.078625000000102,
+            "p95": 21.74633399999948,
+            "max": 21.74633399999948
+          }
+        },
+        {
+          "concurrency": 4,
+          "nativeMeasured": 20,
+          "metrics": {
+            "elapsedMs": {
+              "n": 20,
+              "p50": 168.13495799999964,
+              "p95": 203.73941600000035,
+              "max": 222.3094999999994
+            },
+            "ttfbMs": {
+              "n": 20,
+              "p50": 167.89691700000003,
+              "p95": 203.54175000000032,
+              "max": 221.9064159999998
+            },
+            "encodedBodyBytes": {
+              "n": 20,
+              "p50": 7238,
+              "p95": 7238,
+              "max": 7238
+            },
+            "auth_createdToSendMs": {
+              "n": 20,
+              "p50": 0.8613749999999527,
+              "p95": 1.971541999999772,
+              "max": 2.986667000000125
+            },
+            "auth_sendToHeadersMs": {
+              "n": 20,
+              "p50": 26.2673749999999,
+              "p95": 28.625041000000238,
+              "max": 29.073375000000397
+            },
+            "auth_headersToEndMs": {
+              "n": 20,
+              "p50": 0.03133299999990413,
+              "p95": 0.09262500000022555,
+              "max": 0.10112500000013824
+            },
+            "auth_totalMs": {
+              "n": 20,
+              "p50": 27.166124999999738,
+              "p95": 30.013499999999567,
+              "max": 30.489708000000064
+            },
+            "server_identityMs": {
+              "n": 20,
+              "p50": 27.45,
+              "p95": 30.22,
+              "max": 30.68
+            },
+            "server_databaseMs": {
+              "n": 20,
+              "p50": 127.02,
+              "p95": 164.65,
+              "max": 175.65
+            },
+            "server_live_sessionMs": {
+              "n": 20,
+              "p50": 0.62,
+              "p95": 1.57,
+              "max": 3.23
+            },
+            "server_transaction_acquireMs": {
+              "n": 20,
+              "p50": 0.69,
+              "p95": 1.26,
+              "max": 1.52
+            },
+            "server_transactionMs": {
+              "n": 20,
+              "p50": 133.17,
+              "p95": 172.93,
+              "max": 191.19
+            },
+            "server_compressionMs": {
+              "n": 20,
+              "p50": 0.22,
+              "p95": 0.52,
+              "max": 0.55
+            },
+            "server_serializationMs": {
+              "n": 20,
+              "p50": 0.47,
+              "p95": 0.72,
+              "max": 0.82
+            },
+            "identitySpanMinusCapturedHttpMs": {
+              "n": 20,
+              "p50": 0.22354199999996283,
+              "p95": 0.4453330000000655,
+              "max": 0.4777500000000501
+            },
+            "processWindow_cpuUserMs": {
+              "n": 20,
+              "p50": 114.506,
+              "p95": 125.286,
+              "max": 130.734
+            },
+            "processWindow_cpuSystemMs": {
+              "n": 20,
+              "p50": 17.335,
+              "p95": 18.715,
+              "max": 20.069
+            },
+            "processWindow_eventLoopUtilization": {
+              "n": 20,
+              "p50": 0.3280282486301466,
+              "p95": 0.5448979356051985,
+              "max": 0.5541553510551311
+            }
+          },
+          "directSdkGetUserMs": {
+            "n": 8,
+            "p50": 26.541458000000603,
+            "p95": 28.16083400000025,
+            "max": 28.16083400000025
+          }
+        }
+      ],
+      "correlation": {
+        "nativeRequests": 42,
+        "matchedRequestTimelines": 42,
+        "requestsWithAuthTimeline": 42
+      },
+      "queryPlan": {
+        "label": "Representative existing owner metadata JOIN, complete club/non-draft predicate; values/rows/SQL text not exported.",
+        "planningMs": 1.53,
+        "executionMs": 28.629,
+        "plan": {
+          "nodeType": "Hash Join",
+          "actualRows": 5000,
+          "actualLoops": 1,
+          "actualTotalTimeMs": 28.29,
+          "sharedHitBlocks": 1486,
+          "sharedReadBlocks": 0,
+          "children": [
+            {
+              "nodeType": "Hash Join",
+              "actualRows": 5000,
+              "actualLoops": 1,
+              "actualTotalTimeMs": 27.28,
+              "sharedHitBlocks": 1482,
+              "sharedReadBlocks": 0,
+              "children": [
+                {
+                  "nodeType": "Hash Join",
+                  "actualRows": 7345,
+                  "actualLoops": 1,
+                  "actualTotalTimeMs": 22.019,
+                  "sharedHitBlocks": 1299,
+                  "sharedReadBlocks": 0,
+                  "children": [
+                    {
+                      "nodeType": "Seq Scan",
+                      "actualRows": 7334,
+                      "actualLoops": 1,
+                      "actualTotalTimeMs": 9.692,
+                      "sharedHitBlocks": 1179,
+                      "sharedReadBlocks": 0,
+                      "children": []
+                    },
+                    {
+                      "nodeType": "Hash",
+                      "actualRows": 7345,
+                      "actualLoops": 1,
+                      "actualTotalTimeMs": 9.86,
+                      "sharedHitBlocks": 120,
+                      "sharedReadBlocks": 0,
+                      "children": [
+                        {
+                          "nodeType": "Seq Scan",
+                          "actualRows": 7345,
+                          "actualLoops": 1,
+                          "actualTotalTimeMs": 7.106,
+                          "sharedHitBlocks": 120,
+                          "sharedReadBlocks": 0,
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "nodeType": "Hash",
+                  "actualRows": 5000,
+                  "actualLoops": 1,
+                  "actualTotalTimeMs": 3.043,
+                  "sharedHitBlocks": 183,
+                  "sharedReadBlocks": 0,
+                  "children": [
+                    {
+                      "nodeType": "Seq Scan",
+                      "actualRows": 5000,
+                      "actualLoops": 1,
+                      "actualTotalTimeMs": 1.952,
+                      "sharedHitBlocks": 183,
+                      "sharedReadBlocks": 0,
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "nodeType": "Hash",
+              "actualRows": 18,
+              "actualLoops": 1,
+              "actualTotalTimeMs": 0.027,
+              "sharedHitBlocks": 1,
+              "sharedReadBlocks": 0,
+              "children": [
+                {
+                  "nodeType": "Seq Scan",
+                  "actualRows": 18,
+                  "actualLoops": 1,
+                  "actualTotalTimeMs": 0.013,
+                  "sharedHitBlocks": 1,
+                  "sharedReadBlocks": 0,
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "poolAggregateMaxima": {
+        "app_role": {
+          "connections": 9,
+          "active": 4,
+          "idle_in_transaction": 4,
+          "lock_waiting": 0,
+          "io_waiting": 1,
+          "lwlock_waiting": 0,
+          "client_waiting": 9
+        },
+        "auth_role": {
+          "connections": 4,
+          "active": 2,
+          "idle_in_transaction": 0,
+          "lock_waiting": 0,
+          "io_waiting": 0,
+          "lwlock_waiting": 0,
+          "client_waiting": 2
+        },
+        "other_role": {
+          "connections": 9,
+          "active": 0,
+          "idle_in_transaction": 0,
+          "lock_waiting": 0,
+          "io_waiting": 0,
+          "lwlock_waiting": 0,
+          "client_waiting": 9
+        }
+      },
+      "eventLoopIntervals": 27,
+      "maxOneSecondP95DelayMs": 559.415295,
+      "maxRecordedEventLoopDelayMs": 559.415295,
+      "incomingAuthTimelineCount": 127,
+      "incomingAuthIncompleteTimelines": 0,
+      "allIncomingAuthHttpTotalMs": {
+        "n": 127,
+        "p50": 28.77737500000012,
+        "p95": 77.04299999999967,
+        "max": 116.89083300000016
+      },
+      "largestAuthTimeline": {
+        "requestId": "107409e4-428d-4aea-a244-a396ca9bd804",
+        "traceId": "f89de605-3632-4688-96f5-a958afbc1253",
+        "category": "pipelinePage",
+        "at": "2026-10-26T18:58:20.614Z",
+        "auth": {
+          "category": "auth_user",
+          "startMs": 3.5906250000000455,
+          "status": 200,
+          "failed": false,
+          "createdToSendMs": 0.3008750000001328,
+          "sendToHeadersMs": 116.53816600000005,
+          "headersToEndMs": 0.05158399999982066,
+          "totalMs": 116.89083300000016
+        }
+      },
+      "instrumentedBrowserOutcomes": 4
+    }
+  ],
+  "nativeOutcomes": 168,
+  "directIdentityOutcomes": 56,
+  "instrumentedBrowserOutcomes": 16,
+  "readOnlyPlans": 4
+}

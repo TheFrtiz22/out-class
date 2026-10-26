@@ -1,0 +1,134 @@
+▶ real account HTTP and RSC keep internal templates behind recruiting permission across campuses and overlapping memberships
+  ✔ students see only their own applications; ordinary overlapping memberships expose no internal drafts in HTTP or RSC (516.317ms)
+  ✔ recruiter can use the dedicated template reader only in the authorized club; common payloads stay redacted (242.747792ms)
+  ✔ owner retains the editor and navigation fields without widening account serialization (105.277542ms)
+  ✔ unauthenticated account responses are private and non-cacheable (2.508167ms)
+  ✔ native Prisma notification snapshots use two statements, preserve counts and reject disabled accounts (33.026708ms)
+✔ real account HTTP and RSC keep internal templates behind recruiting permission across campuses and overlapping memberships (1282.507667ms)
+▶ Phase 1 GET reads preserve live authority, no-store, Demo isolation and concurrent browser navigation
+  ✔ each migrated club read validates live authority and private response handling (431.819541ms)
+  ✔ three independent Interview Rooms requests overlap, exclude the scheduler and tolerate rapid navigation (1591.726084ms)
+  ✔ GET preserves anonymous-round assignment projection and cross-club membership boundaries (84.688459ms)
+  ✔ capability removal and suspension deny the same read after earlier successful responses (60.358166ms)
+  ✔ disabled accounts and captured revoked cookies cannot replay GET reads (192.328542ms)
+✔ Phase 1 GET reads preserve live authority, no-store, Demo isolation and concurrent browser navigation (2464.357042ms)
+✔ workspace avoids unused font transfers and renders real italic/variable faces on demand at 1440px (597.493542ms)
+✔ workspace avoids unused font transfers and renders real italic/variable faces on demand at 390px (531.35975ms)
+Feature acceptance: settings
+Feature acceptance: meetings
+Feature acceptance: scheduled decisions
+Feature acceptance: review settings
+✔ built startup omits inactive feature chunks and real selected screens remain usable (4149.335125ms)
+✔ late settings code cannot reopen an abandoned tab and later selection still works (1046.156333ms)
+✔ logout during a pending settings chunk fences protected UI and revokes subsequent reads (1768.212834ms)
+✔ a deferred settings profile restores its durable draft after leaving and reloading without publishing (2801.89825ms)
+✔ member-only direct Meetings entry loads the deferred legacy reader without management controls (1179.118292ms)
+Phase12 scope acceptance: initialReads=1, subsequent visits validated and revoked replay denied
+Phase12 scope acceptance: initialReads=1, subsequent visits validated and revoked replay denied
+Phase12 scope acceptance: initialReads=1, subsequent visits validated and revoked replay denied
+✔ constrained startup fences an already-notified Auth epoch, revisits read fresh, and revoked cookies reveal no old applicants (18505.457667ms)
+▶ selected tabs request authorized data while code is still loading, then consume it exactly once
+  ✔ members (447.560125ms)
+  ✔ pipeline (435.836917ms)
+  ✔ tasks (420.719667ms)
+  ✔ announcements (424.091292ms)
+✔ selected tabs request authorized data while code is still loading, then consume it exactly once (1951.569583ms)
+✔ rapid selected-tab changes fence late results and a revoked revisit never reveals the old directory (826.437875ms)
+✔ pointer and mobile touch navigation retain one fresh read, usable content and responsive layout (1090.672542ms)
+✔ pipeline list/detail GETs retain live auth, strict arguments, masking and exact list parity (662.9625ms)
+✔ applicant list avoids detail reads; closing a pending detail fences it from the next candidate (1300.374125ms)
+✔ fresh applicant detail preserves an autosaved review draft across close and reopen (1328.736208ms)
+✔ paged applicants preserve whole-list search/counts with one fresh read per interaction (1309.644875ms)
+✔ server pages and explicit selections preserve complete authorized sets, privacy and live revocation (851.418333ms)
+✔ fresh page boundaries avoid duplicate reads, full quick-review/voting selection survives pagination and reopen validates again (5383.803ms)
+✔ rapid global searches coalesce obsolete reads, retain keyboard focus and never show a late previous selection (601.143583ms)
+✔ editable review drafts survive the 100/101 server-page boundary and return navigation (1470.356625ms)
+✔ narrow summaries retain canonical filtering, score barriers and fresh assignment/privacy authority over real HTTP (4924.486166ms)
+✔ paged navigation remains bounded, invalid filters make no request and refresh hides old data until fresh privacy validation (2075.241542ms)
+▶ every explicit page refresh rejects revoked membership, disabled accounts and revoked live sessions
+  ✔ membership (949.734125ms)
+  ✔ account (942.19175ms)
+  ✔ session (981.59175ms)
+✔ every explicit page refresh rejects revoked membership, disabled accounts and revoked live sessions (3044.393584ms)
+✔ real Repeatable Read planning bounds hydrated summaries and stays consistent across a concurrent profile update (419.005875ms)
+✔ queued invalid numeric filters remain editable after obsolete page reads drain (1218.513458ms)
+✔ native metadata JOIN preserves complete Prisma predicates, nullable profiles and unknown-scope fallback (266.318708ms)
+▶ captured ordinary-session cookies cannot replay protected reads or profile writes after revocation
+  ✔ global logout removes the provider session and rejects the unexpired captured cookie (335.87125ms)
+  ✔ local logout revokes only that session while another real device keeps working (436.506708ms)
+  ✔ actual emailed password recovery revokes the earlier captured session (559.770333ms)
+  ✔ current disabled status denies a previously valid captured cookie (313.241375ms)
+  ✔ an expired provider session cannot use its still-unexpired JWT (309.132042ms)
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at stringFromUTF8 (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+ssr@0.12.7_@supabase+supabase-js@2.116.0/node_modules/@supabase/ssr/dist/main/utils/base64url.js:194:19)
+    at stringFromBase64URL (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+ssr@0.12.7_@supabase+supabase-js@2.116.0/node_modules/@supabase/ssr/dist/main/utils/base64url.js:97:17)
+    at decodeChunkedCookieValue (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+ssr@0.12.7_@supabase+supabase-js@2.116.0/node_modules/@supabase/ssr/dist/main/cookies.js:51:51)
+    at Object.getItem (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+ssr@0.12.7_@supabase+supabase-js@2.116.0/node_modules/@supabase/ssr/dist/main/cookies.js:370:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async getItemAsync (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+auth-js@2.116.0/node_modules/@supabase/auth-js/dist/main/lib/helpers.js:138:19)
+    at async SupabaseAuthClient.__loadSession (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+auth-js@2.116.0/node_modules/@supabase/auth-js/dist/main/GoTrueClient.js:2521:34)
+    at async SupabaseAuthClient._useSession (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+auth-js@2.116.0/node_modules/@supabase/auth-js/dist/main/GoTrueClient.js:2501:28)
+    at async SupabaseAuthClient._emitInitialSession (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+auth-js@2.116.0/node_modules/@supabase/auth-js/dist/main/GoTrueClient.js:3658:16)
+    at async /Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+auth-js@2.116.0/node_modules/@supabase/auth-js/dist/main/GoTrueClient.js:3652:17
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at stringFromUTF8 (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+ssr@0.12.7_@supabase+supabase-js@2.116.0/node_modules/@supabase/ssr/dist/main/utils/base64url.js:194:19)
+    at stringFromBase64URL (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+ssr@0.12.7_@supabase+supabase-js@2.116.0/node_modules/@supabase/ssr/dist/main/utils/base64url.js:97:17)
+    at decodeChunkedCookieValue (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+ssr@0.12.7_@supabase+supabase-js@2.116.0/node_modules/@supabase/ssr/dist/main/cookies.js:51:51)
+    at Object.getItem (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+ssr@0.12.7_@supabase+supabase-js@2.116.0/node_modules/@supabase/ssr/dist/main/cookies.js:370:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async getItemAsync (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+auth-js@2.116.0/node_modules/@supabase/auth-js/dist/main/lib/helpers.js:138:19)
+    at async SupabaseAuthClient.__loadSession (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+auth-js@2.116.0/node_modules/@supabase/auth-js/dist/main/GoTrueClient.js:2521:34)
+    at async SupabaseAuthClient._useSession (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+auth-js@2.116.0/node_modules/@supabase/auth-js/dist/main/GoTrueClient.js:2501:28)
+    at async SupabaseAuthClient._emitInitialSession (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+auth-js@2.116.0/node_modules/@supabase/auth-js/dist/main/GoTrueClient.js:3658:16)
+    at async /Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+auth-js@2.116.0/node_modules/@supabase/auth-js/dist/main/GoTrueClient.js:3652:17
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at stringFromUTF8 (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+ssr@0.12.7_@supabase+supabase-js@2.116.0/node_modules/@supabase/ssr/dist/main/utils/base64url.js:194:19)
+    at stringFromBase64URL (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+ssr@0.12.7_@supabase+supabase-js@2.116.0/node_modules/@supabase/ssr/dist/main/utils/base64url.js:97:17)
+    at decodeChunkedCookieValue (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+ssr@0.12.7_@supabase+supabase-js@2.116.0/node_modules/@supabase/ssr/dist/main/cookies.js:51:51)
+    at Object.getItem (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+ssr@0.12.7_@supabase+supabase-js@2.116.0/node_modules/@supabase/ssr/dist/main/cookies.js:370:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async getItemAsync (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+auth-js@2.116.0/node_modules/@supabase/auth-js/dist/main/lib/helpers.js:138:19)
+    at async SupabaseAuthClient.__loadSession (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+auth-js@2.116.0/node_modules/@supabase/auth-js/dist/main/GoTrueClient.js:2521:34)
+    at async SupabaseAuthClient._useSession (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+auth-js@2.116.0/node_modules/@supabase/auth-js/dist/main/GoTrueClient.js:2501:28)
+    at async SupabaseAuthClient._emitInitialSession (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+auth-js@2.116.0/node_modules/@supabase/auth-js/dist/main/GoTrueClient.js:3658:16)
+    at async /Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+auth-js@2.116.0/node_modules/@supabase/auth-js/dist/main/GoTrueClient.js:3652:17
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at stringFromUTF8 (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+ssr@0.12.7_@supabase+supabase-js@2.116.0/node_modules/@supabase/ssr/dist/main/utils/base64url.js:194:19)
+    at stringFromBase64URL (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+ssr@0.12.7_@supabase+supabase-js@2.116.0/node_modules/@supabase/ssr/dist/main/utils/base64url.js:97:17)
+    at decodeChunkedCookieValue (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+ssr@0.12.7_@supabase+supabase-js@2.116.0/node_modules/@supabase/ssr/dist/main/cookies.js:51:51)
+    at Object.getItem (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+ssr@0.12.7_@supabase+supabase-js@2.116.0/node_modules/@supabase/ssr/dist/main/cookies.js:370:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async getItemAsync (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+auth-js@2.116.0/node_modules/@supabase/auth-js/dist/main/lib/helpers.js:138:19)
+    at async SupabaseAuthClient.__loadSession (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+auth-js@2.116.0/node_modules/@supabase/auth-js/dist/main/GoTrueClient.js:2521:34)
+    at async SupabaseAuthClient._useSession (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+auth-js@2.116.0/node_modules/@supabase/auth-js/dist/main/GoTrueClient.js:2501:28)
+    at async SupabaseAuthClient._emitInitialSession (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+auth-js@2.116.0/node_modules/@supabase/auth-js/dist/main/GoTrueClient.js:3658:16)
+    at async /Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@supabase+auth-js@2.116.0/node_modules/@supabase/auth-js/dist/main/GoTrueClient.js:3652:17
+  ✔ malformed authentication cookies deny without a server error or write (257.841125ms)
+  ✔ real session validation adds one SQL statement per request and retains one Auth user verification (312.327542ms)
+✔ captured ordinary-session cookies cannot replay protected reads or profile writes after revocation (2534.697209ms)
+▶ settings and authenticated navigation across roles, saves, history and responsive layouts
+  ✔ anonymous public routes stay public and Settings requires authentication (18.685958ms)
+  ✔ desktop settings keeps one shell, active navigation and state across personal sections (540.868583ms)
+  ✔ notification preferences save through the existing action and survive refresh/history (1166.113292ms)
+  ✔ dismissed invitations remain recoverable, accept/decline refresh membership, and claims submit (904.866666ms)
+  ✔ ordinary members cannot see configuration via navigation or direct URLs/actions (576.841375ms)
+  ✔ organization settings saves use the selected organization and switch context safely (3649.899958ms)
+  ✔ interviewer settings show only granted sections and deny unauthorized direct sections (751.320334ms)
+  ✔ remaining detail routes retain shell, while interview schedules stay operational (2508.852541ms)
+  ✔ tablet and mobile keep primary navigation and accessible Settings selectors (4756.001042ms)
+Settings browser screenshots: /var/folders/j8/wlyll34d16z6dxyrbjnl1knm0000gn/T/outclass-settings-artifacts
+  ✔ superadmin retains its elevated administration shell (851.946667ms)
+✔ settings and authenticated navigation across roles, saves, history and responsive layouts (16623.964708ms)
+▶ signup privacy on real Next, Auth, SMTP and desktop/mobile browsers
+  ✔ new and confirmed-existing addresses return exactly the same unauthenticated action result (192.925416ms)
+  ✔ repeat signup creates no duplicate, replaces no verified identity/profile and does not change its password (169.498791ms)
+  ✔ desktop and mobile keep identical verification UI, no session, email correction and sign-in return path (1742.558875ms)
+✔ signup privacy on real Next, Auth, SMTP and desktop/mobile browsers (2209.384417ms)
+ℹ tests 67
+ℹ suites 0
+ℹ pass 67
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 89095.999292

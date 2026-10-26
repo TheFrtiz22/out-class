@@ -1,0 +1,58 @@
+{
+  "startedAt": "2026-10-26T18:17:09.328Z",
+  "profile": "local",
+  "cohorts": [
+    1000,
+    5000
+  ],
+  "blocks": [
+    "BA",
+    "AB"
+  ],
+  "buildIds": {},
+  "planSha256": "0dd32deb52b6bcbfeae4aded47f4f370c3c71aed186e0bd933071fd0b3f7f93b",
+  "tools": {
+    "navigation-phase13-study.cjs": "5a92a6a7c26ced721c956dd34c9cca7c04f19b1c1230a642767ff66b5ea647cf",
+    "navigation-phase13-local.cjs": "77122f11c3c964403b71b9314968c136697473f8fcdcfa0b32eff793ea6795d6",
+    "navigation-audit.cjs": "ef894a888a99815d1e6fd18d5f9ecb8c5d7e4f52ee7e981603442a55bf9e20ef",
+    "navigation-phase13-interactions.cjs": "666eaf0856aec6a200f234d326f36e9ed23c1a10e58d89bdd849195e267ae67b",
+    "navigation-phase13-constrained-interactions.cjs": "304f0a1b0bb6fadfc1739de840f07ac6dc9b1cdfab1c3a0f109c81588139835b",
+    "navigation-phase13-concurrency.cjs": "e9028af6a1eef819636d8a01eee09c14a7d5ce8a4c53134e4117efdd673bb078",
+    "navigation-phase13-host-monitor.cjs": "f6a1b1198c82525348cb1c50feac287eb164f014961dfe4ae0b1dc131f79e930"
+  },
+  "completed": [],
+  "interactions": [],
+  "concurrency": [],
+  "features": [],
+  "failures": [
+    {
+      "name": "Error",
+      "message": "Host-control violation: entire profile retained as invalid"
+    },
+    {
+      "name": "HostControlViolation",
+      "message": "Entire profile retained; no individual row replacement."
+    }
+  ],
+  "complete": false,
+  "runtimePackageManifests": {
+    "next": "547305a02acf9b1700e8210e511deefe616d415f3fc06c9f7551187430b7ee54",
+    "react": "6029fda5e660da53952cf5ddcd1e8568fc8dc0c6dcb9deaf7667fdc4c7f5a113",
+    "prisma": "640c40516faa0c333995d0e22cf9e09815c3d7f80ef71ac793283d2c9cac41be",
+    "playwright": "76e7341a52a4dd154553c3514926a5f824da4374d000e88d9ac3c14ee6eadf84",
+    "@supabase/ssr": "f7fb77112c8e841801ae6b841078488ea262e226a5488ef213ce1a13c1b6be0e",
+    "@supabase/supabase-js": "7fb2b72ae229cc489891f65915a11ba0528f14783ffaa95379d50bcef95f1d0c"
+  },
+  "hostControl": {
+    "valid": false,
+    "samples": 2,
+    "violations": [
+      {
+        "at": "2026-10-26T18:17:09.449Z",
+        "code": "power_source_or_low_power_mode_changed",
+        "phase": "starting"
+      }
+    ]
+  },
+  "applicationStopped": true
+}
