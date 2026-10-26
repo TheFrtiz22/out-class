@@ -32,6 +32,8 @@ Baseline, pass 1 and final captures cover 1440×900, 1280×800, 1024×768, 768×
 
 Pass 1 established the shared optical layers and related light/navy surfaces. Review found a visible seam and background text in the public mobile drawer, and a slightly washed-out navy tint. Pass 2 combined the drawer's backdrop, deepened the navy base, and added a fine inner rim. Final images were inspected for clipping, alignment, stacking, text interference and contrast. Representative before/after files are in `screenshots/`; the complete reproducible audit output lives under ignored `test-results/liquid-glass/`.
 
+Pre-merge review caught one additional tablet state: with the perspective control merged into the header, opening the drawer moved that control down with the growing surface. The header row now establishes its containing block. The browser regression reproduces the original 127.5px displacement at 768px and checks stable row alignment through opening and dismissal at 768px, 1024px and 1099px.
+
 | Surface | Before | After |
 | --- | --- | --- |
 | Public capsule over the hero | ![Before: public desktop](screenshots/before-public-1440-hero.png) | ![After: public desktop](screenshots/after-public-1440-hero.png) |

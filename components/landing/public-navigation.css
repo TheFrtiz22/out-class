@@ -35,7 +35,7 @@
 }
 .oc-public-nav[data-hero="true"] .oc-public-nav-surface { box-shadow: var(--oc-glass-light-depth), 0 18px 40px -24px rgb(0 0 0 / 40%); }
 .oc-public-nav-surface::before { content: ""; position: absolute; inset: 1px; border: 1px solid rgb(255 255 255 / 32%); border-bottom-color: rgb(20 45 69 / 6%); border-radius: inherit; pointer-events: none; }
-.oc-public-nav-row { display: flex; align-items: center; gap: 20px; min-height: 68px; padding: 10px 12px 10px 24px; }
+.oc-public-nav-row { position: relative; display: flex; align-items: center; gap: 20px; min-height: 68px; padding: 10px 12px 10px 24px; }
 .oc-public-logo { position: relative; display: flex; align-items: center; flex: 0 0 132px; height: 44px; border-radius: 8px; }
 .oc-public-logo > span { position: absolute; inset: 0; display: flex; align-items: center; transition: opacity 240ms var(--nav-ease); }
 .oc-public-logo img { display: block; width: 100%; height: auto; }
