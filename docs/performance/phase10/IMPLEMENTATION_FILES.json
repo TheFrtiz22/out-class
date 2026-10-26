@@ -1,0 +1,15 @@
+{
+  "baseline": "c80a370a482aa6b7398b1b4598c1c6bda0426736",
+  "files": [
+    "app/layout.tsx",
+    "scripts/navigation-audit.cjs",
+    "scripts/navigation-phase10-local.cjs",
+    "scripts/navigation-phase10-study.cjs",
+    "scripts/navigation-phase10-interactions.cjs",
+    "scripts/navigation-phase10-constrained-interactions.cjs",
+    "scripts/navigation-phase10-concurrency.cjs",
+    "tests/navigation-phase10-e2e.test.cjs"
+  ],
+  "sha256": "7ac674e405722641328ea8f147a9bd372b7d55dd908edd0cc4fd6d3bdaa4d9a1",
+  "applicationChange": "app/layout.tsx only; three added lines including one explanatory comment."
+}

@@ -1,0 +1,26 @@
+{
+  "pausedAt": "2026-10-25T23:11:35.849386+00:00",
+  "reason": "User explicitly requested pause until plugged in.",
+  "applicationSourceChangedSincePassingChecks": false,
+  "candidateBuildId": "Dj_0I0pC93saxp7MnUlJH",
+  "partialCollection": "paused-local-2",
+  "partialCollectionAccepted": false,
+  "recordedCompletedBlocks": 9,
+  "recordedBrowserOutcomes": 100,
+  "recordedInteractionOutcomes": 48,
+  "interruptedCollection": "interrupted-local-1",
+  "privateBuildsAndCredentials": "Retained in the existing private temporary directories for resumption; not included in repository.",
+  "resume": "Verify host awake/plugged in, source hashes and private fixtures; restart only reserved disposable local project/app, refresh local service status if required; run full local and constrained BA/AB protocols. No partial/excluded timings pooled.",
+  "collectorProcessesStopped": 7,
+  "sourceFilesVerifiedAtPause": 913,
+  "appPortStopped": true,
+  "ownedLocalServicesStopped": true,
+  "unrelatedOriginalCheckoutPreserved": true,
+  "privateFixtureDirectoryRetained": true,
+  "localDatabaseBackupRetained": true,
+  "historicalRecord": true,
+  "supersededBy": [
+    "RESUMPTION.json",
+    "CLEANUP.json"
+  ]
+}

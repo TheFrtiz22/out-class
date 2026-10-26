@@ -1,0 +1,10 @@
+✔ workspace avoids unused font transfers and renders real italic/variable faces on demand at 1440px (1090.526917ms)
+✔ workspace avoids unused font transfers and renders real italic/variable faces on demand at 390px (498.248042ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1793.308

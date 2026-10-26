@@ -1,0 +1,15 @@
+{
+  "resumedAt": "2026-10-26T01:41:26.962922+00:00",
+  "candidateSourceFilesVerified": 913,
+  "baselineAndCandidateBuildIdsVerified": true,
+  "localConnectionAndPublicKeyValuesUnchanged": true,
+  "restoredCohortsVerified": [
+    1000,
+    5000
+  ],
+  "normalActorSigninAndFreshPageReadSmoke": "Both restored cohorts passed; 100 applications in each bounded response; private no-store and Vary Cookie preserved.",
+  "localServiceSet": "Same disposable set as original provisioning, with the original captured SMTP/TLS trust setup. No production services touched.",
+  "power": "Mac observed lid open and 100% battery; temporary caffeinate -dimsu assertions. Actual power logs decide validity.",
+  "partialAndInterruptedDataExcluded": "EXCLUSIONS.json",
+  "sourceAndApplicationRebuild": "No application edits or rebuild on resume; reuses checked frozen builds."
+}

@@ -1,0 +1,37 @@
+{
+  "baseline": "c80a370a482aa6b7398b1b4598c1c6bda0426736",
+  "hypothesis": "Root localFont groups eagerly preload all four faces (428672 bytes). Let CSS request only used faces, keeping identical files, families, variable weights, italic styles, fallbacks and display swap. Avoid transferring unused italic faces before live validated workspace startup.",
+  "scope": "One app change: preload false on both existing font groups. No auth, queries, transport, cache, infrastructure, schema or dependency changes.",
+  "primaryMetric": "Source useful-content time from document navigation, reported separately from destination click. Preserve all traffic through existing drain; observe font settlement/CLS without changing readiness predicates.",
+  "cohorts": [
+    1000,
+    5000
+  ],
+  "profiles": [
+    "unthrottled",
+    "80ms latency, 200000 B/s down, 93750 B/s up, CPU4x"
+  ],
+  "blocks": [
+    "BA",
+    "AB"
+  ],
+  "warmupsPerBuildBlockPathCondition": 1,
+  "samplesPerBuildBlockPathCondition": 5,
+  "paths": [
+    "applicants",
+    "applicantDetail"
+  ],
+  "conditions": [
+    "cold",
+    "warm"
+  ],
+  "plannedBrowserOutcomes": 384,
+  "interactions": "Existing warm next-page/search, 1 warmup+5 measured per path/build/block/cohort, unthrottled and constrained.",
+  "httpDiagnostic": "Same pipelinePage GET, 1/2/4 readers; both cohorts, BA/AB, 1 warmup+5 waves. Preserve Phase9 unresolved tails; no attribution to font loading.",
+  "acceptance": "No intended font change, no failed outcomes/security regression; unused faces remain available on demand; report all worsening metrics/CLS/font settlement, and no claims that this resolves Phase9 database tails.",
+  "publication": "Local commit only; hold stack publication pending earlier unresolved performance decisions.",
+  "power": "Temporary caffeinate, audit actual Sleep/Wake/DarkWake; exclude complete interrupted set only.",
+  "plannedWarmInteractionOutcomes": 192,
+  "plannedNativeHttpOutcomes": 336,
+  "fontDiagnostics": "Observe existing source readiness; DOMContentLoaded fonts.ready resolution, paint entries, face states and layout-shift entries. No waits or font forcing in accepted measurements. Font demand probes are separate regression tests."
+}

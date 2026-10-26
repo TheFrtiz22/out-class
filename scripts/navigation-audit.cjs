@@ -88,6 +88,13 @@ function routes(f) {
   };
 }
 function installBrowserObservers(options) {
+  if (options?.fontDiagnostics) {
+    window.__fontAudit = { readyMs: null, layoutShifts: [] };
+    document.addEventListener('DOMContentLoaded', () => { document.fonts.ready.then(() => { window.__fontAudit.readyMs = performance.now(); }); }, { once: true });
+    new PerformanceObserver(list => {
+      for (const entry of list.getEntries()) window.__fontAudit.layoutShifts.push({ atMs: entry.startTime, value: entry.value, hadRecentInput: entry.hadRecentInput });
+    }).observe({ type: 'layout-shift', buffered: true });
+  }
   window.__workspaceReadEvents = [];
   const readCauses = new Set(['mount','dispatch','user','readAuthority','isImpersonating','clubId','kind','privacyScope','retry','mode','demoReady','demoEnabled','initial_session','signed_in','signed_out','token_refreshed','user_updated','mfa_challenge_verified','password_recovery']);
   window.addEventListener('outclass:workspace-read', event => {
@@ -156,7 +163,7 @@ async function main() {
   assert.ok(sampleCount>0&&sampleCount<=100);
   async function session(participant=0) {
     const context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:cookieSets[participant],origins:[]}});
-    await context.addInitScript(installBrowserObservers,{diagnoseHydration:process.argv.includes('--diagnose-hydration')});
+    await context.addInitScript(installBrowserObservers,{diagnoseHydration:process.argv.includes('--diagnose-hydration'),fontDiagnostics:process.argv.includes('--font-diagnostics')});
     const page=await context.newPage(),cdp=await context.newCDPSession(page);
     if(process.argv.includes('--probe-hydration-dom')){
       assert.ok(process.argv.includes('--diagnose-hydration'),'DOM probing is diagnostic only');
@@ -212,7 +219,8 @@ async function main() {
     }).catch(() => null);
     const heap=Object.fromEntries((await s.cdp.send('Performance.getMetrics')).metrics.map(m=>[m.name,m.value]));
     const authorityEvents=await s.page.evaluate(()=>window.__workspaceReadEvents||[]);
-    return { elapsedMs: Date.now()-started, meaningfulMs:s.sourceReadyMs??null, dom, heapUsedBytes:heap.JSHeapUsedSize,heapTotalBytes:heap.JSHeapTotalSize,authorityEvents, requests: s.requests.map(r => ({route:r.route,type:r.type,method:r.method,status:r.status,failed:!!r.failed,pending:r.end===null,startMs:r.start-started,endMs:r.end===null?null:r.end-started,traceId:r.traceId||null,serverTiming:r.serverTiming||null,encodedBodyBytes:r.bytes,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart-r.timing.requestStart:null,transferMs:r.timing?.responseEnd>=0?r.timing.responseEnd-r.timing.responseStart:null})) };
+    const fonts=process.argv.includes('--font-diagnostics')?await s.page.evaluate(()=>({ readyMs:window.__fontAudit.readyMs,layoutShifts:window.__fontAudit.layoutShifts,paint:performance.getEntriesByType('paint').map(e=>({name:e.name,atMs:e.startTime})),faces:[...document.fonts].map(f=>({family:f.family,style:f.style,weight:f.weight,status:f.status})),preloadCount:document.querySelectorAll('link[rel="preload"][as="font"]').length })):null;
+    return { elapsedMs: Date.now()-started, meaningfulMs:s.sourceReadyMs??null, dom, ...(fonts?{fonts}:{}), heapUsedBytes:heap.JSHeapUsedSize,heapTotalBytes:heap.JSHeapTotalSize,authorityEvents, requests: s.requests.map(r => ({route:r.route,type:r.type,method:r.method,status:r.status,failed:!!r.failed,pending:r.end===null,startMs:r.start-started,endMs:r.end===null?null:r.end-started,traceId:r.traceId||null,serverTiming:r.serverTiming||null,encodedBodyBytes:r.bytes,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart-r.timing.requestStart:null,transferMs:r.timing?.responseEnd>=0?r.timing.responseEnd-r.timing.responseStart:null})) };
   }
   async function open(s,id) {
     const started=Date.now();

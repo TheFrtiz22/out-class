@@ -1,0 +1,2449 @@
+[
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "clickMs",
+    "quantile": "p50",
+    "before": 79.7000000178814,
+    "after": 81
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "clickMs",
+    "quantile": "p95",
+    "before": 125.09999999403954,
+    "after": 180.7000000178814
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "networkCompleteMs",
+    "quantile": "p95",
+    "before": 96.7998046875,
+    "after": 152.900146484375
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "scriptMs",
+    "quantile": "p95",
+    "before": 26.102,
+    "after": 26.570000000000004
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "sourceScriptBytes",
+    "quantile": "p50",
+    "before": 543405,
+    "after": 543419
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "sourceScriptBytes",
+    "quantile": "p95",
+    "before": 543405,
+    "after": 543419
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "fontReadyMs",
+    "quantile": "p50",
+    "before": 73.5,
+    "after": 115.7999999821186
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "fontReadyMs",
+    "quantile": "p95",
+    "before": 90.80000001192093,
+    "after": 152.2000000178814
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "first-paintMs",
+    "quantile": "p50",
+    "before": 76,
+    "after": 80
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "server_identityMs",
+    "quantile": "p95",
+    "before": 52.05,
+    "after": 109.13
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "server_databaseMs",
+    "quantile": "p95",
+    "before": 25.57,
+    "after": 27.31
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "server_live_sessionMs",
+    "quantile": "p95",
+    "before": 1.67,
+    "after": 1.69
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "server_transactionMs",
+    "quantile": "p95",
+    "before": 26.34,
+    "after": 31.24
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "server_compressionMs",
+    "quantile": "p95",
+    "before": 0.31,
+    "after": 0.96
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "server_serializationMs",
+    "quantile": "p95",
+    "before": 0.9,
+    "after": 2.81
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "server_totalMs",
+    "quantile": "p95",
+    "before": 85.08,
+    "after": 144.56
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "readTtfbMs",
+    "quantile": "p95",
+    "before": 89.613,
+    "after": 146.929
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "readTransferMs",
+    "quantile": "p50",
+    "before": 0.3300000000000054,
+    "after": 0.35499999999998977
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "readTransferMs",
+    "quantile": "p95",
+    "before": 0.7680000000000007,
+    "after": 1.716000000000001
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "networkCompleteMs",
+    "quantile": "p50",
+    "before": 40.10009765625,
+    "after": 41.199951171875
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "networkCompleteMs",
+    "quantile": "p95",
+    "before": 56.39990234375,
+    "after": 57
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "taskMs",
+    "quantile": "p50",
+    "before": 35.691,
+    "after": 36.11499999999998
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "sourceDrainedMs",
+    "quantile": "p95",
+    "before": 414,
+    "after": 424
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "sourceScriptBytes",
+    "quantile": "p50",
+    "before": 543405,
+    "after": 543419
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "sourceScriptBytes",
+    "quantile": "p95",
+    "before": 543405,
+    "after": 543419
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "fontReadyMs",
+    "quantile": "p50",
+    "before": 79.19999998807907,
+    "after": 110.59999999403954
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "fontReadyMs",
+    "quantile": "p95",
+    "before": 87.5,
+    "after": 127.89999997615814
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "server_identityMs",
+    "quantile": "p50",
+    "before": 21.28,
+    "after": 21.7
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "server_live_sessionMs",
+    "quantile": "p95",
+    "before": 0.68,
+    "after": 0.7
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "server_transactionMs",
+    "quantile": "p95",
+    "before": 27.98,
+    "after": 29.39
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "server_compressionMs",
+    "quantile": "p50",
+    "before": 0.2,
+    "after": 0.21
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "server_compressionMs",
+    "quantile": "p95",
+    "before": 0.35,
+    "after": 1.14
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "server_serializationMs",
+    "quantile": "p95",
+    "before": 0.91,
+    "after": 1.38
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "server_totalMs",
+    "quantile": "p50",
+    "before": 34.72,
+    "after": 35.99
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "server_totalMs",
+    "quantile": "p95",
+    "before": 51.05,
+    "after": 51.91
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "readTtfbMs",
+    "quantile": "p50",
+    "before": 36.256,
+    "after": 37.419000000000004
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "readTtfbMs",
+    "quantile": "p95",
+    "before": 52.809,
+    "after": 53.4
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "readTransferMs",
+    "quantile": "p50",
+    "before": 0.3509999999999991,
+    "after": 0.3760000000000048
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "clickMs",
+    "quantile": "p95",
+    "before": 154.5,
+    "after": 168.2000000178814
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "networkCompleteMs",
+    "quantile": "p95",
+    "before": 208,
+    "after": 242.60009765625
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "scriptMs",
+    "quantile": "p95",
+    "before": 22.481,
+    "after": 23.659
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "taskMs",
+    "quantile": "p95",
+    "before": 126.84899999999999,
+    "after": 132.88299999999998
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "sourceUsefulMs",
+    "quantile": "p95",
+    "before": 468,
+    "after": 987
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "sourceDrainedMs",
+    "quantile": "p95",
+    "before": 644,
+    "after": 1104
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "sourceScriptBytes",
+    "quantile": "p50",
+    "before": 575303,
+    "after": 575317
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "sourceScriptBytes",
+    "quantile": "p95",
+    "before": 575303,
+    "after": 575317
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "fontReadyMs",
+    "quantile": "p50",
+    "before": 77.19999998807907,
+    "after": 116.59999999403954
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "fontReadyMs",
+    "quantile": "p95",
+    "before": 83.7999999821186,
+    "after": 248.80000001192093
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "sourceCLS",
+    "quantile": "p95",
+    "before": 0,
+    "after": 4.150571469907407e-06
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "first-paintMs",
+    "quantile": "p95",
+    "before": 88,
+    "after": 220
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "first-contentful-paintMs",
+    "quantile": "p95",
+    "before": 116,
+    "after": 220
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "clickMs",
+    "quantile": "p50",
+    "before": 97.69999998807907,
+    "after": 99
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "encodedBodyBytes",
+    "quantile": "p50",
+    "before": 2768,
+    "after": 2773
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "sourceScriptBytes",
+    "quantile": "p50",
+    "before": 575303,
+    "after": 575317
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "sourceScriptBytes",
+    "quantile": "p95",
+    "before": 575303,
+    "after": 575317
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "fontReadyMs",
+    "quantile": "p50",
+    "before": 84,
+    "after": 114.69999998807907
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "fontReadyMs",
+    "quantile": "p95",
+    "before": 93.7999999821186,
+    "after": 138.7000000178814
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "clickMs",
+    "quantile": "p95",
+    "before": 164.09999999403954,
+    "after": 311.2999999821186
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "networkCompleteMs",
+    "quantile": "p95",
+    "before": 126.400146484375,
+    "after": 270.699951171875
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "scriptMs",
+    "quantile": "p95",
+    "before": 26.679999999999996,
+    "after": 45.479000000000006
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "taskMs",
+    "quantile": "p95",
+    "before": 80.532,
+    "after": 152.15800000000002
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "sourceUsefulMs",
+    "quantile": "p95",
+    "before": 449,
+    "after": 486
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "sourceDrainedMs",
+    "quantile": "p95",
+    "before": 531,
+    "after": 666
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "sourceScriptBytes",
+    "quantile": "p50",
+    "before": 543405,
+    "after": 543419
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "sourceScriptBytes",
+    "quantile": "p95",
+    "before": 543405,
+    "after": 543419
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "fontReadyMs",
+    "quantile": "p50",
+    "before": 82.09999999403954,
+    "after": 116.40000000596046
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "fontReadyMs",
+    "quantile": "p95",
+    "before": 95.2999999821186,
+    "after": 221.7999999821186
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "first-paintMs",
+    "quantile": "p95",
+    "before": 100,
+    "after": 196
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "first-contentful-paintMs",
+    "quantile": "p95",
+    "before": 116,
+    "after": 204
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "server_identityMs",
+    "quantile": "p50",
+    "before": 24.84,
+    "after": 24.98
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "server_identityMs",
+    "quantile": "p95",
+    "before": 42.85,
+    "after": 103.21
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "server_databaseMs",
+    "quantile": "p95",
+    "before": 35.99,
+    "after": 92.27
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "server_live_sessionMs",
+    "quantile": "p50",
+    "before": 0.5,
+    "after": 0.53
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "server_live_sessionMs",
+    "quantile": "p95",
+    "before": 0.93,
+    "after": 1.84
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "server_transaction_acquireMs",
+    "quantile": "p95",
+    "before": 0.6,
+    "after": 0.99
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "server_transactionMs",
+    "quantile": "p95",
+    "before": 69.73,
+    "after": 146.74
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "server_compressionMs",
+    "quantile": "p95",
+    "before": 1.24,
+    "after": 1.5
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "server_serializationMs",
+    "quantile": "p50",
+    "before": 0.64,
+    "after": 0.69
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "server_serializationMs",
+    "quantile": "p95",
+    "before": 1.65,
+    "after": 2.05
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "server_totalMs",
+    "quantile": "p95",
+    "before": 115.79,
+    "after": 257.61
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "readTtfbMs",
+    "quantile": "p95",
+    "before": 118.273,
+    "after": 263.479
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "readTransferMs",
+    "quantile": "p95",
+    "before": 0.4410000000000025,
+    "after": 8.377999999999986
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "sourceScriptBytes",
+    "quantile": "p50",
+    "before": 543405,
+    "after": 543419
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "sourceScriptBytes",
+    "quantile": "p95",
+    "before": 543405,
+    "after": 543419
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "fontReadyMs",
+    "quantile": "p50",
+    "before": 96.90000000596046,
+    "after": 116.7000000178814
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "server_transaction_acquireMs",
+    "quantile": "p95",
+    "before": 1.01,
+    "after": 1.16
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "sourceScriptBytes",
+    "quantile": "p50",
+    "before": 575303,
+    "after": 575317
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "sourceScriptBytes",
+    "quantile": "p95",
+    "before": 575303,
+    "after": 575317
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "fontReadyMs",
+    "quantile": "p50",
+    "before": 69.7999999821186,
+    "after": 112.40000000596046
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "fontReadyMs",
+    "quantile": "p95",
+    "before": 94.19999998807907,
+    "after": 133.7000000178814
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "clickMs",
+    "quantile": "p50",
+    "before": 97.30000001192093,
+    "after": 97.7000000178814
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "scriptMs",
+    "quantile": "p50",
+    "before": 17.638,
+    "after": 17.801
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "sourceUsefulMs",
+    "quantile": "p95",
+    "before": 643,
+    "after": 942
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "sourceDrainedMs",
+    "quantile": "p95",
+    "before": 758,
+    "after": 1660
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "sourceScriptBytes",
+    "quantile": "p50",
+    "before": 575303,
+    "after": 575317
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "sourceScriptBytes",
+    "quantile": "p95",
+    "before": 575303,
+    "after": 575317
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "fontReadyMs",
+    "quantile": "p50",
+    "before": 70.30000001192093,
+    "after": 119.80000001192093
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "fontReadyMs",
+    "quantile": "p95",
+    "before": 110.40000000596046,
+    "after": 134.5
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "first-paintMs",
+    "quantile": "p50",
+    "before": 76,
+    "after": 80
+  },
+  {
+    "profile": "local",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "first-contentful-paintMs",
+    "quantile": "p50",
+    "before": 76,
+    "after": 80
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "sourceScriptBytes",
+    "quantile": "p50",
+    "before": 543405,
+    "after": 543419
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "sourceScriptBytes",
+    "quantile": "p95",
+    "before": 543405,
+    "after": 543419
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "sourceCLS",
+    "quantile": "p50",
+    "before": 4.150571469907407e-06,
+    "after": 1.6447482638888887e-05
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "sourceCLS",
+    "quantile": "p95",
+    "before": 4.150571469907407e-06,
+    "after": 0.001918896122685185
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "readTransferMs",
+    "quantile": "p50",
+    "before": 89.762,
+    "after": 89.796
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "clickMs",
+    "quantile": "p95",
+    "before": 231.7000000178814,
+    "after": 233
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "networkCompleteMs",
+    "quantile": "p50",
+    "before": 140,
+    "after": 141.599853515625
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "taskMs",
+    "quantile": "p50",
+    "before": 162.19699999999992,
+    "after": 173.80299999999994
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "taskMs",
+    "quantile": "p95",
+    "before": 206.5740000000007,
+    "after": 209.87399999999968
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "sourceScriptBytes",
+    "quantile": "p50",
+    "before": 543405,
+    "after": 543419
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "sourceScriptBytes",
+    "quantile": "p95",
+    "before": 543405,
+    "after": 543419
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "sourceCLS",
+    "quantile": "p50",
+    "before": 4.150571469907407e-06,
+    "after": 1.6447482638888887e-05
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "sourceCLS",
+    "quantile": "p95",
+    "before": 4.150571469907407e-06,
+    "after": 0.001918896122685185
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "server_identityMs",
+    "quantile": "p50",
+    "before": 24.1,
+    "after": 25.01
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "server_identityMs",
+    "quantile": "p95",
+    "before": 34.97,
+    "after": 55.43
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "server_transaction_acquireMs",
+    "quantile": "p95",
+    "before": 0.66,
+    "after": 0.68
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "server_totalMs",
+    "quantile": "p95",
+    "before": 59.3,
+    "after": 72.32
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "readTtfbMs",
+    "quantile": "p50",
+    "before": 86.452,
+    "after": 89.534
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "readTtfbMs",
+    "quantile": "p95",
+    "before": 90.459,
+    "after": 92.422
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "readTransferMs",
+    "quantile": "p95",
+    "before": 39.238000000000014,
+    "after": 39.35900000000001
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "clickMs",
+    "quantile": "p50",
+    "before": 265.5,
+    "after": 265.60000002384186
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "clickMs",
+    "quantile": "p95",
+    "before": 296.7999999821186,
+    "after": 454.40000000596046
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "networkCompleteMs",
+    "quantile": "p50",
+    "before": 356.60009765625,
+    "after": 377
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "networkCompleteMs",
+    "quantile": "p95",
+    "before": 433.400146484375,
+    "after": 558
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "scriptMs",
+    "quantile": "p95",
+    "before": 89.28799999999981,
+    "after": 135.20699999999985
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "taskMs",
+    "quantile": "p95",
+    "before": 345.05300000000005,
+    "after": 443.7120000000001
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "sourceScriptBytes",
+    "quantile": "p50",
+    "before": 575303,
+    "after": 575317
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "sourceScriptBytes",
+    "quantile": "p95",
+    "before": 575303,
+    "after": 575317
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "sourceCLS",
+    "quantile": "p95",
+    "before": 4.150571469907407e-06,
+    "after": 1.6447482638888887e-05
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "networkCompleteMs",
+    "quantile": "p95",
+    "before": 413.300048828125,
+    "after": 455.300048828125
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "scriptMs",
+    "quantile": "p95",
+    "before": 87.22300000000027,
+    "after": 88.05800000000019
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "sourceScriptBytes",
+    "quantile": "p50",
+    "before": 575303,
+    "after": 575317
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "sourceScriptBytes",
+    "quantile": "p95",
+    "before": 575303,
+    "after": 575317
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "fontReadyMs",
+    "quantile": "p95",
+    "before": 4723.5,
+    "after": 4868.5
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "sourceCLS",
+    "quantile": "p95",
+    "before": 4.150571469907407e-06,
+    "after": 0.001918896122685185
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "networkCompleteMs",
+    "quantile": "p95",
+    "before": 336.39990234375,
+    "after": 360.199951171875
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "scriptMs",
+    "quantile": "p95",
+    "before": 125.21000000000004,
+    "after": 126.02000000000002
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "sourceScriptBytes",
+    "quantile": "p50",
+    "before": 543405,
+    "after": 543419
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "sourceScriptBytes",
+    "quantile": "p95",
+    "before": 543405,
+    "after": 543419
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "fontReadyMs",
+    "quantile": "p95",
+    "before": 4732,
+    "after": 4866
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "sourceCLS",
+    "quantile": "p50",
+    "before": 4.150571469907407e-06,
+    "after": 1.6447482638888887e-05
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "sourceCLS",
+    "quantile": "p95",
+    "before": 4.150571469907407e-06,
+    "after": 0.001918896122685185
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "server_identityMs",
+    "quantile": "p95",
+    "before": 33.14,
+    "after": 36.76
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "server_databaseMs",
+    "quantile": "p50",
+    "before": 25.78,
+    "after": 34.46
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "server_live_sessionMs",
+    "quantile": "p50",
+    "before": 0.52,
+    "after": 0.6
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "server_live_sessionMs",
+    "quantile": "p95",
+    "before": 0.85,
+    "after": 3.06
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "server_transaction_acquireMs",
+    "quantile": "p95",
+    "before": 0.62,
+    "after": 12.97
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "server_transactionMs",
+    "quantile": "p50",
+    "before": 45.0,
+    "after": 53.31
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "server_transactionMs",
+    "quantile": "p95",
+    "before": 137.42,
+    "after": 230.79
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "server_serializationMs",
+    "quantile": "p50",
+    "before": 0.98,
+    "after": 1.14
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "server_totalMs",
+    "quantile": "p50",
+    "before": 76.42,
+    "after": 88.87
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "server_totalMs",
+    "quantile": "p95",
+    "before": 167.94,
+    "after": 284.55
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "readTtfbMs",
+    "quantile": "p50",
+    "before": 117.027,
+    "after": 120.227
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "cold",
+    "metric": "readTtfbMs",
+    "quantile": "p95",
+    "before": 183.429,
+    "after": 291.493
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "taskMs",
+    "quantile": "p50",
+    "before": 155.34999999999988,
+    "after": 172.64199999999974
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "sourceScriptBytes",
+    "quantile": "p50",
+    "before": 543405,
+    "after": 543419
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "sourceScriptBytes",
+    "quantile": "p95",
+    "before": 543405,
+    "after": 543419
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "sourceCLS",
+    "quantile": "p50",
+    "before": 4.150571469907407e-06,
+    "after": 1.6447482638888887e-05
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "sourceCLS",
+    "quantile": "p95",
+    "before": 4.150571469907407e-06,
+    "after": 0.001918896122685185
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "server_identityMs",
+    "quantile": "p50",
+    "before": 24.44,
+    "after": 26.25
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "server_transaction_acquireMs",
+    "quantile": "p95",
+    "before": 0.72,
+    "after": 0.9
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "server_serializationMs",
+    "quantile": "p50",
+    "before": 0.62,
+    "after": 0.63
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "recruiting \u2192 applicants",
+    "condition": "warm",
+    "metric": "server_totalMs",
+    "quantile": "p50",
+    "before": 61.01,
+    "after": 63.97
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "clickMs",
+    "quantile": "p95",
+    "before": 280,
+    "after": 283.89999997615814
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "networkCompleteMs",
+    "quantile": "p50",
+    "before": 358.199951171875,
+    "after": 367.5
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "networkCompleteMs",
+    "quantile": "p95",
+    "before": 389.39990234375,
+    "after": 394.7001953125
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "scriptMs",
+    "quantile": "p50",
+    "before": 72.32400000000005,
+    "after": 72.57599999999975
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "scriptMs",
+    "quantile": "p95",
+    "before": 88.14800000000034,
+    "after": 89.3259999999998
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "taskMs",
+    "quantile": "p50",
+    "before": 262.34899999999993,
+    "after": 271.4380000000003
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "sourceScriptBytes",
+    "quantile": "p50",
+    "before": 575303,
+    "after": 575317
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "sourceScriptBytes",
+    "quantile": "p95",
+    "before": 575303,
+    "after": 575317
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "cold",
+    "metric": "sourceCLS",
+    "quantile": "p95",
+    "before": 4.150571469907407e-06,
+    "after": 1.6447482638888887e-05
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "clickMs",
+    "quantile": "p50",
+    "before": 238.30000001192093,
+    "after": 239.2000000178814
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "clickMs",
+    "quantile": "p95",
+    "before": 252,
+    "after": 252.10000002384186
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "networkCompleteMs",
+    "quantile": "p95",
+    "before": 350.5,
+    "after": 353.599853515625
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "scriptMs",
+    "quantile": "p95",
+    "before": 67.5119999999998,
+    "after": 68.69399999999982
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "taskMs",
+    "quantile": "p50",
+    "before": 281.35699999999986,
+    "after": 282.66199999999975
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "taskMs",
+    "quantile": "p95",
+    "before": 316.05100000000033,
+    "after": 323.458
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "sourceScriptBytes",
+    "quantile": "p50",
+    "before": 575303,
+    "after": 575317
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "sourceScriptBytes",
+    "quantile": "p95",
+    "before": 575303,
+    "after": 575317
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "fontReadyMs",
+    "quantile": "p95",
+    "before": 4730.5999999940395,
+    "after": 4801.800000011921
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "path": "applicants \u2192 applicantDetail",
+    "condition": "warm",
+    "metric": "sourceCLS",
+    "quantile": "p95",
+    "before": 4.150571469907407e-06,
+    "after": 0.001918896122685185
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "kind": "next-page",
+    "category": "interaction",
+    "metric": "meaningfulMs",
+    "quantile": "p50",
+    "before": 95.2999999821186,
+    "after": 96.5
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "kind": "next-page",
+    "category": "interaction",
+    "metric": "meaningfulMs",
+    "quantile": "p95",
+    "before": 112.2999999821186,
+    "after": 148.59999999403954
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "kind": "distant-search",
+    "category": "interaction",
+    "metric": "meaningfulMs",
+    "quantile": "p50",
+    "before": 61,
+    "after": 76.39999997615814
+  },
+  {
+    "profile": "local",
+    "size": 1000,
+    "kind": "distant-search",
+    "category": "interaction",
+    "metric": "meaningfulMs",
+    "quantile": "p95",
+    "before": 76.7999999821186,
+    "after": 93.30000001192093
+  },
+  {
+    "profile": "constrained",
+    "size": 1000,
+    "kind": "next-page",
+    "category": "interaction",
+    "metric": "meaningfulMs",
+    "quantile": "p50",
+    "before": 200.40000000596046,
+    "after": 201.09999999403954
+  },
+  {
+    "profile": "constrained",
+    "size": 5000,
+    "kind": "distant-search",
+    "category": "interaction",
+    "metric": "meaningfulMs",
+    "quantile": "p95",
+    "before": 133.80000001192093,
+    "after": 143
+  },
+  {
+    "size": 1000,
+    "concurrency": 1,
+    "category": "http",
+    "metric": "server_identityMs",
+    "quantile": "p50",
+    "before": 16.53,
+    "after": 16.66
+  },
+  {
+    "size": 1000,
+    "concurrency": 1,
+    "category": "http",
+    "metric": "server_transaction_acquireMs",
+    "quantile": "p50",
+    "before": 0.39,
+    "after": 0.4
+  },
+  {
+    "size": 1000,
+    "concurrency": 1,
+    "category": "http",
+    "metric": "server_transaction_acquireMs",
+    "quantile": "p95",
+    "before": 0.44,
+    "after": 0.49
+  },
+  {
+    "size": 1000,
+    "concurrency": 1,
+    "category": "http",
+    "metric": "server_compressionMs",
+    "quantile": "p95",
+    "before": 0.49,
+    "after": 1.95
+  },
+  {
+    "size": 1000,
+    "concurrency": 1,
+    "category": "http",
+    "metric": "server_serializationMs",
+    "quantile": "p50",
+    "before": 0.46,
+    "after": 0.6
+  },
+  {
+    "size": 1000,
+    "concurrency": 1,
+    "category": "http",
+    "metric": "server_serializationMs",
+    "quantile": "p95",
+    "before": 1.04,
+    "after": 2.18
+  },
+  {
+    "size": 1000,
+    "concurrency": 1,
+    "category": "http",
+    "metric": "server_totalMs",
+    "quantile": "p50",
+    "before": 44.57,
+    "after": 45.19
+  },
+  {
+    "size": 1000,
+    "concurrency": 1,
+    "category": "http",
+    "metric": "requestMs",
+    "quantile": "p50",
+    "before": 46.20637499999998,
+    "after": 46.90025000000003
+  },
+  {
+    "size": 1000,
+    "concurrency": 1,
+    "category": "http",
+    "metric": "burstMs",
+    "quantile": "p50",
+    "before": 46.205915999999945,
+    "after": 46.90004200000001
+  },
+  {
+    "size": 1000,
+    "concurrency": 4,
+    "category": "http",
+    "metric": "server_transaction_acquireMs",
+    "quantile": "p95",
+    "before": 2.04,
+    "after": 2.35
+  },
+  {
+    "size": 5000,
+    "concurrency": 1,
+    "category": "http",
+    "metric": "server_identityMs",
+    "quantile": "p50",
+    "before": 16.09,
+    "after": 17.2
+  },
+  {
+    "size": 5000,
+    "concurrency": 1,
+    "category": "http",
+    "metric": "server_identityMs",
+    "quantile": "p95",
+    "before": 21.17,
+    "after": 23.38
+  },
+  {
+    "size": 5000,
+    "concurrency": 1,
+    "category": "http",
+    "metric": "server_databaseMs",
+    "quantile": "p50",
+    "before": 104.78,
+    "after": 107.0
+  },
+  {
+    "size": 5000,
+    "concurrency": 1,
+    "category": "http",
+    "metric": "server_databaseMs",
+    "quantile": "p95",
+    "before": 112.07,
+    "after": 129.96
+  },
+  {
+    "size": 5000,
+    "concurrency": 1,
+    "category": "http",
+    "metric": "server_live_sessionMs",
+    "quantile": "p50",
+    "before": 0.4,
+    "after": 0.41
+  },
+  {
+    "size": 5000,
+    "concurrency": 1,
+    "category": "http",
+    "metric": "server_transaction_acquireMs",
+    "quantile": "p50",
+    "before": 0.38,
+    "after": 0.39
+  },
+  {
+    "size": 5000,
+    "concurrency": 1,
+    "category": "http",
+    "metric": "server_transaction_acquireMs",
+    "quantile": "p95",
+    "before": 0.42,
+    "after": 0.45
+  },
+  {
+    "size": 5000,
+    "concurrency": 1,
+    "category": "http",
+    "metric": "server_transactionMs",
+    "quantile": "p50",
+    "before": 114.11,
+    "after": 116.73
+  },
+  {
+    "size": 5000,
+    "concurrency": 1,
+    "category": "http",
+    "metric": "server_transactionMs",
+    "quantile": "p95",
+    "before": 123.28,
+    "after": 141.89
+  },
+  {
+    "size": 5000,
+    "concurrency": 1,
+    "category": "http",
+    "metric": "server_compressionMs",
+    "quantile": "p50",
+    "before": 0.21,
+    "after": 0.22
+  },
+  {
+    "size": 5000,
+    "concurrency": 1,
+    "category": "http",
+    "metric": "server_compressionMs",
+    "quantile": "p95",
+    "before": 0.42,
+    "after": 3.41
+  },
+  {
+    "size": 5000,
+    "concurrency": 1,
+    "category": "http",
+    "metric": "server_serializationMs",
+    "quantile": "p50",
+    "before": 0.61,
+    "after": 0.62
+  },
+  {
+    "size": 5000,
+    "concurrency": 1,
+    "category": "http",
+    "metric": "server_serializationMs",
+    "quantile": "p95",
+    "before": 1.42,
+    "after": 4.27
+  },
+  {
+    "size": 5000,
+    "concurrency": 1,
+    "category": "http",
+    "metric": "server_totalMs",
+    "quantile": "p50",
+    "before": 132.43,
+    "after": 139.03
+  },
+  {
+    "size": 5000,
+    "concurrency": 1,
+    "category": "http",
+    "metric": "server_totalMs",
+    "quantile": "p95",
+    "before": 142.17,
+    "after": 162.39
+  },
+  {
+    "size": 5000,
+    "concurrency": 1,
+    "category": "http",
+    "metric": "requestMs",
+    "quantile": "p50",
+    "before": 134.21116700000005,
+    "after": 140.76100000000002
+  },
+  {
+    "size": 5000,
+    "concurrency": 1,
+    "category": "http",
+    "metric": "requestMs",
+    "quantile": "p95",
+    "before": 145.627834,
+    "after": 165.12345900000003
+  },
+  {
+    "size": 5000,
+    "concurrency": 1,
+    "category": "http",
+    "metric": "burstMs",
+    "quantile": "p50",
+    "before": 134.21058300000004,
+    "after": 140.76066600000004
+  },
+  {
+    "size": 5000,
+    "concurrency": 1,
+    "category": "http",
+    "metric": "burstMs",
+    "quantile": "p95",
+    "before": 145.62745900000004,
+    "after": 165.12320899999997
+  },
+  {
+    "size": 5000,
+    "concurrency": 2,
+    "category": "http",
+    "metric": "server_identityMs",
+    "quantile": "p50",
+    "before": 18.26,
+    "after": 19.89
+  },
+  {
+    "size": 5000,
+    "concurrency": 2,
+    "category": "http",
+    "metric": "server_identityMs",
+    "quantile": "p95",
+    "before": 21.27,
+    "after": 29.34
+  },
+  {
+    "size": 5000,
+    "concurrency": 2,
+    "category": "http",
+    "metric": "server_databaseMs",
+    "quantile": "p50",
+    "before": 116.64,
+    "after": 119.58
+  },
+  {
+    "size": 5000,
+    "concurrency": 2,
+    "category": "http",
+    "metric": "server_databaseMs",
+    "quantile": "p95",
+    "before": 130.14,
+    "after": 130.67
+  },
+  {
+    "size": 5000,
+    "concurrency": 2,
+    "category": "http",
+    "metric": "server_live_sessionMs",
+    "quantile": "p50",
+    "before": 0.41,
+    "after": 0.56
+  },
+  {
+    "size": 5000,
+    "concurrency": 2,
+    "category": "http",
+    "metric": "server_live_sessionMs",
+    "quantile": "p95",
+    "before": 0.64,
+    "after": 0.85
+  },
+  {
+    "size": 5000,
+    "concurrency": 2,
+    "category": "http",
+    "metric": "server_transaction_acquireMs",
+    "quantile": "p95",
+    "before": 0.54,
+    "after": 0.56
+  },
+  {
+    "size": 5000,
+    "concurrency": 2,
+    "category": "http",
+    "metric": "server_transactionMs",
+    "quantile": "p50",
+    "before": 123.31,
+    "after": 127.39
+  },
+  {
+    "size": 5000,
+    "concurrency": 2,
+    "category": "http",
+    "metric": "server_compressionMs",
+    "quantile": "p95",
+    "before": 0.23,
+    "after": 0.24
+  },
+  {
+    "size": 5000,
+    "concurrency": 2,
+    "category": "http",
+    "metric": "server_serializationMs",
+    "quantile": "p50",
+    "before": 0.42,
+    "after": 0.43
+  },
+  {
+    "size": 5000,
+    "concurrency": 2,
+    "category": "http",
+    "metric": "server_totalMs",
+    "quantile": "p50",
+    "before": 143.56,
+    "after": 152.7
+  },
+  {
+    "size": 5000,
+    "concurrency": 2,
+    "category": "http",
+    "metric": "server_totalMs",
+    "quantile": "p95",
+    "before": 159.26,
+    "after": 167.0
+  },
+  {
+    "size": 5000,
+    "concurrency": 2,
+    "category": "http",
+    "metric": "requestMs",
+    "quantile": "p50",
+    "before": 145.38187500000004,
+    "after": 154.19729199999983
+  },
+  {
+    "size": 5000,
+    "concurrency": 2,
+    "category": "http",
+    "metric": "requestMs",
+    "quantile": "p95",
+    "before": 161.56404099999986,
+    "after": 168.54162499999984
+  },
+  {
+    "size": 5000,
+    "concurrency": 2,
+    "category": "http",
+    "metric": "burstMs",
+    "quantile": "p50",
+    "before": 148.67212500000016,
+    "after": 155.11158299999988
+  },
+  {
+    "size": 5000,
+    "concurrency": 4,
+    "category": "http",
+    "metric": "server_identityMs",
+    "quantile": "p50",
+    "before": 23.57,
+    "after": 27.62
+  },
+  {
+    "size": 5000,
+    "concurrency": 4,
+    "category": "http",
+    "metric": "server_identityMs",
+    "quantile": "p95",
+    "before": 30.07,
+    "after": 44.88
+  },
+  {
+    "size": 5000,
+    "concurrency": 4,
+    "category": "http",
+    "metric": "server_databaseMs",
+    "quantile": "p50",
+    "before": 137.57,
+    "after": 144.1
+  },
+  {
+    "size": 5000,
+    "concurrency": 4,
+    "category": "http",
+    "metric": "server_databaseMs",
+    "quantile": "p95",
+    "before": 173.22,
+    "after": 177.51
+  },
+  {
+    "size": 5000,
+    "concurrency": 4,
+    "category": "http",
+    "metric": "server_live_sessionMs",
+    "quantile": "p95",
+    "before": 1.79,
+    "after": 2.39
+  },
+  {
+    "size": 5000,
+    "concurrency": 4,
+    "category": "http",
+    "metric": "server_transaction_acquireMs",
+    "quantile": "p50",
+    "before": 0.59,
+    "after": 0.63
+  },
+  {
+    "size": 5000,
+    "concurrency": 4,
+    "category": "http",
+    "metric": "server_transaction_acquireMs",
+    "quantile": "p95",
+    "before": 2.27,
+    "after": 3.05
+  },
+  {
+    "size": 5000,
+    "concurrency": 4,
+    "category": "http",
+    "metric": "server_transactionMs",
+    "quantile": "p50",
+    "before": 145.25,
+    "after": 151.59
+  },
+  {
+    "size": 5000,
+    "concurrency": 4,
+    "category": "http",
+    "metric": "server_transactionMs",
+    "quantile": "p95",
+    "before": 179.98,
+    "after": 187.15
+  },
+  {
+    "size": 5000,
+    "concurrency": 4,
+    "category": "http",
+    "metric": "server_compressionMs",
+    "quantile": "p50",
+    "before": 0.19,
+    "after": 0.21
+  },
+  {
+    "size": 5000,
+    "concurrency": 4,
+    "category": "http",
+    "metric": "server_compressionMs",
+    "quantile": "p95",
+    "before": 0.31,
+    "after": 0.42
+  },
+  {
+    "size": 5000,
+    "concurrency": 4,
+    "category": "http",
+    "metric": "server_serializationMs",
+    "quantile": "p50",
+    "before": 0.44,
+    "after": 0.48
+  },
+  {
+    "size": 5000,
+    "concurrency": 4,
+    "category": "http",
+    "metric": "server_serializationMs",
+    "quantile": "p95",
+    "before": 0.79,
+    "after": 1.21
+  },
+  {
+    "size": 5000,
+    "concurrency": 4,
+    "category": "http",
+    "metric": "server_totalMs",
+    "quantile": "p50",
+    "before": 175.43,
+    "after": 185.88
+  },
+  {
+    "size": 5000,
+    "concurrency": 4,
+    "category": "http",
+    "metric": "server_totalMs",
+    "quantile": "p95",
+    "before": 209.34,
+    "after": 221.88
+  },
+  {
+    "size": 5000,
+    "concurrency": 4,
+    "category": "http",
+    "metric": "requestMs",
+    "quantile": "p50",
+    "before": 177.87562500000013,
+    "after": 189.3209999999999
+  },
+  {
+    "size": 5000,
+    "concurrency": 4,
+    "category": "http",
+    "metric": "requestMs",
+    "quantile": "p95",
+    "before": 212.8087089999999,
+    "after": 225.81308400000034
+  },
+  {
+    "size": 5000,
+    "concurrency": 4,
+    "category": "http",
+    "metric": "burstMs",
+    "quantile": "p50",
+    "before": 191.55066699999998,
+    "after": 205.96083299999987
+  },
+  {
+    "size": 5000,
+    "concurrency": 4,
+    "category": "http",
+    "metric": "burstMs",
+    "quantile": "p95",
+    "before": 223.1507499999998,
+    "after": 242.8204579999997
+  }
+]

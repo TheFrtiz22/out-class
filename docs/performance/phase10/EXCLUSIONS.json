@@ -1,0 +1,38 @@
+{
+  "collections": [
+    {
+      "collection": "interrupted-local-1",
+      "accepted": false,
+      "reason": "Actual host Sleep/DarkWake events in complete measurement interval; reject the whole set under the predeclared power rule. Temporary caffeinate does not override lid sleep.",
+      "retainedBrowserOutcomes": 192,
+      "retainedInteractionOutcomes": 96,
+      "failedOutcomes": [
+        {
+          "file": "size-1000-pair-1-2-A-warmup/browser-samples.json",
+          "index": 3,
+          "stage": "source",
+          "error": "page.waitForFunction: Timeout 30000ms exceeded.",
+          "sourceUsefulMs": null
+        },
+        {
+          "file": "size-1000-pair-1-2-A-measure/browser-samples.json",
+          "index": 7,
+          "stage": "source",
+          "error": "page.waitForFunction: Timeout 30000ms exceeded.",
+          "sourceUsefulMs": null
+        }
+      ],
+      "powerAudit": "interrupted-local-1/POWER_AUDIT.json",
+      "timingsUsedInComparison": false,
+      "replacement": "Same frozen builds/cohorts and complete BA/AB protocol, only after host awake condition is restored."
+    },
+    {
+      "collection": "paused-local-2",
+      "accepted": false,
+      "reason": "User-requested pause; incomplete collection.",
+      "recordedBrowserOutcomes": 100,
+      "recordedInteractionOutcomes": 48,
+      "note": "Only fully written observations are counted; an in-flight block was terminated. No partial timing distributions used."
+    }
+  ]
+}

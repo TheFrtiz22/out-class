@@ -1,0 +1,16 @@
+{
+  "completed": true,
+  "at": "2026-10-26T02:15:33.916470+00:00",
+  "sourceFilesVerified": 913,
+  "candidateBuildId": "Dj_0I0pC93saxp7MnUlJH",
+  "ownedAppStopped": true,
+  "ownedLocalContainersAndVolumesRemoved": true,
+  "unrelatedContainersPreserved": 21,
+  "unrelatedContainerStatesUnchanged": true,
+  "originalCheckoutHeadAndStatusUnchanged": true,
+  "mainUnchanged": true,
+  "priorInactiveFixtureDirectoryRestored": true,
+  "ownedPrivateCredentialsAndBuildSnapshotsRemoved": true,
+  "powerControl": "Temporary assertions end with collection; no persistent settings modified.",
+  "publication": "No push, PR, merge or deployment."
+}

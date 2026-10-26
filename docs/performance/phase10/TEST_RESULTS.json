@@ -1,0 +1,51 @@
+{
+  "buildId": "Dj_0I0pC93saxp7MnUlJH",
+  "ordinary": {
+    "total": 1462,
+    "passed": 1405,
+    "failed": 0,
+    "skipped": 57,
+    "note": "57 optional environment-gated cases; two new font cases exercised separately against this same candidate build. Not every gated suite exercised."
+  },
+  "liveExisting": {
+    "total": 59,
+    "passed": 59,
+    "failed": 0,
+    "skipped": 0,
+    "scope": "Auth/account/privacy/revocation, Phase 1/2/3/5/6/7/8/9 navigation, settings; serialized with 1000 applicants."
+  },
+  "newFontAcceptance": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "skipped": 0,
+    "viewports": [
+      1440,
+      390
+    ],
+    "scope": "Built font CSS; no font preload hints, two actual initial upright transfers; real italic faces fetched on DOM demand at variable weights400/600; zero page errors."
+  },
+  "liveUniqueTotal": 61,
+  "nativeSecurityConcurrency": {
+    "passed": 3,
+    "failed": 0
+  },
+  "nativeMetadataParity": "Existing Phase9 native differential, 86 scopes and injection-shaped value passed in live suite.",
+  "provisioning": {
+    "passed": 38,
+    "failed": 0
+  },
+  "migrations": {
+    "freshAndLegacy": 57,
+    "rlsTablesWithBrowserDenial": 78
+  },
+  "productionBuild": "passed",
+  "typecheck": "passed",
+  "lint": {
+    "errors": 0,
+    "existingWarnings": 22
+  },
+  "developmentFailures": [],
+  "baselineOrdinary": "Before font change: 1405 passed, 55 gated skips, 0 failures. Retained separately, not added to candidate counts.",
+  "resumptionVerification": "913 application hashes and both frozen builds match passing checks; restored 1000/5000 cohorts pass fresh authenticated page reads with private no-store and Cookie sensitivity. No app rebuild or application change on resume."
+}
