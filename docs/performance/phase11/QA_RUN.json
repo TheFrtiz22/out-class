@@ -1,0 +1,50 @@
+{
+  "startedAt": "2026-10-26T03:08:21.611Z",
+  "buildId": "02anxbf_teiZ6LLVG7dPN",
+  "checks": [
+    {
+      "name": "unit-final",
+      "startedAt": "2026-10-26T03:08:21.612Z",
+      "completedAt": "2026-10-26T03:09:50.763Z",
+      "status": 0,
+      "signal": null
+    },
+    {
+      "name": "migrations",
+      "startedAt": "2026-10-26T03:09:50.765Z",
+      "completedAt": "2026-10-26T03:09:51.949Z",
+      "status": 0,
+      "signal": null
+    },
+    {
+      "name": "security",
+      "startedAt": "2026-10-26T03:09:51.950Z",
+      "completedAt": "2026-10-26T03:10:04.451Z",
+      "status": 0,
+      "signal": null
+    },
+    {
+      "name": "typecheck",
+      "startedAt": "2026-10-26T03:10:04.451Z",
+      "completedAt": "2026-10-26T03:10:08.446Z",
+      "status": 0,
+      "signal": null
+    },
+    {
+      "name": "lint",
+      "startedAt": "2026-10-26T03:10:08.446Z",
+      "completedAt": "2026-10-26T03:10:14.669Z",
+      "status": 0,
+      "signal": null
+    },
+    {
+      "name": "live",
+      "startedAt": "2026-10-26T03:10:14.695Z",
+      "completedAt": "2026-10-26T03:11:24.622Z",
+      "status": 0,
+      "signal": null
+    }
+  ],
+  "complete": true,
+  "completedAt": "2026-10-26T03:11:24.622Z"
+}

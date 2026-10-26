@@ -1,0 +1,18 @@
+{
+  "accepted": false,
+  "reason": "Predeclared protocol/UI sanity probe; complete pilot excluded, never pooled with accepted comparisons.",
+  "outcomes": [
+    {
+      "build": "baseline",
+      "outcomes": 8,
+      "failed": 0,
+      "exitCode": 0
+    },
+    {
+      "build": "candidate",
+      "outcomes": 8,
+      "failed": 0,
+      "exitCode": 0
+    }
+  ]
+}

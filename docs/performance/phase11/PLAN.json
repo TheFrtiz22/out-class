@@ -1,0 +1,63 @@
+{
+  "baseline": "2c95b4dec8fa218274c37f9dd406a090c37e58e0",
+  "scope": "One client bundle experiment in components/club-workspace.tsx: dynamically import five inactive feature components with existing WorkspaceLoading fallback and default SSR; preserve all render guards, props, keys, data fetching, draft/state ownership and live authority.",
+  "targets": [
+    "ClubSettingsWorkspace",
+    "ClubMeetingsWorkspace",
+    "MeetingList",
+    "DecisionSchedules",
+    "RecruitmentReviewSettings"
+  ],
+  "hypothesis": "Avoid loading nonselected settings, meetings and review/decision editor code before Recruiting. Measure destination first-use costs as well as initial source savings; no eager module prefetch to hide the cost.",
+  "constraints": "No auth success cache, new caching library, GET/resource/transport/policy change, production infrastructure/schema/index/dependency changes or publication. Phase10 font deferral retained.",
+  "cohorts": [
+    1000,
+    5000
+  ],
+  "profiles": [
+    "local",
+    "80ms latency, 200000 B/s down, 93750 B/s up, CPU4x"
+  ],
+  "blocks": [
+    "BA",
+    "AB"
+  ],
+  "warmupsPerBuildBlockPathCondition": 1,
+  "samplesPerBuildBlockPathCondition": 5,
+  "mainPaths": [
+    "applicants",
+    "applicantDetail"
+  ],
+  "conditions": [
+    "cold",
+    "warm"
+  ],
+  "plannedBrowserOutcomes": 384,
+  "plannedWarmInteractionOutcomes": 192,
+  "plannedNativeHttpOutcomes": 336,
+  "deferredFeatureCost": {
+    "cohort": 1000,
+    "profile": "constrained",
+    "paths": [
+      "overview \u2192 settingsProfile",
+      "overview \u2192 meetings",
+      "recruiting \u2192 scheduledDecisions",
+      "settingsApplication \u2192 rounds"
+    ],
+    "conditions": [
+      "cold",
+      "warm"
+    ],
+    "warmupsPerBuildBlockPathCondition": 1,
+    "samplesPerBuildBlockPathCondition": 3,
+    "plannedOutcomes": 128,
+    "groupN": 6,
+    "p95": "nearest rank maximum",
+    "readiness": "Settings actual public-profile form, fixture meeting data, empty scheduled list after fetch, and anonymous-review controls. Anonymous review uses its existing Settings/Application link; warm return uses browser history. Decisions group/details summary open before timed action."
+  },
+  "pilot": "One baseline/candidate constrained feature protocol sanity probe (8 outcomes each, 16 total), excluded whole. No replacement of individual slow accepted rows.",
+  "newRegressionCoverage": "Feature-specific built chunks absent before selection; direct links and selected first-use load correctly; a delayed chunk cannot reopen an abandoned tab or survive logout as protected UI; settings draft continuity. Existing transport/dedup/scheduler/rapid-switch/Auth/native suites.",
+  "primaryMetric": "Full preceding source document useful-content time plus captured requests/script/body bytes and separate subsequent click timing. No readiness clock change. Bounded drains, incomplete background transport flags, fonts/FCP/CLS retained.",
+  "power": "Temporary caffeinate -dimsu; complete actual power audit; exclude interrupted set whole.",
+  "publication": "Local commit only; report negative outcomes and global/freshness/server-tail risks."
+}

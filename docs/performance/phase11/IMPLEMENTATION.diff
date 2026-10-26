@@ -1,0 +1,414 @@
+diff --git a/components/club-workspace.tsx b/components/club-workspace.tsx
+index d4300f6..0ddd33d 100644
+--- a/components/club-workspace.tsx
++++ b/components/club-workspace.tsx
+@@ -1,5 +1,4 @@
+ "use client"
+-import { ClubMeetingsWorkspace } from "@/components/events/club-meetings-workspace";
+ import dynamic from "next/dynamic";
+ import { PageHeader } from "@/components/product/page-header"
+ import { OrganizationSetupChecklist } from "@/components/organization-setup-checklist";
+@@ -31,20 +30,23 @@ import {
+ } from "@/lib/workspace-api";
+ import { ApplicationStateProvider, useApplicationState } from "@/lib/application-state";
+ const ClubMembers = dynamic(() => import("@/components/club-members").then(m => m.ClubMembers));
+-import { ClubSettingsWorkspace } from "@/components/club-settings-workspace";
+ const ClubTasks = dynamic(() => import("@/components/club-tasks").then(m => m.ClubTasks));
+-import { MeetingList } from "@/components/meeting-workspace";
+ const LiveLeaderWorkspace = dynamic(() => import("@/components/views/leader-dashboard/live-leader-workspace").then(m => m.LiveLeaderWorkspace));
+ const InterviewWorkspaceView = dynamic(() => import("@/components/views/interview-workspace-view").then(m => m.InterviewWorkspaceView));
+ const InterviewManagementTabs = dynamic(() => import("@/components/interview-management-tabs").then(m => m.InterviewManagementTabs));
+ const ApplicantInterviewReviews = dynamic(() => import("@/components/applicant-interview-reviews").then(m => m.ApplicantInterviewReviews));
+-import { DecisionSchedules } from "@/components/decision-schedules";
+-import { RecruitmentReviewSettings } from "@/components/recruitment-review-settings";
+ import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+ import { Button } from "@/components/ui/button";
+ import { navigateWithinClub } from "@/lib/workspace-navigation";
+ import { DashboardLoading } from "@/components/product/dashboard-presentation";
+ import { WorkspaceLoading } from "@/components/workspace-loading";
++// Inactive feature code waits for its existing guarded render branch. Keep SSR
++// and component ownership intact for direct links and already-mounted drafts.
++const ClubMeetingsWorkspace = dynamic(() => import("@/components/events/club-meetings-workspace").then(m => m.ClubMeetingsWorkspace), { loading: () => <WorkspaceLoading /> });
++const ClubSettingsWorkspace = dynamic(() => import("@/components/club-settings-workspace").then(m => m.ClubSettingsWorkspace), { loading: () => <WorkspaceLoading /> });
++const MeetingList = dynamic(() => import("@/components/meeting-workspace").then(m => m.MeetingList), { loading: () => <WorkspaceLoading /> });
++const DecisionSchedules = dynamic(() => import("@/components/decision-schedules").then(m => m.DecisionSchedules), { loading: () => <WorkspaceLoading /> });
++const RecruitmentReviewSettings = dynamic(() => import("@/components/recruitment-review-settings").then(m => m.RecruitmentReviewSettings), { loading: () => <WorkspaceLoading /> });
+ import { SelectedClubWorkspace } from "@/components/selected-club-workspace";
+ import { clubWorkspaceEntryHref, clubWorkspacePreferenceKey, readClubWorkspacePreference, saveClubWorkspacePreference } from "@/lib/club-workspace-preference";
+ type Overview = Awaited<ReturnType<typeof getClubWorkspaceOverview>>;
+diff --git a/scripts/navigation-audit.cjs b/scripts/navigation-audit.cjs
+index 01e8314..ded0dcd 100644
+--- a/scripts/navigation-audit.cjs
++++ b/scripts/navigation-audit.cjs
+@@ -158,6 +158,13 @@ async function main() {
+   const descriptors=routes(fixture), allSamples=[], failures=[];
+   if(process.argv.includes('--phase3')) Object.assign(descriptors.applicantDetail,{text:'Synthetic application evidence.'});
+   if(process.argv.includes('--phase2')) { Object.assign(descriptors.overview,{selector:'.oc-command-club'}); Object.assign(descriptors.recruiting,{selector:'.oc-command-recruiting',text:'Current pipeline'}); }
++  if(process.argv.includes('--deferred-screens')) {
++    const base='/club/'+fixture.clubIds[0]+'/workspace';
++    descriptors.settingsProfile={href:base+'?section=settings',selector:'.oc-club-settings fieldset:not([disabled])',text:'One-line pitch',tour:'nav-settings'};
++    descriptors.settingsApplication={href:base+'?section=settings&setting=application',selector:'.oc-settings-workspace details',text:'Review settings'};
++    descriptors.scheduledDecisions={href:base+'?section=recruitment&tool=scheduled-decisions',selector:'section[aria-label="Scheduled Decisions"]',text:'No scheduled decisions.',tour:'nav-scheduled-decisions'};
++    descriptors.rounds={href:base+'?section=recruitment&tool=rounds',selector:'[data-slot="sheet-content"]',text:'Previously viewed information cannot be recalled'};
++  }
+   if(active)descriptors.interviews.text=active.readyText;
+   const sampleCount=Number(process.argv.find(a=>a.startsWith('--samples='))?.split('=')[1]||20);
+   assert.ok(sampleCount>0&&sampleCount<=100);
+@@ -251,13 +258,19 @@ async function main() {
+   }
+   async function clickTarget(s,from,to) {
+     const {page}=s;
++    if(process.argv.includes('--deferred-screens') && to==='rounds') {
++      const details=page.locator('.oc-settings-workspace details').filter({has:page.locator('summary',{hasText:'Review settings'})});
++      if(!await details.evaluate(e=>e.open))await details.locator('summary').click();
++      return page.getByRole('link',{name:'Anonymous review',exact:true}).click();
++    }
++    if(process.argv.includes('--deferred-screens') && from==='rounds' && to==='settingsApplication')return page.goBack({waitUntil:'domcontentloaded'});
+     if(to==='applicantDetail')return page.locator('[data-applicant-id]').filter({visible:true}).first().click();
+     if(from==='applicantDetail')return page.locator('[data-slot="sheet-content"]').getByRole('button',{name:'Close',exact:true}).click();
+     if(process.argv.includes('--phase2') && descriptors[to].tour) {
+       const tour=descriptors[to].tour;
+       let item=page.locator('[data-tour="'+tour+'"]').filter({visible:true}).first();
+-      if(!await item.count() && to==='applicants') {
+-        const group=page.getByRole('button',{name:'Applicants',exact:true}).filter({visible:true}).first();
++      if(!await item.count() && (to==='applicants'||to==='scheduledDecisions')) {
++        const group=page.getByRole('button',{name:to==='scheduledDecisions'?'Decisions':'Applicants',exact:true}).filter({visible:true}).first();
+         await group.focus();await page.keyboard.press('ArrowRight');
+         item=page.locator('[data-tour="'+tour+'"]').filter({visible:true}).first();
+       }
+@@ -290,6 +303,13 @@ async function main() {
+   async function sample(s,from,to,condition,index,gate) {
+     // Open any switcher or grouped rail before timing the destination click.
+     const page=s.page;
++    if(process.argv.includes('--deferred-screens') && to==='rounds') {
++      const details=page.locator('.oc-settings-workspace details').filter({has:page.locator('summary',{hasText:'Review settings'})});
++      if(!await details.evaluate(e=>e.open))await details.locator('summary').click();
++    }
++    if(process.argv.includes('--deferred-screens') && to==='scheduledDecisions' && !await page.locator('[data-tour="nav-scheduled-decisions"]').filter({visible:true}).count()) {
++      await page.getByRole('button',{name:'Decisions',exact:true}).filter({visible:true}).first().focus();await page.keyboard.press('ArrowRight');
++    }
+     if(from==='voting'){
+       const setup=page.getByRole('dialog',{name:'New voting session',exact:true});
+       if(await setup.isVisible()){await setup.getByRole('button',{name:'Close',exact:true}).click();await setup.waitFor({state:'hidden'});}
+@@ -387,7 +407,7 @@ async function main() {
+     return;
+   }
+   const pairs=[['overview','members'],['members','meetings'],['meetings','tasks'],['tasks','announcements'],['announcements','overview'],['recruiting','applicants'],['applicants','interviews'],['interviews','decisions'],['decisions','recruiting'],['applicants','voting'],['voting','applicants'],['overview','settings'],['settings','overview'],['overview','recruiting'],['recruiting','overview'],['overview','club2'],['personal','overview'],['overview','personal']];
+-  const selected=process.argv.includes('--phase3')?[['recruiting','applicants'],['applicants','applicantDetail']]:process.argv.includes('--phase2')?[['overview','members'],['recruiting','applicants'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--only-interviews')?[['applicants','interviews']]:process.argv.includes('--phase1')?[['applicants','interviews'],['members','meetings'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--smoke')?pairs.slice(0,1):process.argv.includes('--member-details')?[['members','memberDetail']]:process.argv.includes('--cross-club')?[['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]:process.argv.includes('--details')?[['applicants','applicantDetail'],['members','memberDetail']]:process.argv.includes('--only-voting')?pairs.filter(p=>p.includes('voting')):process.argv.includes('--waterfalls')?pairs.filter(([f,t])=>f==='overview'&&t==='members'||f==='recruiting'&&t==='applicants'||f==='applicants'&&t==='interviews'):pairs.filter(p=>!p.includes('club2')&&!p.includes('personal')).concat([['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]);
++  const selected=process.argv.includes('--deferred-screens')?[['overview','settingsProfile'],['overview','meetings'],['recruiting','scheduledDecisions'],['settingsApplication','rounds']]:process.argv.includes('--phase3')?[['recruiting','applicants'],['applicants','applicantDetail']]:process.argv.includes('--phase2')?[['overview','members'],['recruiting','applicants'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--only-interviews')?[['applicants','interviews']]:process.argv.includes('--phase1')?[['applicants','interviews'],['members','meetings'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--smoke')?pairs.slice(0,1):process.argv.includes('--member-details')?[['members','memberDetail']]:process.argv.includes('--cross-club')?[['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]:process.argv.includes('--details')?[['applicants','applicantDetail'],['members','memberDetail']]:process.argv.includes('--only-voting')?pairs.filter(p=>p.includes('voting')):process.argv.includes('--waterfalls')?pairs.filter(([f,t])=>f==='overview'&&t==='members'||f==='recruiting'&&t==='applicants'||f==='applicants'&&t==='interviews'):pairs.filter(p=>!p.includes('club2')&&!p.includes('personal')).concat([['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]);
+   const outputStem=process.argv.includes('--member-details')?'member-detail':process.argv.includes('--cross-club')?'cross-club':process.argv.includes('--details')?'detail':process.argv.includes('--only-voting')?'voting':process.argv.includes('--waterfalls')?'waterfall':'browser';
+   try {
+     for(const [from,to] of selected)for(const condition of (process.argv.includes('--cold-warm')?['cold','warm']:['cold','warm','repeated'])){
+diff --git a/scripts/navigation-phase11-concurrency.cjs b/scripts/navigation-phase11-concurrency.cjs
+new file mode 100644
+index 0000000..ed7c4dc
+--- /dev/null
++++ b/scripts/navigation-phase11-concurrency.cjs
+@@ -0,0 +1,16 @@
++// Bounded real HTTP bursts against the reserved fixture. No auth/cache shortcuts.
++const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),http=require('node:http'),{performance}=require('node:perf_hooks'),{gunzipSync}=require('node:zlib'),{PrismaClient}=require('@prisma/client');
++const local=require('./navigation-phase11-local.cjs'),{Actor}=require('../tests/helpers/onboarding-e2e.cjs');
++async function main(){
++ const out=path.resolve(process.argv.find(a=>a.startsWith('--out='))?.slice(6)||''),kind=process.argv.find(a=>a.startsWith('--kind='))?.slice(7);assert.ok(out.startsWith(path.join(local.repo,'docs/performance/phase11')+path.sep)&&!fs.existsSync(out));assert.ok(['pipelinePage','pipelineList'].includes(kind));
++ const fixture=JSON.parse(fs.readFileSync(path.join(local.root,'navigation-fixture.json'))),actor=new Actor(local.config());await actor.signIn(fixture.email,fixture.password);const url=new URL(local.config().appUrl+'/api/workspace?'+new URLSearchParams({kind,args:JSON.stringify([fixture.clubIds[0],{genderCounts:false}])}));assert.equal(url.origin,'http://127.0.0.1:3107');
++ const poolUrl=new URL(local.config().status.DB_URL);poolUrl.searchParams.set('connection_limit','1');const monitor=new PrismaClient({datasourceUrl:poolUrl.href}),agent=new http.Agent({keepAlive:true,maxSockets:4}),samples=[],poolSamples=[];let monitoring=true;
++ const origin=performance.now(),poll=(async()=>{while(monitoring){const [row]=await monitor.$queryRaw`SELECT count(*)::int AS connections, count(*) FILTER (WHERE state='active')::int AS active, count(*) FILTER (WHERE state='idle in transaction')::int AS idle_in_transaction, count(*) FILTER (WHERE wait_event_type='Lock')::int AS lock_waiting FROM pg_stat_activity WHERE datname=current_database() AND usename=current_user AND backend_type='client backend' AND pid<>pg_backend_pid()`;poolSamples.push({offsetMs:performance.now()-origin,...row});await new Promise(r=>setTimeout(r,25))}})();
++ async function read(concurrency,wave,index){return new Promise(resolve=>{
++  const start=performance.now();const request=http.get(url,{agent,headers:{cookie:actor.cookieHeader(),'accept-encoding':'gzip'}},response=>{const ttfbMs=performance.now()-start,chunks=[];response.on('data',chunk=>chunks.push(chunk));response.on('end',()=>{const body=Buffer.concat(chunks);let valid=false,count=null;try{const data=JSON.parse((response.headers['content-encoding']==='gzip'?gunzipSync(body):body).toString()).data;valid=Array.isArray(data.applications);count=data.applications?.length}catch{}const row={concurrency,wave,index,warmup:wave===0,startOffsetMs:start-origin,endOffsetMs:performance.now()-origin,elapsedMs:performance.now()-start,ttfbMs,status:response.statusCode,encodedBodyBytes:body.length,applicationCount:count,serverTiming:response.headers['server-timing']||null,traceId:response.headers['x-outclass-trace-id']||null,privateNoStore:response.headers['cache-control']==='private, no-store',cookieSensitive:/Cookie/.test(response.headers.vary||''),failed:!valid||response.statusCode!==200};samples.push(row);resolve()})});
++  request.setTimeout(30000,()=>request.destroy());request.once('error',e=>{samples.push({concurrency,wave,index,warmup:wave===0,failed:true,startOffsetMs:start-origin,endOffsetMs:performance.now()-origin,error:e.name,elapsedMs:performance.now()-start});resolve()});
++ })}
++ try{for(const concurrency of [1,2,4])for(let wave=0;wave<6;wave++)await Promise.all(Array.from({length:concurrency},(_,index)=>read(concurrency,wave,index)));assert.equal(samples.length,42);assert.ok(samples.every(r=>r.privateNoStore&&r.cookieSensitive&&!r.failed));}
++ finally{monitoring=false;await poll;await monitor.$disconnect();agent.destroy();fs.writeFileSync(out,JSON.stringify({buildId:fs.readFileSync(path.join(local.dist,'BUILD_ID'),'utf8').trim(),size:fixture.counts.applicantsInMeasuredClub,kind,poolLimitPerClient:8,maxConcurrentHttp:4,poolSampling:'25ms same-role aggregates excluding monitor; SQL text/identities never recorded. Count includes unrelated same-role background sessions if present.','sampleUnit':'One HTTP initial-list read, not a local resident interaction. Each burst shares a wave; not independent percentiles.',samples,poolSamples},null,2)+'\n')}
++}
++if(require.main===module)main().catch(e=>{console.error(e.name+': bounded HTTP study failed');process.exitCode=1});
+diff --git a/scripts/navigation-phase11-constrained-interactions.cjs b/scripts/navigation-phase11-constrained-interactions.cjs
+new file mode 100644
+index 0000000..bfa03ad
+--- /dev/null
++++ b/scripts/navigation-phase11-constrained-interactions.cjs
+@@ -0,0 +1,38 @@
++// Additional warm interactions on the same frozen builds/cohorts as the primary
++// harness. No interception, seeded delay, mutation, or benchmark-only app path.
++const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{performance}=require('node:perf_hooks'),{chromium}=require('playwright');
++const local=require('./navigation-phase11-local.cjs'),{Actor}=require('../tests/helpers/onboarding-e2e.cjs'),{safeRoute}=require('./navigation-audit.cjs');
++async function main(){
++ const out=path.resolve(process.argv.find(a=>a.startsWith('--out='))?.slice(6)||'');assert.ok(out.startsWith(path.join(local.repo,'docs/performance/phase11')+path.sep)&&!fs.existsSync(out));
++ const f=JSON.parse(fs.readFileSync(path.join(local.root,'navigation-fixture.json'))),size=f.counts.applicantsInMeasuredClub||100;assert.ok(size>=1000);
++ const actor=new Actor(local.config());await actor.signIn(f.email,f.password);const browser=await chromium.launch({headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage(),requests=[],pending=new Set(),errors=[],samples=[];
++ const cdp=await context.newCDPSession(page);assert.equal(local.config().appUrl,'http://127.0.0.1:3107');await cdp.send('Network.enable');await cdp.send('Network.emulateNetworkConditions',{offline:false,latency:80,downloadThroughput:200000,uploadThroughput:93750,connectionType:'cellular4g'});await cdp.send('Emulation.setCPUThrottlingRate',{rate:4});
++ page.on('pageerror',e=>errors.push(e.name));page.on('request',r=>{const row={request:r,route:safeRoute(r.url()),type:r.resourceType(),start:performance.now(),end:null,status:null,bytes:null};requests.push(row);if(row.type!=='eventsource')pending.add(r)});
++ page.on('response',r=>{const row=requests.find(q=>q.request===r.request());if(row){row.status=r.status();row.serverTiming=r.headers()['server-timing']||null;row.traceId=r.headers()['x-outclass-trace-id']||null}});
++ page.on('requestfinished',r=>{pending.delete(r);const row=requests.find(q=>q.request===r);if(row){row.end=performance.now();row.timing=r.timing();void r.sizes().then(s=>row.bytes=s.responseBodySize).catch(()=>{})}});page.on('requestfailed',r=>{pending.delete(r);const row=requests.find(q=>q.request===r);if(row){row.end=performance.now();row.failed=true}});
++ async function drain(){const until=performance.now()+10000;while(pending.size&&performance.now()<until)await new Promise(r=>setTimeout(r,20));assert.equal(pending.size,0,'Unfinished non-SSE request');await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))))}
++ async function capture(kind,index,target,action){
++  await drain();const offset=requests.length,errorOffset=errors.length,start=performance.now();let failed=null,meaningfulMs=null,marks=null,driverElapsedMs=null;
++  await page.evaluate(({target,event})=>{
++   const state={start:0,ready:0,scheduled:false,origin:performance.timeOrigin};window.__phase11Paint=state;
++   const check=()=>{if(!state.start||state.scheduled)return;const found=[...document.querySelectorAll('.oc-live-pipeline [data-applicant-id]')].some(e=>e.getClientRects().length&&e.textContent.includes(target));if(!found)return;state.scheduled=true;requestAnimationFrame(()=>requestAnimationFrame(()=>{state.ready=performance.now()}))};
++   const begin=()=>{if(!state.start)state.start=performance.now();queueMicrotask(check)};
++   document.addEventListener(event,begin,true);const observer=new MutationObserver(check);observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true});state.check=check;state.cleanup=()=>{observer.disconnect();document.removeEventListener(event,begin,true)};
++  },{target,event:kind==='next-page'?'click':'input'});
++  try{await action();await page.evaluate(()=>window.__phase11Paint.check());await page.waitForFunction(()=>window.__phase11Paint.ready>0,null,{timeout:30000});marks=await page.evaluate(()=>{const s=window.__phase11Paint;s.cleanup();return{start:s.start,ready:s.ready,origin:s.origin}});meaningfulMs=marks.ready-marks.start;driverElapsedMs=performance.now()-start;await drain()}catch(e){failed=e.name;process.exitCode=1;await page.evaluate(()=>window.__phase11Paint.cleanup()).catch(()=>{})}
++  const origin=marks?marks.origin+marks.start:performance.timeOrigin+start;
++  const rows=requests.slice(offset).map(r=>({route:r.route,type:r.type,startMs:performance.timeOrigin+r.start-origin,endMs:r.end===null?null:performance.timeOrigin+r.end-origin,status:r.status,failed:!!r.failed,encodedBodyBytes:r.bytes,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart:null,transferMs:r.timing?.responseEnd>=0&&r.timing?.responseStart>=0?r.timing.responseEnd-r.timing.responseStart:null,serverTiming:r.serverTiming,traceId:r.traceId}));
++  samples.push({kind,index,warmup:index===0,condition:'warm',failed,meaningfulMs,driverElapsedMs,requestCount:rows.length,encodedBodyBytes:rows.every(r=>Number.isFinite(r.encodedBodyBytes))?rows.reduce((n,r)=>n+r.encodedBodyBytes,0):null,pageErrors:errors.slice(errorOffset),requests:rows});
++ }
++ try{
++  await page.goto(local.config().appUrl+'/club/'+f.clubIds[0]+'/workspace?section=recruitment&tool=applicants');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await page.waitForLoadState('networkidle');await drain();const pager=page.getByRole('navigation',{name:'Applicant pages',exact:true}),search=page.getByRole('textbox',{name:'Search applicants',exact:true}),last='Scale Student '+String(size-1).padStart(5,'0');
++  for(let i=0;i<6;i++){
++   await capture('next-page',i,'Scale Student 00100',()=>pager.getByRole('button',{name:'Next applicant page',exact:true}).click());
++   await pager.getByRole('button',{name:'Previous applicant page',exact:true}).click();await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await drain();
++   await capture('distant-search',i,last,()=>search.fill(last));
++   assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),1);assert.equal(await search.evaluate(e=>document.activeElement===e),true);
++   await search.fill('');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await drain();
++  }
++ }finally{fs.mkdirSync(path.dirname(out),{recursive:true});fs.writeFileSync(out,JSON.stringify({buildId:fs.readFileSync(path.join(local.dist,'BUILD_ID'),'utf8').trim(),size,planned:12,samples,errors,interpretation:'Local constrained profile: 80ms latency, 1.6Mbps down/0.75Mbps up, CPU4x. Warm interactions only. Browser event timestamp to MutationObserver content predicate plus two animation frames; driver polling/dispatch is excluded from meaningfulMs and separately retained as driverElapsedMs. Initial preparation, restoration and one warmup per interaction excluded from measured distribution. All failures retained; no retries.'},null,2)+'\n');await context.close();await browser.close()}
++}
++if(require.main===module)main().catch(e=>{console.error(e.name+': interaction study failed');process.exitCode=1});
+diff --git a/scripts/navigation-phase11-interactions.cjs b/scripts/navigation-phase11-interactions.cjs
+new file mode 100644
+index 0000000..76332e3
+--- /dev/null
++++ b/scripts/navigation-phase11-interactions.cjs
+@@ -0,0 +1,37 @@
++// Additional warm interactions on the same frozen builds/cohorts as the primary
++// harness. No interception, seeded delay, mutation, or benchmark-only app path.
++const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{performance}=require('node:perf_hooks'),{chromium}=require('playwright');
++const local=require('./navigation-phase11-local.cjs'),{Actor}=require('../tests/helpers/onboarding-e2e.cjs'),{safeRoute}=require('./navigation-audit.cjs');
++async function main(){
++ const out=path.resolve(process.argv.find(a=>a.startsWith('--out='))?.slice(6)||'');assert.ok(out.startsWith(path.join(local.repo,'docs/performance/phase11')+path.sep)&&!fs.existsSync(out));
++ const f=JSON.parse(fs.readFileSync(path.join(local.root,'navigation-fixture.json'))),size=f.counts.applicantsInMeasuredClub||100;assert.ok(size>=1000);
++ const actor=new Actor(local.config());await actor.signIn(f.email,f.password);const browser=await chromium.launch({headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage(),requests=[],pending=new Set(),errors=[],samples=[];
++ page.on('pageerror',e=>errors.push(e.name));page.on('request',r=>{const row={request:r,route:safeRoute(r.url()),type:r.resourceType(),start:performance.now(),end:null,status:null,bytes:null};requests.push(row);if(row.type!=='eventsource')pending.add(r)});
++ page.on('response',r=>{const row=requests.find(q=>q.request===r.request());if(row){row.status=r.status();row.serverTiming=r.headers()['server-timing']||null;row.traceId=r.headers()['x-outclass-trace-id']||null}});
++ page.on('requestfinished',r=>{pending.delete(r);const row=requests.find(q=>q.request===r);if(row){row.end=performance.now();row.timing=r.timing();void r.sizes().then(s=>row.bytes=s.responseBodySize).catch(()=>{})}});page.on('requestfailed',r=>{pending.delete(r);const row=requests.find(q=>q.request===r);if(row){row.end=performance.now();row.failed=true}});
++ async function drain(){const until=performance.now()+10000;while(pending.size&&performance.now()<until)await new Promise(r=>setTimeout(r,20));assert.equal(pending.size,0,'Unfinished non-SSE request');await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))))}
++ async function capture(kind,index,target,action){
++  await drain();const offset=requests.length,errorOffset=errors.length,start=performance.now();let failed=null,meaningfulMs=null,marks=null,driverElapsedMs=null;
++  await page.evaluate(({target,event})=>{
++   const state={start:0,ready:0,scheduled:false,origin:performance.timeOrigin};window.__phase11Paint=state;
++   const check=()=>{if(!state.start||state.scheduled)return;const found=[...document.querySelectorAll('.oc-live-pipeline [data-applicant-id]')].some(e=>e.getClientRects().length&&e.textContent.includes(target));if(!found)return;state.scheduled=true;requestAnimationFrame(()=>requestAnimationFrame(()=>{state.ready=performance.now()}))};
++   const begin=()=>{if(!state.start)state.start=performance.now();queueMicrotask(check)};
++   document.addEventListener(event,begin,true);const observer=new MutationObserver(check);observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true});state.check=check;state.cleanup=()=>{observer.disconnect();document.removeEventListener(event,begin,true)};
++  },{target,event:kind==='next-page'?'click':'input'});
++  try{await action();await page.evaluate(()=>window.__phase11Paint.check());await page.waitForFunction(()=>window.__phase11Paint.ready>0,null,{timeout:30000});marks=await page.evaluate(()=>{const s=window.__phase11Paint;s.cleanup();return{start:s.start,ready:s.ready,origin:s.origin}});meaningfulMs=marks.ready-marks.start;driverElapsedMs=performance.now()-start;await drain()}catch(e){failed=e.name;process.exitCode=1;await page.evaluate(()=>window.__phase11Paint.cleanup()).catch(()=>{})}
++  const origin=marks?marks.origin+marks.start:performance.timeOrigin+start;
++  const rows=requests.slice(offset).map(r=>({route:r.route,type:r.type,startMs:performance.timeOrigin+r.start-origin,endMs:r.end===null?null:performance.timeOrigin+r.end-origin,status:r.status,failed:!!r.failed,encodedBodyBytes:r.bytes,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart:null,transferMs:r.timing?.responseEnd>=0&&r.timing?.responseStart>=0?r.timing.responseEnd-r.timing.responseStart:null,serverTiming:r.serverTiming,traceId:r.traceId}));
++  samples.push({kind,index,warmup:index===0,condition:'warm',failed,meaningfulMs,driverElapsedMs,requestCount:rows.length,encodedBodyBytes:rows.every(r=>Number.isFinite(r.encodedBodyBytes))?rows.reduce((n,r)=>n+r.encodedBodyBytes,0):null,pageErrors:errors.slice(errorOffset),requests:rows});
++ }
++ try{
++  await page.goto(local.config().appUrl+'/club/'+f.clubIds[0]+'/workspace?section=recruitment&tool=applicants');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await page.waitForLoadState('networkidle');await drain();const pager=page.getByRole('navigation',{name:'Applicant pages',exact:true}),search=page.getByRole('textbox',{name:'Search applicants',exact:true}),last='Scale Student '+String(size-1).padStart(5,'0');
++  for(let i=0;i<6;i++){
++   await capture('next-page',i,'Scale Student 00100',()=>pager.getByRole('button',{name:'Next applicant page',exact:true}).click());
++   await pager.getByRole('button',{name:'Previous applicant page',exact:true}).click();await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await drain();
++   await capture('distant-search',i,last,()=>search.fill(last));
++   assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),1);assert.equal(await search.evaluate(e=>document.activeElement===e),true);
++   await search.fill('');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await drain();
++  }
++ }finally{fs.mkdirSync(path.dirname(out),{recursive:true});fs.writeFileSync(out,JSON.stringify({buildId:fs.readFileSync(path.join(local.dist,'BUILD_ID'),'utf8').trim(),size,planned:12,samples,errors,interpretation:'Warm interactions only. Browser event timestamp to MutationObserver content predicate plus two animation frames; driver polling/dispatch is excluded from meaningfulMs and separately retained as driverElapsedMs. Initial preparation, restoration and one warmup per interaction excluded from measured distribution. All failures retained; no retries.'},null,2)+'\n');await context.close();await browser.close()}
++}
++if(require.main===module)main().catch(e=>{console.error(e.name+': interaction study failed');process.exitCode=1});
+diff --git a/scripts/navigation-phase11-local.cjs b/scripts/navigation-phase11-local.cjs
+new file mode 100644
+index 0000000..2c14aa8
+--- /dev/null
++++ b/scripts/navigation-phase11-local.cjs
+@@ -0,0 +1,12 @@
++// Lifecycle helper restricted to this chat's owned, disposable navigation fixture.
++const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),assert=require('node:assert/strict'),{spawn,spawnSync,execFileSync}=require('node:child_process'),{randomUUID}=require('node:crypto');
++const repo=path.resolve(__dirname,'..'),root=path.join(os.tmpdir(),'outclass-onboarding-e2e'),dist=path.join(repo,'.next-publish');
++const config=()=>require('../tests/helpers/onboarding-e2e.cjs').readConfig(path.join(root,'config.json'));
++function privateRoot(){const location=fs.readFileSync('/tmp/outclass-phase11-builds-path','utf8');assert.ok(location.startsWith(path.join(os.tmpdir(),'outclass-phase11-builds-')));assert.ok(fs.existsSync(location));return location}
++function environment(){const c=config(),s=c.status;assert.equal(c.buildDir,dist);const db=new URL(s.DB_URL);db.searchParams.set('connection_limit','8');return{...process.env,NEXT_PUBLIC_ENABLE_MICROSOFT_AUTH:'false',DATABASE_URL:db.href,POSTGRES_PRISMA_URL:db.href,POSTGRES_URL:db.href,POSTGRES_URL_NON_POOLING:db.href,NEXT_PUBLIC_SUPABASE_URL:s.API_URL,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:s.PUBLISHABLE_KEY,NEXT_PUBLIC_SUPABASE_ANON_KEY:s.ANON_KEY,SUPABASE_SECRET_KEY:s.SECRET_KEY,SUPABASE_SERVICE_ROLE_KEY:s.SERVICE_ROLE_KEY,OUTCLASS_PUBLISH_BUILD:'1',OUTCLASS_SITE_URL:c.appUrl,OUTCLASS_PLATFORM_ADMIN_IDS:c.admin.id,SMTP_HOST:'127.0.0.1',SMTP_PORT:'55325',SMTP_USER:'local-test',SMTP_PASSWORD:'local-test',SMTP_FROM_EMAIL:'outclass@virginia.edu',CRON_SECRET:randomUUID(),NODE_EXTRA_CA_CERTS:path.join(root,'mailpit-cert.pem'),COMMUNICATIONS_EMAIL_ENABLED:'true',RESEND_API_KEY:'',RESEND_FROM_EMAIL:''}}
++async function stop(){const listener=spawnSync('lsof',['-tiTCP:3107','-sTCP:LISTEN'],{encoding:'utf8'}).stdout.trim();if(!listener)return;const pid=fs.readFileSync(path.join(root,'server.pid'),'utf8').trim();assert.equal(listener,pid);assert.ok(execFileSync('lsof',['-a','-p',pid,'-d','cwd','-Fn'],{encoding:'utf8'}).split('\n').includes('n'+repo));process.kill(Number(pid),'SIGTERM');for(let n=0;n<100;n++){if(!spawnSync('lsof',['-tiTCP:3107','-sTCP:LISTEN'],{encoding:'utf8'}).stdout.trim())return;await new Promise(r=>setTimeout(r,50))}throw Error('Owned app failed to stop')}
++function snapshot(name){assert.ok(['baseline','pilot','pilot2','candidate'].includes(name));const target=path.join(privateRoot(),name);assert.ok(!fs.existsSync(target));fs.cpSync(dist,target,{recursive:true});return fs.readFileSync(path.join(target,'BUILD_ID'),'utf8').trim()}
++async function start(name,diagnose=false){assert.ok(['baseline','pilot','pilot2','candidate'].includes(name));const source=path.join(privateRoot(),name);assert.ok(fs.existsSync(path.join(source,'BUILD_ID')));await stop();fs.rmSync(dist,{recursive:true});fs.cpSync(source,dist,{recursive:true});const fd=fs.openSync(path.join(root,'phase11-server.log'),'a'),args=diagnose?['--require','./scripts/navigation-http-diagnostics.cjs']:[];args.push('node_modules/next/dist/bin/next','start','-p','3107','-H','127.0.0.1');const app=spawn(process.execPath,args,{cwd:repo,env:{...environment(),OUTCLASS_PHASE_TRACE:diagnose?'1':'0',OUTCLASS_NAVIGATION_HTTP_DIAGNOSTICS:diagnose?'1':'0'},detached:true,stdio:['ignore',fd,fd]});fs.closeSync(fd);app.unref();fs.writeFileSync(path.join(root,'server.pid'),String(app.pid));for(let n=0;n<100;n++){try{if((await fetch(config().appUrl,{signal:AbortSignal.timeout(1000)})).ok)return}catch{}await new Promise(r=>setTimeout(r,200))}throw Error('Owned app did not become ready')}
++async function build(){await stop();const fd=fs.openSync(path.join(root,'phase11-build.log'),'w');const result=spawnSync('npm',['run','build'],{cwd:repo,env:environment(),stdio:['ignore',fd,fd]});fs.closeSync(fd);assert.equal(result.status,0,'Inspect owned build log');}
++module.exports={repo,root,dist,config,privateRoot,environment,stop,start,snapshot,build};
++if(require.main===module)(async()=>{const [command,name]=process.argv.slice(2);if(command==='stop')await stop();else if(command==='start')await start(name,process.argv.includes('--diagnose'));else if(command==='snapshot')console.log(snapshot(name));else if(command==='build')await build();else throw Error('Unknown local lifecycle command')})().catch(error=>{console.error(error.name+': '+error.message.split('\n')[0]);process.exitCode=1});
+diff --git a/scripts/navigation-phase11-study.cjs b/scripts/navigation-phase11-study.cjs
+new file mode 100644
+index 0000000..2af5818
+--- /dev/null
++++ b/scripts/navigation-phase11-study.cjs
+@@ -0,0 +1,61 @@
++// Matched frozen-build study. Product readiness, request draining and network
++// conditions are the existing harness; font diagnostics only observe the page.
++const fs = require('node:fs'), path = require('node:path'), assert = require('node:assert/strict');
++const { spawnSync } = require('node:child_process'), { createHash } = require('node:crypto');
++const local = require('./navigation-phase11-local.cjs');
++const hash = file => createHash('sha256').update(fs.readFileSync(file)).digest('hex');
++async function main() {
++  const profile = process.argv.find(a => a.startsWith('--profile='))?.slice(10);
++  assert.ok(['local', 'constrained'].includes(profile));
++  const out = path.join(local.repo, 'docs/performance/phase11', profile);
++  assert.ok(!fs.existsSync(out)); fs.mkdirSync(out);
++  const toolNames = ['navigation-phase11-study.cjs', 'navigation-phase11-local.cjs', 'navigation-audit.cjs', 'navigation-phase11-interactions.cjs', 'navigation-phase11-constrained-interactions.cjs', 'navigation-phase11-concurrency.cjs'];
++  const protocol = { startedAt: new Date().toISOString(), profile, cohorts: [1000, 5000], blocks: ['BA', 'AB'], buildIds: {}, planSha256: hash(path.join(local.repo, 'docs/performance/phase11/PLAN.json')), tools: Object.fromEntries(toolNames.map(f => [f, hash(path.join(local.repo, 'scripts', f))])), completed: [], interactions: [], concurrency: [], features: [], failures: [], complete: false };
++  const save = () => fs.writeFileSync(path.join(out, 'PROTOCOL.json'), JSON.stringify(protocol, null, 2) + '\n'); save();
++  function run(script, args, logName) {
++    const fd = fs.openSync(path.join(local.root, logName), 'a');
++    try { return spawnSync(process.execPath, [script, ...args], { cwd: local.repo, env: local.environment(), stdio: ['ignore', fd, fd] }).status; }
++    finally { fs.closeSync(fd); }
++  }
++  try {
++    for (const size of protocol.cohorts) {
++      await local.stop(); fs.copyFileSync(path.join(local.privateRoot(), `fixture-${size}.json`), path.join(local.root, 'navigation-fixture.json'));
++      for (const [pair, order] of protocol.blocks.entries()) for (const [position, variant] of [...order].entries()) {
++        const build = variant === 'B' ? 'baseline' : 'candidate'; await local.start(build);
++        protocol.buildIds[build] = fs.readFileSync(path.join(local.dist, 'BUILD_ID'), 'utf8').trim();
++        const stem = `size-${size}-pair-${pair + 1}-${position + 1}-${variant}`;
++        for (const [phase, n] of [['warmup', 1], ['measure', 5]]) {
++          const directory = stem + '-' + phase;
++          const status = run('scripts/navigation-audit.cjs', ['--phase2', '--phase3', '--cold-warm', '--record-failures', '--source-diagnostics', '--font-diagnostics', ...(profile === 'constrained' ? ['--constrained-network'] : []), '--samples=' + n, '--out=' + path.join(out, directory)], 'phase11-study.log');
++          const data = JSON.parse(fs.readFileSync(path.join(out, directory, 'browser-samples.json')));
++          assert.equal(data.samples.length, n * 4); assert.equal(status, data.failures.length ? 1 : 0);
++          protocol.completed.push({ directory, planned: n * 4, observed: data.samples.length, failed: data.failures.length }); save();
++        }
++        if (profile === 'constrained' && size === 1000) {
++          for (const [phase, n] of [['warmup', 1], ['measure', 3]]) {
++            const directory = stem + '-features-' + phase;
++            const status = run('scripts/navigation-audit.cjs', ['--phase2', '--deferred-screens', '--cold-warm', '--record-failures', '--source-diagnostics', '--font-diagnostics', '--constrained-network', '--samples=' + n, '--out=' + path.join(out, directory)], 'phase11-feature-study.log');
++            const data = JSON.parse(fs.readFileSync(path.join(out, directory, 'browser-samples.json')));
++            assert.equal(data.samples.length, n * 8); assert.equal(status, data.failures.length ? 1 : 0);
++            protocol.features.push({ directory, planned: n * 8, observed: data.samples.length, failed: data.failures.length }); save();
++          }
++        }
++        const interactionFile = stem + '-interactions.json';
++        const status = run('scripts/navigation-phase11-' + (profile === 'constrained' ? 'constrained-interactions' : 'interactions') + '.cjs', ['--out=' + path.join(out, interactionFile)], 'phase11-interactions.log');
++        const interactions = JSON.parse(fs.readFileSync(path.join(out, interactionFile)));
++        assert.equal(interactions.samples.length, 12); assert.equal(status, interactions.samples.some(s => s.failed) ? 1 : 0);
++        protocol.interactions.push({ file: interactionFile, planned: 12, observed: interactions.samples.length, failed: interactions.samples.filter(s => s.failed).length }); save();
++        if (profile === 'constrained') {
++          const file = stem + '-concurrency.json';
++          assert.equal(run('scripts/navigation-phase11-concurrency.cjs', ['--kind=pipelinePage', '--out=' + path.join(out, file)], 'phase11-concurrency.log'), 0);
++          protocol.concurrency.push({ file, planned: 42 }); save();
++        }
++        console.log(`Completed ${profile}, ${size} applicants, pair ${pair + 1}, ${variant}`);
++      }
++    }
++    protocol.complete = true; protocol.completedAt = new Date().toISOString(); save();
++  } catch (error) {
++    protocol.failures.push({ name: error.name, message: error.message.split('\n')[0] }); save(); throw error;
++  } finally { await local.stop(); protocol.applicationStopped = true; save(); }
++}
++if (require.main === module) main().catch(error => { console.error(error.name + ': Phase 11 study failed'); process.exitCode = 1; });
+diff --git a/tests/campus-illustrations.test.cjs b/tests/campus-illustrations.test.cjs
+index 0703d95..63f5688 100644
+--- a/tests/campus-illustrations.test.cjs
++++ b/tests/campus-illustrations.test.cjs
+@@ -81,12 +81,15 @@ for(const [name, member, requested, effective, illustration] of settingsCases) t
+
+ // Render the real parent and settings content against one disposable identity/query.
+ // Data readers, unrelated panels and shell chrome are inert; no service is contacted.
+-function renderSettingsWorkspace(member, requested, section = 'settings') {
++async function renderSettingsWorkspace(member, requested, section = 'settings') {
+  const clubId='visual-fixture-club'
+  const membership={id:'fixture-member',clubId,status:'ACTIVE',permissions:[],...member,club:{name:'Fixture Club',pipelineVersion:1,applicationVersion:1}}
+  const query=new URLSearchParams({section})
+  if(requested != null) query.set('setting',requested)
+  const passthrough=({children})=>React.createElement(React.Fragment,null,children)
++ // Resolve mocked modules before static rendering; real chunk loading is covered
++ // by the built-browser acceptance suite. Keep the real settings permission UI.
++ const pending=[]
+  function component(file) {
+   const exports={}
+   const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText
+@@ -94,7 +97,7 @@ function renderSettingsWorkspace(member, requested, section = 'settings') {
+    if(name==='react'||name==='react/jsx-runtime') return require(name)
+    if(name.endsWith('.css')) return {}
+    if(name==='next/navigation') return {useRouter:()=>({push:()=>{}}),useSearchParams:()=>query}
+-   if(name==='next/dynamic') return {default:()=>()=>null}
++   if(name==='next/dynamic') return {default:loader=>{let Loaded;pending.push(loader().then(value=>{Loaded=value}));return props=>Loaded?React.createElement(Loaded,props):null}}
+    if(name==='next/link') return {default:({children,href,'aria-current':current})=>React.createElement('a',{href,'aria-current':current},children)}
+    if(name==='@/contexts/auth-context') return {useAuth:()=>({user:{id:'fixture-user',memberships:[membership]},activeClubId:clubId,loading:false,refreshUser:async()=>{},selectClub:()=>{}})}
+    if(name==='@/contexts/demo-context') return {useDemoMode:()=>({ready:true,isDemoEnabled:false})}
+@@ -105,14 +108,16 @@ function renderSettingsWorkspace(member, requested, section = 'settings') {
+    if(name==='@/components/product/page-header') return component('components/product/page-header.tsx')
+    if(name==='./campus-illustration') return component('components/product/campus-illustration.tsx')
+    if(['@/lib/club-settings','@/lib/product-navigation','@/lib/permissions','@/lib/interview-access','@/lib/club-workspace','@/lib/workspace-navigation'].includes(name)) return load(name.replace('@/','')+'.ts')
+-   return new Proxy({}, {get:()=>()=>null})
++   return new Proxy({}, {get:(_,key)=>key==='then'?undefined:()=>null})
+   },exports)
+   return exports
+  }
+- return renderToStaticMarkup(React.createElement(component('components/club-workspace.tsx').ClubWorkspace,{clubId,section}))
++ const {ClubWorkspace}=component('components/club-workspace.tsx')
++ await Promise.all(pending)
++ return renderToStaticMarkup(React.createElement(ClubWorkspace,{clubId,section}))
+ }
+-for(const [name,member,requested,effective,illustration] of settingsCases) test(`actual settings content and header agree: ${name}`,()=>{
+- const html=renderSettingsWorkspace(member,requested)
++for(const [name,member,requested,effective,illustration] of settingsCases) test(`actual settings content and header agree: ${name}`,async()=>{
++ const html=await renderSettingsWorkspace(member,requested)
+  const activeLinks=html.match(/<a\b[^>]*aria-current="page"[^>]*>/g)||[]
+  const resolved=resolveSettingsTab(member,requested)
+  const denied=requested && load('lib/club-settings.ts').settingsSections.some(section=>section.id===requested) && !resolved.sections.some(section=>section.id===requested)
+@@ -127,8 +132,8 @@ for(const [name,member,requested,effective,illustration] of settingsCases) test(
+  else assert.doesNotMatch(html,/oc-campus-illustration|data-illustrated/)
+ })
+
+-test('club Overview keeps its name and heading without repetitive public profile shortcuts or artwork',()=>{
+- const html=renderSettingsWorkspace({isOwner:true},null,'overview');
++test('club Overview keeps its name and heading without repetitive public profile shortcuts or artwork',async()=>{
++ const html=await renderSettingsWorkspace({isOwner:true},null,'overview');
+  assert.match(html,/<h1>Overview<\/h1>/);assert.match(html,/Fixture Club/);
+  assert.doesNotMatch(html,/Public club profile|href="\/club\/visual-fixture-club"/);
+  assert.doesNotMatch(html,/oc-campus-illustration|data-illustrated|oc-campus-ribbon/);
+diff --git a/tests/helpers/deferred-feature-chunks.cjs b/tests/helpers/deferred-feature-chunks.cjs
+new file mode 100644
+index 0000000..975fbcc
+--- /dev/null
++++ b/tests/helpers/deferred-feature-chunks.cjs
+@@ -0,0 +1,6 @@
++// Match static UI strings to built feature chunks, independent of content hashes.
++// These are public program assets; no request args or application data are read.
++const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
++const markers={settings:'Make your club stand out.',meetings:'Agendas, resources, and attendance for your club.',scheduledDecisions:'No scheduled decisions.',rounds:'Previously viewed information cannot be recalled'};
++function featureChunks(dist){const root=path.join(dist,'static/chunks'),files=fs.readdirSync(root,{recursive:true}).filter(f=>f.endsWith('.js')),map={};for(const[k,marker]of Object.entries(markers)){map[k]=files.filter(file=>fs.readFileSync(path.join(root,file),'utf8').includes(marker)).map(file=>'/_next/static/chunks/'+file.replaceAll(path.sep,'/'));assert.ok(map[k].length,k+' feature marker must exist in the built program')}return map}
++module.exports={featureChunks};
+diff --git a/tests/navigation-phase11-e2e.test.cjs b/tests/navigation-phase11-e2e.test.cjs
+new file mode 100644
+index 0000000..001d11a
+--- /dev/null
++++ b/tests/navigation-phase11-e2e.test.cjs
+@@ -0,0 +1,39 @@
++// Built lazy chunks and native guarded state, on the reserved disposable fixture.
++const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
++const {chromium}=require('playwright'),{PrismaClient}=require('@prisma/client'),{Actor,readConfig}=require('./helpers/onboarding-e2e.cjs'),{featureChunks}=require('./helpers/deferred-feature-chunks.cjs');
++const configFile=process.env.OUTCLASS_ONBOARDING_E2E_CONFIG;
++async function session(){const config=readConfig(configFile),fixture=JSON.parse(fs.readFileSync(path.join(path.dirname(configFile),'navigation-fixture.json'))),actor=new Actor(config);await actor.signIn(fixture.email,fixture.password);const browser=await chromium.launch({headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.name));return{config,fixture,actor,browser,context,page,errors,async close(){await context.close();await browser.close()}}}
++async function clickNav(page,id){await page.locator('[data-tour="nav-'+id+'"]').filter({visible:true}).first().focus();await page.keyboard.press('Enter')}
++async function recruiting(s){await s.page.goto(s.config.appUrl+'/club/'+s.fixture.clubIds[0]+'/workspace?section=recruitment&tool=overview');await s.page.locator('.oc-command-recruiting').getByText('Current pipeline',{exact:false}).waitFor();await s.page.waitForLoadState('networkidle')}
++const profile=page=>page.locator('.oc-club-settings form[data-autosave-editor="true"]');
++async function holdSettings(s){const targets=new Set(featureChunks(s.config.buildDir).settings);let seen,release;const pending=new Promise(r=>seen=r),gate=new Promise(r=>release=r);await s.page.route('**/_next/static/chunks/**',async route=>{if(!targets.has(new URL(route.request().url()).pathname))return route.continue();const response=await route.fetch();seen();await gate;await route.fulfill({response}).catch(()=>{})});return{pending,release}}
++
++test('built startup omits inactive feature chunks and real selected screens remain usable',{skip:!configFile,timeout:120000},async()=>{
++ const s=await session(),loaded=new Set(),chunks=featureChunks(s.config.buildDir);s.page.on('request',r=>{if(r.resourceType()==='script')loaded.add(new URL(r.url()).pathname)});
++ try{await recruiting(s);for(const[k,urls]of Object.entries(chunks))assert.ok(urls.every(url=>!loaded.has(url)),k+' code should wait for selection');
++  console.log('Feature acceptance: settings');await clickNav(s.page,'settings');await profile(s.page).waitFor();await s.page.getByLabel('One-line pitch',{exact:true}).waitFor();assert.ok(chunks.settings.some(url=>loaded.has(url)));
++  console.log('Feature acceptance: meetings');await clickNav(s.page,'meetings');await s.page.getByText('Audit Weekly Meeting',{exact:true}).first().waitFor();assert.ok(chunks.meetings.some(url=>loaded.has(url)));
++  await s.page.locator('[data-tour="mode-recruiting"]').filter({visible:true}).click();await s.page.locator('.oc-command-recruiting').waitFor();
++  console.log('Feature acceptance: scheduled decisions');const group=s.page.getByRole('button',{name:'Decisions',exact:true}).filter({visible:true}).first();await group.focus();await s.page.keyboard.press('ArrowRight');await clickNav(s.page,'scheduled-decisions');await s.page.getByText('No scheduled decisions.',{exact:true}).waitFor();assert.ok(chunks.scheduledDecisions.some(url=>loaded.has(url)));
++  console.log('Feature acceptance: review settings');await clickNav(s.page,'settings');await profile(s.page).waitFor();await s.page.getByRole('navigation',{name:'Settings sections',exact:true}).getByRole('link',{name:'Recruitment & Applications',exact:true}).focus();await s.page.keyboard.press('Enter');
++  const details=s.page.locator('.oc-settings-workspace details').filter({has:s.page.locator('summary',{hasText:'Review settings'})});await details.locator('summary').click();await s.page.getByRole('link',{name:'Anonymous review',exact:true}).click();await s.page.getByRole('dialog',{name:'Anonymous Review',exact:true}).getByText('Previously viewed information cannot be recalled',{exact:false}).waitFor();assert.ok(chunks.rounds.some(url=>loaded.has(url)));assert.deepEqual(s.errors,[]);
++ }finally{await s.close()}
++});
++
++test('late settings code cannot reopen an abandoned tab and later selection still works',{skip:!configFile,timeout:90000},async()=>{
++ const s=await session();let held;try{held=await holdSettings(s);await recruiting(s);await clickNav(s.page,'settings');await held.pending;await clickNav(s.page,'overview');await s.page.locator('.oc-command-club').waitFor();held.release();await s.page.waitForLoadState('networkidle');assert.equal(await profile(s.page).count(),0);await clickNav(s.page,'settings');await profile(s.page).waitFor();assert.deepEqual(s.errors,[])}finally{held?.release();await s.close()}
++});
++
++test('logout during a pending settings chunk fences protected UI and revokes subsequent reads',{skip:!configFile,timeout:90000},async()=>{
++ const s=await session();let held;try{held=await holdSettings(s);await recruiting(s);await clickNav(s.page,'settings');await held.pending;await s.page.getByRole('button',{name:/Account menu for/}).click();await s.page.getByRole('menuitem',{name:'Sign out',exact:true}).click();await s.page.waitForURL(s.config.appUrl+'/');held.release();await s.page.waitForLoadState('domcontentloaded');assert.equal(await profile(s.page).count(),0);const res=await s.actor.request('/api/workspace?'+new URLSearchParams({kind:'pipelinePage',args:JSON.stringify([s.fixture.clubIds[0],{}])}));assert.equal(res.status,401);assert.deepEqual(s.errors,[])}finally{held?.release();await s.close()}
++});
++
++test('a deferred settings profile restores its durable draft after leaving and reloading without publishing',{skip:!configFile,timeout:90000},async()=>{
++ const s=await session(),db=new PrismaClient({datasourceUrl:s.config.status.DB_URL}),clubId=s.fixture.clubIds[0],key='club-profile:'+clubId+':main';const original=await db.club.findUniqueOrThrow({where:{id:clubId},select:{tagline:true}});assert.equal(await db.editorDraft.findUnique({where:{userId_key:{userId:s.fixture.userId,key}}}),null);
++ try{await recruiting(s);await clickNav(s.page,'settings');const input=s.page.getByLabel('One-line pitch',{exact:true});await input.waitFor();await s.page.waitForFunction(()=>!document.querySelector('.oc-club-settings fieldset').disabled);await input.fill('Phase 11 durable profile draft');await input.blur();await profile(s.page).getByRole('status').filter({hasText:/^Saved$/}).waitFor();const saved=await db.editorDraft.findUniqueOrThrow({where:{userId_key:{userId:s.fixture.userId,key}}});assert.equal(saved.content.tagline,'Phase 11 durable profile draft');await clickNav(s.page,'overview');await s.page.locator('.oc-command-club').waitFor();await s.page.reload();await s.page.locator('.oc-command-club').waitFor();await clickNav(s.page,'settings');await input.waitFor();await s.page.waitForFunction(el=>el.value==='Phase 11 durable profile draft',await input.elementHandle());assert.equal(await input.inputValue(),'Phase 11 durable profile draft');assert.equal((await db.club.findUniqueOrThrow({where:{id:clubId},select:{tagline:true}})).tagline,original.tagline);assert.deepEqual(s.errors,[])}finally{await s.close();await db.editorDraft.deleteMany({where:{userId:s.fixture.userId,key}});await db.$disconnect()}
++});
++
++test('member-only direct Meetings entry loads the deferred legacy reader without management controls',{skip:!configFile,timeout:90000},async()=>{
++ const config=readConfig(configFile),fixture=JSON.parse(fs.readFileSync(path.join(path.dirname(configFile),'navigation-fixture.json'))),db=new PrismaClient({datasourceUrl:config.status.DB_URL}),clubId=fixture.clubIds[1],member=await db.clubMember.findUniqueOrThrow({where:{userId_clubId:{userId:fixture.userId,clubId}}});let s,replacementOwner;
++ try{replacementOwner=await db.clubMember.create({data:{clubId,userId:config.admin.id,isOwner:true,accessRole:'OWNER'}});await db.clubMember.update({where:{id:member.id},data:{isOwner:false,accessRole:'MEMBER',permissions:[]}});s=await session();await s.page.goto(config.appUrl+'/club/'+clubId+'/workspace?section=meetings');await s.page.getByText('Audit Weekly Meeting',{exact:true}).first().waitFor();assert.equal(await s.page.getByRole('button',{name:'Create meeting',exact:true}).count(),0);assert.deepEqual(s.errors,[])}finally{if(s)await s.close();await db.clubMember.update({where:{id:member.id},data:{isOwner:member.isOwner,accessRole:member.accessRole,permissions:member.permissions}});if(replacementOwner)await db.clubMember.delete({where:{id:replacementOwner.id}});await db.$disconnect()}
++});

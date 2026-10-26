@@ -1,0 +1,261 @@
+{
+  "startedAt": "2026-10-26T03:15:58.863Z",
+  "profile": "constrained",
+  "cohorts": [
+    1000,
+    5000
+  ],
+  "blocks": [
+    "BA",
+    "AB"
+  ],
+  "buildIds": {
+    "baseline": "Tha4c6I2ApofrlFBcoCtd",
+    "candidate": "02anxbf_teiZ6LLVG7dPN"
+  },
+  "planSha256": "458ec2b60a195b8587f8b7d9b09aadcbd66cc86e4e03ade2d27f91c6e558e049",
+  "tools": {
+    "navigation-phase11-study.cjs": "15f6e2ca05e7a971127d0a7ac6e6e5c8b4747ad8cd37faffddd4dfee2ae33411",
+    "navigation-phase11-local.cjs": "c52c806255eb73945c29103c75a77beca78f753a5dc2df43b47acf011cc717b6",
+    "navigation-audit.cjs": "ef894a888a99815d1e6fd18d5f9ecb8c5d7e4f52ee7e981603442a55bf9e20ef",
+    "navigation-phase11-interactions.cjs": "ed0262ce789c62bac92fbdc31f50c0b3bdc1ceb95b09e2bba5ea78c1722c7f18",
+    "navigation-phase11-constrained-interactions.cjs": "d4df9a58ad8095bc632485d0224f3815cd3c3f8b9177c677b99f214474d83fd8",
+    "navigation-phase11-concurrency.cjs": "3ec2f52cb3a2c3ba95b24ce59791035b68e96c10c97b2019ea84b0ea687037aa"
+  },
+  "completed": [
+    {
+      "directory": "size-1000-pair-1-1-B-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-1-1-B-measure",
+      "planned": 20,
+      "observed": 20,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-1-2-A-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-1-2-A-measure",
+      "planned": 20,
+      "observed": 20,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-2-1-A-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-2-1-A-measure",
+      "planned": 20,
+      "observed": 20,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-2-2-B-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-2-2-B-measure",
+      "planned": 20,
+      "observed": 20,
+      "failed": 0
+    },
+    {
+      "directory": "size-5000-pair-1-1-B-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failed": 0
+    },
+    {
+      "directory": "size-5000-pair-1-1-B-measure",
+      "planned": 20,
+      "observed": 20,
+      "failed": 0
+    },
+    {
+      "directory": "size-5000-pair-1-2-A-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failed": 0
+    },
+    {
+      "directory": "size-5000-pair-1-2-A-measure",
+      "planned": 20,
+      "observed": 20,
+      "failed": 0
+    },
+    {
+      "directory": "size-5000-pair-2-1-A-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failed": 0
+    },
+    {
+      "directory": "size-5000-pair-2-1-A-measure",
+      "planned": 20,
+      "observed": 20,
+      "failed": 0
+    },
+    {
+      "directory": "size-5000-pair-2-2-B-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failed": 0
+    },
+    {
+      "directory": "size-5000-pair-2-2-B-measure",
+      "planned": 20,
+      "observed": 20,
+      "failed": 0
+    }
+  ],
+  "interactions": [
+    {
+      "file": "size-1000-pair-1-1-B-interactions.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "file": "size-1000-pair-1-2-A-interactions.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "file": "size-1000-pair-2-1-A-interactions.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "file": "size-1000-pair-2-2-B-interactions.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "file": "size-5000-pair-1-1-B-interactions.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "file": "size-5000-pair-1-2-A-interactions.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "file": "size-5000-pair-2-1-A-interactions.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "file": "size-5000-pair-2-2-B-interactions.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    }
+  ],
+  "concurrency": [
+    {
+      "file": "size-1000-pair-1-1-B-concurrency.json",
+      "planned": 42
+    },
+    {
+      "file": "size-1000-pair-1-2-A-concurrency.json",
+      "planned": 42
+    },
+    {
+      "file": "size-1000-pair-2-1-A-concurrency.json",
+      "planned": 42
+    },
+    {
+      "file": "size-1000-pair-2-2-B-concurrency.json",
+      "planned": 42
+    },
+    {
+      "file": "size-5000-pair-1-1-B-concurrency.json",
+      "planned": 42
+    },
+    {
+      "file": "size-5000-pair-1-2-A-concurrency.json",
+      "planned": 42
+    },
+    {
+      "file": "size-5000-pair-2-1-A-concurrency.json",
+      "planned": 42
+    },
+    {
+      "file": "size-5000-pair-2-2-B-concurrency.json",
+      "planned": 42
+    }
+  ],
+  "features": [
+    {
+      "directory": "size-1000-pair-1-1-B-features-warmup",
+      "planned": 8,
+      "observed": 8,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-1-1-B-features-measure",
+      "planned": 24,
+      "observed": 24,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-1-2-A-features-warmup",
+      "planned": 8,
+      "observed": 8,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-1-2-A-features-measure",
+      "planned": 24,
+      "observed": 24,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-2-1-A-features-warmup",
+      "planned": 8,
+      "observed": 8,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-2-1-A-features-measure",
+      "planned": 24,
+      "observed": 24,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-2-2-B-features-warmup",
+      "planned": 8,
+      "observed": 8,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-2-2-B-features-measure",
+      "planned": 24,
+      "observed": 24,
+      "failed": 0
+    }
+  ],
+  "failures": [],
+  "complete": true,
+  "completedAt": "2026-10-26T03:48:54.152Z",
+  "applicationStopped": true
+}

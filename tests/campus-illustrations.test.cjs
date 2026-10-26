@@ -81,12 +81,15 @@ for(const [name, member, requested, effective, illustration] of settingsCases) t
 
 // Render the real parent and settings content against one disposable identity/query.
 // Data readers, unrelated panels and shell chrome are inert; no service is contacted.
-function renderSettingsWorkspace(member, requested, section = 'settings') {
+async function renderSettingsWorkspace(member, requested, section = 'settings') {
  const clubId='visual-fixture-club'
  const membership={id:'fixture-member',clubId,status:'ACTIVE',permissions:[],...member,club:{name:'Fixture Club',pipelineVersion:1,applicationVersion:1}}
  const query=new URLSearchParams({section})
  if(requested != null) query.set('setting',requested)
  const passthrough=({children})=>React.createElement(React.Fragment,null,children)
+ // Resolve mocked modules before static rendering; real chunk loading is covered
+ // by the built-browser acceptance suite. Keep the real settings permission UI.
+ const pending=[]
  function component(file) {
   const exports={}
   const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText
@@ -94,7 +97,7 @@ function renderSettingsWorkspace(member, requested, section = 'settings') {
    if(name==='react'||name==='react/jsx-runtime') return require(name)
    if(name.endsWith('.css')) return {}
    if(name==='next/navigation') return {useRouter:()=>({push:()=>{}}),useSearchParams:()=>query}
-   if(name==='next/dynamic') return {default:()=>()=>null}
+   if(name==='next/dynamic') return {default:loader=>{let Loaded;pending.push(loader().then(value=>{Loaded=value}));return props=>Loaded?React.createElement(Loaded,props):null}}
    if(name==='next/link') return {default:({children,href,'aria-current':current})=>React.createElement('a',{href,'aria-current':current},children)}
    if(name==='@/contexts/auth-context') return {useAuth:()=>({user:{id:'fixture-user',memberships:[membership]},activeClubId:clubId,loading:false,refreshUser:async()=>{},selectClub:()=>{}})}
    if(name==='@/contexts/demo-context') return {useDemoMode:()=>({ready:true,isDemoEnabled:false})}
@@ -105,14 +108,16 @@ function renderSettingsWorkspace(member, requested, section = 'settings') {
    if(name==='@/components/product/page-header') return component('components/product/page-header.tsx')
    if(name==='./campus-illustration') return component('components/product/campus-illustration.tsx')
    if(['@/lib/club-settings','@/lib/product-navigation','@/lib/permissions','@/lib/interview-access','@/lib/club-workspace','@/lib/workspace-navigation'].includes(name)) return load(name.replace('@/','')+'.ts')
-   return new Proxy({}, {get:()=>()=>null})
+   return new Proxy({}, {get:(_,key)=>key==='then'?undefined:()=>null})
   },exports)
   return exports
  }
- return renderToStaticMarkup(React.createElement(component('components/club-workspace.tsx').ClubWorkspace,{clubId,section}))
+ const {ClubWorkspace}=component('components/club-workspace.tsx')
+ await Promise.all(pending)
+ return renderToStaticMarkup(React.createElement(ClubWorkspace,{clubId,section}))
 }
-for(const [name,member,requested,effective,illustration] of settingsCases) test(`actual settings content and header agree: ${name}`,()=>{
- const html=renderSettingsWorkspace(member,requested)
+for(const [name,member,requested,effective,illustration] of settingsCases) test(`actual settings content and header agree: ${name}`,async()=>{
+ const html=await renderSettingsWorkspace(member,requested)
  const activeLinks=html.match(/<a\b[^>]*aria-current="page"[^>]*>/g)||[]
  const resolved=resolveSettingsTab(member,requested)
  const denied=requested && load('lib/club-settings.ts').settingsSections.some(section=>section.id===requested) && !resolved.sections.some(section=>section.id===requested)
@@ -127,8 +132,8 @@ for(const [name,member,requested,effective,illustration] of settingsCases) test(
  else assert.doesNotMatch(html,/oc-campus-illustration|data-illustrated/)
 })
 
-test('club Overview keeps its name and heading without repetitive public profile shortcuts or artwork',()=>{
- const html=renderSettingsWorkspace({isOwner:true},null,'overview');
+test('club Overview keeps its name and heading without repetitive public profile shortcuts or artwork',async()=>{
+ const html=await renderSettingsWorkspace({isOwner:true},null,'overview');
  assert.match(html,/<h1>Overview<\/h1>/);assert.match(html,/Fixture Club/);
  assert.doesNotMatch(html,/Public club profile|href="\/club\/visual-fixture-club"/);
  assert.doesNotMatch(html,/oc-campus-illustration|data-illustrated|oc-campus-ribbon/);

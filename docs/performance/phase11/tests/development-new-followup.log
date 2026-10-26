@@ -1,0 +1,16 @@
+✖ built startup omits inactive feature chunks and real selected screens remain usable (208708.617834ms)
+✔ a deferred settings profile restores its durable draft after leaving and reloading without publishing (6329.447708ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 1
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 215266.158625
+
+✖ failing tests:
+
+test at tests/navigation-phase11-e2e.test.cjs:11:1
+✖ built startup omits inactive feature chunks and real selected screens remain usable (208708.617834ms)
+  'test timed out after 120000ms'

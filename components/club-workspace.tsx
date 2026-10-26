@@ -1,5 +1,4 @@
 "use client"
-import { ClubMeetingsWorkspace } from "@/components/events/club-meetings-workspace";
 import dynamic from "next/dynamic";
 import { PageHeader } from "@/components/product/page-header"
 import { OrganizationSetupChecklist } from "@/components/organization-setup-checklist";
@@ -31,20 +30,23 @@ import {
 } from "@/lib/workspace-api";
 import { ApplicationStateProvider, useApplicationState } from "@/lib/application-state";
 const ClubMembers = dynamic(() => import("@/components/club-members").then(m => m.ClubMembers));
-import { ClubSettingsWorkspace } from "@/components/club-settings-workspace";
 const ClubTasks = dynamic(() => import("@/components/club-tasks").then(m => m.ClubTasks));
-import { MeetingList } from "@/components/meeting-workspace";
 const LiveLeaderWorkspace = dynamic(() => import("@/components/views/leader-dashboard/live-leader-workspace").then(m => m.LiveLeaderWorkspace));
 const InterviewWorkspaceView = dynamic(() => import("@/components/views/interview-workspace-view").then(m => m.InterviewWorkspaceView));
 const InterviewManagementTabs = dynamic(() => import("@/components/interview-management-tabs").then(m => m.InterviewManagementTabs));
 const ApplicantInterviewReviews = dynamic(() => import("@/components/applicant-interview-reviews").then(m => m.ApplicantInterviewReviews));
-import { DecisionSchedules } from "@/components/decision-schedules";
-import { RecruitmentReviewSettings } from "@/components/recruitment-review-settings";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { navigateWithinClub } from "@/lib/workspace-navigation";
 import { DashboardLoading } from "@/components/product/dashboard-presentation";
 import { WorkspaceLoading } from "@/components/workspace-loading";
+// Inactive feature code waits for its existing guarded render branch. Keep SSR
+// and component ownership intact for direct links and already-mounted drafts.
+const ClubMeetingsWorkspace = dynamic(() => import("@/components/events/club-meetings-workspace").then(m => m.ClubMeetingsWorkspace), { loading: () => <WorkspaceLoading /> });
+const ClubSettingsWorkspace = dynamic(() => import("@/components/club-settings-workspace").then(m => m.ClubSettingsWorkspace), { loading: () => <WorkspaceLoading /> });
+const MeetingList = dynamic(() => import("@/components/meeting-workspace").then(m => m.MeetingList), { loading: () => <WorkspaceLoading /> });
+const DecisionSchedules = dynamic(() => import("@/components/decision-schedules").then(m => m.DecisionSchedules), { loading: () => <WorkspaceLoading /> });
+const RecruitmentReviewSettings = dynamic(() => import("@/components/recruitment-review-settings").then(m => m.RecruitmentReviewSettings), { loading: () => <WorkspaceLoading /> });
 import { SelectedClubWorkspace } from "@/components/selected-club-workspace";
 import { clubWorkspaceEntryHref, clubWorkspacePreferenceKey, readClubWorkspacePreference, saveClubWorkspacePreference } from "@/lib/club-workspace-preference";
 type Overview = Awaited<ReturnType<typeof getClubWorkspaceOverview>>;

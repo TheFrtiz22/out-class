@@ -1,0 +1,39 @@
+✔ approved assets preserve full viewBoxes and filled external vector groups (4.155666ms)
+✔ decorative rendering is silent, unfocusable and references both exact asset groups (16.935333ms)
+✔ page headers preserve titles and actions without decorative artwork (21.684792ms)
+✔ Settings keeps settings navigation identity and URLs (220.633958ms)
+✔ standalone brand artwork keeps original colors and reduced-motion support without header layout rules (0.3415ms)
+✔ approved SVG bytes remain unchanged (2.928792ms)
+✔ effective settings/art: owner Appearance (0.209333ms)
+✔ effective settings/art: profile capability Appearance (0.122375ms)
+✔ effective settings/art: application-only inaccessible General (0.082125ms)
+✔ effective settings/art: members-only inaccessible General (0.138208ms)
+✔ effective settings/art: interviews-only inaccessible General (0.072917ms)
+✔ effective settings/art: direct operational tab (0.04625ms)
+✔ effective settings/art: inaccessible operational request falls back to Appearance (0.045292ms)
+✔ effective settings/art: inaccessible operational request falls back to permitted operational tab (0.044ms)
+✔ effective settings/art: unknown requested tab follows permitted Appearance fallback (0.036083ms)
+✔ effective settings/art: default limited-permission tab (0.041042ms)
+✔ effective settings/art: no permitted settings (0.039333ms)
+✔ effective settings/art: revoked membership (0.035917ms)
+✔ actual settings content and header agree: owner Appearance (480.262708ms)
+✔ actual settings content and header agree: profile capability Appearance (157.302042ms)
+✔ actual settings content and header agree: application-only inaccessible General (297.195ms)
+✔ actual settings content and header agree: members-only inaccessible General (327.56025ms)
+✔ actual settings content and header agree: interviews-only inaccessible General (289.237709ms)
+✔ actual settings content and header agree: direct operational tab (220.082458ms)
+✔ actual settings content and header agree: inaccessible operational request falls back to Appearance (175.789084ms)
+✔ actual settings content and header agree: inaccessible operational request falls back to permitted operational tab (224.196042ms)
+✔ actual settings content and header agree: unknown requested tab follows permitted Appearance fallback (125.894334ms)
+✔ actual settings content and header agree: default limited-permission tab (94.969375ms)
+✔ actual settings content and header agree: no permitted settings (132.734542ms)
+✔ actual settings content and header agree: revoked membership (167.740875ms)
+✔ club Overview keeps its name and heading without repetitive public profile shortcuts or artwork (109.282791ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 31
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3606.252125

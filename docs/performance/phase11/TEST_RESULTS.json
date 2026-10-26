@@ -1,0 +1,46 @@
+{
+  "buildId": "02anxbf_teiZ6LLVG7dPN",
+  "ordinary": {
+    "total": 1467,
+    "passed": 1405,
+    "failed": 0,
+    "skipped": 62,
+    "cancelled": 0
+  },
+  "live": {
+    "total": 66,
+    "passed": 66,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "nativeSecurityConcurrency": {
+    "passed": 3,
+    "failed": 0
+  },
+  "provisioning": {
+    "passed": 38,
+    "failed": 0
+  },
+  "migrations": {
+    "freshAndLegacy": 57,
+    "rlsTablesWithBrowserDenial": 78
+  },
+  "productionBuild": "passed; source/build frozen before regression harness corrections; no application changes afterward",
+  "typecheck": "passed",
+  "lint": {
+    "errors": 0,
+    "existingWarnings": 22
+  },
+  "newLiveCases": 5,
+  "existingLiveCases": 61,
+  "optionalGates": "62 ordinary skips are explicit environment gates; selected live66/native3 suites exercised separately, not every optional suite. Counts overlap.",
+  "developmentFailures": [
+    "First new run:3 pass,2 fail; dock pointer interception and sole-owner constraint. Test navigation/fixture corrected, application safeguards unchanged.",
+    "Followup new run:1 pass,1 cancelled; host log also contained Sleep/Wake events; causality not isolated.",
+    "Corrected new subset:2 pass; final full serialized live run66 pass.",
+    "Initial ordinary run:10 settings rendering assertion failures because mock next/dynamic returned null. Existing assertions retained; mock now resolves modules before static rendering.",
+    "First async mock attempt created an unresolved thenable through generic module proxy. Owned development runs stopped, proxy then made undefined; focused31 and final full ordinary suite pass."
+  ],
+  "nativeMetadataParity": "Existing Phase9 native differential:86 scopes plus injection-shaped value passed within live suite."
+}

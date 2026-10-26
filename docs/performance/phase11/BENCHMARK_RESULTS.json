@@ -1,0 +1,7867 @@
+{
+  "baseline": "2c95b4dec8fa218274c37f9dd406a090c37e58e0",
+  "quantiles": "Nearest rank; primary browser and HTTP-burst groups have n10, extra feature groups n6, so p95=max; HTTP per-request groups have 10/20/40 observations by reader count. Source is first navigation in a fresh browser context, including rows whose later destination is warm. No success-only filtering.",
+  "sourceAccounting": "Source observation includes existing bounded drain; late pending request bytes are unavailable, so source body bytes are observed totals, not proof of full eventual accounting. Complete font transfers are counted independently.",
+  "browser": [
+    {
+      "category": "primary",
+      "profile": "local",
+      "size": 1000,
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "variants": {
+        "B": {
+          "clickMs": {
+            "n": 10,
+            "p50": 80.5,
+            "p95": 84.40000000596046
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 45.2001953125,
+            "p95": 54.599853515625
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 5,
+            "p95": 5
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 39969,
+            "p95": 39969
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 22.375,
+            "p95": 24.206
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 61.322999999999986,
+            "p95": 64.668
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 344.5,
+            "p95": 357.30000001192093
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 31898,
+            "p95": 31898
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 3,
+            "p95": 3
+          },
+          "dataTtfbMs": {
+            "n": 10,
+            "p50": 38.293,
+            "p95": 48.399
+          },
+          "dataTransferMs": {
+            "n": 10,
+            "p50": 0.29999999999999716,
+            "p95": 0.6670000000000016
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 267,
+            "p95": 280
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 349,
+            "p95": 364
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 56,
+            "p95": 57
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 836926,
+            "p95": 837173
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 543416,
+            "p95": 543416
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 32,
+            "p95": 32
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 105.90000000596046,
+            "p95": 133.09999999403954
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 76,
+            "p95": 92
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 84,
+            "p95": 92
+          },
+          "server_identityMs": {
+            "n": 10,
+            "p50": 22.01,
+            "p95": 26.77
+          },
+          "server_databaseMs": {
+            "n": 10,
+            "p50": 10.48,
+            "p95": 15.28
+          },
+          "server_live_sessionMs": {
+            "n": 10,
+            "p50": 0.52,
+            "p95": 0.81
+          },
+          "server_transaction_acquireMs": {
+            "n": 10,
+            "p50": 0.45,
+            "p95": 0.61
+          },
+          "server_transactionMs": {
+            "n": 10,
+            "p50": 12.01,
+            "p95": 16.36
+          },
+          "server_compressionMs": {
+            "n": 10,
+            "p50": 0.21,
+            "p95": 0.3
+          },
+          "server_serializationMs": {
+            "n": 10,
+            "p50": 0.59,
+            "p95": 0.78
+          },
+          "server_totalMs": {
+            "n": 10,
+            "p50": 36.8,
+            "p95": 46.75
+          },
+          "readTtfbMs": {
+            "n": 10,
+            "p50": 38.293,
+            "p95": 48.399
+          },
+          "readTransferMs": {
+            "n": 10,
+            "p50": 0.29999999999999716,
+            "p95": 0.6670000000000016
+          }
+        },
+        "A": {
+          "clickMs": {
+            "n": 10,
+            "p50": 78.69999998807907,
+            "p95": 81.59999999403954
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 44.800048828125,
+            "p95": 54.7001953125
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 9,
+            "p95": 9
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 56905,
+            "p95": 56905
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 22.701999999999995,
+            "p95": 23.403999999999993
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 61.862000000000016,
+            "p95": 65.674
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 349.59999999403954,
+            "p95": 403.5
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 48834,
+            "p95": 48834
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 7,
+            "p95": 7
+          },
+          "dataTtfbMs": {
+            "n": 10,
+            "p50": 37.374,
+            "p95": 47.779
+          },
+          "dataTransferMs": {
+            "n": 10,
+            "p50": 0.34599999999999653,
+            "p95": 0.4589999999999961
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 272,
+            "p95": 324
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 355,
+            "p95": 408
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 48,
+            "p95": 48
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 778739,
+            "p95": 778739
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 493676,
+            "p95": 493676
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 29,
+            "p95": 29
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 116.40000000596046,
+            "p95": 125.19999998807907
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 80,
+            "p95": 100
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 80,
+            "p95": 100
+          },
+          "server_identityMs": {
+            "n": 10,
+            "p50": 23.05,
+            "p95": 30.37
+          },
+          "server_databaseMs": {
+            "n": 10,
+            "p50": 9.15,
+            "p95": 11.54
+          },
+          "server_live_sessionMs": {
+            "n": 10,
+            "p50": 0.48,
+            "p95": 0.66
+          },
+          "server_transaction_acquireMs": {
+            "n": 10,
+            "p50": 0.41,
+            "p95": 0.54
+          },
+          "server_transactionMs": {
+            "n": 10,
+            "p50": 11.76,
+            "p95": 13.96
+          },
+          "server_compressionMs": {
+            "n": 10,
+            "p50": 0.22,
+            "p95": 0.3
+          },
+          "server_serializationMs": {
+            "n": 10,
+            "p50": 0.58,
+            "p95": 0.74
+          },
+          "server_totalMs": {
+            "n": 10,
+            "p50": 35.38,
+            "p95": 45.55
+          },
+          "readTtfbMs": {
+            "n": 10,
+            "p50": 37.374,
+            "p95": 47.779
+          },
+          "readTransferMs": {
+            "n": 10,
+            "p50": 0.34599999999999653,
+            "p95": 0.4589999999999961
+          }
+        }
+      }
+    },
+    {
+      "category": "primary",
+      "profile": "local",
+      "size": 1000,
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "variants": {
+        "B": {
+          "clickMs": {
+            "n": 10,
+            "p50": 62.19999998807907,
+            "p95": 72.59999999403954
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 37.699951171875,
+            "p95": 51.5
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 7254,
+            "p95": 7254
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 11.043999999999999,
+            "p95": 11.692000000000007
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 34.309000000000005,
+            "p95": 36.39499999999998
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 326,
+            "p95": 353.59999999403954
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 10,
+            "p50": 34.559999999999995,
+            "p95": 48.429
+          },
+          "dataTransferMs": {
+            "n": 10,
+            "p50": 0.33200000000000074,
+            "p95": 0.3810000000000002
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 264,
+            "p95": 281
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 347,
+            "p95": 365
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 56,
+            "p95": 56
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 836927,
+            "p95": 837130
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 543416,
+            "p95": 543416
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 32,
+            "p95": 32
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 121,
+            "p95": 128.7000000178814
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 84,
+            "p95": 88
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 84,
+            "p95": 88
+          },
+          "server_identityMs": {
+            "n": 10,
+            "p50": 20.65,
+            "p95": 26.0
+          },
+          "server_databaseMs": {
+            "n": 10,
+            "p50": 8.87,
+            "p95": 14.96
+          },
+          "server_live_sessionMs": {
+            "n": 10,
+            "p50": 0.44,
+            "p95": 0.73
+          },
+          "server_transaction_acquireMs": {
+            "n": 10,
+            "p50": 0.38,
+            "p95": 0.71
+          },
+          "server_transactionMs": {
+            "n": 10,
+            "p50": 10.43,
+            "p95": 18.14
+          },
+          "server_compressionMs": {
+            "n": 10,
+            "p50": 0.2,
+            "p95": 0.24
+          },
+          "server_serializationMs": {
+            "n": 10,
+            "p50": 0.45,
+            "p95": 0.49
+          },
+          "server_totalMs": {
+            "n": 10,
+            "p50": 32.93,
+            "p95": 46.97
+          },
+          "readTtfbMs": {
+            "n": 10,
+            "p50": 34.559999999999995,
+            "p95": 48.429
+          },
+          "readTransferMs": {
+            "n": 10,
+            "p50": 0.33200000000000074,
+            "p95": 0.3810000000000002
+          }
+        },
+        "A": {
+          "clickMs": {
+            "n": 10,
+            "p50": 67.5,
+            "p95": 79.09999999403954
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 38.900146484375,
+            "p95": 55.39990234375
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 7254,
+            "p95": 7254
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 11.161000000000005,
+            "p95": 11.66099999999999
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 34.97,
+            "p95": 36.51300000000002
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 316.5,
+            "p95": 373.10000002384186
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 10,
+            "p50": 35.307,
+            "p95": 52.012
+          },
+          "dataTransferMs": {
+            "n": 10,
+            "p50": 0.34499999999999886,
+            "p95": 0.46299999999999386
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 250,
+            "p95": 305
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 334,
+            "p95": 389
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 48,
+            "p95": 48
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 778739,
+            "p95": 778739
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 493676,
+            "p95": 493676
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 29,
+            "p95": 29
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 113.69999998807907,
+            "p95": 126.40000000596046
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 76,
+            "p95": 88
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 76,
+            "p95": 88
+          },
+          "server_identityMs": {
+            "n": 10,
+            "p50": 20.33,
+            "p95": 26.11
+          },
+          "server_databaseMs": {
+            "n": 10,
+            "p50": 9.04,
+            "p95": 27.23
+          },
+          "server_live_sessionMs": {
+            "n": 10,
+            "p50": 0.46,
+            "p95": 0.67
+          },
+          "server_transaction_acquireMs": {
+            "n": 10,
+            "p50": 0.42,
+            "p95": 0.59
+          },
+          "server_transactionMs": {
+            "n": 10,
+            "p50": 10.58,
+            "p95": 28.79
+          },
+          "server_compressionMs": {
+            "n": 10,
+            "p50": 0.21,
+            "p95": 1.43
+          },
+          "server_serializationMs": {
+            "n": 10,
+            "p50": 0.46,
+            "p95": 1.69
+          },
+          "server_totalMs": {
+            "n": 10,
+            "p50": 33.37,
+            "p95": 50.42
+          },
+          "readTtfbMs": {
+            "n": 10,
+            "p50": 35.307,
+            "p95": 52.012
+          },
+          "readTransferMs": {
+            "n": 10,
+            "p50": 0.34499999999999886,
+            "p95": 0.46299999999999386
+          }
+        }
+      }
+    },
+    {
+      "category": "primary",
+      "profile": "local",
+      "size": 1000,
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "variants": {
+        "B": {
+          "clickMs": {
+            "n": 10,
+            "p50": 79.90000000596046,
+            "p95": 93
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 116.2998046875,
+            "p95": 224.39990234375
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 4,
+            "p95": 4
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 2780,
+            "p95": 2780
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 18.330000000000005,
+            "p95": 19.303
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 84.178,
+            "p95": 92.15100000000001
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 319.7999999821186,
+            "p95": 358.80000001192093
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 39,
+            "p50": 36.263999999999996,
+            "p95": 141.16400000000002
+          },
+          "dataTransferMs": {
+            "n": 39,
+            "p50": 0.35300000000000153,
+            "p95": 0.5359999999999943
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 240,
+            "p95": 279
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 356,
+            "p95": 389
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 60,
+            "p95": 60
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 875994,
+            "p95": 876124
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 575314,
+            "p95": 575314
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 35,
+            "p95": 35
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 110.5,
+            "p95": 131.7000000178814
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 72,
+            "p95": 84
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 72,
+            "p95": 84
+          }
+        },
+        "A": {
+          "clickMs": {
+            "n": 10,
+            "p50": 80,
+            "p95": 82.19999998807907
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 111,
+            "p95": 118.300048828125
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 4,
+            "p95": 4
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 2780,
+            "p95": 2780
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 18.042,
+            "p95": 19.057000000000006
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 83.54,
+            "p95": 95.01799999999999
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 298.59999999403954,
+            "p95": 338.59999999403954
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 39,
+            "p50": 34.563,
+            "p95": 43.96
+          },
+          "dataTransferMs": {
+            "n": 39,
+            "p50": 0.3399999999999963,
+            "p95": 0.5330000000000013
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 219,
+            "p95": 259
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 363,
+            "p95": 384
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 56,
+            "p95": 56
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 834668,
+            "p95": 834668
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 542510,
+            "p95": 542510
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 36,
+            "p95": 36
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 108.80000001192093,
+            "p95": 114.40000000596046
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 72,
+            "p95": 84
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 72,
+            "p95": 84
+          }
+        }
+      }
+    },
+    {
+      "category": "primary",
+      "profile": "local",
+      "size": 1000,
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "variants": {
+        "B": {
+          "clickMs": {
+            "n": 10,
+            "p50": 85,
+            "p95": 98
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 122.699951171875,
+            "p95": 136.2001953125
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 4,
+            "p95": 4
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 2780,
+            "p95": 2780
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 16.854000000000006,
+            "p95": 18.865000000000006
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 79.79600000000003,
+            "p95": 83.29200000000003
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 355.40000000596046,
+            "p95": 387.90000000596046
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 38,
+            "p50": 38.75,
+            "p95": 59.139
+          },
+          "dataTransferMs": {
+            "n": 38,
+            "p50": 0.3719999999999999,
+            "p95": 0.6779999999999973
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 261,
+            "p95": 306
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 361,
+            "p95": 403
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 60,
+            "p95": 60
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 875994,
+            "p95": 876124
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 575314,
+            "p95": 575314
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 35,
+            "p95": 35
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 110.7999999821186,
+            "p95": 116.80000001192093
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 72,
+            "p95": 80
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 72,
+            "p95": 80
+          }
+        },
+        "A": {
+          "clickMs": {
+            "n": 10,
+            "p50": 97.30000001192093,
+            "p95": 98.09999999403954
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 116.300048828125,
+            "p95": 129.89990234375
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 4,
+            "p95": 4
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 2780,
+            "p95": 2780
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 17.193,
+            "p95": 18.994999999999997
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 80.76,
+            "p95": 86.89099999999999
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 341,
+            "p95": 407.7999999821186
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 38,
+            "p50": 37.546,
+            "p95": 46.13
+          },
+          "dataTransferMs": {
+            "n": 38,
+            "p50": 0.34499999999999886,
+            "p95": 0.5409999999999968
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 243,
+            "p95": 311
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 364,
+            "p95": 456
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 56,
+            "p95": 56
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 834668,
+            "p95": 834668
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 542510,
+            "p95": 542510
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 36,
+            "p95": 36
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 110.40000000596046,
+            "p95": 124.69999998807907
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 72,
+            "p95": 88
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 72,
+            "p95": 88
+          }
+        }
+      }
+    },
+    {
+      "category": "primary",
+      "profile": "local",
+      "size": 5000,
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "variants": {
+        "B": {
+          "clickMs": {
+            "n": 10,
+            "p50": 97.40000000596046,
+            "p95": 111.69999998807907
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 69.400146484375,
+            "p95": 80.7998046875
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 5,
+            "p95": 5
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 39957,
+            "p95": 39957
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 22.066000000000003,
+            "p95": 23.584
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 61.57100000000001,
+            "p95": 65.468
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 371.40000000596046,
+            "p95": 426.69999998807907
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 31898,
+            "p95": 31898
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 3,
+            "p95": 3
+          },
+          "dataTtfbMs": {
+            "n": 10,
+            "p50": 62.195,
+            "p95": 74.871
+          },
+          "dataTransferMs": {
+            "n": 10,
+            "p50": 0.33100000000000307,
+            "p95": 0.4369999999999976
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 274,
+            "p95": 315
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 358,
+            "p95": 399
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 56,
+            "p95": 56
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 837139,
+            "p95": 837140
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 543416,
+            "p95": 543416
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 32,
+            "p95": 32
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 104.59999999403954,
+            "p95": 122.19999998807907
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 80,
+            "p95": 92
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 84,
+            "p95": 100
+          },
+          "server_identityMs": {
+            "n": 10,
+            "p50": 24.03,
+            "p95": 27.0
+          },
+          "server_databaseMs": {
+            "n": 10,
+            "p50": 20.31,
+            "p95": 28.23
+          },
+          "server_live_sessionMs": {
+            "n": 10,
+            "p50": 0.51,
+            "p95": 0.54
+          },
+          "server_transaction_acquireMs": {
+            "n": 10,
+            "p50": 0.42,
+            "p95": 0.54
+          },
+          "server_transactionMs": {
+            "n": 10,
+            "p50": 35.91,
+            "p95": 45.5
+          },
+          "server_compressionMs": {
+            "n": 10,
+            "p50": 0.22,
+            "p95": 0.37
+          },
+          "server_serializationMs": {
+            "n": 10,
+            "p50": 0.51,
+            "p95": 0.94
+          },
+          "server_totalMs": {
+            "n": 10,
+            "p50": 59.94,
+            "p95": 73.17
+          },
+          "readTtfbMs": {
+            "n": 10,
+            "p50": 62.195,
+            "p95": 74.871
+          },
+          "readTransferMs": {
+            "n": 10,
+            "p50": 0.33100000000000307,
+            "p95": 0.4369999999999976
+          }
+        },
+        "A": {
+          "clickMs": {
+            "n": 10,
+            "p50": 97.80000001192093,
+            "p95": 114.10000002384186
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 66.199951171875,
+            "p95": 86.7001953125
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 9,
+            "p95": 9
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 56893,
+            "p95": 56893
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 22.781999999999996,
+            "p95": 26.330999999999992
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 62.79800000000001,
+            "p95": 69.15999999999998
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 360.2999999821186,
+            "p95": 419.10000002384186
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 48834,
+            "p95": 48834
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 7,
+            "p95": 7
+          },
+          "dataTtfbMs": {
+            "n": 10,
+            "p50": 59.596000000000004,
+            "p95": 79.212
+          },
+          "dataTransferMs": {
+            "n": 10,
+            "p50": 0.3290000000000006,
+            "p95": 0.7299999999999898
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 261,
+            "p95": 305
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 345,
+            "p95": 389
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 48,
+            "p95": 48
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 778746,
+            "p95": 778748
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 493676,
+            "p95": 493676
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 29,
+            "p95": 29
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 114.80000001192093,
+            "p95": 124.40000000596046
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 80,
+            "p95": 108
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 80,
+            "p95": 108
+          },
+          "server_identityMs": {
+            "n": 10,
+            "p50": 23.38,
+            "p95": 34.21
+          },
+          "server_databaseMs": {
+            "n": 10,
+            "p50": 18.95,
+            "p95": 28.83
+          },
+          "server_live_sessionMs": {
+            "n": 10,
+            "p50": 0.51,
+            "p95": 1.1
+          },
+          "server_transaction_acquireMs": {
+            "n": 10,
+            "p50": 0.41,
+            "p95": 0.84
+          },
+          "server_transactionMs": {
+            "n": 10,
+            "p50": 31.28,
+            "p95": 44.57
+          },
+          "server_compressionMs": {
+            "n": 10,
+            "p50": 0.23,
+            "p95": 1.49
+          },
+          "server_serializationMs": {
+            "n": 10,
+            "p50": 0.65,
+            "p95": 1.93
+          },
+          "server_totalMs": {
+            "n": 10,
+            "p50": 57.87,
+            "p95": 76.82
+          },
+          "readTtfbMs": {
+            "n": 10,
+            "p50": 59.596000000000004,
+            "p95": 79.212
+          },
+          "readTransferMs": {
+            "n": 10,
+            "p50": 0.3290000000000006,
+            "p95": 0.7299999999999898
+          }
+        }
+      }
+    },
+    {
+      "category": "primary",
+      "profile": "local",
+      "size": 5000,
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "variants": {
+        "B": {
+          "clickMs": {
+            "n": 10,
+            "p50": 84.7999999821186,
+            "p95": 178.90000000596046
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 56.7998046875,
+            "p95": 145.39990234375
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 7242,
+            "p95": 7242
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 11.507000000000003,
+            "p95": 13.027999999999999
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 35.666000000000004,
+            "p95": 41.08600000000001
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 355.60000002384186,
+            "p95": 445.90000000596046
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 10,
+            "p50": 53.301,
+            "p95": 140.925
+          },
+          "dataTransferMs": {
+            "n": 10,
+            "p50": 0.355000000000004,
+            "p95": 0.4939999999999998
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 264,
+            "p95": 301
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 348,
+            "p95": 384
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 56,
+            "p95": 56
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 837139,
+            "p95": 837140
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 543416,
+            "p95": 543416
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 32,
+            "p95": 32
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 120.59999999403954,
+            "p95": 130.59999999403954
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 80,
+            "p95": 92
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 84,
+            "p95": 96
+          },
+          "server_identityMs": {
+            "n": 10,
+            "p50": 20.28,
+            "p95": 23.8
+          },
+          "server_databaseMs": {
+            "n": 10,
+            "p50": 18.51,
+            "p95": 107.47
+          },
+          "server_live_sessionMs": {
+            "n": 10,
+            "p50": 0.51,
+            "p95": 0.69
+          },
+          "server_transaction_acquireMs": {
+            "n": 10,
+            "p50": 0.42,
+            "p95": 0.58
+          },
+          "server_transactionMs": {
+            "n": 10,
+            "p50": 29.2,
+            "p95": 115.81
+          },
+          "server_compressionMs": {
+            "n": 10,
+            "p50": 0.21,
+            "p95": 0.25
+          },
+          "server_serializationMs": {
+            "n": 10,
+            "p50": 0.45,
+            "p95": 0.54
+          },
+          "server_totalMs": {
+            "n": 10,
+            "p50": 51.8,
+            "p95": 139.27
+          },
+          "readTtfbMs": {
+            "n": 10,
+            "p50": 53.301,
+            "p95": 140.925
+          },
+          "readTransferMs": {
+            "n": 10,
+            "p50": 0.355000000000004,
+            "p95": 0.4939999999999998
+          }
+        },
+        "A": {
+          "clickMs": {
+            "n": 10,
+            "p50": 87.10000002384186,
+            "p95": 170.7999999821186
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 57.89990234375,
+            "p95": 141.400146484375
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 7242,
+            "p95": 7242
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 11.468000000000005,
+            "p95": 12.425000000000006
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 35.179000000000016,
+            "p95": 38.91700000000001
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 345.80000001192093,
+            "p95": 444.7999999821186
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 10,
+            "p50": 54.309000000000005,
+            "p95": 138.108
+          },
+          "dataTransferMs": {
+            "n": 10,
+            "p50": 0.35200000000000387,
+            "p95": 0.509999999999998
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 256,
+            "p95": 274
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 339,
+            "p95": 358
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 48,
+            "p95": 48
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 778747,
+            "p95": 778748
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 493676,
+            "p95": 493676
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 29,
+            "p95": 29
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 112.90000000596046,
+            "p95": 134.59999999403954
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 76,
+            "p95": 100
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 76,
+            "p95": 100
+          },
+          "server_identityMs": {
+            "n": 10,
+            "p50": 20.72,
+            "p95": 30.1
+          },
+          "server_databaseMs": {
+            "n": 10,
+            "p50": 19.52,
+            "p95": 106.69
+          },
+          "server_live_sessionMs": {
+            "n": 10,
+            "p50": 0.46,
+            "p95": 0.57
+          },
+          "server_transaction_acquireMs": {
+            "n": 10,
+            "p50": 0.46,
+            "p95": 0.54
+          },
+          "server_transactionMs": {
+            "n": 10,
+            "p50": 29.51,
+            "p95": 114.15
+          },
+          "server_compressionMs": {
+            "n": 10,
+            "p50": 0.22,
+            "p95": 0.3
+          },
+          "server_serializationMs": {
+            "n": 10,
+            "p50": 0.48,
+            "p95": 0.63
+          },
+          "server_totalMs": {
+            "n": 10,
+            "p50": 52.8,
+            "p95": 136.56
+          },
+          "readTtfbMs": {
+            "n": 10,
+            "p50": 54.309000000000005,
+            "p95": 138.108
+          },
+          "readTransferMs": {
+            "n": 10,
+            "p50": 0.35200000000000387,
+            "p95": 0.509999999999998
+          }
+        }
+      }
+    },
+    {
+      "category": "primary",
+      "profile": "local",
+      "size": 5000,
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "variants": {
+        "B": {
+          "clickMs": {
+            "n": 10,
+            "p50": 80.09999999403954,
+            "p95": 80.59999999403954
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 115.400146484375,
+            "p95": 121.10009765625
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 4,
+            "p95": 4
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 2771,
+            "p95": 2771
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 18.891000000000005,
+            "p95": 19.459000000000003
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 86.28,
+            "p95": 89.77199999999999
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 333.5,
+            "p95": 345.40000000596046
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 39,
+            "p50": 36.488,
+            "p95": 45.437999999999995
+          },
+          "dataTransferMs": {
+            "n": 39,
+            "p50": 0.3240000000000052,
+            "p95": 0.625
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 254,
+            "p95": 266
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 392,
+            "p95": 409
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 60,
+            "p95": 60
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 876119,
+            "p95": 876119
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 575314,
+            "p95": 575314
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 35,
+            "p95": 35
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 114.90000000596046,
+            "p95": 126.2000000178814
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 76,
+            "p95": 88
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 76,
+            "p95": 88
+          }
+        },
+        "A": {
+          "clickMs": {
+            "n": 10,
+            "p50": 79.90000000596046,
+            "p95": 80.7999999821186
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 116.39990234375,
+            "p95": 133.300048828125
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 4,
+            "p95": 4
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 2771,
+            "p95": 2771
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 19.22800000000001,
+            "p95": 20.596000000000004
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 83.96199999999997,
+            "p95": 94.07499999999999
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 411,
+            "p95": 420.5
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 39,
+            "p50": 36.77,
+            "p95": 54.774
+          },
+          "dataTransferMs": {
+            "n": 39,
+            "p50": 0.3879999999999981,
+            "p95": 0.7149999999999963
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 331,
+            "p95": 340
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 413,
+            "p95": 423
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 56,
+            "p95": 56
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 834664,
+            "p95": 834664
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 542510,
+            "p95": 542510
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 36,
+            "p95": 36
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 111.59999999403954,
+            "p95": 123.19999998807907
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 72,
+            "p95": 84
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 72,
+            "p95": 84
+          }
+        }
+      }
+    },
+    {
+      "category": "primary",
+      "profile": "local",
+      "size": 5000,
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "variants": {
+        "B": {
+          "clickMs": {
+            "n": 10,
+            "p50": 97.5,
+            "p95": 101.09999999403954
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 126.199951171875,
+            "p95": 132.5
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 4,
+            "p95": 4
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 2771,
+            "p95": 2771
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 17.398999999999997,
+            "p95": 18.976999999999993
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 80.679,
+            "p95": 86.368
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 418.7999999821186,
+            "p95": 448.69999998807907
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 40,
+            "p50": 40.893,
+            "p95": 47.546
+          },
+          "dataTransferMs": {
+            "n": 40,
+            "p50": 0.4059999999999988,
+            "p95": 0.6730000000000018
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 322,
+            "p95": 352
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 407,
+            "p95": 497
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 60,
+            "p95": 60
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 876119,
+            "p95": 876119
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 575314,
+            "p95": 575314
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 35,
+            "p95": 35
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 111.90000000596046,
+            "p95": 125.2999999821186
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 76,
+            "p95": 80
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 76,
+            "p95": 92
+          }
+        },
+        "A": {
+          "clickMs": {
+            "n": 10,
+            "p50": 97.5,
+            "p95": 136
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 117.60009765625,
+            "p95": 225.10009765625
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 4,
+            "p95": 4
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 2771,
+            "p95": 2771
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 18.48899999999999,
+            "p95": 19.488000000000007
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 81.83000000000001,
+            "p95": 89.202
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 351.59999999403954,
+            "p95": 407.90000000596046
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 38,
+            "p50": 38.20399999999999,
+            "p95": 110.548
+          },
+          "dataTransferMs": {
+            "n": 38,
+            "p50": 0.3930000000000007,
+            "p95": 0.7390000000000043
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 251,
+            "p95": 327
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 396,
+            "p95": 456
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 56,
+            "p95": 56
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 834664,
+            "p95": 834664
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 542510,
+            "p95": 542510
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 36,
+            "p95": 36
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 110.90000000596046,
+            "p95": 117
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 76,
+            "p95": 88
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 76,
+            "p95": 88
+          }
+        }
+      }
+    },
+    {
+      "category": "primary",
+      "profile": "constrained",
+      "size": 1000,
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "variants": {
+        "B": {
+          "clickMs": {
+            "n": 10,
+            "p50": 435.09999999403954,
+            "p95": 444
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 327.400146484375,
+            "p95": 334.5
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 5,
+            "p95": 5
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 39969,
+            "p95": 39969
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 94.84299999999979,
+            "p95": 100.8779999999998
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 301.69500000000005,
+            "p95": 315.55499999999984
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 5071.800000011921,
+            "p95": 5141.0999999940395
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 31898,
+            "p95": 31898
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 3,
+            "p95": 3
+          },
+          "dataTtfbMs": {
+            "n": 10,
+            "p50": 114.572,
+            "p95": 118.518
+          },
+          "dataTransferMs": {
+            "n": 10,
+            "p50": 89.806,
+            "p95": 95.443
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 4644,
+            "p95": 4706
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 4777,
+            "p95": 4830
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 59,
+            "p95": 59
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 837217,
+            "p95": 837218
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 543416,
+            "p95": 543416
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 32,
+            "p95": 32
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 4540.0999999940395,
+            "p95": 4593.5
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 1.6447482638888887e-05,
+            "p95": 0.001918896122685185
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 576,
+            "p95": 620
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 576,
+            "p95": 620
+          },
+          "server_identityMs": {
+            "n": 10,
+            "p50": 28.43,
+            "p95": 38.92
+          },
+          "server_databaseMs": {
+            "n": 10,
+            "p50": 13.02,
+            "p95": 24.26
+          },
+          "server_live_sessionMs": {
+            "n": 10,
+            "p50": 0.5,
+            "p95": 1.46
+          },
+          "server_transaction_acquireMs": {
+            "n": 10,
+            "p50": 0.46,
+            "p95": 0.66
+          },
+          "server_transactionMs": {
+            "n": 10,
+            "p50": 17.04,
+            "p95": 26.96
+          },
+          "server_compressionMs": {
+            "n": 10,
+            "p50": 0.25,
+            "p95": 0.81
+          },
+          "server_serializationMs": {
+            "n": 10,
+            "p50": 0.77,
+            "p95": 1.63
+          },
+          "server_totalMs": {
+            "n": 10,
+            "p50": 48.9,
+            "p95": 62.98
+          },
+          "readTtfbMs": {
+            "n": 10,
+            "p50": 114.572,
+            "p95": 118.518
+          },
+          "readTransferMs": {
+            "n": 10,
+            "p50": 89.806,
+            "p95": 95.443
+          }
+        },
+        "A": {
+          "clickMs": {
+            "n": 10,
+            "p50": 592.8000000119209,
+            "p95": 601.4000000059605
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 482.60009765625,
+            "p95": 492.89990234375
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 9,
+            "p95": 9
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 56905,
+            "p95": 56905
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 105.41,
+            "p95": 112.0699999999999
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 349.2029999999997,
+            "p95": 359.60900000000026
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 4897.4000000059605,
+            "p95": 4958.399999976158
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 48834,
+            "p95": 48834
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 7,
+            "p95": 7
+          },
+          "dataTtfbMs": {
+            "n": 10,
+            "p50": 89.50999999999999,
+            "p95": 99.25199999999998
+          },
+          "dataTransferMs": {
+            "n": 10,
+            "p50": 90.59300000000002,
+            "p95": 92.56599999999997
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 4306,
+            "p95": 4368
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 4440,
+            "p95": 4549
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 50,
+            "p95": 50
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 778826,
+            "p95": 778827
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 493676,
+            "p95": 493676
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 29,
+            "p95": 29
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 4252.700000017881,
+            "p95": 4270.4000000059605
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 0.001918896122685185,
+            "p95": 0.001918896122685185
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 736,
+            "p95": 776
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 736,
+            "p95": 776
+          },
+          "server_identityMs": {
+            "n": 10,
+            "p50": 31.76,
+            "p95": 41.43
+          },
+          "server_databaseMs": {
+            "n": 10,
+            "p50": 13.61,
+            "p95": 33.66
+          },
+          "server_live_sessionMs": {
+            "n": 10,
+            "p50": 0.62,
+            "p95": 0.94
+          },
+          "server_transaction_acquireMs": {
+            "n": 10,
+            "p50": 0.53,
+            "p95": 0.88
+          },
+          "server_transactionMs": {
+            "n": 10,
+            "p50": 16.84,
+            "p95": 36.62
+          },
+          "server_compressionMs": {
+            "n": 10,
+            "p50": 0.24,
+            "p95": 0.54
+          },
+          "server_serializationMs": {
+            "n": 10,
+            "p50": 0.73,
+            "p95": 1.42
+          },
+          "server_totalMs": {
+            "n": 10,
+            "p50": 52.01,
+            "p95": 71.09
+          },
+          "readTtfbMs": {
+            "n": 10,
+            "p50": 89.50999999999999,
+            "p95": 99.25199999999998
+          },
+          "readTransferMs": {
+            "n": 10,
+            "p50": 90.59300000000002,
+            "p95": 92.56599999999997
+          }
+        }
+      }
+    },
+    {
+      "category": "primary",
+      "profile": "constrained",
+      "size": 1000,
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "variants": {
+        "B": {
+          "clickMs": {
+            "n": 10,
+            "p50": 222.7000000178814,
+            "p95": 228.2000000178814
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 146.60009765625,
+            "p95": 151.39990234375
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 7254,
+            "p95": 7254
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 48.51099999999997,
+            "p95": 53.68099999999964
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 177.9980000000001,
+            "p95": 182.99499999999958
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 4880.300000011921,
+            "p95": 4908.5
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 10,
+            "p50": 96.31099999999999,
+            "p95": 98.779
+          },
+          "dataTransferMs": {
+            "n": 10,
+            "p50": 37.209999999999994,
+            "p95": 38.479
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 4663,
+            "p95": 4681
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 4783,
+            "p95": 4806
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 59,
+            "p95": 59
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 837217,
+            "p95": 837217
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 543416,
+            "p95": 543416
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 32,
+            "p95": 32
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 4551.5999999940395,
+            "p95": 4591.9000000059605
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 1.6447482638888887e-05,
+            "p95": 0.001918896122685185
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 588,
+            "p95": 616
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 588,
+            "p95": 616
+          },
+          "server_identityMs": {
+            "n": 10,
+            "p50": 24.77,
+            "p95": 33.78
+          },
+          "server_databaseMs": {
+            "n": 10,
+            "p50": 9.3,
+            "p95": 11.16
+          },
+          "server_live_sessionMs": {
+            "n": 10,
+            "p50": 0.55,
+            "p95": 0.92
+          },
+          "server_transaction_acquireMs": {
+            "n": 10,
+            "p50": 0.44,
+            "p95": 0.55
+          },
+          "server_transactionMs": {
+            "n": 10,
+            "p50": 13.12,
+            "p95": 14.78
+          },
+          "server_compressionMs": {
+            "n": 10,
+            "p50": 0.2,
+            "p95": 0.23
+          },
+          "server_serializationMs": {
+            "n": 10,
+            "p50": 0.62,
+            "p95": 0.86
+          },
+          "server_totalMs": {
+            "n": 10,
+            "p50": 40.17,
+            "p95": 50.93
+          },
+          "readTtfbMs": {
+            "n": 10,
+            "p50": 96.31099999999999,
+            "p95": 98.779
+          },
+          "readTransferMs": {
+            "n": 10,
+            "p50": 37.209999999999994,
+            "p95": 38.479
+          }
+        },
+        "A": {
+          "clickMs": {
+            "n": 10,
+            "p50": 218.09999999403954,
+            "p95": 226.7000000178814
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 142.199951171875,
+            "p95": 148.89990234375
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 7254,
+            "p95": 7254
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 50.18099999999981,
+            "p95": 55.47999999999975
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 176.17299999999992,
+            "p95": 183.90299999999993
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 4532.0999999940395,
+            "p95": 4585.0999999940395
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 10,
+            "p50": 90.673,
+            "p95": 95.83900000000001
+          },
+          "dataTransferMs": {
+            "n": 10,
+            "p50": 37.694,
+            "p95": 39.373000000000005
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 4314,
+            "p95": 4363
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 4456,
+            "p95": 4495
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 50,
+            "p95": 50
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 778827,
+            "p95": 778827
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 493676,
+            "p95": 493676
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 29,
+            "p95": 29
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 4240.600000023842,
+            "p95": 4267.5999999940395
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 0.001918896122685185,
+            "p95": 0.001918896122685185
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 740,
+            "p95": 756
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 740,
+            "p95": 756
+          },
+          "server_identityMs": {
+            "n": 10,
+            "p50": 27.06,
+            "p95": 30.28
+          },
+          "server_databaseMs": {
+            "n": 10,
+            "p50": 9.71,
+            "p95": 27.38
+          },
+          "server_live_sessionMs": {
+            "n": 10,
+            "p50": 0.53,
+            "p95": 0.66
+          },
+          "server_transaction_acquireMs": {
+            "n": 10,
+            "p50": 0.44,
+            "p95": 0.53
+          },
+          "server_transactionMs": {
+            "n": 10,
+            "p50": 12.26,
+            "p95": 30.13
+          },
+          "server_compressionMs": {
+            "n": 10,
+            "p50": 0.22,
+            "p95": 0.39
+          },
+          "server_serializationMs": {
+            "n": 10,
+            "p50": 0.6,
+            "p95": 0.97
+          },
+          "server_totalMs": {
+            "n": 10,
+            "p50": 41.75,
+            "p95": 59.53
+          },
+          "readTtfbMs": {
+            "n": 10,
+            "p50": 90.673,
+            "p95": 95.83900000000001
+          },
+          "readTransferMs": {
+            "n": 10,
+            "p50": 37.694,
+            "p95": 39.373000000000005
+          }
+        }
+      }
+    },
+    {
+      "category": "primary",
+      "profile": "constrained",
+      "size": 1000,
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "variants": {
+        "B": {
+          "clickMs": {
+            "n": 10,
+            "p50": 265.19999998807907,
+            "p95": 274.59999999403954
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 367.2001953125,
+            "p95": 395
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 4,
+            "p95": 4
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 2780,
+            "p95": 2780
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 74.17000000000007,
+            "p95": 78.2639999999999
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 276.1679999999997,
+            "p95": 286.16699999999986
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 5149,
+            "p95": 5165.5999999940395
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 40,
+            "p50": 95.897,
+            "p95": 107.871
+          },
+          "dataTransferMs": {
+            "n": 40,
+            "p50": 0.43900000000000716,
+            "p95": 10.400000000000006
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 4886,
+            "p95": 4894
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 5087,
+            "p95": 5106
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 63,
+            "p95": 63
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 876211,
+            "p95": 876211
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 575314,
+            "p95": 575314
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 35,
+            "p95": 35
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 4543.5,
+            "p95": 4671.4000000059605
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 4.150571469907407e-06,
+            "p95": 0.001918896122685185
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 588,
+            "p95": 644
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 588,
+            "p95": 644
+          }
+        },
+        "A": {
+          "clickMs": {
+            "n": 10,
+            "p50": 266.7000000178814,
+            "p95": 268.7000000178814
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 370.7998046875,
+            "p95": 380.5
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 4,
+            "p95": 4
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 2780,
+            "p95": 2780
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 74.54699999999991,
+            "p95": 79.17099999999988
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 277.06399999999974,
+            "p95": 284.97700000000003
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 5017.4000000059605,
+            "p95": 5038.700000017881
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 40,
+            "p50": 96.253,
+            "p95": 110.56099999999999
+          },
+          "dataTransferMs": {
+            "n": 40,
+            "p50": 0.4369999999999976,
+            "p95": 10.570000000000007
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 4753,
+            "p95": 4774
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 4841,
+            "p95": 4861
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 59,
+            "p95": 59
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 841922,
+            "p95": 841922
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 542510,
+            "p95": 542510
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 36,
+            "p95": 36
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 4370,
+            "p95": 4575.9000000059605
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 0.001918896122685185,
+            "p95": 0.001918896122685185
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 744,
+            "p95": 792
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 744,
+            "p95": 792
+          }
+        }
+      }
+    },
+    {
+      "category": "primary",
+      "profile": "constrained",
+      "size": 1000,
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "variants": {
+        "B": {
+          "clickMs": {
+            "n": 10,
+            "p50": 246.7999999821186,
+            "p95": 258.40000000596046
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 349.5,
+            "p95": 365.300048828125
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 4,
+            "p95": 4
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 2780,
+            "p95": 2780
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 61.624999999999815,
+            "p95": 71.07300000000016
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 288.42000000000036,
+            "p95": 318.84099999999995
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 5121.200000017881,
+            "p95": 5136.9000000059605
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 40,
+            "p50": 95.478,
+            "p95": 106.043
+          },
+          "dataTransferMs": {
+            "n": 40,
+            "p50": 0.45699999999999363,
+            "p95": 9.281000000000006
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 4878,
+            "p95": 4887
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 5091,
+            "p95": 5099
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 63,
+            "p95": 63
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 876211,
+            "p95": 876211
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 575314,
+            "p95": 575314
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 35,
+            "p95": 35
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 4538.0999999940395,
+            "p95": 4809.300000011921
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 4.150571469907407e-06,
+            "p95": 0.001918896122685185
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 580,
+            "p95": 608
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 580,
+            "p95": 608
+          }
+        },
+        "A": {
+          "clickMs": {
+            "n": 10,
+            "p50": 240.69999998807907,
+            "p95": 248.7999999821186
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 341.800048828125,
+            "p95": 368
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 4,
+            "p95": 4
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 2780,
+            "p95": 2780
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 61.53599999999982,
+            "p95": 65.45299999999976
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 282.05000000000035,
+            "p95": 290.59500000000014
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 4997.699999988079,
+            "p95": 5018.799999982119
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 40,
+            "p50": 97.005,
+            "p95": 108.381
+          },
+          "dataTransferMs": {
+            "n": 40,
+            "p50": 0.43499999999998806,
+            "p95": 10.593000000000004
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 4756,
+            "p95": 4774
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 4844,
+            "p95": 4860
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 59,
+            "p95": 59
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 841922,
+            "p95": 841922
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 542510,
+            "p95": 542510
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 36,
+            "p95": 36
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 4371.100000023842,
+            "p95": 4577.9000000059605
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 1.6447482638888887e-05,
+            "p95": 0.001918896122685185
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 744,
+            "p95": 816
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 744,
+            "p95": 816
+          }
+        }
+      }
+    },
+    {
+      "category": "primary",
+      "profile": "constrained",
+      "size": 5000,
+      "path": "recruiting \u2192 applicants",
+      "condition": "cold",
+      "variants": {
+        "B": {
+          "clickMs": {
+            "n": 10,
+            "p50": 435.69999998807907,
+            "p95": 442.80000001192093
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 329.5,
+            "p95": 336
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 5,
+            "p95": 5
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 39957,
+            "p95": 39957
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 96.2259999999997,
+            "p95": 102.0249999999998
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 309.1630000000003,
+            "p95": 321.1659999999998
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 5096.699999988079,
+            "p95": 5110.300000011921
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 31898,
+            "p95": 31898
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 3,
+            "p95": 3
+          },
+          "dataTtfbMs": {
+            "n": 10,
+            "p50": 115.242,
+            "p95": 137.773
+          },
+          "dataTransferMs": {
+            "n": 10,
+            "p50": 90.278,
+            "p95": 96.896
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 4661,
+            "p95": 4670
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 4781,
+            "p95": 4816
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 59,
+            "p95": 59
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 837226,
+            "p95": 837227
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 543416,
+            "p95": 543416
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 32,
+            "p95": 32
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 4544.300000011921,
+            "p95": 4592.800000011921
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 1.6447482638888887e-05,
+            "p95": 0.001918896122685185
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 588,
+            "p95": 616
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 588,
+            "p95": 616
+          },
+          "server_identityMs": {
+            "n": 10,
+            "p50": 27.4,
+            "p95": 31.83
+          },
+          "server_databaseMs": {
+            "n": 10,
+            "p50": 29.12,
+            "p95": 35.91
+          },
+          "server_live_sessionMs": {
+            "n": 10,
+            "p50": 0.55,
+            "p95": 0.79
+          },
+          "server_transaction_acquireMs": {
+            "n": 10,
+            "p50": 0.47,
+            "p95": 0.69
+          },
+          "server_transactionMs": {
+            "n": 10,
+            "p50": 44.86,
+            "p95": 59.7
+          },
+          "server_compressionMs": {
+            "n": 10,
+            "p50": 0.41,
+            "p95": 3.81
+          },
+          "server_serializationMs": {
+            "n": 10,
+            "p50": 1.47,
+            "p95": 4.67
+          },
+          "server_totalMs": {
+            "n": 10,
+            "p50": 76.31,
+            "p95": 96.63
+          },
+          "readTtfbMs": {
+            "n": 10,
+            "p50": 115.242,
+            "p95": 137.773
+          },
+          "readTransferMs": {
+            "n": 10,
+            "p50": 90.278,
+            "p95": 96.896
+          }
+        },
+        "A": {
+          "clickMs": {
+            "n": 10,
+            "p50": 593.5999999940395,
+            "p95": 600
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 483.39990234375,
+            "p95": 493
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 9,
+            "p95": 9
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 56893,
+            "p95": 56893
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 102.86099999999988,
+            "p95": 114.72399999999982
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 352.1620000000003,
+            "p95": 377.20899999999966
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 4902.700000017881,
+            "p95": 4964
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 48834,
+            "p95": 48834
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 7,
+            "p95": 7
+          },
+          "dataTtfbMs": {
+            "n": 10,
+            "p50": 90.541,
+            "p95": 104.80800000000002
+          },
+          "dataTransferMs": {
+            "n": 10,
+            "p50": 89.08699999999999,
+            "p95": 92.90100000000001
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 4310,
+            "p95": 4364
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 4459,
+            "p95": 4482
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 50,
+            "p95": 50
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 778834,
+            "p95": 778835
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 493676,
+            "p95": 493676
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 29,
+            "p95": 29
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 4240.800000011921,
+            "p95": 4271.799999982119
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 0.001918896122685185,
+            "p95": 0.001918896122685185
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 744,
+            "p95": 792
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 744,
+            "p95": 792
+          },
+          "server_identityMs": {
+            "n": 10,
+            "p50": 28.51,
+            "p95": 29.78
+          },
+          "server_databaseMs": {
+            "n": 10,
+            "p50": 24.15,
+            "p95": 39.2
+          },
+          "server_live_sessionMs": {
+            "n": 10,
+            "p50": 0.64,
+            "p95": 0.92
+          },
+          "server_transaction_acquireMs": {
+            "n": 10,
+            "p50": 0.46,
+            "p95": 0.7
+          },
+          "server_transactionMs": {
+            "n": 10,
+            "p50": 41.24,
+            "p95": 55.19
+          },
+          "server_compressionMs": {
+            "n": 10,
+            "p50": 0.39,
+            "p95": 2.89
+          },
+          "server_serializationMs": {
+            "n": 10,
+            "p50": 1.25,
+            "p95": 3.75
+          },
+          "server_totalMs": {
+            "n": 10,
+            "p50": 73.35,
+            "p95": 87.71
+          },
+          "readTtfbMs": {
+            "n": 10,
+            "p50": 90.541,
+            "p95": 104.80800000000002
+          },
+          "readTransferMs": {
+            "n": 10,
+            "p50": 89.08699999999999,
+            "p95": 92.90100000000001
+          }
+        }
+      }
+    },
+    {
+      "category": "primary",
+      "profile": "constrained",
+      "size": 5000,
+      "path": "recruiting \u2192 applicants",
+      "condition": "warm",
+      "variants": {
+        "B": {
+          "clickMs": {
+            "n": 10,
+            "p50": 221,
+            "p95": 293.2000000178814
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 146.10009765625,
+            "p95": 214.89990234375
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 7242,
+            "p95": 7242
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 51.77900000000024,
+            "p95": 55.150999999999954
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 176.26399999999975,
+            "p95": 182.76000000000005
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 4883,
+            "p95": 4958.0999999940395
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 10,
+            "p50": 94.021,
+            "p95": 162.24
+          },
+          "dataTransferMs": {
+            "n": 10,
+            "p50": 37.95800000000001,
+            "p95": 40.471000000000004
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 4666,
+            "p95": 4679
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 4795,
+            "p95": 4817
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 59,
+            "p95": 59
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 837226,
+            "p95": 837227
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 543416,
+            "p95": 543416
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 32,
+            "p95": 32
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 4548.5999999940395,
+            "p95": 4552.799999982119
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 1.6447482638888887e-05,
+            "p95": 1.6447482638888887e-05
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 580,
+            "p95": 612
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 580,
+            "p95": 612
+          },
+          "server_identityMs": {
+            "n": 10,
+            "p50": 25.11,
+            "p95": 28.43
+          },
+          "server_databaseMs": {
+            "n": 10,
+            "p50": 22.65,
+            "p95": 115.46
+          },
+          "server_live_sessionMs": {
+            "n": 10,
+            "p50": 0.47,
+            "p95": 0.7
+          },
+          "server_transaction_acquireMs": {
+            "n": 10,
+            "p50": 0.42,
+            "p95": 0.61
+          },
+          "server_transactionMs": {
+            "n": 10,
+            "p50": 34.35,
+            "p95": 125.36
+          },
+          "server_compressionMs": {
+            "n": 10,
+            "p50": 0.25,
+            "p95": 1.62
+          },
+          "server_serializationMs": {
+            "n": 10,
+            "p50": 0.67,
+            "p95": 1.98
+          },
+          "server_totalMs": {
+            "n": 10,
+            "p50": 63.21,
+            "p95": 153.64
+          },
+          "readTtfbMs": {
+            "n": 10,
+            "p50": 94.021,
+            "p95": 162.24
+          },
+          "readTransferMs": {
+            "n": 10,
+            "p50": 37.95800000000001,
+            "p95": 40.471000000000004
+          }
+        },
+        "A": {
+          "clickMs": {
+            "n": 10,
+            "p50": 219.89999997615814,
+            "p95": 273.40000000596046
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 145.60009765625,
+            "p95": 196.10009765625
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 7242,
+            "p95": 7242
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 49.18400000000012,
+            "p95": 58.06399999999989
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 170.90300000000002,
+            "p95": 202.7890000000001
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 4528.5999999940395,
+            "p95": 4625.4000000059605
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 10,
+            "p50": 91.968,
+            "p95": 140.919
+          },
+          "dataTransferMs": {
+            "n": 10,
+            "p50": 38.48599999999999,
+            "p95": 40.663
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 4306,
+            "p95": 4352
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 4450,
+            "p95": 4482
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 50,
+            "p95": 50
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 778834,
+            "p95": 778835
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 493676,
+            "p95": 493676
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 29,
+            "p95": 29
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 4249,
+            "p95": 4269.800000011921
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 0.001918896122685185,
+            "p95": 0.001918896122685185
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 748,
+            "p95": 780
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 748,
+            "p95": 780
+          },
+          "server_identityMs": {
+            "n": 10,
+            "p50": 25.87,
+            "p95": 101.79
+          },
+          "server_databaseMs": {
+            "n": 10,
+            "p50": 20.14,
+            "p95": 24.23
+          },
+          "server_live_sessionMs": {
+            "n": 10,
+            "p50": 0.48,
+            "p95": 0.6
+          },
+          "server_transaction_acquireMs": {
+            "n": 10,
+            "p50": 0.42,
+            "p95": 0.55
+          },
+          "server_transactionMs": {
+            "n": 10,
+            "p50": 32.91,
+            "p95": 37.86
+          },
+          "server_compressionMs": {
+            "n": 10,
+            "p50": 0.21,
+            "p95": 0.24
+          },
+          "server_serializationMs": {
+            "n": 10,
+            "p50": 0.64,
+            "p95": 0.67
+          },
+          "server_totalMs": {
+            "n": 10,
+            "p50": 59.67,
+            "p95": 138.62
+          },
+          "readTtfbMs": {
+            "n": 10,
+            "p50": 91.968,
+            "p95": 140.919
+          },
+          "readTransferMs": {
+            "n": 10,
+            "p50": 38.48599999999999,
+            "p95": 40.663
+          }
+        }
+      }
+    },
+    {
+      "category": "primary",
+      "profile": "constrained",
+      "size": 5000,
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "cold",
+      "variants": {
+        "B": {
+          "clickMs": {
+            "n": 10,
+            "p50": 268,
+            "p95": 270.09999999403954
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 366.699951171875,
+            "p95": 395.800048828125
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 4,
+            "p95": 4
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 2771,
+            "p95": 2771
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 73.44000000000017,
+            "p95": 76.4739999999997
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 273.2700000000001,
+            "p95": 284.958
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 5156,
+            "p95": 5161
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 40,
+            "p50": 96.673,
+            "p95": 111.99300000000001
+          },
+          "dataTransferMs": {
+            "n": 40,
+            "p50": 0.40800000000000125,
+            "p95": 9.954999999999998
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 4891,
+            "p95": 4893
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 5099,
+            "p95": 5107
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 63,
+            "p95": 63
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 876206,
+            "p95": 876206
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 575314,
+            "p95": 575314
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 35,
+            "p95": 35
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 4543.299999982119,
+            "p95": 4604.800000011921
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 4.150571469907407e-06,
+            "p95": 1.6447482638888887e-05
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 580,
+            "p95": 628
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 580,
+            "p95": 628
+          }
+        },
+        "A": {
+          "clickMs": {
+            "n": 10,
+            "p50": 265.69999998807907,
+            "p95": 298.40000000596046
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 377.800048828125,
+            "p95": 412.7001953125
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 4,
+            "p95": 4
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 2771,
+            "p95": 2771
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 77.48399999999988,
+            "p95": 79.60699999999999
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 273.78400000000005,
+            "p95": 299.56899999999996
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 5038.9000000059605,
+            "p95": 5112.4000000059605
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 40,
+            "p50": 95.92399999999999,
+            "p95": 124.148
+          },
+          "dataTransferMs": {
+            "n": 40,
+            "p50": 0.4159999999999968,
+            "p95": 9.065000000000012
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 4768,
+            "p95": 4815
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 4856,
+            "p95": 4903
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 59,
+            "p95": 59
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 841906,
+            "p95": 841906
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 542510,
+            "p95": 542510
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 36,
+            "p95": 36
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 4274.899999976158,
+            "p95": 4362.700000017881
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 1.6447482638888887e-05,
+            "p95": 0.001918896122685185
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 732,
+            "p95": 784
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 732,
+            "p95": 784
+          }
+        }
+      }
+    },
+    {
+      "category": "primary",
+      "profile": "constrained",
+      "size": 5000,
+      "path": "applicants \u2192 applicantDetail",
+      "condition": "warm",
+      "variants": {
+        "B": {
+          "clickMs": {
+            "n": 10,
+            "p50": 243.2000000178814,
+            "p95": 252.40000000596046
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 342.10009765625,
+            "p95": 366.10009765625
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 4,
+            "p95": 4
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 2771,
+            "p95": 2771
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 59.652999999999956,
+            "p95": 63.4509999999997
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 287.617,
+            "p95": 313.3219999999999
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 5129.200000017881,
+            "p95": 5147.4000000059605
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 40,
+            "p50": 95.87599999999999,
+            "p95": 106.88900000000001
+          },
+          "dataTransferMs": {
+            "n": 40,
+            "p50": 0.43499999999998806,
+            "p95": 8.969000000000008
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 4888,
+            "p95": 4895
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 5099,
+            "p95": 5108
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 63,
+            "p95": 63
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 876206,
+            "p95": 876206
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 575314,
+            "p95": 575314
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 35,
+            "p95": 35
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 4537.299999982119,
+            "p95": 4620.899999976158
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 4.150571469907407e-06,
+            "p95": 1.6447482638888887e-05
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 580,
+            "p95": 612
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 580,
+            "p95": 612
+          }
+        },
+        "A": {
+          "clickMs": {
+            "n": 10,
+            "p50": 239.59999999403954,
+            "p95": 249.39999997615814
+          },
+          "networkCompleteMs": {
+            "n": 10,
+            "p50": 344.400146484375,
+            "p95": 363.10009765625
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 4,
+            "p95": 4
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 2771,
+            "p95": 2771
+          },
+          "scriptMs": {
+            "n": 10,
+            "p50": 59.40399999999979,
+            "p95": 64.83499999999998
+          },
+          "taskMs": {
+            "n": 10,
+            "p50": 279.97499999999985,
+            "p95": 298.40599999999995
+          },
+          "sourcePlusClickMs": {
+            "n": 10,
+            "p50": 5000.800000011921,
+            "p95": 5055.4000000059605
+          },
+          "clickScriptBytes": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 10,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 40,
+            "p50": 96.802,
+            "p95": 110.617
+          },
+          "dataTransferMs": {
+            "n": 40,
+            "p50": 0.4829999999999899,
+            "p95": 10.659999999999997
+          },
+          "sourceUsefulMs": {
+            "n": 10,
+            "p50": 4766,
+            "p95": 4813
+          },
+          "sourceDrainedMs": {
+            "n": 10,
+            "p50": 4852,
+            "p95": 4900
+          },
+          "sourceRequests": {
+            "n": 10,
+            "p50": 59,
+            "p95": 59
+          },
+          "sourceBodyBytes": {
+            "n": 10,
+            "p50": 841906,
+            "p95": 841906
+          },
+          "sourceScriptBytes": {
+            "n": 10,
+            "p50": 542510,
+            "p95": 542510
+          },
+          "sourceScriptRequests": {
+            "n": 10,
+            "p50": 36,
+            "p95": 36
+          },
+          "sourceFontBytes": {
+            "n": 10,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 10,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 10,
+            "p50": 4288.700000017881,
+            "p95": 4389.800000011921
+          },
+          "sourceCLS": {
+            "n": 10,
+            "p50": 1.6447482638888887e-05,
+            "p95": 0.001918896122685185
+          },
+          "first-paintMs": {
+            "n": 10,
+            "p50": 744,
+            "p95": 816
+          },
+          "first-contentful-paintMs": {
+            "n": 10,
+            "p50": 744,
+            "p95": 816
+          }
+        }
+      }
+    }
+  ],
+  "features": [
+    {
+      "category": "feature",
+      "profile": "constrained",
+      "size": 1000,
+      "path": "overview \u2192 settingsProfile",
+      "condition": "cold",
+      "variants": {
+        "B": {
+          "clickMs": {
+            "n": 6,
+            "p50": 172.30000001192093,
+            "p95": 192.69999998807907
+          },
+          "networkCompleteMs": {
+            "n": 6,
+            "p50": 166.699951171875,
+            "p95": 175.10009765625
+          },
+          "requestCount": {
+            "n": 6,
+            "p50": 2,
+            "p95": 2
+          },
+          "encodedBodyBytes": {
+            "n": 6,
+            "p50": 249,
+            "p95": 249
+          },
+          "scriptMs": {
+            "n": 6,
+            "p50": 51.61099999999985,
+            "p95": 54.072000000000116
+          },
+          "taskMs": {
+            "n": 6,
+            "p50": 152.68900000000008,
+            "p95": 156.3309999999998
+          },
+          "sourcePlusClickMs": {
+            "n": 6,
+            "p50": 4828,
+            "p95": 4864.699999988079
+          },
+          "clickScriptBytes": {
+            "n": 6,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 6,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 12,
+            "p50": 90.375,
+            "p95": 123.488
+          },
+          "dataTransferMs": {
+            "n": 12,
+            "p50": 0.4210000000000065,
+            "p95": 1.0899999999999892
+          },
+          "sourceUsefulMs": {
+            "n": 6,
+            "p50": 4655,
+            "p95": 4672
+          },
+          "sourceDrainedMs": {
+            "n": 6,
+            "p50": 4864,
+            "p95": 4883
+          },
+          "sourceRequests": {
+            "n": 6,
+            "p50": 60,
+            "p95": 60
+          },
+          "sourceBodyBytes": {
+            "n": 6,
+            "p50": 837727,
+            "p95": 837728
+          },
+          "sourceScriptBytes": {
+            "n": 6,
+            "p50": 543416,
+            "p95": 543416
+          },
+          "sourceScriptRequests": {
+            "n": 6,
+            "p50": 32,
+            "p95": 32
+          },
+          "sourceFontBytes": {
+            "n": 6,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 6,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 6,
+            "p50": 4536.600000023842,
+            "p95": 4596.100000023842
+          },
+          "sourceCLS": {
+            "n": 6,
+            "p50": 1.6447482638888887e-05,
+            "p95": 0.001918896122685185
+          },
+          "first-paintMs": {
+            "n": 6,
+            "p50": 572,
+            "p95": 584
+          },
+          "first-contentful-paintMs": {
+            "n": 6,
+            "p50": 572,
+            "p95": 584
+          }
+        },
+        "A": {
+          "clickMs": {
+            "n": 6,
+            "p50": 458.59999999403954,
+            "p95": 483.5
+          },
+          "networkCompleteMs": {
+            "n": 6,
+            "p50": 452,
+            "p95": 461.89990234375
+          },
+          "requestCount": {
+            "n": 6,
+            "p50": 9,
+            "p95": 9
+          },
+          "encodedBodyBytes": {
+            "n": 6,
+            "p50": 22866,
+            "p95": 22866
+          },
+          "scriptMs": {
+            "n": 6,
+            "p50": 73.02699999999996,
+            "p95": 76.44499999999988
+          },
+          "taskMs": {
+            "n": 6,
+            "p50": 228.31899999999993,
+            "p95": 280.0569999999998
+          },
+          "sourcePlusClickMs": {
+            "n": 6,
+            "p50": 4760.5,
+            "p95": 4771.9000000059605
+          },
+          "clickScriptBytes": {
+            "n": 6,
+            "p50": 20062,
+            "p95": 20062
+          },
+          "clickScriptRequests": {
+            "n": 6,
+            "p50": 4,
+            "p95": 4
+          },
+          "dataTtfbMs": {
+            "n": 12,
+            "p50": 91.80199999999999,
+            "p95": 117.563
+          },
+          "dataTransferMs": {
+            "n": 12,
+            "p50": 0.41800000000000637,
+            "p95": 1.8199999999999932
+          },
+          "sourceUsefulMs": {
+            "n": 6,
+            "p50": 4285,
+            "p95": 4315
+          },
+          "sourceDrainedMs": {
+            "n": 6,
+            "p50": 4500,
+            "p95": 4526
+          },
+          "sourceRequests": {
+            "n": 6,
+            "p50": 51,
+            "p95": 51
+          },
+          "sourceBodyBytes": {
+            "n": 6,
+            "p50": 779338,
+            "p95": 779340
+          },
+          "sourceScriptBytes": {
+            "n": 6,
+            "p50": 493676,
+            "p95": 493676
+          },
+          "sourceScriptRequests": {
+            "n": 6,
+            "p50": 29,
+            "p95": 29
+          },
+          "sourceFontBytes": {
+            "n": 6,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 6,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 6,
+            "p50": 4269.199999988079,
+            "p95": 4287.100000023842
+          },
+          "sourceCLS": {
+            "n": 6,
+            "p50": 0.001918896122685185,
+            "p95": 0.001918896122685185
+          },
+          "first-paintMs": {
+            "n": 6,
+            "p50": 740,
+            "p95": 820
+          },
+          "first-contentful-paintMs": {
+            "n": 6,
+            "p50": 740,
+            "p95": 820
+          }
+        }
+      }
+    },
+    {
+      "category": "feature",
+      "profile": "constrained",
+      "size": 1000,
+      "path": "overview \u2192 settingsProfile",
+      "condition": "warm",
+      "variants": {
+        "B": {
+          "clickMs": {
+            "n": 6,
+            "p50": 154.7999999821186,
+            "p95": 169.2000000178814
+          },
+          "networkCompleteMs": {
+            "n": 6,
+            "p50": 126.39990234375,
+            "p95": 139.10009765625
+          },
+          "requestCount": {
+            "n": 6,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 6,
+            "p50": 88,
+            "p95": 88
+          },
+          "scriptMs": {
+            "n": 6,
+            "p50": 24.800000000000153,
+            "p95": 27.665000000000273
+          },
+          "taskMs": {
+            "n": 6,
+            "p50": 86.44000000000007,
+            "p95": 89.40700000000001
+          },
+          "sourcePlusClickMs": {
+            "n": 6,
+            "p50": 4776.5999999940395,
+            "p95": 4854.200000017881
+          },
+          "clickScriptBytes": {
+            "n": 6,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 6,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 6,
+            "p50": 105.161,
+            "p95": 116.114
+          },
+          "dataTransferMs": {
+            "n": 6,
+            "p50": 0.41900000000001114,
+            "p95": 0.8950000000000102
+          },
+          "sourceUsefulMs": {
+            "n": 6,
+            "p50": 4641,
+            "p95": 4685
+          },
+          "sourceDrainedMs": {
+            "n": 6,
+            "p50": 4843,
+            "p95": 4897
+          },
+          "sourceRequests": {
+            "n": 6,
+            "p50": 60,
+            "p95": 60
+          },
+          "sourceBodyBytes": {
+            "n": 6,
+            "p50": 837726,
+            "p95": 837728
+          },
+          "sourceScriptBytes": {
+            "n": 6,
+            "p50": 543416,
+            "p95": 543416
+          },
+          "sourceScriptRequests": {
+            "n": 6,
+            "p50": 32,
+            "p95": 32
+          },
+          "sourceFontBytes": {
+            "n": 6,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 6,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 6,
+            "p50": 4563,
+            "p95": 4598.800000011921
+          },
+          "sourceCLS": {
+            "n": 6,
+            "p50": 1.6447482638888887e-05,
+            "p95": 0.001918896122685185
+          },
+          "first-paintMs": {
+            "n": 6,
+            "p50": 584,
+            "p95": 652
+          },
+          "first-contentful-paintMs": {
+            "n": 6,
+            "p50": 584,
+            "p95": 652
+          }
+        },
+        "A": {
+          "clickMs": {
+            "n": 6,
+            "p50": 162.59999999403954,
+            "p95": 171.60000002384186
+          },
+          "networkCompleteMs": {
+            "n": 6,
+            "p50": 134,
+            "p95": 142.800048828125
+          },
+          "requestCount": {
+            "n": 6,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 6,
+            "p50": 88,
+            "p95": 88
+          },
+          "scriptMs": {
+            "n": 6,
+            "p50": 25.249999999999993,
+            "p95": 27.293000000000013
+          },
+          "taskMs": {
+            "n": 6,
+            "p50": 85.45499999999961,
+            "p95": 91.53499999999993
+          },
+          "sourcePlusClickMs": {
+            "n": 6,
+            "p50": 4442.399999976158,
+            "p95": 4489.5999999940395
+          },
+          "clickScriptBytes": {
+            "n": 6,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 6,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 6,
+            "p50": 111.387,
+            "p95": 116.19
+          },
+          "dataTransferMs": {
+            "n": 6,
+            "p50": 0.4650000000000034,
+            "p95": 0.8429999999999893
+          },
+          "sourceUsefulMs": {
+            "n": 6,
+            "p50": 4306,
+            "p95": 4327
+          },
+          "sourceDrainedMs": {
+            "n": 6,
+            "p50": 4517,
+            "p95": 4536
+          },
+          "sourceRequests": {
+            "n": 6,
+            "p50": 51,
+            "p95": 51
+          },
+          "sourceBodyBytes": {
+            "n": 6,
+            "p50": 779339,
+            "p95": 779340
+          },
+          "sourceScriptBytes": {
+            "n": 6,
+            "p50": 493676,
+            "p95": 493676
+          },
+          "sourceScriptRequests": {
+            "n": 6,
+            "p50": 29,
+            "p95": 29
+          },
+          "sourceFontBytes": {
+            "n": 6,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 6,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 6,
+            "p50": 4242.800000011921,
+            "p95": 4269.9000000059605
+          },
+          "sourceCLS": {
+            "n": 6,
+            "p50": 0.001918896122685185,
+            "p95": 0.001918896122685185
+          },
+          "first-paintMs": {
+            "n": 6,
+            "p50": 728,
+            "p95": 748
+          },
+          "first-contentful-paintMs": {
+            "n": 6,
+            "p50": 728,
+            "p95": 748
+          }
+        }
+      }
+    },
+    {
+      "category": "feature",
+      "profile": "constrained",
+      "size": 1000,
+      "path": "overview \u2192 meetings",
+      "condition": "cold",
+      "variants": {
+        "B": {
+          "clickMs": {
+            "n": 6,
+            "p50": 140.69999998807907,
+            "p95": 154
+          },
+          "networkCompleteMs": {
+            "n": 6,
+            "p50": 118.099853515625,
+            "p95": 123.699951171875
+          },
+          "requestCount": {
+            "n": 6,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 6,
+            "p50": 397,
+            "p95": 397
+          },
+          "scriptMs": {
+            "n": 6,
+            "p50": 24.862999999999857,
+            "p95": 26.407999999999987
+          },
+          "taskMs": {
+            "n": 6,
+            "p50": 101.55899999999995,
+            "p95": 114.58799999999991
+          },
+          "sourcePlusClickMs": {
+            "n": 6,
+            "p50": 4801.699999988079,
+            "p95": 4838.700000017881
+          },
+          "clickScriptBytes": {
+            "n": 6,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 6,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 6,
+            "p50": 93.24799999999999,
+            "p95": 96.852
+          },
+          "dataTransferMs": {
+            "n": 6,
+            "p50": 0.8939999999999912,
+            "p95": 1.2090000000000032
+          },
+          "sourceUsefulMs": {
+            "n": 6,
+            "p50": 4661,
+            "p95": 4700
+          },
+          "sourceDrainedMs": {
+            "n": 6,
+            "p50": 4860,
+            "p95": 4910
+          },
+          "sourceRequests": {
+            "n": 6,
+            "p50": 60,
+            "p95": 60
+          },
+          "sourceBodyBytes": {
+            "n": 6,
+            "p50": 837727,
+            "p95": 837728
+          },
+          "sourceScriptBytes": {
+            "n": 6,
+            "p50": 543416,
+            "p95": 543416
+          },
+          "sourceScriptRequests": {
+            "n": 6,
+            "p50": 32,
+            "p95": 32
+          },
+          "sourceFontBytes": {
+            "n": 6,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 6,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 6,
+            "p50": 4546,
+            "p95": 4593.800000011921
+          },
+          "sourceCLS": {
+            "n": 6,
+            "p50": 1.6447482638888887e-05,
+            "p95": 0.001918896122685185
+          },
+          "first-paintMs": {
+            "n": 6,
+            "p50": 576,
+            "p95": 604
+          },
+          "first-contentful-paintMs": {
+            "n": 6,
+            "p50": 576,
+            "p95": 604
+          }
+        },
+        "A": {
+          "clickMs": {
+            "n": 6,
+            "p50": 450.10000002384186,
+            "p95": 460.5
+          },
+          "networkCompleteMs": {
+            "n": 6,
+            "p50": 424.2001953125,
+            "p95": 431.300048828125
+          },
+          "requestCount": {
+            "n": 6,
+            "p50": 7,
+            "p95": 7
+          },
+          "encodedBodyBytes": {
+            "n": 6,
+            "p50": 36049,
+            "p95": 36049
+          },
+          "scriptMs": {
+            "n": 6,
+            "p50": 40.596999999999994,
+            "p95": 45.00499999999996
+          },
+          "taskMs": {
+            "n": 6,
+            "p50": 180.218,
+            "p95": 185.92800000000008
+          },
+          "sourcePlusClickMs": {
+            "n": 6,
+            "p50": 4387.5,
+            "p95": 4750.5
+          },
+          "clickScriptBytes": {
+            "n": 6,
+            "p50": 31012,
+            "p95": 31012
+          },
+          "clickScriptRequests": {
+            "n": 6,
+            "p50": 5,
+            "p95": 5
+          },
+          "dataTtfbMs": {
+            "n": 6,
+            "p50": 90.968,
+            "p95": 97.586
+          },
+          "dataTransferMs": {
+            "n": 6,
+            "p50": 0.36199999999999477,
+            "p95": 0.7989999999999924
+          },
+          "sourceUsefulMs": {
+            "n": 6,
+            "p50": 3934,
+            "p95": 4306
+          },
+          "sourceDrainedMs": {
+            "n": 6,
+            "p50": 4484,
+            "p95": 4501
+          },
+          "sourceRequests": {
+            "n": 6,
+            "p50": 51,
+            "p95": 51
+          },
+          "sourceBodyBytes": {
+            "n": 6,
+            "p50": 779157,
+            "p95": 779340
+          },
+          "sourceScriptBytes": {
+            "n": 6,
+            "p50": 493676,
+            "p95": 493676
+          },
+          "sourceScriptRequests": {
+            "n": 6,
+            "p50": 29,
+            "p95": 29
+          },
+          "sourceFontBytes": {
+            "n": 6,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 6,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 6,
+            "p50": 4267.600000023842,
+            "p95": 4286.0999999940395
+          },
+          "sourceCLS": {
+            "n": 6,
+            "p50": 0.001918896122685185,
+            "p95": 0.001918896122685185
+          },
+          "first-paintMs": {
+            "n": 6,
+            "p50": 736,
+            "p95": 792
+          },
+          "first-contentful-paintMs": {
+            "n": 6,
+            "p50": 736,
+            "p95": 792
+          }
+        }
+      }
+    },
+    {
+      "category": "feature",
+      "profile": "constrained",
+      "size": 1000,
+      "path": "overview \u2192 meetings",
+      "condition": "warm",
+      "variants": {
+        "B": {
+          "clickMs": {
+            "n": 6,
+            "p50": 123.2000000178814,
+            "p95": 138.89999997615814
+          },
+          "networkCompleteMs": {
+            "n": 6,
+            "p50": 103.60009765625,
+            "p95": 109.699951171875
+          },
+          "requestCount": {
+            "n": 6,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 6,
+            "p50": 397,
+            "p95": 397
+          },
+          "scriptMs": {
+            "n": 6,
+            "p50": 14.442000000000288,
+            "p95": 18.181000000000004
+          },
+          "taskMs": {
+            "n": 6,
+            "p50": 56.418000000000305,
+            "p95": 66.12000000000018
+          },
+          "sourcePlusClickMs": {
+            "n": 6,
+            "p50": 4426.899999976158,
+            "p95": 4754.200000017881
+          },
+          "clickScriptBytes": {
+            "n": 6,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 6,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 6,
+            "p50": 90.523,
+            "p95": 96.208
+          },
+          "dataTransferMs": {
+            "n": 6,
+            "p50": 0.39099999999999113,
+            "p95": 0.617999999999995
+          },
+          "sourceUsefulMs": {
+            "n": 6,
+            "p50": 4289,
+            "p95": 4631
+          },
+          "sourceDrainedMs": {
+            "n": 6,
+            "p50": 4787,
+            "p95": 4844
+          },
+          "sourceRequests": {
+            "n": 6,
+            "p50": 60,
+            "p95": 60
+          },
+          "sourceBodyBytes": {
+            "n": 6,
+            "p50": 837546,
+            "p95": 837727
+          },
+          "sourceScriptBytes": {
+            "n": 6,
+            "p50": 543416,
+            "p95": 543416
+          },
+          "sourceScriptRequests": {
+            "n": 6,
+            "p50": 32,
+            "p95": 32
+          },
+          "sourceFontBytes": {
+            "n": 6,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 6,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 6,
+            "p50": 4592.5,
+            "p95": 4598.9000000059605
+          },
+          "sourceCLS": {
+            "n": 6,
+            "p50": 0.001918896122685185,
+            "p95": 0.001918896122685185
+          },
+          "first-paintMs": {
+            "n": 6,
+            "p50": 608,
+            "p95": 636
+          },
+          "first-contentful-paintMs": {
+            "n": 6,
+            "p50": 608,
+            "p95": 636
+          }
+        },
+        "A": {
+          "clickMs": {
+            "n": 6,
+            "p50": 125.90000000596046,
+            "p95": 141.59999999403954
+          },
+          "networkCompleteMs": {
+            "n": 6,
+            "p50": 107.300048828125,
+            "p95": 114.199951171875
+          },
+          "requestCount": {
+            "n": 6,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 6,
+            "p50": 397,
+            "p95": 397
+          },
+          "scriptMs": {
+            "n": 6,
+            "p50": 14.45300000000005,
+            "p95": 17.62099999999989
+          },
+          "taskMs": {
+            "n": 6,
+            "p50": 60.900000000000176,
+            "p95": 68.20499999999984
+          },
+          "sourcePlusClickMs": {
+            "n": 6,
+            "p50": 4083,
+            "p95": 4421
+          },
+          "clickScriptBytes": {
+            "n": 6,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 6,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 6,
+            "p50": 92.866,
+            "p95": 99.127
+          },
+          "dataTransferMs": {
+            "n": 6,
+            "p50": 0.6490000000000009,
+            "p95": 1.1029999999999944
+          },
+          "sourceUsefulMs": {
+            "n": 6,
+            "p50": 3946,
+            "p95": 4295
+          },
+          "sourceDrainedMs": {
+            "n": 6,
+            "p50": 4488,
+            "p95": 4507
+          },
+          "sourceRequests": {
+            "n": 6,
+            "p50": 51,
+            "p95": 51
+          },
+          "sourceBodyBytes": {
+            "n": 6,
+            "p50": 779157,
+            "p95": 779340
+          },
+          "sourceScriptBytes": {
+            "n": 6,
+            "p50": 493676,
+            "p95": 493676
+          },
+          "sourceScriptRequests": {
+            "n": 6,
+            "p50": 29,
+            "p95": 29
+          },
+          "sourceFontBytes": {
+            "n": 6,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 6,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 6,
+            "p50": 4269.100000023842,
+            "p95": 4283.699999988079
+          },
+          "sourceCLS": {
+            "n": 6,
+            "p50": 0.001918896122685185,
+            "p95": 0.001918896122685185
+          },
+          "first-paintMs": {
+            "n": 6,
+            "p50": 736,
+            "p95": 788
+          },
+          "first-contentful-paintMs": {
+            "n": 6,
+            "p50": 736,
+            "p95": 788
+          }
+        }
+      }
+    },
+    {
+      "category": "feature",
+      "profile": "constrained",
+      "size": 1000,
+      "path": "recruiting \u2192 scheduledDecisions",
+      "condition": "cold",
+      "variants": {
+        "B": {
+          "clickMs": {
+            "n": 6,
+            "p50": 149.80000001192093,
+            "p95": 173.80000001192093
+          },
+          "networkCompleteMs": {
+            "n": 6,
+            "p50": 127.699951171875,
+            "p95": 144.699951171875
+          },
+          "requestCount": {
+            "n": 6,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 6,
+            "p50": 86,
+            "p95": 86
+          },
+          "scriptMs": {
+            "n": 6,
+            "p50": 23.732000000000085,
+            "p95": 27.06399999999998
+          },
+          "taskMs": {
+            "n": 6,
+            "p50": 79.77599999999984,
+            "p95": 98.38599999999964
+          },
+          "sourcePlusClickMs": {
+            "n": 6,
+            "p50": 4478.5,
+            "p95": 4806.5
+          },
+          "clickScriptBytes": {
+            "n": 6,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 6,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 6,
+            "p50": 102.536,
+            "p95": 113.39999999999999
+          },
+          "dataTransferMs": {
+            "n": 6,
+            "p50": 0.409000000000006,
+            "p95": 1.115000000000009
+          },
+          "sourceUsefulMs": {
+            "n": 6,
+            "p50": 4320,
+            "p95": 4664
+          },
+          "sourceDrainedMs": {
+            "n": 6,
+            "p50": 4780,
+            "p95": 4796
+          },
+          "sourceRequests": {
+            "n": 6,
+            "p50": 59,
+            "p95": 59
+          },
+          "sourceBodyBytes": {
+            "n": 6,
+            "p50": 837014,
+            "p95": 837217
+          },
+          "sourceScriptBytes": {
+            "n": 6,
+            "p50": 543416,
+            "p95": 543416
+          },
+          "sourceScriptRequests": {
+            "n": 6,
+            "p50": 32,
+            "p95": 32
+          },
+          "sourceFontBytes": {
+            "n": 6,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 6,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 6,
+            "p50": 4583.699999988079,
+            "p95": 4596
+          },
+          "sourceCLS": {
+            "n": 6,
+            "p50": 0.001918896122685185,
+            "p95": 0.001918896122685185
+          },
+          "first-paintMs": {
+            "n": 6,
+            "p50": 576,
+            "p95": 600
+          },
+          "first-contentful-paintMs": {
+            "n": 6,
+            "p50": 576,
+            "p95": 600
+          }
+        },
+        "A": {
+          "clickMs": {
+            "n": 6,
+            "p50": 448.90000000596046,
+            "p95": 468.90000000596046
+          },
+          "networkCompleteMs": {
+            "n": 6,
+            "p50": 421.89990234375,
+            "p95": 438.5
+          },
+          "requestCount": {
+            "n": 6,
+            "p50": 4,
+            "p95": 4
+          },
+          "encodedBodyBytes": {
+            "n": 6,
+            "p50": 8023,
+            "p95": 8023
+          },
+          "scriptMs": {
+            "n": 6,
+            "p50": 34.84900000000013,
+            "p95": 38.51000000000005
+          },
+          "taskMs": {
+            "n": 6,
+            "p50": 140.34900000000005,
+            "p95": 156.8839999999998
+          },
+          "sourcePlusClickMs": {
+            "n": 6,
+            "p50": 4392.9000000059605,
+            "p95": 4768
+          },
+          "clickScriptBytes": {
+            "n": 6,
+            "p50": 7937,
+            "p95": 7937
+          },
+          "clickScriptRequests": {
+            "n": 6,
+            "p50": 3,
+            "p95": 3
+          },
+          "dataTtfbMs": {
+            "n": 6,
+            "p50": 100.62299999999999,
+            "p95": 117.21
+          },
+          "dataTransferMs": {
+            "n": 6,
+            "p50": 0.3640000000000043,
+            "p95": 0.8849999999999909
+          },
+          "sourceUsefulMs": {
+            "n": 6,
+            "p50": 3944,
+            "p95": 4325
+          },
+          "sourceDrainedMs": {
+            "n": 6,
+            "p50": 4462,
+            "p95": 4473
+          },
+          "sourceRequests": {
+            "n": 6,
+            "p50": 50,
+            "p95": 50
+          },
+          "sourceBodyBytes": {
+            "n": 6,
+            "p50": 778625,
+            "p95": 778827
+          },
+          "sourceScriptBytes": {
+            "n": 6,
+            "p50": 493676,
+            "p95": 493676
+          },
+          "sourceScriptRequests": {
+            "n": 6,
+            "p50": 29,
+            "p95": 29
+          },
+          "sourceFontBytes": {
+            "n": 6,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 6,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 6,
+            "p50": 4259.300000011921,
+            "p95": 4266.4000000059605
+          },
+          "sourceCLS": {
+            "n": 6,
+            "p50": 0.001918896122685185,
+            "p95": 0.001918896122685185
+          },
+          "first-paintMs": {
+            "n": 6,
+            "p50": 732,
+            "p95": 772
+          },
+          "first-contentful-paintMs": {
+            "n": 6,
+            "p50": 732,
+            "p95": 772
+          }
+        }
+      }
+    },
+    {
+      "category": "feature",
+      "profile": "constrained",
+      "size": 1000,
+      "path": "recruiting \u2192 scheduledDecisions",
+      "condition": "warm",
+      "variants": {
+        "B": {
+          "clickMs": {
+            "n": 6,
+            "p50": 147.60000002384186,
+            "p95": 153.5
+          },
+          "networkCompleteMs": {
+            "n": 6,
+            "p50": 115,
+            "p95": 128.699951171875
+          },
+          "requestCount": {
+            "n": 6,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 6,
+            "p50": 86,
+            "p95": 86
+          },
+          "scriptMs": {
+            "n": 6,
+            "p50": 14.284999999999881,
+            "p95": 17.020000000000035
+          },
+          "taskMs": {
+            "n": 6,
+            "p50": 48.75699999999972,
+            "p95": 63.87400000000021
+          },
+          "sourcePlusClickMs": {
+            "n": 6,
+            "p50": 4467.4000000059605,
+            "p95": 4887.5
+          },
+          "clickScriptBytes": {
+            "n": 6,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 6,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 6,
+            "p50": 97.089,
+            "p95": 111.617
+          },
+          "dataTransferMs": {
+            "n": 6,
+            "p50": 0.45300000000000296,
+            "p95": 1.1809999999999974
+          },
+          "sourceUsefulMs": {
+            "n": 6,
+            "p50": 4323,
+            "p95": 4734
+          },
+          "sourceDrainedMs": {
+            "n": 6,
+            "p50": 4784,
+            "p95": 4852
+          },
+          "sourceRequests": {
+            "n": 6,
+            "p50": 59,
+            "p95": 59
+          },
+          "sourceBodyBytes": {
+            "n": 6,
+            "p50": 837014,
+            "p95": 837217
+          },
+          "sourceScriptBytes": {
+            "n": 6,
+            "p50": 543416,
+            "p95": 543416
+          },
+          "sourceScriptRequests": {
+            "n": 6,
+            "p50": 32,
+            "p95": 32
+          },
+          "sourceFontBytes": {
+            "n": 6,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 6,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 6,
+            "p50": 4583.799999982119,
+            "p95": 4594.0999999940395
+          },
+          "sourceCLS": {
+            "n": 6,
+            "p50": 0.001918896122685185,
+            "p95": 0.001918896122685185
+          },
+          "first-paintMs": {
+            "n": 6,
+            "p50": 584,
+            "p95": 620
+          },
+          "first-contentful-paintMs": {
+            "n": 6,
+            "p50": 584,
+            "p95": 620
+          }
+        },
+        "A": {
+          "clickMs": {
+            "n": 6,
+            "p50": 142.59999999403954,
+            "p95": 151.39999997615814
+          },
+          "networkCompleteMs": {
+            "n": 6,
+            "p50": 118.699951171875,
+            "p95": 125.7998046875
+          },
+          "requestCount": {
+            "n": 6,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 6,
+            "p50": 86,
+            "p95": 86
+          },
+          "scriptMs": {
+            "n": 6,
+            "p50": 12.787000000000104,
+            "p95": 17.066000000000024
+          },
+          "taskMs": {
+            "n": 6,
+            "p50": 56.82700000000018,
+            "p95": 60.49499999999996
+          },
+          "sourcePlusClickMs": {
+            "n": 6,
+            "p50": 4080,
+            "p95": 4104.399999976158
+          },
+          "clickScriptBytes": {
+            "n": 6,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 6,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 6,
+            "p50": 99.665,
+            "p95": 110.39099999999999
+          },
+          "dataTransferMs": {
+            "n": 6,
+            "p50": 0.3610000000000042,
+            "p95": 1.3020000000000067
+          },
+          "sourceUsefulMs": {
+            "n": 6,
+            "p50": 3937,
+            "p95": 3955
+          },
+          "sourceDrainedMs": {
+            "n": 6,
+            "p50": 4475,
+            "p95": 4477
+          },
+          "sourceRequests": {
+            "n": 6,
+            "p50": 50,
+            "p95": 50
+          },
+          "sourceBodyBytes": {
+            "n": 6,
+            "p50": 778625,
+            "p95": 778625
+          },
+          "sourceScriptBytes": {
+            "n": 6,
+            "p50": 493676,
+            "p95": 493676
+          },
+          "sourceScriptRequests": {
+            "n": 6,
+            "p50": 29,
+            "p95": 29
+          },
+          "sourceFontBytes": {
+            "n": 6,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 6,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 6,
+            "p50": 4261.800000011921,
+            "p95": 4277.4000000059605
+          },
+          "sourceCLS": {
+            "n": 6,
+            "p50": 0.001918896122685185,
+            "p95": 0.001918896122685185
+          },
+          "first-paintMs": {
+            "n": 6,
+            "p50": 736,
+            "p95": 756
+          },
+          "first-contentful-paintMs": {
+            "n": 6,
+            "p50": 736,
+            "p95": 756
+          }
+        }
+      }
+    },
+    {
+      "category": "feature",
+      "profile": "constrained",
+      "size": 1000,
+      "path": "settingsApplication \u2192 rounds",
+      "condition": "cold",
+      "variants": {
+        "B": {
+          "clickMs": {
+            "n": 6,
+            "p50": 304.69999998807907,
+            "p95": 329
+          },
+          "networkCompleteMs": {
+            "n": 6,
+            "p50": 375,
+            "p95": 425.400146484375
+          },
+          "requestCount": {
+            "n": 6,
+            "p50": 4,
+            "p95": 5
+          },
+          "encodedBodyBytes": {
+            "n": 6,
+            "p50": 1338,
+            "p95": 3810
+          },
+          "scriptMs": {
+            "n": 6,
+            "p50": 53.912999999999876,
+            "p95": 60.273000000000025
+          },
+          "taskMs": {
+            "n": 6,
+            "p50": 188.95000000000016,
+            "p95": 204.97500000000014
+          },
+          "sourcePlusClickMs": {
+            "n": 6,
+            "p50": 4577.9000000059605,
+            "p95": 4596.699999988079
+          },
+          "clickScriptBytes": {
+            "n": 6,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 6,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 20,
+            "p50": 95.482,
+            "p95": 112.658
+          },
+          "dataTransferMs": {
+            "n": 20,
+            "p50": 0.7999999999999972,
+            "p95": 10.301000000000002
+          },
+          "sourceUsefulMs": {
+            "n": 6,
+            "p50": 4252,
+            "p95": 4292
+          },
+          "sourceDrainedMs": {
+            "n": 6,
+            "p50": 4865,
+            "p95": 4911
+          },
+          "sourceRequests": {
+            "n": 6,
+            "p50": 62,
+            "p95": 62
+          },
+          "sourceBodyBytes": {
+            "n": 6,
+            "p50": 840490,
+            "p95": 841407
+          },
+          "sourceScriptBytes": {
+            "n": 6,
+            "p50": 547304,
+            "p95": 547304
+          },
+          "sourceScriptRequests": {
+            "n": 6,
+            "p50": 33,
+            "p95": 33
+          },
+          "sourceFontBytes": {
+            "n": 6,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 6,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 6,
+            "p50": 4653,
+            "p95": 4696.699999988079
+          },
+          "sourceCLS": {
+            "n": 6,
+            "p50": 0.0019392441888503083,
+            "p95": 0.002284626736111111
+          },
+          "first-paintMs": {
+            "n": 6,
+            "p50": 612,
+            "p95": 624
+          },
+          "first-contentful-paintMs": {
+            "n": 6,
+            "p50": 612,
+            "p95": 624
+          }
+        },
+        "A": {
+          "clickMs": {
+            "n": 6,
+            "p50": 595.8999999761581,
+            "p95": 611.1999999880791
+          },
+          "networkCompleteMs": {
+            "n": 6,
+            "p50": 682.599853515625,
+            "p95": 702.300048828125
+          },
+          "requestCount": {
+            "n": 6,
+            "p50": 8,
+            "p95": 8
+          },
+          "encodedBodyBytes": {
+            "n": 6,
+            "p50": 10176,
+            "p95": 12463
+          },
+          "scriptMs": {
+            "n": 6,
+            "p50": 74.40499999999983,
+            "p95": 76.80200000000004
+          },
+          "taskMs": {
+            "n": 6,
+            "p50": 240.72700000000015,
+            "p95": 245.17699999999996
+          },
+          "sourcePlusClickMs": {
+            "n": 6,
+            "p50": 4950.899999976158,
+            "p95": 4978.0999999940395
+          },
+          "clickScriptBytes": {
+            "n": 6,
+            "p50": 7804,
+            "p95": 7804
+          },
+          "clickScriptRequests": {
+            "n": 6,
+            "p50": 2,
+            "p95": 2
+          },
+          "dataTtfbMs": {
+            "n": 20,
+            "p50": 98.37299999999999,
+            "p95": 103.369
+          },
+          "dataTransferMs": {
+            "n": 20,
+            "p50": 1.0079999999999956,
+            "p95": 9.132999999999996
+          },
+          "sourceUsefulMs": {
+            "n": 6,
+            "p50": 4355,
+            "p95": 4381
+          },
+          "sourceDrainedMs": {
+            "n": 6,
+            "p50": 4661,
+            "p95": 4704
+          },
+          "sourceRequests": {
+            "n": 6,
+            "p50": 60,
+            "p95": 60
+          },
+          "sourceBodyBytes": {
+            "n": 6,
+            "p50": 804708,
+            "p95": 806016
+          },
+          "sourceScriptBytes": {
+            "n": 6,
+            "p50": 517623,
+            "p95": 517623
+          },
+          "sourceScriptRequests": {
+            "n": 6,
+            "p50": 34,
+            "p95": 34
+          },
+          "sourceFontBytes": {
+            "n": 6,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 6,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 6,
+            "p50": 4417.299999982119,
+            "p95": 4447.800000011921
+          },
+          "sourceCLS": {
+            "n": 6,
+            "p50": 0.001918896122685185,
+            "p95": 0.0021285315393518517
+          },
+          "first-paintMs": {
+            "n": 6,
+            "p50": 736,
+            "p95": 756
+          },
+          "first-contentful-paintMs": {
+            "n": 6,
+            "p50": 736,
+            "p95": 756
+          }
+        }
+      }
+    },
+    {
+      "category": "feature",
+      "profile": "constrained",
+      "size": 1000,
+      "path": "settingsApplication \u2192 rounds",
+      "condition": "warm",
+      "variants": {
+        "B": {
+          "clickMs": {
+            "n": 6,
+            "p50": 281.2999999821186,
+            "p95": 283.19999998807907
+          },
+          "networkCompleteMs": {
+            "n": 6,
+            "p50": 358.900146484375,
+            "p95": 367.300048828125
+          },
+          "requestCount": {
+            "n": 6,
+            "p50": 4,
+            "p95": 4
+          },
+          "encodedBodyBytes": {
+            "n": 6,
+            "p50": 1338,
+            "p95": 3812
+          },
+          "scriptMs": {
+            "n": 6,
+            "p50": 33.506999999999735,
+            "p95": 35.15900000000016
+          },
+          "taskMs": {
+            "n": 6,
+            "p50": 123.29100000000004,
+            "p95": 130.00299999999987
+          },
+          "sourcePlusClickMs": {
+            "n": 6,
+            "p50": 909,
+            "p95": 1180.199999988079
+          },
+          "clickScriptBytes": {
+            "n": 6,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 6,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 20,
+            "p50": 98.152,
+            "p95": 105.372
+          },
+          "dataTransferMs": {
+            "n": 20,
+            "p50": 0.5539999999999878,
+            "p95": 10.25200000000001
+          },
+          "sourceUsefulMs": {
+            "n": 6,
+            "p50": 633,
+            "p95": 897
+          },
+          "sourceDrainedMs": {
+            "n": 6,
+            "p50": 4873,
+            "p95": 4892
+          },
+          "sourceRequests": {
+            "n": 6,
+            "p50": 62,
+            "p95": 62
+          },
+          "sourceBodyBytes": {
+            "n": 6,
+            "p50": 841407,
+            "p95": 841407
+          },
+          "sourceScriptBytes": {
+            "n": 6,
+            "p50": 547304,
+            "p95": 547304
+          },
+          "sourceScriptRequests": {
+            "n": 6,
+            "p50": 33,
+            "p95": 33
+          },
+          "sourceFontBytes": {
+            "n": 6,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 6,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 6,
+            "p50": 4575,
+            "p95": 4630.799999982119
+          },
+          "sourceCLS": {
+            "n": 6,
+            "p50": 1.6447482638888887e-05,
+            "p95": 0.002284626736111111
+          },
+          "first-paintMs": {
+            "n": 6,
+            "p50": 600,
+            "p95": 632
+          },
+          "first-contentful-paintMs": {
+            "n": 6,
+            "p50": 600,
+            "p95": 632
+          }
+        },
+        "A": {
+          "clickMs": {
+            "n": 6,
+            "p50": 279.09999999403954,
+            "p95": 282.69999998807907
+          },
+          "networkCompleteMs": {
+            "n": 6,
+            "p50": 353.5,
+            "p95": 369.39990234375
+          },
+          "requestCount": {
+            "n": 6,
+            "p50": 4,
+            "p95": 4
+          },
+          "encodedBodyBytes": {
+            "n": 6,
+            "p50": 1342,
+            "p95": 3628
+          },
+          "scriptMs": {
+            "n": 6,
+            "p50": 34.49400000000003,
+            "p95": 40.33400000000009
+          },
+          "taskMs": {
+            "n": 6,
+            "p50": 127.29599999999985,
+            "p95": 143.39199999999997
+          },
+          "sourcePlusClickMs": {
+            "n": 6,
+            "p50": 1209.699999988079,
+            "p95": 4637.5999999940395
+          },
+          "clickScriptBytes": {
+            "n": 6,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 6,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 20,
+            "p50": 96.173,
+            "p95": 104.075
+          },
+          "dataTransferMs": {
+            "n": 20,
+            "p50": 0.909000000000006,
+            "p95": 8.89800000000001
+          },
+          "sourceUsefulMs": {
+            "n": 6,
+            "p50": 927,
+            "p95": 4357
+          },
+          "sourceDrainedMs": {
+            "n": 6,
+            "p50": 4683,
+            "p95": 4731
+          },
+          "sourceRequests": {
+            "n": 6,
+            "p50": 60,
+            "p95": 60
+          },
+          "sourceBodyBytes": {
+            "n": 6,
+            "p50": 804708,
+            "p95": 806016
+          },
+          "sourceScriptBytes": {
+            "n": 6,
+            "p50": 517623,
+            "p95": 517623
+          },
+          "sourceScriptRequests": {
+            "n": 6,
+            "p50": 34,
+            "p95": 34
+          },
+          "sourceFontBytes": {
+            "n": 6,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 6,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 6,
+            "p50": 4410.5,
+            "p95": 4420.299999982119
+          },
+          "sourceCLS": {
+            "n": 6,
+            "p50": 0.001918896122685185,
+            "p95": 0.0021285315393518517
+          },
+          "first-paintMs": {
+            "n": 6,
+            "p50": 608,
+            "p95": 752
+          },
+          "first-contentful-paintMs": {
+            "n": 6,
+            "p50": 608,
+            "p95": 752
+          }
+        }
+      }
+    }
+  ],
+  "featureCountsAndTransportFlags": {
+    "local": {
+      "allOutcomes": 0,
+      "measured": 0,
+      "warmups": 0,
+      "failedOutcomes": 0,
+      "pageErrors": 0,
+      "httpErrors": 0,
+      "failedTransports": 0,
+      "pendingSSE": 0,
+      "pendingNonSSE": 0,
+      "interactionOutcomes": 0,
+      "failedInteractions": 0,
+      "interactionPageErrorsIncludingPreparation": 0,
+      "sourcePreparationsWithAdditionalPipelineReads": 0
+    },
+    "constrained": {
+      "allOutcomes": 128,
+      "measured": 96,
+      "warmups": 32,
+      "failedOutcomes": 0,
+      "pageErrors": 0,
+      "httpErrors": 0,
+      "failedTransports": 23,
+      "pendingSSE": 128,
+      "pendingNonSSE": 6,
+      "interactionOutcomes": 0,
+      "failedInteractions": 0,
+      "interactionPageErrorsIncludingPreparation": 0,
+      "sourcePreparationsWithAdditionalPipelineReads": 0
+    }
+  },
+  "pairedWaitAccounting": "sourcePlusClickMs is each row source useful duration plus its later click duration; excludes source bounded-drain time, deliberate warm visit and navigation preparation. It is a derived sum of two loading waits, not an uninterrupted wall-clock or sum of percentiles.",
+  "interactions": [
+    {
+      "profile": "local",
+      "size": 1000,
+      "kind": "next-page",
+      "variants": {
+        "B": {
+          "meaningfulMs": {
+            "n": 10,
+            "p50": 95.90000000596046,
+            "p95": 96.39999997615814
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 7948,
+            "p95": 7948
+          }
+        },
+        "A": {
+          "meaningfulMs": {
+            "n": 10,
+            "p50": 96,
+            "p95": 96.69999998807907
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 7948,
+            "p95": 7948
+          }
+        }
+      }
+    },
+    {
+      "profile": "local",
+      "size": 1000,
+      "kind": "distant-search",
+      "variants": {
+        "B": {
+          "meaningfulMs": {
+            "n": 10,
+            "p50": 61.19999998807907,
+            "p95": 62.10000002384186
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 760,
+            "p95": 760
+          }
+        },
+        "A": {
+          "meaningfulMs": {
+            "n": 10,
+            "p50": 61.29999998211861,
+            "p95": 77.5
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 760,
+            "p95": 760
+          }
+        }
+      }
+    },
+    {
+      "profile": "local",
+      "size": 5000,
+      "kind": "next-page",
+      "variants": {
+        "B": {
+          "meaningfulMs": {
+            "n": 10,
+            "p50": 179.69999998807907,
+            "p95": 196
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 7961,
+            "p95": 7961
+          }
+        },
+        "A": {
+          "meaningfulMs": {
+            "n": 10,
+            "p50": 182.69999998807907,
+            "p95": 196.30000001192093
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 7961,
+            "p95": 7961
+          }
+        }
+      }
+    },
+    {
+      "profile": "local",
+      "size": 5000,
+      "kind": "distant-search",
+      "variants": {
+        "B": {
+          "meaningfulMs": {
+            "n": 10,
+            "p50": 77.59999999403954,
+            "p95": 93.5
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 762,
+            "p95": 762
+          }
+        },
+        "A": {
+          "meaningfulMs": {
+            "n": 10,
+            "p50": 77.5,
+            "p95": 95.09999999403954
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 762,
+            "p95": 762
+          }
+        }
+      }
+    },
+    {
+      "profile": "constrained",
+      "size": 1000,
+      "kind": "next-page",
+      "variants": {
+        "B": {
+          "meaningfulMs": {
+            "n": 10,
+            "p50": 210.40000000596046,
+            "p95": 217.90000000596046
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 7948,
+            "p95": 7948
+          }
+        },
+        "A": {
+          "meaningfulMs": {
+            "n": 10,
+            "p50": 206.09999999403954,
+            "p95": 212.60000002384186
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 7948,
+            "p95": 7948
+          }
+        }
+      }
+    },
+    {
+      "profile": "constrained",
+      "size": 1000,
+      "kind": "distant-search",
+      "variants": {
+        "B": {
+          "meaningfulMs": {
+            "n": 10,
+            "p50": 129.19999998807907,
+            "p95": 136.69999998807907
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 760,
+            "p95": 760
+          }
+        },
+        "A": {
+          "meaningfulMs": {
+            "n": 10,
+            "p50": 125.5,
+            "p95": 134.90000000596046
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 760,
+            "p95": 760
+          }
+        }
+      }
+    },
+    {
+      "profile": "constrained",
+      "size": 5000,
+      "kind": "next-page",
+      "variants": {
+        "B": {
+          "meaningfulMs": {
+            "n": 10,
+            "p50": 266.7999999821186,
+            "p95": 273.80000001192093
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 7961,
+            "p95": 7961
+          }
+        },
+        "A": {
+          "meaningfulMs": {
+            "n": 10,
+            "p50": 267.30000001192093,
+            "p95": 273.09999999403954
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 7961,
+            "p95": 7961
+          }
+        }
+      }
+    },
+    {
+      "profile": "constrained",
+      "size": 5000,
+      "kind": "distant-search",
+      "variants": {
+        "B": {
+          "meaningfulMs": {
+            "n": 10,
+            "p50": 128.40000000596046,
+            "p95": 137.39999997615814
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 762,
+            "p95": 762
+          }
+        },
+        "A": {
+          "meaningfulMs": {
+            "n": 10,
+            "p50": 127.59999999403954,
+            "p95": 134.30000001192093
+          },
+          "requestCount": {
+            "n": 10,
+            "p50": 1,
+            "p95": 1
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 762,
+            "p95": 762
+          }
+        }
+      }
+    }
+  ],
+  "http": [
+    {
+      "size": 1000,
+      "concurrency": 1,
+      "variants": {
+        "B": {
+          "server_identityMs": {
+            "n": 10,
+            "p50": 16.18,
+            "p95": 17.82
+          },
+          "server_databaseMs": {
+            "n": 10,
+            "p50": 24.27,
+            "p95": 25.23
+          },
+          "server_live_sessionMs": {
+            "n": 10,
+            "p50": 0.39,
+            "p95": 0.42
+          },
+          "server_transaction_acquireMs": {
+            "n": 10,
+            "p50": 0.38,
+            "p95": 0.44
+          },
+          "server_transactionMs": {
+            "n": 10,
+            "p50": 25.84,
+            "p95": 26.76
+          },
+          "server_compressionMs": {
+            "n": 10,
+            "p50": 0.2,
+            "p95": 0.21
+          },
+          "server_serializationMs": {
+            "n": 10,
+            "p50": 0.56,
+            "p95": 0.61
+          },
+          "server_totalMs": {
+            "n": 10,
+            "p50": 44.62,
+            "p95": 46.6
+          },
+          "requestMs": {
+            "n": 10,
+            "p50": 46.22845899999999,
+            "p95": 48.521333999999996
+          },
+          "burstMs": {
+            "n": 10,
+            "p50": 46.22820899999999,
+            "p95": 48.52112500000001
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 7241,
+            "p95": 7241
+          }
+        },
+        "A": {
+          "server_identityMs": {
+            "n": 10,
+            "p50": 16.4,
+            "p95": 21.48
+          },
+          "server_databaseMs": {
+            "n": 10,
+            "p50": 23.81,
+            "p95": 25.81
+          },
+          "server_live_sessionMs": {
+            "n": 10,
+            "p50": 0.39,
+            "p95": 0.44
+          },
+          "server_transaction_acquireMs": {
+            "n": 10,
+            "p50": 0.38,
+            "p95": 0.42
+          },
+          "server_transactionMs": {
+            "n": 10,
+            "p50": 25.21,
+            "p95": 27.74
+          },
+          "server_compressionMs": {
+            "n": 10,
+            "p50": 0.2,
+            "p95": 0.37
+          },
+          "server_serializationMs": {
+            "n": 10,
+            "p50": 0.46,
+            "p95": 0.89
+          },
+          "server_totalMs": {
+            "n": 10,
+            "p50": 43.35,
+            "p95": 49.25
+          },
+          "requestMs": {
+            "n": 10,
+            "p50": 45.047500000000014,
+            "p95": 51.19787500000001
+          },
+          "burstMs": {
+            "n": 10,
+            "p50": 45.04716600000003,
+            "p95": 51.19749999999999
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 7241,
+            "p95": 7241
+          }
+        }
+      }
+    },
+    {
+      "size": 1000,
+      "concurrency": 2,
+      "variants": {
+        "B": {
+          "server_identityMs": {
+            "n": 20,
+            "p50": 18.05,
+            "p95": 21.05
+          },
+          "server_databaseMs": {
+            "n": 20,
+            "p50": 26.22,
+            "p95": 27.56
+          },
+          "server_live_sessionMs": {
+            "n": 20,
+            "p50": 0.51,
+            "p95": 0.79
+          },
+          "server_transaction_acquireMs": {
+            "n": 20,
+            "p50": 0.38,
+            "p95": 0.51
+          },
+          "server_transactionMs": {
+            "n": 20,
+            "p50": 27.65,
+            "p95": 28.95
+          },
+          "server_compressionMs": {
+            "n": 20,
+            "p50": 0.19,
+            "p95": 0.41
+          },
+          "server_serializationMs": {
+            "n": 20,
+            "p50": 0.41,
+            "p95": 0.62
+          },
+          "server_totalMs": {
+            "n": 20,
+            "p50": 48.13,
+            "p95": 52.11
+          },
+          "requestMs": {
+            "n": 20,
+            "p50": 49.70324999999997,
+            "p95": 53.518958
+          },
+          "burstMs": {
+            "n": 10,
+            "p50": 49.93624999999997,
+            "p95": 56.58104100000003
+          },
+          "encodedBodyBytes": {
+            "n": 20,
+            "p50": 7241,
+            "p95": 7241
+          }
+        },
+        "A": {
+          "server_identityMs": {
+            "n": 20,
+            "p50": 17.31,
+            "p95": 25.37
+          },
+          "server_databaseMs": {
+            "n": 20,
+            "p50": 26.13,
+            "p95": 28.72
+          },
+          "server_live_sessionMs": {
+            "n": 20,
+            "p50": 0.49,
+            "p95": 1.47
+          },
+          "server_transaction_acquireMs": {
+            "n": 20,
+            "p50": 0.39,
+            "p95": 0.54
+          },
+          "server_transactionMs": {
+            "n": 20,
+            "p50": 27.63,
+            "p95": 29.86
+          },
+          "server_compressionMs": {
+            "n": 20,
+            "p50": 0.2,
+            "p95": 0.45
+          },
+          "server_serializationMs": {
+            "n": 20,
+            "p50": 0.42,
+            "p95": 0.62
+          },
+          "server_totalMs": {
+            "n": 20,
+            "p50": 47.61,
+            "p95": 53.6
+          },
+          "requestMs": {
+            "n": 20,
+            "p50": 49.04124999999999,
+            "p95": 55.05220800000001
+          },
+          "burstMs": {
+            "n": 10,
+            "p50": 50.929958000000056,
+            "p95": 57.99083300000001
+          },
+          "encodedBodyBytes": {
+            "n": 20,
+            "p50": 7241,
+            "p95": 7241
+          }
+        }
+      }
+    },
+    {
+      "size": 1000,
+      "concurrency": 4,
+      "variants": {
+        "B": {
+          "server_identityMs": {
+            "n": 40,
+            "p50": 24.09,
+            "p95": 28.48
+          },
+          "server_databaseMs": {
+            "n": 40,
+            "p50": 26.65,
+            "p95": 36.96
+          },
+          "server_live_sessionMs": {
+            "n": 40,
+            "p50": 0.51,
+            "p95": 1.05
+          },
+          "server_transaction_acquireMs": {
+            "n": 40,
+            "p50": 0.64,
+            "p95": 1.25
+          },
+          "server_transactionMs": {
+            "n": 40,
+            "p50": 27.66,
+            "p95": 36.74
+          },
+          "server_compressionMs": {
+            "n": 40,
+            "p50": 0.17,
+            "p95": 0.58
+          },
+          "server_serializationMs": {
+            "n": 40,
+            "p50": 0.39,
+            "p95": 0.86
+          },
+          "server_totalMs": {
+            "n": 40,
+            "p50": 52.24,
+            "p95": 68.07
+          },
+          "requestMs": {
+            "n": 40,
+            "p50": 54.01529199999993,
+            "p95": 69.575875
+          },
+          "burstMs": {
+            "n": 10,
+            "p50": 60.62458300000003,
+            "p95": 76.44716700000004
+          },
+          "encodedBodyBytes": {
+            "n": 40,
+            "p50": 7241,
+            "p95": 7241
+          }
+        },
+        "A": {
+          "server_identityMs": {
+            "n": 40,
+            "p50": 23.25,
+            "p95": 30.04
+          },
+          "server_databaseMs": {
+            "n": 40,
+            "p50": 27.77,
+            "p95": 33.78
+          },
+          "server_live_sessionMs": {
+            "n": 40,
+            "p50": 0.55,
+            "p95": 0.87
+          },
+          "server_transaction_acquireMs": {
+            "n": 40,
+            "p50": 0.61,
+            "p95": 1.21
+          },
+          "server_transactionMs": {
+            "n": 40,
+            "p50": 28.23,
+            "p95": 35.3
+          },
+          "server_compressionMs": {
+            "n": 40,
+            "p50": 0.18,
+            "p95": 0.49
+          },
+          "server_serializationMs": {
+            "n": 40,
+            "p50": 0.38,
+            "p95": 0.81
+          },
+          "server_totalMs": {
+            "n": 40,
+            "p50": 53.69,
+            "p95": 67.23
+          },
+          "requestMs": {
+            "n": 40,
+            "p50": 56.49037499999997,
+            "p95": 69.27679200000011
+          },
+          "burstMs": {
+            "n": 10,
+            "p50": 60.852207999999905,
+            "p95": 71.27891700000009
+          },
+          "encodedBodyBytes": {
+            "n": 40,
+            "p50": 7241,
+            "p95": 7241
+          }
+        }
+      }
+    },
+    {
+      "size": 5000,
+      "concurrency": 1,
+      "variants": {
+        "B": {
+          "server_identityMs": {
+            "n": 10,
+            "p50": 16.71,
+            "p95": 17.63
+          },
+          "server_databaseMs": {
+            "n": 10,
+            "p50": 103.31,
+            "p95": 120.36
+          },
+          "server_live_sessionMs": {
+            "n": 10,
+            "p50": 0.4,
+            "p95": 0.44
+          },
+          "server_transaction_acquireMs": {
+            "n": 10,
+            "p50": 0.39,
+            "p95": 0.5
+          },
+          "server_transactionMs": {
+            "n": 10,
+            "p50": 113.6,
+            "p95": 139.66
+          },
+          "server_compressionMs": {
+            "n": 10,
+            "p50": 0.2,
+            "p95": 0.36
+          },
+          "server_serializationMs": {
+            "n": 10,
+            "p50": 0.6,
+            "p95": 0.99
+          },
+          "server_totalMs": {
+            "n": 10,
+            "p50": 132.88,
+            "p95": 159.27
+          },
+          "requestMs": {
+            "n": 10,
+            "p50": 134.85137499999996,
+            "p95": 161.697583
+          },
+          "burstMs": {
+            "n": 10,
+            "p50": 134.85116699999992,
+            "p95": 161.69729199999995
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 7229,
+            "p95": 7229
+          }
+        },
+        "A": {
+          "server_identityMs": {
+            "n": 10,
+            "p50": 17.11,
+            "p95": 19.31
+          },
+          "server_databaseMs": {
+            "n": 10,
+            "p50": 104.07,
+            "p95": 108.69
+          },
+          "server_live_sessionMs": {
+            "n": 10,
+            "p50": 0.42,
+            "p95": 0.58
+          },
+          "server_transaction_acquireMs": {
+            "n": 10,
+            "p50": 0.4,
+            "p95": 0.46
+          },
+          "server_transactionMs": {
+            "n": 10,
+            "p50": 113.53,
+            "p95": 118.61
+          },
+          "server_compressionMs": {
+            "n": 10,
+            "p50": 0.21,
+            "p95": 0.38
+          },
+          "server_serializationMs": {
+            "n": 10,
+            "p50": 0.6,
+            "p95": 1.28
+          },
+          "server_totalMs": {
+            "n": 10,
+            "p50": 134.9,
+            "p95": 139.31
+          },
+          "requestMs": {
+            "n": 10,
+            "p50": 136.53170899999998,
+            "p95": 141.80720899999994
+          },
+          "burstMs": {
+            "n": 10,
+            "p50": 136.53141700000003,
+            "p95": 141.80674999999997
+          },
+          "encodedBodyBytes": {
+            "n": 10,
+            "p50": 7229,
+            "p95": 7229
+          }
+        }
+      }
+    },
+    {
+      "size": 5000,
+      "concurrency": 2,
+      "variants": {
+        "B": {
+          "server_identityMs": {
+            "n": 20,
+            "p50": 19.57,
+            "p95": 29.31
+          },
+          "server_databaseMs": {
+            "n": 20,
+            "p50": 116.87,
+            "p95": 160.94
+          },
+          "server_live_sessionMs": {
+            "n": 20,
+            "p50": 0.47,
+            "p95": 0.9
+          },
+          "server_transaction_acquireMs": {
+            "n": 20,
+            "p50": 0.4,
+            "p95": 0.76
+          },
+          "server_transactionMs": {
+            "n": 20,
+            "p50": 124.32,
+            "p95": 185.68
+          },
+          "server_compressionMs": {
+            "n": 20,
+            "p50": 0.19,
+            "p95": 0.22
+          },
+          "server_serializationMs": {
+            "n": 20,
+            "p50": 0.43,
+            "p95": 0.48
+          },
+          "server_totalMs": {
+            "n": 20,
+            "p50": 149.35,
+            "p95": 208.27
+          },
+          "requestMs": {
+            "n": 20,
+            "p50": 150.85908399999994,
+            "p95": 211.33629100000007
+          },
+          "burstMs": {
+            "n": 10,
+            "p50": 155.49337500000001,
+            "p95": 229.9451250000002
+          },
+          "encodedBodyBytes": {
+            "n": 20,
+            "p50": 7229,
+            "p95": 7229
+          }
+        },
+        "A": {
+          "server_identityMs": {
+            "n": 20,
+            "p50": 19.31,
+            "p95": 33.01
+          },
+          "server_databaseMs": {
+            "n": 20,
+            "p50": 121.06,
+            "p95": 197.46
+          },
+          "server_live_sessionMs": {
+            "n": 20,
+            "p50": 0.46,
+            "p95": 0.8
+          },
+          "server_transaction_acquireMs": {
+            "n": 20,
+            "p50": 0.39,
+            "p95": 0.81
+          },
+          "server_transactionMs": {
+            "n": 20,
+            "p50": 129.26,
+            "p95": 206.15
+          },
+          "server_compressionMs": {
+            "n": 20,
+            "p50": 0.2,
+            "p95": 1.78
+          },
+          "server_serializationMs": {
+            "n": 20,
+            "p50": 0.44,
+            "p95": 2.03
+          },
+          "server_totalMs": {
+            "n": 20,
+            "p50": 150.99,
+            "p95": 229.2
+          },
+          "requestMs": {
+            "n": 20,
+            "p50": 153.2404160000001,
+            "p95": 230.65041599999995
+          },
+          "burstMs": {
+            "n": 10,
+            "p50": 154.03362500000003,
+            "p95": 241.86758299999997
+          },
+          "encodedBodyBytes": {
+            "n": 20,
+            "p50": 7229,
+            "p95": 7229
+          }
+        }
+      }
+    },
+    {
+      "size": 5000,
+      "concurrency": 4,
+      "variants": {
+        "B": {
+          "server_identityMs": {
+            "n": 40,
+            "p50": 25.17,
+            "p95": 30.09
+          },
+          "server_databaseMs": {
+            "n": 40,
+            "p50": 136.83,
+            "p95": 152.16
+          },
+          "server_live_sessionMs": {
+            "n": 40,
+            "p50": 0.46,
+            "p95": 0.71
+          },
+          "server_transaction_acquireMs": {
+            "n": 40,
+            "p50": 0.54,
+            "p95": 0.88
+          },
+          "server_transactionMs": {
+            "n": 40,
+            "p50": 144.74,
+            "p95": 159.75
+          },
+          "server_compressionMs": {
+            "n": 40,
+            "p50": 0.19,
+            "p95": 0.33
+          },
+          "server_serializationMs": {
+            "n": 40,
+            "p50": 0.48,
+            "p95": 0.82
+          },
+          "server_totalMs": {
+            "n": 40,
+            "p50": 172.44,
+            "p95": 190.98
+          },
+          "requestMs": {
+            "n": 40,
+            "p50": 175.66470800000025,
+            "p95": 194.44529199999988
+          },
+          "burstMs": {
+            "n": 10,
+            "p50": 188.18620800000008,
+            "p95": 201.10891700000002
+          },
+          "encodedBodyBytes": {
+            "n": 40,
+            "p50": 7229,
+            "p95": 7229
+          }
+        },
+        "A": {
+          "server_identityMs": {
+            "n": 40,
+            "p50": 25.52,
+            "p95": 41.17
+          },
+          "server_databaseMs": {
+            "n": 40,
+            "p50": 140.42,
+            "p95": 161.76
+          },
+          "server_live_sessionMs": {
+            "n": 40,
+            "p50": 0.52,
+            "p95": 0.9
+          },
+          "server_transaction_acquireMs": {
+            "n": 40,
+            "p50": 0.59,
+            "p95": 1.02
+          },
+          "server_transactionMs": {
+            "n": 40,
+            "p50": 147.96,
+            "p95": 170.94
+          },
+          "server_compressionMs": {
+            "n": 40,
+            "p50": 0.21,
+            "p95": 0.33
+          },
+          "server_serializationMs": {
+            "n": 40,
+            "p50": 0.47,
+            "p95": 0.77
+          },
+          "server_totalMs": {
+            "n": 40,
+            "p50": 182.27,
+            "p95": 203.04
+          },
+          "requestMs": {
+            "n": 40,
+            "p50": 184.363875,
+            "p95": 207.38458300000002
+          },
+          "burstMs": {
+            "n": 10,
+            "p50": 201.30233399999997,
+            "p95": 214.1057079999996
+          },
+          "encodedBodyBytes": {
+            "n": 40,
+            "p50": 7229,
+            "p95": 7229
+          }
+        }
+      }
+    }
+  ],
+  "countsAndTransportFlags": {
+    "local": {
+      "allOutcomes": 192,
+      "measured": 160,
+      "warmups": 32,
+      "failedOutcomes": 0,
+      "pageErrors": 0,
+      "httpErrors": 0,
+      "failedTransports": 11,
+      "pendingSSE": 192,
+      "pendingNonSSE": 0,
+      "interactionOutcomes": 96,
+      "failedInteractions": 0,
+      "interactionPageErrorsIncludingPreparation": 0,
+      "sourcePreparationsWithAdditionalPipelineReads": 0
+    },
+    "constrained": {
+      "allOutcomes": 192,
+      "measured": 160,
+      "warmups": 32,
+      "failedOutcomes": 0,
+      "pageErrors": 0,
+      "httpErrors": 0,
+      "failedTransports": 0,
+      "pendingSSE": 192,
+      "pendingNonSSE": 112,
+      "interactionOutcomes": 96,
+      "failedInteractions": 0,
+      "interactionPageErrorsIncludingPreparation": 0,
+      "sourcePreparationsWithAdditionalPipelineReads": 43
+    }
+  },
+  "httpOutcomes": 336,
+  "httpFailed": 0,
+  "httpAllPrivateNoStoreAndCookieSensitive": true,
+  "poolObservations": [
+    {
+      "profile": "constrained",
+      "size": 1000,
+      "variant": "B",
+      "file": "size-1000-pair-1-1-B-concurrency.json",
+      "samples": 37,
+      "maxima": {
+        "connections": 9,
+        "active": 3,
+        "idle_in_transaction": 3,
+        "lock_waiting": 0
+      }
+    },
+    {
+      "profile": "constrained",
+      "size": 1000,
+      "variant": "A",
+      "file": "size-1000-pair-1-2-A-concurrency.json",
+      "samples": 37,
+      "maxima": {
+        "connections": 9,
+        "active": 3,
+        "idle_in_transaction": 3,
+        "lock_waiting": 0
+      }
+    },
+    {
+      "profile": "constrained",
+      "size": 1000,
+      "variant": "A",
+      "file": "size-1000-pair-2-1-A-concurrency.json",
+      "samples": 34,
+      "maxima": {
+        "connections": 9,
+        "active": 3,
+        "idle_in_transaction": 2,
+        "lock_waiting": 0
+      }
+    },
+    {
+      "profile": "constrained",
+      "size": 1000,
+      "variant": "B",
+      "file": "size-1000-pair-2-2-B-concurrency.json",
+      "samples": 36,
+      "maxima": {
+        "connections": 9,
+        "active": 3,
+        "idle_in_transaction": 3,
+        "lock_waiting": 0
+      }
+    },
+    {
+      "profile": "constrained",
+      "size": 5000,
+      "variant": "B",
+      "file": "size-5000-pair-1-1-B-concurrency.json",
+      "samples": 107,
+      "maxima": {
+        "connections": 9,
+        "active": 4,
+        "idle_in_transaction": 4,
+        "lock_waiting": 0
+      }
+    },
+    {
+      "profile": "constrained",
+      "size": 5000,
+      "variant": "A",
+      "file": "size-5000-pair-1-2-A-concurrency.json",
+      "samples": 111,
+      "maxima": {
+        "connections": 9,
+        "active": 4,
+        "idle_in_transaction": 4,
+        "lock_waiting": 0
+      }
+    },
+    {
+      "profile": "constrained",
+      "size": 5000,
+      "variant": "A",
+      "file": "size-5000-pair-2-1-A-concurrency.json",
+      "samples": 110,
+      "maxima": {
+        "connections": 9,
+        "active": 4,
+        "idle_in_transaction": 4,
+        "lock_waiting": 0
+      }
+    },
+    {
+      "profile": "constrained",
+      "size": 5000,
+      "variant": "B",
+      "file": "size-5000-pair-2-2-B-concurrency.json",
+      "samples": 109,
+      "maxima": {
+        "connections": 9,
+        "active": 4,
+        "idle_in_transaction": 4,
+        "lock_waiting": 0
+      }
+    }
+  ]
+}

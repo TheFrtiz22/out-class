@@ -1,0 +1,33 @@
+✔ approved assets preserve full viewBoxes and filled external vector groups (5.45425ms)
+✔ decorative rendering is silent, unfocusable and references both exact asset groups (7.448291ms)
+✔ page headers preserve titles and actions without decorative artwork (2.102875ms)
+✔ Settings keeps settings navigation identity and URLs (80.275917ms)
+✔ standalone brand artwork keeps original colors and reduced-motion support without header layout rules (0.292959ms)
+✔ approved SVG bytes remain unchanged (1.797667ms)
+✔ effective settings/art: owner Appearance (0.093959ms)
+✔ effective settings/art: profile capability Appearance (0.060917ms)
+✔ effective settings/art: application-only inaccessible General (0.040584ms)
+✔ effective settings/art: members-only inaccessible General (0.0695ms)
+✔ effective settings/art: interviews-only inaccessible General (0.031542ms)
+✔ effective settings/art: direct operational tab (0.022042ms)
+✔ effective settings/art: inaccessible operational request falls back to Appearance (0.021667ms)
+✔ effective settings/art: inaccessible operational request falls back to permitted operational tab (0.020083ms)
+✔ effective settings/art: unknown requested tab follows permitted Appearance fallback (0.055292ms)
+✔ effective settings/art: default limited-permission tab (0.018208ms)
+✔ effective settings/art: no permitted settings (0.016375ms)
+✔ effective settings/art: revoked membership (0.015834ms)
+✖ tests/campus-illustrations.test.cjs (59518.9385ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 18
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 59523.288167
+
+✖ failing tests:
+
+test at tests/campus-illustrations.test.cjs:1:1
+✖ tests/campus-illustrations.test.cjs (59518.9385ms)
+  'test failed'

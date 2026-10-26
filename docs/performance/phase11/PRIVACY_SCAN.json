@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "knownFixtureValuesConsidered": 37,
+  "credentialAndActorClubValuesChecked": 35,
+  "permittedPublicLocalServiceLocators": 2,
+  "locatorExplanation": "Only the reserved local project name and loopback app origin are permitted in lifecycle code/provision logs; neither is a credential or actor/club identity. All credential/actor/club values remain checked.",
+  "matchedFiles": [],
+  "includes": "Private config/fixture JSON credential, URL, email and actor/club identity values; sensitive values not exported. Raw response bodies are not recorded by the harness.",
+  "logNormalizationFiles": 0,
+  "finalCandidateSourceFilesVerified": 913
+}

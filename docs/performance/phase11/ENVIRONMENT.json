@@ -1,0 +1,47 @@
+{
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "node": "v26.9.0",
+  "next": "15.5.27",
+  "react": "19.2.0",
+  "prisma": "6.19.3",
+  "supabaseCli": "2.119.0",
+  "appPort": 3107,
+  "localSupabasePorts": [
+    55321,
+    55322,
+    55324,
+    55325
+  ],
+  "poolLimitPerClient": 8,
+  "temporaryPowerAssertion": "caffeinate -dimsu during accepted runs; no persistent settings",
+  "networkProfile": {
+    "latencyMs": 80,
+    "downBytesPerSecond": 200000,
+    "upBytesPerSecond": 93750,
+    "cpuSlowdown": 4
+  },
+  "fonts": {
+    "app/fonts/libre-caslon-text/libre-caslon-text-italic-variable.woff2": {
+      "bytes": 62892,
+      "sha256": "5e38560b144a9b8a092e125d08b405887ac425b2915f8c3338d96fc602a5602a"
+    },
+    "app/fonts/libre-caslon-text/libre-caslon-text-variable.woff2": {
+      "bytes": 57596,
+      "sha256": "5a828f4790661d83c653f40022afeb290e8a2aa91b7d469f67d51b3d7e2d49f3"
+    },
+    "app/fonts/source-sans-3/source-sans-3-upright.woff2": {
+      "bytes": 170188,
+      "sha256": "5f16566f7a40d39b339ad26be151fa5a1ab1f0c2574c7a2e619765584a1acbd8"
+    },
+    "app/fonts/source-sans-3/source-sans-3-italic.woff2": {
+      "bytes": 137996,
+      "sha256": "b4959abc0569392f87c6c6ac612f90e3fe0104d283724189b7d8b6f61af347d3"
+    }
+  },
+  "sourceDefinition": "Fresh browser source navigation precedes timed click. Cold/warm label describes destination visit, not a cached initial document. No readiness predicates were changed.",
+  "publication": "Local only; no production infrastructure, env, schema, index, dependencies or security policy changed.",
+  "applicationChange": "Five guarded feature component imports use next/dynamic with existing WorkspaceLoading fallback and default SSR; other 912 application files unchanged.",
+  "fontsRetainedFromPhase10": true,
+  "deferredFeatureCostProfile": "1000 applicants, constrained only; n6 per build/path/condition.",
+  "playwright": "1.64.0"
+}

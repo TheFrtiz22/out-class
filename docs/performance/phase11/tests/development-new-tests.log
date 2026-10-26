@@ -1,0 +1,98 @@
+✖ built startup omits inactive feature chunks and real selected screens remain usable (33936.88925ms)
+✔ late settings code cannot reopen an abandoned tab and later selection still works (1598.981917ms)
+✔ logout during a pending settings chunk fences protected UI and revokes subsequent reads (1883.46725ms)
+✔ a deferred settings profile restores its durable draft after leaving and reloading without publishing (32448.452583ms)
+✖ member-only direct Meetings entry loads the deferred legacy reader without management controls (34.390667ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 3
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 70135.499459
+
+✖ failing tests:
+
+test at tests/navigation-phase11-e2e.test.cjs:11:1
+✖ built startup omits inactive feature chunks and real selected screens remain usable (33936.88925ms)
+  locator.click: Timeout 30000ms exceeded.
+  Call log:
+    - waiting for getByRole('navigation', { name: 'Settings sections', exact: true }).getByRole('link', { name: 'Recruitment & Applications', exact: true })
+      - locator resolved to <a href="/club/[fixture-id]/workspace?section=settings&setting=application">Recruitment & Applications</a>
+    - attempting click action
+      2 × waiting for element to be visible, enabled and stable
+        - element is not stable
+      - retrying click action
+      - waiting 20ms
+      - waiting for element to be visible, enabled and stable
+      - element is not stable
+    2 × retrying click action
+        - waiting 100ms
+        - waiting for element to be visible, enabled and stable
+        - element is visible, enabled and stable
+        - scrolling into view if needed
+        - done scrolling
+        - <nav aria-label="Workspace">…</nav> from <aside data-dock-expanded="true" aria-label="Workspace dock" class="oc-expanding-dock hidden lg:block">…</aside> subtree intercepts pointer events
+    14 × retrying click action
+         - waiting 500ms
+         - waiting for element to be visible, enabled and stable
+         - element is visible, enabled and stable
+         - scrolling into view if needed
+         - done scrolling
+         - <a data-dock-item="true" data-magnify="neighbor" data-tour="nav-announcements" href="/club/[fixture-id]/workspace?section=announcements" class="flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-ring w-full text-left border-transparent text-muted-foreground hover:bg-muted hover:text-foreground">…</a> from <aside data-dock-expanded="true" aria-label="Workspace dock" class="oc-expanding-dock hidden lg:block">…</aside> subtree intercepts pointer events
+       - retrying click action
+         - waiting 500ms
+         - waiting for element to be visible, enabled and stable
+         - element is visible, enabled and stable
+         - scrolling into view if needed
+         - done scrolling
+         - <a data-dock-item="true" data-magnify="neighbor" data-tour="nav-announcements" href="/club/[fixture-id]/workspace?section=announcements" class="flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-ring w-full text-left border-transparent text-muted-foreground hover:bg-muted hover:text-foreground">…</a> from <aside data-dock-expanded="true" aria-label="Workspace dock" class="oc-expanding-dock hidden lg:block">…</aside> subtree intercepts pointer events
+       - retrying click action
+         - waiting 500ms
+         - waiting for element to be visible, enabled and stable
+         - element is visible, enabled and stable
+         - scrolling into view if needed
+         - done scrolling
+         - <nav aria-label="Workspace">…</nav> from <aside data-dock-expanded="true" aria-label="Workspace dock" class="oc-expanding-dock hidden lg:block">…</aside> subtree intercepts pointer events
+       - retrying click action
+         - waiting 500ms
+         - waiting for element to be visible, enabled and stable
+         - element is visible, enabled and stable
+         - scrolling into view if needed
+         - done scrolling
+         - <nav aria-label="Workspace">…</nav> from <aside data-dock-expanded="true" aria-label="Workspace dock" class="oc-expanding-dock hidden lg:block">…</aside> subtree intercepts pointer events
+    - retrying click action
+      - waiting 500ms
+      - waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <a data-dock-item="true" data-magnify="neighbor" data-tour="nav-announcements" href="/club/[fixture-id]/workspace?section=announcements" class="flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-ring w-full text-left border-transparent text-muted-foreground hover:bg-muted hover:text-foreground">…</a> from <aside data-dock-expanded="true" aria-label="Workspace dock" class="oc-expanding-dock hidden lg:block">…</aside> subtree intercepts pointer events
+    - retrying click action
+      - waiting 500ms
+
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/navigation-phase11-e2e.test.cjs:18:209) {
+    name: 'TimeoutError',
+    log: [ "  - waiting for getByRole('navigation', { name: 'Settings sections', exact: true }).getByRole('link', { name: 'Recruitment & Applications', exact: true })", '    - locator resolved to <a href="/club/[fixture-id]/workspace?section=settings&setting=application">Recruitment & Applications</a>', '  - attempting click action', '    2 × waiting for element to be visible, enabled and stable', '      - element is not stable', '    - retrying click action', '    - waiting 20ms', '    - waiting for element to be visible, enabled and stable', '    - element is not stable', '  2 × retrying click action', '      - waiting 100ms', '      - waiting for element to be visible, enabled and stable', '      - element is visible, enabled and stable', '      - scrolling into view if needed', '      - done scrolling', '      - <nav aria-label="Workspace">…</nav> from <aside data-dock-expanded="true" aria-label="Workspace dock" class="oc-expanding-dock hidden lg:block">…</aside> subtree intercepts pointer events', '  14 × retrying click action', '       - waiting 500ms', '       - waiting for element to be visible, enabled and stable', '       - element is visible, enabled and stable', '       - scrolling into view if needed', '       - done scrolling', '       - <a data-dock-item="true" data-magnify="neighbor" data-tour="nav-announcements" href="/club/[fixture-id]/workspace?section=announcements" class="flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-ring w-full text-left border-transparent text-muted-foreground hover:bg-muted hover:text-foreground">…</a> from <aside data-dock-expanded="true" aria-label="Workspace dock" class="oc-expanding-dock hidden lg:block">…</aside> subtree intercepts pointer events', '     - retrying click action', '       - waiting 500ms', '       - waiting for element to be visible, enabled and stable', '       - element is visible, enabled and stable', '       - scrolling into view if needed', '       - done scrolling', '       - <a data-dock-item="true" data-magnify="neighbor" data-tour="nav-announcements" href="/club/[fixture-id]/workspace?section=announcements" class="flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-ring w-full text-left border-transparent text-muted-foreground hover:bg-muted hover:text-foreground">…</a> from <aside data-dock-expanded="true" aria-label="Workspace dock" class="oc-expanding-dock hidden lg:block">…</aside> subtree intercepts pointer events', '     - retrying click action', '       - waiting 500ms', '       - waiting for element to be visible, enabled and stable', '       - element is visible, enabled and stable', '       - scrolling into view if needed', '       - done scrolling', '       - <nav aria-label="Workspace">…</nav> from <aside data-dock-expanded="true" aria-label="Workspace dock" class="oc-expanding-dock hidden lg:block">…</aside> subtree intercepts pointer events', '     - retrying click action', '       - waiting 500ms', '       - waiting for element to be visible, enabled and stable', '       - element is visible, enabled and stable', '       - scrolling into view if needed', '       - done scrolling', '       - <nav aria-label="Workspace">…</nav> from <aside data-dock-expanded="true" aria-label="Workspace dock" class="oc-expanding-dock hidden lg:block">…</aside> subtree intercepts pointer events', '  - retrying click action', '    - waiting 500ms', '    - waiting for element to be visible, enabled and stable', '    - element is visible, enabled and stable', '    - scrolling into view if needed', '    - done scrolling', '    - <a data-dock-item="true" data-magnify="neighbor" data-tour="nav-announcements" href="/club/[fixture-id]/workspace?section=announcements" class="flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-ring w-full text-left border-transparent text-muted-foreground hover:bg-muted hover:text-foreground">…</a> from <aside data-dock-expanded="true" aria-label="Workspace dock" class="oc-expanding-dock hidden lg:block">…</aside> subtree intercepts pointer events', '  - retrying click action', '    - waiting 500ms' ]
+  }
+
+test at tests/navigation-phase11-e2e.test.cjs:36:1
+✖ member-only direct Meetings entry loads the deferred legacy reader without management controls (34.390667ms)
+  PrismaClientUnknownRequestError:
+  Invalid `db.clubMember.update()` invocation in
+  /Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/navigation-phase11-e2e.test.cjs:38:26
+
+    35
+    36 test('member-only direct Meetings entry loads the deferred legacy reader without management controls',{skip:!configFile,timeout:90000},async()=>{
+    37  const config=readConfig(configFile),fixture=JSON.parse(fs.readFileSync(path.join(path.dirname(configFile),'navigation-fixture.json'))),db=new PrismaClient({datasourceUrl:config.status.DB_URL}),clubId=fixture.clubIds[1],member=await db.clubMember.findUniqueOrThrow({where:{userId_clubId:{userId:fixture.userId,clubId}}});let s;
+  → 38  try{await db.clubMember.update(
+  Error occurred during query execution:
+  ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Assign another active owner first", severity: "ERROR", detail: None, column: None, hint: None }), transient: false })
+      at ei.handleRequestError (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client/runtime/library.js:121:7458)
+      at ei.handleAndLogRequestError (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client/runtime/library.js:121:6593)
+      at ei.request (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client/runtime/library.js:121:6300)
+      at async a (/Users/jesseklinger/Documents/out-class/node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client/runtime/library.js:130:9551)
+      at async TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/navigation-phase11-e2e.test.cjs:38:6)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)

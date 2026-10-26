@@ -1,0 +1,14 @@
+Feature acceptance: settings
+Feature acceptance: meetings
+Feature acceptance: scheduled decisions
+Feature acceptance: review settings
+✔ built startup omits inactive feature chunks and real selected screens remain usable (4738.563958ms)
+✔ member-only direct Meetings entry loads the deferred legacy reader without management controls (1187.085417ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6156.24975

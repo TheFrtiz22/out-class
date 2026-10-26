@@ -1,0 +1,212 @@
+6fe707da3c4289bfd85f3c50b2eabc1ea04ea4c6e3470926212bd4b82fa45a47
+a4d5c189489b7e55b46ac7ffea92ceb6cfec2dd380a5bbfa256b20c0000094af
+CREATE ROLE
+CREATE ROLE
+CREATE ROLE
+CREATE SCHEMA
+CREATE TABLE
+GRANT
+GRANT
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": PostgreSQL database "outclass_security_test", schema "public" at "127.0.0.1:58454"
+
+57 migrations found in prisma/migrations
+
+Applying migration `20260923000000_baseline`
+Applying migration `20260923010000_capabilities`
+Applying migration `20260924000000_club_claims`
+Applying migration `20260924010000_anonymous_review_tests`
+Applying migration `20260924020000_interview_kits`
+Applying migration `20260924030000_meetings`
+Applying migration `20260924040000_member_tasks`
+Applying migration `20260925000000_platform_view_sessions`
+Applying migration `20260925010000_marketing_participants`
+Applying migration `20260927000000_recruiting_rules`
+Applying migration `20260928000000_private_resume_storage`
+Applying migration `20260929000000_club_marketing`
+Applying migration `20260930000000_interview_rooms`
+Applying migration `20261001000000_support_impersonation_tutorials`
+Applying migration `20261001010000_club_onboarding`
+Applying migration `20261002000000_organization_invitation_emails`
+Applying migration `20261002010000_onboarding_security`
+Applying migration `20261003000000_applicant_intelligence`
+Applying migration `20261003010000_durable_voting`
+Applying migration `20261003020000_corkboard`
+Applying migration `20261003030000_task_workflows`
+Applying migration `20261004000000_interview_foundation`
+Applying migration `20261004000000_voting_presentation_join`
+Applying migration `20261005000000_club_settings`
+Applying migration `20261005000000_interview_scheduling_access`
+Applying migration `20261005010000_public_corkboard`
+Applying migration `20261006010000_admin_workspace`
+Applying migration `20261006020000_profile_recruitment_visibility`
+Applying migration `20261007010000_profile_gpa_private_photos`
+Applying migration `20261008000000_school_requests`
+Applying migration `20261009000000_recruitment_offers`
+Applying migration `20261009010000_interview_collaboration`
+Applying migration `20261009234601_private_club_assets`
+Applying migration `20261010180000_communications_foundation`
+Applying migration `20261010190000_communications_center`
+Applying migration `20261010190001_reconciled_decision_letters`
+Applying migration `20261011002000_production_communications_runtime_access`
+Applying migration `20261011180000_submitted_interview_questions`
+Applying migration `20261011194930_decision_letter_runtime_access`
+Applying migration `20261012120000_global_availability`
+Applying migration `20261012160000_unpublished_panel_proposals`
+Applying migration `20261012171752_admin_session_bound_elevation`
+Applying migration `20261012190000_panel_schedule_publication`
+Applying migration `20261012200000_availability_collection`
+Applying migration `20261013002253_recipient_audiences`
+Applying migration `20261013005624_scheduled_communications`
+Applying migration `20261013014837_decision_letter_controls`
+Applying migration `20261013014950_recruitment_cycles`
+Applying migration `20261013015200_scheduled_decisions`
+Applying migration `20261013140024_scheduled_invitation_emails`
+Applying migration `20261013141510_scheduled_availability_requests`
+Applying migration `20261014230000_interview_self_booking`
+Applying migration `20261015010000_editor_drafts`
+Applying migration `20261016010000_saved_campus_events`
+Applying migration `20261016020000_event_scheduling_flyer_limits`
+Applying migration `20261016030000_event_flyer_deletion_runtime_access`
+Applying migration `20261019175843_outclass_auth_session_view`
+
+The following migration(s) have been applied:
+
+migrations/
+  └─ 20260923000000_baseline/
+    └─ migration.sql
+  └─ 20260923010000_capabilities/
+    └─ migration.sql
+  └─ 20260924000000_club_claims/
+    └─ migration.sql
+  └─ 20260924010000_anonymous_review_tests/
+    └─ migration.sql
+  └─ 20260924020000_interview_kits/
+    └─ migration.sql
+  └─ 20260924030000_meetings/
+    └─ migration.sql
+  └─ 20260924040000_member_tasks/
+    └─ migration.sql
+  └─ 20260925000000_platform_view_sessions/
+    └─ migration.sql
+  └─ 20260925010000_marketing_participants/
+    └─ migration.sql
+  └─ 20260927000000_recruiting_rules/
+    └─ migration.sql
+  └─ 20260928000000_private_resume_storage/
+    └─ migration.sql
+  └─ 20260929000000_club_marketing/
+    └─ migration.sql
+  └─ 20260930000000_interview_rooms/
+    └─ migration.sql
+  └─ 20261001000000_support_impersonation_tutorials/
+    └─ migration.sql
+  └─ 20261001010000_club_onboarding/
+    └─ migration.sql
+  └─ 20261002000000_organization_invitation_emails/
+    └─ migration.sql
+  └─ 20261002010000_onboarding_security/
+    └─ migration.sql
+  └─ 20261003000000_applicant_intelligence/
+    └─ migration.sql
+  └─ 20261003010000_durable_voting/
+    └─ migration.sql
+  └─ 20261003020000_corkboard/
+    └─ migration.sql
+  └─ 20261003030000_task_workflows/
+    └─ migration.sql
+  └─ 20261004000000_interview_foundation/
+    └─ migration.sql
+  └─ 20261004000000_voting_presentation_join/
+    └─ migration.sql
+  └─ 20261005000000_club_settings/
+    └─ migration.sql
+  └─ 20261005000000_interview_scheduling_access/
+    └─ migration.sql
+  └─ 20261005010000_public_corkboard/
+    └─ migration.sql
+  └─ 20261006010000_admin_workspace/
+    └─ migration.sql
+  └─ 20261006020000_profile_recruitment_visibility/
+    └─ migration.sql
+  └─ 20261007010000_profile_gpa_private_photos/
+    └─ migration.sql
+  └─ 20261008000000_school_requests/
+    └─ migration.sql
+  └─ 20261009000000_recruitment_offers/
+    └─ migration.sql
+  └─ 20261009010000_interview_collaboration/
+    └─ migration.sql
+  └─ 20261009234601_private_club_assets/
+    └─ migration.sql
+  └─ 20261010180000_communications_foundation/
+    └─ migration.sql
+  └─ 20261010190000_communications_center/
+    └─ migration.sql
+  └─ 20261010190001_reconciled_decision_letters/
+    └─ migration.sql
+  └─ 20261011002000_production_communications_runtime_access/
+    └─ migration.sql
+  └─ 20261011180000_submitted_interview_questions/
+    └─ migration.sql
+  └─ 20261011194930_decision_letter_runtime_access/
+    └─ migration.sql
+  └─ 20261012120000_global_availability/
+    └─ migration.sql
+  └─ 20261012160000_unpublished_panel_proposals/
+    └─ migration.sql
+  └─ 20261012171752_admin_session_bound_elevation/
+    └─ migration.sql
+  └─ 20261012190000_panel_schedule_publication/
+    └─ migration.sql
+  └─ 20261012200000_availability_collection/
+    └─ migration.sql
+  └─ 20261013002253_recipient_audiences/
+    └─ migration.sql
+  └─ 20261013005624_scheduled_communications/
+    └─ migration.sql
+  └─ 20261013014837_decision_letter_controls/
+    └─ migration.sql
+  └─ 20261013014950_recruitment_cycles/
+    └─ migration.sql
+  └─ 20261013015200_scheduled_decisions/
+    └─ migration.sql
+  └─ 20261013140024_scheduled_invitation_emails/
+    └─ migration.sql
+  └─ 20261013141510_scheduled_availability_requests/
+    └─ migration.sql
+  └─ 20261014230000_interview_self_booking/
+    └─ migration.sql
+  └─ 20261015010000_editor_drafts/
+    └─ migration.sql
+  └─ 20261016010000_saved_campus_events/
+    └─ migration.sql
+  └─ 20261016020000_event_scheduling_flyer_limits/
+    └─ migration.sql
+  └─ 20261016030000_event_flyer_deletion_runtime_access/
+    └─ migration.sql
+  └─ 20261019175843_outclass_auth_session_view/
+    └─ migration.sql
+
+All migrations have been successfully applied.
+DO
+REVOKE
+Running 3 environment-gated suites against disposable outclass_security_test
+✔ native collaboration: ordered simultaneous picks, revision conflicts, exact queue advancement, invitations and revocation (598.982542ms)
+✔ native PostgreSQL interview transactions: independent drafts, simultaneous finish, annotations, revocation and immutable anonymous reopening (1047.200334ms)
+✔ native PostgreSQL: concurrent claims, duplicate imports, email delivery, and owner suspensions (1427.622375ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3511.38475
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": PostgreSQL database "outclass_security_test", schema "public" at "127.0.0.1:58454"
+
+57 migrations found in prisma/migrations
+
+Database schema is up to date!
+PASS: security integration suites ran against disposable PostgreSQL

@@ -158,6 +158,13 @@ async function main() {
   const descriptors=routes(fixture), allSamples=[], failures=[];
   if(process.argv.includes('--phase3')) Object.assign(descriptors.applicantDetail,{text:'Synthetic application evidence.'});
   if(process.argv.includes('--phase2')) { Object.assign(descriptors.overview,{selector:'.oc-command-club'}); Object.assign(descriptors.recruiting,{selector:'.oc-command-recruiting',text:'Current pipeline'}); }
+  if(process.argv.includes('--deferred-screens')) {
+    const base='/club/'+fixture.clubIds[0]+'/workspace';
+    descriptors.settingsProfile={href:base+'?section=settings',selector:'.oc-club-settings fieldset:not([disabled])',text:'One-line pitch',tour:'nav-settings'};
+    descriptors.settingsApplication={href:base+'?section=settings&setting=application',selector:'.oc-settings-workspace details',text:'Review settings'};
+    descriptors.scheduledDecisions={href:base+'?section=recruitment&tool=scheduled-decisions',selector:'section[aria-label="Scheduled Decisions"]',text:'No scheduled decisions.',tour:'nav-scheduled-decisions'};
+    descriptors.rounds={href:base+'?section=recruitment&tool=rounds',selector:'[data-slot="sheet-content"]',text:'Previously viewed information cannot be recalled'};
+  }
   if(active)descriptors.interviews.text=active.readyText;
   const sampleCount=Number(process.argv.find(a=>a.startsWith('--samples='))?.split('=')[1]||20);
   assert.ok(sampleCount>0&&sampleCount<=100);
@@ -251,13 +258,19 @@ async function main() {
   }
   async function clickTarget(s,from,to) {
     const {page}=s;
+    if(process.argv.includes('--deferred-screens') && to==='rounds') {
+      const details=page.locator('.oc-settings-workspace details').filter({has:page.locator('summary',{hasText:'Review settings'})});
+      if(!await details.evaluate(e=>e.open))await details.locator('summary').click();
+      return page.getByRole('link',{name:'Anonymous review',exact:true}).click();
+    }
+    if(process.argv.includes('--deferred-screens') && from==='rounds' && to==='settingsApplication')return page.goBack({waitUntil:'domcontentloaded'});
     if(to==='applicantDetail')return page.locator('[data-applicant-id]').filter({visible:true}).first().click();
     if(from==='applicantDetail')return page.locator('[data-slot="sheet-content"]').getByRole('button',{name:'Close',exact:true}).click();
     if(process.argv.includes('--phase2') && descriptors[to].tour) {
       const tour=descriptors[to].tour;
       let item=page.locator('[data-tour="'+tour+'"]').filter({visible:true}).first();
-      if(!await item.count() && to==='applicants') {
-        const group=page.getByRole('button',{name:'Applicants',exact:true}).filter({visible:true}).first();
+      if(!await item.count() && (to==='applicants'||to==='scheduledDecisions')) {
+        const group=page.getByRole('button',{name:to==='scheduledDecisions'?'Decisions':'Applicants',exact:true}).filter({visible:true}).first();
         await group.focus();await page.keyboard.press('ArrowRight');
         item=page.locator('[data-tour="'+tour+'"]').filter({visible:true}).first();
       }
@@ -290,6 +303,13 @@ async function main() {
   async function sample(s,from,to,condition,index,gate) {
     // Open any switcher or grouped rail before timing the destination click.
     const page=s.page;
+    if(process.argv.includes('--deferred-screens') && to==='rounds') {
+      const details=page.locator('.oc-settings-workspace details').filter({has:page.locator('summary',{hasText:'Review settings'})});
+      if(!await details.evaluate(e=>e.open))await details.locator('summary').click();
+    }
+    if(process.argv.includes('--deferred-screens') && to==='scheduledDecisions' && !await page.locator('[data-tour="nav-scheduled-decisions"]').filter({visible:true}).count()) {
+      await page.getByRole('button',{name:'Decisions',exact:true}).filter({visible:true}).first().focus();await page.keyboard.press('ArrowRight');
+    }
     if(from==='voting'){
       const setup=page.getByRole('dialog',{name:'New voting session',exact:true});
       if(await setup.isVisible()){await setup.getByRole('button',{name:'Close',exact:true}).click();await setup.waitFor({state:'hidden'});}
@@ -387,7 +407,7 @@ async function main() {
     return;
   }
   const pairs=[['overview','members'],['members','meetings'],['meetings','tasks'],['tasks','announcements'],['announcements','overview'],['recruiting','applicants'],['applicants','interviews'],['interviews','decisions'],['decisions','recruiting'],['applicants','voting'],['voting','applicants'],['overview','settings'],['settings','overview'],['overview','recruiting'],['recruiting','overview'],['overview','club2'],['personal','overview'],['overview','personal']];
-  const selected=process.argv.includes('--phase3')?[['recruiting','applicants'],['applicants','applicantDetail']]:process.argv.includes('--phase2')?[['overview','members'],['recruiting','applicants'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--only-interviews')?[['applicants','interviews']]:process.argv.includes('--phase1')?[['applicants','interviews'],['members','meetings'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--smoke')?pairs.slice(0,1):process.argv.includes('--member-details')?[['members','memberDetail']]:process.argv.includes('--cross-club')?[['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]:process.argv.includes('--details')?[['applicants','applicantDetail'],['members','memberDetail']]:process.argv.includes('--only-voting')?pairs.filter(p=>p.includes('voting')):process.argv.includes('--waterfalls')?pairs.filter(([f,t])=>f==='overview'&&t==='members'||f==='recruiting'&&t==='applicants'||f==='applicants'&&t==='interviews'):pairs.filter(p=>!p.includes('club2')&&!p.includes('personal')).concat([['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]);
+  const selected=process.argv.includes('--deferred-screens')?[['overview','settingsProfile'],['overview','meetings'],['recruiting','scheduledDecisions'],['settingsApplication','rounds']]:process.argv.includes('--phase3')?[['recruiting','applicants'],['applicants','applicantDetail']]:process.argv.includes('--phase2')?[['overview','members'],['recruiting','applicants'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--only-interviews')?[['applicants','interviews']]:process.argv.includes('--phase1')?[['applicants','interviews'],['members','meetings'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--smoke')?pairs.slice(0,1):process.argv.includes('--member-details')?[['members','memberDetail']]:process.argv.includes('--cross-club')?[['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]:process.argv.includes('--details')?[['applicants','applicantDetail'],['members','memberDetail']]:process.argv.includes('--only-voting')?pairs.filter(p=>p.includes('voting')):process.argv.includes('--waterfalls')?pairs.filter(([f,t])=>f==='overview'&&t==='members'||f==='recruiting'&&t==='applicants'||f==='applicants'&&t==='interviews'):pairs.filter(p=>!p.includes('club2')&&!p.includes('personal')).concat([['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]);
   const outputStem=process.argv.includes('--member-details')?'member-detail':process.argv.includes('--cross-club')?'cross-club':process.argv.includes('--details')?'detail':process.argv.includes('--only-voting')?'voting':process.argv.includes('--waterfalls')?'waterfall':'browser';
   try {
     for(const [from,to] of selected)for(const condition of (process.argv.includes('--cold-warm')?['cold','warm']:['cold','warm','repeated'])){

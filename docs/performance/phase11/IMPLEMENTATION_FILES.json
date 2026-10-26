@@ -1,0 +1,20 @@
+{
+  "baseline": "2c95b4dec8fa218274c37f9dd406a090c37e58e0",
+  "files": [
+    "components/club-workspace.tsx",
+    "scripts/navigation-audit.cjs",
+    "scripts/navigation-phase11-local.cjs",
+    "scripts/navigation-phase11-study.cjs",
+    "scripts/navigation-phase11-interactions.cjs",
+    "scripts/navigation-phase11-constrained-interactions.cjs",
+    "scripts/navigation-phase11-concurrency.cjs",
+    "tests/campus-illustrations.test.cjs",
+    "tests/navigation-phase11-e2e.test.cjs",
+    "tests/helpers/deferred-feature-chunks.cjs"
+  ],
+  "sha256": "6b4835feb03430f9f4955d6ba7e67659b0abf266eeaff6206701495eddc46ba3",
+  "scope": "Application, shared feature benchmark scenario, Phase11-only collectors, real built regression coverage and static-render harness adaptation. Blank diff context lines normalized only; reverse application checked.",
+  "applicationChanged": [
+    "components/club-workspace.tsx"
+  ]
+}
