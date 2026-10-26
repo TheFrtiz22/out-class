@@ -1,0 +1,81 @@
+{
+  "acceptedPerformanceData": false,
+  "observations": [
+    {
+      "variant": "baseline",
+      "buildId": "9_IJRDuwFMnwclrWJ9soE",
+      "scope": "Excluded, untimed SSR/content diagnostics; only marker booleans/offsets are exported. Full streamed-body marker presence is not proof of visible first-chunk rendering or interaction readiness.",
+      "requests": [
+        {
+          "status": 200,
+          "headersMs": 87.11429199999998,
+          "completeBodyMs": 89.31804199999999,
+          "settingsMarkupPresent": true,
+          "reviewSettingsLabelPresent": true,
+          "clientBailoutMarker": false,
+          "streamedHiddenSections": 3
+        },
+        {
+          "status": 200,
+          "headersMs": 69.71941699999996,
+          "completeBodyMs": 70.9445,
+          "settingsMarkupPresent": true,
+          "reviewSettingsLabelPresent": true,
+          "clientBailoutMarker": false,
+          "streamedHiddenSections": 2
+        },
+        {
+          "status": 200,
+          "headersMs": 42.129209,
+          "completeBodyMs": 43.33933400000001,
+          "settingsMarkupPresent": true,
+          "reviewSettingsLabelPresent": true,
+          "clientBailoutMarker": false,
+          "streamedHiddenSections": 2
+        }
+      ],
+      "javascriptDisabled": {
+        "settingsMenuVisible": false,
+        "reviewSettingsVisible": false
+      }
+    },
+    {
+      "variant": "candidate",
+      "buildId": "FXBoz7ZsRfWXbsBo4gGDZ",
+      "scope": "Excluded, untimed SSR/content diagnostics; only marker booleans/offsets are exported. Full streamed-body marker presence is not proof of visible first-chunk rendering or interaction readiness.",
+      "requests": [
+        {
+          "status": 200,
+          "headersMs": 70.13566700000001,
+          "completeBodyMs": 71.65395799999999,
+          "settingsMarkupPresent": true,
+          "reviewSettingsLabelPresent": true,
+          "clientBailoutMarker": false,
+          "streamedHiddenSections": 2
+        },
+        {
+          "status": 200,
+          "headersMs": 49.053165999999976,
+          "completeBodyMs": 50.352040999999986,
+          "settingsMarkupPresent": true,
+          "reviewSettingsLabelPresent": true,
+          "clientBailoutMarker": false,
+          "streamedHiddenSections": 2
+        },
+        {
+          "status": 200,
+          "headersMs": 48.05933300000004,
+          "completeBodyMs": 54.353125000000034,
+          "settingsMarkupPresent": true,
+          "reviewSettingsLabelPresent": true,
+          "clientBailoutMarker": false,
+          "streamedHiddenSections": 2
+        }
+      ],
+      "javascriptDisabled": {
+        "settingsMenuVisible": false,
+        "reviewSettingsVisible": false
+      }
+    }
+  ]
+}

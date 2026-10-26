@@ -1,0 +1,16 @@
+{
+  "accepted": false,
+  "directory": "preflight-constrained-2",
+  "reason": "Power preflight observed Battery Power despite user cable confirmation. Guard command did not stop subsequent shell line, so early collection began; whole short attempt excluded and stopped before continuing.",
+  "rowsExcluded": "Every recorded and partial row; no pooling",
+  "hostReportedBatteryPercent": 84,
+  "hostReportedDischarging": true,
+  "waitingFor": "AC detection before fresh whole constrained protocol",
+  "resolution": "User clarified no charger is available and requested continuation. Fresh whole constrained protocol uses battery for both variants; RESUMPTION.json records matched settings and actual sleep audit.",
+  "recordedCounts": {
+    "mainOutcomesRecorded": 10,
+    "featureOutcomesRecorded": 0,
+    "interactionOutcomesRecorded": 0,
+    "httpOutcomesRecorded": 0
+  }
+}

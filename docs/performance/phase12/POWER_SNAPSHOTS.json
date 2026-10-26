@@ -1,0 +1,67 @@
+[
+  {
+    "at": "2026-10-26T14:11:56.466077+00:00",
+    "source": "Battery Power",
+    "batteryPercent": 82,
+    "completedMainBlocks": 1,
+    "completedFeatureBlocks": 0,
+    "completedInteractionBlocks": 0,
+    "completedNativeBlocks": 0
+  },
+  {
+    "at": "2026-10-26T14:18:09.496185+00:00",
+    "source": "Battery Power",
+    "batteryPercent": 79,
+    "lowPowerMode": 0,
+    "completedMainBlocks": 4,
+    "completedFeatureBlocks": 2,
+    "completedInteractionBlocks": 1,
+    "completedNativeBlocks": 1
+  },
+  {
+    "at": "2026-10-26T14:22:15.539652+00:00",
+    "source": "Battery Power",
+    "batteryPercent": 77,
+    "completedMainBlocks": 5,
+    "completedFeatureBlocks": 4,
+    "completedInteractionBlocks": 2,
+    "completedNativeBlocks": 2
+  },
+  {
+    "at": "2026-10-26T14:29:18.171308+00:00",
+    "source": "Battery Power",
+    "batteryPercent": 73,
+    "completedMainBlocks": 7,
+    "completedFeatureBlocks": 6,
+    "completedInteractionBlocks": 3,
+    "completedNativeBlocks": 3
+  },
+  {
+    "at": "2026-10-26T14:34:03.224237+00:00",
+    "source": "Battery Power",
+    "batteryPercent": 70,
+    "completedMainBlocks": 9,
+    "completedFeatureBlocks": 8,
+    "completedInteractionBlocks": 4,
+    "completedNativeBlocks": 4
+  },
+  {
+    "at": "2026-10-26T14:37:44.578739+00:00",
+    "source": "Battery Power",
+    "batteryPercent": 67,
+    "lowPowerMode": 0,
+    "completedMainBlocks": 11,
+    "completedFeatureBlocks": 8,
+    "completedInteractionBlocks": 5,
+    "completedNativeBlocks": 5
+  },
+  {
+    "at": "2026-10-26T14:43:51.163950+00:00",
+    "source": "Battery Power",
+    "batteryPercent": 63,
+    "completedMainBlocks": 15,
+    "completedFeatureBlocks": 8,
+    "completedInteractionBlocks": 7,
+    "completedNativeBlocks": 7
+  }
+]

@@ -1,0 +1,19 @@
+{
+  "completed": true,
+  "at": "2026-10-26T14:54:20.344432+00:00",
+  "sourceFilesVerified": 913,
+  "candidateBuildId": "FXBoz7ZsRfWXbsBo4gGDZ",
+  "ownedAppStopped": true,
+  "ownedLocalContainersAndVolumesRemoved": true,
+  "unrelatedContainersPreserved": 21,
+  "unrelatedContainerStatesUnchanged": true,
+  "originalCheckoutHeadAndStatusUnchanged": false,
+  "originalCheckoutNotModifiedByPhase12": true,
+  "externalCheckoutChangesPreserved": true,
+  "externalObservation": "ORIGINAL_CHECKOUT_OBSERVATION.json",
+  "mainUnchanged": true,
+  "priorInactiveFixtureDirectoryRestored": true,
+  "ownedPrivateCredentialsAndBuildSnapshotsRemoved": true,
+  "powerControl": "Temporary assertions end with collection; no persistent settings modified.",
+  "publication": "No push, PR, merge or deployment."
+}

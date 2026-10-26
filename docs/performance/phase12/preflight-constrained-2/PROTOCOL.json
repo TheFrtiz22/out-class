@@ -1,0 +1,40 @@
+{
+  "startedAt": "2026-10-26T14:06:30.499Z",
+  "profile": "constrained",
+  "cohorts": [
+    1000,
+    5000
+  ],
+  "blocks": [
+    "BA",
+    "AB"
+  ],
+  "buildIds": {
+    "baseline": "9_IJRDuwFMnwclrWJ9soE"
+  },
+  "planSha256": "268d7f235fa36e1c140916788723fc1a00902b2fa4c0b426f5172231c107aad5",
+  "tools": {
+    "navigation-phase12-study.cjs": "eb4810b0b8ff6f3b4fe92d422d61b4b93d8a4970b2d20d664d027401fcf5f22c",
+    "navigation-phase12-local.cjs": "3f6560053412fd058e000ca776f25a882e9a139e095e2543572df0cefa0a5e15",
+    "navigation-audit.cjs": "ef894a888a99815d1e6fd18d5f9ecb8c5d7e4f52ee7e981603442a55bf9e20ef",
+    "navigation-phase12-interactions.cjs": "9e96e8602abab979930188361d46b44a022db2b9c200a67af34768df2f6f2b4e",
+    "navigation-phase12-constrained-interactions.cjs": "6f2709ff03f7a0f45edfbbae888e0157b57fa9dba54d1d9a7e74dc67fa5913eb",
+    "navigation-phase12-concurrency.cjs": "ca5c86b48badaca11ec59973aec9fba8b77ea0f2bab9f50d4fffae9a2ce4de6c"
+  },
+  "completed": [
+    {
+      "directory": "size-1000-pair-1-1-B-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failed": 0
+    }
+  ],
+  "interactions": [],
+  "concurrency": [],
+  "features": [],
+  "failures": [],
+  "complete": false,
+  "applicationStopped": true,
+  "abortedAt": "2026-10-26T14:07:27.488525+00:00",
+  "abortedReason": "Power preflight observed Battery Power despite user cable confirmation. Guard command did not stop subsequent shell line, so early collection began; whole short attempt excluded and stopped before continuing."
+}

@@ -1,0 +1,21 @@
+{
+  "url": "https://supabase.com/changelog.md",
+  "fetchedAt": "2026-10-26T12:32:03.497465+00:00",
+  "bytes": 102641,
+  "sha256": "45528009025b8ad8487ccb73f7c769b66d4b0e7aa4560157047899dcb5b5a006",
+  "breakingChangeIndexLines": [
+    "2026-09-25 \u00b7 Breaking Change \u00b7 Database \u00b7 [supabase.com/changelog/postgres-15-19-17-11-breaking-changes](https://supabase.com/changelog/postgres-15-19-17-11-breaking-changes)",
+    "2026-05-25 \u00b7 Breaking Change \u00b7 Database \u00b7 [supabase.com/changelog/46320-breaking-change-in-pg-graphql-1-6-0-graphql-introspection-disabled-by-default](https://supabase.com/changelog/46320-breaking-change-in-pg-graphql-1-6-0-graphql-introspection-disabled-by-default)",
+    "2026-05-18 \u00b7 Breaking Change \u00b7 Database \u00b7 [supabase.com/changelog/46081-self-hosted-supabase-switching-studio-from-supabase-admin-to-postgres-breaking-change](https://supabase.com/changelog/46081-self-hosted-supabase-switching-studio-from-supabase-admin-to-postgres-breaking-change)",
+    "2026-05-18 \u00b7 Breaking Change \u00b7 Database \u00b7 [supabase.com/changelog/46080-self-hosted-supabase-upgrading-from-pg-15-to-17-breaking-change](https://supabase.com/changelog/46080-self-hosted-supabase-upgrading-from-pg-15-to-17-breaking-change)",
+    "2026-05-01 \u00b7 Breaking Change \u00b7 Platform \u00b7 [supabase.com/changelog/45468-breaking-change-oauth-token-endpoint-will-return-http-200-instead-of-201](https://supabase.com/changelog/45468-breaking-change-oauth-token-endpoint-will-return-http-200-instead-of-201)",
+    "2026-04-28 \u00b7 Breaking Change \u00b7 Data APIs, Database \u00b7 [supabase.com/changelog/45329-breaking-change-tables-not-exposed-to-data-and-graphql-api-automatically](https://supabase.com/changelog/45329-breaking-change-tables-not-exposed-to-data-and-graphql-api-automatically)",
+    "2026-02-17 \u00b7 Breaking Change \u00b7 Data APIs \u00b7 [supabase.com/changelog/42949-breaking-change-removing-access-to-openapi-spec-via-the-anon-key](https://supabase.com/changelog/42949-breaking-change-removing-access-to-openapi-spec-via-the-anon-key)",
+    "2026-01-26 \u00b7 Breaking Change \u00b7 Platform \u00b7 [supabase.com/changelog/42180-breaking-change-pg-graphql-no-longer-enabled-automatically-within-approx-3-weeks-from-today](https://supabase.com/changelog/42180-breaking-change-pg-graphql-no-longer-enabled-automatically-within-approx-3-weeks-from-today)",
+    "2025-10-08 \u00b7 Breaking Change \u00b7 Database \u00b7 [supabase.com/changelog/39378-potential-breaking-change-in-pgmq-from-1-4-4-to-1-5-1-and-temporary-halt-on-upgrade-for-existing-projects](https://supabase.com/changelog/39378-potential-breaking-change-in-pgmq-from-1-4-4-to-1-5-1-and-temporary-halt-on-upgrade-for-existing-projects)",
+    "2025-02-18 \u00b7 Breaking Change \u00b7 Studio \u00b7 [supabase.com/changelog/33670-upcoming-breaking-change-to-dashboard-navigation](https://supabase.com/changelog/33670-upcoming-breaking-change-to-dashboard-navigation)",
+    "2024-09-24 \u00b7 Breaking Change \u00b7 Security \u00b7 [supabase.com/changelog/29494-supabase-platform-access-control-project-permissions-breaking-changes-on-october-15-2024](https://supabase.com/changelog/29494-supabase-platform-access-control-project-permissions-breaking-changes-on-october-15-2024)",
+    "2024-07-15 \u00b7 Breaking Change \u00b7 Platform \u00b7 [supabase.com/changelog/27993-supabase-platform-access-control-organization-permissions-breaking-changes-on-july-26-2024](https://supabase.com/changelog/27993-supabase-platform-access-control-organization-permissions-breaking-changes-on-july-26-2024)"
+  ],
+  "scope": "Existing pinned SDK, Auth behavior and disposable local fixture; no Supabase API/config/schema/dependency change. Browser initialization event sequence will be verified against installed SDK source and real Auth."
+}

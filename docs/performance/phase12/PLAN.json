@@ -1,0 +1,60 @@
+{
+  "baseline": "327f7de5d8dad3381f0db258956d0b8b6424a6af",
+  "scope": "One local Auth epoch dispatch/settlement fence: synchronously publish the existing opaque epoch before scheduling its React state update, and skip selected-resource effects/settlements whose captured epoch is already obsolete. No Auth event or invalidation rule is removed.",
+  "targets": [
+    "contexts/auth-context.tsx",
+    "components/selected-club-workspace.tsx"
+  ],
+  "hypothesis": "An Auth notification can precede a newly mounted selected effect while its rendered context still contains the previous epoch. A synchronous local epoch check avoids the obsolete request; the following committed scope still sends a fresh live-authorized GET. Preserve Phase11 module boundaries and quantify their unresolved Settings/first-use costs.",
+  "constraints": "No successful authorization/data cache, auth-event suppression, unverified identity authority, GET transport/query/policy change, production configuration/schema/index/dependency changes or publication. Phase10 fonts and Phase11 code deferral retained.",
+  "cohorts": [
+    1000,
+    5000
+  ],
+  "profiles": [
+    "local",
+    "80ms latency, 200000 B/s down, 93750 B/s up, CPU4x"
+  ],
+  "blocks": [
+    "BA",
+    "AB"
+  ],
+  "warmupsPerBuildBlockPathCondition": 1,
+  "samplesPerBuildBlockPathCondition": 5,
+  "mainPaths": [
+    "applicants",
+    "applicantDetail"
+  ],
+  "conditions": [
+    "cold",
+    "warm"
+  ],
+  "plannedBrowserOutcomes": 384,
+  "plannedWarmInteractionOutcomes": 192,
+  "plannedNativeHttpOutcomes": 336,
+  "deferredFeatureCost": {
+    "cohort": 1000,
+    "profile": "constrained",
+    "paths": [
+      "overview \u2192 settingsProfile",
+      "overview \u2192 meetings",
+      "recruiting \u2192 scheduledDecisions",
+      "settingsApplication \u2192 rounds"
+    ],
+    "conditions": [
+      "cold",
+      "warm"
+    ],
+    "warmupsPerBuildBlockPathCondition": 1,
+    "samplesPerBuildBlockPathCondition": 3,
+    "plannedOutcomes": 128,
+    "groupN": 6,
+    "p95": "nearest rank maximum",
+    "readiness": "Settings actual public-profile form, fixture meeting data, empty scheduled list after fetch, and anonymous-review controls. Anonymous review uses its existing Settings/Application link; warm return uses browser history. Decisions group/details summary open before timed action."
+  },
+  "pilot": "One baseline/candidate constrained main-path protocol sanity probe, four outcomes each (eight total); excluded whole. Additional untimed HTML/SSR observations, if collected, remain diagnostic only.",
+  "newRegressionCoverage": "Auth epoch fence changes synchronously before React commits; stale rendered effects dispatch no request; obsolete successful/error settlements cannot commit while a new Auth context is pending. Real constrained entry/revisit/revocation plus 67 live cases including the new case, plus existing navigation/draft/transport/privacy/native suites.",
+  "primaryMetric": "Full preceding source document useful-content time plus captured requests/script/body bytes and separate subsequent click timing. No readiness clock change. Bounded drains, incomplete background transport flags, fonts/FCP/CLS retained.",
+  "power": "Temporary caffeinate -dimsu; complete actual power audit; exclude interrupted set whole.",
+  "publication": "Local experiment only; preserve Phase11 adverse evidence and investigate remaining Settings/anonymous-review and server tails before any publication."
+}

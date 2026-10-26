@@ -1,0 +1,134 @@
+{
+  "generatedAt": "2026-10-26T14:07:27.409Z",
+  "sampleCount": 5,
+  "groups": [
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "meaningfulMs": {
+        "samples": 5,
+        "p50": 582.5,
+        "p95": 588.4,
+        "max": 588.4
+      },
+      "interactiveMs": {
+        "samples": 5,
+        "p50": 583.6,
+        "p95": 589.8,
+        "max": 589.8
+      },
+      "clickToUrlMs": {
+        "samples": 5,
+        "p50": 1.8,
+        "p95": 2.5,
+        "max": 2.5
+      },
+      "networkCompleteMs": {
+        "samples": 5,
+        "p50": 474.8,
+        "p95": 478.6,
+        "max": 478.6
+      },
+      "scriptMs": {
+        "samples": 5,
+        "p50": 106.77,
+        "p95": 110.84,
+        "max": 110.84
+      },
+      "taskMs": {
+        "samples": 5,
+        "p50": 341.71,
+        "p95": 373.95,
+        "max": 373.95
+      },
+      "requestCount": {
+        "samples": 5,
+        "p50": 9,
+        "p95": 9,
+        "max": 9
+      },
+      "encodedBodyBytes": {
+        "samples": 5,
+        "p50": 56891,
+        "p95": 56891,
+        "max": 56891
+      }
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "warm",
+      "meaningfulMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "interactiveMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "clickToUrlMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "networkCompleteMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "scriptMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "taskMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "requestCount": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "encodedBodyBytes": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      }
+    }
+  ],
+  "failures": [
+    {
+      "path": "recruiting → applicants",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "error": "cdpSession.send: Target page, context or browser has been closed"
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "warm",
+      "error": "browserContext.close: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /Users/jesseklinger/Library/Caches/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-mac-arm64/chrome-headless-shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,NetworkTimeServiceQuerying,AimEnabled,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 "
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "error": "browser.newContext: Target page, context or browser has been closed"
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "error": "browser.newContext: Target page, context or browser has been closed"
+    }
+  ]
+}

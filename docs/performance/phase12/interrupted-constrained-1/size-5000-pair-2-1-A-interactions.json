@@ -1,0 +1,8 @@
+{
+  "buildId": "FXBoz7ZsRfWXbsBo4gGDZ",
+  "size": 5000,
+  "planned": 12,
+  "samples": [],
+  "errors": [],
+  "interpretation": "Local constrained profile: 80ms latency, 1.6Mbps down/0.75Mbps up, CPU4x. Warm interactions only. Browser event timestamp to MutationObserver content predicate plus two animation frames; driver polling/dispatch is excluded from meaningfulMs and separately retained as driverElapsedMs. Initial preparation, restoration and one warmup per interaction excluded from measured distribution. All failures retained; no retries."
+}

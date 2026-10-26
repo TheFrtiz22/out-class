@@ -22,6 +22,8 @@ interface AuthContextType {
   isImpersonating: boolean;
   /** Opaque browser session epoch; a scope hint, never an authorization result. */
   readAuthority?: object;
+  /** Immediate local epoch fence while an Auth notification awaits React commit. */
+  isReadAuthorityCurrent: (authority: object | undefined) => boolean;
   user: PopulatedUser | null;
   loading: boolean;
   /** Known server session awaiting its initial /api/users/me identity. */
@@ -42,12 +44,21 @@ export function AuthProvider({ children, initialUser = null, isImpersonating = f
   const [loading, setLoading] = useState(!initialUser && hasSession);
   const { isDemoEnabled, state, viewAs } = useDemoMode();
   const [readAuthority, setReadAuthority] = useState<object>({});
+  const currentReadAuthority = React.useRef(readAuthority);
+  const isReadAuthorityCurrent = React.useCallback((authority: object | undefined) => currentReadAuthority.current === authority, []);
   useEffect(() => {
     if (isDemoEnabled || !hasSession) return;
     let token: string | undefined;
     const { data: { subscription } } = createClient().auth.onAuthStateChange((event, session) => {
       const next = session?.access_token ?? "";
-      if (token !== undefined ? next !== token : event !== "INITIAL_SESSION") { recordWorkspaceRead("auth", [event.toLowerCase()]); setReadAuthority({}); }
+      if (token !== undefined ? next !== token : event !== "INITIAL_SESSION") {
+        // Publish the fence before scheduling React's context update. A newly
+        // mounted view must not dispatch with the previous rendered epoch.
+        const authority = {};
+        currentReadAuthority.current = authority;
+        recordWorkspaceRead("auth", [event.toLowerCase()]);
+        setReadAuthority(authority);
+      }
       token = next;
     });
     return () => subscription.unsubscribe();
@@ -102,7 +113,7 @@ export function AuthProvider({ children, initialUser = null, isImpersonating = f
     else setSelectedClubId(clubId);
   };
   return (
-    <AuthContext.Provider value={{ isImpersonating, readAuthority, user: identity, activeClubId, selectClub, loading: isDemoEnabled ? !state : bootstrapChanged ? !initialUser && hasSession : loading, sessionPending: hasSession && !isDemoEnabled && loading && !identity, mutateUser, refreshUser: isDemoEnabled ? async () => {} : fetchUser }}>
+    <AuthContext.Provider value={{ isImpersonating, readAuthority, isReadAuthorityCurrent, user: identity, activeClubId, selectClub, loading: isDemoEnabled ? !state : bootstrapChanged ? !initialUser && hasSession : loading, sessionPending: hasSession && !isDemoEnabled && loading && !identity, mutateUser, refreshUser: isDemoEnabled ? async () => {} : fetchUser }}>
       {children}
     </AuthContext.Provider>
   );

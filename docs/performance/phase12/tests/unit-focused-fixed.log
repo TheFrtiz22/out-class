@@ -1,0 +1,27 @@
+✔ Recruiting Interviews retains the scheduling tab when round navigation remounts it (77.171125ms)
+✔ read API preserves dates and user JSON, validates scope, and never caches private responses (131.037958ms)
+✔ ordinary read fetches overlap rather than enter the Server Action queue (10.225584ms)
+✔ root bootstrap starts authenticated content without an identity HTTP waterfall (4.681708ms)
+✔ verified Supabase identity is reused only inside the same React request; membership remains live (10.011334ms)
+✔ duplicate identity refreshes coalesce and a late old-account response cannot replace the new bootstrap (7.149209ms)
+✔ middleware avoids duplicate refresh only after demo/support guards; loaders own authentication (5.808666ms)
+✔ query-only club transitions skip RSC navigation and preserve modified/cross-club links (0.965541ms)
+✔ Members delegates each visit to a fresh selected-tab loader and privacy/account changes remain scoped (19.841083ms)
+✔ advanced permissions delegate one directory and one self-identity refresh to their owner (8.702458ms)
+✔ a stalled workspace read times out, aborts its request and releases the deadline (3.588833ms)
+✔ a changed browser Auth token rotates pending-read authority without treating the token as authorization (4.246459ms)
+✔ Auth publishes its opaque epoch fence before React commits, without dropping any token-change invalidation (2.155917ms)
+✔ all four selected resources start their guarded read alongside code loading and never reuse another visit (30.576875ms)
+✔ late navigation/session/account results cannot reveal a previous projection; retry makes a fresh request (6.728334ms)
+✔ Demo and unresolved Demo initialization never dispatch a live selected-tab request (5.168458ms)
+✔ club, privacy and support authority changes hide content and fence earlier reads (6.322167ms)
+✔ an Auth notification before effect commit defers an obsolete selected read until its current scope renders (3.10575ms)
+✔ successful and failed reads cannot settle during the gap between Auth notification and React commit (7.384167ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 19
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 478.059292

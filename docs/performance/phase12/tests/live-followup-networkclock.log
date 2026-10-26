@@ -1,0 +1,12 @@
+Phase12 scope acceptance: initialReads=1, subsequent visits validated and revoked replay denied
+Phase12 scope acceptance: initialReads=1, subsequent visits validated and revoked replay denied
+Phase12 scope acceptance: initialReads=1, subsequent visits validated and revoked replay denied
+✔ constrained startup fences an already-notified Auth epoch, revisits read fresh, and revoked cookies reveal no old applicants (19058.951917ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 19311.724792

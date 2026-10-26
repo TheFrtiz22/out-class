@@ -1,0 +1,18 @@
+{
+  "accepted": false,
+  "reason": "Predeclared complete main-path protocol sanity probes, excluded whole; no replacement of individual slow accepted observations.",
+  "outcomes": [
+    {
+      "build": "baseline",
+      "outcomes": 4,
+      "failed": 0,
+      "exitCode": 0
+    },
+    {
+      "build": "candidate",
+      "outcomes": 4,
+      "failed": 0,
+      "exitCode": 0
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "story": "A selected workspace visit loads code and a fresh live-authorized GET together; an Auth epoch already superseded before the effect commits must send no obsolete read, and a later real change must still refresh.",
+  "reviewedApplicationFiles": [
+    "contexts/auth-context.tsx",
+    "components/selected-club-workspace.tsx"
+  ],
+  "reactReview": {
+    "stableCallback": "useCallback has no dependencies and reads the provider-owned current epoch ref.",
+    "refWrites": "Only the existing SDK notification invalidation branch synchronously publishes a new opaque object; not during render.",
+    "effectOwnership": "Effect retains mounted cleanup and complete memoized owner; epoch and stable comparator are dependencies. Current-scope code and GET retain Promise.all.",
+    "resultSettlement": "Both fulfillment and rejection check current mount and epoch. Existing owner equality controls rendering across user, support, club, privacy, mode, retry and Demo changes.",
+    "eventRule": "Existing token-change/INITIAL_SESSION predicate and subscription cleanup unchanged.",
+    "unchangedUI": "No new controls, icons, loading delays, layout, focus behavior, draft ownership or new dependency."
+  },
+  "fullStoryEvidence": [
+    {
+      "boundary": "Browser input to selected visit",
+      "evidence": "tests/live.log: real selected screens, mobile/pointer navigation, rapid switching and native GET overlap pass; final new browser regression passes three constrained entries in tests/live-followup.log."
+    },
+    {
+      "boundary": "Client to explicit GET",
+      "evidence": "lib/workspace-read.ts and app/api/workspace/route.ts unchanged in 913-file manifests. Existing unit/live strict kind/argument allowlists, no-store and same-origin handling pass."
+    },
+    {
+      "boundary": "GET to live authority and database",
+      "evidence": "tests/live.log retains membership/capability/suspension/account/session/recovery/revocation and metadata parity coverage; tests/security.log has three native concurrency passes."
+    },
+    {
+      "boundary": "Authorized response to visible content",
+      "evidence": "tests/unit-focused-fixed.log covers current mount, pre-commit success/error fence, Demo and support/privacy ownership. tests/live-followup.log confirms fresh revisit and no old content on captured revoked cookies."
+    }
+  ],
+  "limitations": [
+    "The initial live suite has66 passes and one test-selector failure, resolved by a targeted followup on the same frozen build; no full-suite clean67 claim.",
+    "Existing tests and loopback fixtures establish covered behavior, not exhaustive formal security proof or production latency.",
+    "No additional builds or tests were launched by this experiment during collection; external development overlap was discovered during cleanup and recorded as a latency confound."
+  ],
+  "skills": [
+    "vercel:react-best-practices",
+    "vercel:verification",
+    "supabase:supabase"
+  ]
+}

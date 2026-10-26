@@ -49,7 +49,7 @@ export function SelectedClubWorkspace({ kind, clubId, privacyScope, personalOnly
   kind: SelectedClubWorkspaceKind; clubId: string; privacyScope: string;
   personalOnly?: boolean; initialScope?: string; decisionsOnly?: boolean; rejectedOnly?: boolean;
 }) {
-  const { user, readAuthority, isImpersonating, loading } = useAuth()
+  const { user, readAuthority, isReadAuthorityCurrent, isImpersonating, loading } = useAuth()
   const demo = useDemoMode()
   const [retry, setRetry] = useState(0)
   // Same full identity/session ownership as interview reads. This is a mounted
@@ -59,15 +59,15 @@ export function SelectedClubWorkspace({ kind, clubId, privacyScope, personalOnly
   const [result, setResult] = useState<{ owner: object; value?: Loaded; failed?: boolean } | null>(null)
   const lastRead = useRef<typeof owner | null>(null)
   useEffect(() => {
-    if (!demo.ready || demo.isDemoEnabled || loading || !user) return
+    if (!demo.ready || demo.isDemoEnabled || loading || !user || !isReadAuthorityCurrent(readAuthority)) return
     recordWorkspaceRead("selected", lastRead.current ? (Object.keys(owner) as (keyof typeof owner)[]).filter(key => lastRead.current![key] !== owner[key]) : ["mount"])
     lastRead.current = owner
     let current = true
     void loadSelectedClubWorkspace(kind, clubId, mode).then(value => {
-      if (current) setResult({ owner, value })
-    }).catch(() => { if (current) setResult({ owner, failed: true }) })
+      if (current && isReadAuthorityCurrent(readAuthority)) setResult({ owner, value })
+    }).catch(() => { if (current && isReadAuthorityCurrent(readAuthority)) setResult({ owner, failed: true }) })
     return () => { current = false }
-  }, [kind, clubId, mode, owner, demo.ready, demo.isDemoEnabled, loading, user])
+  }, [kind, clubId, mode, owner, demo.ready, demo.isDemoEnabled, loading, user, readAuthority, isReadAuthorityCurrent])
   const current = demo.ready && !demo.isDemoEnabled && !loading && result?.owner === owner ? result : null
   if (current?.failed) return <div role="alert" className="space-y-3"><p>Could not load this workspace. Your access may have changed.</p><Button variant="outline" onClick={() => setRetry(value => value + 1)}>Retry workspace</Button></div>
   const entry = current?.value

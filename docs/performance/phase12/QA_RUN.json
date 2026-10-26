@@ -1,0 +1,68 @@
+{
+  "startedAt": "2026-10-26T13:04:49.484Z",
+  "buildId": "FXBoz7ZsRfWXbsBo4gGDZ",
+  "ordinaryFileConcurrency": 2,
+  "checks": [
+    {
+      "name": "unit-final",
+      "startedAt": "2026-10-26T13:04:49.490Z",
+      "completedAt": "2026-10-26T13:08:03.729Z",
+      "status": 0,
+      "signal": null
+    },
+    {
+      "name": "migrations",
+      "startedAt": "2026-10-26T13:08:03.731Z",
+      "completedAt": "2026-10-26T13:08:04.946Z",
+      "status": 0,
+      "signal": null
+    },
+    {
+      "name": "security",
+      "startedAt": "2026-10-26T13:08:04.947Z",
+      "completedAt": "2026-10-26T13:08:18.241Z",
+      "status": 0,
+      "signal": null
+    },
+    {
+      "name": "typecheck",
+      "startedAt": "2026-10-26T13:08:18.242Z",
+      "completedAt": "2026-10-26T13:08:25.387Z",
+      "status": 0,
+      "signal": null
+    },
+    {
+      "name": "lint",
+      "startedAt": "2026-10-26T13:08:25.388Z",
+      "completedAt": "2026-10-26T13:08:31.805Z",
+      "status": 0,
+      "signal": null
+    },
+    {
+      "name": "live",
+      "startedAt": "2026-10-26T13:08:31.829Z",
+      "completedAt": "2026-10-26T13:10:18.386Z",
+      "status": 1,
+      "signal": null,
+      "resolvedBy": "live-scope-followup"
+    },
+    {
+      "name": "live-scope-followup",
+      "startedAt": "2026-10-26T13:11:38.894Z",
+      "completedAt": "2026-10-26T13:11:58.342Z",
+      "status": 0,
+      "signal": null
+    },
+    {
+      "name": "live-dispatch-marker-followup",
+      "startedAt": "2026-10-26T14:03:09.943Z",
+      "completedAt": "2026-10-26T14:03:29.022Z",
+      "status": 0,
+      "signal": null,
+      "note": "Existing browser-local selected-effect marker replaces asynchronous Playwright request delivery time for Auth-before-dispatch ordering. Application/build and performance clocks unchanged."
+    }
+  ],
+  "liveResolution": "The initial live suite passed66/67; new scope case passed its initial read-count assertion but waited on wrong Club Overview selector while in Recruiting. Only the test target was corrected; same frozen application build. Targeted followup passes the new unique case across3 native contexts.",
+  "complete": true,
+  "completedAt": "2026-10-26T14:03:29.022Z"
+}

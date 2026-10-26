@@ -1,0 +1,16 @@
+{
+  "recorded": {
+    "next": "15.5.27",
+    "react": "19.2.0",
+    "prisma": "6.19.3",
+    "playwright": "1.64.0"
+  },
+  "observed": {
+    "next": "15.5.27",
+    "react": "19.2.0",
+    "prisma": "6.19.3",
+    "playwright": "1.64.0"
+  },
+  "sameVersions": true,
+  "scope": "Shared dependency package versions checked after observed external checkout work; exact dependency file contents were not independently frozen. Application source hashes and build snapshots are frozen. No dependencies installed or changed by Phase12."
+}

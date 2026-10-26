@@ -1,0 +1,8 @@
+{
+  "requestOrderingEvidence": "Deterministic unit regression, baseline-only real browser failure, candidate real browser pass, and44\u21920 already-notified multiple-read source outcomes. Retained even with host-load uncertainty.",
+  "localProfile": "Completed before the observed original-checkout activity; no experiment-launched tests/builds competed. Exclusive host access was not established.",
+  "constrainedProfile": "Complete declared samples and no actual sleep. Retained entire set, including adverse tails. Concurrent external checkout/development work overlapped, so latency comparison is observational and confounded.",
+  "publication": "Hold. No consistent latency improvement or isolated causal performance gain established.",
+  "exclusionRule": "No post-hoc removal of adverse rows for external-load explanations. Original sleep/power-preflight exclusions remain separate.",
+  "reference": "ORIGINAL_CHECKOUT_OBSERVATION.json"
+}

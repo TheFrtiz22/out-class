@@ -1,0 +1,18 @@
+{
+  "accepted": false,
+  "rule": "Predeclared whole-collection exclusion for actual host sleep; no individual slow/failing row replacement.",
+  "directory": "interrupted-constrained-1",
+  "initialDetailOutcomes": 168,
+  "featureOutcomes": 128,
+  "interactionOutcomes": 72,
+  "httpOutcomes": 252,
+  "collectorFailure": [
+    {
+      "name": "AssertionError",
+      "message": "Expected values to be strictly equal:"
+    }
+  ],
+  "unrecordedInteractionPreparation": "The next interaction file has0 samples and no page errors, while collector stderr records TimeoutError. Existing collector reports only error type, so the exact preparation step is unavailable. No missing rows are invented.",
+  "powerAudit": "interrupted-constrained-1/POWER_AUDIT.json",
+  "replacement": "Entire constrained protocol will rerun on identical source/builds/cohorts following explicit user confirmation of open lid and AC power. Local collection remains accepted."
+}

@@ -1,0 +1,28 @@
+✖ constrained startup fences an already-notified Auth epoch, revisits read fresh, and revoked cookies reveal no old applicants (6097.835375ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6315.749958
+
+✖ failing tests:
+
+test at tests/navigation-phase12-e2e.test.cjs:6:1
+✖ constrained startup fences an already-notified Auth epoch, revisits read fresh, and revoked cookies reveal no old applicants (6097.835375ms)
+  AssertionError [ERR_ASSERTION]: An Auth event already known before the selected effect dispatches must not cause an obsolete request followed by a replacement
+
+  2 !== 1
+
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/navigation-phase12-e2e.test.cjs:12:177)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

@@ -1,0 +1,23 @@
+{
+  "observedAt": "2026-10-26T14:54:16.108623+00:00",
+  "originalCheckout": "/Users/jesseklinger/Documents/out-class",
+  "initialHead": "cc77a33cdd0176a8dd64f78771e5f56412adff6a",
+  "initialStatus": "",
+  "observedHead": "f14a8128bb9196f570f1c2803bfa20eb4403d07a",
+  "observedBranch": "codex/liquid-glass-navigation",
+  "observedStatus": "",
+  "recentReflog": [
+    "f14a812 HEAD@{2026-10-26 10:52:41 -0400} commit: Polish navigation with shared light and navy glass materials",
+    "145fed9 HEAD@{2026-10-26 10:29:39 -0400} merge origin/main: Fast-forward",
+    "cc77a33 HEAD@{2026-10-26 10:25:16 -0400} checkout: moving from codex/application-writing-local-baseline to codex/liquid-glass-navigation",
+    "cc77a33 HEAD@{2026-10-23 11:35:03 -0400} commit: 3way"
+  ],
+  "phase12Action": "Read-only observation. No checkout, reset, merge, file write, or shutdown of unrelated work. Preserve current branch and edits.",
+  "externalDevelopmentServerObserved": {
+    "port": 3111,
+    "active": true,
+    "elapsedAtObservation": "approximately27 minutes",
+    "startInferredFromElapsed": "approximately2026-10-26T14:29Z; approximate, not a process start log"
+  },
+  "timingImplication": "Checkout changed at14:25Z and external development server began approximately14:29Z during constrained protocol. CPU/build/browser activity of that work is not captured. Retain every constrained row as observational data; latency is confounded, not an isolated causal before/after estimate."
+}

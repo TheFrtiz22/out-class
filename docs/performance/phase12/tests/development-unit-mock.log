@@ -1,0 +1,63 @@
+✔ Recruiting Interviews retains the scheduling tab when round navigation remounts it (187.584917ms)
+✔ read API preserves dates and user JSON, validates scope, and never caches private responses (146.060666ms)
+✔ ordinary read fetches overlap rather than enter the Server Action queue (9.419542ms)
+✔ root bootstrap starts authenticated content without an identity HTTP waterfall (4.193375ms)
+✔ verified Supabase identity is reused only inside the same React request; membership remains live (9.843917ms)
+✔ duplicate identity refreshes coalesce and a late old-account response cannot replace the new bootstrap (7.362459ms)
+✔ middleware avoids duplicate refresh only after demo/support guards; loaders own authentication (5.8555ms)
+✔ query-only club transitions skip RSC navigation and preserve modified/cross-club links (0.577625ms)
+✔ Members delegates each visit to a fresh selected-tab loader and privacy/account changes remain scoped (23.481ms)
+✔ advanced permissions delegate one directory and one self-identity refresh to their owner (4.939708ms)
+✔ a stalled workspace read times out, aborts its request and releases the deadline (3.437583ms)
+✔ a changed browser Auth token rotates pending-read authority without treating the token as authorization (4.658083ms)
+✔ Auth publishes its opaque epoch fence before React commits, without dropping any token-change invalidation (2.258792ms)
+✔ all four selected resources start their guarded read alongside code loading and never reuse another visit (32.33375ms)
+✖ late navigation/session/account results cannot reveal a previous projection; retry makes a fresh request (7.185417ms)
+✔ Demo and unresolved Demo initialization never dispatch a live selected-tab request (4.895208ms)
+✖ club, privacy and support authority changes hide content and fence earlier reads (6.053042ms)
+✔ an Auth notification before effect commit defers an obsolete selected read until its current scope renders (3.44775ms)
+✔ successful and failed reads cannot settle during the gap between Auth notification and React commit (15.188792ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 17
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 601.1835
+
+✖ failing tests:
+
+test at tests/selected-workspace-loader.test.cjs:15:1
+✖ late navigation/session/account results cannot reveal a previous projection; retry makes a fresh request (7.185417ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  5 !== 4
+
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/selected-workspace-loader.test.cjs:18:306)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 5,
+    expected: 4,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/selected-workspace-loader.test.cjs:25:1
+✖ club, privacy and support authority changes hide content and fence earlier reads (6.053042ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  'status' !== 'alert'
+
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/selected-workspace-loader.test.cjs:28:278)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'status',
+    expected: 'alert',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

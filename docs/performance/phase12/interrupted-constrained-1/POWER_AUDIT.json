@@ -1,0 +1,35 @@
+{
+  "startedAt": "2026-10-26T13:19:15.932Z",
+  "attemptStoppedAt": "2026-10-26T13:50:19.634883+00:00",
+  "stoppedAtBasis": "Last protocol write after owned application was stopped in finally; protocol remains incomplete.",
+  "complete": false,
+  "acceptedPowerInterval": false,
+  "control": "Temporary caffeinate -dimsu; no persistent power settings changed. Actual host sleep invalidates whole interval.",
+  "source": "Read-only macOS power log, actual Sleep/Wake/DarkWake categories; scheduled wake requests excluded.",
+  "events": [
+    {
+      "at": "2026-10-26T09:48:16-04:00",
+      "category": "Sleep"
+    },
+    {
+      "at": "2026-10-26T09:48:48-04:00",
+      "category": "DarkWake"
+    },
+    {
+      "at": "2026-10-26T09:48:59-04:00",
+      "category": "Sleep"
+    },
+    {
+      "at": "2026-10-26T09:49:09-04:00",
+      "category": "DarkWake"
+    },
+    {
+      "at": "2026-10-26T09:49:18-04:00",
+      "category": "Sleep"
+    },
+    {
+      "at": "2026-10-26T09:50:19-04:00",
+      "category": "DarkWake"
+    }
+  ]
+}

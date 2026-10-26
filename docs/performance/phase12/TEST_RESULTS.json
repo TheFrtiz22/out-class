@@ -1,0 +1,74 @@
+{
+  "buildId": "FXBoz7ZsRfWXbsBo4gGDZ",
+  "ordinary": {
+    "total": 1471,
+    "passed": 1408,
+    "failed": 0,
+    "skipped": 63,
+    "cancelled": 0
+  },
+  "ordinaryFileConcurrency": 2,
+  "live": {
+    "total": 67,
+    "passed": 67,
+    "failed": 0,
+    "skipped": 0,
+    "note": "67 unique passing cases across initial66/67 + corrected targeted1. Original full live suite failure remains in initialLiveSuite/live.log; counts are not added as68 unique cases."
+  },
+  "initialLiveSuite": {
+    "total": 67,
+    "passed": 66,
+    "failed": 1,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "targetedLiveFollowup": {
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "nativeSecurityConcurrency": {
+    "passed": 3,
+    "failed": 0
+  },
+  "provisioning": {
+    "passed": 38,
+    "failed": 0
+  },
+  "migrations": {
+    "freshAndLegacy": 57,
+    "rlsTablesWithBrowserDenial": 78
+  },
+  "productionBuild": "passed; frozen before final QA; two application files changed",
+  "typecheck": "passed",
+  "lint": {
+    "errors": 0,
+    "existingWarnings": 22
+  },
+  "newOrdinaryCases": 3,
+  "newLiveCases": 1,
+  "existingLiveCases": 66,
+  "excludedBaselineRegression": {
+    "passed": 0,
+    "failed": 1,
+    "reason": "Expected failure: two pipeline reads after Auth notification already preceded first dispatch. New regression assertion demonstrates baseline defect; never pooled into candidate verification/performance."
+  },
+  "optionalGates": "63 ordinary skips are explicit environment gates; selected live/native suites exercised separately, not every optional suite. Counts overlap.",
+  "developmentFailures": [
+    "First focused mock:17/19 pass;2 assertions fail because scope-check callback mock was recreated each render. Test mock now matches production memoized callback;19 focused pass.",
+    "First full ordinary run overlapping build:1402 pass,6 browser timeout/assertion failures,63 skips. Same frozen application later passes1408 with file concurrency2 and no competing build. Causality not isolated; no timeout/assertion/product changes.",
+    "Initial candidate live67 run:66 pass,new scope case passed initial read-count assertion then waited for wrong Club Overview selector while navigating within Recruiting. Corrected test target passes targeted case across3 native contexts; application/build unchanged.",
+    "Initial browser event-order assertion used Playwright request-delivery time, which may lag real browser dispatch. Final test uses the existing browser-local selected-effect diagnostic marker instead; final baseline still fails two versus one, candidate passes all three contexts. Previous logs retained; application/build and benchmark clocks unchanged."
+  ],
+  "nativeMetadataParity": "Existing Phase9 native differential:86 scopes plus injection-shaped value passed in initial live suite.",
+  "targetedDispatchMarkerFollowup": {
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "note": "Final regression compares Auth and selected-effect dispatch markers on the same browser clock. Expected baseline failure retained; same frozen candidate passes three native contexts."
+  }
+}

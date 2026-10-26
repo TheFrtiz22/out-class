@@ -210,3 +210,15 @@ test('a changed browser Auth token rotates pending-read authority without treati
  observe('TOKEN_REFRESHED',{access_token:'opaque-B'});const rotated=render().readAuthority;assert.notEqual(rotated,initial);assert.equal(render().user,identity);
  observe('SIGNED_IN',{access_token:'opaque-B'});assert.equal(render().readAuthority,rotated);observe('SIGNED_OUT',null);assert.notEqual(render().readAuthority,rotated);
 });
+
+test('Auth publishes its opaque epoch fence before React commits, without dropping any token-change invalidation',async()=>{
+ const h=hooks(),identity={id:'user',memberships:[]};let observe;
+ const {AuthProvider}=loader({react:h.react,'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/lib/demo/store':{},'@/lib/permissions':{hasWorkspace:()=>false},'@/utils/supabase/client':{createClient:()=>({auth:{onAuthStateChange:fn=>{observe=fn;return{data:{subscription:{unsubscribe(){}}}}}}})}})('contexts/auth-context.tsx');
+ const render=()=>h.render(()=>AuthProvider({initialUser:identity,children:null}).props.value),initial=render();await h.flush();assert.ok(initial.isReadAuthorityCurrent(initial.readAuthority));
+ observe('INITIAL_SESSION',{access_token:'opaque-A'});assert.ok(initial.isReadAuthorityCurrent(initial.readAuthority));
+ observe('TOKEN_REFRESHED',{access_token:'opaque-B'});assert.equal(initial.isReadAuthorityCurrent(initial.readAuthority),false,'The previously rendered context must fence reads before a rerender');
+ const refreshed=render();assert.ok(refreshed.isReadAuthorityCurrent(refreshed.readAuthority));assert.equal(refreshed.user,identity,'The fence never turns an SDK session into authorized identity');
+ observe('SIGNED_IN',{access_token:'opaque-B'});assert.ok(refreshed.isReadAuthorityCurrent(refreshed.readAuthority));
+ observe('SIGNED_IN',{access_token:'opaque-C'});assert.equal(refreshed.isReadAuthorityCurrent(refreshed.readAuthority),false);const replaced=render();
+ observe('SIGNED_OUT',null);assert.equal(replaced.isReadAuthorityCurrent(replaced.readAuthority),false);assert.equal(render().user,identity,'Existing remote identity refresh remains separate');
+});

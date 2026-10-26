@@ -1,0 +1,23 @@
+{
+  "baseline": "327f7de5d8dad3381f0db258956d0b8b6424a6af",
+  "files": [
+    "components/selected-club-workspace.tsx",
+    "contexts/auth-context.tsx",
+    "scripts/navigation-phase12-local.cjs",
+    "scripts/navigation-phase12-study.cjs",
+    "scripts/navigation-phase12-interactions.cjs",
+    "scripts/navigation-phase12-constrained-interactions.cjs",
+    "scripts/navigation-phase12-concurrency.cjs",
+    "scripts/navigation-phase12-ssr.cjs",
+    "tests/performance-regressions.test.cjs",
+    "tests/selected-workspace-loader.test.cjs",
+    "tests/navigation-phase12-e2e.test.cjs"
+  ],
+  "sha256": "05bdeefb90a4dda6fd397dbe180e564469b35c6b414d04d7e78f1ba53c6caca8",
+  "scope": "Two application files, regression cases/mock correction and Phase12-only collectors/SSR diagnostic. Blank diff context lines normalized only; reverse application checked.",
+  "applicationChanged": [
+    "components/selected-club-workspace.tsx",
+    "contexts/auth-context.tsx"
+  ],
+  "reverseApplyCheck": true
+}

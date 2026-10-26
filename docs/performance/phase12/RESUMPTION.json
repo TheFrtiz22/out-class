@@ -1,0 +1,46 @@
+{
+  "at": "2026-10-26T14:10:01.408Z",
+  "userPowerClarification": "User is not near a charger and explicitly directs continuation on battery; earlier AC requirement was an agent preflight choice, not part of PLAN.",
+  "sourceFilesVerified": 913,
+  "changedApplicationFiles": [
+    "components/selected-club-workspace.tsx",
+    "contexts/auth-context.tsx"
+  ],
+  "buildIds": {
+    "baseline": "9_IJRDuwFMnwclrWJ9soE",
+    "candidate": "FXBoz7ZsRfWXbsBo4gGDZ"
+  },
+  "collectorAndPlanHashesMatchAcceptedLocal": true,
+  "cohorts": [
+    {
+      "planned": 1000,
+      "actual": 1000
+    },
+    {
+      "planned": 5000,
+      "actual": 5000
+    }
+  ],
+  "power": {
+    "source": "Battery Power",
+    "acConnected": false,
+    "startingPercent": 83,
+    "lowPowerMode": 0,
+    "temporaryAwakeControl": "caffeinate -dimsu; idle sleep prevention on battery; lid sleep is not overridden",
+    "persistentSettingsChanged": false,
+    "endingSource": "Battery Power",
+    "endingPercent": 62
+  },
+  "freshLiveRead": {
+    "status": 200,
+    "privateNoStore": true,
+    "cookieSensitive": true,
+    "validProjection": true
+  },
+  "excludedAttempts": [
+    "interrupted-constrained-1",
+    "preflight-constrained-2"
+  ],
+  "replacementScope": "Entire constrained protocol; both frozen variants on battery under unchanged settings; accepted local profile retained separately. Actual sleep audit required.",
+  "completedAt": "2026-10-26T14:44:13.055Z"
+}
