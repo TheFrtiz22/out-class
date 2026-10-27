@@ -7,18 +7,18 @@ const nodes=n=>!n||typeof n!=='object'?[]:Array.isArray(n)?n.flatMap(nodes):[n,.
 const text=n=>typeof n==='number'?String(n):typeof n==='string'?n:Array.isArray(n)?n.map(text).join(''):n?.props?text(n.props.children):''
 const button=(tree,label)=>nodes(tree).find(n=>n.type==='Button'&&text(n)===label)
 function harness(existing, overrides = {}){
- const slots=[],effects=[],cleanups=[],timers=new Map(),calls=[];let index=0,timerId=0,fail=false,defer=null,lost=false
+ const slots=[],effects=[],cleanups=[],timers=new Map(),calls=[];let index=0,timerId=0,fail=false,defer=null,lost=false,recoveryOptions=null
  const record=existing || {id:'session',revision:0,completedAt:null,questions:[{id:'q1',prompt:'Snapshot question',guidance:'Listen carefully'}],draft:{questionNotes:[],additionalQuestions:[],overallReview:'',additionalNotes:'',applicantQuestions:'',completedQuestionIds:[],score:null}}
  const react={useState(initial){const i=index++;if(!(i in slots))slots[i]=initial;return[slots[i],v=>slots[i]=typeof v==='function'?v(slots[i]):v]},useRef(initial){const i=index++;return slots[i]??={current:initial}},useEffect(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;effects.push(()=>{cleanups[i]?.();cleanups[i]=fn()})}}}
  react.useLayoutEffect=react.useEffect
- const api={getPreviousInterviewScores:async()=>[],openInterviewSession:async()=>structuredClone(record),getInterviewKit:async()=>{calls.push(['library']);return{questions:[...record.questions,{id:'q2',prompt:'New kit question',guidance:'New guidance'}]}},saveInterviewSession:async input=>{calls.push(['save',structuredClone(input)]);if(defer)await defer;if(fail)throw Error('Revision changed. Retry before leaving.');if(record.completedAt){if(!input.complete||input.revision!==record.revision-1||JSON.stringify(input.draft)!==JSON.stringify(record.draft))throw Error('Interview already completed.');return{session:structuredClone(record),evaluation:{id:'evaluation'}};}record.draft=structuredClone(input.draft);record.revision++;if(input.complete)record.completedAt='2026-09-27';if(lost){lost=false;throw Error('Response interrupted after commit');}return{session:structuredClone(record),evaluation:input.complete?{id:'evaluation'}:null}}}
+ const api={getPreviousInterviewScores:async()=>[],openInterviewSession:async()=>structuredClone(record),getInterviewKit:async()=>{calls.push(['library']);return{questions:[...record.questions,{id:'q2',prompt:'New kit question',guidance:'New guidance'}]}},saveInterviewSession:async input=>{calls.push(['save',structuredClone(input)]);if(defer)await defer;if(fail)throw Error('Revision changed. Retry before leaving.');if(input.complete && overrides.unacknowledged)return {session:structuredClone(record),evaluation:null};if(overrides.rejectRevision && input.revision!==record.revision)throw Error('Revision conflict');if(record.completedAt){if(!input.complete||input.revision!==record.revision-1||JSON.stringify(input.draft)!==JSON.stringify(record.draft))throw Error('Interview already completed.');return{session:structuredClone(record),evaluation:{id:'evaluation'}};}record.draft=structuredClone(input.draft);record.revision++;if(input.complete)record.completedAt='2026-09-27';if(lost){lost=false;throw Error('Response interrupted after commit');}return{session:structuredClone(record),evaluation:input.complete?{id:'evaluation'}:null}}}
  const mod={exports:{}}
  let sharedView=null;const collab={clientId:'tab',get view(){return sharedView},error:'',refresh:async()=>{},dismiss:async()=>{},select:overrides.select || (async id=>({revision:1,question:[...record.questions,{id:'q2',prompt:'New kit question',guidance:'New guidance'}].find(q=>q.id===id)}))};
  const code=ts.transpileModule(fs.readFileSync('components/interview-kit-session.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText
  const motion={exports:{}};new Function('module','exports',ts.transpileModule(fs.readFileSync('lib/interview-question-motion.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(motion,motion.exports)
- new Function('require','module','exports','setTimeout','clearTimeout',code)(name=>name==='react'?react:name==='@/hooks/use-autosave-recovery'?{useAutosaveRecovery:()=>({recovery:null,onBlur(){}})}:name==='@/hooks/use-interview-workspace'?{useInterviewWorkspace:()=>collab}:name==='@/lib/demo/interview-collaboration'?{}:name==='@/lib/interview-question-motion'?motion.exports:name==='@/lib/composer-enter'?require('./helpers/interview-harness.cjs').harness().load('lib/composer-enter.ts'):name==='@/lib/workspace-api'?api:name==='@/lib/interview-kits'?{emptyInterviewDraft:{questionNotes:[],additionalQuestions:[],overallReview:'',score:null}}:name.startsWith('@/components/')?new Proxy({},{get:(_,key)=>key}):require(name),mod,mod.exports,fn=>{timers.set(++timerId,fn);return timerId},id=>timers.delete(id))
+ new Function('require','module','exports','setTimeout','clearTimeout',code)(name=>name==='react'?react:name==='@/hooks/use-autosave-recovery'?{useAutosaveRecovery:options=>{recoveryOptions=options;return {recovery:null,onBlur(){void options.flush().catch(()=>{})}}}}:name==='@/hooks/use-interview-workspace'?{useInterviewWorkspace:()=>collab}:name==='@/lib/demo/interview-collaboration'?{}:name==='@/lib/interview-question-motion'?motion.exports:name==='@/lib/composer-enter'?require('./helpers/interview-harness.cjs').harness().load('lib/composer-enter.ts'):name==='@/lib/workspace-api'?api:name==='@/lib/interview-kits'?{emptyInterviewDraft:{questionNotes:[],additionalQuestions:[],overallReview:'',score:null}}:name.startsWith('@/components/')?new Proxy({},{get:(_,key)=>key}):require(name),mod,mod.exports,fn=>{timers.set(++timerId,fn);return timerId},id=>timers.delete(id))
  const props={clubId:'club',applicationId:'app',roundId:'round',formRef:{current:null},onState(){},onComplete(...args){calls.push(['complete',...args])}, ...overrides}
- return {calls,record,shared(value){sharedView=value},fail(value){fail=value},loseResponse(){lost=true},defer(value){defer=value},render(){index=0;const tree=mod.exports.InterviewKitSession(props);while(effects.length)effects.shift()();return tree},tick(){const pending=[...timers.values()];timers.clear();pending.forEach(fn=>fn())}}
+ return {calls,record,blur(){return recoveryOptions.flush()},shared(value){sharedView=value},fail(value){fail=value},loseResponse(){lost=true},defer(value){defer=value},render(){index=0;const tree=mod.exports.InterviewKitSession(props);while(effects.length)effects.shift()();return tree},tick(){const pending=[...timers.values()];timers.clear();pending.forEach(fn=>fn())}}
 }
 const select=(tree,label)=>nodes(tree).find(n=>n.type==='button'&&(text(n).startsWith(label)||nodes(n).some(c=>c.props?.className==='oc-completed-prompt'&&text(c).startsWith(label)))).props.onClick()
 const edit=(tree,value)=>nodes(tree).find(n=>n.props?.id==='active-notes-q1').props.onChange({target:{value}})
@@ -221,4 +221,43 @@ test('desktop renders an inert flight, preserves notes above its stable landing 
   assert.ok(calls[0].frames.every(frame=>!frame.transform.includes('scale')));assert.equal(calls[0].frames.at(-1).transform,'translate(700px,180px)');assert.equal(calls[0].frames.at(-1).width,'280px');assert.deepEqual(calls[1].frames,[{opacity:1},{opacity:0}]);
   assert.deepEqual(h.record.draft.completedQuestionIds,[]);assert.equal(h.record.draft.score,null);
  } finally {global.window=priorWindow;global.document=priorDocument;}
+});
+
+
+test('explicit finish owns the save queue when blur and finish await the same autosave',async()=>{
+ const h=harness();h.render();await flush();let t=h.render();button(t,'End current interview').props.onClick();await flush();t=h.render();
+ scoreInput(t).props.onChange({currentTarget:{value:'8'}});t=h.render();
+ let release;h.defer(new Promise(resolve=>release=resolve));h.tick();
+ nodes(t).find(n=>n.props?.id==='applicant-questions').props.onChange({target:{value:'Latest question, entered while saving'}});t=h.render();
+ nodes(t).find(n=>n.props?.id==='additional-interview-notes').props.onChange({target:{value:'Latest discussion'}});t=h.render();scoreInput(t).props.onChange({currentTarget:{value:'9.5'}});t=h.render();
+ const blur=h.blur();const finish=button(t,'End post-interview');const first=finish.props.onClick();finish.props.onClick();
+ release();await blur;await first;await flush();t=h.render();
+ assert.ok(h.record.completedAt,'one explicit click must submit rather than silently return to editing');
+ assert.equal(h.record.draft.score,9.5);assert.equal(h.record.draft.applicantQuestions,'Latest question, entered while saving');assert.equal(h.record.draft.additionalNotes,'Latest discussion');
+ assert.equal(h.calls.filter(c=>c[0]==='save'&&c[1].complete).length,1);assert.equal(h.calls.filter(c=>c[0]==='complete').length,1);
+ assert.deepEqual(h.calls.filter(c=>c[0]==='save').map(c=>c[1].revision),[0,1,2]);
+});
+
+
+test('revision conflict preserves the latest closing review and retry refreshes only its revision',async()=>{
+ const h=harness(undefined,{rejectRevision:true});h.render();await flush();let t=h.render();button(t,'End current interview').props.onClick();await flush();t=h.render();
+ scoreInput(t).props.onChange({currentTarget:{value:'9.5'}});t=h.render();nodes(t).find(n=>n.props?.id==='applicant-questions').props.onChange({target:{value:'Retain the latest answer'}});t=h.render();
+ h.record.revision++;button(t,'End post-interview').props.onClick();await flush();t=h.render();
+ assert.equal(h.record.completedAt,null);assert.equal(nodes(t).find(n=>n.props?.id==='applicant-questions').props.value,'Retain the latest answer');assert.equal(scoreInput(t).props.value,9.5);assert.equal(h.calls.filter(c=>c[0]==='complete').length,0);
+ button(t,'Refresh revision, keep my text').props.onClick();await flush();t=h.render();button(t,'Retry end post-interview').props.onClick();await flush();t=h.render();
+ assert.ok(h.record.completedAt);assert.equal(h.record.draft.applicantQuestions,'Retain the latest answer');assert.equal(h.record.draft.score,9.5);assert.equal(h.calls.filter(c=>c[0]==='complete').length,1);
+});
+
+test('failed pending autosave cannot consume finish; failed submission retains input for explicit retry',async()=>{
+ const h=harness();h.render();await flush();let t=h.render();button(t,'End current interview').props.onClick();await flush();t=h.render();scoreInput(t).props.onChange({currentTarget:{value:'7.5'}});t=h.render();
+ let release;h.defer(new Promise(r=>release=r));h.fail(true);h.tick();
+ nodes(t).find(n=>n.props?.id==='applicant-questions').props.onChange({target:{value:'Keep this on failure'}});t=h.render();const blur=h.blur().catch(()=>{});button(t,'End post-interview').props.onClick();release();await blur;await flush();t=h.render();
+ assert.equal(h.record.completedAt,null);assert.ok(button(t,'Retry end post-interview'));assert.equal(nodes(t).find(n=>n.props?.id==='applicant-questions').props.value,'Keep this on failure');assert.equal(h.calls.filter(c=>c[0]==='save'&&c[1].complete).length,1);
+ h.fail(false);button(t,'Retry end post-interview').props.onClick();await flush();assert.ok(h.record.completedAt);assert.equal(h.record.draft.applicantQuestions,'Keep this on failure');assert.equal(h.calls.filter(c=>c[0]==='complete').length,1);
+});
+
+
+test('an unacknowledged submission never unlocks Next or reports completion',async()=>{
+ const h=harness(undefined,{unacknowledged:true});h.render();await flush();let t=h.render();button(t,'End current interview').props.onClick();await flush();t=h.render();scoreInput(t).props.onChange({currentTarget:{value:'6.5'}});t=h.render();button(t,'End post-interview').props.onClick();await flush();t=h.render();
+ assert.equal(h.record.completedAt,null);assert.ok(button(t,'Retry end post-interview'));assert.equal(h.calls.filter(c=>c[0]==='complete').length,0);assert.equal(button(t,'Next candidate \u2192'),undefined);assert.equal(scoreInput(t).props.value,6.5);
 });

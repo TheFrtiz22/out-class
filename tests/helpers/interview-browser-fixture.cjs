@@ -2,6 +2,8 @@
 // controlled latency. Bound to loopback only; never a production application route.
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),http=require('node:http'),cp=require('node:child_process'),ts=require('typescript');
 const root=path.resolve(__dirname,'../..'),tmp=fs.mkdtempSync(path.join(os.tmpdir(),'outclass-interaction-browser-'));
+const port=Number(process.env.OUTCLASS_INTERACTION_PORT||4318);
+if(!Number.isInteger(port)||port<1024||port>65535)throw Error('Invalid loopback fixture port');
 const baseline=process.env.OUTCLASS_INTERACTION_BASELINE||'ce2c0141291bcb0b8683b8a3a94ad5db62c6d746';
 const readGit=p=>cp.execFileSync('git',['show',baseline+':'+p],{cwd:root,encoding:'utf8',windowsHide:true});
 fs.writeFileSync(path.join(tmp,'before-kit.tsx'),readGit('components/interview-kit-session.tsx').replace('@/hooks/use-interview-workspace','fixture-before-hook').replace('@/components/interview-timer','fixture-before-timer'));
@@ -33,5 +35,5 @@ w.webpack({mode:'production',optimization:{minimize:false},context:root,entry:pa
   const allowed=file&&[path.join(tmp,'build')+path.sep,staticRoot+path.sep,path.join(root,'public/pdfjs')+path.sep,path.join(root,'public/demo')+path.sep].some(p=>file.startsWith(p));
   if(!file||(!allowed&&!['/room.css','/pdf.css'].includes(url.pathname))||!fs.existsSync(file)){res.writeHead(404);res.end();return;}
   res.setHeader('content-type',type||(/\.js$|\.mjs$/.test(file)?'application/javascript':file.endsWith('.pdf')?'application/pdf':file.endsWith('.css')?'text/css':'application/octet-stream'));fs.createReadStream(file).pipe(res);
- });server.listen(4318,'127.0.0.1',()=>console.log('Isolated actual-component fixture ready: http://127.0.0.1:4318/?mode=before or ?mode=after; baseline '+baseline+'; no production calls.'));
+ });server.listen(port,'127.0.0.1',()=>console.log('Isolated actual-component fixture ready: http://127.0.0.1:'+port+'/?mode=before or ?mode=after; baseline '+baseline+'; no production calls.'));
 });

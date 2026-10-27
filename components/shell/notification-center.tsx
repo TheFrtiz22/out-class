@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 import { Bell, Maximize2, CheckCheck, Check, Mail, Archive, MoreHorizontal, ArrowLeft, ArrowUpRight, CalendarDays, FileText, Megaphone, ListChecks, Users2 } from "@/components/icons"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -10,6 +11,7 @@ import { OrganizationInvitationCard } from "@/components/organization-invitation
 import { useOrganizationInvitations } from "@/contexts/organization-invitations-context"
 import { useApplicationState } from "@/lib/application-state"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
+import { navigateWithinClub } from "@/lib/workspace-navigation"
 import { notificationDestination, notificationFeed, notificationRelativeTime } from "@/lib/notification-presentation"
 import type { Notification } from "@/lib/data"
 import type { ViewId } from "@/lib/views"
@@ -26,6 +28,7 @@ export function NotificationCenter({ unread, pendingInvitations, loadState, onRe
   onNavigate: (view: ViewId) => void
 }) {
   const state = useApplicationState()
+  const router = useRouter()
   const invitations = useOrganizationInvitations()
   const [open, setOpen] = useState(false), [filter, setFilter] = useState<"all" | "unread">("all")
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -96,9 +99,18 @@ export function NotificationCenter({ unread, pendingInvitations, loadState, onRe
           <ul className="oc-notification-items">{feed.map(item => {
             const destination = notificationDestination(item, state.trackedApps)
             return <li key={item.id} data-notification-id={item.id} data-unread={!item.read}><div className="oc-notification-row">{destination.kind === "href" ? <Link tabIndex={0} aria-disabled={busy} className="oc-notification-open" href={destination.href} prefetch={false} onClick={event => {
+              if (event.defaultPrevented) return
               if (busy || !canLeaveWorkspace()) { event.preventDefault(); return }
+              if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && event.button === 0) {
+                event.preventDefault()
+                if (navigated.current) return
+                navigated.current = true
+                // Commit the destination before starting the read Server Action.
+                // Same-club links reuse the workspace's query-only navigation.
+                if (!navigateWithinClub(destination.href)) router.push(destination.href)
+                setOpen(false)
+              }
               read(item)
-              if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && event.button === 0) { navigated.current = true; setOpen(false) }
             }}>{itemContent(item)}<span className="sr-only">{item.cta || "Open update"}</span></Link> : <button tabIndex={0} type="button" disabled={busy} className="oc-notification-open" onClick={() => activate(item)}>{itemContent(item)}</button>}
               <DropdownMenu><DropdownMenuTrigger asChild><button tabIndex={0} type="button" className="oc-notification-more" aria-label={`Actions for ${item.title}`} disabled={busy}><MoreHorizontal size={18} aria-hidden="true" /></button></DropdownMenuTrigger><DropdownMenuContent className="oc-notification-item-menu" align="end" collisionPadding={12} onCloseAutoFocus={event => { if (!panel.current?.querySelector(`[data-notification-id="${CSS.escape(item.id)}"]`)) { event.preventDefault(); filterButton.current?.focus({ preventScroll: true }) } }}><DropdownMenuItem onSelect={() => void run(() => state.setNotificationsRead([item.id], !item.read))}>{item.read ? <Mail /> : <Check />}{item.read ? "Mark unread" : "Mark read"}</DropdownMenuItem>{item.durableId && <DropdownMenuItem onSelect={() => void run(() => state.deleteNotifications([item.id]))}><Archive />Dismiss</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>
             </div></li>
