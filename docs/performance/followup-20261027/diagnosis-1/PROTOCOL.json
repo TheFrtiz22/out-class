@@ -1,0 +1,56 @@
+{
+  "acceptedPerformanceData": false,
+  "startedAt": "2026-10-27T14:07:30.093Z",
+  "complete": true,
+  "sourceRef": "b83fe214c476a633177568ce792ba779885a7676",
+  "buildId": "ftuiaUURaqpFiw7MszQ5G",
+  "planSha256": "8263aeca3f5fddbb41c0789a6293719fff743a05f0c3a9af14088ca8059df224",
+  "tools": {
+    "navigation-audit.cjs": "ef894a888a99815d1e6fd18d5f9ecb8c5d7e4f52ee7e981603442a55bf9e20ef",
+    "navigation-followup-local.cjs": "ceeef3722d7d95209ad3814f8ce100451496c64795b32df8c8404f698f3acdfe",
+    "navigation-followup-server-diagnostics.cjs": "9a1376c03a9c583a6a75966425ed6ec4ea1833b516fef3c1089cc228e8a3518b",
+    "navigation-followup-provider-events.cjs": "6236ecaae8e65a564adc9bd48a2c4fc516d9f3431f49b782f518222764628caf",
+    "navigation-followup-study.cjs": "e612d322393dd8637699fae195a969d625efaab7f6cb4c2f838e8e400913e91a",
+    "navigation-phase15-host-monitor.cjs": "1efc15070f972406de7a785e96a0b33cda24a304ff68dede639e71f1de8e14b7"
+  },
+  "blocks": [
+    {
+      "directory": "batch-1",
+      "status": 0,
+      "planned": 40,
+      "observed": 40,
+      "failed": 0
+    },
+    {
+      "directory": "batch-2",
+      "status": 0,
+      "planned": 40,
+      "observed": 40,
+      "failed": 0
+    },
+    {
+      "directory": "batch-3",
+      "status": 0,
+      "planned": 40,
+      "observed": 40,
+      "failed": 0
+    },
+    {
+      "directory": "batch-4",
+      "status": 0,
+      "planned": 40,
+      "observed": 40,
+      "failed": 0
+    }
+  ],
+  "failures": [],
+  "backgroundFailures": [],
+  "samplerFailures": 0,
+  "completedAt": "2026-10-27T14:22:29.437Z",
+  "hostControl": {
+    "valid": true,
+    "samples": 181,
+    "violations": []
+  },
+  "applicationStopped": true
+}

@@ -1,0 +1,9 @@
+{
+  "providerImage": "public.ecr.aws/supabase/gotrue:v2.197.0",
+  "numericDurationUnit": "nanoseconds",
+  "providerSource": "https://github.com/supabase/auth/blob/v2.197.0/internal/observability/request-logger.go",
+  "sourceFinding": "Pinned logEntry.Write records elapsed.Nanoseconds(); provider handler time is not exclusive database or CPU time.",
+  "gatewaySource": "https://developer.konghq.com/gateway/traffic-control/proxying/",
+  "gatewayFinding": "Upstream header measures wait for first upstream response byte in milliseconds; proxy header precedes upstream dispatch. Headers are emitted before complete response-body processing.",
+  "providerRequestIdJoinAvailable": false
+}

@@ -1,0 +1,35 @@
+{
+  "acceptedPerformanceData": false,
+  "status": 200,
+  "responseCorrelationHeaders": {
+    "x-request-id": null,
+    "sb-request-id": null,
+    "x-kong-request-id": null
+  },
+  "headerNames": [
+    "access-control-allow-origin",
+    "connection",
+    "content-length",
+    "content-type",
+    "date",
+    "vary",
+    "via",
+    "x-kong-proxy-latency",
+    "x-kong-upstream-latency"
+  ],
+  "providerUserEvents": [
+    {
+      "category": "auth_user",
+      "requestId": "c5091ed4-204d-4b48-8fc3-4933ed3d59bb",
+      "at": "2026-10-27T13:57:51Z",
+      "status": 200,
+      "providerDurationMs": 26.316792,
+      "rawNumericDuration": 26316792,
+      "numericDurationUnit": "nanoseconds"
+    }
+  ],
+  "providerDurationUnit": "nanoseconds",
+  "providerImage": "public.ecr.aws/supabase/gotrue:v2.197.0",
+  "source": "https://github.com/supabase/auth/blob/v2.197.0/internal/observability/request-logger.go",
+  "interpretation": "Pinned source explicitly emits elapsed.Nanoseconds(); provider middleware duration is not exclusive CPU or database execution."
+}

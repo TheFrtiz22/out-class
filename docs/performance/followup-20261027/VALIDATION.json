@@ -1,0 +1,21 @@
+{
+  "at": "2026-10-27T14:35:07.632507+00:00",
+  "applicationFilesVerified": 927,
+  "applicationChanges": 0,
+  "sourceToolPlanHashesVerified": true,
+  "browserMembership": 160,
+  "independentClickQuantilesVerified": 8,
+  "independentAuthHttpQuantilesVerified": 3657,
+  "focusedTests": {
+    "passed": 17,
+    "failed": 0,
+    "skipped": 0,
+    "log": "tests/focused.log"
+  },
+  "normalVerifiedSignupAuthTotpProvision": {
+    "passed": 38,
+    "scope": "Fresh disposable baseline provision before diagnosis; not a new full application run"
+  },
+  "historicalPhase15AndReviewPreserved": true,
+  "hostedBeforeAfterClaim": false
+}

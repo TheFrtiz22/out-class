@@ -1,0 +1,17 @@
+{
+  "logs": [
+    "analysis.log",
+    "collector-auth-ca.log",
+    "collector-build.log",
+    "collector-certificate.log",
+    "collector-followup-browser.log",
+    "collector-migrate.log",
+    "collector-supabase-start.log",
+    "focused.log",
+    "provision.log",
+    "scale.log",
+    "seed.log",
+    "study.log"
+  ],
+  "redaction": "Known private fixture values and generic JWT/secret-key patterns; raw provider/server logs excluded in favor of strict sanitized event exports."
+}

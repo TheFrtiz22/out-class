@@ -1,0 +1,41 @@
+{
+  "at": "2026-10-27T13:53:48.807268+00:00",
+  "sourceRef": "b83fe214c476a633177568ce792ba779885a7676",
+  "main": "06d3e93110d09fc564de7e28cf7dc3a71f081fe4",
+  "originalHead": "09f312dc9dedf0084ad0f3f1c2a537856f38bd84",
+  "originalStatus": "",
+  "containers": [
+    "supabase_pg_meta_outclass-announcement-e2e\trunning",
+    "supabase_storage_outclass-announcement-e2e\trunning",
+    "supabase_rest_outclass-announcement-e2e\trunning",
+    "supabase_realtime_outclass-announcement-e2e\trunning",
+    "supabase_inbucket_outclass-announcement-e2e\trunning",
+    "supabase_auth_outclass-announcement-e2e\trunning",
+    "supabase_kong_outclass-announcement-e2e\texited",
+    "supabase_db_outclass-announcement-e2e\trunning",
+    "outclass-release-rehearsal-20261002\texited",
+    "supabase_db_out-class\trunning",
+    "supabase_studio_out-class\trunning",
+    "supabase_pg_meta_out-class\trunning",
+    "supabase_edge_runtime_out-class\texited",
+    "supabase_storage_out-class\trunning",
+    "supabase_rest_out-class\trunning",
+    "supabase_realtime_out-class\trunning",
+    "supabase_inbucket_out-class\trunning",
+    "supabase_auth_out-class\trunning",
+    "supabase_kong_out-class\trunning",
+    "supabase_vector_out-class\trunning",
+    "supabase_analytics_out-class\trunning"
+  ],
+  "applicationChangeForFirstProbe": 0,
+  "testsBeforeProbe": {
+    "command": "node --test tests/navigation-followup-diagnostics.test.cjs tests/navigation-phase15-diagnostics.test.cjs",
+    "passed": 8,
+    "failed": 0
+  },
+  "toolHashes": {
+    "scripts/navigation-followup-server-diagnostics.cjs": "0ab0c99968520f813d0d9f7f40a2fa828b647698528b9189f3e0633158d021d5",
+    "scripts/navigation-followup-provider-events.cjs": "6236ecaae8e65a564adc9bd48a2c4fc516d9f3431f49b782f518222764628caf",
+    "scripts/navigation-audit.cjs": "ef894a888a99815d1e6fd18d5f9ecb8c5d7e4f52ee7e981603442a55bf9e20ef"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "completed": true,
+  "at": "2026-10-27T14:35:11.503964+00:00",
+  "ownedAppContainersVolumesRemoved": true,
+  "privateCredentialsAndSnapshotsRemoved": true,
+  "priorInactiveFixtureRestored": true,
+  "unrelatedContainerStatesUnchanged": true,
+  "unrelatedContainers": 21,
+  "originalCheckoutUnchanged": true,
+  "retainedBuildId": "ftuiaUURaqpFiw7MszQ5G",
+  "power": "Temporary awake assertion only; no persistent configuration change.",
+  "publication": "Only the separately ready PR85 is on main; diagnostic branch remains unmerged."
+}

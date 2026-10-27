@@ -1,0 +1,30 @@
+{
+  "startedAt": "2026-10-27T13:49:30.566510+00:00",
+  "base": "b83fe214c476a633177568ce792ba779885a7676",
+  "mainReadyCommit": "06d3e93110d09fc564de7e28cf7dc3a71f081fe4",
+  "readyPullRequest": "https://github.com/TheFrtiz22/out-class/pull/85",
+  "mainDeploymentCheck": "success",
+  "readyApplicationChanges": "Only font preload and missing-artwork fixes; broader retained application remains on this local followup branch.",
+  "objective": "Explain intermittent identity waiting under the actual constrained source-and-Review burst before changing protected application behavior; then resolve Settings first-use and fresh-page interaction costs.",
+  "applicationChangesForFirstProbe": 0,
+  "dataset": "Fresh disposable1000-applicant fixture; existing constrained deferred-feature browser harness, four sequential batches of5 cold and5 warm outcomes per feature. Target Settings\u2192Review totals20 cold+20 warm; three other feature paths retained as controls.",
+  "plannedBrowserOutcomes": 160,
+  "targetReviewOutcomes": 40,
+  "interpretation": "Instrumented diagnosis only, excluded from all existing primary benchmark quantiles; do not replace Phase15 slow rows. No before/after speedup claim.",
+  "observations": [
+    "Existing request UUID\u2192workspace trace UUID\u2192Auth HTTP lifecycle stages.",
+    "Strictly sanitized provider request UUID and matching Auth middleware duration when available; confirm units from pinned provider source before interpreting numeric values.",
+    "Node per-second event-loop delay, GC entries, CPU/resource and heap counters; overlapping process windows are not exclusive request CPU.",
+    "Owned Auth/database container aggregate CPU/memory and DB-role wait-state samples; no SQL text/values, actors, tokens, cookies or response bodies.",
+    "Existing X-Kong-Upstream-Latency/X-Kong-Proxy-Latency in milliseconds, with documented overlap/first-header limitations; no claim of pure provider execution."
+  ],
+  "security": "Remote verified identity, live session/revocation, enabled account, membership/capabilities/suspension, support/anonymous/voting authority, no-store/Cookie sensitivity and Demo isolation remain unchanged. No production configuration/DB/schema/index/dependency changes.",
+  "controls": "Fresh owned loopback fixture, frozen build/source/harness, existing host/sleep controls. All build/tests before probes; instrumentation overhead explicitly separates these observations from performance claims.",
+  "stopConditions": [
+    "All160 planned outcomes retained, or retain the complete failed attempt with reason.",
+    "If no stall reproduces, report that limit; never label an unobserved cause solved.",
+    "Any candidate app fix requires a separate predeclared comparison and full relevant security/draft/browser validation before release."
+  ],
+  "remainingAcceptance": "Ready subset already landed. No other application change is release-cleared by this diagnostic plan.",
+  "preflightRefinement": "The owned local Auth gateway exposes no response request UUID, so exact provider-log joins are unavailable without changing metadata/configuration. Existing numeric Kong upstream/proxy headers will provide per-HTTP-request stage observations; provider logs remain separate complete aggregates. No header injection or provider configuration change."
+}

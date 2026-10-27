@@ -1,0 +1,8 @@
+{
+  "acceptedPerformanceData": false,
+  "status": 200,
+  "gatewayUpstreamMs": 18,
+  "gatewayProxyMs": 1,
+  "providerRequestId": null,
+  "interpretation": "Headers are observed per HTTP response, in milliseconds; they do not include complete body transfer and do not isolate pure CPU/SQL."
+}

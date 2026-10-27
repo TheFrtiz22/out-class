@@ -1,0 +1,8 @@
+{
+  "at": "2026-10-27T14:35:07.804588+00:00",
+  "passed": true,
+  "filesScanned": 41,
+  "knownValueCount": 24,
+  "findings": [],
+  "scope": "Known private fixture values and generic JWT/secret-key patterns; strict runtime/provider event schemas tested separately."
+}

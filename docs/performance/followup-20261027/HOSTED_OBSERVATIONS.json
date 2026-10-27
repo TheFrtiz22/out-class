@@ -1,0 +1,66 @@
+{
+  "observedAt": "2026-10-27T14:33:10.392777+00:00",
+  "readOnly": true,
+  "configurationChanged": false,
+  "sources": {
+    "deployment": "https://vercel.com/outclassuva/out-class/BzCLa2ydkTndaTH2X6nwWMAstWub",
+    "workspaceMetrics": "https://vercel.com/outclassuva/out-class/observability/route/%2Fapi%2Fworkspace?view=function&type=serverless&advanced=true",
+    "supabase": "Supabase connected list_projects result"
+  },
+  "deployment": {
+    "commit": "06d3e93110d09fc564de7e28cf7dc3a71f081fe4",
+    "branch": "main",
+    "environment": "Production",
+    "status": "Ready",
+    "currentDomain": "www.out-class.net",
+    "functionRegion": "iad1",
+    "fluidCompute": true,
+    "nodeVersion": "24.x",
+    "cpu": "Standard 1 vCPU 2 GB Memory"
+  },
+  "supabase": {
+    "name": "OutClass",
+    "region": "us-west-2",
+    "status": "ACTIVE_HEALTHY",
+    "postgresVersion": "17.6.1.166"
+  },
+  "workspaceRoute": {
+    "route": "/api/workspace",
+    "environment": "Production",
+    "displayedWindow": "Oct 26, 2026 10:30pm \u2013 Oct 27, 2026 10:30am EDT; Last 12 hours",
+    "invocations": 733,
+    "durationMs": {
+      "n": null,
+      "p50": null,
+      "average": 1800,
+      "p75": 2060,
+      "p95": 2380,
+      "max": null
+    },
+    "activeCpuMs": {
+      "average": 93,
+      "p75": 127,
+      "p95": 156
+    },
+    "timeToFirstByteMs": {
+      "average": 1850,
+      "p75": 2130,
+      "p95": 2570
+    },
+    "errorPercent": 0,
+    "timeoutPercent": 0,
+    "coldPercent": 2.2,
+    "externalSupabase": {
+      "apiCalls": 851,
+      "displayedLatencyMs": 290,
+      "aggregation": null
+    }
+  },
+  "limitations": [
+    "Dashboard values are rounded, read at a moving window and may use different metric populations; invocation count is not asserted as exact latency sample size.",
+    "Window includes multiple deployed commits and background traffic. This is not a before/after comparison or click-to-content measurement.",
+    "External API latency aggregation is not labeled in the inspected table; do not call it p50/p95 or pure provider execution.",
+    "Region distance and wall/CPU gap support investigating network/server waits but do not isolate Auth versus DB versus scheduling. Effective production Prisma pool settings were not read.",
+    "Vercel connector returned 403; existing authenticated browser supplied read-only deployment/metric observations. Original deployment-list page was restored."
+  ]
+}

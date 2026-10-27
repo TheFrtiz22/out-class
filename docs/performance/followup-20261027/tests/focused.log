@@ -1,0 +1,25 @@
+✔ audit nearest-rank percentiles do not fabricate missing measurements (0.903417ms)
+✔ saved request names omit query arguments, tokens and fixture identifiers (0.134875ms)
+✔ active workload output cannot replace the original audit or existing evidence (0.977042ms)
+✔ hydration fixture accepts only its separate local project and ports (1.30575ms)
+✔ followup runtime observer is opt-in and refuses non-owned endpoints (1.383708ms)
+✔ only a validated provider request UUID leaves the response-header boundary (1.62525ms)
+✔ provider duration is unknown until its numeric unit is established (0.223667ms)
+✔ provider logs discard actors, cookies, request data and messages (0.231291ms)
+✔ container counters accept only the two owned services and numeric fields (0.302417ms)
+✔ gateway timing headers preserve zero and discard every other header (0.149083ms)
+✔ followup output cannot overwrite historical, root or existing evidence (16.757583ms)
+✔ diagnostic preload stays disabled by default and refuses hosted or unreserved Auth endpoints (0.677541ms)
+✔ concurrent diagnostic timelines retain only numeric timings, fixed labels and non-sensitive trace IDs (4.30775ms)
+✔ host control includes foreign development workers and strips private arguments while excluding the complete benchmark process tree (1.226791ms)
+✔ summary preserves zero, missing metrics and the actual slow maximum (0.991708ms)
+✔ incomplete, host-invalid or sleep-interrupted profiles cannot be summarized (1.388ms)
+✔ real immutable evidence retains every measured row and the rejected cold tail (100.11875ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 290.528708
