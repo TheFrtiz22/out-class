@@ -30,12 +30,14 @@
   }
   .oc-dock-rail::after { content: ""; position: absolute; inset: 1px; border: 1px solid rgb(220 238 255 / 7%); border-top-color: rgb(220 238 255 / 17%); border-bottom-color: rgb(4 15 29 / 24%); border-radius: 26px; pointer-events: none; }
   .oc-dock-brand { display: flex; align-items: center; min-height: 52px; flex-shrink: 0; margin-bottom: 10px; border-radius: 12px; text-align: left; }
-  .oc-dock-brand-art { display: block; width: 220px; height: 52px; flex: 0 0 220px; pointer-events: none; }
+  /* Center the visible interlocked mark within the compact icon column. */
+  .oc-dock-brand-art { display: block; width: 220px; height: 52px; flex: 0 0 220px; pointer-events: none; transform: translateX(-4.5px); transition: transform var(--oc-glass-move) var(--oc-floating-ease); }
   .oc-dock-brand-art svg { display: block; width: 220px; height: 52px; overflow: visible; }
   .oc-dock-brand-art path { fill: #fff9f1; }
   .oc-dock-brand-art .oc-dock-letter-c { fill: #f26522; transform: translate(-153px,20px); transition: transform var(--oc-glass-move) var(--oc-floating-ease); }
   .oc-dock-letter-out, .oc-dock-letter-class { opacity: 0; transform: translateX(-12px); transition: opacity 120ms ease, transform 260ms var(--oc-floating-ease); }
   .oc-dock-brand-art .oc-dock-letter-class { fill: #f26522; }
+  [data-dock-expanded="true"] .oc-dock-brand-art { transform: translateX(0); }
   [data-dock-expanded="true"] .oc-dock-letter-c { transform: translate(0,0); }
   [data-dock-expanded="true"] :is(.oc-dock-letter-out,.oc-dock-letter-class) { opacity: 1; transform: translateX(0); transition-delay: 80ms; }
   .oc-dock-navigation { min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
