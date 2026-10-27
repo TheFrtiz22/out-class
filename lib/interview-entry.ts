@@ -40,3 +40,10 @@ export function sortInterviewEntries(rows: InterviewRoomEntry[], now = Date.now(
   const past = (r: InterviewRoomEntry) => r.completed || r.cancelled || !r.started && +new Date(r.endTime) < now;
   return [...rows].sort((a, b) => Number(past(a)) - Number(past(b)) || +new Date(a.startTime) - +new Date(b.startTime) || a.id.localeCompare(b.id));
 }
+
+/** Metadata from the authorized room projection only; never grants kit/review access. */
+export function interviewRoomRoundOptions(rounds: { id: string; name: string }[], rows: InterviewRoomEntry[]) {
+  const options = new Map(rounds.map(round => [round.id, { id: round.id, name: round.name }]));
+  for (const row of rows) if (!options.has(row.roundId)) options.set(row.roundId, { id: row.roundId, name: row.roundName });
+  return [...options.values()];
+}

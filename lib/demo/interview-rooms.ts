@@ -94,8 +94,8 @@ export async function cancelRoomBooking(id: string) {
 }
 export async function getBookingApplication(clubId: string, roundId: string) {
   const s = demoStore.get(), app = s.applications.find(a => a.clubId === clubId && a.roundId === roundId && a.studentId === s.students[0].id && a.status === "INTERVIEWING")
-  if (!app) throw new Error("The sample applicant has not been invited to this round.")
-  return { applicationId: app.id }
+  if (!app) return { status: "unavailable" as const }
+  return { status: "ready" as const, applicationId: app.id }
 }
 
 export async function setInterviewStaffingRequirement(input: {clubId:string;roomId:string;slotId?:string;needed:number|null;revision:number}) {

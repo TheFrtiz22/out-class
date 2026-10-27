@@ -180,11 +180,15 @@ export async function cancelRoomBooking(bookingId: string) {
   revalidatePath("/")
 }
 export async function getBookingApplication(clubId: string, roundId: string) {
-  uuid.parse(clubId); uuid.parse(roundId)
+  if (!uuid.safeParse(clubId).success || !uuid.safeParse(roundId).success) return { status: "unavailable" as const }
   const { user } = await requireAuth()
-  const app = await prisma.application.findFirst({ where: { clubId, roundId, studentId: user.id, status: "INTERVIEWING" }, select: { id: true } })
-  if (!app) throw new Error("This booking link is for applicants invited to this recruitment round. Sign in with your applicant account or check with the club.")
-  return { applicationId: app.id }
+  try {
+    const app = await prisma.application.findFirst({ where: { clubId, roundId, studentId: user.id, status: "INTERVIEWING", round: { archivedAt: null } }, select: { id: true } })
+    return app ? { status: "ready" as const, applicationId: app.id } : { status: "unavailable" as const }
+  } catch (error) {
+    console.error("Booking invitation lookup failed", { kind: error instanceof Error ? error.name : "Unknown" })
+    return { status: "error" as const }
+  }
 }
 
 /** Staffing metadata only. Never calls panel sync, approval or notification code. */

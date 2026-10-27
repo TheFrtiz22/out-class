@@ -1,5 +1,4 @@
 "use client";
-import { ActionWorkflow } from "@/components/product/action-workflow";
 import { useAutosave } from "@/hooks/use-autosave";
 import { AutosaveStatus } from "@/components/ui/autosave-status";
 import { useAuth } from "@/contexts/auth-context";
@@ -15,7 +14,7 @@ import {
 import type { KitQuestion } from "@/lib/interview-kits";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ListChecks } from "@/components/icons";
+import { ChevronDown, ListChecks } from "@/components/icons";
 import "@/components/clubs/interview-kit-editor.css";
 export function InterviewKitEditor({
   clubId,
@@ -87,8 +86,8 @@ export function RoundKitEditor({ clubId, roundInfo, initiallyOpen = false }: {
   }
   return (
     <section className="oc-kit-round" data-autosave-editor="true" data-unsaved={dirty} data-saving={busy} aria-label={roundInfo.name}>
-      <div className="flex flex-wrap items-center justify-between gap-3 p-4"><div><h3 id={'kit-heading-' + round} className="font-medium">{roundInfo.name}</h3><p className="mt-1 text-xs text-muted-foreground">{!canReadKit ? "Restricted" : loaded ? `${questions.length} questions` : message ? "Could not load" : "Loading…"}</p></div><Button variant="outline" onClick={() => setOpen(true)}>{canEdit ? "Manage questions" : "View question bank"}<span className="sr-only"> · {roundInfo.name}</span></Button></div>
-      <ActionWorkflow title={roundInfo.name + " · Interview kit"} description="Questions and evaluation guidance for this round. Existing interviews retain their original kit." open={open} onOpenChange={setOpen} presentation="sheet"><div id={'kit-panel-' + round} className="oc-kit-builder" onBlur={autosave.onBlur} data-autosave-editor="true" data-unsaved={dirty} data-saving={busy}>
+      <h3><button type="button" id={'kit-heading-' + round} aria-expanded={open} aria-controls={'kit-panel-' + round} onClick={() => setOpen(value => !value)} className="flex min-h-11 w-full items-center gap-3 p-4 text-left text-sm focus-visible:outline-2 focus-visible:outline-ring"><ChevronDown aria-hidden="true" className={`size-4 shrink-0 transition-transform motion-reduce:transition-none ${open ? "" : "-rotate-90"}`} /><span className="flex-1 font-medium">{roundInfo.name}</span><span className="text-xs text-muted-foreground">{!canReadKit ? "Restricted" : loaded ? `${questions.length} questions` : message ? "Could not load" : "Loading…"}</span>{(busy || autosave.error || dirty) && <span className="text-xs" role="status">{busy ? "Saving…" : autosave.error ? "Couldn't save" : "Unsaved changes"}</span>}</button></h3>
+      <div id={'kit-panel-' + round} hidden={!open} aria-labelledby={'kit-heading-' + round} className="oc-kit-builder" onBlur={autosave.onBlur} data-autosave-editor="true" data-unsaved={dirty} data-saving={busy}>
           {!canReadKit ? <div role="alert" className="space-y-3"><p>This round is saved. Editing its kit requires an explicit President, Vice-president or Board grant. Assigned interviewers can browse its question bank.</p>{canManageGrants && <Link className="underline" href={interviewSetupHref(clubId, round, "access")}>Manage interview access</Link>}</div> : <>
           {!canEdit && <p className="mb-4 text-sm text-muted-foreground">Read-only question bank. Use questions in your assigned interview workspace.</p>}
           <h4 className="oc-kit-builder-label"><ListChecks size={19} aria-hidden="true" />Question builder</h4>
@@ -188,7 +187,7 @@ export function RoundKitEditor({ clubId, roundInfo, initiallyOpen = false }: {
           Reload kit
         </Button>
         </>}
-      </div></ActionWorkflow>
+      </div>
     </section>
   );
 }

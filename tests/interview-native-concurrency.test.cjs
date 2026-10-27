@@ -83,21 +83,21 @@ test('native PostgreSQL interview transactions: independent drafts, simultaneous
  assert.equal(review.readOnly,true);assert.equal(review.score,8.5);assert.equal(review.additionalNotes,'');assert.equal(review.applicantQuestions,'');
  assert.doesNotMatch(JSON.stringify(review),/Only interviewer one|Final discussion|Synthetic/);
  await prisma.application.update({where:{id:app.id},data:{roundId:round.id}});
- const history=[];
+ const history=[];const historySlot=await prisma.interviewSlot.create({data:{clubId:club.id,roomId:room.id,location:room.location,capacity:20,startTime:new Date('2099-10-20T16:00:00Z'),endTime:new Date('2099-10-20T16:20:00Z')}});
  async function historyFixture(interviewerId=oneMember.id,roundId=round.id,complete=true){
   const student=await prisma.user.create({data:{email:`history-${randomUUID()}@virginia.edu`}});
   await prisma.studentProfile.create({data:{userId:student.id,firstName:'Synthetic',lastName:'History',computingId:randomUUID(),major:'Economics',gradYear:2028}});
   const application=await prisma.application.create({data:{clubId:club.id,studentId:student.id,roundId,status:'INTERVIEWING'}});
   await prisma.interviewPanelAssignment.create({data:{applicationId:application.id,roundId,memberId:interviewerId,grantedBy:owner.id}});
-  const date=new Date('2026-10-01T12:00:00Z');
+  if(roundId===round.id)await prisma.interviewBooking.create({data:{applicationId:application.id,roundId,slotId:historySlot.id}});const date=new Date('2099-10-20T16:30:00Z');
   const evaluation=complete?await prisma.evaluation.create({data:{applicationId:application.id,interviewerId,roundId,round:'Interview',score:7.5,submittedAt:date}}):null;
   return prisma.interviewRecord.create({data:{applicationId:application.id,interviewerId,roundId,anonymousReview:roundId===next.id,questions:[q],draft:{...first.draft,score:evaluation?7.5:null},completedAt:evaluation?date:null,evaluationId:evaluation?.id}});
  }
  assert.deepEqual(await a.kits.getPreviousInterviewScores(scope),[]);
  for(let i=0;i<7;i++)history.push(await historyFixture());
  await historyFixture(twoMember.id);await historyFixture(oneMember.id,next.id);await historyFixture(oneMember.id,round.id,false);
- const expected=history.sort((x,y)=>y.id.localeCompare(x.id)).slice(0,5).map(r=>r.id);
- assert.deepEqual((await a.kits.getPreviousInterviewScores(scope)).map(r=>r.id),expected,'History excludes current, peer, same-name other round and unfinished records; ID breaks timestamp ties');
+ const expected=history.sort((x,y)=>y.applicationId.localeCompare(x.applicationId)).slice(0,5).map(r=>r.applicationId);
+ assert.deepEqual((await a.kits.getPreviousInterviewScores(scope)).map(r=>r.id),expected,'History excludes current, unpermitted peer-only applicant, same-name other round and unfinished records; applicant ID breaks ties');
  // A different club with an identically named round must never enter history.
  const foreign=await prisma.club.create({data:{name:'Foreign synthetic',slug:randomUUID(),tagline:'',description:'',color:'#fff',category:'Other'}});
  const foreignMember=await prisma.clubMember.create({data:{clubId:foreign.id,userId:one.id,permissions:['applications.review','applicants.identify']}});
