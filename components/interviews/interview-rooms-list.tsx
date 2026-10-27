@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useDemoMode } from "@/contexts/demo-context";
 import { getInterviewWorkspace, getInterviewRounds } from "@/lib/workspace-api";
-import { interviewEntryHref, interviewEntryStatus, type InterviewRoomEntry } from "@/lib/interview-entry";
+import { interviewEntryHref, interviewEntryStatus, interviewRoomRoundOptions, type InterviewRoomEntry } from "@/lib/interview-entry";
 import { defaultInterviewDate, groupInterviewDates, readExpandedInterviewDates } from "@/lib/interview-room-dates";
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "@/components/icons";
@@ -34,7 +34,7 @@ export function InterviewRoomsList({ clubId }: { clubId: string }) {
     setRows([]); setSecondary(false); setLoading(true);
     const reader = serializedWorkspaceRead(
       () => Promise.all([assignedRooms(), getInterviewWorkspace(clubId), getInterviewRounds(clubId)]),
-      ([result, workspace, available]) => { setRows(result); setRounds(available.rounds); setSecondary(workspace.applications.some(a => a.assignedRoundIds.some(r => !result.some(row => row.applicationId === a.id && row.roundId === r)))); setError(""); setLoading(false); },
+      ([result, workspace, available]) => { setRows(result); setRounds(interviewRoomRoundOptions(available.rounds, result)); setSecondary(workspace.applications.some(a => a.assignedRoundIds.some(r => !result.some(row => row.applicationId === a.id && row.roundId === r)))); setError(""); setLoading(false); },
       () => { setRows([]); setSecondary(false); setError("Couldn’t load assigned interviews. Check your current interview access and retry."); setLoading(false); },
     );
     const visible = () => { if (!document.hidden) void reader.poll(); };

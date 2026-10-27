@@ -1,7 +1,7 @@
 // Loopback only, actual scheduling components and Demo actions. No hosted services.
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),postcss=require('postcss')
 const {bundle}=require('./browser-bundle.cjs'),{harness}=require('./demo-harness.cjs')
-async function fixture({fresh=false,baseline,pipeline=false}={}){
+async function fixture({fresh=false,baseline,pipeline=false,jsonbDraft=false}={}){
  const h=harness(),{demoStore,demoUser}=h.load('lib/demo/store.ts');demoStore.start(h.load('lib/demo/seed.ts').createDemoSeed('2099-09-07'))
  const s=demoStore.get(),club=s.clubs[0],room=s.interviewRooms.find(r=>r.clubId===club.id&&s.bookingFlow.settings[r.roundId]?.bookingPublishedAt)||s.interviewRooms.find(r=>r.clubId===club.id),roundId=room.roundId,scope={clubId:club.id,roundId},api=h.load('lib/workspace-api.ts'),user=demoUser(),writes=[]
  demoStore.mutate(s=>s.perspective={role:'leader',clubId:club.id})
@@ -22,6 +22,7 @@ async function fixture({fresh=false,baseline,pipeline=false}={}){
   '@/lib/workspace-api':`async function call(name,args){const r=await fetch('/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,args,role:new URLSearchParams(location.search).has('applicant')?'student':'leader'})});const v=await r.json();if(!r.ok)throw Error(v.error);return v}${calls.map(name=>`exports.${name}=(...args)=>call('${name}',args);`).join('')}`,
  }
  if(baseline){const ts=require('typescript'),cp=require('node:child_process');for(const name of ['room-manager','create-room-dialog','panel-preview-workspace','booking-publication']){const file='components/interviews/'+name+'.tsx',source=cp.execFileSync('git',['show',baseline+':'+file],{encoding:'utf8',windowsHide:true}).replaceAll('"./','"@/components/interviews/').replaceAll('"lucide-react"','"@/components/icons"');mocks['@/components/interviews/'+name]=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022,esModuleInterop:true}}).outputText}}
+ if(jsonbDraft)mocks['@/hooks/use-editor-draft']=`const{useEffect,useRef}=require('react');exports.useEditorDraft=({value,enabled,restore})=>{const done=useRef(false);useEffect(()=>{if(enabled&&!done.current){done.current=true;restore(JSON.parse(JSON.stringify(value),(_k,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.fromEntries(Object.entries(v).reverse()):v))}},[enabled]);return{ready:true,dirty:false,saving:false,error:'',state:'idle',flush:async()=>{},clear:async()=>{},onBlur(){},recovery:null}}`;
  const js=bundle(entry,mocks)
  const css=(await postcss([require('@tailwindcss/postcss')()]).process('@import "../app/globals.css";\n@import "../components/interviews/scheduling.css";\n@import "../components/clubs/interview-kit-editor.css";\n@import "../components/clubs/club-settings.css";',{from:path.resolve('tests/visual-fixture.css')})).css+'\n:root{--font-source-sans-3:Arial;--font-libre-caslon-text:Georgia}'
  const server=http.createServer(async(req,res)=>{

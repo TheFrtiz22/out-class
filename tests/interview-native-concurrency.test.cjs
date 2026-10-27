@@ -83,21 +83,21 @@ test('native PostgreSQL interview transactions: independent drafts, simultaneous
  assert.equal(review.readOnly,true);assert.equal(review.score,8.5);assert.equal(review.additionalNotes,'');assert.equal(review.applicantQuestions,'');
  assert.doesNotMatch(JSON.stringify(review),/Only interviewer one|Final discussion|Synthetic/);
  await prisma.application.update({where:{id:app.id},data:{roundId:round.id}});
- const history=[];
+ const history=[];const historySlot=await prisma.interviewSlot.create({data:{clubId:club.id,roomId:room.id,location:room.location,capacity:20,startTime:new Date('2099-10-20T16:00:00Z'),endTime:new Date('2099-10-20T16:20:00Z')}});
  async function historyFixture(interviewerId=oneMember.id,roundId=round.id,complete=true){
   const student=await prisma.user.create({data:{email:`history-${randomUUID()}@virginia.edu`}});
   await prisma.studentProfile.create({data:{userId:student.id,firstName:'Synthetic',lastName:'History',computingId:randomUUID(),major:'Economics',gradYear:2028}});
   const application=await prisma.application.create({data:{clubId:club.id,studentId:student.id,roundId,status:'INTERVIEWING'}});
   await prisma.interviewPanelAssignment.create({data:{applicationId:application.id,roundId,memberId:interviewerId,grantedBy:owner.id}});
-  const date=new Date('2026-10-01T12:00:00Z');
+  if(roundId===round.id)await prisma.interviewBooking.create({data:{applicationId:application.id,roundId,slotId:historySlot.id}});const date=new Date('2099-10-20T16:30:00Z');
   const evaluation=complete?await prisma.evaluation.create({data:{applicationId:application.id,interviewerId,roundId,round:'Interview',score:7.5,submittedAt:date}}):null;
   return prisma.interviewRecord.create({data:{applicationId:application.id,interviewerId,roundId,anonymousReview:roundId===next.id,questions:[q],draft:{...first.draft,score:evaluation?7.5:null},completedAt:evaluation?date:null,evaluationId:evaluation?.id}});
  }
  assert.deepEqual(await a.kits.getPreviousInterviewScores(scope),[]);
  for(let i=0;i<7;i++)history.push(await historyFixture());
  await historyFixture(twoMember.id);await historyFixture(oneMember.id,next.id);await historyFixture(oneMember.id,round.id,false);
- const expected=history.sort((x,y)=>y.id.localeCompare(x.id)).slice(0,5).map(r=>r.id);
- assert.deepEqual((await a.kits.getPreviousInterviewScores(scope)).map(r=>r.id),expected,'History excludes current, peer, same-name other round and unfinished records; ID breaks timestamp ties');
+ const expected=history.sort((x,y)=>y.applicationId.localeCompare(x.applicationId)).slice(0,5).map(r=>r.applicationId);
+ assert.deepEqual((await a.kits.getPreviousInterviewScores(scope)).map(r=>r.id),expected,'History excludes current, unpermitted peer-only applicant, same-name other round and unfinished records; applicant ID breaks ties');
  // A different club with an identically named round must never enter history.
  const foreign=await prisma.club.create({data:{name:'Foreign synthetic',slug:randomUUID(),tagline:'',description:'',color:'#fff',category:'Other'}});
  const foreignMember=await prisma.clubMember.create({data:{clubId:foreign.id,userId:one.id,permissions:['applications.review','applicants.identify']}});
@@ -112,7 +112,10 @@ test('native PostgreSQL interview transactions: independent drafts, simultaneous
  // must recheck after commit, rather than use an authorization captured beforehand.
  let release,locked;const ready=new Promise(resolve=>locked=resolve),hold=new Promise(resolve=>release=resolve);
  const revoke=prisma.$transaction(async tx=>{await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${club.id} FOR UPDATE`;locked();await hold;await tx.interviewPanelAssignment.update({where:{applicationId_roundId_memberId:{applicationId:app.id,roundId:round.id,memberId:oneMember.id}},data:{revokedAt:new Date()}});});
- await ready;const pending=a.kits.openInterviewSession(scope),pendingList=a.entries.getAssignedInterviewRooms(club.id);release();await revoke;await assert.rejects(pending,/panel/);assert.deepEqual(await pendingList,[]);
+ await ready;const pending=a.kits.openInterviewSession(scope),pendingList=a.entries.getAssignedInterviewRooms(club.id);release();await revoke;await assert.rejects(pending,/panel/);
+ const remaining=await pendingList;assert.equal(remaining.some(row=>row.applicationId===app.id),false,'the revoked applicant disappears even when other valid history assignments remain');
+ const retainedGrants=await prisma.interviewPanelAssignment.findMany({where:{memberId:oneMember.id,roundId:round.id,revokedAt:null},select:{applicationId:true}});
+ assert.ok(remaining.length>0);assert.ok(remaining.every(row=>row.clubId===club.id&&row.roundId===round.id&&retainedGrants.some(g=>g.applicationId===row.applicationId)),'all remaining candidate rows still require their own active grant');
  assert.equal((await prisma.interviewResumeDocument.findUnique({where:{id:document.id}})).contentHash,document.contentHash);
  const audit=await prisma.auditLog.findMany({where:{clubId:club.id}});assert.doesNotMatch(JSON.stringify(audit),/Comment one|Edit A|Only interviewer/);
 });

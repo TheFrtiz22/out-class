@@ -1,3 +1,4 @@
+import { interviewHistoryWindow, previousApplicantScores } from "@/lib/interview-score-history";
 import { anonymousApplicantLabel } from "@/lib/anonymous-review";
 import { demoStore, demoMember } from "./store";
 import { annotationContentSchema, interviewCapabilities, interviewOfficesSchema, interviewScopeSchema, interviewScoreSchema, type InterviewScope } from "@/lib/interview-access";
@@ -147,16 +148,24 @@ export function getSubmittedInterviewReview(input: InterviewScope & { interviewe
   const club=s.clubs.find(c=>c.id===input.clubId)!;const anonymous=!!(r.anonymousReview||club.rounds.find(round=>round.id===input.roundId)?.anonymousReview||club.rounds.find(round=>round.id===s.applications.find(a=>a.id===input.applicationId)!.roundId)?.anonymousReview);if(anonymous&&!caps.readClosing)throw Error("Leadership required.");return { id: r.id, interviewerId: r.interviewerId, roundId: r.roundId, anonymous,textUnavailable:anonymous,submittedAt: anonymous?null:r.completedAt, score: e?.score ?? r.draft.score, applicantQuestions: anonymous ? "" : e?.applicantQuestions ?? r.draft.applicantQuestions ?? "", additionalNotes: anonymous ? "" : e?.notes ?? r.draft.additionalNotes ?? r.draft.overallReview, readOnly: true };
 }
 export function getPreviousInterviewScores(input: InterviewScope) {
-  const { s, member } = access(input);
-  return s.interviews.filter(r => {
-    if (r.interviewerId !== member.id || r.clubId !== input.clubId || r.roundId !== input.roundId || r.applicationId === input.applicationId || !r.completedAt || r.anonymousReview) return false;
-    if (!s.applications.find(a => a.id === r.applicationId)?.evaluations.some(e => e.interviewerId === member.id && e.roundId === input.roundId)) return false;
-    try { access({ ...input, applicationId: r.applicationId }); return true; } catch { return false; }
-  }).sort((a,b) => (+new Date(b.completedAt!) - +new Date(a.completedAt!)) || b.id.localeCompare(a.id)).slice(0,5).map(r => {
-    const app = s.applications.find(a => a.id === r.applicationId)!, p = s.students.find(p => p.id === app.studentId)!.profile;
-    const e = app.evaluations.find(e => e.roundId === r.roundId && e.interviewerId === member.id);
-    return { id: r.id, name: `${p.firstName} ${p.lastName}`, score: e?.score ?? r.draft.score };
-  });
+  const { s, member, caps } = access(input);
+  const current = s.roomBookings.find(b => b.applicationId === input.applicationId && b.roundId === input.roundId);
+  const room = current && s.interviewRooms.find(r => r.id === current.roomId && r.clubId === input.clubId && r.roundId === input.roundId);
+  if (!current || !room) return [];
+  const window = interviewHistoryWindow(current.startTime);
+  return previousApplicantScores(s.roomBookings.filter(b => b.applicationId !== input.applicationId && b.roundId === input.roundId && b.roomId === room.id && +new Date(b.startTime) >= +window.start && +new Date(b.startTime) < +new Date(current.startTime)).flatMap(b => {
+    const app = s.applications.find(a => a.id === b.applicationId && a.clubId === input.clubId && a.studentId !== member.userId && a.status !== "DRAFTING");
+    const club = s.clubs.find(c => c.id === input.clubId)!;
+    if (!app || club.rounds.find(r => r.id === app.roundId)?.anonymousReview) return [];
+    const panel = s.interviewFoundation.assignments.some(a => a.applicationId === app.id && a.roundId === input.roundId && a.memberId === member.id && !a.revokedAt);
+    if (!caps.readClosing && !panel) return [];
+    const records = s.interviews.filter(r => r.applicationId === app.id && r.clubId === input.clubId && r.roundId === input.roundId && r.completedAt);
+    if (records.some(r => r.anonymousReview)) return [];
+    const reviews = records.flatMap(r => app.evaluations.filter(e => e.roundId === input.roundId && e.interviewerId === r.interviewerId && e.submittedAt).map(e => ({ id: r.id, interviewerId: r.interviewerId, score: e.score, submittedAt: e.submittedAt })));
+    if ((!caps.readClosing || app.roundId === input.roundId && panel) && !reviews.some(r => r.interviewerId === member.id)) return [];
+    const p = s.students.find(p => p.id === app.studentId)?.profile;
+    return [{ id: app.id, name: p ? `${p.firstName} ${p.lastName}` : "Profile not provided", reviews }];
+  }));
 }
 export function getEarlierInterviewReviews(input: unknown) {
   const scope = interviewScopeSchema.parse(input); demoStore.refresh();

@@ -225,16 +225,6 @@ function InterviewSession({
     return () => window.removeEventListener("beforeunload", warn)
   }, [dirty, busy])
   useEffect(() => {
-    const shortcut = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && active && !busy) {
-        event.preventDefault()
-        form.current?.requestSubmit()
-      }
-    }
-    window.addEventListener("keydown", shortcut)
-    return () => window.removeEventListener("keydown", shortcut)
-  }, [active?.id, busy])
-  useEffect(() => {
     if (!new URLSearchParams(window.location.search).has("applicationId") && leaderFocus?.clubId === membership.clubId && leaderFocus.applicantId && queue.some(a => a.id === leaderFocus.applicantId)) {
       choose(leaderFocus.applicantId, true)
       clearLeaderFocus()

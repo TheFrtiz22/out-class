@@ -8,8 +8,9 @@ test('shell focuses content on primary mode or club changes even when the destin
  new Function('require','module','exports','window','document',code)(name=>mocks[name]||(name.endsWith('.css')?{}:name.startsWith('@/')?new Proxy({},{get:(_,key)=>String(key)}):require(name)),mod,mod.exports,{scrollTo:()=>calls.push('scroll'),matchMedia:()=>({addEventListener(){},removeEventListener(){}}),addEventListener(){},removeEventListener(){}},{title:''})
  function render(mode,clubId='mii'){
   index=0
-  mod.exports.ProductShell({mode,clubId,active:'overview',title:'Overview',modes:[],items:[],onNavigate(){},onSelect(){}})
-  slots[3].current={focus:()=>calls.push('focus')}
+  const tree=mod.exports.ProductShell({mode,clubId,active:'overview',title:'Overview',modes:[],items:[],onNavigate(){},onSelect(){}})
+  const nodes=node=>!node||typeof node!=='object'?[]:[node,...[node.props?.children].flat(Infinity).flatMap(nodes)]
+  nodes(tree).find(node=>node.props?.id==='workspace-content').props.ref.current={focus:()=>calls.push('focus')}
   while(effects.length)effects.shift()()
  }
  render('recruiting');assert.deepEqual(calls,[])

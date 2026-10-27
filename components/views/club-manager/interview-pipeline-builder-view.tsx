@@ -1,5 +1,6 @@
 "use client";
 import { useEditorDraft } from "@/hooks/use-editor-draft"
+import { editorValue } from "@/lib/editor-value"
 import { AutosaveStatus } from "@/components/ui/autosave-status"
 
 import { ActionWorkflow } from "@/components/product/action-workflow";
@@ -50,7 +51,7 @@ export function InterviewPipelineBuilderView({
   const [editorOpen, setEditorOpen] = useState(false), [editing, setEditing] = useState<RoundDraft | null>(null);
   const [setup, setSetup] = useState<InterviewSetupStatus[]>([]), [setupError, setSetupError] = useState(false), [setupRetry, setSetupRetry] = useState(0);
   useEffect(() => { if (!demo.ready || !clubId) return; let active = true; setSetupError(false); setSetup([]); getPipelineInterviewStatus(clubId).then(value => { if (active) setSetup(value); }).catch(() => { if (active) setSetupError(true); }); return () => { active = false; }; }, [clubId, demo.ready, demo.isDemoEnabled, retry, setupRetry]);
-  const snapshot = JSON.stringify(rounds),
+  const snapshot = editorValue(rounds),
     dirty = loaded && snapshot !== baseline;
   useEffect(() => {
     if (!demo.ready || !clubId) return;
@@ -69,7 +70,7 @@ export function InterviewPipelineBuilderView({
             configuration: roundConfigurationSchema.parse(r.configuration),
           }));
         setRounds(items);
-        setBaseline(JSON.stringify(items));
+        setBaseline(editorValue(items));
         setVersion(data.pipelineVersion);
         setSavedRounds(data.pipelineRounds.filter((r) => !r.archivedAt));
         setArchived(
@@ -115,7 +116,7 @@ export function InterviewPipelineBuilderView({
       await savePipelineSettings(input);
       await draftSave.clear();
       setRounds(proposed);
-      setBaseline(JSON.stringify(proposed));
+      setBaseline(editorValue(proposed));
       setNotice("Recruiting pipeline saved.");
       setRetry((n) => n + 1);
       window.dispatchEvent(new Event(INTERVIEW_ROUNDS_CHANGED));
