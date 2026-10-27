@@ -1,0 +1,54 @@
+{
+  "pullRequest": "https://github.com/TheFrtiz22/out-class/pull/88",
+  "main": "78402ee611f46b8764898250e46b6dcc8dab7654",
+  "testedHead": "0b07a29bdeb0bfc40d13dd1d96322ca9a1e1057c",
+  "testedAndMergedTree": "ec5129159b0019051305a35d8c2bf02ee1ff1d21",
+  "applicationChange": "Collapsed sidebar branding translated left 4.5px; expanded position and reduced-motion behavior preserved",
+  "testChange": "Invitation dismissal test waits for directory refresh to finish before Escape; saving guard unchanged",
+  "focusedBrowserTests": {
+    "pass": 5,
+    "fail": 0
+  },
+  "hostedChecks": {
+    "passed": 12,
+    "total": 12,
+    "runs": [
+      40572127133,
+      40572126939
+    ],
+    "ordinary": {
+      "tests": 1434,
+      "pass": 1390,
+      "fail": 0,
+      "skip": 44
+    },
+    "lint": {
+      "errors": 0,
+      "existingWarnings": 21
+    },
+    "authSettingsRuntime": {
+      "pass": 50,
+      "fail": 0
+    },
+    "selectedNavigation": {
+      "pass": 16,
+      "fail": 0
+    },
+    "authenticatedAccessibility": {
+      "pass": 18,
+      "fail": 0
+    }
+  },
+  "initialFailure": "Initial hosted invitation test pressed Escape after saved notice but before guarded directory refresh completed; all assertions and production saving protection retained",
+  "alignmentPxFromHorizontalCenter": {
+    "before": 4.61422348,
+    "after": 0.11422348,
+    "source": "Local real-shell geometry measurement; collapsed and expanded screenshots visually reviewed"
+  },
+  "deployment": "https://vercel.com/outclassuva/out-class/3iVYU3Wo8jeRahH5y1gkcBapMbpP",
+  "productionStatus": "Ready / Production; exact main source and www.out-class.net domain verified",
+  "productionReadyAt": "2026-10-27T20:00:55Z",
+  "productionVisualVerification": "Fresh protected Overview opened in owned browser tab; cropped logo screenshot reviewed; collapsed transform matrix(1,0,0,1,-4.5,0) observed",
+  "performanceClaim": "UI alignment fix only; no navigation performance improvement claimed",
+  "preservation": "Original liquid-glass checkout unchanged; all newer main changes retained"
+}

@@ -123,7 +123,7 @@ function collectReview() {
 if (require.main === module) {
   const file = path.join(repo, 'docs/performance/NAVIGATION_BENCHMARKS.json'), original = JSON.parse(fs.readFileSync(file, 'utf8'));
   original.schemaVersion = 2;
-  original.scopeNote = 'Original top-level fields describe only the October21 investigation at sourceCommit. latestReview contains a separate later comparison; readySubsetRelease, selectedStartupRelease and followupDiagnosis, when present, describe independent later datasets. Do not pool datasets or treat historical production observations as current telemetry.';
+  original.scopeNote = 'Original top-level fields describe only the October21 investigation at sourceCommit. latestReview contains a separate later comparison; readySubsetRelease, selectedStartupRelease and followupDiagnosis, when present, describe independent later datasets. subsequentUiRelease is release metadata; productionOverviewDiagnostic is a separate uncontrolled single-request observation. Do not pool datasets or treat historical production observations as current telemetry.';
   original.latestReview = collectReview();
   fs.writeFileSync(file, JSON.stringify(original, null, 2) + '\n');
   console.log('Preserved historical benchmark fields; derived92 Phase15 groups with measured n/p50/p95/max and provenance.');

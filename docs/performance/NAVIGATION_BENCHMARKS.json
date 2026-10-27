@@ -44,92 +44,92 @@
   "excludedAttempts": {
     "originalBrowserFailures": [
       {
-        "path": "applicants → voting",
+        "path": "applicants \u2192 voting",
         "condition": "warm",
         "error": "locator.click: Timeout 30000ms exceeded."
       },
       {
-        "path": "applicants → voting",
+        "path": "applicants \u2192 voting",
         "condition": "repeated",
         "error": "locator.click: Timeout 30000ms exceeded."
       },
       {
-        "path": "voting → applicants",
+        "path": "voting \u2192 applicants",
         "condition": "cold",
         "error": "page.waitForFunction: Timeout 30000ms exceeded."
       },
       {
-        "path": "voting → applicants",
+        "path": "voting \u2192 applicants",
         "condition": "warm",
         "error": "locator.click: Timeout 30000ms exceeded."
       },
       {
-        "path": "voting → applicants",
+        "path": "voting \u2192 applicants",
         "condition": "repeated",
         "error": "page.waitForFunction: Timeout 30000ms exceeded."
       },
       {
-        "path": "overview → club2",
+        "path": "overview \u2192 club2",
         "condition": "warm",
         "error": "page.waitForFunction: Timeout 30000ms exceeded."
       },
       {
-        "path": "overview → club2",
+        "path": "overview \u2192 club2",
         "condition": "repeated",
         "error": "page.waitForFunction: Timeout 30000ms exceeded."
       },
       {
-        "path": "personal → overview",
+        "path": "personal \u2192 overview",
         "condition": "cold",
         "error": "page.waitForFunction: Timeout 30000ms exceeded."
       },
       {
-        "path": "personal → overview",
+        "path": "personal \u2192 overview",
         "condition": "warm",
         "error": "page.waitForFunction: Timeout 30000ms exceeded."
       },
       {
-        "path": "personal → overview",
+        "path": "personal \u2192 overview",
         "condition": "repeated",
         "error": "page.waitForFunction: Timeout 30000ms exceeded."
       },
       {
-        "path": "overview → personal",
+        "path": "overview \u2192 personal",
         "condition": "warm",
         "error": "browserContext.close: Target page, context or browser has been closed"
       },
       {
-        "path": "overview → personal",
+        "path": "overview \u2192 personal",
         "condition": "repeated",
         "error": "browser.newContext: Target page, context or browser has been closed"
       }
     ],
     "originalSuperseded": [
       "All Voting cases: nested setup-dialog adapter corrected in voting-samples.json.",
-      "overview → club2: original readiness predicate could match the source club; discard all samples.",
-      "personal → overview: actual switcher defaults to Recruiting; replaced by personal → recruiting.",
-      "overview → personal: original predicate matched shell before useful Home content; replaced by cross-club-samples.json.",
+      "overview \u2192 club2: original readiness predicate could match the source club; discard all samples.",
+      "personal \u2192 overview: actual switcher defaults to Recruiting; replaced by personal \u2192 recruiting.",
+      "overview \u2192 personal: original predicate matched shell before useful Home content; replaced by cross-club-samples.json.",
       "Members/Applicants/Interviews representative paths are replaced by sequential exact-click waterfall pass in consolidated benchmarks."
     ],
     "detailHarnessFailures": [
       {
-        "path": "members → memberDetail",
+        "path": "members \u2192 memberDetail",
         "condition": "cold",
         "error": "page.waitForFunction: Timeout 30000ms exceeded."
       },
       {
-        "path": "members → memberDetail",
+        "path": "members \u2192 memberDetail",
         "condition": "warm",
         "error": "page.waitForFunction: Timeout 30000ms exceeded."
       },
       {
-        "path": "members → memberDetail",
+        "path": "members \u2192 memberDetail",
         "condition": "repeated",
         "error": "page.waitForFunction: Timeout 30000ms exceeded."
       }
     ],
     "exploratoryObservation": {
-      "path": "personal → recruiting",
+      "path": "personal \u2192 recruiting",
       "condition": "cold",
       "meaningfulMsApprox": 4306.7,
       "pass": "superseded cross-workspace adapter pass",
@@ -140,7 +140,7 @@
   },
   "navigation": [
     {
-      "navigation": "overview → members",
+      "navigation": "overview \u2192 members",
       "environment": "local production Next build / disposable Supabase",
       "condition": "cold",
       "sampleCount": 20,
@@ -246,7 +246,7 @@
       }
     },
     {
-      "navigation": "overview → members",
+      "navigation": "overview \u2192 members",
       "environment": "local production Next build / disposable Supabase",
       "condition": "warm",
       "sampleCount": 20,
@@ -340,7 +340,7 @@
       }
     },
     {
-      "navigation": "overview → members",
+      "navigation": "overview \u2192 members",
       "environment": "local production Next build / disposable Supabase",
       "condition": "repeated",
       "sampleCount": 20,
@@ -434,7 +434,7 @@
       }
     },
     {
-      "navigation": "members → meetings",
+      "navigation": "members \u2192 meetings",
       "environment": "local production Next build / disposable Supabase",
       "condition": "cold",
       "sampleCount": 20,
@@ -523,7 +523,7 @@
       }
     },
     {
-      "navigation": "members → meetings",
+      "navigation": "members \u2192 meetings",
       "environment": "local production Next build / disposable Supabase",
       "condition": "warm",
       "sampleCount": 20,
@@ -612,7 +612,7 @@
       }
     },
     {
-      "navigation": "members → meetings",
+      "navigation": "members \u2192 meetings",
       "environment": "local production Next build / disposable Supabase",
       "condition": "repeated",
       "sampleCount": 20,
@@ -701,7 +701,7 @@
       }
     },
     {
-      "navigation": "meetings → tasks",
+      "navigation": "meetings \u2192 tasks",
       "environment": "local production Next build / disposable Supabase",
       "condition": "cold",
       "sampleCount": 20,
@@ -814,7 +814,7 @@
       }
     },
     {
-      "navigation": "meetings → tasks",
+      "navigation": "meetings \u2192 tasks",
       "environment": "local production Next build / disposable Supabase",
       "condition": "warm",
       "sampleCount": 20,
@@ -903,7 +903,7 @@
       }
     },
     {
-      "navigation": "meetings → tasks",
+      "navigation": "meetings \u2192 tasks",
       "environment": "local production Next build / disposable Supabase",
       "condition": "repeated",
       "sampleCount": 20,
@@ -992,7 +992,7 @@
       }
     },
     {
-      "navigation": "tasks → announcements",
+      "navigation": "tasks \u2192 announcements",
       "environment": "local production Next build / disposable Supabase",
       "condition": "cold",
       "sampleCount": 20,
@@ -1093,7 +1093,7 @@
       }
     },
     {
-      "navigation": "tasks → announcements",
+      "navigation": "tasks \u2192 announcements",
       "environment": "local production Next build / disposable Supabase",
       "condition": "warm",
       "sampleCount": 20,
@@ -1182,7 +1182,7 @@
       }
     },
     {
-      "navigation": "tasks → announcements",
+      "navigation": "tasks \u2192 announcements",
       "environment": "local production Next build / disposable Supabase",
       "condition": "repeated",
       "sampleCount": 20,
@@ -1271,7 +1271,7 @@
       }
     },
     {
-      "navigation": "announcements → overview",
+      "navigation": "announcements \u2192 overview",
       "environment": "local production Next build / disposable Supabase",
       "condition": "cold",
       "sampleCount": 20,
@@ -1396,7 +1396,7 @@
       }
     },
     {
-      "navigation": "announcements → overview",
+      "navigation": "announcements \u2192 overview",
       "environment": "local production Next build / disposable Supabase",
       "condition": "warm",
       "sampleCount": 20,
@@ -1509,7 +1509,7 @@
       }
     },
     {
-      "navigation": "announcements → overview",
+      "navigation": "announcements \u2192 overview",
       "environment": "local production Next build / disposable Supabase",
       "condition": "repeated",
       "sampleCount": 20,
@@ -1622,7 +1622,7 @@
       }
     },
     {
-      "navigation": "recruiting → applicants",
+      "navigation": "recruiting \u2192 applicants",
       "environment": "local production Next build / disposable Supabase",
       "condition": "cold",
       "sampleCount": 20,
@@ -1764,7 +1764,7 @@
       }
     },
     {
-      "navigation": "recruiting → applicants",
+      "navigation": "recruiting \u2192 applicants",
       "environment": "local production Next build / disposable Supabase",
       "condition": "warm",
       "sampleCount": 20,
@@ -1858,7 +1858,7 @@
       }
     },
     {
-      "navigation": "recruiting → applicants",
+      "navigation": "recruiting \u2192 applicants",
       "environment": "local production Next build / disposable Supabase",
       "condition": "repeated",
       "sampleCount": 20,
@@ -1952,7 +1952,7 @@
       }
     },
     {
-      "navigation": "applicants → interviews",
+      "navigation": "applicants \u2192 interviews",
       "environment": "local production Next build / disposable Supabase",
       "condition": "cold",
       "sampleCount": 20,
@@ -2190,7 +2190,7 @@
       }
     },
     {
-      "navigation": "applicants → interviews",
+      "navigation": "applicants \u2192 interviews",
       "environment": "local production Next build / disposable Supabase",
       "condition": "warm",
       "sampleCount": 20,
@@ -2368,7 +2368,7 @@
       }
     },
     {
-      "navigation": "applicants → interviews",
+      "navigation": "applicants \u2192 interviews",
       "environment": "local production Next build / disposable Supabase",
       "condition": "repeated",
       "sampleCount": 20,
@@ -2546,7 +2546,7 @@
       }
     },
     {
-      "navigation": "interviews → decisions",
+      "navigation": "interviews \u2192 decisions",
       "environment": "local production Next build / disposable Supabase",
       "condition": "cold",
       "sampleCount": 20,
@@ -2683,7 +2683,7 @@
       }
     },
     {
-      "navigation": "interviews → decisions",
+      "navigation": "interviews \u2192 decisions",
       "environment": "local production Next build / disposable Supabase",
       "condition": "warm",
       "sampleCount": 20,
@@ -2772,7 +2772,7 @@
       }
     },
     {
-      "navigation": "interviews → decisions",
+      "navigation": "interviews \u2192 decisions",
       "environment": "local production Next build / disposable Supabase",
       "condition": "repeated",
       "sampleCount": 20,
@@ -2861,7 +2861,7 @@
       }
     },
     {
-      "navigation": "decisions → recruiting",
+      "navigation": "decisions \u2192 recruiting",
       "environment": "local production Next build / disposable Supabase",
       "condition": "cold",
       "sampleCount": 20,
@@ -2950,7 +2950,7 @@
       }
     },
     {
-      "navigation": "decisions → recruiting",
+      "navigation": "decisions \u2192 recruiting",
       "environment": "local production Next build / disposable Supabase",
       "condition": "warm",
       "sampleCount": 20,
@@ -3039,7 +3039,7 @@
       }
     },
     {
-      "navigation": "decisions → recruiting",
+      "navigation": "decisions \u2192 recruiting",
       "environment": "local production Next build / disposable Supabase",
       "condition": "repeated",
       "sampleCount": 20,
@@ -3128,7 +3128,7 @@
       }
     },
     {
-      "navigation": "overview → settings",
+      "navigation": "overview \u2192 settings",
       "environment": "local production Next build / disposable Supabase",
       "condition": "cold",
       "sampleCount": 20,
@@ -3229,7 +3229,7 @@
       }
     },
     {
-      "navigation": "overview → settings",
+      "navigation": "overview \u2192 settings",
       "environment": "local production Next build / disposable Supabase",
       "condition": "warm",
       "sampleCount": 20,
@@ -3318,7 +3318,7 @@
       }
     },
     {
-      "navigation": "overview → settings",
+      "navigation": "overview \u2192 settings",
       "environment": "local production Next build / disposable Supabase",
       "condition": "repeated",
       "sampleCount": 20,
@@ -3407,7 +3407,7 @@
       }
     },
     {
-      "navigation": "settings → overview",
+      "navigation": "settings \u2192 overview",
       "environment": "local production Next build / disposable Supabase",
       "condition": "cold",
       "sampleCount": 20,
@@ -3532,7 +3532,7 @@
       }
     },
     {
-      "navigation": "settings → overview",
+      "navigation": "settings \u2192 overview",
       "environment": "local production Next build / disposable Supabase",
       "condition": "warm",
       "sampleCount": 20,
@@ -3645,7 +3645,7 @@
       }
     },
     {
-      "navigation": "settings → overview",
+      "navigation": "settings \u2192 overview",
       "environment": "local production Next build / disposable Supabase",
       "condition": "repeated",
       "sampleCount": 20,
@@ -3758,7 +3758,7 @@
       }
     },
     {
-      "navigation": "overview → recruiting",
+      "navigation": "overview \u2192 recruiting",
       "environment": "local production Next build / disposable Supabase",
       "condition": "cold",
       "sampleCount": 20,
@@ -3834,7 +3834,7 @@
       }
     },
     {
-      "navigation": "overview → recruiting",
+      "navigation": "overview \u2192 recruiting",
       "environment": "local production Next build / disposable Supabase",
       "condition": "warm",
       "sampleCount": 20,
@@ -3910,7 +3910,7 @@
       }
     },
     {
-      "navigation": "overview → recruiting",
+      "navigation": "overview \u2192 recruiting",
       "environment": "local production Next build / disposable Supabase",
       "condition": "repeated",
       "sampleCount": 20,
@@ -3986,7 +3986,7 @@
       }
     },
     {
-      "navigation": "recruiting → overview",
+      "navigation": "recruiting \u2192 overview",
       "environment": "local production Next build / disposable Supabase",
       "condition": "cold",
       "sampleCount": 20,
@@ -4099,7 +4099,7 @@
       }
     },
     {
-      "navigation": "recruiting → overview",
+      "navigation": "recruiting \u2192 overview",
       "environment": "local production Next build / disposable Supabase",
       "condition": "warm",
       "sampleCount": 20,
@@ -4200,7 +4200,7 @@
       }
     },
     {
-      "navigation": "recruiting → overview",
+      "navigation": "recruiting \u2192 overview",
       "environment": "local production Next build / disposable Supabase",
       "condition": "repeated",
       "sampleCount": 20,
@@ -4301,7 +4301,7 @@
       }
     },
     {
-      "navigation": "applicants → voting",
+      "navigation": "applicants \u2192 voting",
       "environment": "local production Next build / disposable Supabase",
       "condition": "cold",
       "sampleCount": 20,
@@ -4395,7 +4395,7 @@
       }
     },
     {
-      "navigation": "applicants → voting",
+      "navigation": "applicants \u2192 voting",
       "environment": "local production Next build / disposable Supabase",
       "condition": "warm",
       "sampleCount": 20,
@@ -4489,7 +4489,7 @@
       }
     },
     {
-      "navigation": "applicants → voting",
+      "navigation": "applicants \u2192 voting",
       "environment": "local production Next build / disposable Supabase",
       "condition": "repeated",
       "sampleCount": 20,
@@ -4583,7 +4583,7 @@
       }
     },
     {
-      "navigation": "voting → applicants",
+      "navigation": "voting \u2192 applicants",
       "environment": "local production Next build / disposable Supabase",
       "condition": "cold",
       "sampleCount": 20,
@@ -4664,7 +4664,7 @@
       }
     },
     {
-      "navigation": "voting → applicants",
+      "navigation": "voting \u2192 applicants",
       "environment": "local production Next build / disposable Supabase",
       "condition": "warm",
       "sampleCount": 20,
@@ -4745,7 +4745,7 @@
       }
     },
     {
-      "navigation": "voting → applicants",
+      "navigation": "voting \u2192 applicants",
       "environment": "local production Next build / disposable Supabase",
       "condition": "repeated",
       "sampleCount": 20,
@@ -4826,7 +4826,7 @@
       }
     },
     {
-      "navigation": "applicants → applicantDetail",
+      "navigation": "applicants \u2192 applicantDetail",
       "environment": "local production Next build / disposable Supabase",
       "condition": "cold",
       "sampleCount": 20,
@@ -4944,7 +4944,7 @@
       }
     },
     {
-      "navigation": "applicants → applicantDetail",
+      "navigation": "applicants \u2192 applicantDetail",
       "environment": "local production Next build / disposable Supabase",
       "condition": "warm",
       "sampleCount": 20,
@@ -5062,7 +5062,7 @@
       }
     },
     {
-      "navigation": "applicants → applicantDetail",
+      "navigation": "applicants \u2192 applicantDetail",
       "environment": "local production Next build / disposable Supabase",
       "condition": "repeated",
       "sampleCount": 20,
@@ -5180,7 +5180,7 @@
       }
     },
     {
-      "navigation": "members → memberDetail",
+      "navigation": "members \u2192 memberDetail",
       "environment": "local production Next build / disposable Supabase",
       "condition": "cold",
       "sampleCount": 20,
@@ -5274,7 +5274,7 @@
       }
     },
     {
-      "navigation": "members → memberDetail",
+      "navigation": "members \u2192 memberDetail",
       "environment": "local production Next build / disposable Supabase",
       "condition": "warm",
       "sampleCount": 20,
@@ -5368,7 +5368,7 @@
       }
     },
     {
-      "navigation": "members → memberDetail",
+      "navigation": "members \u2192 memberDetail",
       "environment": "local production Next build / disposable Supabase",
       "condition": "repeated",
       "sampleCount": 20,
@@ -5462,7 +5462,7 @@
       }
     },
     {
-      "navigation": "recruiting → club2",
+      "navigation": "recruiting \u2192 club2",
       "environment": "local production Next build / disposable Supabase",
       "condition": "cold",
       "sampleCount": 20,
@@ -5664,7 +5664,7 @@
       }
     },
     {
-      "navigation": "recruiting → club2",
+      "navigation": "recruiting \u2192 club2",
       "environment": "local production Next build / disposable Supabase",
       "condition": "warm",
       "sampleCount": 20,
@@ -5866,7 +5866,7 @@
       }
     },
     {
-      "navigation": "recruiting → club2",
+      "navigation": "recruiting \u2192 club2",
       "environment": "local production Next build / disposable Supabase",
       "condition": "repeated",
       "sampleCount": 20,
@@ -6080,7 +6080,7 @@
       }
     },
     {
-      "navigation": "personal → recruiting",
+      "navigation": "personal \u2192 recruiting",
       "environment": "local production Next build / disposable Supabase",
       "condition": "cold",
       "sampleCount": 20,
@@ -6426,7 +6426,7 @@
       }
     },
     {
-      "navigation": "personal → recruiting",
+      "navigation": "personal \u2192 recruiting",
       "environment": "local production Next build / disposable Supabase",
       "condition": "warm",
       "sampleCount": 20,
@@ -6628,7 +6628,7 @@
       }
     },
     {
-      "navigation": "personal → recruiting",
+      "navigation": "personal \u2192 recruiting",
       "environment": "local production Next build / disposable Supabase",
       "condition": "repeated",
       "sampleCount": 20,
@@ -6842,7 +6842,7 @@
       }
     },
     {
-      "navigation": "recruiting → personal",
+      "navigation": "recruiting \u2192 personal",
       "environment": "local production Next build / disposable Supabase",
       "condition": "cold",
       "sampleCount": 20,
@@ -7200,7 +7200,7 @@
       }
     },
     {
-      "navigation": "recruiting → personal",
+      "navigation": "recruiting \u2192 personal",
       "environment": "local production Next build / disposable Supabase",
       "condition": "warm",
       "sampleCount": 20,
@@ -7378,7 +7378,7 @@
       }
     },
     {
-      "navigation": "recruiting → personal",
+      "navigation": "recruiting \u2192 personal",
       "environment": "local production Next build / disposable Supabase",
       "condition": "repeated",
       "sampleCount": 20,
@@ -8547,7 +8547,7 @@
     },
     "runtimeRegionEvidence": "Production Functions overview explicitly displayed Region IAD1; API route External APIs table displayed Vercel Data Cache IAD1.",
     "environment": "Production",
-    "window": "Last 12 hours; dashboard selection displayed 05:08–17:08 America/New_York on 2026-10-21",
+    "window": "Last 12 hours; dashboard selection displayed 05:08\u201317:08 America/New_York on 2026-10-21",
     "aggregate": {
       "invocationsDisplayed": "10K",
       "ttfbMs": {
@@ -8669,7 +8669,7 @@
     "syntheticSupplement": "evidence/static-supplement.json"
   },
   "validationEvidence": "evidence/validation.json",
-  "scopeNote": "Original top-level fields describe only the October21 investigation at sourceCommit. latestReview contains a separate later comparison; readySubsetRelease, selectedStartupRelease and followupDiagnosis, when present, describe independent later datasets. Do not pool datasets or treat historical production observations as current telemetry.",
+  "scopeNote": "Original top-level fields describe only the October21 investigation at sourceCommit. latestReview contains a separate later comparison; readySubsetRelease, selectedStartupRelease and followupDiagnosis, when present, describe independent later datasets. subsequentUiRelease is release metadata; productionOverviewDiagnostic is a separate uncontrolled single-request observation. Do not pool datasets or treat historical production observations as current telemetry.",
   "latestReview": {
     "reviewDate": "2026-10-27",
     "sourceCommit": "dd304540aa9a30c64af1b23e21622245c378d98a",
@@ -8698,7 +8698,7 @@
         "profile": "constrained",
         "size": 1000,
         "variant": "A",
-        "navigation": "overview → meetings",
+        "navigation": "overview \u2192 meetings",
         "condition": "cold",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -9133,7 +9133,7 @@
         "profile": "constrained",
         "size": 1000,
         "variant": "A",
-        "navigation": "overview → meetings",
+        "navigation": "overview \u2192 meetings",
         "condition": "warm",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -9328,7 +9328,7 @@
         "profile": "constrained",
         "size": 1000,
         "variant": "A",
-        "navigation": "overview → settingsProfile",
+        "navigation": "overview \u2192 settingsProfile",
         "condition": "cold",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -9812,7 +9812,7 @@
         "profile": "constrained",
         "size": 1000,
         "variant": "A",
-        "navigation": "overview → settingsProfile",
+        "navigation": "overview \u2192 settingsProfile",
         "condition": "warm",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -9976,7 +9976,7 @@
         "profile": "constrained",
         "size": 1000,
         "variant": "A",
-        "navigation": "recruiting → scheduledDecisions",
+        "navigation": "recruiting \u2192 scheduledDecisions",
         "condition": "cold",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -10260,7 +10260,7 @@
         "profile": "constrained",
         "size": 1000,
         "variant": "A",
-        "navigation": "recruiting → scheduledDecisions",
+        "navigation": "recruiting \u2192 scheduledDecisions",
         "condition": "warm",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -10424,7 +10424,7 @@
         "profile": "constrained",
         "size": 1000,
         "variant": "A",
-        "navigation": "settingsApplication → rounds",
+        "navigation": "settingsApplication \u2192 rounds",
         "condition": "cold",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -10868,7 +10868,7 @@
         "profile": "constrained",
         "size": 1000,
         "variant": "A",
-        "navigation": "settingsApplication → rounds",
+        "navigation": "settingsApplication \u2192 rounds",
         "condition": "warm",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -11192,7 +11192,7 @@
         "profile": "constrained",
         "size": 1000,
         "variant": "B",
-        "navigation": "overview → meetings",
+        "navigation": "overview \u2192 meetings",
         "condition": "cold",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -11627,7 +11627,7 @@
         "profile": "constrained",
         "size": 1000,
         "variant": "B",
-        "navigation": "overview → meetings",
+        "navigation": "overview \u2192 meetings",
         "condition": "warm",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -11822,7 +11822,7 @@
         "profile": "constrained",
         "size": 1000,
         "variant": "B",
-        "navigation": "overview → settingsProfile",
+        "navigation": "overview \u2192 settingsProfile",
         "condition": "cold",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -12306,7 +12306,7 @@
         "profile": "constrained",
         "size": 1000,
         "variant": "B",
-        "navigation": "overview → settingsProfile",
+        "navigation": "overview \u2192 settingsProfile",
         "condition": "warm",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -12470,7 +12470,7 @@
         "profile": "constrained",
         "size": 1000,
         "variant": "B",
-        "navigation": "recruiting → scheduledDecisions",
+        "navigation": "recruiting \u2192 scheduledDecisions",
         "condition": "cold",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -12754,7 +12754,7 @@
         "profile": "constrained",
         "size": 1000,
         "variant": "B",
-        "navigation": "recruiting → scheduledDecisions",
+        "navigation": "recruiting \u2192 scheduledDecisions",
         "condition": "warm",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -12918,7 +12918,7 @@
         "profile": "constrained",
         "size": 1000,
         "variant": "B",
-        "navigation": "settingsApplication → rounds",
+        "navigation": "settingsApplication \u2192 rounds",
         "condition": "cold",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -13442,7 +13442,7 @@
         "profile": "constrained",
         "size": 1000,
         "variant": "B",
-        "navigation": "settingsApplication → rounds",
+        "navigation": "settingsApplication \u2192 rounds",
         "condition": "warm",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -13806,7 +13806,7 @@
         "profile": "local",
         "size": 1000,
         "variant": "A",
-        "navigation": "overview → meetings",
+        "navigation": "overview \u2192 meetings",
         "condition": "cold",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -14241,7 +14241,7 @@
         "profile": "local",
         "size": 1000,
         "variant": "A",
-        "navigation": "overview → meetings",
+        "navigation": "overview \u2192 meetings",
         "condition": "warm",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -14436,7 +14436,7 @@
         "profile": "local",
         "size": 1000,
         "variant": "A",
-        "navigation": "overview → settingsProfile",
+        "navigation": "overview \u2192 settingsProfile",
         "condition": "cold",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -14920,7 +14920,7 @@
         "profile": "local",
         "size": 1000,
         "variant": "A",
-        "navigation": "overview → settingsProfile",
+        "navigation": "overview \u2192 settingsProfile",
         "condition": "warm",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -15084,7 +15084,7 @@
         "profile": "local",
         "size": 1000,
         "variant": "A",
-        "navigation": "recruiting → scheduledDecisions",
+        "navigation": "recruiting \u2192 scheduledDecisions",
         "condition": "cold",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -15368,7 +15368,7 @@
         "profile": "local",
         "size": 1000,
         "variant": "A",
-        "navigation": "recruiting → scheduledDecisions",
+        "navigation": "recruiting \u2192 scheduledDecisions",
         "condition": "warm",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -15532,7 +15532,7 @@
         "profile": "local",
         "size": 1000,
         "variant": "A",
-        "navigation": "settingsApplication → rounds",
+        "navigation": "settingsApplication \u2192 rounds",
         "condition": "cold",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -15976,7 +15976,7 @@
         "profile": "local",
         "size": 1000,
         "variant": "A",
-        "navigation": "settingsApplication → rounds",
+        "navigation": "settingsApplication \u2192 rounds",
         "condition": "warm",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -16300,7 +16300,7 @@
         "profile": "local",
         "size": 1000,
         "variant": "B",
-        "navigation": "overview → meetings",
+        "navigation": "overview \u2192 meetings",
         "condition": "cold",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -16735,7 +16735,7 @@
         "profile": "local",
         "size": 1000,
         "variant": "B",
-        "navigation": "overview → meetings",
+        "navigation": "overview \u2192 meetings",
         "condition": "warm",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -16930,7 +16930,7 @@
         "profile": "local",
         "size": 1000,
         "variant": "B",
-        "navigation": "overview → settingsProfile",
+        "navigation": "overview \u2192 settingsProfile",
         "condition": "cold",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -17414,7 +17414,7 @@
         "profile": "local",
         "size": 1000,
         "variant": "B",
-        "navigation": "overview → settingsProfile",
+        "navigation": "overview \u2192 settingsProfile",
         "condition": "warm",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -17578,7 +17578,7 @@
         "profile": "local",
         "size": 1000,
         "variant": "B",
-        "navigation": "recruiting → scheduledDecisions",
+        "navigation": "recruiting \u2192 scheduledDecisions",
         "condition": "cold",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -17862,7 +17862,7 @@
         "profile": "local",
         "size": 1000,
         "variant": "B",
-        "navigation": "recruiting → scheduledDecisions",
+        "navigation": "recruiting \u2192 scheduledDecisions",
         "condition": "warm",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -18026,7 +18026,7 @@
         "profile": "local",
         "size": 1000,
         "variant": "B",
-        "navigation": "settingsApplication → rounds",
+        "navigation": "settingsApplication \u2192 rounds",
         "condition": "cold",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -18510,7 +18510,7 @@
         "profile": "local",
         "size": 1000,
         "variant": "B",
-        "navigation": "settingsApplication → rounds",
+        "navigation": "settingsApplication \u2192 rounds",
         "condition": "warm",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -22538,7 +22538,7 @@
         "profile": "constrained",
         "size": 1000,
         "variant": "A",
-        "navigation": "applicants → applicantDetail",
+        "navigation": "applicants \u2192 applicantDetail",
         "condition": "cold",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -22979,7 +22979,7 @@
         "profile": "constrained",
         "size": 1000,
         "variant": "A",
-        "navigation": "applicants → applicantDetail",
+        "navigation": "applicants \u2192 applicantDetail",
         "condition": "warm",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -23420,7 +23420,7 @@
         "profile": "constrained",
         "size": 1000,
         "variant": "A",
-        "navigation": "recruiting → applicants",
+        "navigation": "recruiting \u2192 applicants",
         "condition": "cold",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -23969,7 +23969,7 @@
         "profile": "constrained",
         "size": 1000,
         "variant": "A",
-        "navigation": "recruiting → applicants",
+        "navigation": "recruiting \u2192 applicants",
         "condition": "warm",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -24198,7 +24198,7 @@
         "profile": "constrained",
         "size": 1000,
         "variant": "B",
-        "navigation": "applicants → applicantDetail",
+        "navigation": "applicants \u2192 applicantDetail",
         "condition": "cold",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -24639,7 +24639,7 @@
         "profile": "constrained",
         "size": 1000,
         "variant": "B",
-        "navigation": "applicants → applicantDetail",
+        "navigation": "applicants \u2192 applicantDetail",
         "condition": "warm",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -25080,7 +25080,7 @@
         "profile": "constrained",
         "size": 1000,
         "variant": "B",
-        "navigation": "recruiting → applicants",
+        "navigation": "recruiting \u2192 applicants",
         "condition": "cold",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -25629,7 +25629,7 @@
         "profile": "constrained",
         "size": 1000,
         "variant": "B",
-        "navigation": "recruiting → applicants",
+        "navigation": "recruiting \u2192 applicants",
         "condition": "warm",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -25858,7 +25858,7 @@
         "profile": "constrained",
         "size": 5000,
         "variant": "A",
-        "navigation": "applicants → applicantDetail",
+        "navigation": "applicants \u2192 applicantDetail",
         "condition": "cold",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -26299,7 +26299,7 @@
         "profile": "constrained",
         "size": 5000,
         "variant": "A",
-        "navigation": "applicants → applicantDetail",
+        "navigation": "applicants \u2192 applicantDetail",
         "condition": "warm",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -26740,7 +26740,7 @@
         "profile": "constrained",
         "size": 5000,
         "variant": "A",
-        "navigation": "recruiting → applicants",
+        "navigation": "recruiting \u2192 applicants",
         "condition": "cold",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -27289,7 +27289,7 @@
         "profile": "constrained",
         "size": 5000,
         "variant": "A",
-        "navigation": "recruiting → applicants",
+        "navigation": "recruiting \u2192 applicants",
         "condition": "warm",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -27518,7 +27518,7 @@
         "profile": "constrained",
         "size": 5000,
         "variant": "B",
-        "navigation": "applicants → applicantDetail",
+        "navigation": "applicants \u2192 applicantDetail",
         "condition": "cold",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -27959,7 +27959,7 @@
         "profile": "constrained",
         "size": 5000,
         "variant": "B",
-        "navigation": "applicants → applicantDetail",
+        "navigation": "applicants \u2192 applicantDetail",
         "condition": "warm",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -28400,7 +28400,7 @@
         "profile": "constrained",
         "size": 5000,
         "variant": "B",
-        "navigation": "recruiting → applicants",
+        "navigation": "recruiting \u2192 applicants",
         "condition": "cold",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -28949,7 +28949,7 @@
         "profile": "constrained",
         "size": 5000,
         "variant": "B",
-        "navigation": "recruiting → applicants",
+        "navigation": "recruiting \u2192 applicants",
         "condition": "warm",
         "environment": "Same local production services; CDP80ms latency,200000B/s down,93750B/s up,CPU4x.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -29178,7 +29178,7 @@
         "profile": "local",
         "size": 1000,
         "variant": "A",
-        "navigation": "applicants → applicantDetail",
+        "navigation": "applicants \u2192 applicantDetail",
         "condition": "cold",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -29619,7 +29619,7 @@
         "profile": "local",
         "size": 1000,
         "variant": "A",
-        "navigation": "applicants → applicantDetail",
+        "navigation": "applicants \u2192 applicantDetail",
         "condition": "warm",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -30060,7 +30060,7 @@
         "profile": "local",
         "size": 1000,
         "variant": "A",
-        "navigation": "recruiting → applicants",
+        "navigation": "recruiting \u2192 applicants",
         "condition": "cold",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -30609,7 +30609,7 @@
         "profile": "local",
         "size": 1000,
         "variant": "A",
-        "navigation": "recruiting → applicants",
+        "navigation": "recruiting \u2192 applicants",
         "condition": "warm",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -30838,7 +30838,7 @@
         "profile": "local",
         "size": 1000,
         "variant": "B",
-        "navigation": "applicants → applicantDetail",
+        "navigation": "applicants \u2192 applicantDetail",
         "condition": "cold",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -31279,7 +31279,7 @@
         "profile": "local",
         "size": 1000,
         "variant": "B",
-        "navigation": "applicants → applicantDetail",
+        "navigation": "applicants \u2192 applicantDetail",
         "condition": "warm",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -31720,7 +31720,7 @@
         "profile": "local",
         "size": 1000,
         "variant": "B",
-        "navigation": "recruiting → applicants",
+        "navigation": "recruiting \u2192 applicants",
         "condition": "cold",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -32269,7 +32269,7 @@
         "profile": "local",
         "size": 1000,
         "variant": "B",
-        "navigation": "recruiting → applicants",
+        "navigation": "recruiting \u2192 applicants",
         "condition": "warm",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -32498,7 +32498,7 @@
         "profile": "local",
         "size": 5000,
         "variant": "A",
-        "navigation": "applicants → applicantDetail",
+        "navigation": "applicants \u2192 applicantDetail",
         "condition": "cold",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -32939,7 +32939,7 @@
         "profile": "local",
         "size": 5000,
         "variant": "A",
-        "navigation": "applicants → applicantDetail",
+        "navigation": "applicants \u2192 applicantDetail",
         "condition": "warm",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -33380,7 +33380,7 @@
         "profile": "local",
         "size": 5000,
         "variant": "A",
-        "navigation": "recruiting → applicants",
+        "navigation": "recruiting \u2192 applicants",
         "condition": "cold",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -33929,7 +33929,7 @@
         "profile": "local",
         "size": 5000,
         "variant": "A",
-        "navigation": "recruiting → applicants",
+        "navigation": "recruiting \u2192 applicants",
         "condition": "warm",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "D-Qsd-xB5rEbF8lbg7twQ",
@@ -34158,7 +34158,7 @@
         "profile": "local",
         "size": 5000,
         "variant": "B",
-        "navigation": "applicants → applicantDetail",
+        "navigation": "applicants \u2192 applicantDetail",
         "condition": "cold",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -34599,7 +34599,7 @@
         "profile": "local",
         "size": 5000,
         "variant": "B",
-        "navigation": "applicants → applicantDetail",
+        "navigation": "applicants \u2192 applicantDetail",
         "condition": "warm",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -35040,7 +35040,7 @@
         "profile": "local",
         "size": 5000,
         "variant": "B",
-        "navigation": "recruiting → applicants",
+        "navigation": "recruiting \u2192 applicants",
         "condition": "cold",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -35589,7 +35589,7 @@
         "profile": "local",
         "size": 5000,
         "variant": "B",
-        "navigation": "recruiting → applicants",
+        "navigation": "recruiting \u2192 applicants",
         "condition": "warm",
         "environment": "Local production Next build, disposable loopback Auth/PostgreSQL, Chromium1440x1000, unthrottled.",
         "buildId": "8gb3WlwOdFPhj1b-uU6FI",
@@ -39318,7 +39318,7 @@
     "data": "ready-20261027/INITIAL_COMPARISON.json",
     "records": [
       {
-        "navigation": "initial authenticated entry → overview",
+        "navigation": "initial authenticated entry \u2192 overview",
         "environment": "Local production Next build; fresh browser contexts; warm disposable loopback Auth/PostgreSQL; no CDP throttle",
         "variant": "A",
         "sampleCount": 20,
@@ -39457,7 +39457,7 @@
         ]
       },
       {
-        "navigation": "initial authenticated entry → personal",
+        "navigation": "initial authenticated entry \u2192 personal",
         "environment": "Local production Next build; fresh browser contexts; warm disposable loopback Auth/PostgreSQL; no CDP throttle",
         "variant": "A",
         "sampleCount": 20,
@@ -39596,7 +39596,7 @@
         ]
       },
       {
-        "navigation": "initial authenticated entry → overview",
+        "navigation": "initial authenticated entry \u2192 overview",
         "environment": "Local production Next build; fresh browser contexts; warm disposable loopback Auth/PostgreSQL; no CDP throttle",
         "variant": "B",
         "sampleCount": 20,
@@ -39735,7 +39735,7 @@
         ]
       },
       {
-        "navigation": "initial authenticated entry → personal",
+        "navigation": "initial authenticated entry \u2192 personal",
         "environment": "Local production Next build; fresh browser contexts; warm disposable loopback Auth/PostgreSQL; no CDP throttle",
         "variant": "B",
         "sampleCount": 20,
@@ -39911,5 +39911,21 @@
     "releaseRecord": "docs/performance/followup-20261027/SELECTED_RELEASE.json",
     "structuredResults": "https://github.com/TheFrtiz22/out-class/blob/4c27bbe77c7d783e2b84ad06ddb9b3ead7899c59/docs/performance/selected-ready-20261027/COMPARISON.json",
     "interpretation": "Separate selected-startup comparison; all cold p50/p95 improve, warm/source costs retained. Never pool with October21/Phase15/diagnostic datasets. No exact later-main production timing claim."
+  },
+  "subsequentUiRelease": {
+    "main": "78402ee611f46b8764898250e46b6dcc8dab7654",
+    "pullRequest": 88,
+    "productionStatus": "Ready / Production; exact main source and www.out-class.net domain verified",
+    "releaseRecord": "docs/performance/followup-20261027/CENTERING_RELEASE.json",
+    "performanceClaim": "UI alignment fix only; no navigation performance improvement claimed"
+  },
+  "productionOverviewDiagnostic": {
+    "source": "docs/performance/followup-20261027/PRODUCTION_OVERVIEW_TRACE.json",
+    "sampleSize": 1,
+    "controlledBenchmark": false,
+    "requestDurationMs": 5215.747,
+    "serverTotalMs": 5067.3,
+    "identityMs": 221.36,
+    "interpretation": "Single successful production refresh; overlapping database totals do not identify a critical path. No before/after or navigation percentile claim."
   }
 }

@@ -1,5 +1,14 @@
 # OutClass optimization roadmap — review through Phase 15
 
+## Subsequent production verification — October 27
+
+The sidebar-centering fix was merged as PR 88, main `78402ee611f46b8764898250e46b6dcc8dab7654`, and verified Ready / Production with the actual protected Overview visually checked. All twelve hosted jobs passed, including 1,390 ordinary tests (44 skipped), 50 Auth/settings/runtime cases, 16 selected-navigation cases and 18 authenticated accessibility cases. See [CENTERING_RELEASE.json](followup-20261027/CENTERING_RELEASE.json). This UI adjustment carries no navigation-speed claim.
+
+A normal Overview refresh on that deployment produced one successful, uncontrolled production trace: 5,215.747 ms network duration, 5,156.074 ms TTFB, 5,067.30 ms server total and 221.36 ms identity verification; decoded body 1,929 bytes, total transfer 1,182 bytes, encoded body size unavailable. Private `no-store` and `Vary: Cookie` were observed. The database phase aggregates overlapping queries (25,290.15 ms), so it cannot be read as critical-path wall time or summed with nested phases. This observation is separate from all controlled comparisons and does not establish typical production latency, a regression, or a solved root cause. See [PRODUCTION_OVERVIEW_TRACE.json](followup-20261027/PRODUCTION_OVERVIEW_TRACE.json) for limitations and the non-sensitive trace ID.
+
+The next bounded-pipeline candidate is being adapted in a separate worktree from this newer main. Its baseline build and 38 signup/session/MFA checks are complete; current-main candidate performance and integration acceptance remain pending. Preserve the synchronous epoch checks in page, detail, complete-selection and voting handoff paths. Before changing regional infrastructure or authorization, collect enough production critical-path evidence to distinguish repeated query round trips, waits, cold starts and provider variability. No such infrastructure or security change is authorized by these observations.
+
+
 Updated October 27, 2026; audit reference3017e01d5b55bc8fb38d4f8fbec4906dd93bf619; retained experiment source/evidence dd30454. This is a proposed implementation/release plan, not a statement that all changes are approved or deployed. [Handoff](CHATGPT_HANDOFF.md) contains the five ranked bottlenecks, exact measurements and constraints; [JSON](NAVIGATION_BENCHMARKS.json) contains separate historical and latest groups.
 
 ## Selected startup release — now on main

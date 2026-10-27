@@ -1,0 +1,46 @@
+{
+  "capturedAt": "2026-10-27T20:04:32.331Z",
+  "sourceCommit": "78402ee611f46b8764898250e46b6dcc8dab7654",
+  "environment": "Production www.out-class.net; one ordinary Overview refresh",
+  "sampleSize": 1,
+  "controlledBenchmark": false,
+  "collection": "CDP Network events around the normal Refresh overview button in an isolated verification tab; response content and arguments were never collected",
+  "truncated": false,
+  "complete": true,
+  "requests": [
+    {
+      "kind": "overview",
+      "method": "GET",
+      "status": 200,
+      "failed": false,
+      "requestDurationMs": 5215.747,
+      "ttfbMs": 5156.074,
+      "sendToHeadersMs": 5155.257,
+      "encodedBodyBytes": null,
+      "decodedBodyBytes": 1929,
+      "totalTransferBytes": 1182,
+      "cacheControlPrivateNoStore": true,
+      "varyCookie": true,
+      "fromDiskCache": false,
+      "fromServiceWorker": false,
+      "traceId": "a7d35b1b-d890-4817-8c96-9141775bbed4",
+      "phases": {
+        "identity": 221.36,
+        "database": 25290.15,
+        "live_session": 611.41,
+        "lock_query": 612.74,
+        "compression": 0.44,
+        "serialization": 0.85,
+        "total": 5067.3
+      }
+    }
+  ],
+  "limitations": [
+    "One uncontrolled refresh, not a before/after navigation benchmark; no navigation percentile claim",
+    "Browser use and local build activity were not controlled",
+    "Database and nested phase totals overlap; do not sum them or interpret aggregate database duration as critical-path wall time",
+    "Encoded body bytes unavailable: CDP dataReceived encoded lengths were zero despite a nonempty transfer; decoded body and total transfer are separately observable",
+    "No request arguments, full resource URLs, bodies, identity values, cookies, SQL or arbitrary headers retained",
+    "No production configuration or schema was changed; network observation was disabled and the owned verification tab closed after collection"
+  ]
+}
