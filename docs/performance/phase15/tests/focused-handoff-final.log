@@ -1,0 +1,44 @@
+✖ review handoffs avoid an unused server page request and history revisits still read fresh (2832.966625ms)
+✔ a revoked live session cannot reuse earlier review data through a query-only handoff (1866.459333ms)
+✖ application draft saving blocks the handoff and a saved draft survives Review and browser Back without publishing (31416.956708ms)
+✔ modified review links retain ordinary direct entry in a new browser tab (1643.229708ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 2
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 37958.056458
+
+✖ failing tests:
+
+test at tests/navigation-phase15-e2e.test.cjs:17:1
+✖ review handoffs avoid an unused server page request and history revisits still read fresh (2832.966625ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  4 !== 0
+
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/navigation-phase15-e2e.test.cjs:23:291)
+      at runNextTicks (node:internal/process/task_queues:65:5)
+      at process.processImmediate (node:internal/timers:541:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 4,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/navigation-phase15-e2e.test.cjs:34:1
+✖ application draft saving blocks the handoff and a saved draft survives Review and browser Back without publishing (31416.956708ms)
+  locator.waitFor: Timeout 30000ms exceeded.
+  Call log:
+    - waiting for getByRole('status').filter({ hasText: /^Saved$/ }).first() to be visible
+
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/navigation-phase15-e2e.test.cjs:42:164) {
+    name: 'TimeoutError',
+    log: [ "  - waiting for getByRole('status').filter({ hasText: /^Saved$/ }).first() to be visible" ]
+  }

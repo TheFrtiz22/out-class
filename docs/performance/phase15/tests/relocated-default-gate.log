@@ -1,0 +1,12 @@
+﹣ review handoffs avoid an unused server page request and history revisits still read fresh (0.283417ms) # SKIP
+﹣ a revoked live session cannot reuse earlier review data through a query-only handoff (0.044875ms) # SKIP
+﹣ application draft saving blocks the handoff and a saved draft survives Review and browser Back without publishing (0.03275ms) # SKIP
+﹣ modified review links retain ordinary direct entry in a new browser tab (0.031ms) # SKIP
+ℹ tests 4
+ℹ suites 0
+ℹ pass 0
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 4
+ℹ todo 0
+ℹ duration_ms 194.558875

@@ -1,0 +1,7 @@
+{
+  "at": "2026-10-27T00:26:01.995958+00:00",
+  "url": "https://supabase.com/changelog.md",
+  "bytes": 102641,
+  "sha256": "45528009025b8ad8487ccb73f7c769b66d4b0e7aa4560157047899dcb5b5a006",
+  "scope": "No Supabase API/SDK/auth/schema/config changes. Existing pinned local fixture and live validation retained. Database upgrade breaking entries do not apply."
+}

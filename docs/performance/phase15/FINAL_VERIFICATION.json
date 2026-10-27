@@ -1,0 +1,76 @@
+{
+  "startedAt": "2026-10-27T02:13:50.079Z",
+  "checks": [
+    {
+      "name": "relocated-experiment",
+      "startedAt": "2026-10-27T02:13:52.628Z",
+      "completedAt": "2026-10-27T02:14:01.818Z",
+      "status": 0
+    },
+    {
+      "name": "relocated-default-gate",
+      "startedAt": "2026-10-27T02:14:01.818Z",
+      "completedAt": "2026-10-27T02:14:02.091Z",
+      "status": 0
+    },
+    {
+      "name": "retained-unit",
+      "startedAt": "2026-10-27T02:14:02.157Z",
+      "completedAt": "2026-10-27T02:17:12.365Z",
+      "status": 0
+    },
+    {
+      "name": "retained-live",
+      "startedAt": "2026-10-27T02:17:14.483Z",
+      "completedAt": "2026-10-27T02:18:41.454Z",
+      "status": 0
+    },
+    {
+      "name": "retained-typecheck",
+      "startedAt": "2026-10-27T02:18:41.529Z",
+      "completedAt": "2026-10-27T02:18:43.716Z",
+      "status": 0
+    },
+    {
+      "name": "retained-lint",
+      "startedAt": "2026-10-27T02:18:43.717Z",
+      "completedAt": "2026-10-27T02:18:50.004Z",
+      "status": 0
+    }
+  ],
+  "complete": true,
+  "retainedApplication": "Exact Phase14/Phase13 application; Phase15 handoff experiment reverted.",
+  "ordinary": {
+    "total": 1480,
+    "passed": 1417,
+    "failed": 0,
+    "skipped": 63,
+    "cancelled": 0
+  },
+  "live": {
+    "total": 67,
+    "passed": 67,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "relocatedExperiment": {
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "relocatedDefaultGate": {
+    "total": 4,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 4,
+    "cancelled": 0
+  },
+  "nativeSecurity": "3 passed before timing; all retained server/auth/database source and dependencies equal the tested baseline.",
+  "retainedBuildId": "8gb3WlwOdFPhj1b-uU6FI",
+  "applicationFilesVerified": 913,
+  "applicationChangesThisPhase": 0,
+  "completedAt": "2026-10-27T02:18:50.049Z"
+}

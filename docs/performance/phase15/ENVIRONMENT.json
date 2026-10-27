@@ -1,0 +1,12 @@
+{
+  "node": "v26.9.0",
+  "platform": "darwin",
+  "arch": "arm64",
+  "appOrigin": "http://127.0.0.1:3107",
+  "authOrigin": "http://127.0.0.1:55321",
+  "database": "Owned disposable loopback PostgreSQL only; never production credentials.",
+  "poolLimitPerClient": 8,
+  "maxConcurrentHttp": 4,
+  "userAgreement": "Open lid and idle host confirmed. Battery authorized; one recorded initial source and low-power mode0 unchanged within each profile. Temporary awake assertion only.",
+  "scope": "Cold browser contexts with warm local production Next/Auth/database services; fixed CDP constrained profile."
+}

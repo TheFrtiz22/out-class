@@ -1,0 +1,8 @@
+overview → settingsProfile cold 1/1: 453.6 ms, 9 requests
+overview → settingsProfile warm 1/1: 167.9 ms, 1 requests
+overview → meetings cold 1/1: 457.6 ms, 7 requests
+overview → meetings warm 1/1: 135.8 ms, 1 requests
+recruiting → scheduledDecisions cold 1/1: 453.9 ms, 4 requests
+recruiting → scheduledDecisions warm 1/1: 141.0 ms, 1 requests
+settingsApplication → rounds cold 1/1: 611.1 ms, 8 requests
+settingsApplication → rounds warm 1/1: 278.9 ms, 4 requests

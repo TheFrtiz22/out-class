@@ -1,0 +1,71 @@
+{
+  "initialDraftTest": "The exact label Question did not match the real textarea accessible name, which includes its initial value. A read-only DOM probe confirmed real controls were present and no application error. Use the actual textbox name prefix instead. No application assertion, timeout or readiness rule weakened.",
+  "probeSetup": "The first temporary probe required Playwright relative to /tmp and was corrected to the repository dependency path before browser use.",
+  "draftNavigationContract": "The shared autosave capture handler blocks the first click during a held real save, then automatically replays it once the write finishes. The test now verifies that actual contract and durable draft restoration, instead of waiting for a status on an editor that has unmounted.",
+  "requestCounterScope": "A sanitized network probe showed unrelated Applicants intent prefetch and a legitimate Settings browser-Back server request. The regression counter now targets only the two Review destination page GETs; it still rejects any such request. All primary benchmark traffic remains recorded.",
+  "networkProbe": [
+    {
+      "section": null,
+      "tool": null,
+      "setting": null,
+      "rsc": false,
+      "prefetch": false
+    },
+    {
+      "section": null,
+      "tool": null,
+      "setting": null,
+      "rsc": false,
+      "prefetch": false
+    },
+    {
+      "section": null,
+      "tool": null,
+      "setting": null,
+      "rsc": false,
+      "prefetch": false
+    },
+    {
+      "section": null,
+      "tool": null,
+      "setting": null,
+      "rsc": false,
+      "prefetch": false
+    },
+    {
+      "section": null,
+      "tool": null,
+      "setting": null,
+      "rsc": false,
+      "prefetch": false
+    },
+    {
+      "section": null,
+      "tool": null,
+      "setting": null,
+      "rsc": false,
+      "prefetch": false
+    },
+    {
+      "section": "settings",
+      "tool": null,
+      "setting": "application",
+      "rsc": true,
+      "prefetch": false
+    },
+    {
+      "section": null,
+      "tool": null,
+      "setting": null,
+      "rsc": false,
+      "prefetch": false
+    },
+    {
+      "section": "recruitment",
+      "tool": "applicants",
+      "setting": null,
+      "rsc": true,
+      "prefetch": true
+    }
+  ]
+}

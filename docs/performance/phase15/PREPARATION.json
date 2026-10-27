@@ -1,0 +1,51 @@
+{
+  "startedAt": "2026-10-27T00:44:45.950Z",
+  "checks": [
+    {
+      "name": "baseline-regression-probe",
+      "startedAt": "2026-10-27T00:44:48.320Z",
+      "completedAt": "2026-10-27T00:44:50.617Z",
+      "status": 1,
+      "expected": 1
+    },
+    {
+      "name": "pilot-baseline",
+      "startedAt": "2026-10-27T00:44:50.617Z",
+      "completedAt": "2026-10-27T00:45:35.709Z",
+      "status": 0,
+      "expected": 0
+    },
+    {
+      "name": "focused-handoff",
+      "startedAt": "2026-10-27T00:45:58.494Z",
+      "completedAt": "2026-10-27T00:46:36.704Z",
+      "status": 1,
+      "expected": 0,
+      "resolvedBy": "focused-handoff-verified"
+    },
+    {
+      "name": "focused-handoff-final",
+      "startedAt": "2026-10-27T00:48:15.793Z",
+      "completedAt": "2026-10-27T00:48:53.863Z",
+      "status": 1,
+      "expected": 0,
+      "resolvedBy": "focused-handoff-verified"
+    },
+    {
+      "name": "focused-handoff-verified",
+      "startedAt": "2026-10-27T01:06:31.362Z",
+      "completedAt": "2026-10-27T01:06:40.693Z",
+      "status": 0,
+      "expected": 0
+    },
+    {
+      "name": "pilot-candidate",
+      "startedAt": "2026-10-27T01:06:40.694Z",
+      "completedAt": "2026-10-27T01:07:25.457Z",
+      "status": 0,
+      "expected": 0
+    }
+  ],
+  "complete": true,
+  "completedAt": "2026-10-27T01:07:25.540Z"
+}

@@ -1,0 +1,30 @@
+✖ review handoffs avoid an unused server page request and history revisits still read fresh (2011.351042ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2220.717834
+
+✖ failing tests:
+
+test at tests/navigation-phase15-e2e.test.cjs:17:1
+✖ review handoffs avoid an unused server page request and history revisits still read fresh (2011.351042ms)
+  AssertionError [ERR_ASSERTION]: Same-workspace review must not fetch another RSC page
+
+  1 !== 0
+
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/navigation-phase15-e2e.test.cjs:20:10)
+      at runNextTicks (node:internal/process/task_queues:65:5)
+      at process.processImmediate (node:internal/timers:541:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

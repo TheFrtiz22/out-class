@@ -1,0 +1,502 @@
+{
+  "scope": "Maxima from measured main/feature source and click request observations. Warmups excluded here, retained in raw artifacts. Repeated source traces counted once for maxima; source/click windows are separate. Database/transaction/other spans may overlap and are not exclusive pool/provider/CPU time. Separate instrumented probes never enter this file.",
+  "browserOutcomesIncludingWarmups": 640,
+  "capturedMeasuredPhaseObservations": 4541,
+  "uniqueMeasuredPhaseTraces": 4541,
+  "largestThreeByPhase": {
+    "identity": [
+      {
+        "category": "feature",
+        "profile": "constrained",
+        "variant": "A",
+        "path": "settingsApplication \u2192 rounds",
+        "condition": "cold",
+        "file": "size-1000-pair-2-1-A-features-measure/browser-samples.json",
+        "index": 19,
+        "stage": "source",
+        "route": "/api/workspace?kind=corkboard",
+        "traceId": "3fd4fd69-619b-4c61-842d-fc4b2bb42ad1",
+        "status": 200,
+        "ttfbMs": 4273.102000000001,
+        "phases": {
+          "identity": 4221.61,
+          "database": 35.83,
+          "live_session": 10.09,
+          "serialization": 0.22,
+          "total": 4261.58
+        }
+      },
+      {
+        "category": "feature",
+        "profile": "constrained",
+        "variant": "A",
+        "path": "settingsApplication \u2192 rounds",
+        "condition": "cold",
+        "file": "size-1000-pair-2-1-A-features-measure/browser-samples.json",
+        "index": 19,
+        "stage": "source",
+        "route": "/api/workspace?kind=invitations",
+        "traceId": "5c114be9-0311-4ab8-8d78-02828b1199bc",
+        "status": 200,
+        "ttfbMs": 4379.258,
+        "phases": {
+          "identity": 4199.79,
+          "database": 72.8,
+          "live_session": 25.35,
+          "transaction_acquire": 13.56,
+          "lock_query": 5.02,
+          "transaction": 55.7,
+          "serialization": 0.16,
+          "total": 4349.88
+        }
+      },
+      {
+        "category": "feature",
+        "profile": "constrained",
+        "variant": "A",
+        "path": "settingsApplication \u2192 rounds",
+        "condition": "cold",
+        "file": "size-1000-pair-2-1-A-features-measure/browser-samples.json",
+        "index": 19,
+        "stage": "source",
+        "route": "/api/workspace?kind=tutorial",
+        "traceId": "6798f423-6a00-40a2-805c-c6a731145553",
+        "status": 200,
+        "ttfbMs": 3958.8880000000004,
+        "phases": {
+          "identity": 3895.65,
+          "database": 24.25,
+          "live_session": 6.71,
+          "serialization": 0.15,
+          "total": 3923.29
+        }
+      }
+    ],
+    "live_session": [
+      {
+        "category": "feature",
+        "profile": "constrained",
+        "variant": "A",
+        "path": "overview \u2192 meetings",
+        "condition": "warm",
+        "file": "size-1000-pair-1-2-A-features-measure/browser-samples.json",
+        "index": 11,
+        "stage": "source",
+        "route": "/api/workspace?kind=corkboard",
+        "traceId": "65ba1f33-757f-4263-97ff-2ae4977703c4",
+        "status": 200,
+        "ttfbMs": 377.734,
+        "phases": {
+          "identity": 187.35,
+          "database": 142.24,
+          "live_session": 107.45,
+          "serialization": 0.23,
+          "total": 333.66
+        }
+      },
+      {
+        "category": "feature",
+        "profile": "constrained",
+        "variant": "A",
+        "path": "settingsApplication \u2192 rounds",
+        "condition": "cold",
+        "file": "size-1000-pair-2-1-A-features-measure/browser-samples.json",
+        "index": 19,
+        "stage": "click",
+        "route": "/api/workspace?kind=overview",
+        "traceId": "2067a33e-5d43-4c9b-ae15-2bd02c2d3224",
+        "status": 200,
+        "ttfbMs": 1361.805,
+        "phases": {
+          "identity": 1203.14,
+          "database": 373.34,
+          "live_session": 55.12,
+          "lock_query": 4.72,
+          "compression": 0.36,
+          "serialization": 0.81,
+          "total": 1307.09
+        }
+      },
+      {
+        "category": "feature",
+        "profile": "constrained",
+        "variant": "A",
+        "path": "settingsApplication \u2192 rounds",
+        "condition": "warm",
+        "file": "size-1000-pair-2-1-A-features-measure/browser-samples.json",
+        "index": 21,
+        "stage": "source",
+        "route": "/api/workspace?kind=corkboard",
+        "traceId": "094baf69-d42d-44ea-9e2d-cab111396db6",
+        "status": 200,
+        "ttfbMs": 195.488,
+        "phases": {
+          "identity": 115.97,
+          "database": 68.32,
+          "live_session": 38.65,
+          "serialization": 0.26,
+          "total": 187.03
+        }
+      }
+    ],
+    "transaction_acquire": [
+      {
+        "category": "feature",
+        "profile": "constrained",
+        "variant": "A",
+        "path": "settingsApplication \u2192 rounds",
+        "condition": "cold",
+        "file": "size-1000-pair-2-1-A-features-measure/browser-samples.json",
+        "index": 19,
+        "stage": "source",
+        "route": "/api/workspace?kind=invitations",
+        "traceId": "5c114be9-0311-4ab8-8d78-02828b1199bc",
+        "status": 200,
+        "ttfbMs": 4379.258,
+        "phases": {
+          "identity": 4199.79,
+          "database": 72.8,
+          "live_session": 25.35,
+          "transaction_acquire": 13.56,
+          "lock_query": 5.02,
+          "transaction": 55.7,
+          "serialization": 0.16,
+          "total": 4349.88
+        }
+      },
+      {
+        "category": "feature",
+        "profile": "constrained",
+        "variant": "A",
+        "path": "settingsApplication \u2192 rounds",
+        "condition": "warm",
+        "file": "size-1000-pair-2-1-A-features-measure/browser-samples.json",
+        "index": 21,
+        "stage": "source",
+        "route": "/api/workspace?kind=invitations",
+        "traceId": "b858c7ad-c65d-45b2-bd51-9a3df0735194",
+        "status": 200,
+        "ttfbMs": 240.756,
+        "phases": {
+          "identity": 111.81,
+          "database": 97.04,
+          "live_session": 8.94,
+          "transaction_acquire": 8.81,
+          "lock_query": 11.31,
+          "transaction": 102.08,
+          "serialization": 0.78,
+          "total": 227.84
+        }
+      },
+      {
+        "category": "feature",
+        "profile": "constrained",
+        "variant": "A",
+        "path": "settingsApplication \u2192 rounds",
+        "condition": "cold",
+        "file": "size-1000-pair-2-1-A-features-measure/browser-samples.json",
+        "index": 19,
+        "stage": "source",
+        "route": "/api/workspace?kind=notifications",
+        "traceId": "42ccf610-f16d-4bc8-8daf-254a861c78b6",
+        "status": 200,
+        "ttfbMs": 417.974,
+        "phases": {
+          "identity": 392.38,
+          "database": 7.51,
+          "live_session": 1.95,
+          "transaction_acquire": 8.16,
+          "transaction": 8.88,
+          "compression": 0.16,
+          "serialization": 0.44,
+          "total": 410.73
+        }
+      }
+    ],
+    "database": [
+      {
+        "category": "main",
+        "profile": "constrained",
+        "variant": "B",
+        "path": "recruiting \u2192 applicants",
+        "condition": "cold",
+        "file": "size-5000-pair-2-2-B-measure/browser-samples.json",
+        "index": 2,
+        "stage": "source",
+        "route": "/api/workspace?kind=overview",
+        "traceId": "b2262c1a-62f1-47b1-92cd-0118c3fe1aeb",
+        "status": 200,
+        "ttfbMs": 253.566,
+        "phases": {
+          "identity": 94.82,
+          "database": 1787.71,
+          "live_session": 2.54,
+          "lock_query": 1.94,
+          "compression": 0.13,
+          "serialization": 0.22,
+          "total": 245.38
+        }
+      },
+      {
+        "category": "main",
+        "profile": "constrained",
+        "variant": "A",
+        "path": "recruiting \u2192 applicants",
+        "condition": "cold",
+        "file": "size-1000-pair-2-1-A-measure/browser-samples.json",
+        "index": 4,
+        "stage": "source",
+        "route": "/api/workspace?kind=overview",
+        "traceId": "2f5f7795-423f-4f8c-9382-c057c0cbdbbf",
+        "status": 200,
+        "ttfbMs": 262.74399999999997,
+        "phases": {
+          "identity": 157.48,
+          "database": 1147.31,
+          "live_session": 3.28,
+          "lock_query": 5.97,
+          "compression": 0.18,
+          "serialization": 0.35,
+          "total": 250.72
+        }
+      },
+      {
+        "category": "feature",
+        "profile": "constrained",
+        "variant": "A",
+        "path": "recruiting \u2192 scheduledDecisions",
+        "condition": "cold",
+        "file": "size-1000-pair-2-1-A-features-measure/browser-samples.json",
+        "index": 14,
+        "stage": "source",
+        "route": "/api/workspace?kind=overview",
+        "traceId": "eac2331b-94ff-4fe1-8898-99a6f4d752b4",
+        "status": 200,
+        "ttfbMs": 187.02100000000002,
+        "phases": {
+          "identity": 95.37,
+          "database": 715.63,
+          "live_session": 5.38,
+          "lock_query": 19.77,
+          "compression": 0.14,
+          "serialization": 0.24,
+          "total": 166.34
+        }
+      }
+    ],
+    "transaction": [
+      {
+        "category": "main",
+        "profile": "constrained",
+        "variant": "A",
+        "path": "applicants \u2192 applicantDetail",
+        "condition": "warm",
+        "file": "size-5000-pair-2-1-A-measure/browser-samples.json",
+        "index": 17,
+        "stage": "source",
+        "route": "/api/workspace?kind=pipelinePage",
+        "traceId": "b089c7b2-812f-4716-9d24-66df0bae2e7e",
+        "status": 200,
+        "ttfbMs": 278.435,
+        "phases": {
+          "identity": 33.15,
+          "database": 206.28,
+          "live_session": 0.59,
+          "transaction_acquire": 0.56,
+          "transaction": 229.4,
+          "compression": 0.48,
+          "serialization": 2.08,
+          "total": 267.14
+        }
+      },
+      {
+        "category": "main",
+        "profile": "constrained",
+        "variant": "A",
+        "path": "applicants \u2192 applicantDetail",
+        "condition": "warm",
+        "file": "size-5000-pair-2-1-A-measure/browser-samples.json",
+        "index": 16,
+        "stage": "source",
+        "route": "/api/workspace?kind=pipelinePage",
+        "traceId": "0568754e-4a5e-42b4-aad5-4e6f8d7ef4c2",
+        "status": 200,
+        "ttfbMs": 216.683,
+        "phases": {
+          "identity": 19.02,
+          "database": 145.6,
+          "live_session": 0.47,
+          "transaction_acquire": 0.51,
+          "transaction": 174.58,
+          "compression": 0.79,
+          "serialization": 2.64,
+          "total": 198.2
+        }
+      },
+      {
+        "category": "main",
+        "profile": "constrained",
+        "variant": "B",
+        "path": "applicants \u2192 applicantDetail",
+        "condition": "warm",
+        "file": "size-5000-pair-1-1-B-measure/browser-samples.json",
+        "index": 17,
+        "stage": "source",
+        "route": "/api/workspace?kind=pipelinePage",
+        "traceId": "7216e69a-aeba-43ef-88ca-60cefdc53194",
+        "status": 200,
+        "ttfbMs": 230.80599999999998,
+        "phases": {
+          "identity": 40.1,
+          "database": 155.85,
+          "live_session": 1.48,
+          "transaction_acquire": 1.06,
+          "transaction": 171.28,
+          "compression": 0.2,
+          "serialization": 0.68,
+          "total": 216.54
+        }
+      }
+    ],
+    "serialization": [
+      {
+        "category": "main",
+        "profile": "local",
+        "variant": "A",
+        "path": "applicants \u2192 applicantDetail",
+        "condition": "cold",
+        "file": "size-5000-pair-1-2-A-measure/browser-samples.json",
+        "index": 10,
+        "stage": "source",
+        "route": "/api/workspace?kind=taskNotifications",
+        "traceId": "307eb672-9510-4962-beeb-5eb4bdff0c67",
+        "status": 200,
+        "ttfbMs": 45.049,
+        "phases": {
+          "identity": 26.56,
+          "database": 3.31,
+          "live_session": 0.89,
+          "compression": 11.5,
+          "serialization": 11.59,
+          "total": 42.13
+        }
+      },
+      {
+        "category": "main",
+        "profile": "constrained",
+        "variant": "B",
+        "path": "recruiting \u2192 applicants",
+        "condition": "cold",
+        "file": "size-5000-pair-2-2-B-measure/browser-samples.json",
+        "index": 4,
+        "stage": "click",
+        "route": "/api/workspace?kind=pipelinePage",
+        "traceId": "c9bd053a-fb12-44bb-87f4-137e56e71ca6",
+        "status": 200,
+        "ttfbMs": 120.184,
+        "phases": {
+          "identity": 22.78,
+          "database": 47.0,
+          "live_session": 0.73,
+          "transaction_acquire": 0.82,
+          "transaction": 71.11,
+          "compression": 3.67,
+          "serialization": 4.76,
+          "total": 101.07
+        }
+      },
+      {
+        "category": "main",
+        "profile": "constrained",
+        "variant": "A",
+        "path": "recruiting \u2192 applicants",
+        "condition": "cold",
+        "file": "size-5000-pair-2-1-A-measure/browser-samples.json",
+        "index": 4,
+        "stage": "click",
+        "route": "/api/workspace?kind=pipelinePage",
+        "traceId": "565f6b9a-1e43-4b2e-9f58-b2011ff4d636",
+        "status": 200,
+        "ttfbMs": 216.441,
+        "phases": {
+          "identity": 95.56,
+          "database": 64.05,
+          "live_session": 3.35,
+          "transaction_acquire": 1.27,
+          "transaction": 96.31,
+          "compression": 3.01,
+          "serialization": 4.07,
+          "total": 203.29
+        }
+      }
+    ],
+    "total": [
+      {
+        "category": "feature",
+        "profile": "constrained",
+        "variant": "A",
+        "path": "settingsApplication \u2192 rounds",
+        "condition": "cold",
+        "file": "size-1000-pair-2-1-A-features-measure/browser-samples.json",
+        "index": 19,
+        "stage": "source",
+        "route": "/api/workspace?kind=invitations",
+        "traceId": "5c114be9-0311-4ab8-8d78-02828b1199bc",
+        "status": 200,
+        "ttfbMs": 4379.258,
+        "phases": {
+          "identity": 4199.79,
+          "database": 72.8,
+          "live_session": 25.35,
+          "transaction_acquire": 13.56,
+          "lock_query": 5.02,
+          "transaction": 55.7,
+          "serialization": 0.16,
+          "total": 4349.88
+        }
+      },
+      {
+        "category": "feature",
+        "profile": "constrained",
+        "variant": "A",
+        "path": "settingsApplication \u2192 rounds",
+        "condition": "cold",
+        "file": "size-1000-pair-2-1-A-features-measure/browser-samples.json",
+        "index": 19,
+        "stage": "source",
+        "route": "/api/workspace?kind=corkboard",
+        "traceId": "3fd4fd69-619b-4c61-842d-fc4b2bb42ad1",
+        "status": 200,
+        "ttfbMs": 4273.102000000001,
+        "phases": {
+          "identity": 4221.61,
+          "database": 35.83,
+          "live_session": 10.09,
+          "serialization": 0.22,
+          "total": 4261.58
+        }
+      },
+      {
+        "category": "feature",
+        "profile": "constrained",
+        "variant": "A",
+        "path": "settingsApplication \u2192 rounds",
+        "condition": "cold",
+        "file": "size-1000-pair-2-1-A-features-measure/browser-samples.json",
+        "index": 19,
+        "stage": "source",
+        "route": "/api/workspace?kind=tutorial",
+        "traceId": "6798f423-6a00-40a2-805c-c6a731145553",
+        "status": 200,
+        "ttfbMs": 3958.8880000000004,
+        "phases": {
+          "identity": 3895.65,
+          "database": 24.25,
+          "live_session": 6.71,
+          "serialization": 0.15,
+          "total": 3923.29
+        }
+      }
+    ]
+  }
+}

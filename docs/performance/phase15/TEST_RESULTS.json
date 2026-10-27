@@ -1,0 +1,65 @@
+{
+  "applicationChangesThisPhase": 1,
+  "ordinary": {
+    "total": 1484,
+    "passed": 1417,
+    "failed": 0,
+    "skipped": 67,
+    "cancelled": 0
+  },
+  "live": {
+    "total": 71,
+    "passed": 71,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "nativeSecurityConcurrency": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "provisioning": {
+    "total": 38,
+    "passed": 38,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "focusedHandoff": {
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "migrations": {
+    "freshAndLegacy": 57,
+    "rlsTablesWithBrowserDenial": 78
+  },
+  "productionBuilds": "Both frozen builds passed",
+  "typecheck": "passed",
+  "lint": {
+    "errors": 0,
+    "existingWarnings": 22
+  },
+  "newOrdinaryCases": 3,
+  "newLiveCases": 4,
+  "baselineRegressionProof": {
+    "total": 1,
+    "passed": 0,
+    "failed": 1,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "interruptedOrdinary": {
+    "total": 1484,
+    "passed": 1416,
+    "failed": 0,
+    "skipped": 67,
+    "cancelled": 1
+  },
+  "history": "Initial test assumptions corrected to match actual accessible names, target handoff requests and existing autosave replay. No product guard, timeout or benchmark readiness rule changed. The ordinary interruption and actual Sleep/Wake events remain separate; complete rerun precedes timings. Counts overlap and must not be added."
+}

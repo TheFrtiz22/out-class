@@ -1,0 +1,43 @@
+diff --git a/components/club-settings-workspace.tsx b/components/club-settings-workspace.tsx
+index e95c493..c7b1625 100644
+--- a/components/club-settings-workspace.tsx
++++ b/components/club-settings-workspace.tsx
+@@ -3,14 +3,14 @@
+ import { ActionWorkflow } from "@/components/product/action-workflow";
+ import { InterviewerEligibilityControls } from "@/components/availability/interviewer-eligibility";
+ import { ArrowUpRight } from "@/components/icons"
+-import { useEffect, useState } from "react";
++import { useEffect, useState, type MouseEvent } from "react";
+ import Link from "next/link";
+ import { useRouter, useSearchParams } from "next/navigation";
+ import dynamic from "next/dynamic";
+ import { useAuth } from "@/contexts/auth-context";
+ import { useDemoMode } from "@/contexts/demo-context";
+ import { resolveSettingsTab, settingsSections } from "@/lib/club-settings";
+-import { navigateWithinClub } from "@/lib/workspace-navigation";
++import { handleClubLink, navigateWithinClub } from "@/lib/workspace-navigation";
+ import { canLeaveWorkspace } from "@/lib/product-navigation";
+ import { hasPermission } from "@/lib/permissions";
+ import { saveClubPreferences } from "@/actions/club-settings";
+@@ -66,6 +66,12 @@ export function ClubSettingsWorkspace({
+   if (!member) return <p role="alert">Settings access unavailable.</p>;
+   const requested = params.get("setting");
+   if (requested && settingsSections.some(section => section.id === requested) && !sections.some(section => section.id === requested)) return <p role="alert">This settings section isn’t available with your current access.</p>;
++  function followReviewLink(event: MouseEvent<HTMLAnchorElement>) {
++    if (!canLeaveWorkspace()) { event.preventDefault(); return; }
++    // These destinations use the mounted workspace and fresh authorized GETs.
++    // Preserve ordinary browser navigation for modified or cross-page clicks.
++    handleClubLink(event, event.currentTarget.href);
++  }
+   function selectSetting(id: string) {
+     if (active === id) return;
+     const discard = !!document.querySelector('[data-unsaved="true"]');
+@@ -160,7 +166,7 @@ export function ClubSettingsWorkspace({
+         {visible("application") && (
+           <div hidden={active !== "application"}>
+             {hasPermission(member, "recruitment.manage") && <div className="mb-5 flex flex-wrap gap-4 border-b pb-4 text-sm"><Link className="underline underline-offset-4" href={`/club/${clubId}/workspace?section=settings&setting=pipeline`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Configure recruitment rounds</Link><Link className="underline underline-offset-4" href={`/club/${clubId}/workspace?section=settings&setting=cycles`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Manage application cycles</Link></div>}
+-            {hasPermission(member, "recruitment.manage") && <details className="mb-5 border-b pb-3"><summary className="min-h-11 cursor-pointer py-3 text-sm font-medium">Review settings</summary><div className="flex flex-wrap gap-4 py-2 text-sm"><Link className="underline underline-offset-4" href={`/club/${clubId}/workspace?section=recruitment&tool=rounds`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Anonymous review</Link><Link className="underline underline-offset-4" href={`/club/${clubId}/workspace?section=recruitment&tool=rules`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Screening rules</Link></div></details>}
++            {hasPermission(member, "recruitment.manage") && <details className="mb-5 border-b pb-3"><summary className="min-h-11 cursor-pointer py-3 text-sm font-medium">Review settings</summary><div className="flex flex-wrap gap-4 py-2 text-sm"><Link className="underline underline-offset-4" href={`/club/${clubId}/workspace?section=recruitment&tool=rounds`} prefetch={false} onClick={followReviewLink}>Anonymous review</Link><Link className="underline underline-offset-4" href={`/club/${clubId}/workspace?section=recruitment&tool=rules`} prefetch={false} onClick={followReviewLink}>Screening rules</Link></div></details>}
+             <ApplicationBuilder clubId={clubId} />
+           </div>
+         )}

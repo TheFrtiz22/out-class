@@ -1,0 +1,25 @@
+All verification done. Beginning frozen-build comparison.
+Completed local, 1000 applicants, pair 1, B
+Completed local, 1000 applicants, pair 1, A
+Completed local, 1000 applicants, pair 2, A
+Completed local, 1000 applicants, pair 2, B
+Completed local, 5000 applicants, pair 1, B
+Completed local, 5000 applicants, pair 1, A
+Completed local, 5000 applicants, pair 2, A
+Completed local, 5000 applicants, pair 2, B
+No sleep interruptions: /Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/docs/performance/phase15/local
+Completed constrained, 1000 applicants, pair 1, B
+Completed constrained, 1000 applicants, pair 1, A
+Completed constrained, 1000 applicants, pair 2, A
+Completed constrained, 1000 applicants, pair 2, B
+Completed constrained, 5000 applicants, pair 1, B
+Completed constrained, 5000 applicants, pair 1, A
+Completed constrained, 5000 applicants, pair 2, A
+Completed constrained, 5000 applicants, pair 2, B
+No sleep interruptions: /Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/docs/performance/phase15/constrained
+Both profiles complete. Beginning separate instrumented diagnosis.
+1000-baseline: diagnostics retained separately; all42 native traces correlated.
+1000-candidate: diagnostics retained separately; all42 native traces correlated.
+5000-candidate: diagnostics retained separately; all42 native traces correlated.
+5000-baseline: diagnostics retained separately; all42 native traces correlated.
+Phase15 collection and separate diagnostics complete.

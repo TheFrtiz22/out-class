@@ -1,0 +1,158 @@
+{
+  "startedAt": "2026-10-27T01:09:18.676Z",
+  "completedAt": "2026-10-27T01:21:06.583Z",
+  "events": [
+    {
+      "at": "2026-10-26T21:09:54-04:00",
+      "category": "Sleep"
+    },
+    {
+      "at": "2026-10-26T21:09:56-04:00",
+      "category": "Wake"
+    },
+    {
+      "at": "2026-10-26T21:10:05-04:00",
+      "category": "DarkWake"
+    },
+    {
+      "at": "2026-10-26T21:10:11-04:00",
+      "category": "Sleep"
+    },
+    {
+      "at": "2026-10-26T21:10:13-04:00",
+      "category": "Wake"
+    },
+    {
+      "at": "2026-10-26T21:11:56-04:00",
+      "category": "DarkWake"
+    },
+    {
+      "at": "2026-10-26T21:12:07-04:00",
+      "category": "Sleep"
+    },
+    {
+      "at": "2026-10-26T21:12:08-04:00",
+      "category": "Wake"
+    },
+    {
+      "at": "2026-10-26T21:12:08-04:00",
+      "category": "DarkWake"
+    },
+    {
+      "at": "2026-10-26T21:12:27-04:00",
+      "category": "Sleep"
+    },
+    {
+      "at": "2026-10-26T21:12:29-04:00",
+      "category": "Wake"
+    },
+    {
+      "at": "2026-10-26T21:12:30-04:00",
+      "category": "DarkWake"
+    },
+    {
+      "at": "2026-10-26T21:12:39-04:00",
+      "category": "Sleep"
+    },
+    {
+      "at": "2026-10-26T21:12:41-04:00",
+      "category": "Wake"
+    },
+    {
+      "at": "2026-10-26T21:12:49-04:00",
+      "category": "DarkWake"
+    },
+    {
+      "at": "2026-10-26T21:13:06-04:00",
+      "category": "Sleep"
+    },
+    {
+      "at": "2026-10-26T21:13:08-04:00",
+      "category": "Wake"
+    },
+    {
+      "at": "2026-10-26T21:13:09-04:00",
+      "category": "DarkWake"
+    },
+    {
+      "at": "2026-10-26T21:13:15-04:00",
+      "category": "Sleep"
+    },
+    {
+      "at": "2026-10-26T21:13:16-04:00",
+      "category": "Wake"
+    },
+    {
+      "at": "2026-10-26T21:13:18-04:00",
+      "category": "DarkWake"
+    },
+    {
+      "at": "2026-10-26T21:13:34-04:00",
+      "category": "Sleep"
+    },
+    {
+      "at": "2026-10-26T21:13:36-04:00",
+      "category": "Wake"
+    },
+    {
+      "at": "2026-10-26T21:13:38-04:00",
+      "category": "DarkWake"
+    },
+    {
+      "at": "2026-10-26T21:13:49-04:00",
+      "category": "Sleep"
+    },
+    {
+      "at": "2026-10-26T21:13:51-04:00",
+      "category": "Wake"
+    },
+    {
+      "at": "2026-10-26T21:13:52-04:00",
+      "category": "DarkWake"
+    },
+    {
+      "at": "2026-10-26T21:14:04-04:00",
+      "category": "Sleep"
+    },
+    {
+      "at": "2026-10-26T21:14:06-04:00",
+      "category": "Wake"
+    },
+    {
+      "at": "2026-10-26T21:14:17-04:00",
+      "category": "DarkWake"
+    },
+    {
+      "at": "2026-10-26T21:14:40-04:00",
+      "category": "Sleep"
+    },
+    {
+      "at": "2026-10-26T21:14:41-04:00",
+      "category": "Wake"
+    },
+    {
+      "at": "2026-10-26T21:19:52-04:00",
+      "category": "DarkWake"
+    },
+    {
+      "at": "2026-10-26T21:20:20-04:00",
+      "category": "Sleep"
+    },
+    {
+      "at": "2026-10-26T21:20:22-04:00",
+      "category": "Wake"
+    },
+    {
+      "at": "2026-10-26T21:20:28-04:00",
+      "category": "Wake"
+    }
+  ],
+  "ordinaryOutcomes": {
+    "total": 1484,
+    "passed": 1416,
+    "failed": 0,
+    "cancelled": 1,
+    "skipped": 67
+  },
+  "policy": "Keep interrupted run separate; full ordinary rerun under temporary awake assertion. No assertions/timeouts changed. No primary timing outcomes exist yet."
+}

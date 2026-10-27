@@ -1,0 +1,21 @@
+{
+  "baseline": "30ad54846c6cbd4d3cf25cafd19eb99d6751f2bc",
+  "files": [
+    "scripts/navigation-phase15-concurrency.cjs",
+    "scripts/navigation-phase15-constrained-interactions.cjs",
+    "scripts/navigation-phase15-diagnose.cjs",
+    "scripts/navigation-phase15-host-monitor.cjs",
+    "scripts/navigation-phase15-interactions.cjs",
+    "scripts/navigation-phase15-local.cjs",
+    "scripts/navigation-phase15-server-diagnostics.cjs",
+    "scripts/navigation-phase15-study.cjs",
+    "tests/experiments/navigation-phase15-e2e.test.cjs",
+    "tests/navigation-phase15-diagnostics.test.cjs"
+  ],
+  "sha256": "902f1fddef5fc236babc7e02b25eacd64321c869f44e2c56547a3397f4f56b8a",
+  "experimentApplicationDiffSha256": "1b516056ae41f088a539e2a844209b0db68689d5eaaaa949dede167c2e935af2",
+  "historicalMeasuredImplementationSha256": "b3591ef7cfbfaabe61f76b08b782660f782e434d1be3c0a55b04f40bf34385cc",
+  "retainedApplicationChanges": 0,
+  "measuredApplicationChanges": 1,
+  "scope": "Current tooling and opt-in experiment tests. Historical measured candidate and app patches preserved separately."
+}

@@ -1,0 +1,93 @@
+{
+  "startedAt": "2026-10-27T01:09:14.207Z",
+  "ordinaryFileConcurrency": 2,
+  "checks": [
+    {
+      "name": "baseline-regression-verified",
+      "startedAt": "2026-10-27T01:09:16.510Z",
+      "completedAt": "2026-10-27T01:09:18.611Z",
+      "status": 1,
+      "expected": 1
+    },
+    {
+      "name": "unit-interrupted",
+      "startedAt": "2026-10-27T01:09:18.676Z",
+      "completedAt": "2026-10-27T01:21:06.583Z",
+      "status": 1,
+      "expected": 0,
+      "resolvedBy": "unit"
+    },
+    {
+      "name": "unit",
+      "startedAt": "2026-10-27T01:23:16.790Z",
+      "completedAt": "2026-10-27T01:26:27.020Z",
+      "status": 0,
+      "expected": 0
+    },
+    {
+      "name": "migrations",
+      "startedAt": "2026-10-27T01:26:27.021Z",
+      "completedAt": "2026-10-27T01:26:28.049Z",
+      "status": 0,
+      "expected": 0
+    },
+    {
+      "name": "security-disposable",
+      "startedAt": "2026-10-27T01:26:28.049Z",
+      "completedAt": "2026-10-27T01:26:40.368Z",
+      "status": 0,
+      "expected": 0
+    },
+    {
+      "name": "typecheck",
+      "startedAt": "2026-10-27T01:26:40.368Z",
+      "completedAt": "2026-10-27T01:26:44.336Z",
+      "status": 0,
+      "expected": 0
+    },
+    {
+      "name": "lint",
+      "startedAt": "2026-10-27T01:26:44.337Z",
+      "completedAt": "2026-10-27T01:26:50.630Z",
+      "status": 0,
+      "expected": 0
+    },
+    {
+      "name": "live",
+      "startedAt": "2026-10-27T01:26:52.565Z",
+      "completedAt": "2026-10-27T01:28:31.612Z",
+      "status": 0,
+      "expected": 0
+    },
+    {
+      "name": "seed-1000",
+      "startedAt": "2026-10-27T01:28:31.686Z",
+      "completedAt": "2026-10-27T01:28:32.463Z",
+      "status": 0,
+      "expected": 0
+    },
+    {
+      "name": "scale-1000",
+      "startedAt": "2026-10-27T01:28:32.463Z",
+      "completedAt": "2026-10-27T01:28:33.086Z",
+      "status": 0,
+      "expected": 0
+    },
+    {
+      "name": "seed-5000",
+      "startedAt": "2026-10-27T01:28:33.087Z",
+      "completedAt": "2026-10-27T01:28:33.849Z",
+      "status": 0,
+      "expected": 0
+    },
+    {
+      "name": "scale-5000",
+      "startedAt": "2026-10-27T01:28:33.849Z",
+      "completedAt": "2026-10-27T01:28:36.500Z",
+      "status": 0,
+      "expected": 0
+    }
+  ],
+  "complete": true,
+  "completedAt": "2026-10-27T01:28:36.501Z"
+}

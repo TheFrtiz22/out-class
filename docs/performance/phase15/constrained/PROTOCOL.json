@@ -1,0 +1,275 @@
+{
+  "startedAt": "2026-10-27T01:35:07.979Z",
+  "profile": "constrained",
+  "cohorts": [
+    1000,
+    5000
+  ],
+  "blocks": [
+    "BA",
+    "AB"
+  ],
+  "buildIds": {
+    "baseline": "8gb3WlwOdFPhj1b-uU6FI",
+    "candidate": "D-Qsd-xB5rEbF8lbg7twQ"
+  },
+  "planSha256": "cf47b8f0c4c5753f2178d66ce27e4280f9046fbadbe24db591b156341ee78f09",
+  "tools": {
+    "navigation-phase15-study.cjs": "3a7b45a700d9c7844164ed84cb6fbb23e293f005267e8a1107b294941e660733",
+    "navigation-phase15-local.cjs": "96ccbbd4dd7b433e11986afa46581cea0918c321643bef6cf78b54d2dc59ce80",
+    "navigation-audit.cjs": "ef894a888a99815d1e6fd18d5f9ecb8c5d7e4f52ee7e981603442a55bf9e20ef",
+    "navigation-phase15-interactions.cjs": "c3302c5b98f76d0b95f6fe297681f0b9828db5ce1a3977532c877a06fdc30dac",
+    "navigation-phase15-constrained-interactions.cjs": "ab00b905c48c416a46af53a98ca505712990bdaba3bbaa0beda04737e5728eeb",
+    "navigation-phase15-concurrency.cjs": "c3b54f445bec7a3c485becf7c2439ccfa101b3fb8445bedef95a2eccd8c73148",
+    "navigation-phase15-host-monitor.cjs": "1efc15070f972406de7a785e96a0b33cda24a304ff68dede639e71f1de8e14b7"
+  },
+  "completed": [
+    {
+      "directory": "size-1000-pair-1-1-B-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-1-1-B-measure",
+      "planned": 20,
+      "observed": 20,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-1-2-A-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-1-2-A-measure",
+      "planned": 20,
+      "observed": 20,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-2-1-A-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-2-1-A-measure",
+      "planned": 20,
+      "observed": 20,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-2-2-B-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-2-2-B-measure",
+      "planned": 20,
+      "observed": 20,
+      "failed": 0
+    },
+    {
+      "directory": "size-5000-pair-1-1-B-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failed": 0
+    },
+    {
+      "directory": "size-5000-pair-1-1-B-measure",
+      "planned": 20,
+      "observed": 20,
+      "failed": 0
+    },
+    {
+      "directory": "size-5000-pair-1-2-A-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failed": 0
+    },
+    {
+      "directory": "size-5000-pair-1-2-A-measure",
+      "planned": 20,
+      "observed": 20,
+      "failed": 0
+    },
+    {
+      "directory": "size-5000-pair-2-1-A-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failed": 0
+    },
+    {
+      "directory": "size-5000-pair-2-1-A-measure",
+      "planned": 20,
+      "observed": 20,
+      "failed": 0
+    },
+    {
+      "directory": "size-5000-pair-2-2-B-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failed": 0
+    },
+    {
+      "directory": "size-5000-pair-2-2-B-measure",
+      "planned": 20,
+      "observed": 20,
+      "failed": 0
+    }
+  ],
+  "interactions": [
+    {
+      "file": "size-1000-pair-1-1-B-interactions.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "file": "size-1000-pair-1-2-A-interactions.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "file": "size-1000-pair-2-1-A-interactions.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "file": "size-1000-pair-2-2-B-interactions.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "file": "size-5000-pair-1-1-B-interactions.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "file": "size-5000-pair-1-2-A-interactions.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "file": "size-5000-pair-2-1-A-interactions.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "file": "size-5000-pair-2-2-B-interactions.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    }
+  ],
+  "concurrency": [
+    {
+      "file": "size-1000-pair-1-1-B-concurrency.json",
+      "planned": 42
+    },
+    {
+      "file": "size-1000-pair-1-2-A-concurrency.json",
+      "planned": 42
+    },
+    {
+      "file": "size-1000-pair-2-1-A-concurrency.json",
+      "planned": 42
+    },
+    {
+      "file": "size-1000-pair-2-2-B-concurrency.json",
+      "planned": 42
+    },
+    {
+      "file": "size-5000-pair-1-1-B-concurrency.json",
+      "planned": 42
+    },
+    {
+      "file": "size-5000-pair-1-2-A-concurrency.json",
+      "planned": 42
+    },
+    {
+      "file": "size-5000-pair-2-1-A-concurrency.json",
+      "planned": 42
+    },
+    {
+      "file": "size-5000-pair-2-2-B-concurrency.json",
+      "planned": 42
+    }
+  ],
+  "features": [
+    {
+      "directory": "size-1000-pair-1-1-B-features-warmup",
+      "planned": 8,
+      "observed": 8,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-1-1-B-features-measure",
+      "planned": 24,
+      "observed": 24,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-1-2-A-features-warmup",
+      "planned": 8,
+      "observed": 8,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-1-2-A-features-measure",
+      "planned": 24,
+      "observed": 24,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-2-1-A-features-warmup",
+      "planned": 8,
+      "observed": 8,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-2-1-A-features-measure",
+      "planned": 24,
+      "observed": 24,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-2-2-B-features-warmup",
+      "planned": 8,
+      "observed": 8,
+      "failed": 0
+    },
+    {
+      "directory": "size-1000-pair-2-2-B-features-measure",
+      "planned": 24,
+      "observed": 24,
+      "failed": 0
+    }
+  ],
+  "failures": [],
+  "complete": true,
+  "runtimePackageManifests": {
+    "next": "547305a02acf9b1700e8210e511deefe616d415f3fc06c9f7551187430b7ee54",
+    "react": "6029fda5e660da53952cf5ddcd1e8568fc8dc0c6dcb9deaf7667fdc4c7f5a113",
+    "prisma": "640c40516faa0c333995d0e22cf9e09815c3d7f80ef71ac793283d2c9cac41be",
+    "playwright": "76e7341a52a4dd154553c3514926a5f824da4374d000e88d9ac3c14ee6eadf84",
+    "@supabase/ssr": "f7fb77112c8e841801ae6b841078488ea262e226a5488ef213ce1a13c1b6be0e",
+    "@supabase/supabase-js": "7fb2b72ae229cc489891f65915a11ba0528f14783ffaa95379d50bcef95f1d0c"
+  },
+  "completedAt": "2026-10-27T02:07:58.018Z",
+  "hostControl": {
+    "valid": true,
+    "samples": 395,
+    "violations": []
+  },
+  "applicationStopped": true
+}

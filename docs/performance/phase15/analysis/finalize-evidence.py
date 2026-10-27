@@ -1,0 +1,48 @@
+"""Verify the measured candidate, chosen final source, controls and complete evidence."""
+from pathlib import Path
+import json,hashlib,re,subprocess,datetime,tempfile,os
+root=Path('docs/performance/phase15');read=lambda p:json.loads(p.read_text());sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest();before=read(root/'BASELINE_SOURCE.json');after=read(root/'CANDIDATE_SOURCE.json');final=read(root/'FINAL_SOURCE.json');decision=read(root/'DECISION.json');assert len(before['files'])==len(after['files'])==len(final['files'])==913
+assert before['files']==read(Path('docs/performance/phase14/FINAL_SOURCE.json'))['files'];assert before['sourceRef']==read(root/'PLAN.json')['baseline'];assert [f for f in after['files'] if after['files'][f]!=before['files'][f]]==['components/club-settings-workspace.tsx']
+assert final['files']==(after['files'] if decision['adopted'] else before['files'])
+for f,digest in final['files'].items():assert sha(Path(f))==digest,f
+assert subprocess.check_output(['git','diff','--name-only',before['sourceRef'],'--','actions','app','components','contexts','lib','prisma','utils'],text=True).splitlines()==(['components/club-settings-workspace.tsx'] if decision['adopted'] else [])
+controls={}
+for name in ['local','constrained']:
+ p=read(root/name/'PROTOCOL.json');h=read(root/name/'HOST_MONITOR.json');assert p['complete'] and not p['failures'] and p['applicationStopped'] and p['hostControl']['valid'] and h['valid'] and not h['violations'];assert len(p['completed'])==16 and len(p['features'])==len(p['interactions'])==8 and len(p['concurrency'])==(8 if name=='constrained' else 0)
+ assert p['buildIds']=={'baseline':before['buildId'],'candidate':after['buildId']} and p['planSha256']==sha(root/'PLAN.json')
+ for tool,digest in p['tools'].items():assert sha(Path('scripts')/tool)==digest,tool
+ for package,digest in p['runtimePackageManifests'].items():assert sha(Path('node_modules')/package/'package.json')==digest,package
+ assert read(root/name/'POWER_AUDIT.json')['acceptedPowerInterval'];assert all(s['powerSource']==h['powerBaseline']['source'] and s['lowPowerMode']==0 for s in h['samples'])
+ for field in ['completed','features']:
+  for group in p[field]:
+   d=read(root/name/group['directory']/'browser-samples.json');assert len(d['samples'])==group['planned'] and not d['failures']
+   for row in d['samples']:
+    assert not row.get('failed') and row.get('pageErrorCount',0)==0
+    if field=='completed':assert len([q for q in row['requests'] if re.fullmatch(r'/api/workspace\?kind=pipeline(?:Page|List)?',q['route'])])==1
+ controls[name]={'startedAt':p['startedAt'],'completedAt':p['completedAt'],'hostSamples':len(h['samples']),'hostControlsPassed':True,'actualSleepAuditPassed':True,'powerBaseline':h['powerBaseline'],'sourceToolPlanAndRuntimePackageHashesVerified':True}
+tests=read(root/'TEST_RESULTS.json');assert tests['ordinary']=={'total':1484,'passed':1417,'failed':0,'skipped':67,'cancelled':0};assert tests['live']['passed']==71 and tests['live']['failed']==tests['live']['skipped']==0;assert tests['nativeSecurityConcurrency']['passed']==3 and tests['nativeSecurityConcurrency']['failed']==0;assert tests['focusedHandoff']['passed']==4 and tests['focusedHandoff']['failed']==0;assert tests['baselineRegressionProof']['failed']==1;assert tests['interruptedOrdinary']=={'total':1484,'passed':1416,'failed':0,'skipped':67,'cancelled':1}
+retained=read(root/'FINAL_VERIFICATION.json');assert not decision['adopted'] and retained['complete'] and all(c['status']==0 for c in retained['checks']);assert retained['ordinary']=={'total':1480,'passed':1417,'failed':0,'skipped':63,'cancelled':0};assert retained['live']=={'total':67,'passed':67,'failed':0,'skipped':0,'cancelled':0};assert retained['relocatedExperiment']=={'total':4,'passed':4,'failed':0,'skipped':0,'cancelled':0};assert retained['relocatedDefaultGate']=={'total':4,'passed':0,'failed':0,'skipped':4,'cancelled':0};assert retained['applicationFilesVerified']==913 and retained['retainedBuildId']==final['buildId']
+qa=read(root/'QA_RUN.json');assert qa['complete'] and all(c['status']==c.get('expected',0) or any(f['name']==c.get('resolvedBy') and f['status']==0 for f in qa['checks']) for c in qa['checks']);assert qa['completedAt']<controls['local']['startedAt'];assert read(root/'QA_AWAKE_AUDIT.json')['passed']
+prep=read(root/'PREPARATION.json');assert prep['complete'] and all(c['status']==c['expected'] or any(f['name']==c.get('resolvedBy') and f['status']==0 for f in prep['checks']) for c in prep['checks'])
+for name in ['pilot-baseline','pilot-candidate']:
+ d=read(root/name/'browser-samples.json');assert len(d['samples'])==8 and not d['failures']
+data=read(root/'BENCHMARK_RESULTS.json');assert sum(f['allOutcomes'] for f in data['countsAndTransportFlags'].values())==384 and sum(f['allOutcomes'] for f in data['featureCountsAndTransportFlags'].values())==256 and sum(f['interactionOutcomes'] for f in data['countsAndTransportFlags'].values())==192;assert data['httpOutcomes']==336 and data['httpFailed']==0 and data['httpAllPrivateNoStoreAndCookieSensitive'];assert len(data['features'])==16 and len(data['interactions'])==8
+for field in ['countsAndTransportFlags','featureCountsAndTransportFlags']:
+ for flags in data[field].values():assert flags['failedOutcomes']==flags['pageErrors']==flags['httpErrors']==flags['failedInteractions']==flags['interactionPageErrorsIncludingPreparation']==0
+handoff=read(root/'HANDOFF_TIMELINES.json');assert len(handoff['rows'])==64 and len(handoff['summary'])==8 and all(g['measuredOutcomes']==6 for g in handoff['summary'])
+diag=read(root/'DIAGNOSTIC_SUMMARY.json');assert diag['acceptedPerformanceData'] is False and diag['nativeOutcomes']==168 and diag['directIdentityOutcomes']==56 and diag['instrumentedBrowserOutcomes']==32 and diag['readOnlyPlans']==4;assert all(c['correlation']=={'nativeRequests':42,'matchedRequestTimelines':42,'requestsWithAuthTimeline':42} for c in diag['cases']);assert read(root/'DIAGNOSTIC_PREFLIGHT.json')['traceCorrelationVerified']
+cleanup=read(root/'CLEANUP.json');assert cleanup['completed'] and cleanup['sourceFilesVerified']==913 and cleanup['applicationChangesThisPhase']==(1 if decision['adopted'] else 0) and cleanup['ownedPrivateCredentialsAndBuildSnapshotsRemoved'] and cleanup['mainUnchanged'];assert read(root/'PRIVACY_SCAN.json')['passed']
+implementation=read(root/'IMPLEMENTATION_FILES.json');assert sha(root/'IMPLEMENTATION.diff')==implementation['sha256'];subprocess.run(['git','apply','--reverse','--check',str(root/'IMPLEMENTATION.diff')],check=True)
+assert sha(root/'EXPERIMENT_APPLICATION.diff')==implementation['experimentApplicationDiffSha256'] and sha(root/'EXPERIMENT_IMPLEMENTATION.diff')==implementation['historicalMeasuredImplementationSha256']
+subprocess.run(['git','apply','--check',str(root/'EXPERIMENT_APPLICATION.diff')],check=True)
+with tempfile.TemporaryDirectory(prefix='outclass-phase15-patch-check-') as location:
+ env={**os.environ,'GIT_INDEX_FILE':str(Path(location)/'index')};subprocess.run(['git','read-tree',before['sourceRef']],env=env,check=True);subprocess.run(['git','apply','--cached',str(root/'EXPERIMENT_IMPLEMENTATION.diff')],env=env,check=True);blob=subprocess.check_output(['git','show',':components/club-settings-workspace.tsx'],env=env);assert hashlib.sha256(blob).hexdigest()==after['files']['components/club-settings-workspace.tsx']
+assert retained['startedAt']>max(read(root/'diagnostics'/f"{c['size']}-{c['variant']}.json")['completedAt'] for c in diag['cases'])
+for f in root.rglob('*.log'):
+ text=re.sub(r'\x1b\[[0-?]*[ -/]*[@-~]','',f.read_text());f.write_text('\n'.join(line.rstrip() for line in text.splitlines()).rstrip()+'\n')
+for f in root.rglob('*'):
+ if f.is_file():
+  text=f.read_text(errors='replace')
+  for pattern in [r'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----',r'sb_secret_[A-Za-z0-9_-]{20,}',r'eyJ[A-Za-z0-9_-]{15,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}']:assert not re.search(pattern,text),str(f)
+evidence={'at':datetime.datetime.now(datetime.timezone.utc).isoformat(),'phase':'15','comparisonBaseline':before['sourceRef'],'candidateBuildId':after['buildId'],'finalBuildId':final['buildId'],'applicationSourceFilesVerified':913,'applicationChangesThisPhase':1 if decision['adopted'] else 0,'measuredExperimentApplicationChanges':1,'adopted':decision['adopted'],'measuredCandidateOrdinaryPassed':1417,'measuredCandidateGatedSkips':67,'measuredCandidateLivePassed':71,'retainedOrdinaryPassed':1417,'retainedGatedSkips':63,'retainedLivePassed':67,'relocatedExperimentPassed':4,'nativeSecurityPassed':3,'expectedBaselineRegressionFailures':1,'earlierInterruptedOrdinary':'QA_POWER_INTERRUPTION.json','controls':controls,'exclusiveHostAccessFormallyProven':False,'diagnosticBoundsArePureProviderOrPoolTime':False,'primaryOutcomes':{'browser':384,'features':256,'interactions':192,'nativeHttp':336},'separateDiagnosticOutcomes':{'nativeHttp':168,'directIdentity':56,'browser':32,'readOnlyPlans':4},'developmentPilotOutcomes':16,'implementationDiffReverseCheck':True,'historicalMeasuredPatchHashVerified':True,'privacyScan':'PRIVACY_SCAN.json','cleanup':'CLEANUP.json','files':{str(f.relative_to(root)):{'sha256':sha(f),'bytes':f.stat().st_size} for f in sorted(root.rglob('*')) if f.is_file() and f.name not in ['EVIDENCE.json','SHA256SUMS']}}
+(root/'EVIDENCE.json').write_text(json.dumps(evidence,indent=2)+'\n');(root/'SHA256SUMS').write_text(''.join(f'{sha(f)}  {f.relative_to(root)}\n' for f in sorted(root.rglob('*')) if f.is_file() and f.name!='SHA256SUMS'));print('Sources, complete memberships, controls, privacy, cleanup and checksums verified.')

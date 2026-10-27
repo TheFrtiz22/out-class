@@ -1,0 +1,25 @@
+✔ review handoffs avoid an unused server page request and history revisits still read fresh (3199.950167ms)
+✔ a revoked live session cannot reuse earlier review data through a query-only handoff (1843.765333ms)
+✖ application draft saving blocks the handoff and a saved draft survives Review and browser Back without publishing (31216.621667ms)
+✔ modified review links retain ordinary direct entry in a new browser tab (1638.427292ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 38128.130292
+
+✖ failing tests:
+
+test at tests/navigation-phase15-e2e.test.cjs:34:1
+✖ application draft saving blocks the handoff and a saved draft survives Review and browser Back without publishing (31216.621667ms)
+  locator.waitFor: Timeout 30000ms exceeded.
+  Call log:
+    - waiting for getByLabel('Question', { exact: true }).first() to be visible
+
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/navigation-phase15-e2e.test.cjs:38:96) {
+    name: 'TimeoutError',
+    log: [ "  - waiting for getByLabel('Question', { exact: true }).first() to be visible" ]
+  }
