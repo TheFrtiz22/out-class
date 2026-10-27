@@ -38,6 +38,7 @@ function provider({ hasSession = true, isImpersonating = false, demo = { isDemoE
   const demoIdentity = { id: "demo-user", memberships: [{ clubId: "demo-club", isOwner: true }] }
   const { AuthProvider } = load("contexts/auth-context.tsx", {
     react,
+    "@/lib/workspace-read-diagnostics": { recordWorkspaceRead() {} },
     "@/utils/supabase/client": { createClient: () => ({ auth: { onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }) } }) },
     "@/lib/permissions": { hasWorkspace: member => member.isOwner === true },
     "@/contexts/demo-context": { useDemoMode: () => demo },

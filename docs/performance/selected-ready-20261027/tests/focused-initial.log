@@ -1,0 +1,39 @@
+✔ audit nearest-rank percentiles do not fabricate missing measurements (0.611458ms)
+✔ saved request names omit query arguments, tokens and fixture identifiers (0.15725ms)
+✔ active workload output cannot replace the original audit or existing evidence (2.61ms)
+✔ hydration fixture accepts only its separate local project and ports (1.663833ms)
+✔ Recruiting Interviews retains the scheduling tab when round navigation remounts it (105.8755ms)
+✔ read API preserves dates and user JSON, validates scope, and never caches private responses (162.65825ms)
+✔ ordinary read fetches overlap rather than enter the Server Action queue (11.061166ms)
+✔ root bootstrap starts authenticated content without an identity HTTP waterfall (4.797125ms)
+✔ verified Supabase identity is reused only inside the same React request; membership remains live (15.986166ms)
+✔ duplicate identity refreshes coalesce and a late old-account response cannot replace the new bootstrap (3.955958ms)
+✔ middleware avoids duplicate refresh only after demo/support guards; loaders own authentication (12.731208ms)
+✔ query-only club transitions skip RSC navigation and preserve modified/cross-club links (1.085125ms)
+✖ Members mounts without Overview and its resource survives navigation only within the same identity/grants (24.663958ms)
+✔ advanced permissions delegate one directory and one self-identity refresh to their owner (6.7935ms)
+✔ a stalled workspace read times out, aborts its request and releases the deadline (5.281041ms)
+✔ a changed browser Auth token rotates pending-read authority without treating the token as authorization (6.291167ms)
+✔ all four selected resources start their guarded read alongside code loading and never reuse another visit (44.315083ms)
+✔ late navigation/session/account results cannot reveal a previous projection; retry makes a fresh request (11.53775ms)
+✔ Demo and unresolved Demo initialization never dispatch a live selected-tab request (8.369208ms)
+✔ club, privacy and support authority changes hide content and fence earlier reads (9.21925ms)
+✔ an Auth notification before effect commit defers an obsolete selected read until its current scope renders (3.4165ms)
+✔ successful and failed reads cannot settle during the gap between Auth notification and React commit (13.341875ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 21
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 626.375209
+
+✖ failing tests:
+
+test at tests/performance-regressions.test.cjs:163:1
+✖ Members mounts without Overview and its resource survives navigation only within the same identity/grants (24.663958ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'props')
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/performance-ready/out-class/tests/performance-regressions.test.cjs:180:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)

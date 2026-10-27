@@ -1,0 +1,104 @@
+{
+  "startedAt": "2026-10-27T17:05:51.930Z",
+  "complete": false,
+  "profile": "constrained",
+  "base": "06d3e93110d09fc564de7e28cf7dc3a71f081fe4",
+  "builds": {
+    "B": "YhMtIPGz1MT4-4jqyodGd",
+    "A": "K2lMsjNFdigRZqc5-mLIv"
+  },
+  "toolHashes": {
+    "navigation-audit.cjs": "ef894a888a99815d1e6fd18d5f9ecb8c5d7e4f52ee7e981603442a55bf9e20ef",
+    "navigation-selected-ready-local.cjs": "21352607fa86bd9c9323537e244e3b0ea2f34e41692899dff47d9dcc0f2a4f08",
+    "navigation-selected-ready-host-monitor.cjs": "1efc15070f972406de7a785e96a0b33cda24a304ff68dede639e71f1de8e14b7",
+    "navigation-selected-ready-study.cjs": "876cd2891d8e0c1c941f6cab3798f0cf7b0e7c01364b09530ab7e53bb5476cf4"
+  },
+  "planSha256": "1e52af76079d67ecb832a314915cb37480197a48f5e6df8a433dc7ea3e520196",
+  "blocks": [
+    {
+      "directory": "block-1-B-warmup",
+      "variant": "B",
+      "stage": "warmup",
+      "planned": 8,
+      "observed": 8,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "block-1-B-measure",
+      "variant": "B",
+      "stage": "measure",
+      "planned": 40,
+      "observed": 40,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "block-2-A-warmup",
+      "variant": "A",
+      "stage": "warmup",
+      "planned": 8,
+      "observed": 8,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "block-2-A-measure",
+      "variant": "A",
+      "stage": "measure",
+      "planned": 40,
+      "observed": 40,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "block-3-A-warmup",
+      "variant": "A",
+      "stage": "warmup",
+      "planned": 8,
+      "observed": 8,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "block-3-A-measure",
+      "variant": "A",
+      "stage": "measure",
+      "planned": 40,
+      "observed": 40,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "block-4-B-warmup",
+      "variant": "B",
+      "stage": "warmup",
+      "planned": 8,
+      "observed": 8,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "block-4-B-measure",
+      "variant": "B",
+      "stage": "measure",
+      "planned": 40,
+      "observed": 40,
+      "failures": 5,
+      "status": 1
+    }
+  ],
+  "failures": [
+    {
+      "type": "AssertionError",
+      "reason": "Comparison failed; retain complete attempt and inspect before acceptance."
+    }
+  ],
+  "completedAt": "2026-10-27T17:29:42.287Z",
+  "hostControl": {
+    "valid": true,
+    "samples": 227,
+    "violations": []
+  },
+  "applicationStopped": true
+}

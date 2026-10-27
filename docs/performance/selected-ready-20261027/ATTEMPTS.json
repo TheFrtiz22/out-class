@@ -1,0 +1,58 @@
+{
+  "at": "2026-10-27T18:00:04.399911+00:00",
+  "local": "local; complete and valid, retained separately",
+  "constrainedAttempts": [
+    {
+      "attempt": 1,
+      "directory": "attempts/constrained-interrupted-1",
+      "accepted": false,
+      "reason": "Actual Sleep/DarkWake cycles; whole profile excluded. Five source-page timeouts retained, no individual replacement.",
+      "originalDirectory": "constrained",
+      "allOriginalFileHashesVerifiedAfterMove": true,
+      "originalFiles": {
+        "POWER_AUDIT.json": "ed2646de9f28d187d4d2ec00f696a16ed1d263d72a06a5c1b8d31ff7260b19c7",
+        "HOST_MONITOR.json": "9ddcbae47e5ed9488b7044edc6dca355b4936b3f23ad12d6b1f14ef165dbfef9",
+        "PROTOCOL.json": "4add0e05c55e37d891b698c91dc7245393aa39dfd9fd550cfa115061f83a60a1",
+        "block-2-A-measure/browser-samples.json": "65572318aa20f8ffb33bf9877312ffb1baa76dc85d6d50e0850fcc503acb9811",
+        "block-2-A-measure/browser-summary.json": "e33fcdddfc929112d9fae00dccab7b7d2c90ce6da98d175ba199841a99fa73b2",
+        "block-4-B-measure/browser-samples.json": "f88db42017191996e2c67fb89a5eeafe641855b5ebac86a7af30fbc918c9bcab",
+        "block-4-B-measure/browser-summary.json": "69a47a41a94b9f642c3245358f5fd48d2d20d3d468f86ca9d1ad7451bc84c641",
+        "block-4-B-warmup/browser-samples.json": "e44c85101f97f7b281c277c64a79f90e7fedfa34cc2e1f52693d026b39895f7a",
+        "block-4-B-warmup/browser-summary.json": "ec088daf4e3e2661f31c3ee3a146776b8b5755c95898fff752953a3a3bd567c1",
+        "block-3-A-measure/browser-samples.json": "25d14528bcd7846f1f5618d886f31f542aed3d271eed6d4e43fda685089ca4a4",
+        "block-3-A-measure/browser-summary.json": "c5578402f9ec556e68cd7d4cd2ba29249177b60f8d08bfe1b48f96f47eed6236",
+        "block-1-B-warmup/browser-samples.json": "039897802bc6cfa7e1640323e75c7e3e3a21feac71946fb39eda8783580d1f05",
+        "block-1-B-warmup/browser-summary.json": "776e9aada6dce84293754139df7d1f0bec23b22d3c5b4c0b5fdf02a84f83c23a",
+        "block-2-A-warmup/browser-samples.json": "f73f937f45f79a1a41ac342a4a9286127e87e582176202a3ad9e042169558f41",
+        "block-2-A-warmup/browser-summary.json": "81548213a845eb71af506e876cf05f7cf307b9f0632410f2a52427b0a5cd4156",
+        "block-3-A-warmup/browser-samples.json": "abd04f62c9c67015831ab23e3092ceac65e565a9ea27a52ea242115558bea381",
+        "block-3-A-warmup/browser-summary.json": "b501f9f81780abab93334840c2f3c661be1bccd1fea4dca45ed49689418f4200",
+        "block-1-B-measure/browser-samples.json": "9c1cccdda69992801f85ead854271929667e8d4e63148d176aca11a3ab6a0a37",
+        "block-1-B-measure/browser-summary.json": "25bbc5d3bedf8218af97be609a3608c478a085129630e1be2ee9b55c8ee6eceb"
+      }
+    },
+    {
+      "attempt": 2,
+      "directory": "attempts/constrained-power-change-2",
+      "status": "Excluded whole; power source changed during first warmup. Zero measured visits.",
+      "accepted": false,
+      "allOriginalFileHashesVerifiedAfterMove": true,
+      "originalFiles": {
+        "HOST_MONITOR.json": "2e09d029a442488d81590e21ddb83c3041757229809d8c957938dca99aa0d370",
+        "PROTOCOL.json": "90d86e2d73c4e4cf55f40fa07ecac3ba693339a4ccd784a8563181d1f28f418e",
+        "block-1-B-warmup/browser-samples.json": "5b296f67f8656159ae0ac37af372ff933aa8ae7edf0405be70aaa935b1c47bfc",
+        "block-1-B-warmup/browser-summary.json": "e5af583390968acfe4c05d4a1683dac8c3f50c5f7bd685d27ed24ce27dbf6666"
+      }
+    },
+    {
+      "attempt": 3,
+      "directory": "constrained",
+      "status": "Complete and accepted after host/source/tool/plan controls and actual sleep audit.",
+      "accepted": true,
+      "actualRecordedPowerBaseline": {
+        "source": "Battery Power",
+        "lowPowerMode": 0
+      }
+    }
+  ]
+}

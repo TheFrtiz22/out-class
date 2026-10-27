@@ -81,8 +81,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
-      - name: Run Next.js / Supabase Auth / SMTP / settings integration
-        run: node scripts/run-onboarding-e2e.cjs --club-integration
+      - name: Run Next.js / Supabase Auth / SMTP / settings and selected-navigation integration
+        run: node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation
 
   local-storage:
     name: Private Storage and native PostgreSQL

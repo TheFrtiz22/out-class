@@ -1,0 +1,10 @@
+✔ browser network preload refuses non-owned endpoints and stays disabled by default (1.039083ms)
+✔ network diagnostic exports only fixed error and resource categories (0.5295ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 101.943792

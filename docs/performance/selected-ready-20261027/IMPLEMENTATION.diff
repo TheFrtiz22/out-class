@@ -1,0 +1,809 @@
+diff --git a/.github/workflows/disposable-integrations.yml b/.github/workflows/disposable-integrations.yml
+index 4e0ea08..dad23c3 100644
+--- a/.github/workflows/disposable-integrations.yml
++++ b/.github/workflows/disposable-integrations.yml
+@@ -84,2 +84,2 @@ jobs:
+-      - name: Run Next.js / Supabase Auth / SMTP / settings integration
+-        run: node scripts/run-onboarding-e2e.cjs --club-integration
++      - name: Run Next.js / Supabase Auth / SMTP / settings and selected-navigation integration
++        run: node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation
+diff --git a/components/club-announcements.tsx b/components/club-announcements.tsx
+index ff892bb..6544316 100644
+--- a/components/club-announcements.tsx
++++ b/components/club-announcements.tsx
+@@ -24 +24 @@ type Item = Awaited<ReturnType<typeof getClubAnnouncements>>[number];
+-export function ClubAnnouncements({ clubId }: { clubId: string }) {
++export function ClubAnnouncements({ clubId, initialItems }: { clubId: string; initialItems?: Item[] }) {
+@@ -31 +31,2 @@ export function ClubAnnouncements({ clubId }: { clubId: string }) {
+- const [items, setItems] = useState<Item[]>([]);
++ const [items, setItems] = useState<Item[]>(initialItems ?? []);
++ const firstRead = useRef(initialItems !== undefined);
+@@ -49 +50 @@ export function ClubAnnouncements({ clubId }: { clubId: string }) {
+- useEffect(() => { void reload(); }, [reload]);
++ useEffect(() => { if (firstRead.current) { firstRead.current = false; return; } void reload(); }, [reload]);
+diff --git a/components/club-members.tsx b/components/club-members.tsx
+index 2659e67..d2df025 100644
+--- a/components/club-members.tsx
++++ b/components/club-members.tsx
+@@ -20 +20 @@ type Directory = Awaited<ReturnType<typeof import("@/actions/organization-member
+-export function ClubMembers({ clubId, initialDirectory, onDirectory }: { clubId: string; initialDirectory?: Directory | null; onDirectory?: (data: Directory | null) => void }) {
++export function ClubMembers({ clubId, initialDirectory, onDirectory, validatedInitialData = false }: { clubId: string; validatedInitialData?: boolean; initialDirectory?: Directory | null; onDirectory?: (data: Directory | null) => void }) {
+@@ -49 +49 @@ export function ClubMembers({ clubId, initialDirectory, onDirectory }: { clubId:
+-  if (demo.ready && !demo.isDemoEnabled) return <OrganizationMemberManagement key={clubId} clubId={clubId} initialData={initialDirectory} onData={onDirectory} />
++  if (demo.ready && !demo.isDemoEnabled) return <OrganizationMemberManagement key={clubId} clubId={clubId} initialData={initialDirectory} onData={onDirectory} validatedInitialData={validatedInitialData} />
+diff --git a/components/club-tasks.tsx b/components/club-tasks.tsx
+index 6c46eda..79f723e 100644
+--- a/components/club-tasks.tsx
++++ b/components/club-tasks.tsx
+@@ -26 +26 @@ function resources(task:Task){return taskInputSchema.shape.resources.safeParse(t
+-export function ClubTasks({clubId,embedded=false,initialScope="team",personalOnly=false}:{clubId:string;embedded?:boolean;personalOnly?:boolean;initialScope?:string}) {
++export function ClubTasks({clubId,embedded=false,initialScope="team",personalOnly=false,initialData}:{clubId:string;initialData?:Workspace;embedded?:boolean;personalOnly?:boolean;initialScope?:string}) {
+@@ -28 +28,2 @@ export function ClubTasks({clubId,embedded=false,initialScope="team",personalOnl
+-  const [workspaceData,setWorkspace]=useState<Workspace|null>(null),[error,setError]=useState(""),[busy,setBusy]=useState(false),[refresh,setRefresh]=useState(0),[loaded,setLoaded]=useState(false),[scope,setScope]=useState(initialScope),[filter,setFilter]=useState("open"),[query,setQuery]=useState(""),[activeId,setActive]=useState<string|null>(null),[dirty,setDirty]=useState(false)
++  const [workspaceData,setWorkspace]=useState<Workspace|null>(initialData??null),[error,setError]=useState(""),[busy,setBusy]=useState(false),[refresh,setRefresh]=useState(0),[loaded,setLoaded]=useState(!!initialData),[scope,setScope]=useState(initialScope),[filter,setFilter]=useState("open"),[query,setQuery]=useState(""),[activeId,setActive]=useState<string|null>(null),[dirty,setDirty]=useState(false)
++  const firstRead=useRef(!!initialData)
+@@ -31 +32 @@ export function ClubTasks({clubId,embedded=false,initialScope="team",personalOnl
+-  useEffect(()=>{if(!demo.ready||loading)return;let current=true;setError("");setLoaded(false);getTaskWorkspace(clubId).then(data=>{if(current)setWorkspace(data)}).catch(error=>{if(current){setWorkspace(null);setError(error instanceof Error?error.message:"Could not load tasks.")}}).finally(()=>{if(current)setLoaded(true)});return()=>{current=false}},[clubId,refresh,demo.ready,demo.isDemoEnabled,loading])
++  useEffect(()=>{if(!demo.ready||loading)return;if(firstRead.current){firstRead.current=false;return;}let current=true;setError("");setLoaded(false);getTaskWorkspace(clubId).then(data=>{if(current)setWorkspace(data)}).catch(error=>{if(current){setWorkspace(null);setError(error instanceof Error?error.message:"Could not load tasks.")}}).finally(()=>{if(current)setLoaded(true)});return()=>{current=false}},[clubId,refresh,demo.ready,demo.isDemoEnabled,loading])
+diff --git a/components/club-workspace.tsx b/components/club-workspace.tsx
+index 00264a4..d4300f6 100644
+--- a/components/club-workspace.tsx
++++ b/components/club-workspace.tsx
+@@ -47,0 +48 @@ import { WorkspaceLoading } from "@/components/workspace-loading";
++import { SelectedClubWorkspace } from "@/components/selected-club-workspace";
+@@ -50,2 +50,0 @@ type Overview = Awaited<ReturnType<typeof getClubWorkspaceOverview>>;
+-type Directory = Awaited<ReturnType<typeof import("@/actions/organization-members").getOrganizationMemberManagement>>;
+-type Pipeline = Awaited<ReturnType<typeof import("@/lib/workspace-api").getClubPipeline>>;
+@@ -120,10 +118,0 @@ export function ClubWorkspace({
+-  const [resources, setResources] = useState<{ scope: string; members: Directory | null; pipeline: Pipeline | null; membersAt: number; pipelineAt: number }>({ scope, members: null, pipeline: null, membersAt: 0, pipelineAt: 0 });
+-  const saved = resources.scope === scope ? { ...resources, members: Date.now() - resources.membersAt < 30000 ? resources.members : null, pipeline: Date.now() - resources.pipelineAt < 30000 ? resources.pipeline : null } : null;
+-  function publishMembers(members: Directory | null) {
+-    if (owner.current !== scope) return;
+-    setResources(previous => previous.scope === scope && previous.members === members ? previous : { scope, members, membersAt: Date.now(), pipeline: previous.scope === scope ? previous.pipeline : null, pipelineAt: previous.scope === scope ? previous.pipelineAt : 0 });
+-  }
+-  function publishPipeline(id: string, pipeline: Pipeline | null) {
+-    if (owner.current !== scope || id !== clubId) return;
+-    setResources(previous => previous.scope === scope && previous.pipeline === pipeline ? previous : { scope, pipeline, pipelineAt: Date.now(), members: previous.scope === scope ? previous.members : null, membersAt: previous.scope === scope ? previous.membersAt : 0 });
+-  }
+@@ -205 +194 @@ export function ClubWorkspace({
+-            {section === "tasks" && <ClubTasks clubId={clubId} embedded personalOnly={!manager} initialScope={taskView === "mine" ? "mine" : manager ? "team" : "mine"} />}
++            {section === "tasks" && (demo.isDemoEnabled ? <ClubTasks clubId={clubId} embedded personalOnly={!manager} initialScope={taskView === "mine" ? "mine" : manager ? "team" : "mine"} /> : <SelectedClubWorkspace kind="tasks" clubId={clubId} privacyScope={scope} personalOnly={!manager} initialScope={taskView === "mine" ? "mine" : manager ? "team" : "mine"} />)}
+@@ -207 +196 @@ export function ClubWorkspace({
+-            {section === "members" && <ClubMembers key={clubId} clubId={clubId} initialDirectory={saved?.members} onDirectory={publishMembers} />}
++            {section === "members" && (demo.isDemoEnabled ? <ClubMembers key={clubId} clubId={clubId} /> : <SelectedClubWorkspace kind="members" clubId={clubId} privacyScope={scope} />)}
+@@ -209,2 +198,2 @@ export function ClubWorkspace({
+-            {section === "announcements" && <ClubAnnouncements key={clubId} clubId={clubId} />}
+-            {section === "recruitment" && (active === "resumes" || active === "reviews" ? <ApplicantInterviewReviews clubId={clubId} tool={active} /> : active === "scheduled-decisions" ? <DecisionSchedules clubId={clubId} /> : active === "overview" && current ? <RecruitingOverview data={current} refreshing={overviewPending} onChanged={() => setRetry(n => n + 1)} /> : active === "interviews" ? <div className="space-y-3">{(hasPermission(membership, "interviews.manage") || interviewCapabilities(membership).editKit || interviewCapabilities(membership).participate || interviewCapabilities(membership).readClosing) && <RecruitmentWorkspace clubId={clubId} member={membership} onInterview={() => setInterviewMode(true)} initialTool="kits" />}</div> : <><p className="mb-5 text-sm text-muted-foreground">{active === "decisions" ? "Publish final decisions with a formal letter and inbox notification. Decision-availability email follows the student’s application-email preferences." : active === "rejected" ? "Review retained rejected applications and their history. Use explicit reconsideration to return an eligible application to review." : "Review submitted applications and move candidates through your club’s rounds."}</p><LiveLeaderWorkspace key={privacyRevision} scoped rejectedOnly={active === "rejected"} decisionsOnly={active === "decisions"} initialData={saved?.pipeline ? { clubId, pipeline: saved.pipeline } : undefined} onData={publishPipeline} /></>)}
++            {section === "announcements" && (demo.isDemoEnabled ? <ClubAnnouncements key={clubId} clubId={clubId} /> : <SelectedClubWorkspace kind="announcements" clubId={clubId} privacyScope={scope} />)}
++            {section === "recruitment" && (active === "resumes" || active === "reviews" ? <ApplicantInterviewReviews clubId={clubId} tool={active} /> : active === "scheduled-decisions" ? <DecisionSchedules clubId={clubId} /> : active === "overview" && current ? <RecruitingOverview data={current} refreshing={overviewPending} onChanged={() => setRetry(n => n + 1)} /> : active === "interviews" ? <div className="space-y-3">{(hasPermission(membership, "interviews.manage") || interviewCapabilities(membership).editKit || interviewCapabilities(membership).participate || interviewCapabilities(membership).readClosing) && <RecruitmentWorkspace clubId={clubId} member={membership} onInterview={() => setInterviewMode(true)} initialTool="kits" />}</div> : <><p className="mb-5 text-sm text-muted-foreground">{active === "decisions" ? "Publish final decisions with a formal letter and inbox notification. Decision-availability email follows the student’s application-email preferences." : active === "rejected" ? "Review retained rejected applications and their history. Use explicit reconsideration to return an eligible application to review." : "Review submitted applications and move candidates through your club’s rounds."}</p>{(demo.isDemoEnabled ? <LiveLeaderWorkspace key={privacyRevision} scoped rejectedOnly={active === "rejected"} decisionsOnly={active === "decisions"} /> : <SelectedClubWorkspace kind="pipeline" clubId={clubId} privacyScope={scope} rejectedOnly={active === "rejected"} decisionsOnly={active === "decisions"} />)}</>)}
+diff --git a/components/organization-member-management.tsx b/components/organization-member-management.tsx
+index 19648c6..4e07930 100644
+--- a/components/organization-member-management.tsx
++++ b/components/organization-member-management.tsx
+@@ -73 +73 @@ const statusLabel = (status: string) =>
+-export function OrganizationMemberManagement({ clubId, initialData = null, onData }: { clubId: string; initialData?: Directory | null; onData?: (data: Directory | null) => void }) {
++export function OrganizationMemberManagement({ clubId, initialData = null, onData, validatedInitialData = false }: { clubId: string; validatedInitialData?: boolean; initialData?: Directory | null; onData?: (data: Directory | null) => void }) {
+@@ -101,0 +102 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
++  const firstRead = useRef(validatedInitialData && !!initialData);
+@@ -106,0 +108 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
++    if (firstRead.current) { firstRead.current = false; return; }
+diff --git a/components/selected-club-workspace.tsx b/components/selected-club-workspace.tsx
+new file mode 100644
+index 0000000..fa2d454
+--- /dev/null
++++ b/components/selected-club-workspace.tsx
+@@ -0,0 +1,81 @@
++"use client"
++
++import { useEffect, useMemo, useRef, useState } from "react"
++import { useAuth } from "@/contexts/auth-context"
++import { useDemoMode } from "@/contexts/demo-context"
++import { recordWorkspaceRead } from "@/lib/workspace-read-diagnostics"
++import { readWorkspace } from "@/lib/workspace-read"
++import { Button } from "@/components/ui/button"
++
++export type SelectedClubWorkspaceKind = "members" | "pipeline" | "tasks" | "announcements"
++
++// Only the selected tab starts work. Code and its original guarded GET overlap;
++// neither module loading nor a previous tab's data can authorize this visit.
++export async function loadSelectedClubWorkspace(kind: SelectedClubWorkspaceKind, clubId: string) {
++  switch (kind) {
++    case "members": {
++      const [module, data] = await Promise.all([
++        import("@/components/club-members"),
++        readWorkspace<Awaited<ReturnType<typeof import("@/actions/organization-members").getOrganizationMemberManagement>>>("members", [clubId]),
++      ])
++      return { kind, module, data } as const
++    }
++    case "pipeline": {
++      const [module, data] = await Promise.all([
++        import("@/components/views/leader-dashboard/live-leader-workspace"),
++        readWorkspace<Awaited<ReturnType<typeof import("@/actions/crm").getClubPipeline>>>("pipeline", [clubId, { genderCounts: false }]),
++      ])
++      return { kind, module, data } as const
++    }
++    case "tasks": {
++      const [module, data] = await Promise.all([
++        import("@/components/club-tasks"),
++        readWorkspace<Awaited<ReturnType<typeof import("@/actions/tasks").getTaskWorkspace>>>("tasks", [clubId]),
++      ])
++      return { kind, module, data } as const
++    }
++    case "announcements": {
++      const [module, data] = await Promise.all([
++        import("@/components/club-announcements"),
++        readWorkspace<Awaited<ReturnType<typeof import("@/actions/communications").getClubAnnouncements>>>("announcements", [clubId]),
++      ])
++      return { kind, module, data } as const
++    }
++  }
++}
++
++type Loaded = Awaited<ReturnType<typeof loadSelectedClubWorkspace>>
++export function SelectedClubWorkspace({ kind, clubId, privacyScope, personalOnly, initialScope, decisionsOnly, rejectedOnly }: {
++  kind: SelectedClubWorkspaceKind; clubId: string; privacyScope: string;
++  personalOnly?: boolean; initialScope?: string; decisionsOnly?: boolean; rejectedOnly?: boolean;
++}) {
++  const { user, readAuthority, isReadAuthorityCurrent, isImpersonating, loading } = useAuth()
++  const demo = useDemoMode()
++  const [retry, setRetry] = useState(0)
++  // Same full identity/session ownership as interview reads. This is a mounted
++  // visit, not a cache: leaving or changing authority always starts a new GET.
++  const mode = rejectedOnly ? "rejected" : decisionsOnly ? "decisions" : "applicants"
++  const owner = useMemo(() => ({ user, readAuthority, isImpersonating, clubId, kind, privacyScope, retry, mode, demoReady: demo.ready, demoEnabled: demo.isDemoEnabled }), [user, readAuthority, isImpersonating, clubId, kind, privacyScope, retry, mode, demo.ready, demo.isDemoEnabled])
++  const [result, setResult] = useState<{ owner: object; value?: Loaded; failed?: boolean } | null>(null)
++  const lastRead = useRef<typeof owner | null>(null)
++  useEffect(() => {
++    if (!demo.ready || demo.isDemoEnabled || loading || !user || !isReadAuthorityCurrent(readAuthority)) return
++    recordWorkspaceRead("selected", lastRead.current ? (Object.keys(owner) as (keyof typeof owner)[]).filter(key => lastRead.current![key] !== owner[key]) : ["mount"])
++    lastRead.current = owner
++    let current = true
++    void loadSelectedClubWorkspace(kind, clubId).then(value => {
++      if (current && isReadAuthorityCurrent(readAuthority)) setResult({ owner, value })
++    }).catch(() => { if (current && isReadAuthorityCurrent(readAuthority)) setResult({ owner, failed: true }) })
++    return () => { current = false }
++  }, [kind, clubId, mode, owner, demo.ready, demo.isDemoEnabled, loading, user, readAuthority, isReadAuthorityCurrent])
++  const current = demo.ready && !demo.isDemoEnabled && !loading && isReadAuthorityCurrent(readAuthority) && result?.owner === owner ? result : null
++  if (current?.failed) return <div role="alert" className="space-y-3"><p>Could not load this workspace. Your access may have changed.</p><Button variant="outline" onClick={() => setRetry(value => value + 1)}>Retry workspace</Button></div>
++  const entry = current?.value
++  if (!entry) return <p role="status">Loading workspace…</p>
++  switch (entry.kind) {
++    case "members": { const View = entry.module.ClubMembers; return <View clubId={clubId} initialDirectory={entry.data} validatedInitialData /> }
++    case "pipeline": { const View = entry.module.LiveLeaderWorkspace; return <View scoped decisionsOnly={decisionsOnly} rejectedOnly={rejectedOnly} initialData={{ clubId, pipeline: entry.data }} validatedInitialData /> }
++    case "tasks": { const View = entry.module.ClubTasks; return <View clubId={clubId} embedded personalOnly={personalOnly} initialScope={initialScope} initialData={entry.data} /> }
++    case "announcements": { const View = entry.module.ClubAnnouncements; return <View clubId={clubId} initialItems={entry.data} /> }
++  }
++}
+diff --git a/components/views/leader-dashboard/live-leader-workspace.tsx b/components/views/leader-dashboard/live-leader-workspace.tsx
+index 6ed3e78..50e8f66 100644
+--- a/components/views/leader-dashboard/live-leader-workspace.tsx
++++ b/components/views/leader-dashboard/live-leader-workspace.tsx
+@@ -72 +72 @@ const average = (app: Candidate) =>
+-export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, rejectedOnly = false, initialData, onData }: { scoped?: boolean; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: { clubId: string; pipeline: Pipeline }; onData?: (clubId: string, data: Pipeline | null) => void }) {
++export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, rejectedOnly = false, initialData, onData, validatedInitialData = false }: { validatedInitialData?: boolean; scoped?: boolean; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: { clubId: string; pipeline: Pipeline }; onData?: (clubId: string, data: Pipeline | null) => void }) {
+@@ -118 +118 @@ export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, rej
+-      <ClubWorkspace key={club.clubId} membership={club} decisionsOnly={decisionsOnly} rejectedOnly={rejectedOnly} initialData={initialData?.clubId === club.clubId ? initialData.pipeline : null} onData={data => onData?.(club.clubId, data)} />
++      <ClubWorkspace key={club.clubId} membership={club} decisionsOnly={decisionsOnly} rejectedOnly={rejectedOnly} validatedInitialData={validatedInitialData} initialData={initialData?.clubId === club.clubId ? initialData.pipeline : null} onData={data => onData?.(club.clubId, data)} />
+@@ -132 +132 @@ export function ApplicantReviewPreview({ clubId, applicationId, onClose, onChang
+-function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false, initialData = null, onData, preview }: { preview?: { applicationId: string; onClose: () => void; onChanged: () => void; onNext?: () => void }; membership: ExtendedMembership; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: Pipeline | null; onData?: (data: Pipeline | null) => void }) {
++function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false, initialData = null, onData, preview, validatedInitialData = false }: { validatedInitialData?: boolean; preview?: { applicationId: string; onClose: () => void; onChanged: () => void; onNext?: () => void }; membership: ExtendedMembership; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: Pipeline | null; onData?: (data: Pipeline | null) => void }) {
+@@ -169,0 +170 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
++  const firstRead = useRef(validatedInitialData && !!initialData)
+@@ -176,0 +178 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
++    if (firstRead.current) { firstRead.current = false; return }
+diff --git a/contexts/auth-context.tsx b/contexts/auth-context.tsx
+index 48c3514..991a6ce 100644
+--- a/contexts/auth-context.tsx
++++ b/contexts/auth-context.tsx
+@@ -1 +1,2 @@
+-"use client";
++"use client"
++import { recordWorkspaceRead } from "@/lib/workspace-read-diagnostics";
+@@ -23,0 +25,2 @@ interface AuthContextType {
++  /** Immediate local epoch fence while an Auth notification awaits React commit. */
++  isReadAuthorityCurrent: (authority: object | undefined) => boolean;
+@@ -43,0 +47,2 @@ export function AuthProvider({ children, initialUser = null, isImpersonating = f
++  const currentReadAuthority = React.useRef(readAuthority);
++  const isReadAuthorityCurrent = React.useCallback((authority: object | undefined) => currentReadAuthority.current === authority, []);
+@@ -49 +54,8 @@ export function AuthProvider({ children, initialUser = null, isImpersonating = f
+-      if (token !== undefined ? next !== token : event !== "INITIAL_SESSION") setReadAuthority({});
++      if (token !== undefined ? next !== token : event !== "INITIAL_SESSION") {
++        // Publish the fence before scheduling React's context update. A newly
++        // mounted view must not dispatch with the previous rendered epoch.
++        const authority = {};
++        currentReadAuthority.current = authority;
++        recordWorkspaceRead("auth", [event.toLowerCase()]);
++        setReadAuthority(authority);
++      }
+@@ -104 +116 @@ export function AuthProvider({ children, initialUser = null, isImpersonating = f
+-    <AuthContext.Provider value={{ isImpersonating, readAuthority, user: identity, activeClubId, selectClub, loading: isDemoEnabled ? !state : bootstrapChanged ? !initialUser && hasSession : loading, sessionPending: hasSession && !isDemoEnabled && loading && !identity, mutateUser, refreshUser: isDemoEnabled ? async () => {} : fetchUser }}>
++    <AuthContext.Provider value={{ isImpersonating, readAuthority, isReadAuthorityCurrent, user: identity, activeClubId, selectClub, loading: isDemoEnabled ? !state : bootstrapChanged ? !initialUser && hasSession : loading, sessionPending: hasSession && !isDemoEnabled && loading && !identity, mutateUser, refreshUser: isDemoEnabled ? async () => {} : fetchUser }}>
+diff --git a/lib/workspace-read-diagnostics.ts b/lib/workspace-read-diagnostics.ts
+new file mode 100644
+index 0000000..5d84473
+--- /dev/null
++++ b/lib/workspace-read-diagnostics.ts
+@@ -0,0 +1,9 @@
++// Local observers receive only fixed event labels, never identities, tokens,
++// cookies, filter values, request arguments or authorization results. No buffer.
++export const workspaceReadCauses = ["mount", "dispatch", "user", "readAuthority", "isImpersonating", "clubId", "kind", "privacyScope", "retry", "mode", "demoReady", "demoEnabled", "initial_session", "signed_in", "signed_out", "token_refreshed", "user_updated", "mfa_challenge_verified", "password_recovery"] as const
++export function recordWorkspaceRead(kind: "auth" | "selected" | "page", causes: readonly string[]) {
++  if (typeof window === "undefined" || typeof CustomEvent === "undefined" || typeof window.dispatchEvent !== "function") return
++  if (!["auth", "selected", "page"].includes(kind)) return
++  const safe = causes.filter(cause => workspaceReadCauses.includes(cause as typeof workspaceReadCauses[number]))
++  try { window.dispatchEvent(new CustomEvent("outclass:workspace-read", { detail: { kind, causes: safe } })) } catch { /* Diagnostics must never block an authority change or a read. */ }
++}
+diff --git a/scripts/navigation-audit.cjs b/scripts/navigation-audit.cjs
+index 4cb01e9..ded0dcd 100644
+--- a/scripts/navigation-audit.cjs
++++ b/scripts/navigation-audit.cjs
+@@ -90,0 +91,14 @@ function installBrowserObservers(options) {
++  if (options?.fontDiagnostics) {
++    window.__fontAudit = { readyMs: null, layoutShifts: [] };
++    document.addEventListener('DOMContentLoaded', () => { document.fonts.ready.then(() => { window.__fontAudit.readyMs = performance.now(); }); }, { once: true });
++    new PerformanceObserver(list => {
++      for (const entry of list.getEntries()) window.__fontAudit.layoutShifts.push({ atMs: entry.startTime, value: entry.value, hadRecentInput: entry.hadRecentInput });
++    }).observe({ type: 'layout-shift', buffered: true });
++  }
++  window.__workspaceReadEvents = [];
++  const readCauses = new Set(['mount','dispatch','user','readAuthority','isImpersonating','clubId','kind','privacyScope','retry','mode','demoReady','demoEnabled','initial_session','signed_in','signed_out','token_refreshed','user_updated','mfa_challenge_verified','password_recovery']);
++  window.addEventListener('outclass:workspace-read', event => {
++    const value=event.detail;if(!value||!['auth','selected','page'].includes(value.kind)||!Array.isArray(value.causes))return;
++    if(window.__workspaceReadEvents.length===256)window.__workspaceReadEvents.shift();
++    window.__workspaceReadEvents.push({atMs:performance.now(),kind:value.kind,causes:value.causes.filter(c=>readCauses.has(c))});
++  });
+@@ -122 +136 @@ async function waitReady(page, desc) {
+-  await page.waitForFunction(d=>(!d.href||location.pathname===new URL(d.href,location.origin).pathname)&&(!d.clubLabel||[...document.querySelectorAll('.oc-workspace-switcher-trigger')].some(el=>el.textContent.includes(d.clubLabel)))&&[...document.querySelectorAll(d.selector)].some(el=>el.getClientRects().length&&el.textContent.includes(d.text)),desc,{timeout:30000});
++  await page.waitForFunction(d=>(!d.href||location.pathname===new URL(d.href,location.origin).pathname)&&(!d.clubLabel||[...document.querySelectorAll('.oc-workspace-switcher-trigger, [aria-label^="Switch club:"]')].some(el=>el.textContent.includes(d.clubLabel)))&&[...document.querySelectorAll(d.selector)].some(el=>el.getClientRects().length&&el.textContent.includes(d.text)),desc,{timeout:30000});
+@@ -144,0 +159,9 @@ async function main() {
++  if(process.argv.includes('--phase3')) Object.assign(descriptors.applicantDetail,{text:'Synthetic application evidence.'});
++  if(process.argv.includes('--phase2')) { Object.assign(descriptors.overview,{selector:'.oc-command-club'}); Object.assign(descriptors.recruiting,{selector:'.oc-command-recruiting',text:'Current pipeline'}); }
++  if(process.argv.includes('--deferred-screens')) {
++    const base='/club/'+fixture.clubIds[0]+'/workspace';
++    descriptors.settingsProfile={href:base+'?section=settings',selector:'.oc-club-settings fieldset:not([disabled])',text:'One-line pitch',tour:'nav-settings'};
++    descriptors.settingsApplication={href:base+'?section=settings&setting=application',selector:'.oc-settings-workspace details',text:'Review settings'};
++    descriptors.scheduledDecisions={href:base+'?section=recruitment&tool=scheduled-decisions',selector:'section[aria-label="Scheduled Decisions"]',text:'No scheduled decisions.',tour:'nav-scheduled-decisions'};
++    descriptors.rounds={href:base+'?section=recruitment&tool=rounds',selector:'[data-slot="sheet-content"]',text:'Previously viewed information cannot be recalled'};
++  }
+@@ -150 +173 @@ async function main() {
+-    await context.addInitScript(installBrowserObservers,{diagnoseHydration:process.argv.includes('--diagnose-hydration')});
++    await context.addInitScript(installBrowserObservers,{diagnoseHydration:process.argv.includes('--diagnose-hydration'),fontDiagnostics:process.argv.includes('--font-diagnostics')});
+@@ -163 +186,15 @@ async function main() {
+-    const requests=[],pending=new Set(),pageErrors=[];
++    if(process.argv.includes('--constrained-network')) {
++      assert.equal(config.appUrl,'http://127.0.0.1:3107','Network profiling is reserved for this disposable local fixture');
++      await cdp.send('Network.enable');
++      await cdp.send('Network.emulateNetworkConditions',{offline:false,latency:80,downloadThroughput:200000,uploadThroughput:93750,connectionType:'cellular4g'});
++      await cdp.send('Emulation.setCPUThrottlingRate',{rate:4});
++    }
++    const requests=[],pending=new Set(),pageErrors=[],wire=[];
++    if(process.argv.includes('--phase3')) {
++      await cdp.send('Network.enable');
++      cdp.on('Network.requestWillBeSent',event=>{
++        const headers=Object.fromEntries(Object.entries(event.request.headers).map(([key,value])=>[key.toLowerCase(),value]));
++        wire.push({id:event.requestId,key:event.request.method+' '+event.request.url+' '+(headers['next-action']||''),bytes:0});
++      });
++      cdp.on('Network.dataReceived',event=>{const item=wire.find(row=>row.id===event.requestId);if(item)item.bytes+=event.encodedDataLength;});
++    }
+@@ -176 +213 @@ async function main() {
+-    return {context,page,cdp,requests,pending,pageErrors,participant};
++    return {context,page,cdp,requests,pending,pageErrors,participant,wire};
+@@ -184 +221,16 @@ async function main() {
+-  async function open(s,id) {await s.page.goto(config.appUrl+descriptors[id].href,{waitUntil:'domcontentloaded'});await waitReady(s.page,descriptors[id]);await settle(s);}
++  async function preparationSnapshot(s, started) {
++    const dom = await s.page.evaluate(() => {
++      const text = document.body?.textContent || "";
++      const nav = performance.getEntriesByType("navigation")[0];
++      return { readyState: document.readyState, opening: text.includes("Opening club workspace…"), selectedLoading: text.includes("Loading workspace…"), pipeline: !!document.querySelector(".oc-live-pipeline"), accessUnavailable: text.includes("Club workspace unavailable"), alerts: document.querySelectorAll('[role="alert"]').length, document: nav ? {ttfbMs:nav.responseStart, domContentLoadedMs:nav.domContentLoadedEventEnd} : null };
++    }).catch(() => null);
++    const heap=Object.fromEntries((await s.cdp.send('Performance.getMetrics')).metrics.map(m=>[m.name,m.value]));
++    const authorityEvents=await s.page.evaluate(()=>window.__workspaceReadEvents||[]);
++    const fonts=process.argv.includes('--font-diagnostics')?await s.page.evaluate(()=>({ readyMs:window.__fontAudit.readyMs,layoutShifts:window.__fontAudit.layoutShifts,paint:performance.getEntriesByType('paint').map(e=>({name:e.name,atMs:e.startTime})),faces:[...document.fonts].map(f=>({family:f.family,style:f.style,weight:f.weight,status:f.status})),preloadCount:document.querySelectorAll('link[rel="preload"][as="font"]').length })):null;
++    return { elapsedMs: Date.now()-started, meaningfulMs:s.sourceReadyMs??null, dom, ...(fonts?{fonts}:{}), heapUsedBytes:heap.JSHeapUsedSize,heapTotalBytes:heap.JSHeapTotalSize,authorityEvents, requests: s.requests.map(r => ({route:r.route,type:r.type,method:r.method,status:r.status,failed:!!r.failed,pending:r.end===null,startMs:r.start-started,endMs:r.end===null?null:r.end-started,traceId:r.traceId||null,serverTiming:r.serverTiming||null,encodedBodyBytes:r.bytes,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart-r.timing.requestStart:null,transferMs:r.timing?.responseEnd>=0?r.timing.responseEnd-r.timing.responseStart:null})) };
++  }
++  async function open(s,id) {
++    const started=Date.now();
++    try { await s.page.goto(config.appUrl+descriptors[id].href,{waitUntil:'domcontentloaded'});await waitReady(s.page,descriptors[id]);s.sourceReadyMs=Date.now()-started;await settle(s); }
++    finally { if(process.argv.includes('--source-diagnostics')) s.preparation=await preparationSnapshot(s,started); }
++  }
+@@ -208,0 +261,18 @@ async function main() {
++    if(process.argv.includes('--deferred-screens') && to==='rounds') {
++      const details=page.locator('.oc-settings-workspace details').filter({has:page.locator('summary',{hasText:'Review settings'})});
++      if(!await details.evaluate(e=>e.open))await details.locator('summary').click();
++      return page.getByRole('link',{name:'Anonymous review',exact:true}).click();
++    }
++    if(process.argv.includes('--deferred-screens') && from==='rounds' && to==='settingsApplication')return page.goBack({waitUntil:'domcontentloaded'});
++    if(to==='applicantDetail')return page.locator('[data-applicant-id]').filter({visible:true}).first().click();
++    if(from==='applicantDetail')return page.locator('[data-slot="sheet-content"]').getByRole('button',{name:'Close',exact:true}).click();
++    if(process.argv.includes('--phase2') && descriptors[to].tour) {
++      const tour=descriptors[to].tour;
++      let item=page.locator('[data-tour="'+tour+'"]').filter({visible:true}).first();
++      if(!await item.count() && (to==='applicants'||to==='scheduledDecisions')) {
++        const group=page.getByRole('button',{name:to==='scheduledDecisions'?'Decisions':'Applicants',exact:true}).filter({visible:true}).first();
++        await group.focus();await page.keyboard.press('ArrowRight');
++        item=page.locator('[data-tour="'+tour+'"]').filter({visible:true}).first();
++      }
++      await item.focus();return page.keyboard.press('Enter');
++    }
+@@ -235,0 +306,7 @@ async function main() {
++    if(process.argv.includes('--deferred-screens') && to==='rounds') {
++      const details=page.locator('.oc-settings-workspace details').filter({has:page.locator('summary',{hasText:'Review settings'})});
++      if(!await details.evaluate(e=>e.open))await details.locator('summary').click();
++    }
++    if(process.argv.includes('--deferred-screens') && to==='scheduledDecisions' && !await page.locator('[data-tour="nav-scheduled-decisions"]').filter({visible:true}).count()) {
++      await page.getByRole('button',{name:'Decisions',exact:true}).filter({visible:true}).first().focus();await page.keyboard.press('ArrowRight');
++    }
+@@ -243 +320 @@ async function main() {
+-      if(!await item.isVisible()&&['applicants','decisions'].includes(to))await page.getByRole('button',{name:to==='decisions'?'Decisions':'Applicants',exact:true}).first().click();
++      if(!process.argv.includes('--phase2')&&!await item.isVisible()&&['applicants','decisions'].includes(to))await page.getByRole('button',{name:to==='decisions'?'Decisions':'Applicants',exact:true}).first().click();
+@@ -246,0 +324 @@ async function main() {
++    s.sampleStartIndex=startIndex;
+@@ -254 +332 @@ async function main() {
+-        if(desc.clubLabel&&![...document.querySelectorAll('.oc-workspace-switcher-trigger')].some(el=>el.textContent.includes(desc.clubLabel)))return;
++        if(desc.clubLabel&&![...document.querySelectorAll('.oc-workspace-switcher-trigger, [aria-label^="Switch club:"]')].some(el=>el.textContent.includes(desc.clubLabel)))return;
+@@ -272,2 +350,11 @@ async function main() {
+-    const rows=s.requests.slice(startIndex).map(({req,...r})=>({route:r.route,type:r.type,method:r.method,status:r.status,serverTiming:r.serverTiming||null,traceId:r.traceId||null,startMs:r.start-clickWall,endMs:r.end===null?null:r.end-clickWall,encodedBodyBytes:r.bytes,failed:r.failed||false,failureReason:r.failureReason||null,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart-r.timing.requestStart:null,transferMs:r.timing?.responseEnd>=0?r.timing.responseEnd-r.timing.responseStart:null}));
+-    const row={path:from+' → '+to,condition,index,clickToUrlMs:marks.url?marks.url-marks.click:null,meaningfulMs:marks.ready-marks.click,interactiveMs:marks.interactive?marks.interactive-marks.click:null,networkCompleteMs:Math.max(0,...rows.filter(r=>r.type!=='eventsource').map(r=>r.endMs||0)),requestCount:rows.length,encodedBodyBytes:rows.reduce((n,r)=>n+(r.encodedBodyBytes||0),0),scriptMs:(afterMetrics.ScriptDuration-beforeMetrics.ScriptDuration)*1000,taskMs:(afterMetrics.TaskDuration-beforeMetrics.TaskDuration)*1000,layoutMs:(afterMetrics.LayoutDuration-beforeMetrics.LayoutDuration)*1000,longTasks:marks.longTasks,reactCommitCount:marks.commits,reactRenderDurationMs:null,requests:rows};
++    const rows=s.requests.slice(startIndex).map(({req,...r},offset)=>{
++      let encodedBodyBytes=r.bytes,bodyBytesSource='playwright';
++      if(process.argv.includes('--phase3') && encodedBodyBytes===null && r.failed) {
++        const key=req.method()+' '+req.url()+' '+(req.headers()['next-action']||'');
++        const ordinal=s.requests.slice(0,startIndex+offset).filter(row=>row.req.method()+' '+row.req.url()+' '+(row.req.headers()['next-action']||'')===key).length;
++        const received=s.wire.filter(row=>row.key===key)[ordinal];
++        if(received){encodedBodyBytes=received.bytes;bodyBytesSource='cdp_received_chunks_before_cancel';}
++      }
++      return {route:r.route,type:r.type,method:r.method,status:r.status,serverTiming:r.serverTiming||null,traceId:r.traceId||null,startMs:r.start-clickWall,endMs:r.end===null?null:r.end-clickWall,encodedBodyBytes,failed:r.failed||false,failureReason:r.failureReason||null,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart-r.timing.requestStart:null,transferMs:r.timing?.responseEnd>=0?r.timing.responseEnd-r.timing.responseStart:null,...(process.argv.includes('--phase3')?{bodyBytesSource}:{})};
++    });
++    const row={...(s.preparation?{preparation:s.preparation}:{}),path:from+' → '+to,condition,index,clickToUrlMs:marks.url?marks.url-marks.click:null,meaningfulMs:marks.ready-marks.click,interactiveMs:marks.interactive?marks.interactive-marks.click:null,networkCompleteMs:Math.max(0,...rows.filter(r=>r.type!=='eventsource').map(r=>r.endMs||0)),requestCount:rows.length,encodedBodyBytes:rows.reduce((n,r)=>n+(r.encodedBodyBytes||0),0),scriptMs:(afterMetrics.ScriptDuration-beforeMetrics.ScriptDuration)*1000,taskMs:(afterMetrics.TaskDuration-beforeMetrics.TaskDuration)*1000,layoutMs:(afterMetrics.LayoutDuration-beforeMetrics.LayoutDuration)*1000,longTasks:marks.longTasks,reactCommitCount:marks.commits,reactRenderDurationMs:null,heapBeforeBytes:beforeMetrics.JSHeapUsedSize,heapAfterBytes:afterMetrics.JSHeapUsedSize,authorityEvents:await s.page.evaluate(()=>window.__workspaceReadEvents||[]),requests:rows};
+@@ -275,0 +363 @@ async function main() {
++    if(process.argv.includes('--phase2')){row.pageErrorCount=s.pageErrors.length;row.pageErrorKinds=[...s.pageErrors];row.inputMethod=process.argv.includes('--phase3')&&to==='applicantDetail'?'pointer':'keyboard';row.initialScriptBytes=s.requests.slice(0,startIndex).filter(r=>r.type==='script').reduce((n,r)=>n+(r.bytes||0),0);}
+@@ -276,0 +365,5 @@ async function main() {
++    if(process.argv.includes('--phase3')) {
++      row.cycleReadError=await page.getByText('Cycles could not load.',{exact:true}).count()>0;
++      assert.equal(row.cycleReadError,false,'Recruitment cycle read failed in the UI');
++    }
++    if(process.argv.includes('--phase2'))assert.equal(row.pageErrorCount,0,'browser_script_error');
+@@ -317 +410 @@ async function main() {
+-  const selected=process.argv.includes('--only-interviews')?[['applicants','interviews']]:process.argv.includes('--phase1')?[['applicants','interviews'],['members','meetings'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--smoke')?pairs.slice(0,1):process.argv.includes('--member-details')?[['members','memberDetail']]:process.argv.includes('--cross-club')?[['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]:process.argv.includes('--details')?[['applicants','applicantDetail'],['members','memberDetail']]:process.argv.includes('--only-voting')?pairs.filter(p=>p.includes('voting')):process.argv.includes('--waterfalls')?pairs.filter(([f,t])=>f==='overview'&&t==='members'||f==='recruiting'&&t==='applicants'||f==='applicants'&&t==='interviews'):pairs.filter(p=>!p.includes('club2')&&!p.includes('personal')).concat([['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]);
++  const selected=process.argv.includes('--deferred-screens')?[['overview','settingsProfile'],['overview','meetings'],['recruiting','scheduledDecisions'],['settingsApplication','rounds']]:process.argv.includes('--phase3')?[['recruiting','applicants'],['applicants','applicantDetail']]:process.argv.includes('--phase2')?[['overview','members'],['recruiting','applicants'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--only-interviews')?[['applicants','interviews']]:process.argv.includes('--phase1')?[['applicants','interviews'],['members','meetings'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--smoke')?pairs.slice(0,1):process.argv.includes('--member-details')?[['members','memberDetail']]:process.argv.includes('--cross-club')?[['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]:process.argv.includes('--details')?[['applicants','applicantDetail'],['members','memberDetail']]:process.argv.includes('--only-voting')?pairs.filter(p=>p.includes('voting')):process.argv.includes('--waterfalls')?pairs.filter(([f,t])=>f==='overview'&&t==='members'||f==='recruiting'&&t==='applicants'||f==='applicants'&&t==='interviews'):pairs.filter(p=>!p.includes('club2')&&!p.includes('personal')).concat([['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]);
+@@ -325,0 +419 @@ async function main() {
++          let attemptStage='source';
+@@ -328 +422,2 @@ async function main() {
+-            if(condition==='warm'){await clickTarget(s,from,to);await waitReady(s.page,descriptors[to]);await settle(s);await clickTarget(s,to,from);await waitReady(s.page,descriptors[from]);await settle(s);}
++            if(condition==='warm'){attemptStage='warm target';await clickTarget(s,from,to);await waitReady(s.page,descriptors[to]);await settle(s);attemptStage='warm return';await clickTarget(s,to,from);await waitReady(s.page,descriptors[from]);await settle(s);}
++            attemptStage='measured';
+@@ -330,0 +426,9 @@ async function main() {
++          } catch(error) {
++            if(!process.argv.includes('--record-failures')) throw error;
++            const message=String(error.message).replace(/[0-9a-f]{8}-[0-9a-f-]{27,}/gi,'[fixture-id]').slice(0,1800);
++            let diagnostic=null;
++            try { diagnostic=await Promise.race([s.page.evaluate(()=>({tool:new URLSearchParams(location.search).get('tool'),pipeline:!!document.querySelector('.oc-live-pipeline'),sheet:!!document.querySelector('[data-slot="sheet-content"]'),alerts:document.querySelectorAll('[role="alert"]').length,click:window.__navAudit.click,origin:performance.timeOrigin,now:performance.now()})),new Promise(resolve=>setTimeout(()=>resolve(null),2000))]); } catch {}
++            const requests=s.requests.slice(attemptStage==='measured'?(s.sampleStartIndex??0):0).map(r=>({route:r.route,type:r.type,method:r.method,status:r.status,failed:r.failed||false,failureReason:r.failureReason||null,encodedBodyBytes:r.bytes}));
++            const observation={...(s.preparation?{preparation:s.preparation}:{}),path:from+' → '+to,condition,index:i,failed:true,stage:attemptStage,error:message,diagnostic:diagnostic?{tool:diagnostic.tool,pipeline:diagnostic.pipeline,sheet:diagnostic.sheet,alerts:diagnostic.alerts}:null,clickToContentLowerBoundMs:attemptStage==='measured'&&diagnostic?.click?diagnostic.now-diagnostic.click:null,meaningfulMs:null,interactiveMs:null,pageErrorCount:s.pageErrors.length,pageErrorKinds:[...s.pageErrors],requests};
++            failures.push({path:observation.path,condition,index:i,stage:attemptStage,error:message});allSamples.push(observation);
++            console.log('RECORDED FAILURE '+observation.path+' '+condition+' '+(i+1)+'/'+sampleCount+' '+attemptStage);
+@@ -335 +439 @@ async function main() {
+-      fs.writeFileSync(path.join(outDir,outputStem+'-samples.json'),JSON.stringify({environment:'local Next production build + disposable local Supabase',fixture:fixture.counts,sampleCount,metricsNotes:{meaningfulMs:'DOM content predicate followed by two requestAnimationFrame callbacks; paint proxy, not screenshot timing',interactiveMs:'first enabled visible control after content predicate; no mutation is invoked',requestOffsets:'relative to captured DOM click timestamp',networkCompleteMs:'observed non-SSE requests drained after useful content; includes background traffic',cpu:'CDP delta through settle, so includes post-content background work',react:'production commit notifications only; profiler render durations unavailable'},samples:allSamples,failures},null,2));
++      fs.writeFileSync(path.join(outDir,outputStem+'-samples.json'),JSON.stringify({environment:'local Next production build + disposable local Supabase',fixture:fixture.counts,sampleCount,metricsNotes:{profile:process.argv.includes('--constrained-network')?'Local CDP 80ms latency, 1.6Mbps down/0.75Mbps up, CPU4x':'Local unthrottled',meaningfulMs:'DOM content predicate followed by two requestAnimationFrame callbacks; paint proxy, not screenshot timing',interactiveMs:'first enabled visible control after content predicate; no mutation is invoked',requestOffsets:'relative to captured DOM click timestamp',networkCompleteMs:'observed non-SSE requests drained after useful content; includes background traffic',cpu:'CDP delta through settle, so includes post-content background work',react:'production commit notifications only; profiler render durations unavailable'},samples:allSamples,failures},null,2));
+diff --git a/scripts/navigation-selected-ready-host-monitor.cjs b/scripts/navigation-selected-ready-host-monitor.cjs
+new file mode 100644
+index 0000000..da90466
+--- /dev/null
++++ b/scripts/navigation-selected-ready-host-monitor.cjs
+@@ -0,0 +1,17 @@
++// Read-only host sampling. Raw command lines stay in memory and are never exported.
++const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),cp=require('node:child_process'),crypto=require('node:crypto');
++function cpuSeconds(value){const [days,time]=value.includes('-')?value.split('-'):['0',value];return Number(days)*86400+time.split(':').reduce((n,v)=>n*60+Number(v),0)}
++function parseProcesses(text){return text.split('\n').flatMap(line=>{const m=line.match(/^\s*(\d+)\s+(\d+)\s+([\d:.\-]+)\s+(.+)$/);return m?[{pid:+m[1],parent:+m[2],cpu:cpuSeconds(m[3]),command:m[4]}]:[]})}
++function roles(rows,rootPid){const map=new Map(rows.map(p=>[p.pid,p]));function owned(p){const seen=new Set();while(p&&!seen.has(p.pid)){if(p.pid===rootPid)return true;seen.add(p.pid);p=map.get(p.parent)}return false}function direct(p){const executable=p.command.split(/\s/)[0];if(!/(?:^|\/)(?:node|nodejs|next-server)(?:$|\s)/.test(executable))return null;if(/(?:^|\/)next(?:\s|$)|next\/dist\/bin\/next/.test(p.command)){if(/\sdev(?:\s|$)/.test(p.command))return 'next_dev';if(/\sbuild(?:\s|$)/.test(p.command))return 'next_build'}if(/\s--test(?:\s|=|$)/.test(p.command))return 'test_runner';return null}return rows.filter(p=>!owned(p)).flatMap(p=>{let ancestor=p,category=null,root=p;const seen=new Set();while(ancestor&&!seen.has(ancestor.pid)){seen.add(ancestor.pid);const found=direct(ancestor);if(found){category=found;root=ancestor;break}ancestor=map.get(ancestor.parent)}return category?[{pid:p.pid,root:root.pid,family:category,cpuSeconds:p.cpu}]:[]})}
++function cpuTimes(){return os.cpus().reduce((a,c)=>({idle:a.idle+c.times.idle,total:a.total+Object.values(c.times).reduce((n,v)=>n+v,0)}),{idle:0,total:0})}
++function startMonitor({repo,output,rootPid=process.pid}){
++ const run=(cmd,args)=>cp.execFileSync(cmd,args,{encoding:'utf8',timeout:7000}),original='/Users/jesseklinger/Documents/out-class',initial={originalHead:run('git',['-C',original,'rev-parse','HEAD']).trim(),originalStatus:run('git',['-C',original,'status','--porcelain'])},samples=[],violations=[],labels=new Map(),history=new Map();let previous=cpuTimes(),phase='starting',initialPower=null;
++ const label=pid=>{if(!labels.has(pid))labels.set(pid,'process-'+(labels.size+1));return labels.get(pid)},fail=code=>{if(!violations.some(v=>v.code===code))violations.push({at:new Date().toISOString(),code,phase})};
++ function sample(){try{const now=Date.now(),next=cpuTimes(),processes=roles(parseProcesses(run('ps',['-axo','pid=,ppid=,time=,args='])),rootPid),groups=new Map();for(const p of processes){const key=p.root;if(!groups.has(key))groups.set(key,{id:label(key),family:p.family,cpuSeconds:0});groups.get(key).cpuSeconds+=p.cpuSeconds}
++  const foreign=[...groups.entries()].map(([pid,p])=>{const points=history.get(pid)||[];points.push({at:now,cpu:p.cpuSeconds});while(points.length>1&&points[1].at<now-60000)points.shift();history.set(pid,points);const delta=Math.max(0,p.cpuSeconds-points[0].cpu);if(p.family==='next_build'||p.family==='test_runner')fail('foreign_build_or_test');if(p.family==='next_dev'&&delta>1)fail('foreign_dev_cpu_over_1_second_in_60_seconds');return{...p,observedWindowMs:now-points[0].at,cpuDeltaInWindowSeconds:+delta.toFixed(3)}});
++  const head=run('git',['-C',original,'rev-parse','HEAD']).trim(),status=run('git',['-C',original,'status','--porcelain']);if(head!==initial.originalHead||status!==initial.originalStatus)fail('original_checkout_changed');const batt=run('pmset',['-g','batt']),settings=run('pmset',['-g','custom']),powerSource=batt.includes("'AC Power'")?'AC Power':'Battery Power',powerSection=(settings.split(powerSource+':')[1]||'').split(/(?:AC|Battery) Power:/)[0];const mode=Number((powerSection.match(/lowpowermode\s+(\d+)/)||[])[1]||0);if(initialPower===null)initialPower={source:powerSource,lowPowerMode:mode};if(mode!==0||powerSource!==initialPower.source)fail('power_source_or_low_power_mode_changed');samples.push({at:new Date(now).toISOString(),phase,cpuBusyPercent:+(100*(1-(next.idle-previous.idle)/(next.total-previous.total||1))).toFixed(3),freeMemoryMiB:Math.round(os.freemem()/1048576),powerSource,batteryPercent:Number((batt.match(/(\d+)%;/)||[])[1]||0),lowPowerMode:Number((powerSection.match(/lowpowermode\s+(\d+)/)||[])[1]||0),foreignProcesses:foreign,originalHead:head,originalStatusSha256:crypto.createHash('sha256').update(status).digest('hex')});previous=next;
++ }catch{fail('host_monitor_observation_failed')}save()}
++ function save(){fs.writeFileSync(output,JSON.stringify({scope:'5-second read-only samples. Process families and numeric CPU only; command lines, arguments, environment and secrets never exported. Sampling may miss brief external work; idle-host agreement is additional evidence, not proof of exclusive access.',rootProcessTracked:true,powerBaseline:initialPower,originalBaseline:{head:initial.originalHead,statusSha256:crypto.createHash('sha256').update(initial.originalStatus).digest('hex')},foreignDevCpuRule:'More than1 cumulative CPU-second observed within60 seconds, including worker descendants, invalidates the whole profile.',valid:!violations.length,violations,samples},null,2)+'\n')}
++ sample();const timer=setInterval(sample,5000);return{setPhase(value){phase=value},assertClean(){if(violations.length)throw Error('Host-control violation: entire profile retained as invalid')},stop(){clearInterval(timer);sample();return{valid:!violations.length,samples:samples.length,violations}}}
++}
++module.exports={cpuSeconds,parseProcesses,roles,startMonitor};
+diff --git a/scripts/navigation-selected-ready-local.cjs b/scripts/navigation-selected-ready-local.cjs
+new file mode 100644
+index 0000000..661a91d
+--- /dev/null
++++ b/scripts/navigation-selected-ready-local.cjs
+@@ -0,0 +1,12 @@
++// Lifecycle helper restricted to this chat's owned, disposable navigation fixture.
++const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),assert=require('node:assert/strict'),{spawn,spawnSync,execFileSync}=require('node:child_process'),{randomUUID}=require('node:crypto');
++const repo=path.resolve(__dirname,'..'),root=path.join(os.tmpdir(),'outclass-onboarding-e2e'),dist=path.join(repo,'.next-publish');
++const config=()=>require('../tests/helpers/onboarding-e2e.cjs').readConfig(path.join(root,'config.json'));
++function privateRoot(){const location=fs.readFileSync('/tmp/outclass-selected-ready-builds-path','utf8');assert.ok(location.startsWith(path.join(os.tmpdir(),'outclass-selected-ready-builds-')));assert.ok(fs.existsSync(location));return location}
++function environment(){const c=config(),s=c.status;assert.equal(c.buildDir,dist);const db=new URL(s.DB_URL);db.searchParams.set('connection_limit','8');return{...process.env,NEXT_PUBLIC_ENABLE_MICROSOFT_AUTH:'false',DATABASE_URL:db.href,POSTGRES_PRISMA_URL:db.href,POSTGRES_URL:db.href,POSTGRES_URL_NON_POOLING:db.href,NEXT_PUBLIC_SUPABASE_URL:s.API_URL,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:s.PUBLISHABLE_KEY,NEXT_PUBLIC_SUPABASE_ANON_KEY:s.ANON_KEY,SUPABASE_SECRET_KEY:s.SECRET_KEY,SUPABASE_SERVICE_ROLE_KEY:s.SERVICE_ROLE_KEY,OUTCLASS_PUBLISH_BUILD:'1',OUTCLASS_SITE_URL:c.appUrl,OUTCLASS_PLATFORM_ADMIN_IDS:c.admin.id,SMTP_HOST:'127.0.0.1',SMTP_PORT:'55325',SMTP_USER:'local-test',SMTP_PASSWORD:'local-test',SMTP_FROM_EMAIL:'outclass@virginia.edu',CRON_SECRET:randomUUID(),NODE_EXTRA_CA_CERTS:path.join(root,'mailpit-cert.pem'),COMMUNICATIONS_EMAIL_ENABLED:'true',RESEND_API_KEY:'',RESEND_FROM_EMAIL:''}}
++async function stop(){const listener=spawnSync('lsof',['-tiTCP:3107','-sTCP:LISTEN'],{encoding:'utf8'}).stdout.trim();if(!listener)return;const pid=fs.readFileSync(path.join(root,'server.pid'),'utf8').trim();assert.equal(listener,pid);assert.ok(execFileSync('lsof',['-a','-p',pid,'-d','cwd','-Fn'],{encoding:'utf8'}).split('\n').includes('n'+repo));process.kill(Number(pid),'SIGTERM');for(let n=0;n<100;n++){if(!spawnSync('lsof',['-tiTCP:3107','-sTCP:LISTEN'],{encoding:'utf8'}).stdout.trim())return;await new Promise(r=>setTimeout(r,50))}throw Error('Owned app failed to stop')}
++function snapshot(name){assert.ok(['baseline','pilot','pilot2','candidate'].includes(name));const target=path.join(privateRoot(),name);assert.ok(!fs.existsSync(target));fs.cpSync(dist,target,{recursive:true});return fs.readFileSync(path.join(target,'BUILD_ID'),'utf8').trim()}
++async function start(name,diagnose=false){assert.ok(['baseline','pilot','pilot2','candidate'].includes(name));const source=path.join(privateRoot(),name);assert.ok(fs.existsSync(path.join(source,'BUILD_ID')));await stop();fs.rmSync(dist,{recursive:true});fs.cpSync(source,dist,{recursive:true});const fd=fs.openSync(path.join(root,'selected-ready-server.log'),'a'),args=[];args.push('node_modules/next/dist/bin/next','start','-p','3107','-H','127.0.0.1');const app=spawn(process.execPath,args,{cwd:repo,env:{...environment(),OUTCLASS_PHASE_TRACE:diagnose?'1':'0',OUTCLASS_NAVIGATION_HTTP_DIAGNOSTICS:'0',OUTCLASS_SELECTED_READY_SERVER_DIAGNOSTICS:diagnose?'1':'0',OUTCLASS_SELECTED_READY_DISPOSABLE:'outclass-onboarding-e2e'},detached:true,stdio:['ignore',fd,fd]});fs.closeSync(fd);app.unref();fs.writeFileSync(path.join(root,'server.pid'),String(app.pid));for(let n=0;n<100;n++){try{if((await fetch(config().appUrl,{signal:AbortSignal.timeout(1000)})).ok)return}catch{}await new Promise(r=>setTimeout(r,200))}throw Error('Owned app did not become ready')}
++async function build(){await stop();const fd=fs.openSync(path.join(root,'selected-ready-build.log'),'w');const result=spawnSync('npm',['run','build'],{cwd:repo,env:environment(),stdio:['ignore',fd,fd]});fs.closeSync(fd);assert.equal(result.status,0,'Inspect owned build log');}
++module.exports={repo,root,dist,config,privateRoot,environment,stop,start,snapshot,build};
++if(require.main===module)(async()=>{const [command,name]=process.argv.slice(2);if(command==='stop')await stop();else if(command==='start')await start(name,process.argv.includes('--diagnose'));else if(command==='snapshot')console.log(snapshot(name));else if(command==='build')await build();else throw Error('Unknown local lifecycle command')})().catch(error=>{console.error(error.name+': '+error.message.split('\n')[0]);process.exitCode=1});
+diff --git a/scripts/navigation-selected-ready-network-diagnostics.cjs b/scripts/navigation-selected-ready-network-diagnostics.cjs
+new file mode 100644
+index 0000000..b7e3e1f
+--- /dev/null
++++ b/scripts/navigation-selected-ready-network-diagnostics.cjs
+@@ -0,0 +1,39 @@
++// Standalone local diagnostic preload; never changes requests or application code.
++const assert = require('node:assert/strict');
++const codes = new Set(['ERR_ABORTED', 'ERR_FAILED', 'ERR_CONNECTION_RESET', 'ERR_CONNECTION_CLOSED', 'ERR_EMPTY_RESPONSE', 'ERR_TIMED_OUT', 'ERR_CONTENT_LENGTH_MISMATCH', 'ERR_INCOMPLETE_CHUNKED_ENCODING', 'ERR_NETWORK_CHANGED', 'ERR_CACHE_MISS', 'ERR_HTTP2_PROTOCOL_ERROR', 'ERR_INSUFFICIENT_RESOURCES', 'ERR_NETWORK_IO_SUSPENDED']);
++function errorCategory(value) {
++  const match = String(value).match(/net::(ERR_[A-Z_]+)/);
++  return match ? (codes.has(match[1]) ? match[1] : 'other_network_error') : null;
++}
++function configuration(env = process.env) {
++  if (env.OUTCLASS_SELECTED_READY_NETWORK_DIAGNOSTICS !== '1') return false;
++  assert.equal(env.OUTCLASS_SITE_URL, 'http://127.0.0.1:3107');
++  assert.equal(env.NEXT_PUBLIC_SUPABASE_URL, 'http://127.0.0.1:55321');
++  assert.equal(env.OUTCLASS_SELECTED_READY_DISPOSABLE, 'outclass-onboarding-e2e');
++  return true;
++}
++function resourceCategory(url) {
++  const path = new URL(url).pathname;
++  if (path.startsWith('/_next/static/chunks/')) return 'script';
++  if (path.startsWith('/_next/static/media/')) return 'media';
++  if (path.startsWith('/api/')) return 'api';
++  return 'other';
++}
++module.exports = { errorCategory, configuration, resourceCategory };
++if (configuration()) {
++  const { chromium } = require('playwright'), { randomUUID } = require('node:crypto');
++  const launch = chromium.launch.bind(chromium);
++  chromium.launch = async (...args) => {
++    const browser = await launch(...args), newContext = browser.newContext.bind(browser);
++    browser.newContext = async (...options) => {
++      const context = await newContext(...options), contextId = randomUUID();
++      const emit = value => console.log(JSON.stringify({ event: 'selected.network', at: new Date().toISOString(), contextId, ...value }));
++      context.on('page', page => {
++        page.on('requestfailed', request => emit({ type: 'request_failed', resource: resourceCategory(request.url()), networkError: errorCategory(request.failure()?.errorText) }));
++        page.on('pageerror', error => emit({ type: 'page_error', name: ['Error', 'TypeError', 'ReferenceError', 'ChunkLoadError'].includes(error.name) ? error.name : 'other', networkError: errorCategory(error.message), chunkLoadFailure: /ChunkLoadError|Loading chunk [0-9]+ failed/.test(error.message), hydrationFailure: /Minified React error #418/.test(error.message) }));
++      });
++      return context;
++    };
++    return browser;
++  };
++}
+diff --git a/scripts/navigation-selected-ready-study.cjs b/scripts/navigation-selected-ready-study.cjs
+new file mode 100644
+index 0000000..6cf0972
+--- /dev/null
++++ b/scripts/navigation-selected-ready-study.cjs
+@@ -0,0 +1,64 @@
++// Paired current-main comparison; uses the existing collector without app changes.
++const fs = require('node:fs'), path = require('node:path'), assert = require('node:assert/strict');
++const { spawn } = require('node:child_process'), { createHash } = require('node:crypto');
++const local = require('./navigation-selected-ready-local.cjs');
++const { startMonitor } = require('./navigation-selected-ready-host-monitor.cjs');
++const read = file => JSON.parse(fs.readFileSync(file, 'utf8'));
++const hash = file => createHash('sha256').update(fs.readFileSync(file)).digest('hex');
++function outputDirectory(profile, repo = local.repo) {
++  assert.ok(['local', 'constrained'].includes(profile));
++  const result = path.join(repo, 'docs/performance/selected-ready-20261027', profile);
++  assert.ok(!fs.existsSync(result), 'Retain existing evidence; do not overwrite it');
++  return result;
++}
++async function main() {
++  const profile = process.argv.find(arg => arg.startsWith('--profile='))?.slice(10);
++  const out = outputDirectory(profile), root = path.dirname(out), planFile = path.join(root, 'PLAN.json');
++  const plan = read(planFile), candidate = read(path.join(root, 'CANDIDATE_SOURCE.json'));
++  const baseline = read(path.join(root, 'BASELINE_SOURCE.json'));
++  const fixtureFile = path.join(local.root, 'navigation-fixture.json'), fixture = read(fixtureFile);
++  assert.equal(fixture.counts.applicantsInMeasuredClub ?? fixture.counts.applicantsPerClub, plan.fixtureApplicants);
++  const frozen = Object.fromEntries(['navigation-audit.cjs', 'navigation-selected-ready-local.cjs', 'navigation-selected-ready-host-monitor.cjs', 'navigation-selected-ready-study.cjs'].map(file => [file, hash(path.join(local.repo, 'scripts', file))]));
++  const fixtureHash = hash(fixtureFile), planHash = hash(planFile);
++  fs.mkdirSync(out);
++  const state = { startedAt: new Date().toISOString(), complete: false, profile, base: plan.base, builds: { B: baseline.buildId, A: candidate.buildId }, toolHashes: frozen, planSha256: planHash, blocks: [], failures: [] };
++  const save = () => fs.writeFileSync(path.join(out, 'PROTOCOL.json'), JSON.stringify(state, null, 2) + '\n');
++  const host = startMonitor({ repo: local.repo, output: path.join(out, 'HOST_MONITOR.json') });
++  const check = () => {
++    for (const [file, digest] of Object.entries(candidate.files)) assert.equal(hash(path.join(local.repo, file)), digest, file);
++    for (const [file, digest] of Object.entries(frozen)) assert.equal(hash(path.join(local.repo, 'scripts', file)), digest, file);
++    assert.equal(hash(planFile), planHash); assert.equal(hash(fixtureFile), fixtureHash); host.assertClean();
++  };
++  save();
++  try {
++    for (const [position, variant] of plan.order.entries()) {
++      check(); host.setPhase(`${position + 1}-${variant}-start`);
++      await local.start(variant === 'A' ? 'candidate' : 'baseline');
++      assert.equal(fs.readFileSync(path.join(local.dist, 'BUILD_ID'), 'utf8').trim(), state.builds[variant]);
++      for (const [stage, count] of [['warmup', plan.warmupsPerBlockGroup], ['measure', plan.measuredPerBlockGroup]]) {
++        check(); const directory = `block-${position + 1}-${variant}-${stage}`; host.setPhase(directory);
++        const fd = fs.openSync(path.join(local.root, 'selected-ready-study.log'), 'a');
++        let status;
++        try {
++          const child = spawn(process.execPath, ['scripts/navigation-audit.cjs', ...plan.harnessFlags, ...(profile === 'constrained' ? ['--constrained-network'] : []), '--samples=' + count, '--out=' + path.join(out, directory)], { cwd: local.repo, env: local.environment(), stdio: ['ignore', fd, fd] });
++          status = await new Promise((resolve, reject) => { child.once('error', reject); child.once('close', resolve); });
++        } finally { fs.closeSync(fd); }
++        const data = read(path.join(out, directory, 'browser-samples.json'));
++        state.blocks.push({ directory, variant, stage, planned: count * 8, observed: data.samples.length, failures: data.failures.length, status }); save();
++        assert.equal(data.samples.length, count * 8); assert.equal(status, 0); assert.deepEqual(data.failures, []);
++        assert.ok(data.samples.every(row => !row.failed && row.pageErrorCount === 0)); check();
++      }
++      console.log(`${profile} block ${position + 1}/4 (${variant}) complete; all rows retained.`);
++    }
++    state.complete = true;
++  } catch (error) {
++    state.failures.push({ type: error.name, reason: 'Comparison failed; retain complete attempt and inspect before acceptance.' });
++    throw error;
++  } finally {
++    await local.stop();
++    fs.rmSync(local.dist, { recursive: true }); fs.cpSync(path.join(local.privateRoot(), 'candidate'), local.dist, { recursive: true });
++    state.completedAt = new Date().toISOString(); state.hostControl = host.stop(); state.applicationStopped = true; save();
++  }
++}
++module.exports = { outputDirectory };
++if (require.main === module) main().catch(error => { console.error(error.name + ': selected startup comparison failed'); process.exitCode = 1; });
+diff --git a/scripts/run-onboarding-e2e.cjs b/scripts/run-onboarding-e2e.cjs
+index f7956c8..ea0e51d 100644
+--- a/scripts/run-onboarding-e2e.cjs
++++ b/scripts/run-onboarding-e2e.cjs
+@@ -9,0 +10,2 @@ const projectId=dashboards?'outclass-dashboards-e2e':writing?'outclass-applicati
++const selectedNavigation=process.argv.includes('--selected-navigation');
++if(selectedNavigation&&(writing||!process.argv.includes('--club-integration')))throw Error('--selected-navigation requires --club-integration on the onboarding fixture.');
+@@ -112,0 +115,6 @@ async function ready(url,headers={}){
++ if(selectedNavigation){
++  logged(process.execPath,['scripts/navigation-audit.cjs','--seed'],'selected-navigation-seed.log',env);
++  const navigationTests=['tests/navigation-phase1-e2e.test.cjs','tests/navigation-phase2-e2e.test.cjs','tests/navigation-phase10-e2e.test.cjs','tests/navigation-phase12-e2e.test.cjs'];
++  const navigationResult=spawnSync(process.execPath,['--test','--test-concurrency=1',...navigationTests],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
++  if(navigationResult.status!==0)throw Error('Selected navigation integration failed; inspect the disposable test log.');
++ }
+diff --git a/tests/loading-experience.test.cjs b/tests/loading-experience.test.cjs
+index bf8ee4f..1070d11 100644
+--- a/tests/loading-experience.test.cjs
++++ b/tests/loading-experience.test.cjs
+@@ -40,0 +41 @@ function provider({ hasSession = true, isImpersonating = false, demo = { isDemoE
++    "@/lib/workspace-read-diagnostics": { recordWorkspaceRead() {} },
+diff --git a/tests/navigation-phase12-e2e.test.cjs b/tests/navigation-phase12-e2e.test.cjs
+new file mode 100644
+index 0000000..83272e5
+--- /dev/null
++++ b/tests/navigation-phase12-e2e.test.cjs
+@@ -0,0 +1,17 @@
++// Real Auth, production chunks and private no-store GETs; no response gates.
++const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
++const {chromium}=require('playwright'),{Actor,readConfig}=require('./helpers/onboarding-e2e.cjs');
++const configFile=process.env.OUTCLASS_ONBOARDING_E2E_CONFIG;
++async function select(page,id){let target=page.locator('[data-tour="nav-'+id+'"]').filter({visible:true}).first();if(!await target.count()&&id==='applicants'){await page.getByRole('button',{name:'Applicants',exact:true}).filter({visible:true}).first().focus();await page.keyboard.press('ArrowRight');target=page.locator('[data-tour="nav-'+id+'"]').filter({visible:true}).first()}await target.focus();await page.keyboard.press('Enter')}
++test('constrained startup fences an already-notified Auth epoch, revisits read fresh, and revoked cookies reveal no old applicants',{skip:!configFile,timeout:120000},async()=>{
++ const config=readConfig(configFile),fixture=JSON.parse(fs.readFileSync(path.join(path.dirname(configFile),'navigation-fixture.json'))),browser=await chromium.launch({headless:true});
++ try{for(let iteration=0;iteration<3;iteration++){
++  const actor=new Actor(config);await actor.signIn(fixture.email,fixture.password);const context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage(),reads=[],errors=[];
++  try{await page.addInitScript(()=>{window.__phase12Auth=[];window.__phase12Dispatch=[];window.addEventListener('outclass:workspace-read',event=>{if(event.detail?.kind==='auth')window.__phase12Auth.push(performance.timeOrigin+performance.now());if(event.detail?.kind==='selected')window.__phase12Dispatch.push(performance.timeOrigin+performance.now())})});const cdp=await context.newCDPSession(page);await cdp.send('Network.enable');await cdp.send('Network.emulateNetworkConditions',{offline:false,latency:80,downloadThroughput:200000,uploadThroughput:93750,connectionType:'cellular4g'});await cdp.send('Emulation.setCPUThrottlingRate',{rate:4});page.on('request',request=>{const url=new URL(request.url());if(url.pathname==='/api/workspace'&&url.searchParams.get('kind')==='pipeline')reads.push(Date.now())});page.on('pageerror',error=>errors.push(error.name));
++   await page.goto(config.appUrl+'/club/'+fixture.clubIds[0]+'/workspace?section=recruitment&tool=applicants');await page.locator('.oc-live-pipeline').getByText('Audit Student 000',{exact:true}).first().waitFor();await page.waitForLoadState('networkidle');const {events,dispatches}=await page.evaluate(()=>({events:window.__phase12Auth,dispatches:window.__phase12Dispatch}));assert.ok(dispatches.length>=1);
++   assert.ok(reads.length>=1&&reads.length<=2,'Only an actual later Auth change can justify a second initial read');if(!events.length||Math.max(...events)<dispatches[0])assert.equal(reads.length,1,'An Auth event already known before the selected effect dispatches must not cause an obsolete request followed by a replacement');else assert.ok(dispatches.at(-1)>=Math.max(...events),'A later Auth event must still revalidate');
++   const initial=reads.length;await select(page,'overview');await page.locator('.oc-command-recruiting').waitFor();await select(page,'applicants');await page.locator('.oc-live-pipeline').getByText('Audit Student 000',{exact:true}).first().waitFor();await page.waitForLoadState('networkidle');assert.equal(reads.length,initial+1,'A new visit never reuses a successful authorization or projection');
++   await select(page,'overview');await page.locator('.oc-command-recruiting').waitFor();assert.equal((await actor.client.auth.signOut({scope:'local'})).error,null);await page.evaluate(()=>{window.__phase12Revealed=false;new MutationObserver(()=>{if([...document.querySelectorAll('.oc-live-pipeline')].some(e=>e.getClientRects().length&&e.textContent.includes('Audit Student 000')))window.__phase12Revealed=true}).observe(document.body,{subtree:true,childList:true,attributes:true})});await select(page,'applicants');await page.getByRole('alert').filter({hasText:'Could not load this workspace.'}).waitFor();assert.equal(await page.evaluate(()=>window.__phase12Revealed),false);assert.equal(await page.locator('.oc-live-pipeline').count(),0);assert.deepEqual(errors,[]);console.log('Phase12 scope acceptance: initialReads='+initial+', subsequent visits validated and revoked replay denied');
++  }finally{await context.close()}
++ }}finally{await browser.close()}
++});
+diff --git a/tests/navigation-phase2-e2e.test.cjs b/tests/navigation-phase2-e2e.test.cjs
+new file mode 100644
+index 0000000..055920e
+--- /dev/null
++++ b/tests/navigation-phase2-e2e.test.cjs
+@@ -0,0 +1,19 @@
++// Real production build and disposable Auth only. Synthetic request gates prove
++// ordering in regressions; the performance benchmark never installs these gates.
++const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
++const {chromium}=require('playwright'),{Actor,readConfig}=require('./helpers/onboarding-e2e.cjs');
++const configFile=process.env.OUTCLASS_ONBOARDING_E2E_CONFIG;
++const cases=[['members','members','Members','Audit Student 000'],['pipeline','applicants','All Applicants','Audit Student 000'],['tasks','tasks','Tasks','Audit Task'],['announcements','announcements','Announcements','Audit Announcement']];
++async function fixture(){const config=readConfig(configFile),root=path.dirname(configFile),data=JSON.parse(fs.readFileSync(path.join(root,'navigation-fixture.json'))),actor=new Actor(config);await actor.signIn(data.email,data.password);return{config,data,actor};}
++async function context(browser,f,options={}){return browser.newContext({viewport:{width:1440,height:1000},...options,storageState:{cookies:[...f.actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}});}
++async function open(page,f,recruiting=false){await page.goto(f.config.appUrl+'/club/'+f.data.clubIds[0]+'/workspace?section='+(recruiting?'recruitment&tool=overview':'overview'));await page.locator(recruiting?'.oc-command-recruiting':'.oc-command-club').filter({visible:true}).first().getByRole('button',{name:'Refresh overview',exact:true}).waitFor();}
++async function select(page,tour){let link=page.locator(`[data-tour="nav-${tour}"]`).filter({visible:true}).first();if(!await link.count()&&tour==='applicants'){const group=page.getByRole('button',{name:'Applicants',exact:true}).filter({visible:true}).first();await group.focus();await page.keyboard.press('ArrowRight');link=page.locator(`[data-tour="nav-${tour}"]`).filter({visible:true}).first();}await link.focus();await page.keyboard.press('Enter');}
++test('selected tabs request authorized data while code is still loading, then consume it exactly once', {skip:!configFile},async t=>{
++ const f=await fixture(),browser=await chromium.launch({headless:true});try{for(const[kind,tour,label,text]of cases)await t.test(kind,async()=>{const c=await context(browser,f),page=await c.newPage();let unblock,codeStarted,reads=0;const blocked=[],errors=[];page.on('pageerror',e=>errors.push(e.name));try{await open(page,f,kind==='pipeline');const seen=new Promise(resolve=>unblock=resolve);page.on('request',r=>{const u=new URL(r.url());if(u.pathname==='/api/workspace'&&u.searchParams.get('kind')===(kind)){reads++;unblock();}});const pendingCode=new Promise(resolve=>codeStarted=resolve);const gate=route=>{blocked.push(route);codeStarted()};await page.route('**/_next/static/chunks/*.js',gate);await select(page,tour);await Promise.race([Promise.all([seen,pendingCode]),new Promise((_,reject)=>setTimeout(()=>reject(Error('Data waited for the blocked code chunk')),3000))]);assert.ok(blocked.length,'The selected component really has an unresolved chunk');assert.equal(await page.getByRole('status').filter({hasText:'Loading workspace…'}).count(),1);await Promise.all(blocked.splice(0).map(r=>r.continue()));await page.unroute('**/_next/static/chunks/*.js',gate);await page.locator(`section[aria-label="${label}"]`).getByText(text,{exact:true}).first().waitFor();assert.equal(reads,1);assert.deepEqual(errors,[]);}finally{await page.unroute('**/_next/static/chunks/*.js');await Promise.allSettled(blocked.map(r=>r.continue()));await c.close();}});}finally{await browser.close();}
++});
++test('rapid selected-tab changes fence late results and a revoked revisit never reveals the old directory',{skip:!configFile},async()=>{
++ const f=await fixture(),browser=await chromium.launch({headless:true}),c=await context(browser,f),page=await c.newPage();let release;try{await open(page,f);let received;const held=new Promise(resolve=>received=resolve);const gate=async route=>{const response=await route.fetch();release=()=>route.fulfill({response});received();};await page.route('**/api/workspace?kind=members&*',gate);await select(page,'members');await held;await select(page,'tasks');await page.getByText('Audit Task',{exact:true}).first().waitFor();await release();await page.unroute('**/api/workspace?kind=members&*',gate);assert.equal(await page.locator('section[aria-label="Members"]').count(),0);await select(page,'members');await page.getByRole('button',{name:'Member details · Audit Student 000',exact:true}).waitFor();await select(page,'overview');await page.locator('.oc-command-club').filter({visible:true}).first().waitFor();assert.equal((await f.actor.client.auth.signOut({scope:'local'})).error,null);await page.evaluate(()=>{window.__phase2Revealed=false;new MutationObserver(()=>{if([...document.querySelectorAll('button')].some(e=>e.getClientRects().length&&e.getAttribute('aria-label')==='Member details · Audit Student 000'))window.__phase2Revealed=true}).observe(document.body,{subtree:true,childList:true,attributes:true})});await select(page,'members');await page.getByRole('alert').filter({hasText:'Could not load this workspace.'}).waitFor();assert.equal(await page.evaluate(()=>window.__phase2Revealed),false);assert.equal(await page.getByRole('button',{name:'Member details · Audit Student 000',exact:true}).count(),0);}finally{if(release)await release().catch(()=>{});await c.close();await browser.close();}
++});
++test('pointer and mobile touch navigation retain one fresh read, usable content and responsive layout',{skip:!configFile},async()=>{
++ const f=await fixture(),browser=await chromium.launch({headless:true});try{for(const touch of [false,true]){const c=await context(browser,f,touch?{viewport:{width:390,height:844},isMobile:true,hasTouch:true}:{}),page=await c.newPage();let reads=0;const errors=[];page.on('pageerror',e=>errors.push(e.name));try{await open(page,f);page.on('request',r=>{const u=new URL(r.url());if(u.pathname==='/api/workspace'&&u.searchParams.get('kind')==='tasks')reads++});const link=touch?page.getByRole('navigation',{name:'Primary mobile navigation'}).getByRole('link',{name:'Tasks',exact:true}):page.locator('[data-tour="nav-tasks"]').filter({visible:true}).first();if(touch)await link.tap();else await link.click();await page.getByText('Audit Task',{exact:true}).first().waitFor();assert.equal(reads,1);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);assert.deepEqual(errors,[]);}finally{await c.close()}}}finally{await browser.close()}
++});
+diff --git a/tests/navigation-selected-network-diagnostics.test.cjs b/tests/navigation-selected-network-diagnostics.test.cjs
+new file mode 100644
+index 0000000..3f5f89a
+--- /dev/null
++++ b/tests/navigation-selected-network-diagnostics.test.cjs
+@@ -0,0 +1,15 @@
++const { test } = require('node:test'), assert = require('node:assert/strict');
++const { configuration, errorCategory, resourceCategory } = require('../scripts/navigation-selected-ready-network-diagnostics.cjs');
++test('browser network preload refuses non-owned endpoints and stays disabled by default', () => {
++  assert.equal(configuration({}), false);
++  const env = { OUTCLASS_SELECTED_READY_NETWORK_DIAGNOSTICS: '1', OUTCLASS_SITE_URL: 'http://127.0.0.1:3107', NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:55321', OUTCLASS_SELECTED_READY_DISPOSABLE: 'outclass-onboarding-e2e' };
++  assert.equal(configuration(env), true);
++  for (const change of [{ OUTCLASS_SITE_URL: 'https://production.example.test' }, { NEXT_PUBLIC_SUPABASE_URL: 'https://production.example.test' }, { OUTCLASS_SELECTED_READY_DISPOSABLE: '' }]) assert.throws(() => configuration({ ...env, ...change }));
++});
++test('network diagnostic exports only fixed error and resource categories', () => {
++  assert.equal(errorCategory('net::ERR_CONTENT_LENGTH_MISMATCH secret-cookie'), 'ERR_CONTENT_LENGTH_MISMATCH');
++  assert.equal(errorCategory('net::ERR_PRIVATE_ACTOR_VALUE'), 'other_network_error');
++  assert.equal(errorCategory('private email@example.test'), null);
++  assert.equal(resourceCategory('http://127.0.0.1:3107/_next/static/chunks/private-value.js?token=secret'), 'script');
++  assert.equal(resourceCategory('http://127.0.0.1:3107/api/workspace?args=private'), 'api');
++});
+diff --git a/tests/navigation-selected-ready-study.test.cjs b/tests/navigation-selected-ready-study.test.cjs
+new file mode 100644
+index 0000000..96fabd1
+--- /dev/null
++++ b/tests/navigation-selected-ready-study.test.cjs
+@@ -0,0 +1,17 @@
++const { test } = require('node:test');
++const assert = require('node:assert/strict');
++const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
++const { outputDirectory } = require('../scripts/navigation-selected-ready-study.cjs');
++
++test('selected-startup comparison accepts only declared profiles and preserves existing evidence', () => {
++  const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'outclass-selected-output-test-'));
++  try {
++    const file = outputDirectory('local', repo);
++    assert.equal(file, path.join(repo, 'docs/performance/selected-ready-20261027/local'));
++    for (const value of ['', '../phase15', 'local/other', 'constructor', undefined]) assert.throws(() => outputDirectory(value, repo));
++    fs.mkdirSync(file, { recursive: true }); fs.writeFileSync(path.join(file, 'PROTOCOL.json'), 'existing evidence');
++    assert.throws(() => outputDirectory('local', repo));
++    assert.equal(fs.readFileSync(path.join(file, 'PROTOCOL.json'), 'utf8'), 'existing evidence');
++    assert.equal(outputDirectory('constrained', repo), path.join(path.dirname(file), 'constrained'));
++  } finally { fs.rmSync(repo, { recursive: true }); }
++});
+diff --git a/tests/performance-regressions.test.cjs b/tests/performance-regressions.test.cjs
+index 213db76..ef95445 100644
+--- a/tests/performance-regressions.test.cjs
++++ b/tests/performance-regressions.test.cjs
+@@ -163,28 +163,18 @@ test('query-only club transitions skip RSC navigation and preserve modified/cros
+-test('Members mounts without Overview and its resource survives navigation only within the same identity/grants', async () => {
+-  const h = hooks(); let query = 'section=members', calls = 0;
+-  let member = { id: 'membership', userId: 'user-a', clubId, isOwner: true, status: 'ACTIVE', accessRole: 'OWNER', permissions: [], interviewOffices: [], club: { id: clubId, name: 'Club' } };
+-  let user = { id: 'user-a', memberships: [member] };
+-  const load = loader({
+-    react: h.react, 'next/dynamic': { __esModule: true, default: () => 'Dynamic' }, 'next/link': { __esModule: true, default: 'Link' },
+-    'next/navigation': { useRouter: () => ({ push() {}, replace() {} }), useSearchParams: () => new URLSearchParams(query) },
+-    '@/contexts/auth-context': { useAuth: () => ({ user, loading: false, activeClubId: clubId, selectClub() {} }) },
+-    '@/contexts/demo-context': { useDemoMode: () => ({ ready: true, isDemoEnabled: false }) },
+-    '@/lib/workspace-api': { getClubWorkspaceOverview: async () => { calls++; return { club: member.club, membership: member }; } },
+-    '@/lib/application-state': { ApplicationStateProvider: 'Provider', useApplicationState: () => ({}) },
+-  });
+-  const { ClubWorkspace } = load('components/club-workspace.tsx');
+-  const render = () => h.render(() => ClubWorkspace({ clubId, section: 'members' }));
+-  let tree = render(); await h.flush(); assert.equal(calls, 0);
+-  const child = nodes(tree).find(n => typeof n.props?.onDirectory === 'function');
+-  const directory = { actor: member, members: [member], invitations: [], identifierTypes: [] };
+-  child.props.onDirectory(directory); tree = render();
+-  query = 'section=settings'; render(); await h.flush();
+-  query = 'section=members'; tree = render();
+-  assert.equal(nodes(tree).find(n => n.props?.onDirectory).props.initialDirectory, directory);
+-  member = { ...member, club: { ...member.club, pipelineVersion: 1 } }; user = { ...user, memberships: [member] }; tree = render();
+-  assert.equal(nodes(tree).find(n => n.props?.onDirectory).props.initialDirectory, undefined, 'Pipeline/privacy version changes invalidate retained resources');
+-  user = { id: 'user-b', memberships: [{ ...member, id: 'other-membership', userId: 'user-b' }] }; tree = render();
+-  assert.equal(nodes(tree).find(n => n.props?.onDirectory).props.initialDirectory, undefined);
+-  child.props.onDirectory(directory); tree = render(); assert.equal(nodes(tree).find(n => n.props?.onDirectory).props.initialDirectory, undefined, 'Late replies cannot restore another account resource');
+-  user = { id: 'user-a', memberships: [{ ...member, permissions: ['members.manage'] }] }; tree = render();
+-  assert.equal(nodes(tree).find(n => n.props?.onDirectory).props.initialDirectory, undefined, 'Grant change invalidates prior data');
++test('Members delegates each visit to a fresh selected-tab loader and privacy/account changes remain scoped', async () => {
++  const h=hooks();let query='section=members',calls=0;
++  let member={id:'membership',userId:'user-a',clubId,isOwner:true,status:'ACTIVE',accessRole:'OWNER',permissions:[],interviewOffices:[],club:{id:clubId,name:'Club'}};
++  let user={id:'user-a',memberships:[member]};
++  const load=loader({react:h.react,'next/dynamic':{__esModule:true,default:()=>'Dynamic'},'next/link':{__esModule:true,default:'Link'},
++    'next/navigation':{useRouter:()=>({push(){},replace(){}}),useSearchParams:()=>new URLSearchParams(query)},
++    '@/contexts/auth-context':{useAuth:()=>({user,loading:false,activeClubId:clubId,selectClub(){}})},
++    '@/contexts/demo-context':{useDemoMode:()=>({ready:true,isDemoEnabled:false})},
++    '@/lib/workspace-api':{getClubWorkspaceOverview:async()=>{calls++;return{club:member.club,membership:member}}},
++    '@/lib/application-state':{ApplicationStateProvider:'Provider',useApplicationState:()=>({})}});
++  const {ClubWorkspace}=load('components/club-workspace.tsx'),render=()=>h.render(()=>ClubWorkspace({clubId,section:'members'}));
++  const selected=tree=>nodes(tree).find(n=>n.props?.kind==='members');
++  let tree=render();await h.flush();assert.equal(calls,0);const original=selected(tree).props.privacyScope;
++  assert.equal(selected(tree).props.initialDirectory,undefined,'No retained directory is revealed before a new live read');
++  query='section=settings';render();await h.flush();query='section=members';tree=render();assert.ok(selected(tree));
++  member={...member,club:{...member.club,pipelineVersion:1}};user={...user,memberships:[member]};tree=render();assert.notEqual(selected(tree).props.privacyScope,original);
++  const previous=selected(tree).props.privacyScope;user={id:'user-b',memberships:[{...member,id:'other-membership',userId:'user-b'}]};tree=render();assert.notEqual(selected(tree).props.privacyScope,previous);
++  user={id:'user-a',memberships:[{...member,permissions:['members.manage']}]};tree=render();assert.notEqual(selected(tree).props.privacyScope,original);
+@@ -222,0 +213,12 @@ test('a changed browser Auth token rotates pending-read authority without treati
++
++test('Auth publishes its opaque epoch fence before React commits, without dropping any token-change invalidation',async()=>{
++ const h=hooks(),identity={id:'user',memberships:[]};let observe;
++ const {AuthProvider}=loader({react:h.react,'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/lib/demo/store':{},'@/lib/permissions':{hasWorkspace:()=>false},'@/utils/supabase/client':{createClient:()=>({auth:{onAuthStateChange:fn=>{observe=fn;return{data:{subscription:{unsubscribe(){}}}}}}})}})('contexts/auth-context.tsx');
++ const render=()=>h.render(()=>AuthProvider({initialUser:identity,children:null}).props.value),initial=render();await h.flush();assert.ok(initial.isReadAuthorityCurrent(initial.readAuthority));
++ observe('INITIAL_SESSION',{access_token:'opaque-A'});assert.ok(initial.isReadAuthorityCurrent(initial.readAuthority));
++ observe('TOKEN_REFRESHED',{access_token:'opaque-B'});assert.equal(initial.isReadAuthorityCurrent(initial.readAuthority),false,'The previously rendered context must fence reads before a rerender');
++ const refreshed=render();assert.ok(refreshed.isReadAuthorityCurrent(refreshed.readAuthority));assert.equal(refreshed.user,identity,'The fence never turns an SDK session into authorized identity');
++ observe('SIGNED_IN',{access_token:'opaque-B'});assert.ok(refreshed.isReadAuthorityCurrent(refreshed.readAuthority));
++ observe('SIGNED_IN',{access_token:'opaque-C'});assert.equal(refreshed.isReadAuthorityCurrent(refreshed.readAuthority),false);const replaced=render();
++ observe('SIGNED_OUT',null);assert.equal(replaced.isReadAuthorityCurrent(replaced.readAuthority),false);assert.equal(render().user,identity,'Existing remote identity refresh remains separate');
++});
+diff --git a/tests/selected-navigation-ci.test.cjs b/tests/selected-navigation-ci.test.cjs
+new file mode 100644
+index 0000000..8366bb5
+--- /dev/null
++++ b/tests/selected-navigation-ci.test.cjs
+@@ -0,0 +1,14 @@
++const { test } = require('node:test'), assert = require('node:assert/strict');
++const { spawnSync } = require('node:child_process');
++const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
++
++test('selected navigation CI rejects another fixture mode before touching the owned directory or services', () => {
++  const root = path.join(os.tmpdir(), 'outclass-onboarding-e2e');
++  const before = fs.existsSync(root) ? fs.statSync(root).mtimeMs : null;
++  for (const args of [['--selected-navigation'], ['--club-integration', '--selected-navigation', '--dashboards'], ['--club-integration', '--selected-navigation', '--application-writing']]) {
++    const result = spawnSync(process.execPath, ['scripts/run-onboarding-e2e.cjs', ...args], { encoding: 'utf8' });
++    assert.equal(result.status, 1);
++    assert.match(result.stderr, /--selected-navigation requires --club-integration on the onboarding fixture/);
++    assert.equal(fs.existsSync(root) ? fs.statSync(root).mtimeMs : null, before);
++  }
++});
+diff --git a/tests/selected-workspace-loader.test.cjs b/tests/selected-workspace-loader.test.cjs
+new file mode 100644
+index 0000000..19aa696
+--- /dev/null
++++ b/tests/selected-workspace-loader.test.cjs
+@@ -0,0 +1,50 @@
++const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript');
++const tick=async()=>{for(let n=0;n<30;n++)await Promise.resolve()};
++function setup(){
++ const state=[],effects=[],cleanups=new Map();let cursor=0,user={id:'one'},epoch={},currentEpoch=epoch,support=false,demo={ready:true,isDemoEnabled:false};const requests=[],modules=[];
++ const hooks={useRef(initial){return state[cursor++]??={current:initial}},useState(initial){const i=cursor++;if(!(i in state))state[i]=initial;return[state[i],v=>state[i]=typeof v==='function'?v(state[i]):v]},useMemo(fn,deps){const i=cursor++;if(!state[i]||deps.some((d,j)=>d!==state[i].deps[j]))state[i]={deps,value:fn()};return state[i].value},useEffect(fn,deps){const i=cursor++;if(!state[i]||deps.some((d,j)=>d!==state[i][j])){state[i]=deps;effects.push([i,fn])}}};
++ const readWorkspace=(kind,args)=>new Promise((resolve,reject)=>requests.push({kind,args,resolve,reject}));
++ const isReadAuthorityCurrent=value=>value===currentEpoch;
++ const mocks={react:hooks,'@/lib/workspace-read-diagnostics':{recordWorkspaceRead(){}},'@/contexts/auth-context':{useAuth:()=>({user,readAuthority:epoch,isReadAuthorityCurrent,isImpersonating:support,loading:false})},'@/contexts/demo-context':{useDemoMode:()=>demo},'@/lib/workspace-read':{readWorkspace},'@/components/ui/button':{Button:'Button'}};
++ const mod={exports:{}};new Function('require','module','exports',ts.transpileModule(fs.readFileSync('components/selected-club-workspace.tsx','utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText)(name=>{if(name in mocks)return mocks[name];if(name.startsWith('@/components/')){modules.push(name);return{ClubMembers:'Members',ClubTasks:'Tasks',ClubAnnouncements:'Announcements',LiveLeaderWorkspace:'Pipeline'}}return require(name)},mod,mod.exports);
++ return{...mod.exports,requests,modules,render(props){cursor=0;return mod.exports.SelectedClubWorkspace(props)},async flush(){for(const[i,fn]of effects.splice(0)){cleanups.get(i)?.();cleanups.set(i,fn())}await tick()},setUser(v){user=v},rotate(){epoch={};currentEpoch=epoch},rotateBeforeCommit(){currentEpoch={}},commitEpoch(){epoch=currentEpoch},setDemo(v){demo=v},setSupport(v){support=v},cleanup(){for(const fn of cleanups.values())fn?.()}};
++}
++test('all four selected resources start their guarded read alongside code loading and never reuse another visit',async()=>{
++ const f=setup();for(const kind of ['members','pipeline','tasks','announcements']){const pending=f.loadSelectedClubWorkspace(kind,'club');await tick();assert.equal(f.requests.length,f.modules.length);const r=f.requests.at(-1);assert.equal(r.kind,kind);assert.deepEqual(r.args,kind==='pipeline'?['club',{genderCounts:false}]:['club']);r.resolve({fixture:true});assert.equal((await pending).kind,kind)}
++ const pending=f.loadSelectedClubWorkspace('members','club');await tick();assert.equal(f.requests.length,5);f.requests.at(-1).reject(Error('revoked'));await assert.rejects(pending,/revoked/);
++});
++test('late navigation/session/account results cannot reveal a previous projection; retry makes a fresh request',async()=>{
++ const f=setup();let props={kind:'members',clubId:'club',privacyScope:'scope'};f.render(props);await f.flush();const old=f.requests[0];
++ props={...props,kind:'tasks'};f.render(props);await f.flush();old.resolve({private:'old'});await tick();assert.equal(f.render(props).props.role,'status');f.requests[1].resolve({clubId:'club'});await tick();assert.equal(f.render(props).type,'Tasks');
++ f.rotate();assert.equal(f.render(props).props.role,'status');await f.flush();f.requests[2].reject(Error('revoked'));await tick();let tree=f.render(props);assert.equal(tree.props.role,'alert');tree.props.children[1].props.onClick();assert.equal(f.render(props).props.role,'status');await f.flush();assert.equal(f.requests.length,4);
++ f.setUser({id:'two'});f.render(props);await f.flush();f.requests[3].resolve({private:'previous session'});await tick();assert.equal(f.render(props).props.role,'status');f.requests[4].resolve({clubId:'club'});await tick();assert.equal(f.render(props).type,'Tasks');f.cleanup();
++});
++test('Demo and unresolved Demo initialization never dispatch a live selected-tab request',async()=>{
++ const f=setup(),props={kind:'tasks',clubId:'club',privacyScope:'scope'};f.setDemo({ready:false,isDemoEnabled:false});f.render(props);await f.flush();assert.equal(f.requests.length,0);f.setDemo({ready:true,isDemoEnabled:true});f.render(props);await f.flush();assert.equal(f.requests.length,0);f.setDemo({ready:true,isDemoEnabled:false});f.render(props);await f.flush();assert.equal(f.requests.length,1);f.requests[0].resolve({clubId:'club'});await tick();assert.equal(f.render(props).type,'Tasks');f.setDemo({ready:true,isDemoEnabled:true});assert.equal(f.render(props).props.role,'status');f.cleanup();
++});
++
++test('club, privacy and support authority changes hide content and fence earlier reads',async()=>{
++ const f=setup();let props={kind:'members',clubId:'one',privacyScope:'identified'};f.render(props);await f.flush();f.requests[0].resolve({members:[]});await tick();assert.equal(f.render(props).type,'Members');
++ props={...props,clubId:'two'};assert.equal(f.render(props).props.role,'status');await f.flush();f.setSupport(true);assert.equal(f.render(props).props.role,'status');await f.flush();f.requests[1].resolve({members:['wrong club context']});await tick();assert.equal(f.render(props).props.role,'status');
++ props={...props,privacyScope:'anonymous-revision'};f.render(props);await f.flush();f.requests[2].resolve({members:['old support projection']});await tick();assert.equal(f.render(props).props.role,'status');f.requests[3].reject(Error('support restricted'));await tick();assert.equal(f.render(props).props.role,'alert');f.cleanup();
++});
++
++test('an Auth notification before effect commit defers an obsolete selected read until its current scope renders',async()=>{
++ const f=setup(),props={kind:'pipeline',clubId:'club',privacyScope:'scope'};
++ f.render(props);f.rotateBeforeCommit();await f.flush();assert.equal(f.requests.length,0,'The old rendered epoch is already obsolete, so no request should be sent');
++ f.commitEpoch();f.render(props);await f.flush();assert.equal(f.requests.length,1);f.requests[0].resolve({clubId:'club'});await tick();assert.equal(f.render(props).type,'Pipeline');
++ f.cleanup();
++});
++test('successful and failed reads cannot settle during the gap between Auth notification and React commit',async()=>{
++ for(const failure of [false,true]){
++  const f=setup(),props={kind:'members',clubId:'club',privacyScope:'scope'};f.render(props);await f.flush();assert.equal(f.requests.length,1);
++  f.rotateBeforeCommit();if(failure)f.requests[0].reject(Error('obsolete error'));else f.requests[0].resolve({members:['obsolete projection']});await tick();assert.equal(f.render(props).props.role,'status');
++  f.commitEpoch();f.render(props);await f.flush();assert.equal(f.requests.length,2);f.requests[1].resolve({members:[]});await tick();assert.equal(f.render(props).type,'Members');f.cleanup();
++ }
++});
++
++ test('already visible results stay hidden if rendered before the notified epoch commits',async()=>{
++  const f=setup(),props={kind:'members',clubId:'club',privacyScope:'scope'};f.render(props);await f.flush();f.requests[0].resolve({members:[]});await tick();assert.equal(f.render(props).type,'Members');
++  f.rotateBeforeCommit();assert.equal(f.render(props).props.role,'status');await f.flush();assert.equal(f.requests.length,1);
++  f.commitEpoch();f.render(props);await f.flush();assert.equal(f.requests.length,2);f.requests[1].resolve({members:[]});await tick();assert.equal(f.render(props).type,'Members');f.cleanup();
++ });
+diff --git a/tests/workspace-read-diagnostics.test.cjs b/tests/workspace-read-diagnostics.test.cjs
+new file mode 100644
+index 0000000..a53b105
+--- /dev/null
++++ b/tests/workspace-read-diagnostics.test.cjs
+@@ -0,0 +1,8 @@
++const {test}=require('node:test'),assert=require('node:assert/strict'),{load}=require('./helpers/voting-harness.cjs');
++test('workspace diagnostics expose fixed cause labels and no arbitrary identifiers, filters or values',()=>{
++ const records=[],previous=global.window;global.window={dispatchEvent(event){records.push(event)}};
++ try{const {recordWorkspaceRead}=load('lib/workspace-read-diagnostics.ts');recordWorkspaceRead('selected',['mount','user','private-actor-id','token=secret','query=private']);assert.deepEqual(records.map(e=>({type:e.type,detail:e.detail})),[{type:'outclass:workspace-read',detail:{kind:'selected',causes:['mount','user']}}]);recordWorkspaceRead('arbitrary',['mount']);assert.equal(records.length,1)}finally{global.window=previous}
++});
++test('diagnostics do not buffer events or require a browser',()=>{const {recordWorkspaceRead}=load('lib/workspace-read-diagnostics.ts');assert.doesNotThrow(()=>recordWorkspaceRead('auth',['signed_in']))});
++
++test("a failing diagnostic observer cannot block authentication or read ownership",()=>{const prior=global.window;global.window={dispatchEvent(){throw Error("observer failure")}};try{assert.doesNotThrow(()=>load("lib/workspace-read-diagnostics.ts").recordWorkspaceRead("auth",["signed_out"]))}finally{global.window=prior}});

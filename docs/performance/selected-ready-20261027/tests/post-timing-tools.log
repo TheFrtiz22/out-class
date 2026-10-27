@@ -1,0 +1,15 @@
+✔ browser network preload refuses non-owned endpoints and stays disabled by default (1.982ms)
+✔ network diagnostic exports only fixed error and resource categories (1.592917ms)
+✔ selected-startup comparison accepts only declared profiles and preserves existing evidence (6.495875ms)
+✔ selected navigation CI rejects another fixture mode before touching the owned directory or services (337.022292ms)
+✔ workspace diagnostics expose fixed cause labels and no arbitrary identifiers, filters or values (1.613459ms)
+✔ diagnostics do not buffer events or require a browser (0.623667ms)
+✔ a failing diagnostic observer cannot block authentication or read ownership (0.546417ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 452.5135

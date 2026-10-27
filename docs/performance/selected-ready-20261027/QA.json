@@ -1,0 +1,71 @@
+{
+  "at": "2026-10-27T18:31:40.909831+00:00",
+  "applicationFilesVerified": 917,
+  "applicationDifferences": [
+    "components/club-announcements.tsx",
+    "components/club-members.tsx",
+    "components/club-tasks.tsx",
+    "components/club-workspace.tsx",
+    "components/organization-member-management.tsx",
+    "components/selected-club-workspace.tsx",
+    "components/views/leader-dashboard/live-leader-workspace.tsx",
+    "contexts/auth-context.tsx",
+    "lib/workspace-read-diagnostics.ts"
+  ],
+  "applicationChangesAfterFrozenBuild": false,
+  "ordinary": {
+    "passed": 1367,
+    "failed": 0,
+    "skipped": 44,
+    "total": 1411
+  },
+  "ordinaryInitial": {
+    "passed": 1358,
+    "failed": 5,
+    "skipped": 44,
+    "total": 1407,
+    "cause": "New diagnostic module not mocked by loading harness; one explicit no-op mock repairs it without assertion changes."
+  },
+  "focusedInitial": {
+    "passed": 21,
+    "failed": 1,
+    "cause": "Old retained-directory contract replaced with fresh visit scope regression coverage."
+  },
+  "focusedFinal": {
+    "passed": 24,
+    "failed": 0
+  },
+  "realAuthBrowser": {
+    "passed": 45,
+    "failed": 0,
+    "skipped": 0
+  },
+  "normalVerifiedSignupAuthTotp": {
+    "passed": 38,
+    "failed": 0
+  },
+  "nativeSecurityConcurrency": {
+    "passed": 3,
+    "failed": 0
+  },
+  "migrations": {
+    "freshAndLegacy": 57,
+    "rlsTables": 78
+  },
+  "builds": [
+    "YhMtIPGz1MT4-4jqyodGd",
+    "K2lMsjNFdigRZqc5-mLIv"
+  ],
+  "types": "passed",
+  "lint": {
+    "errors": 0,
+    "existingWarnings": 22
+  },
+  "postTimingTools": {
+    "passed": 7,
+    "failed": 0,
+    "scope": "Includes newly added network sanitizer and CI mode guards; no app source change."
+  },
+  "ciEntrypoint": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation; positive end-to-end status pending hosted job.",
+  "note": "Test populations overlap; never sum. Full ordinary precedes post-timing CI wiring; hosted full validation must pass before merge."
+}

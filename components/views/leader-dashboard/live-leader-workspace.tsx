@@ -69,7 +69,7 @@ const name = (app: Candidate) =>
 const average = (app: Candidate) =>
   app.roundScore?.average ?? null
 
-export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, rejectedOnly = false, initialData, onData }: { scoped?: boolean; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: { clubId: string; pipeline: Pipeline }; onData?: (clubId: string, data: Pipeline | null) => void }) {
+export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, rejectedOnly = false, initialData, onData, validatedInitialData = false }: { validatedInitialData?: boolean; scoped?: boolean; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: { clubId: string; pipeline: Pipeline }; onData?: (clubId: string, data: Pipeline | null) => void }) {
   const { user, activeClubId, selectClub } = useAuth()
   const demo = useDemoMode()
   const { leaderFocus } = useApplicationState()
@@ -115,7 +115,7 @@ export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, rej
           </select>
         )}
       </div>}
-      <ClubWorkspace key={club.clubId} membership={club} decisionsOnly={decisionsOnly} rejectedOnly={rejectedOnly} initialData={initialData?.clubId === club.clubId ? initialData.pipeline : null} onData={data => onData?.(club.clubId, data)} />
+      <ClubWorkspace key={club.clubId} membership={club} decisionsOnly={decisionsOnly} rejectedOnly={rejectedOnly} validatedInitialData={validatedInitialData} initialData={initialData?.clubId === club.clubId ? initialData.pipeline : null} onData={data => onData?.(club.clubId, data)} />
       {demo.isDemoEnabled && !decisionsOnly && <details className="text-xs text-muted-foreground"><summary className="min-h-11 cursor-pointer py-3">Sample recruiting target</summary><DemoRoundTarget /></details>}
     </div>
   )
@@ -129,7 +129,7 @@ export function ApplicantReviewPreview({ clubId, applicationId, onClose, onChang
   return <ClubWorkspace key={applicationId} membership={membership} preview={{ applicationId, onClose, onChanged, onNext }} />
 }
 
-function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false, initialData = null, onData, preview }: { preview?: { applicationId: string; onClose: () => void; onChanged: () => void; onNext?: () => void }; membership: ExtendedMembership; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: Pipeline | null; onData?: (data: Pipeline | null) => void }) {
+function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false, initialData = null, onData, preview, validatedInitialData = false }: { validatedInitialData?: boolean; preview?: { applicationId: string; onClose: () => void; onChanged: () => void; onNext?: () => void }; membership: ExtendedMembership; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: Pipeline | null; onData?: (data: Pipeline | null) => void }) {
   const previewId = preview?.applicationId
   const demo = useDemoMode()
   const { leaderFocus, clearLeaderFocus } = useApplicationState()
@@ -167,6 +167,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   const [boardMove, setBoardMove] = useState<{ id: string; lane: ApplicantLane } | null>(null)
   const [boardError, setBoardError] = useState("")
   const mutating = useRef(false)
+  const firstRead = useRef(validatedInitialData && !!initialData)
   const retained = useRef(data), publish = useRef(onData)
   retained.current = data
   publish.current = onData
@@ -174,6 +175,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   const heading = useRef<HTMLHeadingElement>(null)
   const search = useRef<HTMLInputElement>(null)
   useEffect(() => {
+    if (firstRead.current) { firstRead.current = false; return }
     let current = true
     setLoading(!retained.current)
     setError("")

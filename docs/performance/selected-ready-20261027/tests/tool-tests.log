@@ -1,0 +1,12 @@
+✔ selected-startup comparison accepts only declared profiles and preserves existing evidence (8.507292ms)
+✔ workspace diagnostics expose fixed cause labels and no arbitrary identifiers, filters or values (2.067291ms)
+✔ diagnostics do not buffer events or require a browser (0.826959ms)
+✔ a failing diagnostic observer cannot block authentication or read ownership (1.285667ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 396.59775
