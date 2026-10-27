@@ -1,0 +1,46 @@
+{
+  "scope": "Nine client application files, selected public module/private data overlap and Auth epoch fences only.",
+  "securityReview": {
+    "serverActionsApisAuthSqlAndSchemasUnchanged": true,
+    "currentMainUiPreserved": true,
+    "liveRemoteAndSessionValidationUnchanged": true,
+    "successfulAuthorizationCacheAcrossRequests": false,
+    "freshVisitDoesNotRevealRetainedProtectedData": true,
+    "demoUsesExistingLocalPath": true,
+    "independentReadConcurrency": "One selected guarded resource plus public module import; existing bounded GET dispatch unchanged."
+  },
+  "reactReview": {
+    "hooksUnconditional": true,
+    "effectDependenciesComplete": true,
+    "lateResultsAndAuthEpochFenced": true,
+    "publicDynamicImportsStaticallyAnalyzable": true,
+    "draftAndLiveUpdateCodePreserved": true,
+    "typecheck": "passed",
+    "lint": "0 errors, 22 pre-existing warnings"
+  },
+  "tests": {
+    "normalVerifiedSignupAuthTotp": 38,
+    "selectedRealAuthBrowserSelection": 45,
+    "nativeSecurityConcurrency": 3,
+    "focusedInitial": {
+      "pass": 21,
+      "fail": 1,
+      "reason": "Old retained-directory unit contract replaced with fresh selected-visit contract; dedicated scope/late-result tests cover it."
+    },
+    "focusedFinal": {
+      "pass": 24,
+      "fail": 0
+    },
+    "toolDiagnostics": {
+      "pass": 4,
+      "fail": 0
+    },
+    "loadingHarnessRepair": {
+      "pass": 7,
+      "fail": 0,
+      "change": "Explicit no-op mock for new diagnostic module; no assertion removed."
+    }
+  },
+  "ordinaryStatus": "Full rerun passed: 1367 passed, 44 gated skips, 0 failed/cancelled, 1411 total.",
+  "completeBeforeMeasurementsAt": "2026-10-27T17:02:48.886410+00:00"
+}

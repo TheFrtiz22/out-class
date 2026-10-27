@@ -1,0 +1,22 @@
+{
+  "measuredOutcomes": 320,
+  "usefulContentFailures": 0,
+  "pageErrors": 0,
+  "requestSnapshots": {
+    "source": {
+      "requestSnapshots": 18599,
+      "httpStatusAtLeast400": 0,
+      "failedSnapshots": 0,
+      "pendingSnapshots": 320,
+      "unknownBodySnapshots": 320
+    },
+    "click": {
+      "requestSnapshots": 670,
+      "httpStatusAtLeast400": 0,
+      "failedSnapshots": 0,
+      "pendingSnapshots": 0,
+      "unknownBodySnapshots": 0
+    }
+  },
+  "note": "Stage snapshots may overlap background work; pending SSE and unavailable bodies remain visible. Excluded attempts are separate in ATTEMPTS.json."
+}

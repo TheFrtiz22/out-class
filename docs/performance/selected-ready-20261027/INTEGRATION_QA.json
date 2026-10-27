@@ -1,0 +1,32 @@
+{
+  "at": "2026-10-27T18:42:38.423020+00:00",
+  "mainPreserved": "f343d6a67896589bf4ee086480b4d98e0bebfa78",
+  "applicationPatchUnchanged": true,
+  "sourceFiles": 919,
+  "ordinary": {
+    "passed": 1390,
+    "skipped": 44,
+    "failed": 0,
+    "total": 1434
+  },
+  "exactCiEntrypoint": {
+    "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --keep",
+    "authSettingsRuntimePassed": 50,
+    "navigationPassed": 16,
+    "failed": 0,
+    "skipped": 0
+  },
+  "nativeSecurityConcurrency": {
+    "passed": 3,
+    "failed": 0
+  },
+  "build": "passed",
+  "types": "passed",
+  "lint": {
+    "errors": 0,
+    "warnings": 21
+  },
+  "newPerformanceMeasurementClaim": false,
+  "earlierMeasuredComparisonBase": "06d3e93110d09fc564de7e28cf7dc3a71f081fe4",
+  "hostedChecks": "Pending PR creation/verification; main merge remains gated."
+}

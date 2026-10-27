@@ -70,7 +70,7 @@ const statusLabel = (status: string) =>
     : status.charAt(0) + status.slice(1).toLowerCase();
 
 /** Extends the existing club Members route; all authorization comes from the shared layer. */
-export function OrganizationMemberManagement({ clubId, initialData = null, onData }: { clubId: string; initialData?: Directory | null; onData?: (data: Directory | null) => void }) {
+export function OrganizationMemberManagement({ clubId, initialData = null, onData, validatedInitialData = false }: { clubId: string; validatedInitialData?: boolean; initialData?: Directory | null; onData?: (data: Directory | null) => void }) {
   const { refreshUser } = useAuth();
   const [data, setData] = useState<Directory | null>(initialData);
   const [error, setError] = useState(""),
@@ -99,11 +99,13 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
     [bulkPermissions, setBulkPermissions] = useState<string[]>([]);
   const working = useRef(false),
     trigger = useRef<HTMLElement | null>(null);
+  const firstRead = useRef(validatedInitialData && !!initialData);
   const retained = useRef(data), publish = useRef(onData);
   retained.current = data;
   publish.current = onData;
   useEffect(() => { publish.current?.(data); }, [data]);
   useEffect(() => {
+    if (firstRead.current) { firstRead.current = false; return; }
     let current = true;
     setLoading(!retained.current);
     setError("");

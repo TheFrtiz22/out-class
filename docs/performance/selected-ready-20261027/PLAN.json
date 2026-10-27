@@ -1,0 +1,56 @@
+{
+  "base": "06d3e93110d09fc564de7e28cf7dc3a71f081fe4",
+  "scope": "Port only selected-workspace startup and synchronous Auth epoch fences to current main. Full original pipeline read, UI, server/Auth/database contracts remain; no Phase3\u201315 pagination/projection/Settings experiment.",
+  "expectedApplicationFiles": [
+    "components/club-announcements.tsx",
+    "components/club-members.tsx",
+    "components/club-tasks.tsx",
+    "components/club-workspace.tsx",
+    "components/organization-member-management.tsx",
+    "components/selected-club-workspace.tsx",
+    "components/views/leader-dashboard/live-leader-workspace.tsx",
+    "contexts/auth-context.tsx",
+    "lib/workspace-read-diagnostics.ts"
+  ],
+  "profiles": [
+    "local",
+    "constrained"
+  ],
+  "order": [
+    "B",
+    "A",
+    "A",
+    "B"
+  ],
+  "routes": [
+    "overview\u2192members",
+    "recruiting\u2192applicants",
+    "meetings\u2192tasks",
+    "tasks\u2192announcements"
+  ],
+  "conditions": [
+    "cold",
+    "warm"
+  ],
+  "fixtureApplicants": 100,
+  "warmupsPerBlockGroup": 1,
+  "measuredPerBlockGroup": 5,
+  "measuredPerVariantPathConditionProfile": 10,
+  "plannedMeasured": 320,
+  "plannedWarmups": 64,
+  "harnessFlags": [
+    "--phase2",
+    "--cold-warm",
+    "--record-failures",
+    "--source-diagnostics",
+    "--font-diagnostics"
+  ],
+  "acceptance": [
+    "Full relevant functional/security/draft tests, source drift checks and all planned outcomes must pass.",
+    "Cold selected reads must start alongside module loading and show meaningful navigation improvement; warm fresh-validation cost is reported as the required security tradeoff.",
+    "No material unexplained tail regression beyond that explicit fresh-validation contract. Do not replace slow rows; failed host profiles are excluded whole with evidence."
+  ],
+  "controls": "Frozen source/build/fixture/plan/collectors, BA then AB per profile; host and actual sleep audit; no builds/tests during collection; no synthetic loading/application readiness changes.",
+  "security": "Remote identity + live session/revocation/account/membership/capabilities/suspension/support/anonymous/voting remain unchanged. Private no-store/Cookie transport and Demo isolation preserved. Client epochs never authorize reads. New visits must validate before content is visible.",
+  "publication": "User authorizes ready changes on main after validation. Keep rejected/unresolved app changes separate; no production configuration/DB/schema/index/region changes."
+}

@@ -21,14 +21,15 @@ import { saveCommunicationSchedule } from "@/actions/communication-schedules";
 import { ScheduledCommunications, ScheduleFields, initialTiming, type ScheduledItem } from "@/components/communication-schedules";
 type Item = Awaited<ReturnType<typeof getClubAnnouncements>>[number];
 
-export function ClubAnnouncements({ clubId }: { clubId: string }) {
+export function ClubAnnouncements({ clubId, initialItems }: { clubId: string; initialItems?: Item[] }) {
  const demo = useDemoMode();
  const [sendMode,setSendMode]=useState<"NOW"|"SCHEDULE">("NOW");
  const [timing,setTiming]=useState(initialTiming);
  const [editing,setEditing]=useState<ScheduledItem|null>(null);
  const [scheduleRefresh,setScheduleRefresh]=useState(0);
  const requestKey = useRef<string | null>(null);
- const [items, setItems] = useState<Item[]>([]);
+ const [items, setItems] = useState<Item[]>(initialItems ?? []);
+ const firstRead = useRef(initialItems !== undefined);
  const [busy, setBusy] = useState(false);
  const [compose, setCompose] = useState(false);
  const [confirmPublish, setConfirmPublish] = useState(false);
@@ -46,7 +47,7 @@ export function ClubAnnouncements({ clubId }: { clubId: string }) {
   try { setItems(await getClubAnnouncements(clubId)); }
   catch (e) { setError(e instanceof Error ? e.message : "Could not load announcements."); }
  }, [clubId, demo.isDemoEnabled]);
- useEffect(() => { void reload(); }, [reload]);
+ useEffect(() => { if (firstRead.current) { firstRead.current = false; return; } void reload(); }, [reload]);
  const draftSave = useEditorDraft({
   scope: { kind: "announcement", clubId, resourceId: editing?.id ?? "new" },
   value: { title, body, audience, audienceSpec, sendMode, timing },

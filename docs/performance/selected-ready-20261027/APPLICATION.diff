@@ -1,0 +1,226 @@
+diff --git a/components/club-announcements.tsx b/components/club-announcements.tsx
+index ff892bb..6544316 100644
+--- a/components/club-announcements.tsx
++++ b/components/club-announcements.tsx
+@@ -24 +24 @@ type Item = Awaited<ReturnType<typeof getClubAnnouncements>>[number];
+-export function ClubAnnouncements({ clubId }: { clubId: string }) {
++export function ClubAnnouncements({ clubId, initialItems }: { clubId: string; initialItems?: Item[] }) {
+@@ -31 +31,2 @@ export function ClubAnnouncements({ clubId }: { clubId: string }) {
+- const [items, setItems] = useState<Item[]>([]);
++ const [items, setItems] = useState<Item[]>(initialItems ?? []);
++ const firstRead = useRef(initialItems !== undefined);
+@@ -49 +50 @@ export function ClubAnnouncements({ clubId }: { clubId: string }) {
+- useEffect(() => { void reload(); }, [reload]);
++ useEffect(() => { if (firstRead.current) { firstRead.current = false; return; } void reload(); }, [reload]);
+diff --git a/components/club-members.tsx b/components/club-members.tsx
+index 2659e67..d2df025 100644
+--- a/components/club-members.tsx
++++ b/components/club-members.tsx
+@@ -20 +20 @@ type Directory = Awaited<ReturnType<typeof import("@/actions/organization-member
+-export function ClubMembers({ clubId, initialDirectory, onDirectory }: { clubId: string; initialDirectory?: Directory | null; onDirectory?: (data: Directory | null) => void }) {
++export function ClubMembers({ clubId, initialDirectory, onDirectory, validatedInitialData = false }: { clubId: string; validatedInitialData?: boolean; initialDirectory?: Directory | null; onDirectory?: (data: Directory | null) => void }) {
+@@ -49 +49 @@ export function ClubMembers({ clubId, initialDirectory, onDirectory }: { clubId:
+-  if (demo.ready && !demo.isDemoEnabled) return <OrganizationMemberManagement key={clubId} clubId={clubId} initialData={initialDirectory} onData={onDirectory} />
++  if (demo.ready && !demo.isDemoEnabled) return <OrganizationMemberManagement key={clubId} clubId={clubId} initialData={initialDirectory} onData={onDirectory} validatedInitialData={validatedInitialData} />
+diff --git a/components/club-tasks.tsx b/components/club-tasks.tsx
+index 6c46eda..79f723e 100644
+--- a/components/club-tasks.tsx
++++ b/components/club-tasks.tsx
+@@ -26 +26 @@ function resources(task:Task){return taskInputSchema.shape.resources.safeParse(t
+-export function ClubTasks({clubId,embedded=false,initialScope="team",personalOnly=false}:{clubId:string;embedded?:boolean;personalOnly?:boolean;initialScope?:string}) {
++export function ClubTasks({clubId,embedded=false,initialScope="team",personalOnly=false,initialData}:{clubId:string;initialData?:Workspace;embedded?:boolean;personalOnly?:boolean;initialScope?:string}) {
+@@ -28 +28,2 @@ export function ClubTasks({clubId,embedded=false,initialScope="team",personalOnl
+-  const [workspaceData,setWorkspace]=useState<Workspace|null>(null),[error,setError]=useState(""),[busy,setBusy]=useState(false),[refresh,setRefresh]=useState(0),[loaded,setLoaded]=useState(false),[scope,setScope]=useState(initialScope),[filter,setFilter]=useState("open"),[query,setQuery]=useState(""),[activeId,setActive]=useState<string|null>(null),[dirty,setDirty]=useState(false)
++  const [workspaceData,setWorkspace]=useState<Workspace|null>(initialData??null),[error,setError]=useState(""),[busy,setBusy]=useState(false),[refresh,setRefresh]=useState(0),[loaded,setLoaded]=useState(!!initialData),[scope,setScope]=useState(initialScope),[filter,setFilter]=useState("open"),[query,setQuery]=useState(""),[activeId,setActive]=useState<string|null>(null),[dirty,setDirty]=useState(false)
++  const firstRead=useRef(!!initialData)
+@@ -31 +32 @@ export function ClubTasks({clubId,embedded=false,initialScope="team",personalOnl
+-  useEffect(()=>{if(!demo.ready||loading)return;let current=true;setError("");setLoaded(false);getTaskWorkspace(clubId).then(data=>{if(current)setWorkspace(data)}).catch(error=>{if(current){setWorkspace(null);setError(error instanceof Error?error.message:"Could not load tasks.")}}).finally(()=>{if(current)setLoaded(true)});return()=>{current=false}},[clubId,refresh,demo.ready,demo.isDemoEnabled,loading])
++  useEffect(()=>{if(!demo.ready||loading)return;if(firstRead.current){firstRead.current=false;return;}let current=true;setError("");setLoaded(false);getTaskWorkspace(clubId).then(data=>{if(current)setWorkspace(data)}).catch(error=>{if(current){setWorkspace(null);setError(error instanceof Error?error.message:"Could not load tasks.")}}).finally(()=>{if(current)setLoaded(true)});return()=>{current=false}},[clubId,refresh,demo.ready,demo.isDemoEnabled,loading])
+diff --git a/components/club-workspace.tsx b/components/club-workspace.tsx
+index 00264a4..d4300f6 100644
+--- a/components/club-workspace.tsx
++++ b/components/club-workspace.tsx
+@@ -47,0 +48 @@ import { WorkspaceLoading } from "@/components/workspace-loading";
++import { SelectedClubWorkspace } from "@/components/selected-club-workspace";
+@@ -50,2 +50,0 @@ type Overview = Awaited<ReturnType<typeof getClubWorkspaceOverview>>;
+-type Directory = Awaited<ReturnType<typeof import("@/actions/organization-members").getOrganizationMemberManagement>>;
+-type Pipeline = Awaited<ReturnType<typeof import("@/lib/workspace-api").getClubPipeline>>;
+@@ -120,10 +118,0 @@ export function ClubWorkspace({
+-  const [resources, setResources] = useState<{ scope: string; members: Directory | null; pipeline: Pipeline | null; membersAt: number; pipelineAt: number }>({ scope, members: null, pipeline: null, membersAt: 0, pipelineAt: 0 });
+-  const saved = resources.scope === scope ? { ...resources, members: Date.now() - resources.membersAt < 30000 ? resources.members : null, pipeline: Date.now() - resources.pipelineAt < 30000 ? resources.pipeline : null } : null;
+-  function publishMembers(members: Directory | null) {
+-    if (owner.current !== scope) return;
+-    setResources(previous => previous.scope === scope && previous.members === members ? previous : { scope, members, membersAt: Date.now(), pipeline: previous.scope === scope ? previous.pipeline : null, pipelineAt: previous.scope === scope ? previous.pipelineAt : 0 });
+-  }
+-  function publishPipeline(id: string, pipeline: Pipeline | null) {
+-    if (owner.current !== scope || id !== clubId) return;
+-    setResources(previous => previous.scope === scope && previous.pipeline === pipeline ? previous : { scope, pipeline, pipelineAt: Date.now(), members: previous.scope === scope ? previous.members : null, membersAt: previous.scope === scope ? previous.membersAt : 0 });
+-  }
+@@ -205 +194 @@ export function ClubWorkspace({
+-            {section === "tasks" && <ClubTasks clubId={clubId} embedded personalOnly={!manager} initialScope={taskView === "mine" ? "mine" : manager ? "team" : "mine"} />}
++            {section === "tasks" && (demo.isDemoEnabled ? <ClubTasks clubId={clubId} embedded personalOnly={!manager} initialScope={taskView === "mine" ? "mine" : manager ? "team" : "mine"} /> : <SelectedClubWorkspace kind="tasks" clubId={clubId} privacyScope={scope} personalOnly={!manager} initialScope={taskView === "mine" ? "mine" : manager ? "team" : "mine"} />)}
+@@ -207 +196 @@ export function ClubWorkspace({
+-            {section === "members" && <ClubMembers key={clubId} clubId={clubId} initialDirectory={saved?.members} onDirectory={publishMembers} />}
++            {section === "members" && (demo.isDemoEnabled ? <ClubMembers key={clubId} clubId={clubId} /> : <SelectedClubWorkspace kind="members" clubId={clubId} privacyScope={scope} />)}
+@@ -209,2 +198,2 @@ export function ClubWorkspace({
+-            {section === "announcements" && <ClubAnnouncements key={clubId} clubId={clubId} />}
+-            {section === "recruitment" && (active === "resumes" || active === "reviews" ? <ApplicantInterviewReviews clubId={clubId} tool={active} /> : active === "scheduled-decisions" ? <DecisionSchedules clubId={clubId} /> : active === "overview" && current ? <RecruitingOverview data={current} refreshing={overviewPending} onChanged={() => setRetry(n => n + 1)} /> : active === "interviews" ? <div className="space-y-3">{(hasPermission(membership, "interviews.manage") || interviewCapabilities(membership).editKit || interviewCapabilities(membership).participate || interviewCapabilities(membership).readClosing) && <RecruitmentWorkspace clubId={clubId} member={membership} onInterview={() => setInterviewMode(true)} initialTool="kits" />}</div> : <><p className="mb-5 text-sm text-muted-foreground">{active === "decisions" ? "Publish final decisions with a formal letter and inbox notification. Decision-availability email follows the student’s application-email preferences." : active === "rejected" ? "Review retained rejected applications and their history. Use explicit reconsideration to return an eligible application to review." : "Review submitted applications and move candidates through your club’s rounds."}</p><LiveLeaderWorkspace key={privacyRevision} scoped rejectedOnly={active === "rejected"} decisionsOnly={active === "decisions"} initialData={saved?.pipeline ? { clubId, pipeline: saved.pipeline } : undefined} onData={publishPipeline} /></>)}
++            {section === "announcements" && (demo.isDemoEnabled ? <ClubAnnouncements key={clubId} clubId={clubId} /> : <SelectedClubWorkspace kind="announcements" clubId={clubId} privacyScope={scope} />)}
++            {section === "recruitment" && (active === "resumes" || active === "reviews" ? <ApplicantInterviewReviews clubId={clubId} tool={active} /> : active === "scheduled-decisions" ? <DecisionSchedules clubId={clubId} /> : active === "overview" && current ? <RecruitingOverview data={current} refreshing={overviewPending} onChanged={() => setRetry(n => n + 1)} /> : active === "interviews" ? <div className="space-y-3">{(hasPermission(membership, "interviews.manage") || interviewCapabilities(membership).editKit || interviewCapabilities(membership).participate || interviewCapabilities(membership).readClosing) && <RecruitmentWorkspace clubId={clubId} member={membership} onInterview={() => setInterviewMode(true)} initialTool="kits" />}</div> : <><p className="mb-5 text-sm text-muted-foreground">{active === "decisions" ? "Publish final decisions with a formal letter and inbox notification. Decision-availability email follows the student’s application-email preferences." : active === "rejected" ? "Review retained rejected applications and their history. Use explicit reconsideration to return an eligible application to review." : "Review submitted applications and move candidates through your club’s rounds."}</p>{(demo.isDemoEnabled ? <LiveLeaderWorkspace key={privacyRevision} scoped rejectedOnly={active === "rejected"} decisionsOnly={active === "decisions"} /> : <SelectedClubWorkspace kind="pipeline" clubId={clubId} privacyScope={scope} rejectedOnly={active === "rejected"} decisionsOnly={active === "decisions"} />)}</>)}
+diff --git a/components/organization-member-management.tsx b/components/organization-member-management.tsx
+index 19648c6..4e07930 100644
+--- a/components/organization-member-management.tsx
++++ b/components/organization-member-management.tsx
+@@ -73 +73 @@ const statusLabel = (status: string) =>
+-export function OrganizationMemberManagement({ clubId, initialData = null, onData }: { clubId: string; initialData?: Directory | null; onData?: (data: Directory | null) => void }) {
++export function OrganizationMemberManagement({ clubId, initialData = null, onData, validatedInitialData = false }: { clubId: string; validatedInitialData?: boolean; initialData?: Directory | null; onData?: (data: Directory | null) => void }) {
+@@ -101,0 +102 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
++  const firstRead = useRef(validatedInitialData && !!initialData);
+@@ -106,0 +108 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
++    if (firstRead.current) { firstRead.current = false; return; }
+diff --git a/components/selected-club-workspace.tsx b/components/selected-club-workspace.tsx
+new file mode 100644
+index 0000000..fa2d454
+--- /dev/null
++++ b/components/selected-club-workspace.tsx
+@@ -0,0 +1,81 @@
++"use client"
++
++import { useEffect, useMemo, useRef, useState } from "react"
++import { useAuth } from "@/contexts/auth-context"
++import { useDemoMode } from "@/contexts/demo-context"
++import { recordWorkspaceRead } from "@/lib/workspace-read-diagnostics"
++import { readWorkspace } from "@/lib/workspace-read"
++import { Button } from "@/components/ui/button"
++
++export type SelectedClubWorkspaceKind = "members" | "pipeline" | "tasks" | "announcements"
++
++// Only the selected tab starts work. Code and its original guarded GET overlap;
++// neither module loading nor a previous tab's data can authorize this visit.
++export async function loadSelectedClubWorkspace(kind: SelectedClubWorkspaceKind, clubId: string) {
++  switch (kind) {
++    case "members": {
++      const [module, data] = await Promise.all([
++        import("@/components/club-members"),
++        readWorkspace<Awaited<ReturnType<typeof import("@/actions/organization-members").getOrganizationMemberManagement>>>("members", [clubId]),
++      ])
++      return { kind, module, data } as const
++    }
++    case "pipeline": {
++      const [module, data] = await Promise.all([
++        import("@/components/views/leader-dashboard/live-leader-workspace"),
++        readWorkspace<Awaited<ReturnType<typeof import("@/actions/crm").getClubPipeline>>>("pipeline", [clubId, { genderCounts: false }]),
++      ])
++      return { kind, module, data } as const
++    }
++    case "tasks": {
++      const [module, data] = await Promise.all([
++        import("@/components/club-tasks"),
++        readWorkspace<Awaited<ReturnType<typeof import("@/actions/tasks").getTaskWorkspace>>>("tasks", [clubId]),
++      ])
++      return { kind, module, data } as const
++    }
++    case "announcements": {
++      const [module, data] = await Promise.all([
++        import("@/components/club-announcements"),
++        readWorkspace<Awaited<ReturnType<typeof import("@/actions/communications").getClubAnnouncements>>>("announcements", [clubId]),
++      ])
++      return { kind, module, data } as const
++    }
++  }
++}
++
++type Loaded = Awaited<ReturnType<typeof loadSelectedClubWorkspace>>
++export function SelectedClubWorkspace({ kind, clubId, privacyScope, personalOnly, initialScope, decisionsOnly, rejectedOnly }: {
++  kind: SelectedClubWorkspaceKind; clubId: string; privacyScope: string;
++  personalOnly?: boolean; initialScope?: string; decisionsOnly?: boolean; rejectedOnly?: boolean;
++}) {
++  const { user, readAuthority, isReadAuthorityCurrent, isImpersonating, loading } = useAuth()
++  const demo = useDemoMode()
++  const [retry, setRetry] = useState(0)
++  // Same full identity/session ownership as interview reads. This is a mounted
++  // visit, not a cache: leaving or changing authority always starts a new GET.
++  const mode = rejectedOnly ? "rejected" : decisionsOnly ? "decisions" : "applicants"
++  const owner = useMemo(() => ({ user, readAuthority, isImpersonating, clubId, kind, privacyScope, retry, mode, demoReady: demo.ready, demoEnabled: demo.isDemoEnabled }), [user, readAuthority, isImpersonating, clubId, kind, privacyScope, retry, mode, demo.ready, demo.isDemoEnabled])
++  const [result, setResult] = useState<{ owner: object; value?: Loaded; failed?: boolean } | null>(null)
++  const lastRead = useRef<typeof owner | null>(null)
++  useEffect(() => {
++    if (!demo.ready || demo.isDemoEnabled || loading || !user || !isReadAuthorityCurrent(readAuthority)) return
++    recordWorkspaceRead("selected", lastRead.current ? (Object.keys(owner) as (keyof typeof owner)[]).filter(key => lastRead.current![key] !== owner[key]) : ["mount"])
++    lastRead.current = owner
++    let current = true
++    void loadSelectedClubWorkspace(kind, clubId).then(value => {
++      if (current && isReadAuthorityCurrent(readAuthority)) setResult({ owner, value })
++    }).catch(() => { if (current && isReadAuthorityCurrent(readAuthority)) setResult({ owner, failed: true }) })
++    return () => { current = false }
++  }, [kind, clubId, mode, owner, demo.ready, demo.isDemoEnabled, loading, user, readAuthority, isReadAuthorityCurrent])
++  const current = demo.ready && !demo.isDemoEnabled && !loading && isReadAuthorityCurrent(readAuthority) && result?.owner === owner ? result : null
++  if (current?.failed) return <div role="alert" className="space-y-3"><p>Could not load this workspace. Your access may have changed.</p><Button variant="outline" onClick={() => setRetry(value => value + 1)}>Retry workspace</Button></div>
++  const entry = current?.value
++  if (!entry) return <p role="status">Loading workspace…</p>
++  switch (entry.kind) {
++    case "members": { const View = entry.module.ClubMembers; return <View clubId={clubId} initialDirectory={entry.data} validatedInitialData /> }
++    case "pipeline": { const View = entry.module.LiveLeaderWorkspace; return <View scoped decisionsOnly={decisionsOnly} rejectedOnly={rejectedOnly} initialData={{ clubId, pipeline: entry.data }} validatedInitialData /> }
++    case "tasks": { const View = entry.module.ClubTasks; return <View clubId={clubId} embedded personalOnly={personalOnly} initialScope={initialScope} initialData={entry.data} /> }
++    case "announcements": { const View = entry.module.ClubAnnouncements; return <View clubId={clubId} initialItems={entry.data} /> }
++  }
++}
+diff --git a/components/views/leader-dashboard/live-leader-workspace.tsx b/components/views/leader-dashboard/live-leader-workspace.tsx
+index 6ed3e78..50e8f66 100644
+--- a/components/views/leader-dashboard/live-leader-workspace.tsx
++++ b/components/views/leader-dashboard/live-leader-workspace.tsx
+@@ -72 +72 @@ const average = (app: Candidate) =>
+-export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, rejectedOnly = false, initialData, onData }: { scoped?: boolean; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: { clubId: string; pipeline: Pipeline }; onData?: (clubId: string, data: Pipeline | null) => void }) {
++export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, rejectedOnly = false, initialData, onData, validatedInitialData = false }: { validatedInitialData?: boolean; scoped?: boolean; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: { clubId: string; pipeline: Pipeline }; onData?: (clubId: string, data: Pipeline | null) => void }) {
+@@ -118 +118 @@ export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, rej
+-      <ClubWorkspace key={club.clubId} membership={club} decisionsOnly={decisionsOnly} rejectedOnly={rejectedOnly} initialData={initialData?.clubId === club.clubId ? initialData.pipeline : null} onData={data => onData?.(club.clubId, data)} />
++      <ClubWorkspace key={club.clubId} membership={club} decisionsOnly={decisionsOnly} rejectedOnly={rejectedOnly} validatedInitialData={validatedInitialData} initialData={initialData?.clubId === club.clubId ? initialData.pipeline : null} onData={data => onData?.(club.clubId, data)} />
+@@ -132 +132 @@ export function ApplicantReviewPreview({ clubId, applicationId, onClose, onChang
+-function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false, initialData = null, onData, preview }: { preview?: { applicationId: string; onClose: () => void; onChanged: () => void; onNext?: () => void }; membership: ExtendedMembership; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: Pipeline | null; onData?: (data: Pipeline | null) => void }) {
++function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false, initialData = null, onData, preview, validatedInitialData = false }: { validatedInitialData?: boolean; preview?: { applicationId: string; onClose: () => void; onChanged: () => void; onNext?: () => void }; membership: ExtendedMembership; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: Pipeline | null; onData?: (data: Pipeline | null) => void }) {
+@@ -169,0 +170 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
++  const firstRead = useRef(validatedInitialData && !!initialData)
+@@ -176,0 +178 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
++    if (firstRead.current) { firstRead.current = false; return }
+diff --git a/contexts/auth-context.tsx b/contexts/auth-context.tsx
+index 48c3514..991a6ce 100644
+--- a/contexts/auth-context.tsx
++++ b/contexts/auth-context.tsx
+@@ -1 +1,2 @@
+-"use client";
++"use client"
++import { recordWorkspaceRead } from "@/lib/workspace-read-diagnostics";
+@@ -23,0 +25,2 @@ interface AuthContextType {
++  /** Immediate local epoch fence while an Auth notification awaits React commit. */
++  isReadAuthorityCurrent: (authority: object | undefined) => boolean;
+@@ -43,0 +47,2 @@ export function AuthProvider({ children, initialUser = null, isImpersonating = f
++  const currentReadAuthority = React.useRef(readAuthority);
++  const isReadAuthorityCurrent = React.useCallback((authority: object | undefined) => currentReadAuthority.current === authority, []);
+@@ -49 +54,8 @@ export function AuthProvider({ children, initialUser = null, isImpersonating = f
+-      if (token !== undefined ? next !== token : event !== "INITIAL_SESSION") setReadAuthority({});
++      if (token !== undefined ? next !== token : event !== "INITIAL_SESSION") {
++        // Publish the fence before scheduling React's context update. A newly
++        // mounted view must not dispatch with the previous rendered epoch.
++        const authority = {};
++        currentReadAuthority.current = authority;
++        recordWorkspaceRead("auth", [event.toLowerCase()]);
++        setReadAuthority(authority);
++      }
+@@ -104 +116 @@ export function AuthProvider({ children, initialUser = null, isImpersonating = f
+-    <AuthContext.Provider value={{ isImpersonating, readAuthority, user: identity, activeClubId, selectClub, loading: isDemoEnabled ? !state : bootstrapChanged ? !initialUser && hasSession : loading, sessionPending: hasSession && !isDemoEnabled && loading && !identity, mutateUser, refreshUser: isDemoEnabled ? async () => {} : fetchUser }}>
++    <AuthContext.Provider value={{ isImpersonating, readAuthority, isReadAuthorityCurrent, user: identity, activeClubId, selectClub, loading: isDemoEnabled ? !state : bootstrapChanged ? !initialUser && hasSession : loading, sessionPending: hasSession && !isDemoEnabled && loading && !identity, mutateUser, refreshUser: isDemoEnabled ? async () => {} : fetchUser }}>
+diff --git a/lib/workspace-read-diagnostics.ts b/lib/workspace-read-diagnostics.ts
+new file mode 100644
+index 0000000..5d84473
+--- /dev/null
++++ b/lib/workspace-read-diagnostics.ts
+@@ -0,0 +1,9 @@
++// Local observers receive only fixed event labels, never identities, tokens,
++// cookies, filter values, request arguments or authorization results. No buffer.
++export const workspaceReadCauses = ["mount", "dispatch", "user", "readAuthority", "isImpersonating", "clubId", "kind", "privacyScope", "retry", "mode", "demoReady", "demoEnabled", "initial_session", "signed_in", "signed_out", "token_refreshed", "user_updated", "mfa_challenge_verified", "password_recovery"] as const
++export function recordWorkspaceRead(kind: "auth" | "selected" | "page", causes: readonly string[]) {
++  if (typeof window === "undefined" || typeof CustomEvent === "undefined" || typeof window.dispatchEvent !== "function") return
++  if (!["auth", "selected", "page"].includes(kind)) return
++  const safe = causes.filter(cause => workspaceReadCauses.includes(cause as typeof workspaceReadCauses[number]))
++  try { window.dispatchEvent(new CustomEvent("outclass:workspace-read", { detail: { kind, causes: safe } })) } catch { /* Diagnostics must never block an authority change or a read. */ }
++}

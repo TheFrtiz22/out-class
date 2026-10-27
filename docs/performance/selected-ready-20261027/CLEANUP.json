@@ -1,0 +1,14 @@
+{
+  "completed": true,
+  "at": "2026-10-27T18:31:45.286372+00:00",
+  "ownedAppContainersVolumesRemoved": true,
+  "privateCredentialsAndSnapshotsRemoved": true,
+  "priorInactiveFixtureRestored": true,
+  "unrelatedContainerStatesUnchanged": true,
+  "unrelatedContainers": 21,
+  "originalCheckoutUnchanged": true,
+  "localMainUnchangedBeforeAuthorizedIntegration": "06d3e93110d09fc564de7e28cf7dc3a71f081fe4",
+  "retainedCandidateBuildId": "K2lMsjNFdigRZqc5-mLIv",
+  "applicationFilesVerified": 917,
+  "power": "Temporary awake assertions only, no persistent setting changes."
+}

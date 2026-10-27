@@ -1,0 +1,25 @@
+overview → members cold 1/2: 409.1 ms, 3 requests
+overview → members cold 2/2: 386.6 ms, 2 requests
+overview → members warm 1/2: 30.8 ms, 1 requests
+overview → members warm 2/2: 33.2 ms, 1 requests
+recruiting → applicants cold 1/2: 632.9 ms, 5 requests
+recruiting → applicants cold 2/2: 639.6 ms, 6 requests
+recruiting → applicants warm 1/2: 102.7 ms, 1 requests
+recruiting → applicants warm 2/2: 99.9 ms, 1 requests
+meetings → tasks cold 1/2: 371.7 ms, 4 requests
+meetings → tasks cold 2/2: 378.6 ms, 3 requests
+meetings → tasks warm 1/2: 143.2 ms, 1 requests
+meetings → tasks warm 2/2: 153.8 ms, 1 requests
+tasks → announcements cold 1/2: 341.6 ms, 2 requests
+tasks → announcements cold 2/2: 347.7 ms, 2 requests
+tasks → announcements warm 1/2: 128.3 ms, 1 requests
+tasks → announcements warm 2/2: 135.7 ms, 1 requests
+overview → members cold 1/2: 290.7 ms, 2 requests
+RECORDED FAILURE overview → members cold 2/2 source
+UNAVAILABLE overview → members warm: browser.newContext: Target page, context or browser has been closed
+UNAVAILABLE recruiting → applicants cold: browser.newContext: Target page, context or browser has been closed
+UNAVAILABLE recruiting → applicants warm: browser.newContext: Target page, context or browser has been closed
+UNAVAILABLE meetings → tasks cold: browser.newContext: Target page, context or browser has been closed
+UNAVAILABLE meetings → tasks warm: browser.newContext: Target page, context or browser has been closed
+UNAVAILABLE tasks → announcements cold: browser.newContext: Target page, context or browser has been closed
+UNAVAILABLE tasks → announcements warm: browser.newContext: Target page, context or browser has been closed

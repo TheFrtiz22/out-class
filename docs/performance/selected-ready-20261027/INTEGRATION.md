@@ -1,0 +1,11 @@
+# Integration with subsequent main fixes
+
+PR #86 landed on main while the isolated comparison was running. The selected-workspace branch merges and preserves main `f343d6a67896589bf4ee086480b4d98e0bebfa78`, including its interview workflows, score-history visibility, editor-draft and notification fixes. The nine application files in the selected patch are unchanged. The patch comparison differs only in Git's object-ID abbreviation width; normalized patch text and all nine content hashes match the measured candidate.
+
+The preserved performance comparison remains **06d3e93 → its frozen selected-workspace candidate**, with 320 measured outcomes/64 warmups and the reported warm/source costs. No exact latency delta is claimed for this later combined build. Read [the full measured report](README.md), [comparison](COMPARISON.json), [decision/tradeoffs](DECISION.json) and [application patch](APPLICATION.diff). `INTEGRATED_SOURCE.json` identifies the separately built/tested combined source.
+
+The combined code passes **1,390 ordinary tests / 44 gated skips / 0 failures**, the exact CI invocation with **50 Auth/settings/runtime tests and 16 navigation checks**, **three native security/concurrency suites**, a production build, types and lint (**0 errors / 21 existing warnings**). Counts overlap with earlier runs and are not added. The new CI mode is tested positively end-to-end, not just by its negative guard cases. These checks occur after timing and never enter navigation percentiles.
+
+Initial fixture preparation stopped on the overly strict raw patch-text comparison, while the authorized disposable runner proceeded. That comparison is corrected using content hashes and normalized Git object IDs. The inactive disposable fixture was reprovisioned in place; no previous inactive credential-directory restoration is claimed for this integration pass. Only this reserved project's new credentials/containers/volumes are removed. The original checkout and 21 unrelated services remain unchanged.
+
+Hosted checks must pass for the final PR head before the user's authorized main integration. This document records the pre-publication verification; actual PR/main/deployment status is reported through the GitHub checks and release handoff separately. Broader pipeline/Settings experiments remain unmerged; historical identity waiting is unresolved.

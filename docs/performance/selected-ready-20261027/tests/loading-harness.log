@@ -1,0 +1,15 @@
+✔ anonymous entry never blocks on identity or sends a users/me request (36.44125ms)
+✔ known sessions stay pending only until the real identity request resolves (8.790291ms)
+✔ HTTP failures, lost connections, and invalid responses all release the entry loader (26.233416ms)
+✔ identity refreshes and club selection keep ready workspace content mounted (5.179916ms)
+✔ demo identity never waits for live authentication; support view retains its identity flag (8.466541ms)
+✔ session boundary swaps immediately and returns ready children without a wrapper (2.4005ms)
+✔ route loader uses the branded mark with a stable image box and accessible status (2.50025ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 280.015167

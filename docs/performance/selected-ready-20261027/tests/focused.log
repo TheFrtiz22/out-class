@@ -1,0 +1,32 @@
+✔ audit nearest-rank percentiles do not fabricate missing measurements (0.531416ms)
+✔ saved request names omit query arguments, tokens and fixture identifiers (0.125ms)
+✔ active workload output cannot replace the original audit or existing evidence (1.169042ms)
+✔ hydration fixture accepts only its separate local project and ports (1.5685ms)
+✔ Recruiting Interviews retains the scheduling tab when round navigation remounts it (88.35775ms)
+✔ read API preserves dates and user JSON, validates scope, and never caches private responses (129.023ms)
+✔ ordinary read fetches overlap rather than enter the Server Action queue (8.698333ms)
+✔ root bootstrap starts authenticated content without an identity HTTP waterfall (4.256834ms)
+✔ verified Supabase identity is reused only inside the same React request; membership remains live (8.060459ms)
+✔ duplicate identity refreshes coalesce and a late old-account response cannot replace the new bootstrap (2.842042ms)
+✔ middleware avoids duplicate refresh only after demo/support guards; loaders own authentication (8.539458ms)
+✔ query-only club transitions skip RSC navigation and preserve modified/cross-club links (0.819708ms)
+✔ Members delegates each visit to a fresh selected-tab loader and privacy/account changes remain scoped (17.7345ms)
+✔ advanced permissions delegate one directory and one self-identity refresh to their owner (5.372917ms)
+✔ a stalled workspace read times out, aborts its request and releases the deadline (3.321583ms)
+✔ a changed browser Auth token rotates pending-read authority without treating the token as authorization (4.830584ms)
+✔ Auth publishes its opaque epoch fence before React commits, without dropping any token-change invalidation (2.139542ms)
+✔ all four selected resources start their guarded read alongside code loading and never reuse another visit (40.6595ms)
+✔ late navigation/session/account results cannot reveal a previous projection; retry makes a fresh request (10.578958ms)
+✔ Demo and unresolved Demo initialization never dispatch a live selected-tab request (8.521458ms)
+✔ club, privacy and support authority changes hide content and fence earlier reads (7.457833ms)
+✔ an Auth notification before effect commit defers an obsolete selected read until its current scope renders (4.60575ms)
+✔ successful and failed reads cannot settle during the gap between Auth notification and React commit (7.301042ms)
+✔ already visible results stay hidden if rendered before the notified epoch commits (3.782541ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 24
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 505.263083

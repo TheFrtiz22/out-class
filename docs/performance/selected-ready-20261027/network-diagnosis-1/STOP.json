@@ -1,0 +1,9 @@
+{
+  "at": "2026-10-27T18:31:40.908841+00:00",
+  "reason": "Stopped the separate probe after actual sleep evidence invalidated the primary profile; holding timings for open/idle confirmation.",
+  "complete": false,
+  "acceptedPerformanceData": false,
+  "completedBaselineOutcomes": 16,
+  "candidatePartialOutcomes": 2,
+  "originalProtocolPreserved": true
+}

@@ -1,0 +1,8 @@
+{
+  "at": "2026-10-27T18:42:41.639312+00:00",
+  "passed": true,
+  "filesScanned": 16,
+  "knownPrivateValues": 24,
+  "findings": [],
+  "originalEvidenceScan": "PRIVACY_SCAN.json"
+}

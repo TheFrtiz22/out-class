@@ -1,0 +1,20 @@
+{
+  "at": "2026-10-27T18:27:55.347964+00:00",
+  "applicationCandidateAcceptedForIntegration": true,
+  "mainReleaseStatus": "Pending hosted checks; no selected-workspace merge yet.",
+  "coldGroupsWithImprovedP50AndP95": 8,
+  "totalColdGroups": 8,
+  "measuredOutcomes": 320,
+  "warmupsExcluded": 64,
+  "sameServerAuthQueryContract": true,
+  "warmFreshValidationCostsAccepted": true,
+  "uniformWarmOrSourceImprovementClaim": false,
+  "materialityJudgment": "Every selected cold p50/p95 improves. Warm Members/Applicants cost is the declared fresh-validation contract. Warm Tasks median is unchanged; its observed maximum rises46.1ms with identity76.67ms versus23.12ms in the baseline maximum. Source+click Tasks cold maximum rises270.4ms (5.4%) with source identity spans up563.43ms before the selected task dispatch. These existing-server waits remain risks, not attributed provider fixes or a general speedup; the cold startup/required fresh reveal benefits justify this narrow client integration.",
+  "unresolved": [
+    "Historical4.2s identity cause remains unobserved.",
+    "Source Auth waiting, warm Tasks maximum and small-sample tails need further investigation; server identity spans do not isolate provider execution.",
+    "No production/low-end/multi-user performance or scalability guarantee."
+  ],
+  "excludedAttempts": "ATTEMPTS.json",
+  "gate": "Wait for all required hosted checks and preserve newer main changes before authorized merge."
+}

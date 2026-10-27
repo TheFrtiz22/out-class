@@ -1,0 +1,4 @@
+constrained block 1/4 (B) complete; all rows retained.
+constrained block 2/4 (A) complete; all rows retained.
+constrained block 3/4 (A) complete; all rows retained.
+AssertionError: selected startup comparison failed

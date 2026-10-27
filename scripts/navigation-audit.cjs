@@ -88,6 +88,20 @@ function routes(f) {
   };
 }
 function installBrowserObservers(options) {
+  if (options?.fontDiagnostics) {
+    window.__fontAudit = { readyMs: null, layoutShifts: [] };
+    document.addEventListener('DOMContentLoaded', () => { document.fonts.ready.then(() => { window.__fontAudit.readyMs = performance.now(); }); }, { once: true });
+    new PerformanceObserver(list => {
+      for (const entry of list.getEntries()) window.__fontAudit.layoutShifts.push({ atMs: entry.startTime, value: entry.value, hadRecentInput: entry.hadRecentInput });
+    }).observe({ type: 'layout-shift', buffered: true });
+  }
+  window.__workspaceReadEvents = [];
+  const readCauses = new Set(['mount','dispatch','user','readAuthority','isImpersonating','clubId','kind','privacyScope','retry','mode','demoReady','demoEnabled','initial_session','signed_in','signed_out','token_refreshed','user_updated','mfa_challenge_verified','password_recovery']);
+  window.addEventListener('outclass:workspace-read', event => {
+    const value=event.detail;if(!value||!['auth','selected','page'].includes(value.kind)||!Array.isArray(value.causes))return;
+    if(window.__workspaceReadEvents.length===256)window.__workspaceReadEvents.shift();
+    window.__workspaceReadEvents.push({atMs:performance.now(),kind:value.kind,causes:value.causes.filter(c=>readCauses.has(c))});
+  });
   window.__navAudit={longTasks:[],commits:[],hydration:[],domMismatches:[],phase:'initial'};
   if(options?.diagnoseHydration)window.__captureHydrationDom=(fiber,node)=>{
     const describe=n=>!n?null:{nodeType:n.nodeType,tag:n.nodeType===1?n.tagName.toLowerCase():n.nodeType===8?'comment':'text',classes:n.nodeType===1?[...n.classList].filter(c=>c.startsWith('oc-')):[],suspense:n.nodeType===8&&/^[/$?!~&]{1,6}$/.test(n.data)?n.data:null};
@@ -119,7 +133,7 @@ function installBrowserObservers(options) {
   for(const method of ['pushState','replaceState']){const original=history[method];history[method]=function(...args){const result=original.apply(this,args);if(window.__navAudit.armed && window.__navAudit.click && !window.__navAudit.url)window.__navAudit.url=performance.now();return result;};}
 }
 async function waitReady(page, desc) {
-  await page.waitForFunction(d=>(!d.href||location.pathname===new URL(d.href,location.origin).pathname)&&(!d.clubLabel||[...document.querySelectorAll('.oc-workspace-switcher-trigger')].some(el=>el.textContent.includes(d.clubLabel)))&&[...document.querySelectorAll(d.selector)].some(el=>el.getClientRects().length&&el.textContent.includes(d.text)),desc,{timeout:30000});
+  await page.waitForFunction(d=>(!d.href||location.pathname===new URL(d.href,location.origin).pathname)&&(!d.clubLabel||[...document.querySelectorAll('.oc-workspace-switcher-trigger, [aria-label^="Switch club:"]')].some(el=>el.textContent.includes(d.clubLabel)))&&[...document.querySelectorAll(d.selector)].some(el=>el.getClientRects().length&&el.textContent.includes(d.text)),desc,{timeout:30000});
 }
 async function main() {
   const config=profile.readConfig(path.join(root,'config.json'));
@@ -142,12 +156,21 @@ async function main() {
   const actionNames=new Map(Object.entries(manifest.node).map(([id,v])=>[id,(v.filename||'')+':'+v.exportedName]));
   const browser=await chromium.launch({headless:true});
   const descriptors=routes(fixture), allSamples=[], failures=[];
+  if(process.argv.includes('--phase3')) Object.assign(descriptors.applicantDetail,{text:'Synthetic application evidence.'});
+  if(process.argv.includes('--phase2')) { Object.assign(descriptors.overview,{selector:'.oc-command-club'}); Object.assign(descriptors.recruiting,{selector:'.oc-command-recruiting',text:'Current pipeline'}); }
+  if(process.argv.includes('--deferred-screens')) {
+    const base='/club/'+fixture.clubIds[0]+'/workspace';
+    descriptors.settingsProfile={href:base+'?section=settings',selector:'.oc-club-settings fieldset:not([disabled])',text:'One-line pitch',tour:'nav-settings'};
+    descriptors.settingsApplication={href:base+'?section=settings&setting=application',selector:'.oc-settings-workspace details',text:'Review settings'};
+    descriptors.scheduledDecisions={href:base+'?section=recruitment&tool=scheduled-decisions',selector:'section[aria-label="Scheduled Decisions"]',text:'No scheduled decisions.',tour:'nav-scheduled-decisions'};
+    descriptors.rounds={href:base+'?section=recruitment&tool=rounds',selector:'[data-slot="sheet-content"]',text:'Previously viewed information cannot be recalled'};
+  }
   if(active)descriptors.interviews.text=active.readyText;
   const sampleCount=Number(process.argv.find(a=>a.startsWith('--samples='))?.split('=')[1]||20);
   assert.ok(sampleCount>0&&sampleCount<=100);
   async function session(participant=0) {
     const context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:cookieSets[participant],origins:[]}});
-    await context.addInitScript(installBrowserObservers,{diagnoseHydration:process.argv.includes('--diagnose-hydration')});
+    await context.addInitScript(installBrowserObservers,{diagnoseHydration:process.argv.includes('--diagnose-hydration'),fontDiagnostics:process.argv.includes('--font-diagnostics')});
     const page=await context.newPage(),cdp=await context.newCDPSession(page);
     if(process.argv.includes('--probe-hydration-dom')){
       assert.ok(process.argv.includes('--diagnose-hydration'),'DOM probing is diagnostic only');
@@ -160,7 +183,21 @@ async function main() {
       });
     }
     await cdp.send('Performance.enable');
-    const requests=[],pending=new Set(),pageErrors=[];
+    if(process.argv.includes('--constrained-network')) {
+      assert.equal(config.appUrl,'http://127.0.0.1:3107','Network profiling is reserved for this disposable local fixture');
+      await cdp.send('Network.enable');
+      await cdp.send('Network.emulateNetworkConditions',{offline:false,latency:80,downloadThroughput:200000,uploadThroughput:93750,connectionType:'cellular4g'});
+      await cdp.send('Emulation.setCPUThrottlingRate',{rate:4});
+    }
+    const requests=[],pending=new Set(),pageErrors=[],wire=[];
+    if(process.argv.includes('--phase3')) {
+      await cdp.send('Network.enable');
+      cdp.on('Network.requestWillBeSent',event=>{
+        const headers=Object.fromEntries(Object.entries(event.request.headers).map(([key,value])=>[key.toLowerCase(),value]));
+        wire.push({id:event.requestId,key:event.request.method+' '+event.request.url+' '+(headers['next-action']||''),bytes:0});
+      });
+      cdp.on('Network.dataReceived',event=>{const item=wire.find(row=>row.id===event.requestId);if(item)item.bytes+=event.encodedDataLength;});
+    }
     page.on('pageerror',error=>{
       const react=/Minified React error #(\d+)/.exec(error.message||'');
       pageErrors.push(react?'react_'+react[1]:/ResizeObserver loop/.test(error.message||'')?'resize_observer_loop':['TypeError','ReferenceError','RangeError','SyntaxError'].includes(error.name)?error.name:'page_error');
@@ -173,7 +210,7 @@ async function main() {
     page.on('response',response=>{const row=requests.find(r=>r.req===response.request());if(row){row.status=response.status();row.serverTiming=response.headers()['server-timing']||null;row.traceId=response.headers()['x-outclass-trace-id']||null;}});
     page.on('requestfinished',req=>{pending.delete(req);const row=requests.find(r=>r.req===req);if(row){row.end=Date.now();row.timing=req.timing();void req.sizes().then(s=>{row.bytes=s.responseBodySize;}).catch(()=>{});}});
     page.on('requestfailed',req=>{pending.delete(req);const row=requests.find(r=>r.req===req);if(row){row.end=Date.now();row.failed=true;const reason=req.failure()?.errorText;row.failureReason=/^net::[A-Z_]+$/.test(reason||"")?reason:"transport_failure";}});
-    return {context,page,cdp,requests,pending,pageErrors,participant};
+    return {context,page,cdp,requests,pending,pageErrors,participant,wire};
   }
   async function settle(s) {
     // SSE is ongoing. Wait for other requests to drain, with a finite bound.
@@ -181,7 +218,22 @@ async function main() {
     while(s.pending.size && Date.now()<end)await s.page.waitForTimeout(30);
     await s.page.waitForTimeout(80);
   }
-  async function open(s,id) {await s.page.goto(config.appUrl+descriptors[id].href,{waitUntil:'domcontentloaded'});await waitReady(s.page,descriptors[id]);await settle(s);}
+  async function preparationSnapshot(s, started) {
+    const dom = await s.page.evaluate(() => {
+      const text = document.body?.textContent || "";
+      const nav = performance.getEntriesByType("navigation")[0];
+      return { readyState: document.readyState, opening: text.includes("Opening club workspace…"), selectedLoading: text.includes("Loading workspace…"), pipeline: !!document.querySelector(".oc-live-pipeline"), accessUnavailable: text.includes("Club workspace unavailable"), alerts: document.querySelectorAll('[role="alert"]').length, document: nav ? {ttfbMs:nav.responseStart, domContentLoadedMs:nav.domContentLoadedEventEnd} : null };
+    }).catch(() => null);
+    const heap=Object.fromEntries((await s.cdp.send('Performance.getMetrics')).metrics.map(m=>[m.name,m.value]));
+    const authorityEvents=await s.page.evaluate(()=>window.__workspaceReadEvents||[]);
+    const fonts=process.argv.includes('--font-diagnostics')?await s.page.evaluate(()=>({ readyMs:window.__fontAudit.readyMs,layoutShifts:window.__fontAudit.layoutShifts,paint:performance.getEntriesByType('paint').map(e=>({name:e.name,atMs:e.startTime})),faces:[...document.fonts].map(f=>({family:f.family,style:f.style,weight:f.weight,status:f.status})),preloadCount:document.querySelectorAll('link[rel="preload"][as="font"]').length })):null;
+    return { elapsedMs: Date.now()-started, meaningfulMs:s.sourceReadyMs??null, dom, ...(fonts?{fonts}:{}), heapUsedBytes:heap.JSHeapUsedSize,heapTotalBytes:heap.JSHeapTotalSize,authorityEvents, requests: s.requests.map(r => ({route:r.route,type:r.type,method:r.method,status:r.status,failed:!!r.failed,pending:r.end===null,startMs:r.start-started,endMs:r.end===null?null:r.end-started,traceId:r.traceId||null,serverTiming:r.serverTiming||null,encodedBodyBytes:r.bytes,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart-r.timing.requestStart:null,transferMs:r.timing?.responseEnd>=0?r.timing.responseEnd-r.timing.responseStart:null})) };
+  }
+  async function open(s,id) {
+    const started=Date.now();
+    try { await s.page.goto(config.appUrl+descriptors[id].href,{waitUntil:'domcontentloaded'});await waitReady(s.page,descriptors[id]);s.sourceReadyMs=Date.now()-started;await settle(s); }
+    finally { if(process.argv.includes('--source-diagnostics')) s.preparation=await preparationSnapshot(s,started); }
+  }
   if(process.argv.includes('--initial')){
     const samples=[];
     try{
@@ -206,6 +258,24 @@ async function main() {
   }
   async function clickTarget(s,from,to) {
     const {page}=s;
+    if(process.argv.includes('--deferred-screens') && to==='rounds') {
+      const details=page.locator('.oc-settings-workspace details').filter({has:page.locator('summary',{hasText:'Review settings'})});
+      if(!await details.evaluate(e=>e.open))await details.locator('summary').click();
+      return page.getByRole('link',{name:'Anonymous review',exact:true}).click();
+    }
+    if(process.argv.includes('--deferred-screens') && from==='rounds' && to==='settingsApplication')return page.goBack({waitUntil:'domcontentloaded'});
+    if(to==='applicantDetail')return page.locator('[data-applicant-id]').filter({visible:true}).first().click();
+    if(from==='applicantDetail')return page.locator('[data-slot="sheet-content"]').getByRole('button',{name:'Close',exact:true}).click();
+    if(process.argv.includes('--phase2') && descriptors[to].tour) {
+      const tour=descriptors[to].tour;
+      let item=page.locator('[data-tour="'+tour+'"]').filter({visible:true}).first();
+      if(!await item.count() && (to==='applicants'||to==='scheduledDecisions')) {
+        const group=page.getByRole('button',{name:to==='scheduledDecisions'?'Decisions':'Applicants',exact:true}).filter({visible:true}).first();
+        await group.focus();await page.keyboard.press('ArrowRight');
+        item=page.locator('[data-tour="'+tour+'"]').filter({visible:true}).first();
+      }
+      await item.focus();return page.keyboard.press('Enter');
+    }
     if(to==='applicantDetail')return page.locator('[data-applicant-id]').first().click();
     if(to==='memberDetail')return page.getByRole('button',{name:'Member details · Audit Student 000',exact:true}).click();
     if(from==='applicantDetail'||from==='memberDetail')return page.locator('[data-slot="sheet-content"]').getByRole('button',{name:'Close',exact:true}).click();
@@ -233,6 +303,13 @@ async function main() {
   async function sample(s,from,to,condition,index,gate) {
     // Open any switcher or grouped rail before timing the destination click.
     const page=s.page;
+    if(process.argv.includes('--deferred-screens') && to==='rounds') {
+      const details=page.locator('.oc-settings-workspace details').filter({has:page.locator('summary',{hasText:'Review settings'})});
+      if(!await details.evaluate(e=>e.open))await details.locator('summary').click();
+    }
+    if(process.argv.includes('--deferred-screens') && to==='scheduledDecisions' && !await page.locator('[data-tour="nav-scheduled-decisions"]').filter({visible:true}).count()) {
+      await page.getByRole('button',{name:'Decisions',exact:true}).filter({visible:true}).first().focus();await page.keyboard.press('ArrowRight');
+    }
     if(from==='voting'){
       const setup=page.getByRole('dialog',{name:'New voting session',exact:true});
       if(await setup.isVisible()){await setup.getByRole('button',{name:'Close',exact:true}).click();await setup.waitFor({state:'hidden'});}
@@ -240,10 +317,11 @@ async function main() {
     if(to==='personal'||to==='club2'||from==='personal'||from==='club2')await page.getByRole('button',{name:/Switch workspace:/}).first().click();
     else if(!['voting'].includes(from)&&to!=='voting'&&descriptors[to].tour){
       const item=page.locator('[data-tour="'+descriptors[to].tour+'"]').first();
-      if(!await item.isVisible()&&['applicants','decisions'].includes(to))await page.getByRole('button',{name:to==='decisions'?'Decisions':'Applicants',exact:true}).first().click();
+      if(!process.argv.includes('--phase2')&&!await item.isVisible()&&['applicants','decisions'].includes(to))await page.getByRole('button',{name:to==='decisions'?'Decisions':'Applicants',exact:true}).first().click();
     }
     const beforeMetrics=Object.fromEntries((await s.cdp.send('Performance.getMetrics')).metrics.map(x=>[x.name,x.value]));
     const startIndex=s.requests.length;
+    s.sampleStartIndex=startIndex;
     await page.evaluate(desc=>{
       const a=window.__navAudit;a.phase='navigation';a.armed=true;a.click=0;a.url=0;a.ready=0;a.interactive=0;
       if(a.observer)a.observer.disconnect();
@@ -251,7 +329,7 @@ async function main() {
       const check=()=>{
         if(!a.click||scheduled||a.ready)return;
         if(desc.href&&location.pathname!==new URL(desc.href,location.origin).pathname)return;
-        if(desc.clubLabel&&![...document.querySelectorAll('.oc-workspace-switcher-trigger')].some(el=>el.textContent.includes(desc.clubLabel)))return;
+        if(desc.clubLabel&&![...document.querySelectorAll('.oc-workspace-switcher-trigger, [aria-label^="Switch club:"]')].some(el=>el.textContent.includes(desc.clubLabel)))return;
         const root=[...document.querySelectorAll(desc.selector)].find(el=>el.getClientRects().length&&el.textContent.includes(desc.text));
         if(!root)return;
         // Closing Voting reveals Applicants already mounted underneath.
@@ -269,11 +347,26 @@ async function main() {
     const afterMetrics=Object.fromEntries((await s.cdp.send('Performance.getMetrics')).metrics.map(x=>[x.name,x.value]));
     const marks=await page.evaluate(()=>{const a=window.__navAudit;a.armed=false;a.observer.disconnect();return{click:a.click,origin:performance.timeOrigin,url:a.url,ready:a.ready,interactive:a.interactive,longTasks:a.longTasks.filter(t=>t.start>=a.click&&t.start<a.ready),commits:a.commits.filter(t=>t>=a.click&&t<=a.ready).length};});
     const clickWall=marks.origin+marks.click;
-    const rows=s.requests.slice(startIndex).map(({req,...r})=>({route:r.route,type:r.type,method:r.method,status:r.status,serverTiming:r.serverTiming||null,traceId:r.traceId||null,startMs:r.start-clickWall,endMs:r.end===null?null:r.end-clickWall,encodedBodyBytes:r.bytes,failed:r.failed||false,failureReason:r.failureReason||null,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart-r.timing.requestStart:null,transferMs:r.timing?.responseEnd>=0?r.timing.responseEnd-r.timing.responseStart:null}));
-    const row={path:from+' → '+to,condition,index,clickToUrlMs:marks.url?marks.url-marks.click:null,meaningfulMs:marks.ready-marks.click,interactiveMs:marks.interactive?marks.interactive-marks.click:null,networkCompleteMs:Math.max(0,...rows.filter(r=>r.type!=='eventsource').map(r=>r.endMs||0)),requestCount:rows.length,encodedBodyBytes:rows.reduce((n,r)=>n+(r.encodedBodyBytes||0),0),scriptMs:(afterMetrics.ScriptDuration-beforeMetrics.ScriptDuration)*1000,taskMs:(afterMetrics.TaskDuration-beforeMetrics.TaskDuration)*1000,layoutMs:(afterMetrics.LayoutDuration-beforeMetrics.LayoutDuration)*1000,longTasks:marks.longTasks,reactCommitCount:marks.commits,reactRenderDurationMs:null,requests:rows};
+    const rows=s.requests.slice(startIndex).map(({req,...r},offset)=>{
+      let encodedBodyBytes=r.bytes,bodyBytesSource='playwright';
+      if(process.argv.includes('--phase3') && encodedBodyBytes===null && r.failed) {
+        const key=req.method()+' '+req.url()+' '+(req.headers()['next-action']||'');
+        const ordinal=s.requests.slice(0,startIndex+offset).filter(row=>row.req.method()+' '+row.req.url()+' '+(row.req.headers()['next-action']||'')===key).length;
+        const received=s.wire.filter(row=>row.key===key)[ordinal];
+        if(received){encodedBodyBytes=received.bytes;bodyBytesSource='cdp_received_chunks_before_cancel';}
+      }
+      return {route:r.route,type:r.type,method:r.method,status:r.status,serverTiming:r.serverTiming||null,traceId:r.traceId||null,startMs:r.start-clickWall,endMs:r.end===null?null:r.end-clickWall,encodedBodyBytes,failed:r.failed||false,failureReason:r.failureReason||null,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart-r.timing.requestStart:null,transferMs:r.timing?.responseEnd>=0?r.timing.responseEnd-r.timing.responseStart:null,...(process.argv.includes('--phase3')?{bodyBytesSource}:{})};
+    });
+    const row={...(s.preparation?{preparation:s.preparation}:{}),path:from+' → '+to,condition,index,clickToUrlMs:marks.url?marks.url-marks.click:null,meaningfulMs:marks.ready-marks.click,interactiveMs:marks.interactive?marks.interactive-marks.click:null,networkCompleteMs:Math.max(0,...rows.filter(r=>r.type!=='eventsource').map(r=>r.endMs||0)),requestCount:rows.length,encodedBodyBytes:rows.reduce((n,r)=>n+(r.encodedBodyBytes||0),0),scriptMs:(afterMetrics.ScriptDuration-beforeMetrics.ScriptDuration)*1000,taskMs:(afterMetrics.TaskDuration-beforeMetrics.TaskDuration)*1000,layoutMs:(afterMetrics.LayoutDuration-beforeMetrics.LayoutDuration)*1000,longTasks:marks.longTasks,reactCommitCount:marks.commits,reactRenderDurationMs:null,heapBeforeBytes:beforeMetrics.JSHeapUsedSize,heapAfterBytes:afterMetrics.JSHeapUsedSize,authorityEvents:await s.page.evaluate(()=>window.__workspaceReadEvents||[]),requests:rows};
     if(process.argv.includes('--diagnose-hydration')){const diagnostic=await page.evaluate(()=>({hydration:window.__navAudit.hydration,dom:window.__navAudit.domMismatches}));row.hydration=diagnostic.hydration;row.hydrationDom=diagnostic.dom;}
     if(active){row.pageErrorCount=s.pageErrors.length;row.pageErrorKinds=[...s.pageErrors];row.participant=s.participant;row.wave=index;row.renderedRooms=await page.locator('section[aria-label="Interview rooms"] li').count();row.openInterviewLinks=await page.locator('section[aria-label="Interview rooms"]').getByRole('link',{name:'Open interview',exact:true}).count();}
+    if(process.argv.includes('--phase2')){row.pageErrorCount=s.pageErrors.length;row.pageErrorKinds=[...s.pageErrors];row.inputMethod=process.argv.includes('--phase3')&&to==='applicantDetail'?'pointer':'keyboard';row.initialScriptBytes=s.requests.slice(0,startIndex).filter(r=>r.type==='script').reduce((n,r)=>n+(r.bytes||0),0);}
     allSamples.push(row);
+    if(process.argv.includes('--phase3')) {
+      row.cycleReadError=await page.getByText('Cycles could not load.',{exact:true}).count()>0;
+      assert.equal(row.cycleReadError,false,'Recruitment cycle read failed in the UI');
+    }
+    if(process.argv.includes('--phase2'))assert.equal(row.pageErrorCount,0,'browser_script_error');
     if(active){assert.equal(row.pageErrorCount,0,'browser_script_error');if(row.hydration)assert.equal(row.hydration.length,0,'hydration_recovery');assert.equal(row.renderedRooms,24,'room_count');assert.equal(row.openInterviewLinks,24,'open_link_count');}
     return row;
   }
@@ -314,7 +407,7 @@ async function main() {
     return;
   }
   const pairs=[['overview','members'],['members','meetings'],['meetings','tasks'],['tasks','announcements'],['announcements','overview'],['recruiting','applicants'],['applicants','interviews'],['interviews','decisions'],['decisions','recruiting'],['applicants','voting'],['voting','applicants'],['overview','settings'],['settings','overview'],['overview','recruiting'],['recruiting','overview'],['overview','club2'],['personal','overview'],['overview','personal']];
-  const selected=process.argv.includes('--only-interviews')?[['applicants','interviews']]:process.argv.includes('--phase1')?[['applicants','interviews'],['members','meetings'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--smoke')?pairs.slice(0,1):process.argv.includes('--member-details')?[['members','memberDetail']]:process.argv.includes('--cross-club')?[['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]:process.argv.includes('--details')?[['applicants','applicantDetail'],['members','memberDetail']]:process.argv.includes('--only-voting')?pairs.filter(p=>p.includes('voting')):process.argv.includes('--waterfalls')?pairs.filter(([f,t])=>f==='overview'&&t==='members'||f==='recruiting'&&t==='applicants'||f==='applicants'&&t==='interviews'):pairs.filter(p=>!p.includes('club2')&&!p.includes('personal')).concat([['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]);
+  const selected=process.argv.includes('--deferred-screens')?[['overview','settingsProfile'],['overview','meetings'],['recruiting','scheduledDecisions'],['settingsApplication','rounds']]:process.argv.includes('--phase3')?[['recruiting','applicants'],['applicants','applicantDetail']]:process.argv.includes('--phase2')?[['overview','members'],['recruiting','applicants'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--only-interviews')?[['applicants','interviews']]:process.argv.includes('--phase1')?[['applicants','interviews'],['members','meetings'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--smoke')?pairs.slice(0,1):process.argv.includes('--member-details')?[['members','memberDetail']]:process.argv.includes('--cross-club')?[['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]:process.argv.includes('--details')?[['applicants','applicantDetail'],['members','memberDetail']]:process.argv.includes('--only-voting')?pairs.filter(p=>p.includes('voting')):process.argv.includes('--waterfalls')?pairs.filter(([f,t])=>f==='overview'&&t==='members'||f==='recruiting'&&t==='applicants'||f==='applicants'&&t==='interviews'):pairs.filter(p=>!p.includes('club2')&&!p.includes('personal')).concat([['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]);
   const outputStem=process.argv.includes('--member-details')?'member-detail':process.argv.includes('--cross-club')?'cross-club':process.argv.includes('--details')?'detail':process.argv.includes('--only-voting')?'voting':process.argv.includes('--waterfalls')?'waterfall':'browser';
   try {
     for(const [from,to] of selected)for(const condition of (process.argv.includes('--cold-warm')?['cold','warm']:['cold','warm','repeated'])){
@@ -323,16 +416,27 @@ async function main() {
         if(condition==='repeated') {shared=await session();await open(shared,from==='voting'?'applicants':from);if(from==='voting'){await clickTarget(shared,'applicants','voting');await waitReady(shared.page,descriptors.voting);await settle(shared);}}
         for(let i=0;i<sampleCount;i++) {
           const s=shared||await session();
+          let attemptStage='source';
           try {
             if(!shared){await open(s,from==='voting'?'applicants':from);if(from==='voting'){await clickTarget(s,'applicants','voting');await waitReady(s.page,descriptors.voting);await settle(s);}}
-            if(condition==='warm'){await clickTarget(s,from,to);await waitReady(s.page,descriptors[to]);await settle(s);await clickTarget(s,to,from);await waitReady(s.page,descriptors[from]);await settle(s);}
+            if(condition==='warm'){attemptStage='warm target';await clickTarget(s,from,to);await waitReady(s.page,descriptors[to]);await settle(s);attemptStage='warm return';await clickTarget(s,to,from);await waitReady(s.page,descriptors[from]);await settle(s);}
+            attemptStage='measured';
             const r=await sample(s,from,to,condition,i);console.log(`${r.path} ${condition} ${i+1}/${sampleCount}: ${r.meaningfulMs.toFixed(1)} ms, ${r.requestCount} requests`);
             if(shared&&i<sampleCount-1){await clickTarget(s,to,from);await waitReady(s.page,descriptors[from]);await settle(s);}
+          } catch(error) {
+            if(!process.argv.includes('--record-failures')) throw error;
+            const message=String(error.message).replace(/[0-9a-f]{8}-[0-9a-f-]{27,}/gi,'[fixture-id]').slice(0,1800);
+            let diagnostic=null;
+            try { diagnostic=await Promise.race([s.page.evaluate(()=>({tool:new URLSearchParams(location.search).get('tool'),pipeline:!!document.querySelector('.oc-live-pipeline'),sheet:!!document.querySelector('[data-slot="sheet-content"]'),alerts:document.querySelectorAll('[role="alert"]').length,click:window.__navAudit.click,origin:performance.timeOrigin,now:performance.now()})),new Promise(resolve=>setTimeout(()=>resolve(null),2000))]); } catch {}
+            const requests=s.requests.slice(attemptStage==='measured'?(s.sampleStartIndex??0):0).map(r=>({route:r.route,type:r.type,method:r.method,status:r.status,failed:r.failed||false,failureReason:r.failureReason||null,encodedBodyBytes:r.bytes}));
+            const observation={...(s.preparation?{preparation:s.preparation}:{}),path:from+' → '+to,condition,index:i,failed:true,stage:attemptStage,error:message,diagnostic:diagnostic?{tool:diagnostic.tool,pipeline:diagnostic.pipeline,sheet:diagnostic.sheet,alerts:diagnostic.alerts}:null,clickToContentLowerBoundMs:attemptStage==='measured'&&diagnostic?.click?diagnostic.now-diagnostic.click:null,meaningfulMs:null,interactiveMs:null,pageErrorCount:s.pageErrors.length,pageErrorKinds:[...s.pageErrors],requests};
+            failures.push({path:observation.path,condition,index:i,stage:attemptStage,error:message});allSamples.push(observation);
+            console.log('RECORDED FAILURE '+observation.path+' '+condition+' '+(i+1)+'/'+sampleCount+' '+attemptStage);
           } finally {if(!shared)await s.context.close();}
         }
       } catch(e){failures.push({path:from+' → '+to,condition,error:String(e.message).slice(0,1800)});console.log('UNAVAILABLE '+from+' → '+to+' '+condition+': '+String(e.message).slice(0,800));if(shared)console.log('Fixture UI diagnostics: '+await shared.page.locator('body').innerText().then(s=>s.slice(0,1800)).catch(()=>''));}
       finally {if(shared)await shared.context.close();}
-      fs.writeFileSync(path.join(outDir,outputStem+'-samples.json'),JSON.stringify({environment:'local Next production build + disposable local Supabase',fixture:fixture.counts,sampleCount,metricsNotes:{meaningfulMs:'DOM content predicate followed by two requestAnimationFrame callbacks; paint proxy, not screenshot timing',interactiveMs:'first enabled visible control after content predicate; no mutation is invoked',requestOffsets:'relative to captured DOM click timestamp',networkCompleteMs:'observed non-SSE requests drained after useful content; includes background traffic',cpu:'CDP delta through settle, so includes post-content background work',react:'production commit notifications only; profiler render durations unavailable'},samples:allSamples,failures},null,2));
+      fs.writeFileSync(path.join(outDir,outputStem+'-samples.json'),JSON.stringify({environment:'local Next production build + disposable local Supabase',fixture:fixture.counts,sampleCount,metricsNotes:{profile:process.argv.includes('--constrained-network')?'Local CDP 80ms latency, 1.6Mbps down/0.75Mbps up, CPU4x':'Local unthrottled',meaningfulMs:'DOM content predicate followed by two requestAnimationFrame callbacks; paint proxy, not screenshot timing',interactiveMs:'first enabled visible control after content predicate; no mutation is invoked',requestOffsets:'relative to captured DOM click timestamp',networkCompleteMs:'observed non-SSE requests drained after useful content; includes background traffic',cpu:'CDP delta through settle, so includes post-content background work',react:'production commit notifications only; profiler render durations unavailable'},samples:allSamples,failures},null,2));
     }
     const groups=[...new Set(allSamples.map(s=>s.path+'|'+s.condition))].map(key=>{const samples=allSamples.filter(s=>s.path+'|'+s.condition===key);return{path:samples[0].path,condition:samples[0].condition,meaningfulMs:distribution(samples.map(s=>s.meaningfulMs)),interactiveMs:distribution(samples.map(s=>s.interactiveMs)),clickToUrlMs:distribution(samples.map(s=>s.clickToUrlMs)),networkCompleteMs:distribution(samples.map(s=>s.networkCompleteMs)),scriptMs:distribution(samples.map(s=>s.scriptMs)),taskMs:distribution(samples.map(s=>s.taskMs)),requestCount:distribution(samples.map(s=>s.requestCount)),encodedBodyBytes:distribution(samples.map(s=>s.encodedBodyBytes))};});
     fs.writeFileSync(path.join(outDir,outputStem+'-summary.json'),JSON.stringify({generatedAt:new Date().toISOString(),sampleCount,groups,failures},null,2));
