@@ -1,0 +1,219 @@
+{
+  "note": "Same local Chrome, isolated fixture contexts, three samples per size. Frame intervals include compositor work; hover uses real pointer events. GC-normalized JS heap is diagnostic, not a leak proof.",
+  "samples": {
+    "before": [
+      {
+        "width": 1440,
+        "run": 1,
+        "scroll": {
+          "frames": 133,
+          "medianMs": 16.7,
+          "p95Ms": 17.5,
+          "over34Ms": 0
+        },
+        "hover": {
+          "frames": 271,
+          "medianMs": 16.7,
+          "p95Ms": 17.6,
+          "over34Ms": 1
+        },
+        "initialHeapMB": 7.87,
+        "settledHeapMB": 9.91,
+        "initialNodes": 199,
+        "settledNodes": 253
+      },
+      {
+        "width": 1440,
+        "run": 2,
+        "scroll": {
+          "frames": 133,
+          "medianMs": 16.7,
+          "p95Ms": 17.3,
+          "over34Ms": 0
+        },
+        "hover": {
+          "frames": 273,
+          "medianMs": 16.7,
+          "p95Ms": 17.7,
+          "over34Ms": 1
+        },
+        "initialHeapMB": 7.86,
+        "settledHeapMB": 9.91,
+        "initialNodes": 199,
+        "settledNodes": 253
+      },
+      {
+        "width": 1440,
+        "run": 3,
+        "scroll": {
+          "frames": 133,
+          "medianMs": 16.7,
+          "p95Ms": 17.5,
+          "over34Ms": 0
+        },
+        "hover": {
+          "frames": 273,
+          "medianMs": 16.7,
+          "p95Ms": 17.6,
+          "over34Ms": 1
+        },
+        "initialHeapMB": 7.87,
+        "settledHeapMB": 9.9,
+        "initialNodes": 199,
+        "settledNodes": 253
+      },
+      {
+        "width": 390,
+        "run": 1,
+        "scroll": {
+          "frames": 133,
+          "medianMs": 16.7,
+          "p95Ms": 17.6,
+          "over34Ms": 0
+        },
+        "hover": null,
+        "initialHeapMB": 7.87,
+        "settledHeapMB": 7.89,
+        "initialNodes": 198,
+        "settledNodes": 198
+      },
+      {
+        "width": 390,
+        "run": 2,
+        "scroll": {
+          "frames": 133,
+          "medianMs": 16.7,
+          "p95Ms": 17.6,
+          "over34Ms": 0
+        },
+        "hover": null,
+        "initialHeapMB": 7.88,
+        "settledHeapMB": 7.9,
+        "initialNodes": 198,
+        "settledNodes": 198
+      },
+      {
+        "width": 390,
+        "run": 3,
+        "scroll": {
+          "frames": 133,
+          "medianMs": 16.7,
+          "p95Ms": 17.6,
+          "over34Ms": 0
+        },
+        "hover": null,
+        "initialHeapMB": 7.87,
+        "settledHeapMB": 7.9,
+        "initialNodes": 198,
+        "settledNodes": 198
+      }
+    ],
+    "after": [
+      {
+        "width": 1440,
+        "run": 1,
+        "scroll": {
+          "frames": 133,
+          "medianMs": 16.7,
+          "p95Ms": 17.4,
+          "over34Ms": 0
+        },
+        "hover": {
+          "frames": 273,
+          "medianMs": 16.7,
+          "p95Ms": 17.6,
+          "over34Ms": 1
+        },
+        "initialHeapMB": 7.88,
+        "settledHeapMB": 9.94,
+        "initialNodes": 199,
+        "settledNodes": 253
+      },
+      {
+        "width": 1440,
+        "run": 2,
+        "scroll": {
+          "frames": 133,
+          "medianMs": 16.7,
+          "p95Ms": 17.1,
+          "over34Ms": 0
+        },
+        "hover": {
+          "frames": 273,
+          "medianMs": 16.7,
+          "p95Ms": 17.4,
+          "over34Ms": 1
+        },
+        "initialHeapMB": 7.87,
+        "settledHeapMB": 9.94,
+        "initialNodes": 199,
+        "settledNodes": 253
+      },
+      {
+        "width": 1440,
+        "run": 3,
+        "scroll": {
+          "frames": 133,
+          "medianMs": 16.7,
+          "p95Ms": 17.1,
+          "over34Ms": 0
+        },
+        "hover": {
+          "frames": 275,
+          "medianMs": 16.7,
+          "p95Ms": 17.4,
+          "over34Ms": 1
+        },
+        "initialHeapMB": 7.87,
+        "settledHeapMB": 9.94,
+        "initialNodes": 199,
+        "settledNodes": 253
+      },
+      {
+        "width": 390,
+        "run": 1,
+        "scroll": {
+          "frames": 133,
+          "medianMs": 16.7,
+          "p95Ms": 17.2,
+          "over34Ms": 0
+        },
+        "hover": null,
+        "initialHeapMB": 7.87,
+        "settledHeapMB": 7.9,
+        "initialNodes": 197,
+        "settledNodes": 197
+      },
+      {
+        "width": 390,
+        "run": 2,
+        "scroll": {
+          "frames": 133,
+          "medianMs": 16.7,
+          "p95Ms": 17.3,
+          "over34Ms": 0
+        },
+        "hover": null,
+        "initialHeapMB": 7.87,
+        "settledHeapMB": 7.9,
+        "initialNodes": 197,
+        "settledNodes": 197
+      },
+      {
+        "width": 390,
+        "run": 3,
+        "scroll": {
+          "frames": 133,
+          "medianMs": 16.7,
+          "p95Ms": 17.3,
+          "over34Ms": 0
+        },
+        "hover": null,
+        "initialHeapMB": 7.86,
+        "settledHeapMB": 7.89,
+        "initialNodes": 197,
+        "settledNodes": 197
+      }
+    ]
+  }
+}

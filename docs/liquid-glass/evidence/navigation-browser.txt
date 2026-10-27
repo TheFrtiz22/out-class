@@ -1,0 +1,12 @@
+✔ browser: Applicants destinations select correct records, retain bookmarks/refresh/Back and activate mobile Applicants (6823.023625ms)
+✔ browser: global search label matches visible text on Mac, Windows and Linux (6007.733084ms)
+✔ browser: grouped keyboard navigation, saved popover/shared persistence, scoped availability, avatars and mobile (7135.019875ms)
+✔ browser: tutorial X dismisses immediately during pending progress, persists offline, restores focus and restarts (5163.188834ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 16128.490125

@@ -1,9 +1,7 @@
 // Dedicated disposable PostgreSQL, never inherits a configured database target.
 const { spawnSync } = require('node:child_process');
 const name = 'outclass-decision-transaction-repair';
-// Official Supabase 17.11.0.002 multi-platform image, pinned by digest.
-// GHCR avoids ECR Public's anonymous shared-runner download quota.
-const postgresImage = 'ghcr.io/supabase/postgres:17.11.0.002@sha256:0450166354dc9c1d25f0322ac8b580774d4fb0184d2b087f6e4fe9499c66cf53';
+const { ensurePostgresImage } = require('../tests/helpers/local-postgres-image.cjs');
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, { stdio: options.input ? ['pipe', 'inherit', 'inherit'] : 'inherit', ...options });
   if (result.status !== 0) throw Error(`${command} failed (${result.status})`);
@@ -15,6 +13,7 @@ const databaseUrl = 'postgresql://fixture_superuser@127.0.0.1:58452/outclass_rec
 const env = { ...process.env, DATABASE_URL: databaseUrl, POSTGRES_PRISMA_URL: databaseUrl,
   OUTCLASS_TRANSACTION_TEST_DATABASE_URL: databaseUrl, COMMUNICATIONS_EMAIL_ENABLED: 'false', RESEND_API_KEY: '', SMTP_HOST: '' };
 try {
+  const postgresImage = ensurePostgresImage();
   run('docker', ['run', '-d', '--name', name, '--label', 'outclass.transaction-test=disposable', '-p', '127.0.0.1:58452:5432',
     '--entrypoint', 'bash', postgresImage, '-ec',
     'mkdir /tmp/fixturedb; chown postgres:postgres /tmp/fixturedb; su postgres -s /bin/bash -c "/nix/var/nix/profiles/default/bin/initdb -D /tmp/fixturedb -U fixture_superuser --auth=trust >/dev/null"; printf "host all all 0.0.0.0/0 trust\\n" >> /tmp/fixturedb/pg_hba.conf; exec su postgres -s /bin/bash -c "/nix/var/nix/profiles/default/bin/postgres -D /tmp/fixturedb -c listen_addresses=\\\"*\\\""']);

@@ -1,0 +1,65 @@
+{
+  "environment": "local production Next build; authenticated local fixture; cold browser context; warm server/DB",
+  "samples": [
+    {
+      "route": "overview",
+      "index": 0,
+      "meaningfulMs": 397,
+      "scriptMs": 47.443,
+      "taskMs": 118.38799999999999,
+      "longTasks": [],
+      "document": {
+        "ttfbMs": 93.40000000596046,
+        "domContentLoadedMs": 120.40000000596046,
+        "transferSize": 17465
+      },
+      "requestCount": 61
+    },
+    {
+      "route": "personal",
+      "index": 0,
+      "meaningfulMs": 455.90000000596046,
+      "scriptMs": 58,
+      "taskMs": 131.99,
+      "longTasks": [],
+      "document": {
+        "ttfbMs": 51.69999998807907,
+        "domContentLoadedMs": 76,
+        "transferSize": 19613
+      },
+      "requestCount": 62
+    }
+  ],
+  "summary": [
+    {
+      "route": "overview",
+      "meaningfulMs": {
+        "samples": 1,
+        "p50": 397,
+        "p95": 397,
+        "max": 397
+      },
+      "scriptMs": {
+        "samples": 1,
+        "p50": 47.44,
+        "p95": 47.44,
+        "max": 47.44
+      }
+    },
+    {
+      "route": "personal",
+      "meaningfulMs": {
+        "samples": 1,
+        "p50": 455.9,
+        "p95": 455.9,
+        "max": 455.9
+      },
+      "scriptMs": {
+        "samples": 1,
+        "p50": 58,
+        "p95": 58,
+        "max": 58
+      }
+    }
+  ]
+}

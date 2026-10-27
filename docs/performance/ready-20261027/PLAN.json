@@ -1,0 +1,35 @@
+{
+  "base": "d0313644f981e7428b84eb1ec980e6863c135c35",
+  "applicationChanges": [
+    "app/layout.tsx",
+    "components/club-logo.tsx",
+    "lib/club-assets.ts",
+    "public/logos/README.md"
+  ],
+  "scope": "Initial authenticated document useful-content observations for the isolated ready subset, not a complete navigation or hosted-performance test.",
+  "harness": "scripts/navigation-audit.cjs --initial",
+  "harnessSha256": "f41f0f798c0b1bc804094cbee1f3606d93cdd9821a3a236e06a287955471b7f3",
+  "order": [
+    "B",
+    "A",
+    "A",
+    "B"
+  ],
+  "routes": [
+    "overview",
+    "personal"
+  ],
+  "samplesPerRoutePerBlock": 10,
+  "warmupsPerRoutePerBlock": 1,
+  "plannedMeasuredOutcomes": 80,
+  "plannedWarmupOutcomes": 8,
+  "groupMeasuredN": 20,
+  "conditions": "Fresh desktop browser contexts, warm local production Next/Auth/PostgreSQL; no CDP throttle. Same fixture/8-connection per-client environment for both frozen builds.",
+  "limitations": [
+    "Before/after source observations are not click timing, hosted cold starts or exclusive React render time.",
+    "Initial mode does not export per-request body/timing/error detail; preserve those fields as unavailable. Font/logo browser regression checks cover transport correctness separately.",
+    "No claim of a combined production speedup or clearance for the broader experimental series."
+  ],
+  "controls": "Reuse the existing read-only host monitor from dd30454; all builds/tests finish first; verify frozen source/plan/harness and actual sleep events; reject whole comparison on observed violation.",
+  "publication": "User authorizes committing ready changes to main. No unresolved experimental merge or production configuration/database change."
+}
