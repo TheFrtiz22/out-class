@@ -14,6 +14,10 @@ test('interview composer Enter actions, multiline, validation, duplicate guards,
     await page.goto('http://127.0.0.1:4318/?mode=after&latency=300')
     await page.getByRole('region', { name: 'Available questions' }).getByRole('button').first().click()
     const notes = page.getByRole('textbox', { name: 'Your private notes', exact: true })
+    await notes.fill('Before modified shortcut');
+    await notes.press('Control+Enter');await notes.press('Meta+Enter');await notes.evaluate(el=>el.form.requestSubmit());await page.waitForFunction(()=>document.querySelector('#interview-evaluation')?.getAttribute('data-saving')==='false');
+    assert.equal(await page.getByRole('heading',{name:'Post-interview',exact:true}).count(),0);
+    assert.equal(await notes.inputValue(),'Before modified shortcut');
     await notes.fill('First line'); await notes.press('Shift+Enter'); await page.keyboard.type('Second line')
     assert.equal(await notes.inputValue(), 'First line\nSecond line')
     await notes.dispatchEvent('keydown', { key: 'Enter', isComposing: true })

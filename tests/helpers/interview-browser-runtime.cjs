@@ -1,7 +1,8 @@
 module.exports.mock=String.raw`
 import React from 'react';
 const params=new URLSearchParams(location.search),latency=Math.max(0,Math.min(3000,Number(params.get('latency')||300)));
-export const fixture={fail:false,selection:null,revision:0,records:new Map(),annotations:[],now:0};
+export const fixture={fail:false,selection:null,revision:0,records:new Map(),annotations:[],now:0,saves:[],saveGate:null};
+window.interviewFixture=fixture;
 const realNow=Date.now.bind(Date);Date.now=()=>realNow()+fixture.now;
 const nativeFetch=window.fetch.bind(window);window.fetch=(input,options)=>{if(new URL(typeof input==='string'?input:input.url,location.href).origin!==location.origin)throw Error('External access denied in isolated fixture');return nativeFetch(input,options)};
 export const delay=()=>new Promise(r=>setTimeout(r,latency));
@@ -11,7 +12,7 @@ export function record(app=scope.applicationId){if(!fixture.records.has(app)){co
 export const useAuth=()=>({user:{id:'00000000-0000-4000-8000-000000000201'}}),useDemoMode=()=>({isDemoEnabled:true});
 export async function getInterviewKit(){await delay();return {questions,version:1}}
 export async function openInterviewSession(s){await delay();return structuredClone(record(s.applicationId))}
-export async function saveInterviewSession(s){await delay();if(fixture.fail)throw Error('Synthetic save failure');const r=record(s.applicationId);if(r.completedAt)throw Error('Read only');if(r.revision!==s.revision)throw Error('Stale revision');r.draft=structuredClone(s.draft);r.revision++;if(s.complete)r.completedAt=new Date().toISOString();return {session:structuredClone(r),evaluation:s.complete?{id:r.id}:null}}
+export async function saveInterviewSession(s){fixture.saves.push(structuredClone(s));const gate=fixture.saveGate;if(gate)await gate;await delay();if(fixture.fail)throw Error('Synthetic save failure');const r=record(s.applicationId);if(r.completedAt)throw Error('Read only');if(r.revision!==s.revision)throw Error('Stale revision');r.draft=structuredClone(s.draft);r.revision++;if(s.complete)r.completedAt=new Date().toISOString();return {session:structuredClone(r),evaluation:s.complete?{id:r.id}:null}}
 export async function getInterviewCollaboration(s){await delay();return {sessionId:s.applicationId,revision:fixture.revision,selection:fixture.selection,participants:[{id:'fixture',name:'Fictional reviewer'}],invitation:null,timing:record(s.applicationId).timing}}
 export async function selectSharedInterviewQuestion(s){await delay();if(fixture.fail)throw Error('Synthetic sharing failure');const question=questions.find(q=>q.id===s.questionId);fixture.revision++;fixture.selection={question,by:'Fictional reviewer',memberId:'fixture'};return {question,revision:fixture.revision}}
 export async function leaveInterviewCollaboration(){} export async function dismissInterviewInvitation(){} export function simulateDemoInterviewSelection(){} export function simulateDemoInterviewAdvance(){}

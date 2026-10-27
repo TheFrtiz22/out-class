@@ -15,14 +15,14 @@ test('new demo foundation persists isolated grants, pinned documents, annotation
  assert.equal(h.calls(),0);demoStore.stop();
 });
 
-test('demo previous-five excludes current, other reviewers, other rounds, drafts and revoked assignments with deterministic ties',async()=>{
+test('demo room/day history excludes current, other rounds, drafts and revoked ordinary access with deterministic applicant ties',async()=>{
  const h=harness(),{demoStore}=h.load('lib/demo/store.ts'),api=h.load('lib/workspace-api.ts');demoStore.start();
  const s=demoStore.get(),club=s.clubs[0],round=club.rounds.find(r=>r.name==='Interview'),member=s.memberships.find(m=>m.clubId===club.id&&m.isOwner),app=s.applications.find(a=>a.clubId===club.id&&a.roundId===round.id&&a.studentId!==member.userId);
  const scope={clubId:club.id,applicationId:app.id,roundId:round.id};
  demoStore.mutate(s=>{
-  s.perspective={role:'leader',clubId:club.id};s.interviews=[];
+  s.perspective={role:'leader',clubId:club.id};s.interviews=[];s.memberships.find(m=>m.id===member.id).interviewOffices=[];s.interviewRooms.push({...s.interviewRooms[0],id:'history-room',clubId:club.id,roundId:round.id});s.roomBookings=s.roomBookings.filter(b=>b.applicationId!==app.id||b.roundId!==round.id);s.roomBookings.push({id:'current-booking',applicationId:app.id,roundId:round.id,roomId:'history-room',startTime:'2026-10-01T23:00:00Z'});
   for(let i=0;i<8;i++){
-   const a=structuredClone(app);a.id=`history-app-${i}`;a.evaluations=[{id:`history-eval-${i}`,applicationId:a.id,interviewerId:member.id,roundId:round.id,round:round.name,score:5+i*.5,notes:'Private closing',applicantQuestions:'Private question',submittedAt:new Date('2026-10-01'),createdAt:new Date('2026-10-01')}];s.applications.push(a);
+   const a=structuredClone(app);a.id=`history-app-${i}`;a.evaluations=[{id:`history-eval-${i}`,applicationId:a.id,interviewerId:member.id,roundId:round.id,round:round.name,score:5+i*.5,notes:'Private closing',applicantQuestions:'Private question',submittedAt:new Date('2026-10-01'),createdAt:new Date('2026-10-01')}];s.applications.push(a);s.roomBookings.push({id:'booking-'+i,applicationId:a.id,roundId:round.id,roomId:'history-room',startTime:'2026-10-01T20:00:00Z'});
    s.interviewFoundation.assignments.push({applicationId:a.id,roundId:round.id,memberId:member.id,revokedAt:i===7?'2026-10-02':null});
    s.interviews.push({id:`record-${i}`,applicationId:a.id,clubId:club.id,roundId:round.id,interviewerId:member.id,anonymousReview:false,completedAt:i===6?null:'2026-10-01T00:00:00.000Z',revision:1,questions:[],draft:{questionNotes:[],additionalQuestions:[],overallReview:'SECRET',score:5+i*.5}});
   }
@@ -30,5 +30,5 @@ test('demo previous-five excludes current, other reviewers, other rounds, drafts
   s.interviews.push({...s.interviews[0],id:'other-reviewer',interviewerId:'other'});
   s.interviews.push({...s.interviews[0],id:'current',applicationId:app.id});
  });
- const rows=await api.getPreviousInterviewScores(scope);assert.deepEqual(rows.map(r=>r.id),['record-5','record-4','record-3','record-2','record-1']);assert.doesNotMatch(JSON.stringify(rows),/SECRET|Private closing|Private question/);assert.equal(h.calls(),0);demoStore.stop();
+ const rows=await api.getPreviousInterviewScores(scope);assert.deepEqual(rows.map(r=>r.id),['history-app-5','history-app-4','history-app-3','history-app-2','history-app-1']);assert.doesNotMatch(JSON.stringify(rows),/SECRET|Private closing|Private question/);assert.equal(h.calls(),0);demoStore.stop();
 });

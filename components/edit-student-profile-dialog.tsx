@@ -48,6 +48,7 @@ export function EditStudentProfileDialog({
   const [error, setError] = useState("")
   const [originalPhoto, setOriginalPhoto] = useState<string | null>(null)
   const [originalGpa, setOriginalGpa] = useState<number | null>(null)
+  const scholarship = draft?.scholarStatus as { selections: string[]; other: string } | null | undefined
   const [scholarYes, setScholarYes] = useState(false)
   const [photoSource, setPhotoSource] = useState<string | null>(null)
   useEffect(() => () => { if (photoSource?.startsWith("blob:")) URL.revokeObjectURL(photoSource) }, [photoSource])
@@ -227,7 +228,8 @@ export function EditStudentProfileDialog({
                   <label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" checked={draft.transferStudent} onChange={e => setDraft({ ...draft, transferStudent: e.target.checked })} />Transfer student</label>
                   <fieldset className="space-y-3"><legend className="text-sm font-medium">Are you a scholar?</legend>
                     <select aria-label="Are you a scholar?" className="rounded-md border bg-background p-2" value={scholarYes ? "yes" : draft.scholarStatus ? "no" : ""} onChange={e => { setScholarYes(e.target.value === "yes"); setDraft({ ...draft, scholarStatus: e.target.value === "no" ? { selections: ["NOT_APPLICABLE"], other: "" } : null }) }}><option value="">Not provided</option><option value="yes">Yes</option><option value="no">No</option></select>
-                    {scholarYes && <div className="grid gap-3 sm:grid-cols-2">{scholarPrograms.map(selection => <label key={selection} className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" checked={!!(draft.scholarStatus as { selections?: string[] } | null)?.selections?.includes(selection)} onChange={e => setDraft({ ...draft, scholarStatus: toggleScholar(draft.scholarStatus, selection, e.target.checked) })} />{scholarLabels[selection]}</label>)}</div>}
+                    {scholarYes && <div className="grid gap-3 sm:grid-cols-2">{([...scholarPrograms, "OTHER"] as const).map(selection => <label key={selection} className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" checked={!!(draft.scholarStatus as { selections?: string[] } | null)?.selections?.includes(selection)} onChange={e => setDraft({ ...draft, scholarStatus: toggleScholar(draft.scholarStatus, selection, e.target.checked) })} />{scholarLabels[selection]}</label>)}</div>}
+                    {scholarYes && scholarship?.selections.includes("OTHER") && <label className="block space-y-2 text-sm">Scholarship name<Input aria-label="Other scholarship name" maxLength={200} value={scholarship.other || ""} onChange={e => setDraft({ ...draft, scholarStatus: { ...scholarship!, other: e.target.value } })} /></label>}
                   </fieldset>
                   <div className="grid grid-cols-2 gap-4">
                     {(

@@ -312,62 +312,72 @@ export function InterviewKitSession({
     return () => onState(false, false);
   }, [dirty, saving, closingQuestion, newQuestion, onState]);
   async function persist(complete = false, next = false, patch?: Partial<InterviewDraft>): Promise<boolean | undefined> {
-    if (complete && (finishingRef.current || recovery.recovery != null)) return;
+    if (finishingRef.current || (complete && recovery.recovery != null)) return;
     if (complete) { finishingRef.current = true; setCompleting(true); }
-    if (pendingSave.current) await pendingSave.current;
-    const record = sessionRef.current;
-    if (!record || savingRef.current || record.completedAt) { if (complete) { finishingRef.current = false; setCompleting(false); } return; }
-    if (complete && draftRef.current.score === null) {
-      setError("Choose an overall score before ending the post-interview.");
-      finishingRef.current = false; setCompleting(false);
-      return false;
-    }
-    if (complete && newQuestion.trim()) {
-      setError("Add or clear the additional question before completing.");
-      finishingRef.current = false; setCompleting(false);
-      return;
-    }
-    savingRef.current = true;
-    setSaving(true);
-    setError("");
-    setFailedFinish(false);
-    const snapshot = structuredClone({ ...draftRef.current, ...patch });
-    const request = (async () => { try {
-      const result = await saveInterviewSession({
-        clubId,
-        applicationId,
-        roundId,
-        revision: record.revision,
-        draft: snapshot,
-        complete,
-      });
-      sessionRef.current = { ...record, ...result.session };
-      if (mounted.current) {
-        setSession(sessionRef.current);
-        savedRef.current = JSON.stringify(snapshot);
-        setSaved(savedRef.current);
-        if (patch) setDraft(current => ({ ...current, ...patch }));
-        if (complete && result.evaluation) { setActiveQuestion(""); setDraft(result.session.draft); onComplete(result.evaluation, next); }
+    try {
+      // Completion owns the queue before waiting. Blur/visibility flushes must
+      // not start another draft write ahead of the explicit submission.
+      while (pendingSave.current) await pendingSave.current;
+      if (!complete && finishingRef.current) return;
+      const record = sessionRef.current;
+      if (!record || record.completedAt) return;
+      if (complete && draftRef.current.score === null) {
+        setError("Choose an overall score before ending the post-interview.");
+        return false;
       }
-      return true;
-    } catch {
-      if (mounted.current) setFailedFinish(complete);
-      if (mounted.current)
-        setError("Your interview could not be saved. Retry, or refresh your access and revision.");
-      return false;
+      if (complete && newQuestion.trim()) {
+        setError("Add or clear the additional question before completing.");
+        return;
+      }
+      savingRef.current = true;
+      setSaving(true);
+      setError("");
+      setFailedFinish(false);
+      const snapshot = structuredClone({ ...draftRef.current, ...patch });
+      const request = (async () => { try {
+        const result = await saveInterviewSession({
+          clubId,
+          applicationId,
+          roundId,
+          revision: record.revision,
+          draft: snapshot,
+          complete,
+        });
+        if (complete && (!result.session.completedAt || !result.evaluation)) {
+          throw Error("Submission was not acknowledged.");
+        }
+        sessionRef.current = { ...record, ...result.session };
+        if (mounted.current) {
+          setSession(sessionRef.current);
+          savedRef.current = JSON.stringify(snapshot);
+          setSaved(savedRef.current);
+          if (patch) setDraft(current => ({ ...current, ...patch }));
+          if (complete && result.evaluation) { setActiveQuestion(""); setDraft(result.session.draft); onComplete(result.evaluation, next); }
+        }
+        return true;
+      } catch {
+        if (mounted.current) setFailedFinish(complete);
+        if (mounted.current)
+          setError("Your interview could not be saved. Retry, or refresh your access and revision.");
+        return false;
+      } finally {
+        savingRef.current = false;
+        if (mounted.current) {
+          setSaving(false);
+        }
+      } })();
+      pendingSave.current = request;
+      try { return await request; } finally { if (pendingSave.current === request) pendingSave.current = null; }
     } finally {
-      savingRef.current = false;
-      if (mounted.current) {
-        setSaving(false);
-        if (complete) { finishingRef.current = false; setCompleting(false); }
+      if (complete) {
+        finishingRef.current = false;
+        if (mounted.current) setCompleting(false);
       }
-    } })();
-    pendingSave.current = request;
-    try { return await request; } finally { if (pendingSave.current === request) pendingSave.current = null; }
+    }
   }
   async function flushLatest() {
     if (pendingSave.current) await pendingSave.current;
-    while (sessionRef.current && !sessionRef.current.completedAt && JSON.stringify(draftRef.current) !== savedRef.current) {
+    while (!finishingRef.current && sessionRef.current && !sessionRef.current.completedAt && JSON.stringify(draftRef.current) !== savedRef.current) {
       if (!(await persist())) throw Error("Your private notes are retained. Retry before leaving.");
     }
   }
@@ -504,7 +514,7 @@ export function InterviewKitSession({
       if (mounted.current) setNextBusy(false);
     }
   }
-  return <form ref={formRef} id="interview-evaluation" className="oc-focused-interview min-w-0" data-unsaved={dirty || !!newQuestion.trim()} data-saving={saving} onCompositionStart={() => { composing.current = true; }} onCompositionEnd={() => { composing.current = false; }} onSubmit={e => { e.preventDefault(); if (!session.completedAt) void endInterview(); }}>
+  return <form ref={formRef} id="interview-evaluation" className="oc-focused-interview min-w-0" data-unsaved={dirty || !!newQuestion.trim()} data-saving={saving} onCompositionStart={() => { composing.current = true; }} onCompositionEnd={() => { composing.current = false; }} onSubmit={e => { e.preventDefault(); }}>
     <header className="oc-room-header">
       {toolbar?.(!!session.completedAt)}
       <InterviewTimer key={session.id} recordId={session.id} paused={closing || !!session.completedAt} timing={collaboration.view?.timing !== undefined ? collaboration.view.timing : session.timing} />
@@ -559,7 +569,7 @@ export function InterviewKitSession({
           {session.completedAt && <RoundScore scope={{ clubId, applicationId, roundId }} />}
           <a href="#interview-completed" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4 lg:hidden">Miscellaneous notes and question review</a>
           <fieldset disabled={disabled} className="space-y-3"><label htmlFor="applicant-questions">Questions the applicant asked</label><Textarea id="applicant-questions" rows={4} maxLength={20000} value={draft.applicantQuestions || ""} onChange={e => setDraft(d => ({ ...d, applicantQuestions: e.target.value }))} />
-            {!session.completedAt && <div className="oc-score-history"><h3>Your previous five interviews in this round</h3>{historyError ? <p role="alert">{historyError} <Button type="button" variant="ghost" onClick={() => setHistoryRetry(v => v + 1)}>Retry history</Button></p> : history === null ? <p role="status">Loading your scores…</p> : history.length ? <ul>{history.map(h => <li key={h.id}><span>{h.name}</span><span>{h.score} / 10</span></li>)}</ul> : <p className="text-xs text-muted-foreground">No previous completed interviews available.</p>}</div>}
+            {!session.completedAt && <div className="oc-score-history"><h3>Previous five applicants in this room</h3>{historyError ? <p role="alert">{historyError} <Button type="button" variant="ghost" onClick={() => setHistoryRetry(v => v + 1)}>Retry history</Button></p> : history === null ? <p role="status">Loading your scores…</p> : history.length ? <ul>{history.map(h => <li key={h.id}><span>{h.name}</span><span>{h.score} / 10</span></li>)}</ul> : <p className="text-xs text-muted-foreground">No previous completed interviews available.</p>}</div>}
             <label htmlFor="interview-score" className="block">Overall score · <span aria-live="polite">{draft.score === null ? "Not scored" : `${draft.score} / 10`}</span></label>
             {session.completedAt ? <p>{draft.score === null ? "Not scored" : `${draft.score} / 10`}</p> : <input id="interview-score" type="range" min={1} max={10} step={0.5} value={draft.score ?? 1} disabled={disabled} aria-valuetext={draft.score === null ? "Not scored; interact to select a score" : `${draft.score} out of 10`} className="min-h-11 w-full accent-foreground cursor-pointer disabled:opacity-50" onChange={e => { const score = Number(e.currentTarget.value); setDraft(d => ({ ...d, score })); }} onPointerUp={e => { const score = Number(e.currentTarget.value); setDraft(d => ({ ...d, score })); }} onKeyDown={scoreKey} />}
             {!session.completedAt && <p className="text-xs text-muted-foreground">1–10 in half-point steps. Select with pointer or touch, or use the arrow keys, Home and End.</p>}

@@ -12,6 +12,7 @@ import { kitSchema, interviewDraftSchema, emptyInterviewDraft, validateQuestionN
 import type { InterviewRecord } from "@prisma/client";
 import { approvedBookingPanel, collaborationAccess } from "@/utils/interview-collaboration";
 import { interviewTiming } from "@/lib/interview-session-timing";
+import { interviewHistoryWindow, previousApplicantScores } from "@/lib/interview-score-history";
 import { snapshotSubmittedQuestions, submittedQuestionsSchema, submittedScoreSummary } from "@/lib/interview-review-summary";
 import { canDiscoverInterviewSetup, type InterviewSetupRounds } from "@/lib/interview-setup";
 import { CLUB_SUSPENDED_MESSAGE } from "@/lib/club-suspension";
@@ -216,13 +217,28 @@ export async function getSubmittedInterviewReview(input: z.infer<typeof scope> &
 export async function getPreviousInterviewScores(input: z.infer<typeof scope>) {
   const data = scope.parse(input); const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
-    const { member } = await authorizeInterview(tx, data, user.id);
-    const records = await tx.interviewRecord.findMany({ where: {
-      interviewerId: member.id, roundId: data.roundId, applicationId: { not: data.applicationId }, completedAt: { not: null }, anonymousReview: false, evaluationId: { not: null },
-      round: { clubId: data.clubId, anonymousReview: false },
-      application: { clubId: data.clubId, studentId: { not: user.id }, status: { not: "DRAFTING" }, round: { anonymousReview: false }, interviewAssignments: { some: { memberId: member.id, roundId: data.roundId, revokedAt: null } } },
-    }, orderBy: [{ completedAt: "desc" }, { id: "desc" }], take: 5,
-    select: { id: true, evaluation: { select: { score: true } }, application: { select: { student: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } } } });
-    return records.map(r => ({ id: r.id, name: r.application.student.studentProfile ? `${r.application.student.studentProfile.firstName} ${r.application.student.studentProfile.lastName}` : "Profile not provided", score: r.evaluation!.score }));
+    const { member, caps } = await authorizeInterview(tx, data, user.id);
+    const current = await tx.interviewBooking.findUnique({ where: { applicationId_roundId: { applicationId: data.applicationId, roundId: data.roundId } }, include: { slot: { include: { room: true } } } });
+    const room = current?.slot.room;
+    if (!current || !room || room.clubId !== data.clubId || room.roundId !== data.roundId) return [];
+    const window = interviewHistoryWindow(current.slot.startTime);
+    const bookings = await tx.interviewBooking.findMany({ where: {
+      roundId: data.roundId, applicationId: { not: data.applicationId },
+      slot: { clubId: data.clubId, roomId: room.id, startTime: { gte: window.start, lt: current.slot.startTime } },
+      application: { clubId: data.clubId, studentId: { not: user.id }, status: { not: "DRAFTING" }, round: { anonymousReview: false },
+        ...(!caps.readClosing ? { interviewAssignments: { some: { memberId: member.id, roundId: data.roundId, revokedAt: null } } } : {}) },
+    }, select: { applicationId: true, application: { select: { roundId: true, student: { select: { studentProfile: { select: { firstName: true, lastName: true } } } }, interviewAssignments: { where: { memberId: member.id, roundId: data.roundId, revokedAt: null }, select: { id: true } } } } } });
+    const allRecords = bookings.length ? await tx.interviewRecord.findMany({ where: { applicationId: { in: bookings.map(b => b.applicationId) }, roundId: data.roundId, completedAt: { not: null }, evaluationId: { not: null }, round: { clubId: data.clubId, anonymousReview: false }, interviewer: { clubId: data.clubId } }, select: { id: true, applicationId: true, interviewerId: true, anonymousReview: true, evaluation: { select: { score: true, submittedAt: true } } } }) : [];
+    const applicants = [];
+    for (const booking of bookings) {
+      const records = allRecords.filter(r => r.applicationId === booking.applicationId);
+      // Match the canonical round-score visibility gate; never reveal peers early.
+      if (records.some(r => r.anonymousReview)) continue;
+      const own = records.some(r => r.interviewerId === member.id && r.evaluation?.submittedAt);
+      if ((!caps.readClosing || booking.application.roundId === data.roundId && booking.application.interviewAssignments.length > 0) && !own) continue;
+      const p = booking.application.student.studentProfile;
+      applicants.push({ id: booking.applicationId, name: p ? `${p.firstName} ${p.lastName}` : "Profile not provided", reviews: records.flatMap(r => r.evaluation ? [{ id: r.id, interviewerId: r.interviewerId, score: r.evaluation.score, submittedAt: r.evaluation.submittedAt }] : []) });
+    }
+    return previousApplicantScores(applicants);
   }, interviewTransactionOptions);
 }

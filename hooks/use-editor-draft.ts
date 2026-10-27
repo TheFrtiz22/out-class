@@ -5,6 +5,7 @@ import { useDemoMode } from "@/contexts/demo-context"
 import { getEditorDraft, saveEditorDraft } from "@/actions/editor-drafts"
 import { editorDraftKey, type EditorScope } from "@/lib/editor-drafts"
 import { useAutosave } from "@/hooks/use-autosave"
+import { editorValue, sameEditorBase } from "@/lib/editor-value"
 
 /** Stage private working copies. Calling this hook can never invoke a domain commit action. */
 export function useEditorDraft<T>({ scope, value, restore, enabled = true, base = "" }: { scope: EditorScope; value: T; restore: (value: T) => void; enabled?: boolean; base?: string }) {
@@ -29,7 +30,7 @@ export function useEditorDraft<T>({ scope, value, restore, enabled = true, base 
       let committed = 0
       try { committed = Number(sessionStorage.getItem(`outclass:committed-draft:${identity}`) || 0) } catch {}
       if (saved?.content != null && saved.revision > committed) {
-        if (saved.base === latest.current.base || JSON.stringify(saved.content) === JSON.stringify(latest.current.value)) latest.current.restore(saved.content as T)
+        if (sameEditorBase(saved.base, latest.current.base) || editorValue(saved.content) === editorValue(latest.current.value)) latest.current.restore(saved.content as T)
         else setRecovery(saved.content as T)
       }
       setLoaded(identity)

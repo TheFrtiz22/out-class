@@ -1,8 +1,8 @@
 import { z } from "zod";
 
-export const scholarPrograms = ["ECHOLS", "JEFFERSON", "COLLEGE_SCIENCE", "RODMAN", "MILLER_ARTS", "CORE"] as const;
+export const scholarPrograms = ["ECHOLS", "JEFFERSON", "WALENTAS", "COLLEGE_SCIENCE", "RODMAN", "MILLER_ARTS", "CORE"] as const;
 // Historical designations remain valid so editing education never destroys existing data.
-export const scholarSelections = [...scholarPrograms, "WALENTAS", "NOT_APPLICABLE", "OTHER"] as const;
+export const scholarSelections = [...scholarPrograms, "NOT_APPLICABLE", "OTHER"] as const;
 export const scholarLabels = { JEFFERSON: "Jefferson Scholars Program", WALENTAS: "Walentas Scholar", ECHOLS: "Echols Scholars Program", RODMAN: "Rodman Scholars Program", COLLEGE_SCIENCE: "College Science Scholars Program", MILLER_ARTS: "Miller Arts Scholars Program", CORE: "CORE Scholars Program", NOT_APPLICABLE: "Not Applicable", OTHER: "Other" };
 export function scholarNames(value: unknown): string[] {
   const parsed = scholarStatusSchema.safeParse(value);

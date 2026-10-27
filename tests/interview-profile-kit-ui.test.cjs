@@ -21,6 +21,8 @@ test('Education checkboxes enforce exclusivity and Other, and save only the educ
  check('Jefferson Scholars Program',true);check('Echols Scholars Program',true);
  await nodes(t).find(n=>n.type==='form').props.onSubmit({preventDefault(){}});
  assert.deepEqual(calls[0].scholarStatus.selections.sort(),['ECHOLS','JEFFERSON']);assert.equal("gpa" in calls[0],false);assert.equal('resumeUrl'in calls[0],false);assert.equal('experiences'in calls[0],false);
+ await nodes(h.render()).find(n=>n.type==='Dialog').props.onOpenChange(true);t=h.render();answer().props.onChange({target:{value:'yes'}});t=h.render();check('Walentas Scholar',true);check('Other',true);
+ nodes(t).find(n=>n.props?.['aria-label']==='Other scholarship name').props.onChange({target:{value:'Synthetic fellowship'}});t=h.render();await nodes(t).find(n=>n.type==='form').props.onSubmit({preventDefault(){}});assert.equal(calls.at(-1).scholarStatus.other,'Synthetic fellowship');assert.ok(calls.at(-1).scholarStatus.selections.includes('WALENTAS'));
  answer().props.onChange({target:{value:'no'}});t=h.render();assert.equal(nodes(t).filter(n=>n.type==='label'&&text(n).includes('Scholars Program')).length,0);
 
 })
