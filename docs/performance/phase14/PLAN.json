@@ -1,0 +1,107 @@
+{
+  "baseline": "f14ab3a410268638bfceb7b51b7fb372d18a452b",
+  "scope": "One bounded client-only optimization: begin review editor module loading at the same time as its selected, live-authorized rounds GET. Keep Settings module boundaries and all request/draft ownership unchanged. Separate instrumentation investigates remaining identity waits.",
+  "targets": [
+    "components/club-workspace.tsx"
+  ],
+  "hypothesis": "On selecting Anonymous Review, overlap review code download with rounds GET instead of starting code only after data settles. Preserve inactive-feature bundle savings. No effect expected on warm editor visits, request count, bytes or server execution.",
+  "constraints": "No authorization/data caching, authority event suppression, identity/session/policy/query change, schema/index/infra/dependency change or publication. All previous font/scope fixes retained.",
+  "cohorts": [
+    1000,
+    5000
+  ],
+  "profiles": [
+    "local",
+    "80ms latency, 200000 B/s down, 93750 B/s up, CPU4x"
+  ],
+  "blocks": [
+    "BA",
+    "AB"
+  ],
+  "warmupsPerBuildBlockPathCondition": 1,
+  "samplesPerBuildBlockPathCondition": 5,
+  "mainPaths": [
+    "applicants",
+    "applicantDetail"
+  ],
+  "conditions": [
+    "cold",
+    "warm"
+  ],
+  "plannedBrowserOutcomes": 384,
+  "plannedWarmInteractionOutcomes": 192,
+  "plannedNativeHttpOutcomes": 336,
+  "deferredFeatureCost": {
+    "cohort": 1000,
+    "profile": "local and constrained",
+    "paths": [
+      "overview \u2192 settingsProfile",
+      "overview \u2192 meetings",
+      "recruiting \u2192 scheduledDecisions",
+      "settingsApplication \u2192 rounds"
+    ],
+    "conditions": [
+      "cold",
+      "warm"
+    ],
+    "warmupsPerBuildBlockPathCondition": 1,
+    "samplesPerBuildBlockPathCondition": 3,
+    "plannedOutcomes": 256,
+    "groupN": 6,
+    "p95": "nearest rank maximum",
+    "readiness": "Settings actual public-profile form, fixture meeting data, empty scheduled list after fetch, and anonymous-review controls. Anonymous review uses its existing Settings/Application link; warm return uses browser history. Decisions group/details summary open before timed action.",
+    "profiles": [
+      "local",
+      "constrained"
+    ]
+  },
+  "pilot": "Two excluded eight-outcome development feature probes, plus the unchanged new browser test failing on baseline and passing on candidate. Pilots do not enter primary quantiles. A separate local GET verifies the instrumented observer before collection.",
+  "primaryMetric": "Full preceding source document useful-content time plus captured requests/script/body bytes and separate subsequent click timing. No readiness clock change. Bounded drains, incomplete background transport flags, fonts/FCP/CLS retained.",
+  "power": "User-confirmed open lid and idle host. Earlier authorization permits battery. Record one initial power source and low-power mode0 throughout each whole profile; temporary awake assertion and actual sleep audit. No rows replaced for timing.",
+  "publication": "No push, PR, merge or deployment. Report causal limits and inherited Settings/review first-use risks.",
+  "phase": "14",
+  "candidate": "Frozen Phase14 build with the exact CANDIDATE_SOURCE.json hashes; one application file differs from the Phase13 baseline.",
+  "hostControl": {
+    "confirmedIdleWindow": true,
+    "existingDevServerPort3111": "Unrelated services remain untouched; any observed foreign dev worker must stay within the declared idle CPU bound.",
+    "samplingSeconds": 5,
+    "invalidateWholeProfileIf": [
+      "actual sleep/wake interruption",
+      "foreign build/test runner observed during measurement",
+      "foreign Next dev CPU grows more than1 CPU-second in any60-second window",
+      "original checkout HEAD or porcelain status changes",
+      "collector/plan/application/dependency version hashes change",
+      "Recorded initial power source changes within a profile, or low-power mode differs from0"
+    ],
+    "failurePolicy": "Stop or retain whole profile as invalid; never replace individual slow rows. Diagnostics are separate from timing samples.",
+    "baseline": "Each complete profile records the original checkout state immediately before its first sample. Changes during preparation are recorded and preserved; any later change within that profile invalidates it."
+  },
+  "diagnostics": {
+    "scope": "Separate instrumented native and browser probes using the Phase13 observer, excluded from primary timings. No telemetry shipped to production.",
+    "cases": [
+      {
+        "size": 1000,
+        "variant": "baseline"
+      },
+      {
+        "size": 1000,
+        "variant": "candidate"
+      },
+      {
+        "size": 5000,
+        "variant": "candidate"
+      },
+      {
+        "size": 5000,
+        "variant": "baseline"
+      }
+    ],
+    "nativePerCase": 42,
+    "directIdentityPerCase": 14,
+    "browserPerCase": 8,
+    "readOnlyPlansPerCase": 1,
+    "browserPaths": "Existing deferred-screens Settings/Meetings/Decisions/Review workload, cold and warm; separate from primary."
+  },
+  "plannedFeatureOutcomes": 256,
+  "interpretationRule": "Claim a target performance gain only where the complete matched cold useful-content p50/p95 improve under valid controls. Report unchanged/worse metrics regardless of proven download overlap. No broad latency claim from structural overlap; small n nearest-rank p95 often equals maximum."
+}

@@ -1,0 +1,2983 @@
+{
+  "scope": "Existing selected-review requests, same useful-content predicate and clocks. Code/data overlap is a structural observation, not proof of shorter visible-content time. All measured, warmup, cold and warm rows retained; server phases overlap and are not exclusive CPU/pool time.",
+  "rows": [
+    {
+      "profile": "local",
+      "variant": "B",
+      "condition": "cold",
+      "measured": false,
+      "file": "size-1000-pair-1-1-B-features-warmup/browser-samples.json",
+      "index": 6,
+      "clickMs": 162.39999997615814,
+      "sourceMs": 455,
+      "sourcePlusClickMs": 617.3999999761581,
+      "requests": 7,
+      "encodedBodyBytes": 10177,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 109.699951171875,
+      "lastReviewCodeEndMs": 111.699951171875,
+      "roundsStartMs": 74.699951171875,
+      "roundsEndMs": 107.699951171875,
+      "codeStartedBeforeRoundsComplete": false,
+      "codeStartMinusRoundsEndMs": 2.0,
+      "codeAndRoundsOverlapMs": 0,
+      "roundsTtfbMs": 32.856,
+      "roundsTransferMs": 0.36599999999999966,
+      "serverPhases": {
+        "identity": 21.74,
+        "database": 7.09,
+        "live_session": 0.73,
+        "lock_query": 1.2,
+        "serialization": 0.06,
+        "total": 29.46
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "B",
+      "condition": "warm",
+      "measured": false,
+      "file": "size-1000-pair-1-1-B-features-warmup/browser-samples.json",
+      "index": 7,
+      "clickMs": 131.80000001192093,
+      "sourceMs": 437,
+      "sourcePlusClickMs": 568.8000000119209,
+      "requests": 4,
+      "encodedBodyBytes": 1341,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 76.2001953125,
+      "roundsEndMs": 107.2001953125,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 30.703,
+      "roundsTransferMs": 0.3500000000000014,
+      "serverPhases": {
+        "identity": 20.81,
+        "database": 6.13,
+        "live_session": 0.7,
+        "lock_query": 0.72,
+        "serialization": 0.09,
+        "total": 27.55
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "B",
+      "condition": "cold",
+      "measured": true,
+      "file": "size-1000-pair-1-1-B-features-measure/browser-samples.json",
+      "index": 18,
+      "clickMs": 155.60000002384186,
+      "sourceMs": 446,
+      "sourcePlusClickMs": 601.6000000238419,
+      "requests": 7,
+      "encodedBodyBytes": 10176,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 107.400146484375,
+      "lastReviewCodeEndMs": 109.400146484375,
+      "roundsStartMs": 73.400146484375,
+      "roundsEndMs": 105.400146484375,
+      "codeStartedBeforeRoundsComplete": false,
+      "codeStartMinusRoundsEndMs": 2.0,
+      "codeAndRoundsOverlapMs": 0,
+      "roundsTtfbMs": 30.966,
+      "roundsTransferMs": 0.37099999999999866,
+      "serverPhases": {
+        "identity": 22.17,
+        "database": 4.65,
+        "live_session": 0.39,
+        "lock_query": 0.5,
+        "serialization": 0.06,
+        "total": 27.33
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "B",
+      "condition": "cold",
+      "measured": true,
+      "file": "size-1000-pair-1-1-B-features-measure/browser-samples.json",
+      "index": 19,
+      "clickMs": 162.19999998807907,
+      "sourceMs": 434,
+      "sourcePlusClickMs": 596.1999999880791,
+      "requests": 7,
+      "encodedBodyBytes": 10177,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 123.699951171875,
+      "lastReviewCodeEndMs": 123.699951171875,
+      "roundsStartMs": 79.699951171875,
+      "roundsEndMs": 120.699951171875,
+      "codeStartedBeforeRoundsComplete": false,
+      "codeStartMinusRoundsEndMs": 3.0,
+      "codeAndRoundsOverlapMs": 0,
+      "roundsTtfbMs": 40.364,
+      "roundsTransferMs": 0.41899999999999693,
+      "serverPhases": {
+        "identity": 27.17,
+        "database": 7.52,
+        "live_session": 0.75,
+        "lock_query": 0.76,
+        "serialization": 0.12,
+        "total": 35.69
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "B",
+      "condition": "cold",
+      "measured": true,
+      "file": "size-1000-pair-1-1-B-features-measure/browser-samples.json",
+      "index": 20,
+      "clickMs": 160.7999999821186,
+      "sourceMs": 435,
+      "sourcePlusClickMs": 595.7999999821186,
+      "requests": 7,
+      "encodedBodyBytes": 10177,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 113.199951171875,
+      "lastReviewCodeEndMs": 115.199951171875,
+      "roundsStartMs": 85.199951171875,
+      "roundsEndMs": 111.199951171875,
+      "codeStartedBeforeRoundsComplete": false,
+      "codeStartMinusRoundsEndMs": 2.0,
+      "codeAndRoundsOverlapMs": 0,
+      "roundsTtfbMs": 25.96,
+      "roundsTransferMs": 0.36599999999999966,
+      "serverPhases": {
+        "identity": 18.99,
+        "database": 3.06,
+        "live_session": 0.6,
+        "lock_query": 0.58,
+        "serialization": 0.09,
+        "total": 22.64
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "B",
+      "condition": "warm",
+      "measured": true,
+      "file": "size-1000-pair-1-1-B-features-measure/browser-samples.json",
+      "index": 21,
+      "clickMs": 148.90000000596046,
+      "sourceMs": 437,
+      "sourcePlusClickMs": 585.9000000059605,
+      "requests": 4,
+      "encodedBodyBytes": 1341,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 94.300048828125,
+      "roundsEndMs": 123.300048828125,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 28.369,
+      "roundsTransferMs": 0.35900000000000176,
+      "serverPhases": {
+        "identity": 20.56,
+        "database": 5.07,
+        "live_session": 0.46,
+        "lock_query": 0.67,
+        "serialization": 0.09,
+        "total": 26.12
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "B",
+      "condition": "warm",
+      "measured": true,
+      "file": "size-1000-pair-1-1-B-features-measure/browser-samples.json",
+      "index": 22,
+      "clickMs": 247.69999998807907,
+      "sourceMs": 435,
+      "sourcePlusClickMs": 682.6999999880791,
+      "requests": 4,
+      "encodedBodyBytes": 1340,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 93.10009765625,
+      "roundsEndMs": 223.10009765625,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 129.008,
+      "roundsTransferMs": 0.7089999999999748,
+      "serverPhases": {
+        "identity": 116.57,
+        "database": 9.34,
+        "live_session": 1.17,
+        "lock_query": 0.81,
+        "serialization": 0.1,
+        "total": 126.61
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "B",
+      "condition": "warm",
+      "measured": true,
+      "file": "size-1000-pair-1-1-B-features-measure/browser-samples.json",
+      "index": 23,
+      "clickMs": 149.39999997615814,
+      "sourceMs": 433,
+      "sourcePlusClickMs": 582.3999999761581,
+      "requests": 4,
+      "encodedBodyBytes": 1343,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 91.800048828125,
+      "roundsEndMs": 122.800048828125,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 30.707,
+      "roundsTransferMs": 0.3829999999999991,
+      "serverPhases": {
+        "identity": 21.4,
+        "database": 5.37,
+        "live_session": 0.51,
+        "lock_query": 0.47,
+        "serialization": 0.08,
+        "total": 27.25
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "A",
+      "condition": "cold",
+      "measured": false,
+      "file": "size-1000-pair-1-2-A-features-warmup/browser-samples.json",
+      "index": 6,
+      "clickMs": 164.69999998807907,
+      "sourceMs": 460,
+      "sourcePlusClickMs": 624.6999999880791,
+      "requests": 7,
+      "encodedBodyBytes": 10179,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 83.2998046875,
+      "lastReviewCodeEndMs": 84.2998046875,
+      "roundsStartMs": 83.2998046875,
+      "roundsEndMs": 111.2998046875,
+      "codeStartedBeforeRoundsComplete": true,
+      "codeStartMinusRoundsEndMs": -28.0,
+      "codeAndRoundsOverlapMs": 1.0,
+      "roundsTtfbMs": 27.81,
+      "roundsTransferMs": 0.44700000000000273,
+      "serverPhases": {
+        "identity": 20.81,
+        "database": 2.66,
+        "live_session": 0.45,
+        "lock_query": 0.47,
+        "serialization": 0.05,
+        "total": 24.24
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "A",
+      "condition": "warm",
+      "measured": false,
+      "file": "size-1000-pair-1-2-A-features-warmup/browser-samples.json",
+      "index": 7,
+      "clickMs": 132.30000001192093,
+      "sourceMs": 439,
+      "sourcePlusClickMs": 571.3000000119209,
+      "requests": 4,
+      "encodedBodyBytes": 1146,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 75.10009765625,
+      "roundsEndMs": 102.10009765625,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 26.526,
+      "roundsTransferMs": 0.4209999999999994,
+      "serverPhases": {
+        "identity": 20.17,
+        "database": 3.63,
+        "live_session": 0.55,
+        "lock_query": 0.53,
+        "serialization": 0.08,
+        "total": 24.33
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "A",
+      "condition": "cold",
+      "measured": true,
+      "file": "size-1000-pair-1-2-A-features-measure/browser-samples.json",
+      "index": 18,
+      "clickMs": 160,
+      "sourceMs": 453,
+      "sourcePlusClickMs": 613,
+      "requests": 7,
+      "encodedBodyBytes": 10178,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 85.5,
+      "lastReviewCodeEndMs": 86.5,
+      "roundsStartMs": 85.5,
+      "roundsEndMs": 114.5,
+      "codeStartedBeforeRoundsComplete": true,
+      "codeStartMinusRoundsEndMs": -29.0,
+      "codeAndRoundsOverlapMs": 1.0,
+      "roundsTtfbMs": 28.464,
+      "roundsTransferMs": 0.46499999999999986,
+      "serverPhases": {
+        "identity": 20.41,
+        "database": 4.07,
+        "live_session": 0.88,
+        "lock_query": 0.5,
+        "serialization": 0.06,
+        "total": 25.21
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "A",
+      "condition": "cold",
+      "measured": true,
+      "file": "size-1000-pair-1-2-A-features-measure/browser-samples.json",
+      "index": 19,
+      "clickMs": 140.19999998807907,
+      "sourceMs": 431,
+      "sourcePlusClickMs": 571.1999999880791,
+      "requests": 7,
+      "encodedBodyBytes": 10179,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 69.900146484375,
+      "lastReviewCodeEndMs": 70.900146484375,
+      "roundsStartMs": 69.900146484375,
+      "roundsEndMs": 99.900146484375,
+      "codeStartedBeforeRoundsComplete": true,
+      "codeStartMinusRoundsEndMs": -30.0,
+      "codeAndRoundsOverlapMs": 1.0,
+      "roundsTtfbMs": 30.497,
+      "roundsTransferMs": 0.1999999999999993,
+      "serverPhases": {
+        "identity": 20.78,
+        "database": 5.61,
+        "live_session": 0.58,
+        "lock_query": 0.65,
+        "serialization": 0.07,
+        "total": 26.88
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "A",
+      "condition": "cold",
+      "measured": true,
+      "file": "size-1000-pair-1-2-A-features-measure/browser-samples.json",
+      "index": 20,
+      "clickMs": 178.40000000596046,
+      "sourceMs": 442,
+      "sourcePlusClickMs": 620.4000000059605,
+      "requests": 7,
+      "encodedBodyBytes": 12468,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 91.900146484375,
+      "lastReviewCodeEndMs": 92.900146484375,
+      "roundsStartMs": 91.900146484375,
+      "roundsEndMs": 121.900146484375,
+      "codeStartedBeforeRoundsComplete": true,
+      "codeStartMinusRoundsEndMs": -30.0,
+      "codeAndRoundsOverlapMs": 1.0,
+      "roundsTtfbMs": 30.662,
+      "roundsTransferMs": 0.3470000000000013,
+      "serverPhases": {
+        "identity": 22.93,
+        "database": 3.16,
+        "live_session": 0.57,
+        "lock_query": 0.88,
+        "serialization": 0.04,
+        "total": 26.66
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "A",
+      "condition": "warm",
+      "measured": true,
+      "file": "size-1000-pair-1-2-A-features-measure/browser-samples.json",
+      "index": 21,
+      "clickMs": 149.60000002384186,
+      "sourceMs": 435,
+      "sourcePlusClickMs": 584.6000000238419,
+      "requests": 4,
+      "encodedBodyBytes": 1345,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 83.60009765625,
+      "roundsEndMs": 117.60009765625,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 33.952,
+      "roundsTransferMs": 0.41899999999999693,
+      "serverPhases": {
+        "identity": 24.98,
+        "database": 4.88,
+        "live_session": 0.32,
+        "lock_query": 1.06,
+        "serialization": 0.09,
+        "total": 30.44
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "A",
+      "condition": "warm",
+      "measured": true,
+      "file": "size-1000-pair-1-2-A-features-measure/browser-samples.json",
+      "index": 22,
+      "clickMs": 132.60000002384186,
+      "sourceMs": 434,
+      "sourcePlusClickMs": 566.6000000238419,
+      "requests": 4,
+      "encodedBodyBytes": 1146,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 76.099853515625,
+      "roundsEndMs": 105.099853515625,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 29.197999999999997,
+      "roundsTransferMs": 0.4450000000000003,
+      "serverPhases": {
+        "identity": 20.78,
+        "database": 5.95,
+        "live_session": 0.78,
+        "lock_query": 1.04,
+        "serialization": 0.08,
+        "total": 27.17
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "A",
+      "condition": "warm",
+      "measured": true,
+      "file": "size-1000-pair-1-2-A-features-measure/browser-samples.json",
+      "index": 23,
+      "clickMs": 148.2999999821186,
+      "sourceMs": 433,
+      "sourcePlusClickMs": 581.2999999821186,
+      "requests": 4,
+      "encodedBodyBytes": 1345,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 95.89990234375,
+      "roundsEndMs": 127.89990234375,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 31.837,
+      "roundsTransferMs": 0.3999999999999986,
+      "serverPhases": {
+        "identity": 24.2,
+        "database": 4.75,
+        "live_session": 0.47,
+        "lock_query": 0.66,
+        "serialization": 0.08,
+        "total": 29.36
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "A",
+      "condition": "cold",
+      "measured": false,
+      "file": "size-1000-pair-2-1-A-features-warmup/browser-samples.json",
+      "index": 6,
+      "clickMs": 162.40000000596046,
+      "sourceMs": 454,
+      "sourcePlusClickMs": 616.4000000059605,
+      "requests": 7,
+      "encodedBodyBytes": 10179,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 73.800048828125,
+      "lastReviewCodeEndMs": 75.800048828125,
+      "roundsStartMs": 74.800048828125,
+      "roundsEndMs": 107.800048828125,
+      "codeStartedBeforeRoundsComplete": true,
+      "codeStartMinusRoundsEndMs": -34.0,
+      "codeAndRoundsOverlapMs": 1.0,
+      "roundsTtfbMs": 33.967,
+      "roundsTransferMs": 0.39099999999999824,
+      "serverPhases": {
+        "identity": 21.69,
+        "database": 7.6,
+        "live_session": 0.61,
+        "lock_query": 1.04,
+        "serialization": 0.06,
+        "total": 30.32
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "A",
+      "condition": "warm",
+      "measured": false,
+      "file": "size-1000-pair-2-1-A-features-warmup/browser-samples.json",
+      "index": 7,
+      "clickMs": 148,
+      "sourceMs": 433,
+      "sourcePlusClickMs": 581,
+      "requests": 4,
+      "encodedBodyBytes": 3632,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 91.699951171875,
+      "roundsEndMs": 123.699951171875,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 31.962000000000003,
+      "roundsTransferMs": 0.43499999999999517,
+      "serverPhases": {
+        "identity": 21.74,
+        "database": 5.98,
+        "live_session": 0.58,
+        "lock_query": 0.53,
+        "serialization": 0.08,
+        "total": 28.26
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "A",
+      "condition": "cold",
+      "measured": true,
+      "file": "size-1000-pair-2-1-A-features-measure/browser-samples.json",
+      "index": 18,
+      "clickMs": 161.19999998807907,
+      "sourceMs": 437,
+      "sourcePlusClickMs": 598.1999999880791,
+      "requests": 7,
+      "encodedBodyBytes": 10178,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 89.800048828125,
+      "lastReviewCodeEndMs": 91.800048828125,
+      "roundsStartMs": 90.800048828125,
+      "roundsEndMs": 121.800048828125,
+      "codeStartedBeforeRoundsComplete": true,
+      "codeStartMinusRoundsEndMs": -32.0,
+      "codeAndRoundsOverlapMs": 1.0,
+      "roundsTtfbMs": 31.078,
+      "roundsTransferMs": 0.4579999999999984,
+      "serverPhases": {
+        "identity": 21.17,
+        "database": 5.72,
+        "live_session": 0.78,
+        "lock_query": 0.64,
+        "serialization": 0.07,
+        "total": 27.55
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "A",
+      "condition": "cold",
+      "measured": true,
+      "file": "size-1000-pair-2-1-A-features-measure/browser-samples.json",
+      "index": 19,
+      "clickMs": 159.89999997615814,
+      "sourceMs": 437,
+      "sourcePlusClickMs": 596.8999999761581,
+      "requests": 7,
+      "encodedBodyBytes": 10177,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 80.60009765625,
+      "lastReviewCodeEndMs": 81.60009765625,
+      "roundsStartMs": 80.60009765625,
+      "roundsEndMs": 108.60009765625,
+      "codeStartedBeforeRoundsComplete": true,
+      "codeStartMinusRoundsEndMs": -28.0,
+      "codeAndRoundsOverlapMs": 1.0,
+      "roundsTtfbMs": 28.355,
+      "roundsTransferMs": 0.23799999999999955,
+      "serverPhases": {
+        "identity": 20.8,
+        "database": 3.3,
+        "live_session": 0.8,
+        "lock_query": 0.8,
+        "serialization": 0.05,
+        "total": 24.69
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "A",
+      "condition": "cold",
+      "measured": true,
+      "file": "size-1000-pair-2-1-A-features-measure/browser-samples.json",
+      "index": 20,
+      "clickMs": 147,
+      "sourceMs": 437,
+      "sourcePlusClickMs": 584,
+      "requests": 7,
+      "encodedBodyBytes": 10179,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 74.900146484375,
+      "lastReviewCodeEndMs": 75.900146484375,
+      "roundsStartMs": 74.900146484375,
+      "roundsEndMs": 103.900146484375,
+      "codeStartedBeforeRoundsComplete": true,
+      "codeStartMinusRoundsEndMs": -29.0,
+      "codeAndRoundsOverlapMs": 1.0,
+      "roundsTtfbMs": 29.32,
+      "roundsTransferMs": 0.2309999999999981,
+      "serverPhases": {
+        "identity": 20.66,
+        "database": 4.64,
+        "live_session": 0.44,
+        "lock_query": 0.55,
+        "serialization": 0.07,
+        "total": 25.8
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "A",
+      "condition": "warm",
+      "measured": true,
+      "file": "size-1000-pair-2-1-A-features-measure/browser-samples.json",
+      "index": 21,
+      "clickMs": 147.7999999821186,
+      "sourceMs": 434,
+      "sourcePlusClickMs": 581.7999999821186,
+      "requests": 4,
+      "encodedBodyBytes": 1344,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 93.10009765625,
+      "roundsEndMs": 125.10009765625,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 30.982,
+      "roundsTransferMs": 0.4510000000000005,
+      "serverPhases": {
+        "identity": 22.63,
+        "database": 5.2,
+        "live_session": 0.36,
+        "lock_query": 0.52,
+        "serialization": 0.08,
+        "total": 28.28
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "A",
+      "condition": "warm",
+      "measured": true,
+      "file": "size-1000-pair-2-1-A-features-measure/browser-samples.json",
+      "index": 22,
+      "clickMs": 149,
+      "sourceMs": 431,
+      "sourcePlusClickMs": 580,
+      "requests": 4,
+      "encodedBodyBytes": 1345,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 92,
+      "roundsEndMs": 124,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 30.999000000000002,
+      "roundsTransferMs": 0.5129999999999981,
+      "serverPhases": {
+        "identity": 21.48,
+        "database": 4.74,
+        "live_session": 0.52,
+        "lock_query": 0.5,
+        "serialization": 0.14,
+        "total": 27.0
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "A",
+      "condition": "warm",
+      "measured": true,
+      "file": "size-1000-pair-2-1-A-features-measure/browser-samples.json",
+      "index": 23,
+      "clickMs": 149.10000002384186,
+      "sourceMs": 436,
+      "sourcePlusClickMs": 585.1000000238419,
+      "requests": 4,
+      "encodedBodyBytes": 1344,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 91.39990234375,
+      "roundsEndMs": 119.39990234375,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 27.695,
+      "roundsTransferMs": 0.3769999999999989,
+      "serverPhases": {
+        "identity": 20.77,
+        "database": 2.92,
+        "live_session": 0.58,
+        "lock_query": 0.47,
+        "serialization": 0.06,
+        "total": 24.22
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "B",
+      "condition": "cold",
+      "measured": false,
+      "file": "size-1000-pair-2-2-B-features-warmup/browser-samples.json",
+      "index": 6,
+      "clickMs": 177.09999999403954,
+      "sourceMs": 457,
+      "sourcePlusClickMs": 634.0999999940395,
+      "requests": 7,
+      "encodedBodyBytes": 12461,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 124.89990234375,
+      "lastReviewCodeEndMs": 124.89990234375,
+      "roundsStartMs": 92.89990234375,
+      "roundsEndMs": 122.89990234375,
+      "codeStartedBeforeRoundsComplete": false,
+      "codeStartMinusRoundsEndMs": 2.0,
+      "codeAndRoundsOverlapMs": 0,
+      "roundsTtfbMs": 29.099,
+      "roundsTransferMs": 0.36499999999999844,
+      "serverPhases": {
+        "identity": 19.9,
+        "database": 4.97,
+        "live_session": 0.4,
+        "lock_query": 0.53,
+        "serialization": 0.06,
+        "total": 25.46
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "B",
+      "condition": "warm",
+      "measured": false,
+      "file": "size-1000-pair-2-2-B-features-warmup/browser-samples.json",
+      "index": 7,
+      "clickMs": 132,
+      "sourceMs": 436,
+      "sourcePlusClickMs": 568,
+      "requests": 4,
+      "encodedBodyBytes": 1343,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 81,
+      "roundsEndMs": 114,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 31.819,
+      "roundsTransferMs": 0.4789999999999992,
+      "serverPhases": {
+        "identity": 21.7,
+        "database": 2.84,
+        "live_session": 0.62,
+        "lock_query": 0.45,
+        "serialization": 0.05,
+        "total": 25.66
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "B",
+      "condition": "cold",
+      "measured": true,
+      "file": "size-1000-pair-2-2-B-features-measure/browser-samples.json",
+      "index": 18,
+      "clickMs": 157.2000000178814,
+      "sourceMs": 454,
+      "sourcePlusClickMs": 611.2000000178814,
+      "requests": 7,
+      "encodedBodyBytes": 10176,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 112.5,
+      "lastReviewCodeEndMs": 114.5,
+      "roundsStartMs": 83.5,
+      "roundsEndMs": 109.5,
+      "codeStartedBeforeRoundsComplete": false,
+      "codeStartMinusRoundsEndMs": 3.0,
+      "codeAndRoundsOverlapMs": 0,
+      "roundsTtfbMs": 26.137,
+      "roundsTransferMs": 0.41899999999999693,
+      "serverPhases": {
+        "identity": 19.36,
+        "database": 3.17,
+        "live_session": 0.57,
+        "lock_query": 0.61,
+        "serialization": 0.06,
+        "total": 23.05
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "B",
+      "condition": "cold",
+      "measured": true,
+      "file": "size-1000-pair-2-2-B-features-measure/browser-samples.json",
+      "index": 19,
+      "clickMs": 162.2999999821186,
+      "sourceMs": 436,
+      "sourcePlusClickMs": 598.2999999821186,
+      "requests": 7,
+      "encodedBodyBytes": 10176,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 122.199951171875,
+      "lastReviewCodeEndMs": 124.199951171875,
+      "roundsStartMs": 87.199951171875,
+      "roundsEndMs": 119.199951171875,
+      "codeStartedBeforeRoundsComplete": false,
+      "codeStartMinusRoundsEndMs": 3.0,
+      "codeAndRoundsOverlapMs": 0,
+      "roundsTtfbMs": 32.249,
+      "roundsTransferMs": 0.45999999999999375,
+      "serverPhases": {
+        "identity": 22.52,
+        "database": 5.57,
+        "live_session": 0.54,
+        "lock_query": 0.49,
+        "serialization": 0.09,
+        "total": 28.6
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "B",
+      "condition": "cold",
+      "measured": true,
+      "file": "size-1000-pair-2-2-B-features-measure/browser-samples.json",
+      "index": 20,
+      "clickMs": 161.2999999821186,
+      "sourceMs": 436,
+      "sourcePlusClickMs": 597.2999999821186,
+      "requests": 7,
+      "encodedBodyBytes": 10176,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 124.300048828125,
+      "lastReviewCodeEndMs": 124.300048828125,
+      "roundsStartMs": 88.300048828125,
+      "roundsEndMs": 121.300048828125,
+      "codeStartedBeforeRoundsComplete": false,
+      "codeStartMinusRoundsEndMs": 3.0,
+      "codeAndRoundsOverlapMs": 0,
+      "roundsTtfbMs": 32.801,
+      "roundsTransferMs": 0.37299999999999756,
+      "serverPhases": {
+        "identity": 25.36,
+        "database": 3.52,
+        "live_session": 1.17,
+        "lock_query": 0.54,
+        "serialization": 0.05,
+        "total": 29.41
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "B",
+      "condition": "warm",
+      "measured": true,
+      "file": "size-1000-pair-2-2-B-features-measure/browser-samples.json",
+      "index": 21,
+      "clickMs": 132.19999998807907,
+      "sourceMs": 434,
+      "sourcePlusClickMs": 566.1999999880791,
+      "requests": 4,
+      "encodedBodyBytes": 1343,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 74.199951171875,
+      "roundsEndMs": 101.199951171875,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 26.119,
+      "roundsTransferMs": 0.3470000000000013,
+      "serverPhases": {
+        "identity": 18.55,
+        "database": 4.75,
+        "live_session": 0.48,
+        "lock_query": 0.67,
+        "serialization": 0.09,
+        "total": 23.73
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "B",
+      "condition": "warm",
+      "measured": true,
+      "file": "size-1000-pair-2-2-B-features-measure/browser-samples.json",
+      "index": 22,
+      "clickMs": 147.89999997615814,
+      "sourceMs": 430,
+      "sourcePlusClickMs": 577.8999999761581,
+      "requests": 4,
+      "encodedBodyBytes": 1342,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 92.400146484375,
+      "roundsEndMs": 120.400146484375,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 27.823,
+      "roundsTransferMs": 0.4170000000000016,
+      "serverPhases": {
+        "identity": 19.8,
+        "database": 5.01,
+        "live_session": 0.83,
+        "lock_query": 0.48,
+        "serialization": 0.08,
+        "total": 25.39
+      }
+    },
+    {
+      "profile": "local",
+      "variant": "B",
+      "condition": "warm",
+      "measured": true,
+      "file": "size-1000-pair-2-2-B-features-measure/browser-samples.json",
+      "index": 23,
+      "clickMs": 148.80000001192093,
+      "sourceMs": 437,
+      "sourcePlusClickMs": 585.8000000119209,
+      "requests": 4,
+      "encodedBodyBytes": 1342,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 94.699951171875,
+      "roundsEndMs": 123.699951171875,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 28.383000000000003,
+      "roundsTransferMs": 0.3409999999999975,
+      "serverPhases": {
+        "identity": 20.45,
+        "database": 4.85,
+        "live_session": 0.45,
+        "lock_query": 0.4,
+        "serialization": 0.1,
+        "total": 25.77
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "B",
+      "condition": "cold",
+      "measured": false,
+      "file": "size-1000-pair-1-1-B-features-warmup/browser-samples.json",
+      "index": 6,
+      "clickMs": 594.8000000119209,
+      "sourceMs": 930,
+      "sourcePlusClickMs": 1524.800000011921,
+      "requests": 8,
+      "encodedBodyBytes": 10177,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 277.10009765625,
+      "lastReviewCodeEndMs": 405.10009765625,
+      "roundsStartMs": 175.10009765625,
+      "roundsEndMs": 268.10009765625,
+      "codeStartedBeforeRoundsComplete": false,
+      "codeStartMinusRoundsEndMs": 9.0,
+      "codeAndRoundsOverlapMs": 0,
+      "roundsTtfbMs": 91.48,
+      "roundsTransferMs": 0.3089999999999975,
+      "serverPhases": {
+        "identity": 20.64,
+        "database": 10.38,
+        "live_session": 0.63,
+        "lock_query": 0.79,
+        "serialization": 0.09,
+        "total": 31.72
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "B",
+      "condition": "warm",
+      "measured": false,
+      "file": "size-1000-pair-1-1-B-features-warmup/browser-samples.json",
+      "index": 7,
+      "clickMs": 264,
+      "sourceMs": 929,
+      "sourcePlusClickMs": 1193,
+      "requests": 4,
+      "encodedBodyBytes": 1343,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 153.300048828125,
+      "roundsEndMs": 240.300048828125,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 86.383,
+      "roundsTransferMs": 0.3200000000000074,
+      "serverPhases": {
+        "identity": 21.34,
+        "database": 7.46,
+        "live_session": 0.99,
+        "lock_query": 0.58,
+        "serialization": 0.06,
+        "total": 29.43
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "B",
+      "condition": "cold",
+      "measured": true,
+      "file": "size-1000-pair-1-1-B-features-measure/browser-samples.json",
+      "index": 18,
+      "clickMs": 594.6999999880791,
+      "sourceMs": 945,
+      "sourcePlusClickMs": 1539.699999988079,
+      "requests": 8,
+      "encodedBodyBytes": 10174,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 275.699951171875,
+      "lastReviewCodeEndMs": 408.699951171875,
+      "roundsStartMs": 176.699951171875,
+      "roundsEndMs": 266.699951171875,
+      "codeStartedBeforeRoundsComplete": false,
+      "codeStartMinusRoundsEndMs": 9.0,
+      "codeAndRoundsOverlapMs": 0,
+      "roundsTtfbMs": 89.381,
+      "roundsTransferMs": 0.41900000000001114,
+      "serverPhases": {
+        "identity": 23.38,
+        "database": 3.76,
+        "live_session": 0.75,
+        "lock_query": 0.59,
+        "serialization": 0.07,
+        "total": 27.94
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "B",
+      "condition": "cold",
+      "measured": true,
+      "file": "size-1000-pair-1-1-B-features-measure/browser-samples.json",
+      "index": 19,
+      "clickMs": 595.6999999880791,
+      "sourceMs": 928,
+      "sourcePlusClickMs": 1523.699999988079,
+      "requests": 8,
+      "encodedBodyBytes": 12459,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 272.39990234375,
+      "lastReviewCodeEndMs": 403.39990234375,
+      "roundsStartMs": 171.39990234375,
+      "roundsEndMs": 260.39990234375,
+      "codeStartedBeforeRoundsComplete": false,
+      "codeStartMinusRoundsEndMs": 12.0,
+      "codeAndRoundsOverlapMs": 0,
+      "roundsTtfbMs": 88.263,
+      "roundsTransferMs": 0.32099999999999795,
+      "serverPhases": {
+        "identity": 20.66,
+        "database": 3.35,
+        "live_session": 0.41,
+        "lock_query": 0.69,
+        "serialization": 0.07,
+        "total": 24.55
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "B",
+      "condition": "cold",
+      "measured": true,
+      "file": "size-1000-pair-1-1-B-features-measure/browser-samples.json",
+      "index": 20,
+      "clickMs": 594.5,
+      "sourceMs": 928,
+      "sourcePlusClickMs": 1522.5,
+      "requests": 8,
+      "encodedBodyBytes": 10176,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 270,
+      "lastReviewCodeEndMs": 401,
+      "roundsStartMs": 173,
+      "roundsEndMs": 260,
+      "codeStartedBeforeRoundsComplete": false,
+      "codeStartMinusRoundsEndMs": 10,
+      "codeAndRoundsOverlapMs": 0,
+      "roundsTtfbMs": 86.771,
+      "roundsTransferMs": 0.29399999999999693,
+      "serverPhases": {
+        "identity": 19.8,
+        "database": 5.2,
+        "live_session": 0.64,
+        "lock_query": 0.73,
+        "serialization": 0.06,
+        "total": 25.52
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "B",
+      "condition": "warm",
+      "measured": true,
+      "file": "size-1000-pair-1-1-B-features-measure/browser-samples.json",
+      "index": 21,
+      "clickMs": 265.30000001192093,
+      "sourceMs": 944,
+      "sourcePlusClickMs": 1209.300000011921,
+      "requests": 4,
+      "encodedBodyBytes": 1341,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 146,
+      "roundsEndMs": 235,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 87.809,
+      "roundsTransferMs": 0.6229999999999905,
+      "serverPhases": {
+        "identity": 19.79,
+        "database": 3.26,
+        "live_session": 0.75,
+        "lock_query": 0.54,
+        "serialization": 0.06,
+        "total": 23.58
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "B",
+      "condition": "warm",
+      "measured": true,
+      "file": "size-1000-pair-1-1-B-features-measure/browser-samples.json",
+      "index": 22,
+      "clickMs": 265.10000002384186,
+      "sourceMs": 658,
+      "sourcePlusClickMs": 923.1000000238419,
+      "requests": 4,
+      "encodedBodyBytes": 1341,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 150.400146484375,
+      "roundsEndMs": 238.400146484375,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 87.247,
+      "roundsTransferMs": 0.22099999999998943,
+      "serverPhases": {
+        "identity": 20.37,
+        "database": 7.06,
+        "live_session": 0.48,
+        "lock_query": 0.59,
+        "serialization": 0.09,
+        "total": 27.9
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "B",
+      "condition": "warm",
+      "measured": true,
+      "file": "size-1000-pair-1-1-B-features-measure/browser-samples.json",
+      "index": 23,
+      "clickMs": 265.2000000178814,
+      "sourceMs": 926,
+      "sourcePlusClickMs": 1191.2000000178814,
+      "requests": 4,
+      "encodedBodyBytes": 1342,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 150.5,
+      "roundsEndMs": 238.5,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 87.225,
+      "roundsTransferMs": 0.8500000000000085,
+      "serverPhases": {
+        "identity": 20.06,
+        "database": 2.9,
+        "live_session": 0.6,
+        "lock_query": 0.57,
+        "serialization": 0.06,
+        "total": 23.49
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "A",
+      "condition": "cold",
+      "measured": false,
+      "file": "size-1000-pair-1-2-A-features-warmup/browser-samples.json",
+      "index": 6,
+      "clickMs": 629.6999999880791,
+      "sourceMs": 896,
+      "sourcePlusClickMs": 1525.699999988079,
+      "requests": 8,
+      "encodedBodyBytes": 10179,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 185.300048828125,
+      "lastReviewCodeEndMs": 353.300048828125,
+      "roundsStartMs": 186.300048828125,
+      "roundsEndMs": 302.300048828125,
+      "codeStartedBeforeRoundsComplete": true,
+      "codeStartMinusRoundsEndMs": -117.0,
+      "codeAndRoundsOverlapMs": 116.0,
+      "roundsTtfbMs": 108.143,
+      "roundsTransferMs": 0.6610000000000014,
+      "serverPhases": {
+        "identity": 21.57,
+        "database": 6.35,
+        "live_session": 0.42,
+        "lock_query": 1.02,
+        "serialization": 0.11,
+        "total": 28.67
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "A",
+      "condition": "warm",
+      "measured": false,
+      "file": "size-1000-pair-1-2-A-features-warmup/browser-samples.json",
+      "index": 7,
+      "clickMs": 265.5,
+      "sourceMs": 626,
+      "sourcePlusClickMs": 891.5,
+      "requests": 4,
+      "encodedBodyBytes": 1343,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 158.300048828125,
+      "roundsEndMs": 242.300048828125,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 83.491,
+      "roundsTransferMs": 0.40099999999999625,
+      "serverPhases": {
+        "identity": 25.32,
+        "database": 5.72,
+        "live_session": 0.41,
+        "lock_query": 0.64,
+        "serialization": 0.11,
+        "total": 32.02
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "A",
+      "condition": "cold",
+      "measured": true,
+      "file": "size-1000-pair-1-2-A-features-measure/browser-samples.json",
+      "index": 18,
+      "clickMs": 627.0999999940395,
+      "sourceMs": 922,
+      "sourcePlusClickMs": 1549.0999999940395,
+      "requests": 8,
+      "encodedBodyBytes": 10179,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 176.199951171875,
+      "lastReviewCodeEndMs": 340.199951171875,
+      "roundsStartMs": 176.199951171875,
+      "roundsEndMs": 292.199951171875,
+      "codeStartedBeforeRoundsComplete": true,
+      "codeStartMinusRoundsEndMs": -116.0,
+      "codeAndRoundsOverlapMs": 116.0,
+      "roundsTtfbMs": 113.726,
+      "roundsTransferMs": 0.28300000000000125,
+      "serverPhases": {
+        "identity": 21.07,
+        "database": 3.04,
+        "live_session": 0.76,
+        "lock_query": 0.5,
+        "serialization": 0.05,
+        "total": 24.68
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "A",
+      "condition": "cold",
+      "measured": true,
+      "file": "size-1000-pair-1-2-A-features-measure/browser-samples.json",
+      "index": 19,
+      "clickMs": 612.0999999940395,
+      "sourceMs": 905,
+      "sourcePlusClickMs": 1517.0999999940395,
+      "requests": 8,
+      "encodedBodyBytes": 10179,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 181,
+      "lastReviewCodeEndMs": 341,
+      "roundsStartMs": 181,
+      "roundsEndMs": 290,
+      "codeStartedBeforeRoundsComplete": true,
+      "codeStartMinusRoundsEndMs": -109,
+      "codeAndRoundsOverlapMs": 109,
+      "roundsTtfbMs": 109.635,
+      "roundsTransferMs": 0.21300000000000807,
+      "serverPhases": {
+        "identity": 23.61,
+        "database": 7.6,
+        "live_session": 0.77,
+        "lock_query": 0.42,
+        "serialization": 0.16,
+        "total": 31.82
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "A",
+      "condition": "cold",
+      "measured": true,
+      "file": "size-1000-pair-1-2-A-features-measure/browser-samples.json",
+      "index": 20,
+      "clickMs": 613.5999999940395,
+      "sourceMs": 937,
+      "sourcePlusClickMs": 1550.5999999940395,
+      "requests": 8,
+      "encodedBodyBytes": 10179,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 174,
+      "lastReviewCodeEndMs": 333,
+      "roundsStartMs": 174,
+      "roundsEndMs": 286,
+      "codeStartedBeforeRoundsComplete": true,
+      "codeStartMinusRoundsEndMs": -112,
+      "codeAndRoundsOverlapMs": 112,
+      "roundsTtfbMs": 103.35600000000001,
+      "roundsTransferMs": 0.23699999999999477,
+      "serverPhases": {
+        "identity": 24.25,
+        "database": 6.25,
+        "live_session": 0.55,
+        "lock_query": 0.72,
+        "serialization": 0.09,
+        "total": 31.02
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "A",
+      "condition": "warm",
+      "measured": true,
+      "file": "size-1000-pair-1-2-A-features-measure/browser-samples.json",
+      "index": 21,
+      "clickMs": 281.09999999403954,
+      "sourceMs": 936,
+      "sourcePlusClickMs": 1217.0999999940395,
+      "requests": 4,
+      "encodedBodyBytes": 1345,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 154.099853515625,
+      "roundsEndMs": 250.099853515625,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 95.158,
+      "roundsTransferMs": 0.6950000000000074,
+      "serverPhases": {
+        "identity": 20.58,
+        "database": 3.24,
+        "live_session": 0.52,
+        "lock_query": 0.61,
+        "serialization": 0.07,
+        "total": 24.31
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "A",
+      "condition": "warm",
+      "measured": true,
+      "file": "size-1000-pair-1-2-A-features-measure/browser-samples.json",
+      "index": 22,
+      "clickMs": 282.59999999403954,
+      "sourceMs": 928,
+      "sourcePlusClickMs": 1210.5999999940395,
+      "requests": 4,
+      "encodedBodyBytes": 1345,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 154.300048828125,
+      "roundsEndMs": 250.300048828125,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 95.508,
+      "roundsTransferMs": 0.4130000000000109,
+      "serverPhases": {
+        "identity": 20.56,
+        "database": 5.73,
+        "live_session": 0.57,
+        "lock_query": 0.63,
+        "serialization": 0.09,
+        "total": 26.91
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "A",
+      "condition": "warm",
+      "measured": true,
+      "file": "size-1000-pair-1-2-A-features-measure/browser-samples.json",
+      "index": 23,
+      "clickMs": 281,
+      "sourceMs": 907,
+      "sourcePlusClickMs": 1188,
+      "requests": 4,
+      "encodedBodyBytes": 3632,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 154.10009765625,
+      "roundsEndMs": 254.10009765625,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 98.226,
+      "roundsTransferMs": 0.32399999999999807,
+      "serverPhases": {
+        "identity": 18.94,
+        "database": 7.75,
+        "live_session": 0.71,
+        "lock_query": 0.43,
+        "serialization": 0.13,
+        "total": 27.27
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "A",
+      "condition": "cold",
+      "measured": false,
+      "file": "size-1000-pair-2-1-A-features-warmup/browser-samples.json",
+      "index": 6,
+      "clickMs": 612.3000000119209,
+      "sourceMs": 930,
+      "sourcePlusClickMs": 1542.300000011921,
+      "requests": 8,
+      "encodedBodyBytes": 10178,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 177.60009765625,
+      "lastReviewCodeEndMs": 341.60009765625,
+      "roundsStartMs": 178.60009765625,
+      "roundsEndMs": 287.60009765625,
+      "codeStartedBeforeRoundsComplete": true,
+      "codeStartMinusRoundsEndMs": -110.0,
+      "codeAndRoundsOverlapMs": 109.0,
+      "roundsTtfbMs": 108.84500000000001,
+      "roundsTransferMs": 0.2389999999999901,
+      "serverPhases": {
+        "identity": 22.06,
+        "database": 2.6,
+        "live_session": 0.33,
+        "lock_query": 0.51,
+        "serialization": 0.06,
+        "total": 25.85
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "A",
+      "condition": "warm",
+      "measured": false,
+      "file": "size-1000-pair-2-1-A-features-warmup/browser-samples.json",
+      "index": 7,
+      "clickMs": 264.69999998807907,
+      "sourceMs": 935,
+      "sourcePlusClickMs": 1199.699999988079,
+      "requests": 4,
+      "encodedBodyBytes": 1345,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 153.7998046875,
+      "roundsEndMs": 239.7998046875,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 84.842,
+      "roundsTransferMs": 0.42199999999999704,
+      "serverPhases": {
+        "identity": 45.33,
+        "database": 8.79,
+        "live_session": 0.93,
+        "lock_query": 0.8,
+        "serialization": 0.1,
+        "total": 55.28
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "A",
+      "condition": "cold",
+      "measured": true,
+      "file": "size-1000-pair-2-1-A-features-measure/browser-samples.json",
+      "index": 18,
+      "clickMs": 612.8999999761581,
+      "sourceMs": 926,
+      "sourcePlusClickMs": 1538.8999999761581,
+      "requests": 8,
+      "encodedBodyBytes": 10179,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 175.800048828125,
+      "lastReviewCodeEndMs": 306.800048828125,
+      "roundsStartMs": 175.800048828125,
+      "roundsEndMs": 288.800048828125,
+      "codeStartedBeforeRoundsComplete": true,
+      "codeStartMinusRoundsEndMs": -113.0,
+      "codeAndRoundsOverlapMs": 113.0,
+      "roundsTtfbMs": 110.477,
+      "roundsTransferMs": 0.3269999999999982,
+      "serverPhases": {
+        "identity": 22.47,
+        "database": 3.51,
+        "live_session": 0.88,
+        "lock_query": 0.55,
+        "serialization": 0.06,
+        "total": 26.8
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "A",
+      "condition": "cold",
+      "measured": true,
+      "file": "size-1000-pair-2-1-A-features-measure/browser-samples.json",
+      "index": 19,
+      "clickMs": 627.5,
+      "sourceMs": 950,
+      "sourcePlusClickMs": 1577.5,
+      "requests": 8,
+      "encodedBodyBytes": 10178,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 184.800048828125,
+      "lastReviewCodeEndMs": 343.800048828125,
+      "roundsStartMs": 185.800048828125,
+      "roundsEndMs": 302.800048828125,
+      "codeStartedBeforeRoundsComplete": true,
+      "codeStartMinusRoundsEndMs": -118.0,
+      "codeAndRoundsOverlapMs": 117.0,
+      "roundsTtfbMs": 116.83000000000001,
+      "roundsTransferMs": 1.1609999999999872,
+      "serverPhases": {
+        "identity": 27.19,
+        "database": 7.86,
+        "live_session": 0.36,
+        "lock_query": 0.49,
+        "serialization": 0.14,
+        "total": 35.68
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "A",
+      "condition": "cold",
+      "measured": true,
+      "file": "size-1000-pair-2-1-A-features-measure/browser-samples.json",
+      "index": 20,
+      "clickMs": 612.6999999880791,
+      "sourceMs": 942,
+      "sourcePlusClickMs": 1554.699999988079,
+      "requests": 8,
+      "encodedBodyBytes": 10179,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 172.699951171875,
+      "lastReviewCodeEndMs": 333.699951171875,
+      "roundsStartMs": 172.699951171875,
+      "roundsEndMs": 288.699951171875,
+      "codeStartedBeforeRoundsComplete": true,
+      "codeStartMinusRoundsEndMs": -116.0,
+      "codeAndRoundsOverlapMs": 116.0,
+      "roundsTtfbMs": 103.023,
+      "roundsTransferMs": 0.2810000000000059,
+      "serverPhases": {
+        "identity": 19.46,
+        "database": 3.85,
+        "live_session": 0.53,
+        "lock_query": 0.83,
+        "serialization": 0.06,
+        "total": 23.93
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "A",
+      "condition": "warm",
+      "measured": true,
+      "file": "size-1000-pair-2-1-A-features-measure/browser-samples.json",
+      "index": 21,
+      "clickMs": 278.19999998807907,
+      "sourceMs": 929,
+      "sourcePlusClickMs": 1207.199999988079,
+      "requests": 4,
+      "encodedBodyBytes": 1345,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 153.199951171875,
+      "roundsEndMs": 246.199951171875,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 90.329,
+      "roundsTransferMs": 0.46399999999999864,
+      "serverPhases": {
+        "identity": 20.24,
+        "database": 6.36,
+        "live_session": 0.62,
+        "lock_query": 0.55,
+        "serialization": 0.13,
+        "total": 27.24
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "A",
+      "condition": "warm",
+      "measured": true,
+      "file": "size-1000-pair-2-1-A-features-measure/browser-samples.json",
+      "index": 22,
+      "clickMs": 265.69999998807907,
+      "sourceMs": 928,
+      "sourcePlusClickMs": 1193.699999988079,
+      "requests": 4,
+      "encodedBodyBytes": 1345,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 146.800048828125,
+      "roundsEndMs": 234.800048828125,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 87.553,
+      "roundsTransferMs": 0.42600000000000193,
+      "serverPhases": {
+        "identity": 20.31,
+        "database": 7.25,
+        "live_session": 0.95,
+        "lock_query": 0.64,
+        "serialization": 0.09,
+        "total": 28.06
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "A",
+      "condition": "warm",
+      "measured": true,
+      "file": "size-1000-pair-2-1-A-features-measure/browser-samples.json",
+      "index": 23,
+      "clickMs": 264.90000000596046,
+      "sourceMs": 927,
+      "sourcePlusClickMs": 1191.9000000059605,
+      "requests": 4,
+      "encodedBodyBytes": 1345,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 154.10009765625,
+      "roundsEndMs": 242.10009765625,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 86.74600000000001,
+      "roundsTransferMs": 0.3149999999999977,
+      "serverPhases": {
+        "identity": 20.77,
+        "database": 7.8,
+        "live_session": 0.52,
+        "lock_query": 0.82,
+        "serialization": 0.09,
+        "total": 29.27
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "B",
+      "condition": "cold",
+      "measured": false,
+      "file": "size-1000-pair-2-2-B-features-warmup/browser-samples.json",
+      "index": 6,
+      "clickMs": 595.5999999940395,
+      "sourceMs": 942,
+      "sourcePlusClickMs": 1537.5999999940395,
+      "requests": 8,
+      "encodedBodyBytes": 10177,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 270.2998046875,
+      "lastReviewCodeEndMs": 399.2998046875,
+      "roundsStartMs": 174.2998046875,
+      "roundsEndMs": 261.2998046875,
+      "codeStartedBeforeRoundsComplete": false,
+      "codeStartMinusRoundsEndMs": 9.0,
+      "codeAndRoundsOverlapMs": 0,
+      "roundsTtfbMs": 85.77,
+      "roundsTransferMs": 0.27300000000001035,
+      "serverPhases": {
+        "identity": 21.9,
+        "database": 8.43,
+        "live_session": 0.43,
+        "lock_query": 0.76,
+        "serialization": 0.08,
+        "total": 30.94
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "B",
+      "condition": "warm",
+      "measured": false,
+      "file": "size-1000-pair-2-2-B-features-warmup/browser-samples.json",
+      "index": 7,
+      "clickMs": 281.40000000596046,
+      "sourceMs": 654,
+      "sourcePlusClickMs": 935.4000000059605,
+      "requests": 4,
+      "encodedBodyBytes": 1343,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 157.5,
+      "roundsEndMs": 248.5,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 90.238,
+      "roundsTransferMs": 0.47799999999999443,
+      "serverPhases": {
+        "identity": 23.75,
+        "database": 4.3,
+        "live_session": 0.71,
+        "lock_query": 0.84,
+        "serialization": 0.12,
+        "total": 28.73
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "B",
+      "condition": "cold",
+      "measured": true,
+      "file": "size-1000-pair-2-2-B-features-measure/browser-samples.json",
+      "index": 18,
+      "clickMs": 595.2999999821186,
+      "sourceMs": 930,
+      "sourcePlusClickMs": 1525.2999999821186,
+      "requests": 8,
+      "encodedBodyBytes": 12463,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 275.7001953125,
+      "lastReviewCodeEndMs": 407.7001953125,
+      "roundsStartMs": 179.7001953125,
+      "roundsEndMs": 266.7001953125,
+      "codeStartedBeforeRoundsComplete": false,
+      "codeStartMinusRoundsEndMs": 9.0,
+      "codeAndRoundsOverlapMs": 0,
+      "roundsTtfbMs": 86.449,
+      "roundsTransferMs": 0.45600000000000307,
+      "serverPhases": {
+        "identity": 30.51,
+        "database": 3.95,
+        "live_session": 0.79,
+        "lock_query": 0.59,
+        "serialization": 0.08,
+        "total": 35.16
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "B",
+      "condition": "cold",
+      "measured": true,
+      "file": "size-1000-pair-2-2-B-features-measure/browser-samples.json",
+      "index": 19,
+      "clickMs": 579.5,
+      "sourceMs": 930,
+      "sourcePlusClickMs": 1509.5,
+      "requests": 8,
+      "encodedBodyBytes": 10176,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 266.5,
+      "lastReviewCodeEndMs": 395.5,
+      "roundsStartMs": 172.5,
+      "roundsEndMs": 257.5,
+      "codeStartedBeforeRoundsComplete": false,
+      "codeStartMinusRoundsEndMs": 9.0,
+      "codeAndRoundsOverlapMs": 0,
+      "roundsTtfbMs": 83.938,
+      "roundsTransferMs": 0.3440000000000083,
+      "serverPhases": {
+        "identity": 22.0,
+        "database": 6.92,
+        "live_session": 0.65,
+        "lock_query": 0.59,
+        "serialization": 0.08,
+        "total": 29.42
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "B",
+      "condition": "cold",
+      "measured": true,
+      "file": "size-1000-pair-2-2-B-features-measure/browser-samples.json",
+      "index": 20,
+      "clickMs": 581.2000000178814,
+      "sourceMs": 934,
+      "sourcePlusClickMs": 1515.2000000178814,
+      "requests": 8,
+      "encodedBodyBytes": 10177,
+      "reviewCodeRequests": 1,
+      "firstReviewCodeStartMs": 268,
+      "lastReviewCodeEndMs": 398,
+      "roundsStartMs": 171,
+      "roundsEndMs": 258,
+      "codeStartedBeforeRoundsComplete": false,
+      "codeStartMinusRoundsEndMs": 10,
+      "codeAndRoundsOverlapMs": 0,
+      "roundsTtfbMs": 86.236,
+      "roundsTransferMs": 0.5869999999999891,
+      "serverPhases": {
+        "identity": 22.62,
+        "database": 8.86,
+        "live_session": 0.43,
+        "lock_query": 2.17,
+        "serialization": 0.05,
+        "total": 32.1
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "B",
+      "condition": "warm",
+      "measured": true,
+      "file": "size-1000-pair-2-2-B-features-measure/browser-samples.json",
+      "index": 21,
+      "clickMs": 264.2999999821186,
+      "sourceMs": 929,
+      "sourcePlusClickMs": 1193.2999999821186,
+      "requests": 4,
+      "encodedBodyBytes": 1343,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 152.89990234375,
+      "roundsEndMs": 235.89990234375,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 81.469,
+      "roundsTransferMs": 0.5460000000000065,
+      "serverPhases": {
+        "identity": 29.43,
+        "database": 6.28,
+        "live_session": 0.73,
+        "lock_query": 0.8,
+        "serialization": 0.08,
+        "total": 36.38
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "B",
+      "condition": "warm",
+      "measured": true,
+      "file": "size-1000-pair-2-2-B-features-measure/browser-samples.json",
+      "index": 22,
+      "clickMs": 263.7999999821186,
+      "sourceMs": 927,
+      "sourcePlusClickMs": 1190.7999999821186,
+      "requests": 4,
+      "encodedBodyBytes": 1343,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 143.39990234375,
+      "roundsEndMs": 234.39990234375,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 89.374,
+      "roundsTransferMs": 0.7430000000000092,
+      "serverPhases": {
+        "identity": 24.59,
+        "database": 3.06,
+        "live_session": 0.79,
+        "lock_query": 0.44,
+        "serialization": 0.05,
+        "total": 28.52
+      }
+    },
+    {
+      "profile": "constrained",
+      "variant": "B",
+      "condition": "warm",
+      "measured": true,
+      "file": "size-1000-pair-2-2-B-features-measure/browser-samples.json",
+      "index": 23,
+      "clickMs": 265.09999999403954,
+      "sourceMs": 659,
+      "sourcePlusClickMs": 924.0999999940395,
+      "requests": 4,
+      "encodedBodyBytes": 1343,
+      "reviewCodeRequests": 0,
+      "firstReviewCodeStartMs": null,
+      "lastReviewCodeEndMs": null,
+      "roundsStartMs": 149.300048828125,
+      "roundsEndMs": 240.300048828125,
+      "codeStartedBeforeRoundsComplete": null,
+      "codeStartMinusRoundsEndMs": null,
+      "codeAndRoundsOverlapMs": null,
+      "roundsTtfbMs": 90.19,
+      "roundsTransferMs": 0.6920000000000073,
+      "serverPhases": {
+        "identity": 20.35,
+        "database": 7.58,
+        "live_session": 0.86,
+        "lock_query": 0.38,
+        "serialization": 0.08,
+        "total": 28.43
+      }
+    }
+  ],
+  "summary": [
+    {
+      "profile": "local",
+      "condition": "cold",
+      "variant": "B",
+      "measuredOutcomes": 6,
+      "outcomesWithReviewCodeRequests": 6,
+      "codeStartedBeforeRoundsComplete": 0,
+      "metrics": {
+        "clickMs": {
+          "n": 6,
+          "p50": 160.7999999821186,
+          "p95": 162.2999999821186,
+          "max": 162.2999999821186
+        },
+        "sourceMs": {
+          "n": 6,
+          "p50": 436,
+          "p95": 454,
+          "max": 454
+        },
+        "sourcePlusClickMs": {
+          "n": 6,
+          "p50": 597.2999999821186,
+          "p95": 611.2000000178814,
+          "max": 611.2000000178814
+        },
+        "requests": {
+          "n": 6,
+          "p50": 7,
+          "p95": 7,
+          "max": 7
+        },
+        "encodedBodyBytes": {
+          "n": 6,
+          "p50": 10176,
+          "p95": 10177,
+          "max": 10177
+        },
+        "firstReviewCodeStartMs": {
+          "n": 6,
+          "p50": 113.199951171875,
+          "p95": 124.300048828125,
+          "max": 124.300048828125
+        },
+        "lastReviewCodeEndMs": {
+          "n": 6,
+          "p50": 115.199951171875,
+          "p95": 124.300048828125,
+          "max": 124.300048828125
+        },
+        "roundsStartMs": {
+          "n": 6,
+          "p50": 83.5,
+          "p95": 88.300048828125,
+          "max": 88.300048828125
+        },
+        "roundsEndMs": {
+          "n": 6,
+          "p50": 111.199951171875,
+          "p95": 121.300048828125,
+          "max": 121.300048828125
+        },
+        "codeStartMinusRoundsEndMs": {
+          "n": 6,
+          "p50": 3.0,
+          "p95": 3.0,
+          "max": 3.0
+        },
+        "codeAndRoundsOverlapMs": {
+          "n": 6,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "roundsTtfbMs": {
+          "n": 6,
+          "p50": 30.966,
+          "p95": 40.364,
+          "max": 40.364
+        },
+        "roundsTransferMs": {
+          "n": 6,
+          "p50": 0.37299999999999756,
+          "p95": 0.45999999999999375,
+          "max": 0.45999999999999375
+        },
+        "server_databaseMs": {
+          "n": 6,
+          "p50": 3.52,
+          "p95": 7.52,
+          "max": 7.52
+        },
+        "server_identityMs": {
+          "n": 6,
+          "p50": 22.17,
+          "p95": 27.17,
+          "max": 27.17
+        },
+        "server_live_sessionMs": {
+          "n": 6,
+          "p50": 0.57,
+          "p95": 1.17,
+          "max": 1.17
+        },
+        "server_lock_queryMs": {
+          "n": 6,
+          "p50": 0.54,
+          "p95": 0.76,
+          "max": 0.76
+        },
+        "server_serializationMs": {
+          "n": 6,
+          "p50": 0.06,
+          "p95": 0.12,
+          "max": 0.12
+        },
+        "server_totalMs": {
+          "n": 6,
+          "p50": 27.33,
+          "p95": 35.69,
+          "max": 35.69
+        }
+      }
+    },
+    {
+      "profile": "local",
+      "condition": "warm",
+      "variant": "B",
+      "measuredOutcomes": 6,
+      "outcomesWithReviewCodeRequests": 0,
+      "codeStartedBeforeRoundsComplete": 0,
+      "metrics": {
+        "clickMs": {
+          "n": 6,
+          "p50": 148.80000001192093,
+          "p95": 247.69999998807907,
+          "max": 247.69999998807907
+        },
+        "sourceMs": {
+          "n": 6,
+          "p50": 434,
+          "p95": 437,
+          "max": 437
+        },
+        "sourcePlusClickMs": {
+          "n": 6,
+          "p50": 582.3999999761581,
+          "p95": 682.6999999880791,
+          "max": 682.6999999880791
+        },
+        "requests": {
+          "n": 6,
+          "p50": 4,
+          "p95": 4,
+          "max": 4
+        },
+        "encodedBodyBytes": {
+          "n": 6,
+          "p50": 1342,
+          "p95": 1343,
+          "max": 1343
+        },
+        "firstReviewCodeStartMs": {
+          "n": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "lastReviewCodeEndMs": {
+          "n": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "roundsStartMs": {
+          "n": 6,
+          "p50": 92.400146484375,
+          "p95": 94.699951171875,
+          "max": 94.699951171875
+        },
+        "roundsEndMs": {
+          "n": 6,
+          "p50": 122.800048828125,
+          "p95": 223.10009765625,
+          "max": 223.10009765625
+        },
+        "codeStartMinusRoundsEndMs": {
+          "n": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "codeAndRoundsOverlapMs": {
+          "n": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "roundsTtfbMs": {
+          "n": 6,
+          "p50": 28.369,
+          "p95": 129.008,
+          "max": 129.008
+        },
+        "roundsTransferMs": {
+          "n": 6,
+          "p50": 0.35900000000000176,
+          "p95": 0.7089999999999748,
+          "max": 0.7089999999999748
+        },
+        "server_databaseMs": {
+          "n": 6,
+          "p50": 5.01,
+          "p95": 9.34,
+          "max": 9.34
+        },
+        "server_identityMs": {
+          "n": 6,
+          "p50": 20.45,
+          "p95": 116.57,
+          "max": 116.57
+        },
+        "server_live_sessionMs": {
+          "n": 6,
+          "p50": 0.48,
+          "p95": 1.17,
+          "max": 1.17
+        },
+        "server_lock_queryMs": {
+          "n": 6,
+          "p50": 0.48,
+          "p95": 0.81,
+          "max": 0.81
+        },
+        "server_serializationMs": {
+          "n": 6,
+          "p50": 0.09,
+          "p95": 0.1,
+          "max": 0.1
+        },
+        "server_totalMs": {
+          "n": 6,
+          "p50": 25.77,
+          "p95": 126.61,
+          "max": 126.61
+        }
+      }
+    },
+    {
+      "profile": "local",
+      "condition": "cold",
+      "variant": "A",
+      "measuredOutcomes": 6,
+      "outcomesWithReviewCodeRequests": 6,
+      "codeStartedBeforeRoundsComplete": 6,
+      "metrics": {
+        "clickMs": {
+          "n": 6,
+          "p50": 159.89999997615814,
+          "p95": 178.40000000596046,
+          "max": 178.40000000596046
+        },
+        "sourceMs": {
+          "n": 6,
+          "p50": 437,
+          "p95": 453,
+          "max": 453
+        },
+        "sourcePlusClickMs": {
+          "n": 6,
+          "p50": 596.8999999761581,
+          "p95": 620.4000000059605,
+          "max": 620.4000000059605
+        },
+        "requests": {
+          "n": 6,
+          "p50": 7,
+          "p95": 7,
+          "max": 7
+        },
+        "encodedBodyBytes": {
+          "n": 6,
+          "p50": 10178,
+          "p95": 12468,
+          "max": 12468
+        },
+        "firstReviewCodeStartMs": {
+          "n": 6,
+          "p50": 80.60009765625,
+          "p95": 91.900146484375,
+          "max": 91.900146484375
+        },
+        "lastReviewCodeEndMs": {
+          "n": 6,
+          "p50": 81.60009765625,
+          "p95": 92.900146484375,
+          "max": 92.900146484375
+        },
+        "roundsStartMs": {
+          "n": 6,
+          "p50": 80.60009765625,
+          "p95": 91.900146484375,
+          "max": 91.900146484375
+        },
+        "roundsEndMs": {
+          "n": 6,
+          "p50": 108.60009765625,
+          "p95": 121.900146484375,
+          "max": 121.900146484375
+        },
+        "codeStartMinusRoundsEndMs": {
+          "n": 6,
+          "p50": -30.0,
+          "p95": -28.0,
+          "max": -28.0
+        },
+        "codeAndRoundsOverlapMs": {
+          "n": 6,
+          "p50": 1.0,
+          "p95": 1.0,
+          "max": 1.0
+        },
+        "roundsTtfbMs": {
+          "n": 6,
+          "p50": 29.32,
+          "p95": 31.078,
+          "max": 31.078
+        },
+        "roundsTransferMs": {
+          "n": 6,
+          "p50": 0.23799999999999955,
+          "p95": 0.46499999999999986,
+          "max": 0.46499999999999986
+        },
+        "server_databaseMs": {
+          "n": 6,
+          "p50": 4.07,
+          "p95": 5.72,
+          "max": 5.72
+        },
+        "server_identityMs": {
+          "n": 6,
+          "p50": 20.78,
+          "p95": 22.93,
+          "max": 22.93
+        },
+        "server_live_sessionMs": {
+          "n": 6,
+          "p50": 0.58,
+          "p95": 0.88,
+          "max": 0.88
+        },
+        "server_lock_queryMs": {
+          "n": 6,
+          "p50": 0.64,
+          "p95": 0.88,
+          "max": 0.88
+        },
+        "server_serializationMs": {
+          "n": 6,
+          "p50": 0.06,
+          "p95": 0.07,
+          "max": 0.07
+        },
+        "server_totalMs": {
+          "n": 6,
+          "p50": 25.8,
+          "p95": 27.55,
+          "max": 27.55
+        }
+      }
+    },
+    {
+      "profile": "local",
+      "condition": "warm",
+      "variant": "A",
+      "measuredOutcomes": 6,
+      "outcomesWithReviewCodeRequests": 0,
+      "codeStartedBeforeRoundsComplete": 0,
+      "metrics": {
+        "clickMs": {
+          "n": 6,
+          "p50": 148.2999999821186,
+          "p95": 149.60000002384186,
+          "max": 149.60000002384186
+        },
+        "sourceMs": {
+          "n": 6,
+          "p50": 434,
+          "p95": 436,
+          "max": 436
+        },
+        "sourcePlusClickMs": {
+          "n": 6,
+          "p50": 581.2999999821186,
+          "p95": 585.1000000238419,
+          "max": 585.1000000238419
+        },
+        "requests": {
+          "n": 6,
+          "p50": 4,
+          "p95": 4,
+          "max": 4
+        },
+        "encodedBodyBytes": {
+          "n": 6,
+          "p50": 1344,
+          "p95": 1345,
+          "max": 1345
+        },
+        "firstReviewCodeStartMs": {
+          "n": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "lastReviewCodeEndMs": {
+          "n": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "roundsStartMs": {
+          "n": 6,
+          "p50": 91.39990234375,
+          "p95": 95.89990234375,
+          "max": 95.89990234375
+        },
+        "roundsEndMs": {
+          "n": 6,
+          "p50": 119.39990234375,
+          "p95": 127.89990234375,
+          "max": 127.89990234375
+        },
+        "codeStartMinusRoundsEndMs": {
+          "n": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "codeAndRoundsOverlapMs": {
+          "n": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "roundsTtfbMs": {
+          "n": 6,
+          "p50": 30.982,
+          "p95": 33.952,
+          "max": 33.952
+        },
+        "roundsTransferMs": {
+          "n": 6,
+          "p50": 0.41899999999999693,
+          "p95": 0.5129999999999981,
+          "max": 0.5129999999999981
+        },
+        "server_databaseMs": {
+          "n": 6,
+          "p50": 4.75,
+          "p95": 5.95,
+          "max": 5.95
+        },
+        "server_identityMs": {
+          "n": 6,
+          "p50": 21.48,
+          "p95": 24.98,
+          "max": 24.98
+        },
+        "server_live_sessionMs": {
+          "n": 6,
+          "p50": 0.47,
+          "p95": 0.78,
+          "max": 0.78
+        },
+        "server_lock_queryMs": {
+          "n": 6,
+          "p50": 0.52,
+          "p95": 1.06,
+          "max": 1.06
+        },
+        "server_serializationMs": {
+          "n": 6,
+          "p50": 0.08,
+          "p95": 0.14,
+          "max": 0.14
+        },
+        "server_totalMs": {
+          "n": 6,
+          "p50": 27.17,
+          "p95": 30.44,
+          "max": 30.44
+        }
+      }
+    },
+    {
+      "profile": "constrained",
+      "condition": "cold",
+      "variant": "B",
+      "measuredOutcomes": 6,
+      "outcomesWithReviewCodeRequests": 6,
+      "codeStartedBeforeRoundsComplete": 0,
+      "metrics": {
+        "clickMs": {
+          "n": 6,
+          "p50": 594.5,
+          "p95": 595.6999999880791,
+          "max": 595.6999999880791
+        },
+        "sourceMs": {
+          "n": 6,
+          "p50": 930,
+          "p95": 945,
+          "max": 945
+        },
+        "sourcePlusClickMs": {
+          "n": 6,
+          "p50": 1522.5,
+          "p95": 1539.699999988079,
+          "max": 1539.699999988079
+        },
+        "requests": {
+          "n": 6,
+          "p50": 8,
+          "p95": 8,
+          "max": 8
+        },
+        "encodedBodyBytes": {
+          "n": 6,
+          "p50": 10176,
+          "p95": 12463,
+          "max": 12463
+        },
+        "firstReviewCodeStartMs": {
+          "n": 6,
+          "p50": 270,
+          "p95": 275.7001953125,
+          "max": 275.7001953125
+        },
+        "lastReviewCodeEndMs": {
+          "n": 6,
+          "p50": 401,
+          "p95": 408.699951171875,
+          "max": 408.699951171875
+        },
+        "roundsStartMs": {
+          "n": 6,
+          "p50": 172.5,
+          "p95": 179.7001953125,
+          "max": 179.7001953125
+        },
+        "roundsEndMs": {
+          "n": 6,
+          "p50": 260,
+          "p95": 266.7001953125,
+          "max": 266.7001953125
+        },
+        "codeStartMinusRoundsEndMs": {
+          "n": 6,
+          "p50": 9.0,
+          "p95": 12.0,
+          "max": 12.0
+        },
+        "codeAndRoundsOverlapMs": {
+          "n": 6,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "roundsTtfbMs": {
+          "n": 6,
+          "p50": 86.449,
+          "p95": 89.381,
+          "max": 89.381
+        },
+        "roundsTransferMs": {
+          "n": 6,
+          "p50": 0.3440000000000083,
+          "p95": 0.5869999999999891,
+          "max": 0.5869999999999891
+        },
+        "server_databaseMs": {
+          "n": 6,
+          "p50": 3.95,
+          "p95": 8.86,
+          "max": 8.86
+        },
+        "server_identityMs": {
+          "n": 6,
+          "p50": 22.0,
+          "p95": 30.51,
+          "max": 30.51
+        },
+        "server_live_sessionMs": {
+          "n": 6,
+          "p50": 0.64,
+          "p95": 0.79,
+          "max": 0.79
+        },
+        "server_lock_queryMs": {
+          "n": 6,
+          "p50": 0.59,
+          "p95": 2.17,
+          "max": 2.17
+        },
+        "server_serializationMs": {
+          "n": 6,
+          "p50": 0.07,
+          "p95": 0.08,
+          "max": 0.08
+        },
+        "server_totalMs": {
+          "n": 6,
+          "p50": 27.94,
+          "p95": 35.16,
+          "max": 35.16
+        }
+      }
+    },
+    {
+      "profile": "constrained",
+      "condition": "warm",
+      "variant": "B",
+      "measuredOutcomes": 6,
+      "outcomesWithReviewCodeRequests": 0,
+      "codeStartedBeforeRoundsComplete": 0,
+      "metrics": {
+        "clickMs": {
+          "n": 6,
+          "p50": 265.09999999403954,
+          "p95": 265.30000001192093,
+          "max": 265.30000001192093
+        },
+        "sourceMs": {
+          "n": 6,
+          "p50": 926,
+          "p95": 944,
+          "max": 944
+        },
+        "sourcePlusClickMs": {
+          "n": 6,
+          "p50": 1190.7999999821186,
+          "p95": 1209.300000011921,
+          "max": 1209.300000011921
+        },
+        "requests": {
+          "n": 6,
+          "p50": 4,
+          "p95": 4,
+          "max": 4
+        },
+        "encodedBodyBytes": {
+          "n": 6,
+          "p50": 1342,
+          "p95": 1343,
+          "max": 1343
+        },
+        "firstReviewCodeStartMs": {
+          "n": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "lastReviewCodeEndMs": {
+          "n": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "roundsStartMs": {
+          "n": 6,
+          "p50": 149.300048828125,
+          "p95": 152.89990234375,
+          "max": 152.89990234375
+        },
+        "roundsEndMs": {
+          "n": 6,
+          "p50": 235.89990234375,
+          "p95": 240.300048828125,
+          "max": 240.300048828125
+        },
+        "codeStartMinusRoundsEndMs": {
+          "n": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "codeAndRoundsOverlapMs": {
+          "n": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "roundsTtfbMs": {
+          "n": 6,
+          "p50": 87.247,
+          "p95": 90.19,
+          "max": 90.19
+        },
+        "roundsTransferMs": {
+          "n": 6,
+          "p50": 0.6229999999999905,
+          "p95": 0.8500000000000085,
+          "max": 0.8500000000000085
+        },
+        "server_databaseMs": {
+          "n": 6,
+          "p50": 3.26,
+          "p95": 7.58,
+          "max": 7.58
+        },
+        "server_identityMs": {
+          "n": 6,
+          "p50": 20.35,
+          "p95": 29.43,
+          "max": 29.43
+        },
+        "server_live_sessionMs": {
+          "n": 6,
+          "p50": 0.73,
+          "p95": 0.86,
+          "max": 0.86
+        },
+        "server_lock_queryMs": {
+          "n": 6,
+          "p50": 0.54,
+          "p95": 0.8,
+          "max": 0.8
+        },
+        "server_serializationMs": {
+          "n": 6,
+          "p50": 0.06,
+          "p95": 0.09,
+          "max": 0.09
+        },
+        "server_totalMs": {
+          "n": 6,
+          "p50": 27.9,
+          "p95": 36.38,
+          "max": 36.38
+        }
+      }
+    },
+    {
+      "profile": "constrained",
+      "condition": "cold",
+      "variant": "A",
+      "measuredOutcomes": 6,
+      "outcomesWithReviewCodeRequests": 6,
+      "codeStartedBeforeRoundsComplete": 6,
+      "metrics": {
+        "clickMs": {
+          "n": 6,
+          "p50": 612.8999999761581,
+          "p95": 627.5,
+          "max": 627.5
+        },
+        "sourceMs": {
+          "n": 6,
+          "p50": 926,
+          "p95": 950,
+          "max": 950
+        },
+        "sourcePlusClickMs": {
+          "n": 6,
+          "p50": 1549.0999999940395,
+          "p95": 1577.5,
+          "max": 1577.5
+        },
+        "requests": {
+          "n": 6,
+          "p50": 8,
+          "p95": 8,
+          "max": 8
+        },
+        "encodedBodyBytes": {
+          "n": 6,
+          "p50": 10179,
+          "p95": 10179,
+          "max": 10179
+        },
+        "firstReviewCodeStartMs": {
+          "n": 6,
+          "p50": 175.800048828125,
+          "p95": 184.800048828125,
+          "max": 184.800048828125
+        },
+        "lastReviewCodeEndMs": {
+          "n": 6,
+          "p50": 333.699951171875,
+          "p95": 343.800048828125,
+          "max": 343.800048828125
+        },
+        "roundsStartMs": {
+          "n": 6,
+          "p50": 175.800048828125,
+          "p95": 185.800048828125,
+          "max": 185.800048828125
+        },
+        "roundsEndMs": {
+          "n": 6,
+          "p50": 288.800048828125,
+          "p95": 302.800048828125,
+          "max": 302.800048828125
+        },
+        "codeStartMinusRoundsEndMs": {
+          "n": 6,
+          "p50": -116.0,
+          "p95": -109,
+          "max": -109
+        },
+        "codeAndRoundsOverlapMs": {
+          "n": 6,
+          "p50": 113.0,
+          "p95": 117.0,
+          "max": 117.0
+        },
+        "roundsTtfbMs": {
+          "n": 6,
+          "p50": 109.635,
+          "p95": 116.83000000000001,
+          "max": 116.83000000000001
+        },
+        "roundsTransferMs": {
+          "n": 6,
+          "p50": 0.2810000000000059,
+          "p95": 1.1609999999999872,
+          "max": 1.1609999999999872
+        },
+        "server_databaseMs": {
+          "n": 6,
+          "p50": 3.85,
+          "p95": 7.86,
+          "max": 7.86
+        },
+        "server_identityMs": {
+          "n": 6,
+          "p50": 22.47,
+          "p95": 27.19,
+          "max": 27.19
+        },
+        "server_live_sessionMs": {
+          "n": 6,
+          "p50": 0.55,
+          "p95": 0.88,
+          "max": 0.88
+        },
+        "server_lock_queryMs": {
+          "n": 6,
+          "p50": 0.5,
+          "p95": 0.83,
+          "max": 0.83
+        },
+        "server_serializationMs": {
+          "n": 6,
+          "p50": 0.06,
+          "p95": 0.16,
+          "max": 0.16
+        },
+        "server_totalMs": {
+          "n": 6,
+          "p50": 26.8,
+          "p95": 35.68,
+          "max": 35.68
+        }
+      }
+    },
+    {
+      "profile": "constrained",
+      "condition": "warm",
+      "variant": "A",
+      "measuredOutcomes": 6,
+      "outcomesWithReviewCodeRequests": 0,
+      "codeStartedBeforeRoundsComplete": 0,
+      "metrics": {
+        "clickMs": {
+          "n": 6,
+          "p50": 278.19999998807907,
+          "p95": 282.59999999403954,
+          "max": 282.59999999403954
+        },
+        "sourceMs": {
+          "n": 6,
+          "p50": 928,
+          "p95": 936,
+          "max": 936
+        },
+        "sourcePlusClickMs": {
+          "n": 6,
+          "p50": 1193.699999988079,
+          "p95": 1217.0999999940395,
+          "max": 1217.0999999940395
+        },
+        "requests": {
+          "n": 6,
+          "p50": 4,
+          "p95": 4,
+          "max": 4
+        },
+        "encodedBodyBytes": {
+          "n": 6,
+          "p50": 1345,
+          "p95": 3632,
+          "max": 3632
+        },
+        "firstReviewCodeStartMs": {
+          "n": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "lastReviewCodeEndMs": {
+          "n": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "roundsStartMs": {
+          "n": 6,
+          "p50": 154.099853515625,
+          "p95": 154.300048828125,
+          "max": 154.300048828125
+        },
+        "roundsEndMs": {
+          "n": 6,
+          "p50": 246.199951171875,
+          "p95": 254.10009765625,
+          "max": 254.10009765625
+        },
+        "codeStartMinusRoundsEndMs": {
+          "n": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "codeAndRoundsOverlapMs": {
+          "n": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "roundsTtfbMs": {
+          "n": 6,
+          "p50": 90.329,
+          "p95": 98.226,
+          "max": 98.226
+        },
+        "roundsTransferMs": {
+          "n": 6,
+          "p50": 0.4130000000000109,
+          "p95": 0.6950000000000074,
+          "max": 0.6950000000000074
+        },
+        "server_databaseMs": {
+          "n": 6,
+          "p50": 6.36,
+          "p95": 7.8,
+          "max": 7.8
+        },
+        "server_identityMs": {
+          "n": 6,
+          "p50": 20.31,
+          "p95": 20.77,
+          "max": 20.77
+        },
+        "server_live_sessionMs": {
+          "n": 6,
+          "p50": 0.57,
+          "p95": 0.95,
+          "max": 0.95
+        },
+        "server_lock_queryMs": {
+          "n": 6,
+          "p50": 0.61,
+          "p95": 0.82,
+          "max": 0.82
+        },
+        "server_serializationMs": {
+          "n": 6,
+          "p50": 0.09,
+          "p95": 0.13,
+          "max": 0.13
+        },
+        "server_totalMs": {
+          "n": 6,
+          "p50": 27.24,
+          "p95": 29.27,
+          "max": 29.27
+        }
+      }
+    }
+  ]
+}

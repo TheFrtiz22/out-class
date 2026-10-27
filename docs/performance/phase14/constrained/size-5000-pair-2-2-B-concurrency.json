@@ -1,0 +1,1553 @@
+{
+  "buildId": "Wlr8arrf3PezIcM74hNyk",
+  "size": 5000,
+  "kind": "pipelinePage",
+  "poolLimitPerClient": 8,
+  "maxConcurrentHttp": 4,
+  "poolSampling": "25ms same-role aggregates excluding monitor; SQL text/identities never recorded. Count includes unrelated same-role background sessions if present.",
+  "sampleUnit": "One HTTP initial-list read, not a local resident interaction. Each burst shares a wave; not independent percentiles.",
+  "samples": [
+    {
+      "concurrency": 1,
+      "wave": 0,
+      "index": 0,
+      "warmup": true,
+      "startOffsetMs": 0.08004099999999426,
+      "endOffsetMs": 174.95641600000002,
+      "elapsedMs": 174.87829200000002,
+      "ttfbMs": 174.17529199999998,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=19.09, database;dur=131.24, live_session;dur=0.44, transaction_acquire;dur=0.43, transaction;dur=141.06, compression;dur=0.20, serialization;dur=0.63, total;dur=162.81",
+      "traceId": "4eb4840c-e505-477c-8a26-b8878639743e",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 1,
+      "wave": 1,
+      "index": 0,
+      "warmup": false,
+      "startOffsetMs": 175.14175000000003,
+      "endOffsetMs": 321.959208,
+      "elapsedMs": 146.81770799999998,
+      "ttfbMs": 146.509416,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=20.71, database;dur=110.54, live_session;dur=0.62, transaction_acquire;dur=0.40, transaction;dur=121.74, compression;dur=0.29, serialization;dur=0.71, total;dur=145.18",
+      "traceId": "5b7f4051-c0fe-4005-a9e5-a11528e8c930",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 1,
+      "wave": 2,
+      "index": 0,
+      "warmup": false,
+      "startOffsetMs": 322.02725,
+      "endOffsetMs": 470.787958,
+      "elapsedMs": 148.76116599999995,
+      "ttfbMs": 148.19645799999995,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=23.77, database;dur=108.81, live_session;dur=0.46, transaction_acquire;dur=0.44, transaction;dur=120.13, compression;dur=0.34, serialization;dur=1.15, total;dur=146.84",
+      "traceId": "0c0248a9-d7cb-4895-ae24-e95cb1b92087",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 1,
+      "wave": 3,
+      "index": 0,
+      "warmup": false,
+      "startOffsetMs": 470.851041,
+      "endOffsetMs": 615.381916,
+      "elapsedMs": 144.531292,
+      "ttfbMs": 144.002209,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=16.94, database;dur=108.92, live_session;dur=0.48, transaction_acquire;dur=0.39, transaction;dur=122.06, compression;dur=0.34, serialization;dur=0.99, total;dur=142.11",
+      "traceId": "61513051-37c5-4d4a-b086-e86e03047cae",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 1,
+      "wave": 4,
+      "index": 0,
+      "warmup": false,
+      "startOffsetMs": 615.4425,
+      "endOffsetMs": 770.16025,
+      "elapsedMs": 154.718208,
+      "ttfbMs": 154.1672910000001,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=17.69, database;dur=118.27, live_session;dur=0.42, transaction_acquire;dur=0.45, transaction;dur=127.81, compression;dur=3.85, serialization;dur=4.56, total;dur=152.03",
+      "traceId": "ad77ca4a-fb81-4af2-93b4-184d37d7bc7e",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 1,
+      "wave": 5,
+      "index": 0,
+      "warmup": false,
+      "startOffsetMs": 770.239583,
+      "endOffsetMs": 911.32225,
+      "elapsedMs": 141.0830830000001,
+      "ttfbMs": 140.5467500000001,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=16.87, database;dur=110.23, live_session;dur=0.38, transaction_acquire;dur=0.44, transaction;dur=118.04, compression;dur=0.38, serialization;dur=1.01, total;dur=138.10",
+      "traceId": "dd1ee156-a689-460e-8cf3-4cd76bcf6c22",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 2,
+      "wave": 0,
+      "index": 1,
+      "warmup": true,
+      "startOffsetMs": 911.509291,
+      "endOffsetMs": 1053.137708,
+      "elapsedMs": 141.62858400000005,
+      "ttfbMs": 141.32312500000012,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=16.54, database;dur=108.44, live_session;dur=0.67, transaction_acquire;dur=0.49, transaction;dur=117.58, compression;dur=0.21, serialization;dur=0.47, total;dur=136.60",
+      "traceId": "87cc8909-92ae-407b-8a08-353d5359061f",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 2,
+      "wave": 0,
+      "index": 0,
+      "warmup": true,
+      "startOffsetMs": 911.3825410000001,
+      "endOffsetMs": 1065.2437909999999,
+      "elapsedMs": 153.86145899999997,
+      "ttfbMs": 153.63875000000007,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=17.69, database;dur=123.15, live_session;dur=0.47, transaction_acquire;dur=0.47, transaction;dur=130.62, compression;dur=0.19, serialization;dur=0.43, total;dur=151.13",
+      "traceId": "91e3ccdb-9bc4-43d3-b05c-791bbf54993c",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 2,
+      "wave": 1,
+      "index": 1,
+      "warmup": false,
+      "startOffsetMs": 1065.38475,
+      "endOffsetMs": 1206.169291,
+      "elapsedMs": 140.78475000000003,
+      "ttfbMs": 140.53170799999998,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=17.41, database;dur=110.44, live_session;dur=0.35, transaction_acquire;dur=0.37, transaction;dur=117.95, compression;dur=0.20, serialization;dur=0.43, total;dur=137.52",
+      "traceId": "33954c79-e845-4507-b195-16f0f9bd5506",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 2,
+      "wave": 1,
+      "index": 0,
+      "warmup": false,
+      "startOffsetMs": 1065.287541,
+      "endOffsetMs": 1213.097,
+      "elapsedMs": 147.809667,
+      "ttfbMs": 147.5339590000001,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=18.11, database;dur=118.25, live_session;dur=0.60, transaction_acquire;dur=0.41, transaction;dur=125.10, compression;dur=0.20, serialization;dur=0.41, total;dur=145.92",
+      "traceId": "56b36eb9-1809-47e2-8ae8-043aa010beb1",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 2,
+      "wave": 2,
+      "index": 1,
+      "warmup": false,
+      "startOffsetMs": 1213.188625,
+      "endOffsetMs": 1352.574416,
+      "elapsedMs": 139.38587499999994,
+      "ttfbMs": 139.15774999999985,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=17.18, database;dur=109.46, live_session;dur=0.29, transaction_acquire;dur=0.46, transaction;dur=117.21, compression;dur=0.20, serialization;dur=0.42, total;dur=136.17",
+      "traceId": "db0ffcdd-d9c9-491f-ba2f-d28cc63fa0ab",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 2,
+      "wave": 2,
+      "index": 0,
+      "warmup": false,
+      "startOffsetMs": 1213.133083,
+      "endOffsetMs": 1359.4681659999999,
+      "elapsedMs": 146.33520799999997,
+      "ttfbMs": 146.13545799999997,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=18.03, database;dur=116.98, live_session;dur=0.47, transaction_acquire;dur=0.40, transaction;dur=124.26, compression;dur=0.19, serialization;dur=0.39, total;dur=144.60",
+      "traceId": "ace60cc4-cd22-4f9b-8ed8-c3202bb66180",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 2,
+      "wave": 3,
+      "index": 1,
+      "warmup": false,
+      "startOffsetMs": 1359.5428749999999,
+      "endOffsetMs": 1498.062,
+      "elapsedMs": 138.51925000000006,
+      "ttfbMs": 138.26025000000004,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=18.15, database;dur=108.27, live_session;dur=0.36, transaction_acquire;dur=0.35, transaction;dur=115.97, compression;dur=0.19, serialization;dur=0.42, total;dur=135.88",
+      "traceId": "bbda0a2c-1611-412a-a33d-b6e21db7228f",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 2,
+      "wave": 3,
+      "index": 0,
+      "warmup": false,
+      "startOffsetMs": 1359.493416,
+      "endOffsetMs": 1509.511041,
+      "elapsedMs": 150.01770899999997,
+      "ttfbMs": 149.83974999999987,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=18.06, database;dur=121.57, live_session;dur=0.44, transaction_acquire;dur=0.36, transaction;dur=128.17, compression;dur=0.16, serialization;dur=0.35, total;dur=148.75",
+      "traceId": "dd3cdc5b-a8c7-4d53-b5ad-0616b433cf90",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 2,
+      "wave": 4,
+      "index": 0,
+      "warmup": false,
+      "startOffsetMs": 1509.538333,
+      "endOffsetMs": 1651.959333,
+      "elapsedMs": 142.42112499999985,
+      "ttfbMs": 142.19404199999985,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=20.14, database;dur=111.05, live_session;dur=0.27, transaction_acquire;dur=0.46, transaction;dur=118.88, compression;dur=0.19, serialization;dur=0.41, total;dur=140.96",
+      "traceId": "e98636f7-d6f6-45ff-8deb-513d494de2cc",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 2,
+      "wave": 4,
+      "index": 1,
+      "warmup": false,
+      "startOffsetMs": 1509.5874159999998,
+      "endOffsetMs": 1661.596625,
+      "elapsedMs": 152.00950000000012,
+      "ttfbMs": 151.69566700000018,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=19.11, database;dur=120.76, live_session;dur=0.39, transaction_acquire;dur=0.36, transaction;dur=128.45, compression;dur=0.18, serialization;dur=0.38, total;dur=149.52",
+      "traceId": "8d8afe2a-b136-40f4-b2ea-fcd690430efd",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 2,
+      "wave": 5,
+      "index": 0,
+      "warmup": false,
+      "startOffsetMs": 1661.6363749999998,
+      "endOffsetMs": 1801.500083,
+      "elapsedMs": 139.8638330000001,
+      "ttfbMs": 139.6366660000001,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=18.69, database;dur=110.35, live_session;dur=0.70, transaction_acquire;dur=0.32, transaction;dur=117.38, compression;dur=0.20, serialization;dur=0.42, total;dur=138.45",
+      "traceId": "711d19d9-f597-4b5d-ba5c-f2254300b757",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 2,
+      "wave": 5,
+      "index": 1,
+      "warmup": false,
+      "startOffsetMs": 1661.712791,
+      "endOffsetMs": 1810.8541249999998,
+      "elapsedMs": 149.14145899999994,
+      "ttfbMs": 148.9448339999999,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=18.46, database;dur=119.48, live_session;dur=0.37, transaction_acquire;dur=0.31, transaction;dur=126.75, compression;dur=0.19, serialization;dur=0.39, total;dur=146.98",
+      "traceId": "c3a5608a-1d88-480b-8239-c6ec49cc158f",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 4,
+      "wave": 0,
+      "index": 0,
+      "warmup": true,
+      "startOffsetMs": 1810.894583,
+      "endOffsetMs": 1906.5525409999998,
+      "elapsedMs": 95.65812499999993,
+      "ttfbMs": 95.38183299999992,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=27.99, database;dur=50.48, live_session;dur=1.57, transaction_acquire;dur=2.17, transaction;dur=61.57, compression;dur=0.21, serialization;dur=0.44, total;dur=94.04",
+      "traceId": "75ea5644-231c-465c-ae93-b87031edd915",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 4,
+      "wave": 0,
+      "index": 2,
+      "warmup": true,
+      "startOffsetMs": 1811.015708,
+      "endOffsetMs": 1964.1321249999999,
+      "elapsedMs": 153.11654199999998,
+      "ttfbMs": 152.8767919999998,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=24.56, database;dur=115.08, live_session;dur=0.50, transaction_acquire;dur=0.89, transaction;dur=123.36, compression;dur=0.18, serialization;dur=0.40, total;dur=149.98",
+      "traceId": "789c75f5-bc1f-4e09-bc6e-1416992ea4ed",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 4,
+      "wave": 0,
+      "index": 1,
+      "warmup": true,
+      "startOffsetMs": 1810.978208,
+      "endOffsetMs": 1984.644125,
+      "elapsedMs": 173.66604200000006,
+      "ttfbMs": 173.37529199999994,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=22.81, database;dur=137.33, live_session;dur=0.47, transaction_acquire;dur=0.62, transaction;dur=145.52, compression;dur=0.53, serialization;dur=0.96, total;dur=171.24",
+      "traceId": "409db2be-bee0-494f-802b-a1bd49a48d1e",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 4,
+      "wave": 0,
+      "index": 3,
+      "warmup": true,
+      "startOffsetMs": 1811.090041,
+      "endOffsetMs": 1984.8723750000001,
+      "elapsedMs": 173.7824589999998,
+      "ttfbMs": 173.59579199999985,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=22.12, database;dur=136.91, live_session;dur=0.40, transaction_acquire;dur=0.82, transaction;dur=145.04, compression;dur=0.45, serialization;dur=0.82, total;dur=169.77",
+      "traceId": "191b9b9c-17f6-413b-98c4-c22162dab740",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 4,
+      "wave": 1,
+      "index": 3,
+      "warmup": false,
+      "startOffsetMs": 1985.0093749999999,
+      "endOffsetMs": 2087.595541,
+      "elapsedMs": 102.5863330000002,
+      "ttfbMs": 102.2760830000002,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=24.48, database;dur=60.31, live_session;dur=0.45, transaction_acquire;dur=0.43, transaction;dur=70.19, compression;dur=0.21, serialization;dur=0.62, total;dur=97.16",
+      "traceId": "6efdcdc5-faa1-437b-b260-04bb48ae1d8e",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 4,
+      "wave": 1,
+      "index": 2,
+      "warmup": false,
+      "startOffsetMs": 1984.9719159999997,
+      "endOffsetMs": 2145.9379160000003,
+      "elapsedMs": 160.96612500000037,
+      "ttfbMs": 160.66054200000008,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=25.06, database;dur=119.24, live_session;dur=0.44, transaction_acquire;dur=0.51, transaction;dur=128.49, compression;dur=0.35, serialization;dur=0.80, total;dur=156.24",
+      "traceId": "60c64cec-c423-42e9-88cd-989c361807bc",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 4,
+      "wave": 1,
+      "index": 1,
+      "warmup": false,
+      "startOffsetMs": 1984.9475409999998,
+      "endOffsetMs": 2178.6254160000003,
+      "elapsedMs": 193.67800000000034,
+      "ttfbMs": 193.38595900000018,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=26.25, database;dur=155.64, live_session;dur=0.43, transaction_acquire;dur=0.49, transaction;dur=161.49, compression;dur=0.22, serialization;dur=0.49, total;dur=190.11",
+      "traceId": "ce5fe9f1-b19d-495e-be58-5e2fcb7a1cf8",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 4,
+      "wave": 1,
+      "index": 0,
+      "warmup": false,
+      "startOffsetMs": 1984.8909579999997,
+      "endOffsetMs": 2187.994666,
+      "elapsedMs": 203.10391700000037,
+      "ttfbMs": 202.82300000000032,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=24.06, database;dur=165.76, live_session;dur=3.52, transaction_acquire;dur=0.45, transaction;dur=171.08, compression;dur=0.17, serialization;dur=0.42, total;dur=201.34",
+      "traceId": "e0db08cb-a102-41fd-9c4e-0082673841a7",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 4,
+      "wave": 2,
+      "index": 2,
+      "warmup": false,
+      "startOffsetMs": 2188.1218750000003,
+      "endOffsetMs": 2288.476208,
+      "elapsedMs": 100.35449999999992,
+      "ttfbMs": 100.05799999999999,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=28.07, database;dur=56.21, live_session;dur=0.55, transaction_acquire;dur=0.65, transaction;dur=65.96, compression;dur=0.20, serialization;dur=0.45, total;dur=96.53",
+      "traceId": "0bc260d3-8dcc-479f-9752-3d9ff90014a6",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 4,
+      "wave": 2,
+      "index": 3,
+      "warmup": false,
+      "startOffsetMs": 2188.138041,
+      "endOffsetMs": 2345.306458,
+      "elapsedMs": 157.16845899999998,
+      "ttfbMs": 156.92283399999997,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=26.56, database;dur=117.33, live_session;dur=0.81, transaction_acquire;dur=0.81, transaction;dur=123.05, compression;dur=0.17, serialization;dur=0.40, total;dur=152.28",
+      "traceId": "5edf7ffa-1c8e-4f2b-9a74-8b3044ad63fd",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 4,
+      "wave": 2,
+      "index": 0,
+      "warmup": false,
+      "startOffsetMs": 2188.02725,
+      "endOffsetMs": 2354.9910830000003,
+      "elapsedMs": 166.96395800000028,
+      "ttfbMs": 166.73529099999996,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=30.17, database;dur=125.66, live_session;dur=0.45, transaction_acquire;dur=0.65, transaction;dur=132.78, compression;dur=0.17, serialization;dur=0.41, total;dur=165.35",
+      "traceId": "7af6c00b-f522-48a0-83b7-16f140d93885",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 4,
+      "wave": 2,
+      "index": 1,
+      "warmup": false,
+      "startOffsetMs": 2188.101291,
+      "endOffsetMs": 2366.524958,
+      "elapsedMs": 178.42383400000017,
+      "ttfbMs": 178.18483400000014,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=29.13, database;dur=137.15, live_session;dur=0.45, transaction_acquire;dur=0.63, transaction;dur=144.31, compression;dur=0.16, serialization;dur=0.35, total;dur=175.78",
+      "traceId": "486e8027-55c5-4e72-9ebe-08ea45e8c68a",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 4,
+      "wave": 3,
+      "index": 1,
+      "warmup": false,
+      "startOffsetMs": 2366.6166660000004,
+      "endOffsetMs": 2522.188791,
+      "elapsedMs": 155.5722499999997,
+      "ttfbMs": 155.2908339999999,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=23.41, database;dur=120.57, live_session;dur=0.50, transaction_acquire;dur=0.68, transaction;dur=127.66, compression;dur=0.21, serialization;dur=0.44, total;dur=153.06",
+      "traceId": "3731c2c5-b5b8-4340-9d55-79e580eae160",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 4,
+      "wave": 3,
+      "index": 2,
+      "warmup": false,
+      "startOffsetMs": 2366.646208,
+      "endOffsetMs": 2529.606916,
+      "elapsedMs": 162.9608330000001,
+      "ttfbMs": 162.732708,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=24.23, database;dur=126.78, live_session;dur=0.51, transaction_acquire;dur=0.34, transaction;dur=133.71, compression;dur=0.15, serialization;dur=0.35, total;dur=159.90",
+      "traceId": "17faa65a-76f2-4fd4-ac2e-318b3fed3d4b",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 4,
+      "wave": 3,
+      "index": 0,
+      "warmup": false,
+      "startOffsetMs": 2366.550333,
+      "endOffsetMs": 2543.5125000000003,
+      "elapsedMs": 176.96229200000016,
+      "ttfbMs": 176.65270800000008,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=23.47, database;dur=142.16, live_session;dur=0.65, transaction_acquire;dur=0.70, transaction;dur=149.13, compression;dur=0.19, serialization;dur=0.41, total;dur=175.27",
+      "traceId": "228c736f-4574-43d8-868a-aefb234dcc1c",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 4,
+      "wave": 3,
+      "index": 3,
+      "warmup": false,
+      "startOffsetMs": 2366.6679160000003,
+      "endOffsetMs": 2553.304541,
+      "elapsedMs": 186.6367919999998,
+      "ttfbMs": 186.391709,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=21.73, database;dur=150.65, live_session;dur=0.42, transaction_acquire;dur=0.75, transaction;dur=158.86, compression;dur=0.25, serialization;dur=0.49, total;dur=182.70",
+      "traceId": "122ae8d8-b991-487a-895c-2ef4c84e7cb7",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 4,
+      "wave": 4,
+      "index": 2,
+      "warmup": false,
+      "startOffsetMs": 2553.427541,
+      "endOffsetMs": 2757.8729160000003,
+      "elapsedMs": 204.44550000000027,
+      "ttfbMs": 204.1295,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=36.56, database;dur=152.51, live_session;dur=1.11, transaction_acquire;dur=1.57, transaction;dur=160.01, compression;dur=0.24, serialization;dur=0.50, total;dur=201.02",
+      "traceId": "18eb2a46-7560-46c9-be7a-eb39cc58f450",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 4,
+      "wave": 4,
+      "index": 1,
+      "warmup": false,
+      "startOffsetMs": 2553.406375,
+      "endOffsetMs": 2759.3124580000003,
+      "elapsedMs": 205.90625,
+      "ttfbMs": 205.70258300000023,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=44.08, database;dur=148.19, live_session;dur=4.23, transaction_acquire;dur=1.32, transaction;dur=152.29, compression;dur=0.14, serialization;dur=0.34, total;dur=203.49",
+      "traceId": "f0f4ae46-edea-4854-8ec4-7ab67fff9084",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 4,
+      "wave": 4,
+      "index": 3,
+      "warmup": false,
+      "startOffsetMs": 2553.4444160000003,
+      "endOffsetMs": 2763.712625,
+      "elapsedMs": 210.26833399999987,
+      "ttfbMs": 210.01258400000006,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=43.97, database;dur=150.58, live_session;dur=0.88, transaction_acquire;dur=1.57, transaction;dur=157.67, compression;dur=0.15, serialization;dur=0.35, total;dur=206.09",
+      "traceId": "074b1354-515e-4ba9-9469-2e25003722f2",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 4,
+      "wave": 4,
+      "index": 0,
+      "warmup": false,
+      "startOffsetMs": 2553.34825,
+      "endOffsetMs": 2781.9985,
+      "elapsedMs": 228.65033300000005,
+      "ttfbMs": 228.36675000000014,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=49.06, database;dur=162.47, live_session;dur=0.55, transaction_acquire;dur=1.46, transaction;dur=174.48, compression;dur=0.17, serialization;dur=0.38, total;dur=227.01",
+      "traceId": "54b862a5-3cdf-42aa-bd3f-c8df0ba39c5b",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 4,
+      "wave": 5,
+      "index": 1,
+      "warmup": false,
+      "startOffsetMs": 2782.077,
+      "endOffsetMs": 2938.998791,
+      "elapsedMs": 156.9219579999999,
+      "ttfbMs": 156.67658299999994,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=25.64, database;dur=118.75, live_session;dur=0.64, transaction_acquire;dur=0.62, transaction;dur=126.26, compression;dur=0.21, serialization;dur=0.45, total;dur=154.30",
+      "traceId": "201cf3f2-1c8d-486a-9a00-ff58480a02b3",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 4,
+      "wave": 5,
+      "index": 2,
+      "warmup": false,
+      "startOffsetMs": 2782.0972500000003,
+      "endOffsetMs": 2944.416458,
+      "elapsedMs": 162.31937500000004,
+      "ttfbMs": 162.1199999999999,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=25.25, database;dur=124.19, live_session;dur=0.39, transaction_acquire;dur=0.75, transaction;dur=131.35, compression;dur=0.16, serialization;dur=0.36, total;dur=158.92",
+      "traceId": "02abc175-f666-447d-8b43-9bf0629ec3e8",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 4,
+      "wave": 5,
+      "index": 0,
+      "warmup": false,
+      "startOffsetMs": 2782.0225,
+      "endOffsetMs": 2954.424916,
+      "elapsedMs": 172.40245800000002,
+      "ttfbMs": 172.22833300000002,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=23.01, database;dur=137.98, live_session;dur=0.76, transaction_acquire;dur=0.58, transaction;dur=145.24, compression;dur=0.15, serialization;dur=0.33, total;dur=171.01",
+      "traceId": "d53a51fe-65bd-4515-a238-8f81513deb73",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    },
+    {
+      "concurrency": 4,
+      "wave": 5,
+      "index": 3,
+      "warmup": false,
+      "startOffsetMs": 2782.111875,
+      "endOffsetMs": 2965.385041,
+      "elapsedMs": 183.27329099999997,
+      "ttfbMs": 183.07229099999995,
+      "status": 200,
+      "encodedBodyBytes": 7257,
+      "applicationCount": 100,
+      "serverTiming": "identity;dur=23.46, database;dur=146.29, live_session;dur=0.67, transaction_acquire;dur=0.55, transaction;dur=153.33, compression;dur=0.15, serialization;dur=0.35, total;dur=179.11",
+      "traceId": "cb383f7f-c880-43c7-8f6d-205e56a0fd6e",
+      "privateNoStore": true,
+      "cookieSensitive": true,
+      "failed": false
+    }
+  ],
+  "poolSamples": [
+    {
+      "offsetMs": 17.997791000000007,
+      "connections": 9,
+      "active": 0,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 44.589166000000006,
+      "connections": 9,
+      "active": 0,
+      "idle_in_transaction": 1,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 70.659041,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 98.18266600000001,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 125.77754100000001,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 152.978708,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 179.25449999999998,
+      "connections": 9,
+      "active": 0,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 206.05666599999998,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 232.945708,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 259.672375,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 285.78870800000004,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 312.88420800000006,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 340.022208,
+      "connections": 9,
+      "active": 0,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 366.91704100000004,
+      "connections": 9,
+      "active": 0,
+      "idle_in_transaction": 1,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 393.535791,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 419.71733300000005,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 446.480916,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 471.5478330000001,
+      "connections": 9,
+      "active": 0,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 497.48800000000006,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 524.08925,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 550.3452080000001,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 577.1343330000001,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 603.425333,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 629.452125,
+      "connections": 9,
+      "active": 0,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 655.663125,
+      "connections": 9,
+      "active": 0,
+      "idle_in_transaction": 1,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 682.343291,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 709.585875,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 736.612291,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 763.418625,
+      "connections": 9,
+      "active": 0,
+      "idle_in_transaction": 1,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 790.057166,
+      "connections": 9,
+      "active": 0,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 816.241666,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 842.010833,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 867.9454999999999,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 894.7715830000001,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 921.622833,
+      "connections": 9,
+      "active": 0,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 947.483083,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 1,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 974.1535,
+      "connections": 9,
+      "active": 2,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1000.6494160000001,
+      "connections": 9,
+      "active": 2,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1027.299166,
+      "connections": 9,
+      "active": 2,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1053.237791,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1078.550166,
+      "connections": 9,
+      "active": 0,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1104.585416,
+      "connections": 9,
+      "active": 0,
+      "idle_in_transaction": 2,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1131.12625,
+      "connections": 9,
+      "active": 2,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1157.5143329999999,
+      "connections": 9,
+      "active": 2,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1183.882833,
+      "connections": 9,
+      "active": 2,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1210.0239159999999,
+      "connections": 9,
+      "active": 0,
+      "idle_in_transaction": 1,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1236.402333,
+      "connections": 9,
+      "active": 2,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1261.913791,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 1,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1288.423541,
+      "connections": 9,
+      "active": 2,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1314.372416,
+      "connections": 9,
+      "active": 2,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1340.774958,
+      "connections": 9,
+      "active": 2,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1366.695958,
+      "connections": 9,
+      "active": 0,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1393.6242499999998,
+      "connections": 9,
+      "active": 2,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1420.170083,
+      "connections": 9,
+      "active": 2,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1446.557875,
+      "connections": 9,
+      "active": 2,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1472.91075,
+      "connections": 9,
+      "active": 2,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1498.164625,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1523.616875,
+      "connections": 9,
+      "active": 0,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1550.092291,
+      "connections": 9,
+      "active": 0,
+      "idle_in_transaction": 2,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1576.599416,
+      "connections": 9,
+      "active": 2,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1602.600708,
+      "connections": 9,
+      "active": 2,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1628.3016659999998,
+      "connections": 9,
+      "active": 2,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1653.481666,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1678.938708,
+      "connections": 9,
+      "active": 0,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1705.622625,
+      "connections": 9,
+      "active": 0,
+      "idle_in_transaction": 2,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1732.190333,
+      "connections": 9,
+      "active": 2,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1758.593291,
+      "connections": 9,
+      "active": 2,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1784.386583,
+      "connections": 9,
+      "active": 2,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1810.215,
+      "connections": 9,
+      "active": 0,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1837.311,
+      "connections": 9,
+      "active": 0,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1863.858375,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 3,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1890.77175,
+      "connections": 9,
+      "active": 3,
+      "idle_in_transaction": 1,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1916.8244159999997,
+      "connections": 9,
+      "active": 3,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1943.3549999999998,
+      "connections": 9,
+      "active": 3,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1969.679875,
+      "connections": 9,
+      "active": 2,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 1996.6206249999998,
+      "connections": 9,
+      "active": 0,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2024.8437499999998,
+      "connections": 9,
+      "active": 4,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2051.4916660000004,
+      "connections": 9,
+      "active": 0,
+      "idle_in_transaction": 4,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2077.5161660000003,
+      "connections": 9,
+      "active": 2,
+      "idle_in_transaction": 2,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2103.1918330000003,
+      "connections": 9,
+      "active": 3,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2130.4188750000003,
+      "connections": 9,
+      "active": 3,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2156.614,
+      "connections": 9,
+      "active": 2,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2182.4134160000003,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2209.09675,
+      "connections": 9,
+      "active": 0,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2237.714708,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 3,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2263.773708,
+      "connections": 9,
+      "active": 2,
+      "idle_in_transaction": 2,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2290.1121660000003,
+      "connections": 9,
+      "active": 3,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2316.478,
+      "connections": 9,
+      "active": 3,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2343.0199580000003,
+      "connections": 9,
+      "active": 2,
+      "idle_in_transaction": 1,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2368.4500000000003,
+      "connections": 9,
+      "active": 0,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2394.3631250000003,
+      "connections": 9,
+      "active": 0,
+      "idle_in_transaction": 3,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2420.294833,
+      "connections": 9,
+      "active": 0,
+      "idle_in_transaction": 4,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2447.1785830000003,
+      "connections": 9,
+      "active": 3,
+      "idle_in_transaction": 1,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2473.965375,
+      "connections": 9,
+      "active": 4,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2500.673916,
+      "connections": 9,
+      "active": 4,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2527.218166,
+      "connections": 9,
+      "active": 2,
+      "idle_in_transaction": 1,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2553.570291,
+      "connections": 9,
+      "active": 0,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2578.863208,
+      "connections": 9,
+      "active": 0,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2604.7877080000003,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2631.821375,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 3,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2658.440833,
+      "connections": 9,
+      "active": 2,
+      "idle_in_transaction": 2,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2684.5139160000003,
+      "connections": 9,
+      "active": 4,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2710.939041,
+      "connections": 9,
+      "active": 4,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2737.789791,
+      "connections": 9,
+      "active": 4,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2763.925166,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2790.7034160000003,
+      "connections": 9,
+      "active": 0,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2818.472,
+      "connections": 9,
+      "active": 4,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2844.7561250000003,
+      "connections": 9,
+      "active": 1,
+      "idle_in_transaction": 3,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2870.777125,
+      "connections": 9,
+      "active": 3,
+      "idle_in_transaction": 1,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2897.688791,
+      "connections": 9,
+      "active": 4,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2923.9552080000003,
+      "connections": 9,
+      "active": 4,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    },
+    {
+      "offsetMs": 2950.5835,
+      "connections": 9,
+      "active": 2,
+      "idle_in_transaction": 0,
+      "lock_waiting": 0
+    }
+  ]
+}

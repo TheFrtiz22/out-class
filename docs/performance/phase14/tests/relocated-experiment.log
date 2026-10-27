@@ -1,0 +1,10 @@
+✔ selected review downloads its code while the live rounds response is still pending (1935.265208ms)
+✔ abandoning and logging out during review loading cannot reveal a late editor or authorize a later read (4430.352125ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6575.121375

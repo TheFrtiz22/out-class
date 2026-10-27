@@ -1,0 +1,63 @@
+{
+  "startedAt": "2026-10-26T23:53:27.921Z",
+  "checks": [
+    {
+      "name": "relocated-experiment",
+      "startedAt": "2026-10-26T23:53:30.207Z",
+      "completedAt": "2026-10-26T23:53:36.860Z",
+      "status": 0
+    },
+    {
+      "name": "retained-unit",
+      "startedAt": "2026-10-26T23:53:36.932Z",
+      "completedAt": "2026-10-26T23:57:01.256Z",
+      "status": 0
+    },
+    {
+      "name": "retained-live",
+      "startedAt": "2026-10-26T23:57:03.375Z",
+      "completedAt": "2026-10-26T23:58:36.401Z",
+      "status": 0
+    },
+    {
+      "name": "retained-typecheck",
+      "startedAt": "2026-10-26T23:58:36.475Z",
+      "completedAt": "2026-10-26T23:58:40.595Z",
+      "status": 0
+    },
+    {
+      "name": "retained-lint",
+      "startedAt": "2026-10-26T23:58:40.595Z",
+      "completedAt": "2026-10-26T23:58:46.952Z",
+      "status": 0
+    }
+  ],
+  "complete": true,
+  "retainedApplication": "Exact Phase13 source; measured preload experiment rejected.",
+  "ordinary": {
+    "total": 1477,
+    "passed": 1414,
+    "failed": 0,
+    "skipped": 63,
+    "cancelled": 0
+  },
+  "live": {
+    "total": 67,
+    "passed": 67,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "relocatedExperiment": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "nativeSecurity": "3 passed before measurement; all server/auth/database source and dependencies identical in retained source.",
+  "retainedBuildId": "Wlr8arrf3PezIcM74hNyk",
+  "applicationFilesVerified": 913,
+  "applicationChangesThisPhase": 0,
+  "completedAt": "2026-10-26T23:58:46.954Z"
+}

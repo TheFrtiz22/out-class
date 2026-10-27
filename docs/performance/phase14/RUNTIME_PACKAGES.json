@@ -1,0 +1,26 @@
+{
+  "next": {
+    "version": "15.5.27",
+    "sha256": "547305a02acf9b1700e8210e511deefe616d415f3fc06c9f7551187430b7ee54"
+  },
+  "react": {
+    "version": "19.2.0",
+    "sha256": "6029fda5e660da53952cf5ddcd1e8568fc8dc0c6dcb9deaf7667fdc4c7f5a113"
+  },
+  "prisma": {
+    "version": "6.19.3",
+    "sha256": "640c40516faa0c333995d0e22cf9e09815c3d7f80ef71ac793283d2c9cac41be"
+  },
+  "playwright": {
+    "version": "1.64.0",
+    "sha256": "76e7341a52a4dd154553c3514926a5f824da4374d000e88d9ac3c14ee6eadf84"
+  },
+  "@supabase/ssr": {
+    "version": "0.12.7",
+    "sha256": "f7fb77112c8e841801ae6b841078488ea262e226a5488ef213ce1a13c1b6be0e"
+  },
+  "@supabase/supabase-js": {
+    "version": "2.116.0",
+    "sha256": "7fb2b72ae229cc489891f65915a11ba0528f14783ffaa95379d50bcef95f1d0c"
+  }
+}

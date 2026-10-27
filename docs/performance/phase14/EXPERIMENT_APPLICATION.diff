@@ -1,0 +1,14 @@
+diff --git a/components/club-workspace.tsx b/components/club-workspace.tsx
+index 0ddd33d..1120786 100644
+--- a/components/club-workspace.tsx
++++ b/components/club-workspace.tsx
+@@ -286,6 +286,9 @@ function RoundSettings({ clubId, embedded = false, canIdentify = true, onChanged
+   useEffect(() => {
+     let current = true;
+     setError(false);
++    // Only the selected review starts this code download. Overlap it with the
++    // live rounds read; the dynamic component still owns rendering/load errors.
++    void import("@/components/recruitment-review-settings").catch(() => {});
+     getWorkspaceRounds(clubId)
+       .then((r) => {
+         if (current) setRounds(r);

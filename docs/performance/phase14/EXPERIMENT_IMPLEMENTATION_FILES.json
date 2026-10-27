@@ -1,0 +1,22 @@
+{
+  "implementationBase": "f14ab3a410268638bfceb7b51b7fb372d18a452b",
+  "applicationChangesThisPhase": 1,
+  "files": [
+    "components/club-workspace.tsx",
+    "scripts/navigation-phase14-local.cjs",
+    "scripts/navigation-phase14-study.cjs",
+    "scripts/navigation-phase14-interactions.cjs",
+    "scripts/navigation-phase14-constrained-interactions.cjs",
+    "scripts/navigation-phase14-concurrency.cjs",
+    "scripts/navigation-phase14-host-monitor.cjs",
+    "scripts/navigation-phase14-server-diagnostics.cjs",
+    "scripts/navigation-phase14-diagnose.cjs",
+    "tests/navigation-phase14-e2e.test.cjs",
+    "tests/navigation-phase14-diagnostics.test.cjs"
+  ],
+  "sha256": "4d61a8ad4cd67884eafea71692530e454411d9a40353986007f6aa47a719adcc",
+  "reverseApplyCheck": true,
+  "applicationDiff": "EXPERIMENT_APPLICATION.diff",
+  "applicationDiffSha256": "b9713552a8206d89c83db54e9c6e5d153e18b2409614c08819562f475fde8be5",
+  "artifact": "EXPERIMENT_IMPLEMENTATION.diff"
+}

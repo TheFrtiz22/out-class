@@ -1,0 +1,32 @@
+{
+  "baseline": {
+    "settings": [
+      "/_next/static/chunks/5349-76f8b6dcd683ce38.js"
+    ],
+    "meetings": [
+      "/_next/static/chunks/2019-abaddaaa9beb74db.js"
+    ],
+    "scheduledDecisions": [
+      "/_next/static/chunks/4656.07765cfc7f1e9131.js"
+    ],
+    "rounds": [
+      "/_next/static/chunks/63.2369671f99054276.js",
+      "/_next/static/chunks/7959.0015f7ee6f4f76d8.js"
+    ]
+  },
+  "candidate": {
+    "settings": [
+      "/_next/static/chunks/5349-76f8b6dcd683ce38.js"
+    ],
+    "meetings": [
+      "/_next/static/chunks/2019-abaddaaa9beb74db.js"
+    ],
+    "scheduledDecisions": [
+      "/_next/static/chunks/4656.07765cfc7f1e9131.js"
+    ],
+    "rounds": [
+      "/_next/static/chunks/63.2369671f99054276.js",
+      "/_next/static/chunks/7959.0015f7ee6f4f76d8.js"
+    ]
+  }
+}

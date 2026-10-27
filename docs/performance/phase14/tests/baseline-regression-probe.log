@@ -1,0 +1,19 @@
+✖ selected review downloads its code while the live rounds response is still pending (11785.61675ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 11998.260417
+
+✖ failing tests:
+
+test at tests/navigation-phase14-e2e.test.cjs:26:1
+✖ selected review downloads its code while the live rounds response is still pending (11785.61675ms)
+  page.waitForRequest: Timeout 10000ms exceeded while waiting for event "request"
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/navigation-phase14-e2e.test.cjs:32:21) {
+    name: 'TimeoutError',
+    log: []
+  }

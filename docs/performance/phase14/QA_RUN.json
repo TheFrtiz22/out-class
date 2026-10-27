@@ -1,0 +1,76 @@
+{
+  "startedAt": "2026-10-26T19:13:10.797Z",
+  "ordinaryFileConcurrency": 2,
+  "checks": [
+    {
+      "name": "unit",
+      "startedAt": "2026-10-26T19:13:10.826Z",
+      "completedAt": "2026-10-26T19:16:36.320Z",
+      "status": 0
+    },
+    {
+      "name": "migrations",
+      "startedAt": "2026-10-26T19:16:36.321Z",
+      "completedAt": "2026-10-26T19:16:37.386Z",
+      "status": 0
+    },
+    {
+      "name": "security-disposable",
+      "startedAt": "2026-10-26T19:16:37.386Z",
+      "completedAt": "2026-10-26T19:16:51.632Z",
+      "status": 0
+    },
+    {
+      "name": "typecheck",
+      "startedAt": "2026-10-26T19:16:51.633Z",
+      "completedAt": "2026-10-26T19:16:56.804Z",
+      "status": 0
+    },
+    {
+      "name": "lint",
+      "startedAt": "2026-10-26T19:16:56.804Z",
+      "completedAt": "2026-10-26T19:17:03.245Z",
+      "status": 0
+    },
+    {
+      "name": "live-initial",
+      "startedAt": "2026-10-26T19:17:05.304Z",
+      "completedAt": "2026-10-26T19:18:44.931Z",
+      "status": 0,
+      "coverage": "65 cases passed; signup-privacy suite omitted from this selected invocation. Complete serialized rerun follows."
+    },
+    {
+      "name": "seed-1000",
+      "startedAt": "2026-10-26T19:18:45.008Z",
+      "completedAt": "2026-10-26T19:18:45.897Z",
+      "status": 0
+    },
+    {
+      "name": "scale-1000",
+      "startedAt": "2026-10-26T19:18:45.898Z",
+      "completedAt": "2026-10-26T19:18:47.098Z",
+      "status": 0
+    },
+    {
+      "name": "seed-5000",
+      "startedAt": "2026-10-26T19:18:47.106Z",
+      "completedAt": "2026-10-26T19:18:48.493Z",
+      "status": 0
+    },
+    {
+      "name": "scale-5000",
+      "startedAt": "2026-10-26T19:18:48.494Z",
+      "completedAt": "2026-10-26T19:18:52.121Z",
+      "status": 0
+    },
+    {
+      "name": "live",
+      "startedAt": "2026-10-26T23:04:19.517Z",
+      "completedAt": "2026-10-26T23:05:58.941Z",
+      "status": 0,
+      "coverage": "Full Phase13 selected live coverage plus two new Phase14 cases; complete serialized rerun."
+    }
+  ],
+  "complete": true,
+  "completedAt": "2026-10-26T23:05:58.941Z"
+}

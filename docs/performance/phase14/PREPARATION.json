@@ -1,0 +1,35 @@
+{
+  "startedAt": "2026-10-26T19:10:48.395Z",
+  "checks": [
+    {
+      "name": "baseline-regression-probe",
+      "startedAt": "2026-10-26T19:10:50.450Z",
+      "completedAt": "2026-10-26T19:11:02.535Z",
+      "status": 1,
+      "expected": 1
+    },
+    {
+      "name": "pilot-baseline",
+      "startedAt": "2026-10-26T19:11:02.536Z",
+      "completedAt": "2026-10-26T19:11:47.130Z",
+      "status": 0,
+      "expected": 0
+    },
+    {
+      "name": "focused-review",
+      "startedAt": "2026-10-26T19:12:09.203Z",
+      "completedAt": "2026-10-26T19:12:16.002Z",
+      "status": 0,
+      "expected": 0
+    },
+    {
+      "name": "pilot-candidate",
+      "startedAt": "2026-10-26T19:12:16.002Z",
+      "completedAt": "2026-10-26T19:13:01.345Z",
+      "status": 0,
+      "expected": 0
+    }
+  ],
+  "complete": true,
+  "completedAt": "2026-10-26T19:13:01.416Z"
+}

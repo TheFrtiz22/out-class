@@ -1,0 +1,359 @@
+diff --git a/components/club-workspace.tsx b/components/club-workspace.tsx
+index 0ddd33d..1120786 100644
+--- a/components/club-workspace.tsx
++++ b/components/club-workspace.tsx
+@@ -286,6 +286,9 @@ function RoundSettings({ clubId, embedded = false, canIdentify = true, onChanged
+   useEffect(() => {
+     let current = true;
+     setError(false);
++    // Only the selected review starts this code download. Overlap it with the
++    // live rounds read; the dynamic component still owns rendering/load errors.
++    void import("@/components/recruitment-review-settings").catch(() => {});
+     getWorkspaceRounds(clubId)
+       .then((r) => {
+         if (current) setRounds(r);
+diff --git a/scripts/navigation-phase14-concurrency.cjs b/scripts/navigation-phase14-concurrency.cjs
+new file mode 100644
+index 0000000..7adf1c6
+--- /dev/null
++++ b/scripts/navigation-phase14-concurrency.cjs
+@@ -0,0 +1,16 @@
++// Bounded real HTTP bursts against the reserved fixture. No auth/cache shortcuts.
++const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),http=require('node:http'),{performance}=require('node:perf_hooks'),{gunzipSync}=require('node:zlib'),{PrismaClient}=require('@prisma/client');
++const local=require('./navigation-phase14-local.cjs'),{Actor}=require('../tests/helpers/onboarding-e2e.cjs');
++async function main(){
++ const out=path.resolve(process.argv.find(a=>a.startsWith('--out='))?.slice(6)||''),kind=process.argv.find(a=>a.startsWith('--kind='))?.slice(7);assert.ok(out.startsWith(path.join(local.repo,'docs/performance/phase14')+path.sep)&&!fs.existsSync(out));assert.ok(['pipelinePage','pipelineList'].includes(kind));
++ const fixture=JSON.parse(fs.readFileSync(path.join(local.root,'navigation-fixture.json'))),actor=new Actor(local.config());await actor.signIn(fixture.email,fixture.password);const url=new URL(local.config().appUrl+'/api/workspace?'+new URLSearchParams({kind,args:JSON.stringify([fixture.clubIds[0],{genderCounts:false}])}));assert.equal(url.origin,'http://127.0.0.1:3107');
++ const poolUrl=new URL(local.config().status.DB_URL);poolUrl.searchParams.set('connection_limit','1');const monitor=new PrismaClient({datasourceUrl:poolUrl.href}),agent=new http.Agent({keepAlive:true,maxSockets:4}),samples=[],poolSamples=[];let monitoring=true;
++ const origin=performance.now(),poll=(async()=>{while(monitoring){const [row]=await monitor.$queryRaw`SELECT count(*)::int AS connections, count(*) FILTER (WHERE state='active')::int AS active, count(*) FILTER (WHERE state='idle in transaction')::int AS idle_in_transaction, count(*) FILTER (WHERE wait_event_type='Lock')::int AS lock_waiting FROM pg_stat_activity WHERE datname=current_database() AND usename=current_user AND backend_type='client backend' AND pid<>pg_backend_pid()`;poolSamples.push({offsetMs:performance.now()-origin,...row});await new Promise(r=>setTimeout(r,25))}})();
++ async function read(concurrency,wave,index){return new Promise(resolve=>{
++  const start=performance.now();const request=http.get(url,{agent,headers:{cookie:actor.cookieHeader(),'accept-encoding':'gzip'}},response=>{const ttfbMs=performance.now()-start,chunks=[];response.on('data',chunk=>chunks.push(chunk));response.on('end',()=>{const body=Buffer.concat(chunks);let valid=false,count=null;try{const data=JSON.parse((response.headers['content-encoding']==='gzip'?gunzipSync(body):body).toString()).data;valid=Array.isArray(data.applications);count=data.applications?.length}catch{}const row={concurrency,wave,index,warmup:wave===0,startOffsetMs:start-origin,endOffsetMs:performance.now()-origin,elapsedMs:performance.now()-start,ttfbMs,status:response.statusCode,encodedBodyBytes:body.length,applicationCount:count,serverTiming:response.headers['server-timing']||null,traceId:response.headers['x-outclass-trace-id']||null,privateNoStore:response.headers['cache-control']==='private, no-store',cookieSensitive:/Cookie/.test(response.headers.vary||''),failed:!valid||response.statusCode!==200};samples.push(row);resolve()})});
++  request.setTimeout(30000,()=>request.destroy());request.once('error',e=>{samples.push({concurrency,wave,index,warmup:wave===0,failed:true,startOffsetMs:start-origin,endOffsetMs:performance.now()-origin,error:e.name,elapsedMs:performance.now()-start});resolve()});
++ })}
++ try{for(const concurrency of [1,2,4])for(let wave=0;wave<6;wave++)await Promise.all(Array.from({length:concurrency},(_,index)=>read(concurrency,wave,index)));assert.equal(samples.length,42);assert.ok(samples.every(r=>r.privateNoStore&&r.cookieSensitive&&!r.failed));}
++ finally{monitoring=false;await poll;await monitor.$disconnect();agent.destroy();fs.writeFileSync(out,JSON.stringify({buildId:fs.readFileSync(path.join(local.dist,'BUILD_ID'),'utf8').trim(),size:fixture.counts.applicantsInMeasuredClub,kind,poolLimitPerClient:8,maxConcurrentHttp:4,poolSampling:'25ms same-role aggregates excluding monitor; SQL text/identities never recorded. Count includes unrelated same-role background sessions if present.','sampleUnit':'One HTTP initial-list read, not a local resident interaction. Each burst shares a wave; not independent percentiles.',samples,poolSamples},null,2)+'\n')}
++}
++if(require.main===module)main().catch(e=>{console.error(e.name+': bounded HTTP study failed');process.exitCode=1});
+diff --git a/scripts/navigation-phase14-constrained-interactions.cjs b/scripts/navigation-phase14-constrained-interactions.cjs
+new file mode 100644
+index 0000000..1ff912a
+--- /dev/null
++++ b/scripts/navigation-phase14-constrained-interactions.cjs
+@@ -0,0 +1,38 @@
++// Additional warm interactions on the same frozen builds/cohorts as the primary
++// harness. No interception, seeded delay, mutation, or benchmark-only app path.
++const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{performance}=require('node:perf_hooks'),{chromium}=require('playwright');
++const local=require('./navigation-phase14-local.cjs'),{Actor}=require('../tests/helpers/onboarding-e2e.cjs'),{safeRoute}=require('./navigation-audit.cjs');
++async function main(){
++ const out=path.resolve(process.argv.find(a=>a.startsWith('--out='))?.slice(6)||'');assert.ok(out.startsWith(path.join(local.repo,'docs/performance/phase14')+path.sep)&&!fs.existsSync(out));
++ const f=JSON.parse(fs.readFileSync(path.join(local.root,'navigation-fixture.json'))),size=f.counts.applicantsInMeasuredClub||100;assert.ok(size>=1000);
++ const actor=new Actor(local.config());await actor.signIn(f.email,f.password);const browser=await chromium.launch({headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage(),requests=[],pending=new Set(),errors=[],samples=[];
++ const cdp=await context.newCDPSession(page);assert.equal(local.config().appUrl,'http://127.0.0.1:3107');await cdp.send('Network.enable');await cdp.send('Network.emulateNetworkConditions',{offline:false,latency:80,downloadThroughput:200000,uploadThroughput:93750,connectionType:'cellular4g'});await cdp.send('Emulation.setCPUThrottlingRate',{rate:4});
++ page.on('pageerror',e=>errors.push(e.name));page.on('request',r=>{const row={request:r,route:safeRoute(r.url()),type:r.resourceType(),start:performance.now(),end:null,status:null,bytes:null};requests.push(row);if(row.type!=='eventsource')pending.add(r)});
++ page.on('response',r=>{const row=requests.find(q=>q.request===r.request());if(row){row.status=r.status();row.serverTiming=r.headers()['server-timing']||null;row.traceId=r.headers()['x-outclass-trace-id']||null}});
++ page.on('requestfinished',r=>{pending.delete(r);const row=requests.find(q=>q.request===r);if(row){row.end=performance.now();row.timing=r.timing();void r.sizes().then(s=>row.bytes=s.responseBodySize).catch(()=>{})}});page.on('requestfailed',r=>{pending.delete(r);const row=requests.find(q=>q.request===r);if(row){row.end=performance.now();row.failed=true}});
++ async function drain(){const until=performance.now()+10000;while(pending.size&&performance.now()<until)await new Promise(r=>setTimeout(r,20));assert.equal(pending.size,0,'Unfinished non-SSE request');await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))))}
++ async function capture(kind,index,target,action){
++  await drain();const offset=requests.length,errorOffset=errors.length,start=performance.now();let failed=null,meaningfulMs=null,marks=null,driverElapsedMs=null;
++  await page.evaluate(({target,event})=>{
++   const state={start:0,ready:0,scheduled:false,origin:performance.timeOrigin};window.__phase14Paint=state;
++   const check=()=>{if(!state.start||state.scheduled)return;const found=[...document.querySelectorAll('.oc-live-pipeline [data-applicant-id]')].some(e=>e.getClientRects().length&&e.textContent.includes(target));if(!found)return;state.scheduled=true;requestAnimationFrame(()=>requestAnimationFrame(()=>{state.ready=performance.now()}))};
++   const begin=()=>{if(!state.start)state.start=performance.now();queueMicrotask(check)};
++   document.addEventListener(event,begin,true);const observer=new MutationObserver(check);observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true});state.check=check;state.cleanup=()=>{observer.disconnect();document.removeEventListener(event,begin,true)};
++  },{target,event:kind==='next-page'?'click':'input'});
++  try{await action();await page.evaluate(()=>window.__phase14Paint.check());await page.waitForFunction(()=>window.__phase14Paint.ready>0,null,{timeout:30000});marks=await page.evaluate(()=>{const s=window.__phase14Paint;s.cleanup();return{start:s.start,ready:s.ready,origin:s.origin}});meaningfulMs=marks.ready-marks.start;driverElapsedMs=performance.now()-start;await drain()}catch(e){failed=e.name;process.exitCode=1;await page.evaluate(()=>window.__phase14Paint.cleanup()).catch(()=>{})}
++  const origin=marks?marks.origin+marks.start:performance.timeOrigin+start;
++  const rows=requests.slice(offset).map(r=>({route:r.route,type:r.type,startMs:performance.timeOrigin+r.start-origin,endMs:r.end===null?null:performance.timeOrigin+r.end-origin,status:r.status,failed:!!r.failed,encodedBodyBytes:r.bytes,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart:null,transferMs:r.timing?.responseEnd>=0&&r.timing?.responseStart>=0?r.timing.responseEnd-r.timing.responseStart:null,serverTiming:r.serverTiming,traceId:r.traceId}));
++  samples.push({kind,index,warmup:index===0,condition:'warm',failed,meaningfulMs,driverElapsedMs,requestCount:rows.length,encodedBodyBytes:rows.every(r=>Number.isFinite(r.encodedBodyBytes))?rows.reduce((n,r)=>n+r.encodedBodyBytes,0):null,pageErrors:errors.slice(errorOffset),requests:rows});
++ }
++ try{
++  await page.goto(local.config().appUrl+'/club/'+f.clubIds[0]+'/workspace?section=recruitment&tool=applicants');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await page.waitForLoadState('networkidle');await drain();const pager=page.getByRole('navigation',{name:'Applicant pages',exact:true}),search=page.getByRole('textbox',{name:'Search applicants',exact:true}),last='Scale Student '+String(size-1).padStart(5,'0');
++  for(let i=0;i<6;i++){
++   await capture('next-page',i,'Scale Student 00100',()=>pager.getByRole('button',{name:'Next applicant page',exact:true}).click());
++   await pager.getByRole('button',{name:'Previous applicant page',exact:true}).click();await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await drain();
++   await capture('distant-search',i,last,()=>search.fill(last));
++   assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),1);assert.equal(await search.evaluate(e=>document.activeElement===e),true);
++   await search.fill('');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await drain();
++  }
++ }finally{fs.mkdirSync(path.dirname(out),{recursive:true});fs.writeFileSync(out,JSON.stringify({buildId:fs.readFileSync(path.join(local.dist,'BUILD_ID'),'utf8').trim(),size,planned:12,samples,errors,interpretation:'Local constrained profile: 80ms latency, 1.6Mbps down/0.75Mbps up, CPU4x. Warm interactions only. Browser event timestamp to MutationObserver content predicate plus two animation frames; driver polling/dispatch is excluded from meaningfulMs and separately retained as driverElapsedMs. Initial preparation, restoration and one warmup per interaction excluded from measured distribution. All failures retained; no retries.'},null,2)+'\n');await context.close();await browser.close()}
++}
++if(require.main===module)main().catch(e=>{console.error(e.name+': interaction study failed');process.exitCode=1});
+diff --git a/scripts/navigation-phase14-diagnose.cjs b/scripts/navigation-phase14-diagnose.cjs
+new file mode 100644
+index 0000000..c6cae8a
+--- /dev/null
++++ b/scripts/navigation-phase14-diagnose.cjs
+@@ -0,0 +1,19 @@
++// Separate instrumented observations, never pooled into primary navigation timings.
++const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict'),{spawn}=require('node:child_process'),{performance}=require('node:perf_hooks'),{gunzipSync}=require('node:zlib'),{PrismaClient}=require('@prisma/client');
++const local=require('./navigation-phase14-local.cjs'),{Actor}=require('../tests/helpers/onboarding-e2e.cjs');
++async function main(){const variant=process.argv.find(x=>x.startsWith('--variant='))?.slice(10),size=Number(process.argv.find(x=>x.startsWith('--size='))?.slice(7));assert.ok(['baseline','candidate'].includes(variant));assert.ok([1000,5000].includes(size));const output=path.join(local.repo,'docs/performance/phase14/diagnostics'),stem=`${size}-${variant}`;fs.mkdirSync(output,{recursive:true});assert.ok(!fs.existsSync(path.join(output,stem+'.json')));await local.stop();fs.copyFileSync(path.join(local.privateRoot(),`fixture-${size}.json`),path.join(local.root,'navigation-fixture.json'));const f=JSON.parse(fs.readFileSync(path.join(local.root,'navigation-fixture.json'))),config=local.config();assert.equal(config.appUrl,'http://127.0.0.1:3107');assert.equal(new URL(config.status.DB_URL).hostname,'127.0.0.1');const actor=new Actor(config);await actor.signIn(f.email,f.password);const log=path.join(local.root,'phase14-server.log'),offset=fs.existsSync(log)?fs.statSync(log).size:0;await local.start(variant,true);const startedAt=new Date().toISOString(),started=performance.now(),poolUrl=new URL(config.status.DB_URL);poolUrl.searchParams.set('connection_limit','1');const db=new PrismaClient({datasourceUrl:poolUrl.href}),agent=new http.Agent({keepAlive:true,maxSockets:4}),httpSamples=[],directIdentitySamples=[],poolSamples=[];let monitoring=false,poll,queryPlan;
++ function sanitizePlan(value){const p=value[0],walk=node=>({nodeType:node['Node Type'],actualRows:node['Actual Rows'],actualLoops:node['Actual Loops'],actualTotalTimeMs:node['Actual Total Time'],sharedHitBlocks:node['Shared Hit Blocks'],sharedReadBlocks:node['Shared Read Blocks'],children:(node.Plans||[]).map(walk)});return{label:'Representative existing owner metadata JOIN, complete club/non-draft predicate; values/rows/SQL text not exported.',planningMs:p['Planning Time'],executionMs:p['Execution Time'],plan:walk(p.Plan)}}
++ async function read(concurrency,wave,index){const url=new URL(config.appUrl+'/api/workspace?'+new URLSearchParams({kind:'pipelinePage',args:JSON.stringify([f.clubIds[0],{genderCounts:false}])}));return new Promise(resolve=>{const start=performance.now(),at=new Date().toISOString(),request=http.get(url,{agent,headers:{cookie:actor.cookieHeader(),'accept-encoding':'gzip'}},response=>{const ttfbMs=performance.now()-start,chunks=[];response.on('data',chunk=>chunks.push(chunk));response.on('end',()=>{const body=Buffer.concat(chunks);let count=null;try{const value=JSON.parse((response.headers['content-encoding']==='gzip'?gunzipSync(body):body).toString());count=value.data?.applications?.length}catch{}httpSamples.push({concurrency,wave,index,warmup:wave===0,at,startOffsetMs:start-started,endOffsetMs:performance.now()-started,ttfbMs,elapsedMs:performance.now()-start,status:response.statusCode,encodedBodyBytes:body.length,applicationCount:count,failed:response.statusCode!==200||!Number.isInteger(count)||count<1,traceId:/^[a-f0-9-]{36}$/i.test(response.headers['x-outclass-trace-id']||'')?response.headers['x-outclass-trace-id']:null,serverTiming:response.headers['server-timing']||null,privateNoStore:response.headers['cache-control']==='private, no-store',cookieSensitive:/Cookie/.test(response.headers.vary||'')});resolve()})});request.setTimeout(30000,()=>request.destroy());request.once('error',()=>{httpSamples.push({concurrency,wave,index,warmup:wave===0,at,failed:true,elapsedMs:performance.now()-start});resolve()})})}
++ try{
++  assert.equal(await db.application.count({where:{clubId:f.clubIds[0]}}),size);
++  const plan=await db.$transaction(async tx=>{await tx.$executeRaw`SET TRANSACTION READ ONLY`;return tx.$queryRaw`EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) SELECT a."id",a."roundId",a."studentId",a."status"::text AS status,r."anonymousReview",u."email",p."userId" IS NOT NULL AS "hasProfile",p."firstName",p."lastName",p."major",p."gradYear",p."transferStudent",p."gpa",p."satScore",p."actScore" FROM "Application" a JOIN "PipelineRound" r ON r."id"=a."roundId" JOIN "User" u ON u."id"=a."studentId" LEFT JOIN "StudentProfile" p ON p."userId"=u."id" WHERE a."clubId"=${f.clubIds[0]} AND a."status"<>'DRAFTING'`});queryPlan=sanitizePlan(plan[0]['QUERY PLAN']);
++  monitoring=true;poll=(async()=>{while(monitoring){const rows=await db.$queryRaw`SELECT CASE WHEN usename=current_user THEN 'app_role' WHEN usename='supabase_auth_admin' THEN 'auth_role' ELSE 'other_role' END AS category,count(*)::int AS connections,count(*) FILTER(WHERE state='active')::int AS active,count(*) FILTER(WHERE state='idle in transaction')::int AS idle_in_transaction,count(*) FILTER(WHERE wait_event_type='Lock')::int AS lock_waiting,count(*) FILTER(WHERE wait_event_type='IO')::int AS io_waiting,count(*) FILTER(WHERE wait_event_type='LWLock')::int AS lwlock_waiting,count(*) FILTER(WHERE wait_event_type='Client')::int AS client_waiting FROM pg_stat_activity WHERE datname=current_database() AND backend_type='client backend' AND pid<>pg_backend_pid() GROUP BY category`;poolSamples.push({at:new Date().toISOString(),offsetMs:performance.now()-started,rows});await new Promise(r=>setTimeout(r,25))}})();
++  for(const concurrency of [1,2,4])for(let wave=0;wave<6;wave++)await Promise.all(Array.from({length:concurrency},(_,index)=>read(concurrency,wave,index)));
++  assert.equal(httpSamples.length,42);assert.ok(httpSamples.every(r=>!r.failed&&r.privateNoStore&&r.cookieSensitive));
++  const session=await actor.client.auth.getSession();assert.ok(session.data.session);const token=session.data.session.access_token;
++  for(const concurrency of [1,2,4])for(let wave=0;wave<2;wave++)await Promise.all(Array.from({length:concurrency},async(_,index)=>{const start=performance.now(),at=new Date().toISOString(),value=await actor.client.auth.getUser(token);directIdentitySamples.push({concurrency,wave,index,at,elapsedMs:performance.now()-start,valid:!value.error&&value.data.user?.id===f.userId,status:value.error?.status||200})}));assert.ok(directIdentitySamples.every(s=>s.valid));
++  const fd=fs.openSync(path.join(local.root,'phase14-diagnostic-browser.log'),'a');try{const child=spawn(process.execPath,['scripts/navigation-audit.cjs','--phase2','--deferred-screens','--cold-warm','--record-failures','--source-diagnostics','--font-diagnostics','--constrained-network','--samples=1','--out='+path.join(output,stem+'-browser')],{cwd:local.repo,env:local.environment(),stdio:['ignore',fd,fd]});assert.equal(await new Promise((resolve,reject)=>{child.once('error',reject);child.once('close',resolve)}),0)}finally{fs.closeSync(fd)}
++ }finally{monitoring=false;if(poll)await poll;await db.$disconnect();agent.destroy();await local.stop();const lines=fs.readFileSync(log).subarray(offset).toString().split('\n'),serverEvents=[];for(const line of lines)try{const row=JSON.parse(line);if(['phase14.request','phase14.event_loop','workspace.phases'].includes(row.event))serverEvents.push(row)}catch{}const traceIds=new Set(httpSamples.map(s=>s.traceId).filter(Boolean)),matched=serverEvents.filter(e=>e.event==='phase14.request'&&traceIds.has(e.traceId));fs.writeFileSync(path.join(output,stem+'.json'),JSON.stringify({acceptedPerformanceData:false,variant,size,buildId:fs.readFileSync(path.join(local.dist,'BUILD_ID'),'utf8').trim(),startedAt,completedAt:new Date().toISOString(),limits:'Instrumented separate probes. Auth created-to-send includes dispatch/scheduling; send-to-headers includes transport/provider/scheduling, not pure provider execution. Process-window CPU overlaps other requests. Aggregate DB states are not per-request pool waits. Representative EXPLAIN exports only plan/timing facts. No authorization result is cached or borrowed.',poolLimitPerClient:8,maxConcurrentHttp:4,queryPlan,httpSamples,directIdentitySamples,poolSamples,serverEvents,correlation:{nativeRequests:httpSamples.length,matchedRequestTimelines:matched.length,requestsWithAuthTimeline:matched.filter(e=>e.auth.some(a=>a.category==='auth_user')).length}},null,2)+'\n');assert.equal(matched.length,httpSamples.length);assert.ok(matched.every(e=>e.auth.some(a=>a.category==='auth_user')))}
++ console.log(`${stem}: diagnostics retained separately; all42 native traces correlated.`)
++}
++if(require.main===module)main().catch(e=>{console.error(e.name+': local server diagnosis failed; retain all observations');process.exitCode=1});
+diff --git a/scripts/navigation-phase14-host-monitor.cjs b/scripts/navigation-phase14-host-monitor.cjs
+new file mode 100644
+index 0000000..da90466
+--- /dev/null
++++ b/scripts/navigation-phase14-host-monitor.cjs
+@@ -0,0 +1,17 @@
++// Read-only host sampling. Raw command lines stay in memory and are never exported.
++const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),cp=require('node:child_process'),crypto=require('node:crypto');
++function cpuSeconds(value){const [days,time]=value.includes('-')?value.split('-'):['0',value];return Number(days)*86400+time.split(':').reduce((n,v)=>n*60+Number(v),0)}
++function parseProcesses(text){return text.split('\n').flatMap(line=>{const m=line.match(/^\s*(\d+)\s+(\d+)\s+([\d:.\-]+)\s+(.+)$/);return m?[{pid:+m[1],parent:+m[2],cpu:cpuSeconds(m[3]),command:m[4]}]:[]})}
++function roles(rows,rootPid){const map=new Map(rows.map(p=>[p.pid,p]));function owned(p){const seen=new Set();while(p&&!seen.has(p.pid)){if(p.pid===rootPid)return true;seen.add(p.pid);p=map.get(p.parent)}return false}function direct(p){const executable=p.command.split(/\s/)[0];if(!/(?:^|\/)(?:node|nodejs|next-server)(?:$|\s)/.test(executable))return null;if(/(?:^|\/)next(?:\s|$)|next\/dist\/bin\/next/.test(p.command)){if(/\sdev(?:\s|$)/.test(p.command))return 'next_dev';if(/\sbuild(?:\s|$)/.test(p.command))return 'next_build'}if(/\s--test(?:\s|=|$)/.test(p.command))return 'test_runner';return null}return rows.filter(p=>!owned(p)).flatMap(p=>{let ancestor=p,category=null,root=p;const seen=new Set();while(ancestor&&!seen.has(ancestor.pid)){seen.add(ancestor.pid);const found=direct(ancestor);if(found){category=found;root=ancestor;break}ancestor=map.get(ancestor.parent)}return category?[{pid:p.pid,root:root.pid,family:category,cpuSeconds:p.cpu}]:[]})}
++function cpuTimes(){return os.cpus().reduce((a,c)=>({idle:a.idle+c.times.idle,total:a.total+Object.values(c.times).reduce((n,v)=>n+v,0)}),{idle:0,total:0})}
++function startMonitor({repo,output,rootPid=process.pid}){
++ const run=(cmd,args)=>cp.execFileSync(cmd,args,{encoding:'utf8',timeout:7000}),original='/Users/jesseklinger/Documents/out-class',initial={originalHead:run('git',['-C',original,'rev-parse','HEAD']).trim(),originalStatus:run('git',['-C',original,'status','--porcelain'])},samples=[],violations=[],labels=new Map(),history=new Map();let previous=cpuTimes(),phase='starting',initialPower=null;
++ const label=pid=>{if(!labels.has(pid))labels.set(pid,'process-'+(labels.size+1));return labels.get(pid)},fail=code=>{if(!violations.some(v=>v.code===code))violations.push({at:new Date().toISOString(),code,phase})};
++ function sample(){try{const now=Date.now(),next=cpuTimes(),processes=roles(parseProcesses(run('ps',['-axo','pid=,ppid=,time=,args='])),rootPid),groups=new Map();for(const p of processes){const key=p.root;if(!groups.has(key))groups.set(key,{id:label(key),family:p.family,cpuSeconds:0});groups.get(key).cpuSeconds+=p.cpuSeconds}
++  const foreign=[...groups.entries()].map(([pid,p])=>{const points=history.get(pid)||[];points.push({at:now,cpu:p.cpuSeconds});while(points.length>1&&points[1].at<now-60000)points.shift();history.set(pid,points);const delta=Math.max(0,p.cpuSeconds-points[0].cpu);if(p.family==='next_build'||p.family==='test_runner')fail('foreign_build_or_test');if(p.family==='next_dev'&&delta>1)fail('foreign_dev_cpu_over_1_second_in_60_seconds');return{...p,observedWindowMs:now-points[0].at,cpuDeltaInWindowSeconds:+delta.toFixed(3)}});
++  const head=run('git',['-C',original,'rev-parse','HEAD']).trim(),status=run('git',['-C',original,'status','--porcelain']);if(head!==initial.originalHead||status!==initial.originalStatus)fail('original_checkout_changed');const batt=run('pmset',['-g','batt']),settings=run('pmset',['-g','custom']),powerSource=batt.includes("'AC Power'")?'AC Power':'Battery Power',powerSection=(settings.split(powerSource+':')[1]||'').split(/(?:AC|Battery) Power:/)[0];const mode=Number((powerSection.match(/lowpowermode\s+(\d+)/)||[])[1]||0);if(initialPower===null)initialPower={source:powerSource,lowPowerMode:mode};if(mode!==0||powerSource!==initialPower.source)fail('power_source_or_low_power_mode_changed');samples.push({at:new Date(now).toISOString(),phase,cpuBusyPercent:+(100*(1-(next.idle-previous.idle)/(next.total-previous.total||1))).toFixed(3),freeMemoryMiB:Math.round(os.freemem()/1048576),powerSource,batteryPercent:Number((batt.match(/(\d+)%;/)||[])[1]||0),lowPowerMode:Number((powerSection.match(/lowpowermode\s+(\d+)/)||[])[1]||0),foreignProcesses:foreign,originalHead:head,originalStatusSha256:crypto.createHash('sha256').update(status).digest('hex')});previous=next;
++ }catch{fail('host_monitor_observation_failed')}save()}
++ function save(){fs.writeFileSync(output,JSON.stringify({scope:'5-second read-only samples. Process families and numeric CPU only; command lines, arguments, environment and secrets never exported. Sampling may miss brief external work; idle-host agreement is additional evidence, not proof of exclusive access.',rootProcessTracked:true,powerBaseline:initialPower,originalBaseline:{head:initial.originalHead,statusSha256:crypto.createHash('sha256').update(initial.originalStatus).digest('hex')},foreignDevCpuRule:'More than1 cumulative CPU-second observed within60 seconds, including worker descendants, invalidates the whole profile.',valid:!violations.length,violations,samples},null,2)+'\n')}
++ sample();const timer=setInterval(sample,5000);return{setPhase(value){phase=value},assertClean(){if(violations.length)throw Error('Host-control violation: entire profile retained as invalid')},stop(){clearInterval(timer);sample();return{valid:!violations.length,samples:samples.length,violations}}}
++}
++module.exports={cpuSeconds,parseProcesses,roles,startMonitor};
+diff --git a/scripts/navigation-phase14-interactions.cjs b/scripts/navigation-phase14-interactions.cjs
+new file mode 100644
+index 0000000..1cd9926
+--- /dev/null
++++ b/scripts/navigation-phase14-interactions.cjs
+@@ -0,0 +1,37 @@
++// Additional warm interactions on the same frozen builds/cohorts as the primary
++// harness. No interception, seeded delay, mutation, or benchmark-only app path.
++const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{performance}=require('node:perf_hooks'),{chromium}=require('playwright');
++const local=require('./navigation-phase14-local.cjs'),{Actor}=require('../tests/helpers/onboarding-e2e.cjs'),{safeRoute}=require('./navigation-audit.cjs');
++async function main(){
++ const out=path.resolve(process.argv.find(a=>a.startsWith('--out='))?.slice(6)||'');assert.ok(out.startsWith(path.join(local.repo,'docs/performance/phase14')+path.sep)&&!fs.existsSync(out));
++ const f=JSON.parse(fs.readFileSync(path.join(local.root,'navigation-fixture.json'))),size=f.counts.applicantsInMeasuredClub||100;assert.ok(size>=1000);
++ const actor=new Actor(local.config());await actor.signIn(f.email,f.password);const browser=await chromium.launch({headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage(),requests=[],pending=new Set(),errors=[],samples=[];
++ page.on('pageerror',e=>errors.push(e.name));page.on('request',r=>{const row={request:r,route:safeRoute(r.url()),type:r.resourceType(),start:performance.now(),end:null,status:null,bytes:null};requests.push(row);if(row.type!=='eventsource')pending.add(r)});
++ page.on('response',r=>{const row=requests.find(q=>q.request===r.request());if(row){row.status=r.status();row.serverTiming=r.headers()['server-timing']||null;row.traceId=r.headers()['x-outclass-trace-id']||null}});
++ page.on('requestfinished',r=>{pending.delete(r);const row=requests.find(q=>q.request===r);if(row){row.end=performance.now();row.timing=r.timing();void r.sizes().then(s=>row.bytes=s.responseBodySize).catch(()=>{})}});page.on('requestfailed',r=>{pending.delete(r);const row=requests.find(q=>q.request===r);if(row){row.end=performance.now();row.failed=true}});
++ async function drain(){const until=performance.now()+10000;while(pending.size&&performance.now()<until)await new Promise(r=>setTimeout(r,20));assert.equal(pending.size,0,'Unfinished non-SSE request');await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))))}
++ async function capture(kind,index,target,action){
++  await drain();const offset=requests.length,errorOffset=errors.length,start=performance.now();let failed=null,meaningfulMs=null,marks=null,driverElapsedMs=null;
++  await page.evaluate(({target,event})=>{
++   const state={start:0,ready:0,scheduled:false,origin:performance.timeOrigin};window.__phase14Paint=state;
++   const check=()=>{if(!state.start||state.scheduled)return;const found=[...document.querySelectorAll('.oc-live-pipeline [data-applicant-id]')].some(e=>e.getClientRects().length&&e.textContent.includes(target));if(!found)return;state.scheduled=true;requestAnimationFrame(()=>requestAnimationFrame(()=>{state.ready=performance.now()}))};
++   const begin=()=>{if(!state.start)state.start=performance.now();queueMicrotask(check)};
++   document.addEventListener(event,begin,true);const observer=new MutationObserver(check);observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true});state.check=check;state.cleanup=()=>{observer.disconnect();document.removeEventListener(event,begin,true)};
++  },{target,event:kind==='next-page'?'click':'input'});
++  try{await action();await page.evaluate(()=>window.__phase14Paint.check());await page.waitForFunction(()=>window.__phase14Paint.ready>0,null,{timeout:30000});marks=await page.evaluate(()=>{const s=window.__phase14Paint;s.cleanup();return{start:s.start,ready:s.ready,origin:s.origin}});meaningfulMs=marks.ready-marks.start;driverElapsedMs=performance.now()-start;await drain()}catch(e){failed=e.name;process.exitCode=1;await page.evaluate(()=>window.__phase14Paint.cleanup()).catch(()=>{})}
++  const origin=marks?marks.origin+marks.start:performance.timeOrigin+start;
++  const rows=requests.slice(offset).map(r=>({route:r.route,type:r.type,startMs:performance.timeOrigin+r.start-origin,endMs:r.end===null?null:performance.timeOrigin+r.end-origin,status:r.status,failed:!!r.failed,encodedBodyBytes:r.bytes,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart:null,transferMs:r.timing?.responseEnd>=0&&r.timing?.responseStart>=0?r.timing.responseEnd-r.timing.responseStart:null,serverTiming:r.serverTiming,traceId:r.traceId}));
++  samples.push({kind,index,warmup:index===0,condition:'warm',failed,meaningfulMs,driverElapsedMs,requestCount:rows.length,encodedBodyBytes:rows.every(r=>Number.isFinite(r.encodedBodyBytes))?rows.reduce((n,r)=>n+r.encodedBodyBytes,0):null,pageErrors:errors.slice(errorOffset),requests:rows});
++ }
++ try{
++  await page.goto(local.config().appUrl+'/club/'+f.clubIds[0]+'/workspace?section=recruitment&tool=applicants');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await page.waitForLoadState('networkidle');await drain();const pager=page.getByRole('navigation',{name:'Applicant pages',exact:true}),search=page.getByRole('textbox',{name:'Search applicants',exact:true}),last='Scale Student '+String(size-1).padStart(5,'0');
++  for(let i=0;i<6;i++){
++   await capture('next-page',i,'Scale Student 00100',()=>pager.getByRole('button',{name:'Next applicant page',exact:true}).click());
++   await pager.getByRole('button',{name:'Previous applicant page',exact:true}).click();await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await drain();
++   await capture('distant-search',i,last,()=>search.fill(last));
++   assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),1);assert.equal(await search.evaluate(e=>document.activeElement===e),true);
++   await search.fill('');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await drain();
++  }
++ }finally{fs.mkdirSync(path.dirname(out),{recursive:true});fs.writeFileSync(out,JSON.stringify({buildId:fs.readFileSync(path.join(local.dist,'BUILD_ID'),'utf8').trim(),size,planned:12,samples,errors,interpretation:'Warm interactions only. Browser event timestamp to MutationObserver content predicate plus two animation frames; driver polling/dispatch is excluded from meaningfulMs and separately retained as driverElapsedMs. Initial preparation, restoration and one warmup per interaction excluded from measured distribution. All failures retained; no retries.'},null,2)+'\n');await context.close();await browser.close()}
++}
++if(require.main===module)main().catch(e=>{console.error(e.name+': interaction study failed');process.exitCode=1});
+diff --git a/scripts/navigation-phase14-local.cjs b/scripts/navigation-phase14-local.cjs
+new file mode 100644
+index 0000000..7f1dce0
+--- /dev/null
++++ b/scripts/navigation-phase14-local.cjs
+@@ -0,0 +1,12 @@
++// Lifecycle helper restricted to this chat's owned, disposable navigation fixture.
++const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),assert=require('node:assert/strict'),{spawn,spawnSync,execFileSync}=require('node:child_process'),{randomUUID}=require('node:crypto');
++const repo=path.resolve(__dirname,'..'),root=path.join(os.tmpdir(),'outclass-onboarding-e2e'),dist=path.join(repo,'.next-publish');
++const config=()=>require('../tests/helpers/onboarding-e2e.cjs').readConfig(path.join(root,'config.json'));
++function privateRoot(){const location=fs.readFileSync('/tmp/outclass-phase14-builds-path','utf8');assert.ok(location.startsWith(path.join(os.tmpdir(),'outclass-phase14-builds-')));assert.ok(fs.existsSync(location));return location}
++function environment(){const c=config(),s=c.status;assert.equal(c.buildDir,dist);const db=new URL(s.DB_URL);db.searchParams.set('connection_limit','8');return{...process.env,NEXT_PUBLIC_ENABLE_MICROSOFT_AUTH:'false',DATABASE_URL:db.href,POSTGRES_PRISMA_URL:db.href,POSTGRES_URL:db.href,POSTGRES_URL_NON_POOLING:db.href,NEXT_PUBLIC_SUPABASE_URL:s.API_URL,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:s.PUBLISHABLE_KEY,NEXT_PUBLIC_SUPABASE_ANON_KEY:s.ANON_KEY,SUPABASE_SECRET_KEY:s.SECRET_KEY,SUPABASE_SERVICE_ROLE_KEY:s.SERVICE_ROLE_KEY,OUTCLASS_PUBLISH_BUILD:'1',OUTCLASS_SITE_URL:c.appUrl,OUTCLASS_PLATFORM_ADMIN_IDS:c.admin.id,SMTP_HOST:'127.0.0.1',SMTP_PORT:'55325',SMTP_USER:'local-test',SMTP_PASSWORD:'local-test',SMTP_FROM_EMAIL:'outclass@virginia.edu',CRON_SECRET:randomUUID(),NODE_EXTRA_CA_CERTS:path.join(root,'mailpit-cert.pem'),COMMUNICATIONS_EMAIL_ENABLED:'true',RESEND_API_KEY:'',RESEND_FROM_EMAIL:''}}
++async function stop(){const listener=spawnSync('lsof',['-tiTCP:3107','-sTCP:LISTEN'],{encoding:'utf8'}).stdout.trim();if(!listener)return;const pid=fs.readFileSync(path.join(root,'server.pid'),'utf8').trim();assert.equal(listener,pid);assert.ok(execFileSync('lsof',['-a','-p',pid,'-d','cwd','-Fn'],{encoding:'utf8'}).split('\n').includes('n'+repo));process.kill(Number(pid),'SIGTERM');for(let n=0;n<100;n++){if(!spawnSync('lsof',['-tiTCP:3107','-sTCP:LISTEN'],{encoding:'utf8'}).stdout.trim())return;await new Promise(r=>setTimeout(r,50))}throw Error('Owned app failed to stop')}
++function snapshot(name){assert.ok(['baseline','pilot','pilot2','candidate'].includes(name));const target=path.join(privateRoot(),name);assert.ok(!fs.existsSync(target));fs.cpSync(dist,target,{recursive:true});return fs.readFileSync(path.join(target,'BUILD_ID'),'utf8').trim()}
++async function start(name,diagnose=false){assert.ok(['baseline','pilot','pilot2','candidate'].includes(name));const source=path.join(privateRoot(),name);assert.ok(fs.existsSync(path.join(source,'BUILD_ID')));await stop();fs.rmSync(dist,{recursive:true});fs.cpSync(source,dist,{recursive:true});const fd=fs.openSync(path.join(root,'phase14-server.log'),'a'),args=diagnose?['--require','./scripts/navigation-phase14-server-diagnostics.cjs']:[];args.push('node_modules/next/dist/bin/next','start','-p','3107','-H','127.0.0.1');const app=spawn(process.execPath,args,{cwd:repo,env:{...environment(),OUTCLASS_PHASE_TRACE:diagnose?'1':'0',OUTCLASS_NAVIGATION_HTTP_DIAGNOSTICS:'0',OUTCLASS_PHASE14_SERVER_DIAGNOSTICS:diagnose?'1':'0',OUTCLASS_PHASE14_DISPOSABLE:'outclass-onboarding-e2e'},detached:true,stdio:['ignore',fd,fd]});fs.closeSync(fd);app.unref();fs.writeFileSync(path.join(root,'server.pid'),String(app.pid));for(let n=0;n<100;n++){try{if((await fetch(config().appUrl,{signal:AbortSignal.timeout(1000)})).ok)return}catch{}await new Promise(r=>setTimeout(r,200))}throw Error('Owned app did not become ready')}
++async function build(){await stop();const fd=fs.openSync(path.join(root,'phase14-build.log'),'w');const result=spawnSync('npm',['run','build'],{cwd:repo,env:environment(),stdio:['ignore',fd,fd]});fs.closeSync(fd);assert.equal(result.status,0,'Inspect owned build log');}
++module.exports={repo,root,dist,config,privateRoot,environment,stop,start,snapshot,build};
++if(require.main===module)(async()=>{const [command,name]=process.argv.slice(2);if(command==='stop')await stop();else if(command==='start')await start(name,process.argv.includes('--diagnose'));else if(command==='snapshot')console.log(snapshot(name));else if(command==='build')await build();else throw Error('Unknown local lifecycle command')})().catch(error=>{console.error(error.name+': '+error.message.split('\n')[0]);process.exitCode=1});
+diff --git a/scripts/navigation-phase14-server-diagnostics.cjs b/scripts/navigation-phase14-server-diagnostics.cjs
+new file mode 100644
+index 0000000..6aa3c88
+--- /dev/null
++++ b/scripts/navigation-phase14-server-diagnostics.cjs
+@@ -0,0 +1,21 @@
++// Opt-in preload for this task's disposable loopback app. No product code changes.
++const {AsyncLocalStorage}=require('node:async_hooks'),{randomUUID}=require('node:crypto'),dc=require('node:diagnostics_channel'),http=require('node:http'),{monitorEventLoopDelay,performance}=require('node:perf_hooks');
++const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
++function incomingCategory(value){try{const u=new URL(value,'http://127.0.0.1:3107');if(u.pathname==='/api/workspace'){const kind=u.searchParams.get('kind');return ['rounds','pipeline','pipelineList','pipelinePage','pipelineSelection','overview','notifications','taskNotifications','invitations','corkboard','tutorial'].includes(kind)?kind:'workspace_other'}return u.pathname.startsWith('/_next/')?'static':u.pathname==='/api/communications/stream'?'stream':u.pathname.startsWith('/club/')?'document':u.pathname.startsWith('/api/')?'api_other':'other'}catch{return 'other'}}
++function observePhaseLog(store,value){if(!store||typeof value!=='string'||!value.startsWith('{\"event\":\"workspace.phases\"'))return;try{const row=JSON.parse(value);if(row.event==='workspace.phases'&&typeof row.traceId==='string'&&UUID.test(row.traceId))store.traceId=row.traceId}catch{}}
++function authCategory(request,origin){try{if(String(request.origin)!==origin)return null;const u=new URL(request.path,origin);return u.pathname==='/auth/v1/user'?'auth_user':u.pathname==='/auth/v1/token'?'auth_token':u.pathname.startsWith('/auth/v1/')?'auth_other':null}catch{return null}}
++function configuration(env){if(env.OUTCLASS_PHASE14_SERVER_DIAGNOSTICS!=='1')return null;const api=new URL(env.NEXT_PUBLIC_SUPABASE_URL||''),site=new URL(env.OUTCLASS_SITE_URL||'');if(api.origin!=='http://127.0.0.1:55321'||site.origin!=='http://127.0.0.1:3107'||env.OUTCLASS_PHASE14_DISPOSABLE!=='outclass-onboarding-e2e')throw Error('Diagnostics require the explicitly disposable loopback fixture');return{authOrigin:api.origin}}
++function collector({authOrigin,clock=()=>performance.now(),emit=entry=>console.info(JSON.stringify(entry))}){const requests=new WeakMap();return{
++ createStore(category){return{id:randomUUID(),category,started:clock(),auth:[]}},
++ created(request,store){if(!store)return;const category=authCategory(request,authOrigin);if(!category)return;const record={category,startMs:clock()-store.started,status:null,failed:false,createdToSendMs:null,sendToHeadersMs:null,headersToEndMs:null,totalMs:null},state={record,store,created:clock(),sent:null,headers:null};store.auth.push(record);requests.set(request,state)},
++ sent(request){const s=requests.get(request);if(s){s.sent=clock();s.record.createdToSendMs=s.sent-s.created}},
++ headers(request,status){const s=requests.get(request);if(s){s.headers=clock();s.record.status=Number.isInteger(status)?status:null;s.record.sendToHeadersMs=s.sent===null?null:s.headers-s.sent}},
++ ended(request,failed=false){const s=requests.get(request);if(s){s.record.failed=Boolean(failed);s.record.headersToEndMs=s.headers===null?null:clock()-s.headers;s.record.totalMs=clock()-s.created}},
++ finish(store,{status,traceId,stage,processWindow}={}){const row={event:'phase14.request',at:new Date().toISOString(),requestId:store.id,category:store.category,stage:stage==='finish'?'finish':'closed_before_finish',status:Number.isInteger(status)?status:null,traceId:typeof traceId==='string'&&UUID.test(traceId)?traceId:null,elapsedMs:clock()-store.started,auth:store.auth,processWindow};emit(row);return row}
++}}
++function install(env=process.env){const config=configuration(env);if(!config)return;const context=new AsyncLocalStorage(),observe=collector(config),original=http.Server.prototype.emit,hist=monitorEventLoopDelay({resolution:10}),info=console.info;console.info=function(...values){observePhaseLog(context.getStore(),values[0]);return Reflect.apply(info,this,values)};hist.enable();let last=performance.eventLoopUtilization();const finite=n=>Number.isFinite(n)?n:null;const timer=setInterval(()=>{const usage=performance.eventLoopUtilization(last);last=performance.eventLoopUtilization();console.info(JSON.stringify({event:'phase14.event_loop',at:new Date().toISOString(),processOffsetMs:performance.now(),utilization:usage.utilization,delayP95Ms:finite(hist.percentile(95)/1e6),delayMaxMs:finite(hist.max/1e6)}));hist.reset()},1000);timer.unref();
++ for(const[name,fn]of [['undici:request:create',m=>observe.created(m.request,context.getStore())],['undici:client:sendHeaders',m=>observe.sent(m.request)],['undici:request:headers',m=>observe.headers(m.request,m.response?.statusCode)],['undici:request:trailers',m=>observe.ended(m.request)],['undici:request:error',m=>observe.ended(m.request,true)]])dc.channel(name).subscribe(fn);
++ http.Server.prototype.emit=function(event,...args){if(event!=='request')return Reflect.apply(original,this,[event,...args]);const[request,response]=args,address=this.address();if(!address||address.port!==3107||!['127.0.0.1','::ffff:127.0.0.1'].includes(address.address))return Reflect.apply(original,this,[event,...args]);const store=observe.createStore(incomingCategory(request.url)),cpu=process.cpuUsage(),elu=performance.eventLoopUtilization();let finished=false;const complete=stage=>observe.finish(store,{stage,status:response.statusCode,traceId:store.traceId||response.getHeader('x-outclass-trace-id'),processWindow:{cpuUserMs:process.cpuUsage(cpu).user/1000,cpuSystemMs:process.cpuUsage(cpu).system/1000,eventLoopUtilization:performance.eventLoopUtilization(elu).utilization,interpretation:'Process-wide deltas over overlapping request windows; not exclusive per-request CPU.'}});response.once('finish',()=>{finished=true;complete('finish')});response.once('close',()=>{if(!finished)complete('closed_before_finish')});return context.run(store,()=>Reflect.apply(original,this,[event,...args]))};
++}
++module.exports={incomingCategory,authCategory,configuration,collector,observePhaseLog};
++install();
+diff --git a/scripts/navigation-phase14-study.cjs b/scripts/navigation-phase14-study.cjs
+new file mode 100644
+index 0000000..57a1330
+--- /dev/null
++++ b/scripts/navigation-phase14-study.cjs
+@@ -0,0 +1,68 @@
++// Matched frozen-build study. Product readiness, request draining and network
++// conditions are the existing harness; font diagnostics only observe the page.
++const fs = require('node:fs'), path = require('node:path'), assert = require('node:assert/strict');
++const { spawn } = require('node:child_process'), { createHash } = require('node:crypto');
++const local = require('./navigation-phase14-local.cjs');
++const hash = file => createHash('sha256').update(fs.readFileSync(file)).digest('hex');
++async function main() {
++  const profile = process.argv.find(a => a.startsWith('--profile='))?.slice(10);
++  assert.ok(['local', 'constrained'].includes(profile));
++  const out = path.join(local.repo, 'docs/performance/phase14', profile);
++  assert.ok(!fs.existsSync(out)); fs.mkdirSync(out);
++  const toolNames = ['navigation-phase14-study.cjs', 'navigation-phase14-local.cjs', 'navigation-audit.cjs', 'navigation-phase14-interactions.cjs', 'navigation-phase14-constrained-interactions.cjs', 'navigation-phase14-concurrency.cjs', 'navigation-phase14-host-monitor.cjs'];
++  const protocol = { startedAt: new Date().toISOString(), profile, cohorts: [1000, 5000], blocks: ['BA', 'AB'], buildIds: {}, planSha256: hash(path.join(local.repo, 'docs/performance/phase14/PLAN.json')), tools: Object.fromEntries(toolNames.map(f => [f, hash(path.join(local.repo, 'scripts', f))])), completed: [], interactions: [], concurrency: [], features: [], failures: [], complete: false };
++  const save = () => fs.writeFileSync(path.join(out, 'PROTOCOL.json'), JSON.stringify(protocol, null, 2) + '\n'); save();
++  const host = require('./navigation-phase14-host-monitor.cjs').startMonitor({ repo: local.repo, output: path.join(out, 'HOST_MONITOR.json') });
++  protocol.runtimePackageManifests = Object.fromEntries(Object.entries(JSON.parse(fs.readFileSync(path.join(local.repo, 'docs/performance/phase14/RUNTIME_PACKAGES.json')))).map(([name, spec]) => [name, spec.sha256])); save();
++  const currentSource = JSON.parse(fs.readFileSync(path.join(local.repo, 'docs/performance/phase14/CANDIDATE_SOURCE.json')));
++  const verifySources = () => { for (const [file, digest] of Object.entries(currentSource.files)) assert.equal(hash(path.join(local.repo, file)), digest, file); for (const [name, digest] of Object.entries(protocol.runtimePackageManifests)) assert.equal(hash(path.join(local.repo, 'node_modules', name, 'package.json')), digest, name); host.assertClean(); };
++  async function run(script, args, logName) {
++    host.setPhase(path.basename(args.find(a => a.startsWith('--out='))?.slice(6) || script));
++    const fd = fs.openSync(path.join(local.root, logName), 'a');
++    try { const child = spawn(process.execPath, [script, ...args], { cwd: local.repo, env: local.environment(), stdio: ['ignore', fd, fd] }); const status = await new Promise((resolve, reject) => { child.once('error', reject); child.once('close', resolve); }); host.assertClean(); return status; }
++    finally { fs.closeSync(fd); }
++  }
++  try {
++    verifySources();
++    for (const size of protocol.cohorts) {
++      await local.stop(); fs.copyFileSync(path.join(local.privateRoot(), `fixture-${size}.json`), path.join(local.root, 'navigation-fixture.json'));
++      for (const [pair, order] of protocol.blocks.entries()) for (const [position, variant] of [...order].entries()) {
++        const build = variant === 'B' ? 'baseline' : 'candidate'; await local.start(build);
++        protocol.buildIds[build] = fs.readFileSync(path.join(local.dist, 'BUILD_ID'), 'utf8').trim();
++        const stem = `size-${size}-pair-${pair + 1}-${position + 1}-${variant}`;
++        for (const [phase, n] of [['warmup', 1], ['measure', 5]]) {
++          const directory = stem + '-' + phase;
++          const status = await run('scripts/navigation-audit.cjs', ['--phase2', '--phase3', '--cold-warm', '--record-failures', '--source-diagnostics', '--font-diagnostics', ...(profile === 'constrained' ? ['--constrained-network'] : []), '--samples=' + n, '--out=' + path.join(out, directory)], 'phase14-study.log');
++          const data = JSON.parse(fs.readFileSync(path.join(out, directory, 'browser-samples.json')));
++          assert.equal(data.samples.length, n * 4); assert.equal(status, data.failures.length ? 1 : 0);
++          protocol.completed.push({ directory, planned: n * 4, observed: data.samples.length, failed: data.failures.length }); save();
++        }
++        if (size === 1000) {
++          for (const [phase, n] of [['warmup', 1], ['measure', 3]]) {
++            const directory = stem + '-features-' + phase;
++            const status = await run('scripts/navigation-audit.cjs', ['--phase2', '--deferred-screens', '--cold-warm', '--record-failures', '--source-diagnostics', '--font-diagnostics', ...(profile === 'constrained' ? ['--constrained-network'] : []), '--samples=' + n, '--out=' + path.join(out, directory)], 'phase14-feature-study.log');
++            const data = JSON.parse(fs.readFileSync(path.join(out, directory, 'browser-samples.json')));
++            assert.equal(data.samples.length, n * 8); assert.equal(status, data.failures.length ? 1 : 0);
++            protocol.features.push({ directory, planned: n * 8, observed: data.samples.length, failed: data.failures.length }); save();
++          }
++        }
++        const interactionFile = stem + '-interactions.json';
++        const status = await run('scripts/navigation-phase14-' + (profile === 'constrained' ? 'constrained-interactions' : 'interactions') + '.cjs', ['--out=' + path.join(out, interactionFile)], 'phase14-interactions.log');
++        const interactions = JSON.parse(fs.readFileSync(path.join(out, interactionFile)));
++        assert.equal(interactions.samples.length, 12); assert.equal(status, interactions.samples.some(s => s.failed) ? 1 : 0);
++        protocol.interactions.push({ file: interactionFile, planned: 12, observed: interactions.samples.length, failed: interactions.samples.filter(s => s.failed).length }); save();
++        if (profile === 'constrained') {
++          const file = stem + '-concurrency.json';
++          assert.equal(await run('scripts/navigation-phase14-concurrency.cjs', ['--kind=pipelinePage', '--out=' + path.join(out, file)], 'phase14-concurrency.log'), 0);
++          protocol.concurrency.push({ file, planned: 42 }); save();
++        }
++        verifySources();
++        console.log(`Completed ${profile}, ${size} applicants, pair ${pair + 1}, ${variant}`);
++      }
++    }
++    protocol.complete = true; protocol.completedAt = new Date().toISOString(); save();
++  } catch (error) {
++    protocol.failures.push({ name: error.name, message: error.message.split('\n')[0] }); save(); throw error;
++  } finally { await local.stop(); protocol.hostControl = host.stop(); if (!protocol.hostControl.valid) { protocol.complete = false; protocol.failures.push({ name: 'HostControlViolation', message: 'Entire profile retained; no individual row replacement.' }); process.exitCode = 1; } protocol.applicationStopped = true; save(); }
++}
++if (require.main === module) main().catch(error => { console.error(error.name + ': Phase 14 study failed'); process.exitCode = 1; });
+diff --git a/tests/navigation-phase14-diagnostics.test.cjs b/tests/navigation-phase14-diagnostics.test.cjs
+new file mode 100644
+index 0000000..2a649a3
+--- /dev/null
++++ b/tests/navigation-phase14-diagnostics.test.cjs
+@@ -0,0 +1,5 @@
++const {test}=require('node:test'),assert=require('node:assert/strict');
++const diagnostic=require('../scripts/navigation-phase14-server-diagnostics.cjs'),host=require('../scripts/navigation-phase14-host-monitor.cjs');
++test('diagnostic preload stays disabled by default and refuses hosted or unreserved Auth endpoints',()=>{assert.equal(diagnostic.configuration({}),null);const enabled={OUTCLASS_PHASE14_SERVER_DIAGNOSTICS:'1',OUTCLASS_PHASE14_DISPOSABLE:'outclass-onboarding-e2e',NEXT_PUBLIC_SUPABASE_URL:'http://127.0.0.1:55321',OUTCLASS_SITE_URL:'http://127.0.0.1:3107'};assert.deepEqual(diagnostic.configuration(enabled),{authOrigin:'http://127.0.0.1:55321'});for(const changes of [{NEXT_PUBLIC_SUPABASE_URL:'https://production.example.test'},{OUTCLASS_SITE_URL:'https://outclass.example.test'},{OUTCLASS_PHASE14_DISPOSABLE:''}])assert.throws(()=>diagnostic.configuration({...enabled,...changes}),/disposable loopback/)});
++test('concurrent diagnostic timelines retain only numeric timings, fixed labels and non-sensitive trace IDs',()=>{let clock=0;const emitted=[],secret='private-cookie-token-email@example.test',c=diagnostic.collector({authOrigin:'http://127.0.0.1:55321',clock:()=>clock,emit:x=>emitted.push(x)}),a=c.createStore(diagnostic.incomingCategory('/api/workspace?kind=pipelinePage&args='+secret)),b=c.createStore('overview'),qa={origin:'http://127.0.0.1:55321',path:'/auth/v1/user?secret='+secret,headers:{authorization:secret},body:secret},qb={origin:'http://127.0.0.1:55321',path:'/auth/v1/user'},foreign={origin:'https://private.example.test',path:'/auth/v1/user'};c.created(qa,a);clock=2;c.created(qb,b);c.created(foreign,a);clock=5;c.sent(qb);clock=7;c.sent(qa);clock=11;c.headers(qa,200);clock=13;c.ended(qa);clock=17;c.headers(qb,403);c.ended(qb,true);c.finish(a,{status:200,traceId:secret,stage:'finish'});c.finish(b,{status:403,traceId:'ab4a925a-4ad8-45ae-bdb2-bb23bb341923',stage:'finish'});assert.notEqual(a.id,b.id);assert.equal(emitted[0].auth.length,1);assert.equal(emitted[0].auth[0].createdToSendMs,7);assert.equal(emitted[0].auth[0].sendToHeadersMs,4);assert.equal(emitted[0].auth[0].headersToEndMs,2);assert.equal(emitted[1].auth[0].createdToSendMs,3);assert.equal(emitted[1].auth[0].failed,true);assert.equal(emitted[0].traceId,null);assert.equal(JSON.stringify(emitted).includes(secret),false);assert.equal(JSON.stringify(emitted).includes('authorization'),false);assert.equal(JSON.stringify(emitted).includes('private.example'),false);diagnostic.observePhaseLog(a,JSON.stringify({event:'other',traceId:secret,headers:secret}));assert.equal(a.traceId,undefined);diagnostic.observePhaseLog(a,JSON.stringify({event:'workspace.phases',traceId:'ab4a925a-4ad8-45ae-bdb2-bb23bb341923',phases:{identity:{ms:1,count:1}}}));assert.equal(a.traceId,'ab4a925a-4ad8-45ae-bdb2-bb23bb341923')});
++test('host control includes foreign development workers and strips private arguments while excluding the complete benchmark process tree',()=>{const raw='10 1 1:00.00 /usr/bin/node next/dist/bin/next dev --port3111 --private=secret\n11 10 0:02.50 next-server (v15.5) private-cookie\n20 1 0:01.00 /usr/bin/node scripts/navigation-phase14-study.cjs\n21 20 0:03.00 /usr/bin/node --test private-test\n22 1 0:04.00 /usr/bin/node --test private-secret';const rows=host.roles(host.parseProcesses(raw),20);assert.deepEqual(rows.map(x=>[x.pid,x.family,x.cpuSeconds]),[[10,'next_dev',60],[11,'next_dev',2.5],[22,'test_runner',4]]);assert.equal(JSON.stringify(rows).includes('secret'),false);assert.equal(JSON.stringify(rows).includes('cookie'),false);assert.equal(host.cpuSeconds('1-01:02:03.25'),90123.25)});
+diff --git a/tests/navigation-phase14-e2e.test.cjs b/tests/navigation-phase14-e2e.test.cjs
+new file mode 100644
+index 0000000..353965e
+--- /dev/null
++++ b/tests/navigation-phase14-e2e.test.cjs
+@@ -0,0 +1,52 @@
++// Built browser regression tests only. Held responses never enter benchmarks.
++const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
++const {chromium}=require('playwright'),{Actor,readConfig}=require('./helpers/onboarding-e2e.cjs'),{featureChunks}=require('./helpers/deferred-feature-chunks.cjs');
++const configFile=process.env.OUTCLASS_ONBOARDING_E2E_CONFIG;
++async function session(){
++ const config=readConfig(configFile),fixture=JSON.parse(fs.readFileSync(path.join(path.dirname(configFile),'navigation-fixture.json'))),actor=new Actor(config);await actor.signIn(fixture.email,fixture.password);
++ const browser=await chromium.launch({headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage(),errors=[];
++ page.on('pageerror',error=>errors.push(error.name));
++ return{config,fixture,actor,page,context,browser,errors,async close(){await context.close();await browser.close()}};
++}
++async function applicationSettings(s){
++ await s.page.goto(s.config.appUrl+'/club/'+s.fixture.clubIds[0]+'/workspace?section=settings&setting=application');
++ await s.page.getByText('Review settings',{exact:true}).waitFor();
++ const details=s.page.locator('.oc-settings-workspace details').filter({has:s.page.locator('summary',{hasText:'Review settings'})});await details.locator('summary').click();
++ await s.page.waitForLoadState('networkidle');
++}
++async function selectReview(s){await s.page.getByRole('link',{name:'Anonymous review',exact:true}).click()}
++async function holdRounds(s){
++ let seen,release;const pending=new Promise(resolve=>seen=resolve),gate=new Promise(resolve=>release=resolve);let count=0;
++ await s.page.route('**/api/workspace?*',async route=>{
++  if(new URL(route.request().url()).searchParams.get('kind')!=='rounds')return route.continue();
++  count++;const response=await route.fetch();seen();await gate;await route.fulfill({response}).catch(()=>{});
++ });
++ return{pending,release,get count(){return count}};
++}
++test('selected review downloads its code while the live rounds response is still pending',{skip:!configFile,timeout:90000},async()=>{
++ const s=await session();let held;
++ try{
++  await applicationSettings(s);const targets=new Set(featureChunks(s.config.buildDir).rounds);held=await holdRounds(s);
++  // Requiring the request before releasing rounds distinguishes overlap from
++  // the previous data-then-code waterfall, without asserting arbitrary speed.
++  const code=s.page.waitForRequest(request=>targets.has(new URL(request.url()).pathname),{timeout:10000});
++  await selectReview(s);await held.pending;
++  const request=await code;assert.equal(request.resourceType(),'script');
++  assert.equal(await s.page.getByRole('dialog',{name:'Anonymous Review',exact:true}).getByText('Previously viewed information cannot be recalled',{exact:false}).count(),0);
++  held.release();await s.page.getByRole('dialog',{name:'Anonymous Review',exact:true}).getByText('Previously viewed information cannot be recalled',{exact:false}).waitFor();
++  assert.equal(held.count,1);assert.deepEqual(s.errors,[]);
++ }finally{held?.release();await s.close()}
++});
++test('abandoning and logging out during review loading cannot reveal a late editor or authorize a later read',{skip:!configFile,timeout:90000},async()=>{
++ const s=await session();let held,releaseCode;
++ try{
++  await applicationSettings(s);const targets=new Set(featureChunks(s.config.buildDir).rounds);let seenCode;const pendingCode=new Promise(resolve=>seenCode=resolve),codeGate=new Promise(resolve=>releaseCode=resolve);
++  await s.page.route('**/_next/static/chunks/**',async route=>{if(!targets.has(new URL(route.request().url()).pathname))return route.continue();const response=await route.fetch();seenCode();await codeGate;await route.fulfill({response}).catch(()=>{})});
++  held=await holdRounds(s);await selectReview(s);await Promise.all([held.pending,pendingCode]);
++  await s.page.getByRole('dialog',{name:'Anonymous Review',exact:true}).getByRole('button',{name:'Close',exact:true}).click();
++  await s.page.getByRole('button',{name:/Account menu for/}).click();await s.page.getByRole('menuitem',{name:'Sign out',exact:true}).click();await s.page.waitForURL(s.config.appUrl+'/');
++  held.release();releaseCode();await s.page.waitForLoadState('networkidle');
++  assert.equal(await s.page.getByText('Previously viewed information cannot be recalled',{exact:false}).count(),0);
++  const response=await s.actor.request('/api/workspace?'+new URLSearchParams({kind:'rounds',args:JSON.stringify([s.fixture.clubIds[0]])}));assert.equal(response.status,401);assert.deepEqual(s.errors,[]);
++ }finally{held?.release();releaseCode?.();await s.close()}
++});

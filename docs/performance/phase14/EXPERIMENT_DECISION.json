@@ -1,0 +1,500 @@
+{
+  "at": "2026-10-26T23:53:00.722290+00:00",
+  "adopted": false,
+  "reason": "No request-count saving and no measured target cold-click benefit; constrained cold and warm click p50/p95 worsen. Keep evidence and experiment harness, revert application change. Small groups are not statistical proof of a general slowdown.",
+  "measuredApplicationChanges": 1,
+  "retainedApplicationChanges": 0,
+  "constrainedReview": [
+    {
+      "category": "feature",
+      "profile": "constrained",
+      "size": 1000,
+      "path": "settingsApplication \u2192 rounds",
+      "condition": "cold",
+      "variants": {
+        "B": {
+          "clickMs": {
+            "n": 6,
+            "p50": 594.5,
+            "p95": 595.6999999880791
+          },
+          "networkCompleteMs": {
+            "n": 6,
+            "p50": 666,
+            "p95": 683.699951171875
+          },
+          "requestCount": {
+            "n": 6,
+            "p50": 8,
+            "p95": 8
+          },
+          "encodedBodyBytes": {
+            "n": 6,
+            "p50": 10176,
+            "p95": 12463
+          },
+          "scriptMs": {
+            "n": 6,
+            "p50": 76.91899999999974,
+            "p95": 84.5490000000002
+          },
+          "taskMs": {
+            "n": 6,
+            "p50": 242.0899999999997,
+            "p95": 272.53499999999997
+          },
+          "sourcePlusClickMs": {
+            "n": 6,
+            "p50": 1522.5,
+            "p95": 1539.699999988079
+          },
+          "clickScriptBytes": {
+            "n": 6,
+            "p50": 7804,
+            "p95": 7804
+          },
+          "clickScriptRequests": {
+            "n": 6,
+            "p50": 2,
+            "p95": 2
+          },
+          "dataTtfbMs": {
+            "n": 20,
+            "p50": 94.429,
+            "p95": 99.583
+          },
+          "dataTransferMs": {
+            "n": 20,
+            "p50": 0.796999999999997,
+            "p95": 8.399999999999991
+          },
+          "sourceUsefulMs": {
+            "n": 6,
+            "p50": 930,
+            "p95": 945
+          },
+          "sourceDrainedMs": {
+            "n": 6,
+            "p50": 4685,
+            "p95": 4709
+          },
+          "sourceRequests": {
+            "n": 6,
+            "p50": 60,
+            "p95": 60
+          },
+          "sourceBodyBytes": {
+            "n": 6,
+            "p50": 806115,
+            "p95": 806115
+          },
+          "sourceScriptBytes": {
+            "n": 6,
+            "p50": 517715,
+            "p95": 517715
+          },
+          "sourceScriptRequests": {
+            "n": 6,
+            "p50": 34,
+            "p95": 34
+          },
+          "sourceFontBytes": {
+            "n": 6,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 6,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 6,
+            "p50": 4422.5,
+            "p95": 4443.5999999940395
+          },
+          "sourceCLS": {
+            "n": 6,
+            "p50": 0.0021285315393518517,
+            "p95": 0.0021285315393518517
+          },
+          "first-paintMs": {
+            "n": 6,
+            "p50": 604,
+            "p95": 608
+          },
+          "first-contentful-paintMs": {
+            "n": 6,
+            "p50": 604,
+            "p95": 608
+          }
+        },
+        "A": {
+          "clickMs": {
+            "n": 6,
+            "p50": 612.8999999761581,
+            "p95": 627.5
+          },
+          "networkCompleteMs": {
+            "n": 6,
+            "p50": 700,
+            "p95": 710.199951171875
+          },
+          "requestCount": {
+            "n": 6,
+            "p50": 8,
+            "p95": 8
+          },
+          "encodedBodyBytes": {
+            "n": 6,
+            "p50": 10179,
+            "p95": 10179
+          },
+          "scriptMs": {
+            "n": 6,
+            "p50": 72.79300000000033,
+            "p95": 76.69000000000014
+          },
+          "taskMs": {
+            "n": 6,
+            "p50": 241.45499999999976,
+            "p95": 252.17500000000027
+          },
+          "sourcePlusClickMs": {
+            "n": 6,
+            "p50": 1549.0999999940395,
+            "p95": 1577.5
+          },
+          "clickScriptBytes": {
+            "n": 6,
+            "p50": 7804,
+            "p95": 7804
+          },
+          "clickScriptRequests": {
+            "n": 6,
+            "p50": 2,
+            "p95": 2
+          },
+          "dataTtfbMs": {
+            "n": 18,
+            "p50": 107.35900000000001,
+            "p95": 117.616
+          },
+          "dataTransferMs": {
+            "n": 18,
+            "p50": 0.7489999999999952,
+            "p95": 30.542999999999992
+          },
+          "sourceUsefulMs": {
+            "n": 6,
+            "p50": 926,
+            "p95": 950
+          },
+          "sourceDrainedMs": {
+            "n": 6,
+            "p50": 4688,
+            "p95": 4789
+          },
+          "sourceRequests": {
+            "n": 6,
+            "p50": 60,
+            "p95": 60
+          },
+          "sourceBodyBytes": {
+            "n": 6,
+            "p50": 806125,
+            "p95": 806125
+          },
+          "sourceScriptBytes": {
+            "n": 6,
+            "p50": 517725,
+            "p95": 517725
+          },
+          "sourceScriptRequests": {
+            "n": 6,
+            "p50": 34,
+            "p95": 34
+          },
+          "sourceFontBytes": {
+            "n": 6,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 6,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 6,
+            "p50": 4421.699999988079,
+            "p95": 4450.299999982119
+          },
+          "sourceCLS": {
+            "n": 6,
+            "p50": 0.0021285315393518517,
+            "p95": 0.0021285315393518517
+          },
+          "first-paintMs": {
+            "n": 6,
+            "p50": 608,
+            "p95": 616
+          },
+          "first-contentful-paintMs": {
+            "n": 6,
+            "p50": 608,
+            "p95": 616
+          }
+        }
+      }
+    },
+    {
+      "category": "feature",
+      "profile": "constrained",
+      "size": 1000,
+      "path": "settingsApplication \u2192 rounds",
+      "condition": "warm",
+      "variants": {
+        "B": {
+          "clickMs": {
+            "n": 6,
+            "p50": 265.09999999403954,
+            "p95": 265.30000001192093
+          },
+          "networkCompleteMs": {
+            "n": 6,
+            "p50": 343.400146484375,
+            "p95": 348.89990234375
+          },
+          "requestCount": {
+            "n": 6,
+            "p50": 4,
+            "p95": 4
+          },
+          "encodedBodyBytes": {
+            "n": 6,
+            "p50": 1342,
+            "p95": 1343
+          },
+          "scriptMs": {
+            "n": 6,
+            "p50": 33.00800000000015,
+            "p95": 38.87599999999969
+          },
+          "taskMs": {
+            "n": 6,
+            "p50": 120.63200000000008,
+            "p95": 132.39100000000013
+          },
+          "sourcePlusClickMs": {
+            "n": 6,
+            "p50": 1190.7999999821186,
+            "p95": 1209.300000011921
+          },
+          "clickScriptBytes": {
+            "n": 6,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 6,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 18,
+            "p50": 94.277,
+            "p95": 104.851
+          },
+          "dataTransferMs": {
+            "n": 18,
+            "p50": 0.6229999999999905,
+            "p95": 8.778999999999996
+          },
+          "sourceUsefulMs": {
+            "n": 6,
+            "p50": 926,
+            "p95": 944
+          },
+          "sourceDrainedMs": {
+            "n": 6,
+            "p50": 4703,
+            "p95": 4898
+          },
+          "sourceRequests": {
+            "n": 6,
+            "p50": 60,
+            "p95": 60
+          },
+          "sourceBodyBytes": {
+            "n": 6,
+            "p50": 806115,
+            "p95": 806115
+          },
+          "sourceScriptBytes": {
+            "n": 6,
+            "p50": 517715,
+            "p95": 517715
+          },
+          "sourceScriptRequests": {
+            "n": 6,
+            "p50": 34,
+            "p95": 34
+          },
+          "sourceFontBytes": {
+            "n": 6,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 6,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 6,
+            "p50": 4419,
+            "p95": 4433.0999999940395
+          },
+          "sourceCLS": {
+            "n": 6,
+            "p50": 0.0021285315393518517,
+            "p95": 0.0021285315393518517
+          },
+          "first-paintMs": {
+            "n": 6,
+            "p50": 608,
+            "p95": 644
+          },
+          "first-contentful-paintMs": {
+            "n": 6,
+            "p50": 608,
+            "p95": 644
+          }
+        },
+        "A": {
+          "clickMs": {
+            "n": 6,
+            "p50": 278.19999998807907,
+            "p95": 282.59999999403954
+          },
+          "networkCompleteMs": {
+            "n": 6,
+            "p50": 357.099853515625,
+            "p95": 364.300048828125
+          },
+          "requestCount": {
+            "n": 6,
+            "p50": 4,
+            "p95": 4
+          },
+          "encodedBodyBytes": {
+            "n": 6,
+            "p50": 1345,
+            "p95": 3632
+          },
+          "scriptMs": {
+            "n": 6,
+            "p50": 32.96100000000024,
+            "p95": 34.964
+          },
+          "taskMs": {
+            "n": 6,
+            "p50": 122.35299999999994,
+            "p95": 129.29000000000013
+          },
+          "sourcePlusClickMs": {
+            "n": 6,
+            "p50": 1193.699999988079,
+            "p95": 1217.0999999940395
+          },
+          "clickScriptBytes": {
+            "n": 6,
+            "p50": 0,
+            "p95": 0
+          },
+          "clickScriptRequests": {
+            "n": 6,
+            "p50": 0,
+            "p95": 0
+          },
+          "dataTtfbMs": {
+            "n": 19,
+            "p50": 97.246,
+            "p95": 103.537
+          },
+          "dataTransferMs": {
+            "n": 19,
+            "p50": 0.42600000000000193,
+            "p95": 8.174999999999997
+          },
+          "sourceUsefulMs": {
+            "n": 6,
+            "p50": 928,
+            "p95": 936
+          },
+          "sourceDrainedMs": {
+            "n": 6,
+            "p50": 4694,
+            "p95": 4748
+          },
+          "sourceRequests": {
+            "n": 6,
+            "p50": 60,
+            "p95": 60
+          },
+          "sourceBodyBytes": {
+            "n": 6,
+            "p50": 806125,
+            "p95": 806125
+          },
+          "sourceScriptBytes": {
+            "n": 6,
+            "p50": 517725,
+            "p95": 517725
+          },
+          "sourceScriptRequests": {
+            "n": 6,
+            "p50": 34,
+            "p95": 34
+          },
+          "sourceFontBytes": {
+            "n": 6,
+            "p50": 227784,
+            "p95": 227784
+          },
+          "sourceFontRequests": {
+            "n": 6,
+            "p50": 2,
+            "p95": 2
+          },
+          "fontReadyMs": {
+            "n": 6,
+            "p50": 4422.300000011921,
+            "p95": 4452.200000017881
+          },
+          "sourceCLS": {
+            "n": 6,
+            "p50": 0.0021285315393518517,
+            "p95": 0.0021285315393518517
+          },
+          "first-paintMs": {
+            "n": 6,
+            "p50": 604,
+            "p95": 612
+          },
+          "first-contentful-paintMs": {
+            "n": 6,
+            "p50": 604,
+            "p95": 612
+          }
+        }
+      }
+    }
+  ],
+  "measuredSource": "CANDIDATE_SOURCE.json",
+  "retainedSource": "FINAL_SOURCE.json",
+  "reproducePatch": "EXPERIMENT_APPLICATION.diff",
+  "experimentHarness": "tests/experiments/navigation-phase14-e2e.test.cjs",
+  "experimentGate": "OUTCLASS_PHASE14_EXPERIMENT=1 in addition to reserved local config"
+}

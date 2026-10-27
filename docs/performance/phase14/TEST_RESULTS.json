@@ -1,0 +1,63 @@
+{
+  "applicationChangesThisPhase": 1,
+  "ordinary": {
+    "total": 1479,
+    "passed": 1414,
+    "failed": 0,
+    "skipped": 65,
+    "cancelled": 0
+  },
+  "live": {
+    "total": 69,
+    "passed": 69,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "nativeSecurityConcurrency": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "provisioning": {
+    "total": 38,
+    "passed": 38,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "focusedReview": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "migrations": {
+    "freshAndLegacy": 57,
+    "rlsTablesWithBrowserDenial": 78
+  },
+  "productionBuilds": "Both frozen baseline and candidate passed",
+  "typecheck": "passed",
+  "lint": {
+    "errors": 0,
+    "existingWarnings": 22
+  },
+  "newOrdinaryCases": 3,
+  "newLiveCases": 2,
+  "optionalGates": "Ordinary environment gates remain explicit; selected live/native suites exercised separately. Counts overlap and must not be added.",
+  "baselineRegressionProbe": {
+    "expectedStatus": 1,
+    "actual": {
+      "total": 1,
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "cancelled": 0
+    },
+    "reason": "Old build cannot request review editor code until held rounds response is released. Candidate passes the same unchanged test."
+  },
+  "pilot": "Two unbalanced eight-outcome development probes retained separately; not included in accepted quantiles."
+}

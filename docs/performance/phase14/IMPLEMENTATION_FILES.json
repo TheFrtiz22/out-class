@@ -1,0 +1,23 @@
+{
+  "implementationBase": "f14ab3a410268638bfceb7b51b7fb372d18a452b",
+  "applicationChangesThisPhase": 0,
+  "measuredExperimentApplicationChanges": 1,
+  "files": [
+    "scripts/navigation-phase14-local.cjs",
+    "scripts/navigation-phase14-study.cjs",
+    "scripts/navigation-phase14-interactions.cjs",
+    "scripts/navigation-phase14-constrained-interactions.cjs",
+    "scripts/navigation-phase14-concurrency.cjs",
+    "scripts/navigation-phase14-host-monitor.cjs",
+    "scripts/navigation-phase14-server-diagnostics.cjs",
+    "scripts/navigation-phase14-diagnose.cjs",
+    "tests/experiments/navigation-phase14-e2e.test.cjs",
+    "tests/navigation-phase14-diagnostics.test.cjs"
+  ],
+  "sha256": "2311fb038413c50fee3bf4d6c5cb5ae36397f96f9210d07174b1067cc3137222",
+  "reverseApplyCheck": true,
+  "experimentApplicationDiff": "EXPERIMENT_APPLICATION.diff",
+  "experimentApplicationDiffSha256": "b9713552a8206d89c83db54e9c6e5d153e18b2409614c08819562f475fde8be5",
+  "historicalMeasuredImplementation": "EXPERIMENT_IMPLEMENTATION.diff",
+  "historicalMeasuredImplementationSha256": "4d61a8ad4cd67884eafea71692530e454411d9a40353986007f6aa47a719adcc"
+}
