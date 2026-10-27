@@ -1,0 +1,16 @@
+[
+  {
+    "method": "POST",
+    "status": 200,
+    "contentType": "text/x-component",
+    "contentEncoding": "gzip",
+    "decodedBytes": 18914
+  },
+  {
+    "method": "GET",
+    "status": 200,
+    "contentType": "application/json",
+    "contentEncoding": null,
+    "decodedBytes": 18968
+  }
+]

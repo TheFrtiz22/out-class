@@ -95,7 +95,7 @@ export const reviewPanelPublication = adapt(publicationApi.reviewPanelPublicatio
 export const publishPanelSchedule = adapt(publicationApi.publishPanelSchedule, (scope) => demoBookingApi.publishPanelSchedule(scope as Parameters<typeof demoBookingApi.publishPanelSchedule>[0]))
 export const assignPanelAvailabilityOverride = adapt(availabilityOverrideApi.assignPanelAvailabilityOverride, (scope) => demoBookingApi.assignPanelAvailabilityOverride(scope as Parameters<typeof demoBookingApi.assignPanelAvailabilityOverride>[0]))
 export const revokePanelAvailabilityOverride = adapt(availabilityOverrideApi.revokePanelAvailabilityOverride, (scope) => demoBookingApi.revokePanelAvailabilityOverride(scope as Parameters<typeof demoBookingApi.revokePanelAvailabilityOverride>[0]))
-export const getInterviewBookingPublication = adapt(bookingPublicationApi.getInterviewBookingPublication, (scope) => demoBookingApi.getInterviewBookingPublication(scope as Parameters<typeof demoBookingApi.getInterviewBookingPublication>[0]))
+export const getInterviewBookingPublication = adapt((...args: Parameters<typeof bookingPublicationApi.getInterviewBookingPublication>) => readWorkspace<Awaited<ReturnType<typeof bookingPublicationApi.getInterviewBookingPublication>>>("bookingPublication", args), (scope) => demoBookingApi.getInterviewBookingPublication(scope as Parameters<typeof demoBookingApi.getInterviewBookingPublication>[0]))
 export const setInterviewBookingPublication = adapt(bookingPublicationApi.setInterviewBookingPublication, (scope) => demoBookingApi.setInterviewBookingPublication(scope as Parameters<typeof demoBookingApi.setInterviewBookingPublication>[0]))
 function scopedApplication(clubId: string, id: string) {
   const s = demoStore.get()
@@ -309,8 +309,8 @@ export const saveAnonymousReviewContent = adapt(crm.saveAnonymousReviewContent, 
 })
 
 export const getInterviewKit = adapt(interviewKits.getInterviewKit, demoInterviews.getInterviewKit)
-export const getInterviewWorkspace = adapt(interviewKits.getInterviewWorkspace, demoInterviews.getInterviewWorkspace)
-export const getAssignedInterviewRooms = adapt(interviewEntry.getAssignedInterviewRooms, demoInterviewEntry.getAssignedInterviewRooms)
+export const getInterviewWorkspace = adapt((...args: Parameters<typeof interviewKits.getInterviewWorkspace>) => readWorkspace<Awaited<ReturnType<typeof interviewKits.getInterviewWorkspace>>>("interviewWorkspace", args), demoInterviews.getInterviewWorkspace)
+export const getAssignedInterviewRooms = adapt((...args: Parameters<typeof interviewEntry.getAssignedInterviewRooms>) => readWorkspace<Awaited<ReturnType<typeof interviewEntry.getAssignedInterviewRooms>>>("assignedRooms", args), demoInterviewEntry.getAssignedInterviewRooms)
 export const resolveInterviewRoomEntry = adapt(interviewEntry.resolveInterviewRoomEntry, demoInterviewEntry.resolveInterviewRoomEntry)
 export const getEarlierInterviewReviews = adapt(interviewKits.getEarlierInterviewReviews, demoInterviews.getEarlierInterviewReviews)
 export const getInterviewRoundScore = adapt(interviewKits.getInterviewRoundScore, demoInterviews.getInterviewRoundScore)
@@ -335,7 +335,7 @@ export const deleteInterviewResumeAnnotation = adapt(interviewResumes.deleteInte
 export const getInterviewAnnotationHistory = adapt(interviewResumes.getInterviewAnnotationHistory, demoInterviews.getInterviewAnnotationHistory)
 export const setMemberInterviewOffices = adapt(interviewGrants.setMemberInterviewOffices, demoInterviews.setMemberInterviewOffices)
 export const setInterviewPanelAssignment = adapt(interviewGrants.setInterviewPanelAssignment, demoInterviews.setInterviewPanelAssignment)
-export const getInterviewRounds = adapt(interviewKits.getInterviewRounds, demoInterviews.getInterviewRounds)
+export const getInterviewRounds = adapt((...args: Parameters<typeof interviewKits.getInterviewRounds>) => readWorkspace<Awaited<ReturnType<typeof interviewKits.getInterviewRounds>>>("interviewRounds", args), demoInterviews.getInterviewRounds)
 
 function demoMeetingAccess(id: string) {
   const s=demoStore.get(), meeting=s.meetings.find(m=>m.id===id), membership=s.memberships.find(m=>m.clubId===meeting?.clubId&&m.userId===demoUser().id)
@@ -343,7 +343,7 @@ function demoMeetingAccess(id: string) {
   return presentDemoMeeting(meeting)
 }
 function demoMeetingManager(clubId:string){demoMember();if(clubId!==demoStore.get().clubs[0].id)throw new Error("Access denied.")}
-export const listMeetings = adapt(meetingsApi.listMeetings, clubId => {
+export const listMeetings = adapt((...args: Parameters<typeof meetingsApi.listMeetings>) => readWorkspace<Awaited<ReturnType<typeof meetingsApi.listMeetings>>>("meetings", args), clubId => {
   const s=demoStore.get(),user=demoUser()
   return s.meetings.filter(m=>(!clubId||m.clubId===clubId)&&canReadMeeting(m,s.memberships.some(member=>member.clubId===m.clubId&&member.userId===user.id)?{}:null)).sort((a,b)=>b.date.getTime()-a.date.getTime()).map(presentDemoMeeting)
 })
@@ -388,7 +388,7 @@ export const recruitmentAttendanceSummary=adapt((...args: Parameters<typeof meet
 
 // Semester work follows the same isolated demo boundary as recruitment.
 export const getTaskNotifications = adapt((...args: Parameters<typeof tasksApi.getTaskNotifications>) => readWorkspace<Awaited<ReturnType<typeof tasksApi.getTaskNotifications>>>("taskNotifications", args), () => demoNotifications().filter(notification => "taskHref" in notification && notification.taskHref))
-export const getTaskWorkspace = adapt(tasksApi.getTaskWorkspace, demoTasks.getTaskWorkspace)
+export const getTaskWorkspace = adapt((...args: Parameters<typeof tasksApi.getTaskWorkspace>) => readWorkspace<Awaited<ReturnType<typeof tasksApi.getTaskWorkspace>>>("tasks", args), demoTasks.getTaskWorkspace)
 export const saveTask = adapt(tasksApi.saveTask, demoTasks.saveTask)
 export const previewTaskAudience = adapt(tasksApi.previewTaskAudience, demoTasks.previewTaskAudience)
 export const bulkUpdateTasks = adapt(tasksApi.bulkUpdateTasks, demoTasks.bulkUpdateTasks)
@@ -435,7 +435,7 @@ export const applyRecruitingRuleFlags = adapt(recruitingRules.applyRecruitingRul
 export const getRecruitingRuleFlags = adapt(recruitingRules.getRecruitingRuleFlags, demoRecruitingRules.getRecruitingRuleFlags)
 export const clearRecruitingRuleFlags = adapt(recruitingRules.clearRecruitingRuleFlags, demoRecruitingRules.clearRecruitingRuleFlags)
 
-export const getRoomWorkspace = adapt(roomApi.getRoomWorkspace, demoRoomApi.getRoomWorkspace)
+export const getRoomWorkspace = adapt((...args: Parameters<typeof roomApi.getRoomWorkspace>) => readWorkspace<Awaited<ReturnType<typeof roomApi.getRoomWorkspace>>>("roomWorkspace", args), demoRoomApi.getRoomWorkspace)
 export const createInterviewRoom = adapt(roomApi.createInterviewRoom, demoRoomApi.createInterviewRoom)
 export const setInterviewStaffingRequirement = adapt(roomApi.setInterviewStaffingRequirement, raw=>demoRoomApi.setInterviewStaffingRequirement(raw as Parameters<typeof demoRoomApi.setInterviewStaffingRequirement>[0]))
 export const setInterviewRoomOpen = adapt(roomApi.setInterviewRoomOpen, demoRoomApi.setInterviewRoomOpen)

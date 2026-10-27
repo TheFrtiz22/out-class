@@ -1,0 +1,31 @@
+current
+Running 3 environment-gated suites against disposable outclass_security_test
+✔ native collaboration: ordered simultaneous picks, revision conflicts, exact queue advancement, invitations and revocation (650.93775ms)
+✔ native PostgreSQL interview transactions: independent drafts, simultaneous finish, annotations, revocation and immutable anonymous reopening (1063.421667ms)
+✔ native PostgreSQL: concurrent claims, duplicate imports, email delivery, and owner suspensions (1461.581917ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3618.422083
+Database schema is up to date (57 migrations).
+PASS: disposable security runner exited successfully.
+
+audit reference
+Running 3 environment-gated suites against disposable outclass_security_test
+✔ native collaboration: ordered simultaneous picks, revision conflicts, exact queue advancement, invitations and revocation (641.574209ms)
+✔ native PostgreSQL interview transactions: independent drafts, simultaneous finish, annotations, revocation and immutable anonymous reopening (1063.609625ms)
+✔ native PostgreSQL: concurrent claims, duplicate imports, email delivery, and owner suspensions (1359.5395ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3495.01075
+Database schema is up to date (57 migrations).
+PASS: disposable security runner exited successfully.

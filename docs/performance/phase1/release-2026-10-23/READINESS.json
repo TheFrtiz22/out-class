@@ -1,0 +1,91 @@
+{
+  "sourceBranch": "codex/application-writing-local-baseline",
+  "sourceCommit": "cc77a33cdd0176a8dd64f78771e5f56412adff6a",
+  "mainIntegrated": "4f29429515e507ff708f3e223bbf1b290eac6d42",
+  "unit": {
+    "tests": 1385,
+    "pass": 1347,
+    "fail": 0,
+    "skipped": 38,
+    "duration_ms": 175350.321834
+  },
+  "typecheck": {
+    "passed": true
+  },
+  "lint": {
+    "errors": 0,
+    "existingWarnings": 22
+  },
+  "nativeSecurity": {
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "skipped": 0,
+    "duration_ms": 51118.975541
+  },
+  "migrationChecks": {
+    "passed": true,
+    "migrations": 57,
+    "rlsTables": 78
+  },
+  "productionBuild": {
+    "passed": true,
+    "fixture": "outclass-availability-e2e"
+  },
+  "publishedNavigation": {
+    "passed": true,
+    "explicitBrowserApproval": true,
+    "reviewAloneDoesNotPublish": true,
+    "realAuthAndLiveSession": true,
+    "publishedVersionAuthority": true,
+    "legacyApprovalRemovalSurvives": true,
+    "mobileRoomLink": true,
+    "immediateGrantRevocation": true,
+    "exactOpeningDeniedAfterRevocation": true,
+    "browserErrors": 0
+  },
+  "initialFailures": {
+    "unit": {
+      "tests": 1385,
+      "pass": 1342,
+      "fail": 5,
+      "skipped": 38,
+      "duration_ms": 495914.035833
+    },
+    "resolution": "Serialized rerun cleared four timing failures; generated PDF viewer assets were absent from the clean worktree. After asset preparation the complete bounded run passes.",
+    "legacyPublicationUI": "Existing --publication script requested obsolete Rooms control before publishing. A dedicated current-control browser publication/navigation/revocation scenario passed; broader legacy-script selector maintenance is outside this performance release."
+  },
+  "authorization": "Human explicitly requested merge and publication to main once clear on 2026-10-23.",
+  "productionInfrastructureChanges": false,
+  "productionDatabaseChanges": false,
+  "ciFollowup": {
+    "eventBrowserNativeTestsPassed": 5,
+    "mailpitMirrorGuardPassed": true,
+    "decisionTransactionsPassed": true,
+    "applicationSourcesChanged": false,
+    "officialCliSource": "https://github.com/supabase/cli/blob/v2.119.0/apps/cli-go/internal/utils/docker.go#L244",
+    "changes": [
+      "Match current event button labels and assert saved aria-pressed state.",
+      "Include existing marketing branding in the narrow template response key assertion.",
+      "Accept exact official local Mailpit mirror repositories without disabling TLS."
+    ]
+  },
+  "finalCiRepair": {
+    "hostedDisposableJobsPassed": 8,
+    "hostedOrdinarySuiteBeforeRepair": {
+      "pass": 1347,
+      "fail": 1,
+      "skipped": 38
+    },
+    "localAffectedBrowserTests": {
+      "pass": 5,
+      "fail": 0
+    },
+    "changedFileLintPassed": true,
+    "changes": [
+      "Preserve current workspace caption name with a valid group role; scan the Admin route for accessibility.",
+      "Wait for actual eligibility save/refresh completion before testing Escape closure."
+    ],
+    "productionSecurityChanges": false
+  }
+}

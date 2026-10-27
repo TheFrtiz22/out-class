@@ -1,0 +1,686 @@
+diff --git a/app/layout.tsx b/app/layout.tsx
+index b387d3b..dec6088 100644
+--- a/app/layout.tsx
++++ b/app/layout.tsx
+@@ -11,6 +11,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
+ import { Toaster } from "@/components/ui/sonner"
+ import "./globals.css"
+ import { ClubCustomizationProvider } from "@/lib/club-customization"
++import { RouteContent } from "@/components/route-content"
+ import { SITE_URL, SITE_TITLE, SITE_DESCRIPTION, LEGAL_ORGANIZATION_NAME, privateRobots } from "@/lib/seo"
+ 
+ // One Caslon family, with real variable weights and a real italic face.
+@@ -91,7 +92,7 @@ export default async function RootLayout({
+           <AuthProvider initialUser={initialUser} isImpersonating={cookieStore.has(PLATFORM_VIEW_COOKIE)} hasSession={!!initialUser || cookieStore.has(PLATFORM_VIEW_COOKIE)}>
+             <OrganizationInvitationsProvider>
+             <CorkboardProvider><ClubCustomizationProvider>
+-              <div className="oc-route-content" style={cookieStore.has(PLATFORM_VIEW_COOKIE) ? { paddingTop: "var(--support-banner-height, 120px)" } : undefined}>{children}</div>
++              <RouteContent style={cookieStore.has(PLATFORM_VIEW_COOKIE) ? { paddingTop: "var(--support-banner-height, 120px)" } : undefined}>{children}</RouteContent>
+             </ClubCustomizationProvider></CorkboardProvider>
+             </OrganizationInvitationsProvider>
+           </AuthProvider>
+diff --git a/scripts/navigation-audit.cjs b/scripts/navigation-audit.cjs
+index 492a359..1bb6edb 100644
+--- a/scripts/navigation-audit.cjs
++++ b/scripts/navigation-audit.cjs
+@@ -7,8 +7,9 @@ const assert = require('node:assert/strict');
+ const { randomUUID } = require('node:crypto');
+ const { chromium } = require('playwright');
+ const { PrismaClient } = require('@prisma/client');
+-const { Actor, readConfig, confirmationMessage } = require('../tests/helpers/onboarding-e2e.cjs');
+-const root = path.join(os.tmpdir(), 'outclass-onboarding-e2e');
++const { Actor, confirmationMessage } = require('../tests/helpers/onboarding-e2e.cjs');
++const profile = require('./navigation-fixture-config.cjs').fixtureProfile(process.argv.includes('--hydration-fixture'));
++const root = profile.root;
+ const fixtureFile = path.join(root, 'navigation-fixture.json');
+ const outDir = path.resolve(process.argv.find(a => a.startsWith('--out='))?.slice(6) || 'docs/performance/evidence');
+ function distribution(values) {
+@@ -21,6 +22,13 @@ function safeRoute(input) {
+   if(u.pathname==='/api/workspace') return '/api/workspace?kind='+u.searchParams.get('kind');
+   return u.pathname.replace(/[0-9a-f]{8}-[0-9a-f-]{27,}/gi, '[fixture-id]');
+ }
++function validateActiveOutput(explicitOutput) {
++  assert.ok(explicitOutput,'Active workloads require an explicit new output directory');
++  const allowed=path.resolve(__dirname,'../docs/performance/phase1/active-workload');
++  const relative=path.relative(allowed,path.resolve(explicitOutput));
++  assert.ok(relative&&!relative.startsWith('..')&&!path.isAbsolute(relative),'Keep active workload evidence in a new active-workload subdirectory');
++  assert.ok(!fs.existsSync(path.join(explicitOutput,'browser-samples.json')),'Existing benchmark evidence must not be overwritten');
++}
+ async function seed(config) {
+   if(fs.existsSync(fixtureFile)) return JSON.parse(fs.readFileSync(fixtureFile));
+   const actor = new Actor(config), tag='navaudit'+randomUUID().replaceAll('-','').slice(0,10);
+@@ -78,11 +86,34 @@ function routes(f) {
+     memberDetail:{selector:'[data-slot="sheet-content"]',text:'Audit Student 000'},
+   };
+ }
+-function installBrowserObservers() {
+-  window.__navAudit={longTasks:[],commits:[]};
++function installBrowserObservers(options) {
++  window.__navAudit={longTasks:[],commits:[],hydration:[],domMismatches:[],phase:'initial'};
++  if(options?.diagnoseHydration)window.__captureHydrationDom=(fiber,node)=>{
++    const describe=n=>!n?null:{nodeType:n.nodeType,tag:n.nodeType===1?n.tagName.toLowerCase():n.nodeType===8?'comment':'text',classes:n.nodeType===1?[...n.classList].filter(c=>c.startsWith('oc-')):[],suspense:n.nodeType===8&&/^[/$?!~&]{1,6}$/.test(n.data)?n.data:null};
++    const parents=[];for(let p=fiber.return;p&&parents.length<5;p=p.return)if(typeof p.type==='string')parents.push({tag:p.type,node:describe(p.stateNode)});
++    window.__navAudit.domMismatches.push({phase:window.__navAudit.phase,atMs:performance.now(),readyState:document.readyState,expectedTag:typeof fiber.type==='string'?fiber.type:'component',expectedClasses:String(fiber.pendingProps?.className||'').split(/\s+/).filter(c=>c.startsWith('oc-')),actual:describe(node),previous:describe(node?.previousSibling),next:describe(node?.nextSibling),parent:describe(node?.parentNode),siblings:[...(node?.parentNode?.childNodes||[])].slice(0,12).map(describe),parents,routeWrapperCount:document.querySelectorAll('.oc-route-content').length});
++  };
+   new PerformanceObserver(list=>{for(const e of list.getEntries())window.__navAudit.longTasks.push({start:e.startTime,duration:e.duration});}).observe({entryTypes:['longtask']});
+   // Commit notifications only; standard production React omits profiler durations.
+-  window.__REACT_DEVTOOLS_GLOBAL_HOOK__={supportsFiber:true,renderers:new Map(),inject(r){const id=this.renderers.size+1;this.renderers.set(id,r);return id;},onCommitFiberRoot(){window.__navAudit.commits.push(performance.now());},onCommitFiberUnmount(){}};
++  const wrapped=new WeakSet();
++  window.__REACT_DEVTOOLS_GLOBAL_HOOK__={supportsFiber:true,renderers:new Map(),inject(r){const id=this.renderers.size+1;this.renderers.set(id,r);return id;},onCommitFiberRoot(_id,root){
++    window.__navAudit.commits.push(performance.now());
++    if(options?.diagnoseHydration&&root&&!wrapped.has(root)){
++      wrapped.add(root);const original=root.onRecoverableError;
++      root.onRecoverableError=(error,info)=>{
++        const message=String(error.message||''),match=/Minified React error #(\d+)/.exec(message),development=/Hydration failed because|server rendered HTML didn't match/.test(message);
++        if(match||development){
++          const redact=text=>text.replace(/https?:\/\/[^\s)]+/g,value=>{try{return '[origin]'+new URL(value).pathname.replace(/[0-9a-f]{8}-[0-9a-f-]{27,}/gi,'[fixture-id]')}catch{return '[source]'}});
++          const stack=redact(String(info?.componentStack||'')),errorFrames=String(error.stack||'').split('\n').slice(1,6).map(redact);
++          const names=new Set([...stack.matchAll(/at ([\w$]+)/g)].map(m=>m[1])),components=[];
++          const visit=f=>{if(!f)return;const type=typeof f.type==='function'?f.type:f.type?.render;if(typeof type==='function'&&names.has(type.name)&&components.length<30){components.push({name:type.displayName||type.name,classes:[...new Set(String(type).match(/oc-[a-zA-Z0-9_-]+/g)||[])].slice(0,20)})}visit(f.child);visit(f.sibling)};visit(root.current);
++          const markupDiff=message.split('\n').filter(line=>/^[+-]\s+/.test(line)).map(line=>({sign:line[0],tags:[...line.matchAll(/<\/?([\w-]+)/g)].map(m=>m[1]),classes:[...line.matchAll(/className="([\w -]+)"/g)].map(m=>m[1])})).filter(row=>row.tags.length||row.classes.length);
++          window.__navAudit.hydration.push({code:match?Number(match[1]):418,phase:window.__navAudit.phase,atMs:performance.now(),stack,errorFrames,components,markupDiff});
++        }
++        return original(error,info);
++      };
++    }
++  },onCommitFiberUnmount(){}};
+   document.addEventListener('click',()=>{if(window.__navAudit.armed && !window.__navAudit.click)window.__navAudit.click=performance.now();},true);
+   for(const method of ['pushState','replaceState']){const original=history[method];history[method]=function(...args){const result=original.apply(this,args);if(window.__navAudit.armed && window.__navAudit.click && !window.__navAudit.url)window.__navAudit.url=performance.now();return result;};}
+ }
+@@ -90,25 +121,49 @@ async function waitReady(page, desc) {
+   await page.waitForFunction(d=>(!d.href||location.pathname===new URL(d.href,location.origin).pathname)&&(!d.clubLabel||[...document.querySelectorAll('.oc-workspace-switcher-trigger')].some(el=>el.textContent.includes(d.clubLabel)))&&[...document.querySelectorAll(d.selector)].some(el=>el.getClientRects().length&&el.textContent.includes(d.text)),desc,{timeout:30000});
+ }
+ async function main() {
+-  const config=readConfig(path.join(root,'config.json'));
+-  assert.equal(config.appUrl,'http://127.0.0.1:3107');
++  const config=profile.readConfig(path.join(root,'config.json'));
++  assert.equal(config.appUrl,profile.appUrl);
++  if(process.argv.includes('--active-rooms')&&!process.argv.includes('--seed'))validateActiveOutput(process.argv.find(a=>a.startsWith('--out='))?.slice(6));
+   const fixture=await seed(config);
+-  if(process.argv.includes('--seed')){console.log('Created/reused disposable local audit fixtures: '+JSON.stringify(fixture.counts));return;}
++  const active = process.argv.includes('--active-rooms') ? await require('./active-interview-fixture.cjs').activeInterviewFixture(config,fixture) : null;
++  const clients=Number(process.argv.find(a=>a.startsWith('--clients='))?.slice(10)||1);
++  assert.ok(Number.isInteger(clients)&&clients>=1&&clients<=4,'Workload is bounded to at most four clients');
++  assert.ok(clients===1||active,'Multiple clients require the distinct active-room fixture accounts');
++  if(process.argv.includes('--seed')){console.log('Created/reused disposable local audit fixtures: '+JSON.stringify({...fixture.counts,...active?.counts}));return;}
+   fs.mkdirSync(outDir,{recursive:true});
+-  const actor=new Actor(config);await actor.signIn(fixture.email,fixture.password);
+-  const cookies=[...actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'}));
+-  const manifest=JSON.parse(fs.readFileSync(path.join(config.buildDir,'server/server-reference-manifest.json')));
++  const cookieSets=[];
++  for(const credential of (active?.credentials||[{email:fixture.email,password:fixture.password}]).slice(0,clients)){
++    const actor=new Actor(config);await actor.signIn(credential.email,credential.password);
++    cookieSets.push([...actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})));
++  }
++  const manifestFile=path.join(config.buildDir,'server/server-reference-manifest.json');
++  const manifest=process.argv.includes('--diagnose-hydration')&&!fs.existsSync(manifestFile)?{node:{}}:JSON.parse(fs.readFileSync(manifestFile));
+   const actionNames=new Map(Object.entries(manifest.node).map(([id,v])=>[id,(v.filename||'')+':'+v.exportedName]));
+   const browser=await chromium.launch({headless:true});
+   const descriptors=routes(fixture), allSamples=[], failures=[];
++  if(active)descriptors.interviews.text=active.readyText;
+   const sampleCount=Number(process.argv.find(a=>a.startsWith('--samples='))?.split('=')[1]||20);
+   assert.ok(sampleCount>0&&sampleCount<=100);
+-  async function session() {
+-    const context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies,origins:[]}});
+-    await context.addInitScript(installBrowserObservers);
++  async function session(participant=0) {
++    const context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:cookieSets[participant],origins:[]}});
++    await context.addInitScript(installBrowserObservers,{diagnoseHydration:process.argv.includes('--diagnose-hydration')});
+     const page=await context.newPage(),cdp=await context.newCDPSession(page);
++    if(process.argv.includes('--probe-hydration-dom')){
++      assert.ok(process.argv.includes('--diagnose-hydration'),'DOM probing is diagnostic only');
++      await page.route('**/_next/static/chunks/fbbc4d8e-*.js',async route=>{
++        const response=await route.fetch(),body=await response.text();
++        assert.ok(body.includes('var rP=null,rN=null,rL=!1')&&body.includes('function rD(e){var n=Error(i(418,'),'React diagnostic probe does not match this build');
++        const patched=body.replace('function rD(e){','function rD(e){try{globalThis.__captureHydrationDom?.(e,rN)}catch{}');
++        const headers={...response.headers()};delete headers['content-encoding'];delete headers['content-length'];
++        await route.fulfill({response,headers,body:patched});
++      });
++    }
+     await cdp.send('Performance.enable');
+-    const requests=[],pending=new Set();
++    const requests=[],pending=new Set(),pageErrors=[];
++    page.on('pageerror',error=>{
++      const react=/Minified React error #(\d+)/.exec(error.message||'');
++      pageErrors.push(react?'react_'+react[1]:/ResizeObserver loop/.test(error.message||'')?'resize_observer_loop':['TypeError','ReferenceError','RangeError','SyntaxError'].includes(error.name)?error.name:'page_error');
++    });
+     page.on('request',req=>{
+       const action=req.headers()['next-action'];
+       const row={req,route:action?actionNames.get(action)||'server-action':safeRoute(req.url()),method:req.method(),type:req.resourceType(),start:Date.now(),status:null,end:null,bytes:null,timing:null};
+@@ -117,7 +172,7 @@ async function main() {
+     page.on('response',response=>{const row=requests.find(r=>r.req===response.request());if(row){row.status=response.status();row.serverTiming=response.headers()['server-timing']||null;row.traceId=response.headers()['x-outclass-trace-id']||null;}});
+     page.on('requestfinished',req=>{pending.delete(req);const row=requests.find(r=>r.req===req);if(row){row.end=Date.now();row.timing=req.timing();void req.sizes().then(s=>{row.bytes=s.responseBodySize;}).catch(()=>{});}});
+     page.on('requestfailed',req=>{pending.delete(req);const row=requests.find(r=>r.req===req);if(row){row.end=Date.now();row.failed=true;const reason=req.failure()?.errorText;row.failureReason=/^net::[A-Z_]+$/.test(reason||"")?reason:"transport_failure";}});
+-    return {context,page,cdp,requests,pending};
++    return {context,page,cdp,requests,pending,pageErrors,participant};
+   }
+   async function settle(s) {
+     // SSE is ongoing. Wait for other requests to drain, with a finite bound.
+@@ -174,7 +229,7 @@ async function main() {
+     }
+     return item.click();
+   }
+-  async function sample(s,from,to,condition,index) {
++  async function sample(s,from,to,condition,index,gate) {
+     // Open any switcher or grouped rail before timing the destination click.
+     const page=s.page;
+     if(from==='voting'){
+@@ -189,7 +244,7 @@ async function main() {
+     const beforeMetrics=Object.fromEntries((await s.cdp.send('Performance.getMetrics')).metrics.map(x=>[x.name,x.value]));
+     const startIndex=s.requests.length;
+     await page.evaluate(desc=>{
+-      const a=window.__navAudit;a.armed=true;a.click=0;a.url=0;a.ready=0;a.interactive=0;
++      const a=window.__navAudit;a.phase='navigation';a.armed=true;a.click=0;a.url=0;a.ready=0;a.interactive=0;
+       if(a.observer)a.observer.disconnect();
+       let scheduled=false;
+       const check=()=>{
+@@ -204,6 +259,7 @@ async function main() {
+       };
+       a.observer=new MutationObserver(check);a.observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true});a.check=check;
+     },descriptors[to]);
++    if(gate)await gate(); // Synchronize real clicks; outside the measured interval.
+     if(to==='personal'||to==='club2'||from==='personal'||from==='club2')await page.getByRole('menuitem',{name:to==='personal'?'Personal workspace':to==='club2'?/Navigation Audit Club 2/:/Navigation Audit Club 1/}).click();
+     else await clickTarget(s,from,to);
+     await page.evaluate(()=>window.__navAudit.check());
+@@ -214,7 +270,47 @@ async function main() {
+     const clickWall=marks.origin+marks.click;
+     const rows=s.requests.slice(startIndex).map(({req,...r})=>({route:r.route,type:r.type,method:r.method,status:r.status,serverTiming:r.serverTiming||null,traceId:r.traceId||null,startMs:r.start-clickWall,endMs:r.end===null?null:r.end-clickWall,encodedBodyBytes:r.bytes,failed:r.failed||false,failureReason:r.failureReason||null,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart-r.timing.requestStart:null,transferMs:r.timing?.responseEnd>=0?r.timing.responseEnd-r.timing.responseStart:null}));
+     const row={path:from+' → '+to,condition,index,clickToUrlMs:marks.url?marks.url-marks.click:null,meaningfulMs:marks.ready-marks.click,interactiveMs:marks.interactive?marks.interactive-marks.click:null,networkCompleteMs:Math.max(0,...rows.filter(r=>r.type!=='eventsource').map(r=>r.endMs||0)),requestCount:rows.length,encodedBodyBytes:rows.reduce((n,r)=>n+(r.encodedBodyBytes||0),0),scriptMs:(afterMetrics.ScriptDuration-beforeMetrics.ScriptDuration)*1000,taskMs:(afterMetrics.TaskDuration-beforeMetrics.TaskDuration)*1000,layoutMs:(afterMetrics.LayoutDuration-beforeMetrics.LayoutDuration)*1000,longTasks:marks.longTasks,reactCommitCount:marks.commits,reactRenderDurationMs:null,requests:rows};
+-    allSamples.push(row);return row;
++    if(process.argv.includes('--diagnose-hydration')){const diagnostic=await page.evaluate(()=>({hydration:window.__navAudit.hydration,dom:window.__navAudit.domMismatches}));row.hydration=diagnostic.hydration;row.hydrationDom=diagnostic.dom;}
++    if(active){row.pageErrorCount=s.pageErrors.length;row.pageErrorKinds=[...s.pageErrors];row.participant=s.participant;row.wave=index;row.renderedRooms=await page.locator('section[aria-label="Interview rooms"] li').count();row.openInterviewLinks=await page.locator('section[aria-label="Interview rooms"]').getByRole('link',{name:'Open interview',exact:true}).count();}
++    allSamples.push(row);
++    if(active){assert.equal(row.pageErrorCount,0,'browser_script_error');if(row.hydration)assert.equal(row.hydration.length,0,'hydration_recovery');assert.equal(row.renderedRooms,24,'room_count');assert.equal(row.openInterviewLinks,24,'open_link_count');}
++    return row;
++  }
++  if(active){
++    const poolUrl=new URL(config.status.DB_URL);poolUrl.searchParams.set('connection_limit','1');
++    const monitor=new PrismaClient({datasourceUrl:poolUrl.href}),poolSamples=[];
++    const checkpoint=()=>fs.writeFileSync(path.join(outDir,'browser-samples.json'),JSON.stringify({environment:'local production Next + real disposable Auth/PostgreSQL; active owner-attested rooms',build:config.activeWorkload||null,fixture:{...fixture.counts,...active.counts},clients,wavesPerCondition:sampleCount,metricsNotes:{cold:'fresh browser contexts; warm server/database',synchronization:'Client clicks released together before click timestamps; no synthetic application delay',pool:'50 ms sampled aggregates for same-role database backends, excluding the monitor; no SQL text or identities retained',observationUnit:'participant navigation; concurrent observations share a wave'},samples:allSamples,poolSamples,failures},null,2));
++    try{
++      workloadWaves:for(const condition of ['cold','warm'])for(let wave=0;wave<sampleCount;wave++){
++        const sessions=[];
++        try{
++          // Prepare users sequentially. Only measured destination clicks form the burst.
++          const prepare=async participant=>{
++            const s=await session(participant);sessions[participant]=s;s.stage='initial';await open(s,'applicants');s.stage='prepared';
++            if(condition==='warm'){if(process.argv.includes('--diagnose-hydration'))await s.page.evaluate(()=>{window.__navAudit.phase='warmup'});await clickTarget(s,'applicants','interviews');await waitReady(s.page,descriptors.interviews);await settle(s);await clickTarget(s,'interviews','applicants');await waitReady(s.page,descriptors.applicants);await settle(s);}
++          };
++          if(process.argv.includes('--parallel-initial-loads')){
++            assert.ok(process.argv.includes('--diagnose-hydration'),'Parallel initial loads are a separate diagnostic scenario');
++            const prepared=await Promise.allSettled(Array.from({length:clients},(_,participant)=>prepare(participant)));
++            for(const result of prepared)if(result.status==='rejected')throw result.reason;
++          }else{
++            for(let participant=0;participant<clients;participant++)await prepare(participant);
++          }
++          let arrived=0,release,rejectBarrier;const ready=new Promise((resolve,reject)=>{release=resolve;rejectBarrier=reject});
++          const barrierTimeout=setTimeout(()=>rejectBarrier(Error('Click synchronization timed out')),10000);void ready.catch(()=>{});
++          const gate=()=>{if(++arrived===clients)release();return ready;};
++          let stopped=false;const origin=Date.now(),poll=(async()=>{while(!stopped){const [counts]=await monitor.$queryRaw`SELECT count(*)::int AS connections, count(*) FILTER (WHERE state='active')::int AS active, count(*) FILTER (WHERE state='idle in transaction')::int AS idle_in_transaction, count(*) FILTER (WHERE wait_event_type='Lock')::int AS lock_waiting FROM pg_stat_activity WHERE datname=current_database() AND usename=current_user AND backend_type='client backend' AND pid<>pg_backend_pid()`;poolSamples.push({condition,wave,offsetMs:Date.now()-origin,...counts});await new Promise(r=>setTimeout(r,50));}})();
++          try{
++            const outcomes=await Promise.allSettled(sessions.map(async(s,participant)=>{const row=await sample(s,'applicants','interviews',condition,wave,gate);row.participant=participant;row.wave=wave;return row}));
++            for(const result of outcomes)if(result.status==='rejected')throw result.reason;
++          }finally{clearTimeout(barrierTimeout);stopped=true;await poll;}
++          console.log('active rooms '+clients+' clients '+condition+' wave '+(wave+1)+'/'+sampleCount+' complete');
++        }catch(error){const assertion=String(error.message||'').split('\n')[0];const readiness=await Promise.all(sessions.filter(Boolean).map(async s=>({participant:s.participant,stage:s.stage,dom:await s.page.evaluate(()=>({pipeline:!!document.querySelector('.oc-live-pipeline'),rooms:document.querySelectorAll('section[aria-label="Interview rooms"] li').length,loading:!!document.querySelector('.oc-loading-screen'),hasApplicant:!!document.querySelector('.oc-live-pipeline')?.textContent.includes('Audit Student 000'),hasBookedApplicant:!!document.querySelector('section[aria-label="Interview rooms"]')?.textContent.includes('Audit Student 099')})).catch(()=>null),pageErrors:s.pageErrors})));failures.push({condition,wave,error:error.name||'WorkloadFailure',assertion:['browser_script_error','room_count','open_link_count'].includes(assertion)?assertion:null,actual:typeof error.actual==='number'?error.actual:null,expected:typeof error.expected==='number'?error.expected:null,readiness});process.exitCode=1;console.log('Workload failure recorded for '+condition+' wave '+(wave+1));}
++        finally{await Promise.allSettled(sessions.filter(Boolean).map(s=>s.context.close()));checkpoint();}
++        if(process.argv.includes('--stop-after-hydration')&&allSamples.some(s=>s.hydration?.length))break workloadWaves;
++      }
++    }finally{checkpoint();await monitor.$disconnect();await browser.close();}
++    return;
+   }
+   const pairs=[['overview','members'],['members','meetings'],['meetings','tasks'],['tasks','announcements'],['announcements','overview'],['recruiting','applicants'],['applicants','interviews'],['interviews','decisions'],['decisions','recruiting'],['applicants','voting'],['voting','applicants'],['overview','settings'],['settings','overview'],['overview','recruiting'],['recruiting','overview'],['overview','club2'],['personal','overview'],['overview','personal']];
+   const selected=process.argv.includes('--only-interviews')?[['applicants','interviews']]:process.argv.includes('--phase1')?[['applicants','interviews'],['members','meetings'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--smoke')?pairs.slice(0,1):process.argv.includes('--member-details')?[['members','memberDetail']]:process.argv.includes('--cross-club')?[['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]:process.argv.includes('--details')?[['applicants','applicantDetail'],['members','memberDetail']]:process.argv.includes('--only-voting')?pairs.filter(p=>p.includes('voting')):process.argv.includes('--waterfalls')?pairs.filter(([f,t])=>f==='overview'&&t==='members'||f==='recruiting'&&t==='applicants'||f==='applicants'&&t==='interviews'):pairs.filter(p=>!p.includes('club2')&&!p.includes('personal')).concat([['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]);
+@@ -242,5 +338,5 @@ async function main() {
+     if(failures.length)process.exitCode=1;
+   } finally {await browser.close();}
+ }
+-module.exports={distribution,safeRoute};
++module.exports={distribution,safeRoute,validateActiveOutput,installBrowserObservers};
+ if(require.main===module)main().catch(e=>{console.error(e.name, e.code || '', String(e.message).split('\n').filter(line=>/Invalid|constraint|argument|Unknown|verification|failed|Error/.test(line)).slice(-3).join('\n'));process.exitCode=1;});
+diff --git a/tests/navigation-audit-harness.test.cjs b/tests/navigation-audit-harness.test.cjs
+index 72e7611..c98df57 100644
+--- a/tests/navigation-audit-harness.test.cjs
++++ b/tests/navigation-audit-harness.test.cjs
+@@ -1,6 +1,6 @@
+ const {test}=require('node:test');
+ const assert=require('node:assert/strict');
+-const {distribution,safeRoute}=require('../scripts/navigation-audit.cjs');
++const {distribution,safeRoute,validateActiveOutput}=require('../scripts/navigation-audit.cjs');
+ test('audit nearest-rank percentiles do not fabricate missing measurements',()=>{
+   assert.deepEqual(distribution([]),{samples:0,p50:null,p95:null,max:null});
+   assert.deepEqual(distribution([null,undefined,NaN]),{samples:0,p50:null,p95:null,max:null});
+@@ -10,3 +10,23 @@ test('saved request names omit query arguments, tokens and fixture identifiers',
+   assert.equal(safeRoute('/api/workspace?kind=pipeline&args=secret&token=secret'),'/api/workspace?kind=pipeline');
+   assert.equal(safeRoute('/club/00000000-0000-4000-8000-000000000001/workspace?private=secret'),'/club/[fixture-id]/workspace');
+ });
++test('active workload output cannot replace the original audit or existing evidence',t=>{
++  const fs=require('node:fs'),path=require('node:path');
++  assert.throws(()=>validateActiveOutput(),/explicit new output/);
++  assert.throws(()=>validateActiveOutput('docs/performance/evidence'),/new active-workload subdirectory/);
++  const dir=fs.mkdtempSync(path.resolve('docs/performance/phase1/active-workload/.output-guard-'));
++  t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
++  assert.doesNotThrow(()=>validateActiveOutput(dir));
++  fs.writeFileSync(path.join(dir,'browser-samples.json'),'preserved evidence');
++  assert.throws(()=>validateActiveOutput(dir),/must not be overwritten/);
++  assert.equal(fs.readFileSync(path.join(dir,'browser-samples.json'),'utf8'),'preserved evidence');
++});
++test('hydration fixture accepts only its separate local project and ports',t=>{
++  const fs=require('node:fs'),path=require('node:path'),os=require('node:os');
++  const {fixtureProfile}=require('../scripts/navigation-fixture-config.cjs');
++  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'outclass-hydration-guard-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
++  const file=path.join(dir,'config.json'),profile=fixtureProfile(true);
++  const config={projectId:'outclass-hydration-e2e',appUrl:'http://127.0.0.1:3117',status:{API_URL:'http://127.0.0.1:58321',DB_URL:'postgresql://fixture@127.0.0.1:58322/postgres',MAILPIT_URL:'http://127.0.0.1:58324'}};
++  fs.writeFileSync(file,JSON.stringify(config));assert.equal(profile.readConfig(file).projectId,config.projectId);
++  for(const changed of [{...config,projectId:'outclass-onboarding-e2e'},{...config,status:{...config.status,DB_URL:'postgresql://fixture@db.example.test:58322/postgres'}},{...config,status:{...config.status,API_URL:'http://127.0.0.1:55321'}}]){fs.writeFileSync(file,JSON.stringify(changed));assert.throws(()=>profile.readConfig(file));}
++});
+diff --git a/tests/workspace-reliability.test.cjs b/tests/workspace-reliability.test.cjs
+index 2247338..edee2ac 100644
+--- a/tests/workspace-reliability.test.cjs
++++ b/tests/workspace-reliability.test.cjs
+@@ -6,7 +6,7 @@ test('voting GET allowlist validates scope, uses private no-store responses and
+  const mocks={'next/headers':{cookies:async()=>({get:()=>demo?{value:'1'}:undefined})},'@/actions/voting':{getVotingWorkspace:async(club,session)=>{calls++;assert.equal(club,id);assert.equal(session,expectedSession);return{session:{id}}},getVotingJoinInfo:async()=>({status:'JOINABLE'})},'@/actions/club-onboarding':{getOrganizationInvitations:async()=>{throw failure}}};
+  const load=loader(mocks);api=load('utils/verified-email-policy.ts');const {GET}=load('app/api/workspace/route.ts');
+  const request=(kind,args)=>GET(new Request(`https://outclass.test/api/workspace?${new URLSearchParams({kind,args:JSON.stringify(args)})}`));
+- let response=await request('voting',[id,id]);assert.equal(response.status,200);assert.equal(calls,1);assert.equal(response.headers.get('Cache-Control'),'private, no-store');assert.equal(response.headers.get('Vary'),'Cookie');
++ let response=await request('voting',[id,id]);assert.equal(response.status,200);assert.equal(calls,1);assert.equal(response.headers.get('Cache-Control'),'private, no-store');assert.match(response.headers.get('Vary'),/(?:^|,\s*)Cookie(?:,|$)/);assert.match(response.headers.get('Vary'),/(?:^|,\s*)Accept-Encoding(?:,|$)/);
+  expectedSession=undefined;response=await request('voting',[id,null]);assert.equal(response.status,200);response=await request('voting',[id]);assert.equal(response.status,200);
+  response=await request('voting',['wrong',id]);assert.equal(response.status,400);assert.equal(calls,3);
+  demo=true;response=await request('voting',[id,id]);assert.equal(response.status,403);assert.equal(calls,3);demo=false;
+diff --git a/components/route-content.tsx b/components/route-content.tsx
+new file mode 100644
+index 0000000..51d5260
+--- /dev/null
++++ b/components/route-content.tsx
+@@ -0,0 +1,14 @@
++"use client"
++
++import type { CSSProperties, ReactNode } from "react"
++
++// Flight children can suspend while React reconciles them. Give that work a
++// component fiber so React 19 does not replay an already claimed host div with
++// its hydration cursor still inside the div (react/react#35494).
++function RouteChildren({ children }: { children: ReactNode }) {
++  return children
++}
++
++export function RouteContent({ children, style }: { children: ReactNode; style?: CSSProperties }) {
++  return <div className="oc-route-content" style={style}><RouteChildren>{children}</RouteChildren></div>
++}
+diff --git a/scripts/active-interview-fixture.cjs b/scripts/active-interview-fixture.cjs
+new file mode 100644
+index 0000000..f6d6f49
+--- /dev/null
++++ b/scripts/active-interview-fixture.cjs
+@@ -0,0 +1,74 @@
++// Synthetic data only, confined by the existing reserved local configuration guard.
++const fs = require('node:fs');
++const path = require('node:path');
++const assert = require('node:assert/strict');
++const { randomUUID } = require('node:crypto');
++const { PrismaClient } = require('@prisma/client');
++const { Actor, confirmationMessage } = require('../tests/helpers/onboarding-e2e.cjs');
++const { fixtureProfile } = require('./navigation-fixture-config.cjs');
++
++async function activeInterviewFixture(config, navigation) {
++  const profile = fixtureProfile(config.projectId === 'outclass-hydration-e2e');
++  const filename = path.join(profile.root, 'active-interview-fixture.json');
++  // Revalidate even when called from another harness.
++  const guarded = profile.readConfig(path.join(path.dirname(filename), 'config.json'));
++  assert.equal(config.projectId, profile.projectId);
++  assert.equal(config.appUrl, profile.appUrl);
++  assert.ok(config.status.DB_URL === guarded.status.DB_URL && config.status.API_URL === guarded.status.API_URL, 'Only the validated local fixture connections are allowed');
++  const db = new PrismaClient({ datasourceUrl: config.status.DB_URL });
++  try {
++    if (fs.existsSync(filename)) {
++      const existing = JSON.parse(fs.readFileSync(filename));
++      assert.equal(existing.clubId, navigation.clubIds[0]);
++      assert.equal(await db.interviewBooking.count({ where: { slot: { clubId: existing.clubId } } }), 24);
++      const [grants, approvals] = await Promise.all([
++        db.interviewPanelAssignment.count({ where: { application: { clubId: existing.clubId }, bookingManaged: true, revokedAt: null } }),
++        db.interviewRoom.count({ where: { clubId: existing.clubId, panelApprovedBy: { not: null } } }),
++      ]);
++      assert.equal(grants, 96, 'Active workload requires 96 live grants; create a fresh fixture after revocation tests');
++      assert.equal(approvals, 3, 'Active workload requires three owner-approved rooms');
++      existing.counts.activeClubMembers = await db.clubMember.count({ where: { clubId: existing.clubId } });
++      return existing;
++    }
++    const clubId = navigation.clubIds[0];
++    const round = await db.pipelineRound.findFirstOrThrow({ where: { clubId, type: 'INTERVIEW' } });
++    const credentials = [{ email: navigation.email, password: navigation.password }];
++    const owner = await db.clubMember.findUniqueOrThrow({ where: { userId_clubId: { userId: navigation.userId, clubId } } });
++    const members = [owner];
++    for (let i = 0; i < 3; i++) {
++      const identifier = 'navreview' + randomUUID().replaceAll('-', '').slice(0, 10);
++      const email = identifier + '@virginia.edu', password = 'Local-workload-only!' + randomUUID();
++      const actor = new Actor(config);
++      const signup = await actor.client.auth.signUp({ email, password });
++      assert.ok(!signup.error, 'Disposable reviewer signup succeeds');
++      const message = await confirmationMessage(config, email);
++      const token = message.Text.match(/\b(\d{6})\b/)?.[1];
++      assert.ok(token);
++      const verified = await actor.client.auth.verifyOtp({ email, token, type: 'email' });
++      assert.ok(!verified.error && verified.data.user?.email_confirmed_at);
++      const userId = verified.data.user.id;
++      await db.user.create({ data: { id: userId, email, studentProfile: { create: { firstName: 'Workload', lastName: 'Reviewer ' + (i + 1), computingId: identifier, major: 'Economics', gradYear: 2028 } } } });
++      members.push(await db.clubMember.create({ data: { clubId, userId, accessRole: 'INTERVIEWER', permissions: ['applications.review', 'applicants.identify', 'interviews.manage'] } }));
++      credentials.push({ email, password });
++    }
++    const apps = await db.application.findMany({ where: { clubId }, orderBy: { student: { studentProfile: { lastName: 'desc' } } }, take: 24, include: { student: { include: { studentProfile: true } } } });
++    assert.equal(apps.length, 24);
++    const start = new Date(Date.now() + 86400000); start.setUTCHours(13, 0, 0, 0);
++    // Supported owner-attested room panels, with sequential non-overlapping slots.
++    // Existing database guards validate every booking-managed assignment.
++    const rooms = [];
++    for (let i = 0; i < 3; i++) rooms.push(await db.interviewRoom.create({ data: { clubId, roundId: round.id, name: 'Workload Room ' + (i + 1), location: 'Synthetic room', kind: 'IN_PERSON', timezone: 'America/New_York', duration: 20, buffer: 5, interviewersNeeded: 4, panelMemberIds: members.map(m => m.id), approvedPanelMemberIds: members.map(m => m.id), panelApprovedBy: navigation.userId } }));
++    for (let i = 0; i < apps.length; i++) {
++      const app = apps[i], room = rooms[i % rooms.length];
++      await db.application.update({ where: { id: app.id }, data: { roundId: round.id, status: 'INTERVIEWING' } });
++      const slot = await db.interviewSlot.create({ data: { clubId, roomId: room.id, startTime: new Date(+start + i * 25 * 60000), endTime: new Date(+start + (i * 25 + 20) * 60000), location: room.location } });
++      const booking = await db.interviewBooking.create({ data: { slotId: slot.id, applicationId: app.id, roundId: round.id } });
++      await db.interviewPanelAssignment.createMany({ data: members.map(m => ({ applicationId: app.id, roundId: round.id, memberId: m.id, grantedBy: navigation.userId, bookingManaged: true, bookingId: booking.id })) });
++    }
++    const fixture = { clubId, credentials, readyText: 'Audit Student 099', counts: { activeClubMembers: navigation.counts.membersPerClub + 3, rooms: 3, bookedCandidates: 24, reviewers: 4, assignmentsPerReviewer: 24, panelAuthority: 'Existing owner-attested room panel path; no published schedule version', sequentialNonOverlappingSlots: true } };
++    fs.writeFileSync(filename, JSON.stringify(fixture), { mode: 0o600 });
++    return fixture;
++  } finally { await db.$disconnect(); }
++}
++
++module.exports = { activeInterviewFixture };
+diff --git a/scripts/navigation-fixture-config.cjs b/scripts/navigation-fixture-config.cjs
+new file mode 100644
+index 0000000..c72f4fe
+--- /dev/null
++++ b/scripts/navigation-fixture-config.cjs
+@@ -0,0 +1,23 @@
++// Two fixed, disposable profiles. An arbitrary app, project or database is never accepted.
++const fs = require('node:fs'), path = require('node:path'), os = require('node:os');
++const assert = require('node:assert/strict');
++const { readConfig } = require('../tests/helpers/onboarding-e2e.cjs');
++
++function fixtureProfile(hydration = false) {
++  if (!hydration) return { root: path.join(os.tmpdir(), 'outclass-onboarding-e2e'), projectId: 'outclass-onboarding-e2e', appUrl: 'http://127.0.0.1:3107', readConfig };
++  return {
++    root: path.join(os.tmpdir(), 'outclass-hydration-e2e'), projectId: 'outclass-hydration-e2e', appUrl: 'http://127.0.0.1:3117',
++    readConfig(filename) {
++      const config = JSON.parse(fs.readFileSync(filename));
++      assert.equal(config.projectId, 'outclass-hydration-e2e');
++      for (const [value, port] of [[config.appUrl, '3117'], [config.status.API_URL, '58321'], [config.status.DB_URL, '58322'], [config.status.MAILPIT_URL, '58324']]) {
++        const url = new URL(value);
++        assert.ok(['localhost', '127.0.0.1'].includes(url.hostname), 'Hydration checks require loopback services');
++        assert.equal(url.port, port, 'Hydration checks require their dedicated ports');
++      }
++      return config;
++    },
++  };
++}
++
++module.exports = { fixtureProfile };
+diff --git a/scripts/phase1-workload-build.cjs b/scripts/phase1-workload-build.cjs
+new file mode 100644
+index 0000000..1ec76a6
+--- /dev/null
++++ b/scripts/phase1-workload-build.cjs
+@@ -0,0 +1,60 @@
++// Start one of two fixed local builds for the active-room comparison.
++// Never fetches environment values or changes a hosted service.
++const fs = require('node:fs'), path = require('node:path'), os = require('node:os');
++const assert = require('node:assert/strict');
++const { spawn, spawnSync, execFileSync } = require('node:child_process');
++const { randomUUID } = require('node:crypto');
++const { readConfig } = require('../tests/helpers/onboarding-e2e.cjs');
++const root = path.join(os.tmpdir(), 'outclass-onboarding-e2e');
++const repo = path.resolve(__dirname, '..'), configFile = path.join(root, 'config.json');
++const config = readConfig(configFile), s = config.status;
++const reference = '3017e01d5b55bc8fb38d4f8fbec4906dd93bf619';
++const target = process.argv[2];
++assert.ok(['reference', 'current'].includes(target) && process.argv.length === 3);
++const referenceRoot = path.join(root, 'active-workload-audit-reference');
++const applicationPaths = ['app', 'actions', 'components', 'contexts', 'hooks', 'lib', 'utils', 'public', 'styles', 'prisma', 'middleware.ts', 'next.config.mjs', 'package.json', 'pnpm-lock.yaml'];
++assert.equal(execFileSync('git', ['diff', 'HEAD', '--name-only', '--', ...applicationPaths], { cwd: repo, encoding: 'utf8' }).trim(), '', 'Current application changes must be built and identified before comparison');
++assert.equal(execFileSync('git', ['ls-files', '--others', '--exclude-standard', '--', ...applicationPaths], { cwd: repo, encoding: 'utf8' }).trim(), '');
++
++(async () => {
++  const pid = Number(fs.readFileSync(path.join(root, 'server.pid'), 'utf8'));
++  assert.equal(execFileSync('lsof', ['-tiTCP:3107', '-sTCP:LISTEN'], { encoding: 'utf8' }).trim(), String(pid));
++  const cwd = execFileSync('lsof', ['-a', '-p', String(pid), '-d', 'cwd', '-Fn'], { encoding: 'utf8' }).split('\n').find(line => line.startsWith('n'))?.slice(1);
++  assert.ok([repo, referenceRoot].filter(p=>fs.existsSync(p)).map(p=>fs.realpathSync(p)).includes(fs.realpathSync(cwd)), 'Only the reserved app may be replaced');
++  process.kill(pid, 'SIGTERM');
++  for (let n = 0; n < 100; n++) {
++    if (spawnSync('lsof', ['-tiTCP:3107', '-sTCP:LISTEN'], { stdio: 'ignore' }).status !== 0) break;
++    await new Promise(r => setTimeout(r, 50));
++    if (n === 99) throw Error('Reserved app did not stop');
++  }
++  if (target === 'reference' && !fs.existsSync(referenceRoot)) {
++    fs.mkdirSync(referenceRoot);
++    const archive = execFileSync('git', ['archive', '--format=tar', reference], { cwd: repo, maxBuffer: 64 * 1024 * 1024 });
++    assert.equal(spawnSync('tar', ['-xf', '-', '-C', referenceRoot], { input: archive }).status, 0);
++    fs.symlinkSync(path.join(repo, 'node_modules'), path.join(referenceRoot, 'node_modules'), 'dir');
++    fs.writeFileSync(path.join(referenceRoot, '.outclass-audit-reference'), reference);
++  }
++  const source = target === 'reference' ? referenceRoot : repo;
++  if (target === 'reference') assert.equal(fs.readFileSync(path.join(source, '.outclass-audit-reference'), 'utf8'), reference);
++  const pool = new URL(s.DB_URL); pool.searchParams.set('connection_limit', '8');
++  const env = { ...process.env, NEXT_PUBLIC_ENABLE_MICROSOFT_AUTH: 'false', DATABASE_URL: pool.href, POSTGRES_PRISMA_URL: pool.href, POSTGRES_URL: pool.href, POSTGRES_URL_NON_POOLING: pool.href, NEXT_PUBLIC_SUPABASE_URL: s.API_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: s.PUBLISHABLE_KEY, NEXT_PUBLIC_SUPABASE_ANON_KEY: s.ANON_KEY, SUPABASE_SECRET_KEY: s.SECRET_KEY, SUPABASE_SERVICE_ROLE_KEY: s.SERVICE_ROLE_KEY, OUTCLASS_PUBLISH_BUILD: '1', OUTCLASS_SITE_URL: config.appUrl, OUTCLASS_PLATFORM_ADMIN_IDS: config.admin.id, SMTP_HOST: '127.0.0.1', SMTP_PORT: '55325', SMTP_USER: 'local-test', SMTP_PASSWORD: 'local-test', SMTP_FROM_EMAIL: 'outclass@virginia.edu', CRON_SECRET: randomUUID(), NODE_EXTRA_CA_CERTS: path.join(root, 'mailpit-cert.pem'), COMMUNICATIONS_EMAIL_ENABLED: 'false', RESEND_API_KEY: '', RESEND_FROM_EMAIL: '' };
++  const buildDir = path.join(source, '.next-publish');
++  if (target === 'reference' && !fs.existsSync(path.join(buildDir, 'BUILD_ID'))) {
++    const fd = fs.openSync(path.join(root, 'active-reference-build.log'), 'w');
++    const result = spawnSync(process.execPath, [path.join(repo, 'node_modules/next/dist/bin/next'), 'build'], { cwd: source, env, stdio: ['ignore', fd, fd] });
++    fs.closeSync(fd); assert.equal(result.status, 0, 'Inspect the reserved reference build log');
++  }
++  assert.ok(fs.existsSync(path.join(buildDir, 'BUILD_ID')));
++  const log = fs.openSync(path.join(root, 'active-' + target + '-server.log'), 'a');
++  const app = spawn(process.execPath, [path.join(repo, 'node_modules/next/dist/bin/next'), 'start', '-p', '3107', '-H', '127.0.0.1'], { cwd: source, env, detached: true, stdio: ['ignore', log, log] });
++  fs.closeSync(log); app.unref();
++  fs.writeFileSync(path.join(root, 'server.pid'), String(app.pid));
++  config.buildDir = buildDir;
++  config.activeWorkload = { target, sourceCommit: target === 'reference' ? reference : execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim(), applicationSourcesModified: false, poolLimitPerPrismaClient: 8, buildId: fs.readFileSync(path.join(buildDir, 'BUILD_ID'), 'utf8').trim() };
++  fs.writeFileSync(configFile, JSON.stringify(config), { mode: 0o600 });
++  for (let n = 0; n < 100; n++) {
++    try { if ((await fetch(config.appUrl)).ok) { console.log(JSON.stringify(config.activeWorkload)); return; } } catch {}
++    await new Promise(r => setTimeout(r, 200));
++  }
++  throw Error('Reserved workload app did not start');
++})().catch(error => { console.error(error.name + ': ' + String(error.message).split('\n')[0]); process.exitCode = 1; });
+diff --git a/scripts/summarize-active-navigation.cjs b/scripts/summarize-active-navigation.cjs
+new file mode 100644
+index 0000000..ef54f77
+--- /dev/null
++++ b/scripts/summarize-active-navigation.cjs
+@@ -0,0 +1,32 @@
++// Aggregate sanitized active-room samples, keeping participant and wave counts explicit.
++const fs = require('node:fs'), path = require('node:path');
++const { distribution } = require('./navigation-audit.cjs');
++const root = path.resolve('docs/performance/phase1/active-workload');
++const names = { getAssignedInterviewRooms: 'assignedRooms', getInterviewWorkspace: 'interviewWorkspace', getInterviewRounds: 'interviewRounds' };
++const kind = r => r.route.includes('?kind=') ? r.route.split('?kind=')[1] : names[r.route.split(':').at(-1)];
++const phases = r => Object.fromEntries([...String(r.serverTiming || '').matchAll(/([a-z_]+);dur=([\d.]+)/g)].map(m => [m[1], Number(m[2])]));
++const summary = { observationUnit: 'participant navigation, clustered in simultaneous waves', poolSamplingIntervalMs: 50, groups: [], limitations: ['Local warm server/database; cold means a fresh browser context and unvisited destination.', 'One and four users; not a production capacity or sustained-load test.', 'Each reviewer has the same 24 non-overlapping bookings in three owner-attested rooms; published slot-panel versions are not represented.', 'An 8-connection limit applies per Prisma client, not globally to every server process or service.', 'Database sampler observes same-role backends except itself; 50 ms sampling can miss short waits and is not a Prisma queue measurement.', 'DOM readiness plus two animation frames is a paint proxy; four-user observations share browser/CPU and wave.', 'Reference cohorts run before current cohorts; not a randomized crossover.'] };
++summary.limitations.push('Browser error counts cover each page lifetime, including initial page load and warm-up; they are not localized to the measured destination click.', 'The raw membersPerClub=61 describes the base fixture; three verified reviewers increase the active club to 64 members.', 'The initial incomplete four-user reference run and two smoke runs are preserved outside the primary groups.');
++for (const stage of ['reference', 'current']) for (const clients of [1, 4]) {
++  const file = path.join(root, stage + '-' + clients, 'browser-samples.json');
++  if (!fs.existsSync(file)) continue;
++  const data = JSON.parse(fs.readFileSync(file));
++  for (const condition of ['cold', 'warm']) {
++    const samples = data.samples.filter(s => s.condition === condition), requests = samples.flatMap(s => s.requests);
++    const critical = samples.map(s => {
++      const found = new Map();
++      for (const r of s.requests) { const key = kind(r); if (['assignedRooms', 'interviewWorkspace', 'interviewRounds'].includes(key) && !found.has(key)) found.set(key, r); }
++      return [...found.values()];
++    });
++    const reads = critical.flat(), phaseNames = [...new Set(reads.flatMap(r => Object.keys(phases(r))))];
++    const complete = samples.filter(s => s.requests.every(r => r.type === 'eventsource' || r.encodedBodyBytes !== null));
++    const pool = data.poolSamples.filter(s => s.condition === condition);
++    const visibleReads = Object.fromEntries(['assignedRooms', 'interviewWorkspace', 'interviewRounds'].map(name => {
++      const rows = reads.filter(r => kind(r) === name);
++      return [name, { requests: rows.length, durationMs: distribution(rows.map(r => r.endMs - r.startMs)), ttfbMs: distribution(rows.map(r => r.ttfbMs)), serverPhasesMs: Object.fromEntries(phaseNames.map(phase => [phase, distribution(rows.map(r => phases(r)[phase]))])) }];
++    }));
++    summary.groups.push({ stage, clients, condition, build: data.build, waves: new Set(samples.map(s => s.wave)).size, samples: samples.length, failures: data.failures.filter(f => f.condition === condition), ...Object.fromEntries(['meaningfulMs', 'interactiveMs', 'requestCount', 'networkCompleteMs', 'scriptMs', 'taskMs'].map(metric => [metric, distribution(samples.map(s => s[metric]))])), observedBodyBytesLowerBound: distribution(samples.map(s => s.encodedBodyBytes)), completePayloadSamples: complete.length, completePayloadBytes: distribution(complete.map(s => s.encodedBodyBytes)), httpErrors: requests.filter(r => r.status >= 400).length, transportFailures: requests.filter(r => r.failed).length, post200Aborts: requests.filter(r => r.failed && r.status === 200 && r.failureReason === 'net::ERR_ABORTED').length, failureReasons: Object.fromEntries([...new Set(requests.filter(r => r.failed).map(r => r.failureReason))].map(reason => [reason, requests.filter(r => r.failed && r.failureReason === reason).length])), pageErrors: samples.reduce((n, s) => n + (s.pageErrorCount || 0), 0), visibleReadBarrierMs: distribution(critical.filter(rows => rows.length === 3).map(rows => Math.max(...rows.map(r => r.endMs)) - Math.min(...rows.map(r => r.startMs)))), visibleReadTtfbMs: distribution(reads.map(r => r.ttfbMs)), visibleReads, serverPhasesMs: Object.fromEntries(phaseNames.map(phase => [phase, distribution(reads.map(r => phases(r)[phase]))])), pool: { samples: pool.length, connections: distribution(pool.map(s => s.connections)), active: distribution(pool.map(s => s.active)), idleInTransaction: distribution(pool.map(s => s.idle_in_transaction)), lockWaiting: distribution(pool.map(s => s.lock_waiting)) } });
++  }
++}
++fs.writeFileSync(path.join(root, 'COMPARISON.json'), JSON.stringify(summary, null, 2) + '\n');
++for (const g of summary.groups) console.log(`${g.stage} ${g.clients} clients ${g.condition}: ${g.meaningfulMs.p50}/${g.meaningfulMs.p95} ms, ${g.requestCount.p50} requests, ${g.httpErrors} HTTP errors, ${g.post200Aborts} post-200 aborts, ${g.pageErrors} browser errors`);
+diff --git a/tests/active-interview-navigation-e2e.test.cjs b/tests/active-interview-navigation-e2e.test.cjs
+new file mode 100644
+index 0000000..6f1cf28
+--- /dev/null
++++ b/tests/active-interview-navigation-e2e.test.cjs
+@@ -0,0 +1,49 @@
++// Opt-in real HTTP/Auth/PostgreSQL checks for the reserved active navigation fixture.
++const { test } = require('node:test');
++const assert = require('node:assert/strict');
++const fs = require('node:fs'), path = require('node:path');
++const { PrismaClient } = require('@prisma/client');
++const { Actor, readConfig } = require('./helpers/onboarding-e2e.cjs');
++const { load } = require('./helpers/voting-harness.cjs');
++const { decodeWorkspaceData } = load('lib/workspace-wire.ts');
++const configFile = process.env.OUTCLASS_ONBOARDING_E2E_CONFIG;
++
++test('active Interview Rooms: distinct reviewers, concurrent reads and immediate assignment revocation', { skip: !configFile, timeout: 60000 }, async t => {
++  const config = readConfig(configFile);
++  const fixture = JSON.parse(fs.readFileSync(path.join(path.dirname(configFile), 'active-interview-fixture.json')));
++  const db = new PrismaClient({ datasourceUrl: config.status.DB_URL });
++  t.after(() => db.$disconnect());
++  const actors = [];
++  for (const credentials of fixture.credentials) {
++    const actor = new Actor(config); await actor.signIn(credentials.email, credentials.password); actors.push(actor);
++  }
++  assert.equal(new Set(actors.map(actor => actor.user.id)).size, 4);
++  const read = async (actor, kind) => {
++    const response = await actor.request('/api/workspace?' + new URLSearchParams({ kind, args: JSON.stringify([fixture.clubId]) }));
++    assert.equal(response.status, 200, kind);
++    assert.equal(response.headers.get('cache-control'), 'private, no-store');
++    assert.match(response.headers.get('vary'), /(?:^|,\s*)Cookie(?:,|$)/);
++    return { data: decodeWorkspaceData(await response.json()), trace: response.headers.get('x-outclass-trace-id') };
++  };
++  await t.test('four separately verified accounts receive all 24 authorized bookings and distinct request traces', async () => {
++    const results = await Promise.all(actors.map(async actor => {
++      const [assigned, workspace, rounds] = await Promise.all(['assignedRooms', 'interviewWorkspace', 'interviewRounds'].map(kind => read(actor, kind)));
++      assert.equal(assigned.data.length, 24); assert.ok(assigned.data.every(row => row.canOpen && row.applicationId));
++      assert.equal(workspace.data.applications.length, 24); assert.equal(rounds.data.status, 'ready');
++      return [assigned.trace, workspace.trace, rounds.trace];
++    }));
++    const traces = results.flat(); assert.ok(traces.every(trace => /^[a-f0-9-]{36}$/.test(trace))); assert.equal(new Set(traces).size, 12);
++  });
++  await t.test('revoking one booking grant removes that candidate on the next requests and preserves other reviewers', async () => {
++    const member = await db.clubMember.findUniqueOrThrow({ where: { userId_clubId: { userId: actors[1].user.id, clubId: fixture.clubId } } });
++    const grant = await db.interviewPanelAssignment.findFirstOrThrow({ where: { memberId: member.id, revokedAt: null, bookingManaged: true } });
++    try {
++      await db.interviewPanelAssignment.update({ where: { id: grant.id }, data: { revokedAt: new Date() } });
++      const assigned = await read(actors[1], 'assignedRooms'), workspace = await read(actors[1], 'interviewWorkspace');
++      assert.equal(assigned.data.length, 23); assert.ok(assigned.data.every(row => row.applicationId !== grant.applicationId));
++      assert.equal(workspace.data.applications.length, 23); assert.ok(workspace.data.applications.every(row => row.id !== grant.applicationId));
++      assert.equal((await read(actors[2], 'assignedRooms')).data.length, 24);
++    } finally { await db.interviewPanelAssignment.update({ where: { id: grant.id }, data: { revokedAt: grant.revokedAt } }); }
++    assert.equal((await read(actors[1], 'assignedRooms')).data.length, 24);
++  });
++});
+diff --git a/tests/hydration-diagnostics-browser.test.cjs b/tests/hydration-diagnostics-browser.test.cjs
+new file mode 100644
+index 0000000..a699fa4
+--- /dev/null
++++ b/tests/hydration-diagnostics-browser.test.cjs
+@@ -0,0 +1,44 @@
++const { test } = require('node:test');
++const assert = require('node:assert/strict');
++const http = require('node:http');
++const { chromium } = require('playwright');
++const { bundle } = require('./helpers/browser-bundle.cjs');
++const { installBrowserObservers } = require('../scripts/navigation-audit.cjs');
++
++test('optional hydration diagnostics capture the component, preserve React reporting and omit private values', async () => {
++  const code = bundle(`import React from 'react';import {hydrateRoot} from 'react-dom/client';function HydrationCase(){return <p className="oc-hydration-fixture">Client snapshot</p>}window.originalCalls=0;hydrateRoot(document.getElementById('root'),<HydrationCase/>,{onRecoverableError(){window.originalCalls++}});`);
++  const server = http.createServer((req, res) => {
++    res.setHeader('Content-Type', req.url === '/fixture.js' ? 'application/javascript' : 'text/html');
++    res.end(req.url === '/fixture.js' ? code : '<div id="root"><p class="oc-hydration-fixture">Server snapshot</p></div><script src="/fixture.js"></script>');
++  });
++  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
++  const browser = await chromium.launch({ headless: true });
++  try {
++    for (const enabled of [false, true]) {
++      const context = await browser.newContext();
++      await context.addInitScript(installBrowserObservers, { diagnoseHydration: enabled });
++      const page = await context.newPage();
++      await page.goto('http://127.0.0.1:' + server.address().port);
++      await page.waitForFunction(() => window.originalCalls === 1);
++      const diagnostics = await page.evaluate(() => window.__navAudit.hydration);
++      assert.equal(diagnostics.length, enabled ? 1 : 0);
++      if (enabled) {
++        assert.equal(diagnostics[0].code, 418); assert.equal(diagnostics[0].phase, 'initial');
++        assert.match(diagnostics[0].stack, /HydrationCase/);
++        assert.ok(diagnostics[0].components.some(c => c.classes.includes('oc-hydration-fixture')));
++        const redacted = await page.evaluate(() => {
++          function Fixture() { return 'oc-fixture'; }
++          let original = false;
++          const error = Error('Minified React error #418; raw-secret');
++          const info = { componentStack: '\n at Fixture (https://example.test/fixture.js?token=raw-secret)' };
++          const root = { current: { type: Fixture, memoizedProps: { token: 'raw-secret' } }, onRecoverableError(e, i) { original = e === error && i === info; } };
++          window.__REACT_DEVTOOLS_GLOBAL_HOOK__.onCommitFiberRoot(1, root);
++          root.onRecoverableError(error, info);
++          return { original, record: window.__navAudit.hydration.at(-1) };
++        });
++        assert.equal(redacted.original, true); assert.equal(JSON.stringify(redacted.record).includes('raw-secret'), false);
++      }
++      await context.close();
++    }
++  } finally { await browser.close(); server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); }
++});
+diff --git a/tests/route-content-hydration-browser.test.cjs b/tests/route-content-hydration-browser.test.cjs
+new file mode 100644
+index 0000000..8274899
+--- /dev/null
++++ b/tests/route-content-hydration-browser.test.cjs
+@@ -0,0 +1,53 @@
++const { test } = require('node:test');
++const assert = require('node:assert/strict');
++const http = require('node:http');
++const { chromium } = require('playwright');
++const { bundle } = require('./helpers/browser-bundle.cjs');
++
++test('streamed route children hydrate without replacing server content when their chunk resolves during a replay', async () => {
++  const entry = `
++    import React, {lazy, startTransition, useEffect} from 'react';
++    import {hydrateRoot} from 'react-dom/client';
++    import {RouteContent} from '@/components/route-content';
++    const chunk = {status:'pending', then(done) {
++      queueMicrotask(() => {chunk.status='fulfilled'; chunk.value={default:<section data-route-body>Ready</section>}; done(chunk.value)});
++    }};
++    const streamed = lazy(() => chunk);
++    function App() {
++      useEffect(() => {window.hydrated=true}, []);
++      return location.pathname.endsWith('/control') ? <div className="oc-route-content">{streamed}</div> : <RouteContent>{streamed}</RouteContent>;
++    }
++    window.originalBody = document.querySelector('[data-route-body]'); window.errors=[];
++    startTransition(() => hydrateRoot(document.getElementById('root'), <App/>, {onRecoverableError(e){window.errors.push(e.message)}}));
++  `;
++  const code = { react: bundle(entry), next: bundle(entry, {
++    react: "module.exports=require('next/dist/compiled/react')",
++    'react/jsx-runtime': "module.exports=require('next/dist/compiled/react/jsx-runtime')",
++    'react-dom/client': "module.exports=require('next/dist/compiled/react-dom/client')",
++  }) };
++  const server = http.createServer((req, res) => {
++    const runtime = req.url.split('/')[1].replace('.js', '');
++    res.setHeader('Content-Type', req.url.endsWith('.js') ? 'application/javascript' : 'text/html');
++    res.end(req.url.endsWith('.js') ? code[runtime] : '<div id="root"><div class="oc-route-content"><section data-route-body>Ready</section></div></div><script src="/' + runtime + '.js"></script>');
++  });
++  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
++  const browser = await chromium.launch({ headless: true });
++  try {
++    for (const runtime of ['react', 'next']) for (const route of ['control', 'guarded']) {
++      const page = await browser.newPage();
++      try {
++        await page.goto('http://127.0.0.1:' + server.address().port + '/' + runtime + '/' + route);
++        await page.waitForFunction(() => window.hydrated);
++        const result = await page.evaluate(() => ({errors:window.errors, retained:window.originalBody === document.querySelector('[data-route-body]'), wrappers:document.querySelectorAll('.oc-route-content').length}));
++        assert.equal(result.wrappers, 1);
++        if (route === 'control') {
++          assert.ok(result.errors.some(error => error.includes('#418')), 'Control must exercise the installed React hydration replay bug');
++          assert.equal(result.retained, false);
++        } else {
++          assert.deepEqual(result.errors, []);
++          assert.equal(result.retained, true, 'Hydration must preserve the original server-rendered node');
++        }
++      } finally { await page.close(); }
++    }
++  } finally { await browser.close(); server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); }
++});

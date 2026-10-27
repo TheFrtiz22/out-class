@@ -1,0 +1,18 @@
+{
+  "observedDate": "2026-10-21",
+  "method": "Read-only authenticated Vercel dashboard via existing browser session",
+  "project": "out-class",
+  "scope": "outclassuva",
+  "settingsUrl": "https://vercel.com/outclassuva/out-class/settings/functions",
+  "settings": {"fluidCompute": true, "cpu": "Standard 1 vCPU / 2 GB", "selectedRegion": "iad1", "selectedRegionLabel": "Washington, D.C., us-east-1", "pdx1Selected": false},
+  "runtimeRegionEvidence": "Production Functions overview explicitly displayed Region IAD1; API route External APIs table displayed Vercel Data Cache IAD1.",
+  "environment": "Production",
+  "window": "Last 12 hours; dashboard selection displayed 05:08–17:08 America/New_York on 2026-10-21",
+  "aggregate": {"invocationsDisplayed":"10K","ttfbMs":{"average":1190,"p75":1770,"p95":2760},"activeCpuMs":{"average":55,"p75":67,"p95":191},"startTypePercent":{"hot":98.3,"cold":0.9,"prewarmed":0.8}},
+  "routes": [
+    {"route":"/api/workspace","url":"https://vercel.com/outclassuva/out-class/observability/route/%2Fapi%2Fworkspace?advanced=true&view=function&type=serverless","invocationsDisplayed":"1.6K","sampleCount":null,"durationMs":{"average":1460,"p75":1580,"p95":2490,"p50":null,"max":null},"ttfbMs":{"average":1490,"p75":1610,"p95":2580},"activeCpuMs":{"average":123,"p75":162,"p95":204},"cpuThrottlePercent":{"average":1.1,"p95":2.4},"startTypePercent":{"hot":97.1,"cold":2.2,"prewarmed":0.8},"supabaseExternalApi":{"callsDisplayed":"1.7K","latencyDisplayedMs":290,"latencyStatistic":"Dashboard table labels only Latency; not asserted to be p50/p95 or exclusively Auth."}},
+    {"route":"/club/[clubId]/workspace","url":"https://vercel.com/outclassuva/out-class/observability/route/%2Fclub%2F%5BclubId%5D%2Fworkspace?advanced=true&view=function&type=serverless","invocationsDisplayed":"3.7K","sampleCount":null,"durationMs":{"average":2330,"p75":2590,"p95":3540,"p50":null,"max":null},"ttfbMs":{"average":2320,"p75":2580,"p95":3580},"activeCpuMs":{"average":76,"p75":101,"p95":222},"cpuThrottlePercent":{"average":0.5,"p95":2.3},"startTypePercent":{"hot":99.0,"cold":0.7,"prewarmed":0.4},"sanitizedPathBreakdown":[{"path":"club A","invocationsDisplayed":"3.2K","p75DurationMs":2220},{"path":"club B","invocationsDisplayed":"445","p75DurationMs":4180},{"path":"club C","invocationsDisplayed":"3","p75DurationMs":2620}]}
+  ],
+  "connectorLimitation": "Project listing succeeded, but project detail returned team-scope 403. No authorize-team tool was available; browser dashboard supplied the above evidence.",
+  "limitations": ["Displayed counts are rounded; exact sample sizes, p50 and maxima unavailable.","Workspace route aggregates document/RSC/Server Action traffic. API route aggregates all kind values.","No browser click-to-content pairing or Prisma/network/pool/lock span attribution in these aggregates.","Settings and runtime observations are current; no deployment or settings change performed.","Percentages are dashboard-rounded and may not sum to 100."]
+}

@@ -65,6 +65,7 @@ export function ExpandingDock({ sections, active, contextKey, renderItem, onHome
     targets.forEach((target, position) => {
       if (position === index) target.dataset.magnify = "current"
       else if (Math.abs(position - index) === 1) target.dataset.magnify = "neighbor"
+      else if (Math.abs(position - index) === 2) target.dataset.magnify = "outer"
       else target.removeAttribute("data-magnify")
     })
   }

@@ -6,7 +6,7 @@ test('voting GET allowlist validates scope, uses private no-store responses and 
  const mocks={'next/headers':{cookies:async()=>({get:()=>demo?{value:'1'}:undefined})},'@/actions/voting':{getVotingWorkspace:async(club,session)=>{calls++;assert.equal(club,id);assert.equal(session,expectedSession);return{session:{id}}},getVotingJoinInfo:async()=>({status:'JOINABLE'})},'@/actions/club-onboarding':{getOrganizationInvitations:async()=>{throw failure}}};
  const load=loader(mocks);api=load('utils/verified-email-policy.ts');const {GET}=load('app/api/workspace/route.ts');
  const request=(kind,args)=>GET(new Request(`https://outclass.test/api/workspace?${new URLSearchParams({kind,args:JSON.stringify(args)})}`));
- let response=await request('voting',[id,id]);assert.equal(response.status,200);assert.equal(calls,1);assert.equal(response.headers.get('Cache-Control'),'private, no-store');assert.equal(response.headers.get('Vary'),'Cookie');
+ let response=await request('voting',[id,id]);assert.equal(response.status,200);assert.equal(calls,1);assert.equal(response.headers.get('Cache-Control'),'private, no-store');assert.match(response.headers.get('Vary'),/(?:^|,\s*)Cookie(?:,|$)/);assert.match(response.headers.get('Vary'),/(?:^|,\s*)Accept-Encoding(?:,|$)/);
  expectedSession=undefined;response=await request('voting',[id,null]);assert.equal(response.status,200);response=await request('voting',[id]);assert.equal(response.status,200);
  response=await request('voting',['wrong',id]);assert.equal(response.status,400);assert.equal(calls,3);
  demo=true;response=await request('voting',[id,id]);assert.equal(response.status,403);assert.equal(calls,3);demo=false;

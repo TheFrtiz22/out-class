@@ -1,0 +1,219 @@
+{
+  "date": "2026-10-22",
+  "verifiedFixtureCounts": {
+    "members": 64,
+    "rooms": 3,
+    "bookings": 24,
+    "activeGrants": 96
+  },
+  "localOnly": true,
+  "applicationSourcesChanged": false,
+  "cleanup": {
+    "reservedAppStopped": true,
+    "reservedSupabaseStopped": true,
+    "credentialsRemoved": true,
+    "auditArchiveRemoved": true,
+    "unrelatedStacksUntouched": true
+  },
+  "auditReference": "3017e01d5b55bc8fb38d4f8fbec4906dd93bf619",
+  "currentHead": "cffb63cff78c9694b89ed7e26a82d21edb5421e5",
+  "sourceNote": "Current app sources equal the committed Phase 1 implementation. The later cffb63c commit contains only native tests/evidence. Diagnostic error capture, failure labels and fixture guards were refined during/after collection; final tooling hashes identify reviewable files, not immutable intermediate harness checkpoints. Final tooling also rejects output overwrites; current-profile reproduction must start from the freshly built setup at the same app source.",
+  "node": "v26.9.0",
+  "cohorts": [
+    {
+      "stage": "reference-1",
+      "sha256": "9be1725f77423c3533d628b51a4f502d298c9179f8a111517b30d4bef87571e3",
+      "observations": 40,
+      "failures": [],
+      "browserErrors": 0,
+      "build": {
+        "target": "reference",
+        "sourceCommit": "3017e01d5b55bc8fb38d4f8fbec4906dd93bf619",
+        "applicationSourcesModified": false,
+        "poolLimitPerPrismaClient": 8,
+        "buildId": "ALfL67MjErRtJGZev6Tr7"
+      }
+    },
+    {
+      "stage": "reference-4",
+      "sha256": "3c4f4b25f50fdb1e280ef8c2452ad013efd0d9b709c9a1e0a24a421981c67412",
+      "observations": 160,
+      "failures": [
+        {
+          "condition": "cold",
+          "wave": 9,
+          "error": "AssertionError",
+          "assertion": null,
+          "actual": 1,
+          "expected": 0
+        }
+      ],
+      "browserErrors": 1,
+      "build": {
+        "target": "reference",
+        "sourceCommit": "3017e01d5b55bc8fb38d4f8fbec4906dd93bf619",
+        "applicationSourcesModified": false,
+        "poolLimitPerPrismaClient": 8,
+        "buildId": "ALfL67MjErRtJGZev6Tr7"
+      }
+    },
+    {
+      "stage": "current-1",
+      "sha256": "6104b95ba666365aff6b00321e04cd6d3cc872fd2763ef08dd8c7d17144c2ad1",
+      "observations": 40,
+      "failures": [
+        {
+          "condition": "warm",
+          "wave": 3,
+          "error": "AssertionError",
+          "assertion": null,
+          "actual": 1,
+          "expected": 0
+        }
+      ],
+      "browserErrors": 1,
+      "build": {
+        "target": "current",
+        "sourceCommit": "cffb63cff78c9694b89ed7e26a82d21edb5421e5",
+        "applicationSourcesModified": false,
+        "poolLimitPerPrismaClient": 8,
+        "buildId": "aCNbtS7NHHYDWN3odwjah"
+      }
+    },
+    {
+      "stage": "current-4",
+      "sha256": "fb01fbd6678363265fc5d4ab52ff36e0bb285a3c08feabd6f13bd32609c9fb83",
+      "observations": 160,
+      "failures": [
+        {
+          "condition": "cold",
+          "wave": 9,
+          "error": "AssertionError",
+          "assertion": null,
+          "actual": 1,
+          "expected": 0
+        },
+        {
+          "condition": "cold",
+          "wave": 14,
+          "error": "AssertionError",
+          "assertion": null,
+          "actual": 1,
+          "expected": 0
+        }
+      ],
+      "browserErrors": 2,
+      "build": {
+        "target": "current",
+        "sourceCommit": "cffb63cff78c9694b89ed7e26a82d21edb5421e5",
+        "applicationSourcesModified": false,
+        "poolLimitPerPrismaClient": 8,
+        "buildId": "aCNbtS7NHHYDWN3odwjah"
+      }
+    }
+  ],
+  "primaryObservations": 400,
+  "incompleteRun": {
+    "path": "reference-4-incomplete/browser-samples.json",
+    "savedObservations": 55,
+    "excludedFromPrimary": true,
+    "reason": "Original assertion stopped collection without identifying the cause; preserved rather than overwritten."
+  },
+  "smokeObservations": 16,
+  "tests": {
+    "reservedAuth": {
+      "tests": 38,
+      "passed": 38,
+      "failed": 0,
+      "skipped": 0
+    },
+    "activeHttp": {
+      "tests": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    "harnessUnit": {
+      "tests": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    "fixtureConnectionGuard": "passed",
+    "lint": "passed",
+    "benchmarkBrowserAcceptance": "not clean: reference 1 and current 3 React 418 errors; every affected row retains 24 links"
+  },
+  "serverErrors": [
+    {
+      "stage": "reference",
+      "prismaErrorRecords": 0,
+      "poolTimeoutP2024": 0,
+      "transactionP2028": 0
+    },
+    {
+      "stage": "current",
+      "prismaErrorRecords": 0,
+      "poolTimeoutP2024": 0,
+      "transactionP2028": 0
+    }
+  ],
+  "patchSha256": "76c10c55f2567a37fd11892bbdd756425aacf551c21f9b6dc1bbbfbcd4f0ed4d",
+  "files": {
+    "scripts/navigation-audit.cjs": "acb049a860ec78ecfe004a4fdd833ee961dec9e9107e46343bfd16a053ec77e5",
+    "tests/navigation-audit-harness.test.cjs": "0da15a59950970438ab0ace812b357a82305542e8fef5f0dc9e374a40e4c3af4",
+    "scripts/active-interview-fixture.cjs": "80ccb94d587d7980812a6cf42e8a3ad90553458f2311bf121b8646156fc959fb",
+    "scripts/phase1-workload-build.cjs": "b15e57cd9b57e230e072f1ed9f0dd471d89e78d9f238bd96e31ac182de9c03d3",
+    "scripts/summarize-active-navigation.cjs": "520b84d50069510411065ba15946d8019e23249c97eaecab15e5d337d59cac0f",
+    "tests/active-interview-navigation-e2e.test.cjs": "4856faf3dbefb1ecfc2287407bc2cb06008a9c7c177a2a1fe8fd60975d857692"
+  },
+  "comparisonSha256": "62538ae99ff5533bb3e0438fca28f402bb0b691c1d3332325a726a4a7fa07660",
+  "subsequentWorkspaceEdits": {
+    "measuredApplicationCommit": "cffb63cff78c9694b89ed7e26a82d21edb5421e5",
+    "coveredByBenchmarks": false,
+    "preserved": true,
+    "modifiedPaths": [
+      "actions/applications.ts",
+      "actions/club-onboarding.ts",
+      "actions/communications.ts",
+      "actions/tasks.ts",
+      "components/admin/admin-clubs.tsx",
+      "components/applications/application-form.tsx",
+      "components/applications/application-journey-card.tsx",
+      "components/applications/application-management-card.tsx",
+      "components/applications/application-status-card.tsx",
+      "components/applications/application-status-detail.tsx",
+      "components/applications/application-tracker.css",
+      "components/applications/question-field.tsx",
+      "components/club-logo.tsx",
+      "components/club-workspace-switcher.tsx",
+      "components/clubs/club-profile-editor.tsx",
+      "components/clubs/directory-logo.tsx",
+      "components/clubs/marketing-profile.tsx",
+      "components/communications/decision-letter.tsx",
+      "components/communications/template-editor.tsx",
+      "components/landing/launch-clubs.tsx",
+      "components/organization-invitation-card.tsx",
+      "components/organization-memberships.tsx",
+      "components/personal-clubs.tsx",
+      "components/views/application-tracker-view.tsx",
+      "components/views/club-profile-view.tsx",
+      "components/views/inbox-view.tsx",
+      "components/views/student-dashboard-view.tsx",
+      "lib/application-state.tsx",
+      "lib/club-marketing.ts",
+      "lib/communications-client.ts",
+      "lib/data.ts",
+      "lib/demo/communications.ts",
+      "lib/demo/store.ts",
+      "lib/launch-clubs.ts",
+      "lib/student-home.ts",
+      "lib/task-notifications.ts"
+    ],
+    "untrackedPaths": [
+      "components/clubs/logo-background-picker.tsx",
+      "hooks/use-logo-analysis.ts",
+      "lib/club-logo-background.ts"
+    ]
+  },
+  "hydrationFollowup": "hydration/EVIDENCE.json"
+}

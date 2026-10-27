@@ -1,0 +1,5378 @@
+[
+  {
+    "at": "2026-10-23T09:05:40.522Z",
+    "block": 0,
+    "phase": "warmup",
+    "cpuBusyPercent": 18.84,
+    "loadAverage": [
+      3.67724609375,
+      3.39306640625,
+      4.400390625
+    ],
+    "freeMemoryMiB": 1083
+  },
+  {
+    "at": "2026-10-23T09:05:41.523Z",
+    "block": 0,
+    "phase": "warmup",
+    "cpuBusyPercent": 29.78,
+    "loadAverage": [
+      3.67724609375,
+      3.39306640625,
+      4.400390625
+    ],
+    "freeMemoryMiB": 595
+  },
+  {
+    "at": "2026-10-23T09:05:42.525Z",
+    "block": 0,
+    "phase": "warmup",
+    "cpuBusyPercent": 40.86,
+    "loadAverage": [
+      3.67724609375,
+      3.39306640625,
+      4.400390625
+    ],
+    "freeMemoryMiB": 153
+  },
+  {
+    "at": "2026-10-23T09:05:43.525Z",
+    "block": 0,
+    "phase": "warmup",
+    "cpuBusyPercent": 41.88,
+    "loadAverage": [
+      5.38427734375,
+      3.75146484375,
+      4.52099609375
+    ],
+    "freeMemoryMiB": 591
+  },
+  {
+    "at": "2026-10-23T09:05:44.527Z",
+    "block": 0,
+    "phase": "warmup",
+    "cpuBusyPercent": 18.56,
+    "loadAverage": [
+      5.38427734375,
+      3.75146484375,
+      4.52099609375
+    ],
+    "freeMemoryMiB": 473
+  },
+  {
+    "at": "2026-10-23T09:05:45.528Z",
+    "block": 0,
+    "phase": "warmup",
+    "cpuBusyPercent": 21.49,
+    "loadAverage": [
+      5.38427734375,
+      3.75146484375,
+      4.52099609375
+    ],
+    "freeMemoryMiB": 328
+  },
+  {
+    "at": "2026-10-23T09:05:46.530Z",
+    "block": 0,
+    "phase": "warmup",
+    "cpuBusyPercent": 22.84,
+    "loadAverage": [
+      5.38427734375,
+      3.75146484375,
+      4.52099609375
+    ],
+    "freeMemoryMiB": 117
+  },
+  {
+    "at": "2026-10-23T09:05:47.530Z",
+    "block": 0,
+    "phase": "warmup",
+    "cpuBusyPercent": 25.65,
+    "loadAverage": [
+      5.38427734375,
+      3.75146484375,
+      4.52099609375
+    ],
+    "freeMemoryMiB": 70
+  },
+  {
+    "at": "2026-10-23T09:05:48.532Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 28.01,
+    "loadAverage": [
+      5.83349609375,
+      3.87158203125,
+      4.55859375
+    ],
+    "freeMemoryMiB": 854
+  },
+  {
+    "at": "2026-10-23T09:05:49.533Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 37.42,
+    "loadAverage": [
+      5.83349609375,
+      3.87158203125,
+      4.55859375
+    ],
+    "freeMemoryMiB": 515
+  },
+  {
+    "at": "2026-10-23T09:05:50.535Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 37.36,
+    "loadAverage": [
+      5.83349609375,
+      3.87158203125,
+      4.55859375
+    ],
+    "freeMemoryMiB": 149
+  },
+  {
+    "at": "2026-10-23T09:05:51.536Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 43.96,
+    "loadAverage": [
+      5.83349609375,
+      3.87158203125,
+      4.55859375
+    ],
+    "freeMemoryMiB": 378
+  },
+  {
+    "at": "2026-10-23T09:05:52.535Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 36.13,
+    "loadAverage": [
+      5.83349609375,
+      3.87158203125,
+      4.55859375
+    ],
+    "freeMemoryMiB": 147
+  },
+  {
+    "at": "2026-10-23T09:05:53.536Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 36.59,
+    "loadAverage": [
+      5.5263671875,
+      3.84033203125,
+      4.54345703125
+    ],
+    "freeMemoryMiB": 490
+  },
+  {
+    "at": "2026-10-23T09:05:54.538Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 41.27,
+    "loadAverage": [
+      5.5263671875,
+      3.84033203125,
+      4.54345703125
+    ],
+    "freeMemoryMiB": 80
+  },
+  {
+    "at": "2026-10-23T09:05:55.538Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 41.71,
+    "loadAverage": [
+      5.5263671875,
+      3.84033203125,
+      4.54345703125
+    ],
+    "freeMemoryMiB": 476
+  },
+  {
+    "at": "2026-10-23T09:05:56.540Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 45.37,
+    "loadAverage": [
+      5.5263671875,
+      3.84033203125,
+      4.54345703125
+    ],
+    "freeMemoryMiB": 73
+  },
+  {
+    "at": "2026-10-23T09:05:57.539Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 49.6,
+    "loadAverage": [
+      5.5263671875,
+      3.84033203125,
+      4.54345703125
+    ],
+    "freeMemoryMiB": 647
+  },
+  {
+    "at": "2026-10-23T09:05:58.540Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 61.93,
+    "loadAverage": [
+      5.40380859375,
+      3.8427734375,
+      4.5400390625
+    ],
+    "freeMemoryMiB": 91
+  },
+  {
+    "at": "2026-10-23T09:05:59.543Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 52.71,
+    "loadAverage": [
+      5.40380859375,
+      3.8427734375,
+      4.5400390625
+    ],
+    "freeMemoryMiB": 88
+  },
+  {
+    "at": "2026-10-23T09:06:00.544Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 52.12,
+    "loadAverage": [
+      5.40380859375,
+      3.8427734375,
+      4.5400390625
+    ],
+    "freeMemoryMiB": 355
+  },
+  {
+    "at": "2026-10-23T09:06:01.546Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 38.52,
+    "loadAverage": [
+      5.40380859375,
+      3.8427734375,
+      4.5400390625
+    ],
+    "freeMemoryMiB": 104
+  },
+  {
+    "at": "2026-10-23T09:06:02.548Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 29.46,
+    "loadAverage": [
+      5.40380859375,
+      3.8427734375,
+      4.5400390625
+    ],
+    "freeMemoryMiB": 96
+  },
+  {
+    "at": "2026-10-23T09:06:03.549Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 27.06,
+    "loadAverage": [
+      5.2109375,
+      3.82861328125,
+      4.53076171875
+    ],
+    "freeMemoryMiB": 76
+  },
+  {
+    "at": "2026-10-23T09:06:04.550Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 27.88,
+    "loadAverage": [
+      5.2109375,
+      3.82861328125,
+      4.53076171875
+    ],
+    "freeMemoryMiB": 75
+  },
+  {
+    "at": "2026-10-23T09:06:05.552Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 23.57,
+    "loadAverage": [
+      5.2109375,
+      3.82861328125,
+      4.53076171875
+    ],
+    "freeMemoryMiB": 638
+  },
+  {
+    "at": "2026-10-23T09:06:06.554Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 24.22,
+    "loadAverage": [
+      5.2109375,
+      3.82861328125,
+      4.53076171875
+    ],
+    "freeMemoryMiB": 367
+  },
+  {
+    "at": "2026-10-23T09:06:07.556Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 26.51,
+    "loadAverage": [
+      5.2109375,
+      3.82861328125,
+      4.53076171875
+    ],
+    "freeMemoryMiB": 187
+  },
+  {
+    "at": "2026-10-23T09:06:08.559Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 28.07,
+    "loadAverage": [
+      5.19384765625,
+      3.84765625,
+      4.533203125
+    ],
+    "freeMemoryMiB": 65
+  },
+  {
+    "at": "2026-10-23T09:06:09.560Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 27.56,
+    "loadAverage": [
+      5.19384765625,
+      3.84765625,
+      4.533203125
+    ],
+    "freeMemoryMiB": 70
+  },
+  {
+    "at": "2026-10-23T09:06:10.562Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 27.78,
+    "loadAverage": [
+      5.19384765625,
+      3.84765625,
+      4.533203125
+    ],
+    "freeMemoryMiB": 501
+  },
+  {
+    "at": "2026-10-23T09:06:11.562Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 24.67,
+    "loadAverage": [
+      5.19384765625,
+      3.84765625,
+      4.533203125
+    ],
+    "freeMemoryMiB": 315
+  },
+  {
+    "at": "2026-10-23T09:06:12.564Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 22.11,
+    "loadAverage": [
+      5.19384765625,
+      3.84765625,
+      4.533203125
+    ],
+    "freeMemoryMiB": 200
+  },
+  {
+    "at": "2026-10-23T09:06:13.566Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 40.28,
+    "loadAverage": [
+      5.01806640625,
+      3.83349609375,
+      4.52392578125
+    ],
+    "freeMemoryMiB": 91
+  },
+  {
+    "at": "2026-10-23T09:06:14.568Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 44.04,
+    "loadAverage": [
+      5.01806640625,
+      3.83349609375,
+      4.52392578125
+    ],
+    "freeMemoryMiB": 95
+  },
+  {
+    "at": "2026-10-23T09:06:15.569Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 40.2,
+    "loadAverage": [
+      5.01806640625,
+      3.83349609375,
+      4.52392578125
+    ],
+    "freeMemoryMiB": 444
+  },
+  {
+    "at": "2026-10-23T09:06:16.569Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 33.77,
+    "loadAverage": [
+      5.01806640625,
+      3.83349609375,
+      4.52392578125
+    ],
+    "freeMemoryMiB": 297
+  },
+  {
+    "at": "2026-10-23T09:06:17.571Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 21.12,
+    "loadAverage": [
+      5.01806640625,
+      3.83349609375,
+      4.52392578125
+    ],
+    "freeMemoryMiB": 139
+  },
+  {
+    "at": "2026-10-23T09:06:18.572Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 28.86,
+    "loadAverage": [
+      4.6962890625,
+      3.7861328125,
+      4.5029296875
+    ],
+    "freeMemoryMiB": 82
+  },
+  {
+    "at": "2026-10-23T09:06:19.572Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 29.26,
+    "loadAverage": [
+      4.6962890625,
+      3.7861328125,
+      4.5029296875
+    ],
+    "freeMemoryMiB": 708
+  },
+  {
+    "at": "2026-10-23T09:06:20.573Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 24.77,
+    "loadAverage": [
+      4.6962890625,
+      3.7861328125,
+      4.5029296875
+    ],
+    "freeMemoryMiB": 509
+  },
+  {
+    "at": "2026-10-23T09:06:21.573Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 23.79,
+    "loadAverage": [
+      4.6962890625,
+      3.7861328125,
+      4.5029296875
+    ],
+    "freeMemoryMiB": 350
+  },
+  {
+    "at": "2026-10-23T09:06:22.575Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 24.27,
+    "loadAverage": [
+      4.6962890625,
+      3.7861328125,
+      4.5029296875
+    ],
+    "freeMemoryMiB": 118
+  },
+  {
+    "at": "2026-10-23T09:06:23.576Z",
+    "block": 0,
+    "phase": "measure",
+    "cpuBusyPercent": 24.92,
+    "loadAverage": [
+      5.20068359375,
+      3.90576171875,
+      4.54052734375
+    ],
+    "freeMemoryMiB": 88
+  },
+  {
+    "at": "2026-10-23T09:06:24.578Z",
+    "block": 1,
+    "phase": "starting",
+    "cpuBusyPercent": 29.51,
+    "loadAverage": [
+      5.20068359375,
+      3.90576171875,
+      4.54052734375
+    ],
+    "freeMemoryMiB": 1135
+  },
+  {
+    "at": "2026-10-23T09:06:25.580Z",
+    "block": 1,
+    "phase": "warmup",
+    "cpuBusyPercent": 16.55,
+    "loadAverage": [
+      5.20068359375,
+      3.90576171875,
+      4.54052734375
+    ],
+    "freeMemoryMiB": 837
+  },
+  {
+    "at": "2026-10-23T09:06:26.581Z",
+    "block": 1,
+    "phase": "warmup",
+    "cpuBusyPercent": 41.49,
+    "loadAverage": [
+      5.20068359375,
+      3.90576171875,
+      4.54052734375
+    ],
+    "freeMemoryMiB": 243
+  },
+  {
+    "at": "2026-10-23T09:06:27.583Z",
+    "block": 1,
+    "phase": "warmup",
+    "cpuBusyPercent": 38.21,
+    "loadAverage": [
+      5.20068359375,
+      3.90576171875,
+      4.54052734375
+    ],
+    "freeMemoryMiB": 69
+  },
+  {
+    "at": "2026-10-23T09:06:28.584Z",
+    "block": 1,
+    "phase": "warmup",
+    "cpuBusyPercent": 32.77,
+    "loadAverage": [
+      5.8251953125,
+      4.056640625,
+      4.58984375
+    ],
+    "freeMemoryMiB": 525
+  },
+  {
+    "at": "2026-10-23T09:06:29.585Z",
+    "block": 1,
+    "phase": "warmup",
+    "cpuBusyPercent": 28.61,
+    "loadAverage": [
+      5.8251953125,
+      4.056640625,
+      4.58984375
+    ],
+    "freeMemoryMiB": 348
+  },
+  {
+    "at": "2026-10-23T09:06:30.587Z",
+    "block": 1,
+    "phase": "warmup",
+    "cpuBusyPercent": 25.9,
+    "loadAverage": [
+      5.8251953125,
+      4.056640625,
+      4.58984375
+    ],
+    "freeMemoryMiB": 99
+  },
+  {
+    "at": "2026-10-23T09:06:31.587Z",
+    "block": 1,
+    "phase": "warmup",
+    "cpuBusyPercent": 24.65,
+    "loadAverage": [
+      5.8251953125,
+      4.056640625,
+      4.58984375
+    ],
+    "freeMemoryMiB": 69
+  },
+  {
+    "at": "2026-10-23T09:06:32.588Z",
+    "block": 1,
+    "phase": "warmup",
+    "cpuBusyPercent": 20.87,
+    "loadAverage": [
+      5.8251953125,
+      4.056640625,
+      4.58984375
+    ],
+    "freeMemoryMiB": 71
+  },
+  {
+    "at": "2026-10-23T09:06:33.589Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 26.38,
+    "loadAverage": [
+      5.5185546875,
+      4.0224609375,
+      4.57421875
+    ],
+    "freeMemoryMiB": 781
+  },
+  {
+    "at": "2026-10-23T09:06:34.590Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 44.53,
+    "loadAverage": [
+      5.5185546875,
+      4.0224609375,
+      4.57421875
+    ],
+    "freeMemoryMiB": 273
+  },
+  {
+    "at": "2026-10-23T09:06:35.593Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 37.24,
+    "loadAverage": [
+      5.5185546875,
+      4.0224609375,
+      4.57421875
+    ],
+    "freeMemoryMiB": 64
+  },
+  {
+    "at": "2026-10-23T09:06:36.592Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 37.76,
+    "loadAverage": [
+      5.5185546875,
+      4.0224609375,
+      4.57421875
+    ],
+    "freeMemoryMiB": 340
+  },
+  {
+    "at": "2026-10-23T09:06:37.592Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 37.24,
+    "loadAverage": [
+      5.5185546875,
+      4.0224609375,
+      4.57421875
+    ],
+    "freeMemoryMiB": 105
+  },
+  {
+    "at": "2026-10-23T09:06:38.592Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 37.89,
+    "loadAverage": [
+      5.796875,
+      4.10498046875,
+      4.60009765625
+    ],
+    "freeMemoryMiB": 287
+  },
+  {
+    "at": "2026-10-23T09:06:39.595Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 40.44,
+    "loadAverage": [
+      5.796875,
+      4.10498046875,
+      4.60009765625
+    ],
+    "freeMemoryMiB": 35
+  },
+  {
+    "at": "2026-10-23T09:06:40.594Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 48.23,
+    "loadAverage": [
+      5.796875,
+      4.10498046875,
+      4.60009765625
+    ],
+    "freeMemoryMiB": 460
+  },
+  {
+    "at": "2026-10-23T09:06:41.595Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 45.87,
+    "loadAverage": [
+      5.796875,
+      4.10498046875,
+      4.60009765625
+    ],
+    "freeMemoryMiB": 125
+  },
+  {
+    "at": "2026-10-23T09:06:42.597Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 32.8,
+    "loadAverage": [
+      5.796875,
+      4.10498046875,
+      4.60009765625
+    ],
+    "freeMemoryMiB": 588
+  },
+  {
+    "at": "2026-10-23T09:06:43.598Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 44.11,
+    "loadAverage": [
+      5.97314453125,
+      4.16943359375,
+      4.61962890625
+    ],
+    "freeMemoryMiB": 149
+  },
+  {
+    "at": "2026-10-23T09:06:44.599Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 41.11,
+    "loadAverage": [
+      5.97314453125,
+      4.16943359375,
+      4.61962890625
+    ],
+    "freeMemoryMiB": 84
+  },
+  {
+    "at": "2026-10-23T09:06:45.598Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 30.11,
+    "loadAverage": [
+      5.97314453125,
+      4.16943359375,
+      4.61962890625
+    ],
+    "freeMemoryMiB": 647
+  },
+  {
+    "at": "2026-10-23T09:06:46.600Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 26.81,
+    "loadAverage": [
+      5.97314453125,
+      4.16943359375,
+      4.61962890625
+    ],
+    "freeMemoryMiB": 187
+  },
+  {
+    "at": "2026-10-23T09:06:47.602Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 28.64,
+    "loadAverage": [
+      5.97314453125,
+      4.16943359375,
+      4.61962890625
+    ],
+    "freeMemoryMiB": 117
+  },
+  {
+    "at": "2026-10-23T09:06:48.603Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 25.45,
+    "loadAverage": [
+      5.73486328125,
+      4.14990234375,
+      4.60986328125
+    ],
+    "freeMemoryMiB": 72
+  },
+  {
+    "at": "2026-10-23T09:06:49.604Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 26.01,
+    "loadAverage": [
+      5.73486328125,
+      4.14990234375,
+      4.60986328125
+    ],
+    "freeMemoryMiB": 63
+  },
+  {
+    "at": "2026-10-23T09:06:50.606Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 26.23,
+    "loadAverage": [
+      5.73486328125,
+      4.14990234375,
+      4.60986328125
+    ],
+    "freeMemoryMiB": 608
+  },
+  {
+    "at": "2026-10-23T09:06:51.608Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 23.81,
+    "loadAverage": [
+      5.73486328125,
+      4.14990234375,
+      4.60986328125
+    ],
+    "freeMemoryMiB": 459
+  },
+  {
+    "at": "2026-10-23T09:06:52.608Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 26.06,
+    "loadAverage": [
+      5.73486328125,
+      4.14990234375,
+      4.60986328125
+    ],
+    "freeMemoryMiB": 302
+  },
+  {
+    "at": "2026-10-23T09:06:53.610Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 25.63,
+    "loadAverage": [
+      5.435546875,
+      4.11376953125,
+      4.59423828125
+    ],
+    "freeMemoryMiB": 79
+  },
+  {
+    "at": "2026-10-23T09:06:54.612Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 26.26,
+    "loadAverage": [
+      5.435546875,
+      4.11376953125,
+      4.59423828125
+    ],
+    "freeMemoryMiB": 77
+  },
+  {
+    "at": "2026-10-23T09:06:55.614Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 31.56,
+    "loadAverage": [
+      5.435546875,
+      4.11376953125,
+      4.59423828125
+    ],
+    "freeMemoryMiB": 300
+  },
+  {
+    "at": "2026-10-23T09:06:56.616Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 23.19,
+    "loadAverage": [
+      5.435546875,
+      4.11376953125,
+      4.59423828125
+    ],
+    "freeMemoryMiB": 136
+  },
+  {
+    "at": "2026-10-23T09:06:57.617Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 26.69,
+    "loadAverage": [
+      5.435546875,
+      4.11376953125,
+      4.59423828125
+    ],
+    "freeMemoryMiB": 87
+  },
+  {
+    "at": "2026-10-23T09:06:58.617Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 25.81,
+    "loadAverage": [
+      5.080078125,
+      4.06201171875,
+      4.57275390625
+    ],
+    "freeMemoryMiB": 99
+  },
+  {
+    "at": "2026-10-23T09:06:59.619Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 28.59,
+    "loadAverage": [
+      5.080078125,
+      4.06201171875,
+      4.57275390625
+    ],
+    "freeMemoryMiB": 169
+  },
+  {
+    "at": "2026-10-23T09:07:00.620Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 26.73,
+    "loadAverage": [
+      5.080078125,
+      4.06201171875,
+      4.57275390625
+    ],
+    "freeMemoryMiB": 525
+  },
+  {
+    "at": "2026-10-23T09:07:01.622Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 27.16,
+    "loadAverage": [
+      5.080078125,
+      4.06201171875,
+      4.57275390625
+    ],
+    "freeMemoryMiB": 338
+  },
+  {
+    "at": "2026-10-23T09:07:02.624Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 22.07,
+    "loadAverage": [
+      5.080078125,
+      4.06201171875,
+      4.57275390625
+    ],
+    "freeMemoryMiB": 144
+  },
+  {
+    "at": "2026-10-23T09:07:03.626Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 24.75,
+    "loadAverage": [
+      5.1533203125,
+      4.09375,
+      4.5810546875
+    ],
+    "freeMemoryMiB": 64
+  },
+  {
+    "at": "2026-10-23T09:07:04.627Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 33.64,
+    "loadAverage": [
+      5.1533203125,
+      4.09375,
+      4.5810546875
+    ],
+    "freeMemoryMiB": 651
+  },
+  {
+    "at": "2026-10-23T09:07:05.629Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 20.46,
+    "loadAverage": [
+      5.1533203125,
+      4.09375,
+      4.5810546875
+    ],
+    "freeMemoryMiB": 482
+  },
+  {
+    "at": "2026-10-23T09:07:06.631Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 22.64,
+    "loadAverage": [
+      5.1533203125,
+      4.09375,
+      4.5810546875
+    ],
+    "freeMemoryMiB": 350
+  },
+  {
+    "at": "2026-10-23T09:07:07.633Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 24.1,
+    "loadAverage": [
+      5.1533203125,
+      4.09375,
+      4.5810546875
+    ],
+    "freeMemoryMiB": 156
+  },
+  {
+    "at": "2026-10-23T09:07:08.634Z",
+    "block": 1,
+    "phase": "measure",
+    "cpuBusyPercent": 25.28,
+    "loadAverage": [
+      5.861328125,
+      4.2578125,
+      4.63623046875
+    ],
+    "freeMemoryMiB": 96
+  },
+  {
+    "at": "2026-10-23T09:07:09.636Z",
+    "block": 2,
+    "phase": "starting",
+    "cpuBusyPercent": 29.68,
+    "loadAverage": [
+      5.861328125,
+      4.2578125,
+      4.63623046875
+    ],
+    "freeMemoryMiB": 1213
+  },
+  {
+    "at": "2026-10-23T09:07:10.637Z",
+    "block": 2,
+    "phase": "warmup",
+    "cpuBusyPercent": 19.78,
+    "loadAverage": [
+      5.861328125,
+      4.2578125,
+      4.63623046875
+    ],
+    "freeMemoryMiB": 877
+  },
+  {
+    "at": "2026-10-23T09:07:11.639Z",
+    "block": 2,
+    "phase": "warmup",
+    "cpuBusyPercent": 39.31,
+    "loadAverage": [
+      5.861328125,
+      4.2578125,
+      4.63623046875
+    ],
+    "freeMemoryMiB": 326
+  },
+  {
+    "at": "2026-10-23T09:07:12.639Z",
+    "block": 2,
+    "phase": "warmup",
+    "cpuBusyPercent": 34.74,
+    "loadAverage": [
+      5.861328125,
+      4.2578125,
+      4.63623046875
+    ],
+    "freeMemoryMiB": 112
+  },
+  {
+    "at": "2026-10-23T09:07:13.641Z",
+    "block": 2,
+    "phase": "warmup",
+    "cpuBusyPercent": 40.24,
+    "loadAverage": [
+      5.4716796875,
+      4.20361328125,
+      4.61474609375
+    ],
+    "freeMemoryMiB": 515
+  },
+  {
+    "at": "2026-10-23T09:07:14.643Z",
+    "block": 2,
+    "phase": "warmup",
+    "cpuBusyPercent": 28.74,
+    "loadAverage": [
+      5.4716796875,
+      4.20361328125,
+      4.61474609375
+    ],
+    "freeMemoryMiB": 337
+  },
+  {
+    "at": "2026-10-23T09:07:15.645Z",
+    "block": 2,
+    "phase": "warmup",
+    "cpuBusyPercent": 25.13,
+    "loadAverage": [
+      5.4716796875,
+      4.20361328125,
+      4.61474609375
+    ],
+    "freeMemoryMiB": 88
+  },
+  {
+    "at": "2026-10-23T09:07:16.645Z",
+    "block": 2,
+    "phase": "warmup",
+    "cpuBusyPercent": 20.08,
+    "loadAverage": [
+      5.4716796875,
+      4.20361328125,
+      4.61474609375
+    ],
+    "freeMemoryMiB": 90
+  },
+  {
+    "at": "2026-10-23T09:07:17.646Z",
+    "block": 2,
+    "phase": "warmup",
+    "cpuBusyPercent": 20.9,
+    "loadAverage": [
+      5.4716796875,
+      4.20361328125,
+      4.61474609375
+    ],
+    "freeMemoryMiB": 85
+  },
+  {
+    "at": "2026-10-23T09:07:18.646Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 28.82,
+    "loadAverage": [
+      5.193359375,
+      4.1669921875,
+      4.59912109375
+    ],
+    "freeMemoryMiB": 803
+  },
+  {
+    "at": "2026-10-23T09:07:19.647Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 50.4,
+    "loadAverage": [
+      5.193359375,
+      4.1669921875,
+      4.59912109375
+    ],
+    "freeMemoryMiB": 234
+  },
+  {
+    "at": "2026-10-23T09:07:20.648Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 40.2,
+    "loadAverage": [
+      5.193359375,
+      4.1669921875,
+      4.59912109375
+    ],
+    "freeMemoryMiB": 112
+  },
+  {
+    "at": "2026-10-23T09:07:21.649Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 35.99,
+    "loadAverage": [
+      5.193359375,
+      4.1669921875,
+      4.59912109375
+    ],
+    "freeMemoryMiB": 384
+  },
+  {
+    "at": "2026-10-23T09:07:22.652Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 33.1,
+    "loadAverage": [
+      5.193359375,
+      4.1669921875,
+      4.59912109375
+    ],
+    "freeMemoryMiB": 179
+  },
+  {
+    "at": "2026-10-23T09:07:23.653Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 45.91,
+    "loadAverage": [
+      5.177734375,
+      4.1806640625,
+      4.60107421875
+    ],
+    "freeMemoryMiB": 316
+  },
+  {
+    "at": "2026-10-23T09:07:24.655Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 35.98,
+    "loadAverage": [
+      5.177734375,
+      4.1806640625,
+      4.60107421875
+    ],
+    "freeMemoryMiB": 106
+  },
+  {
+    "at": "2026-10-23T09:07:25.656Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 38.99,
+    "loadAverage": [
+      5.177734375,
+      4.1806640625,
+      4.60107421875
+    ],
+    "freeMemoryMiB": 409
+  },
+  {
+    "at": "2026-10-23T09:07:26.658Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 40.1,
+    "loadAverage": [
+      5.177734375,
+      4.1806640625,
+      4.60107421875
+    ],
+    "freeMemoryMiB": 88
+  },
+  {
+    "at": "2026-10-23T09:07:27.658Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 36.43,
+    "loadAverage": [
+      5.177734375,
+      4.1806640625,
+      4.60107421875
+    ],
+    "freeMemoryMiB": 396
+  },
+  {
+    "at": "2026-10-23T09:07:28.659Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 42.94,
+    "loadAverage": [
+      5.4033203125,
+      4.24365234375,
+      4.62060546875
+    ],
+    "freeMemoryMiB": 73
+  },
+  {
+    "at": "2026-10-23T09:07:29.660Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 36.16,
+    "loadAverage": [
+      5.4033203125,
+      4.24365234375,
+      4.62060546875
+    ],
+    "freeMemoryMiB": 595
+  },
+  {
+    "at": "2026-10-23T09:07:30.660Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 21.5,
+    "loadAverage": [
+      5.4033203125,
+      4.24365234375,
+      4.62060546875
+    ],
+    "freeMemoryMiB": 481
+  },
+  {
+    "at": "2026-10-23T09:07:31.662Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 28.04,
+    "loadAverage": [
+      5.4033203125,
+      4.24365234375,
+      4.62060546875
+    ],
+    "freeMemoryMiB": 249
+  },
+  {
+    "at": "2026-10-23T09:07:32.664Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 22.23,
+    "loadAverage": [
+      5.4033203125,
+      4.24365234375,
+      4.62060546875
+    ],
+    "freeMemoryMiB": 85
+  },
+  {
+    "at": "2026-10-23T09:07:33.666Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 23.85,
+    "loadAverage": [
+      6.01123046875,
+      4.388671875,
+      4.66943359375
+    ],
+    "freeMemoryMiB": 69
+  },
+  {
+    "at": "2026-10-23T09:07:34.668Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 42.94,
+    "loadAverage": [
+      6.01123046875,
+      4.388671875,
+      4.66943359375
+    ],
+    "freeMemoryMiB": 461
+  },
+  {
+    "at": "2026-10-23T09:07:35.669Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 28.21,
+    "loadAverage": [
+      6.01123046875,
+      4.388671875,
+      4.66943359375
+    ],
+    "freeMemoryMiB": 191
+  },
+  {
+    "at": "2026-10-23T09:07:36.671Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 16.85,
+    "loadAverage": [
+      6.01123046875,
+      4.388671875,
+      4.66943359375
+    ],
+    "freeMemoryMiB": 106
+  },
+  {
+    "at": "2026-10-23T09:07:37.673Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 25.33,
+    "loadAverage": [
+      6.01123046875,
+      4.388671875,
+      4.66943359375
+    ],
+    "freeMemoryMiB": 79
+  },
+  {
+    "at": "2026-10-23T09:07:38.675Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 23.72,
+    "loadAverage": [
+      5.60986328125,
+      4.33203125,
+      4.6474609375
+    ],
+    "freeMemoryMiB": 76
+  },
+  {
+    "at": "2026-10-23T09:07:39.677Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 39.64,
+    "loadAverage": [
+      5.60986328125,
+      4.33203125,
+      4.6474609375
+    ],
+    "freeMemoryMiB": 507
+  },
+  {
+    "at": "2026-10-23T09:07:40.677Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 26.26,
+    "loadAverage": [
+      5.60986328125,
+      4.33203125,
+      4.6474609375
+    ],
+    "freeMemoryMiB": 345
+  },
+  {
+    "at": "2026-10-23T09:07:41.677Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 20.48,
+    "loadAverage": [
+      5.60986328125,
+      4.33203125,
+      4.6474609375
+    ],
+    "freeMemoryMiB": 215
+  },
+  {
+    "at": "2026-10-23T09:07:42.678Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 18.15,
+    "loadAverage": [
+      5.60986328125,
+      4.33203125,
+      4.6474609375
+    ],
+    "freeMemoryMiB": 122
+  },
+  {
+    "at": "2026-10-23T09:07:43.680Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 26.59,
+    "loadAverage": [
+      5.48046875,
+      4.326171875,
+      4.6435546875
+    ],
+    "freeMemoryMiB": 81
+  },
+  {
+    "at": "2026-10-23T09:07:44.682Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 37.69,
+    "loadAverage": [
+      5.48046875,
+      4.326171875,
+      4.6435546875
+    ],
+    "freeMemoryMiB": 633
+  },
+  {
+    "at": "2026-10-23T09:07:45.684Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 24.95,
+    "loadAverage": [
+      5.48046875,
+      4.326171875,
+      4.6435546875
+    ],
+    "freeMemoryMiB": 473
+  },
+  {
+    "at": "2026-10-23T09:07:46.685Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 22.31,
+    "loadAverage": [
+      5.48046875,
+      4.326171875,
+      4.6435546875
+    ],
+    "freeMemoryMiB": 383
+  },
+  {
+    "at": "2026-10-23T09:07:47.685Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 15.83,
+    "loadAverage": [
+      5.48046875,
+      4.326171875,
+      4.6435546875
+    ],
+    "freeMemoryMiB": 220
+  },
+  {
+    "at": "2026-10-23T09:07:48.688Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 23.45,
+    "loadAverage": [
+      5.12158203125,
+      4.2705078125,
+      4.6220703125
+    ],
+    "freeMemoryMiB": 75
+  },
+  {
+    "at": "2026-10-23T09:07:49.690Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 36.9,
+    "loadAverage": [
+      5.12158203125,
+      4.2705078125,
+      4.6220703125
+    ],
+    "freeMemoryMiB": 677
+  },
+  {
+    "at": "2026-10-23T09:07:50.691Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 27.19,
+    "loadAverage": [
+      5.12158203125,
+      4.2705078125,
+      4.6220703125
+    ],
+    "freeMemoryMiB": 472
+  },
+  {
+    "at": "2026-10-23T09:07:51.691Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 23.54,
+    "loadAverage": [
+      5.12158203125,
+      4.2705078125,
+      4.6220703125
+    ],
+    "freeMemoryMiB": 265
+  },
+  {
+    "at": "2026-10-23T09:07:52.692Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 16.25,
+    "loadAverage": [
+      5.12158203125,
+      4.2705078125,
+      4.6220703125
+    ],
+    "freeMemoryMiB": 128
+  },
+  {
+    "at": "2026-10-23T09:07:53.694Z",
+    "block": 2,
+    "phase": "measure",
+    "cpuBusyPercent": 20.7,
+    "loadAverage": [
+      4.71142578125,
+      4.19921875,
+      4.5947265625
+    ],
+    "freeMemoryMiB": 79
+  },
+  {
+    "at": "2026-10-23T09:07:54.696Z",
+    "block": 3,
+    "phase": "starting",
+    "cpuBusyPercent": 25.6,
+    "loadAverage": [
+      4.71142578125,
+      4.19921875,
+      4.5947265625
+    ],
+    "freeMemoryMiB": 996
+  },
+  {
+    "at": "2026-10-23T09:07:55.696Z",
+    "block": 3,
+    "phase": "warmup",
+    "cpuBusyPercent": 26.28,
+    "loadAverage": [
+      4.71142578125,
+      4.19921875,
+      4.5947265625
+    ],
+    "freeMemoryMiB": 494
+  },
+  {
+    "at": "2026-10-23T09:07:56.697Z",
+    "block": 3,
+    "phase": "warmup",
+    "cpuBusyPercent": 39.03,
+    "loadAverage": [
+      4.71142578125,
+      4.19921875,
+      4.5947265625
+    ],
+    "freeMemoryMiB": 85
+  },
+  {
+    "at": "2026-10-23T09:07:57.697Z",
+    "block": 3,
+    "phase": "warmup",
+    "cpuBusyPercent": 41.61,
+    "loadAverage": [
+      4.71142578125,
+      4.19921875,
+      4.5947265625
+    ],
+    "freeMemoryMiB": 77
+  },
+  {
+    "at": "2026-10-23T09:07:58.699Z",
+    "block": 3,
+    "phase": "warmup",
+    "cpuBusyPercent": 23.99,
+    "loadAverage": [
+      4.654296875,
+      4.19580078125,
+      4.5908203125
+    ],
+    "freeMemoryMiB": 463
+  },
+  {
+    "at": "2026-10-23T09:07:59.700Z",
+    "block": 3,
+    "phase": "warmup",
+    "cpuBusyPercent": 28.54,
+    "loadAverage": [
+      4.654296875,
+      4.19580078125,
+      4.5908203125
+    ],
+    "freeMemoryMiB": 183
+  },
+  {
+    "at": "2026-10-23T09:08:00.702Z",
+    "block": 3,
+    "phase": "warmup",
+    "cpuBusyPercent": 28.4,
+    "loadAverage": [
+      4.654296875,
+      4.19580078125,
+      4.5908203125
+    ],
+    "freeMemoryMiB": 87
+  },
+  {
+    "at": "2026-10-23T09:08:01.702Z",
+    "block": 3,
+    "phase": "warmup",
+    "cpuBusyPercent": 31.8,
+    "loadAverage": [
+      4.654296875,
+      4.19580078125,
+      4.5908203125
+    ],
+    "freeMemoryMiB": 107
+  },
+  {
+    "at": "2026-10-23T09:08:02.702Z",
+    "block": 3,
+    "phase": "warmup",
+    "cpuBusyPercent": 26.54,
+    "loadAverage": [
+      4.654296875,
+      4.19580078125,
+      4.5908203125
+    ],
+    "freeMemoryMiB": 766
+  },
+  {
+    "at": "2026-10-23T09:08:03.705Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 27.01,
+    "loadAverage": [
+      4.681640625,
+      4.208984375,
+      4.5927734375
+    ],
+    "freeMemoryMiB": 494
+  },
+  {
+    "at": "2026-10-23T09:08:04.706Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 45.42,
+    "loadAverage": [
+      4.681640625,
+      4.208984375,
+      4.5927734375
+    ],
+    "freeMemoryMiB": 97
+  },
+  {
+    "at": "2026-10-23T09:08:05.707Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 36.69,
+    "loadAverage": [
+      4.681640625,
+      4.208984375,
+      4.5927734375
+    ],
+    "freeMemoryMiB": 597
+  },
+  {
+    "at": "2026-10-23T09:08:06.707Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 35.61,
+    "loadAverage": [
+      4.681640625,
+      4.208984375,
+      4.5927734375
+    ],
+    "freeMemoryMiB": 252
+  },
+  {
+    "at": "2026-10-23T09:08:07.707Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 37.4,
+    "loadAverage": [
+      4.681640625,
+      4.208984375,
+      4.5927734375
+    ],
+    "freeMemoryMiB": 647
+  },
+  {
+    "at": "2026-10-23T09:08:08.707Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 40.83,
+    "loadAverage": [
+      4.466796875,
+      4.171875,
+      4.5771484375
+    ],
+    "freeMemoryMiB": 288
+  },
+  {
+    "at": "2026-10-23T09:08:09.708Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 34.41,
+    "loadAverage": [
+      4.466796875,
+      4.171875,
+      4.5771484375
+    ],
+    "freeMemoryMiB": 121
+  },
+  {
+    "at": "2026-10-23T09:08:10.709Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 43.09,
+    "loadAverage": [
+      4.466796875,
+      4.171875,
+      4.5771484375
+    ],
+    "freeMemoryMiB": 404
+  },
+  {
+    "at": "2026-10-23T09:08:11.711Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 38.27,
+    "loadAverage": [
+      4.466796875,
+      4.171875,
+      4.5771484375
+    ],
+    "freeMemoryMiB": 85
+  },
+  {
+    "at": "2026-10-23T09:08:12.713Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 38.59,
+    "loadAverage": [
+      4.466796875,
+      4.171875,
+      4.5771484375
+    ],
+    "freeMemoryMiB": 501
+  },
+  {
+    "at": "2026-10-23T09:08:13.713Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 41.94,
+    "loadAverage": [
+      4.10888671875,
+      4.1025390625,
+      4.55029296875
+    ],
+    "freeMemoryMiB": 75
+  },
+  {
+    "at": "2026-10-23T09:08:14.714Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 40.6,
+    "loadAverage": [
+      4.10888671875,
+      4.1025390625,
+      4.55029296875
+    ],
+    "freeMemoryMiB": 76
+  },
+  {
+    "at": "2026-10-23T09:08:15.715Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 23.69,
+    "loadAverage": [
+      4.10888671875,
+      4.1025390625,
+      4.55029296875
+    ],
+    "freeMemoryMiB": 401
+  },
+  {
+    "at": "2026-10-23T09:08:16.717Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 23.95,
+    "loadAverage": [
+      4.10888671875,
+      4.1025390625,
+      4.55029296875
+    ],
+    "freeMemoryMiB": 241
+  },
+  {
+    "at": "2026-10-23T09:08:17.720Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 20.78,
+    "loadAverage": [
+      4.10888671875,
+      4.1025390625,
+      4.55029296875
+    ],
+    "freeMemoryMiB": 104
+  },
+  {
+    "at": "2026-10-23T09:08:18.722Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 25.7,
+    "loadAverage": [
+      4.02001953125,
+      4.083984375,
+      4.541015625
+    ],
+    "freeMemoryMiB": 92
+  },
+  {
+    "at": "2026-10-23T09:08:19.723Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 30.4,
+    "loadAverage": [
+      4.02001953125,
+      4.083984375,
+      4.541015625
+    ],
+    "freeMemoryMiB": 716
+  },
+  {
+    "at": "2026-10-23T09:08:20.725Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 26.53,
+    "loadAverage": [
+      4.02001953125,
+      4.083984375,
+      4.541015625
+    ],
+    "freeMemoryMiB": 564
+  },
+  {
+    "at": "2026-10-23T09:08:21.727Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 23.8,
+    "loadAverage": [
+      4.02001953125,
+      4.083984375,
+      4.541015625
+    ],
+    "freeMemoryMiB": 421
+  },
+  {
+    "at": "2026-10-23T09:08:22.728Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 22.11,
+    "loadAverage": [
+      4.02001953125,
+      4.083984375,
+      4.541015625
+    ],
+    "freeMemoryMiB": 279
+  },
+  {
+    "at": "2026-10-23T09:08:23.730Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 23.22,
+    "loadAverage": [
+      4.25830078125,
+      4.13232421875,
+      4.55517578125
+    ],
+    "freeMemoryMiB": 73
+  },
+  {
+    "at": "2026-10-23T09:08:24.731Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 34.17,
+    "loadAverage": [
+      4.25830078125,
+      4.13232421875,
+      4.55517578125
+    ],
+    "freeMemoryMiB": 664
+  },
+  {
+    "at": "2026-10-23T09:08:25.731Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 20.93,
+    "loadAverage": [
+      4.25830078125,
+      4.13232421875,
+      4.55517578125
+    ],
+    "freeMemoryMiB": 496
+  },
+  {
+    "at": "2026-10-23T09:08:26.733Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 23.22,
+    "loadAverage": [
+      4.25830078125,
+      4.13232421875,
+      4.55517578125
+    ],
+    "freeMemoryMiB": 384
+  },
+  {
+    "at": "2026-10-23T09:08:27.735Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 26.16,
+    "loadAverage": [
+      4.25830078125,
+      4.13232421875,
+      4.55517578125
+    ],
+    "freeMemoryMiB": 161
+  },
+  {
+    "at": "2026-10-23T09:08:28.736Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 22.27,
+    "loadAverage": [
+      4.3974609375,
+      4.1630859375,
+      4.5634765625
+    ],
+    "freeMemoryMiB": 88
+  },
+  {
+    "at": "2026-10-23T09:08:29.736Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 35.96,
+    "loadAverage": [
+      4.3974609375,
+      4.1630859375,
+      4.5634765625
+    ],
+    "freeMemoryMiB": 654
+  },
+  {
+    "at": "2026-10-23T09:08:30.737Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 19.2,
+    "loadAverage": [
+      4.3974609375,
+      4.1630859375,
+      4.5634765625
+    ],
+    "freeMemoryMiB": 573
+  },
+  {
+    "at": "2026-10-23T09:08:31.739Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 23.24,
+    "loadAverage": [
+      4.3974609375,
+      4.1630859375,
+      4.5634765625
+    ],
+    "freeMemoryMiB": 349
+  },
+  {
+    "at": "2026-10-23T09:08:32.740Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 22.14,
+    "loadAverage": [
+      4.3974609375,
+      4.1630859375,
+      4.5634765625
+    ],
+    "freeMemoryMiB": 193
+  },
+  {
+    "at": "2026-10-23T09:08:33.741Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 23.29,
+    "loadAverage": [
+      4.205078125,
+      4.126953125,
+      4.54833984375
+    ],
+    "freeMemoryMiB": 70
+  },
+  {
+    "at": "2026-10-23T09:08:34.741Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 35.68,
+    "loadAverage": [
+      4.205078125,
+      4.126953125,
+      4.54833984375
+    ],
+    "freeMemoryMiB": 635
+  },
+  {
+    "at": "2026-10-23T09:08:35.742Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 17.72,
+    "loadAverage": [
+      4.205078125,
+      4.126953125,
+      4.54833984375
+    ],
+    "freeMemoryMiB": 410
+  },
+  {
+    "at": "2026-10-23T09:08:36.744Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 19.08,
+    "loadAverage": [
+      4.205078125,
+      4.126953125,
+      4.54833984375
+    ],
+    "freeMemoryMiB": 291
+  },
+  {
+    "at": "2026-10-23T09:08:37.746Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 24.29,
+    "loadAverage": [
+      4.205078125,
+      4.126953125,
+      4.54833984375
+    ],
+    "freeMemoryMiB": 144
+  },
+  {
+    "at": "2026-10-23T09:08:38.747Z",
+    "block": 3,
+    "phase": "measure",
+    "cpuBusyPercent": 22.74,
+    "loadAverage": [
+      3.8681640625,
+      4.05810546875,
+      4.521484375
+    ],
+    "freeMemoryMiB": 67
+  },
+  {
+    "at": "2026-10-23T09:08:39.748Z",
+    "block": 4,
+    "phase": "starting",
+    "cpuBusyPercent": 30.52,
+    "loadAverage": [
+      3.8681640625,
+      4.05810546875,
+      4.521484375
+    ],
+    "freeMemoryMiB": 1022
+  },
+  {
+    "at": "2026-10-23T09:08:40.749Z",
+    "block": 4,
+    "phase": "warmup",
+    "cpuBusyPercent": 18.32,
+    "loadAverage": [
+      3.8681640625,
+      4.05810546875,
+      4.521484375
+    ],
+    "freeMemoryMiB": 730
+  },
+  {
+    "at": "2026-10-23T09:08:41.751Z",
+    "block": 4,
+    "phase": "warmup",
+    "cpuBusyPercent": 39.05,
+    "loadAverage": [
+      3.8681640625,
+      4.05810546875,
+      4.521484375
+    ],
+    "freeMemoryMiB": 286
+  },
+  {
+    "at": "2026-10-23T09:08:42.752Z",
+    "block": 4,
+    "phase": "warmup",
+    "cpuBusyPercent": 34.3,
+    "loadAverage": [
+      3.8681640625,
+      4.05810546875,
+      4.521484375
+    ],
+    "freeMemoryMiB": 73
+  },
+  {
+    "at": "2026-10-23T09:08:43.754Z",
+    "block": 4,
+    "phase": "warmup",
+    "cpuBusyPercent": 36.43,
+    "loadAverage": [
+      3.63818359375,
+      4.00732421875,
+      4.50048828125
+    ],
+    "freeMemoryMiB": 416
+  },
+  {
+    "at": "2026-10-23T09:08:44.755Z",
+    "block": 4,
+    "phase": "warmup",
+    "cpuBusyPercent": 30.52,
+    "loadAverage": [
+      3.63818359375,
+      4.00732421875,
+      4.50048828125
+    ],
+    "freeMemoryMiB": 197
+  },
+  {
+    "at": "2026-10-23T09:08:45.757Z",
+    "block": 4,
+    "phase": "warmup",
+    "cpuBusyPercent": 24.14,
+    "loadAverage": [
+      3.63818359375,
+      4.00732421875,
+      4.50048828125
+    ],
+    "freeMemoryMiB": 75
+  },
+  {
+    "at": "2026-10-23T09:08:46.759Z",
+    "block": 4,
+    "phase": "warmup",
+    "cpuBusyPercent": 22.12,
+    "loadAverage": [
+      3.63818359375,
+      4.00732421875,
+      4.50048828125
+    ],
+    "freeMemoryMiB": 66
+  },
+  {
+    "at": "2026-10-23T09:08:47.760Z",
+    "block": 4,
+    "phase": "warmup",
+    "cpuBusyPercent": 20.7,
+    "loadAverage": [
+      3.63818359375,
+      4.00732421875,
+      4.50048828125
+    ],
+    "freeMemoryMiB": 75
+  },
+  {
+    "at": "2026-10-23T09:08:48.761Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 26.16,
+    "loadAverage": [
+      3.4267578125,
+      3.95703125,
+      4.4794921875
+    ],
+    "freeMemoryMiB": 803
+  },
+  {
+    "at": "2026-10-23T09:08:49.762Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 46.98,
+    "loadAverage": [
+      3.4267578125,
+      3.95703125,
+      4.4794921875
+    ],
+    "freeMemoryMiB": 387
+  },
+  {
+    "at": "2026-10-23T09:08:50.763Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 41.08,
+    "loadAverage": [
+      3.4267578125,
+      3.95703125,
+      4.4794921875
+    ],
+    "freeMemoryMiB": 99
+  },
+  {
+    "at": "2026-10-23T09:08:51.766Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 36.82,
+    "loadAverage": [
+      3.4267578125,
+      3.95703125,
+      4.4794921875
+    ],
+    "freeMemoryMiB": 245
+  },
+  {
+    "at": "2026-10-23T09:08:52.768Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 35.48,
+    "loadAverage": [
+      3.4267578125,
+      3.95703125,
+      4.4794921875
+    ],
+    "freeMemoryMiB": 94
+  },
+  {
+    "at": "2026-10-23T09:08:53.768Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 47.93,
+    "loadAverage": [
+      4.513671875,
+      4.17333984375,
+      4.552734375
+    ],
+    "freeMemoryMiB": 370
+  },
+  {
+    "at": "2026-10-23T09:08:54.769Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 38.59,
+    "loadAverage": [
+      4.513671875,
+      4.17333984375,
+      4.552734375
+    ],
+    "freeMemoryMiB": 125
+  },
+  {
+    "at": "2026-10-23T09:08:55.769Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 36.23,
+    "loadAverage": [
+      4.513671875,
+      4.17333984375,
+      4.552734375
+    ],
+    "freeMemoryMiB": 506
+  },
+  {
+    "at": "2026-10-23T09:08:56.771Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 41.85,
+    "loadAverage": [
+      4.513671875,
+      4.17333984375,
+      4.552734375
+    ],
+    "freeMemoryMiB": 133
+  },
+  {
+    "at": "2026-10-23T09:08:57.773Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 37.85,
+    "loadAverage": [
+      4.513671875,
+      4.17333984375,
+      4.552734375
+    ],
+    "freeMemoryMiB": 529
+  },
+  {
+    "at": "2026-10-23T09:08:58.775Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 37.15,
+    "loadAverage": [
+      4.31201171875,
+      4.13720703125,
+      4.53759765625
+    ],
+    "freeMemoryMiB": 146
+  },
+  {
+    "at": "2026-10-23T09:08:59.775Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 39.86,
+    "loadAverage": [
+      4.31201171875,
+      4.13720703125,
+      4.53759765625
+    ],
+    "freeMemoryMiB": 546
+  },
+  {
+    "at": "2026-10-23T09:09:00.778Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 29.35,
+    "loadAverage": [
+      4.31201171875,
+      4.13720703125,
+      4.53759765625
+    ],
+    "freeMemoryMiB": 307
+  },
+  {
+    "at": "2026-10-23T09:09:01.779Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 36.39,
+    "loadAverage": [
+      4.31201171875,
+      4.13720703125,
+      4.53759765625
+    ],
+    "freeMemoryMiB": 68
+  },
+  {
+    "at": "2026-10-23T09:09:02.780Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 24.85,
+    "loadAverage": [
+      4.31201171875,
+      4.13720703125,
+      4.53759765625
+    ],
+    "freeMemoryMiB": 102
+  },
+  {
+    "at": "2026-10-23T09:09:03.782Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 26.44,
+    "loadAverage": [
+      4.52685546875,
+      4.1845703125,
+      4.5517578125
+    ],
+    "freeMemoryMiB": 80
+  },
+  {
+    "at": "2026-10-23T09:09:04.785Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 31.39,
+    "loadAverage": [
+      4.52685546875,
+      4.1845703125,
+      4.5517578125
+    ],
+    "freeMemoryMiB": 646
+  },
+  {
+    "at": "2026-10-23T09:09:05.787Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 24.97,
+    "loadAverage": [
+      4.52685546875,
+      4.1845703125,
+      4.5517578125
+    ],
+    "freeMemoryMiB": 484
+  },
+  {
+    "at": "2026-10-23T09:09:06.789Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 24.2,
+    "loadAverage": [
+      4.52685546875,
+      4.1845703125,
+      4.5517578125
+    ],
+    "freeMemoryMiB": 332
+  },
+  {
+    "at": "2026-10-23T09:09:07.790Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 25.95,
+    "loadAverage": [
+      4.52685546875,
+      4.1845703125,
+      4.5517578125
+    ],
+    "freeMemoryMiB": 104
+  },
+  {
+    "at": "2026-10-23T09:09:08.792Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 24.37,
+    "loadAverage": [
+      5.765625,
+      4.44677734375,
+      4.64208984375
+    ],
+    "freeMemoryMiB": 92
+  },
+  {
+    "at": "2026-10-23T09:09:09.792Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 33.17,
+    "loadAverage": [
+      5.765625,
+      4.44677734375,
+      4.64208984375
+    ],
+    "freeMemoryMiB": 693
+  },
+  {
+    "at": "2026-10-23T09:09:10.794Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 21.61,
+    "loadAverage": [
+      5.765625,
+      4.44677734375,
+      4.64208984375
+    ],
+    "freeMemoryMiB": 600
+  },
+  {
+    "at": "2026-10-23T09:09:11.795Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 24.15,
+    "loadAverage": [
+      5.765625,
+      4.44677734375,
+      4.64208984375
+    ],
+    "freeMemoryMiB": 352
+  },
+  {
+    "at": "2026-10-23T09:09:12.797Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 23.39,
+    "loadAverage": [
+      5.765625,
+      4.44677734375,
+      4.64208984375
+    ],
+    "freeMemoryMiB": 152
+  },
+  {
+    "at": "2026-10-23T09:09:13.799Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 30.66,
+    "loadAverage": [
+      5.6240234375,
+      4.43896484375,
+      4.63818359375
+    ],
+    "freeMemoryMiB": 89
+  },
+  {
+    "at": "2026-10-23T09:09:14.801Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 40,
+    "loadAverage": [
+      5.6240234375,
+      4.43896484375,
+      4.63818359375
+    ],
+    "freeMemoryMiB": 674
+  },
+  {
+    "at": "2026-10-23T09:09:15.803Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 17.62,
+    "loadAverage": [
+      5.6240234375,
+      4.43896484375,
+      4.63818359375
+    ],
+    "freeMemoryMiB": 436
+  },
+  {
+    "at": "2026-10-23T09:09:16.806Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 19.22,
+    "loadAverage": [
+      5.6240234375,
+      4.43896484375,
+      4.63818359375
+    ],
+    "freeMemoryMiB": 344
+  },
+  {
+    "at": "2026-10-23T09:09:17.806Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 24.95,
+    "loadAverage": [
+      5.6240234375,
+      4.43896484375,
+      4.63818359375
+    ],
+    "freeMemoryMiB": 158
+  },
+  {
+    "at": "2026-10-23T09:09:18.809Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 27.18,
+    "loadAverage": [
+      5.33349609375,
+      4.3984375,
+      4.62255859375
+    ],
+    "freeMemoryMiB": 72
+  },
+  {
+    "at": "2026-10-23T09:09:19.811Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 37.71,
+    "loadAverage": [
+      5.33349609375,
+      4.3984375,
+      4.62255859375
+    ],
+    "freeMemoryMiB": 515
+  },
+  {
+    "at": "2026-10-23T09:09:20.811Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 26.58,
+    "loadAverage": [
+      5.33349609375,
+      4.3984375,
+      4.62255859375
+    ],
+    "freeMemoryMiB": 328
+  },
+  {
+    "at": "2026-10-23T09:09:21.812Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 16.63,
+    "loadAverage": [
+      5.33349609375,
+      4.3984375,
+      4.62255859375
+    ],
+    "freeMemoryMiB": 213
+  },
+  {
+    "at": "2026-10-23T09:09:22.815Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 26.26,
+    "loadAverage": [
+      5.33349609375,
+      4.3984375,
+      4.62255859375
+    ],
+    "freeMemoryMiB": 105
+  },
+  {
+    "at": "2026-10-23T09:09:23.816Z",
+    "block": 4,
+    "phase": "measure",
+    "cpuBusyPercent": 24.02,
+    "loadAverage": [
+      4.986328125,
+      4.341796875,
+      4.60107421875
+    ],
+    "freeMemoryMiB": 84
+  },
+  {
+    "at": "2026-10-23T09:09:24.819Z",
+    "block": 5,
+    "phase": "starting",
+    "cpuBusyPercent": 29.71,
+    "loadAverage": [
+      4.986328125,
+      4.341796875,
+      4.60107421875
+    ],
+    "freeMemoryMiB": 956
+  },
+  {
+    "at": "2026-10-23T09:09:25.820Z",
+    "block": 5,
+    "phase": "warmup",
+    "cpuBusyPercent": 19.76,
+    "loadAverage": [
+      4.986328125,
+      4.341796875,
+      4.60107421875
+    ],
+    "freeMemoryMiB": 588
+  },
+  {
+    "at": "2026-10-23T09:09:26.821Z",
+    "block": 5,
+    "phase": "warmup",
+    "cpuBusyPercent": 44.2,
+    "loadAverage": [
+      4.986328125,
+      4.341796875,
+      4.60107421875
+    ],
+    "freeMemoryMiB": 137
+  },
+  {
+    "at": "2026-10-23T09:09:27.823Z",
+    "block": 5,
+    "phase": "warmup",
+    "cpuBusyPercent": 35.92,
+    "loadAverage": [
+      4.986328125,
+      4.341796875,
+      4.60107421875
+    ],
+    "freeMemoryMiB": 76
+  },
+  {
+    "at": "2026-10-23T09:09:28.824Z",
+    "block": 5,
+    "phase": "warmup",
+    "cpuBusyPercent": 26,
+    "loadAverage": [
+      5.3076171875,
+      4.4189453125,
+      4.62646484375
+    ],
+    "freeMemoryMiB": 516
+  },
+  {
+    "at": "2026-10-23T09:09:29.827Z",
+    "block": 5,
+    "phase": "warmup",
+    "cpuBusyPercent": 29.75,
+    "loadAverage": [
+      5.3076171875,
+      4.4189453125,
+      4.62646484375
+    ],
+    "freeMemoryMiB": 325
+  },
+  {
+    "at": "2026-10-23T09:09:30.828Z",
+    "block": 5,
+    "phase": "warmup",
+    "cpuBusyPercent": 25.33,
+    "loadAverage": [
+      5.3076171875,
+      4.4189453125,
+      4.62646484375
+    ],
+    "freeMemoryMiB": 142
+  },
+  {
+    "at": "2026-10-23T09:09:31.828Z",
+    "block": 5,
+    "phase": "warmup",
+    "cpuBusyPercent": 26.96,
+    "loadAverage": [
+      5.3076171875,
+      4.4189453125,
+      4.62646484375
+    ],
+    "freeMemoryMiB": 57
+  },
+  {
+    "at": "2026-10-23T09:09:32.829Z",
+    "block": 5,
+    "phase": "warmup",
+    "cpuBusyPercent": 23.24,
+    "loadAverage": [
+      5.3076171875,
+      4.4189453125,
+      4.62646484375
+    ],
+    "freeMemoryMiB": 73
+  },
+  {
+    "at": "2026-10-23T09:09:33.828Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 23.19,
+    "loadAverage": [
+      5.20263671875,
+      4.41162109375,
+      4.62255859375
+    ],
+    "freeMemoryMiB": 704
+  },
+  {
+    "at": "2026-10-23T09:09:34.828Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 42.47,
+    "loadAverage": [
+      5.20263671875,
+      4.41162109375,
+      4.62255859375
+    ],
+    "freeMemoryMiB": 286
+  },
+  {
+    "at": "2026-10-23T09:09:35.829Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 36.82,
+    "loadAverage": [
+      5.20263671875,
+      4.41162109375,
+      4.62255859375
+    ],
+    "freeMemoryMiB": 134
+  },
+  {
+    "at": "2026-10-23T09:09:36.830Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 41.03,
+    "loadAverage": [
+      5.20263671875,
+      4.41162109375,
+      4.62255859375
+    ],
+    "freeMemoryMiB": 210
+  },
+  {
+    "at": "2026-10-23T09:09:37.830Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 37.95,
+    "loadAverage": [
+      5.20263671875,
+      4.41162109375,
+      4.62255859375
+    ],
+    "freeMemoryMiB": 93
+  },
+  {
+    "at": "2026-10-23T09:09:38.832Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 36.95,
+    "loadAverage": [
+      4.86572265625,
+      4.35498046875,
+      4.60107421875
+    ],
+    "freeMemoryMiB": 386
+  },
+  {
+    "at": "2026-10-23T09:09:39.833Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 42.48,
+    "loadAverage": [
+      4.86572265625,
+      4.35498046875,
+      4.60107421875
+    ],
+    "freeMemoryMiB": 101
+  },
+  {
+    "at": "2026-10-23T09:09:40.833Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 39.54,
+    "loadAverage": [
+      4.86572265625,
+      4.35498046875,
+      4.60107421875
+    ],
+    "freeMemoryMiB": 483
+  },
+  {
+    "at": "2026-10-23T09:09:41.835Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 43,
+    "loadAverage": [
+      4.86572265625,
+      4.35498046875,
+      4.60107421875
+    ],
+    "freeMemoryMiB": 147
+  },
+  {
+    "at": "2026-10-23T09:09:42.837Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 38.87,
+    "loadAverage": [
+      4.86572265625,
+      4.35498046875,
+      4.60107421875
+    ],
+    "freeMemoryMiB": 520
+  },
+  {
+    "at": "2026-10-23T09:09:43.839Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 37.05,
+    "loadAverage": [
+      4.47607421875,
+      4.2822265625,
+      4.57373046875
+    ],
+    "freeMemoryMiB": 150
+  },
+  {
+    "at": "2026-10-23T09:09:44.841Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 38.77,
+    "loadAverage": [
+      4.47607421875,
+      4.2822265625,
+      4.57373046875
+    ],
+    "freeMemoryMiB": 88
+  },
+  {
+    "at": "2026-10-23T09:09:45.844Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 23.56,
+    "loadAverage": [
+      4.47607421875,
+      4.2822265625,
+      4.57373046875
+    ],
+    "freeMemoryMiB": 503
+  },
+  {
+    "at": "2026-10-23T09:09:46.845Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 25.75,
+    "loadAverage": [
+      4.47607421875,
+      4.2822265625,
+      4.57373046875
+    ],
+    "freeMemoryMiB": 317
+  },
+  {
+    "at": "2026-10-23T09:09:47.848Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 23.42,
+    "loadAverage": [
+      4.47607421875,
+      4.2822265625,
+      4.57373046875
+    ],
+    "freeMemoryMiB": 89
+  },
+  {
+    "at": "2026-10-23T09:09:48.849Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 25.38,
+    "loadAverage": [
+      4.27734375,
+      4.244140625,
+      4.55859375
+    ],
+    "freeMemoryMiB": 89
+  },
+  {
+    "at": "2026-10-23T09:09:49.850Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 31.69,
+    "loadAverage": [
+      4.27734375,
+      4.244140625,
+      4.55859375
+    ],
+    "freeMemoryMiB": 814
+  },
+  {
+    "at": "2026-10-23T09:09:50.850Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 26.73,
+    "loadAverage": [
+      4.27734375,
+      4.244140625,
+      4.55859375
+    ],
+    "freeMemoryMiB": 660
+  },
+  {
+    "at": "2026-10-23T09:09:51.852Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 24.02,
+    "loadAverage": [
+      4.27734375,
+      4.244140625,
+      4.55859375
+    ],
+    "freeMemoryMiB": 414
+  },
+  {
+    "at": "2026-10-23T09:09:52.852Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 24.02,
+    "loadAverage": [
+      4.27734375,
+      4.244140625,
+      4.55859375
+    ],
+    "freeMemoryMiB": 242
+  },
+  {
+    "at": "2026-10-23T09:09:53.855Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 21.14,
+    "loadAverage": [
+      4.7353515625,
+      4.33935546875,
+      4.59033203125
+    ],
+    "freeMemoryMiB": 87
+  },
+  {
+    "at": "2026-10-23T09:09:54.855Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 36.6,
+    "loadAverage": [
+      4.7353515625,
+      4.33935546875,
+      4.59033203125
+    ],
+    "freeMemoryMiB": 656
+  },
+  {
+    "at": "2026-10-23T09:09:55.855Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 16.52,
+    "loadAverage": [
+      4.7353515625,
+      4.33935546875,
+      4.59033203125
+    ],
+    "freeMemoryMiB": 427
+  },
+  {
+    "at": "2026-10-23T09:09:56.856Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 20.16,
+    "loadAverage": [
+      4.7353515625,
+      4.33935546875,
+      4.59033203125
+    ],
+    "freeMemoryMiB": 288
+  },
+  {
+    "at": "2026-10-23T09:09:57.858Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 31.12,
+    "loadAverage": [
+      4.7353515625,
+      4.33935546875,
+      4.59033203125
+    ],
+    "freeMemoryMiB": 68
+  },
+  {
+    "at": "2026-10-23T09:09:58.858Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 24.19,
+    "loadAverage": [
+      4.59619140625,
+      4.31689453125,
+      4.58056640625
+    ],
+    "freeMemoryMiB": 74
+  },
+  {
+    "at": "2026-10-23T09:09:59.861Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 38.53,
+    "loadAverage": [
+      4.59619140625,
+      4.31689453125,
+      4.58056640625
+    ],
+    "freeMemoryMiB": 496
+  },
+  {
+    "at": "2026-10-23T09:10:00.861Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 27.17,
+    "loadAverage": [
+      4.59619140625,
+      4.31689453125,
+      4.58056640625
+    ],
+    "freeMemoryMiB": 247
+  },
+  {
+    "at": "2026-10-23T09:10:01.860Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 20.48,
+    "loadAverage": [
+      4.59619140625,
+      4.31689453125,
+      4.58056640625
+    ],
+    "freeMemoryMiB": 160
+  },
+  {
+    "at": "2026-10-23T09:10:02.862Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 21.18,
+    "loadAverage": [
+      4.59619140625,
+      4.31689453125,
+      4.58056640625
+    ],
+    "freeMemoryMiB": 83
+  },
+  {
+    "at": "2026-10-23T09:10:03.863Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 23.24,
+    "loadAverage": [
+      4.22802734375,
+      4.2451171875,
+      4.5537109375
+    ],
+    "freeMemoryMiB": 62
+  },
+  {
+    "at": "2026-10-23T09:10:04.864Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 35.75,
+    "loadAverage": [
+      4.22802734375,
+      4.2451171875,
+      4.5537109375
+    ],
+    "freeMemoryMiB": 619
+  },
+  {
+    "at": "2026-10-23T09:10:05.864Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 23.94,
+    "loadAverage": [
+      4.22802734375,
+      4.2451171875,
+      4.5537109375
+    ],
+    "freeMemoryMiB": 450
+  },
+  {
+    "at": "2026-10-23T09:10:06.866Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 20.88,
+    "loadAverage": [
+      4.22802734375,
+      4.2451171875,
+      4.5537109375
+    ],
+    "freeMemoryMiB": 360
+  },
+  {
+    "at": "2026-10-23T09:10:07.867Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 17.05,
+    "loadAverage": [
+      4.22802734375,
+      4.2451171875,
+      4.5537109375
+    ],
+    "freeMemoryMiB": 214
+  },
+  {
+    "at": "2026-10-23T09:10:08.867Z",
+    "block": 5,
+    "phase": "measure",
+    "cpuBusyPercent": 23.87,
+    "loadAverage": [
+      3.96923828125,
+      4.19091796875,
+      4.53271484375
+    ],
+    "freeMemoryMiB": 82
+  },
+  {
+    "at": "2026-10-23T09:10:09.869Z",
+    "block": 6,
+    "phase": "starting",
+    "cpuBusyPercent": 31.09,
+    "loadAverage": [
+      3.96923828125,
+      4.19091796875,
+      4.53271484375
+    ],
+    "freeMemoryMiB": 1030
+  },
+  {
+    "at": "2026-10-23T09:10:10.870Z",
+    "block": 6,
+    "phase": "warmup",
+    "cpuBusyPercent": 21.39,
+    "loadAverage": [
+      3.96923828125,
+      4.19091796875,
+      4.53271484375
+    ],
+    "freeMemoryMiB": 673
+  },
+  {
+    "at": "2026-10-23T09:10:11.871Z",
+    "block": 6,
+    "phase": "warmup",
+    "cpuBusyPercent": 43.03,
+    "loadAverage": [
+      3.96923828125,
+      4.19091796875,
+      4.53271484375
+    ],
+    "freeMemoryMiB": 203
+  },
+  {
+    "at": "2026-10-23T09:10:12.872Z",
+    "block": 6,
+    "phase": "warmup",
+    "cpuBusyPercent": 45.27,
+    "loadAverage": [
+      3.96923828125,
+      4.19091796875,
+      4.53271484375
+    ],
+    "freeMemoryMiB": 67
+  },
+  {
+    "at": "2026-10-23T09:10:13.874Z",
+    "block": 6,
+    "phase": "warmup",
+    "cpuBusyPercent": 26.71,
+    "loadAverage": [
+      3.8115234375,
+      4.154296875,
+      4.517578125
+    ],
+    "freeMemoryMiB": 472
+  },
+  {
+    "at": "2026-10-23T09:10:14.876Z",
+    "block": 6,
+    "phase": "warmup",
+    "cpuBusyPercent": 25.7,
+    "loadAverage": [
+      3.8115234375,
+      4.154296875,
+      4.517578125
+    ],
+    "freeMemoryMiB": 291
+  },
+  {
+    "at": "2026-10-23T09:10:15.878Z",
+    "block": 6,
+    "phase": "warmup",
+    "cpuBusyPercent": 25.5,
+    "loadAverage": [
+      3.8115234375,
+      4.154296875,
+      4.517578125
+    ],
+    "freeMemoryMiB": 86
+  },
+  {
+    "at": "2026-10-23T09:10:16.880Z",
+    "block": 6,
+    "phase": "warmup",
+    "cpuBusyPercent": 27.84,
+    "loadAverage": [
+      3.8115234375,
+      4.154296875,
+      4.517578125
+    ],
+    "freeMemoryMiB": 101
+  },
+  {
+    "at": "2026-10-23T09:10:17.882Z",
+    "block": 6,
+    "phase": "warmup",
+    "cpuBusyPercent": 25.6,
+    "loadAverage": [
+      3.8115234375,
+      4.154296875,
+      4.517578125
+    ],
+    "freeMemoryMiB": 93
+  },
+  {
+    "at": "2026-10-23T09:10:18.884Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 29.16,
+    "loadAverage": [
+      3.74609375,
+      4.134765625,
+      4.50830078125
+    ],
+    "freeMemoryMiB": 641
+  },
+  {
+    "at": "2026-10-23T09:10:19.886Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 41.73,
+    "loadAverage": [
+      3.74609375,
+      4.134765625,
+      4.50830078125
+    ],
+    "freeMemoryMiB": 157
+  },
+  {
+    "at": "2026-10-23T09:10:20.886Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 36.56,
+    "loadAverage": [
+      3.74609375,
+      4.134765625,
+      4.50830078125
+    ],
+    "freeMemoryMiB": 643
+  },
+  {
+    "at": "2026-10-23T09:10:21.887Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 45.57,
+    "loadAverage": [
+      3.74609375,
+      4.134765625,
+      4.50830078125
+    ],
+    "freeMemoryMiB": 297
+  },
+  {
+    "at": "2026-10-23T09:10:22.888Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 38.17,
+    "loadAverage": [
+      3.74609375,
+      4.134765625,
+      4.50830078125
+    ],
+    "freeMemoryMiB": 78
+  },
+  {
+    "at": "2026-10-23T09:10:23.890Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 39.22,
+    "loadAverage": [
+      3.44580078125,
+      4.06591796875,
+      4.4814453125
+    ],
+    "freeMemoryMiB": 209
+  },
+  {
+    "at": "2026-10-23T09:10:24.891Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 37.29,
+    "loadAverage": [
+      3.44580078125,
+      4.06591796875,
+      4.4814453125
+    ],
+    "freeMemoryMiB": 81
+  },
+  {
+    "at": "2026-10-23T09:10:25.892Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 42.51,
+    "loadAverage": [
+      3.44580078125,
+      4.06591796875,
+      4.4814453125
+    ],
+    "freeMemoryMiB": 399
+  },
+  {
+    "at": "2026-10-23T09:10:26.894Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 35.01,
+    "loadAverage": [
+      3.44580078125,
+      4.06591796875,
+      4.4814453125
+    ],
+    "freeMemoryMiB": 145
+  },
+  {
+    "at": "2026-10-23T09:10:27.894Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 41.31,
+    "loadAverage": [
+      3.44580078125,
+      4.06591796875,
+      4.4814453125
+    ],
+    "freeMemoryMiB": 319
+  },
+  {
+    "at": "2026-10-23T09:10:28.896Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 43.19,
+    "loadAverage": [
+      3.24951171875,
+      4.0146484375,
+      4.4609375
+    ],
+    "freeMemoryMiB": 69
+  },
+  {
+    "at": "2026-10-23T09:10:29.895Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 43.79,
+    "loadAverage": [
+      3.24951171875,
+      4.0146484375,
+      4.4609375
+    ],
+    "freeMemoryMiB": 522
+  },
+  {
+    "at": "2026-10-23T09:10:30.896Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 19.05,
+    "loadAverage": [
+      3.24951171875,
+      4.0146484375,
+      4.4609375
+    ],
+    "freeMemoryMiB": 387
+  },
+  {
+    "at": "2026-10-23T09:10:31.898Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 21.64,
+    "loadAverage": [
+      3.24951171875,
+      4.0146484375,
+      4.4609375
+    ],
+    "freeMemoryMiB": 180
+  },
+  {
+    "at": "2026-10-23T09:10:32.899Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 24.17,
+    "loadAverage": [
+      3.24951171875,
+      4.0146484375,
+      4.4609375
+    ],
+    "freeMemoryMiB": 70
+  },
+  {
+    "at": "2026-10-23T09:10:33.901Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 25.07,
+    "loadAverage": [
+      3.2294921875,
+      3.99755859375,
+      4.4521484375
+    ],
+    "freeMemoryMiB": 94
+  },
+  {
+    "at": "2026-10-23T09:10:34.901Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 34.65,
+    "loadAverage": [
+      3.2294921875,
+      3.99755859375,
+      4.4521484375
+    ],
+    "freeMemoryMiB": 659
+  },
+  {
+    "at": "2026-10-23T09:10:35.902Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 27.79,
+    "loadAverage": [
+      3.2294921875,
+      3.99755859375,
+      4.4521484375
+    ],
+    "freeMemoryMiB": 362
+  },
+  {
+    "at": "2026-10-23T09:10:36.904Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 17.52,
+    "loadAverage": [
+      3.2294921875,
+      3.99755859375,
+      4.4521484375
+    ],
+    "freeMemoryMiB": 240
+  },
+  {
+    "at": "2026-10-23T09:10:37.904Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 18.53,
+    "loadAverage": [
+      3.2294921875,
+      3.99755859375,
+      4.4521484375
+    ],
+    "freeMemoryMiB": 147
+  },
+  {
+    "at": "2026-10-23T09:10:38.905Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 23.39,
+    "loadAverage": [
+      2.970703125,
+      3.93115234375,
+      4.42578125
+    ],
+    "freeMemoryMiB": 68
+  },
+  {
+    "at": "2026-10-23T09:10:39.907Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 37.55,
+    "loadAverage": [
+      2.970703125,
+      3.93115234375,
+      4.42578125
+    ],
+    "freeMemoryMiB": 501
+  },
+  {
+    "at": "2026-10-23T09:10:40.908Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 26.26,
+    "loadAverage": [
+      2.970703125,
+      3.93115234375,
+      4.42578125
+    ],
+    "freeMemoryMiB": 324
+  },
+  {
+    "at": "2026-10-23T09:10:41.910Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 23.81,
+    "loadAverage": [
+      2.970703125,
+      3.93115234375,
+      4.42578125
+    ],
+    "freeMemoryMiB": 212
+  },
+  {
+    "at": "2026-10-23T09:10:42.911Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 18.14,
+    "loadAverage": [
+      2.970703125,
+      3.93115234375,
+      4.42578125
+    ],
+    "freeMemoryMiB": 78
+  },
+  {
+    "at": "2026-10-23T09:10:43.913Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 23.55,
+    "loadAverage": [
+      2.8125,
+      3.88232421875,
+      4.4052734375
+    ],
+    "freeMemoryMiB": 78
+  },
+  {
+    "at": "2026-10-23T09:10:44.916Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 34.78,
+    "loadAverage": [
+      2.8125,
+      3.88232421875,
+      4.4052734375
+    ],
+    "freeMemoryMiB": 616
+  },
+  {
+    "at": "2026-10-23T09:10:45.917Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 23.94,
+    "loadAverage": [
+      2.8125,
+      3.88232421875,
+      4.4052734375
+    ],
+    "freeMemoryMiB": 491
+  },
+  {
+    "at": "2026-10-23T09:10:46.917Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 23.17,
+    "loadAverage": [
+      2.8125,
+      3.88232421875,
+      4.4052734375
+    ],
+    "freeMemoryMiB": 332
+  },
+  {
+    "at": "2026-10-23T09:10:47.918Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 22.55,
+    "loadAverage": [
+      2.8125,
+      3.88232421875,
+      4.4052734375
+    ],
+    "freeMemoryMiB": 174
+  },
+  {
+    "at": "2026-10-23T09:10:48.919Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 21.64,
+    "loadAverage": [
+      3.0673828125,
+      3.91748046875,
+      4.41455078125
+    ],
+    "freeMemoryMiB": 112
+  },
+  {
+    "at": "2026-10-23T09:10:49.921Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 41.06,
+    "loadAverage": [
+      3.0673828125,
+      3.91748046875,
+      4.41455078125
+    ],
+    "freeMemoryMiB": 582
+  },
+  {
+    "at": "2026-10-23T09:10:50.922Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 27.26,
+    "loadAverage": [
+      3.0673828125,
+      3.91748046875,
+      4.41455078125
+    ],
+    "freeMemoryMiB": 363
+  },
+  {
+    "at": "2026-10-23T09:10:51.923Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 30.99,
+    "loadAverage": [
+      3.0673828125,
+      3.91748046875,
+      4.41455078125
+    ],
+    "freeMemoryMiB": 111
+  },
+  {
+    "at": "2026-10-23T09:10:52.925Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 32.09,
+    "loadAverage": [
+      3.0673828125,
+      3.91748046875,
+      4.41455078125
+    ],
+    "freeMemoryMiB": 113
+  },
+  {
+    "at": "2026-10-23T09:10:53.927Z",
+    "block": 6,
+    "phase": "measure",
+    "cpuBusyPercent": 24.22,
+    "loadAverage": [
+      2.8212890625,
+      3.85205078125,
+      4.388671875
+    ],
+    "freeMemoryMiB": 134
+  },
+  {
+    "at": "2026-10-23T09:10:54.929Z",
+    "block": 7,
+    "phase": "warmup",
+    "cpuBusyPercent": 18.48,
+    "loadAverage": [
+      2.8212890625,
+      3.85205078125,
+      4.388671875
+    ],
+    "freeMemoryMiB": 853
+  },
+  {
+    "at": "2026-10-23T09:10:55.930Z",
+    "block": 7,
+    "phase": "warmup",
+    "cpuBusyPercent": 28.43,
+    "loadAverage": [
+      2.8212890625,
+      3.85205078125,
+      4.388671875
+    ],
+    "freeMemoryMiB": 415
+  },
+  {
+    "at": "2026-10-23T09:10:56.932Z",
+    "block": 7,
+    "phase": "warmup",
+    "cpuBusyPercent": 50.65,
+    "loadAverage": [
+      2.8212890625,
+      3.85205078125,
+      4.388671875
+    ],
+    "freeMemoryMiB": 133
+  },
+  {
+    "at": "2026-10-23T09:10:57.933Z",
+    "block": 7,
+    "phase": "warmup",
+    "cpuBusyPercent": 48.13,
+    "loadAverage": [
+      2.8212890625,
+      3.85205078125,
+      4.388671875
+    ],
+    "freeMemoryMiB": 574
+  },
+  {
+    "at": "2026-10-23T09:10:58.935Z",
+    "block": 7,
+    "phase": "warmup",
+    "cpuBusyPercent": 33.4,
+    "loadAverage": [
+      3.23583984375,
+      3.9208984375,
+      4.40966796875
+    ],
+    "freeMemoryMiB": 366
+  },
+  {
+    "at": "2026-10-23T09:10:59.936Z",
+    "block": 7,
+    "phase": "warmup",
+    "cpuBusyPercent": 42.96,
+    "loadAverage": [
+      3.23583984375,
+      3.9208984375,
+      4.40966796875
+    ],
+    "freeMemoryMiB": 65
+  },
+  {
+    "at": "2026-10-23T09:11:00.938Z",
+    "block": 7,
+    "phase": "warmup",
+    "cpuBusyPercent": 50.8,
+    "loadAverage": [
+      3.23583984375,
+      3.9208984375,
+      4.40966796875
+    ],
+    "freeMemoryMiB": 69
+  },
+  {
+    "at": "2026-10-23T09:11:01.940Z",
+    "block": 7,
+    "phase": "warmup",
+    "cpuBusyPercent": 44.61,
+    "loadAverage": [
+      3.23583984375,
+      3.9208984375,
+      4.40966796875
+    ],
+    "freeMemoryMiB": 63
+  },
+  {
+    "at": "2026-10-23T09:11:02.942Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 29.33,
+    "loadAverage": [
+      3.23583984375,
+      3.9208984375,
+      4.40966796875
+    ],
+    "freeMemoryMiB": 825
+  },
+  {
+    "at": "2026-10-23T09:11:03.942Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 35.58,
+    "loadAverage": [
+      3.13671875,
+      3.888671875,
+      4.3955078125
+    ],
+    "freeMemoryMiB": 384
+  },
+  {
+    "at": "2026-10-23T09:11:04.942Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 40.79,
+    "loadAverage": [
+      3.13671875,
+      3.888671875,
+      4.3955078125
+    ],
+    "freeMemoryMiB": 133
+  },
+  {
+    "at": "2026-10-23T09:11:05.944Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 35.21,
+    "loadAverage": [
+      3.13671875,
+      3.888671875,
+      4.3955078125
+    ],
+    "freeMemoryMiB": 523
+  },
+  {
+    "at": "2026-10-23T09:11:06.945Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 43.68,
+    "loadAverage": [
+      3.13671875,
+      3.888671875,
+      4.3955078125
+    ],
+    "freeMemoryMiB": 123
+  },
+  {
+    "at": "2026-10-23T09:11:07.945Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 32.77,
+    "loadAverage": [
+      3.13671875,
+      3.888671875,
+      4.3955078125
+    ],
+    "freeMemoryMiB": 599
+  },
+  {
+    "at": "2026-10-23T09:11:08.947Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 40.12,
+    "loadAverage": [
+      2.88525390625,
+      3.82373046875,
+      4.36962890625
+    ],
+    "freeMemoryMiB": 222
+  },
+  {
+    "at": "2026-10-23T09:11:09.947Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 44.01,
+    "loadAverage": [
+      2.88525390625,
+      3.82373046875,
+      4.36962890625
+    ],
+    "freeMemoryMiB": 98
+  },
+  {
+    "at": "2026-10-23T09:11:10.949Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 38.49,
+    "loadAverage": [
+      2.88525390625,
+      3.82373046875,
+      4.36962890625
+    ],
+    "freeMemoryMiB": 318
+  },
+  {
+    "at": "2026-10-23T09:11:11.951Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 36.45,
+    "loadAverage": [
+      2.88525390625,
+      3.82373046875,
+      4.36962890625
+    ],
+    "freeMemoryMiB": 94
+  },
+  {
+    "at": "2026-10-23T09:11:12.952Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 46.96,
+    "loadAverage": [
+      2.88525390625,
+      3.82373046875,
+      4.36962890625
+    ],
+    "freeMemoryMiB": 284
+  },
+  {
+    "at": "2026-10-23T09:11:13.953Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 45.54,
+    "loadAverage": [
+      2.73388671875,
+      3.7763671875,
+      4.349609375
+    ],
+    "freeMemoryMiB": 73
+  },
+  {
+    "at": "2026-10-23T09:11:14.953Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 34.51,
+    "loadAverage": [
+      2.73388671875,
+      3.7763671875,
+      4.349609375
+    ],
+    "freeMemoryMiB": 561
+  },
+  {
+    "at": "2026-10-23T09:11:15.955Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 19.22,
+    "loadAverage": [
+      2.73388671875,
+      3.7763671875,
+      4.349609375
+    ],
+    "freeMemoryMiB": 288
+  },
+  {
+    "at": "2026-10-23T09:11:16.957Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 23.16,
+    "loadAverage": [
+      2.73388671875,
+      3.7763671875,
+      4.349609375
+    ],
+    "freeMemoryMiB": 134
+  },
+  {
+    "at": "2026-10-23T09:11:17.959Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 23.69,
+    "loadAverage": [
+      2.73388671875,
+      3.7763671875,
+      4.349609375
+    ],
+    "freeMemoryMiB": 97
+  },
+  {
+    "at": "2026-10-23T09:11:18.959Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 25.8,
+    "loadAverage": [
+      2.5146484375,
+      3.71337890625,
+      4.32373046875
+    ],
+    "freeMemoryMiB": 93
+  },
+  {
+    "at": "2026-10-23T09:11:19.960Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 38,
+    "loadAverage": [
+      2.5146484375,
+      3.71337890625,
+      4.32373046875
+    ],
+    "freeMemoryMiB": 510
+  },
+  {
+    "at": "2026-10-23T09:11:20.961Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 26.21,
+    "loadAverage": [
+      2.5146484375,
+      3.71337890625,
+      4.32373046875
+    ],
+    "freeMemoryMiB": 337
+  },
+  {
+    "at": "2026-10-23T09:11:21.963Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 34.27,
+    "loadAverage": [
+      2.5146484375,
+      3.71337890625,
+      4.32373046875
+    ],
+    "freeMemoryMiB": 155
+  },
+  {
+    "at": "2026-10-23T09:11:22.965Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 34.91,
+    "loadAverage": [
+      2.5146484375,
+      3.71337890625,
+      4.32373046875
+    ],
+    "freeMemoryMiB": 68
+  },
+  {
+    "at": "2026-10-23T09:11:23.967Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 26.61,
+    "loadAverage": [
+      2.39306640625,
+      3.66796875,
+      4.30419921875
+    ],
+    "freeMemoryMiB": 65
+  },
+  {
+    "at": "2026-10-23T09:11:24.968Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 37.36,
+    "loadAverage": [
+      2.39306640625,
+      3.66796875,
+      4.30419921875
+    ],
+    "freeMemoryMiB": 614
+  },
+  {
+    "at": "2026-10-23T09:11:25.970Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 27.14,
+    "loadAverage": [
+      2.39306640625,
+      3.66796875,
+      4.30419921875
+    ],
+    "freeMemoryMiB": 299
+  },
+  {
+    "at": "2026-10-23T09:11:26.971Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 18.03,
+    "loadAverage": [
+      2.39306640625,
+      3.66796875,
+      4.30419921875
+    ],
+    "freeMemoryMiB": 123
+  },
+  {
+    "at": "2026-10-23T09:11:27.972Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 20.58,
+    "loadAverage": [
+      2.39306640625,
+      3.66796875,
+      4.30419921875
+    ],
+    "freeMemoryMiB": 70
+  },
+  {
+    "at": "2026-10-23T09:11:28.974Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 24.95,
+    "loadAverage": [
+      2.44140625,
+      3.65673828125,
+      4.29638671875
+    ],
+    "freeMemoryMiB": 73
+  },
+  {
+    "at": "2026-10-23T09:11:29.976Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 38.11,
+    "loadAverage": [
+      2.44140625,
+      3.65673828125,
+      4.29638671875
+    ],
+    "freeMemoryMiB": 544
+  },
+  {
+    "at": "2026-10-23T09:11:30.977Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 24.27,
+    "loadAverage": [
+      2.44140625,
+      3.65673828125,
+      4.29638671875
+    ],
+    "freeMemoryMiB": 352
+  },
+  {
+    "at": "2026-10-23T09:11:31.979Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 24.7,
+    "loadAverage": [
+      2.44140625,
+      3.65673828125,
+      4.29638671875
+    ],
+    "freeMemoryMiB": 257
+  },
+  {
+    "at": "2026-10-23T09:11:32.980Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 17.02,
+    "loadAverage": [
+      2.44140625,
+      3.65673828125,
+      4.29638671875
+    ],
+    "freeMemoryMiB": 131
+  },
+  {
+    "at": "2026-10-23T09:11:33.980Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 20.04,
+    "loadAverage": [
+      2.24560546875,
+      3.595703125,
+      4.27099609375
+    ],
+    "freeMemoryMiB": 77
+  },
+  {
+    "at": "2026-10-23T09:11:34.982Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 34.53,
+    "loadAverage": [
+      2.24560546875,
+      3.595703125,
+      4.27099609375
+    ],
+    "freeMemoryMiB": 591
+  },
+  {
+    "at": "2026-10-23T09:11:35.983Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 24.06,
+    "loadAverage": [
+      2.24560546875,
+      3.595703125,
+      4.27099609375
+    ],
+    "freeMemoryMiB": 448
+  },
+  {
+    "at": "2026-10-23T09:11:36.985Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 23.22,
+    "loadAverage": [
+      2.24560546875,
+      3.595703125,
+      4.27099609375
+    ],
+    "freeMemoryMiB": 263
+  },
+  {
+    "at": "2026-10-23T09:11:37.986Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 25.08,
+    "loadAverage": [
+      2.24560546875,
+      3.595703125,
+      4.27099609375
+    ],
+    "freeMemoryMiB": 54
+  },
+  {
+    "at": "2026-10-23T09:11:38.986Z",
+    "block": 7,
+    "phase": "measure",
+    "cpuBusyPercent": 21.96,
+    "loadAverage": [
+      2.3056640625,
+      3.58544921875,
+      4.26318359375
+    ],
+    "freeMemoryMiB": 70
+  },
+  {
+    "at": "2026-10-23T09:11:39.988Z",
+    "block": 8,
+    "phase": "warmup",
+    "cpuBusyPercent": 23.18,
+    "loadAverage": [
+      2.3056640625,
+      3.58544921875,
+      4.26318359375
+    ],
+    "freeMemoryMiB": 822
+  },
+  {
+    "at": "2026-10-23T09:11:40.990Z",
+    "block": 8,
+    "phase": "warmup",
+    "cpuBusyPercent": 30.07,
+    "loadAverage": [
+      2.3056640625,
+      3.58544921875,
+      4.26318359375
+    ],
+    "freeMemoryMiB": 290
+  },
+  {
+    "at": "2026-10-23T09:11:41.990Z",
+    "block": 8,
+    "phase": "warmup",
+    "cpuBusyPercent": 43.57,
+    "loadAverage": [
+      2.3056640625,
+      3.58544921875,
+      4.26318359375
+    ],
+    "freeMemoryMiB": 89
+  },
+  {
+    "at": "2026-10-23T09:11:42.990Z",
+    "block": 8,
+    "phase": "warmup",
+    "cpuBusyPercent": 37.4,
+    "loadAverage": [
+      2.3056640625,
+      3.58544921875,
+      4.26318359375
+    ],
+    "freeMemoryMiB": 659
+  },
+  {
+    "at": "2026-10-23T09:11:43.992Z",
+    "block": 8,
+    "phase": "warmup",
+    "cpuBusyPercent": 24.55,
+    "loadAverage": [
+      2.20068359375,
+      3.54248046875,
+      4.24365234375
+    ],
+    "freeMemoryMiB": 499
+  },
+  {
+    "at": "2026-10-23T09:11:44.993Z",
+    "block": 8,
+    "phase": "warmup",
+    "cpuBusyPercent": 24.42,
+    "loadAverage": [
+      2.20068359375,
+      3.54248046875,
+      4.24365234375
+    ],
+    "freeMemoryMiB": 357
+  },
+  {
+    "at": "2026-10-23T09:11:45.994Z",
+    "block": 8,
+    "phase": "warmup",
+    "cpuBusyPercent": 24.45,
+    "loadAverage": [
+      2.20068359375,
+      3.54248046875,
+      4.24365234375
+    ],
+    "freeMemoryMiB": 108
+  },
+  {
+    "at": "2026-10-23T09:11:46.996Z",
+    "block": 8,
+    "phase": "warmup",
+    "cpuBusyPercent": 30.19,
+    "loadAverage": [
+      2.20068359375,
+      3.54248046875,
+      4.24365234375
+    ],
+    "freeMemoryMiB": 70
+  },
+  {
+    "at": "2026-10-23T09:11:47.998Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 27.19,
+    "loadAverage": [
+      2.20068359375,
+      3.54248046875,
+      4.24365234375
+    ],
+    "freeMemoryMiB": 896
+  },
+  {
+    "at": "2026-10-23T09:11:48.999Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 33.63,
+    "loadAverage": [
+      3.2255859375,
+      3.732421875,
+      4.306640625
+    ],
+    "freeMemoryMiB": 492
+  },
+  {
+    "at": "2026-10-23T09:11:50.001Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 43.66,
+    "loadAverage": [
+      3.2255859375,
+      3.732421875,
+      4.306640625
+    ],
+    "freeMemoryMiB": 70
+  },
+  {
+    "at": "2026-10-23T09:11:51.003Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 37.34,
+    "loadAverage": [
+      3.2255859375,
+      3.732421875,
+      4.306640625
+    ],
+    "freeMemoryMiB": 515
+  },
+  {
+    "at": "2026-10-23T09:11:52.003Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 44.37,
+    "loadAverage": [
+      3.2255859375,
+      3.732421875,
+      4.306640625
+    ],
+    "freeMemoryMiB": 131
+  },
+  {
+    "at": "2026-10-23T09:11:53.004Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 33.37,
+    "loadAverage": [
+      3.2255859375,
+      3.732421875,
+      4.306640625
+    ],
+    "freeMemoryMiB": 571
+  },
+  {
+    "at": "2026-10-23T09:11:54.006Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 39.17,
+    "loadAverage": [
+      3.20751953125,
+      3.72021484375,
+      4.298828125
+    ],
+    "freeMemoryMiB": 98
+  },
+  {
+    "at": "2026-10-23T09:11:55.007Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 36.96,
+    "loadAverage": [
+      3.20751953125,
+      3.72021484375,
+      4.298828125
+    ],
+    "freeMemoryMiB": 640
+  },
+  {
+    "at": "2026-10-23T09:11:56.008Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 43.81,
+    "loadAverage": [
+      3.20751953125,
+      3.72021484375,
+      4.298828125
+    ],
+    "freeMemoryMiB": 318
+  },
+  {
+    "at": "2026-10-23T09:11:57.009Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 36.79,
+    "loadAverage": [
+      3.20751953125,
+      3.72021484375,
+      4.298828125
+    ],
+    "freeMemoryMiB": 77
+  },
+  {
+    "at": "2026-10-23T09:11:58.009Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 37.51,
+    "loadAverage": [
+      3.20751953125,
+      3.72021484375,
+      4.298828125
+    ],
+    "freeMemoryMiB": 245
+  },
+  {
+    "at": "2026-10-23T09:11:59.012Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 38.39,
+    "loadAverage": [
+      2.9501953125,
+      3.658203125,
+      4.2734375
+    ],
+    "freeMemoryMiB": 84
+  },
+  {
+    "at": "2026-10-23T09:12:00.013Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 39.39,
+    "loadAverage": [
+      2.9501953125,
+      3.658203125,
+      4.2734375
+    ],
+    "freeMemoryMiB": 403
+  },
+  {
+    "at": "2026-10-23T09:12:01.014Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 32.36,
+    "loadAverage": [
+      2.9501953125,
+      3.658203125,
+      4.2734375
+    ],
+    "freeMemoryMiB": 169
+  },
+  {
+    "at": "2026-10-23T09:12:02.015Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 38.24,
+    "loadAverage": [
+      2.9501953125,
+      3.658203125,
+      4.2734375
+    ],
+    "freeMemoryMiB": 79
+  },
+  {
+    "at": "2026-10-23T09:12:03.016Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 28.28,
+    "loadAverage": [
+      2.9501953125,
+      3.658203125,
+      4.2734375
+    ],
+    "freeMemoryMiB": 85
+  },
+  {
+    "at": "2026-10-23T09:12:04.017Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 28.11,
+    "loadAverage": [
+      3.0341796875,
+      3.66357421875,
+      4.271484375
+    ],
+    "freeMemoryMiB": 112
+  },
+  {
+    "at": "2026-10-23T09:12:05.017Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 25.13,
+    "loadAverage": [
+      3.0341796875,
+      3.66357421875,
+      4.271484375
+    ],
+    "freeMemoryMiB": 493
+  },
+  {
+    "at": "2026-10-23T09:12:06.019Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 23.42,
+    "loadAverage": [
+      3.0341796875,
+      3.66357421875,
+      4.271484375
+    ],
+    "freeMemoryMiB": 349
+  },
+  {
+    "at": "2026-10-23T09:12:07.020Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 24.87,
+    "loadAverage": [
+      3.0341796875,
+      3.66357421875,
+      4.271484375
+    ],
+    "freeMemoryMiB": 162
+  },
+  {
+    "at": "2026-10-23T09:12:08.021Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 27.45,
+    "loadAverage": [
+      3.0341796875,
+      3.66357421875,
+      4.271484375
+    ],
+    "freeMemoryMiB": 66
+  },
+  {
+    "at": "2026-10-23T09:12:09.023Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 26.76,
+    "loadAverage": [
+      2.951171875,
+      3.6357421875,
+      4.2578125
+    ],
+    "freeMemoryMiB": 78
+  },
+  {
+    "at": "2026-10-23T09:12:10.023Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 27.31,
+    "loadAverage": [
+      2.951171875,
+      3.6357421875,
+      4.2578125
+    ],
+    "freeMemoryMiB": 542
+  },
+  {
+    "at": "2026-10-23T09:12:11.025Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 22.65,
+    "loadAverage": [
+      2.951171875,
+      3.6357421875,
+      4.2578125
+    ],
+    "freeMemoryMiB": 377
+  },
+  {
+    "at": "2026-10-23T09:12:12.026Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 27.75,
+    "loadAverage": [
+      2.951171875,
+      3.6357421875,
+      4.2578125
+    ],
+    "freeMemoryMiB": 80
+  },
+  {
+    "at": "2026-10-23T09:12:13.028Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 29.95,
+    "loadAverage": [
+      2.951171875,
+      3.6357421875,
+      4.2578125
+    ],
+    "freeMemoryMiB": 78
+  },
+  {
+    "at": "2026-10-23T09:12:14.028Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 26.2,
+    "loadAverage": [
+      2.794921875,
+      3.591796875,
+      4.23828125
+    ],
+    "freeMemoryMiB": 75
+  },
+  {
+    "at": "2026-10-23T09:12:15.031Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 26.74,
+    "loadAverage": [
+      2.794921875,
+      3.591796875,
+      4.23828125
+    ],
+    "freeMemoryMiB": 518
+  },
+  {
+    "at": "2026-10-23T09:12:16.031Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 24.37,
+    "loadAverage": [
+      2.794921875,
+      3.591796875,
+      4.23828125
+    ],
+    "freeMemoryMiB": 217
+  },
+  {
+    "at": "2026-10-23T09:12:17.032Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 25.03,
+    "loadAverage": [
+      2.794921875,
+      3.591796875,
+      4.23828125
+    ],
+    "freeMemoryMiB": 106
+  },
+  {
+    "at": "2026-10-23T09:12:18.033Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 24.7,
+    "loadAverage": [
+      2.794921875,
+      3.591796875,
+      4.23828125
+    ],
+    "freeMemoryMiB": 109
+  },
+  {
+    "at": "2026-10-23T09:12:19.035Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 25.53,
+    "loadAverage": [
+      2.65087890625,
+      3.54833984375,
+      4.21923828125
+    ],
+    "freeMemoryMiB": 739
+  },
+  {
+    "at": "2026-10-23T09:12:20.036Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 26.2,
+    "loadAverage": [
+      2.65087890625,
+      3.54833984375,
+      4.21923828125
+    ],
+    "freeMemoryMiB": 492
+  },
+  {
+    "at": "2026-10-23T09:12:21.037Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 25.15,
+    "loadAverage": [
+      2.65087890625,
+      3.54833984375,
+      4.21923828125
+    ],
+    "freeMemoryMiB": 219
+  },
+  {
+    "at": "2026-10-23T09:12:22.039Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 21.99,
+    "loadAverage": [
+      2.65087890625,
+      3.54833984375,
+      4.21923828125
+    ],
+    "freeMemoryMiB": 105
+  },
+  {
+    "at": "2026-10-23T09:12:23.040Z",
+    "block": 8,
+    "phase": "measure",
+    "cpuBusyPercent": 26.38,
+    "loadAverage": [
+      2.65087890625,
+      3.54833984375,
+      4.21923828125
+    ],
+    "freeMemoryMiB": 78
+  },
+  {
+    "at": "2026-10-23T09:12:24.049Z",
+    "block": 9,
+    "phase": "starting",
+    "cpuBusyPercent": 31.47,
+    "loadAverage": [
+      2.6787109375,
+      3.5390625,
+      4.2119140625
+    ],
+    "freeMemoryMiB": 1130
+  },
+  {
+    "at": "2026-10-23T09:12:25.051Z",
+    "block": 9,
+    "phase": "warmup",
+    "cpuBusyPercent": 16.95,
+    "loadAverage": [
+      2.6787109375,
+      3.5390625,
+      4.2119140625
+    ],
+    "freeMemoryMiB": 724
+  },
+  {
+    "at": "2026-10-23T09:12:26.052Z",
+    "block": 9,
+    "phase": "warmup",
+    "cpuBusyPercent": 36.92,
+    "loadAverage": [
+      2.6787109375,
+      3.5390625,
+      4.2119140625
+    ],
+    "freeMemoryMiB": 299
+  },
+  {
+    "at": "2026-10-23T09:12:27.054Z",
+    "block": 9,
+    "phase": "warmup",
+    "cpuBusyPercent": 38.35,
+    "loadAverage": [
+      2.6787109375,
+      3.5390625,
+      4.2119140625
+    ],
+    "freeMemoryMiB": 110
+  },
+  {
+    "at": "2026-10-23T09:12:28.054Z",
+    "block": 9,
+    "phase": "warmup",
+    "cpuBusyPercent": 39.13,
+    "loadAverage": [
+      2.6787109375,
+      3.5390625,
+      4.2119140625
+    ],
+    "freeMemoryMiB": 479
+  },
+  {
+    "at": "2026-10-23T09:12:29.055Z",
+    "block": 9,
+    "phase": "warmup",
+    "cpuBusyPercent": 19.27,
+    "loadAverage": [
+      2.7041015625,
+      3.52978515625,
+      4.20458984375
+    ],
+    "freeMemoryMiB": 307
+  },
+  {
+    "at": "2026-10-23T09:12:30.055Z",
+    "block": 9,
+    "phase": "warmup",
+    "cpuBusyPercent": 22.22,
+    "loadAverage": [
+      2.7041015625,
+      3.52978515625,
+      4.20458984375
+    ],
+    "freeMemoryMiB": 159
+  },
+  {
+    "at": "2026-10-23T09:12:31.056Z",
+    "block": 9,
+    "phase": "warmup",
+    "cpuBusyPercent": 23.35,
+    "loadAverage": [
+      2.7041015625,
+      3.52978515625,
+      4.20458984375
+    ],
+    "freeMemoryMiB": 67
+  },
+  {
+    "at": "2026-10-23T09:12:32.058Z",
+    "block": 9,
+    "phase": "warmup",
+    "cpuBusyPercent": 30.62,
+    "loadAverage": [
+      2.7041015625,
+      3.52978515625,
+      4.20458984375
+    ],
+    "freeMemoryMiB": 73
+  },
+  {
+    "at": "2026-10-23T09:12:33.058Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 27.35,
+    "loadAverage": [
+      2.7041015625,
+      3.52978515625,
+      4.20458984375
+    ],
+    "freeMemoryMiB": 798
+  },
+  {
+    "at": "2026-10-23T09:12:34.060Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 37.19,
+    "loadAverage": [
+      2.5673828125,
+      3.4873046875,
+      4.185546875
+    ],
+    "freeMemoryMiB": 417
+  },
+  {
+    "at": "2026-10-23T09:12:35.062Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 34.87,
+    "loadAverage": [
+      2.5673828125,
+      3.4873046875,
+      4.185546875
+    ],
+    "freeMemoryMiB": 132
+  },
+  {
+    "at": "2026-10-23T09:12:36.062Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 39.88,
+    "loadAverage": [
+      2.5673828125,
+      3.4873046875,
+      4.185546875
+    ],
+    "freeMemoryMiB": 467
+  },
+  {
+    "at": "2026-10-23T09:12:37.063Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 40.54,
+    "loadAverage": [
+      2.5673828125,
+      3.4873046875,
+      4.185546875
+    ],
+    "freeMemoryMiB": 128
+  },
+  {
+    "at": "2026-10-23T09:12:38.064Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 36.58,
+    "loadAverage": [
+      2.5673828125,
+      3.4873046875,
+      4.185546875
+    ],
+    "freeMemoryMiB": 518
+  },
+  {
+    "at": "2026-10-23T09:12:39.066Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 38.37,
+    "loadAverage": [
+      2.841796875,
+      3.52880859375,
+      4.19580078125
+    ],
+    "freeMemoryMiB": 158
+  },
+  {
+    "at": "2026-10-23T09:12:40.067Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 38.19,
+    "loadAverage": [
+      2.841796875,
+      3.52880859375,
+      4.19580078125
+    ],
+    "freeMemoryMiB": 602
+  },
+  {
+    "at": "2026-10-23T09:12:41.067Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 42.97,
+    "loadAverage": [
+      2.841796875,
+      3.52880859375,
+      4.19580078125
+    ],
+    "freeMemoryMiB": 240
+  },
+  {
+    "at": "2026-10-23T09:12:42.069Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 39.13,
+    "loadAverage": [
+      2.841796875,
+      3.52880859375,
+      4.19580078125
+    ],
+    "freeMemoryMiB": 78
+  },
+  {
+    "at": "2026-10-23T09:12:43.071Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 35.58,
+    "loadAverage": [
+      2.841796875,
+      3.52880859375,
+      4.19580078125
+    ],
+    "freeMemoryMiB": 409
+  },
+  {
+    "at": "2026-10-23T09:12:44.074Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 39.36,
+    "loadAverage": [
+      2.77392578125,
+      3.50341796875,
+      4.1826171875
+    ],
+    "freeMemoryMiB": 101
+  },
+  {
+    "at": "2026-10-23T09:12:45.076Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 38.13,
+    "loadAverage": [
+      2.77392578125,
+      3.50341796875,
+      4.1826171875
+    ],
+    "freeMemoryMiB": 523
+  },
+  {
+    "at": "2026-10-23T09:12:46.077Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 23.72,
+    "loadAverage": [
+      2.77392578125,
+      3.50341796875,
+      4.1826171875
+    ],
+    "freeMemoryMiB": 378
+  },
+  {
+    "at": "2026-10-23T09:12:47.077Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 23.9,
+    "loadAverage": [
+      2.77392578125,
+      3.50341796875,
+      4.1826171875
+    ],
+    "freeMemoryMiB": 194
+  },
+  {
+    "at": "2026-10-23T09:12:48.080Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 15.9,
+    "loadAverage": [
+      2.77392578125,
+      3.50341796875,
+      4.1826171875
+    ],
+    "freeMemoryMiB": 74
+  },
+  {
+    "at": "2026-10-23T09:12:49.082Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 21.83,
+    "loadAverage": [
+      2.6318359375,
+      3.46142578125,
+      4.16357421875
+    ],
+    "freeMemoryMiB": 83
+  },
+  {
+    "at": "2026-10-23T09:12:50.084Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 35.37,
+    "loadAverage": [
+      2.6318359375,
+      3.46142578125,
+      4.16357421875
+    ],
+    "freeMemoryMiB": 631
+  },
+  {
+    "at": "2026-10-23T09:12:51.084Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 27.97,
+    "loadAverage": [
+      2.6318359375,
+      3.46142578125,
+      4.16357421875
+    ],
+    "freeMemoryMiB": 336
+  },
+  {
+    "at": "2026-10-23T09:12:52.085Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 26.41,
+    "loadAverage": [
+      2.6318359375,
+      3.46142578125,
+      4.16357421875
+    ],
+    "freeMemoryMiB": 87
+  },
+  {
+    "at": "2026-10-23T09:12:53.088Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 24.67,
+    "loadAverage": [
+      2.6318359375,
+      3.46142578125,
+      4.16357421875
+    ],
+    "freeMemoryMiB": 67
+  },
+  {
+    "at": "2026-10-23T09:12:54.088Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 23.21,
+    "loadAverage": [
+      2.6611328125,
+      3.45361328125,
+      4.15673828125
+    ],
+    "freeMemoryMiB": 79
+  },
+  {
+    "at": "2026-10-23T09:12:55.089Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 24.67,
+    "loadAverage": [
+      2.6611328125,
+      3.45361328125,
+      4.15673828125
+    ],
+    "freeMemoryMiB": 565
+  },
+  {
+    "at": "2026-10-23T09:12:56.089Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 23.31,
+    "loadAverage": [
+      2.6611328125,
+      3.45361328125,
+      4.15673828125
+    ],
+    "freeMemoryMiB": 271
+  },
+  {
+    "at": "2026-10-23T09:12:57.090Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 26.43,
+    "loadAverage": [
+      2.6611328125,
+      3.45361328125,
+      4.15673828125
+    ],
+    "freeMemoryMiB": 88
+  },
+  {
+    "at": "2026-10-23T09:12:58.090Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 24.22,
+    "loadAverage": [
+      2.6611328125,
+      3.45361328125,
+      4.15673828125
+    ],
+    "freeMemoryMiB": 62
+  },
+  {
+    "at": "2026-10-23T09:12:59.091Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 30.17,
+    "loadAverage": [
+      2.60791015625,
+      3.42919921875,
+      4.14404296875
+    ],
+    "freeMemoryMiB": 67
+  },
+  {
+    "at": "2026-10-23T09:13:00.093Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 30.55,
+    "loadAverage": [
+      2.60791015625,
+      3.42919921875,
+      4.14404296875
+    ],
+    "freeMemoryMiB": 403
+  },
+  {
+    "at": "2026-10-23T09:13:01.095Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 29.93,
+    "loadAverage": [
+      2.60791015625,
+      3.42919921875,
+      4.14404296875
+    ],
+    "freeMemoryMiB": 81
+  },
+  {
+    "at": "2026-10-23T09:13:02.098Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 32.12,
+    "loadAverage": [
+      2.60791015625,
+      3.42919921875,
+      4.14404296875
+    ],
+    "freeMemoryMiB": 83
+  },
+  {
+    "at": "2026-10-23T09:13:03.100Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 25.96,
+    "loadAverage": [
+      2.60791015625,
+      3.42919921875,
+      4.14404296875
+    ],
+    "freeMemoryMiB": 87
+  },
+  {
+    "at": "2026-10-23T09:13:04.102Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 27.48,
+    "loadAverage": [
+      2.47900390625,
+      3.388671875,
+      4.12548828125
+    ],
+    "freeMemoryMiB": 685
+  },
+  {
+    "at": "2026-10-23T09:13:05.103Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 23.64,
+    "loadAverage": [
+      2.47900390625,
+      3.388671875,
+      4.12548828125
+    ],
+    "freeMemoryMiB": 512
+  },
+  {
+    "at": "2026-10-23T09:13:06.103Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 36.13,
+    "loadAverage": [
+      2.47900390625,
+      3.388671875,
+      4.12548828125
+    ],
+    "freeMemoryMiB": 95
+  },
+  {
+    "at": "2026-10-23T09:13:07.105Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 23.16,
+    "loadAverage": [
+      2.47900390625,
+      3.388671875,
+      4.12548828125
+    ],
+    "freeMemoryMiB": 94
+  },
+  {
+    "at": "2026-10-23T09:13:08.107Z",
+    "block": 9,
+    "phase": "measure",
+    "cpuBusyPercent": 34,
+    "loadAverage": [
+      2.47900390625,
+      3.388671875,
+      4.12548828125
+    ],
+    "freeMemoryMiB": 82
+  }
+]

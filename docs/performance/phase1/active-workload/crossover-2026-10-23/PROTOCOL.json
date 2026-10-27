@@ -1,0 +1,220 @@
+{
+  "sourceCommit": "97db164e133809ab2852d7ebcc946b2e92ef1d4f",
+  "seed": "b57df027b9a4760653bf39c105350f93",
+  "blocks": [
+    {
+      "pair": 0,
+      "position": 0,
+      "variant": "A",
+      "comparison": "hydration-wrapper",
+      "order": "AB"
+    },
+    {
+      "pair": 0,
+      "position": 1,
+      "variant": "B",
+      "comparison": "hydration-wrapper",
+      "order": "AB"
+    },
+    {
+      "pair": 1,
+      "position": 0,
+      "variant": "B",
+      "comparison": "hydration-wrapper",
+      "order": "BA"
+    },
+    {
+      "pair": 1,
+      "position": 1,
+      "variant": "A",
+      "comparison": "hydration-wrapper",
+      "order": "BA"
+    },
+    {
+      "pair": 2,
+      "position": 0,
+      "variant": "A",
+      "comparison": "same-build-control",
+      "order": "AA"
+    },
+    {
+      "pair": 2,
+      "position": 1,
+      "variant": "A",
+      "comparison": "same-build-control",
+      "order": "AA"
+    },
+    {
+      "pair": 3,
+      "position": 0,
+      "variant": "B",
+      "comparison": "hydration-wrapper",
+      "order": "BA"
+    },
+    {
+      "pair": 3,
+      "position": 1,
+      "variant": "A",
+      "comparison": "hydration-wrapper",
+      "order": "BA"
+    },
+    {
+      "pair": 4,
+      "position": 0,
+      "variant": "A",
+      "comparison": "hydration-wrapper",
+      "order": "AB"
+    },
+    {
+      "pair": 4,
+      "position": 1,
+      "variant": "B",
+      "comparison": "hydration-wrapper",
+      "order": "AB"
+    }
+  ],
+  "variants": {
+    "A": "Current HEAD including hydration wrapper",
+    "B": "Same HEAD with only the root layout wrapper removed"
+  },
+  "clients": 4,
+  "wavesPerConditionPerBlock": 5,
+  "warmupWavesPerCondition": 1,
+  "conditions": [
+    "cold",
+    "warm"
+  ],
+  "poolLimitPerPrismaClient": 8,
+  "notes": [
+    "Same accounts, bookings, grants, database, URL and pool across every block.",
+    "Both builds completed before collection. No other tests or builds launched by this study during collection.",
+    "No busy-host samples dropped, no synthetic application delays.",
+    "Four AB/BA pairs are primary; the middle AA pair measures ordinary same-build variation.",
+    "Cold browser with warm server/database; initial page errors and incomplete blocks retained.",
+    "System telemetry contains aggregate CPU, load and memory only."
+  ],
+  "completed": [
+    {
+      "block": 0,
+      "phase": "warmup",
+      "variant": "A",
+      "observations": 8,
+      "browserErrors": 0,
+      "exit": 0
+    },
+    {
+      "block": 0,
+      "phase": "measure",
+      "variant": "A",
+      "observations": 40,
+      "browserErrors": 0,
+      "exit": 0
+    },
+    {
+      "block": 1,
+      "phase": "warmup",
+      "variant": "B",
+      "observations": 8,
+      "browserErrors": 0,
+      "exit": 0
+    },
+    {
+      "block": 1,
+      "phase": "measure",
+      "variant": "B",
+      "observations": 40,
+      "browserErrors": 0,
+      "exit": 0
+    },
+    {
+      "block": 2,
+      "phase": "warmup",
+      "variant": "B",
+      "observations": 8,
+      "browserErrors": 0,
+      "exit": 0
+    },
+    {
+      "block": 2,
+      "phase": "measure",
+      "variant": "B",
+      "observations": 40,
+      "browserErrors": 2,
+      "exit": 1
+    },
+    {
+      "block": 3,
+      "phase": "warmup",
+      "variant": "A",
+      "observations": 8,
+      "browserErrors": 0,
+      "exit": 0
+    },
+    {
+      "block": 3,
+      "phase": "measure",
+      "variant": "A",
+      "observations": 40,
+      "browserErrors": 0,
+      "exit": 0
+    },
+    {
+      "block": 4,
+      "phase": "warmup",
+      "variant": "A",
+      "observations": 8,
+      "browserErrors": 0,
+      "exit": 0
+    },
+    {
+      "block": 4,
+      "phase": "measure",
+      "variant": "A",
+      "observations": 40,
+      "browserErrors": 0,
+      "exit": 0
+    },
+    {
+      "block": 5,
+      "phase": "warmup",
+      "variant": "A",
+      "observations": 8,
+      "browserErrors": 0,
+      "exit": 0
+    },
+    {
+      "block": 5,
+      "phase": "measure",
+      "variant": "A",
+      "observations": 40,
+      "browserErrors": 0,
+      "exit": 0
+    }
+  ],
+  "setupTestSummary": [
+    "ℹ tests 38",
+    "ℹ suites 0",
+    "ℹ pass 38",
+    "ℹ fail 0",
+    "ℹ cancelled 0",
+    "ℹ skipped 0",
+    "ℹ todo 0",
+    "ℹ duration_ms 77826.970291"
+  ],
+  "builds": {
+    "A": {
+      "buildId": "69LjUqpapouRjwi7XcmX-",
+      "layoutSha256": "c11380fc6e37eb8afe0bacbe240f9c42b23de7cae0ac1a4e2f37d562d9be2efb"
+    },
+    "B": {
+      "buildId": "y_SA1euahuKI02mLs8vm4",
+      "layoutSha256": "5811ce91b3e313df17b327d44f308f4745a2ef00d10e0e4c0a69afff0095dd3a"
+    }
+  },
+  "cleanup": {
+    "appStopped": true,
+    "ownContainersRemoved": true,
+    "credentialsAndPrivateArchivesRemoved": true,
+    "unrelatedStacksUntouched": true
+  }
+}

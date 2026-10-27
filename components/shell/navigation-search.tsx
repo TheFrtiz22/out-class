@@ -145,7 +145,7 @@ export function NavigationSearch({
     >
       <DialogContent
         showCloseButton={false}
-        className="gap-0 overflow-hidden p-0 sm:max-w-xl"
+        className="oc-navigation-search gap-0 overflow-hidden p-0 sm:max-w-xl"
         onCloseAutoFocus={(event) => {
           if (selectedDestination.current) {
             event.preventDefault()

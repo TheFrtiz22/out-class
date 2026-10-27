@@ -1,0 +1,1244 @@
+{
+  "date": "2026-10-22",
+  "auditReference": "3017e01d5b55bc8fb38d4f8fbec4906dd93bf619",
+  "measuredApplicationBase": "cffb63cff78c9694b89ed7e26a82d21edb5421e5",
+  "currentHead": "43bb46429c817a2a0110a85475268cdf917b5e65",
+  "afterFixObservations": 400,
+  "afterFixBrowserErrors": 0,
+  "raw": [
+    {
+      "path": "after-diagnostic/browser-samples.json",
+      "sha256": "8d699a334e1047b14cad1928d65cdda71e99c2670e4b7fefed05b10b534efa6f",
+      "observations": 160,
+      "failures": [],
+      "browserErrors": 0,
+      "build": {
+        "target": "hydration-diagnostic",
+        "sourceCommit": "cffb63cff78c9694b89ed7e26a82d21edb5421e5",
+        "applicationSourcesModified": true,
+        "poolLimitPerPrismaClient": 8,
+        "buildId": "5xGdq9_zyUpRRD3TtbYf0"
+      }
+    },
+    {
+      "path": "after-parallel/browser-samples.json",
+      "sha256": "0ae8b90dafaa7d2067d8033ce2e64b537a08fb60e0ef1c2bc318ec19f82bca22",
+      "observations": 240,
+      "failures": [],
+      "browserErrors": 0,
+      "build": {
+        "target": "hydration-diagnostic",
+        "sourceCommit": "cffb63cff78c9694b89ed7e26a82d21edb5421e5",
+        "applicationSourcesModified": true,
+        "poolLimitPerPrismaClient": 8,
+        "buildId": "5xGdq9_zyUpRRD3TtbYf0"
+      }
+    },
+    {
+      "path": "after-readiness-incomplete/browser-samples.json",
+      "sha256": "462c9d9a76a02b74289f342128119224dc351901b740cce45bb0038294bc6b29",
+      "observations": 0,
+      "failures": [
+        {
+          "condition": "cold",
+          "wave": 0,
+          "error": "TimeoutError",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 1,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 2,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 3,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 4,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 5,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 6,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 7,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 8,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 9,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 10,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 11,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 12,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 13,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 14,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 15,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 16,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 17,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 18,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 19,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 0,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 1,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 2,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 3,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 4,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 5,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 6,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 7,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 8,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 9,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 10,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 11,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 12,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 13,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 14,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 15,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 16,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 17,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 18,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 19,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        }
+      ],
+      "browserErrors": 0,
+      "build": {
+        "target": "hydration-diagnostic",
+        "sourceCommit": "cffb63cff78c9694b89ed7e26a82d21edb5421e5",
+        "applicationSourcesModified": true,
+        "poolLimitPerPrismaClient": 8,
+        "buildId": "5xGdq9_zyUpRRD3TtbYf0"
+      }
+    },
+    {
+      "path": "after-readiness-probe/browser-samples.json",
+      "sha256": "f4f95f22b6663f1f46948cdad05ea9a6e5e4a8c7e231c5993a1d955ed607c0d4",
+      "observations": 0,
+      "failures": [
+        {
+          "condition": "cold",
+          "wave": 0,
+          "error": "TimeoutError",
+          "assertion": null,
+          "actual": null,
+          "expected": null,
+          "readiness": [
+            {
+              "participant": 0,
+              "stage": "prepared",
+              "dom": {
+                "pipeline": false,
+                "rooms": 0,
+                "loading": false,
+                "hasApplicant": false,
+                "hasBookedApplicant": false
+              },
+              "pageErrors": []
+            },
+            {
+              "participant": 1,
+              "stage": "prepared",
+              "dom": {
+                "pipeline": false,
+                "rooms": 0,
+                "loading": false,
+                "hasApplicant": false,
+                "hasBookedApplicant": false
+              },
+              "pageErrors": []
+            },
+            {
+              "participant": 2,
+              "stage": "prepared",
+              "dom": {
+                "pipeline": false,
+                "rooms": 0,
+                "loading": false,
+                "hasApplicant": false,
+                "hasBookedApplicant": false
+              },
+              "pageErrors": []
+            },
+            {
+              "participant": 3,
+              "stage": "prepared",
+              "dom": {
+                "pipeline": false,
+                "rooms": 0,
+                "loading": false,
+                "hasApplicant": false,
+                "hasBookedApplicant": false
+              },
+              "pageErrors": []
+            }
+          ]
+        },
+        {
+          "condition": "warm",
+          "wave": 0,
+          "error": "TimeoutError",
+          "assertion": null,
+          "actual": null,
+          "expected": null,
+          "readiness": [
+            {
+              "participant": 0,
+              "stage": "prepared",
+              "dom": {
+                "pipeline": false,
+                "rooms": 0,
+                "loading": false,
+                "hasApplicant": false,
+                "hasBookedApplicant": false
+              },
+              "pageErrors": []
+            }
+          ]
+        }
+      ],
+      "browserErrors": 0,
+      "build": {
+        "target": "hydration-diagnostic",
+        "sourceCommit": "cffb63cff78c9694b89ed7e26a82d21edb5421e5",
+        "applicationSourcesModified": true,
+        "poolLimitPerPrismaClient": 8,
+        "buildId": "5xGdq9_zyUpRRD3TtbYf0"
+      }
+    },
+    {
+      "path": "after-startup-incomplete/browser-samples.json",
+      "sha256": "140d71820e60f91ee4526078529c086f39888d24b273dd4a6e56e7a8d4a5a3a5",
+      "observations": 0,
+      "failures": [
+        {
+          "condition": "cold",
+          "wave": 0,
+          "error": "TimeoutError",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 1,
+          "error": "TimeoutError",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 2,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 3,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 4,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 5,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 6,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 7,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 8,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 9,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 10,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 11,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 12,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 13,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 14,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 15,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 16,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 17,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 18,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 19,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 0,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 1,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 2,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 3,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 4,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 5,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 6,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 7,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 8,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 9,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 10,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 11,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 12,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 13,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 14,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 15,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 16,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 17,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 18,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 19,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        }
+      ],
+      "browserErrors": 0,
+      "build": {
+        "target": "hydration-diagnostic",
+        "sourceCommit": "cffb63cff78c9694b89ed7e26a82d21edb5421e5",
+        "applicationSourcesModified": true,
+        "poolLimitPerPrismaClient": 8,
+        "buildId": "5xGdq9_zyUpRRD3TtbYf0"
+      }
+    },
+    {
+      "path": "before-diagnostic/browser-samples.json",
+      "sha256": "01862981b71138060b017221218f6d9124186046787fdbe2fb44a4b08b6dc512",
+      "observations": 160,
+      "failures": [
+        {
+          "condition": "cold",
+          "wave": 11,
+          "error": "AssertionError",
+          "assertion": "browser_script_error",
+          "actual": 1,
+          "expected": 0
+        },
+        {
+          "condition": "warm",
+          "wave": 0,
+          "error": "AssertionError",
+          "assertion": "browser_script_error",
+          "actual": 1,
+          "expected": 0
+        },
+        {
+          "condition": "warm",
+          "wave": 14,
+          "error": "AssertionError",
+          "assertion": "browser_script_error",
+          "actual": 1,
+          "expected": 0
+        }
+      ],
+      "browserErrors": 3,
+      "build": {
+        "target": "hydration-diagnostic",
+        "sourceCommit": "cffb63cff78c9694b89ed7e26a82d21edb5421e5",
+        "applicationSourcesModified": false,
+        "poolLimitPerPrismaClient": 8,
+        "buildId": "L0YauLnelQjXcqEDpqm_r"
+      }
+    },
+    {
+      "path": "development-diagnostic/browser-samples.json",
+      "sha256": "0ee055ea645df303086f20ba446791a65a35adf53588897633f5b4e33353242a",
+      "observations": 12,
+      "failures": [
+        {
+          "condition": "cold",
+          "wave": 0,
+          "error": "TimeoutError",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 4,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 5,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 6,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 7,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 8,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 9,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 10,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 11,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 12,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 13,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 14,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 15,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 16,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 17,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 18,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "cold",
+          "wave": 19,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 0,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 1,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 2,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 3,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 4,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 5,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 6,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 7,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 8,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 9,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 10,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 11,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 12,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 13,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 14,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 15,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 16,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 17,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 18,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        },
+        {
+          "condition": "warm",
+          "wave": 19,
+          "error": "Error",
+          "assertion": null,
+          "actual": null,
+          "expected": null
+        }
+      ],
+      "browserErrors": 0,
+      "build": {
+        "target": "hydration-development",
+        "sourceCommit": "cffb63cff78c9694b89ed7e26a82d21edb5421e5",
+        "applicationSourcesModified": false,
+        "poolLimitPerPrismaClient": 8,
+        "buildId": null
+      }
+    },
+    {
+      "path": "production-dom-parallel/browser-samples.json",
+      "sha256": "cc937e3ba60adcffe6bf67dbdb2e43a210631eee53824621de85f235d361cac6",
+      "observations": 8,
+      "failures": [
+        {
+          "condition": "cold",
+          "wave": 1,
+          "error": "AssertionError",
+          "assertion": "browser_script_error",
+          "actual": 1,
+          "expected": 0
+        }
+      ],
+      "browserErrors": 1,
+      "build": {
+        "target": "hydration-diagnostic",
+        "sourceCommit": "cffb63cff78c9694b89ed7e26a82d21edb5421e5",
+        "applicationSourcesModified": false,
+        "poolLimitPerPrismaClient": 8,
+        "buildId": "L0YauLnelQjXcqEDpqm_r"
+      }
+    },
+    {
+      "path": "production-dom-probe/browser-samples.json",
+      "sha256": "ddcfe65dd70107fcae501452a2a3d00179977b9f4cb56e466c236c6c31e0568e",
+      "observations": 76,
+      "failures": [
+        {
+          "condition": "cold",
+          "wave": 18,
+          "error": "AssertionError",
+          "assertion": "browser_script_error",
+          "actual": 1,
+          "expected": 0
+        }
+      ],
+      "browserErrors": 1,
+      "build": {
+        "target": "hydration-diagnostic",
+        "sourceCommit": "cffb63cff78c9694b89ed7e26a82d21edb5421e5",
+        "applicationSourcesModified": false,
+        "poolLimitPerPrismaClient": 8,
+        "buildId": "L0YauLnelQjXcqEDpqm_r"
+      }
+    }
+  ],
+  "temporaryResourcesCleaned": true,
+  "patchAppliesToCurrentHead": true,
+  "implementationPatchSha256": "5d601715492efc7031e2b5965db2bfae1b06c79860fea2cb4b525d100e1b613c",
+  "originalImplementationPatchUnchanged": true,
+  "sourceFiles": {
+    "app/layout.tsx": "c11380fc6e37eb8afe0bacbe240f9c42b23de7cae0ac1a4e2f37d562d9be2efb",
+    "scripts/navigation-audit.cjs": "1baf24102747ffb427d3113a1ebad2a1d578948616f6a73f1d407a8d30b9ec12",
+    "tests/navigation-audit-harness.test.cjs": "a3e0f82fbac096e6bd9cc526765172b35b1407db812f840a6d342823b922f22d",
+    "tests/workspace-reliability.test.cjs": "a85cce2192c468f8403c5300c5afe0258d5c28dfecbefe3546a4962a963415cb",
+    "components/route-content.tsx": "be3e9dfac06ed7bae0cb58f8eb7761c65f9e5fd31943bc2164906ea7025cc180",
+    "scripts/active-interview-fixture.cjs": "ae261e832f2867c29c91797cdd572e417ad60e6f036700a77e281e2f0fcc9374",
+    "scripts/navigation-fixture-config.cjs": "56fef10b5b2a2e6557784f4ea9a9ede76f3de6dd17a86c99c24fa5e28493ddf0",
+    "scripts/phase1-workload-build.cjs": "b15e57cd9b57e230e072f1ed9f0dd471d89e78d9f238bd96e31ac182de9c03d3",
+    "scripts/summarize-active-navigation.cjs": "520b84d50069510411065ba15946d8019e23249c97eaecab15e5d337d59cac0f",
+    "tests/active-interview-navigation-e2e.test.cjs": "4856faf3dbefb1ecfc2287407bc2cb06008a9c7c177a2a1fe8fd60975d857692",
+    "tests/hydration-diagnostics-browser.test.cjs": "b56814db78fb37aa2acb9bc40ef790757b0e6c2fe4c787472b792df8b37ab0ed",
+    "tests/route-content-hydration-browser.test.cjs": "25078d217a02545b13146e121ac1755190b0764c67ebd9c7d2fa232e6740b07a"
+  },
+  "currentHeadVerificationBuild": {
+    "target": "hydration-current-head-verification",
+    "sourceCommit": "43bb46429c817a2a0110a85475268cdf917b5e65",
+    "applicationSourcesModified": true,
+    "poolLimitPerPrismaClient": 8,
+    "buildId": "31VS4LckOwX7L6b5jpbZI"
+  },
+  "cleanup": {
+    "reservedAppStopped": true,
+    "reservedSupabaseStopped": true,
+    "reservedContainersRemaining": 0,
+    "credentialsRemoved": true,
+    "privateSourceArchiveRemoved": true,
+    "unrelatedStacksUntouched": true,
+    "project": "outclass-hydration-e2e",
+    "appPort": 3117,
+    "apiPort": 58321,
+    "databasePort": 58322,
+    "privateRuntimeLogsRemoved": true
+  },
+  "artifactHashes": {
+    "HYDRATION_FOLLOWUP.diff": "5d601715492efc7031e2b5965db2bfae1b06c79860fea2cb4b525d100e1b613c",
+    "HYDRATION_REPORT.md": "8950810ad4906e6e64b4a6f5c2af5c361f055ba698671e527b10be0fa35b1764",
+    "COMPARISON.json": "01a8fc5862c3a59e47f1c57ea2b2efab2ee8caf4c4b5ef32fdd8eb3f691c63cf",
+    "TEST_RESULTS.json": "c9c5011823c3d160a505c77a5ab0fc58fb3a8f0a1cead9671dd9007a9770c9d8",
+    "TEST_RESULTS.log": "44fd51795896f169cbda1efa0dad7f1ab63687d2d4a44ce214096e0f6742a4db"
+  }
+}

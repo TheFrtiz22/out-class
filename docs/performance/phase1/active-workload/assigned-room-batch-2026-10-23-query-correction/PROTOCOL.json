@@ -1,0 +1,157 @@
+{
+  "sourceCommit": "a3c36e0e8a3c50ab6be02a0080e66e0a9c597904",
+  "seed": "7229a9c28c1d96dac2fac1584b9a0487",
+  "blocks": [
+    {
+      "pair": 0,
+      "position": 0,
+      "variant": "A",
+      "comparison": "assigned-room-batch",
+      "order": "AB"
+    },
+    {
+      "pair": 0,
+      "position": 1,
+      "variant": "B",
+      "comparison": "assigned-room-batch",
+      "order": "AB"
+    },
+    {
+      "pair": 1,
+      "position": 0,
+      "variant": "B",
+      "comparison": "assigned-room-batch",
+      "order": "BA"
+    },
+    {
+      "pair": 1,
+      "position": 1,
+      "variant": "A",
+      "comparison": "assigned-room-batch",
+      "order": "BA"
+    },
+    {
+      "pair": 2,
+      "position": 0,
+      "variant": "A",
+      "comparison": "same-build-control",
+      "order": "AA"
+    },
+    {
+      "pair": 2,
+      "position": 1,
+      "variant": "A",
+      "comparison": "same-build-control",
+      "order": "AA"
+    },
+    {
+      "pair": 3,
+      "position": 0,
+      "variant": "B",
+      "comparison": "assigned-room-batch",
+      "order": "BA"
+    },
+    {
+      "pair": 3,
+      "position": 1,
+      "variant": "A",
+      "comparison": "assigned-room-batch",
+      "order": "BA"
+    },
+    {
+      "pair": 4,
+      "position": 0,
+      "variant": "A",
+      "comparison": "assigned-room-batch",
+      "order": "AB"
+    },
+    {
+      "pair": 4,
+      "position": 1,
+      "variant": "B",
+      "comparison": "assigned-room-batch",
+      "order": "AB"
+    }
+  ],
+  "variants": {
+    "A": "Current HEAD plus the two allowlisted assigned-room batching source files",
+    "B": "Unmodified current HEAD; hydration wrapper present in both builds"
+  },
+  "clients": 4,
+  "wavesPerConditionPerBlock": 5,
+  "warmupWavesPerCondition": 1,
+  "conditions": [
+    "cold",
+    "warm"
+  ],
+  "poolLimitPerPrismaClient": 8,
+  "notes": [
+    "Same accounts, bookings, grants, database, URL and pool across every block.",
+    "Both builds completed before collection. No other tests or builds launched by this study during collection.",
+    "No busy-host samples dropped, no synthetic application delays.",
+    "Four AB/BA pairs are primary; the middle AA pair measures ordinary same-build variation.",
+    "Cold browser with warm server/database; initial page errors and incomplete blocks retained.",
+    "System telemetry contains aggregate CPU, load and memory only."
+  ],
+  "completed": [],
+  "comparison": "assigned-room-batch",
+  "queryAuditOnly": true,
+  "warmupFailurePolicy": "One fixed warmup wave per condition, with no retries. Preserve all warmup failures and missing rows; do not silently force clean warmups. Every measured block must still be complete before accepted latency analysis.",
+  "applicationOverlays": [
+    {
+      "file": "actions/interview-entry.ts",
+      "A": "d42195d1fe8310c4d2da3e2c8c9e19c24fad61fdf5b27bbcde534e36a5dbd23b",
+      "B": "942f8064938e2e13ebd9e9554d16df06b8bb6544782cb81296d9d7e80d2a6516"
+    },
+    {
+      "file": "utils/interview-collaboration.ts",
+      "A": "5ba5a74b63dc010fcf6cf16d93589e8f7f595543ddd3b083dbeed0fba87f3e77",
+      "B": "e60634d6024652abd7608df8495e596d2551d64cc4298a6bc248eaedc6baf4b5"
+    }
+  ],
+  "applicationSourceVerification": {
+    "checkedFiles": 887,
+    "differences": [
+      "actions/interview-entry.ts",
+      "utils/interview-collaboration.ts"
+    ],
+    "hydrationLayoutIdentical": true
+  },
+  "navigationSecurityTestSummary": [
+    "ℹ tests 17",
+    "ℹ suites 0",
+    "ℹ pass 17",
+    "ℹ fail 0",
+    "ℹ cancelled 0",
+    "ℹ skipped 0",
+    "ℹ todo 0",
+    "ℹ duration_ms 17102.7035"
+  ],
+  "activeSecurityTestSummary": [
+    "ℹ tests 3",
+    "ℹ suites 0",
+    "ℹ pass 3",
+    "ℹ fail 0",
+    "ℹ cancelled 0",
+    "ℹ skipped 0",
+    "ℹ todo 0",
+    "ℹ duration_ms 901.519209"
+  ],
+  "setupTestSummary": [
+    "ℹ tests 38",
+    "ℹ suites 0",
+    "ℹ pass 38",
+    "ℹ fail 0",
+    "ℹ cancelled 0",
+    "ℹ skipped 0",
+    "ℹ todo 0",
+    "ℹ duration_ms 77222.647042"
+  ],
+  "queryAuditComplete": true,
+  "cleanup": {
+    "appStopped": true,
+    "ownContainersRemoved": true,
+    "credentialsAndPrivateArchivesRemoved": true,
+    "unrelatedStacksUntouched": true
+  }
+}

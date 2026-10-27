@@ -246,7 +246,6 @@ function RecruitmentWorkspace({
   // Scheduling owns round/week navigation; resetting its parent during a round
   // change discards that state before the next interaction. Other tools keep
   // their existing round-scoped editor reset behavior.
-  const interviewScope = interviewTab === "schedule" || interviewTab === "availability" ? "" : interviewRoundId ?? "";
   const tools = recruitmentTools(member),
     [tool, setTool] = useState(initialTool ?? tools[0]?.id ?? "applicants");
   const active = tools.find((t) => t.id === tool)?.id ?? tools[0]?.id;
@@ -283,7 +282,7 @@ function RecruitmentWorkspace({
       </div>
       {active === "applicants" && <LiveLeaderWorkspace scoped />}
       {active === "rounds" && <RoundSettings clubId={clubId} />}
-      {active === "kits" && <InterviewManagementTabs key={`${clubId}:${interviewTab}:${interviewScope}`} clubId={clubId} initialTab={interviewTab} initialRoundId={interviewRoundId} />}
+      {active === "kits" && <InterviewManagementTabs key={clubId} clubId={clubId} initialTab={interviewTab} initialRoundId={interviewRoundId} />}
     </div>
   );
 }

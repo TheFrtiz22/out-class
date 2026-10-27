@@ -35,14 +35,14 @@ async function fixture(){
   }
  }
  const groups={
-  '@/lib/workspace-read':['getOrganizationMemberManagement'],
+  '@/lib/workspace-read':['getOrganizationMemberManagement','getClubAnnouncements'],
   '@/actions/club-access':['addClubMember','getClubAccess','inviteClubManager','updateClubAccess','revokeClubInvitation'],
   '@/actions/organization-members':['inviteOrganizationMember','changeOrganizationMemberRole','removeOrganizationMember','transferOrganizationOwnership','manageOrganizationInvitation','bulkOrganizationMembers','bulkOrganizationInvitations'],
   '@/actions/invitation-emails':['sendRosterInvitations','requestInvitationDelivery'],
   '@/actions/roster-import':['previewRosterImport','confirmRosterImport'],
   '@/actions/availability':['getInterviewerEligibility','setInterviewerEligibility'],
   '@/actions/recipient-groups':['getRecipientGroups','previewRecipientAudience','saveRecipientGroup','deleteRecipientGroup'],
-  '@/actions/communications':['getClubAnnouncements','publishClubAnnouncement'],
+  '@/actions/communications':['publishClubAnnouncement'],
   '@/actions/communication-schedules':['getCommunicationSchedules','saveCommunicationSchedule','cancelCommunicationSchedule'],
   '@/actions/editor-drafts':['getEditorDraft','saveEditorDraft'],
   '@/lib/workspace-api':['listMeetings','saveMeeting','getMeeting','issueMeetingCheckIn','closeMeetingCheckIn','meetingAttendance','updateTaskMember','previewInvitationSchedule','saveInvitationSchedule','getInvitationSchedules','cancelInvitationSchedule','scheduleDecisionPublication','getDecisionSchedules','cancelDecisionSchedule','getVotingWorkspace','createVotingSession','submitVotingBallot','commandVotingSession','seedVotingDemo']

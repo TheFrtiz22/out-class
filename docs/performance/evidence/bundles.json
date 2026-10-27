@@ -1,0 +1,521 @@
+{
+  "routes": {
+    "/page": {
+      "files": [
+        "static/chunks/webpack-0441005e4b1c9726.js",
+        "static/chunks/22637299-a8b9fb7af9b20019.js",
+        "static/chunks/5841-b5c9660c4f5a3049.js",
+        "static/chunks/main-app-9139750939ca6f29.js",
+        "static/css/f03966a9c9f6136e.css",
+        "static/css/7d42bd81376c4652.css",
+        "static/css/03e20077a4f3fe38.css",
+        "static/css/58385a23da96d47e.css",
+        "static/css/ce23eeb52985230c.css",
+        "static/css/40df19a101a0125c.css",
+        "static/css/7ac2a3dc0b7ca669.css",
+        "static/chunks/420-9d99e693573cfe4e.js",
+        "static/chunks/7573-7905bb5b929b49f0.js",
+        "static/chunks/2298-ac3cd71797c1c868.js",
+        "static/chunks/65-ca03f18275ed250f.js",
+        "static/chunks/1973-4a73d813b9cb6ca5.js",
+        "static/chunks/4857-f21c172e20961fce.js",
+        "static/chunks/7369-ef9cdf96dceb8a3d.js",
+        "static/chunks/4046-3774830ee1d60adb.js",
+        "static/chunks/9405-5eabe74c6a8af44a.js",
+        "static/chunks/9735-b709ae3f28890a49.js",
+        "static/chunks/app/page-011ad7ae697faced.js"
+      ],
+      "sizes": [
+        {
+          "file": "static/chunks/webpack-0441005e4b1c9726.js",
+          "rawBytes": 7845,
+          "gzipBytes": 3846
+        },
+        {
+          "file": "static/chunks/22637299-a8b9fb7af9b20019.js",
+          "rawBytes": 173025,
+          "gzipBytes": 54369
+        },
+        {
+          "file": "static/chunks/5841-b5c9660c4f5a3049.js",
+          "rawBytes": 174444,
+          "gzipBytes": 46328
+        },
+        {
+          "file": "static/chunks/main-app-9139750939ca6f29.js",
+          "rawBytes": 572,
+          "gzipBytes": 238
+        },
+        {
+          "file": "static/chunks/420-9d99e693573cfe4e.js",
+          "rawBytes": 30191,
+          "gzipBytes": 9532
+        },
+        {
+          "file": "static/chunks/7573-7905bb5b929b49f0.js",
+          "rawBytes": 8561,
+          "gzipBytes": 3384
+        },
+        {
+          "file": "static/chunks/2298-ac3cd71797c1c868.js",
+          "rawBytes": 13668,
+          "gzipBytes": 5200
+        },
+        {
+          "file": "static/chunks/65-ca03f18275ed250f.js",
+          "rawBytes": 289617,
+          "gzipBytes": 62193
+        },
+        {
+          "file": "static/chunks/1973-4a73d813b9cb6ca5.js",
+          "rawBytes": 2393,
+          "gzipBytes": 1242
+        },
+        {
+          "file": "static/chunks/4857-f21c172e20961fce.js",
+          "rawBytes": 22175,
+          "gzipBytes": 7867
+        },
+        {
+          "file": "static/chunks/7369-ef9cdf96dceb8a3d.js",
+          "rawBytes": 7595,
+          "gzipBytes": 2874
+        },
+        {
+          "file": "static/chunks/4046-3774830ee1d60adb.js",
+          "rawBytes": 7820,
+          "gzipBytes": 3715
+        },
+        {
+          "file": "static/chunks/9405-5eabe74c6a8af44a.js",
+          "rawBytes": 15477,
+          "gzipBytes": 5088
+        },
+        {
+          "file": "static/chunks/9735-b709ae3f28890a49.js",
+          "rawBytes": 64424,
+          "gzipBytes": 20000
+        },
+        {
+          "file": "static/chunks/app/page-011ad7ae697faced.js",
+          "rawBytes": 1026,
+          "gzipBytes": 653
+        }
+      ]
+    },
+    "/club/[clubId]/workspace/page": {
+      "files": [
+        "static/chunks/webpack-0441005e4b1c9726.js",
+        "static/chunks/22637299-a8b9fb7af9b20019.js",
+        "static/chunks/5841-b5c9660c4f5a3049.js",
+        "static/chunks/main-app-9139750939ca6f29.js",
+        "static/css/e828fc5f4a68c70b.css",
+        "static/css/0ad716f05692e409.css",
+        "static/css/7e0e713e9beef86e.css",
+        "static/css/309e80a13656f5e5.css",
+        "static/css/4b522f2a36a5a87b.css",
+        "static/css/f0d7afa5b9a0f0df.css",
+        "static/css/13e33bce5df67965.css",
+        "static/css/6a175d43dec28046.css",
+        "static/chunks/c7baffe2-707ad18599d8352f.js",
+        "static/chunks/420-9d99e693573cfe4e.js",
+        "static/chunks/7573-7905bb5b929b49f0.js",
+        "static/chunks/2298-ac3cd71797c1c868.js",
+        "static/chunks/4714-73c93c2112712499.js",
+        "static/chunks/65-ca03f18275ed250f.js",
+        "static/chunks/1973-4a73d813b9cb6ca5.js",
+        "static/chunks/4857-f21c172e20961fce.js",
+        "static/chunks/7369-ef9cdf96dceb8a3d.js",
+        "static/chunks/41-64309b380ec9c1a7.js",
+        "static/chunks/2605-685a41086a67c4f0.js",
+        "static/chunks/4590-4f4f90dcc803c391.js",
+        "static/chunks/1515-a0fc10281d641042.js",
+        "static/chunks/2570-776280dbab60663e.js",
+        "static/chunks/9229-e87574e7d154723a.js",
+        "static/chunks/4046-3774830ee1d60adb.js",
+        "static/chunks/2243-7d6690e5cb31e37d.js",
+        "static/chunks/3727-6cfa6cc54c5361d9.js",
+        "static/chunks/9053-458c00892cdaf19a.js",
+        "static/chunks/3062-bcdfb66c61cd63ca.js",
+        "static/chunks/6638-3901773379e964ec.js",
+        "static/chunks/6209-f3fd17e95719ffda.js",
+        "static/chunks/4844-37fe5f1577c93817.js",
+        "static/chunks/8594-55c7d09048fd8df9.js",
+        "static/chunks/app/club/[clubId]/workspace/page-ce8444ba57eab18c.js"
+      ],
+      "sizes": [
+        {
+          "file": "static/chunks/webpack-0441005e4b1c9726.js",
+          "rawBytes": 7845,
+          "gzipBytes": 3846
+        },
+        {
+          "file": "static/chunks/22637299-a8b9fb7af9b20019.js",
+          "rawBytes": 173025,
+          "gzipBytes": 54369
+        },
+        {
+          "file": "static/chunks/5841-b5c9660c4f5a3049.js",
+          "rawBytes": 174444,
+          "gzipBytes": 46328
+        },
+        {
+          "file": "static/chunks/main-app-9139750939ca6f29.js",
+          "rawBytes": 572,
+          "gzipBytes": 238
+        },
+        {
+          "file": "static/chunks/c7baffe2-707ad18599d8352f.js",
+          "rawBytes": 67597,
+          "gzipBytes": 14320
+        },
+        {
+          "file": "static/chunks/420-9d99e693573cfe4e.js",
+          "rawBytes": 30191,
+          "gzipBytes": 9532
+        },
+        {
+          "file": "static/chunks/7573-7905bb5b929b49f0.js",
+          "rawBytes": 8561,
+          "gzipBytes": 3384
+        },
+        {
+          "file": "static/chunks/2298-ac3cd71797c1c868.js",
+          "rawBytes": 13668,
+          "gzipBytes": 5200
+        },
+        {
+          "file": "static/chunks/4714-73c93c2112712499.js",
+          "rawBytes": 57653,
+          "gzipBytes": 13122
+        },
+        {
+          "file": "static/chunks/65-ca03f18275ed250f.js",
+          "rawBytes": 289617,
+          "gzipBytes": 62193
+        },
+        {
+          "file": "static/chunks/1973-4a73d813b9cb6ca5.js",
+          "rawBytes": 2393,
+          "gzipBytes": 1242
+        },
+        {
+          "file": "static/chunks/4857-f21c172e20961fce.js",
+          "rawBytes": 22175,
+          "gzipBytes": 7867
+        },
+        {
+          "file": "static/chunks/7369-ef9cdf96dceb8a3d.js",
+          "rawBytes": 7595,
+          "gzipBytes": 2874
+        },
+        {
+          "file": "static/chunks/41-64309b380ec9c1a7.js",
+          "rawBytes": 27305,
+          "gzipBytes": 10459
+        },
+        {
+          "file": "static/chunks/2605-685a41086a67c4f0.js",
+          "rawBytes": 33165,
+          "gzipBytes": 9241
+        },
+        {
+          "file": "static/chunks/4590-4f4f90dcc803c391.js",
+          "rawBytes": 194826,
+          "gzipBytes": 54219
+        },
+        {
+          "file": "static/chunks/1515-a0fc10281d641042.js",
+          "rawBytes": 23392,
+          "gzipBytes": 6996
+        },
+        {
+          "file": "static/chunks/2570-776280dbab60663e.js",
+          "rawBytes": 23112,
+          "gzipBytes": 8230
+        },
+        {
+          "file": "static/chunks/9229-e87574e7d154723a.js",
+          "rawBytes": 16199,
+          "gzipBytes": 5954
+        },
+        {
+          "file": "static/chunks/4046-3774830ee1d60adb.js",
+          "rawBytes": 7820,
+          "gzipBytes": 3715
+        },
+        {
+          "file": "static/chunks/2243-7d6690e5cb31e37d.js",
+          "rawBytes": 158096,
+          "gzipBytes": 55023
+        },
+        {
+          "file": "static/chunks/3727-6cfa6cc54c5361d9.js",
+          "rawBytes": 139741,
+          "gzipBytes": 40504
+        },
+        {
+          "file": "static/chunks/9053-458c00892cdaf19a.js",
+          "rawBytes": 38004,
+          "gzipBytes": 13362
+        },
+        {
+          "file": "static/chunks/3062-bcdfb66c61cd63ca.js",
+          "rawBytes": 64482,
+          "gzipBytes": 19279
+        },
+        {
+          "file": "static/chunks/6638-3901773379e964ec.js",
+          "rawBytes": 44547,
+          "gzipBytes": 13229
+        },
+        {
+          "file": "static/chunks/6209-f3fd17e95719ffda.js",
+          "rawBytes": 20870,
+          "gzipBytes": 6488
+        },
+        {
+          "file": "static/chunks/4844-37fe5f1577c93817.js",
+          "rawBytes": 23001,
+          "gzipBytes": 5920
+        },
+        {
+          "file": "static/chunks/8594-55c7d09048fd8df9.js",
+          "rawBytes": 22359,
+          "gzipBytes": 7478
+        },
+        {
+          "file": "static/chunks/app/club/[clubId]/workspace/page-ce8444ba57eab18c.js",
+          "rawBytes": 89266,
+          "gzipBytes": 26671
+        }
+      ]
+    },
+    "/layout": {
+      "files": [
+        "static/chunks/webpack-0441005e4b1c9726.js",
+        "static/chunks/22637299-a8b9fb7af9b20019.js",
+        "static/chunks/5841-b5c9660c4f5a3049.js",
+        "static/chunks/main-app-9139750939ca6f29.js",
+        "static/css/61293c82e739792c.css",
+        "static/css/e0677d91194a04d0.css",
+        "static/chunks/420-9d99e693573cfe4e.js",
+        "static/chunks/7573-7905bb5b929b49f0.js",
+        "static/chunks/2298-ac3cd71797c1c868.js",
+        "static/chunks/4714-73c93c2112712499.js",
+        "static/chunks/65-ca03f18275ed250f.js",
+        "static/chunks/2605-685a41086a67c4f0.js",
+        "static/chunks/4046-3774830ee1d60adb.js",
+        "static/chunks/2243-7d6690e5cb31e37d.js",
+        "static/chunks/3727-6cfa6cc54c5361d9.js",
+        "static/chunks/app/layout-28051ca25af7cdaf.js"
+      ],
+      "sizes": [
+        {
+          "file": "static/chunks/webpack-0441005e4b1c9726.js",
+          "rawBytes": 7845,
+          "gzipBytes": 3846
+        },
+        {
+          "file": "static/chunks/22637299-a8b9fb7af9b20019.js",
+          "rawBytes": 173025,
+          "gzipBytes": 54369
+        },
+        {
+          "file": "static/chunks/5841-b5c9660c4f5a3049.js",
+          "rawBytes": 174444,
+          "gzipBytes": 46328
+        },
+        {
+          "file": "static/chunks/main-app-9139750939ca6f29.js",
+          "rawBytes": 572,
+          "gzipBytes": 238
+        },
+        {
+          "file": "static/chunks/420-9d99e693573cfe4e.js",
+          "rawBytes": 30191,
+          "gzipBytes": 9532
+        },
+        {
+          "file": "static/chunks/7573-7905bb5b929b49f0.js",
+          "rawBytes": 8561,
+          "gzipBytes": 3384
+        },
+        {
+          "file": "static/chunks/2298-ac3cd71797c1c868.js",
+          "rawBytes": 13668,
+          "gzipBytes": 5200
+        },
+        {
+          "file": "static/chunks/4714-73c93c2112712499.js",
+          "rawBytes": 57653,
+          "gzipBytes": 13122
+        },
+        {
+          "file": "static/chunks/65-ca03f18275ed250f.js",
+          "rawBytes": 289617,
+          "gzipBytes": 62193
+        },
+        {
+          "file": "static/chunks/2605-685a41086a67c4f0.js",
+          "rawBytes": 33165,
+          "gzipBytes": 9241
+        },
+        {
+          "file": "static/chunks/4046-3774830ee1d60adb.js",
+          "rawBytes": 7820,
+          "gzipBytes": 3715
+        },
+        {
+          "file": "static/chunks/2243-7d6690e5cb31e37d.js",
+          "rawBytes": 158096,
+          "gzipBytes": 55023
+        },
+        {
+          "file": "static/chunks/3727-6cfa6cc54c5361d9.js",
+          "rawBytes": 139741,
+          "gzipBytes": 40504
+        },
+        {
+          "file": "static/chunks/app/layout-28051ca25af7cdaf.js",
+          "rawBytes": 32091,
+          "gzipBytes": 11284
+        }
+      ]
+    }
+  },
+  "largestChunks": [
+    {
+      "file": "b9452fb4.27b03e3019fe6ca8.js",
+      "rawBytes": 434796,
+      "gzipBytes": 129297
+    },
+    {
+      "file": "65-ca03f18275ed250f.js",
+      "rawBytes": 289617,
+      "gzipBytes": 62193
+    },
+    {
+      "file": "framework-e6cd824ff8587102.js",
+      "rawBytes": 189786,
+      "gzipBytes": 59729
+    },
+    {
+      "file": "2243-7d6690e5cb31e37d.js",
+      "rawBytes": 158096,
+      "gzipBytes": 55023
+    },
+    {
+      "file": "22637299-a8b9fb7af9b20019.js",
+      "rawBytes": 173025,
+      "gzipBytes": 54369
+    },
+    {
+      "file": "4590-4f4f90dcc803c391.js",
+      "rawBytes": 194826,
+      "gzipBytes": 54219
+    },
+    {
+      "file": "5841-b5c9660c4f5a3049.js",
+      "rawBytes": 174444,
+      "gzipBytes": 46328
+    },
+    {
+      "file": "3727-6cfa6cc54c5361d9.js",
+      "rawBytes": 139741,
+      "gzipBytes": 40504
+    },
+    {
+      "file": "polyfills-42372ed130431b0a.js",
+      "rawBytes": 112594,
+      "gzipBytes": 39473
+    },
+    {
+      "file": "main-3be19283528980e1.js",
+      "rawBytes": 129019,
+      "gzipBytes": 37308
+    },
+    {
+      "file": "9067.653cccb77d92cce7.js",
+      "rawBytes": 122840,
+      "gzipBytes": 32874
+    },
+    {
+      "file": "app/club/[clubId]/workspace/page-ce8444ba57eab18c.js",
+      "rawBytes": 89266,
+      "gzipBytes": 26671
+    },
+    {
+      "file": "778.9fda5bb49a457389.js",
+      "rawBytes": 96240,
+      "gzipBytes": 25708
+    },
+    {
+      "file": "66.829a606517e52f12.js",
+      "rawBytes": 92524,
+      "gzipBytes": 24257
+    },
+    {
+      "file": "4219.e18fe03e4e500773.js",
+      "rawBytes": 79042,
+      "gzipBytes": 22955
+    }
+  ],
+  "selectedClientModules": [
+    {
+      "name": "/components/club-workspace.tsx",
+      "chunks": [
+        "1099",
+        "static/chunks/c7baffe2-707ad18599d8352f.js",
+        "420",
+        "static/chunks/420-9d99e693573cfe4e.js",
+        "7573",
+        "static/chunks/7573-7905bb5b929b49f0.js",
+        "2298",
+        "static/chunks/2298-ac3cd71797c1c868.js",
+        "4714",
+        "static/chunks/4714-73c93c2112712499.js",
+        "65",
+        "static/chunks/65-ca03f18275ed250f.js",
+        "1973",
+        "static/chunks/1973-4a73d813b9cb6ca5.js",
+        "4857",
+        "static/chunks/4857-f21c172e20961fce.js",
+        "7369",
+        "static/chunks/7369-ef9cdf96dceb8a3d.js",
+        "41",
+        "static/chunks/41-64309b380ec9c1a7.js",
+        "2605",
+        "static/chunks/2605-685a41086a67c4f0.js",
+        "4590",
+        "static/chunks/4590-4f4f90dcc803c391.js",
+        "1515",
+        "static/chunks/1515-a0fc10281d641042.js",
+        "2570",
+        "static/chunks/2570-776280dbab60663e.js",
+        "9229",
+        "static/chunks/9229-e87574e7d154723a.js",
+        "4046",
+        "static/chunks/4046-3774830ee1d60adb.js",
+        "2243",
+        "static/chunks/2243-7d6690e5cb31e37d.js",
+        "3727",
+        "static/chunks/3727-6cfa6cc54c5361d9.js",
+        "9053",
+        "static/chunks/9053-458c00892cdaf19a.js",
+        "3062",
+        "static/chunks/3062-bcdfb66c61cd63ca.js",
+        "6638",
+        "static/chunks/6638-3901773379e964ec.js",
+        "6209",
+        "static/chunks/6209-f3fd17e95719ffda.js",
+        "4844",
+        "static/chunks/4844-37fe5f1577c93817.js",
+        "8594",
+        "static/chunks/8594-55c7d09048fd8df9.js",
+        "2461",
+        "static/chunks/app/club/%5BclubId%5D/workspace/page-ce8444ba57eab18c.js"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,185 @@
+{
+  "scope": "50 ms same-role database backends, excluding monitor; includes idle initial audit Prisma client. Pool limit eight is per application client, not a global cap.",
+  "blocks": [
+    {
+      "folder": "block-01-A-measure",
+      "observations": 40,
+      "peakConnections": 9,
+      "peakActive": 2,
+      "peakIdleTransaction": 5,
+      "peakLockWait": 0,
+      "errors": 0
+    },
+    {
+      "folder": "block-01-A-warmup",
+      "observations": 8,
+      "peakConnections": 9,
+      "peakActive": 2,
+      "peakIdleTransaction": 5,
+      "peakLockWait": 0,
+      "errors": 0
+    },
+    {
+      "folder": "block-02-B-measure",
+      "observations": 40,
+      "peakConnections": 9,
+      "peakActive": 3,
+      "peakIdleTransaction": 8,
+      "peakLockWait": 0,
+      "errors": 0
+    },
+    {
+      "folder": "block-02-B-warmup",
+      "observations": 8,
+      "peakConnections": 9,
+      "peakActive": 1,
+      "peakIdleTransaction": 4,
+      "peakLockWait": 0,
+      "errors": 0
+    },
+    {
+      "folder": "block-03-B-measure",
+      "observations": 40,
+      "peakConnections": 9,
+      "peakActive": 5,
+      "peakIdleTransaction": 6,
+      "peakLockWait": 0,
+      "errors": 0
+    },
+    {
+      "folder": "block-03-B-warmup",
+      "observations": 8,
+      "peakConnections": 9,
+      "peakActive": 3,
+      "peakIdleTransaction": 7,
+      "peakLockWait": 0,
+      "errors": 0
+    },
+    {
+      "folder": "block-04-A-measure",
+      "observations": 40,
+      "peakConnections": 9,
+      "peakActive": 3,
+      "peakIdleTransaction": 4,
+      "peakLockWait": 0,
+      "errors": 0
+    },
+    {
+      "folder": "block-04-A-warmup",
+      "observations": 8,
+      "peakConnections": 9,
+      "peakActive": 2,
+      "peakIdleTransaction": 5,
+      "peakLockWait": 0,
+      "errors": 0
+    },
+    {
+      "folder": "block-05-A-measure",
+      "observations": 40,
+      "peakConnections": 9,
+      "peakActive": 5,
+      "peakIdleTransaction": 7,
+      "peakLockWait": 0,
+      "errors": 0
+    },
+    {
+      "folder": "block-05-A-warmup",
+      "observations": 8,
+      "peakConnections": 9,
+      "peakActive": 1,
+      "peakIdleTransaction": 3,
+      "peakLockWait": 0,
+      "errors": 0
+    },
+    {
+      "folder": "block-06-A-measure",
+      "observations": 40,
+      "peakConnections": 9,
+      "peakActive": 2,
+      "peakIdleTransaction": 7,
+      "peakLockWait": 0,
+      "errors": 0
+    },
+    {
+      "folder": "block-06-A-warmup",
+      "observations": 8,
+      "peakConnections": 9,
+      "peakActive": 5,
+      "peakIdleTransaction": 4,
+      "peakLockWait": 0,
+      "errors": 0
+    },
+    {
+      "folder": "block-07-A-measure",
+      "observations": 40,
+      "peakConnections": 9,
+      "peakActive": 3,
+      "peakIdleTransaction": 8,
+      "peakLockWait": 0,
+      "errors": 0
+    },
+    {
+      "folder": "block-07-A-warmup",
+      "observations": 8,
+      "peakConnections": 9,
+      "peakActive": 2,
+      "peakIdleTransaction": 2,
+      "peakLockWait": 0,
+      "errors": 0
+    },
+    {
+      "folder": "block-08-B-measure",
+      "observations": 40,
+      "peakConnections": 9,
+      "peakActive": 3,
+      "peakIdleTransaction": 7,
+      "peakLockWait": 0,
+      "errors": 0
+    },
+    {
+      "folder": "block-08-B-warmup",
+      "observations": 8,
+      "peakConnections": 9,
+      "peakActive": 4,
+      "peakIdleTransaction": 6,
+      "peakLockWait": 0,
+      "errors": 0
+    },
+    {
+      "folder": "block-09-B-measure",
+      "observations": 40,
+      "peakConnections": 9,
+      "peakActive": 3,
+      "peakIdleTransaction": 6,
+      "peakLockWait": 0,
+      "errors": 0
+    },
+    {
+      "folder": "block-09-B-warmup",
+      "observations": 8,
+      "peakConnections": 9,
+      "peakActive": 4,
+      "peakIdleTransaction": 6,
+      "peakLockWait": 0,
+      "errors": 0
+    },
+    {
+      "folder": "block-10-A-measure",
+      "observations": 40,
+      "peakConnections": 9,
+      "peakActive": 3,
+      "peakIdleTransaction": 6,
+      "peakLockWait": 0,
+      "errors": 0
+    },
+    {
+      "folder": "block-10-A-warmup",
+      "observations": 8,
+      "peakConnections": 9,
+      "peakActive": 4,
+      "peakIdleTransaction": 4,
+      "peakLockWait": 0,
+      "errors": 0
+    }
+  ]
+}

@@ -1,10 +1,10 @@
 /* Public header only. Override these tokens to customize the surface and motion. */
 .oc-public-nav {
-  --nav-ease: cubic-bezier(.22, 1, .36, 1);
-  --nav-duration: 400ms;
+  --nav-ease: var(--oc-glass-ease);
+  --nav-duration: var(--oc-glass-move);
   --nav-ink: var(--primary);
-  --nav-surface: rgb(255 251 245 / 94%);
-  --nav-border: rgb(20 45 78 / 10%);
+  --nav-surface: var(--oc-glass-light-material);
+  --nav-border: var(--oc-glass-light-edge);
   --nav-hover: rgb(20 45 78 / 7%);
   --nav-accent: var(--brand-orange);
   position: sticky;
@@ -15,13 +15,9 @@
   pointer-events: none;
 }
 .oc-public-nav[data-hero="true"] {
-  --nav-ink: #fff7ec;
-  --nav-surface: rgb(20 37 59 / 78%);
-  --nav-border: rgb(255 247 236 / 16%);
-  --nav-hover: rgb(255 247 236 / 12%);
+  --nav-hover: rgb(20 45 78 / 9%);
 }
-.oc-public-nav[data-open="true"] { --nav-surface: rgb(255 251 245 / 98%); }
-.oc-public-nav[data-hero="true"][data-open="true"] { --nav-surface: rgb(20 37 59 / 97%); }
+.oc-public-nav[data-open="true"] { --nav-surface: var(--oc-glass-frosted-material); }
 .oc-landing > .oc-public-nav[data-hero] { position: fixed; inset-inline: 0; }
 .oc-information > .oc-public-nav[data-hero] { position: sticky; }
 .oc-public-nav-surface {
@@ -31,19 +27,21 @@
   border: 1px solid var(--nav-border);
   border-radius: 999px;
   background: var(--nav-surface);
-  box-shadow: 0 8px 32px rgb(12 25 43 / 8%), inset 0 1px 0 rgb(255 255 255 / 5%);
-  -webkit-backdrop-filter: blur(20px) saturate(135%);
-  backdrop-filter: blur(20px) saturate(135%);
+  box-shadow: var(--oc-glass-light-depth);
+  -webkit-backdrop-filter: var(--oc-glass-light-filter);
+  backdrop-filter: var(--oc-glass-light-filter);
   pointer-events: auto;
-  transition: background-color var(--nav-duration) var(--nav-ease), border-color var(--nav-duration) var(--nav-ease), border-radius var(--nav-duration) var(--nav-ease), color var(--nav-duration) var(--nav-ease);
+  transition: background-color var(--nav-duration) var(--nav-ease), border-color var(--nav-duration) var(--nav-ease), border-radius var(--nav-duration) var(--nav-ease), box-shadow var(--nav-duration) var(--nav-ease), color var(--nav-duration) var(--nav-ease);
 }
-.oc-public-nav-row { display: flex; align-items: center; gap: 20px; min-height: 68px; padding: 10px 12px 10px 24px; }
+.oc-public-nav[data-hero="true"] .oc-public-nav-surface { box-shadow: var(--oc-glass-light-depth), 0 18px 40px -24px rgb(0 0 0 / 40%); }
+.oc-public-nav-surface::before { content: ""; position: absolute; inset: 1px; border: 1px solid rgb(255 255 255 / 32%); border-bottom-color: rgb(20 45 69 / 6%); border-radius: inherit; pointer-events: none; }
+.oc-public-nav-row { position: relative; display: flex; align-items: center; gap: 20px; min-height: 68px; padding: 10px 12px 10px 24px; }
 .oc-public-logo { position: relative; display: flex; align-items: center; flex: 0 0 132px; height: 44px; border-radius: 8px; }
 .oc-public-logo > span { position: absolute; inset: 0; display: flex; align-items: center; transition: opacity 240ms var(--nav-ease); }
 .oc-public-logo img { display: block; width: 100%; height: auto; }
 .oc-public-logo-dark { opacity: 0; }
-.oc-public-nav[data-hero="true"] .oc-public-logo-light { opacity: 0; }
-.oc-public-nav[data-hero="true"] .oc-public-logo-dark { opacity: 1; }
+.oc-public-nav[data-hero="true"] .oc-public-logo-light { opacity: 1; }
+.oc-public-nav[data-hero="true"] .oc-public-logo-dark { opacity: 0; }
 .oc-public-desktop, .oc-public-account { display: flex; align-items: center; gap: 4px; }
 .oc-public-desktop { margin-left: auto; }
 .oc-public-account { gap: 8px; }
@@ -62,26 +60,26 @@
   line-height: 20px;
   letter-spacing: -.01em;
 }
-.oc-public-nav .oc-public-link[aria-current] { background: var(--nav-hover); }
+.oc-public-nav .oc-public-link[aria-current] { background: var(--nav-hover); box-shadow: inset 0 1px 0 rgb(255 255 255 / 70%), inset 0 -1px 0 rgb(20 45 69 / 8%); }
 .oc-public-link[aria-current]::after { content: ""; position: absolute; bottom: 5px; left: calc(50% - 2px); width: 4px; height: 4px; border-radius: 50%; background: var(--nav-accent); }
 .oc-public-nav .oc-public-primary {
   min-height: 44px;
   height: auto;
   padding: 12px 20px;
-  border: 1px solid transparent;
+  border: 1px solid rgb(255 255 255 / 16%);
   border-radius: 999px;
   color: #fff7ec;
-  background: var(--primary);
-  box-shadow: 0 2px 4px rgb(12 25 43 / 8%);
+  background: linear-gradient(165deg, rgb(141 178 209 / 18%), transparent 65%), var(--primary);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 20%), inset 0 -2px 0 rgb(242 101 34 / 80%), 0 3px 8px rgb(12 25 43 / 16%);
   font-size: 13px;
   font-weight: 600;
   line-height: 20px;
 }
-.oc-public-nav[data-hero="true"] .oc-public-primary { background: #fff7ec; color: var(--primary); }
+.oc-public-nav[data-hero="true"] .oc-public-primary { color: #fff7ec; }
 .oc-landing .oc-public-nav :is(a, button) {
   transition: background-color 220ms var(--nav-ease), color 220ms var(--nav-ease), box-shadow 220ms var(--nav-ease), transform 220ms var(--nav-ease);
 }
-.oc-landing .oc-public-nav :is(a, button):focus-visible { outline: 2px solid var(--nav-ink); outline-offset: 3px; }
+.oc-public-nav :is(a, button):focus-visible { outline: 2px solid var(--nav-ink); outline-offset: 3px; }
 .oc-public-nav :is(.oc-public-link, .oc-public-login):focus-visible { background: var(--nav-hover); }
 .oc-public-nav .oc-public-primary:focus-visible { box-shadow: 0 0 0 4px var(--nav-hover); }
 .oc-public-nav .oc-public-primary:active { transform: scale(.97); }
@@ -95,48 +93,39 @@
 .oc-public-letter-copy { position: absolute; top: 100%; left: 0; }
 .oc-public-nav :is(a, button):focus-visible .oc-public-letter-track { transform: translateY(-100%); }
 @media (hover: hover) and (pointer: fine) {
-  .oc-public-nav :is(.oc-public-link, .oc-public-login):hover { background: var(--nav-hover); }
-  .oc-public-nav .oc-public-primary:hover { background: color-mix(in srgb, var(--primary) 88%, white); box-shadow: 0 4px 12px rgb(12 25 43 / 14%); }
-  .oc-public-nav[data-hero="true"] .oc-public-primary:hover { background: #ffffff; }
+  .oc-public-nav :is(.oc-public-link, .oc-public-login):hover { background: var(--nav-hover); box-shadow: inset 0 1px 0 rgb(255 255 255 / 65%); }
+  .oc-public-nav .oc-public-primary:hover { background-color: #24445f; box-shadow: inset 0 1px 0 rgb(255 255 255 / 25%), inset 0 -2px 0 var(--brand-orange), 0 5px 14px rgb(12 25 43 / 18%); }
   .oc-public-nav a:hover .oc-public-letter-track { transform: translateY(-100%); }
 }
 .oc-public-menu-toggle { display: none; align-items: center; justify-content: center; flex: 0 0 44px; width: 44px; height: 44px; padding: 0; color: inherit; background: var(--nav-hover); border: 1px solid var(--nav-border); border-radius: 50%; cursor: pointer; }
 .oc-public-menu-icon { position: relative; width: 18px; height: 18px; }
-.oc-public-menu-icon > span { position: absolute; left: 0; top: 8px; width: 18px; height: 1.5px; border-radius: 2px; background: currentColor; transform: translateY(-3px); transition: transform var(--nav-duration) var(--nav-ease); }
-.oc-public-menu-icon > span + span { transform: translateY(3px); }
-.oc-public-nav[data-open="true"] .oc-public-menu-icon > span { transform: rotate(45deg); }
-.oc-public-nav[data-open="true"] .oc-public-menu-icon > span + span { transform: rotate(-45deg); }
+.oc-public-menu-icon > svg { position: absolute; inset: 0; transition: opacity var(--oc-glass-quick) var(--nav-ease), transform var(--nav-duration) var(--nav-ease); }
+.oc-public-menu-icon > svg + svg { opacity: 0; transform: rotate(-45deg) scale(.8); }
+.oc-public-nav[data-open="true"] .oc-public-menu-icon > svg:first-child { opacity: 0; transform: rotate(45deg) scale(.8); }
+.oc-public-nav[data-open="true"] .oc-public-menu-icon > svg + svg { opacity: 1; transform: none; }
 .oc-public-mobile { display: none; }
 @media (max-width: 1099px) {
-  .oc-public-nav { padding: 12px 20px; }
+  .oc-public-nav { padding: 12px 20px; height: 90px; }
   .oc-public-nav-surface { border-radius: 34px; }
   .oc-public-nav-row { min-height: 64px; padding: 9px 10px 9px 20px; gap: 16px; }
   .oc-public-desktop { display: none; }
   .oc-public-account { margin-left: auto; gap: 8px; }
   .oc-public-menu-toggle { display: flex; }
-  .oc-public-nav[data-open="true"] .oc-public-nav-surface { border-bottom-color: transparent; border-radius: 34px 34px 0 0; }
+  .oc-public-nav[data-open="true"] .oc-public-nav-surface { border-radius: 34px; }
   .oc-public-mobile {
-    position: absolute;
-    top: calc(100% - 1px);
-    left: -1px;
-    right: -1px;
+    /* One backdrop for the row and disclosure. The header's fixed footprint
+       lets its material grow without moving the page, including sticky pages. */
+    position: relative;
     display: grid;
     grid-template-rows: 0fr;
     visibility: hidden;
     opacity: 0;
-    border: 1px solid var(--nav-border);
-    border-top: 0;
-    border-radius: 0 0 34px 34px;
-    background: var(--nav-surface);
-    box-shadow: 0 20px 28px rgb(12 25 43 / 10%);
-    -webkit-backdrop-filter: blur(20px) saturate(135%);
-    backdrop-filter: blur(20px) saturate(135%);
-    transition: grid-template-rows var(--nav-duration) var(--nav-ease), opacity 200ms var(--nav-ease), visibility 0s var(--nav-duration), background-color var(--nav-duration) var(--nav-ease);
+    transition: grid-template-rows var(--nav-duration) var(--nav-ease), opacity 200ms var(--nav-ease), visibility 0s var(--nav-duration);
   }
   .oc-public-nav[data-open="true"] .oc-public-mobile { grid-template-rows: 1fr; visibility: visible; opacity: 1; transition-delay: 0s; }
   .oc-public-mobile-clip { min-height: 0; overflow: hidden; }
   .oc-public-mobile-links { display: flex; flex-direction: column; gap: 6px; max-height: calc(100dvh - var(--support-banner-height, 0px) - 112px); overflow-y: auto; overscroll-behavior: contain; padding: 12px 14px 18px; }
-  .oc-public-mobile-links::before { content: ""; height: 1px; background: var(--nav-border); margin: 0 10px 8px; flex-shrink: 0; }
+  .oc-public-mobile-links::before { content: ""; height: 1px; background: rgb(20 45 69 / 12%); margin: 0 10px 8px; flex-shrink: 0; }
   .oc-public-mobile .oc-public-link { justify-content: flex-start; min-height: 48px; flex-shrink: 0; padding-inline: 16px; font-size: 15px; }
   .oc-public-mobile .oc-public-link[aria-current]::after { bottom: calc(50% - 2px); left: auto; right: 18px; }
   .oc-public-mobile .oc-public-mobile-login { display: none; }

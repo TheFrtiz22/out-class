@@ -4,7 +4,7 @@ import { prisma } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
 import { interviewActor, authorizeInterview, interviewTransactionOptions } from "@/utils/interview-access";
 import { ownPanelAssignments } from "@/utils/official-panel-schedule";
-import { approvedBookingPanel } from "@/utils/interview-collaboration";
+import { approvedBookingPanel, approvedBookingPanels } from "@/utils/interview-collaboration";
 import { anonymousApplicantLabel } from "@/lib/anonymous-review";
 import { sortInterviewEntries, type InterviewRoomEntry } from "@/lib/interview-entry";
 
@@ -17,6 +17,32 @@ export async function getAssignedInterviewRooms(clubId: string): Promise<Intervi
     const official = (await ownPanelAssignments(tx, user.id, true)).filter(r => r.clubId === clubId);
     const records = await tx.interviewRecord.findMany({ where: { interviewerId: member.id, application: { clubId }, completedAt: { not: null } }, select: { applicationId: true, roundId: true } });
     const slots = await tx.interviewSlot.findMany({ where: { clubId, room: { clubId }, OR: [{ id: { in: official.map(r => r.id) } }, { bookings: { some: { OR: records.map(r => ({ applicationId: r.applicationId, roundId: r.roundId })) } } }, { room: { isOpen: false }, OR: [{ publishedPanelMemberIds: { has: member.id } }, { panelScheduleVersionId: null, room: { approvedPanelMemberIds: { has: member.id } } }] }] }, include: { room: { include: { round: true } }, panelScheduleVersion: true, bookings: { include: { application: { include: { round: true, student: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } } } } }, orderBy: [{ startTime: "asc" }, { id: "asc" }] });
+    const candidates = slots.flatMap(slot => slot.room!.isOpen ? slot.bookings.filter(booking => booking.roundId === slot.room!.roundId && booking.application.clubId === clubId && booking.application.studentId !== user.id && booking.application.status !== "DRAFTING").map(booking => ({ booking, slot, scope: { clubId, applicationId: booking.applicationId, roundId: slot.room!.roundId } })) : []);
+    const access = new Map<string, { anonymous: boolean; reviewId?: string; canOpen: boolean; completed: boolean; started: boolean; interviewers: string[] }>();
+    const scopeKey = (value: { applicationId: string; roundId: string }) => `${value.applicationId}:${value.roundId}`;
+    // Sequential bounded batches use this transaction's single connection. All
+    // grants, approving owners and enabled colleagues are re-read on every request.
+    for (let offset = 0; offset < candidates.length; offset += 128) {
+      const batch = candidates.slice(offset, offset + 128);
+      const grants = await tx.interviewPanelAssignment.findMany({ where: { memberId: member.id, revokedAt: null, application: { clubId }, OR: batch.map(c => ({ applicationId: c.scope.applicationId, roundId: c.scope.roundId })) }, select: { applicationId: true, roundId: true } });
+      const granted = new Set(grants.map(scopeKey));
+      const eligible = batch.filter(c => granted.has(scopeKey(c.scope)));
+      const panels = await approvedBookingPanels(tx, eligible.map(c => ({ scope: c.scope, booking: { ...c.booking, slot: c.slot } })));
+      const approved = eligible.filter(c => panels.get(c.booking.id)?.includes(member.id));
+      if (!approved.length) continue;
+      const ownRecords = await tx.interviewRecord.findMany({ where: { interviewerId: member.id, application: { clubId }, OR: approved.map(c => ({ applicationId: c.scope.applicationId, roundId: c.scope.roundId })) }, select: { id: true, applicationId: true, roundId: true, completedAt: true, anonymousReview: true } });
+      const byScope = new Map(ownRecords.map(record => [scopeKey(record), record]));
+      const projected = approved.map(c => {
+        const record = byScope.get(scopeKey(c.scope)), room = c.slot.room!;
+        const anonymous = room.round.anonymousReview || c.booking.application.round.anonymousReview || !!record?.anonymousReview;
+        const reviewId = anonymous && record?.completedAt && caps.readClosing ? record.id : undefined;
+        const canOpen = !!reviewId || !anonymous && (!!record?.completedAt || !room.round.archivedAt && c.booking.application.roundId === room.roundId);
+        return { ...c, anonymous, reviewId, canOpen, completed: !!record?.completedAt, started: !!record && !record.completedAt };
+      });
+      const colleagueIds = [...new Set(projected.flatMap(c => c.canOpen && !c.anonymous ? panels.get(c.booking.id)! : []))];
+      const colleagues = colleagueIds.length ? await tx.clubMember.findMany({ where: { id: { in: colleagueIds }, clubId, status: "ACTIVE", user: { disabledAt: null } }, select: { id: true, user: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } }) : [];
+      for (const c of projected) access.set(c.booking.id, { anonymous: c.anonymous, reviewId: c.reviewId, canOpen: c.canOpen, completed: c.completed, started: c.started, interviewers: c.canOpen && !c.anonymous ? colleagues.filter(m => m.id !== member.id && panels.get(c.booking.id)!.includes(m.id)).map(m => m.user.studentProfile ? `${m.user.studentProfile.firstName} ${m.user.studentProfile.lastName}` : "Interviewer") : [] });
+    }
     const rows: InterviewRoomEntry[] = [];
     for (const slot of slots) {
       const room = slot.room!;
@@ -25,19 +51,11 @@ export async function getAssignedInterviewRooms(clubId: string): Promise<Intervi
       if (cancelled) { rows.push({ ...base, id: slot.id, bookingId: null, applicationId: null, candidate: null, interviewers: [], completed: false, started: false, cancelled: true, canOpen: false }); continue; }
       if (!slot.bookings.length && official.some(r => r.id === slot.id)) rows.push({ ...base, id: slot.id, bookingId: null, applicationId: null, candidate: null, interviewers: [], completed: false, started: false, cancelled: false, canOpen: false });
       for (const booking of slot.bookings) {
-        if (booking.roundId !== room.roundId || booking.application.clubId !== clubId || booking.application.studentId === user.id || booking.application.status === "DRAFTING") continue;
-        const scope = { clubId, applicationId: booking.applicationId, roundId: room.roundId };
-        const assignment = await tx.interviewPanelAssignment.findUnique({ where: { applicationId_roundId_memberId: { applicationId: scope.applicationId, roundId: scope.roundId, memberId: member.id } } });
-        if (!assignment || assignment.revokedAt) continue;
-        const panel = await approvedBookingPanel(tx, scope, { ...booking, slot });
-        if (!panel?.includes(member.id)) continue;
-        const record = await tx.interviewRecord.findUnique({ where: { applicationId_interviewerId_roundId: { applicationId: booking.applicationId, interviewerId: member.id, roundId: room.roundId } } });
-        const anonymous = room.round.anonymousReview || booking.application.round.anonymousReview || !!record?.anonymousReview;
-        const reviewId = anonymous && record?.completedAt && caps.readClosing ? record.id : undefined;
-        const canOpen = !!reviewId || !anonymous && (!!record?.completedAt || !room.round.archivedAt && booking.application.roundId === room.roundId);
-        const colleagues = canOpen && !anonymous ? await tx.clubMember.findMany({ where: { id: { in: panel }, clubId, status: "ACTIVE", user: { disabledAt: null } }, select: { id: true, user: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } }) : [];
+        const projection = access.get(booking.id);
+        if (!projection) continue;
+        const { anonymous, reviewId, canOpen, interviewers, completed, started } = projection;
         const p = booking.application.student.studentProfile;
-        rows.push({ ...base, ...(reviewId ? { reviewId } : {}), id: booking.id, bookingId: booking.id, applicationId: canOpen ? booking.applicationId : null, candidate: anonymous ? anonymousApplicantLabel(booking.applicationId) : p ? `${p.firstName} ${p.lastName}` : "Applicant", interviewers: colleagues.filter(m => m.id !== member.id).map(m => m.user.studentProfile ? `${m.user.studentProfile.firstName} ${m.user.studentProfile.lastName}` : "Interviewer"), completed: !!record?.completedAt, started: !!record && !record.completedAt, cancelled: false, canOpen });
+        rows.push({ ...base, ...(reviewId ? { reviewId } : {}), id: booking.id, bookingId: booking.id, applicationId: canOpen ? booking.applicationId : null, candidate: anonymous ? anonymousApplicantLabel(booking.applicationId) : p ? `${p.firstName} ${p.lastName}` : "Applicant", interviewers, completed, started, cancelled: false, canOpen });
       }
     }
     return sortInterviewEntries(rows);

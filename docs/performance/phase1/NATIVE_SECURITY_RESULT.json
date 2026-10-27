@@ -1,0 +1,93 @@
+{
+  "suite": "native PostgreSQL security",
+  "date": "2026-10-22",
+  "baseHead": "31096ad70c5255372ed6a6c7dedd805743f3d779",
+  "auditReference": "3017e01d5b55bc8fb38d4f8fbec4906dd93bf619",
+  "correction": {
+    "initialFailure": {
+      "test": "tests/onboarding-concurrency.test.cjs:28 before correction",
+      "expectedFulfilledRequests": 1,
+      "actualFulfilledRequests": 2,
+      "scenario": "Two authorized retries of the same invitation",
+      "reproducedOnAuditReference": true
+    },
+    "interpretation": "The original report incorrectly described this as competing ownership claims. Existing application behavior intentionally accepts the retry without a second membership write or acceptance audit.",
+    "subsequentFixtureFailure": "The runner disables outbound email; the original test expected its mocked sender to run. The corrected test verifies the pause, then enables only its in-memory sender in a finally-restored environment scope.",
+    "applicationSourcesChanged": false,
+    "authorizationOrLockingChanged": false
+  },
+  "current": {
+    "tests": 3,
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "suites": [
+      {
+        "name": "native collaboration: ordered simultaneous picks, revision conflicts, exact queue advancement, invitations and revocation",
+        "durationMs": 650.93775
+      },
+      {
+        "name": "native PostgreSQL interview transactions: independent drafts, simultaneous finish, annotations, revocation and immutable anonymous reopening",
+        "durationMs": 1063.421667
+      },
+      {
+        "name": "native PostgreSQL: concurrent claims, duplicate imports, email delivery, and owner suspensions",
+        "durationMs": 1461.581917
+      }
+    ],
+    "migrationsUpToDate": true
+  },
+  "reference": {
+    "tests": 3,
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "suites": [
+      {
+        "name": "native collaboration: ordered simultaneous picks, revision conflicts, exact queue advancement, invitations and revocation",
+        "durationMs": 641.574209
+      },
+      {
+        "name": "native PostgreSQL interview transactions: independent drafts, simultaneous finish, annotations, revocation and immutable anonymous reopening",
+        "durationMs": 1063.609625
+      },
+      {
+        "name": "native PostgreSQL: concurrent claims, duplicate imports, email delivery, and owner suspensions",
+        "durationMs": 1359.5395
+      }
+    ],
+    "migrationsUpToDate": true,
+    "productionSources": "Unmodified git archive of audit reference",
+    "overlaidFiles": [
+      "tests/onboarding-concurrency.test.cjs",
+      "scripts/run-disposable-postgres.cjs"
+    ],
+    "overlayPurpose": "Identical corrected test plus the existing macOS disposable runner; shared dependencies use the same unchanged Prisma schema"
+  },
+  "unit": {
+    "tests": 27,
+    "passed": 27,
+    "failed": 0,
+    "skipped": 0
+  },
+  "assertions": [
+    "Same-invitation retries both succeed with one active owner membership, one accepted invitation and one acceptance audit.",
+    "Two different owner invitations produce one successful claim and one explicit already-owned rejection; one owner, accepted invitation and acceptance audit remain.",
+    "Duplicate roster imports produce 50 invitations once.",
+    "Disabled delivery preserves 50 queued entries without attempts; concurrent mocked delivery uses unique claims and records each successful attempt once.",
+    "Independent owner disablements and ownership-transfer races retain an enabled owner.",
+    "Interview draft, completion, annotation, collaboration, revocation and immutable anonymous-reopening concurrency regressions pass."
+  ],
+  "testSha256": "7763a45ec6c072e75184b3f11ecb1ab932193a3c6882fb0cc6762483b63ae8c3",
+  "testPatchSha256": "947322c664854ce78bcf7b0865781fd7b0ab9ba57bffa6170c787d5b9e46651e",
+  "logSha256": "5e844f43d6ebd93c8a3e6536af0feadc8abd307d432f5c14c19243a1b8ee1339",
+  "evidence": "NATIVE_SECURITY_FOLLOWUP.log",
+  "patch": "NATIVE_SECURITY_FOLLOWUP.diff",
+  "fixture": "Dedicated disposable outclass_security_test database, real PostgreSQL 17.11, 8 connections, loopback-only publication, unchanged existing migrations",
+  "productionChanged": false,
+  "externalEmailSent": false,
+  "cleanup": {
+    "ownedContainersRemoved": true,
+    "temporaryAuditArchiveRemoved": true
+  }
+}

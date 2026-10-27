@@ -72,7 +72,7 @@ test('read API preserves dates and user JSON, validates scope, and never caches 
   const response = await GET(request('members', [clubId]));
   assert.equal(response.status, 200);
   assert.equal(response.headers.get('cache-control'), 'private, no-store');
-  assert.equal(response.headers.get('vary'), 'Cookie');
+  assert.match(response.headers.get('vary'), /(?:^|,\s*)Cookie(?:,|$)/);
   assert.deepEqual(wire.decodeWorkspaceData(await response.json()), dates);
   assert.equal((await GET(request('members', ['00000000-0000-4000-8000-000000000002']))).status, 403);
   assert.equal((await GET(request('members', [clubId, { userId: 'forged-owner' }]))).status, 400);
@@ -98,7 +98,7 @@ test('ordinary read fetches overlap rather than enter the Server Action queue', 
 
 test('root bootstrap starts authenticated content without an identity HTTP waterfall', async () => {
   const h = hooks(), identity = { id: 'user', memberships: [{ clubId, isOwner: true }] }; let calls = 0;
-  const { AuthProvider } = loader({ react: h.react, '@/contexts/demo-context': { useDemoMode: () => ({ isDemoEnabled: false }) }, '@/lib/demo/store': {}, '@/lib/permissions': { hasWorkspace: m => m.isOwner } }, { fetch: () => { calls++; throw Error('Unexpected bootstrap request'); } })('contexts/auth-context.tsx');
+  const { AuthProvider } = loader({ '@/utils/supabase/client': { createClient: () => ({ auth: { onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }) } }) }, react: h.react, '@/contexts/demo-context': { useDemoMode: () => ({ isDemoEnabled: false }) }, '@/lib/demo/store': {}, '@/lib/permissions': { hasWorkspace: m => m.isOwner } }, { fetch: () => { calls++; throw Error('Unexpected bootstrap request'); } })('contexts/auth-context.tsx');
   const render = () => h.render(() => AuthProvider({ children: 'children', hasSession: true, initialUser: identity }).props.value);
   assert.equal(render().user, identity); assert.equal(render().sessionPending, false);
   await h.flush(); assert.equal(calls, 0); assert.equal(render().loading, false);
@@ -124,7 +124,7 @@ test('verified Supabase identity is reused only inside the same React request; m
 test('duplicate identity refreshes coalesce and a late old-account response cannot replace the new bootstrap', async () => {
   const h = hooks(), requests = [];
   let identity = { id: 'user-a', memberships: [] };
-  const { AuthProvider } = loader({ react: h.react, '@/contexts/demo-context': { useDemoMode: () => ({ isDemoEnabled: false }) }, '@/lib/demo/store': {}, '@/lib/permissions': { hasWorkspace: () => false } }, { fetch: () => new Promise(resolve => requests.push(resolve)) })('contexts/auth-context.tsx');
+  const { AuthProvider } = loader({ '@/utils/supabase/client': { createClient: () => ({ auth: { onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }) } }) }, react: h.react, '@/contexts/demo-context': { useDemoMode: () => ({ isDemoEnabled: false }) }, '@/lib/demo/store': {}, '@/lib/permissions': { hasWorkspace: () => false } }, { fetch: () => new Promise(resolve => requests.push(resolve)) })('contexts/auth-context.tsx');
   const render = () => h.render(() => AuthProvider({ children: null, hasSession: true, initialUser: identity }).props.value);
   render(); await h.flush();
   const first = render().refreshUser(), duplicate = render().refreshUser();
@@ -211,3 +211,12 @@ test('a stalled workspace read times out, aborts its request and releases the de
   assert.equal(typeof deadline, 'function', 'A stalled read must have a finite deadline')
   deadline(); await assert.rejects(read, /took too long.*try again/i); assert.equal(cleared, 1)
 })
+
+test('a changed browser Auth token rotates pending-read authority without treating the token as authorization',async()=>{
+ const h=hooks(),identity={id:'user',memberships:[]};let observe;
+ const {AuthProvider}=loader({react:h.react,'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/lib/demo/store':{},'@/lib/permissions':{hasWorkspace:()=>false},'@/utils/supabase/client':{createClient:()=>({auth:{onAuthStateChange:fn=>{observe=fn;return{data:{subscription:{unsubscribe(){}}}}}}})}})('contexts/auth-context.tsx');
+ const render=()=>h.render(()=>AuthProvider({initialUser:identity,children:null}).props.value);
+ const initial=render().readAuthority;await h.flush();observe('INITIAL_SESSION',{access_token:'opaque-A'});assert.equal(render().readAuthority,initial);
+ observe('TOKEN_REFRESHED',{access_token:'opaque-B'});const rotated=render().readAuthority;assert.notEqual(rotated,initial);assert.equal(render().user,identity);
+ observe('SIGNED_IN',{access_token:'opaque-B'});assert.equal(render().readAuthority,rotated);observe('SIGNED_OUT',null);assert.notEqual(render().readAuthority,rotated);
+});

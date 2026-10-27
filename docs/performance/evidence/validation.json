@@ -1,0 +1,68 @@
+{
+  "date": "2026-10-21",
+  "sourceCommit": "3017e01d5b55bc8fb38d4f8fbec4906dd93bf619",
+  "productionBuild": {
+    "command": "node scripts/run-onboarding-e2e.cjs --keep (invokes npm run build with guarded local fixture environment)",
+    "result": "passed",
+    "buildDirectory": ".next-publish",
+    "nextVersion": "15.5.27",
+    "workspaceFirstLoadJsReportedKb": 510,
+    "sharedFirstLoadJsReportedKb": 105
+  },
+  "existingRealLocalAcceptance": {
+    "tests": 38,
+    "passed": 38,
+    "failed": 0,
+    "skipped": 0,
+    "dependencies": [
+      "real local Supabase Auth, OTP and MFA",
+      "real local PostgreSQL",
+      "captured local SMTP",
+      "production Next HTTP/RSC",
+      "session revocation and account privacy"
+    ]
+  },
+  "focusedTests": {
+    "command": "node --test tests/navigation-audit-harness.test.cjs tests/performance-regressions.test.cjs tests/workspace-navigation.test.cjs tests/workspace-reliability.test.cjs tests/serialized-workspace-read.test.cjs",
+    "tests": 26,
+    "passed": 26,
+    "failed": 0,
+    "skipped": 0,
+    "newHarnessTestsIncluded": 2
+  },
+  "originalLoaderProbes": {
+    "loaders": 12,
+    "measuredInvocationsEach": 20,
+    "warmupsEach": 2,
+    "result": "all completed with read-only SQL assertions"
+  },
+  "syntaxChecks": {
+    "files": [
+      "scripts/navigation-audit.cjs",
+      "scripts/navigation-loader-audit.cjs",
+      "scripts/summarize-navigation-audit.cjs"
+    ],
+    "result": "passed"
+  },
+  "applicationChanges": "none",
+  "productionChanges": "none",
+  "limitations": [
+    "No full repository test rerun beyond the existing fixture runner and focused checks is claimed.",
+    "Diagnostic browser adapter failures/superseded observations are recorded separately from accepted latency samples.",
+    "Final benchmark totals and cleanup status are recorded in NAVIGATION_BENCHMARKS.json and the audit."
+  ],
+  "browser": {
+    "playwright": "1.64.0",
+    "version": "156.0.8078.4",
+    "headless": true,
+    "platform": "darwin",
+    "architecture": "arm64"
+  },
+  "cleanup": {
+    "status": "passed",
+    "dedicatedNextPort": 3107,
+    "reservedSupabaseProject": "outclass-onboarding-e2e",
+    "localCredentialFilesRemoved": true,
+    "otherLocalProjectsTargeted": false
+  }
+}

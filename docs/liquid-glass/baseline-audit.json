@@ -1,0 +1,105 @@
+{
+  "phase": "baseline",
+  "browser": "chrome",
+  "screenshots": [
+    "public-1440-hero",
+    "public-1440-light",
+    "public-1440-dark",
+    "public-1280-hero",
+    "public-1280-light",
+    "public-1280-dark",
+    "public-1024-hero",
+    "public-1024-drawer",
+    "public-1024-light",
+    "public-1024-dark",
+    "public-768-hero",
+    "public-768-drawer",
+    "public-768-light",
+    "public-768-dark",
+    "public-390-hero",
+    "public-390-drawer",
+    "public-390-light",
+    "public-390-dark",
+    "internal-1440",
+    "internal-1280",
+    "internal-1024",
+    "internal-768",
+    "internal-768-drawer",
+    "internal-390",
+    "internal-390-drawer",
+    "internal-hover",
+    "internal-focus",
+    "internal-collapsed",
+    "internal-expanded",
+    "internal-flyout",
+    "internal-workspaces",
+    "internal-search",
+    "internal-notifications",
+    "internal-account",
+    "internal-increased-contrast",
+    "public-increased-contrast"
+  ],
+  "accessibility": [
+    {
+      "name": "public-1440",
+      "violations": []
+    },
+    {
+      "name": "public-390",
+      "violations": []
+    },
+    {
+      "name": "public-mobile-open",
+      "violations": []
+    },
+    {
+      "name": "internal-1440",
+      "violations": []
+    },
+    {
+      "name": "internal-390",
+      "violations": []
+    },
+    {
+      "name": "flyout",
+      "violations": []
+    },
+    {
+      "name": "workspace-menu",
+      "violations": []
+    },
+    {
+      "name": "search",
+      "violations": []
+    },
+    {
+      "name": "notifications",
+      "violations": []
+    },
+    {
+      "name": "account",
+      "violations": []
+    }
+  ],
+  "performance": {
+    "public": {
+      "frames": 132,
+      "medianMs": 16.7,
+      "p95Ms": 16.7,
+      "over34Ms": 0,
+      "navigationShifts": 0,
+      "backdropFilter": "blur(20px) saturate(1.35)",
+      "heapBytes": 153935132
+    },
+    "internal": {
+      "frames": 132,
+      "medianMs": 16.7,
+      "p95Ms": 16.7,
+      "over34Ms": 0,
+      "navigationShifts": 0,
+      "backdropFilter": "blur(16px)",
+      "heapBytes": 159331648
+    }
+  },
+  "errors": []
+}

@@ -1,5 +1,6 @@
 "use client";
 
+import { createClient } from "@/utils/supabase/client";
 import { hasWorkspace } from "@/lib/permissions";
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { User, StudentProfile, Application, ClubMember } from '@prisma/client';
@@ -18,6 +19,8 @@ export type PopulatedUser = User & {
 
 interface AuthContextType {
   isImpersonating: boolean;
+  /** Opaque browser session epoch; a scope hint, never an authorization result. */
+  readAuthority?: object;
   user: PopulatedUser | null;
   loading: boolean;
   /** Known server session awaiting its initial /api/users/me identity. */
@@ -37,6 +40,17 @@ export function AuthProvider({ children, initialUser = null, isImpersonating = f
   const [user, setUser] = useState<PopulatedUser | null>(initialUser);
   const [loading, setLoading] = useState(!initialUser && hasSession);
   const { isDemoEnabled, state, viewAs } = useDemoMode();
+  const [readAuthority, setReadAuthority] = useState<object>({});
+  useEffect(() => {
+    if (isDemoEnabled || !hasSession) return;
+    let token: string | undefined;
+    const { data: { subscription } } = createClient().auth.onAuthStateChange((event, session) => {
+      const next = session?.access_token ?? "";
+      if (token !== undefined ? next !== token : event !== "INITIAL_SESSION") setReadAuthority({});
+      token = next;
+    });
+    return () => subscription.unsubscribe();
+  }, [isDemoEnabled, hasSession]);
   const [selectedClubId, setSelectedClubId] = useState("");
   const generation = React.useRef(0), bootstrap = React.useRef({ user: initialUser, demo: isDemoEnabled });
   const pending = React.useRef<{ generation: number; promise: Promise<void> } | null>(null);
@@ -87,7 +101,7 @@ export function AuthProvider({ children, initialUser = null, isImpersonating = f
     else setSelectedClubId(clubId);
   };
   return (
-    <AuthContext.Provider value={{ isImpersonating, user: identity, activeClubId, selectClub, loading: isDemoEnabled ? !state : bootstrapChanged ? !initialUser && hasSession : loading, sessionPending: hasSession && !isDemoEnabled && loading && !identity, mutateUser, refreshUser: isDemoEnabled ? async () => {} : fetchUser }}>
+    <AuthContext.Provider value={{ isImpersonating, readAuthority, user: identity, activeClubId, selectClub, loading: isDemoEnabled ? !state : bootstrapChanged ? !initialUser && hasSession : loading, sessionPending: hasSession && !isDemoEnabled && loading && !identity, mutateUser, refreshUser: isDemoEnabled ? async () => {} : fetchUser }}>
       {children}
     </AuthContext.Provider>
   );
