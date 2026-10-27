@@ -1,0 +1,173 @@
+{
+  "scope": "5-second read-only samples. Process families and numeric CPU only; command lines, arguments, environment and secrets never exported. Sampling may miss brief external work; idle-host agreement is additional evidence, not proof of exclusive access.",
+  "rootProcessTracked": true,
+  "powerBaseline": {
+    "source": "Battery Power",
+    "lowPowerMode": 0
+  },
+  "originalBaseline": {
+    "head": "09f312dc9dedf0084ad0f3f1c2a537856f38bd84",
+    "statusSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "foreignDevCpuRule": "More than1 cumulative CPU-second observed within60 seconds, including worker descendants, invalidates the whole profile.",
+  "valid": true,
+  "violations": [],
+  "samples": [
+    {
+      "at": "2026-10-27T04:42:57.404Z",
+      "phase": "starting",
+      "cpuBusyPercent": 100,
+      "freeMemoryMiB": 106,
+      "powerSource": "Battery Power",
+      "batteryPercent": 58,
+      "lowPowerMode": 0,
+      "foreignProcesses": [],
+      "originalHead": "09f312dc9dedf0084ad0f3f1c2a537856f38bd84",
+      "originalStatusSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "at": "2026-10-27T04:43:02.477Z",
+      "phase": "block-1-B-measure",
+      "cpuBusyPercent": 38.103,
+      "freeMemoryMiB": 114,
+      "powerSource": "Battery Power",
+      "batteryPercent": 58,
+      "lowPowerMode": 0,
+      "foreignProcesses": [],
+      "originalHead": "09f312dc9dedf0084ad0f3f1c2a537856f38bd84",
+      "originalStatusSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "at": "2026-10-27T04:43:07.479Z",
+      "phase": "block-1-B-measure",
+      "cpuBusyPercent": 42.333,
+      "freeMemoryMiB": 196,
+      "powerSource": "Battery Power",
+      "batteryPercent": 58,
+      "lowPowerMode": 0,
+      "foreignProcesses": [],
+      "originalHead": "09f312dc9dedf0084ad0f3f1c2a537856f38bd84",
+      "originalStatusSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "at": "2026-10-27T04:43:12.789Z",
+      "phase": "block-1-B-measure",
+      "cpuBusyPercent": 30.95,
+      "freeMemoryMiB": 96,
+      "powerSource": "Battery Power",
+      "batteryPercent": 58,
+      "lowPowerMode": 0,
+      "foreignProcesses": [],
+      "originalHead": "09f312dc9dedf0084ad0f3f1c2a537856f38bd84",
+      "originalStatusSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "at": "2026-10-27T04:43:17.791Z",
+      "phase": "block-2-A-measure",
+      "cpuBusyPercent": 35.254,
+      "freeMemoryMiB": 108,
+      "powerSource": "Battery Power",
+      "batteryPercent": 58,
+      "lowPowerMode": 0,
+      "foreignProcesses": [],
+      "originalHead": "09f312dc9dedf0084ad0f3f1c2a537856f38bd84",
+      "originalStatusSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "at": "2026-10-27T04:43:22.791Z",
+      "phase": "block-2-A-measure",
+      "cpuBusyPercent": 38.175,
+      "freeMemoryMiB": 150,
+      "powerSource": "Battery Power",
+      "batteryPercent": 58,
+      "lowPowerMode": 0,
+      "foreignProcesses": [],
+      "originalHead": "09f312dc9dedf0084ad0f3f1c2a537856f38bd84",
+      "originalStatusSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "at": "2026-10-27T04:43:27.793Z",
+      "phase": "block-2-A-measure",
+      "cpuBusyPercent": 27.965,
+      "freeMemoryMiB": 133,
+      "powerSource": "Battery Power",
+      "batteryPercent": 58,
+      "lowPowerMode": 0,
+      "foreignProcesses": [],
+      "originalHead": "09f312dc9dedf0084ad0f3f1c2a537856f38bd84",
+      "originalStatusSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "at": "2026-10-27T04:43:32.792Z",
+      "phase": "block-3-A-measure",
+      "cpuBusyPercent": 46.062,
+      "freeMemoryMiB": 123,
+      "powerSource": "Battery Power",
+      "batteryPercent": 58,
+      "lowPowerMode": 0,
+      "foreignProcesses": [],
+      "originalHead": "09f312dc9dedf0084ad0f3f1c2a537856f38bd84",
+      "originalStatusSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "at": "2026-10-27T04:43:37.794Z",
+      "phase": "block-3-A-measure",
+      "cpuBusyPercent": 30.978,
+      "freeMemoryMiB": 85,
+      "powerSource": "Battery Power",
+      "batteryPercent": 58,
+      "lowPowerMode": 0,
+      "foreignProcesses": [],
+      "originalHead": "09f312dc9dedf0084ad0f3f1c2a537856f38bd84",
+      "originalStatusSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "at": "2026-10-27T04:43:42.795Z",
+      "phase": "block-4-B-warmup",
+      "cpuBusyPercent": 30.622,
+      "freeMemoryMiB": 120,
+      "powerSource": "Battery Power",
+      "batteryPercent": 58,
+      "lowPowerMode": 0,
+      "foreignProcesses": [],
+      "originalHead": "09f312dc9dedf0084ad0f3f1c2a537856f38bd84",
+      "originalStatusSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "at": "2026-10-27T04:43:47.797Z",
+      "phase": "block-4-B-measure",
+      "cpuBusyPercent": 40.898,
+      "freeMemoryMiB": 216,
+      "powerSource": "Battery Power",
+      "batteryPercent": 58,
+      "lowPowerMode": 0,
+      "foreignProcesses": [],
+      "originalHead": "09f312dc9dedf0084ad0f3f1c2a537856f38bd84",
+      "originalStatusSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "at": "2026-10-27T04:43:52.797Z",
+      "phase": "block-4-B-measure",
+      "cpuBusyPercent": 34.226,
+      "freeMemoryMiB": 101,
+      "powerSource": "Battery Power",
+      "batteryPercent": 58,
+      "lowPowerMode": 0,
+      "foreignProcesses": [],
+      "originalHead": "09f312dc9dedf0084ad0f3f1c2a537856f38bd84",
+      "originalStatusSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "at": "2026-10-27T04:43:55.145Z",
+      "phase": "block-4-B-measure",
+      "cpuBusyPercent": 29.674,
+      "freeMemoryMiB": 617,
+      "powerSource": "Battery Power",
+      "batteryPercent": 58,
+      "lowPowerMode": 0,
+      "foreignProcesses": [],
+      "originalHead": "09f312dc9dedf0084ad0f3f1c2a537856f38bd84",
+      "originalStatusSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

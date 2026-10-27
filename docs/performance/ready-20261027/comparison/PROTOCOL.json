@@ -1,0 +1,66 @@
+{
+  "startedAt": "2026-10-27T04:42:57.334Z",
+  "complete": true,
+  "blocks": [
+    {
+      "variant": "B",
+      "warmup": {
+        "directory": "block-1-B-warmup",
+        "samples": 2
+      },
+      "measure": {
+        "directory": "block-1-B-measure",
+        "samples": 20
+      }
+    },
+    {
+      "variant": "A",
+      "warmup": {
+        "directory": "block-2-A-warmup",
+        "samples": 2
+      },
+      "measure": {
+        "directory": "block-2-A-measure",
+        "samples": 20
+      }
+    },
+    {
+      "variant": "A",
+      "warmup": {
+        "directory": "block-3-A-warmup",
+        "samples": 2
+      },
+      "measure": {
+        "directory": "block-3-A-measure",
+        "samples": 20
+      }
+    },
+    {
+      "variant": "B",
+      "warmup": {
+        "directory": "block-4-B-warmup",
+        "samples": 2
+      },
+      "measure": {
+        "directory": "block-4-B-measure",
+        "samples": 20
+      }
+    }
+  ],
+  "failures": [],
+  "planSha256": "553ea2292201c6efa59edbf5efe4bc55c0c4d0392b9588a76bcb9b1ec4c1784d",
+  "harnessSha256": "f41f0f798c0b1bc804094cbee1f3606d93cdd9821a3a236e06a287955471b7f3",
+  "hostMonitorSource": "dd30454:scripts/navigation-phase15-host-monitor.cjs",
+  "hostMonitorSha256": "1efc15070f972406de7a785e96a0b33cda24a304ff68dede639e71f1de8e14b7",
+  "buildIds": {
+    "baseline": "dztz70P_LX8XV-YiiveaP",
+    "candidate": "Wud3_x0VZZzqvsn809Nt4"
+  },
+  "completedAt": "2026-10-27T04:43:55.121Z",
+  "hostControl": {
+    "valid": true,
+    "samples": 13,
+    "violations": []
+  },
+  "applicationStopped": true
+}

@@ -1,0 +1,358 @@
+   ▲ Next.js 15.5.27
+   - Local:        http://127.0.0.1:3107
+   - Network:      http://127.0.0.1:3107
+
+ ✓ Starting...
+ ✓ Ready in 172ms
+ ⨯ Error: You do not have permission for this club action.
+    at r (.next-publish/server/chunks/5235.js:118:2237)
+    at async N (.next-publish/server/chunks/5235.js:138:95801)
+    at async l (.next-publish/server/app/page.js:1:7661)
+    at async o (.next-publish/server/app/page.js:2:1862)
+    at async N (.next-publish/server/app/page.js:2:6950) {
+  digest: '2566519606'
+}
+ ⨯ Error: You do not have permission for this club action.
+    at r (.next-publish/server/chunks/5235.js:118:2237)
+    at async N (.next-publish/server/chunks/5235.js:138:95801)
+    at async l (.next-publish/server/app/page.js:1:7661)
+    at async o (.next-publish/server/app/page.js:2:1862)
+    at async N (.next-publish/server/app/page.js:2:6950) {
+  digest: '2566519606'
+}
+ ⨯ Error: You do not have permission for this club action.
+    at r (.next-publish/server/chunks/5235.js:118:2237)
+    at async N (.next-publish/server/chunks/5235.js:138:95801)
+    at async l (.next-publish/server/app/page.js:1:7661)
+    at async o (.next-publish/server/app/page.js:2:1862)
+    at async N (.next-publish/server/app/page.js:2:6950) {
+  digest: '2566519606'
+}
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at <unknown> (.next-publish/server/chunks/8950.js:1:4896)
+    at <unknown> (.next-publish/server/chunks/8950.js:1:5087)
+    at r (.next-publish/server/chunks/8950.js:1:5230)
+    at Object.getItem (.next-publish/server/chunks/8950.js:23:4805)
+    at async bX (.next-publish/server/chunks/427.js:11:42516)
+    at async da.__loadSession (.next-publish/server/chunks/427.js:24:13345)
+    at async da._useSession (.next-publish/server/chunks/427.js:24:13060)
+    at async da._emitInitialSession (.next-publish/server/chunks/427.js:24:22606)
+    at async (.next-publish/server/chunks/427.js:24:22508)
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at <unknown> (.next-publish/server/chunks/8950.js:1:4896)
+    at <unknown> (.next-publish/server/chunks/8950.js:1:5087)
+    at r (.next-publish/server/chunks/8950.js:1:5230)
+    at Object.getItem (.next-publish/server/chunks/8950.js:23:4805)
+    at async bX (.next-publish/server/chunks/427.js:11:42516)
+    at async da.__loadSession (.next-publish/server/chunks/427.js:24:13345)
+    at async da._useSession (.next-publish/server/chunks/427.js:24:13060)
+    at async da._emitInitialSession (.next-publish/server/chunks/427.js:24:22606)
+    at async (.next-publish/server/chunks/427.js:24:22508)
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at <unknown> (.next-publish/server/chunks/8950.js:1:4896)
+    at <unknown> (.next-publish/server/chunks/8950.js:1:5087)
+    at r (.next-publish/server/chunks/8950.js:1:5230)
+    at Object.getItem (.next-publish/server/chunks/8950.js:23:4805)
+    at async bX (.next-publish/server/chunks/427.js:11:42516)
+    at async da.__loadSession (.next-publish/server/chunks/427.js:24:13345)
+    at async da._useSession (.next-publish/server/chunks/427.js:24:13060)
+    at async da.getSession (.next-publish/server/chunks/427.js:24:12131)
+    at async (.next-publish/server/chunks/7476.js:1:8459)
+    at async r (.next-publish/server/chunks/7476.js:4:1435)
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at <unknown> (.next-publish/server/chunks/7789.js:78:43704)
+    at <unknown> (.next-publish/server/chunks/7789.js:78:43895)
+    at r (.next-publish/server/chunks/7789.js:78:44038)
+    at Object.getItem (.next-publish/server/chunks/7789.js:100:4805)
+    at async bX (.next-publish/server/chunks/7789.js:16:42516)
+    at async da.__loadSession (.next-publish/server/chunks/7789.js:29:13345)
+    at async da._useSession (.next-publish/server/chunks/7789.js:29:13060)
+    at async da._emitInitialSession (.next-publish/server/chunks/7789.js:29:22606)
+    at async (.next-publish/server/chunks/7789.js:29:22508)
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at <unknown> (.next-publish/server/chunks/7789.js:78:43704)
+    at <unknown> (.next-publish/server/chunks/7789.js:78:43895)
+    at r (.next-publish/server/chunks/7789.js:78:44038)
+    at Object.getItem (.next-publish/server/chunks/7789.js:100:4805)
+    at async bX (.next-publish/server/chunks/7789.js:16:42516)
+    at async da.__loadSession (.next-publish/server/chunks/7789.js:29:13345)
+    at async da._useSession (.next-publish/server/chunks/7789.js:29:13060)
+    at async da._emitInitialSession (.next-publish/server/chunks/7789.js:29:22606)
+    at async (.next-publish/server/chunks/7789.js:29:22508)
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at <unknown> (.next-publish/server/chunks/7789.js:78:43704)
+    at <unknown> (.next-publish/server/chunks/7789.js:78:43895)
+    at r (.next-publish/server/chunks/7789.js:78:44038)
+    at Object.getItem (.next-publish/server/chunks/7789.js:100:4805)
+    at async bX (.next-publish/server/chunks/7789.js:16:42516)
+    at async da.__loadSession (.next-publish/server/chunks/7789.js:29:13345)
+    at async da._useSession (.next-publish/server/chunks/7789.js:29:13060)
+    at async da.getSession (.next-publish/server/chunks/7789.js:29:12131)
+    at async (.next-publish/server/chunks/5235.js:115:108187)
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at <unknown> (.next-publish/server/middleware.js:36:69129)
+    at <unknown> (.next-publish/server/middleware.js:36:69320)
+    at fB (.next-publish/server/middleware.js:36:69463)
+    at Object.getItem (.next-publish/server/middleware.js:58:4823)
+    at async d7 (.next-publish/server/middleware.js:23:42522)
+    at async fm.__loadSession (.next-publish/server/middleware.js:36:13345)
+    at async fm._useSession (.next-publish/server/middleware.js:36:13060)
+    at async fm._emitInitialSession (.next-publish/server/middleware.js:36:22606)
+    at async (.next-publish/server/middleware.js:36:22508) {
+
+}
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at <unknown> (.next-publish/server/middleware.js:36:69129)
+    at <unknown> (.next-publish/server/middleware.js:36:69320)
+    at fB (.next-publish/server/middleware.js:36:69463)
+    at Object.getItem (.next-publish/server/middleware.js:58:4823)
+    at async d7 (.next-publish/server/middleware.js:23:42522)
+    at async fm.__loadSession (.next-publish/server/middleware.js:36:13345)
+    at async fm._useSession (.next-publish/server/middleware.js:36:13060)
+    at async fm._emitInitialSession (.next-publish/server/middleware.js:36:22606)
+    at async (.next-publish/server/middleware.js:36:22508) {
+
+}
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at <unknown> (.next-publish/server/middleware.js:36:69129)
+    at <unknown> (.next-publish/server/middleware.js:36:69320)
+    at fB (.next-publish/server/middleware.js:36:69463)
+    at Object.getItem (.next-publish/server/middleware.js:58:4823)
+    at async d7 (.next-publish/server/middleware.js:23:42522)
+    at async fm.__loadSession (.next-publish/server/middleware.js:36:13345)
+    at async fm._useSession (.next-publish/server/middleware.js:36:13060)
+    at async fm._getUser (.next-publish/server/middleware.js:36:15651)
+    at async fm.getUser (.next-publish/server/middleware.js:36:15453)
+    at async fG (.next-publish/server/middleware.js:58:6503) {
+
+}
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at <unknown> (.next-publish/server/chunks/8950.js:1:4896)
+    at <unknown> (.next-publish/server/chunks/8950.js:1:5087)
+    at r (.next-publish/server/chunks/8950.js:1:5230)
+    at Object.getItem (.next-publish/server/chunks/8950.js:23:4805)
+    at async bX (.next-publish/server/chunks/427.js:11:42516)
+    at async da.__loadSession (.next-publish/server/chunks/427.js:24:13345)
+    at async da._useSession (.next-publish/server/chunks/427.js:24:13060)
+    at async da._emitInitialSession (.next-publish/server/chunks/427.js:24:22606)
+    at async (.next-publish/server/chunks/427.js:24:22508)
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at <unknown> (.next-publish/server/chunks/8950.js:1:4896)
+    at <unknown> (.next-publish/server/chunks/8950.js:1:5087)
+    at r (.next-publish/server/chunks/8950.js:1:5230)
+    at Object.getItem (.next-publish/server/chunks/8950.js:23:4805)
+    at async bX (.next-publish/server/chunks/427.js:11:42516)
+    at async da.__loadSession (.next-publish/server/chunks/427.js:24:13345)
+    at async da._useSession (.next-publish/server/chunks/427.js:24:13060)
+    at async da._emitInitialSession (.next-publish/server/chunks/427.js:24:22606)
+    at async (.next-publish/server/chunks/427.js:24:22508)
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at <unknown> (.next-publish/server/chunks/8950.js:1:4896)
+    at <unknown> (.next-publish/server/chunks/8950.js:1:5087)
+    at r (.next-publish/server/chunks/8950.js:1:5230)
+    at Object.getItem (.next-publish/server/chunks/8950.js:23:4805)
+    at async bX (.next-publish/server/chunks/427.js:11:42516)
+    at async da.__loadSession (.next-publish/server/chunks/427.js:24:13345)
+    at async da._useSession (.next-publish/server/chunks/427.js:24:13060)
+    at async da.getSession (.next-publish/server/chunks/427.js:24:12131)
+    at async (.next-publish/server/chunks/7476.js:1:8459)
+ ⨯ Error: You do not have permission for this club action.
+    at r (.next-publish/server/chunks/5235.js:118:2237)
+    at async o (.next-publish/server/chunks/5235.js:2:7295)
+    at async l (.next-publish/server/app/page.js:1:7661)
+    at async o (.next-publish/server/app/page.js:2:1862)
+    at async N (.next-publish/server/app/page.js:2:6950) {
+  digest: '2317719811'
+}
+Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+   ▲ Next.js 15.5.27
+   - Local:        http://127.0.0.1:3107
+   - Network:      http://127.0.0.1:3107
+
+ ✓ Starting...
+ ✓ Ready in 178ms
+ ⨯ Error: You do not have permission for this club action.
+    at r (.next-publish/server/chunks/5235.js:118:2237)
+    at async N (.next-publish/server/chunks/5235.js:138:95801)
+    at async l (.next-publish/server/app/page.js:1:7661)
+    at async o (.next-publish/server/app/page.js:2:1862)
+    at async N (.next-publish/server/app/page.js:2:6950) {
+  digest: '2566519606'
+}
+ ⨯ Error: You do not have permission for this club action.
+    at r (.next-publish/server/chunks/5235.js:118:2237)
+    at async N (.next-publish/server/chunks/5235.js:138:95801)
+    at async l (.next-publish/server/app/page.js:1:7661)
+    at async o (.next-publish/server/app/page.js:2:1862)
+    at async N (.next-publish/server/app/page.js:2:6950) {
+  digest: '2566519606'
+}
+ ⨯ Error: You do not have permission for this club action.
+    at r (.next-publish/server/chunks/5235.js:118:2237)
+    at async N (.next-publish/server/chunks/5235.js:138:95801)
+    at async l (.next-publish/server/app/page.js:1:7661)
+    at async o (.next-publish/server/app/page.js:2:1862)
+    at async N (.next-publish/server/app/page.js:2:6950) {
+  digest: '2566519606'
+}
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at <unknown> (.next-publish/server/chunks/8950.js:1:4896)
+    at <unknown> (.next-publish/server/chunks/8950.js:1:5087)
+    at r (.next-publish/server/chunks/8950.js:1:5230)
+    at Object.getItem (.next-publish/server/chunks/8950.js:23:4805)
+    at async bX (.next-publish/server/chunks/427.js:11:42516)
+    at async da.__loadSession (.next-publish/server/chunks/427.js:24:13345)
+    at async da._useSession (.next-publish/server/chunks/427.js:24:13060)
+    at async da._emitInitialSession (.next-publish/server/chunks/427.js:24:22606)
+    at async (.next-publish/server/chunks/427.js:24:22508)
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at <unknown> (.next-publish/server/chunks/8950.js:1:4896)
+    at <unknown> (.next-publish/server/chunks/8950.js:1:5087)
+    at r (.next-publish/server/chunks/8950.js:1:5230)
+    at Object.getItem (.next-publish/server/chunks/8950.js:23:4805)
+    at async bX (.next-publish/server/chunks/427.js:11:42516)
+    at async da.__loadSession (.next-publish/server/chunks/427.js:24:13345)
+    at async da._useSession (.next-publish/server/chunks/427.js:24:13060)
+    at async da._emitInitialSession (.next-publish/server/chunks/427.js:24:22606)
+    at async (.next-publish/server/chunks/427.js:24:22508)
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at <unknown> (.next-publish/server/chunks/8950.js:1:4896)
+    at <unknown> (.next-publish/server/chunks/8950.js:1:5087)
+    at r (.next-publish/server/chunks/8950.js:1:5230)
+    at Object.getItem (.next-publish/server/chunks/8950.js:23:4805)
+    at async bX (.next-publish/server/chunks/427.js:11:42516)
+    at async da.__loadSession (.next-publish/server/chunks/427.js:24:13345)
+    at async da._useSession (.next-publish/server/chunks/427.js:24:13060)
+    at async da.getSession (.next-publish/server/chunks/427.js:24:12131)
+    at async (.next-publish/server/chunks/7476.js:1:8459)
+    at async r (.next-publish/server/chunks/7476.js:4:1435)
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at <unknown> (.next-publish/server/chunks/7789.js:78:43704)
+    at <unknown> (.next-publish/server/chunks/7789.js:78:43895)
+    at r (.next-publish/server/chunks/7789.js:78:44038)
+    at Object.getItem (.next-publish/server/chunks/7789.js:100:4805)
+    at async bX (.next-publish/server/chunks/7789.js:16:42516)
+    at async da.__loadSession (.next-publish/server/chunks/7789.js:29:13345)
+    at async da._useSession (.next-publish/server/chunks/7789.js:29:13060)
+    at async da._emitInitialSession (.next-publish/server/chunks/7789.js:29:22606)
+    at async (.next-publish/server/chunks/7789.js:29:22508)
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at <unknown> (.next-publish/server/chunks/7789.js:78:43704)
+    at <unknown> (.next-publish/server/chunks/7789.js:78:43895)
+    at r (.next-publish/server/chunks/7789.js:78:44038)
+    at Object.getItem (.next-publish/server/chunks/7789.js:100:4805)
+    at async bX (.next-publish/server/chunks/7789.js:16:42516)
+    at async da.__loadSession (.next-publish/server/chunks/7789.js:29:13345)
+    at async da._useSession (.next-publish/server/chunks/7789.js:29:13060)
+    at async da._emitInitialSession (.next-publish/server/chunks/7789.js:29:22606)
+    at async (.next-publish/server/chunks/7789.js:29:22508)
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at <unknown> (.next-publish/server/chunks/7789.js:78:43704)
+    at <unknown> (.next-publish/server/chunks/7789.js:78:43895)
+    at r (.next-publish/server/chunks/7789.js:78:44038)
+    at Object.getItem (.next-publish/server/chunks/7789.js:100:4805)
+    at async bX (.next-publish/server/chunks/7789.js:16:42516)
+    at async da.__loadSession (.next-publish/server/chunks/7789.js:29:13345)
+    at async da._useSession (.next-publish/server/chunks/7789.js:29:13060)
+    at async da.getSession (.next-publish/server/chunks/7789.js:29:12131)
+    at async (.next-publish/server/chunks/5235.js:115:108187)
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at <unknown> (.next-publish/server/middleware.js:36:69129)
+    at <unknown> (.next-publish/server/middleware.js:36:69320)
+    at fB (.next-publish/server/middleware.js:36:69463)
+    at Object.getItem (.next-publish/server/middleware.js:58:4823)
+    at async d7 (.next-publish/server/middleware.js:23:42522)
+    at async fm.__loadSession (.next-publish/server/middleware.js:36:13345)
+    at async fm._useSession (.next-publish/server/middleware.js:36:13060)
+    at async fm._emitInitialSession (.next-publish/server/middleware.js:36:22606)
+    at async (.next-publish/server/middleware.js:36:22508) {
+
+}
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at <unknown> (.next-publish/server/middleware.js:36:69129)
+    at <unknown> (.next-publish/server/middleware.js:36:69320)
+    at fB (.next-publish/server/middleware.js:36:69463)
+    at Object.getItem (.next-publish/server/middleware.js:58:4823)
+    at async d7 (.next-publish/server/middleware.js:23:42522)
+    at async fm.__loadSession (.next-publish/server/middleware.js:36:13345)
+    at async fm._useSession (.next-publish/server/middleware.js:36:13060)
+    at async fm._emitInitialSession (.next-publish/server/middleware.js:36:22606)
+    at async (.next-publish/server/middleware.js:36:22508) {
+
+}
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at <unknown> (.next-publish/server/middleware.js:36:69129)
+    at <unknown> (.next-publish/server/middleware.js:36:69320)
+    at fB (.next-publish/server/middleware.js:36:69463)
+    at Object.getItem (.next-publish/server/middleware.js:58:4823)
+    at async d7 (.next-publish/server/middleware.js:23:42522)
+    at async fm.__loadSession (.next-publish/server/middleware.js:36:13345)
+    at async fm._useSession (.next-publish/server/middleware.js:36:13060)
+    at async fm._getUser (.next-publish/server/middleware.js:36:15651)
+    at async fm.getUser (.next-publish/server/middleware.js:36:15453)
+    at async fG (.next-publish/server/middleware.js:58:6503) {
+
+}
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at <unknown> (.next-publish/server/chunks/8950.js:1:4896)
+    at <unknown> (.next-publish/server/chunks/8950.js:1:5087)
+    at r (.next-publish/server/chunks/8950.js:1:5230)
+    at Object.getItem (.next-publish/server/chunks/8950.js:23:4805)
+    at async bX (.next-publish/server/chunks/427.js:11:42516)
+    at async da.__loadSession (.next-publish/server/chunks/427.js:24:13345)
+    at async da._useSession (.next-publish/server/chunks/427.js:24:13060)
+    at async da._emitInitialSession (.next-publish/server/chunks/427.js:24:22606)
+    at async (.next-publish/server/chunks/427.js:24:22508)
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at <unknown> (.next-publish/server/chunks/8950.js:1:4896)
+    at <unknown> (.next-publish/server/chunks/8950.js:1:5087)
+    at r (.next-publish/server/chunks/8950.js:1:5230)
+    at Object.getItem (.next-publish/server/chunks/8950.js:23:4805)
+    at async bX (.next-publish/server/chunks/427.js:11:42516)
+    at async da.__loadSession (.next-publish/server/chunks/427.js:24:13345)
+    at async da._useSession (.next-publish/server/chunks/427.js:24:13060)
+    at async da._emitInitialSession (.next-publish/server/chunks/427.js:24:22606)
+    at async (.next-publish/server/chunks/427.js:24:22508)
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at <unknown> (.next-publish/server/chunks/8950.js:1:4896)
+    at <unknown> (.next-publish/server/chunks/8950.js:1:5087)
+    at r (.next-publish/server/chunks/8950.js:1:5230)
+    at Object.getItem (.next-publish/server/chunks/8950.js:23:4805)
+    at async bX (.next-publish/server/chunks/427.js:11:42516)
+    at async da.__loadSession (.next-publish/server/chunks/427.js:24:13345)
+    at async da._useSession (.next-publish/server/chunks/427.js:24:13060)
+    at async da.getSession (.next-publish/server/chunks/427.js:24:12131)
+    at async (.next-publish/server/chunks/7476.js:1:8459)
+ ⨯ Error: You do not have permission for this club action.
+    at r (.next-publish/server/chunks/5235.js:118:2237)
+    at async o (.next-publish/server/chunks/5235.js:2:7295)
+    at async l (.next-publish/server/app/page.js:1:7661)
+    at async o (.next-publish/server/app/page.js:2:1862)
+    at async N (.next-publish/server/app/page.js:2:6950) {
+  digest: '2317719811'
+}
+Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+   ▲ Next.js 15.5.27
+   - Local:        http://127.0.0.1:3107
+   - Network:      http://127.0.0.1:3107
+
+ ✓ Starting...
+ ✓ Ready in 172ms
+   ▲ Next.js 15.5.27
+   - Local:        http://127.0.0.1:3107
+   - Network:      http://127.0.0.1:3107
+
+ ✓ Starting...
+ ✓ Ready in 164ms
+   ▲ Next.js 15.5.27
+   - Local:        http://127.0.0.1:3107
+   - Network:      http://127.0.0.1:3107
+
+ ✓ Starting...
+ ✓ Ready in 160ms
+   ▲ Next.js 15.5.27
+   - Local:        http://127.0.0.1:3107
+   - Network:      http://127.0.0.1:3107
+
+ ✓ Starting...
+ ✓ Ready in 167ms

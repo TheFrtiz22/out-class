@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-27T04:47:22.664693+00:00",
+  "finalLint": {
+    "status": 0,
+    "errors": 0,
+    "existingWarnings": 22,
+    "evidence": "tests/final-lint.log"
+  },
+  "newPerformanceMeasurement": false,
+  "scope": "Final lint after the gated navigation selector repair; no tests or builds overlap initial-load collection."
+}

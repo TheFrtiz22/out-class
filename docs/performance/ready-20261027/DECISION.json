@@ -1,0 +1,7 @@
+{
+  "at": "2026-10-27T04:46:32.098779+00:00",
+  "adoptedReadySubset": true,
+  "broaderSeriesReleaseCleared": false,
+  "reason": "Two independently scoped resource-avoidance changes preserve main UI and all server/Auth/database source. Current-main tests and bounded initial comparison pass. Request counts improve; local latency differences are small/mixed and are reported without a speedup claim.",
+  "excluded": "Pagination/Settings/Auth-epoch experiments and rejected Phase14/15 handoffs are not included."
+}
