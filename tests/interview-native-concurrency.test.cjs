@@ -112,7 +112,10 @@ test('native PostgreSQL interview transactions: independent drafts, simultaneous
  // must recheck after commit, rather than use an authorization captured beforehand.
  let release,locked;const ready=new Promise(resolve=>locked=resolve),hold=new Promise(resolve=>release=resolve);
  const revoke=prisma.$transaction(async tx=>{await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${club.id} FOR UPDATE`;locked();await hold;await tx.interviewPanelAssignment.update({where:{applicationId_roundId_memberId:{applicationId:app.id,roundId:round.id,memberId:oneMember.id}},data:{revokedAt:new Date()}});});
- await ready;const pending=a.kits.openInterviewSession(scope),pendingList=a.entries.getAssignedInterviewRooms(club.id);release();await revoke;await assert.rejects(pending,/panel/);assert.deepEqual(await pendingList,[]);
+ await ready;const pending=a.kits.openInterviewSession(scope),pendingList=a.entries.getAssignedInterviewRooms(club.id);release();await revoke;await assert.rejects(pending,/panel/);
+ const remaining=await pendingList;assert.equal(remaining.some(row=>row.applicationId===app.id),false,'the revoked applicant disappears even when other valid history assignments remain');
+ const retainedGrants=await prisma.interviewPanelAssignment.findMany({where:{memberId:oneMember.id,roundId:round.id,revokedAt:null},select:{applicationId:true}});
+ assert.ok(remaining.length>0);assert.ok(remaining.every(row=>row.clubId===club.id&&row.roundId===round.id&&retainedGrants.some(g=>g.applicationId===row.applicationId)),'all remaining candidate rows still require their own active grant');
  assert.equal((await prisma.interviewResumeDocument.findUnique({where:{id:document.id}})).contentHash,document.contentHash);
  const audit=await prisma.auditLog.findMany({where:{clubId:club.id}});assert.doesNotMatch(JSON.stringify(audit),/Comment one|Edit A|Only interviewer/);
 });
