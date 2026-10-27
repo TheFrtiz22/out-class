@@ -30,7 +30,7 @@ test('Phase 1 GET reads preserve live authority, no-store, Demo isolation and co
    record=true;await page.locator('[data-tour="nav-interviews"]').filter({visible:true}).first().click();await page.getByText('No assigned interviews.',{exact:true}).waitFor();
    assert.equal(reads.length,3);assert.equal(max,3);assert.ok(Math.max(...reads.map(r=>r.start))<Math.min(...reads.map(r=>r.end??Infinity)));assert.equal(await page.getByRole('heading',{name:'Interview scheduling',exact:true}).count(),0);
    record=false;
-   for(let i=0;i<5;i++){await page.locator('[data-tour="nav-applicants"]').filter({visible:true}).first().click();await page.locator('[data-tour="nav-interviews"]').filter({visible:true}).first().click()}
+   for(let i=0;i<5;i++){let applicants=page.locator('[data-tour="nav-applicants"]').filter({visible:true}).first();if(!await applicants.count()){await page.getByRole('button',{name:'Applicants',exact:true}).filter({visible:true}).first().focus();await page.keyboard.press('ArrowRight');applicants=page.locator('[data-tour="nav-applicants"]').filter({visible:true}).first()}await applicants.focus();await page.keyboard.press('Enter');await page.locator('[data-tour="nav-interviews"]').filter({visible:true}).first().focus();await page.keyboard.press('Enter')}
    await page.getByText('No assigned interviews.',{exact:true}).waitFor();assert.deepEqual(errors,[]);await context.close();
   }finally{await browser.close()}
  });

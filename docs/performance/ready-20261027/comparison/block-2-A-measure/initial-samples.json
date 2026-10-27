@@ -1,0 +1,317 @@
+{
+  "environment": "local production Next build; authenticated local fixture; cold browser context; warm server/DB",
+  "samples": [
+    {
+      "route": "overview",
+      "index": 0,
+      "meaningfulMs": 271.10000002384186,
+      "scriptMs": 45.24100000000001,
+      "taskMs": 110.821,
+      "longTasks": [],
+      "document": {
+        "ttfbMs": 51.60000002384186,
+        "domContentLoadedMs": 69.90000000596046,
+        "transferSize": 17282
+      },
+      "requestCount": 57
+    },
+    {
+      "route": "overview",
+      "index": 1,
+      "meaningfulMs": 267.40000000596046,
+      "scriptMs": 46.857,
+      "taskMs": 114.588,
+      "longTasks": [],
+      "document": {
+        "ttfbMs": 47.19999998807907,
+        "domContentLoadedMs": 66.30000001192093,
+        "transferSize": 17282
+      },
+      "requestCount": 57
+    },
+    {
+      "route": "overview",
+      "index": 2,
+      "meaningfulMs": 271.2999999821186,
+      "scriptMs": 45.919000000000004,
+      "taskMs": 111.755,
+      "longTasks": [],
+      "document": {
+        "ttfbMs": 51.39999997615814,
+        "domContentLoadedMs": 68.89999997615814,
+        "transferSize": 17282
+      },
+      "requestCount": 57
+    },
+    {
+      "route": "overview",
+      "index": 3,
+      "meaningfulMs": 278.59999999403954,
+      "scriptMs": 46.173,
+      "taskMs": 113.234,
+      "longTasks": [],
+      "document": {
+        "ttfbMs": 59.20000001788139,
+        "domContentLoadedMs": 76.09999999403954,
+        "transferSize": 17282
+      },
+      "requestCount": 57
+    },
+    {
+      "route": "overview",
+      "index": 4,
+      "meaningfulMs": 253.60000002384186,
+      "scriptMs": 44.888999999999996,
+      "taskMs": 109.883,
+      "longTasks": [],
+      "document": {
+        "ttfbMs": 50.70000001788139,
+        "domContentLoadedMs": 69.2000000178814,
+        "transferSize": 17282
+      },
+      "requestCount": 57
+    },
+    {
+      "route": "overview",
+      "index": 5,
+      "meaningfulMs": 250.09999999403954,
+      "scriptMs": 45.086,
+      "taskMs": 110.011,
+      "longTasks": [],
+      "document": {
+        "ttfbMs": 47.400000005960464,
+        "domContentLoadedMs": 65.09999999403954,
+        "transferSize": 17282
+      },
+      "requestCount": 57
+    },
+    {
+      "route": "overview",
+      "index": 6,
+      "meaningfulMs": 250,
+      "scriptMs": 45.867,
+      "taskMs": 110.459,
+      "longTasks": [],
+      "document": {
+        "ttfbMs": 46.5,
+        "domContentLoadedMs": 63.19999998807907,
+        "transferSize": 17282
+      },
+      "requestCount": 57
+    },
+    {
+      "route": "overview",
+      "index": 7,
+      "meaningfulMs": 272.2000000178814,
+      "scriptMs": 45.921,
+      "taskMs": 111.546,
+      "longTasks": [],
+      "document": {
+        "ttfbMs": 52.20000001788139,
+        "domContentLoadedMs": 69.40000000596046,
+        "transferSize": 17282
+      },
+      "requestCount": 57
+    },
+    {
+      "route": "overview",
+      "index": 8,
+      "meaningfulMs": 248.7999999821186,
+      "scriptMs": 45.523,
+      "taskMs": 109.483,
+      "longTasks": [],
+      "document": {
+        "ttfbMs": 46.099999994039536,
+        "domContentLoadedMs": 62.5,
+        "transferSize": 17282
+      },
+      "requestCount": 57
+    },
+    {
+      "route": "overview",
+      "index": 9,
+      "meaningfulMs": 249.40000000596046,
+      "scriptMs": 44.513999999999996,
+      "taskMs": 109.167,
+      "longTasks": [],
+      "document": {
+        "ttfbMs": 46.400000005960464,
+        "domContentLoadedMs": 63.400000005960464,
+        "transferSize": 17282
+      },
+      "requestCount": 57
+    },
+    {
+      "route": "personal",
+      "index": 0,
+      "meaningfulMs": 438.2999999821186,
+      "scriptMs": 56.618,
+      "taskMs": 130.878,
+      "longTasks": [],
+      "document": {
+        "ttfbMs": 46.400000005960464,
+        "domContentLoadedMs": 65,
+        "transferSize": 19032
+      },
+      "requestCount": 60
+    },
+    {
+      "route": "personal",
+      "index": 1,
+      "meaningfulMs": 449.09999999403954,
+      "scriptMs": 60.091,
+      "taskMs": 144.571,
+      "longTasks": [],
+      "document": {
+        "ttfbMs": 46.900000005960464,
+        "domContentLoadedMs": 66.7000000178814,
+        "transferSize": 19032
+      },
+      "requestCount": 60
+    },
+    {
+      "route": "personal",
+      "index": 2,
+      "meaningfulMs": 432.40000000596046,
+      "scriptMs": 55.187,
+      "taskMs": 125.026,
+      "longTasks": [],
+      "document": {
+        "ttfbMs": 43.19999998807907,
+        "domContentLoadedMs": 60.900000005960464,
+        "transferSize": 19032
+      },
+      "requestCount": 60
+    },
+    {
+      "route": "personal",
+      "index": 3,
+      "meaningfulMs": 456.5,
+      "scriptMs": 54.71,
+      "taskMs": 131.502,
+      "longTasks": [],
+      "document": {
+        "ttfbMs": 51.69999998807907,
+        "domContentLoadedMs": 74.09999999403954,
+        "transferSize": 19032
+      },
+      "requestCount": 60
+    },
+    {
+      "route": "personal",
+      "index": 4,
+      "meaningfulMs": 446.40000000596046,
+      "scriptMs": 60.208,
+      "taskMs": 144.56199999999998,
+      "longTasks": [],
+      "document": {
+        "ttfbMs": 45.29999998211861,
+        "domContentLoadedMs": 63.900000005960464,
+        "transferSize": 19032
+      },
+      "requestCount": 60
+    },
+    {
+      "route": "personal",
+      "index": 5,
+      "meaningfulMs": 446.90000000596046,
+      "scriptMs": 53.787,
+      "taskMs": 122.712,
+      "longTasks": [],
+      "document": {
+        "ttfbMs": 50.30000001192093,
+        "domContentLoadedMs": 67.40000000596046,
+        "transferSize": 19032
+      },
+      "requestCount": 60
+    },
+    {
+      "route": "personal",
+      "index": 6,
+      "meaningfulMs": 447.90000000596046,
+      "scriptMs": 57.954,
+      "taskMs": 134.844,
+      "longTasks": [],
+      "document": {
+        "ttfbMs": 45.599999994039536,
+        "domContentLoadedMs": 65.09999999403954,
+        "transferSize": 19032
+      },
+      "requestCount": 60
+    },
+    {
+      "route": "personal",
+      "index": 7,
+      "meaningfulMs": 452.19999998807907,
+      "scriptMs": 58.418,
+      "taskMs": 137.35,
+      "longTasks": [],
+      "document": {
+        "ttfbMs": 49.099999994039536,
+        "domContentLoadedMs": 68.59999999403954,
+        "transferSize": 19032
+      },
+      "requestCount": 60
+    },
+    {
+      "route": "personal",
+      "index": 8,
+      "meaningfulMs": 446.69999998807907,
+      "scriptMs": 59.734,
+      "taskMs": 137.409,
+      "longTasks": [],
+      "document": {
+        "ttfbMs": 46.900000005960464,
+        "domContentLoadedMs": 65.09999999403954,
+        "transferSize": 19032
+      },
+      "requestCount": 60
+    },
+    {
+      "route": "personal",
+      "index": 9,
+      "meaningfulMs": 439.80000001192093,
+      "scriptMs": 53.811,
+      "taskMs": 125.62799999999999,
+      "longTasks": [],
+      "document": {
+        "ttfbMs": 48.20000001788139,
+        "domContentLoadedMs": 68.30000001192093,
+        "transferSize": 19032
+      },
+      "requestCount": 60
+    }
+  ],
+  "summary": [
+    {
+      "route": "overview",
+      "meaningfulMs": {
+        "samples": 10,
+        "p50": 253.6,
+        "p95": 278.6,
+        "max": 278.6
+      },
+      "scriptMs": {
+        "samples": 10,
+        "p50": 45.52,
+        "p95": 46.86,
+        "max": 46.86
+      }
+    },
+    {
+      "route": "personal",
+      "meaningfulMs": {
+        "samples": 10,
+        "p50": 446.7,
+        "p95": 456.5,
+        "max": 456.5
+      },
+      "scriptMs": {
+        "samples": 10,
+        "p50": 56.62,
+        "p95": 60.21,
+        "max": 60.21
+      }
+    }
+  ]
+}

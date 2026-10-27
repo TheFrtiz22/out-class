@@ -31,7 +31,9 @@ test('browser: expanding dock, shared motion, safe flyouts, permissions, keyboar
   const stableBounds=await mainBounds(),initialRequests=requests.length
   await page.locator('main').evaluate(el=>el.dataset.mountProbe='retained')
   await capture('after-collapsed')
-  await applicants.hover();await expanded(true);await flyout().waitFor();await page.waitForTimeout(380)
+  await applicants.hover();await expanded(true);await flyout().waitFor()
+  // Expansion state precedes the spring's final geometry; assert its actual end.
+  await expect.poll(()=>dock.evaluate(el=>el.getBoundingClientRect().width)).toBe(272)
   assert.equal(await dock.evaluate(el=>el.getBoundingClientRect().width),272)
   assert.equal(await brand.locator('.oc-dock-letter-out').evaluate(el=>getComputedStyle(el).opacity),'1')
   assert.equal(await brand.locator('.oc-dock-letter-c').evaluate(el=>new DOMMatrix(getComputedStyle(el).transform).e),0,'the same C unlinks into its wordmark position')

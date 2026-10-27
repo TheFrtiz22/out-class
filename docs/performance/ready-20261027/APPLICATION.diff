@@ -1,0 +1,66 @@
+diff --git a/app/layout.tsx b/app/layout.tsx
+index 5c602b2..1e76c10 100644
+--- a/app/layout.tsx
++++ b/app/layout.tsx
+@@ -16,0 +17 @@ import { SITE_URL, SITE_TITLE, SITE_DESCRIPTION, LEGAL_ORGANIZATION_NAME, privat
++// Let rendered text request its faces; root preloads also download unused italics.
+@@ -23,0 +25 @@ const libreCaslonText = localFont({
++  preload: false,
+@@ -35,0 +38 @@ const sourceSans = localFont({
++  preload: false,
+diff --git a/components/club-logo.tsx b/components/club-logo.tsx
+index 4e3cf69..9b719af 100644
+--- a/components/club-logo.tsx
++++ b/components/club-logo.tsx
+@@ -4 +4 @@ import { useLogoAnalysis } from "@/hooks/use-logo-analysis"
+-import { clubAssetSource } from "@/lib/club-assets"
++import { clubLogoSource } from "@/lib/club-assets"
+@@ -32 +32 @@ export function ClubLogo(props: ClubLogoProps) {
+-  const src = clubAssetSource(props.logoUrl?.trim(), props.assetPreview) || `/logos/${encodeURIComponent(props.clubId || props.text.toLowerCase())}.png`
++  const src = clubLogoSource(props.logoUrl, props.clubId, props.text, props.assetPreview)
+@@ -44 +44 @@ function ClubLogoImage({ src, text, color, alt = "", size = "md", className, fal
+-  if (failed) {
++  if (!src || failed) {
+diff --git a/lib/club-assets.ts b/lib/club-assets.ts
+index 9fd8172..5aca499 100644
+--- a/lib/club-assets.ts
++++ b/lib/club-assets.ts
+@@ -10,0 +11,12 @@ export function clubProfileImages(value: { logoUrl?: string | null; bannerUrl?:
++
++// Only checked-in artwork may be inferred from a legacy club key. Database IDs
++// do not imply image files; absent artwork should render the existing monogram.
++const bundledClubLogos: Readonly<Record<string, string>> = {
++  "vvf": "/logos/vvf.webp", "mii": "/logos/mii.webp",
++  "180-degrees": "/logos/180-degrees.png", "180-degrees-globe": "/logos/180-degrees-globe.png",
++  "enactus": "/logos/enactus.png", "enactus-wordmark": "/logos/enactus-wordmark.png",
++};
++export function clubLogoSource(value: string | null | undefined, clubId: string | undefined, text: string, preview = false) {
++  const legacyKey = clubId || text.toLowerCase();
++  return clubAssetSource(value?.trim(), preview) || (Object.hasOwn(bundledClubLogos, legacyKey) ? bundledClubLogos[legacyKey] : "");
++}
+diff --git a/public/logos/README.md b/public/logos/README.md
+index e19ca7f..2b41398 100644
+--- a/public/logos/README.md
++++ b/public/logos/README.md
+@@ -3 +3,4 @@
+-Place PNGs here using the club ID as the filename, for example:
++`ClubLogo` accepts an explicit `logoUrl` (including a protected club-asset reference).
++That source takes precedence over bundled legacy artwork. Known bundled keys are
++`vvf`, `mii`, `180-degrees`, `180-degrees-globe`, `enactus` and `enactus-wordmark`.
++Their exact PNG/WebP paths are listed in `lib/club-assets.ts`.
+@@ -5,11 +8,4 @@ Place PNGs here using the club ID as the filename, for example:
+-- aif.png — Alternative Investment Fund
+-- vcg.png — Virginia Consulting Group
+-- meridian.png — Meridian Capital Group
+-- mii.png — McIntire Investment Institute
+-- vvf.png — Virginia Venture Fund
+-- 180-degrees.png — 180 Degrees Consulting
+-- commerce-council.png — Commerce Council
+-- enactus.png — Enactus
+-
+-ClubLogo also accepts an explicit logoUrl, which overrides the ID path.
+-Missing or broken images retain the existing initials/wordmark placeholder.
++For a new bundled image, add its path to that map or pass an explicit `logoUrl`.
++Database UUIDs and unknown labels do not imply local files. Missing artwork renders
++the existing accessible initials/wordmark immediately, without a guessed request.
++A broken explicit source retains the same fallback; replacing it retries the new source.

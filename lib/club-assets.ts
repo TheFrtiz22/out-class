@@ -8,3 +8,15 @@ export function clubProfileImages(value: { logoUrl?: string | null; bannerUrl?: 
   const m = value.marketing as { gallery?: { url?: string }[]; sections?: { visible?: boolean; cards?: { image?: string }[] }[] } | null;
   return [value.logoUrl, value.bannerUrl, ...(Array.isArray(m?.gallery) ? m.gallery.map(g => g.url) : []), ...(Array.isArray(m?.sections) ? m.sections.filter(s => !publicOnly || s.visible !== false).flatMap(s => Array.isArray(s.cards) ? s.cards.map(c => c.image) : []) : [])].filter((s): s is string => typeof s === "string" && !!s);
 }
+
+// Only checked-in artwork may be inferred from a legacy club key. Database IDs
+// do not imply image files; absent artwork should render the existing monogram.
+const bundledClubLogos: Readonly<Record<string, string>> = {
+  "vvf": "/logos/vvf.webp", "mii": "/logos/mii.webp",
+  "180-degrees": "/logos/180-degrees.png", "180-degrees-globe": "/logos/180-degrees-globe.png",
+  "enactus": "/logos/enactus.png", "enactus-wordmark": "/logos/enactus-wordmark.png",
+};
+export function clubLogoSource(value: string | null | undefined, clubId: string | undefined, text: string, preview = false) {
+  const legacyKey = clubId || text.toLowerCase();
+  return clubAssetSource(value?.trim(), preview) || (Object.hasOwn(bundledClubLogos, legacyKey) ? bundledClubLogos[legacyKey] : "");
+}

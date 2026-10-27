@@ -1,16 +1,12 @@
 # Club logo assets
 
-Place PNGs here using the club ID as the filename, for example:
+`ClubLogo` accepts an explicit `logoUrl` (including a protected club-asset reference).
+That source takes precedence over bundled legacy artwork. Known bundled keys are
+`vvf`, `mii`, `180-degrees`, `180-degrees-globe`, `enactus` and `enactus-wordmark`.
+Their exact PNG/WebP paths are listed in `lib/club-assets.ts`.
 
-- aif.png — Alternative Investment Fund
-- vcg.png — Virginia Consulting Group
-- meridian.png — Meridian Capital Group
-- mii.png — McIntire Investment Institute
-- vvf.png — Virginia Venture Fund
-- 180-degrees.png — 180 Degrees Consulting
-- commerce-council.png — Commerce Council
-- enactus.png — Enactus
-
-ClubLogo also accepts an explicit logoUrl, which overrides the ID path.
-Missing or broken images retain the existing initials/wordmark placeholder.
+For a new bundled image, add its path to that map or pass an explicit `logoUrl`.
+Database UUIDs and unknown labels do not imply local files. Missing artwork renders
+the existing accessible initials/wordmark immediately, without a guessed request.
+A broken explicit source retains the same fallback; replacing it retries the new source.
 OutClass brand assets are separate from club logos.

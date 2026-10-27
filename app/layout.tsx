@@ -14,6 +14,7 @@ import { RouteContent } from "@/components/route-content"
 import { SITE_URL, SITE_TITLE, SITE_DESCRIPTION, LEGAL_ORGANIZATION_NAME, privateRobots } from "@/lib/seo"
 
 // One Caslon family, with real variable weights and a real italic face.
+// Let rendered text request its faces; root preloads also download unused italics.
 const libreCaslonText = localFont({
   src: [
     { path: "./fonts/libre-caslon-text/libre-caslon-text-variable.woff2", weight: "400 700", style: "normal" },
@@ -21,6 +22,7 @@ const libreCaslonText = localFont({
   ],
   variable: "--font-libre-caslon-text",
   display: "swap",
+  preload: false,
   fallback: ["serif"],
   adjustFontFallback: false,
 })
@@ -33,6 +35,7 @@ const sourceSans = localFont({
   ],
   variable: "--font-source-sans-3",
   display: "swap",
+  preload: false,
   fallback: ["Arial", "sans-serif"],
 })
 
