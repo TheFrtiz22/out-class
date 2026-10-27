@@ -8669,7 +8669,7 @@
     "syntheticSupplement": "evidence/static-supplement.json"
   },
   "validationEvidence": "evidence/validation.json",
-  "scopeNote": "Original top-level fields describe only the October21 investigation at sourceCommit. latestReview contains a separate later comparison; readySubsetRelease and followupDiagnosis, when present, describe independent later datasets. Do not pool datasets or treat historical production observations as current telemetry.",
+  "scopeNote": "Original top-level fields describe only the October21 investigation at sourceCommit. latestReview contains a separate later comparison; readySubsetRelease, selectedStartupRelease and followupDiagnosis, when present, describe independent later datasets. Do not pool datasets or treat historical production observations as current telemetry.",
   "latestReview": {
     "reviewDate": "2026-10-27",
     "sourceCommit": "dd304540aa9a30c64af1b23e21622245c378d98a",
@@ -39898,5 +39898,18 @@
     "report": "docs/performance/followup-20261027/README.md",
     "hosted": "docs/performance/followup-20261027/HOSTED_OBSERVATIONS.json",
     "interpretation": "Instrumented retained-build diagnosis only; do not pool with primary comparisons. Historical multi-second stall did not recur and remains unresolved."
+  },
+  "selectedStartupRelease": {
+    "main": "4c27bbe77c7d783e2b84ad06ddb9b3ead7899c59",
+    "pullRequest": 87,
+    "productionStatus": "Ready; exact commit inspected",
+    "measuredBase": "06d3e93110d09fc564de7e28cf7dc3a71f081fe4",
+    "measuredOutcomes": 320,
+    "excludedWarmups": 64,
+    "groups": 32,
+    "nPerGroup": 10,
+    "releaseRecord": "docs/performance/followup-20261027/SELECTED_RELEASE.json",
+    "structuredResults": "https://github.com/TheFrtiz22/out-class/blob/4c27bbe77c7d783e2b84ad06ddb9b3ead7899c59/docs/performance/selected-ready-20261027/COMPARISON.json",
+    "interpretation": "Separate selected-startup comparison; all cold p50/p95 improve, warm/source costs retained. Never pool with October21/Phase15/diagnostic datasets. No exact later-main production timing claim."
   }
 }

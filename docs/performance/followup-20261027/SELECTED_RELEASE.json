@@ -1,0 +1,133 @@
+{
+  "recordedAt": "2026-10-27 19:06:04 UTC",
+  "readySubsets": [
+    {
+      "pullRequest": 85,
+      "main": "06d3e93110d09fc564de7e28cf7dc3a71f081fe4",
+      "scope": "Font preloads and missing logo requests"
+    },
+    {
+      "pullRequest": 87,
+      "main": "4c27bbe77c7d783e2b84ad06ddb9b3ead7899c59",
+      "testedHead": "13e1bfeeba070c58df1f9c9c1b69cf440562502d",
+      "preservedMain": "f343d6a67896589bf4ee086480b4d98e0bebfa78",
+      "scope": "Nine client application files; selected module/private GET overlap, fresh reveal and synchronous Auth epoch fences",
+      "applicationFilesVerified": 919,
+      "testedTreeEqualsMain": true,
+      "hostedJobs": [
+        {
+          "id": 122396161210,
+          "name": "Local Auth, settings and navigation",
+          "conclusion": "success",
+          "runId": 40562829945
+        },
+        {
+          "id": 122396161577,
+          "name": "Private Storage and native PostgreSQL",
+          "conclusion": "success",
+          "runId": 40562829945
+        },
+        {
+          "id": 122396161737,
+          "name": "Native PostgreSQL / audiences",
+          "conclusion": "success",
+          "runId": 40562829945
+        },
+        {
+          "id": 122396161751,
+          "name": "Integration infrastructure coverage",
+          "conclusion": "success",
+          "runId": 40562829945
+        },
+        {
+          "id": 122396161823,
+          "name": "Native PostgreSQL / transactions",
+          "conclusion": "success",
+          "runId": 40562829945
+        },
+        {
+          "id": 122396161852,
+          "name": "Native PostgreSQL / scheduler",
+          "conclusion": "success",
+          "runId": 40562829945
+        },
+        {
+          "id": 122396162100,
+          "name": "Native PostgreSQL / events",
+          "conclusion": "success",
+          "runId": 40562829945
+        },
+        {
+          "id": 122396163879,
+          "name": "Native PostgreSQL / security",
+          "conclusion": "success",
+          "runId": 40562829945
+        },
+        {
+          "id": 122396160346,
+          "name": "accessibility",
+          "conclusion": "success",
+          "runId": 40562830235
+        },
+        {
+          "id": 122396160952,
+          "name": "native-application-transactions",
+          "conclusion": "success",
+          "runId": 40562830235
+        },
+        {
+          "id": 122396160974,
+          "name": "validate",
+          "conclusion": "success",
+          "runId": 40562830235
+        },
+        {
+          "id": 122396161141,
+          "name": "authenticated-accessibility",
+          "conclusion": "success",
+          "runId": 40562830235
+        }
+      ],
+      "vercel": {
+        "state": "success",
+        "environment": "Production",
+        "status": "Ready",
+        "url": "https://vercel.com/outclassuva/out-class/HfDHVkeuAeF7k9VkZhSx7AZSomu9",
+        "exactMainCommitVerifiedInBrowser": true
+      }
+    }
+  ],
+  "verification": {
+    "ordinaryPassed": 1390,
+    "gatedSkips": 44,
+    "authSettingsRuntimePassed": 50,
+    "navigationPassed": 16,
+    "nativeSecuritySuitesPassed": 3,
+    "build": true,
+    "types": true,
+    "lintErrors": 0,
+    "existingLintWarnings": 21
+  },
+  "benchmark": {
+    "base": "06d3e93110d09fc564de7e28cf7dc3a71f081fe4",
+    "measured": 320,
+    "warmups": 64,
+    "groups": 32,
+    "groupN": 10,
+    "reportUrl": "https://github.com/TheFrtiz22/out-class/blob/4c27bbe77c7d783e2b84ad06ddb9b3ead7899c59/docs/performance/selected-ready-20261027/README.md",
+    "dataUrl": "https://github.com/TheFrtiz22/out-class/blob/4c27bbe77c7d783e2b84ad06ddb9b3ead7899c59/docs/performance/selected-ready-20261027/COMPARISON.json",
+    "integrationUrl": "https://github.com/TheFrtiz22/out-class/blob/4c27bbe77c7d783e2b84ad06ddb9b3ead7899c59/docs/performance/selected-ready-20261027/INTEGRATION.md",
+    "allColdP50AndP95Improved": true,
+    "uniformWarmOrSourceImprovement": false,
+    "exactNewMainLatencyClaim": false,
+    "warmCosts": "Members/Applicants: +34.8/+34.8ms local medians, +118.3/+179.4ms constrained. Tasks constrained maximum155.4→201.5ms; cold source+click p955028.6→5299ms.",
+    "errors": "All320 measured useful-content outcomes complete; no page/HTTP errors. Pending source SSE snapshots retained.",
+    "exclusions": "Two complete excluded-attempt artifacts; actual sleep/power controls, not selected row replacement."
+  },
+  "unresolved": [
+    "Historical4.2-second identity cause remains unexplained.",
+    "Fresh authenticated production trace unavailable: isolated protected navigation returned public landing; original tabs untouched.",
+    "Broader pipeline/page/Settings experiments remain separate and not release-cleared."
+  ],
+  "next": "Isolate plain-Prisma bounded pipeline payload/page work against current main; preserve newer QA/privacy/draft fixes, skip raw metadata SQL join and reverted Settings changes."
+}
