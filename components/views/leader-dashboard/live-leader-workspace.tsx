@@ -466,7 +466,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         <p className="text-sm text-muted-foreground">{decisionGroup === "pending" ? "Submitted, in-review, and interviewing applications without a recorded decision. Round and status remain separate." : "Recorded application outcomes, visible to the applicant."} Acceptance does not automatically create club membership.</p>
       </>}
 {!decisionsOnly && !rejectedOnly && <>
-      <section aria-label="Recruitment review" className="flex flex-wrap items-center justify-between gap-4 border-y py-4">
+      <section id="recruitment-review" aria-label="Recruitment review" className="flex flex-wrap items-center justify-between gap-4 border-y py-4">
         <div><h2 className="oc-card-heading">Recruitment review</h2><p className="mt-1 text-xs text-muted-foreground">Review together or work through candidates one at a time.</p></div>
         <div className="flex flex-wrap gap-2">
           {canDecide && <Button variant="outline" disabled={busy || !filtered.some(pendingCandidate)} onClick={startQuickReview}>Quick review</Button>}
