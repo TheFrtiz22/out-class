@@ -1,0 +1,33 @@
+{
+  "at": "2026-10-27T04:22:33.090742+00:00",
+  "branch": "codex/performance-review-handoff-20261027",
+  "sourceEvidenceCommit": "dd304540aa9a30c64af1b23e21622245c378d98a",
+  "tests": {
+    "command": "node --test tests/navigation-review-summary.test.cjs tests/navigation-audit-harness.test.cjs tests/navigation-phase15-diagnostics.test.cjs",
+    "exitCode": 0,
+    "total": 10,
+    "passed": 10,
+    "failed": 0,
+    "skipped": 0
+  },
+  "newLiveMeasurements": 0,
+  "summaryGroupsIndependentlyRecomputed": 92,
+  "historicalBenchmarkFieldsPreserved": true,
+  "historicalAuditBodyPreservedVerbatim": true,
+  "summaryGenerationIdempotent": true,
+  "phase15InputChecksumsVerified": true,
+  "relativeReportLinksChecked": 38,
+  "genericCredentialPatternScan": "passed",
+  "applicationDependencyDatabaseChanges": 0,
+  "currentRemoteMainObserved": "d031364",
+  "readySubsetIntegratedByThisDocumentationCommit": false,
+  "fullApplicationSuiteRerunForDocumentationUpdate": false,
+  "files": {
+    "docs/performance/OUTCLASS_NAVIGATION_AUDIT.md": "4f2fcafaa3288a7f91266dcbbff1762ec7378d304045264c5595408854ff7ddc",
+    "docs/performance/NAVIGATION_BENCHMARKS.json": "894f83288a695af98d1624c2c0dcbadb72fbf68e207cb45fc096ac1cd6a4e5e0",
+    "docs/performance/OPTIMIZATION_ROADMAP.md": "7b4fd61367cf67deb24c405ae7598a1f53c86a45fc1fbe51cc74f28a1c3744a0",
+    "docs/performance/CHATGPT_HANDOFF.md": "4cae8fbf103da03fc3c5db6d3221457a1cca777025154368190afde3bd1726a2",
+    "scripts/summarize-navigation-review.cjs": "4c16a54c87e28b0a3126d99bdf11dddb1dafed9320f08682d6f9f0e5ab329b71",
+    "tests/navigation-review-summary.test.cjs": "60ca1ade3184363dc22d262b0d95143dd6b1c221402c01c5aab6265ef0a9cf83"
+  }
+}

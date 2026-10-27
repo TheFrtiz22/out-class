@@ -1,117 +1,151 @@
-# OutClass performance audit — architectural review handoff
+# OutClass navigation — ChatGPT review handoff
 
-This is a self-contained review brief for the October 21, 2026 investigation at source commit `3017e01d5b55bc8fb38d4f8fbec4906dd93bf619`. **No proposed optimization has been implemented.** Only diagnostic scripts/tests and audit documents were added. No production record/schema/index/configuration/deployment/statistics reset, release or merge was changed. Decide implementation scope after reviewing the evidence.
+Updated October 27, 2026. Original audit reference: `3017e01d5b55bc8fb38d4f8fbec4906dd93bf619`. Latest completed experiment/evidence commit: `dd304540aa9a30c64af1b23e21622245c378d98a`. Source references below describe that retained application, not a claim about today's deployed production commit. The review update is on `codex/performance-review-handoff-20261027`.
 
-## What is slow and what is proved
+## Decision and current status
 
-The strongest production finding is a long authenticated server wait, amplified by serial work. Current Vercel settings and the Production Functions dashboard show **iad1 / us-east-1**, Fluid Compute, Standard 1 vCPU/2 GB. The connected Supabase OutClass project is independently confirmed in **us-west-2**, PostgreSQL 17.6. This is a confirmed cross-region architecture, not a guess from response edge headers.
+This package separates the October 21 investigation, the later local implementation series, and the rejected experiments. **The complete accumulated series is not release-cleared.** The user now authorizes committing independently ready changes to main, followed by resolving the remaining issues. That is not approval to include unresolved experiments. A separately integrated ready subset needs validation against current remote main, which was fetched at `d031364` during this review; no ready-subset merge or deployment has happened in this package.
 
-The dashboard's selected Production last-12-hours window, displayed 05:08–17:08 America/New_York on October 21, showed:
+Phase 1's release is already recorded in main history. Later local work overlaps code/data startup, narrows list projections, bounds page payloads, reduces font preloads and module startup cost, and fences obsolete client reads. Phase 7's full resident-list strategy was superseded by the later fresh-page strategy. Do not cherry-pick every numbered phase together as additive independent improvements.
 
-| Route | Displayed volume | Duration average / p75 / p95 | Active CPU average / p95 | TTFB average / p95 |
+Phase 13 retains the Phase 12 application and confirms duplicate-startup request reduction, but does not establish consistent tail improvement. Phase 14's speculative Review module preload and Phase 15's query-only Settings→Review handoff are **rejected and reverted**. All 913 final application hashes in Phase 15 equal its baseline, which equals retained Phase 13. Experiment patches and opt-in tests remain available. There is no Phase 15 application speedup in the final source.
+
+## Five biggest confirmed or suspected bottlenecks
+
+| Rank / confidence | Finding and actual evidence | Current source / implication |
+|---|---|---|
+| 1 — confirmed waiting; root cause unresolved | One accepted constrained candidate cold Review sample has source useful-content time **8,314ms**, identity spans up to **4,221.61ms**, and rounds identity **932.40ms**. Cold click p95 worsens **611.5→1,463.2ms**, n=6/build. Separate diagnostics do not reproduce the stall. | `utils/auth.ts:19` getSessionUser; `:26` remote getUser; `:31` live session; `lib/server-phase-trace.ts:21` request correlation. The span locates waiting, not pure provider execution. Diagnose before retrying adoption. |
+| 2 — confirmed startup transfer and first-use cost; exclusive attribution unproven | Retained baseline constrained Settings/Application source p50/p95 **4,341/4,369ms**, n=6, with **517,715 script bytes** and **227,784 font bytes** at the median. Settings Profile cold click **459.5/480.3ms**, warm **150.3/215.3ms**, n=6 each. | `app/layout.tsx:18`, `components/club-workspace.tsx:45`, `components/selected-club-workspace.tsx:14`. Existing module deferral saves Recruiting startup but incurs first-use costs. Network/data/render/frame gaps overlap; do not call them exclusive React time. |
+| 3 — confirmed metadata scaling; exact endpoint SQL attribution partial | Native baseline single-reader pipelinePage database span p50/p95 **25.50/30.58ms** at 1,000 versus **107.06/109.19ms** at 5,000, n=10/group. Read-only representative plans execute **10.758ms** at 1,000 and **22.649ms** at 5,000 in the baseline diagnostic. | `lib/pipeline-page-read.ts:17`, `lib/pipeline-metadata-read.ts:23`, `actions/crm.ts:39`. The page hydrates at most 100 summaries on its fast path, but still scans/ranks all eligible metadata. Review/score selectors retain complete hydration. Preserve privacy, collation, facets and snapshot parity. |
+| 4 — confirmed redundant Review page request; adoption blocked by tail | Rejected candidate changes constrained cold requests **8→6**, warm **4→3** and click→URL median **128.6→1.5ms** cold. Cold click median **594.6→465.0ms**, warm **264.9→162.0ms**, n=6. The cold tail worsens, so request savings alone do not establish release readiness. | `components/club-settings-workspace.tsx:163`, `lib/workspace-navigation.ts:2`, `components/club-workspace.tsx:280`. Patch: `phase15/EXPERIMENT_APPLICATION.diff`. Direct/new-tab entry and fresh guarded GETs remain necessary. |
+| 5 — confirmed background fan-out; contribution to stalls suspected | Retained constrained Settings/Application source captures **60 requests** at median, n=6. The stalled source includes corkboard, invitations and tutorial identity waits. Phase 13 independently reduces source pipeline request snapshots **90→48** and multiple-read preparations **42→0**, without consistent tail improvement. | `components/shell/product-shell.tsx:44`, `contexts/auth-context.tsx`, `components/selected-club-workspace.tsx:48`, `lib/workspace-read.ts:9`. Separate selected work from current support/notification/tutorial work. Preserve genuine Auth refreshes and necessary live updates. |
+
+Numbers in different rows are separate workloads; do not add their durations. Historical hidden-Scheduling/action-queue issues were addressed in Phase 1 and are not asserted to remain unchanged in the current code. See `components/interview-management-tabs.tsx:50`: Scheduling mounts only after selection and then preserves its owner.
+
+## Actual navigation results and sample sizes
+
+The latest complete comparison uses identical synthetic 1,000/5,000 cohorts within pairs, BA then AB order, desktop Chromium 1440×1000, production Next builds and disposable loopback Auth/PostgreSQL. Local and constrained CDP profiles are separate. Constrained means 80ms latency,200,000B/s down,93,750B/s up and CPU4×. Cold/warm describes the destination in fresh browser contexts with warm services; it is not hosted cold-start timing.
+
+| Path / profile / visit | n per build | Retained baseline p50 / p95 / max ms | Rejected candidate p50 / p95 / max ms | Median click requests B→A |
 |---|---:|---:|---:|---:|
-| `/api/workspace` | ~1.6K | 1,460 / 1,580 / 2,490 ms | 123 / 204 ms | 1,490 / 2,580 ms |
-| `/club/[clubId]/workspace` | ~3.7K | 2,330 / 2,590 / 3,540 ms | 76 / 222 ms | 2,320 / 3,580 ms |
+| Settings/Application→Review / local / cold | 6 | 158.6 /176.4 /176.4 | 95.8 /125.7 /125.7 | 7→6 |
+| Settings/Application→Review / local / warm | 6 | 149.3 /166.0 /166.0 | 66.2 /82.0 /82.0 | 4→3 |
+| Settings/Application→Review / constrained / cold | 6 | 594.6 /611.5 /611.5 | 465.0 /1,463.2 /1,463.2 | 8→6 |
+| Settings/Application→Review / constrained / warm | 6 | 264.9 /463.4 /463.4 | 162.0 /166.2 /166.2 | 4→3 |
+| Recruiting→Applicants / constrained /5,000 / warm | 10 | 213.8 /224.1 /224.1 | 215.2 /218.6 /218.6 | 1→1 |
+| Applicants→Detail / constrained /5,000 / cold | 10 | 254.7 /286.1 /286.1 | 257.1 /270.1 /270.1 | 4→4 |
 
-Counts are rounded; exact n, p50 and maximum are **unavailable**. The API aggregates all `kind` values; the workspace route combines document/RSC/action traffic. The API's external Supabase table displayed 290 ms “Latency” over ~1.7K calls, without specifying its percentile or limiting it to Auth. Hot starts were 97.1% of API requests and 99% of workspace-route requests. A sanitized club-path cohort showed 4.18 s p75 over a displayed 445 calls, but is not a particular tab measurement. [Recorded dashboard observations and URLs](evidence/vercel-observed.json).
+Nearest-rank p95 equals maximum for n=6 and n=10; this is small-sample evidence, not a hosted p95 guarantee or statistical significance claim. Phase 15 includes384 main browser outcomes (320 measured/64 warmups),256 feature outcomes (192/64),192 page/search outcomes (160/32) and336 native HTTP reads (280/56). No slow row was replaced. Zero useful-content/page/HTTP errors occurred in accepted main/feature outcomes; aborted and pending transport snapshots remain separately recorded.
 
-The difference between average duration and active CPU strongly suggests waiting dominates these routes; **it does not split waiting into Auth/network/Prisma/pool/locks**. Those spans remain necessary. The uncontended local fixture does not establish reproduction of the reported five-second production click. An exploratory superseded cross-workspace pass observed one approximately 4.31 s local result; its trace was not preserved and no cause is assigned. Do not present a clean local median as production latency or silently treat all historical traffic as real users.
+Constrained cold Review encoded click bytes p50/p95 are **10,176/12,465→10,175/10,176**; warm **1,342/3,630→1,341/1,342**. These are observed encoded bodies, not all transferred bytes: headers, unavailable aborted bodies and late traffic are absent. The two editor scripts remain7,804 encoded bytes; no cold-script reduction is claimed. Source+click p95 grows **4,980.5→9,777.2ms** cold. That is a per-row sum of two waits excluding intervening preparation/drains, not continuous journey elapsed time.
 
-## Five largest bottlenecks for review
+The JSON retains the original October 21 dataset (1,200 transitions, n=20 per path/condition) and adds `latestReview.records`:92 separately identified groups with actual n, p50, p95, maximum, request timings, missing-metric nulls and raw file/index references. Datasets are never pooled. Pilots, interrupted tests and instrumented diagnostics are not primary performance samples.
 
-1. **Confirmed placement/wait; strong attribution hypothesis — serial remote identity/SQL chain across regions.** `utils/auth.ts:18` verifies the token remotely and checks live `auth.sessions`; `:42` reads the enabled Prisma account; `:90` reads membership and normally suspension. The real local full-guard loaders emit 4–21 SQL/control statements and one/two Auth verifications. Function CPU is much lower than wall duration. Test a same-region function preview and shorter query chains before infrastructure additions.
-2. **Confirmed locally — pure reads queue as client Server Actions.** `components/interviews/interview-rooms-list.tsx:36` uses `Promise.all` for assigned rooms, interview queue and rounds, but browser HTTP shows those POSTs sequentially. `lib/workspace-api.ts:311`, `:337`, `:390` retain action-based reads for interview/task domains; meetings/announcements also use actions. Three serial remote reads can explain seconds even if each works correctly. GET allowlist transport already exists and can carry those original guarded loaders.
-3. **Confirmed — hidden scheduler fan-out and duplicate requests.** `components/interview-management-tabs.tsx:41` force-mounts Scheduling while Rooms is selected. RoomManager `:54`, `:83`, `:90`, `:107`, `:108` starts additional reads; assigned rooms is requested twice. Local cold Rooms navigation has 13 requests; warm has eight. Most hidden requests finish after useful Rooms content, but they add load and can block subsequent action dispatch.
-4. **Confirmed lifecycle/cold waterfall; strongly supported retry cause.** `components/club-workspace.tsx:201` keys sections by scope/section/tool, unmounting tab contents. Dynamic chunks load before mount-only fetches. React's installed production code has a 300 ms Suspense retry threshold; the observed chunk-finish→read-start gap aligns with it. Members and Pipeline retain 30 s data (`:120`) yet unconditionally revalidate (`organization-member-management.tsx:106`, `live-leader-workspace.tsx:166`). Keep authority/privacy resets; avoid blind retention of every private tab.
-5. **Confirmed shape/size; production magnitude unmeasured — wide unbounded list queries.** `actions/crm.ts:54` loads student/profile/experiences, answers/questions, evaluations, assignments/member, round and booking relations for all submitted applications. A 100-applicant fixture produces ~193 KB ordinary JSON/~201 KB wire bytes and 17 SQL/control statements. Members UI pagination still fetches all memberships and invitations (`actions/organization-members.ts:120`). Tasks loads assignments and a member targeting catalog (`actions/tasks.ts:108`). Narrow/paginate lists and defer private detail payloads.
+## Critical path and architecture
 
-## Local numbers and methodology
+```mermaid
+flowchart LR
+  C[Click and draft guard] --> N[Same-path history or Next page navigation]
+  N --> M[Selected module and data dispatch]
+  M --> G[Explicit allowlisted private GET]
+  G --> I[Remote verified identity]
+  I --> S[Live session and enabled account]
+  S --> A[Current club capability and privacy guards]
+  A --> D[Prisma transaction and database reads]
+  D --> J[Projection, serialization and optional compression]
+  J --> R[Current-scope settlement and useful DOM plus two frames]
+```
 
-Representative production-build browser results, **20 samples in each condition**, real disposable local Supabase Auth/PostgreSQL:
+The slow recorded candidate row is `phase15/constrained/size-1000-pair-2-1-A-features-measure/browser-samples.json`, array index19: query URL changes at1.7ms, rounds dispatch starts169ms, response ends1,126ms, scripts finish about1,276ms, useful content arrives1,463.2ms. Rounds server total is956.12ms including identity932.40ms; database spans17.54ms and live-session=6.11ms are nested/overlapping observations, not additive exclusive phases. Source corkboard/invitations/tutorial identity spans are4,221.61/4,199.79/3,895.65ms and overlap. Primary instrumentation cannot isolate provider versus transport/dispatch versus process scheduling in that row.
 
-| Navigation | Cold p50 / p95 / max | Warm p50 / p95 / max |
-|---|---:|---:|
-| Overview → Members | 381 / 416 / 426.4 ms | 31.2 / 32 / 33 ms |
-| Recruitment Overview → Applicants | 406.3 / 424.6 / 429.1 ms | 31.2 / 32.7 / 33 ms |
-| Applicants → Interviews | 449.3 / 481.2 / 558 ms | 129.4 / 147.4 / 162 ms |
+`phase15/HANDOFF_TIMELINES.json` retains all64 target rows including warmups. `phase15/SERVER_TAILS.json` retains measured source/click tails. The linked full audit retains the original architecture, three historical waterfalls, loader mapping and effect/cache analysis, explicitly scoped to the October 21 source.
 
-Previously loaded members/applicants still send a fresh GET while retained content is visible. Tasks/Meetings/Announcements refetch on section remount. Representative ordinary query-only rail transitions produced no RSC navigation or `/api/users/me` call. Do not diagnose every tab as a full server render/AuthProvider reset.
+## Database findings
 
-Initial authenticated local document→content measurements: club overview **215.8 ms p50 / 274.2 ms p95 / 299.1 ms max**, Personal Home **454.9 / 462.1 / 464.5 ms**, each n=20 with cold browser contexts and warm server/database. They are not Vercel cold starts. The fixture has two clubs, 61 members and 100 submitted applicants per club, no answers/evaluations/active rooms/ballots, and one meeting/task/announcement per club. Desktop Chromium 1440×1000, no mobile throttling, Node 26.9.0 / Next 15.5.27 / React 19.2.0 / Prisma 6.19.3.
+Current pipelinePage fast-path metadata is a parameterized application/round/user/profile JOIN with a strict recognized-predicate schema and the original Prisma fallback for unknown predicates. It runs inside the existing freshly authorized Repeatable Read transaction. After canonical privacy-aware ranking, submitted reviews and active assignments are hydrated for at most 100 selected IDs with the original application predicate. Review/rating/score-dependent selectors use the complete summary path. Complete quick-review/voting selection authority is not changed by list paging.
 
-The accepted dataset contains **1,200 tab transitions/detail openings: 20 supported paths × cold/warm/repeated × 20 samples**, plus 40 initial authenticated entries and 240 measured original-loader invocations. All corrected final cohorts completed with zero adapter failures. The largest accepted transition was **712.6 ms**; this is a local result, not a production maximum. The structured JSON contains every per-path p50/p95/max, CPU/commit/request/byte distribution, relevant request timings, exclusions and null measurements.
+The separate diagnostic cohort contains168 native GETs,56 direct SDK identity observations,32 browser outcomes and four representative read-only plans. All168 native requests correlate with existing trace IDs. Baseline representative plan execution is10.758ms at 1,000 and22.649ms at 5,000; candidate5.557/23.832ms. These are one plan/case, not query distributions or the entire endpoint. No SQL parameter values, rows or credentials are exported.
 
-Content timing is a loaded-data DOM predicate plus two animation frames, not screenshot paint timing. Interaction timing checks enabled visible controls without invoking writes. CDP CPU deltas and long tasks are recorded; standard production React render durations are null. Some supplementary passes shared the workstation/overlapped; sequential exact-click representative records are separately identified. Original nonrepresentative request offsets begin at instrumentation arming, not the click; do not use those as exact waterfalls. Corrected supplementary passes capture click-relative clocks. Failed scope/modal/predicate adapters are excluded rather than counted as application latency.
+App-role samples observe up to6 active connections and9 aggregate connections, zero sampled lock waiters. The configured pool limit is8 **per client**; role aggregates include multiple clients/monitor/background work and are not proof of a pool-limit violation or no brief contention. Observable transaction acquisition includes BEGIN/transport; database spans sum elapsed calls and may exceed wall time. Four-reader diagnostic acquisition p95 ranges0.8–2.0ms. Event-loop histogram maxima494.7–559.9ms and completed Auth HTTP maxima57.1–91.7ms do not reproduce or explain the primary multi-second identity stall.
 
-An original-loader probe adds **20 measured + two warm-up invocations per loader**, outside Next's RSC dispatcher, with real local Auth/session SQL/Prisma and adapted framework cookies:
+Historical read-only production pg_stat_statements since September21 mixes application, system and test traffic: Club FOR UPDATE n=720 mean405.50ms/max8,260.74ms; FOR SHARE n=12,514 mean19.88ms/max19,092.88ms; Application FOR UPDATE n=213 mean134.21ms/max7,259.63ms. Session-live SQL n=10,672 averaged0.026ms/max0.365ms. No SQL p95 or navigation correlation is available. These histories do not prove that locks caused the current event. No speculative indexes, schema changes, statistics resets or production EXPLAIN ANALYZE are justified.
 
-| Loader | SQL/control statements | Auth verifications | Local p50 / p95 | JSON bytes |
-|---|---:|---:|---:|---:|
-| Overview | 11 | 1 | 24.11 / 37.79 ms | 684 |
-| Members | 12 | 1 | 29.01 / 36.17 ms | 36,449 |
-| Pipeline | 17 | 1 | 27.10 / 57.60 ms | 193,216 |
-| Tasks | 16 | 1 | 23.96 / 50.73 ms | 18,856 |
-| Meetings | 4 | 1 | 21.09 / 27.48 ms | 353 |
-| Announcements | 6 | 1 | 22.35 / 46.47 ms | 205 |
-| Empty voting | 21 | 2 | 47.32 / 85.58 ms | 479 |
-| Applicant display | 19 | 1 | 25.35 / 48.63 ms | 1,231 |
-| Assigned rooms | 17 | 1 | 23.88 / 63.43 ms | 2 |
-| Interview queue / rounds | 13 / 13 | 1 each | 24.83 / 28.72; 25.79 / 68.43 ms | 31 / 112 |
-| Room manager | 13 | 1 | 23.99 / 70.05 ms | 5,299 |
+## Vercel and Supabase regions
 
-Counts include BEGIN/SET/COMMIT and generated relation batches. They are not all necessarily serial network crossings; top-level queries can overlap. Prisma event duration is integer engine telemetry, not full application connection/network attribution. The loader probe does not include middleware, Next dispatch, browser queue/render, support sessions or the production pooler.
+**Historical confirmed observation, October 21:** authenticated Vercel Functions dashboard/settings showed iad1/us-east-1; the Supabase connector independently showed us-west-2/PostgreSQL17.6. Evidence: `evidence/vercel-observed.json` and `evidence/database-readonly.json`. Those are not refreshed October 27 telemetry. Current deployed SHA, effective region and runtime pool mode/limit remain to be reconfirmed read-only before attributing today's behavior to regions.
 
-## Database conclusions
+That historical Production12-hour window displayed `/api/workspace` duration average/p75/p95 **1,460/1,580/2,490ms**, active CPU average123ms, approximately1.6K calls. Workspace route duration **2,330/2,590/3,540ms**, active CPU average76ms, approximately3.7K calls. Exact n, p50, maxima and click pairing were unavailable; JSON keeps them null. Route aggregates mix kinds/document/RSC/actions. Low active CPU supports a waiting hypothesis, not a split into provider/pool/SQL/locks.
 
-Read-only `pg_stat_statements` history since September 21 mixes application, historical tests and system/dashboard traffic. **No SQL p95 is available.** Historical Club FOR UPDATE: n=720, mean 405.50 ms, max 8,260.74 ms; Club FOR SHARE: n=12,514, mean 19.88 ms, max 19,092.88 ms; Application FOR UPDATE: n=213, mean 134.21 ms, max 7,259.63 ms. Advisory locking: n=30,312, mean 257.99 ms, max 938.06 ms. These prove long lock acquisition histories, not a specific navigation cause.
+Source `utils/prisma.ts:10` reuses a module-scoped Prisma client and prefers POSTGRES_PRISMA_URL. Local pool configuration is not deployed configuration. No function/database migration or production setting change was made. A region A/B deployment would be a separately scoped future experiment; it is outside the current no-infrastructure-change work. The historical0.5–1.6s regional sensitivity calculation assumes10–20 serial crossings and50–80ms saved each; neither RTT nor that speedup was measured.
 
-Session-live SQL averaged 0.026 ms (n=10,672, max 0.365 ms); a common full User lookup averaged 0.087 ms (n=78,748). A sampled Application relation shape averaged 0.384 ms (n=1,340). Server-side statement execution is generally much smaller than hosted request wall time. Pool acquisition and network are absent from these execution numbers.
+## Security and authorization constraints
 
-The first snapshot found no blocked sessions; a later snapshot had four idle-in-transaction postgres sessions without attribution. max_connections=60; track_io_timing=off. Small table estimates and existing club/member/application/round indexes do not justify speculative indexes. Safe nonexecuting plans used a nonexistent UUID, not actual user values; they cannot establish a populated-club plan. No DDL, production EXPLAIN ANALYZE, session termination or statistics reset occurred. [Sanitized DB evidence](evidence/database-readonly.json).
+Every protected read must retain remote getUser verification of the candidate token; live auth.sessions existence/not_after and revocation; enabled accounts; current club membership, capabilities and suspension; support-session restrictions; anonymous interview/self-review protections; and voting snapshot plus post-snapshot authority. A client epoch is a local stale-work fence, never authorization. React request coalescing is limited to one server request and cannot authorize later requests.
 
-InterviewActor holds Club/User/ClubMember shared locks through its transaction (`utils/interview-access.ts:5`), and assigned-room generation has per-booking reads (`actions/interview-entry.ts:27`). Shared read locks can wait behind publication/admin writes. Batch work/shorten transactions only while proving equivalent revocation/privacy behavior. Members read mode deliberately avoids exclusive organization locks. Voting already uses a read-only repeatable-read snapshot plus a live post-snapshot guard; do not “fix” those protections away.
+Preserve `private, no-store`, Cookie-sensitive responses and same-origin cookie transport, appropriate Accept-Encoding variance, Demo isolation, mutation atomicity, draft continuity and fresh validation before revealing protected content. No cross-request authorization-success cache or stale private content may be introduced. Writes remain Server Actions. Do not merge guarded voting snapshots into an ordinary cached bootstrap.
 
-## Regions, bundles and background activity
+## Top ten recommended changes, ordered implementation sequence
 
-The Vercel connector could list the project but its team detail call returned 403. The authenticated browser supplied current region/runtime metrics, so region is not an evidence gap. **Effective deployed Prisma URL/pool mode/connection limit remain gaps.** Source prefers POSTGRES_PRISMA_URL and otherwise DATABASE_URL (`utils/prisma.ts:9`); module scope reuses the client per runtime instance. Local .env used a us-west-2 Supavisor port-5432 URL without explicit pool settings; do not claim those are deployed runtime settings.
+| Order | Proposed work / expected impact | Complexity / risk / gate |
+|---:|---|---|
+| 1 | Correlate the actual constrained multi-request identity stall with Auth create→send→headers→body, process/event-loop timing and database waits. Establish cause before changing behavior. | Medium / low application risk if disposable-only; reproduce the affected burst rather than only isolated GETs. |
+| 2 | Integrate independently ready missing-artwork and unused font-preload savings against current main; preserve its newer UI. Phase 10 historically removes200,888 font bytes; logo fallback avoids guessed404s. | Low / low; current-main build, browser/font/artwork checks and relevant tests before commit. No combined-main timing claim until measured. |
+| 3 | Retry the preserved query-only Review handoff only after the cold tail is explained. Observed median opportunity129.6ms cold/102.9ms warm constrained. | Low code / medium tail risk; require a fresh full paired protocol and unchanged draft/revocation tests. Current rejected patch stays out. |
+| 4 | Reduce Settings first-use module/data/render/frame dependency while preserving Recruiting bundle savings. | Medium / medium; instrument actual stages; rejected Phase 14 preload is not a ready fix. |
+| 5 | Bound pipeline metadata/ranking work with canonical privacy/selection/collation/facet parity. | High / high correctness risk; same-snapshot native parity plus1,000/5,000 and realistic histories before changing queries. No speculative DDL. |
+| 6 | Resolve resident summaries versus fresh-page interaction policy explicitly, then optimize page/search within that policy. | Medium / high privacy/freshness risk; preserve live checks and report entry plus repeated-interaction cost together. |
+| 7 | Coalesce genuinely identical in-flight background resources inside complete current authority scope; inspect remaining pure read actions before allowlisted GET conversion. | Medium / medium; no cross-request authorization reuse, mutation conversion or required live-update suppression. |
+| 8 | Narrow/page member invitation history and separate large task targeting catalogs only after measuring populated workloads. | Medium / medium; retain totals, targeting and authority semantics. No fabricated benefit estimate. |
+| 9 | Validate mobile/slow-network, active scheduling/voting, multiple clients and realistic review histories with bounded concurrency. | Medium / medium; no pool-size/concurrency increase based on four-reader local probes. |
+| 10 | Refresh deployed SHA/region/effective pool settings read-only and pair one hosted slow click with sanitized server phases. | Low investigation / potentially high later deployment risk. Any region experiment needs a separate authorized scope; production configuration remains unchanged. |
 
-Workspace first-load JS is ~510 kB by Next build output, versus 105 kB shared baseline. The common live/Demo boundary in `lib/workspace-api.ts` contributes client logic/proxies; it does not ship Prisma action implementation code. Sample shared chunks containing Demo logic are 55.0/40.5 KB gzip; Supabase client chunk 54.2 KB; deferred PDF chunk 129.3 KB gzip is absent from the initial workspace manifest. Module-level exact attribution/mobile hydration/duplicate-dependency costs remain unmeasured.
+These are expected opportunities, not additive speedup promises. The roadmap distinguishes ready-subset integration from blocked candidate changes and later scalability work.
 
-ProductShell task polling is 60 s, durable refresh 30 s plus focus and SSE revisions. SSE performs two snapshot queries every 2 s, closes around 45 s and reconnects. A long-lived stream is not one held database transaction; 48 s stream duration is not a 48 s navigation block. Root invitation and support-session checks also react to focus/visibility; shell/switcher/tutorial initialization adds reads on cross-workspace mounts. Durable notifications resolve per-item current authorized context in a transaction. Consolidate/coalesce and batch; preserve live functionality.
+## Changes that should NOT be made
 
-## Top ten recommended changes and sequence
+- No remote identity/live-session bypass, token-metadata-only authorization, successful-authorization caching between requests or protected-content flash before fresh required validation.
+- No removal of enabled-account, membership/capability/suspension/support checks, anonymous/self-review guards, voting snapshots or live post-snapshot guards.
+- No blanket row/advisory-lock removal, transaction-isolation weakening, atomic publication/outbox changes or unbounded Promise.all/pool increases.
+- No automatic Redis, new cache library, Edge Functions, schema/index rollout, database region migration, function-size change or complete rewrite.
+- No cosmetic benchmark readiness changes, synthetic waits/animations, deleted slow samples, pooled pilots/diagnostics or replacing the failed cold result with a better rerun.
+- No deployment of disposable observers, response bodies, cookies, JWTs, SQL parameters, private fixture identities or production environment files.
+- No merge of every experimental phase simply because a local test suite passes.
 
-1. Add sanitized per-request phase/trace IDs and verify the deployed commit, kind/action, Auth, pool, SQL/network and lock phases of one real slow transition.
-2. Defer hidden Scheduling/availability/publication panels until selected, preserving mounted dirty drafts.
-3. Deduplicate the assigned-room read and migrate the remaining pure navigation reads to explicit guarded GETs or a narrow Rooms bootstrap; keep writes as actions.
-4. Compare an explicitly authorized pdx1 preview to iad1; include browser→function RTT and the actual effective DB pool configuration before any promotion.
-5. Start authorized reads and module preload concurrently on bounded navigation intent, reusing the same in-flight result at mount.
-6. Add compact pipeline list DTOs, stable server pagination/filter/sort and on-demand applicant detail; tailor Decisions to its group.
-7. Page member/invitation history and separate task targeting/review catalogs from first list loads.
-8. Extend the existing local resource owner with complete filter/authority keys, in-flight dedupe, generations and explicit mutation invalidation; validate private authority before reuse.
-9. Give notifications one session-scoped owner, coalesce timer/focus/SSE bursts, and batch repeated current-context lookups without sacrificing timeliness.
-10. Batch interview per-booking lookups and bound voting history; split live/Demo domain bundles; measure mobile/list size before virtualization.
+## Information still needed and completion gates
 
-Dependencies and rollout/security acceptance are detailed in [OPTIMIZATION_ROADMAP.md](OPTIMIZATION_ROADMAP.md). Apply transport/hidden-work fixes and region experiments before a broad cache/library rewrite. The arithmetic region sensitivity model is **0.5–1.6 s** for 10–20 effective serial crossings with **assumed**, unmeasured 50–80 ms less overhead each. Three serial requests of duration L can approach max(L) when independent and concurrent. These effects overlap; do not add them into a promised total. No before/after optimization speedup was measured.
+1. Root cause of the primary multi-second identity spans, with request-correlated lifecycle evidence under the actual affected burst.
+2. Current deployed SHA/function region, effective Prisma pool endpoint/mode/limit and a paired hosted slow-navigation trace; October 21 observations cannot establish today's deployment.
+3. Product acceptance of fresh validation/page/search tradeoffs, and a Settings first-use improvement with no unexplained material tail regression.
+4. Mobile/low-end CPU and actual paint/input attribution; production React render duration remains unavailable. DOM plus two frames is a useful-content proxy.
+5. Realistic active interview/ballot/review/history workloads and multi-client saturation evidence. Local empty/owner fixtures do not establish production capacity.
+6. A current-main integrated ready subset, complete relevant security/browser checks and a separately measured final candidate before broader release clearance.
 
-## Changes not to make
+## Tests, evidence and commands
 
-- Do not trust getSession/JWT metadata alone, remove remote verified identity or live session revocation/not_after checks, or cache a successful authorization across requests/users.
-- Do not remove disabled-account, current membership/grant/suspension, anonymous-round, self-review, interview feedback, support-session or post-snapshot voting checks.
-- Do not reveal stale protected content merely because its TTL is short. On authority changes, discard/hide resources and late results; distinguish identity metadata reuse from current authorization.
-- Do not remove row/advisory locks wholesale, parallelize SQL “inside” one transaction as though it has many connections, or break atomic decisions/outboxes/publication fencing.
-- Do not automatically add Redis, SWR/React Query, Edge functions, new indexes, larger function size, a database-region migration or a complete rebuild.
-- Do not disable notifications/live updates or add loading animations/delays to improve a benchmark.
-- Do not ship diagnostic probes, cookies, JWTs, environment files or raw authenticated traces.
+Completed Phase 15 measured-candidate QA:1,417 ordinary passes/67 gated skips,71 live passes,3 native security/concurrency passes,38 normal signup/Auth/TOTP checks; both production builds, types and lint pass (22 existing warnings). After reverting, the retained source passes1,417 ordinary/63 gated skips and67 live checks again. The four opt-in candidate handoff cases pass against the frozen candidate and skip without their experiment flag. Counts overlap and must not be added. All913 retained source hashes, privacy scans, sleep/host controls and cleanup passed. Prior interrupted ordinary attempts and development failures remain recorded.
 
-## Still needed
+This documentation update adds only a read-only evidence summarizer and its tests; it does not introduce a new live probe or collect new timings. It verifies the immutable Phase 15 SHA256SUMS, accepted profile controls, warmup exclusion and complete memberships before emitting92 groups. Run:
 
-A successful production-like browser/server trace for the exact five-second event; read-kind/action and method splits; deployment SHA; exact production invocation n/p50/max; Vercel→Auth/SQL/network/pool/lock spans; a measured pdx1 comparison; deployed pool settings; active ballots/bookings/large history/multi-university and revoked/support-session cohorts; low-end/mobile hydration and true paint/input metrics. The targets (<150 ms visited p50, <500 ms uncached p50, <800 ms major directory, <1.5 s initial dashboard, <1 s tab p95) remain engineering targets.
+```sh
+node --test tests/navigation-review-summary.test.cjs tests/navigation-audit-harness.test.cjs tests/navigation-phase15-diagnostics.test.cjs
+node scripts/summarize-navigation-review.cjs
+```
 
-## Validation, artifacts and reproduction
+The first command validates summary quantiles/zero/null handling, whole-profile rejection, actual retained slow-row provenance and existing harness/diagnostic guards. Current update results are recorded in `review-20261027/VALIDATION.json`. It is not a claim to have rerun all live application tests on the documentation branch.
 
-The real local production build and **38 local Auth/OTP/MFA/PostgreSQL/HTTP acceptance checks passed with zero failures/skips**. **26 focused navigation/security/reader/harness checks passed**, including two harness percentile/redaction tests. Original loaders executed 240 measured local read invocations. Source was not optimized, so no full application test rerun is claimed beyond the build/setup runner and focused suites.
+For a new live comparison, use a new disposable copy/output area and the full preparation/build/cohort/ownership controls in `phase15/REPRODUCTION.md`. The completed evidence directories are immutable and collectors deliberately refuse overwriting them. Private fixtures/build snapshots were deleted after cleanup and must be recreated; the commands are not a one-command replay against existing evidence. After provisioning via `node scripts/run-onboarding-e2e.cjs --keep`, seed with `node scripts/navigation-audit.cjs --seed` and `node scripts/pipeline-scale-fixture.cjs 1000` (and an independent 5000 cohort). The guarded lifecycle helper exposes `build`, `snapshot baseline`, `snapshot candidate`, `start baseline`, `start candidate`, and `stop`; configure its private marker/snapshots as the reproduction document describes. Apply `phase15/EXPERIMENT_APPLICATION.diff` only in the disposable experimental copy before freezing candidate, not to main.
 
-Primary deliverables: [full audit](OUTCLASS_NAVIGATION_AUDIT.md), [structured benchmarks](NAVIGATION_BENCHMARKS.json), [roadmap](OPTIMIZATION_ROADMAP.md), and this handoff. Exact raw sample/waterfall/loader/bundle/DB/dashboard artifact paths are referenced inside the JSON and report; large arrays are not duplicated here. No PR was created.
+Accepted-run entry points, after those prerequisites and fresh output directories are established:
 
-Reproduce with the reserved loopback fixture: `node scripts/run-onboarding-e2e.cjs --keep`; then run `node scripts/navigation-audit.cjs --samples=20`, `--only-voting --samples=20`, `--details --samples=20`, `--cross-club --samples=20`, `--initial --samples=20`, `--waterfalls --samples=20` sequentially; run `node scripts/navigation-loader-audit.cjs`. The existing supplemental runner is `node scripts/performance-audit.cjs`. After preserving its sanitized output as `evidence/static-supplement.json`, `node scripts/summarize-navigation-audit.cjs` assembles the report tables/JSON. The audit contains the exact focused test and cleanup details. Never substitute a production account/configuration into these guarded fixture scripts.
+```sh
+node scripts/navigation-phase15-study.cjs --profile=local
+node scripts/navigation-phase15-study.cjs --profile=constrained
+node scripts/navigation-phase15-diagnose.cjs --size=1000 --variant=baseline
+node scripts/navigation-phase15-diagnose.cjs --size=1000 --variant=candidate
+node scripts/navigation-phase15-diagnose.cjs --size=5000 --variant=candidate
+node scripts/navigation-phase15-diagnose.cjs --size=5000 --variant=baseline
+```
+
+The opt-in browser experiment needs `OUTCLASS_PHASE15_EXPERIMENT=1` and `OUTCLASS_ONBOARDING_E2E_CONFIG` pointing to the owned loopback configuration. Never substitute production credentials/accounts. Audit actual sleep intervals with `phase15/analysis/audit-power.py <profile-directory>`, and derive tables with the Python analysis scripts listed in `phase15/REPRODUCTION.md`. Native security uses `node scripts/run-disposable-postgres.cjs security`, not a general or production database.
+
+Primary deliverables: [full technical audit](OUTCLASS_NAVIGATION_AUDIT.md), [benchmark JSON](NAVIGATION_BENCHMARKS.json), [optimization roadmap](OPTIMIZATION_ROADMAP.md), and this self-contained handoff. Large raw traces remain under `phase15/local/`, `phase15/constrained/` and `phase15/diagnostics/`; the JSON provides file/index provenance. Original production/DB observations remain under `evidence/`. No report PR is created; any future report PR must remain separate and unmerged unless explicitly authorized.
