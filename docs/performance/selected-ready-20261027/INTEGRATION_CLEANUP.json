@@ -1,0 +1,13 @@
+{
+  "completed": true,
+  "at": "2026-10-27T18:42:41.642771+00:00",
+  "ownedAppContainersVolumesRemoved": true,
+  "newPrivateCredentialsRemoved": true,
+  "priorInactiveCredentialDirectoryRestored": false,
+  "reason": "Reserved inactive disposable directory was reprovisioned in place; no previous snapshot retained for this integration pass.",
+  "originalCheckoutUnchanged": true,
+  "unrelatedContainersUnchanged": true,
+  "unrelatedContainers": 21,
+  "retainedCombinedBuildId": "EIEBIFSOfYiIAFWdYmI-4",
+  "noPersistentPowerSettingChange": true
+}
