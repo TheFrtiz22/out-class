@@ -1,0 +1,23 @@
+// Use the actual confirmation / owner-publication flow in the reserved LOCAL fixture.
+const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),assert=require('node:assert/strict')
+const {PrismaClient}=require('@prisma/client'),{Actor,readConfig,randomUUID}=require('../tests/helpers/onboarding-e2e.cjs'),{load}=require('../tests/helpers/voting-harness.cjs')
+async function run(){const root=path.join(os.tmpdir(),'outclass-dashboards-e2e'),c=readConfig(path.join(root,'config.json'));assert.equal(c.suite,'dashboards');const f=JSON.parse(fs.readFileSync(path.join(root,'visual-fixture.json'))),db=new PrismaClient({datasourceUrl:c.status.DB_URL});try{
+ const member=await db.clubMember.findUniqueOrThrow({where:{userId_clubId:{userId:f.actors.reviewer.id,clubId:f.clubId}}});await db.clubMember.update({where:{id:member.id},data:{interviewerEligible:true}})
+ await db.pipelineRound.update({where:{id:f.roundId},data:{interviewKit:load('lib/interview-kits.ts').sampleInterviewKit()}})
+ const interviewer=new Actor(c);await interviewer.signIn(f.actors.reviewer.credentials.email,f.actors.reviewer.credentials.password)
+ const scope={clubId:f.clubId,roundId:f.roundId},current=await interviewer.action('actions/availability.ts','getMyRoundAvailability',[scope])
+ await interviewer.action('actions/availability.ts','saveMyRoundAvailability',[{...scope,accountId:interviewer.user.id,revision:current.document.revision,schedule:{timezone:'America/New_York',weeklySubmitted:true,weekly:Array.from({length:7},()=>[[480,1260]]),exceptions:{}},confirm:true}])
+ if(!f.actors.booking){const actor=new Actor(c);await actor.signUp('Robin Booking',`visualbooking${randomUUID().slice(0,8)}`,2028);await actor.profile('Robin Booking',2028);await actor.action('actions/tutorials.ts','saveTutorial',[{experience:'student',action:'skip',step:0}]);f.actors.booking={id:actor.user.id,credentials:actor.credentials,cookies:[...actor.cookies].map(([name,value])=>({name,value,url:c.appUrl}))};const app=await db.application.create({data:{clubId:f.clubId,studentId:actor.user.id,roundId:f.roundId,status:'INTERVIEWING',submittedAt:new Date()}});f.bookingApplicationId=app.id;fs.writeFileSync(path.join(root,'visual-fixture.json'),JSON.stringify(f),{mode:0o600})}
+ const first=await db.interviewSlot.findFirstOrThrow({where:{roomId:f.roomId},orderBy:{startTime:'asc'}})
+ for(const offset of [1,2]){const startTime=new Date(+first.startTime+offset*3600000);if(!await db.interviewSlot.findFirst({where:{roomId:f.roomId,startTime}}))await db.interviewSlot.create({data:{clubId:f.clubId,roomId:f.roomId,startTime,endTime:new Date(+startTime+1800000),location:first.location}})}
+ const owner=new Actor(c);await owner.signIn(f.actors.owner.credentials.email,f.actors.owner.credentials.password)
+ const workspace=await owner.action('actions/panel-proposals.ts','getPanelProposalWorkspace',[scope]);if((await db.pipelineRound.findUniqueOrThrow({where:{id:f.roundId}})).bookingPublishedAt){console.log('Synthetic official schedule and applicant booking already published.');return}
+ const slot=await db.interviewSlot.findFirstOrThrow({where:{roomId:f.roomId}})
+ const generated=await owner.action('actions/panel-proposals.ts','generatePanelProposal',[{...scope,revision:workspace.proposal?.revision??0,window:{start:new Date(+slot.startTime-3600000).toISOString(),end:new Date(+slot.endTime+3*3600000).toISOString()},options:{maxConsecutiveMinutes:null,breakMinutes:15},mode:'REGENERATE'}]);assert.ok(generated.proposal)
+ const reviewed=await owner.action('actions/panel-publication.ts','reviewPanelPublication',[{...scope,proposalId:generated.proposal.id,revision:generated.proposal.revision}]);assert.equal(reviewed.ok,true,reviewed.error)
+ const result=await owner.action('actions/panel-publication.ts','publishPanelSchedule',[{...scope,proposalId:reviewed.value.proposalId,revision:reviewed.value.revision,approvalToken:reviewed.value.approvalToken}]);assert.equal(result.ok,true,result.error)
+ const round=await db.pipelineRound.findUniqueOrThrow({where:{id:f.roundId}});await owner.action('actions/interview-booking-publication.ts','setInterviewBookingPublication',[{...scope,revision:round.bookingRevision,action:'PUBLISH',cycleId:null,allowCancellation:true,allowRescheduling:true}]);
+ const refreshed=await interviewer.request('/api/workspace?'+new URLSearchParams({kind:'assignedRooms',args:JSON.stringify([f.clubId])}));assert.equal(refreshed.status,200)
+ console.log('Synthetic interviewer confirmed availability; owner reviewed and published the real panel schedule; assigned-room read succeeded.')
+}finally{await db.$disconnect()}}
+run().catch(error=>{console.error(error);process.exitCode=1})

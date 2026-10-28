@@ -6,7 +6,7 @@ function harness(overrides = {}, faults = {}) {
   function load(file) {
     if (cache[file]) return cache[file];
     const m = { exports: {} };
-    const mocks = { 'node:crypto': { ...require('node:crypto'), randomUUID: () => { if (faults.uuid) throw Error('private UUID failure'); return require('node:crypto').randomUUID(); } }, ...overrides, 'next/navigation': { unstable_rethrow: require('next/dist/client/components/unstable-rethrow.server').unstable_rethrow, redirect: url => { throw Object.assign(Error('redirect'), { url }); } } };
+    const mocks = { '@/components/icons': { ArrowRight: () => null, ArrowUpRight: () => null }, 'node:crypto': { ...require('node:crypto'), randomUUID: () => { if (faults.uuid) throw Error('private UUID failure'); return require('node:crypto').randomUUID(); } }, ...overrides, 'next/navigation': { unstable_rethrow: require('next/dist/client/components/unstable-rethrow.server').unstable_rethrow, redirect: url => { throw Object.assign(Error('redirect'), { url }); } } };
     new Function('require', 'module', 'exports', 'console', ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText)(name => mocks[name] || (name.startsWith('@/') ? load(name.slice(2) + (name.includes('components/') ? '.tsx' : '.ts')) : require(name)), m, m.exports, { error: value => { if (faults.logger) throw Error('private logger failure'); logs.push(JSON.parse(value)); } });
     return cache[file] = m.exports;
   }

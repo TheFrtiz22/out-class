@@ -34,7 +34,7 @@ export function InterviewManagementTabs({ clubId, initialTab, initialRoundId, se
     setTab(nextTab)
     if (nextTab === "schedule") setScheduleVisited(true)
   }, [nextTab])
-  return <InterviewReadScope clubId={clubId}><div className="space-y-3">{settingsOnly && canOpenOperations && <Link href={interviewSetupHref(clubId, initialRoundId, "schedule")} className="inline-flex min-h-11 items-center text-sm underline" onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Open Interview Scheduling</Link>}{!canSchedule && <Link href={`/settings/availability?clubId=${encodeURIComponent(clubId)}`} className="inline-flex min-h-11 items-center text-sm underline">Set My Availability</Link>}<Tabs className="oc-interview-management" value={allowedTabs.includes(tab) ? tab : "kits"} onValueChange={value => {
+  return <InterviewReadScope clubId={clubId}><div className="oc-workspace-stack">{settingsOnly && canOpenOperations && <Link href={interviewSetupHref(clubId, initialRoundId, "schedule")} className="inline-flex min-h-11 items-center text-sm underline" onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Open Interview Scheduling</Link>}{!canSchedule && <Link href={`/settings/availability?clubId=${encodeURIComponent(clubId)}`} className="inline-flex min-h-11 items-center text-sm underline">Set My Availability</Link>}<Tabs className="oc-interview-management" value={allowedTabs.includes(tab) ? tab : "kits"} onValueChange={value => {
     if (value !== tab && canLeaveWorkspace(scheduler.current)) {
       setTab(value)
       if (value === "schedule") setScheduleVisited(true)

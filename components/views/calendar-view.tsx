@@ -355,7 +355,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                           className={cn(
                             "min-h-32 space-y-1 border-b border-r border-neutral-100 p-2",
                             day.getMonth() !== cursor.getMonth() &&
-                              "bg-muted text-neutral-400",
+                              "bg-muted text-muted-foreground",
                           )}
                         >
                           <button

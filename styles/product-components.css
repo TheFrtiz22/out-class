@@ -22,7 +22,7 @@
 [data-product-shell] [data-slot="button"] { border-radius: var(--oc-radius-md); font-weight: var(--oc-weight-semibold); }
 [data-product-shell] [data-slot="tabs-list"]:not([data-variant="underline"]) { background: var(--oc-content-soft); border-radius: 999px; border: 1px solid var(--oc-content-edge); }
 [data-product-shell] [data-slot="tabs-trigger"][data-state="active"] { box-shadow: var(--oc-shadow-surface); }
-[data-product-shell] [data-slot="empty-state"][data-tone="subtle"] { background: var(--oc-surface-blue); }
+[data-product-shell] [data-slot="empty-state"][data-tone="subtle"] { background: var(--oc-content-soft); }
 [data-product-shell] table { font-variant-numeric: tabular-nums; }
 [data-product-shell] table thead { background: var(--muted); }
 [data-product-shell] table th { font-size: var(--oc-text-caption); color: var(--muted-foreground); font-weight: var(--oc-weight-semibold); }
@@ -121,7 +121,7 @@
 @media (prefers-reduced-motion: reduce) { .oc-segmented-control[data-sliding="true"] :is(button, .oc-segmented-indicator) { transition: none; } }
 
 /* Quiet status annotations: neutral text and a small semantic rule, without colored capsules. */
-[data-slot="badge"], .oc-status-label { display: inline-flex; align-items: center; gap: .375rem; border: 0 !important; border-inline-start: 2px solid var(--badge-accent, var(--border)) !important; border-radius: 0 !important; background: transparent !important; color: inherit !important; padding: .125rem .5rem; font-size: var(--oc-text-caption); font-weight: 500; line-height: 1.4; }
+[data-slot="badge"], .oc-status-label { display: inline-flex; align-items: center; gap: .375rem; border: 0; border-inline-start: 2px solid var(--badge-accent, var(--border)); border-radius: 0; background: transparent; color: inherit; padding: .125rem .5rem; font-size: var(--oc-text-caption); font-weight: 500; line-height: 1.4; }
 [data-slot="badge"][data-variant="success"], [data-application-status="ACCEPTED"], [data-status-code="ACCEPTED"] { --badge-accent: var(--success); }
 [data-slot="badge"][data-variant="destructive"], [data-application-status="REJECTED"], [data-status-code="REJECTED"] { --badge-accent: var(--destructive); }
 [data-slot="badge"][data-variant="warning"], [data-application-status="WAITLISTED"], [data-status-code="WAITLISTED"] { --badge-accent: var(--warning); }

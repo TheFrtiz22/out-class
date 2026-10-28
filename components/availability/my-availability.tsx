@@ -51,7 +51,7 @@ export function AvailabilityEditor({ initial, scope, initialConfirmed = false, i
     const indices = availabilityEditorKnownDays(schedule, addDays(week, -7)).flatMap((known, i) => known ? [i] : [])
     editDays(previous, indices)
   }
-  return <section className="oc-availability space-y-5 rounded-2xl border bg-card p-4 sm:p-6" data-unsaved={queue.dirty} data-saving={queue.saving || queue.state === "saving" || confirming} aria-busy={confirming}>
+  return <section className="oc-content-panel oc-availability space-y-5 sm:p-6" data-unsaved={queue.dirty} data-saving={queue.saving || queue.state === "saving" || confirming} aria-busy={confirming}>
     <header className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="oc-section-heading">{title}</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{scope ? "Your global schedule is prefilled. Adjust specific dates here and confirm your participation for this club and round." : "Enter your usual free time once. Your schedule follows local clock time, including daylight saving changes."}</p></div><p role="status" aria-live="polite" className={`text-xs font-medium ${queue.state === "error" ? "text-destructive" : "text-muted-foreground"}`}>{queue.state === "saving" ? "Saving…" : queue.state === "unsaved" ? "Unsaved changes" : queue.state === "error" ? "Save failed · edits retained" : queue.document.revision === 0 ? "No schedule saved" : "All changes saved"}</p></header>
     <fieldset disabled={confirming} className="min-w-0 space-y-5">
       <p className="text-xs text-muted-foreground">8:00 AM–9:00 PM · {SCHEDULING_TIMEZONE_LABEL}. Daylight saving changes are automatic. Previously saved hours outside this window are retained.</p>

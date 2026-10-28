@@ -46,7 +46,7 @@ export function QrCodeCard({ title, description, path, filename }: { title: stri
     } catch (error) { setMessage(error instanceof Error ? error.message : "Download failed. Please retry.") }
     finally { setBusy(false) }
   }
-  return <section className="rounded-xl border border-neutral-200 bg-white p-6 font-sans text-black shadow-none">
+  return <section className="oc-content-panel border-neutral-200 font-sans text-black shadow-none">
     <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
       <div className="flex size-48 shrink-0 items-center justify-center rounded-lg border border-neutral-200">
         {origin ? <QRCodeSVG ref={svg} value={url} size={184} level="M" marginSize={4} title={title} /> : <span className="text-sm text-neutral-500">Preparing QR code…</span>}

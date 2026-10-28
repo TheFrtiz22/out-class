@@ -52,7 +52,7 @@ export async function GET(request: Request) {
       case "interviewRounds": data = await (await import("@/actions/interview-kits")).getInterviewRounds(...clubArgs.parse(args)); break
       case "roomWorkspace": data = await (await import("@/actions/interview-rooms")).getRoomWorkspace(...clubArgs.parse(args)); break
       case "bookingPublication": data = await (await import("@/actions/interview-booking-publication")).getInterviewBookingPublication(...z.tuple([z.object({ clubId: z.string().uuid(), roundId: z.string().uuid() }).strict()]).parse(args)); break
-      case "tasks": data = await (await import("@/actions/tasks")).getTaskWorkspace(...taskArgs.parse(args)); break
+      case "tasks": { const [clubId, focus] = taskArgs.parse(args); data = await (await import("@/actions/tasks")).getTaskWorkspace(clubId, focus); break }
       case "meetings": data = await (await import("@/actions/meetings")).listMeetings(...z.tuple([z.string().uuid().nullish().transform(value => value ?? undefined)]).parse(Array.isArray(args) && args.length === 0 ? [null] : args)); break
       case "announcements": data = await (await import("@/actions/communications")).getClubAnnouncements(...clubArgs.parse(args)); break
       case "notifications": data = await (await import("@/actions/communications")).getDurableNotifications(...z.tuple([z.string().uuid().nullish().transform(value => value ?? undefined)]).parse(Array.isArray(args) && args.length === 0 ? [null] : args)); break

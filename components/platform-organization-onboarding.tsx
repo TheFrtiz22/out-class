@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 export function PlatformOrganizationOnboarding({ onCreated }: { onCreated: () => void }) {
   const [open, setOpen] = useState(false), [busy, setBusy] = useState(false);
   return <>
-    <section className="flex flex-col gap-4 rounded-xl border bg-card p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+    <section className="oc-content-panel flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
       <div className="min-w-0"><h2 className="oc-section-heading ">Onboard an organization</h2><p className="mt-1 text-sm text-muted-foreground">Create its listing and designate the initial president as owner.</p></div>
       <Button className="h-auto min-h-11 whitespace-normal text-center sm:max-w-72" type="button" onClick={() => setOpen(true)}>Create organization &amp; invite president</Button>
     </section>

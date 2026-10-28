@@ -1,5 +1,5 @@
 /* Explicit composition recipes. Apply at the owning screen; no navigation overrides. */
-.oc-workspace-stack { display: grid; align-content: start; gap: var(--oc-content-gap); min-width: 0; }
+.oc-workspace-stack { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: var(--oc-content-gap); min-width: 0; }
 .oc-content-panel { min-width: 0; padding: var(--oc-content-padding); border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); }
 .oc-panel-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; margin-bottom: 1rem; }
 .oc-panel-heading h2, .oc-form-section h2 { font-size: var(--oc-text-card); font-weight: 600; line-height: 1.4; letter-spacing: -.015em; }
@@ -7,7 +7,7 @@
 .oc-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; min-width: 0; padding: .875rem 1rem; border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius-small); background: var(--oc-content-surface); }
 .oc-toolbar > :is(label,div) { min-width: 0; }
 .oc-toolbar > input { flex: 1 1 15rem; min-width: 0; }
-.oc-toolbar label { display: grid; gap: .375rem; font-size: var(--oc-text-small); font-weight: 500; }
+.oc-toolbar label { display: grid; grid-template-columns: minmax(0, 1fr); gap: .375rem; font-size: var(--oc-text-small); font-weight: 500; }
 .oc-toolbar label:has([type="checkbox"], [role="checkbox"]) { display: flex; align-items: center; min-height: 2.75rem; }
 .oc-form-section { min-width: 0; display: grid; gap: 1rem; padding: var(--oc-content-padding); border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); background: var(--oc-content-surface); }
 .oc-form-section > label, .oc-field { display: grid; min-width: 0; gap: .5rem; font-size: var(--oc-text-small); font-weight: 500; }
@@ -26,7 +26,7 @@
 .oc-detail-panel { min-width: 0; border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); overflow-wrap: anywhere; }
 .oc-detail-panel > header { padding: var(--oc-content-padding); border-bottom: 1px solid var(--oc-content-edge); }
 /* Headers reserve the close target; Radix continues to own focus and dismissal. */
-[data-slot="dialog-content"][data-close-button]:not(.oc-navigation-search) > :is([data-slot="dialog-header"], [data-slot="dialog-title"]) { padding-inline-end: 2rem; }
+[data-slot="dialog-content"][data-close-button]:not(.oc-navigation-search) > :is([data-slot="dialog-header"], [data-slot="dialog-title"]) { padding-inline-end: 2.75rem; }
 [data-slot="dialog-content"] > [data-slot="dialog-description"] { max-width: 44rem; }
 [data-slot="dialog-content"] > [data-slot="dialog-footer"] { padding-top: 1rem; border-top: 1px solid var(--border); }
 .oc-workspace-stack [data-slot="tabs"] { min-width: 0; gap: 1rem; }
@@ -41,3 +41,10 @@
   .oc-content-panel, .oc-form-section, .oc-toolbar, .oc-data-surface, .oc-detail-panel, .oc-feedback { border-color: CanvasText; box-shadow: none; }
   .oc-data-surface tr:focus-within { outline: 2px solid Highlight; outline-offset: -2px; }
 }
+
+/* Content alignment is independent of the floating navigation reservation. */
+[data-product-shell] main.oc-workspace-content { max-width: var(--oc-content-width); }
+
+.oc-workspace-stack[hidden], .oc-content-panel[hidden], .oc-form-section[hidden] { display: none; }
+
+.oc-standalone-workspace { min-width: 0; width: 100%; max-width: var(--oc-content-width); margin-inline: auto; padding: clamp(1.25rem, 3vw, 2.5rem) var(--oc-space-page); }
