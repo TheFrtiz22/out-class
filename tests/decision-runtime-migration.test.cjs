@@ -11,7 +11,10 @@ for(const mode of ['fresh','current-main','original-reconciliation'])test(`Decis
  for(const n of names.filter(n=>n<='20261007010000_profile_gpa_private_photos'))await apply(n);
  for(const {tablename}of(await db.query(`SELECT tablename FROM pg_tables WHERE schemaname='public'`)).rows)await db.exec(`ALTER TABLE public."${tablename}" OWNER TO outclass_production_app`);
  let initial=names.filter(n=>n>'20261007010000_profile_gpa_private_photos'&&n!==repair);
- if(mode==='current-main')initial=initial.filter(n=>n!==decision);
+ // This historical missing-decision baseline predates LIVE voting, whose
+ // notification trigger intentionally depends on decisionVersion. Rehearse
+ // those dependent migrations only after restoring the missing prerequisite.
+ if(mode==='current-main')initial=initial.filter(n=>n!==decision&&n<'20261027220000_live_voting_foundation');
  if(mode==='original-reconciliation')initial=initial.filter(n=>n<'20261011002000_production_communications_runtime_access');
  for(const n of initial)await apply(n);
  await db.exec(`INSERT INTO "User"(id,email) VALUES('student','student@demo.invalid'),('leader','leader@demo.invalid'); INSERT INTO "Club"(id,slug,name,tagline,description,color,category) VALUES('club','club','Club','','','#142d45','Other'); INSERT INTO "PipelineRound"(id,"clubId",name,"order") VALUES('round','club','Review',0); INSERT INTO "Application"(id,"studentId","clubId","roundId",status,"submittedAt") VALUES('app','student','club','round','IN_REVIEW',NOW()); INSERT INTO "ClubAnnouncement"(id,"clubId","authorId",title,body,audience,"requestKey") VALUES('announcement','club','leader','Keep','Keep body','MEMBERS','request'); INSERT INTO "UserNotificationPreference"("userId","emailApplications","emailFrequency","updatedAt") VALUES('student',false,'DAILY',NOW()); INSERT INTO "UserNotification"(id,"userId","clubId","eventKey",type,title,body,href) VALUES('existing','student','club','keep','ANNOUNCEMENT','Keep','Body','/');`);

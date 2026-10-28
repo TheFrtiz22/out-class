@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs'), ts = require('typescript');
 function load(file, mocks = {}) {
   const mod = { exports: {} };
-  new Function('require', 'module', 'exports', ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText)(n => n in mocks ? mocks[n] : n.startsWith('@/lib/') ? load(n.replace('@/', '') + '.ts', mocks) : require(n), mod, mod.exports);
+  new Function('require', 'module', 'exports', ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText)(n => n in mocks ? mocks[n] : n.startsWith('@/') ? load(n.replace('@/', '') + '.ts', mocks) : require(n), mod, mod.exports);
   return mod.exports;
 }
 const { defaultDisplayConfig, projectApplicantDisplay, displayConfigSchema } = load('lib/applicant-display.ts');
