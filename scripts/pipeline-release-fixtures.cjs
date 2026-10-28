@@ -23,7 +23,7 @@ async function prepare() {
     const existing = JSON.parse(fs.readFileSync(manifest));
     assert.deepEqual(existing.sizes, [1, 100, 1000, 5000]);
     const db = new PrismaClient({ datasourceUrl: config.status.DB_URL });
-    try { await backupOwners(db, original.userId); } finally { await db.$disconnect(); }
+    try { await backupOwners(db, original.userId); for (const size of [1,1000,5000]) { const cohort=JSON.parse(fs.readFileSync(path.join(root,'pipeline-release-'+size+'.json'))); await db.club.update({where:{id:cohort.clubIds[0]},data:{name:'Navigation Audit Club 1'}}); } } finally { await db.$disconnect(); }
     return existing;
   }
   const db = new PrismaClient({ datasourceUrl: config.status.DB_URL });
@@ -40,7 +40,7 @@ async function prepare() {
         clubId = randomUUID();
         // New IDs instead of deleting submitted reviews or disabling triggers.
         await db.$transaction(async tx => {
-          await tx.club.create({ data: { id: clubId, slug: 'repair-' + clubId, name: 'Release fixture ' + size, tagline: 'Synthetic local fixture', description: 'Disposable release validation', claimedAt: new Date(), category: 'Academic', color: '#234567' } });
+          await tx.club.create({ data: { id: clubId, slug: 'repair-' + clubId, name: 'Navigation Audit Club 1', tagline: 'Synthetic local fixture', description: 'Disposable release validation', claimedAt: new Date(), category: 'Academic', color: '#234567' } });
           await tx.clubMember.createMany({ data: members.map(({ id, createdAt, updatedAt, clubId: oldClub, ...member }) => ({ ...member, id: randomUUID(), clubId })) });
           const applied = await tx.pipelineRound.create({ data: { clubId, name: 'Applied', order: 0, type: 'APPLICATION_REVIEW' } });
           await tx.pipelineRound.create({ data: { clubId, name: 'Interview', order: 1, type: 'INTERVIEW' } });

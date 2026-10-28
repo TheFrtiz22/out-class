@@ -8,7 +8,7 @@ function installStage({kind,text,count}){
  const predicate=()=>{
   const rows=[...document.querySelectorAll('.oc-live-pipeline [data-applicant-id]')].filter(visible);
   const sheet=[...document.querySelectorAll('[data-slot="sheet-content"]')].find(visible);
-  const setup=[...document.querySelectorAll('[role="dialog"]')].find(e=>visible(e)&&e.textContent.includes('New voting session'));
+  const setup=[...document.querySelectorAll('[role="dialog"]')].find(e=>visible(e)&&(e.getAttribute('aria-label')==='New voting session'||document.getElementById(e.getAttribute('aria-labelledby'))?.textContent==='New voting session'));
   if(kind==='entry'||kind==='return')return rows.length===count&&!sheet&&!document.querySelector('.oc-voting-stage')&&!document.body.textContent.includes('Updating applicants…');
   if(kind==='detail'||kind==='switch'||kind==='selection')return sheet&&sheet.textContent.includes(text)&&sheet.textContent.includes('Synthetic application evidence.')&&(kind!=='selection'||sheet.textContent.includes('Quick review · '+count+' remaining'));
   if(kind==='search'||kind==='filter')return rows.length===count&&rows.some(e=>e.textContent.includes(text))&&!document.body.textContent.includes('Updating applicants…');
@@ -31,6 +31,7 @@ async function main(){
  assert.ok([1,100,1000,5000].includes(size));const last=size<=100?'Audit Student '+String(size-1).padStart(3,'0'):'Scale Student '+String(size-1).padStart(5,'0');
  const actor=new Actor(config);await actor.signIn(fixture.email,fixture.password);
  const browser=await chromium.launch({headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage(),requests=[],errors=[],pending=new Set(),samples=[];
+ page.on('dialog',dialog=>dialog.accept());
  page.setDefaultTimeout(30000);const cdp=await context.newCDPSession(page);
  if(process.argv.includes('--constrained-network')){await cdp.send('Network.enable');await cdp.send('Network.emulateNetworkConditions',{offline:false,latency:80,downloadThroughput:200000,uploadThroughput:93750,connectionType:'cellular4g'});await cdp.send('Emulation.setCPUThrottlingRate',{rate:4});}
  page.on('pageerror',e=>errors.push(e.name));
@@ -57,16 +58,16 @@ async function main(){
    await stage('votingCold','voting','',0,()=>page.getByRole('button',{name:'Start voting',exact:true}).click());
    const setup=()=>page.getByRole('dialog',{name:'New voting session',exact:true});const round=setup().getByRole('combobox',{name:'Recruitment round',exact:true});const options=await round.locator('option').evaluateAll(nodes=>nodes.map(n=>({value:n.value,text:n.textContent})));const applied=options.find(v=>v.text==='Applied');assert.ok(applied);
    await stage('votingPool','votingPool','',size,()=>round.selectOption(applied.value));
-   await setup().getByRole('button',{name:'Close',exact:true}).click();await setup().waitFor({state:'hidden'});
+   failedAt='closeVotingSetup';await setup().getByRole('button',{name:'Done',exact:true}).click();await setup().waitFor({state:'hidden'});
    await stage('closeVoting','return','',Math.min(100,size),()=>page.locator('.oc-voting-stage').getByRole('button',{name:'Close',exact:true}).click());
    await stage('votingWarm','voting','',0,()=>page.getByRole('button',{name:'Start voting',exact:true}).click());
-   await setup().getByRole('button',{name:'Close',exact:true}).click();await setup().waitFor({state:'hidden'});
+   failedAt='closeVotingSetup';await setup().getByRole('button',{name:'Done',exact:true}).click();await setup().waitFor({state:'hidden'});
    await stage('return','return','',Math.min(100,size),()=>page.locator('.oc-voting-stage').getByRole('button',{name:'Close',exact:true}).click());
    failedAt='networkDrain';await drain();
   }catch(e){failed=e.name;await page.evaluate(()=>window.__releaseStage?.finish()).catch(()=>{});process.exitCode=1;}
   const rows=snapshot(offset,journeyStart??performance.timeOrigin+sourceStart),unknown=rows.filter(r=>!Number.isFinite(r.encodedBodyBytes)).length;
   const httpErrors=rows.filter(r=>r.status>=400).length,pageErrors=errors.slice(errorOffset);if(httpErrors||pageErrors.length){failed||='transport_or_page_error';process.exitCode=1;}
-  samples.push({index,warmup:index<warmups,condition:'fresh_source_warm_assets_after_warmups',failed,failedAt:failed?failedAt:null,source,stages,meaningfulMs:journeyStart===null||journeyEnd===null?null:journeyEnd-journeyStart,networkCompleteMs:pending.size||journeyStart===null?null:performance.timeOrigin+performance.now()-journeyStart,requestCount:rows.length,encodedBodyBytes:unknown?null:rows.reduce((n,r)=>n+r.encodedBodyBytes,0),knownBodyBytes:rows.reduce((n,r)=>n+(r.encodedBodyBytes||0),0),unknownBodyByteCount:unknown,httpErrors,pageErrors,aborted:rows.filter(r=>r.failed).length,pending:rows.filter(r=>r.endMs===null&&r.type!=='eventsource').length,requests:rows});
+  samples.push({index,warmup:index<warmups,condition:'fresh_source_warm_assets_after_warmups',failed,failedAt:failed?failedAt:null,source,stages,sourceThroughContentMs:journeyEnd===null?null:journeyEnd-(performance.timeOrigin+sourceStart),sourceThroughNetworkMs:performance.now()-sourceStart,meaningfulMs:journeyStart===null||journeyEnd===null?null:journeyEnd-journeyStart,networkCompleteMs:pending.size||journeyStart===null?null:performance.timeOrigin+performance.now()-journeyStart,requestCount:rows.length,encodedBodyBytes:unknown?null:rows.reduce((n,r)=>n+r.encodedBodyBytes,0),knownBodyBytes:rows.reduce((n,r)=>n+(r.encodedBodyBytes||0),0),unknownBodyByteCount:unknown,httpErrors,pageErrors,aborted:rows.filter(r=>r.failed).length,pending:rows.filter(r=>r.endMs===null&&r.type!=='eventsource').length,requests:rows});
   console.log('workflow '+size+' '+(index+1)+'/'+(n+warmups)+' '+(failed||'complete'));
   fs.mkdirSync(path.dirname(out),{recursive:true});fs.writeFileSync(out,JSON.stringify({size,buildId:fs.readFileSync(path.join(config.buildDir,'BUILD_ID'),'utf8').trim(),samples},null,2)+'\n');
  }}finally{await context.close();await browser.close();}

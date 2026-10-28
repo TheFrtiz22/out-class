@@ -14,12 +14,15 @@ async function main(){
  const started=new Date(),builds={B:source(local.variants.B),D:source(local.variants.D)};
  const tools=['scripts/navigation-audit.cjs','scripts/pipeline-release-study.cjs','scripts/pipeline-release-workflow.cjs','scripts/pipeline-release-local.cjs'];
  const plan={startedAt:started.toISOString(),screening,profile,cohorts:screening?[1,100]:[1,100,1000,5000],order:['B','D','D','B'],navigationPerBlock:screening?1:'15 at one applicant, otherwise 5',navigationWarmupsPerBlock:screening?0:2,workflowMeasuredPerBlock:screening?1:5,workflowWarmupsPerBlock:screening?0:2,builds,toolHashes:Object.fromEntries(tools.map(p=>[p,hash(fs.readFileSync(path.join(local.repo,p)))])),acceptanceSha256:hash(fs.readFileSync(path.join(local.repo,'docs/performance/pipeline-release-repair/ACCEPTANCE.md'))),powerStart:command('pmset',['-g','batt']).split('\n')[0],lowPower:command('pmset',['-g','custom']).split('\n').filter(l=>l.includes('lowpowermode')),blocks:[]};
+ plan.fixtures=plan.cohorts.map(size=>{const file=path.join(local.root,'pipeline-release-'+size+'.json'),data=JSON.parse(fs.readFileSync(file));return{size,sha256:hash(fs.readFileSync(file)),counts:data.counts,actorMemberships:5}});
+ plan.preparation='Functional QA dismissed visible guides through their accessible controls before timing; no tutorial mutations are issued by this study.';
  fs.writeFileSync(path.join(out,'PROTOCOL.json'),JSON.stringify(plan,null,2)+'\n');
  const assertion=spawn('caffeinate',['-i','-w',String(process.pid)],{stdio:'ignore'});
  function run(script,args,dir){fs.mkdirSync(dir,{recursive:true});const fd=fs.openSync(path.join(dir,'collector.log'),'w');const result=spawnSync(process.execPath,[script,...args],{cwd:local.repo,env:local.environment(),stdio:['ignore',fd,fd]});fs.closeSync(fd);return result.status;}
  try{for(const size of plan.cohorts){
   fs.copyFileSync(path.join(local.root,'pipeline-release-'+size+'.json'),path.join(local.root,'navigation-fixture.json'));
   for(const [i,variant]of plan.order.entries()){
+   for(const [tool,expected] of Object.entries(plan.toolHashes))assert.equal(hash(fs.readFileSync(path.join(local.repo,tool))),expected,'Collector changed after protocol freeze');
    assert.equal(source(local.variants[variant]).digest,builds[variant].digest,'Application changed after protocol freeze');
    assert.equal(command('pmset',['-g','batt']).split('\n')[0],plan.powerStart,'Power source changed; exclude attempt');
    await local.start(variant);const block={size,variant,block:i+1,startedAt:new Date().toISOString(),collectors:[]};plan.blocks.push(block);
@@ -44,7 +47,9 @@ async function main(){
   plan.complete=plan.blocks.length===plan.cohorts.length*4&&plan.blocks.every(b=>b.completedAt);
   plan.acceptedTiming=!screening&&plan.complete&&plan.sleepAuditAvailable&&!plan.sleepEvents.length&&plan.powerStart===plan.powerEnd;
   plan.functionalFailures=plan.blocks.flatMap(b=>b.collectors).filter(c=>c.status!==0).length;
+  plan.toolsVerified=Object.entries(plan.toolHashes).every(([p,h])=>hash(fs.readFileSync(path.join(local.repo,p)))===h);
   plan.sourceVerified=Object.entries(builds).every(([v,b])=>source(local.variants[v]).digest===b.digest);
+  plan.acceptedTiming=plan.acceptedTiming&&plan.toolsVerified&&plan.sourceVerified;
   fs.writeFileSync(path.join(out,'PROTOCOL.json'),JSON.stringify(plan,null,2)+'\n');
  }
 }

@@ -1,6 +1,7 @@
 // Real production HTTP, verified local Auth and PostgreSQL. No performance gates.
 const { test }=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const { PrismaClient }=require('@prisma/client');
+const { chromium }=require('playwright');
 const { Actor,readConfig }=require('./helpers/onboarding-e2e.cjs'),{ load }=require('./helpers/voting-harness.cjs');
 const configFile=process.env.OUTCLASS_ONBOARDING_E2E_CONFIG;
 const { decodeWorkspaceData }=load('lib/workspace-wire.ts'),{ pagePipeline,completePipelineSelection }=load('lib/pipeline-page.ts');
@@ -41,4 +42,31 @@ test('complete-page and voting reads never reuse successful authority after perm
   try{await db.club.update({where:{id:club},data:{suspendedAt:new Date()}});assert.equal((await read('voting')).status,403);}finally{await db.club.update({where:{id:club},data:{suspendedAt:null}});}
   const cookie=actor.cookieHeader();await actor.client.auth.signOut({scope:'local'});for(const kind of ['pipelinePage','pipelineSelection','voting'])assert.equal((await read(kind,cookie)).status,401);
  }finally{await db.$disconnect();}
+});
+
+test('real desktop pointer and mobile touch support detail switching, global search and history for every cohort',{skip:!configFile,timeout:180000},async()=>{
+ const config=readConfig(configFile),browser=await chromium.launch({headless:true});
+ try{for(const size of [1,100,1000,5000])for(const touch of [false,true]){
+  const f=JSON.parse(fs.readFileSync(path.join(path.dirname(configFile),'pipeline-release-'+size+'.json'))),actor=new Actor(config);await actor.signIn(f.email,f.password);
+  const context=await browser.newContext({viewport:touch?{width:390,height:844}:{width:1440,height:1000},isMobile:touch,hasTouch:touch,storageState:{cookies:[...actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage(),errors=[];
+  page.on('pageerror',e=>errors.push(e.name));page.on('dialog',d=>d.accept());
+  const activate=target=>touch?target.tap():target.click();
+  try{
+   await page.goto(config.appUrl+'/club/'+f.clubIds[0]+'/workspace?section=recruitment&tool=overview');
+   // Fresh accounts can show the real non-modal guide over mobile content.
+   // Close it through its accessible control, preserving ordinary pointer tests.
+   const guide=page.getByRole('button',{name:'Dismiss tutorial',exact:true});
+   try{await guide.waitFor({timeout:3000});await activate(guide);}catch(e){if(e.name!=='TimeoutError')throw e;}
+   await activate(page.locator('.oc-command-recruiting').getByRole('link',{name:'All applicants',exact:true}));
+   const rows=()=>page.locator('[data-applicant-id]').filter({visible:true});await rows().first().waitFor();assert.equal(await rows().count(),Math.min(100,size));
+   await activate(rows().first());await page.getByRole('heading',{name:'Audit Student 000',exact:true}).waitFor();
+   await page.locator('[data-slot=sheet-content]').getByText('Synthetic application evidence.',{exact:false}).first().waitFor();
+   if(size>1){await activate(page.getByRole('button',{name:'Next applicant',exact:true}));await page.getByRole('heading',{name:'Audit Student 001',exact:true}).waitFor();}
+   await activate(page.locator('[data-slot=sheet-content]').getByRole('button',{name:'Close',exact:true}));await page.locator('[data-slot=sheet-content]').waitFor({state:'hidden'});
+   const last=size<=100?'Audit Student '+String(size-1).padStart(3,'0'):'Scale Student '+String(size-1).padStart(5,'0');
+   await page.getByRole('textbox',{name:'Search applicants',exact:true}).fill(last);await page.getByText(last,{exact:true}).filter({visible:true}).first().waitFor();assert.equal(await rows().count(),1);
+   await page.goBack();await page.locator('.oc-command-recruiting').waitFor();await page.goForward();await rows().first().waitFor();assert.equal(await rows().count(),Math.min(100,size));
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);assert.deepEqual(errors,[]);console.log('cohort '+size+' '+(touch?'mobile touch':'desktop pointer')+' complete');
+  }finally{await context.close();await actor.client.auth.signOut({scope:'local'});}
+ }}finally{await browser.close();}
 });
