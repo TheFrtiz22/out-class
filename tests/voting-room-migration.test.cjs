@@ -30,6 +30,14 @@ test('live voting migration preserves legacy history and enforces scope, closed 
    INSERT INTO "VotingPass"("sessionId",number) VALUES('live',1);
    INSERT INTO "VotingPassCandidate"("sessionId","passNumber","applicationId",position) VALUES('live',1,'app',0);
    UPDATE "VotingSession" SET state='OPEN',"currentPass"=1,"activeApplicationId"='app',"startedAt"=NOW() WHERE id='live';`);
+  await assert.rejects(db.exec(`UPDATE "VotingParticipant" SET "joinedAt"=NOW() WHERE "sessionId"='live'`),/roster is frozen/);
+  await db.exec(fs.readFileSync(path.join(dir,'20261028130000_live_voting_setup','migration.sql'),'utf8'));
+  await db.exec(`UPDATE "VotingParticipant" SET "joinedAt"=NOW() WHERE "sessionId"='live'`);
+  assert.ok((await db.query(`SELECT "joinedAt" FROM "VotingParticipant" WHERE "sessionId"='live'`)).rows[0].joinedAt);
+  await assert.rejects(db.exec(`UPDATE "VotingParticipant" SET "memberId"='outside' WHERE "sessionId"='live'`),/roster is frozen/);
+  await assert.rejects(db.exec(`UPDATE "VotingSession" SET "presentationOptions"='{"fields":["name"]}' WHERE id='live'`),/setup is locked/);
+  await assert.rejects(db.exec(`UPDATE "VotingSession" SET "targetUnset"=true WHERE id='legacy'`),/optional_target/);
+  assert.equal((await db.query(`SELECT "targetUnset" FROM "VotingSession" WHERE id='legacy'`)).rows[0].targetUnset,false);
   await assert.rejects(db.exec(`INSERT INTO "VotingBallot"(id,"sessionId","passNumber","applicationId","memberId",decision) VALUES('early','live',1,'app','m','PASS')`),/Voting is closed/);
   await db.exec(`UPDATE "VotingPassCandidate" SET "ballotState"='OPEN',"openedAt"=NOW() WHERE "sessionId"='live';
    INSERT INTO "VotingBallot"(id,"sessionId","passNumber","applicationId","memberId",decision) VALUES('ballot','live',1,'app','m','PASS');
@@ -45,6 +53,7 @@ test('live voting migration preserves legacy history and enforces scope, closed 
   await assert.rejects(db.exec(`UPDATE "VotingPassCandidate" SET "confirmedDecision"='PASS' WHERE "sessionId"='live'`),/protected/);
   await assert.rejects(db.exec(`DELETE FROM "VotingPassCandidate" WHERE "sessionId"='live'`),/protected/);
   await assert.rejects(db.exec(`DELETE FROM "VotingParticipant" WHERE "sessionId"='live'`),/roster is frozen/);
+  await assert.rejects(db.exec(`UPDATE "VotingParticipant" SET "joinedAt"=NOW() WHERE "sessionId"='live'`),/roster is frozen/);
   await assert.rejects(db.exec(`UPDATE "VotingRoomCommand" SET result='{}'`),/immutable/);
   assert.equal((await db.query(`SELECT status FROM "Application" WHERE id='app'`)).rows[0].status,'IN_REVIEW');
   assert.equal((await db.query(`SELECT count(*)::int AS n FROM "UserNotification"`)).rows[0].n,0);

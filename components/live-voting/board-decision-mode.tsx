@@ -18,13 +18,18 @@ import type { Decision } from "@/lib/voting-engine"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import "./voting-mode.css"
+import Link from "next/link";
+import { hasPermission } from "@/lib/permissions";
 type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
 type Workspace = Awaited<ReturnType<typeof getVotingWorkspace>>
 const labels = { PASS: "Pass", HOLD: "Hold / Fringe", NOT_PASS: "Do Not Pass", UNRESOLVED: "Unresolved" }
 export function BoardDecisionMode(props: { applicants: Pipeline["applications"]; rounds: Pipeline["rounds"]; clubId: string; clubName: string; canDecide: boolean; onDecision: (id: string,status: AppStatus)=>void }) {
   const params = useSearchParams();
+  const auth=useAuth(),demo=useDemoMode();
+  const membership=demo.isDemoEnabled?demo.state?.memberships.find(m=>m.clubId===props.clubId&&m.isOwner):auth.user?.memberships.find(m=>m.clubId===props.clubId);
+  const canPrepare=hasPermission(membership,"applications.review")&&hasPermission(membership,"decisions.manage")&&hasPermission(membership,"decisions.start");
   const [open,setOpen]=useState(params.get("voting") === "1")
-  return <><Button onClick={()=>setOpen(true)}>Start voting</Button><Dialog open={open} onOpenChange={value => { if (!value && document.querySelector('[data-voting-saving="true"]')) return; setOpen(value) }}><DialogContent aria-describedby={undefined} className="oc-voting-stage inset-0 flex h-dvh w-screen max-w-none translate-x-0 translate-y-0 flex-col overflow-y-auto rounded-none bg-background p-6 sm:max-w-none"><DialogTitle>{props.clubName} · Recruitment voting</DialogTitle>{open&&<VotingBoard {...props} initialSessionId={params.get("sessionId") || undefined} />}</DialogContent></Dialog></>
+  return <>{canPrepare&&<Button asChild><Link href={`/voting/rooms/new?clubId=${props.clubId}${demo.isDemoEnabled?"&demo=1":""}`}>Live voting room</Link></Button>}<Button variant="outline" onClick={()=>setOpen(true)}>Voting history</Button><Dialog open={open} onOpenChange={value => { if (!value && document.querySelector('[data-voting-saving="true"]')) return; setOpen(value) }}><DialogContent aria-describedby={undefined} className="oc-voting-stage inset-0 flex h-dvh w-screen max-w-none translate-x-0 translate-y-0 flex-col overflow-y-auto rounded-none bg-background p-6 sm:max-w-none"><DialogTitle>{props.clubName} · Recruitment voting</DialogTitle>{open&&<VotingBoard {...props} initialSessionId={params.get("sessionId") || undefined} />}</DialogContent></Dialog></>
 }
 export function VotingBoard({ clubId, applicants, onDecision, initialSessionId }: Parameters<typeof BoardDecisionMode>[0] & { initialSessionId?: string }) {
   const demo = useDemoMode()

@@ -11,7 +11,9 @@ function harness(){
   $queryRaw:async()=>[],$executeRaw:async()=>0,club:{findUnique:async()=>({suspendedAt:null})},
   user:{findUnique:async({where})=>{const m=members.find(m=>m.userId===where.id);return m?{id:m.userId,disabledAt:m.user.disabledAt}:null}},
   clubMember:{findUnique:async({where})=>copy(members.find(m=>matches(m,where.userId_clubId))),findFirst:async({where})=>copy(members.find(m=>matches(m,where))),findMany:async({where})=>copy(members.filter(m=>matches(m,where)))},
-  pipelineRound:{findFirst:async({where})=>matches(round,where)?copy(round):null,findMany:async()=>[copy(round)]},recruitmentCycle:{findFirst:async({where})=>matches(cycle,where)?copy(cycle):null},
+  pipelineRound:{findFirst:async({where})=>matches(round,where)?copy(round):null,findMany:async()=>[copy(round)]},recruitmentCycle:{findFirst:async({where})=>matches(cycle,where)?copy(cycle):null,findMany:async()=>[copy(cycle)]},
+  interviewRecord:{findFirst:async()=>null},interviewPanelAssignment:{findFirst:async()=>null},
+  votingParticipant:{update:async({where,data})=>Object.assign(sess(where.sessionId_memberId.sessionId).participants.find(p=>p.memberId===where.sessionId_memberId.memberId),data)},
   application:{findMany:async({where})=>copy(state.apps.filter(a=>matches(a,where))),findFirst:async({where})=>copy(state.apps.find(a=>matches(a,where)))},
   votingSession:{findFirst:async({where})=>copy(state.sessions.find(s=>matches(s,where)))??null,findMany:async({where,select})=>copy(state.sessions.filter(s=>matches({...s,round},where)).map(s=>select?Object.fromEntries(Object.keys(select).map(k=>[k,s[k]])):s)),create:async({data})=>{
    const s={...data,state:'DRAFT',revision:0,currentPass:0,createdAt:new Date(),activeApplicationId:null,startedAt:null,endedAt:null,finalizedAt:null,publishedAt:null,joinOpenedAt:null,participants:data.participants.create,candidates:data.candidates.create,passes:[]};state.sessions.push(s);return copy(s);

@@ -1082,6 +1082,8 @@ model ApplicantObservation {
 
 // Durable decisions are separate from published application statuses.
 model VotingSession {
+  targetUnset Boolean @default(false)
+  presentationOptions Json @default("{}")
   mode String @default("LEGACY")
   cycleId String?
   cycle RecruitmentCycle? @relation(fields: [cycleId, clubId], references: [id, clubId], onDelete: Restrict, onUpdate: NoAction)

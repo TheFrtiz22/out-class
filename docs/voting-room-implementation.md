@@ -1,4 +1,63 @@
-# Live voting room — Part 1 handoff
+# Live voting room - Parts 1-2 handoff
+
+## Current status - Part 2 (October 28, 2026)
+
+Implemented locally on `codex/live-voting-foundation`, continuing Part 1 commit `9fc354d` (main base `78402ee`). No merge, push, deployment, hosted database connection or production test mutation was performed for Part 2. The Part 1 record below is historical; its `Part 2 should build` list is superseded by this section.
+
+### Entry points and completed behavior
+
+- Existing applicant decision controls now offer **Live voting room** to current authorized creators; **Voting history** preserves legacy functionality. New setup is `/voting/rooms/new?clubId={clubId}`.
+- Setup reads active authoritative cycles/rounds, exact-scope eligible applications and current eligible club members. It offers permitted presentation fields, a positive optional target, and saved resume-highlight choices. **Prepare and preview** creates an idempotent persistent DRAFT; leaders preview its applicants before the separate **Start session** action. Prepared configuration is a snapshot; there is no post-start setup editor.
+- `/voting/rooms/[sessionId]?clubId={clubId}&view=leader|present|member` shares one persistent room. The audience route contains no leader controls. Legacy `/voting/[sessionId]/join` routes remain unchanged.
+- The QR contains only the current-origin session destination (club/session IDs and view, plus an explicit isolated Demo flag when appropriate). Normal `/login?next={sessionPath}` preserves it. Server-side join-info distinguishes denied, expired, ended, ready and joined; database/transport failures remain errors. Joining checks the preselected roster and current permissions; it never grants eligibility. Repeating check-in does not increment revision/audit again. Joined names are returned only to leaders.
+- Leader controls separately start, open, close, confirm and advance; override/incomplete-ballot confirmation retains the existing reason requirement. Ending preserves unresolved candidates. Neither setup, joins nor these controls change recruitment decisions or notify applicants. Finalization/correction UI is deferred to Parts 3-4.
+- Members see only their current choice, pending/saved/error state and safe exact-request retry. Changed choices use the latest own-ballot revision. A lost acknowledged response can be retried without overwriting a subsequent choice. Stale/closed context is never silently rebound to the next applicant. Inputs/buttons remain guarded by both synchronous client locks and existing server receipts/CAS.
+- Every refresh/poll reauthorizes. Existing nonoverlapping five-second polling, focus/online reconnect, failure-state clearing and identity-keyed cleanup remain authoritative. Participation counts include only currently eligible voters; this is distinct from the frozen historical roster denominator used for outcome recommendations. No open choice totals or other members' individual ballots are sent to participants. Closed totals are supplied only after closure.
+
+### Presentation privacy and layout
+
+- Basic fields reuse canonical `getApplicantDisplay`/`projectApplicantDisplay`; anonymous rounds exclude name/photo/major and identifying resume/score extras. No private notes, file answers or raw applicant objects are introduced into the UI data contract.
+- A resume excerpt is **an explicitly selected existing TEXT_HIGHLIGHT annotation ID** from a preserved document. Selection is validated against club/application scope and current source-round resume authorization. Reads recheck those same permissions for each viewer. Returned data is only annotation ID, document version ID, page and quote; never annotation comments, authors, general notes, a newly uploaded resume or generated achievements. Without the saved highlight or viewer access, the field reports unavailable.
+- Cumulative interview score reuses `submittedScoreSummary`, the same finalized-review/leadership/own-submission gates as interview scores, stable round IDs, submitted-only evaluations and per-round reviewer deduplication. It is a review-count-weighted mean across the viewer's authorized identified interview rounds. Anonymous linked records are excluded. The UI labels authorized round/review counts and provides the exact scope in Details. Missing scores stay null/"Not scored"; historical values are not rounded to new-entry increments. A voting role alone grants no additional interview evidence access.
+- Audience presentation uses a bounded two-row grid at normal laptop/projector sizes, restrained OutClass colors and typography, progress, participation, provisional accepted count and separate advisory target. Long text has a concise preview plus a full accessible Details dialog. It is not discarded or clipped. At narrow/zoom-equivalent sizes the layout reflows and can scroll. The phone ballot's own status and three large actions remain together in a sticky area. QR/Details dialogs restore focus on Escape/close; reduced-motion preferences are respected.
+
+### Implementation map
+
+- `actions/voting-room-setup.ts`: scoped setup, saved-highlight choices, generic join eligibility and idempotent check-in.
+- `actions/voting-room.ts`: optional target/options persistence, role-safe participation/check-in projection and supplementary canonical presentation reads; existing ballot/command implementation retained.
+- `utils/voting-room-presentation.ts`: authorized preserved quotes and canonical submitted-score aggregation. Unexpected database errors propagate rather than masquerading as withheld/empty data.
+- `lib/voting-room-projection.ts`: the existing pure role/projection logic extracted from the server loader so isolated Demo can reuse it without bundling Prisma/Node crypto. Server callers retain the same checks.
+- `lib/voting-room-api.ts`, `hooks/use-live-voting-room.ts`: real server action boundary plus explicit isolated Demo dispatch. Passing a Demo identity to a live request is rejected.
+- `components/live-voting/room-{setup,view,presentation}.tsx`, `room.css`, `app/voting/rooms/...`: setup, check-in, leader/audience/member pages.
+- `lib/demo/voting-room.ts`: persisted fictional LIVE sessions and receipts, same public projection/state rules, Web Locks serialization where available, no live action fallback. Demo has one explicitly labelled virtual recruitment cycle because the existing Demo graph has no cycle table. Other members require explicit existing vote permissions; no real membership grants are invented. Saved excerpts require existing isolated documents/annotations. Unchanged reads and rejected/replayed writes do not persist redundant snapshots. This adapter does not claim cross-device Demo synchronization: local storage is scoped to one browser profile; real rooms use the server.
+
+### Forward-only Part 2 migration
+
+Pending, **not applied to staging/production**: `20261028130000_live_voting_setup`, after `20261027220000_live_voting_foundation`.
+
+- Adds `VotingSession.targetUnset` and `presentationOptions` with legacy-safe defaults. Nullable LIVE targets map to existing non-null `targetSize=1` plus `targetUnset=true`; projections expose null. Legacy targets remain untouched.
+- Adds an object constraint, optional-target scope constraint and a trigger freezing new presentation settings once started/check-in opened.
+- Replaces the Part 1 roster guard to allow only same-identity presence updates after start, while preserving frozen eligibility/club scope. Ended/finalized sessions remain frozen. This fixes the prerequisite that otherwise prevented a selected voter from checking in late.
+- No new tables, browser grants, public realtime topic, RLS relaxation, data deletion or decision/status changes. Existing private-table RLS/grants remain in force. Generate Prisma client after migrating. Apply both pending migrations before deploying the new readers/writers; do not use reset, db push or fabricated ledger entries.
+
+### Verification and limits
+
+Final local results follow. Tests use disposable PGlite and loopback synthetic fixtures, never applicant production data. Two independent Chromium browser contexts exercise real room/setup actions through a serialized rollback-capable action harness; **Auth and the canonical base presentation are fixture boundaries**, not hosted Supabase claims. Supplementary excerpt/score authorization has separate actual-helper regression coverage. Browser screenshots use local fallback fonts.
+
+- Focused server/Demo/legacy suites: **69 tests passed**, zero failures/skips. Includes scope/anonymous restrictions, optional target, exact QR Auth return path, late/idempotent joins, revoked access, open count-only projections, score scope/null handling, saved quote permissions, command/ballot retries and all retained Part 1 regressions.
+- Rendered browser test: setup and all selected fields, persistent draft preview/start, member check-in/waiting, changing ballots, lost-response retry, reload, hidden open totals, closure, denied/revoked access, ended/expired states, unauthenticated return link, audience-only controls, long-text Details, QR focus return, 1280x720 fit and 390px phone/640px zoom-equivalent reflow. Independent local contexts are not independent Supabase-authenticated devices.
+- Actual migration regression includes a negative control demonstrating that Part 1 rejected late presence updates, followed by Part 2 permitting check-in while still denying identity/roster changes and finalized writes. Full fresh/legacy chain: **59 migrations / 79 RLS-private tables**.
+- Final type checking and production build pass. Full repository lint exits zero with 21 existing warnings and zero errors. The build uses a dummy local database URI with the production release gate unset; no credentials or local environment files were changed. The final isolated Demo regression also passes after eligibility/error-state refinements. No dependencies added. Physical QR scanning, physical touchscreen, actual browser zoom, hosted Auth sign-in/return, private Auth/Storage access and native multi-connection PostgreSQL concurrency remain **unverified**. Docker is unavailable on this workstation; no staging credentials or live accounts were repurposed for this local-only implementation.
+- Local screenshots: `C:\Users\arden\AppData\Local\OutClass-staging-verification\voting-part2-local` (`presentation-desktop.png`, `leader-desktop.png`, `member-phone.png`). Run `node --test tests/voting-room-browser.test.cjs` with `VOTING_SCREENSHOT_DIR` to regenerate.
+
+### Exactly what Parts 3-4 should do next
+
+1. Build deliberate outcome/history/correction and finalization UX on the existing commands. Keep correction reasons/audits, immutable prior passes, provisional acceptance and notification-free End/Finalize intact. Do not reuse notification-producing legacy publication as automatic finalization.
+2. Rehearse both pending migrations on disposable native PostgreSQL/staging; run distinct authenticated leader/member/outsider devices through setup, QR sign-in return, live vote changes, reconnect, simultaneous leader commands/closure and membership revocation. Verify private photo/excerpt gates using synthetic preserved documents and actual Auth/Storage. No production release is authorized by this part.
+3. Run physical phone/QR/touch/projector and 200% browser-zoom acceptance. The local 640px layout check is reflow evidence, not a claim of physical hardware testing.
+4. Preserve the current role-safe polling protocol and API receipts; improve transport only if separately justified. Do not duplicate the existing session/ballot models or broaden presentation permissions.
+
+## Historical Part 1 record
 
 Implementation branch: `codex/live-voting-foundation`, based on main `78402ee`. Part 1 is local implementation only: no merge, deployment, remote database connection, production migration or applicant mutation. Existing historical voting sessions are preserved.
 

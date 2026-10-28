@@ -6,12 +6,18 @@ export const roomChoice = z.enum(["ACCEPT", "HOLD", "REJECT"]);
 export const storedChoice = { ACCEPT: "PASS", HOLD: "HOLD", REJECT: "NOT_PASS" } as const;
 export function publicChoice(value: string | null) { return value === "PASS" ? "ACCEPT" : value === "NOT_PASS" ? "REJECT" : value === "HOLD" ? "HOLD" : "UNREVIEWED"; }
 export const roomScope = z.object({ clubId: z.string().uuid(), sessionId: z.string().uuid() }).strict();
+export const liveRoomFields=["photo","name","major","academicYear","gpa","sat","act","resumeHighlight","interviewScore"] as const;
+export type LiveRoomField=typeof liveRoomFields[number];
+export const roomPresentationSchema=z.object({fields:z.array(z.enum(liveRoomFields)).max(9).refine(v=>new Set(v).size===v.length),highlights:z.record(z.string().uuid(),z.string().uuid()).default({})}).strict();
+export function roomDisplayConfig(fields:LiveRoomField[]){return {version:1 as const,fields:fields.filter((f):f is Exclude<LiveRoomField,"resumeHighlight"|"interviewScore">=>f!=="resumeHighlight"&&f!=="interviewScore")};}
+export function liveRoomPath(clubId:string,sessionId:string,view:"leader"|"present"|"member"="member",demo=false){return `/voting/rooms/${encodeURIComponent(sessionId)}?clubId=${encodeURIComponent(clubId)}&view=${view}${demo?"&demo=1":""}`;}
 export const createRoomSchema = roomScope.extend({
   cycleId: z.string().uuid(), roundId: z.string().uuid(),
   leaderMemberIds: z.array(z.string().uuid()).min(1).max(50),
   participantIds: z.array(z.string().uuid()).min(1).max(500),
   applicationIds: z.array(z.string().uuid()).min(1).max(2000),
-  targetSize: z.number().int().min(1).max(2000), displayConfig: votingDisplaySchema.default(defaultVotingDisplay),
+  targetSize: z.number().int().min(1).max(2000).nullable().default(null), displayConfig: votingDisplaySchema.default(defaultVotingDisplay),
+  presentationOptions:roomPresentationSchema.optional(),
 });
 export const roomCommandSchema = roomScope.extend({ requestId: z.string().uuid(), revision: z.number().int().nonnegative(),
   action: z.enum(["START", "OPEN_VOTING", "CLOSE_VOTING", "CONFIRM", "ADVANCE", "NEXT_PASS", "END", "FINALIZE", "CORRECT"]),
