@@ -92,6 +92,12 @@ escaped by clearing the filter.
 | Voting | One voting GET supplies canonical setup IDs inside its own read-only Repeatable Read snapshot; unchanged live post-snapshot checks |
 | Voting writes | Original POST Server Actions, row/advisory locks, expected revisions, eligibility and immutable histories |
 
+Ordinary round filtering also keeps the complete base metadata for facets and
+base totals; only the existing gender operation scopes the database predicate
+to a round. The same selector now behaves identically for a complete local
+dataset and a larger server page. Live parity includes temporarily moving an
+application into the second round and restoring it after the check.
+
 Sorting review/score-dependent selections still reads complete review metadata.
 Default global ranking remains O(N), with no raw SQL join, new index or schema
 change. This is an explicit follow-up cost, not a claimed constant-time endpoint.

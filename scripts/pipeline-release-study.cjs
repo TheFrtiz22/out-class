@@ -8,6 +8,7 @@ function source(cwd){
  const hashes=Object.fromEntries(files.map(p=>[p,hash(fs.readFileSync(path.join(cwd,p)))]));return{commit:execFileSync('git',['rev-parse','HEAD'],{cwd,encoding:'utf8'}).trim(),buildId:fs.readFileSync(path.join(cwd,'.next-publish/BUILD_ID'),'utf8').trim(),hashes,digest:hash(JSON.stringify(hashes))};
 }
 async function main(){
+ assert.ok(!fs.existsSync(path.join(local.root,'release-study.stop')),'Owned study stop requested');
  const profile=process.argv.find(a=>a.startsWith('--profile='))?.slice(10)||'local',attempt=process.argv.find(a=>a.startsWith('--attempt='))?.slice(10)||'1',screening=process.argv.includes('--screening');
  assert.ok(['local','constrained'].includes(profile));assert.match(attempt,/^\d+$/);
  const out=path.join(local.repo,'docs/performance/pipeline-release-repair',screening?'screening': 'runs',profile+'-attempt-'+attempt);assert.ok(!fs.existsSync(out),'Never overwrite an attempt');fs.mkdirSync(out,{recursive:true});

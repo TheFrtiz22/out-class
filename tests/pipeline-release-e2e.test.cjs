@@ -13,11 +13,13 @@ test('all four cohorts retain complete canonical counts, filters, ranking, detai
   await actor.signIn(fixture.email,fixture.password);
   const read=async(kind,query={})=>{const response=await actor.request('/api/workspace?'+new URLSearchParams({kind,args:JSON.stringify([club,query])}));assert.equal(response.status,200,kind);assert.equal(response.headers.get('cache-control'),'private, no-store');assert.match(response.headers.get('vary'),/Cookie/);return decodeWorkspaceData(await response.json());};
   const db=new PrismaClient({datasourceUrl:config.status.DB_URL});
+  let moved=null;
   try{
+   if(size===1000){const app=await db.application.findFirstOrThrow({where:{clubId:club},select:{id:true,roundId:true}}),other=await db.pipelineRound.findFirstOrThrow({where:{clubId:club,type:'INTERVIEW'}});await db.application.update({where:{id:app.id},data:{roundId:other.id}});moved=app;}
    const member=await db.clubMember.findUniqueOrThrow({where:{userId_clubId:{userId:fixture.userId,clubId:club}}});
    const full=await read('pipeline'),first=await read('pipelinePage');
    assert.equal(full.applications.length,size);assert.equal(first.page.total,size);assert.equal(first.applications.length,Math.min(100,size));assert.equal(first.coverage.complete,size<=100);
-   for(const query of [{},{query:'Scale Student 01000'},{query:'Student 000'},{major:'Economics'},{review:'unreviewed'},{review:'mine'},{sort:'score',descending:true},{sort:'year'},{mode:'decisions',decisionGroup:'accepted'},{roundId:full.rounds[0].id}]){
+   for(const query of [{},{query:'Scale Student 01000'},{query:'Student 000'},{major:'Economics'},{review:'unreviewed'},{review:'mine'},{sort:'score',descending:true},{sort:'year'},{sort:'round'},{roundId:full.rounds[1].id},{mode:'decisions',decisionGroup:'accepted'},{roundId:full.rounds[0].id}]){
     const page=await read('pipelinePage',query),canonical=pagePipeline(full,query,member.id,member.userId,page.page.scope);
     assert.deepEqual(page.applications,canonical.applications,'full authorized details, not a partial summary');assert.deepEqual(page.page,canonical.page);assert.deepEqual(page.facets,canonical.facets);
     assert.deepEqual(await read('pipelineSelection',query),completePipelineSelection(full,query,member.id,member.userId));
@@ -28,7 +30,7 @@ test('all four cohorts retain complete canonical counts, filters, ranking, detai
    const response=await actor.request('/api/workspace?'+new URLSearchParams({kind:'voting',args:JSON.stringify([club,null,{}])}));assert.equal(response.status,200);
    const voting=decodeWorkspaceData(await response.json());assert.deepEqual(voting.candidateSelection,completePipelineSelection(full,{},member.id,member.userId));
    assert.ok(voting.candidateSelection.applications.every(a=>Object.keys(a).sort().join(',')==='canQuickReview,id,roundId,status'));
-  }finally{await db.$disconnect();await actor.client.auth.signOut({scope:'local'});}
+  }finally{if(moved)await db.application.update({where:{id:moved.id},data:{roundId:moved.roundId}});await db.$disconnect();await actor.client.auth.signOut({scope:'local'});}
  });
 });
 

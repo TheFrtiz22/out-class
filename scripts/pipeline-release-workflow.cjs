@@ -24,6 +24,7 @@ function installStage({kind,text,count}){
 }
 const safeRoute=input=>{const u=new URL(input);return u.pathname==='/api/workspace'?u.pathname+'?kind='+u.searchParams.get('kind'):u.pathname.replace(/[\da-f]{8}-[\da-f-]{27,}/ig,'[fixture-id]')};
 async function main(){
+ assert.ok(!fs.existsSync(path.join(local.root,'release-study.stop')),'Owned study stop requested');
  const out=path.resolve(process.argv.find(a=>a.startsWith('--out='))?.slice(6)||'');assert.ok(out.startsWith(path.join(local.repo,'docs/performance/pipeline-release-repair')+path.sep)&&out.endsWith('.json')&&!fs.existsSync(out));
  const n=Number(process.argv.find(a=>a.startsWith('--samples='))?.slice(10)||5);assert.ok(n>0&&n<=30);
  const warmups=Number(process.argv.find(a=>a.startsWith('--warmups='))?.slice(10)||2);assert.ok(warmups>=0&&warmups<=5);

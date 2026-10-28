@@ -39,7 +39,7 @@ export async function getClubPipelineList(clubId: string, input: z.infer<typeof 
 
 export async function getClubPipelinePage(clubId: string, input: PipelinePageQuery = {}) {
   const query = pipelinePageQuery.parse(input);
-  const { pipeline } = await readPipeline(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: query.genderCounts }, async (tx, where, membership, rounds) => {
+  const { pipeline } = await readPipeline(clubId, { roundId: query.gender || query.genderCounts ? query.roundId : undefined, gender: query.gender, genderCounts: query.genderCounts }, async (tx, where, membership, rounds) => {
     // Scope binding only. Both ranking and bounded hydration share this fresh
     // guarded Repeatable Read snapshot; the cursor never grants authority.
     const scope = createHash("sha256").update(JSON.stringify([clubId, membership, rounds, pipelineSelectionKey(query)])).digest("hex");

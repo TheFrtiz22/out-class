@@ -3,6 +3,7 @@ const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),
 const {PrismaClient}=require('@prisma/client'),{Actor}=require('../tests/helpers/onboarding-e2e.cjs');
 const local=require('./pipeline-release-local.cjs'),{source}=require('./pipeline-release-study.cjs');
 async function main(){
+ assert.ok(!fs.existsSync(path.join(local.root,'release-study.stop')),'Owned study stop requested');
  const out=path.join(local.repo,'docs/performance/pipeline-release-repair/capacity-attempt-1');assert.ok(!fs.existsSync(out));fs.mkdirSync(out,{recursive:true});
  const started=new Date(),builds={B:source(local.variants.B),D:source(local.variants.D)},plan={startedAt:started.toISOString(),builds,order:['B','D','D','B'],waves:[2,2,3,3],concurrency:[1,2,4],cohorts:[1000,5000],warmup:'One wave per concurrency/build/cohort, before its first block',poolLimit:8,powerStart:spawnSync('pmset',['-g','batt'],{encoding:'utf8'}).stdout.split('\n')[0],rows:[],monitor:[]};
  fs.writeFileSync(path.join(out,'RESULTS.json'),JSON.stringify(plan,null,2));const awake=spawn('caffeinate',['-i','-w',String(process.pid)],{stdio:'ignore'});
