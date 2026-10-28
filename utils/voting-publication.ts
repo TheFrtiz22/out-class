@@ -10,7 +10,8 @@ export async function publishVotingCandidates(tx:AppTransactionClient,s:Session,
  return publishReviewedVotingCandidates(tx,s,applicationIds,summarizeVoting(s).outcomes,actorId,settings);
 }
 /** Frozen outcomes are valid only while the caller verifies the session revision. */
-export async function publishReviewedVotingCandidates(tx:AppTransactionClient,s:Pick<Session,"id"|"clubId"|"roundId"|"state"|"publishedAt"|"candidates">,applicationIds:string[],outcomes:ReturnType<typeof summarizeVoting>["outcomes"],actorId:string,settings?:FrozenLetterSettings,names?:Record<string,{firstName:string;fullName:string}>){
+export async function publishReviewedVotingCandidates(tx:AppTransactionClient,s:Pick<Session,"id"|"clubId"|"roundId"|"state"|"publishedAt"|"candidates"> & {mode?:string},applicationIds:string[],outcomes:ReturnType<typeof summarizeVoting>["outcomes"],actorId:string,settings?:FrozenLetterSettings,names?:Record<string,{firstName:string;fullName:string}>){
+ if(s.mode==="LIVE")throw Error("Live room finalization does not publish decisions or send notifications.");
  if(s.state!=="COMPLETED"||s.publishedAt||!applicationIds.length||new Set(applicationIds).size!==applicationIds.length)throw Error("Voting session unavailable for publication.");
         for(const id of [...applicationIds].sort()) {
           const o=outcomes.find(o=>o.applicationId===id), c=s.candidates.find(c=>c.applicationId===id)

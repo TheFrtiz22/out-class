@@ -33,7 +33,7 @@ export async function scheduleDecisionPublication(input:unknown){
   if(selection.kind==="VOTING"){
    if(new Set(selection.applicationIds).size!==selection.applicationIds.length)throw Error("Duplicate candidates.");
    await tx.$queryRaw`SELECT id FROM "VotingSession" WHERE id=${selection.sessionId} AND "clubId"=${d.clubId} FOR UPDATE`;
-   const session=await tx.votingSession.findFirst({where:{id:selection.sessionId,clubId:d.clubId},include:{_count:{select:{participants:true}}}});
+   const session=await tx.votingSession.findFirst({where:{id:selection.sessionId,clubId:d.clubId,mode:{not:"LIVE"}},include:{_count:{select:{participants:true}}}});
    if(!session||session.revision!==selection.revision||session.state!=="COMPLETED"||session.publishedAt)throw Error("Review the completed session before scheduling.");
    // Fetch only selected candidates and their latest pass. Historical ballot
    // volume and unrelated applicants cannot make a queued intent unbounded.

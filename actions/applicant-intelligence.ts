@@ -7,6 +7,8 @@ import { requireClubPermission } from "@/utils/auth";
 import { interviewCapabilities } from "@/lib/interview-access";
 import { hasPermission } from "@/lib/permissions";
 import { votingDisplaySchema, readVotingDisplay } from "@/lib/voting-presentation";
+import { loadVotingRoom, roomAuthority } from "@/utils/voting-room";
+import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { displayConfigSchema, readDisplayConfig, projectApplicantDisplay } from "@/lib/applicant-display";
 const scope = z.object({ clubId: z.string().uuid(), applicationId: z.string().uuid(), sessionId: z.string().uuid().optional(), previewConfig: votingDisplaySchema.optional() });
 async function authorized(tx: AppTransactionClient, input: z.infer<typeof scope>, membershipId: string) {
@@ -23,7 +25,7 @@ export async function getApplicantDisplay(input: z.infer<typeof scope>) {
   const data = scope.parse(input);
   const { user, membership } = await requireClubPermission(data.clubId, ["applications.review"]);
   return prisma.$transaction(async tx => {
-    const { app, member: reviewer } = await authorized(tx, data, membership.id);
+    let { app, member: reviewer } = await authorized(tx, data, membership.id);
     let config=readDisplayConfig(app.round.applicantDisplay);
     if(data.previewConfig){
       if(!hasPermission(reviewer,"decisions.manage"))throw Error("Voting setup permission required.");
@@ -31,7 +33,16 @@ export async function getApplicantDisplay(input: z.infer<typeof scope>) {
     }
     if(data.sessionId){
       const voting = await tx.votingSession.findFirst({where:{id:data.sessionId,clubId:data.clubId},include:{participants:true,candidates:true}});
-      if(!voting || !voting.candidates.some(c=>c.applicationId===app.id) || (!hasPermission(reviewer,"decisions.manage")&&!hasPermission(reviewer,"decisions.view")&&!(hasPermission(reviewer,"decisions.vote")&&voting.participants.some(p=>p.memberId===membership.id)))) throw Error("Voting presentation unavailable.");
+      if(!voting || !voting.candidates.some(c=>c.applicationId===app.id) || (voting.mode!=="LIVE"&&!hasPermission(reviewer,"decisions.manage")&&!hasPermission(reviewer,"decisions.view")&&!(hasPermission(reviewer,"decisions.vote")&&voting.participants.some(p=>p.memberId===membership.id)))) throw Error("Voting presentation unavailable.");
+      if(voting.mode === "LIVE") {
+        const member=await authorizeClubTransaction(tx,data.clubId,user.id,["applications.review"],{readOnly:true});
+        // The initial general-display lookup preceded the club lock. Reload its
+        // privacy/field context under that lock before returning LIVE content.
+        ({app,member:reviewer}=await authorized(tx,data,member.id));
+        const {s,round}=await loadVotingRoom(tx,data.clubId,voting.id);
+        const role=roomAuthority(s,member,round.anonymousReview);
+        if(app.roundId!==s.roundId||app.recruitmentCycleId!==s.cycleId||(!role.leader&&s.activeApplicationId!==app.id))throw Error("Voting presentation changed. Refresh the room.");
+      }
       config=readVotingDisplay(voting.displayConfig);
     }
     const observations = app.round.anonymousReview ? [] : await tx.applicantObservation.findMany({ where: { applicationId: app.id }, include: { author: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } }, orderBy: [{ createdAt: "asc" }, { id: "asc" }] });

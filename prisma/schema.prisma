@@ -1082,6 +1082,14 @@ model ApplicantObservation {
 
 // Durable decisions are separate from published application statuses.
 model VotingSession {
+  targetUnset Boolean @default(false)
+  presentationOptions Json @default("{}")
+  mode String @default("LEGACY")
+  cycleId String?
+  cycle RecruitmentCycle? @relation(fields: [cycleId, clubId], references: [id, clubId], onDelete: Restrict, onUpdate: NoAction)
+  leaderMemberIds String[] @default([])
+  finalizedAt DateTime?
+  commands VotingRoomCommand[]
   id String @id @default(uuid())
   clubId String
   club Club @relation(fields: [clubId], references: [id], onDelete: Restrict)
@@ -1140,6 +1148,13 @@ model VotingPass {
   @@id([sessionId, number])
 }
 model VotingPassCandidate {
+  withoutVote Boolean @default(false)
+  ballotState String @default("PENDING")
+  openedAt DateTime?
+  closedAt DateTime?
+  confirmedDecision String?
+  confirmedBy String?
+  confirmedAt DateTime?
   sessionId String
   passNumber Int
   applicationId String
@@ -1154,6 +1169,8 @@ model VotingPassCandidate {
   @@unique([sessionId, passNumber, position])
 }
 model VotingBallot {
+  revision Int @default(0)
+  updatedAt DateTime?
   id String @id @default(uuid())
   sessionId String
   passNumber Int
@@ -1577,6 +1594,7 @@ model ScheduledCommunication {
 }
 
 model RecruitmentCycle {
+ votingSessions VotingSession[]
   interviewBookingRounds PipelineRound[] @relation("InterviewBookingCycle")
  id String @id @default(uuid())
  clubId String
@@ -1587,6 +1605,18 @@ model RecruitmentCycle {
  applications Application[]
  @@unique([id, clubId])
  @@unique([clubId, name])
+}
+
+// Server-only retry receipts; never contain private ballot choices or presentation data.
+model VotingRoomCommand {
+  sessionId String
+  session VotingSession @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  requestId String
+  actorId String
+  fingerprint String
+  result Json
+  createdAt DateTime @default(now())
+  @@id([sessionId, requestId])
 }
 
 // Private working copies; consequential domain actions remain separate.
