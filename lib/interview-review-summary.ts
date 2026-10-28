@@ -15,6 +15,9 @@ export function submittedScoreSummary(reviews: { interviewerId: string; score: n
   const submitted = new Map<string, number>();
   for (const r of reviews) if (r.submittedAt && Number.isFinite(r.score) && r.score >= 1 && r.score <= 10 && !submitted.has(r.interviewerId)) submitted.set(r.interviewerId, r.score);
   const required = new Set([...assignedIds, ...submitted.keys()]).size;
-  return { average: submitted.size ? [...submitted.values()].reduce((a,b) => a+b,0) / submitted.size : null, submitted: submitted.size, required, provisional: assignedIds.some(id => !submitted.has(id)) };
+  // Keep the existing contributor/validation rules, but sum in stable member
+  // order so a different SQL plan cannot change floating-point rounding.
+  const ordered = [...submitted].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0);
+  return { average: submitted.size ? ordered.reduce((sum, [, score]) => sum + score, 0) / submitted.size : null, submitted: submitted.size, required, provisional: assignedIds.some(id => !submitted.has(id)) };
 }
 export function formatAverage(score: number | null) { return score === null ? "Not scored" : new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(score); }

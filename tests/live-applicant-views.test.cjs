@@ -5,7 +5,7 @@ const ts = require('typescript')
 function compile(file, mocks = {}, extra = '') {
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8') + extra, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText
-  new Function('require', 'module', 'exports', 'window', 'requestAnimationFrame', code)(name => mocks[name] || (name==='@/hooks/use-editor-draft'?require('./helpers/autosave-ui-harness.cjs').draftStub:name.startsWith('@/lib/') ? compile(name.replace('@/', '') + '.ts') : name.startsWith('@/') || name.startsWith('./') ? new Proxy({}, { get: (_, key) => String(key) }) : require(name)), mod, mod.exports, { addEventListener(){}, removeEventListener(){}, confirm(){ return true } }, () => {})
+  new Function('require', 'module', 'exports', 'window', 'requestAnimationFrame', 'cancelAnimationFrame', code)(name => mocks[name] || (name==='@/hooks/use-editor-draft'?require('./helpers/autosave-ui-harness.cjs').draftStub:name==='@/hooks/use-pipeline-page'?compile('hooks/use-pipeline-page.ts',mocks):name.startsWith('@/lib/') ? compile(name.replace('@/', '') + '.ts') : name.startsWith('@/') || name.startsWith('./') ? new Proxy({}, { get: (_, key) => String(key) }) : require(name)), mod, mod.exports, { addEventListener(){}, removeEventListener(){}, confirm(){ return true } }, () => {}, () => {})
   return mod.exports
 }
 const { applicantLane } = compile('lib/applicant-board.ts')
@@ -22,16 +22,33 @@ function nodes(node) {
 const text = node => typeof node === 'string' ? node : Array.isArray(node) ? node.map(text).join('') : node?.props ? text(node.props.children) : ''
 const flush = () => new Promise(resolve => setImmediate(resolve))
 function harness(permissions = ['applications.review','applicants.identify','decisions.manage','recruitment.manage'], decisionsOnly = false, rejectedOnly = false) {
-  const slots = [], effects = [], calls = [], lookups = []
-  let index = 0, pipeline = { rounds: [{id:'round',name:'Review',order:0}], applications:[{id:'candidate',canEvaluate:true,studentId:'student',roundId:'round',status:'IN_REVIEW',student:{email:'sample@demo.invalid',studentProfile:null},evaluations:[],answers:[],bookings:[]}] }
-  const react = {useState(initial){const i=index++;if(!(i in slots))slots[i]=initial;return [slots[i],value=>{slots[i]=typeof value==='function'?value(slots[i]):value}]},useRef(initial){const i=index++;return slots[i]??=( {current:initial})},useMemo(fn){index++;return fn()},useEffect(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;effects.push(fn)}}}
-  const api = {getClubPipeline:async()=>{calls.push(['load']);return structuredClone(pipeline)},setApplicationStatus:async input=>{calls.push(['status',input]);const target=pipeline.applications.find(app=>app.id===input.applicationId);if(input.expectedStatus!==target.status)throw Error('stale');target.status=input.status;if(input.status==='ACCEPTED')target.recruitmentOffer={status:'PENDING',expiresAt:new Date(Date.now()+86400000)};return {success:true}},moveApplicantRound:async input=>{calls.push(['round',input]);if(input.expectedRoundId!==pipeline.applications[0].roundId)throw Error('stale');pipeline.applications[0].roundId=input.newRoundId;pipeline.applications[0].studentId='anonymous-candidate';pipeline.applications[0].student={email:'',studentProfile:{firstName:'Applicant',lastName:'CANDIDATE',experiences:[]}};return {success:true}},submitEvaluation:async input=>{calls.push(['review',input]);return {evaluation:{id:'evaluation',interviewerId:'member',round:'Review',score:input.score,notes:input.notes}}}}
-  const C = compile('components/views/leader-dashboard/live-leader-workspace.tsx', {react,'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/lib/reviewer-evaluation':{findReviewerEvaluation(...args){const result=compile('lib/reviewer-evaluation.ts').findReviewerEvaluation(...args);lookups.push({round:args[2],result});return result}},'@/lib/workspace-api':api,'@/lib/application-state':{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus(){}})}}, '\nexports.TestWorkspace = ClubWorkspace;').TestWorkspace
+  const slots = [], effects = [], calls = [], lookups = [], setups = new Map(), cleanups = new Map()
+  let changed = false, index = 0, pipeline = { rounds: [{id:'round',name:'Review',order:0}], applications:[{id:'candidate',canEvaluate:true,studentId:'student',roundId:'round',status:'IN_REVIEW',student:{email:'sample@demo.invalid',studentProfile:null},evaluations:[],answers:[],bookings:[]}] }
+  const react = {useState(initial){const i=index++;if(!(i in slots))slots[i]=initial;return [slots[i],value=>{const next=typeof value==='function'?value(slots[i]):value;changed ||= !Object.is(next,slots[i]);slots[i]=next}]},useRef(initial){const i=index++;return slots[i]??=( {current:initial})},useMemo(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i].deps[j]))slots[i]={deps,value:fn()};return slots[i].value},useCallback(fn,deps){return react.useMemo(()=>fn,deps)},useEffect(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;setups.set(i,fn);effects.push([i,fn])}}}
+  const api = {getClubPipelineList:async()=>{calls.push(['load']);return structuredClone(pipeline)},setApplicationStatus:async input=>{calls.push(['status',input]);const target=pipeline.applications.find(app=>app.id===input.applicationId);if(input.expectedStatus!==target.status)throw Error('stale');target.status=input.status;if(input.status==='ACCEPTED')target.recruitmentOffer={status:'PENDING',expiresAt:new Date(Date.now()+86400000)};return {success:true}},moveApplicantRound:async input=>{calls.push(['round',input]);if(input.expectedRoundId!==pipeline.applications[0].roundId)throw Error('stale');pipeline.applications[0].roundId=input.newRoundId;pipeline.applications[0].studentId='anonymous-candidate';pipeline.applications[0].student={email:'',studentProfile:{firstName:'Applicant',lastName:'CANDIDATE',experiences:[]}};return {success:true}},submitEvaluation:async input=>{calls.push(['review',input]);const evaluation={id:'evaluation',interviewerId:'member',round:'Review',score:input.score,notes:input.notes};pipeline.applications[0].evaluations=[evaluation];pipeline.applications[0].canEvaluate=false;return {evaluation}}}
+  let currentEpoch={};const auth={user:{id:'reviewer'},readAuthority:currentEpoch,isReadAuthorityCurrent:value=>value===currentEpoch};
+  api.getClubPipelinePage=async(club,q={})=>{const data=await api.getClubPipelineList();const page=compile('lib/pipeline-page.ts').pagePipeline(data,q,'member','reviewer','fixture');return {...page,coverage:{complete:page.page.baseTotal===page.applications.length,mode:q.mode??'applicants'}}};
+  api.getClubPipelineSelection=async(club,q={})=>compile('lib/pipeline-page.ts').completePipelineSelection(await api.getClubPipelineList(),q,'member','reviewer');
+  let detailKey='',detail=null;
+  const C = compile('components/views/leader-dashboard/live-leader-workspace.tsx', {react,'@/contexts/auth-context':{useAuth:()=>auth},'@/hooks/use-pipeline-applicant':{usePipelineApplicant(club,id,revision){const key=`${club}:${id}:${revision}`;if(key!==detailKey){detailKey=key;detail=id?structuredClone(pipeline.applications.find(app=>app.id===id)):null}return{application:detail,error:false,retry(){}}}},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false,ready:true})},'@/lib/reviewer-evaluation':{findReviewerEvaluation(...args){const result=compile('lib/reviewer-evaluation.ts').findReviewerEvaluation(...args);lookups.push({round:args[2],result});return result}},'@/lib/workspace-api':api,'@/lib/application-state':{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus(){}})}}, '\nexports.TestWorkspace = ClubWorkspace;').TestWorkspace
   const membership = {id:'member',clubId:'club',permissions,club:{name:'Test club'}}
-  return {calls,api,lookups,addCandidate(app){pipeline.applications.push({...structuredClone(pipeline.applications[0]),...app})},setCanEvaluate(value){pipeline.applications[0].canEvaluate=value},addRound(round){pipeline.rounds.push(round)},setEvaluations(evaluations){pipeline.applications[0].evaluations=evaluations},renameRound(name){pipeline.rounds[0].name=name},setServerRound(roundId){pipeline.applications[0].roundId=roundId},setServerStatus(status){pipeline.applications[0].status=status},render(){index=0;const tree=C({membership,decisionsOnly,rejectedOnly});while(effects.length)effects.shift()();return tree}}
+  return {calls,api,lookups,notifyEpoch(){currentEpoch={}},commitEpoch(){auth.readAuthority=currentEpoch},setViewer(id){auth.user={id};membership.id=id;membership.userId=id},replayEffects(){for(const cleanup of cleanups.values())cleanup?.();cleanups.clear();for(const [slot,setup]of setups)cleanups.set(slot,setup())},addCandidate(app){pipeline.applications.push({...structuredClone(pipeline.applications[0]),...app})},setCanEvaluate(value){pipeline.applications[0].canEvaluate=value},addRound(round){pipeline.rounds.push(round)},setEvaluations(evaluations){pipeline.applications[0].evaluations=evaluations},renameRound(name){pipeline.rounds[0].name=name},setServerRound(roundId){pipeline.applications[0].roundId=roundId},setServerStatus(status){pipeline.applications[0].status=status},render(){for(let step=0;step<20;step++){changed=false;index=0;const tree=C({membership,decisionsOnly,rejectedOnly});while(effects.length){const [slot,setup]=effects.shift();cleanups.get(slot)?.();cleanups.set(slot,setup())}if(!changed)return tree}throw Error('Component failed to settle')}}
 }
 const button = (tree,label) => nodes(tree).find(n=>n.type==='Button'&&text(n)===label)
 const view = tree => nodes(tree).find(n=>['LiveApplicantList','LiveApplicantKanban'].includes(n.type))
+test('complete-selection reads reject a notified obsolete authority before dispatch',async()=>{
+  const h=harness();h.render();await flush();const tree=h.render();
+  const before=h.calls.length;h.notifyEpoch();await button(tree,'Quick review').props.onClick();
+  assert.equal(h.calls.length,before);assert.equal(view(h.render()),undefined);
+})
+test('complete-selection reads reject results during the authority notification-to-commit gap',async()=>{
+  const h=harness(),id=n=>`123e4567-e89b-12d3-a456-${String(n).padStart(12,'0')}`;
+  for(let i=0;i<101;i++)h.addCandidate({id:id(i)});
+  h.render();await flush();let settle;
+  h.api.getClubPipelineSelection=()=>new Promise(resolve=>settle=resolve);
+  const pending=button(h.render(),'Quick review').props.onClick();h.notifyEpoch();settle({applications:[{id:'obsolete',canQuickReview:true}]});await pending;
+  assert.equal(nodes(h.render()).some(n=>n.type==='Sheet'&&n.props.open),false);
+})
 test('List/Kanban toggle preserves the same filtered server data and does not mutate or reload it', async () => {
   const h=harness();h.render();await flush();let tree=h.render()
   const source=view(tree).props.applicants
@@ -43,9 +60,9 @@ test('List/Kanban toggle preserves the same filtered server data and does not mu
 })
 test('drawer status writes send expectedStatus, reject stale outcomes, and refresh canonical offer state', async () => {
   const h=harness();h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render()
-  button(tree,'Accepted').props.onClick();tree=h.render();h.setServerStatus('WAITLISTED');button(tree,'Send now').props.onClick();await flush();tree=h.render()
+  button(tree,'Accepted').props.onClick();tree=h.render();h.setServerStatus('WAITLISTED');button(tree,'Send now').props.onClick();await flush();tree=h.render();await flush();tree=h.render()
   assert.equal(h.calls.find(c=>c[0]==='status')[1].expectedStatus,'IN_REVIEW');assert.equal(view(tree).props.applicants[0].status,'IN_REVIEW');assert.match(text(tree),/could not be saved/)
-  h.setServerStatus('IN_REVIEW');button(tree,'Send now').props.onClick();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED');assert.equal(h.calls.filter(c=>c[0]==='load').length,2);await flush();tree=h.render();assert.ok(button(tree,'Rescind pending offer'))
+  h.setServerStatus('IN_REVIEW');button(tree,'Send now').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED');assert.equal(h.calls.filter(c=>c[0]==='load').length,2);await flush();tree=h.render();await flush();tree=h.render();assert.ok(button(tree,'Rescind pending offer'))
 })
 test('read/review access alone never exposes enabled round moves or decision buttons', async () => {
   const h=harness(['applications.review']);h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render()
@@ -54,8 +71,8 @@ test('read/review access alone never exposes enabled round moves or decision but
 test('evaluation save updates both presentations and explicit round movement reloads anonymous identity', async () => {
   const h=harness();h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render()
   nodes(tree).find(n=>n.props?.id==='review-score').props.onChange({target:{value:'8'}});tree=h.render()
-  nodes(tree).find(n=>n.type==='form').props.onSubmit({preventDefault(){}});await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].evaluations[0].score,8)
-  nodes(tree).find(n=>n.props?.id==='move-round').props.onChange({target:{value:'anonymous-round'}});tree=h.render();button(tree,'Move round').props.onClick();await flush();h.render();await flush();tree=h.render()
+  nodes(tree).find(n=>n.type==='form').props.onSubmit({preventDefault(){}});await flush();tree=h.render();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].evaluations[0].score,8);assert.equal(view(tree).props.applicants[0].evaluations[0].interviewerId,'member')
+  nodes(tree).find(n=>n.props?.id==='move-round').props.onChange({target:{value:'anonymous-round'}});tree=h.render();button(tree,'Move round').props.onClick();await flush();h.render();await flush();tree=h.render();await flush();tree=h.render()
   assert.equal(view(tree).props.applicants[0].studentId,'anonymous-candidate');assert.equal(view(tree).props.applicants[0].student.email,'');assert.equal(nodes(tree).find(n=>n.type==='Sheet').props.open,false)
   button(tree,'Kanban').props.onClick();tree=h.render();assert.equal(view(tree).props.applicants[0].studentId,'anonymous-candidate')
 })
@@ -85,15 +102,15 @@ test('Decisions reuses expected-status mutations and moves saved outcomes betwee
   const h=harness(undefined,true);h.render();await flush();let tree=h.render()
   assert.equal(button(tree,'Kanban'),undefined)
   decisionList(tree).props.open(decisionList(tree).props.applicants[0]);tree=h.render()
-  decisionAction(tree,'Accepted').props.onClick();tree=h.render();button(tree,'Send now').props.onClick();await flush();tree=h.render()
+  decisionAction(tree,'Accepted').props.onClick();tree=h.render();button(tree,'Send now').props.onClick();await flush();tree=h.render();await flush();tree=h.render()
   assert.equal(h.calls.find(c=>c[0]==='status')[1].expectedStatus,'IN_REVIEW')
   assert.equal(decisionList(tree),undefined)
-  decisionGroupButton(tree,'Accepted').props.onClick();tree=h.render()
+  decisionGroupButton(tree,'Accepted').props.onClick();tree=h.render();await flush();tree=h.render()
   assert.equal(decisionList(tree).props.applicants[0].status,'ACCEPTED')
 })
 test('Decisions preserves stale failures and hides mutation controls from anonymous reviewers', async () => {
   const h=harness(undefined,true);h.render();await flush();let tree=h.render();decisionList(tree).props.open(decisionList(tree).props.applicants[0]);tree=h.render()
-  decisionAction(tree,'Accepted').props.onClick();tree=h.render();h.setServerStatus('REJECTED');button(tree,'Send now').props.onClick();await flush();tree=h.render()
+  decisionAction(tree,'Accepted').props.onClick();tree=h.render();h.setServerStatus('REJECTED');button(tree,'Send now').props.onClick();await flush();tree=h.render();await flush();tree=h.render()
   assert.equal(decisionList(tree).props.applicants[0].status,'IN_REVIEW');assert.match(text(tree),/could not be saved/)
   const limited=harness(['applications.review'],true);limited.render();await flush();tree=limited.render();decisionList(tree).props.open(decisionList(tree).props.applicants[0]);tree=limited.render();assert.equal(decisionAction(tree,'Accepted'),undefined)
 })
@@ -104,12 +121,12 @@ test('Kanban round moves reject stale data and share the refreshed anonymous pro
   view(tree).props.open(view(tree).props.applicants[0]);tree=h.render()
   nodes(tree).find(n=>n.props?.id==='move-round').props.onChange({target:{value:'anonymous-round'}});tree=h.render()
   h.setServerRound('concurrent-round')
-  button(tree,'Move round').props.onClick();await flush();tree=h.render()
+  button(tree,'Move round').props.onClick();await flush();tree=h.render();await flush();tree=h.render()
   assert.equal(h.calls.find(c=>c[0]==='round')[1].expectedRoundId,'round')
   assert.equal(view(tree).props.applicants[0].roundId,'round')
   assert.match(text(tree),/could not be saved/)
   h.setServerRound('round')
-  button(tree,'Move round').props.onClick();await flush();h.render();await flush();tree=h.render()
+  button(tree,'Move round').props.onClick();await flush();h.render();await flush();tree=h.render();await flush();tree=h.render()
   assert.equal(view(tree).type,'LiveApplicantKanban')
   const refreshed=view(tree).props.applicants
   assert.equal(refreshed[0].roundId,'anonymous-round')
@@ -122,7 +139,7 @@ test('Kanban decisions use expected status and appear in List after server reloa
   button(tree,'Kanban').props.onClick();tree=h.render()
   view(tree).props.open(view(tree).props.applicants[0]);tree=h.render()
   button(tree,'Accepted').props.onClick();tree=h.render()
-  button(tree,'Send now').props.onClick();await flush();tree=h.render()
+  button(tree,'Send now').props.onClick();await flush();tree=h.render();await flush();tree=h.render()
   assert.equal(h.calls.find(c=>c[0]==='status')[1].expectedStatus,'IN_REVIEW')
   assert.equal(applicantLane(view(tree).props.applicants[0].status),'closed')
   button(tree,'List').props.onClick();tree=h.render()
@@ -153,12 +170,12 @@ test('recruitment review comes before filter toggles and is absent from Decision
 });
 test('quick review saves expected-status decisions and advances only after success', async () => {
  const h=harness();h.addCandidate({id:'second',studentId:'student-two',student:{email:'second@demo.invalid',studentProfile:null}});h.render();await flush();let tree=h.render();
- button(tree,'Quick review').props.onClick();tree=h.render();assert.match(text(tree),/publish the decision immediately/);
- button(tree,'Accept & next').props.onClick();await flush();tree=h.render();assert.deepEqual(h.calls.find(c=>c[0]==='status')[1],{clubId:'club',applicationId:'candidate',status:'ACCEPTED',expectedStatus:'IN_REVIEW'});assert.match(text(nodes(tree).find(n=>n.type==='SheetTitle')),/second@demo.invalid/);
- button(tree,'Deny & next').props.onClick();await flush();tree=h.render();assert.equal(h.calls.filter(c=>c[0]==='status').length,2);assert.match(text(tree),/Quick review complete/);
+ button(tree,'Quick review').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.match(text(tree),/publish the decision immediately/);
+ button(tree,'Accept & next').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.deepEqual(h.calls.find(c=>c[0]==='status')[1],{clubId:'club',applicationId:'candidate',status:'ACCEPTED',expectedStatus:'IN_REVIEW'});assert.match(text(nodes(tree).find(n=>n.type==='SheetTitle')),/second@demo.invalid/);
+ button(tree,'Deny & next').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.equal(h.calls.filter(c=>c[0]==='status').length,2);assert.match(text(tree),/Quick review complete/);
 });
 test('quick review preserves the candidate after a rejected stale write and skips without publishing',async()=>{
- const h=harness();h.render();await flush();let tree=h.render();button(tree,'Quick review').props.onClick();tree=h.render();h.setServerStatus('WAITLISTED');button(tree,'Accept & next').props.onClick();await flush();tree=h.render();assert.ok(nodes(tree).find(n=>n.type==='Sheet').props.open);assert.match(text(tree),/candidate stays open/);button(tree,'Skip').props.onClick();await flush();tree=h.render();assert.equal(nodes(tree).find(n=>n.type==='Sheet').props.open,false);assert.equal(h.calls.filter(c=>c[0]==='status').length,1);
+ const h=harness();h.render();await flush();let tree=h.render();button(tree,'Quick review').props.onClick();await flush();tree=h.render();await flush();tree=h.render();h.setServerStatus('WAITLISTED');button(tree,'Accept & next').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.ok(nodes(tree).find(n=>n.type==='Sheet').props.open);assert.match(text(tree),/candidate stays open/);button(tree,'Skip').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.equal(nodes(tree).find(n=>n.type==='Sheet').props.open,false);assert.equal(h.calls.filter(c=>c[0]==='status').length,1);
 });
 test('review-only users cannot start quick review or move board candidates',async()=>{
  const h=harness(['applications.review']);h.render();await flush();let tree=h.render();assert.equal(button(tree,'Quick review'),undefined);button(tree,'Kanban').props.onClick();tree=h.render();const props=view(tree).props;for(const lane of ['review','interview','decision','closed'])assert.equal(props.canMove(props.applicants[0],lane),false);
@@ -166,12 +183,18 @@ test('review-only users cannot start quick review or move board candidates',asyn
 test('board drops require an explicit outcome and preserve expected status',async()=>{
  const h=harness();h.render();await flush();let tree=h.render();button(tree,'Kanban').props.onClick();tree=h.render();const props=view(tree).props;
  assert.equal(props.canMove(props.applicants[0],'closed'),true);assert.equal(props.canMove(props.applicants[0],'interview'),false);
- props.move(props.applicants[0],'closed');tree=h.render();assert.equal(h.calls.filter(c=>c[0]==='status').length,0);button(tree,'Accept candidate').props.onClick();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED');assert.equal(h.calls.find(c=>c[0]==='status')[1].expectedStatus,'IN_REVIEW');
+ props.move(props.applicants[0],'closed');tree=h.render();assert.equal(h.calls.filter(c=>c[0]==='status').length,0);button(tree,'Accept candidate').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED');assert.equal(h.calls.find(c=>c[0]==='status')[1].expectedStatus,'IN_REVIEW');
 });
 
 test('decision status stays unchanged until the server acknowledges publication',async()=>{
  const h=harness();h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render();button(tree,'Accepted').props.onClick();tree=h.render()
  const write=h.api.setApplicationStatus;let release;h.api.setApplicationStatus=async input=>{await new Promise(resolve=>{release=resolve});return write(input)}
  button(tree,'Send now').props.onClick();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'IN_REVIEW');assert.equal(h.calls.some(c=>c[0]==='status'),false)
- release();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED')
+ release();await flush();tree=h.render();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED')
 })
+
+test('page reader remains usable after React development effect cleanup and setup replay',async()=>{const h=harness();h.render();await flush();let tree=h.render();assert.ok(view(tree));h.replayEffects();button(tree,'Refresh').props.onClick();h.render();await flush();tree=h.render();assert.ok(view(tree),'effect setup must create a usable reader after disposal');assert.equal(h.calls.filter(c=>c[0]==='load').length,2,'explicit refresh still performs fresh authorization after effect replay')});
+
+test('a different membership identity resets the page cursor before fresh summaries render',async()=>{
+ const h=harness(),id=n=>`123e4567-e89b-12d3-a456-${String(n).padStart(12,'0')}`;for(let i=0;i<201;i++)h.addCandidate({id:id(i)});h.render();await flush();let tree=h.render();nodes(tree).find(n=>n.props?.['aria-label']==='Next applicant page').props.onClick();h.render();await flush();tree=h.render();assert.equal(nodes(tree).find(n=>n.type==='p'&&Array.isArray(n.props?.children)&&n.props.children[0]==='Page ').props.children[1],2);h.setViewer(id(999));h.render();await flush();assert.doesNotThrow(()=>{tree=h.render()});assert.equal(nodes(tree).find(n=>n.type==='p'&&Array.isArray(n.props?.children)&&n.props.children[0]==='Page ').props.children[1],1);assert.equal(h.calls.filter(c=>c[0]==='load').length,3);
+});

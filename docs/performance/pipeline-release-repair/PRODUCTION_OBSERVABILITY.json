@@ -1,0 +1,30 @@
+{
+  "at": "2026-10-28T15:44:35.850036+00:00",
+  "readOnly": true,
+  "projectDiscovery": "Succeeded: out-class",
+  "projectDetails": {
+    "status": 403,
+    "reason": "Connector lacks outclassuva team scope"
+  },
+  "runtimeLogs": {
+    "status": 403,
+    "reason": "Logs API returned forbidden before any results; not evidence of absent logs"
+  },
+  "cliFallback": "No vercel executable installed; no credentials/config changed",
+  "newCorrelatedProductionRequests": 0,
+  "historicalOverview": {
+    "networkMs": 5215.747,
+    "serverTotalMs": 5067.3,
+    "identityMs": 221.36,
+    "observations": 1,
+    "source": "980522d7:docs/performance/followup-20261027/PRODUCTION_OVERVIEW_TRACE.json"
+  },
+  "unavailable": [
+    "Fresh production browser/server correlation",
+    "Auth transport subdivisions",
+    "Pure pool acquisition",
+    "Lock contention linked to requests",
+    "Production cohort distribution"
+  ],
+  "conclusion": "No attribution of the historical stall or production improvement is possible; regions/pools/schema/deployment unchanged."
+}

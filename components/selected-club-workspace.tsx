@@ -12,7 +12,7 @@ export type SelectedClubWorkspaceKind = "members" | "pipeline" | "tasks" | "anno
 
 // Only the selected tab starts work. Code and its original guarded GET overlap;
 // neither module loading nor a previous tab's data can authorize this visit.
-export async function loadSelectedClubWorkspace(kind: SelectedClubWorkspaceKind, clubId: string) {
+export async function loadSelectedClubWorkspace(kind: SelectedClubWorkspaceKind, clubId: string, mode: "applicants" | "decisions" | "rejected" = "applicants") {
   switch (kind) {
     case "members": {
       const [module, data] = await Promise.all([
@@ -24,7 +24,7 @@ export async function loadSelectedClubWorkspace(kind: SelectedClubWorkspaceKind,
     case "pipeline": {
       const [module, data] = await Promise.all([
         import("@/components/views/leader-dashboard/live-leader-workspace"),
-        readWorkspace<Awaited<ReturnType<typeof import("@/actions/crm").getClubPipeline>>>("pipeline", [clubId, { genderCounts: false }]),
+        readWorkspace<Awaited<ReturnType<typeof import("@/actions/crm").getClubPipelinePage>>>("pipelinePage", [clubId, { mode, genderCounts: false }]),
       ])
       return { kind, module, data } as const
     }
@@ -64,7 +64,7 @@ export function SelectedClubWorkspace({ kind, clubId, privacyScope, personalOnly
     recordWorkspaceRead("selected", lastRead.current ? (Object.keys(owner) as (keyof typeof owner)[]).filter(key => lastRead.current![key] !== owner[key]) : ["mount"])
     lastRead.current = owner
     let current = true
-    void loadSelectedClubWorkspace(kind, clubId).then(value => {
+    void loadSelectedClubWorkspace(kind, clubId, mode).then(value => {
       if (current && isReadAuthorityCurrent(readAuthority)) setResult({ owner, value })
     }).catch(() => { if (current && isReadAuthorityCurrent(readAuthority)) setResult({ owner, failed: true }) })
     return () => { current = false }

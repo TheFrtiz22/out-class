@@ -25,15 +25,17 @@ function fixture() {
       return { user: { id: state.actor }, membership: membership() };
     }
   };
-  const matches = where => where.clubId === app.clubId && (!where.id || where.id === app.id) && app.status !== 'DRAFTING';
+  const matches = where => where.AND ? where.AND.every(matches) : (!where.clubId || where.clubId === app.clubId) && (!where.id || typeof where.id === 'object' ? !where.id || where.id.in.includes(app.id) : where.id === app.id) && app.status !== 'DRAFTING';
   const tx = {
     $queryRaw: async()=>[],
     user: { findUnique: async()=>({disabledAt:state.disabled?new Date():null}) },
     pipelineRound: { findMany: async () => [app.round] },
     application: {
-      findMany: async ({ where }) => { if(state.pipelineError)throw state.pipelineError; return (state.pipelineReads++, matches(where)) && (!where.round || app.round.anonymousReview) ? [app] : []; },
+      findMany: async ({ where, include, omit, select }) => { state.pipelineOmit=omit; state.pipelineQuery=include; state.pipelineSelect=select; if(state.pipelineError)throw state.pipelineError; return (state.pipelineReads++, matches(where)) && (!where.round || app.round.anonymousReview) ? [app] : []; },
       findFirst: async ({ where, select }) => { if(select)state.narrowReads++; return matches(where) ? app : null; }
     },
+    evaluation: {findMany:async ({where})=>matches(where.application) && where.applicationId.in.includes(app.id) ? app.evaluations.filter(e=>e.submittedAt).map(e=>({...e,applicationId:app.id})):[]},
+    interviewPanelAssignment: {findMany:async ({where})=>matches(where.application) && where.applicationId.in.includes(app.id) ? app.interviewAssignments.map(e=>({...e,applicationId:app.id})):[]},
     clubMember: { findFirst: async () => membership(), findUnique: async({where})=>state.clubAccess && where.userId_clubId.clubId===clubId ? membership():null },
     applicantObservation: { findMany: async () => [] }
   };
@@ -144,4 +146,59 @@ test('pipeline failure diagnostics identify the failing phase without serializin
  assert.equal(rows[0][1].code,'P2028');assert.equal(rows[0][1].phase,'applications');
  assert.ok(rows[0][1].elapsedMs>=0);assert.ok(rows[0][1].acquisitionMs>=0);assert.ok(rows[0][1].transactionMs>=0);
  assert.doesNotMatch(JSON.stringify(rows),/SELECT|private|example|must not log|123e4567/);
+});
+
+for (const reader of ['getClubPipeline', 'getClubPipelineList', 'getClubPipelinePage']) test(`${reader} repeats authorization and masks anonymous/self/foreign rows`, async()=>{
+ const f=fixture();await f.crm[reader](clubId);f.state.clubAccess=false;await assert.rejects(f.crm[reader](clubId));f.state.clubAccess=true;
+ f.state.permissions=[];await assert.rejects(f.crm[reader](clubId));f.state.permissions=['applications.review'];assert.equal((await f.crm[reader](clubId)).applications.length,0);
+ f.app.round.anonymousReview=true;const row=(await f.crm[reader](clubId)).applications[0];assert.equal(row.student.studentProfile.firstName,'Applicant');assert.equal(row.student.email,'');
+ await assert.rejects(f.crm[reader](id(99)));
+});
+
+test('summary database allowlist excludes detail/offer/member content and reads only submitted reviews',async()=>{
+ const f=fixture();await f.crm.getClubPipelineList(clubId);const selected=f.state.pipelineSelect;
+ assert.deepEqual(Object.keys(selected).sort(),['evaluations','id','interviewAssignments','round','roundId','status','student','studentId']);
+ assert.deepEqual(selected.evaluations,{where:{submittedAt:{not:null}},select:{interviewerId:true,roundId:true,submittedAt:true,score:true}});
+ assert.deepEqual(selected.interviewAssignments,{where:{revokedAt:null},select:{memberId:true,roundId:true,member:{select:{status:true,isOwner:true,permissions:true}}}});
+ assert.deepEqual(selected.student.select.studentProfile.select,{firstName:true,lastName:true,major:true,gradYear:true,transferStudent:true,gpa:true,satScore:true,actScore:true});
+ assert.deepEqual(selected.round,{select:{anonymousReview:true}});
+ await f.crm.getClubPipeline(clubId,{applicationId});assert.ok(f.state.pipelineQuery.answers.include.question);assert.ok(f.state.pipelineQuery.bookings.include.slot);assert.ok(f.state.pipelineQuery.student.include.studentProfile.include.experiences);
+});
+
+test('page cursors bind the freshly authorized projection and selection reads contain no identities',async()=>{
+ const f=fixture(),first=await f.crm.getClubPipelinePage(clubId);assert.equal(first.applications[0].id,applicationId);const cursor={id:applicationId,direction:'at',scope:first.page.scope};
+ f.state.permissions.push('applications.review');await assert.rejects(f.crm.getClubPipelinePage(clubId,{cursor}),/selection changed/);
+ for(const query of [{userId:owner},{limit:1000},{applicationId}])await assert.rejects(f.crm.getClubPipelinePage(clubId,query));
+ const selected=await f.crm.getClubPipelineSelection(clubId);assert.deepEqual(selected.applications,[{id:applicationId,roundId,status:'SUBMITTED',canQuickReview:true}]);assert.doesNotMatch(JSON.stringify(selected),/owner@|Student|Fixture|studentId|headshot|score/);
+ f.state.clubAccess=false;await assert.rejects(f.crm.getClubPipelineSelection(clubId));f.state.clubAccess=true;f.state.permissions=[];await assert.rejects(f.crm.getClubPipelineSelection(clubId));
+});
+
+test('narrow database summaries match canonical full privacy across viewer, profile and review states',async()=>{
+ const f=fixture(),project=load('lib/pipeline-list.ts').pipelineListProjection;
+ const member={status:'ACTIVE',isOwner:false,permissions:['applications.review','applicants.identify']};
+ const originalProfile=structuredClone(f.app.student.studentProfile);
+ let comparisons=0;
+ for(const anonymous of [false,true])for(const profile of [originalProfile,null,{...originalProfile,gpa:5,transferStudent:true}])for(const self of [false,true])for(const role of ['identified','reviewer','participant','president'])for(const submitted of [false,true]){
+  f.state.actor=self?owner:reader;f.state.permissions=role==='identified'?['applicants.identify']:role==='reviewer'?['applications.review']:['applications.review','applicants.identify'];f.state.offices=role==='president'?['PRESIDENT']:[];
+  f.app.round.anonymousReview=anonymous;f.app.student.studentProfile=profile;
+  f.app.interviewAssignments=[{roundId,memberId:id(7),member},{roundId,memberId:id(9),member:{...member,status:'SUSPENDED'}},{roundId:id(99),memberId:id(7),member}];
+  f.app.evaluations=[{roundId,interviewerId:id(7),submittedAt:submitted?new Date():null,score:8},{roundId,interviewerId:id(8),submittedAt:new Date(),score:6},{roundId:id(99),interviewerId:id(8),submittedAt:new Date(),score:9}];
+  const canonical=project(await f.crm.getClubPipeline(clubId));assert.deepEqual(await f.crm.getClubPipelineList(clubId),canonical);
+  assert.deepEqual((await f.crm.getClubPipelinePage(clubId)).applications,(await f.crm.getClubPipeline(clubId)).applications);comparisons++;
+ }
+ assert.equal(comparisons,96);
+});
+
+test('summary scores preserve submission barrier, self exclusion, inactive assignments and historical review visibility',async()=>{
+ const f=fixture();f.state.permissions=['applications.review','applicants.identify'];
+ const active={status:'ACTIVE',permissions:f.state.permissions},inactive={...active,status:'SUSPENDED'};
+ f.app.interviewAssignments=[{roundId,memberId:id(7),member:active},{roundId,memberId:id(8),member:inactive}];
+ f.app.evaluations=[{roundId,interviewerId:id(7),submittedAt:null,score:10},{roundId,interviewerId:id(9),submittedAt:new Date(),score:6},{roundId:id(99),interviewerId:id(9),submittedAt:new Date(),score:9}];
+ const row=async()=>(await f.crm.getClubPipelineList(clubId)).applications[0];
+ assert.equal((await row()).roundScore,null);assert.deepEqual((await row()).evaluations,[]);
+ f.state.offices=['PRESIDENT'];assert.equal((await row()).roundScore,null,'office does not bypass assigned reviewer submission');
+ f.app.evaluations[0].submittedAt=new Date();let r=await row();assert.deepEqual(r.roundScore,{average:8,submitted:2,required:2,provisional:false});assert.equal(r.evaluations.length,3);
+ f.state.offices=[];r=await row();assert.equal(r.evaluations.length,2,'ordinary assigned reviewer cannot see another round');
+ f.app.interviewAssignments.push({roundId,memberId:id(10),member:active});assert.equal((await row()).roundScore.provisional,true);
+ f.state.actor=owner;assert.equal((await row()).roundScore,null);assert.deepEqual((await row()).evaluations,[]);
 });

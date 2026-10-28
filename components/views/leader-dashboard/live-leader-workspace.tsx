@@ -1,5 +1,8 @@
 "use client"
 import "@/components/product/operational-dashboard.css"
+import { completePipelineSelection, type PipelinePageQuery, type PipelineCursor } from "@/lib/pipeline-page"
+import { usePipelinePage } from "@/hooks/use-pipeline-page"
+import { usePipelineApplicant } from "@/hooks/use-pipeline-applicant"
 import { useEditorDraft } from "@/hooks/use-editor-draft"
 import { AutosaveStatus } from "@/components/ui/autosave-status"
 import { ApplicationCycleAssignment } from "@/components/recruitment-cycles";
@@ -10,11 +13,10 @@ import { isInterviewRecruitmentRound } from "@/lib/recruitment-lifecycle"
 import { findReviewerEvaluation } from "@/lib/reviewer-evaluation"
 import { profilePhotoSource } from "@/lib/profile-photo"
 import { genderValues } from "@/lib/student-profile"
-import { compareAcademicYears } from "@/lib/recruitment-profile"
 import { ApplicantDisplayPanel } from "@/components/applicant-intelligence"
 import { applicationAttachmentUrl } from "@/lib/student-applications"
 import { applicationDecisionGroup, decisionGroups, type DecisionGroup } from "@/lib/application-decisions"
-import { compareApplicants, type ApplicantSort } from "@/lib/live-applicant-sorting"
+import { type ApplicantSort } from "@/lib/live-applicant-sorting"
 import { applicantLane } from "@/lib/applicant-board"
 import { LiveApplicantList, LiveApplicantKanban, LiveDecisionList, type ApplicantLane } from "./live-applicant-views"
 import { useDemoMode } from "@/contexts/demo-context"
@@ -27,10 +29,10 @@ import Link from "next/link"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
 
 import { WorkspaceLoading } from "@/components/workspace-loading"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ArrowRight, ChevronLeft, ChevronRight, RefreshCw, Search } from "@/components/icons"
 import { BoardDecisionMode } from "@/components/live-voting/board-decision-mode"
-import { getClubPipeline, moveApplicantRound, setApplicationStatus, reconsiderRejectedApplication, revokeRecruitmentOffer } from "@/lib/workspace-api"
+import { getClubPipelinePage, getClubPipelineSelection, moveApplicantRound, setApplicationStatus, reconsiderRejectedApplication, revokeRecruitmentOffer } from "@/lib/workspace-api"
 import { submitEvaluation } from "@/lib/workspace-api"
 import { useApplicationState } from "@/lib/application-state"
 import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
@@ -58,7 +60,7 @@ import {
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 
-type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
+type Pipeline = Awaited<ReturnType<typeof getClubPipelinePage>>
 type Candidate = Pipeline["applications"][number]
 const selectStyle =
   "h-9 max-w-full rounded-md border border-border bg-background px-2 text-sm focus-visible:outline-2 focus-visible:outline-ring"
@@ -133,11 +135,13 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   const previewId = preview?.applicationId
   const demo = useDemoMode()
   const { leaderFocus, clearLeaderFocus } = useApplicationState()
-  const [data, setData] = useState<Pipeline | null>(initialData)
+  const auth = useAuth()
+  const { readAuthority, isReadAuthorityCurrent } = auth
+  const authority = useMemo(() => ({ user: auth.user, readAuthority: auth.readAuthority, support: auth.isImpersonating, loading: auth.loading, membership, demoReady: demo.ready, demoEnabled: demo.isDemoEnabled }), [auth.user, auth.readAuthority, auth.isImpersonating, auth.loading, membership, demo.ready, demo.isDemoEnabled])
   const [error, setError] = useState("")
-  const [loading, setLoading] = useState(!initialData)
   const [revision, setRevision] = useState(0)
   const [query, setQuery] = useState("")
+  const [position, setPosition] = useState<{ key: string; cursor: PipelineCursor } | null>(null)
   const [round, setRound] = useState("")
   const [decisionGroup, setDecisionGroup] = useState<DecisionGroup>("pending")
   const [status, setStatus] = useState("")
@@ -155,7 +159,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   const [sort, setSort] = useState<ApplicantSort>("name")
   const [descending, setDescending] = useState(false)
   const [activeId, setActiveId] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
+  const [writing, setBusy] = useState(false)
   const [message, setMessage] = useState("")
   const [reconsiderReason, setReconsiderReason] = useState("")
   const [score, setScore] = useState("")
@@ -167,33 +171,50 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   const [boardMove, setBoardMove] = useState<{ id: string; lane: ApplicantLane } | null>(null)
   const [boardError, setBoardError] = useState("")
   const mutating = useRef(false)
-  const firstRead = useRef(validatedInitialData && !!initialData)
-  const retained = useRef(data), publish = useRef(onData)
-  retained.current = data
+  const detail = usePipelineApplicant(membership.clubId, previewId || null, revision)
+  const readQuery = useMemo<PipelinePageQuery>(() => ({
+    query, mode: rejectedOnly ? "rejected" : decisionsOnly ? "decisions" : "applicants", decisionGroup,
+    ...(round ? { roundId: round } : {}), ...(gender ? { gender: gender as (typeof genderValues)[number] } : {}), genderCounts: showGenderCounts,
+    ...(status ? { status: status as PipelinePageQuery["status"] } : {}), ...(review ? { review: review as PipelinePageQuery["review"] } : {}),
+    ...(major ? { major } : {}), ...(year ? { year } : {}),
+    ...(gpa ? { gpa: Number(gpa) } : {}), ...(sat ? { sat: Number(sat) } : {}), ...(act ? { act: Number(act) } : {}), ...(rating ? { rating: Number(rating) } : {}), sort, descending,
+  }), [query, rejectedOnly, decisionsOnly, decisionGroup, round, gender, showGenderCounts, status, review, major, year, gpa, sat, act, rating, sort, descending])
+  const selectionKey = JSON.stringify([membership.clubId, membership.id, membership.userId, readQuery])
+  const cursor = position?.key === selectionKey ? position.cursor : undefined
+  // A changed filter starts a new selection. Clearing that filter later must
+  // not resurrect the previous selection's page cursor.
+  useEffect(() => { if (position && position.key !== selectionKey) setPosition(null) }, [position, selectionKey])
+  const pageQuery = useMemo(() => ({ ...readQuery, ...(cursor ? { cursor } : {}) }), [readQuery, cursor])
+  const { data: listData, loading: listLoading, ready, invalid: invalidFilter, error: readError, setData, acceptPage, isCurrent } = usePipelinePage({
+    clubId: membership.clubId, reviewerId: membership.id, userId: membership.userId, query: pageQuery, revision, authority,
+    enabled: !previewId && demo.ready && !auth.loading && !!auth.user, initialData, validatedInitialData,
+  })
+  const latestAuthority = useRef(authority); latestAuthority.current = authority
+  const requestKey = JSON.stringify([selectionKey, cursor, revision])
+  const latestRequest = useRef(requestKey); latestRequest.current = requestKey
+  const pageReady = !!previewId || ready
+  const updating = !previewId && (!pageReady && !invalidFilter || !listData)
+  const busy = writing || updating || invalidFilter
+  const data = previewId ? detail.pipeline : listData
+  const loading = previewId ? !detail.pipeline && !detail.error : listLoading
+  const publish = useRef(onData)
   publish.current = onData
-  useEffect(() => { publish.current?.(data) }, [data])
+  useEffect(() => { if (!previewId) publish.current?.(pageReady ? listData : null) }, [listData, pageReady, previewId])
+  const roundsForReview = useRef(data?.rounds)
+  roundsForReview.current = data?.rounds
   const heading = useRef<HTMLHeadingElement>(null)
   const search = useRef<HTMLInputElement>(null)
-  useEffect(() => {
-    if (firstRead.current) { firstRead.current = false; return }
-    let current = true
-    setLoading(!retained.current)
-    setError("")
-    
-    getClubPipeline(membership.clubId, { ...(previewId ? { applicationId: previewId } : {}), ...(round ? { roundId: round } : {}), ...(gender ? { gender: gender as (typeof genderValues)[number] } : {}), genderCounts: showGenderCounts })
-      .then((result) => {
-        if (current) setData(result)
-      })
-      .catch(() => {
-        if (current) { setData(null); setError("Couldn’t load this club’s applicants. Please try again.") }
-      })
-      .finally(() => {
-        if (current) setLoading(false)
-      })
-    return () => {
-      current = false
-    }
-  }, [membership.clubId, revision, round, gender, showGenderCounts, previewId])
+  useEffect(() => { setError("") }, [authority, revision, pageQuery])
+  const selectionRequestKey = JSON.stringify([selectionKey, revision])
+  const latestSelectionRequest = useRef(selectionRequestKey); latestSelectionRequest.current = selectionRequestKey
+  const loadSelection = useCallback(async (snapshot = listData) => {
+    if (!isReadAuthorityCurrent(readAuthority) || latestAuthority.current !== authority || latestSelectionRequest.current !== selectionRequestKey) throw new Error("Applicant selection changed")
+    const result = snapshot?.coverage?.complete
+      ? completePipelineSelection(snapshot, readQuery, membership.id, membership.userId)
+      : await getClubPipelineSelection(membership.clubId, readQuery)
+    if (!isReadAuthorityCurrent(readAuthority) || latestAuthority.current !== authority || latestSelectionRequest.current !== selectionRequestKey) throw new Error("Applicant selection changed")
+    return result.applications
+  }, [membership.clubId, membership.id, membership.userId, listData, readQuery, authority, selectionRequestKey, readAuthority, isReadAuthorityCurrent])
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       const element = event.target as HTMLElement
@@ -209,61 +230,33 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     window.addEventListener("keydown", key)
     return () => window.removeEventListener("keydown", key)
   }, [activeId])
-  const applicants = useMemo(() => (data?.applications || []).filter(a=>rejectedOnly?a.status==="REJECTED":decisionsOnly||a.status!=="REJECTED"), [data,rejectedOnly,decisionsOnly])
-  const filtered = useMemo(
-    () =>
-      applicants
-        .filter((app) => {
-          const profile = app.student.studentProfile
-          return (
-            `${name(app)} ${app.student.email} ${profile?.major || ""}`
-              .toLowerCase()
-              .includes(query.trim().toLowerCase()) &&
-            (rejectedOnly ? app.status === "REJECTED" : decisionsOnly || app.status !== "REJECTED") &&
-            (!round || app.roundId === round) &&
-            (!status || app.status === status) &&
-            (!decisionsOnly || applicationDecisionGroup(app.status) === decisionGroup) &&
-            (!major || profile?.major === major) &&
-            (!year || String(profile?.academicYear) === year) &&
-            (!gpa || (profile?.gpa != null && profile.gpa > Number(gpa))) &&
-            (!rating || (average(app) != null && average(app)! >= Number(rating))) &&
-            (!act || (profile?.actScore != null && profile.actScore > Number(act))) &&
-            (!sat || (profile?.satScore != null && profile.satScore > Number(sat))) &&
-            (!review ||
-              (review === "unreviewed"
-                ? app.evaluations.length === 0
-                : app.evaluations.some((item) => item.interviewerId === membership.id)))
-          )
-        })
-        .sort((a, b) => compareApplicants(a, b, sort, descending, data?.rounds)),
-    [
-      applicants,
-      data?.rounds,
-      rejectedOnly,
-      decisionsOnly,
-      decisionGroup,
-      query,
-      round,
-      status,
-      major,
-      year,
-      gpa,
-      sat,
-      act,
-      rating,
-      review,
-      sort,
-      descending,
-      membership.id,
-    ],
-  )
+  const applicants = data?.applications || []
+  const filtered = applicants
+  const pageInfo = !previewId ? listData?.page : undefined
+  const total = pageInfo?.total ?? filtered.length
+  const baseTotal = pageInfo?.baseTotal ?? applicants.length
+  const displayed = { items: pageReady ? filtered : [], page: pageInfo?.index ?? 0, count: pageInfo?.count ?? 1, start: pageInfo?.start ?? 0 }
+  function changePage(next: PipelineCursor | null) {
+    if (!next || busy) return
+    focusPage.current = true
+    setPosition({ key: selectionKey, cursor: next })
+  }
+  const workspaceElement = useRef<HTMLDivElement>(null)
+  const focusPage = useRef(false)
+  useEffect(() => {
+    if (!focusPage.current || !pageReady) return
+    focusPage.current = false
+    if (activeId) return
+    const frame = requestAnimationFrame(() => Array.from(workspaceElement.current?.querySelectorAll<HTMLButtonElement>("[data-applicant-id]") ?? []).find(button => button.getClientRects().length > 0)?.focus())
+    return () => cancelAnimationFrame(frame)
+  }, [displayed.page, activeId, pageReady])
   const previewOpened = useRef(false), previewOpen = useRef<(app: Candidate) => void>(() => {})
   useEffect(() => {
     if (!previewId || !data || loading || previewOpened.current) return
     const target = data.applications.find(app => app.id === previewId)
     if (target) { previewOpened.current = true; previewOpen.current(target) }
   }, [previewId, data, loading])
-  const active = applicants.find((app) => app.id === activeId)
+  const active = activeId ? previewId ? detail.application : pageReady ? listData?.applications.find(app => app.id === activeId) ?? null : null : null
   const canEvaluate = active?.canEvaluate === true
   const dirty = canEvaluate && JSON.stringify([score, notes]) !== baseline
   const draftSave = useEditorDraft({
@@ -281,21 +274,21 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     }
     clearLeaderFocus()
   }, [data, loading, leaderFocus, membership.clubId, clearLeaderFocus])
-  function open(app?: Candidate) {
+  function open(app?: Pick<Candidate, "id" | "roundId">, located = false) {
     if (busy) return
     const apply = () => {
     setActiveId(app?.id || null)
+    if (app && !located && !previewId && pageInfo && !filtered.some(item => item.id === app.id)) {
+      setPosition({ key: selectionKey, cursor: { id: app.id, direction: "at", scope: pageInfo.scope } })
+    }
     if (!app) { setQuickQueue(null); preview?.onClose() }
     setMessage("")
     setDecision("")
     if (app) {
-      const mine = findReviewerEvaluation(app.evaluations, membership.id, data?.rounds.find(item => item.id === app.roundId))
-      const value = mine ? String(mine.score) : ""
-      setScore(value)
-      setNotes(mine?.notes || "")
-      setBaseline(JSON.stringify([value, mine?.notes || ""]))
+      setScore("")
+      setNotes("")
+      setBaseline(JSON.stringify(["", ""]))
       setTargetRound(app.roundId)
-      requestAnimationFrame(() => heading.current?.focus())
     } else
       requestAnimationFrame(() => {
         Array.from(
@@ -310,6 +303,36 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     if (active?.canEvaluate && (draftSave.dirty || draftSave.saving)) void draftSave.flush().then(apply).catch(() => {})
     else apply()
   }
+  async function navigateApplicant(direction: -1 | 1) {
+    if (busy || mutating.current || activeIndex < 0) return
+    const adjacent = filtered[activeIndex + direction]
+    if (adjacent) { open(adjacent); return }
+    const next = direction === 1 ? pageInfo?.next : pageInfo?.previous
+    if (!next) return
+    mutating.current = true; setBusy(true)
+    try {
+      if (canEvaluate && (draftSave.dirty || draftSave.saving)) await draftSave.flush()
+      if (!isCurrent()) return
+      const nextQuery = { ...readQuery, cursor: next }
+      const adjacentPage = await getClubPipelinePage(membership.clubId, nextQuery)
+      if (!acceptPage(adjacentPage, nextQuery)) return
+      setPosition({ key: selectionKey, cursor: next })
+      const target = direction === 1 ? adjacentPage.applications[0] : adjacentPage.applications.at(-1)
+      if (target) open(target, true)
+    } catch { setMessage("Couldn’t load the next applicant. Your review stays open.") }
+    finally { mutating.current = false; setBusy(false) }
+  }
+
+  useEffect(() => {
+    if (!active) return
+    const mine = findReviewerEvaluation(active.evaluations, membership.id, roundsForReview.current?.find(item => item.id === active.roundId))
+    const value = mine ? String(mine.score) : ""
+    setScore(value)
+    setNotes(mine?.notes || "")
+    setBaseline(JSON.stringify([value, mine?.notes || ""]))
+    setTargetRound(active.roundId)
+    requestAnimationFrame(() => heading.current?.focus())
+  }, [active, membership.id])
   previewOpen.current = open
   async function mutate(kind: "review" | "round" | "decision") {
     if (!active || mutating.current) return
@@ -333,28 +356,11 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
           score: Number(score),
           notes,
         })
-        setData((previous) =>
-          previous
-            ? {
-                ...previous,
-                applications: previous.applications.map((app) =>
-                  app.id === active.id
-                    ? {
-                        ...app,
-                        canEvaluate: false,
-                        evaluations: [
-                          ...app.evaluations.filter((item) => item.id !== result.evaluation.id),
-                          result.evaluation,
-                        ],
-                      }
-                    : app,
-                ),
-              }
-            : previous,
-        )
+
         await draftSave.clear()
         setBaseline(JSON.stringify([score, notes]))
         setMessage("Evaluation saved.")
+        setRevision(value => value + 1)
       } else if (kind === "round") {
         await moveApplicantRound({
           clubId: membership.clubId,
@@ -404,10 +410,12 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   async function writeStatus(app: Candidate, status: "IN_REVIEW" | "INTERVIEWING" | "WAITLISTED" | "ACCEPTED" | "REJECTED") {
     await setApplicationStatus({ clubId: membership.clubId, applicationId: app.id, status, expectedStatus: app.status === "DRAFTING" ? undefined : app.status })
     try {
-      const refreshed = await getClubPipeline(membership.clubId, { ...(previewId ? { applicationId: previewId } : {}), ...(round ? { roundId: round } : {}), ...(gender ? { gender: gender as (typeof genderValues)[number] } : {}), genderCounts: showGenderCounts })
-      setData(refreshed)
+      if (!isCurrent()) throw new Error("Applicant scope changed")
+      const refreshed = await getClubPipelinePage(membership.clubId, pageQuery)
+      if (!setData(refreshed)) throw new Error("Applicant scope changed")
       return refreshed
     } catch (error) {
+      if (!isCurrent()) throw error
       setData(null); setActiveId(null); setQuickQueue(null)
       setError("The status was saved, but applicants could not be refreshed. Reload to check current data and access.")
       throw error
@@ -425,10 +433,11 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     if (!active || !canDecide || !pendingCandidate(active) || mutating.current || !quickQueue) return
     mutating.current = true; setBusy(true); setMessage("")
     try {
-      await draftSave.flush()
+      if (canEvaluate && (draftSave.dirty || draftSave.saving)) await draftSave.flush()
       const refreshed = await writeStatus(active, status)
       const remaining = quickQueue.filter(id => id !== active.id)
-      const next = remaining.map(id => refreshed.applications.find(app => app.id === id)).find(app => app && pendingCandidate(app))
+      const selection = await loadSelection(refreshed)
+      const next = remaining.map(id => selection.find(app => app.id === id)).find(app => app?.canQuickReview)
       setQuickQueue(remaining)
       // Release the guard before opening the next profile; identity comes from the refreshed projection.
       mutating.current = false; setBusy(false)
@@ -437,10 +446,33 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     } catch { setMessage("This decision could not be saved. The candidate stays open. Refresh and check your access before retrying.") }
     finally { mutating.current = false; setBusy(false) }
   }
-  function startQuickReview() {
-    const queue = filtered.filter(pendingCandidate)
-    if (!canDecide || !queue.length) return
-    setQuickQueue(queue.map(app => app.id)); open(queue[0])
+  async function startQuickReview() {
+    if (!canDecide || busy || mutating.current) return
+    const owner = authority, key = requestKey
+    mutating.current = true; setBusy(true); setMessage("")
+    try {
+      const queue = (await loadSelection()).filter(app => app.canQuickReview)
+      if (!isCurrent() || latestAuthority.current !== owner || latestRequest.current !== key) return
+      setQuickQueue(queue.map(app => app.id))
+      if (queue[0]) open(queue[0])
+    } catch { setMessage("Couldn’t load the complete review selection. Please try again.") }
+    finally { mutating.current = false; setBusy(false) }
+  }
+  async function skipQuickReview() {
+    if (!active || !quickQueue || busy || mutating.current) return
+    const owner = authority, key = requestKey
+    mutating.current = true; setBusy(true)
+    try {
+      if (canEvaluate && (draftSave.dirty || draftSave.saving)) await draftSave.flush()
+      const remaining = quickQueue.filter(id => id !== active.id)
+      const selection = await loadSelection()
+      if (!isCurrent() || latestAuthority.current !== owner || latestRequest.current !== key) return
+      const next = remaining.map(id => selection.find(app => app.id === id)).find(app => app?.canQuickReview)
+      setQuickQueue(remaining)
+      if (next) open(next)
+      else open()
+    } catch { setMessage("Couldn’t refresh the complete review selection. Your review stays open.") }
+    finally { mutating.current = false; setBusy(false) }
   }
   function sortBy(key: ApplicantSort) {
     if (sort === key) setDescending((value) => !value)
@@ -450,35 +482,37 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     }
   }
   if (loading) return <WorkspaceLoading label="Preparing your applicant pipeline…" layout="applicants" rows={5} />
-  if (!data || error)
+  if (!data || error || readError)
     return (
       <div role="alert" className="space-y-3">
-        <p>{error || "No data available."}</p>
-        <Button variant="outline" onClick={() => setRevision((value) => value + 1)}>
+        <p>{error || (readError ? "Couldn’t load this club’s applicants. Your access may have changed." : previewId && detail.error ? "Couldn’t load this applicant. Your access may have changed." : "No data available.")}</p>
+        <Button variant="outline" onClick={() => { setError(""); setPosition(null); setRevision((value) => value + 1) }}>
           Try again
         </Button>
       </div>
     )
   return (
-    <div className="oc-live-pipeline oc-workspace-stack" data-unsaved={draftSave.dirty} data-saving={busy}>
+    <div ref={workspaceElement} className="oc-live-pipeline oc-workspace-stack" data-unsaved={draftSave.dirty} data-saving={busy}>
       <div hidden={!!preview}>
       {!active && message && <p role="status" className="text-sm">{message}</p>}
       {decisionsOnly && <>
-        <div role="group" aria-label="Decision groups" className="flex flex-wrap gap-1 border-b pb-3">{decisionGroups.map(group => <Button key={group.id} variant={decisionGroup === group.id ? "secondary" : "ghost"} aria-pressed={decisionGroup === group.id} onClick={() => setDecisionGroup(group.id)}>{group.label}<span className="ml-2 text-xs font-normal text-muted-foreground">{applicants.filter(app => applicationDecisionGroup(app.status) === group.id).length}</span></Button>)}</div>
+        <div role="group" aria-label="Decision groups" className="flex flex-wrap gap-1 border-b pb-3">{decisionGroups.map(group => <Button key={group.id} variant={decisionGroup === group.id ? "secondary" : "ghost"} aria-pressed={decisionGroup === group.id} onClick={() => setDecisionGroup(group.id)}>{group.label}<span className="ml-2 text-xs font-normal text-muted-foreground">{listData?.facets.decisions[group.id] ?? 0}</span></Button>)}</div>
         <p className="text-sm text-muted-foreground">{decisionGroup === "pending" ? "Submitted, in-review, and interviewing applications without a recorded decision. Round and status remain separate." : "Recorded application outcomes, visible to the applicant."} Acceptance does not automatically create club membership.</p>
       </>}
 {!decisionsOnly && !rejectedOnly && <>
       <section aria-label="Recruitment review" className="oc-content-panel flex flex-wrap items-center justify-between gap-4">
         <div><h2 className="oc-card-heading">Recruitment review</h2><p className="mt-1 text-xs text-muted-foreground">Review together or work through candidates one at a time.</p></div>
         <div className="flex flex-wrap gap-2">
-          {canDecide && <Button variant="outline" disabled={busy || !filtered.some(pendingCandidate)} onClick={startQuickReview}>Quick review</Button>}
+          {canDecide && <Button variant="outline" disabled={busy || !listData?.facets.quickReview} onClick={() => void startQuickReview()}>Quick review</Button>}
       {hasPermission(membership, "applications.review") && (["decisions.view", "decisions.manage", "decisions.vote"] as const).some(permission => hasPermission(membership, permission)) && <BoardDecisionMode
         applicants={filtered}
+        selectionQuery={readQuery}
         rounds={data.rounds}
         clubId={membership.clubId}
         clubName={membership.club.name}
         canDecide={hasPermission(membership, "decisions.manage") && hasPermission(membership, "applicants.identify")}
-        onDecision={(id, status) =>
+        onDecision={(id, status) => {
+          setRevision(value => value + 1)
           setData((previous) =>
             previous
               ? {
@@ -489,7 +523,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                 }
               : previous,
           )
-        }
+        }}
       />}
 
           <Button variant="outline" asChild><Link href={`/club/${membership.clubId}/workspace?section=recruitment&tool=${decisionsOnly ? "applicants" : "decisions"}`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>{decisionsOnly ? "Review applicants" : "Review decisions"}</Link></Button>
@@ -573,12 +607,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
             onChange={(event) => setMajor(event.target.value)}
           >
             <option value="">All majors</option>
-            {[
-              ...new Set(
-                applicants.map((app) => app.student.studentProfile?.major).filter(Boolean),
-              ),
-            ]
-              .sort()
+            {(listData?.facets.majors ?? [])
               .map((value) => (
                 <option key={value}>{value}</option>
               ))}
@@ -590,14 +619,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
             onChange={(event) => setYear(event.target.value)}
           >
             <option value="">All years</option>
-            {[
-              ...new Set(
-                applicants.flatMap((app) =>
-                  app.student.studentProfile ? [app.student.studentProfile.academicYear] : [],
-                ),
-              ),
-            ]
-              .sort(compareAcademicYears)
+            {(listData?.facets.years ?? [])
               .map((value) => (
                 <option key={value}>{value}</option>
               ))}
@@ -639,7 +661,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       </div>
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground" role="status">
-          {filtered.length} {decisionsOnly ? "applications in this selection" : `of ${applicants.length} applicants · scores out of 10`}
+          {total} {decisionsOnly ? "applications in this selection" : `of ${baseTotal} applicants · scores out of 10`}
         </p>
         {(query || round || status || review || major || year || gpa || sat || act || rating) && (
           <Button
@@ -663,11 +685,16 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       <div className="flex flex-wrap items-center gap-3"><label className="text-sm">Sort applicants <select aria-label="Sort applicants" className={selectStyle} value={sort} onChange={event => sortBy(event.target.value as ApplicantSort)}><option value="name">Name / anonymous ID</option><option value="year">Class year</option><option value="status">Status</option><option value="gpa">GPA</option><option value="sat">SAT</option><option value="act">ACT</option><option value="round">Round</option><option value="score">Rating</option></select></label><Button variant="ghost" size="sm" onClick={() => setDescending(value => !value)}>{descending ? "Descending ↓" : "Ascending ↑"}</Button></div>
       {view === "kanban" && <p className="text-xs leading-6 text-muted-foreground">Drag a candidate to another column or use Move to. Review the change before it is saved. Interview moves require an interview round.</p>}
       {rejectedOnly&&<p>Rejected applications are retained here with their reviews and decision history. Reconsideration returns an application to review; it does not change the student’s account or membership.</p>}
-      {!filtered.length ? <p role="status" className="border-y py-10 text-sm text-muted-foreground">{applicants.length ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No rejected applications. Published rejections appear here with their history preserved." : "Submitted applications will appear here. Student drafts stay private."}</p> : decisionsOnly ? <LiveDecisionList applicants={filtered} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} applicants={filtered} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList sort={sort} descending={descending} sortBy={sortBy} applicants={filtered} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
+      {invalidFilter ? <p role="alert">Enter filters within the displayed numeric ranges.</p> : updating ? <p role="status" aria-live="polite">Updating applicants…</p> : !filtered.length ? <p role="status" className="border-y py-10 text-sm text-muted-foreground">{baseTotal ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No rejected applications. Published rejections appear here with their history preserved." : "Submitted applications will appear here. Student drafts stay private."}</p> : decisionsOnly ? <LiveDecisionList applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} laneCounts={listData?.facets.lanes} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
+      {displayed.count > 1 && <nav aria-label="Applicant pages" className="flex flex-wrap items-center justify-between gap-3">
+        <Button variant="outline" aria-label="Previous applicant page" disabled={busy || !pageInfo?.previous} onClick={() => changePage(pageInfo?.previous ?? null)}>Previous page</Button>
+        <p role="status" className="text-sm">Page {displayed.page + 1} of {displayed.count} · Showing {displayed.start + 1}–{displayed.start + displayed.items.length} of {total}</p>
+        <Button variant="outline" aria-label="Next applicant page" disabled={busy || !pageInfo?.next} onClick={() => changePage(pageInfo?.next ?? null)}>Next page</Button>
+      </nav>}
       </div>
       {preview && !active && !data.applications.length && <p role="alert">This applicant is no longer available. <Button onClick={preview.onClose}>Close preview</Button></p>}
       <Sheet
-        open={!!active}
+        open={!!activeId}
         onOpenChange={(value) => {
           if (!value) open()
         }}
@@ -679,6 +706,10 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
             if (dirty || busy) event.preventDefault()
           }}
         >
+          {activeId && !active && <>
+            <SheetHeader><SheetTitle>Applicant review</SheetTitle><SheetDescription>{detail.error ? "This applicant could not be loaded. Your access may have changed." : "Loading applicant…"}</SheetDescription></SheetHeader>
+            {detail.error && <div role="alert"><Button variant="outline" onClick={detail.retry}>Retry applicant</Button></div>}
+          </>}
           {active && (
             <>
               {preview?.onNext && <Button variant="outline" disabled={busy} onClick={() => void (canEvaluate ? draftSave.flush() : Promise.resolve()).then(() => preview.onNext?.()).catch(() => {})}>Next assigned review</Button>}
@@ -724,22 +755,22 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                     variant="ghost"
                     size="icon"
                     aria-label="Previous applicant"
-                    disabled={busy || activeIndex <= 0}
-                    onClick={() => open(filtered[activeIndex - 1])}
+                    disabled={busy || activeIndex < 0 || activeIndex === 0 && !pageInfo?.previous}
+                    onClick={() => void navigateApplicant(-1)}
                   >
                     <ChevronLeft className="size-4" />
                   </Button>
                   <span className="text-xs text-muted-foreground">
                     {activeIndex >= 0
-                      ? `${activeIndex + 1} / ${filtered.length}`
+                      ? `${displayed.start + activeIndex + 1} / ${total}`
                       : "Outside current filters"}
                   </span>
                   <Button
                     variant="ghost"
                     size="icon"
                     aria-label="Next applicant"
-                    disabled={busy || activeIndex < 0 || activeIndex >= filtered.length - 1}
-                    onClick={() => open(filtered[activeIndex + 1])}
+                    disabled={busy || activeIndex < 0 || activeIndex >= filtered.length - 1 && !pageInfo?.next}
+                    onClick={() => void navigateApplicant(1)}
                   >
                     <ChevronRight className="size-4" />
                   </Button>
@@ -944,7 +975,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
               </aside></div>
               </div>
               {quickQueue && <div className="oc-applicant-review-footer flex flex-wrap items-center justify-end gap-3" role="group" aria-label="Quick review decisions">
-                <Button variant="ghost" disabled={busy} onClick={() => { const remaining = quickQueue.filter(id => id !== active.id); const next = remaining.map(id => applicants.find(app => app.id === id)).find(app => app && pendingCandidate(app)); setQuickQueue(remaining); if (next) open(next); else open() }}>Skip</Button>
+                <Button variant="ghost" disabled={busy} onClick={() => void skipQuickReview()}>Skip</Button>
                 <Button variant="outline" disabled={busy || !canDecide || !pendingCandidate(active) || !draftSave.ready || draftSave.recovery != null} onClick={() => void quickDecision("REJECTED")}>Deny & next</Button>
                 <Button disabled={busy || !canDecide || !pendingCandidate(active) || !draftSave.ready || draftSave.recovery != null} onClick={() => void quickDecision("ACCEPTED")}>{busy ? "Saving…" : "Accept & next"}</Button>
               </div>}

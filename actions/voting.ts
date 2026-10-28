@@ -2,6 +2,8 @@
 import { clubWriteTransaction, votingWriteLimits } from "@/utils/club-write-transaction";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { publishVotingCandidates } from "@/utils/voting-publication";
+import { pipelinePageQuery, type PipelinePageQuery } from "@/lib/pipeline-page";
+import { readVotingCandidateSelection } from "@/lib/voting-candidate-selection";
 import { academicYear } from "@/lib/recruitment-profile";
 
 import { CLUB_SUSPENDED_MESSAGE, assertClubOperational, lockOperationalClub } from "@/lib/club-suspension";
@@ -27,8 +29,9 @@ async function session(tx: AppTransactionClient, clubId: string, id: string) {
   if (!s || s.mode === "LIVE") throw Error("Voting session unavailable. Live rooms use their protected room commands.")
   return s
 }
-export async function getVotingWorkspace(clubId: string, sessionId?: string) {
+export async function getVotingWorkspace(clubId: string, sessionId?: string, selectionQuery?: PipelinePageQuery) {
   z.string().uuid().parse(clubId); if (sessionId) z.string().uuid().parse(sessionId)
+  const query = selectionQuery === undefined ? undefined : pipelinePageQuery.omit({ cursor: true }).parse(selectionQuery);
   const { membership } = await requireClubPermission(clubId, ["applications.review"])
   // Polling is a consistent, read-only snapshot, not a club mutation. Holding
   // Club FOR SHARE throughout its queries prevents SKIP LOCKED workers claiming
@@ -48,7 +51,11 @@ export async function getVotingWorkspace(clubId: string, sessionId?: string) {
     const eligible = hasPermission(m,"decisions.manage") ? (await tx.clubMember.findMany({where:{clubId,status:"ACTIVE"},include:{user:{select:{email:true}}}})).filter(v=>hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")) : []
     const joinedParticipants = hasPermission(m,"decisions.manage") && s ? await tx.clubMember.findMany({where:{clubId,id:{in:s.participants.map(p=>p.memberId)}},include:{user:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}}) : []
     const rounds = await tx.pipelineRound.findMany({where:{clubId,archivedAt:null},orderBy:{order:"asc"}})
-    return { sessions, joinedParticipants:joinedParticipants.map(v=>({id:v.id,label:v.user.studentProfile ? `${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}` : "Club member", joinedAt:s!.participants.find(p=>p.memberId===v.id)?.joinedAt??null})), session:s, summary:s ? summarizeVoting(s):null, memberId:m.id, canManage:hasPermission(m,"decisions.manage"), canStart:hasPermission(m,"decisions.start"), canReopen:hasPermission(m,"decisions.reopen"), canFinish:hasPermission(m,"decisions.finish"), canPublish:hasPermission(m,"decisions.publish")&&hasPermission(m,"applicants.identify"), canVote:hasPermission(m,"decisions.vote") && !!s?.participants.some(p=>p.memberId===m.id), eligible:eligible.map(v=>({id:v.id,label:v.user.email})), rounds:rounds.map(r=>({id:r.id,name:r.name})), academicYears: s ? (await tx.application.findMany({where:{id:{in:s.candidates.map(c=>c.applicationId)},clubId},select:{id:true,student:{select:{studentProfile:{select:{gradYear:true,transferStudent:true}}}}}})).map(a => ({ id:a.id, academicYear:a.student.studentProfile ? academicYear(a.student.studentProfile) : "Year unavailable" })):[] }
+    // Setup's canonical candidate IDs belong to this voting snapshot, not a
+    // separate pipeline read before it. Session/ballot reads and post-snapshot
+    // live authority remain unchanged.
+    const candidateSelection = await readVotingCandidateSelection(tx, clubId, m, rounds, query);
+    return { candidateSelection, sessions, joinedParticipants:joinedParticipants.map(v=>({id:v.id,label:v.user.studentProfile ? `${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}` : "Club member", joinedAt:s!.participants.find(p=>p.memberId===v.id)?.joinedAt??null})), session:s, summary:s ? summarizeVoting(s):null, memberId:m.id, canManage:hasPermission(m,"decisions.manage"), canStart:hasPermission(m,"decisions.start"), canReopen:hasPermission(m,"decisions.reopen"), canFinish:hasPermission(m,"decisions.finish"), canPublish:hasPermission(m,"decisions.publish")&&hasPermission(m,"applicants.identify"), canVote:hasPermission(m,"decisions.vote") && !!s?.participants.some(p=>p.memberId===m.id), eligible:eligible.map(v=>({id:v.id,label:v.user.email})), rounds:rounds.map(r=>({id:r.id,name:r.name})), academicYears: s ? (await tx.application.findMany({where:{id:{in:s.candidates.map(c=>c.applicationId)},clubId},select:{id:true,student:{select:{studentProfile:{select:{gradYear:true,transferStudent:true}}}}}})).map(a => ({ id:a.id, academicYear:a.student.studentProfile ? academicYear(a.student.studentProfile) : "Year unavailable" })):[] }
   },{isolationLevel:"RepeatableRead"})
   // Revalidate after releasing the snapshot: suspension, account disablement,
   // support-session expiry, and membership/role revocation must deny its payload.

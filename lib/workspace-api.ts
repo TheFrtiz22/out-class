@@ -1,4 +1,6 @@
 "use client"
+import { pipelineListProjection } from "@/lib/pipeline-list";
+import { pagePipeline, completePipelineSelection, pipelinePageQuery, pipelineSelectionKey } from "@/lib/pipeline-page";
 import * as pipelineActions from "@/actions/club-settings";
 import * as pipelineInterviewActions from "@/actions/pipeline-interviews";
 import * as demoPipeline from "@/lib/demo/pipeline";
@@ -133,6 +135,27 @@ export const getClubPipeline = adapt((...args: Parameters<typeof crm.getClubPipe
       .map((a) => { const app = joinedApplication(a.id); const projected = s.clubs.find(c => c.id === clubId)?.rounds.find(r => r.id === a.roundId)?.anonymousReview ? anonymousApplication(app as unknown as ReviewApplication, genderVisibility(s.applicantDisplay[a.roundId]?.config)) : identifiedApplication(app as unknown as ReviewApplication, genderVisibility(s.applicantDisplay[a.roundId]?.config)); const ownSubmitted = a.evaluations.some(e=>e.interviewerId===demoMember().id&&e.roundId===a.roundId&&e.submittedAt); const assigned=s.interviewFoundation.assignments.some(g=>g.applicationId===a.id&&g.roundId===a.roundId&&g.memberId===demoMember().id&&!g.revokedAt);const caps=interviewCapabilities(demoMember());const self=a.studentId===demoMember().userId;const allowed=!self&&((caps.readClosing&&!assigned)||caps.participate&&assigned&&ownSubmitted); const roundScore=allowed?demoInterviews.getInterviewRoundScore({clubId,applicationId:a.id,roundId:a.roundId}):null;return { ...projected, evaluations: projected.evaluations.filter(e=>!self&&e.submittedAt&&(caps.participate&&e.interviewerId===demoMember().id&&s.interviewFoundation.assignments.some(g=>g.applicationId===a.id&&g.roundId===e.roundId&&g.memberId===demoMember().id&&!g.revokedAt)||allowed&&e.roundId===a.roundId)), roundScore, canEvaluate: !self && !ownSubmitted && (s.clubs.find(c=>c.id===clubId)?.rounds.find(r=>r.id===a.roundId)?.anonymousReview ? caps.participate : caps.participate && assigned), recruitmentOffer: s.recruitmentOffers.find(o=>o.applicationId===a.id) ?? null } }),
   }
 })
+export const getClubPipelineList = adapt(
+  (...args: Parameters<typeof crm.getClubPipelineList>) => readWorkspace<Awaited<ReturnType<typeof crm.getClubPipelineList>>>("pipelineList", args),
+  async (...args: Parameters<typeof getClubPipeline>) => pipelineListProjection(await getClubPipeline(...args)),
+)
+export const getClubPipelinePage = adapt(
+  (...args: Parameters<typeof crm.getClubPipelinePage>) => readWorkspace<Awaited<ReturnType<typeof crm.getClubPipelinePage>>>("pipelinePage", args),
+  async (clubId, input = {}) => {
+    const query = pipelinePageQuery.parse(input), member = demoMember()
+    const list = await getClubPipeline(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: query.genderCounts })
+    const page = pagePipeline(list, query, member.id, member.userId, `demo:${clubId}:${member.id}:${pipelineSelectionKey(query)}`)
+    return { ...page, coverage: { mode: query.mode, complete: !query.roundId && !query.gender && !query.genderCounts && page.page.start === 0 && page.applications.length === page.page.baseTotal } }
+  },
+)
+export const getClubPipelineSelection = adapt(
+  (...args: Parameters<typeof crm.getClubPipelineSelection>) => readWorkspace<Awaited<ReturnType<typeof crm.getClubPipelineSelection>>>("pipelineSelection", args),
+  async (clubId, input = {}) => {
+    const query = pipelinePageQuery.omit({ cursor: true }).parse(input), member = demoMember()
+    const list = await getClubPipelineList(clubId, { roundId: query.roundId, gender: query.gender })
+    return completePipelineSelection(list, query, member.id, member.userId)
+  },
+)
 export const moveApplicantRound = adapt(crm.moveApplicantRound, (input) => {
   scopedApplication(input.clubId, input.applicationId)
   if (
@@ -518,7 +541,7 @@ export const deleteApplicantObservation = adapt(applicantIntelligence.deleteAppl
 });
 
 // Persisted voting follows the same Demo Mode boundary as recruitment and applicant display.
-export const getVotingWorkspace = adapt((...args: Parameters<typeof votingApi.getVotingWorkspace>) => readWorkspace<Awaited<ReturnType<typeof votingApi.getVotingWorkspace>>>("voting", args), demoVoting.getVotingWorkspace)
+export const getVotingWorkspace = adapt((...args: Parameters<typeof votingApi.getVotingWorkspace>) => readWorkspace<Awaited<ReturnType<typeof votingApi.getVotingWorkspace>>>("voting", args), async (clubId, sessionId, selectionQuery) => ({ ...await demoVoting.getVotingWorkspace(clubId, sessionId), candidateSelection: selectionQuery ? await getClubPipelineSelection(clubId, selectionQuery) : null }))
 export const createVotingSession = adapt(votingApi.createVotingSession, demoVoting.createVotingSession)
 export const submitVotingBallot = adapt(votingApi.submitVotingBallot, demoVoting.submitVotingBallot)
 export const commandVotingSession = adapt(votingApi.commandVotingSession, demoVoting.commandVotingSession)
