@@ -20,33 +20,32 @@ html:has([aria-label="Administrator view-as session"]) .oc-route-content .oc-loa
 body > .oc-loading-screen {
   padding-block-start: calc(max(var(--oc-space-content), env(safe-area-inset-top)) + var(--support-banner-height, 0px));
 }
+/* Indeterminate, compositor-friendly motion: no timer, JS work or fake progress percentage. */
 .oc-loading-mark {
   display: block;
   inline-size: clamp(3.5rem, 5vw, 4.5rem);
   block-size: auto;
   aspect-ratio: 1;
-  filter: drop-shadow(0 12px 22px rgb(10 30 52 / 18%));
-  animation: oc-loading-resolve var(--oc-duration-signature) var(--oc-ease-out) both;
+  filter: drop-shadow(0 8px 16px rgb(10 30 52 / 14%));
+  animation: oc-loading-mark-breathe 2100ms ease-in-out infinite;
+  will-change: transform, opacity;
 }
-@keyframes oc-loading-resolve {
-  from { opacity: .4; transform: translateY(2px) scale(.94); }
-  60% { opacity: 1; transform: translateY(-1px) scale(1.008); }
-  to { opacity: 1; transform: none; }
+@keyframes oc-loading-mark-breathe {
+  0%, 100% { opacity: .92; transform: translate3d(0, 1px, 0) scale(.985); }
+  50% { opacity: 1; transform: translate3d(0, -3px, 0) scale(1.025); }
 }
 /* Ready content mounts immediately. The fade adds no timer or extra render gate. */
 .oc-route-content > :not(.oc-loading-screen):not([hidden]) {
   animation: oc-loading-ready clamp(150ms, var(--oc-duration-micro), 250ms) var(--oc-ease-out) both;
 }
 @keyframes oc-loading-ready { from { opacity: .82; } to { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) {
-  .oc-loading-mark, .oc-route-content > :not(.oc-loading-screen):not([hidden]) {
-    animation: none;
-    opacity: 1;
-    transform: none;
-  }
-}
 
-.oc-loading-identity { position: relative; display: grid; justify-items: center; gap: 19px; }
+.oc-loading-identity {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+}
 .oc-loading-identity::before {
   content: "";
   position: absolute;
@@ -59,7 +58,56 @@ body > .oc-loading-screen {
   border-radius: 50%;
   pointer-events: none;
 }
-.oc-loading-screen[data-variant="navy"] .oc-loading-identity::before { border-color: rgb(255 247 236 / 14%); }
-.oc-loading-line { display: block; width: 45px; height: 1px; background: linear-gradient(90deg, transparent, var(--brand-orange), transparent); transform-origin: center; animation: oc-loading-line-reveal 800ms var(--oc-ease-out) both; }
-@keyframes oc-loading-line-reveal { from { opacity: 0; transform: scaleX(.2); } to { opacity: 1; transform: scaleX(1); } }
-@media (prefers-reduced-motion: reduce) { .oc-loading-line { animation: none; } }
+.oc-loading-screen[data-variant="navy"] .oc-loading-identity::before {
+  border-color: rgb(255 247 236 / 14%);
+}
+/* A continuous traveling segment communicates activity for the entire wait. */
+.oc-loading-line {
+  position: relative;
+  display: block;
+  inline-size: 96px;
+  block-size: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgb(232 91 25 / 18%);
+  contain: paint;
+}
+.oc-loading-line::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: 40%;
+  border-radius: inherit;
+  background: var(--brand-orange);
+  animation: oc-loading-sweep 1300ms cubic-bezier(.45, 0, .25, 1) infinite;
+  will-change: transform;
+}
+@keyframes oc-loading-sweep {
+  from { transform: translate3d(-110%, 0, 0); }
+  to { transform: translate3d(285%, 0, 0); }
+}
+.oc-loading-caption {
+  color: var(--muted-foreground);
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  line-height: 1.2;
+}
+.oc-loading-screen[data-variant="navy"] .oc-loading-caption {
+  color: rgb(255 247 236 / 82%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .oc-loading-mark,
+  .oc-loading-line::after,
+  .oc-route-content > :not(.oc-loading-screen):not([hidden]) {
+    animation: none;
+    will-change: auto;
+  }
+  .oc-loading-mark,
+  .oc-route-content > :not(.oc-loading-screen):not([hidden]) {
+    opacity: 1;
+    transform: none;
+  }
+  .oc-loading-line::after { transform: translate3d(80%, 0, 0); }
+}
