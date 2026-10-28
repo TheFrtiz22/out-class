@@ -1,7 +1,7 @@
 .oc-settings-workspace {
   display: grid;
   grid-template-columns: 190px minmax(0, 1fr);
-  gap: 2rem;
+  gap: var(--oc-content-gap);
   align-items: start;
 }
 .oc-settings-navigation {
@@ -35,11 +35,15 @@
   outline-offset: 2px;
 }
 .oc-settings-editor {
-  max-width: 780px;
+  max-width: var(--oc-reading-width);
+  padding: var(--oc-content-padding);
+  border: 1px solid var(--oc-content-edge);
+  border-radius: var(--oc-content-radius);
+  background: var(--oc-content-surface);
   min-width: 0;
 }
 .oc-settings-question {
-  padding: 1.25rem 0;
+  padding: 1rem 0;
   border-bottom: 1px solid var(--border);
 }
 .oc-settings-select {
@@ -134,3 +138,5 @@
   height: 1rem;
   min-height: 1rem;
 }
+
+@media (max-width: 1023px) { .oc-settings-actions { bottom: calc(var(--oc-shell-mobile-height) + env(safe-area-inset-bottom)); } }

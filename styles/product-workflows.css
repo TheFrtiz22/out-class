@@ -1,18 +1,13 @@
 /* Dense operational views share the campus foundations without losing precision. */
 [data-product-shell] .oc-live-pipeline { padding: 0; border: 0; background: transparent; border-radius: 0; }
-[data-product-shell] .oc-live-pipeline > div:has(> [aria-label="Applicant view"]) { padding: 1rem; border-radius: var(--oc-radius-lg); background: var(--card); box-shadow: var(--oc-shadow-surface); }
 [data-product-shell] .oc-live-pipeline [aria-label="Applicant view"] { border: 0; background: var(--muted); border-radius: var(--oc-radius-md); }
 [data-product-shell] .oc-live-pipeline [aria-label="Applicant view"] [aria-pressed="true"] { background: var(--primary); color: var(--primary-foreground); }
-[data-product-shell] .oc-live-pipeline > div:has(> table) { border: 0; border-radius: var(--oc-radius-lg); box-shadow: var(--oc-shadow-surface); }
 [data-product-shell] .oc-applicant-board { gap: 1rem; align-items: start; }
-[data-product-shell] .oc-applicant-board > section { border: 0; border-radius: var(--oc-radius-lg); background: var(--oc-surface-blue); padding: 1rem; min-height: 14rem; }
-[data-product-shell] .oc-applicant-board > section:nth-child(2) { background: var(--oc-surface-warm); }
-[data-product-shell] .oc-applicant-board > section:nth-child(3) { background: var(--oc-surface-sage); }
-[data-product-shell] .oc-applicant-board > section:nth-child(4) { background: var(--oc-surface-lilac); }
+[data-product-shell] .oc-applicant-board > section { border: 0; border-radius: var(--oc-radius-lg); background: var(--oc-content-soft); padding: .875rem; min-height: 10rem; }
 [data-product-shell] .oc-applicant-board header h3 { font-size: var(--oc-text-small); }
 [data-product-shell] .oc-applicant-board header h3 > span { min-width: 1.5rem; padding: .2rem; border-radius: var(--oc-radius-sm); text-align: center; background: var(--card); }
 [data-product-shell] .oc-applicant-board button[data-applicant-id] { border: 0; border-radius: var(--oc-radius-md); background: var(--card); box-shadow: var(--oc-shadow-surface); transition: transform var(--oc-duration-micro), box-shadow var(--oc-duration-ui); }
-[data-product-shell] .oc-applicant-board button[data-applicant-id]:hover { transform: translateY(-2px); box-shadow: var(--oc-shadow-popover); }
+[data-product-shell] .oc-applicant-board button[data-applicant-id]:hover { box-shadow: var(--oc-content-shadow-hover); }
 [data-product-shell] [data-application-status="ACCEPTED"] { --badge-accent: var(--success); }
 [data-product-shell] [data-application-status="REJECTED"] { --badge-accent: var(--destructive); }
 [data-product-shell] [data-application-status="WAITLISTED"] { --badge-accent: var(--warning); }
@@ -20,14 +15,14 @@
 [data-product-shell] [data-application-status="IN_REVIEW"] { --badge-accent: var(--info); }
 [data-product-shell] .ir-overview { display: flex; flex-wrap: wrap; gap: 1.25rem; padding-block: .75rem; border-block: 1px solid var(--border); }
 [data-product-shell] .ir-overview > div { padding: 0; border: 0; background: transparent; }
-[data-product-shell] .ir-room-card { border: 0; border-radius: var(--oc-radius-lg); box-shadow: var(--oc-shadow-surface); }
+[data-product-shell] .ir-room-card { border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); box-shadow: var(--oc-content-shadow); }
 [data-product-shell] .ir-room-slots > div { border: 0; background: var(--oc-surface-sage); border-radius: var(--oc-radius-md); padding: 1rem .5rem; }
 [data-product-shell] .ir-room-slots .is-full { background: var(--muted); }
 [data-product-shell] .ir-booking { border: 0; box-shadow: var(--oc-shadow-surface); border-radius: var(--oc-radius-lg); }
 [data-product-shell] .ir-booking-intro { background: var(--oc-surface-blue); }
 [data-product-shell] .ir-calendar button[aria-pressed="true"], [data-product-shell] .ir-times button[aria-pressed="true"] { background: var(--primary); color: var(--primary-foreground); outline: 2px solid var(--brand-orange); outline-offset: 2px; }
 [data-product-shell] .ir-empty { border: 0; background: var(--oc-surface-blue); }
-[data-product-shell] .oc-scheduling-location { border: 0; background: var(--card); box-shadow: var(--oc-shadow-surface); border-radius: var(--oc-radius-lg); }
+[data-product-shell] .oc-scheduling-location { border: 1px solid var(--oc-content-edge); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); border-radius: var(--oc-content-radius); }
 [data-workspace-detail] { font-family: var(--oc-font-sans); }
 [data-workspace-detail] .oc-focused-interview { --oc-focus-header-height: 4rem; background: var(--background); color: var(--foreground); }
 [data-workspace-detail] .oc-focused-interview > header { background: var(--oc-rail); color: var(--oc-rail-text); border: 0; padding: .75rem 1.5rem; }
@@ -36,7 +31,7 @@
 [data-workspace-detail] .oc-focused-interview > header button:hover { background: var(--oc-rail-selected); }
 [data-workspace-detail] .oc-focused-interview > header [data-slot="button"].border { border-color: var(--oc-rail-muted); background: transparent; }
 [data-workspace-detail] .oc-focused-interview .oc-interview-columns > [aria-label="Candidate context"] { background: var(--oc-surface-blue); border-color: transparent; }
-[data-workspace-detail] .oc-focused-interview .oc-active-question { border: 0; border-radius: var(--oc-radius-lg); box-shadow: var(--oc-shadow-surface); padding: var(--oc-density-inset); }
+[data-workspace-detail] .oc-focused-interview .oc-active-question { border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); box-shadow: var(--oc-content-shadow); padding: var(--oc-density-inset); }
 [data-workspace-detail] .oc-focused-interview .oc-active-question h2 { font-family: var(--oc-font-display); font-size: clamp(1.25rem,1.8vw,1.5rem); font-weight: 400; line-height: 1.35; }
 [data-workspace-detail] .oc-focused-interview .oc-active-question textarea { background: var(--background); border-color: var(--input); border-radius: var(--oc-radius-md); padding: 1rem; line-height: 1.75; }
 [data-workspace-detail] .oc-focused-interview .oc-question-agenda { border: 0; background: transparent; padding: 0; }

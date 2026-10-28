@@ -52,10 +52,10 @@ export function ActionWorkflow({ title, description, trigger, children, variant 
     } catch { setError("Your draft could not be saved. Keep this workflow open and retry.") }
     finally { closing.current = false }
   }
-  const content = <div ref={body} className="min-w-0 space-y-5" onChangeCapture={event => { if ((event.target as HTMLElement).closest("form")) changed.current = true }}>
-    {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+  const content = <div ref={body} className="oc-workspace-stack" onChangeCapture={event => { if ((event.target as HTMLElement).closest("form")) changed.current = true }}>
+    {error && <p role="alert" className="oc-feedback">{error}</p>}
     {typeof children === "function" ? children(done) : children}
-    {showCloseAction && <div className="flex justify-end border-t pt-4"><Button type="button" variant="outline" onClick={() => void requestOpen(false)}>Done</Button></div>}
+    {showCloseAction && <div className="oc-form-actions"><Button type="button" variant="outline" onClick={() => void requestOpen(false)}>Done</Button></div>}
   </div>
   const restoreFocus = (event: Event) => { event.preventDefault(); if (origin.current?.isConnected) origin.current.focus() }
   return presentation === "sheet" ? <Sheet open={open} onOpenChange={value => void requestOpen(value)}>

@@ -47,7 +47,7 @@ export function ClubMembers({ clubId, initialDirectory, onDirectory, validatedIn
   async function run(fn: () => Promise<unknown>) { setBusy(true); setError(""); try { await fn(); await reload() } catch(e) { setError(e instanceof Error ? e.message : "Could not save.") } finally { setBusy(false) } }
   if (!canAccess && !canMembers) return <p role="alert">Member management is not available with your current access.</p>
   if (demo.ready && !demo.isDemoEnabled) return <OrganizationMemberManagement key={clubId} clubId={clubId} initialData={initialDirectory} onData={onDirectory} validatedInitialData={validatedInitialData} />
-  return <div className="max-w-5xl space-y-6" data-unsaved={dirty} data-saving={busy}>
+  return <div className="oc-workspace-stack max-w-5xl" data-unsaved={dirty} data-saving={busy}>
     <p className="text-sm leading-7 text-muted-foreground">Club roles describe responsibilities. Management access is granted separately, capability by capability.</p>
     {demo.isDemoEnabled && <p className="text-sm text-muted-foreground">Fictional demo directory. Membership and access changes are available outside Demo Mode.</p>}
     {!demo.isDemoEnabled && canMembers && <RosterCsvImporter key={clubId} clubId={clubId} />}

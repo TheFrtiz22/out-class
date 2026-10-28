@@ -8,7 +8,7 @@ export default async function EventApprovalsPage() {
   const result = await adminPageLoad("/platform/events", requirePlatformAdmin);
   if (result.supportCode) return <AdminRecovery supportCode={result.supportCode} />;
   return (
-    <section data-workspace-detail className="mx-auto max-w-6xl space-y-6 p-6">
+    <section data-workspace-detail className="oc-workspace-stack">
       <Link href="/platform" className="underline">
         Admin workspace
       </Link>

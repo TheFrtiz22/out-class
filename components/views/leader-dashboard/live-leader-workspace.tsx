@@ -92,7 +92,7 @@ export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, rej
       </div>
     )
   return (
-    <div className="space-y-6">
+    <div className="oc-workspace-stack">
       {!scoped && <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
@@ -460,7 +460,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       </div>
     )
   return (
-    <div className="oc-live-pipeline space-y-6" data-unsaved={draftSave.dirty} data-saving={busy}>
+    <div className="oc-live-pipeline oc-workspace-stack" data-unsaved={draftSave.dirty} data-saving={busy}>
       <div hidden={!!preview}>
       {!active && message && <p role="status" className="text-sm">{message}</p>}
       {decisionsOnly && <>
@@ -468,7 +468,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         <p className="text-sm text-muted-foreground">{decisionGroup === "pending" ? "Submitted, in-review, and interviewing applications without a recorded decision. Round and status remain separate." : "Recorded application outcomes, visible to the applicant."} Acceptance does not automatically create club membership.</p>
       </>}
 {!decisionsOnly && !rejectedOnly && <>
-      <section aria-label="Recruitment review" className="flex flex-wrap items-center justify-between gap-4 border-y py-4">
+      <section aria-label="Recruitment review" className="oc-content-panel flex flex-wrap items-center justify-between gap-4">
         <div><h2 className="oc-card-heading">Recruitment review</h2><p className="mt-1 text-xs text-muted-foreground">Review together or work through candidates one at a time.</p></div>
         <div className="flex flex-wrap gap-2">
           {canDecide && <Button variant="outline" disabled={busy || !filtered.some(pendingCandidate)} onClick={startQuickReview}>Quick review</Button>}
@@ -496,9 +496,9 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         </div>
       </section>
       </>}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="oc-toolbar">
         {!decisionsOnly && <div role="group" aria-label="Applicant view" className="flex rounded-md border bg-card p-1">{(["list", "kanban"] as const).map(mode => <Button key={mode} size="sm" variant={view === mode ? "secondary" : "ghost"} aria-pressed={view === mode} onClick={() => setView(mode)}>{mode === "list" ? "List" : "Kanban"}</Button>)}</div>}
-        <div className="relative w-full sm:max-w-xs">
+        <div className="relative min-w-0 flex-1 basis-60">
           <Search className="absolute left-3 top-3 size-4 text-muted-foreground" />
           <Input
             ref={search}
