@@ -1,0 +1,223 @@
+{
+  "generatedAt": "2026-10-28T02:46:11.903Z",
+  "sampleCount": 3,
+  "groups": [
+    {
+      "path": "applicants → voting",
+      "condition": "cold",
+      "meaningfulMs": {
+        "samples": 3,
+        "p50": 114.7,
+        "p95": 147.1,
+        "max": 147.1
+      },
+      "interactiveMs": {
+        "samples": 3,
+        "p50": 114.8,
+        "p95": 147.2,
+        "max": 147.2
+      },
+      "clickToUrlMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "networkCompleteMs": {
+        "samples": 3,
+        "p50": 83,
+        "p95": 113.1,
+        "max": 113.1
+      },
+      "scriptMs": {
+        "samples": 3,
+        "p50": 7.66,
+        "p95": 8.56,
+        "max": 8.56
+      },
+      "taskMs": {
+        "samples": 3,
+        "p50": 78.76,
+        "p95": 82.98,
+        "max": 82.98
+      },
+      "requestCount": {
+        "samples": 3,
+        "p50": 1,
+        "p95": 1,
+        "max": 1
+      },
+      "encodedBodyBytes": {
+        "samples": 3,
+        "p50": 511,
+        "p95": 511,
+        "max": 511
+      }
+    },
+    {
+      "path": "applicants → voting",
+      "condition": "warm",
+      "meaningfulMs": {
+        "samples": 3,
+        "p50": 119.5,
+        "p95": 120.3,
+        "max": 120.3
+      },
+      "interactiveMs": {
+        "samples": 3,
+        "p50": 119.6,
+        "p95": 120.4,
+        "max": 120.4
+      },
+      "clickToUrlMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "networkCompleteMs": {
+        "samples": 3,
+        "p50": 89.3,
+        "p95": 4568.5,
+        "max": 4568.5
+      },
+      "scriptMs": {
+        "samples": 3,
+        "p50": 5.41,
+        "p95": 5.45,
+        "max": 5.45
+      },
+      "taskMs": {
+        "samples": 3,
+        "p50": 81.16,
+        "p95": 82.01,
+        "max": 82.01
+      },
+      "requestCount": {
+        "samples": 3,
+        "p50": 1,
+        "p95": 1,
+        "max": 1
+      },
+      "encodedBodyBytes": {
+        "samples": 3,
+        "p50": 511,
+        "p95": 511,
+        "max": 511
+      }
+    },
+    {
+      "path": "voting → applicants",
+      "condition": "cold",
+      "meaningfulMs": {
+        "samples": 3,
+        "p50": 31.9,
+        "p95": 32.2,
+        "max": 32.2
+      },
+      "interactiveMs": {
+        "samples": 3,
+        "p50": 32.1,
+        "p95": 32.4,
+        "max": 32.4
+      },
+      "clickToUrlMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "networkCompleteMs": {
+        "samples": 3,
+        "p50": 0,
+        "p95": 0,
+        "max": 0
+      },
+      "scriptMs": {
+        "samples": 3,
+        "p50": 1.5,
+        "p95": 1.59,
+        "max": 1.59
+      },
+      "taskMs": {
+        "samples": 3,
+        "p50": 11.73,
+        "p95": 12.37,
+        "max": 12.37
+      },
+      "requestCount": {
+        "samples": 3,
+        "p50": 0,
+        "p95": 0,
+        "max": 0
+      },
+      "encodedBodyBytes": {
+        "samples": 3,
+        "p50": 0,
+        "p95": 0,
+        "max": 0
+      }
+    },
+    {
+      "path": "voting → applicants",
+      "condition": "warm",
+      "meaningfulMs": {
+        "samples": 2,
+        "p50": 32,
+        "p95": 32.4,
+        "max": 32.4
+      },
+      "interactiveMs": {
+        "samples": 2,
+        "p50": 32.2,
+        "p95": 32.6,
+        "max": 32.6
+      },
+      "clickToUrlMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "networkCompleteMs": {
+        "samples": 2,
+        "p50": 0,
+        "p95": 0,
+        "max": 0
+      },
+      "scriptMs": {
+        "samples": 2,
+        "p50": 1.31,
+        "p95": 1.45,
+        "max": 1.45
+      },
+      "taskMs": {
+        "samples": 2,
+        "p50": 11.06,
+        "p95": 11.47,
+        "max": 11.47
+      },
+      "requestCount": {
+        "samples": 2,
+        "p50": 0,
+        "p95": 0,
+        "max": 0
+      },
+      "encodedBodyBytes": {
+        "samples": 2,
+        "p50": 0,
+        "p95": 0,
+        "max": 0
+      }
+    }
+  ],
+  "failures": [
+    {
+      "path": "voting → applicants",
+      "condition": "warm",
+      "index": 2,
+      "stage": "measured",
+      "error": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('dialog', { name: 'New voting session', exact: true }) to be hidden\u001b[22m\n\u001b[2m    4 × locator resolved to visible <div role=\"dialog\" tabindex=\"-1\" id=\"radix-_r_15_\" data-state=\"closed\" data-slot=\"dialog-content\" aria-labelledby=\"radix-_r_16_\" aria-describedby=\"radix-_r_17_\" class=\"bg-card data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-[var(--oc-z-modal)] grid max-h-[calc(100dvh-2rem)] overflow-y-auto w-full max-w-[calc(100%-2rem)] translate-x-[-50%] …>…</div>\u001b[22m\n"
+    }
+  ]
+}

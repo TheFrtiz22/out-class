@@ -1,0 +1,31 @@
+{
+  "preparedAt": "2026-10-28T14:25:24.866Z",
+  "scope": "Separate verified synthetic actor; additive measured club with1 application,2 rounds and61 members. Two other seed clubs and3 actor memberships remain. Original measured cohorts unchanged. No submitted review was deleted or protection weakened.",
+  "initialPreparation": "A first attempt to delete submitted synthetic reviews was rejected by existing database protections; transaction rolled back. Additive fixture creation used instead.",
+  "cohorts": {
+    "1": {
+      "sha256": "4fbc417b12426f7894ce9f1e04c8d9a89540d11799720605d4209fc0eb524943",
+      "applicationRows": 1,
+      "counts": {
+        "clubs": 2,
+        "membersPerClub": 61,
+        "applicantsPerClub": 100,
+        "meetingsPerClub": 1,
+        "tasksPerClub": 1,
+        "announcementsPerClub": 1,
+        "applicantsInMeasuredClub": 1,
+        "scaleHistory": {
+          "essayAnswersPerApplicant": 3,
+          "essayCharacters": 1024,
+          "profileBioCharacters": 1050,
+          "additionalExperiences": 2,
+          "submittedEvaluationsPerApplicant": 2,
+          "rounds": 2,
+          "bookingHistory": false
+        },
+        "extraSeedClubs": 2,
+        "actorMemberships": 3
+      }
+    }
+  }
+}

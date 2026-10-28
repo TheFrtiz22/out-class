@@ -1,0 +1,19 @@
+{
+  "at": "2026-10-27T20:23:29.740Z",
+  "stages": [
+    {
+      "name": "Auth-settings-runtime",
+      "exitCode": 0
+    },
+    {
+      "name": "navigation-seed",
+      "exitCode": 0
+    },
+    {
+      "name": "existing-selected-navigation",
+      "exitCode": 1
+    }
+  ],
+  "complete": false,
+  "applicationStopped": true
+}

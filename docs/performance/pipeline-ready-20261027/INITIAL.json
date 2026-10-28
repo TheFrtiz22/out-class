@@ -1,0 +1,32 @@
+{
+  "at": "2026-10-27T19:08:55.722154+00:00",
+  "base": "4c27bbe77c7d783e2b84ad06ddb9b3ead7899c59",
+  "main": "4c27bbe77c7d783e2b84ad06ddb9b3ead7899c59",
+  "originalHead": "09f312dc9dedf0084ad0f3f1c2a537856f38bd84",
+  "originalStatus": "",
+  "unrelatedContainers": [
+    "supabase_pg_meta_outclass-announcement-e2e\trunning",
+    "supabase_storage_outclass-announcement-e2e\trunning",
+    "supabase_rest_outclass-announcement-e2e\trunning",
+    "supabase_realtime_outclass-announcement-e2e\trunning",
+    "supabase_inbucket_outclass-announcement-e2e\trunning",
+    "supabase_auth_outclass-announcement-e2e\trunning",
+    "supabase_kong_outclass-announcement-e2e\texited",
+    "supabase_db_outclass-announcement-e2e\trunning",
+    "outclass-release-rehearsal-20261002\texited",
+    "supabase_db_out-class\trunning",
+    "supabase_studio_out-class\trunning",
+    "supabase_pg_meta_out-class\trunning",
+    "supabase_edge_runtime_out-class\texited",
+    "supabase_storage_out-class\trunning",
+    "supabase_rest_out-class\trunning",
+    "supabase_realtime_out-class\trunning",
+    "supabase_inbucket_out-class\trunning",
+    "supabase_auth_out-class\trunning",
+    "supabase_kong_out-class\trunning",
+    "supabase_vector_out-class\trunning",
+    "supabase_analytics_out-class\trunning"
+  ],
+  "priorInactiveFixtureBackedUp": false,
+  "scope": "Plain-Prisma bounded pipeline payload/page integration. No raw metadata JOIN, Settings deferral, production infrastructure/schema/index or security shortcut. Preserve main PR86/87 fixes."
+}

@@ -1,0 +1,4 @@
+{
+  "controlledPerformanceData": false,
+  "scope": "Collector integration verification only; not primary data. Original four failed baseline workflows retained in collector-verification. First-row actionability was blocked while the pointer remained over the navigation hover area; a normal pointer exit is now part of the same full workflow, with its actual collapse wait included. No app or loading-delay change."
+}

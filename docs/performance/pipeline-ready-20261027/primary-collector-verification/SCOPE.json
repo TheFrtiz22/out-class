@@ -1,0 +1,4 @@
+{
+  "controlledPerformanceData": false,
+  "scope": "Existing primary collector integration verification only; not pooled into controlled comparison. Each build must emit all four planned cold/warm entry/detail outcomes."
+}

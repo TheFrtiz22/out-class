@@ -1,0 +1,813 @@
+diff --git a/scripts/run-onboarding-e2e.cjs b/scripts/run-onboarding-e2e.cjs
+index ea0e51db..05a77554 100644
+--- a/scripts/run-onboarding-e2e.cjs
++++ b/scripts/run-onboarding-e2e.cjs
+@@ -117,6 +117,12 @@ async function ready(url,headers={}){
+   const navigationTests=['tests/navigation-phase1-e2e.test.cjs','tests/navigation-phase2-e2e.test.cjs','tests/navigation-phase10-e2e.test.cjs','tests/navigation-phase12-e2e.test.cjs'];
+   const navigationResult=spawnSync(process.execPath,['--test','--test-concurrency=1',...navigationTests],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
+   if(navigationResult.status!==0)throw Error('Selected navigation integration failed; inspect the disposable test log.');
++  // Exercise pagination and whole-selection authority beyond the first page.
++  // Keep the existing navigation checks on their original 100-applicant fixture.
++  logged(process.execPath,['scripts/pipeline-scale-fixture.cjs','1000'],'pipeline-navigation-scale.log',env);
++  const pipelineTests=['tests/navigation-phase3-e2e.test.cjs','tests/navigation-phase5-e2e.test.cjs','tests/navigation-phase6-e2e.test.cjs','tests/navigation-phase7-e2e.test.cjs','tests/navigation-phase8-e2e.test.cjs'];
++  const pipelineResult=spawnSync(process.execPath,['--test','--test-concurrency=1',...pipelineTests],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
++  if(pipelineResult.status!==0)throw Error('Bounded pipeline integration failed; inspect the disposable test log.');
+  }
+  if(keep){console.log(`Keeping the isolated app for review at ${settings.appUrl}. Local test configuration: ${configFile}`);return;}
+ })().catch(error=>{console.error(error.message);process.exitCode=1;}).finally(()=>{
+diff --git a/tests/applicant-pagination.test.cjs b/tests/applicant-pagination.test.cjs
+new file mode 100644
+index 00000000..7973a6f8
+--- /dev/null
++++ b/tests/applicant-pagination.test.cjs
+@@ -0,0 +1,2 @@
++const {test}=require('node:test'),assert=require('node:assert/strict'),{load}=require('./helpers/voting-harness.cjs'),{applicantPage,APPLICANT_PAGE_SIZE}=load('lib/applicant-pagination.ts');
++test('applicant display pages bound DOM input while retaining stable IDs and complete filter selection',()=>{const all=Array.from({length:5000},(_,i)=>({id:String(i),status:i%2?'ACCEPTED':'IN_REVIEW'})),copy=all.slice();assert.equal(APPLICANT_PAGE_SIZE,100);assert.equal(applicantPage(all,0).items.length,100);assert.equal(applicantPage(all,49).items[99].id,'4999');assert.equal(applicantPage(all,99).page,49);assert.deepEqual(all,copy);const filtered=all.filter(a=>a.status==='ACCEPTED');assert.equal(filtered.length,2500);assert.equal(applicantPage(filtered,0).items[0].id,'1');assert.equal(applicantPage(filtered,0).count,25);assert.equal(applicantPage([],3).items.length,0);assert.equal(applicantPage(all,-1).page,0)});
+diff --git a/tests/club-workspace-refinements-browser.test.cjs b/tests/club-workspace-refinements-browser.test.cjs
+index 506609cb..54465837 100644
+--- a/tests/club-workspace-refinements-browser.test.cjs
++++ b/tests/club-workspace-refinements-browser.test.cjs
+@@ -11,12 +11,12 @@ async function fixture() {
+   const app = (id, firstName, gpa, sat, score) => ({ id, studentId: id, roundId: 'round', recruitmentCycleId: null, status: 'IN_REVIEW', canEvaluate: false, publicationGuard: 'fixture', student: { email: `${id}@example.invalid`, studentProfile: { firstName, lastName: 'Example', academicYear: 'Second Year', major: 'Economics', gpa, satScore: sat, actScore: 33, resumeUrl: `12345678-1234-4123-8123-123456789abc/12345678-1234-4123-8123-123456789abc.pdf`, experiences: [] } }, evaluations: [], answers: [], bookings: [], roundScore: { average: score, submitted: 2, required: 2, provisional: false } })
+   const initial = () => ({ pipeline: { rounds: [{ id: 'round', name: 'Interview round', order: 0, type: 'INTERVIEW', anonymousReview: false }], applications: [app('alpha', 'Alpha', 3.7, 1450, 8), app('beta', 'Beta', 3.9, 1550, 9)] }, directory: { actor: owner, members: [member('junior', 'Zoe', 'Third Year', 'MEMBER', ['Girls']), member('senior', 'Adam', 'Fourth Year', 'MEMBER', ['Boys']), member('freshman', 'Maya', 'First Year', 'MEMBER')], invitations: [], identifierTypes: [] }, writes: [] })
+   let state = initial()
+-  const api = `async function call(path,input){const response=await fetch('/api/'+path,input?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)}:undefined);if(!response.ok)throw Error('Fixture save rejected');return response.json()}exports.getClubPipeline=()=>call('pipeline');exports.setApplicationStatus=input=>call('status',input);exports.getOrganizationMemberManagement=()=>call('directory');exports.assignOrganizationMemberGroups=input=>call('groups',input);exports.createOrganizationMemberGroups=input=>call('create-groups',input);exports.getApplicantDisplay=()=>call('display');exports.saveApplicantObservation=input=>call('observation',input);exports.deleteApplicantObservation=input=>call('delete-observation',input);exports.listMeetings=async()=>[];exports.submitEvaluation=async()=>({});exports.moveApplicantRound=async()=>({});exports.getRecipientGroups=()=>call('catalog');exports.previewRecipientAudience=()=>call('preview');exports.publishClubAnnouncement=input=>call('announcement',input);exports.getOrganizationSetupChecklist=()=>call('checklist');`
++  const api = `async function call(path,input){const response=await fetch('/api/'+path,input?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)}:undefined);if(!response.ok)throw Error('Fixture save rejected');return response.json()}exports.getClubPipeline=()=>call('pipeline');exports.getClubPipelineList=()=>call('pipeline');exports.getClubPipelinePage=async(club,q={})=>require('@/lib/pipeline-page').pagePipeline(await call('pipeline'),q,'owner','owner','fixture');exports.getClubPipelineSelection=async(club,q={})=>require('@/lib/pipeline-page').completePipelineSelection(await call('pipeline'),q,'owner','owner');exports.setApplicationStatus=input=>call('status',input);exports.getOrganizationMemberManagement=()=>call('directory');exports.assignOrganizationMemberGroups=input=>call('groups',input);exports.createOrganizationMemberGroups=input=>call('create-groups',input);exports.getApplicantDisplay=()=>call('display');exports.saveApplicantObservation=input=>call('observation',input);exports.deleteApplicantObservation=input=>call('delete-observation',input);exports.listMeetings=async()=>[];exports.submitEvaluation=async()=>({});exports.moveApplicantRound=async()=>({});exports.getRecipientGroups=()=>call('catalog');exports.previewRecipientAudience=()=>call('preview');exports.publishClubAnnouncement=input=>call('announcement',input);exports.getOrganizationSetupChecklist=()=>call('checklist');`
+   const empty = 'module.exports=new Proxy({},{get:()=>()=>null});'
+   const mocks = {
+     'next/link': `const React=require('react');module.exports=({href,children,...props})=>React.createElement('a',{...props,href},children);`,
+     'next/navigation': `exports.useSearchParams=()=>new URLSearchParams(location.search);exports.useRouter=()=>({push(){},refresh(){}});`,
+-    '@/contexts/auth-context': `const member=${JSON.stringify(owner)};exports.useAuth=()=>({user:{id:'owner',memberships:[member]},activeClubId:'club',selectClub(){},refreshUser:async()=>{}});`,
++    '@/contexts/auth-context': `const member=${JSON.stringify(owner)};exports.useAuth=()=>window.__refinementAuth??=({readAuthority:{},isReadAuthorityCurrent:()=>true,user:{id:'owner',memberships:[member]},activeClubId:'club',selectClub(){},refreshUser:async()=>{}});`,
+     '@/contexts/demo-context': 'exports.useDemoMode=()=>({isDemoEnabled:false,ready:true});',
+     '@/lib/application-state': 'exports.useApplicationState=()=>({leaderFocus:null,clearLeaderFocus(){}});',
+     '@/hooks/use-editor-draft': 'exports.useEditorDraft=()=>({ready:true,dirty:false,recovery:null,flush:async()=>{},clear:async()=>{},onBlur(){}});',
+diff --git a/tests/crm-photo-authorization.test.cjs b/tests/crm-photo-authorization.test.cjs
+index 630deccf..5dd361ab 100644
+--- a/tests/crm-photo-authorization.test.cjs
++++ b/tests/crm-photo-authorization.test.cjs
+@@ -25,15 +25,17 @@ function fixture() {
+       return { user: { id: state.actor }, membership: membership() };
+     }
+   };
+-  const matches = where => where.clubId === app.clubId && (!where.id || where.id === app.id) && app.status !== 'DRAFTING';
++  const matches = where => where.AND ? where.AND.every(matches) : (!where.clubId || where.clubId === app.clubId) && (!where.id || typeof where.id === 'object' ? !where.id || where.id.in.includes(app.id) : where.id === app.id) && app.status !== 'DRAFTING';
+   const tx = {
+     $queryRaw: async()=>[],
+     user: { findUnique: async()=>({disabledAt:state.disabled?new Date():null}) },
+     pipelineRound: { findMany: async () => [app.round] },
+     application: {
+-      findMany: async ({ where }) => { if(state.pipelineError)throw state.pipelineError; return (state.pipelineReads++, matches(where)) && (!where.round || app.round.anonymousReview) ? [app] : []; },
++      findMany: async ({ where, include, omit, select }) => { state.pipelineOmit=omit; state.pipelineQuery=include; state.pipelineSelect=select; if(state.pipelineError)throw state.pipelineError; return (state.pipelineReads++, matches(where)) && (!where.round || app.round.anonymousReview) ? [app] : []; },
+       findFirst: async ({ where, select }) => { if(select)state.narrowReads++; return matches(where) ? app : null; }
+     },
++    evaluation: {findMany:async ({where})=>matches(where.application) && where.applicationId.in.includes(app.id) ? app.evaluations.filter(e=>e.submittedAt).map(e=>({...e,applicationId:app.id})):[]},
++    interviewPanelAssignment: {findMany:async ({where})=>matches(where.application) && where.applicationId.in.includes(app.id) ? app.interviewAssignments.map(e=>({...e,applicationId:app.id})):[]},
+     clubMember: { findFirst: async () => membership(), findUnique: async({where})=>state.clubAccess && where.userId_clubId.clubId===clubId ? membership():null },
+     applicantObservation: { findMany: async () => [] }
+   };
+@@ -145,3 +147,58 @@ test('pipeline failure diagnostics identify the failing phase without serializin
+  assert.ok(rows[0][1].elapsedMs>=0);assert.ok(rows[0][1].acquisitionMs>=0);assert.ok(rows[0][1].transactionMs>=0);
+  assert.doesNotMatch(JSON.stringify(rows),/SELECT|private|example|must not log|123e4567/);
+ });
++
++for (const reader of ['getClubPipeline', 'getClubPipelineList', 'getClubPipelinePage']) test(`${reader} repeats authorization and masks anonymous/self/foreign rows`, async()=>{
++ const f=fixture();await f.crm[reader](clubId);f.state.clubAccess=false;await assert.rejects(f.crm[reader](clubId));f.state.clubAccess=true;
++ f.state.permissions=[];await assert.rejects(f.crm[reader](clubId));f.state.permissions=['applications.review'];assert.equal((await f.crm[reader](clubId)).applications.length,0);
++ f.app.round.anonymousReview=true;const row=(await f.crm[reader](clubId)).applications[0];assert.equal(row.student.studentProfile.firstName,'Applicant');assert.equal(row.student.email,'');
++ await assert.rejects(f.crm[reader](id(99)));
++});
++
++test('summary database allowlist excludes detail/offer/member content and reads only submitted reviews',async()=>{
++ const f=fixture();await f.crm.getClubPipelineList(clubId);const selected=f.state.pipelineSelect;
++ assert.deepEqual(Object.keys(selected).sort(),['evaluations','id','interviewAssignments','round','roundId','status','student','studentId']);
++ assert.deepEqual(selected.evaluations,{where:{submittedAt:{not:null}},select:{interviewerId:true,roundId:true,submittedAt:true,score:true}});
++ assert.deepEqual(selected.interviewAssignments,{where:{revokedAt:null},select:{memberId:true,roundId:true,member:{select:{status:true,isOwner:true,permissions:true}}}});
++ assert.deepEqual(selected.student.select.studentProfile.select,{firstName:true,lastName:true,major:true,gradYear:true,transferStudent:true,gpa:true,satScore:true,actScore:true});
++ assert.deepEqual(selected.round,{select:{anonymousReview:true}});
++ await f.crm.getClubPipeline(clubId,{applicationId});assert.ok(f.state.pipelineQuery.answers.include.question);assert.ok(f.state.pipelineQuery.bookings.include.slot);assert.ok(f.state.pipelineQuery.student.include.studentProfile.include.experiences);
++});
++
++test('page cursors bind the freshly authorized projection and selection reads contain no identities',async()=>{
++ const f=fixture(),first=await f.crm.getClubPipelinePage(clubId);assert.equal(first.applications[0].id,applicationId);const cursor={id:applicationId,direction:'at',scope:first.page.scope};
++ f.state.permissions.push('applications.review');await assert.rejects(f.crm.getClubPipelinePage(clubId,{cursor}),/selection changed/);
++ for(const query of [{userId:owner},{limit:1000},{applicationId}])await assert.rejects(f.crm.getClubPipelinePage(clubId,query));
++ const selected=await f.crm.getClubPipelineSelection(clubId);assert.deepEqual(selected.applications,[{id:applicationId,roundId,status:'SUBMITTED',canQuickReview:true}]);assert.doesNotMatch(JSON.stringify(selected),/owner@|Student|Fixture|studentId|headshot|score/);
++ f.state.clubAccess=false;await assert.rejects(f.crm.getClubPipelineSelection(clubId));f.state.clubAccess=true;f.state.permissions=[];await assert.rejects(f.crm.getClubPipelineSelection(clubId));
++});
++
++test('narrow database summaries match canonical full privacy across viewer, profile and review states',async()=>{
++ const f=fixture(),project=load('lib/pipeline-list.ts').pipelineListProjection;
++ const member={status:'ACTIVE',isOwner:false,permissions:['applications.review','applicants.identify']};
++ const originalProfile=structuredClone(f.app.student.studentProfile);
++ let comparisons=0;
++ for(const anonymous of [false,true])for(const profile of [originalProfile,null,{...originalProfile,gpa:5,transferStudent:true}])for(const self of [false,true])for(const role of ['identified','reviewer','participant','president'])for(const submitted of [false,true]){
++  f.state.actor=self?owner:reader;f.state.permissions=role==='identified'?['applicants.identify']:role==='reviewer'?['applications.review']:['applications.review','applicants.identify'];f.state.offices=role==='president'?['PRESIDENT']:[];
++  f.app.round.anonymousReview=anonymous;f.app.student.studentProfile=profile;
++  f.app.interviewAssignments=[{roundId,memberId:id(7),member},{roundId,memberId:id(9),member:{...member,status:'SUSPENDED'}},{roundId:id(99),memberId:id(7),member}];
++  f.app.evaluations=[{roundId,interviewerId:id(7),submittedAt:submitted?new Date():null,score:8},{roundId,interviewerId:id(8),submittedAt:new Date(),score:6},{roundId:id(99),interviewerId:id(8),submittedAt:new Date(),score:9}];
++  const canonical=project(await f.crm.getClubPipeline(clubId));assert.deepEqual(await f.crm.getClubPipelineList(clubId),canonical);
++  assert.deepEqual((await f.crm.getClubPipelinePage(clubId)).applications,canonical.applications);comparisons++;
++ }
++ assert.equal(comparisons,96);
++});
++
++test('summary scores preserve submission barrier, self exclusion, inactive assignments and historical review visibility',async()=>{
++ const f=fixture();f.state.permissions=['applications.review','applicants.identify'];
++ const active={status:'ACTIVE',permissions:f.state.permissions},inactive={...active,status:'SUSPENDED'};
++ f.app.interviewAssignments=[{roundId,memberId:id(7),member:active},{roundId,memberId:id(8),member:inactive}];
++ f.app.evaluations=[{roundId,interviewerId:id(7),submittedAt:null,score:10},{roundId,interviewerId:id(9),submittedAt:new Date(),score:6},{roundId:id(99),interviewerId:id(9),submittedAt:new Date(),score:9}];
++ const row=async()=>(await f.crm.getClubPipelineList(clubId)).applications[0];
++ assert.equal((await row()).roundScore,null);assert.deepEqual((await row()).evaluations,[]);
++ f.state.offices=['PRESIDENT'];assert.equal((await row()).roundScore,null,'office does not bypass assigned reviewer submission');
++ f.app.evaluations[0].submittedAt=new Date();let r=await row();assert.deepEqual(r.roundScore,{average:8,submitted:2,required:2,provisional:false});assert.equal(r.evaluations.length,3);
++ f.state.offices=[];r=await row();assert.equal(r.evaluations.length,2,'ordinary assigned reviewer cannot see another round');
++ f.app.interviewAssignments.push({roundId,memberId:id(10),member:active});assert.equal((await row()).roundScore.provisional,true);
++ f.state.actor=owner;assert.equal((await row()).roundScore,null);assert.deepEqual((await row()).evaluations,[]);
++});
+diff --git a/tests/demo-mode.test.cjs b/tests/demo-mode.test.cjs
+index f6b6e52d..78cc2a2a 100644
+--- a/tests/demo-mode.test.cjs
++++ b/tests/demo-mode.test.cjs
+@@ -164,8 +164,11 @@ test("demo workspace switching preserves one identity and grants leadership only
+   demoStore.mutate(state => { state.perspective = { role: "leader", clubId: state.clubs[0].id } })
+   assert.equal(demoUser().id, student.id)
+   await api.getClubPipeline(s.clubs[0].id)
++  const compact=await api.getClubPipelineList(s.clubs[0].id)
++  assert.ok(compact.applications.every(app=>!("answers" in app)&&!("bookings" in app)))
+   demoStore.mutate(state => { state.perspective = { role: "leader", clubId: state.clubs[1].id } })
+   await assert.rejects(api.getClubPipeline(s.clubs[1].id), /perspective/)
++  await assert.rejects(api.getClubPipelineList(s.clubs[1].id), /perspective/)
+   const foreign = s.applications.find(a => a.clubId === s.clubs[1].id && a.status !== "DRAFTING")
+   await assert.rejects(api.setApplicationStatus({clubId: foreign.clubId, applicationId: foreign.id, status: "ACCEPTED"}), /perspective/)
+   demoStore.stop(); demoStore.start()
+@@ -451,3 +454,8 @@ test('Explore and Corkboard share deterministic demo clubs; saved items survive
+  assert.equal(JSON.stringify(demoStore.get().applications),applications);assert.equal(JSON.stringify(demoStore.get().subscriptions),subscriptions);assert.equal(h.calls(),0);
+  demoStore.reset();assert.deepEqual((await api.getCorkboard()).items,initial.items);assert.equal(h.calls(),0);
+ });
++test('Demo applicant page and complete-selection transports remain isolated and preserve round/search filters',async()=>{
++ const h=harness(),{demoStore}=h.load('lib/demo/store.ts'),api=h.load('lib/workspace-api.ts');demoStore.start();const club=demoStore.get().clubs[0];demoStore.mutate(s=>{s.perspective={role:'leader',clubId:club.id}});
++ const originalFetch=global.fetch;let fetched=0;global.fetch=async()=>{fetched++;throw Error('A Demo read must not reach HTTP')};
++ try{const whole=await api.getClubPipelineList(club.id),page=await api.getClubPipelinePage(club.id),selection=await api.getClubPipelineSelection(club.id);assert.equal(page.page.total,whole.applications.filter(a=>a.status!=='REJECTED').length);assert.equal(selection.applications.length,page.page.total);assert.ok(page.applications.length<=100);const round=whole.rounds[0],filtered=await api.getClubPipelinePage(club.id,{roundId:round.id});assert.ok(filtered.applications.every(a=>a.roundId===round.id));const missing=await api.getClubPipelinePage(club.id,{query:'does not match any fictional candidate'});assert.equal(missing.page.total,0);assert.equal(fetched,0);assert.equal(h.calls(),0);await assert.rejects(api.getClubPipelinePage(demoStore.get().clubs[1].id));}finally{global.fetch=originalFetch}
++});
+diff --git a/tests/live-applicant-views.test.cjs b/tests/live-applicant-views.test.cjs
+index f1aab0cb..1b85bb4b 100644
+--- a/tests/live-applicant-views.test.cjs
++++ b/tests/live-applicant-views.test.cjs
+@@ -5,7 +5,7 @@ const ts = require('typescript')
+ function compile(file, mocks = {}, extra = '') {
+   const mod = { exports: {} }
+   const code = ts.transpileModule(fs.readFileSync(file, 'utf8') + extra, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText
+-  new Function('require', 'module', 'exports', 'window', 'requestAnimationFrame', code)(name => mocks[name] || (name==='@/hooks/use-editor-draft'?require('./helpers/autosave-ui-harness.cjs').draftStub:name.startsWith('@/lib/') ? compile(name.replace('@/', '') + '.ts') : name.startsWith('@/') || name.startsWith('./') ? new Proxy({}, { get: (_, key) => String(key) }) : require(name)), mod, mod.exports, { addEventListener(){}, removeEventListener(){}, confirm(){ return true } }, () => {})
++  new Function('require', 'module', 'exports', 'window', 'requestAnimationFrame', 'cancelAnimationFrame', code)(name => mocks[name] || (name==='@/hooks/use-editor-draft'?require('./helpers/autosave-ui-harness.cjs').draftStub:name==='@/hooks/use-pipeline-page'?compile('hooks/use-pipeline-page.ts',mocks):name.startsWith('@/lib/') ? compile(name.replace('@/', '') + '.ts') : name.startsWith('@/') || name.startsWith('./') ? new Proxy({}, { get: (_, key) => String(key) }) : require(name)), mod, mod.exports, { addEventListener(){}, removeEventListener(){}, confirm(){ return true } }, () => {}, () => {})
+   return mod.exports
+ }
+ const { applicantLane } = compile('lib/applicant-board.ts')
+@@ -22,16 +22,28 @@ function nodes(node) {
+ const text = node => typeof node === 'string' ? node : Array.isArray(node) ? node.map(text).join('') : node?.props ? text(node.props.children) : ''
+ const flush = () => new Promise(resolve => setImmediate(resolve))
+ function harness(permissions = ['applications.review','applicants.identify','decisions.manage','recruitment.manage'], decisionsOnly = false, rejectedOnly = false) {
+-  const slots = [], effects = [], calls = [], lookups = []
+-  let index = 0, pipeline = { rounds: [{id:'round',name:'Review',order:0}], applications:[{id:'candidate',canEvaluate:true,studentId:'student',roundId:'round',status:'IN_REVIEW',student:{email:'sample@demo.invalid',studentProfile:null},evaluations:[],answers:[],bookings:[]}] }
+-  const react = {useState(initial){const i=index++;if(!(i in slots))slots[i]=initial;return [slots[i],value=>{slots[i]=typeof value==='function'?value(slots[i]):value}]},useRef(initial){const i=index++;return slots[i]??=( {current:initial})},useMemo(fn){index++;return fn()},useEffect(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;effects.push(fn)}}}
+-  const api = {getClubPipeline:async()=>{calls.push(['load']);return structuredClone(pipeline)},setApplicationStatus:async input=>{calls.push(['status',input]);const target=pipeline.applications.find(app=>app.id===input.applicationId);if(input.expectedStatus!==target.status)throw Error('stale');target.status=input.status;if(input.status==='ACCEPTED')target.recruitmentOffer={status:'PENDING',expiresAt:new Date(Date.now()+86400000)};return {success:true}},moveApplicantRound:async input=>{calls.push(['round',input]);if(input.expectedRoundId!==pipeline.applications[0].roundId)throw Error('stale');pipeline.applications[0].roundId=input.newRoundId;pipeline.applications[0].studentId='anonymous-candidate';pipeline.applications[0].student={email:'',studentProfile:{firstName:'Applicant',lastName:'CANDIDATE',experiences:[]}};return {success:true}},submitEvaluation:async input=>{calls.push(['review',input]);return {evaluation:{id:'evaluation',interviewerId:'member',round:'Review',score:input.score,notes:input.notes}}}}
+-  const C = compile('components/views/leader-dashboard/live-leader-workspace.tsx', {react,'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/lib/reviewer-evaluation':{findReviewerEvaluation(...args){const result=compile('lib/reviewer-evaluation.ts').findReviewerEvaluation(...args);lookups.push({round:args[2],result});return result}},'@/lib/workspace-api':api,'@/lib/application-state':{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus(){}})}}, '\nexports.TestWorkspace = ClubWorkspace;').TestWorkspace
++  const slots = [], effects = [], calls = [], lookups = [], setups = new Map(), cleanups = new Map()
++  let changed = false, index = 0, pipeline = { rounds: [{id:'round',name:'Review',order:0}], applications:[{id:'candidate',canEvaluate:true,studentId:'student',roundId:'round',status:'IN_REVIEW',student:{email:'sample@demo.invalid',studentProfile:null},evaluations:[],answers:[],bookings:[]}] }
++  const react = {useState(initial){const i=index++;if(!(i in slots))slots[i]=initial;return [slots[i],value=>{const next=typeof value==='function'?value(slots[i]):value;changed ||= !Object.is(next,slots[i]);slots[i]=next}]},useRef(initial){const i=index++;return slots[i]??=( {current:initial})},useMemo(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i].deps[j]))slots[i]={deps,value:fn()};return slots[i].value},useCallback(fn,deps){return react.useMemo(()=>fn,deps)},useEffect(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;setups.set(i,fn);effects.push([i,fn])}}}
++  const api = {getClubPipelineList:async()=>{calls.push(['load']);return structuredClone(pipeline)},setApplicationStatus:async input=>{calls.push(['status',input]);const target=pipeline.applications.find(app=>app.id===input.applicationId);if(input.expectedStatus!==target.status)throw Error('stale');target.status=input.status;if(input.status==='ACCEPTED')target.recruitmentOffer={status:'PENDING',expiresAt:new Date(Date.now()+86400000)};return {success:true}},moveApplicantRound:async input=>{calls.push(['round',input]);if(input.expectedRoundId!==pipeline.applications[0].roundId)throw Error('stale');pipeline.applications[0].roundId=input.newRoundId;pipeline.applications[0].studentId='anonymous-candidate';pipeline.applications[0].student={email:'',studentProfile:{firstName:'Applicant',lastName:'CANDIDATE',experiences:[]}};return {success:true}},submitEvaluation:async input=>{calls.push(['review',input]);const evaluation={id:'evaluation',interviewerId:'member',round:'Review',score:input.score,notes:input.notes};pipeline.applications[0].evaluations=[evaluation];pipeline.applications[0].canEvaluate=false;return {evaluation}}}
++  let currentEpoch={};const auth={user:{id:'reviewer'},readAuthority:currentEpoch,isReadAuthorityCurrent:value=>value===currentEpoch};
++  api.getClubPipelinePage=async(club,q={})=>{const data=await api.getClubPipelineList();return compile('lib/pipeline-page.ts').pagePipeline(data,q,'member','reviewer','fixture')};
++  api.getClubPipelineSelection=async(club,q={})=>compile('lib/pipeline-page.ts').completePipelineSelection(await api.getClubPipelineList(),q,'member','reviewer');
++  let detailKey='',detail=null;
++  const C = compile('components/views/leader-dashboard/live-leader-workspace.tsx', {react,'@/contexts/auth-context':{useAuth:()=>auth},'@/hooks/use-pipeline-applicant':{usePipelineApplicant(club,id,revision){const key=`${club}:${id}:${revision}`;if(key!==detailKey){detailKey=key;detail=id?structuredClone(pipeline.applications.find(app=>app.id===id)):null}return{application:detail,error:false,retry(){}}}},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false,ready:true})},'@/lib/reviewer-evaluation':{findReviewerEvaluation(...args){const result=compile('lib/reviewer-evaluation.ts').findReviewerEvaluation(...args);lookups.push({round:args[2],result});return result}},'@/lib/workspace-api':api,'@/lib/application-state':{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus(){}})}}, '\nexports.TestWorkspace = ClubWorkspace;').TestWorkspace
+   const membership = {id:'member',clubId:'club',permissions,club:{name:'Test club'}}
+-  return {calls,api,lookups,addCandidate(app){pipeline.applications.push({...structuredClone(pipeline.applications[0]),...app})},setCanEvaluate(value){pipeline.applications[0].canEvaluate=value},addRound(round){pipeline.rounds.push(round)},setEvaluations(evaluations){pipeline.applications[0].evaluations=evaluations},renameRound(name){pipeline.rounds[0].name=name},setServerRound(roundId){pipeline.applications[0].roundId=roundId},setServerStatus(status){pipeline.applications[0].status=status},render(){index=0;const tree=C({membership,decisionsOnly,rejectedOnly});while(effects.length)effects.shift()();return tree}}
++  return {calls,api,lookups,notifyEpoch(){currentEpoch={}},commitEpoch(){auth.readAuthority=currentEpoch},setViewer(id){auth.user={id};membership.id=id;membership.userId=id},replayEffects(){for(const cleanup of cleanups.values())cleanup?.();cleanups.clear();for(const [slot,setup]of setups)cleanups.set(slot,setup())},addCandidate(app){pipeline.applications.push({...structuredClone(pipeline.applications[0]),...app})},setCanEvaluate(value){pipeline.applications[0].canEvaluate=value},addRound(round){pipeline.rounds.push(round)},setEvaluations(evaluations){pipeline.applications[0].evaluations=evaluations},renameRound(name){pipeline.rounds[0].name=name},setServerRound(roundId){pipeline.applications[0].roundId=roundId},setServerStatus(status){pipeline.applications[0].status=status},render(){for(let step=0;step<20;step++){changed=false;index=0;const tree=C({membership,decisionsOnly,rejectedOnly});while(effects.length){const [slot,setup]=effects.shift();cleanups.get(slot)?.();cleanups.set(slot,setup())}if(!changed)return tree}throw Error('Component failed to settle')}}
+ }
+ const button = (tree,label) => nodes(tree).find(n=>n.type==='Button'&&text(n)===label)
+ const view = tree => nodes(tree).find(n=>['LiveApplicantList','LiveApplicantKanban'].includes(n.type))
++test('complete-selection reads reject a notified obsolete authority before dispatch',async()=>{
++  const h=harness();h.render();await flush();const tree=h.render(),loader=nodes(tree).find(n=>n.type==='BoardDecisionMode').props.loadApplicants;
++  const before=h.calls.filter(c=>c[0]==='load').length;h.notifyEpoch();await assert.rejects(loader,/Applicant selection changed/);assert.equal(h.calls.filter(c=>c[0]==='load').length,before);assert.equal(view(h.render()),undefined);
++})
++test('complete-selection reads reject results during the authority notification-to-commit gap',async()=>{
++  const h=harness();h.render();await flush();const loader=nodes(h.render()).find(n=>n.type==='BoardDecisionMode').props.loadApplicants;let settle;
++  h.api.getClubPipelineSelection=()=>new Promise(resolve=>settle=resolve);const pending=loader();h.notifyEpoch();settle({applications:[{id:'obsolete'}]});await assert.rejects(pending,/Applicant selection changed/);
++})
+ test('List/Kanban toggle preserves the same filtered server data and does not mutate or reload it', async () => {
+   const h=harness();h.render();await flush();let tree=h.render()
+   const source=view(tree).props.applicants
+@@ -43,9 +55,9 @@ test('List/Kanban toggle preserves the same filtered server data and does not mu
+ })
+ test('drawer status writes send expectedStatus, reject stale outcomes, and refresh canonical offer state', async () => {
+   const h=harness();h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render()
+-  button(tree,'Accepted').props.onClick();tree=h.render();h.setServerStatus('WAITLISTED');button(tree,'Send now').props.onClick();await flush();tree=h.render()
++  button(tree,'Accepted').props.onClick();tree=h.render();h.setServerStatus('WAITLISTED');button(tree,'Send now').props.onClick();await flush();tree=h.render();await flush();tree=h.render()
+   assert.equal(h.calls.find(c=>c[0]==='status')[1].expectedStatus,'IN_REVIEW');assert.equal(view(tree).props.applicants[0].status,'IN_REVIEW');assert.match(text(tree),/could not be saved/)
+-  h.setServerStatus('IN_REVIEW');button(tree,'Send now').props.onClick();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED');assert.equal(h.calls.filter(c=>c[0]==='load').length,2);await flush();tree=h.render();assert.ok(button(tree,'Rescind pending offer'))
++  h.setServerStatus('IN_REVIEW');button(tree,'Send now').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED');assert.equal(h.calls.filter(c=>c[0]==='load').length,2);await flush();tree=h.render();await flush();tree=h.render();assert.ok(button(tree,'Rescind pending offer'))
+ })
+ test('read/review access alone never exposes enabled round moves or decision buttons', async () => {
+   const h=harness(['applications.review']);h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render()
+@@ -54,8 +66,8 @@ test('read/review access alone never exposes enabled round moves or decision but
+ test('evaluation save updates both presentations and explicit round movement reloads anonymous identity', async () => {
+   const h=harness();h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render()
+   nodes(tree).find(n=>n.props?.id==='review-score').props.onChange({target:{value:'8'}});tree=h.render()
+-  nodes(tree).find(n=>n.type==='form').props.onSubmit({preventDefault(){}});await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].evaluations[0].score,8)
+-  nodes(tree).find(n=>n.props?.id==='move-round').props.onChange({target:{value:'anonymous-round'}});tree=h.render();button(tree,'Move round').props.onClick();await flush();h.render();await flush();tree=h.render()
++  nodes(tree).find(n=>n.type==='form').props.onSubmit({preventDefault(){}});await flush();tree=h.render();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].evaluations[0].interviewerId,'member');assert.equal(h.calls.find(call=>call[0]==='review')[1].score,8)
++  nodes(tree).find(n=>n.props?.id==='move-round').props.onChange({target:{value:'anonymous-round'}});tree=h.render();button(tree,'Move round').props.onClick();await flush();h.render();await flush();tree=h.render();await flush();tree=h.render()
+   assert.equal(view(tree).props.applicants[0].studentId,'anonymous-candidate');assert.equal(view(tree).props.applicants[0].student.email,'');assert.equal(nodes(tree).find(n=>n.type==='Sheet').props.open,false)
+   button(tree,'Kanban').props.onClick();tree=h.render();assert.equal(view(tree).props.applicants[0].studentId,'anonymous-candidate')
+ })
+@@ -85,15 +97,15 @@ test('Decisions reuses expected-status mutations and moves saved outcomes betwee
+   const h=harness(undefined,true);h.render();await flush();let tree=h.render()
+   assert.equal(button(tree,'Kanban'),undefined)
+   decisionList(tree).props.open(decisionList(tree).props.applicants[0]);tree=h.render()
+-  decisionAction(tree,'Accepted').props.onClick();tree=h.render();button(tree,'Send now').props.onClick();await flush();tree=h.render()
++  decisionAction(tree,'Accepted').props.onClick();tree=h.render();button(tree,'Send now').props.onClick();await flush();tree=h.render();await flush();tree=h.render()
+   assert.equal(h.calls.find(c=>c[0]==='status')[1].expectedStatus,'IN_REVIEW')
+   assert.equal(decisionList(tree),undefined)
+-  decisionGroupButton(tree,'Accepted').props.onClick();tree=h.render()
++  decisionGroupButton(tree,'Accepted').props.onClick();tree=h.render();await flush();tree=h.render()
+   assert.equal(decisionList(tree).props.applicants[0].status,'ACCEPTED')
+ })
+ test('Decisions preserves stale failures and hides mutation controls from anonymous reviewers', async () => {
+   const h=harness(undefined,true);h.render();await flush();let tree=h.render();decisionList(tree).props.open(decisionList(tree).props.applicants[0]);tree=h.render()
+-  decisionAction(tree,'Accepted').props.onClick();tree=h.render();h.setServerStatus('REJECTED');button(tree,'Send now').props.onClick();await flush();tree=h.render()
++  decisionAction(tree,'Accepted').props.onClick();tree=h.render();h.setServerStatus('REJECTED');button(tree,'Send now').props.onClick();await flush();tree=h.render();await flush();tree=h.render()
+   assert.equal(decisionList(tree).props.applicants[0].status,'IN_REVIEW');assert.match(text(tree),/could not be saved/)
+   const limited=harness(['applications.review'],true);limited.render();await flush();tree=limited.render();decisionList(tree).props.open(decisionList(tree).props.applicants[0]);tree=limited.render();assert.equal(decisionAction(tree,'Accepted'),undefined)
+ })
+@@ -104,12 +116,12 @@ test('Kanban round moves reject stale data and share the refreshed anonymous pro
+   view(tree).props.open(view(tree).props.applicants[0]);tree=h.render()
+   nodes(tree).find(n=>n.props?.id==='move-round').props.onChange({target:{value:'anonymous-round'}});tree=h.render()
+   h.setServerRound('concurrent-round')
+-  button(tree,'Move round').props.onClick();await flush();tree=h.render()
++  button(tree,'Move round').props.onClick();await flush();tree=h.render();await flush();tree=h.render()
+   assert.equal(h.calls.find(c=>c[0]==='round')[1].expectedRoundId,'round')
+   assert.equal(view(tree).props.applicants[0].roundId,'round')
+   assert.match(text(tree),/could not be saved/)
+   h.setServerRound('round')
+-  button(tree,'Move round').props.onClick();await flush();h.render();await flush();tree=h.render()
++  button(tree,'Move round').props.onClick();await flush();h.render();await flush();tree=h.render();await flush();tree=h.render()
+   assert.equal(view(tree).type,'LiveApplicantKanban')
+   const refreshed=view(tree).props.applicants
+   assert.equal(refreshed[0].roundId,'anonymous-round')
+@@ -122,7 +134,7 @@ test('Kanban decisions use expected status and appear in List after server reloa
+   button(tree,'Kanban').props.onClick();tree=h.render()
+   view(tree).props.open(view(tree).props.applicants[0]);tree=h.render()
+   button(tree,'Accepted').props.onClick();tree=h.render()
+-  button(tree,'Send now').props.onClick();await flush();tree=h.render()
++  button(tree,'Send now').props.onClick();await flush();tree=h.render();await flush();tree=h.render()
+   assert.equal(h.calls.find(c=>c[0]==='status')[1].expectedStatus,'IN_REVIEW')
+   assert.equal(applicantLane(view(tree).props.applicants[0].status),'closed')
+   button(tree,'List').props.onClick();tree=h.render()
+@@ -153,12 +165,12 @@ test('recruitment review comes before filter toggles and is absent from Decision
+ });
+ test('quick review saves expected-status decisions and advances only after success', async () => {
+  const h=harness();h.addCandidate({id:'second',studentId:'student-two',student:{email:'second@demo.invalid',studentProfile:null}});h.render();await flush();let tree=h.render();
+- button(tree,'Quick review').props.onClick();tree=h.render();assert.match(text(tree),/publish the decision immediately/);
+- button(tree,'Accept & next').props.onClick();await flush();tree=h.render();assert.deepEqual(h.calls.find(c=>c[0]==='status')[1],{clubId:'club',applicationId:'candidate',status:'ACCEPTED',expectedStatus:'IN_REVIEW'});assert.match(text(nodes(tree).find(n=>n.type==='SheetTitle')),/second@demo.invalid/);
+- button(tree,'Deny & next').props.onClick();await flush();tree=h.render();assert.equal(h.calls.filter(c=>c[0]==='status').length,2);assert.match(text(tree),/Quick review complete/);
++ button(tree,'Quick review').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.match(text(tree),/publish the decision immediately/);
++ button(tree,'Accept & next').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.deepEqual(h.calls.find(c=>c[0]==='status')[1],{clubId:'club',applicationId:'candidate',status:'ACCEPTED',expectedStatus:'IN_REVIEW'});assert.match(text(nodes(tree).find(n=>n.type==='SheetTitle')),/second@demo.invalid/);
++ button(tree,'Deny & next').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.equal(h.calls.filter(c=>c[0]==='status').length,2);assert.match(text(tree),/Quick review complete/);
+ });
+ test('quick review preserves the candidate after a rejected stale write and skips without publishing',async()=>{
+- const h=harness();h.render();await flush();let tree=h.render();button(tree,'Quick review').props.onClick();tree=h.render();h.setServerStatus('WAITLISTED');button(tree,'Accept & next').props.onClick();await flush();tree=h.render();assert.ok(nodes(tree).find(n=>n.type==='Sheet').props.open);assert.match(text(tree),/candidate stays open/);button(tree,'Skip').props.onClick();await flush();tree=h.render();assert.equal(nodes(tree).find(n=>n.type==='Sheet').props.open,false);assert.equal(h.calls.filter(c=>c[0]==='status').length,1);
++ const h=harness();h.render();await flush();let tree=h.render();button(tree,'Quick review').props.onClick();await flush();tree=h.render();await flush();tree=h.render();h.setServerStatus('WAITLISTED');button(tree,'Accept & next').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.ok(nodes(tree).find(n=>n.type==='Sheet').props.open);assert.match(text(tree),/candidate stays open/);button(tree,'Skip').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.equal(nodes(tree).find(n=>n.type==='Sheet').props.open,false);assert.equal(h.calls.filter(c=>c[0]==='status').length,1);
+ });
+ test('review-only users cannot start quick review or move board candidates',async()=>{
+  const h=harness(['applications.review']);h.render();await flush();let tree=h.render();assert.equal(button(tree,'Quick review'),undefined);button(tree,'Kanban').props.onClick();tree=h.render();const props=view(tree).props;for(const lane of ['review','interview','decision','closed'])assert.equal(props.canMove(props.applicants[0],lane),false);
+@@ -166,12 +178,18 @@ test('review-only users cannot start quick review or move board candidates',asyn
+ test('board drops require an explicit outcome and preserve expected status',async()=>{
+  const h=harness();h.render();await flush();let tree=h.render();button(tree,'Kanban').props.onClick();tree=h.render();const props=view(tree).props;
+  assert.equal(props.canMove(props.applicants[0],'closed'),true);assert.equal(props.canMove(props.applicants[0],'interview'),false);
+- props.move(props.applicants[0],'closed');tree=h.render();assert.equal(h.calls.filter(c=>c[0]==='status').length,0);button(tree,'Accept candidate').props.onClick();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED');assert.equal(h.calls.find(c=>c[0]==='status')[1].expectedStatus,'IN_REVIEW');
++ props.move(props.applicants[0],'closed');tree=h.render();assert.equal(h.calls.filter(c=>c[0]==='status').length,0);button(tree,'Accept candidate').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED');assert.equal(h.calls.find(c=>c[0]==='status')[1].expectedStatus,'IN_REVIEW');
+ });
+ 
+ test('decision status stays unchanged until the server acknowledges publication',async()=>{
+  const h=harness();h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render();button(tree,'Accepted').props.onClick();tree=h.render()
+  const write=h.api.setApplicationStatus;let release;h.api.setApplicationStatus=async input=>{await new Promise(resolve=>{release=resolve});return write(input)}
+  button(tree,'Send now').props.onClick();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'IN_REVIEW');assert.equal(h.calls.some(c=>c[0]==='status'),false)
+- release();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED')
++ release();await flush();tree=h.render();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED')
+ })
++
++test('page reader remains usable after React development effect cleanup and setup replay',async()=>{const h=harness();h.render();await flush();let tree=h.render();assert.ok(view(tree));h.replayEffects();button(tree,'Refresh').props.onClick();h.render();await flush();tree=h.render();assert.ok(view(tree),'effect setup must create a usable reader after disposal');assert.equal(h.calls.filter(c=>c[0]==='load').length,2,'explicit refresh still performs fresh authorization after effect replay')});
++
++test('a different membership identity resets the page cursor before fresh summaries render',async()=>{
++ const h=harness(),id=n=>`123e4567-e89b-12d3-a456-${String(n).padStart(12,'0')}`;for(let i=0;i<201;i++)h.addCandidate({id:id(i)});h.render();await flush();let tree=h.render();nodes(tree).find(n=>n.props?.['aria-label']==='Next applicant page').props.onClick();h.render();await flush();tree=h.render();assert.equal(nodes(tree).find(n=>n.type==='p'&&Array.isArray(n.props?.children)&&n.props.children[0]==='Page ').props.children[1],2);h.setViewer(id(999));h.render();await flush();assert.doesNotThrow(()=>{tree=h.render()});assert.equal(nodes(tree).find(n=>n.type==='p'&&Array.isArray(n.props?.children)&&n.props.children[0]==='Page ').props.children[1],1);assert.equal(h.calls.filter(c=>c[0]==='load').length,3);
++});
+diff --git a/tests/navigation-phase12-e2e.test.cjs b/tests/navigation-phase12-e2e.test.cjs
+index 83272e50..98b91088 100644
+--- a/tests/navigation-phase12-e2e.test.cjs
++++ b/tests/navigation-phase12-e2e.test.cjs
+@@ -7,7 +7,7 @@ test('constrained startup fences an already-notified Auth epoch, revisits read f
+  const config=readConfig(configFile),fixture=JSON.parse(fs.readFileSync(path.join(path.dirname(configFile),'navigation-fixture.json'))),browser=await chromium.launch({headless:true});
+  try{for(let iteration=0;iteration<3;iteration++){
+   const actor=new Actor(config);await actor.signIn(fixture.email,fixture.password);const context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage(),reads=[],errors=[];
+-  try{await page.addInitScript(()=>{window.__phase12Auth=[];window.__phase12Dispatch=[];window.addEventListener('outclass:workspace-read',event=>{if(event.detail?.kind==='auth')window.__phase12Auth.push(performance.timeOrigin+performance.now());if(event.detail?.kind==='selected')window.__phase12Dispatch.push(performance.timeOrigin+performance.now())})});const cdp=await context.newCDPSession(page);await cdp.send('Network.enable');await cdp.send('Network.emulateNetworkConditions',{offline:false,latency:80,downloadThroughput:200000,uploadThroughput:93750,connectionType:'cellular4g'});await cdp.send('Emulation.setCPUThrottlingRate',{rate:4});page.on('request',request=>{const url=new URL(request.url());if(url.pathname==='/api/workspace'&&url.searchParams.get('kind')==='pipeline')reads.push(Date.now())});page.on('pageerror',error=>errors.push(error.name));
++  try{await page.addInitScript(()=>{window.__phase12Auth=[];window.__phase12Dispatch=[];window.addEventListener('outclass:workspace-read',event=>{if(event.detail?.kind==='auth')window.__phase12Auth.push(performance.timeOrigin+performance.now());if(event.detail?.kind==='selected')window.__phase12Dispatch.push(performance.timeOrigin+performance.now())})});const cdp=await context.newCDPSession(page);await cdp.send('Network.enable');await cdp.send('Network.emulateNetworkConditions',{offline:false,latency:80,downloadThroughput:200000,uploadThroughput:93750,connectionType:'cellular4g'});await cdp.send('Emulation.setCPUThrottlingRate',{rate:4});page.on('request',request=>{const url=new URL(request.url());if(url.pathname==='/api/workspace'&&url.searchParams.get('kind')==='pipelinePage')reads.push(Date.now())});page.on('pageerror',error=>errors.push(error.name));
+    await page.goto(config.appUrl+'/club/'+fixture.clubIds[0]+'/workspace?section=recruitment&tool=applicants');await page.locator('.oc-live-pipeline').getByText('Audit Student 000',{exact:true}).first().waitFor();await page.waitForLoadState('networkidle');const {events,dispatches}=await page.evaluate(()=>({events:window.__phase12Auth,dispatches:window.__phase12Dispatch}));assert.ok(dispatches.length>=1);
+    assert.ok(reads.length>=1&&reads.length<=2,'Only an actual later Auth change can justify a second initial read');if(!events.length||Math.max(...events)<dispatches[0])assert.equal(reads.length,1,'An Auth event already known before the selected effect dispatches must not cause an obsolete request followed by a replacement');else assert.ok(dispatches.at(-1)>=Math.max(...events),'A later Auth event must still revalidate');
+    const initial=reads.length;await select(page,'overview');await page.locator('.oc-command-recruiting').waitFor();await select(page,'applicants');await page.locator('.oc-live-pipeline').getByText('Audit Student 000',{exact:true}).first().waitFor();await page.waitForLoadState('networkidle');assert.equal(reads.length,initial+1,'A new visit never reuses a successful authorization or projection');
+diff --git a/tests/navigation-phase2-e2e.test.cjs b/tests/navigation-phase2-e2e.test.cjs
+index 055920ea..99c2d710 100644
+--- a/tests/navigation-phase2-e2e.test.cjs
++++ b/tests/navigation-phase2-e2e.test.cjs
+@@ -9,7 +9,7 @@ async function context(browser,f,options={}){return browser.newContext({viewport
+ async function open(page,f,recruiting=false){await page.goto(f.config.appUrl+'/club/'+f.data.clubIds[0]+'/workspace?section='+(recruiting?'recruitment&tool=overview':'overview'));await page.locator(recruiting?'.oc-command-recruiting':'.oc-command-club').filter({visible:true}).first().getByRole('button',{name:'Refresh overview',exact:true}).waitFor();}
+ async function select(page,tour){let link=page.locator(`[data-tour="nav-${tour}"]`).filter({visible:true}).first();if(!await link.count()&&tour==='applicants'){const group=page.getByRole('button',{name:'Applicants',exact:true}).filter({visible:true}).first();await group.focus();await page.keyboard.press('ArrowRight');link=page.locator(`[data-tour="nav-${tour}"]`).filter({visible:true}).first();}await link.focus();await page.keyboard.press('Enter');}
+ test('selected tabs request authorized data while code is still loading, then consume it exactly once', {skip:!configFile},async t=>{
+- const f=await fixture(),browser=await chromium.launch({headless:true});try{for(const[kind,tour,label,text]of cases)await t.test(kind,async()=>{const c=await context(browser,f),page=await c.newPage();let unblock,codeStarted,reads=0;const blocked=[],errors=[];page.on('pageerror',e=>errors.push(e.name));try{await open(page,f,kind==='pipeline');const seen=new Promise(resolve=>unblock=resolve);page.on('request',r=>{const u=new URL(r.url());if(u.pathname==='/api/workspace'&&u.searchParams.get('kind')===(kind)){reads++;unblock();}});const pendingCode=new Promise(resolve=>codeStarted=resolve);const gate=route=>{blocked.push(route);codeStarted()};await page.route('**/_next/static/chunks/*.js',gate);await select(page,tour);await Promise.race([Promise.all([seen,pendingCode]),new Promise((_,reject)=>setTimeout(()=>reject(Error('Data waited for the blocked code chunk')),3000))]);assert.ok(blocked.length,'The selected component really has an unresolved chunk');assert.equal(await page.getByRole('status').filter({hasText:'Loading workspace…'}).count(),1);await Promise.all(blocked.splice(0).map(r=>r.continue()));await page.unroute('**/_next/static/chunks/*.js',gate);await page.locator(`section[aria-label="${label}"]`).getByText(text,{exact:true}).first().waitFor();assert.equal(reads,1);assert.deepEqual(errors,[]);}finally{await page.unroute('**/_next/static/chunks/*.js');await Promise.allSettled(blocked.map(r=>r.continue()));await c.close();}});}finally{await browser.close();}
++ const f=await fixture(),browser=await chromium.launch({headless:true});try{for(const[kind,tour,label,text]of cases)await t.test(kind,async()=>{const c=await context(browser,f),page=await c.newPage();let unblock,codeStarted,reads=0;const blocked=[],errors=[];page.on('pageerror',e=>errors.push(e.name));try{await open(page,f,kind==='pipeline');const seen=new Promise(resolve=>unblock=resolve);page.on('request',r=>{const u=new URL(r.url());if(u.pathname==='/api/workspace'&&u.searchParams.get('kind')===(kind==='pipeline'?'pipelinePage':kind)){reads++;unblock();}});const pendingCode=new Promise(resolve=>codeStarted=resolve);const gate=route=>{blocked.push(route);codeStarted()};await page.route('**/_next/static/chunks/*.js',gate);await select(page,tour);await Promise.race([Promise.all([seen,pendingCode]),new Promise((_,reject)=>setTimeout(()=>reject(Error('Data waited for the blocked code chunk')),3000))]);assert.ok(blocked.length,'The selected component really has an unresolved chunk');assert.equal(await page.getByRole('status').filter({hasText:'Loading workspace…'}).count(),1);await Promise.all(blocked.splice(0).map(r=>r.continue()));await page.unroute('**/_next/static/chunks/*.js',gate);await page.locator(`section[aria-label="${label}"]`).getByText(text,{exact:true}).first().waitFor();assert.equal(reads,1);assert.deepEqual(errors,[]);}finally{await page.unroute('**/_next/static/chunks/*.js');await Promise.allSettled(blocked.map(r=>r.continue()));await c.close();}});}finally{await browser.close();}
+ });
+ test('rapid selected-tab changes fence late results and a revoked revisit never reveals the old directory',{skip:!configFile},async()=>{
+  const f=await fixture(),browser=await chromium.launch({headless:true}),c=await context(browser,f),page=await c.newPage();let release;try{await open(page,f);let received;const held=new Promise(resolve=>received=resolve);const gate=async route=>{const response=await route.fetch();release=()=>route.fulfill({response});received();};await page.route('**/api/workspace?kind=members&*',gate);await select(page,'members');await held;await select(page,'tasks');await page.getByText('Audit Task',{exact:true}).first().waitFor();await release();await page.unroute('**/api/workspace?kind=members&*',gate);assert.equal(await page.locator('section[aria-label="Members"]').count(),0);await select(page,'members');await page.getByRole('button',{name:'Member details · Audit Student 000',exact:true}).waitFor();await select(page,'overview');await page.locator('.oc-command-club').filter({visible:true}).first().waitFor();assert.equal((await f.actor.client.auth.signOut({scope:'local'})).error,null);await page.evaluate(()=>{window.__phase2Revealed=false;new MutationObserver(()=>{if([...document.querySelectorAll('button')].some(e=>e.getClientRects().length&&e.getAttribute('aria-label')==='Member details · Audit Student 000'))window.__phase2Revealed=true}).observe(document.body,{subtree:true,childList:true,attributes:true})});await select(page,'members');await page.getByRole('alert').filter({hasText:'Could not load this workspace.'}).waitFor();assert.equal(await page.evaluate(()=>window.__phase2Revealed),false);assert.equal(await page.getByRole('button',{name:'Member details · Audit Student 000',exact:true}).count(),0);}finally{if(release)await release().catch(()=>{});await c.close();await browser.close();}
+diff --git a/tests/navigation-phase3-e2e.test.cjs b/tests/navigation-phase3-e2e.test.cjs
+new file mode 100644
+index 00000000..57336e56
+--- /dev/null
++++ b/tests/navigation-phase3-e2e.test.cjs
+@@ -0,0 +1,25 @@
++const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
++const {PrismaClient}=require('@prisma/client'),{chromium}=require('playwright'),{Actor,readConfig}=require('./helpers/onboarding-e2e.cjs'),{load}=require('./helpers/voting-harness.cjs');
++const configFile=process.env.OUTCLASS_ONBOARDING_E2E_CONFIG;
++async function fixture(){const config=readConfig(configFile),data=JSON.parse(fs.readFileSync(path.join(path.dirname(configFile),'navigation-fixture.json'))),actor=new Actor(config);await actor.signIn(data.email,data.password);return{config,data,actor}};
++test('pipeline list/detail GETs retain live auth, strict arguments, masking and exact list parity',{skip:!configFile},async()=>{const f=await fixture(),club=f.data.clubIds[0],db=new PrismaClient({datasourceUrl:f.config.status.DB_URL}),decode=load('lib/workspace-wire.ts').decodeWorkspaceData,project=load('lib/pipeline-list.ts').pipelineListProjection;
++ const backups=[];for(const id of f.data.clubIds){const member=await db.clubMember.findFirstOrThrow({where:{clubId:id,userId:{not:f.data.userId}}});backups.push(member);await db.clubMember.update({where:{id:member.id},data:{isOwner:true,accessRole:'OWNER'}})}
++ const read=(kind,args=[club,{}],cookie)=>f.actor.request('/api/workspace?'+new URLSearchParams({kind,args:JSON.stringify(args)}),cookie?{headers:{cookie}}:{});
++ try{const full=decode(await(await read('pipeline')).json()),response=await read('pipelineList');assert.equal(response.status,200);assert.equal(response.headers.get('cache-control'),'private, no-store');assert.match(response.headers.get('vary'),/Cookie/);assert.match(response.headers.get('server-timing'),/identity;dur=.*live_session;dur=/);assert.deepEqual(decode(await response.json()),project(full));
++ assert.equal((await read('pipelineList',[club,{userId:f.data.userId}])).status,400);assert.equal((await read('pipelineList',[require('crypto').randomUUID(),{}])).status,403);assert.equal((await read('pipelineList',[club,{}],f.actor.cookieHeader()+'; '+load('lib/demo/access.ts').DEMO_COOKIE+'=1')).status,403);
++ const round=await db.pipelineRound.findFirstOrThrow({where:{clubId:club,type:'APPLICATION_REVIEW'}});try{await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:true}});const list=decode(await(await read('pipelineList')).json());for(const app of list.applications.filter(a=>a.roundId===round.id)){assert.ok(app.studentId.startsWith('anonymous-'));assert.equal(app.student.email,'');assert.equal(app.student.studentProfile.firstName,'Applicant')}}finally{await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:round.anonymousReview}})}
++ const backup=await db.clubMember.findFirstOrThrow({where:{clubId:club,userId:{not:f.data.userId}}});await db.clubMember.update({where:{id:backup.id},data:{isOwner:true,accessRole:'OWNER'}});const member=await db.clubMember.findUniqueOrThrow({where:{userId_clubId:{userId:f.data.userId,clubId:club}}});try{await db.clubMember.update({where:{id:member.id},data:{isOwner:false,accessRole:'MEMBER',permissions:[],interviewOffices:[]}});assert.equal((await read('pipelineList')).status,403)}finally{await db.clubMember.update({where:{id:member.id},data:{isOwner:member.isOwner,accessRole:member.accessRole,permissions:member.permissions,interviewOffices:member.interviewOffices}});await db.clubMember.update({where:{id:backup.id},data:{isOwner:backup.isOwner,accessRole:backup.accessRole}})}
++ try{await db.user.update({where:{id:f.data.userId},data:{disabledAt:new Date()}});assert.equal((await read('pipelineList')).status,401)}finally{await db.user.update({where:{id:f.data.userId},data:{disabledAt:null}})}
++ const captured=f.actor.cookieHeader();await f.actor.client.auth.signOut({scope:'local'});for(const kind of ['pipelineList','pipeline'])assert.equal((await read(kind,[club,{}],captured)).status,401);
++ }finally{for(const member of backups)await db.clubMember.update({where:{id:member.id},data:{isOwner:member.isOwner,accessRole:member.accessRole}});await db.$disconnect()}
++});
++test('applicant list avoids detail reads; closing a pending detail fences it from the next candidate',{skip:!configFile},async()=>{const f=await fixture(),browser=await chromium.launch({headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...f.actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage();const reads=[],errors=[];let release;
++ try{page.on('pageerror',e=>errors.push(e.name));page.on('request',r=>{const u=new URL(r.url());if(u.pathname==='/api/workspace')reads.push(u.searchParams.get('kind'))});await page.goto(f.config.appUrl+'/club/'+f.data.clubIds[0]+'/workspace?section=recruitment&tool=applicants');await page.locator('.oc-live-pipeline').getByText('Audit Student 000',{exact:true}).first().waitFor();assert.ok(reads.filter(k=>k==='pipelinePage').length>=1,'initial session/bootstrap replacement may require another live read');assert.equal(reads.includes('pipeline'),false);
++ let received;const held=new Promise(resolve=>received=resolve);const gate=async route=>{const response=await route.fetch();release=()=>route.fulfill({response});received()};await page.route('**/api/workspace?kind=pipeline&*',gate);await page.locator('[data-applicant-id]').filter({visible:true}).first().click();await held;assert.equal(await page.getByText('Loading applicant…',{exact:true}).count(),1);const sheet=page.locator('[data-slot="sheet-content"]');await sheet.getByRole('button',{name:'Close',exact:true}).click();await release();await page.unroute('**/api/workspace?kind=pipeline&*',gate);await page.locator('[data-applicant-id]').filter({visible:true}).nth(1).click();await sheet.getByRole('heading',{name:'Audit Student 001',exact:true}).waitFor();assert.equal(await sheet.getByRole('heading',{name:'Audit Student 000',exact:true}).count(),0);assert.equal(reads.filter(k=>k==='pipeline').length,2);assert.deepEqual(errors,[]);
++ }finally{if(release)await release().catch(()=>{});await context.close();await browser.close()}
++});
++test('fresh applicant detail preserves an autosaved review draft across close and reopen',{skip:!configFile},async()=>{const f=await fixture(),clubId=f.data.clubIds[0],db=new PrismaClient({datasourceUrl:f.config.status.DB_URL}),round=await db.pipelineRound.findFirstOrThrow({where:{clubId,type:'APPLICATION_REVIEW'}}),app=await db.application.findFirstOrThrow({where:{clubId,student:{studentProfile:{lastName:'Student 000'}}}}),browser=await chromium.launch({headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...f.actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage();const prior=await db.editorDraft.findMany({where:{userId:f.data.userId}});assert.equal(prior.length,0,'This test owns only an empty disposable actor draft namespace');
++ try{await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:true}});await page.goto(f.config.appUrl+'/club/'+clubId+'/workspace?section=recruitment&tool=applicants');const candidate=page.locator(`[data-applicant-id="${app.id}"]`).filter({visible:true}).first();await page.getByRole('textbox',{name:'Search applicants',exact:true}).fill(load('lib/anonymous-review.ts').anonymousApplicantLabel(app.id));await candidate.click();const score=page.getByLabel('Score (1–10)',{exact:true}),notes=page.getByLabel('Overall evaluation feedback',{exact:true});await score.waitFor();await page.waitForFunction(()=>!document.getElementById('review-score').disabled);await score.fill('8');await notes.fill('Phase 3 disposable draft continuity');await notes.blur();await page.locator('[data-slot="sheet-content"]').getByRole('button',{name:'Close',exact:true}).click();await page.locator('[data-slot="sheet-content"]').waitFor({state:'hidden'});await candidate.click();await page.waitForFunction(()=>document.getElementById('review-notes')?.value==='Phase 3 disposable draft continuity');assert.equal(await score.inputValue(),'8');
++ }finally{await context.close();await browser.close();await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:round.anonymousReview}});await db.editorDraft.deleteMany({where:{userId:f.data.userId}});await db.$disconnect()}
++});
++test('paged applicants preserve whole-list search/counts with one fresh read per interaction',{skip:!configFile},async(t)=>{const f=await fixture();if((f.data.counts.applicantsInMeasuredClub||100)<1000){t.skip('Requires the registered large fixture');return;}const browser=await chromium.launch({headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...f.actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage();let reads=0;try{page.on('request',r=>{if(new URL(r.url()).searchParams.get('kind')==='pipelinePage')reads++});await page.goto(f.config.appUrl+'/club/'+f.data.clubIds[0]+'/workspace?section=recruitment&tool=applicants');const pages=page.getByRole('navigation',{name:'Applicant pages',exact:true});await pages.waitFor();assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),100);await page.waitForLoadState('networkidle');const initialReads=reads;await pages.getByRole('button',{name:'Next applicant page',exact:true}).click();await page.getByText('Scale Student 00100',{exact:true}).first().waitFor();assert.match(await pages.innerText(),/Page 2 of/);assert.equal(reads,initialReads+1);const search=page.getByRole('textbox',{name:'Search applicants',exact:true});const last='Scale Student '+String(f.data.counts.applicantsInMeasuredClub-1).padStart(5,'0');await search.fill(last);await page.getByText(last,{exact:true}).first().waitFor();assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),1);assert.equal(await pages.count(),0);await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));assert.equal(await search.evaluate(el=>document.activeElement===el),true,'filtering keeps keyboard focus');await search.fill('');await pages.waitFor();assert.match(await pages.innerText(),/Page 1 of/);assert.equal(reads,initialReads+3)}finally{await context.close();await browser.close()}});
+diff --git a/tests/navigation-phase5-e2e.test.cjs b/tests/navigation-phase5-e2e.test.cjs
+new file mode 100644
+index 00000000..4e0cbe6c
+--- /dev/null
++++ b/tests/navigation-phase5-e2e.test.cjs
+@@ -0,0 +1,44 @@
++// Real production HTTP/Auth/PostgreSQL. Request gates below are acceptance-only;
++// no gates or synthetic delay are installed in performance collections.
++const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
++const {PrismaClient}=require('@prisma/client'),{chromium}=require('playwright'),{Actor,readConfig}=require('./helpers/onboarding-e2e.cjs'),{load}=require('./helpers/voting-harness.cjs');
++const configFile=process.env.OUTCLASS_ONBOARDING_E2E_CONFIG,decode=load('lib/workspace-wire.ts').decodeWorkspaceData;
++async function fixture(){const config=readConfig(configFile),data=JSON.parse(fs.readFileSync(path.join(path.dirname(configFile),'navigation-fixture.json'))),actor=new Actor(config);await actor.signIn(data.email,data.password);return{config,data,actor,club:data.clubIds[0]};}
++const read=(f,kind,q={},club=f.club,cookie)=>f.actor.request('/api/workspace?'+new URLSearchParams({kind,args:JSON.stringify([club,q])}),cookie?{headers:{cookie}}:{});
++const get=async(f,kind,q={},club)=>{const r=await read(f,kind,q,club);assert.equal(r.status,200,kind);return decode(await r.json())};
++async function context(browser,f){return browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...f.actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}})}
++test('server pages and explicit selections preserve complete authorized sets, privacy and live revocation',{skip:!configFile,timeout:180000},async()=>{
++ const f=await fixture(),db=new PrismaClient({datasourceUrl:f.config.status.DB_URL}),backups=[];
++ try{
++  for(const clubId of f.data.clubIds){const m=await db.clubMember.findFirstOrThrow({where:{clubId,userId:{not:f.data.userId}}});backups.push(m);await db.clubMember.update({where:{id:m.id},data:{isOwner:true,accessRole:'OWNER'}})}
++  const legacy=await get(f,'pipelineList'),response=await read(f,'pipelinePage'),first=decode(await response.json());assert.equal(response.status,200);assert.equal(response.headers.get('cache-control'),'private, no-store');assert.match(response.headers.get('vary'),/Cookie/);assert.match(response.headers.get('server-timing'),/identity;dur=.*live_session;dur=/);assert.ok(response.headers.get('x-outclass-trace-id'));assert.equal(first.page.total,legacy.applications.filter(a=>a.status!=='REJECTED').length);assert.equal(first.applications.length,Math.min(100,first.page.total));
++  const selection=await get(f,'pipelineSelection');assert.equal(selection.applications.length,first.page.total);assert.ok(selection.applications.every(a=>Object.keys(a).sort().join(',')==='canQuickReview,id,roundId,status'));assert.equal(JSON.stringify(selection).includes('virginia.edu'),false);
++  if(first.page.next){const second=await get(f,'pipelinePage',{cursor:first.page.next});assert.equal(second.page.start,100);assert.equal(second.applications[0].id,selection.applications[100].id);const previous=await get(f,'pipelinePage',{cursor:second.page.previous});assert.deepEqual(previous.applications,first.applications);const last=selection.applications.at(-1),located=await get(f,'pipelinePage',{cursor:{id:last.id,direction:'at',scope:first.page.scope}});assert.ok(located.applications.some(a=>a.id===last.id));}
++  for(const q of [{limit:1000},{userId:f.data.userId},{cursor:{id:selection.applications[0].id,direction:'after',scope:'forged'}},{query:'new selection',cursor:first.page.next}])assert.equal((await read(f,'pipelinePage',q)).status,400);
++  assert.equal((await read(f,'pipelineSelection',{cursor:first.page.next})).status,400);
++  for(const kind of ['pipelinePage','pipelineSelection']){assert.equal((await read(f,kind,{},require('crypto').randomUUID())).status,403);const demo=load('lib/demo/access.ts').DEMO_COOKIE;assert.equal((await read(f,kind,{},f.club,f.actor.cookieHeader()+'; '+demo+'=1')).status,403)}
++  const round=await db.pipelineRound.findFirstOrThrow({where:{clubId:f.club,type:'APPLICATION_REVIEW'}});try{await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:true}});const anonymous=await get(f,'pipelinePage'),all=await get(f,'pipelineSelection');assert.ok(anonymous.applications.every(a=>a.studentId.startsWith('anonymous-')&&a.student.email===''&&a.student.studentProfile.firstName==='Applicant'));assert.equal((await get(f,'pipelinePage',{query:'Scale Student'})).page.total,0);assert.equal((await get(f,'pipelinePage',{major:'Economics'})).page.total,0);assert.equal(all.applications.some(a=>a.canQuickReview),false);}finally{await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:round.anonymousReview}})}
++  const member=await db.clubMember.findUniqueOrThrow({where:{userId_clubId:{userId:f.data.userId,clubId:f.club}}});try{await db.clubMember.update({where:{id:member.id},data:{isOwner:false,accessRole:'MEMBER',permissions:[],interviewOffices:[]}});for(const kind of ['pipelinePage','pipelineSelection'])assert.equal((await read(f,kind)).status,403)}finally{await db.clubMember.update({where:{id:member.id},data:{isOwner:member.isOwner,accessRole:member.accessRole,permissions:member.permissions,interviewOffices:member.interviewOffices}})}
++  try{await db.user.update({where:{id:f.data.userId},data:{disabledAt:new Date()}});for(const kind of ['pipelinePage','pipelineSelection'])assert.equal((await read(f,kind)).status,401)}finally{await db.user.update({where:{id:f.data.userId},data:{disabledAt:null}})}
++  const cookie=f.actor.cookieHeader();await f.actor.client.auth.signOut({scope:'local'});for(const kind of ['pipelinePage','pipelineSelection'])assert.equal((await read(f,kind,{},f.club,cookie)).status,401);
++ }finally{for(const m of backups)await db.clubMember.update({where:{id:m.id},data:{isOwner:m.isOwner,accessRole:m.accessRole}});await db.$disconnect()}
++});
++test('fresh page boundaries avoid duplicate reads, full quick-review/voting selection survives pagination and reopen validates again',{skip:!configFile,timeout:120000},async t=>{
++ const f=await fixture();if((f.data.counts.applicantsInMeasuredClub||100)<1000)return t.skip('Requires the registered large fixture');const browser=await chromium.launch({headless:true}),c=await context(browser,f),page=await c.newPage(),reads=[],errors=[];
++ try{page.on('dialog',d=>d.accept());page.on('pageerror',e=>errors.push(e.name));page.on('request',r=>{if(new URL(r.url()).pathname==='/api/workspace')reads.push(new URL(r.url()).searchParams.get('kind'))});await page.goto(f.config.appUrl+'/club/'+f.club+'/workspace?section=recruitment&tool=applicants');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await page.waitForLoadState('networkidle');assert.ok(reads.filter(k=>k==='pipelinePage').length>=1);assert.equal(reads.includes('pipelineSelection'),false);
++  await page.getByRole('button',{name:/Audit Student 099.*Open applicant/}).click();await page.getByRole('heading',{name:'Audit Student 099',exact:true}).waitFor();const before=reads.filter(k=>k==='pipelinePage').length;await page.getByRole('button',{name:'Next applicant',exact:true}).click();await page.getByRole('heading',{name:'Scale Student 00100',exact:true}).waitFor();assert.equal(reads.filter(k=>k==='pipelinePage').length,before+1,'drawer boundary fetches one page and adopts it without a duplicate');await page.getByRole('button',{name:'Previous applicant',exact:true}).click();await page.getByRole('heading',{name:'Audit Student 099',exact:true}).waitFor();await page.getByRole('button',{name:'Close',exact:true}).click();await page.locator('[data-slot=sheet-content]').waitFor({state:'hidden'});
++  await page.getByRole('button',{name:'Next applicant page',exact:true}).click();await page.getByText('Scale Student 00100',{exact:true}).first().waitFor();await page.getByRole('button',{name:'Quick review',exact:true}).click();await page.getByText(`Quick review · ${f.data.counts.applicantsInMeasuredClub} remaining`,{exact:true}).waitFor();await page.getByRole('heading',{name:'Audit Student 000',exact:true}).waitFor();assert.equal(reads.filter(k=>k==='pipelineSelection').length,1);await page.getByRole('button',{name:'Skip',exact:true}).click();await page.getByRole('heading',{name:'Audit Student 001',exact:true}).waitFor();await page.getByRole('button',{name:'Close',exact:true}).click();await page.locator('[data-slot=sheet-content]').waitFor({state:'hidden'});
++  for(let visit=0;visit<2;visit++){let release,seen;const held=new Promise(r=>seen=r);if(visit===1)await page.route('**/api/workspace?kind=pipelineSelection&*',async route=>{const response=await route.fetch();release=()=>route.fulfill({response});seen()});await page.getByRole('button',{name:'Start voting',exact:true}).click();if(visit===1){await held;assert.equal(await page.getByRole('combobox',{name:/^Recruitment round/}).count(),0,'prior successful selection stays hidden until this visit validates');await release();await page.unroute('**/api/workspace?kind=pipelineSelection&*')}const round=page.getByRole('combobox',{name:/^Recruitment round/});await round.waitFor();const options=await round.locator('option').evaluateAll(nodes=>nodes.map(n=>({value:n.value,text:n.textContent})));await round.selectOption(options.find(n=>n.text==='Applied').value);const pool=page.getByRole('group',{name:'Candidate pool · all submitted candidates unless selected below',exact:true});await pool.waitFor();assert.equal(await pool.getByRole('checkbox').count(),f.data.counts.applicantsInMeasuredClub);const setup=page.getByRole('dialog',{name:'New voting session',exact:true});await setup.getByRole('button',{name:'Done',exact:true}).click();await setup.waitFor({state:'hidden'});const stage=page.locator('.oc-voting-stage');await stage.getByRole('button',{name:'Close',exact:true}).click();await stage.waitFor({state:'hidden'});}
++  assert.equal(reads.filter(k=>k==='pipelineSelection').length,4,'every voting visit revalidates the complete set');assert.deepEqual(errors,[]);
++ }finally{await c.close();await browser.close()}
++});
++test('rapid global searches coalesce obsolete reads, retain keyboard focus and never show a late previous selection',{skip:!configFile,timeout:90000},async t=>{
++ const f=await fixture();if((f.data.counts.applicantsInMeasuredClub||100)<1000)return t.skip('Requires the registered large fixture');const browser=await chromium.launch({headless:true}),c=await context(browser,f),page=await c.newPage(),errors=[],submitted=[];let held,release;
++ try{page.on('request',r=>{const u=new URL(r.url());if(u.searchParams.get('kind')==='pipelinePage')submitted.push(JSON.parse(u.searchParams.get('args'))[1].query)});page.on('pageerror',e=>errors.push(e.name));await page.goto(f.config.appUrl+'/club/'+f.club+'/workspace?section=recruitment&tool=applicants');const search=page.getByRole('textbox',{name:'Search applicants',exact:true});await page.getByText('Audit Student 000',{exact:true}).first().waitFor();const started=new Promise(r=>held=r);await page.route('**/api/workspace?kind=pipelinePage&*',async route=>{const args=JSON.parse(new URL(route.request().url()).searchParams.get('args'));if(args[1].query==='Audit Student 000'){const response=await route.fetch();release=()=>route.fulfill({response}).catch(()=>{});held();}else await route.continue()});await search.fill('Audit Student 000');await started;const last='Scale Student '+String(f.data.counts.applicantsInMeasuredClub-1).padStart(5,'0');await search.fill('intermediate query');await search.fill(last);await release();await page.getByText(last,{exact:true}).first().waitFor();await page.unroute('**/api/workspace?kind=pipelinePage&*');await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));assert.equal(await search.evaluate(el=>document.activeElement===el),true);assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),1);assert.equal(await page.getByText('Audit Student 000',{exact:true}).count(),0);assert.equal(submitted.includes('intermediate query'),false,'intermediate filters never dispatch while an earlier read is pending');assert.deepEqual(errors,[]);
++ }finally{if(release)await release();await c.close();await browser.close()}
++});
++test('editable review drafts survive the 100/101 server-page boundary and return navigation',{skip:!configFile,timeout:120000},async t=>{
++ const f=await fixture();if((f.data.counts.applicantsInMeasuredClub||100)<1000)return t.skip('Requires the registered large fixture');const db=new PrismaClient({datasourceUrl:f.config.status.DB_URL}),round=await db.pipelineRound.findFirstOrThrow({where:{clubId:f.club,type:'APPLICATION_REVIEW'}}),browser=await chromium.launch({headless:true}),c=await context(browser,f),page=await c.newPage();const existing=await db.editorDraft.findMany({where:{userId:f.data.userId}});assert.equal(existing.length,0,'Only an empty owned draft namespace may be used');
++ try{await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:true}});const first=await get(f,'pipelinePage'),second=await get(f,'pipelinePage',{cursor:first.page.next}),target=first.applications.at(-1),next=second.applications[0];await page.goto(f.config.appUrl+'/club/'+f.club+'/workspace?section=recruitment&tool=applicants');await page.locator(`[data-applicant-id="${target.id}"]`).filter({visible:true}).first().click();const notes=page.getByLabel('Overall evaluation feedback',{exact:true}),score=page.getByLabel('Score (1–10)',{exact:true});await score.waitFor();await page.waitForFunction(()=>!document.getElementById('review-score').disabled);await score.fill('8');await notes.fill('Phase 5 boundary draft continuity');await page.getByRole('button',{name:'Next applicant',exact:true}).click();await page.getByRole('heading',{name:load('lib/anonymous-review.ts').anonymousApplicantLabel(next.id),exact:true}).waitFor();await page.getByRole('button',{name:'Previous applicant',exact:true}).click();await page.getByRole('heading',{name:load('lib/anonymous-review.ts').anonymousApplicantLabel(target.id),exact:true}).waitFor();await page.waitForFunction(()=>document.getElementById('review-notes')?.value==='Phase 5 boundary draft continuity');assert.equal(await score.inputValue(),'8');
++ }finally{await c.close();await browser.close();await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:round.anonymousReview}});await db.editorDraft.deleteMany({where:{userId:f.data.userId}});await db.$disconnect()}
++});
+diff --git a/tests/navigation-phase6-e2e.test.cjs b/tests/navigation-phase6-e2e.test.cjs
+new file mode 100644
+index 00000000..04eddd2b
+--- /dev/null
++++ b/tests/navigation-phase6-e2e.test.cjs
+@@ -0,0 +1,42 @@
++// Real HTTP/Auth/database parity; only the reserved disposable fixture is used.
++const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
++const {PrismaClient}=require('@prisma/client'),{Actor,readConfig}=require('./helpers/onboarding-e2e.cjs'),{load}=require('./helpers/voting-harness.cjs');
++const configFile=process.env.OUTCLASS_ONBOARDING_E2E_CONFIG;
++test('narrow summaries retain canonical filtering, score barriers and fresh assignment/privacy authority over real HTTP',{skip:!configFile,timeout:180000},async()=>{
++ const config=readConfig(configFile),f=JSON.parse(fs.readFileSync(path.join(path.dirname(configFile),'navigation-fixture.json'))),club=f.clubIds[1],actor=new Actor(config);await actor.signIn(f.email,f.password);
++ const db=new PrismaClient({datasourceUrl:config.status.DB_URL}),decode=load('lib/workspace-wire.ts').decodeWorkspaceData,project=load('lib/pipeline-list.ts').pipelineListProjection,{pagePipeline,completePipelineSelection}=load('lib/pipeline-page.ts');
++ const member=await db.clubMember.findUniqueOrThrow({where:{userId_clubId:{userId:f.userId,clubId:club}}}),backup=await db.clubMember.findFirstOrThrow({where:{clubId:club,userId:{not:f.userId}}}),round=await db.pipelineRound.findFirstOrThrow({where:{clubId:club,type:'APPLICATION_REVIEW'}}),history=await db.pipelineRound.findFirstOrThrow({where:{clubId:club,type:'INTERVIEW'}}),app=await db.application.findFirstOrThrow({where:{clubId:club,studentId:{not:backup.userId},evaluations:{none:{}}}});
++ const reviews=[],assignments=[];
++ async function read(kind,q={}){const response=await actor.request('/api/workspace?'+new URLSearchParams({kind,args:JSON.stringify([club,q])}));assert.equal(response.status,200,kind);assert.equal(response.headers.get('cache-control'),'private, no-store');assert.match(response.headers.get('vary'),/Cookie/);return decode(await response.json())}
++ try{
++  await db.clubMember.update({where:{id:backup.id},data:{isOwner:true,accessRole:'OWNER'}});
++  for(const m of [member,backup])assignments.push(await db.interviewPanelAssignment.create({data:{applicationId:app.id,roundId:round.id,memberId:m.id,grantedBy:f.userId}}));
++  for(const [m,r,score,submittedAt]of [[member,round,10,null],[backup,round,6,new Date()],[backup,history,9,new Date()]])reviews.push(await db.evaluation.create({data:{applicationId:app.id,interviewerId:m.id,roundId:r.id,round:r.name,score,submittedAt,notes:'PRIVATE PHASE 6 CANARY'}}));
++  const scenarios=[
++   {anonymous:false,office:[],permissions:['applications.review','applicants.identify'],submitted:false,revoked:false},
++   {anonymous:false,office:['PRESIDENT'],permissions:['applications.review','applicants.identify'],submitted:false,revoked:false},
++   {anonymous:false,office:[],permissions:['applications.review','applicants.identify'],submitted:true,revoked:false},
++   {anonymous:false,office:['PRESIDENT'],permissions:['applications.review','applicants.identify'],submitted:true,revoked:true},
++   {anonymous:true,office:[],permissions:['applications.review'],submitted:true,revoked:false},
++  ];
++  let published=false;
++  for(const s of scenarios){
++   await db.clubMember.update({where:{id:member.id},data:{isOwner:false,accessRole:'MEMBER',permissions:s.permissions,interviewOffices:s.office}});
++   await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:s.anonymous}});
++   if(s.submitted && !published){await db.evaluation.update({where:{id:reviews[0].id},data:{submittedAt:new Date()}});published=true}
++   await db.interviewPanelAssignment.update({where:{id:assignments[0].id},data:{revokedAt:s.revoked?new Date():null}});
++   const canonical=project(await read('pipeline'));assert.deepEqual(await read('pipelineList'),canonical);
++   const target=canonical.applications.find(a=>a.id===app.id);
++   if(!s.submitted || s.anonymous){assert.equal(target.roundScore,null);assert.deepEqual(target.evaluations,[])}
++   else assert.equal(target.roundScore.average,8);
++   const queries=[{},...['name','round','year','gpa','sat','act','status','score'].map(sort=>({sort,descending:true})),{rating:7},{review:'mine'},{review:'unreviewed'},{query:'Audit Student 099'},{major:'Economics'},{year:canonical.applications[0].student.studentProfile.academicYear},{query:'PRIVATE PHASE 6 CANARY'}];
++   for(const query of queries){const page=await read('pipelinePage',query);assert.deepEqual(page,pagePipeline(canonical,query,member.id,f.userId,page.page.scope));assert.deepEqual(await read('pipelineSelection',query),completePipelineSelection(canonical,query,member.id,f.userId))}
++  }
++ }finally{
++  // Published reviews are immutable history. Retain them until fixture teardown.
++  await db.interviewPanelAssignment.updateMany({where:{id:{in:assignments.map(a=>a.id)}},data:{revokedAt:new Date()}});
++  await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:round.anonymousReview}});
++  await db.clubMember.update({where:{id:member.id},data:{isOwner:member.isOwner,accessRole:member.accessRole,permissions:member.permissions,interviewOffices:member.interviewOffices}});
++  await db.clubMember.update({where:{id:backup.id},data:{isOwner:backup.isOwner,accessRole:backup.accessRole}});await db.$disconnect();
++ }
++});
+diff --git a/tests/navigation-phase7-e2e.test.cjs b/tests/navigation-phase7-e2e.test.cjs
+new file mode 100644
+index 00000000..ae301c56
+--- /dev/null
++++ b/tests/navigation-phase7-e2e.test.cjs
+@@ -0,0 +1,26 @@
++const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
++const {PrismaClient}=require('@prisma/client'),{chromium}=require('playwright'),{Actor,readConfig}=require('./helpers/onboarding-e2e.cjs');
++const configFile=process.env.OUTCLASS_ONBOARDING_E2E_CONFIG;
++async function fixture(){const config=readConfig(configFile),data=JSON.parse(fs.readFileSync(path.join(path.dirname(configFile),'navigation-fixture.json'))),actor=new Actor(config);await actor.signIn(data.email,data.password);return{config,data,actor,club:data.clubIds[0]}}
++async function open(browser,f){const c=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...f.actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await c.newPage();await page.goto(f.config.appUrl+'/club/'+f.club+'/workspace?section=recruitment&tool=applicants');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await page.waitForLoadState('networkidle');return{c,page}}
++test('paged navigation remains bounded, invalid filters make no request and refresh hides old data until fresh privacy validation',{skip:!configFile,timeout:120000},async t=>{
++ const f=await fixture();if((f.data.counts.applicantsInMeasuredClub||100)<1000)return t.skip('Requires the registered large fixture');const browser=await chromium.launch({headless:true}),db=new PrismaClient({datasourceUrl:f.config.status.DB_URL}),round=await db.pipelineRound.findFirstOrThrow({where:{clubId:f.club,type:'APPLICATION_REVIEW'}}),{c,page}=await open(browser,f),reads=[],errors=[];let release;
++ try{page.on('request',r=>{const u=new URL(r.url());if(u.pathname==='/api/workspace')reads.push(u.searchParams.get('kind'))});page.on('pageerror',e=>errors.push(e.name));assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),100);
++  const pager=page.getByRole('navigation',{name:'Applicant pages',exact:true}),search=page.getByRole('textbox',{name:'Search applicants',exact:true});await pager.getByRole('button',{name:'Next applicant page',exact:true}).click();await page.getByText('Scale Student 00100',{exact:true}).first().waitFor();await page.getByRole('combobox',{name:'Sort applicants',exact:true}).selectOption('gpa');const last='Scale Student '+String(f.data.counts.applicantsInMeasuredClub-1).padStart(5,'0');await search.fill(last);await page.getByText(last,{exact:true}).first().waitFor();assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),1);await search.fill('');await page.getByRole('combobox',{name:'Sort applicants',exact:true}).selectOption('name');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await page.locator('.oc-pipeline-filters summary').click();const gpa=page.getByLabel('GPA greater than',{exact:true});await gpa.fill('5');await page.getByRole('alert').filter({hasText:'Enter filters within the displayed numeric ranges.'}).waitFor();assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),0);await gpa.fill('');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();assert.equal(reads.filter(k=>['pipelineList','pipelinePage'].includes(k)).length>=5,true,'valid page/filter/sort interactions revalidate through the page endpoint');
++  await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:true}});let seen;const held=new Promise(r=>seen=r);await page.route('**/api/workspace?kind=pipelinePage&*',async route=>{const response=await route.fetch();release=()=>route.fulfill({response});seen()});await page.getByRole('button',{name:'Refresh',exact:true}).click();await held;assert.equal(await page.locator('[data-applicant-id]').count(),0,'a refresh cannot expose the previous successful summary set');await release();await page.unroute('**/api/workspace?kind=pipelinePage&*');await page.getByRole('textbox',{name:'Search applicants',exact:true}).waitFor();assert.equal(reads.filter(k=>k==='pipelinePage').length>=6,true);assert.equal(await page.getByText('Audit Student 000',{exact:true}).count(),0);await page.getByRole('textbox',{name:'Search applicants',exact:true}).fill('Scale Student');await page.getByText('No applicants match these filters.',{exact:true}).waitFor();assert.deepEqual(errors,[]);
++ }finally{if(release)await release().catch(()=>{});await c.close();await browser.close();await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:round.anonymousReview}});await db.$disconnect()}
++});
++test('every explicit page refresh rejects revoked membership, disabled accounts and revoked live sessions',{skip:!configFile,timeout:180000},async t=>{
++ const f=await fixture(),db=new PrismaClient({datasourceUrl:f.config.status.DB_URL}),browser=await chromium.launch({headless:true}),member=await db.clubMember.findUniqueOrThrow({where:{userId_clubId:{userId:f.data.userId,clubId:f.club}}}),backups=await db.clubMember.findMany({where:{clubId:{in:f.data.clubIds},userId:{not:f.data.userId}},distinct:['clubId']});
++ try{assert.equal(backups.length,f.data.clubIds.length);for(const backup of backups)await db.clubMember.update({where:{id:backup.id},data:{isOwner:true,accessRole:'OWNER'}});
++  for(const reason of ['membership','account','session'])await t.test(reason,async()=>{
++   const {c,page}=await open(browser,f);const statuses=[];page.on('response',r=>{if(new URL(r.url()).searchParams.get('kind')==='pipelinePage')statuses.push(r.status())});
++   try{
++    if(reason==='membership')await db.clubMember.update({where:{id:member.id},data:{isOwner:false,accessRole:'MEMBER',permissions:[],interviewOffices:[]}});
++    if(reason==='account')await db.user.update({where:{id:f.data.userId},data:{disabledAt:new Date()}});
++    if(reason==='session')await f.actor.client.auth.signOut({scope:'local'});
++    await page.getByRole('button',{name:'Refresh',exact:true}).click();await page.getByRole('alert').filter({hasText:/Couldn.t load this club.s applicants/}).waitFor();assert.equal(await page.locator('[data-applicant-id]').count(),0);assert.deepEqual(statuses,[reason==='membership'?403:401]);
++   }finally{await c.close();if(reason==='membership')await db.clubMember.update({where:{id:member.id},data:{isOwner:member.isOwner,accessRole:member.accessRole,permissions:member.permissions,interviewOffices:member.interviewOffices}});if(reason==='account')await db.user.update({where:{id:f.data.userId},data:{disabledAt:null}})}
++  });
++ }finally{await browser.close();for(const backup of backups)await db.clubMember.update({where:{id:backup.id},data:{isOwner:backup.isOwner,accessRole:backup.accessRole}});await db.$disconnect()}
++});
+diff --git a/tests/navigation-phase8-e2e.test.cjs b/tests/navigation-phase8-e2e.test.cjs
+new file mode 100644
+index 00000000..cb9280de
+--- /dev/null
++++ b/tests/navigation-phase8-e2e.test.cjs
+@@ -0,0 +1,30 @@
++// Reserved disposable fixture only. No application or production .env is read.
++const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
++const {PrismaClient}=require('@prisma/client'),{Actor,readConfig}=require('./helpers/onboarding-e2e.cjs'),{load}=require('./helpers/voting-harness.cjs');
++const configFile=process.env.OUTCLASS_ONBOARDING_E2E_CONFIG;
++test('real Repeatable Read planning bounds hydrated summaries and stays consistent across a concurrent profile update',{skip:!configFile,timeout:120000},async()=>{
++ const config=readConfig(configFile),f=JSON.parse(fs.readFileSync(path.join(path.dirname(configFile),'navigation-fixture.json'))),actor=new Actor(config);await actor.signIn(f.email,f.password);
++ const db=new PrismaClient({datasourceUrl:config.status.DB_URL}),clubId=f.clubIds[0],decode=load('lib/workspace-wire.ts').decodeWorkspaceData,{readPipelinePage}=load('lib/pipeline-page-read.ts'),{pagePipeline}=load('lib/pipeline-page.ts');
++ let profile;
++ try{
++  const response=await actor.request('/api/workspace?'+new URLSearchParams({kind:'pipelineList',args:JSON.stringify([clubId,{genderCounts:false}])}));assert.equal(response.status,200);const canonical=decode(await response.json());
++  const membership=await db.clubMember.findUniqueOrThrow({where:{userId_clubId:{userId:f.userId,clubId}}});const target=canonical.applications[0];profile=await db.studentProfile.findUniqueOrThrow({where:{userId:target.studentId}});const calls=[];let changed=false;
++  const page=await db.$transaction(async tx=>{
++   const wrapped={...tx,application:{...tx.application,async findMany(options){const records=await tx.application.findMany(options);calls.push({table:'application',rows:records.length,reviews:!!options.select.evaluations});if(!changed){changed=true;await db.studentProfile.update({where:{id:profile.id},data:{major:'Phase 8 concurrent profile canary',gpa:3.7}})}return records}},evaluation:{...tx.evaluation,async findMany(options){assert.deepEqual(options.where.application,{clubId,status:{not:'DRAFTING'}});calls.push({table:'evaluation',applicationIds:options.where.applicationId.in.length});return tx.evaluation.findMany(options)}},interviewPanelAssignment:{...tx.interviewPanelAssignment,async findMany(options){assert.deepEqual(options.where.application,{clubId,status:{not:'DRAFTING'}});calls.push({table:'assignment',applicationIds:options.where.applicationId.in.length});return tx.interviewPanelAssignment.findMany(options)}}};
++   return readPipelinePage(wrapped,{clubId,status:{not:'DRAFTING'}},membership,canonical.rounds,{},'phase8-snapshot');
++  },{isolationLevel:'RepeatableRead'});
++  assert.deepEqual(page,pagePipeline(canonical,{},membership.id,membership.userId,'phase8-snapshot'));assert.deepEqual(calls,[{table:'application',rows:canonical.applications.length,reviews:false},{table:'evaluation',applicationIds:Math.min(100,canonical.applications.length)},{table:'assignment',applicationIds:Math.min(100,canonical.applications.length)}]);assert.equal((await db.studentProfile.findUniqueOrThrow({where:{id:profile.id}})).major,'Phase 8 concurrent profile canary');
++  const fresh=await actor.request('/api/workspace?'+new URLSearchParams({kind:'pipelinePage',args:JSON.stringify([clubId,{}])}));assert.equal(fresh.status,200);const updated=decode(await fresh.json());assert.ok(updated.facets.majors.includes('Phase 8 concurrent profile canary'));assert.equal(updated.applications.find(a=>a.id===target.id).student.studentProfile.gpa,3.7);assert.equal(fresh.headers.get('cache-control'),'private, no-store');assert.match(fresh.headers.get('vary'),/Cookie/);
++ }finally{if(profile)await db.studentProfile.update({where:{id:profile.id},data:{major:profile.major,gpa:profile.gpa}});await db.$disconnect()}
++});
++
++const {chromium}=require('playwright');
++test('queued invalid numeric filters remain editable after obsolete page reads drain',{skip:!configFile,timeout:90000},async()=>{
++ const config=readConfig(configFile),f=JSON.parse(fs.readFileSync(path.join(path.dirname(configFile),'navigation-fixture.json'))),actor=new Actor(config);await actor.signIn(f.email,f.password);const browser=await chromium.launch({headless:true}),context=await browser.newContext({storageState:{cookies:[...actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage();let release;
++ try{
++  await page.goto(config.appUrl+'/club/'+f.clubIds[0]+'/workspace?section=recruitment&tool=applicants');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await page.waitForLoadState('networkidle');await page.locator('.oc-pipeline-filters summary').click();const search=page.getByRole('textbox',{name:'Search applicants',exact:true}),gpa=page.getByLabel('GPA greater than',{exact:true});let seen;const held=new Promise(r=>seen=r);
++  await page.route('**/api/workspace?kind=pipelinePage&*',async route=>{const q=JSON.parse(new URL(route.request().url()).searchParams.get('args'))[1];if(q.query==='Audit Student 000'){const response=await route.fetch();release=()=>route.fulfill({response});seen()}else await route.continue()});
++  await search.fill('Audit Student 000');await held;await search.fill('obsolete queued filter');await gpa.fill('5');await release();await page.waitForLoadState('networkidle');await page.getByRole('alert').filter({hasText:'Enter filters within the displayed numeric ranges.'}).waitFor();assert.equal(await gpa.isVisible(),true);assert.equal(await gpa.inputValue(),'5');assert.equal(await page.locator('[data-applicant-id]').count(),0);
++  await page.unroute('**/api/workspace?kind=pipelinePage&*');await search.fill('');await gpa.fill('');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),100);
++ }finally{if(release)await release().catch(()=>{});await context.close();await browser.close()}
++});
+diff --git a/tests/pipeline-detail-owner.test.cjs b/tests/pipeline-detail-owner.test.cjs
+new file mode 100644
+index 00000000..2d590d45
+--- /dev/null
++++ b/tests/pipeline-detail-owner.test.cjs
+@@ -0,0 +1,20 @@
++const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript');
++const tick=async()=>{for(let i=0;i<20;i++)await Promise.resolve()};
++function setup(){const state=[],effects=[],cleanups=new Map(),reads=[];let cursor=0,user={},epoch={},currentEpoch=epoch,support=false,demo={ready:true,isDemoEnabled:false};
++ const hooks={useState(init){const i=cursor++;if(!(i in state))state[i]=init;return[state[i],v=>state[i]=typeof v==='function'?v(state[i]):v]},useMemo(fn,deps){const i=cursor++;if(!state[i]||deps.some((d,j)=>d!==state[i].deps[j]))state[i]={deps,value:fn()};return state[i].value},useEffect(fn,deps){const i=cursor++;if(!state[i]||deps.some((d,j)=>d!==state[i][j])){state[i]=deps;effects.push([i,fn])}}};
++ const isReadAuthorityCurrent=authority=>authority===currentEpoch;
++ const mocks={react:hooks,'@/contexts/auth-context':{useAuth:()=>({user,readAuthority:epoch,isReadAuthorityCurrent,isImpersonating:support,loading:false})},'@/contexts/demo-context':{useDemoMode:()=>demo},'@/lib/workspace-api':{getClubPipeline:(club,filter)=>new Promise((resolve,reject)=>reads.push({club,filter,resolve,reject}))}};
++ const mod={exports:{}};new Function('require','module','exports',ts.transpileModule(fs.readFileSync('hooks/use-pipeline-applicant.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(n=>mocks[n]||require(n),mod,mod.exports);
++ return{reads,render(club,id,revision=0){cursor=0;return mod.exports.usePipelineApplicant(club,id,revision)},async flush(){for(const[i,fn]of effects.splice(0)){cleanups.get(i)?.();cleanups.set(i,fn())}await tick()},notifyEpoch(){currentEpoch={}},commitEpoch(){epoch=currentEpoch},rotate(){epoch={};currentEpoch=epoch},user(){user={}},support(){support=!support},demo(value){demo=value}};
++}
++test('detail opens fresh, fences late candidate/close results and retries denied reads',async()=>{const f=setup();assert.equal(f.render('club',null).application,null);await f.flush();assert.equal(f.reads.length,0);f.render('club','A');await f.flush();assert.deepEqual(f.reads[0].filter,{applicationId:'A'});f.render('club',null);await f.flush();f.render('club','B');await f.flush();f.reads[0].resolve({applications:[{id:'A',secret:'old'}]});await tick();assert.equal(f.render('club','B').application,null);f.reads[1].resolve({applications:[{id:'B'}]});await tick();assert.equal(f.render('club','B').application.id,'B');f.render('club',null);await f.flush();f.render('club','B');await f.flush();assert.equal(f.reads.length,3);f.reads[2].reject(Error('revoked'));await tick();const value=f.render('club','B');assert.equal(value.error,true);assert.equal(value.application,null);value.retry();f.render('club','B');await f.flush();assert.equal(f.reads.length,4)});
++test('authority, club, revision and Demo changes hide detail synchronously and discard pending results',async()=>{const f=setup();let club='one',rev=0;for(const change of [()=>{},()=>f.rotate(),()=>f.user(),()=>f.support(),()=>club='two',()=>rev++,()=>f.demo({ready:true,isDemoEnabled:true})]){change();assert.equal(f.render(club,'A',rev).application,null);await f.flush();f.reads.at(-1).resolve({applications:[{id:'A'}]});await tick();assert.equal(f.render(club,'A',rev).application.id,'A')}f.demo({ready:false,isDemoEnabled:false});assert.equal(f.render(club,'A',rev).application,null);await f.flush();assert.equal(f.reads.length,7)});
++test('a notified epoch prevents detail dispatch before React commits',async()=>{
++ const f=setup();f.render('club','A');f.notifyEpoch();await f.flush();assert.equal(f.reads.length,0);f.commitEpoch();f.render('club','A');await f.flush();assert.equal(f.reads.length,1);
++});
++test('detail results and failures cannot settle in the notification-to-commit gap',async()=>{
++ for(const failed of [false,true]){const f=setup();f.render('club','A');await f.flush();f.notifyEpoch();if(failed)f.reads[0].reject(Error('obsolete'));else f.reads[0].resolve({applications:[{id:'A',private:'obsolete'}]});await tick();const hidden=f.render('club','A');assert.equal(hidden.application,null);assert.equal(hidden.error,false);f.commitEpoch();f.render('club','A');await f.flush();assert.equal(f.reads.length,2);f.reads[1].resolve({applications:[{id:'A'}]});await tick();assert.equal(f.render('club','A').application.id,'A');}
++});
++test('already displayed detail stays hidden immediately after notification',async()=>{
++ const f=setup();f.render('club','A');await f.flush();f.reads[0].resolve({applications:[{id:'A'}]});await tick();assert.equal(f.render('club','A').application.id,'A');f.notifyEpoch();assert.equal(f.render('club','A').application,null);await f.flush();assert.equal(f.reads.length,1);f.commitEpoch();f.render('club','A');await f.flush();assert.equal(f.reads.length,2);
++});
+diff --git a/tests/pipeline-list.test.cjs b/tests/pipeline-list.test.cjs
+new file mode 100644
+index 00000000..45144225
+--- /dev/null
++++ b/tests/pipeline-list.test.cjs
+@@ -0,0 +1,15 @@
++const {test}=require('node:test'),assert=require('node:assert/strict');
++const {load}=require('./helpers/voting-harness.cjs');
++const {pipelineListProjection}=load('lib/pipeline-list.ts');
++test('pipeline list allowlist preserves filtering/ordering fields and excludes all detail content',()=>{
++ const app={id:'app',roundId:'round',studentId:'student',status:'SUBMITTED',student:{email:'visible@example.invalid',studentProfile:{firstName:'First',lastName:'Last',major:'Math',academicYear:'First Year',gpa:3.4,satScore:1400,actScore:30,bio:'SECRET',headshotUrl:'SECRET',experiences:[{title:'SECRET'}]}},evaluations:[{interviewerId:'reviewer',notes:'SECRET',score:8}],roundScore:{average:8},answers:[{response:'SECRET'}],bookings:[{id:'SECRET'}],anonymousReviewText:'SECRET',futureColumn:'SECRET'};
++ const data=pipelineListProjection({rounds:[{id:'round'}],genderCounts:null,applications:[app]});
++ assert.doesNotMatch(JSON.stringify(data),/SECRET|answers|bookings|experiences|notes|futureColumn/);
++ assert.equal(data.applications[0].student.studentProfile.gpa,3.4);assert.deepEqual(data.applications[0].evaluations,[{interviewerId:'reviewer'}]);assert.deepEqual(data.applications[0].roundScore,{average:8});
++});
++test('anonymous list runs after canonical masking and never restores identity or withheld fields',()=>{
++ const {anonymousApplication}=load('lib/anonymous-review.ts');
++ const app={id:'1234',clubId:'club',roundId:'round',studentId:'SECRET',status:'SUBMITTED',student:{email:'SECRET',studentProfile:{firstName:'SECRET',lastName:'SECRET',major:'SECRET',gradYear:2028,gpa:3.3}},evaluations:[],answers:[],bookings:[]};
++ const masked=anonymousApplication(app);const list=pipelineListProjection({rounds:[],genderCounts:null,applications:[{...masked,roundScore:null}]});
++ assert.doesNotMatch(JSON.stringify(list),/SECRET/);assert.equal(list.applications[0].student.studentProfile.firstName,'Applicant');assert.equal(list.applications[0].student.studentProfile.gpa,3.3);
++});
+diff --git a/tests/pipeline-page-owner.test.cjs b/tests/pipeline-page-owner.test.cjs
+new file mode 100644
+index 00000000..880c146e
+--- /dev/null
++++ b/tests/pipeline-page-owner.test.cjs
+@@ -0,0 +1,51 @@
++const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript');
++const {load}=require('./helpers/voting-harness.cjs');
++const tick=async()=>{for(let i=0;i<30;i++)await Promise.resolve()};
++function setup(){
++ const slots=[],effects=[],setups=new Map(),cleanups=new Map(),requests=[];let index=0,changed=false,epoch={},currentEpoch=epoch;
++ const isReadAuthorityCurrent=authority=>authority===currentEpoch;
++ const react={useState(value){const i=index++;if(!(i in slots))slots[i]=value;return[slots[i],next=>{const v=typeof next==='function'?next(slots[i]):next;changed||=!Object.is(v,slots[i]);slots[i]=v}]},useRef(value){return slots[index++]??={current:value}},useMemo(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i].deps[j]))slots[i]={deps,value:fn()};return slots[i].value},useCallback(fn,deps){return react.useMemo(()=>fn,deps)},useEffect(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;setups.set(i,fn);effects.push([i,fn])}}};
++ const mod={exports:{}};new Function('require','module','exports',ts.transpileModule(fs.readFileSync('hooks/use-pipeline-page.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(name=>name==='react'?react:name==='@/contexts/auth-context'?{useAuth:()=>({readAuthority:epoch,isReadAuthorityCurrent})}:name==='@/lib/workspace-api'?{getClubPipelinePage:(club,query)=>new Promise((resolve,reject)=>requests.push({club,query,resolve,reject}))}:name.startsWith('@/')?load(name.slice(2)+'.ts'):require(name),mod,mod.exports);
++ return{requests,notifyEpoch(){currentEpoch={}},commitEpoch(){epoch=currentEpoch},renderBeforeEffects(props){index=0;changed=false;return mod.exports.usePipelinePage(props)},async commitEffects(){for(const[i,fn]of effects.splice(0)){cleanups.get(i)?.();cleanups.set(i,fn())}await tick()},render(props){let result;for(let step=0;step<20;step++){index=0;changed=false;result=mod.exports.usePipelinePage(props);for(const[i,fn]of effects.splice(0)){cleanups.get(i)?.();cleanups.set(i,fn())}if(!changed)return result}throw Error('Hook failed to settle')},replay(){for(const fn of cleanups.values())fn?.();cleanups.clear();for(const[i,fn]of setups)cleanups.set(i,fn())},cleanup(){for(const fn of cleanups.values())fn?.()}};
++}
++const props=()=>({clubId:'club',query:{},revision:0,authority:{},enabled:true,initialData:null,validatedInitialData:false});
++test('a notified epoch blocks page dispatch before its React commit',async()=>{
++ const h=setup(),p=props();h.renderBeforeEffects(p);h.notifyEpoch();await h.commitEffects();assert.equal(h.requests.length,0);
++ h.commitEpoch();h.render(p);assert.equal(h.requests.length,1);h.requests[0].resolve({marker:'fresh'});await tick();assert.equal(h.render(p).ready,true);h.cleanup();
++});
++test('notified epochs reject pending page successes and failures before React commits',async()=>{
++ for(const failed of [false,true]){const h=setup(),p=props();h.render(p);h.notifyEpoch();if(failed)h.requests[0].reject(Error('obsolete'));else h.requests[0].resolve({marker:'obsolete'});await tick();const hidden=h.render(p);assert.equal(hidden.data,null);assert.equal(hidden.ready,false);assert.equal(hidden.error,false);
++ h.commitEpoch();h.render(p);assert.equal(h.requests.length,2);h.requests[1].resolve({marker:'fresh'});await tick();assert.equal(h.render(p).data.marker,'fresh');h.cleanup();}
++});
++test('already visible page data, setters and adjacent handoffs are fenced immediately on notification',async()=>{
++ const h=setup(),p={...props(),initialData:{marker:'visible'},validatedInitialData:true};const old=h.render(p);assert.equal(old.ready,true);h.notifyEpoch();assert.equal(old.isCurrent(),false);assert.equal(old.setData({marker:'stale'}),false);assert.equal(old.acceptPage({marker:'stale'},{query:'next'}),false);assert.equal(h.render(p).data,null);
++ h.commitEpoch();h.render(p);assert.equal(h.requests.length,1);h.requests[0].resolve({marker:'fresh'});await tick();assert.equal(h.render(p).data.marker,'fresh');h.cleanup();
++});
++test('queued page reads never dispatch for a notified obsolete epoch',async()=>{
++ const h=setup();let p=props();h.render(p);p={...p,query:{query:'queued'}};h.render(p);h.notifyEpoch();h.requests[0].resolve({marker:'obsolete'});await tick();assert.equal(h.requests.length,1);assert.equal(h.render(p).data,null);
++ h.commitEpoch();h.render(p);assert.equal(h.requests.length,2);assert.equal(h.requests[1].query.query,'queued');h.requests[1].resolve({marker:'fresh'});await tick();assert.equal(h.render(p).ready,true);h.cleanup();
++});
++test('page owners fence stale completions/setters and drain rapid query changes to the latest only',async()=>{
++ const h=setup();let p=props();const old=h.render(p);for(let i=0;i<20;i++){p={...p,query:{query:String(i)}};assert.equal(h.render(p).ready,false)}assert.equal(h.requests.length,1);h.requests[0].resolve({marker:'obsolete'});await tick();assert.equal(h.requests.length,2);assert.equal(h.requests[1].query.query,'19');assert.equal(h.render(p).data,null);h.requests[1].resolve({marker:'current'});await tick();let value=h.render(p);assert.equal(value.ready,true);assert.equal(value.data.marker,'current');assert.equal(old.setData({marker:'stale'}),false);
++ const previous=value;p={...p,query:{query:'different'}};value=h.render(p);assert.equal(value.data.marker,'current','only prior metadata is retained to keep controls editable');assert.equal(value.ready,false,'prior rows cannot render for the changed query');p={...p,query:{query:'19'}};h.render(p);assert.equal(previous.isCurrent(),false,'returning to a query must create a fresh owner');h.cleanup();
++});
++test('validated initial pages avoid duplication; invalid filters keep controls editable and never dispatch',async()=>{
++ const h=setup();let p={...props(),initialData:{marker:'validated'},validatedInitialData:true};let v=h.render(p);assert.equal(v.ready,true);assert.equal(h.requests.length,0);h.replay();assert.equal(h.render(p).ready,true);p={...p,query:{gpa:5}};v=h.render(p);assert.equal(v.invalid,true);assert.equal(v.data.marker,'validated');assert.equal(v.ready,false);assert.equal(h.requests.length,0);p={...p,query:{gpa:3}};h.render(p);assert.equal(h.requests.length,1);h.requests[0].reject(Error('revoked'));await tick();v=h.render(p);assert.equal(v.error,true);assert.equal(v.loading,false);assert.equal(v.data,null);h.cleanup();
++});
++test('authority and refresh changes hide all earlier pages; queued disabled scopes never dispatch',async()=>{
++ const h=setup();let p={...props(),initialData:{marker:'initial'},validatedInitialData:true};const old=h.render(p);p={...p,revision:1};assert.equal(h.render(p).data,null);assert.equal(old.setData({marker:'stale'}),false);assert.equal(h.requests.length,1);p={...p,authority:{}};h.render(p);p={...p,enabled:false};assert.equal(h.render(p).data,null);h.requests[0].resolve({marker:'obsolete'});await tick();assert.equal(h.requests.length,1);p={...p,enabled:true};h.render(p);assert.equal(h.requests.length,2);h.requests[1].resolve({marker:'fresh'});await tick();assert.equal(h.render(p).ready,true);h.cleanup();
++});
++test('an adjacent freshly authorized page is adopted once, while obsolete handoffs cannot replace a newer owner',async()=>{
++ const h=setup();let p={...props(),initialData:{marker:'first'},validatedInitialData:true};const old=h.render(p);const next={query:'next'};assert.equal(old.acceptPage({marker:'second'},next),true);p={...p,query:next};let value=h.render(p);assert.equal(value.ready,true);assert.equal(value.data.marker,'second');assert.equal(h.requests.length,0,'handing off the fetched boundary must not dispatch it again');assert.equal(old.acceptPage({marker:'stale'},{query:'wrong'}),false);p={...p,revision:1};assert.equal(h.render(p).data,null);assert.equal(h.requests.length,1);h.cleanup();
++});
++
++test('an invalid filter after queued reads retains editable metadata without dispatching or releasing obsolete rows',async()=>{
++ const h=setup();let p={...props(),initialData:{marker:'initial'},validatedInitialData:true};h.render(p);p={...p,query:{query:'pending'}};h.render(p);p={...p,query:{query:'queued'}};h.render(p);p={...p,query:{gpa:5}};h.render(p);h.requests[0].resolve({marker:'obsolete'});await tick();const value=h.render(p);assert.equal(value.invalid,true);assert.equal(value.ready,false);assert.equal(value.data?.marker,'initial','controls must retain only prior metadata while invalid');assert.equal(value.loading,false);assert.equal(h.requests.length,1);h.cleanup();
++});
++test('an authority change while filters are invalid reacquires safe metadata before showing editable controls',async()=>{
++ const h=setup();let p={...props(),initialData:{marker:'initial'},validatedInitialData:true};h.render(p);p={...p,query:{gpa:5}};h.render(p);p={...p,authority:{}};assert.equal(h.render(p).data,null);assert.equal(h.requests.length,1,'new authority must validate rather than remaining stuck behind invalid input');assert.deepEqual(h.requests[0].query,{});h.requests[0].resolve({marker:'fresh-controls'});await tick();const value=h.render(p);assert.equal(value.data.marker,'fresh-controls');assert.equal(value.invalid,true);assert.equal(value.ready,false);assert.equal(value.loading,false);h.cleanup();
++});
++
++test('an adopted adjacent page cannot resurrect an old owner when the query is left and revisited',async()=>{
++ const h=setup();let p={...props(),initialData:{marker:'first'},validatedInitialData:true};const first=h.render(p);const next={query:'adopted'};first.acceptPage({marker:'adopted'},next);p={...p,query:next};const adopted=h.render(p);assert.equal(adopted.ready,true);p={...p,query:{query:'different'}};h.render(p);p={...p,query:next};const revisit=h.render(p);assert.equal(revisit.ready,false,'revisiting must validate again rather than resurrecting the handoff');assert.equal(adopted.isCurrent(),false);h.requests[0].resolve({marker:'obsolete'});await tick();assert.equal(h.requests.length,2);h.requests[1].resolve({marker:'fresh-revisit'});await tick();assert.equal(h.render(p).data.marker,'fresh-revisit');h.cleanup();
++});
+diff --git a/tests/pipeline-page-read.test.cjs b/tests/pipeline-page-read.test.cjs
+new file mode 100644
+index 00000000..f95f051d
+--- /dev/null
++++ b/tests/pipeline-page-read.test.cjs
+@@ -0,0 +1,25 @@
++const {test}=require('node:test'),assert=require('node:assert/strict');
++const {load,uuid}=require('./helpers/voting-harness.cjs');
++const {readPipelinePage,pipelinePageMetadataSelect,requiresCompleteReviewMetadata}=load('lib/pipeline-page-read.ts');
++const {pipelineSummaryProjection,pipelineSummarySelect}=load('lib/pipeline-summary.ts'),{pagePipeline}=load('lib/pipeline-page.ts');
++const round=uuid(700),viewer=uuid(701),student=uuid(702),rounds=[{id:round,name:'Round',order:0,type:'APPLICATION_REVIEW',anonymousReview:false,genderVisible:false}];
++const member={id:viewer,userId:student,isOwner:true,status:'ACTIVE',interviewOffices:['PRESIDENT']};
++const raw=Array.from({length:251},(_,i)=>({id:uuid(1000+i),roundId:round,status:['SUBMITTED','INTERVIEWING','ACCEPTED','REJECTED','WAITLISTED'][i%5],studentId:i===0?student:uuid(2000+i),round:{anonymousReview:i%3===0},student:{email:`visible${i}@example.invalid`,studentProfile:i%7?{firstName:['Éva','李','Ann','ann','Zoe'][i%5],lastName:'Student '+i,major:i%2?'Math':'Physics',gradYear:2027+i%9,transferStudent:!!(i%2),gpa:i%4?3.4:null,satScore:1300+i%200,actScore:30}:null},evaluations:[{interviewerId:uuid(800),roundId:round,score:8,submittedAt:new Date()}],interviewAssignments:[]}));
++function database(records=raw){const calls=[];return{calls,application:{async findMany(options){calls.push({table:'application',...options});if(options.select===pipelinePageMetadataSelect)return records.map(({evaluations,interviewAssignments,...metadata})=>metadata);return records}},evaluation:{async findMany(options){calls.push({table:'evaluation',...options});return records.filter(a=>options.where.applicationId.in.includes(a.id)).flatMap(a=>a.evaluations.filter(e=>e.submittedAt).map(e=>({...e,applicationId:a.id}))) }},interviewPanelAssignment:{async findMany(options){calls.push({table:'assignment',...options});return records.filter(a=>options.where.applicationId.in.includes(a.id)).flatMap(a=>a.interviewAssignments.map(e=>({...e,applicationId:a.id})))}}}}
++
++const expected=(q,m=member)=>pagePipeline({rounds,genderCounts:null,applications:raw.map(a=>pipelineSummaryProjection(a,m))},q,m.id,m.userId,'scope');
++test('bounded summary hydration retains exact canonical privacy, facets, locale ordering, filters and cursor behavior',async()=>{
++ for(const m of [member,{...member,isOwner:false,permissions:['applications.review']}])for(const q of [{},...['name','round','year','gpa','sat','act','status'].flatMap(sort=>[{sort},{sort,descending:true}]),{gpa:3},{sat:1300},{act:20},{major:'Math'},{query:'student 20'},{mode:'decisions',decisionGroup:'accepted'},{mode:'rejected'}]){
++  const tx=database(),before=expected(q,m),after=await readPipelinePage(tx,{clubId:'club'},m,rounds,q,'scope');assert.deepEqual(after,before);assert.equal(tx.calls[0].select,pipelinePageMetadataSelect);if(before.applications.length){assert.equal(tx.calls.length,3);for(const call of tx.calls.slice(1)){assert.deepEqual(call.where.application,{clubId:'club'});assert.equal(call.where.applicationId.in.length,before.applications.length);assert.ok(call.where.applicationId.in.length<=100)}}
++  if(before.page.next){const tx2=database(),next={...q,cursor:before.page.next};assert.deepEqual(await readPipelinePage(tx2,{clubId:'club'},m,rounds,next,'scope'),expected(next,m))}
++ }
++ assert.equal('evaluations'in pipelinePageMetadataSelect,false);assert.equal('interviewAssignments'in pipelinePageMetadataSelect,false);
++});
++test('review and score dependencies retain the complete canonical path, including a zero rating threshold',async()=>{
++ for(const q of [{review:'mine'},{review:'unreviewed'},{rating:0},{rating:7},{sort:'score'}]){assert.equal(requiresCompleteReviewMetadata(q),true);const tx=database();assert.deepEqual(await readPipelinePage(tx,{clubId:'club'},member,rounds,q,'scope'),expected(q));assert.equal(tx.calls.length,1);assert.deepEqual(tx.calls[0].select,pipelineSummarySelect)}
++});
++test('empty pages avoid relation reads and scope mismatches fail closed',async()=>{
++ const tx=database();assert.deepEqual(await readPipelinePage(tx,{},member,rounds,{query:'no-match'},'scope'),expected({query:'no-match'}));assert.equal(tx.calls.length,1);
++ await assert.rejects(()=>readPipelinePage(database(),{},member,rounds,{cursor:{id:raw[0].id,direction:'after',scope:'other'}},'scope'),/Restart pagination/);
++
++});
+diff --git a/tests/pipeline-page.test.cjs b/tests/pipeline-page.test.cjs
+new file mode 100644
+index 00000000..35c40465
+--- /dev/null
++++ b/tests/pipeline-page.test.cjs
+@@ -0,0 +1,39 @@
++const {test}=require('node:test'),assert=require('node:assert/strict');
++const {load,uuid}=require('./helpers/voting-harness.cjs');
++const {pagePipeline,completePipelineSelection,pipelinePageQuery}=load('lib/pipeline-page.ts');
++const round=uuid(9000),reviewer=uuid(9001),user=uuid(9002);
++const app=(i,extra={})=>({id:uuid(i),studentId:uuid(i+10000),roundId:round,status:'SUBMITTED',student:{email:`student${i}@example.invalid`,studentProfile:{firstName:'Student',lastName:String(i).padStart(4,'0'),major:i%2?'Math':'Economics',academicYear:i%2?'First Year':'Third Year',gpa:i%2?3.7:3.1,satScore:i%2?1500:1300,actScore:i%2?34:28}},evaluations:i%3?[{interviewerId:reviewer}]:[],roundScore:i%5?{average:i%2?9:7}:null,...extra});
++const list=n=>({rounds:[{id:round,order:0}],genderCounts:null,applications:Array.from({length:n},(_,i)=>app(i+1))});
++const page=(data,q={},scope='scope')=>pagePipeline(data,q,reviewer,user,scope);
++test('server pages bound rows and preserve all matches, facets and complete selections beyond 100',()=>{
++ const data=list(1000),first=page(data);assert.equal(first.applications.length,100);assert.equal(first.page.total,1000);assert.equal(first.page.count,10);assert.equal(first.page.next.id,uuid(100));assert.equal(first.page.previous,null);assert.equal(first.facets.quickReview,1000);assert.equal(first.facets.lanes.review,1000);assert.deepEqual(first.facets.majors,['Economics','Math']);
++ const ids=[...first.applications.map(a=>a.id)];let current=first;while(current.page.next){current=page(data,{cursor:current.page.next});ids.push(...current.applications.map(a=>a.id))}assert.equal(ids.length,1000);assert.equal(new Set(ids).size,1000);assert.equal(current.page.index,9);const previous=page(data,{cursor:current.page.previous});assert.equal(previous.page.index,8);assert.equal(previous.applications[0].id,uuid(801));
++ const selected=completePipelineSelection(data,{},reviewer,user).applications;assert.equal(selected.length,1000);assert.deepEqual(selected.map(a=>a.id),ids);assert.deepEqual(Object.keys(selected[0]),['id','roundId','status','canQuickReview']);assert.doesNotMatch(JSON.stringify(selected),/student|email|score|major/);
++ const found=page(data,{query:'Student 1000'});assert.equal(found.page.total,1);assert.equal(found.applications[0].id,uuid(1000));assert.equal(found.page.baseTotal,1000);
++});
++test('all academic/review/decision filters apply globally before paging; totals remain global',()=>{
++ const data=list(360);data.applications[0].status='REJECTED';data.applications[1].status='ACCEPTED';data.applications[2].studentId=user;
++ const q={major:'Math',year:'First Year',gpa:3.5,sat:1400,act:30,rating:8,review:'mine',sort:'gpa',descending:true};
++ const result=page(data,q),expected=data.applications.filter(a=>a.status!=='REJECTED'&&a.student.studentProfile.major==='Math'&&a.evaluations.some(e=>e.interviewerId===reviewer)&&a.roundScore?.average>=8);
++ assert.equal(result.page.total,expected.length);assert.equal(result.page.baseTotal,359);assert.ok(result.applications.every(a=>expected.includes(a)));assert.equal(completePipelineSelection(data,q,reviewer,user).applications.length,expected.length);
++ assert.equal(page(data,{gpa:3.7}).page.total,0,'strict greater-than remains strict');assert.equal(page(data,{rating:9}).page.total,143,'rating is inclusive and hidden scores do not match');
++ assert.equal(page(data,{mode:'decisions',decisionGroup:'accepted',query:'no match'}).facets.decisions.accepted,1);assert.equal(page(data,{mode:'rejected'}).page.total,1);
++ const selected=completePipelineSelection(data,{},reviewer,user).applications;assert.equal(selected.find(a=>a.id===uuid(3)).canQuickReview,false,'self excluded');assert.equal(selected.find(a=>a.id===uuid(2)).canQuickReview,false,'recorded decisions excluded');
++});
++test('anonymous identity/major and hidden scores cannot affect search, facets, ordering or review filters',()=>{
++ const {anonymousApplication}=load('lib/anonymous-review.ts'),{pipelineListProjection}=load('lib/pipeline-list.ts');
++ const raw={...app(1),clubId:uuid(9010),answers:[],bookings:[]};raw.student.studentProfile.firstName='SECRET';raw.student.studentProfile.lastName='SECRET';raw.student.studentProfile.major='SECRET';raw.student.studentProfile.gradYear=2028;
++ const masked=anonymousApplication(raw);const data=pipelineListProjection({rounds:[{id:round,order:0}],genderCounts:null,applications:[{...masked,roundScore:null}]});
++ assert.equal(page(data,{query:'SECRET'}).page.total,0);assert.deepEqual(page(data).facets.majors,[]);assert.equal(page(data,{rating:1}).page.total,0);assert.equal(page(data,{query:'Applicant'}).page.total,1);assert.equal(completePipelineSelection(data,{},reviewer,user).applications[0].canQuickReview,false);assert.doesNotMatch(JSON.stringify(page(data)),/SECRET/);
++});
++test('every sort has deterministic ID ties, missing-last semantics and reversible page navigation',()=>{
++ const data=list(240);for(const a of data.applications){a.student.studentProfile.firstName='Same';a.student.studentProfile.lastName='Name';a.student.studentProfile.academicYear='Second Year';a.student.studentProfile.gpa=null;a.student.studentProfile.satScore=null;a.student.studentProfile.actScore=null;a.roundScore=null}data.applications.reverse();
++ for(const sort of ['name','round','year','gpa','sat','act','status','score'])for(const descending of [false,true]){const first=page(data,{sort,descending});const second=page(data,{sort,descending,cursor:first.page.next});const back=page(data,{sort,descending,cursor:second.page.previous});assert.equal(first.applications[0].id,uuid(1),sort);assert.deepEqual(back.applications.map(a=>a.id),first.applications.map(a=>a.id));assert.equal(second.applications[0].id,uuid(101));}
++ assert.equal(data.applications[0].id,uuid(240),'source order is unchanged');
++});
++test('cursor positions cannot cross selection scope; lost anchors reset safely and at-cursors locate any matching page',()=>{
++ const data=list(250),first=page(data);assert.throws(()=>page(data,{cursor:first.page.next},'other-club-or-authority'),/selection changed/);
++ assert.equal(page(data,{cursor:{id:uuid(233),direction:'at',scope:'scope'}}).page.index,2);
++ const cursor=first.page.next;data.applications=data.applications.filter(a=>a.id!==cursor.id);const reset=page(data,{cursor});assert.equal(reset.page.reset,true);assert.equal(reset.page.start,0);
++ for(const q of [{userId:user},{limit:5000},{applicationId:uuid(1)},{sort:'rawScore'},{rating:NaN},{query:'x'.repeat(201)},{cursor:{...cursor,grant:true}}])assert.equal(pipelinePageQuery.safeParse(q).success,false);
++});
+diff --git a/tests/pipeline-voting-selection-owner.test.cjs b/tests/pipeline-voting-selection-owner.test.cjs
+new file mode 100644
+index 00000000..bcfac963
+--- /dev/null
++++ b/tests/pipeline-voting-selection-owner.test.cjs
+@@ -0,0 +1,27 @@
++const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript');
++const tick=async()=>{for(let i=0;i<25;i++)await Promise.resolve()};
++const nodes=n=>!n||typeof n!=='object'?[]:Array.isArray(n)?n.flatMap(nodes):[n,...nodes(n.props?.children)];
++const board=tree=>nodes(tree).find(n=>n.type?.name==='VotingBoard');
++function setup(){
++ const slots=[],effects=[],cleanups=new Map(),requests=[];let cursor=0,changed=false,epoch={},currentEpoch=epoch,saving=false;
++ const isReadAuthorityCurrent=value=>value===currentEpoch;
++ const react={useState(initial){const i=cursor++;if(!(i in slots))slots[i]=initial;return[slots[i],value=>{const next=typeof value==='function'?value(slots[i]):value;changed||=!Object.is(next,slots[i]);slots[i]=next}]},useEffect(fn,deps){const i=cursor++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;effects.push([i,fn])}}};
++ const mocks={react,'next/navigation':{useSearchParams:()=>new URLSearchParams('voting=1')},'@/contexts/auth-context':{useAuth:()=>({readAuthority:epoch,isReadAuthorityCurrent})},'@/components/ui/button':{Button:'Button'},'@/components/ui/dialog':{Dialog:'Dialog',DialogContent:'DialogContent',DialogTitle:'DialogTitle'}};
++ const mod={exports:{}};new Function('require','module','exports','document',ts.transpileModule(fs.readFileSync('components/live-voting/board-decision-mode.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText)(name=>mocks[name]||(name.startsWith('@/')||name.endsWith('.css')?{}:require(name)),mod,mod.exports,{querySelector:()=>saving?{}:null});
++ const props={clubId:'club',clubName:'Fixture',canDecide:true,applicants:[],rounds:[],onDecision(){},loadApplicants:()=>new Promise((resolve,reject)=>requests.push({resolve,reject}))};
++ const commit=()=>{for(const[i,fn]of effects.splice(0)){cleanups.get(i)?.();cleanups.set(i,fn())}};
++ return{requests,setSaving(value){saving=value},notifyEpoch(){currentEpoch={}},commitEpoch(){epoch=currentEpoch},renderBeforeEffects(){cursor=0;return mod.exports.BoardDecisionMode(props)},commitEffects:commit,render(){for(let i=0;i<20;i++){cursor=0;changed=false;const tree=mod.exports.BoardDecisionMode(props);commit();if(!changed)return tree}throw Error('Voting selection failed to settle')}};
++}
++test('each voting visit validates its complete selection; close, retry and late results cannot reuse a prior visit',async()=>{
++ const h=setup();assert.equal(board(h.render()),undefined);assert.equal(h.requests.length,1);h.requests[0].resolve([{id:'one'},{id:'two'},{id:'three'}]);await tick();let tree=h.render();assert.equal(board(tree).props.applicants.length,3);
++ h.setSaving(true);nodes(tree).find(n=>n.type==='Dialog').props.onOpenChange(false);assert.equal(nodes(h.render()).find(n=>n.type==='Dialog').props.open,true);h.setSaving(false);nodes(tree).find(n=>n.type==='Dialog').props.onOpenChange(false);tree=h.render();nodes(tree).find(n=>n.type==='Button'&&n.props.children==='Start voting').props.onClick();assert.equal(board(h.render()),undefined);assert.equal(h.requests.length,2);h.requests[1].reject(Error('revoked'));await tick();tree=h.render();assert.equal(board(tree),undefined);assert.ok(nodes(tree).some(n=>n.props.role==='alert'));nodes(tree).find(n=>n.type==='Button'&&n.props.children==='Retry selection').props.onClick();h.render();assert.equal(h.requests.length,3);
++});
++test('notified authority blocks voting selection dispatch before its React commit',()=>{
++ const h=setup();h.renderBeforeEffects();h.notifyEpoch();h.commitEffects();assert.equal(h.requests.length,0);h.commitEpoch();h.render();assert.equal(h.requests.length,1);
++});
++test('notified authority fences voting selection success and failure before React commits',async()=>{
++ for(const failed of [false,true]){const h=setup();h.render();h.notifyEpoch();if(failed)h.requests[0].reject(Error('obsolete'));else h.requests[0].resolve([{id:'obsolete'}]);await tick();let tree=h.render();assert.equal(board(tree),undefined);assert.equal(nodes(tree).some(n=>n.props.role==='alert'),false);h.commitEpoch();h.render();assert.equal(h.requests.length,2);h.requests[1].resolve([{id:'fresh'}]);await tick();assert.equal(board(h.render()).props.applicants[0].id,'fresh');}
++});
++test('already displayed voting selection hides immediately on authority notification',async()=>{
++ const h=setup();h.render();h.requests[0].resolve([{id:'visible'}]);await tick();assert.ok(board(h.render()));h.notifyEpoch();assert.equal(board(h.render()),undefined);h.commitEpoch();h.render();assert.equal(h.requests.length,2);
++});
+diff --git a/tests/review-editor-access-browser.test.cjs b/tests/review-editor-access-browser.test.cjs
+index af5ad11a..7a5ff2bf 100644
+--- a/tests/review-editor-access-browser.test.cjs
++++ b/tests/review-editor-access-browser.test.cjs
+@@ -5,10 +5,10 @@ test('browser: unassigned reviews have no editor or draft requests; assigned rev
+  const pipeline={rounds:[{id:round,name:'Interview',order:0,type:'INTERVIEW'},{id:'next-round',name:'Next round',order:1,type:'CUSTOM'}],applications:[{id:app,studentId:'synthetic-student',roundId:round,status:'IN_REVIEW',student:{email:'synthetic@demo.invalid',studentProfile:{firstName:'Synthetic',lastName:'Applicant',major:'Economics',experiences:[]}},evaluations:[],answers:[],bookings:[]}]};
+  const mocks={
+   'next/link':`const React=require('react');module.exports=({children,href,...props})=>React.createElement('a',{...props,href},children);`,
+-  '@/contexts/auth-context':`exports.useAuth=()=>({user:{id:'synthetic-reviewer',memberships:[{id:'synthetic-member',clubId:'${club}',userId:'synthetic-reviewer',isOwner:true,status:'ACTIVE',permissions:[],club:{name:'Synthetic club'}}]},activeClubId:'${club}',selectClub(){}});`,
++  '@/contexts/auth-context':`exports.useAuth=()=>window.__reviewAuth??=({readAuthority:{},isReadAuthorityCurrent:()=>true,user:{id:'synthetic-reviewer',memberships:[{id:'synthetic-member',clubId:'${club}',userId:'synthetic-reviewer',isOwner:true,status:'ACTIVE',permissions:[],club:{name:'Synthetic club'}}]},activeClubId:'${club}',selectClub(){}});`,
+   '@/contexts/demo-context':`exports.useDemoMode=()=>({isDemoEnabled:false,ready:true});`,
+   '@/lib/application-state':`exports.useApplicationState=()=>({leaderFocus:null,clearLeaderFocus(){}});`,
+-  '@/lib/workspace-api':`exports.getClubPipeline=async()=>{const p=${JSON.stringify(pipeline)};p.applications[0].canEvaluate=new URLSearchParams(location.search).has('assigned');return p};exports.submitEvaluation=async input=>{const r=await fetch('/evaluation',{method:'POST',body:JSON.stringify(input)});if(!r.ok)throw Error('Finalization failed');return r.json()};`,
++  '@/lib/workspace-api':`exports.getClubPipeline=async()=>{window.__pipelineDetails=(window.__pipelineDetails||0)+1;const p=${JSON.stringify(pipeline)};p.applications[0].canEvaluate=new URLSearchParams(location.search).has('assigned')&&!window.__reviewFinalized;return p};exports.getClubPipelineList=async()=>{window.__pipelineLists=(window.__pipelineLists||0)+1;return exports.getClubPipeline()};exports.getClubPipelinePage=async(club,q={})=>require('@/lib/pipeline-page').pagePipeline(await exports.getClubPipelineList(),q,'synthetic-member','synthetic-reviewer','fixture');exports.getClubPipelineSelection=async(club,q={})=>require('@/lib/pipeline-page').completePipelineSelection(await exports.getClubPipelineList(),q,'synthetic-member','synthetic-reviewer');exports.submitEvaluation=async input=>{const r=await fetch('/evaluation',{method:'POST',body:JSON.stringify(input)});if(!r.ok)throw Error('Finalization failed');const value=await r.json();window.__reviewFinalized=true;return value};`,
+   '@/actions/editor-drafts':`exports.getEditorDraft=async()=>{const r=await fetch('/draft');return r.json()};exports.saveEditorDraft=async input=>{const r=await fetch('/draft',{method:'POST',body:JSON.stringify(input)});return r.json()};`,
+   '@/components/applicant-intelligence':`exports.ApplicantDisplayPanel=()=>null;`,
+   '@/components/recruitment-attendance-summary':`exports.RecruitmentAttendanceSummary=()=>null;`,
+@@ -18,7 +18,7 @@ test('browser: unassigned reviews have no editor or draft requests; assigned rev
+   '@/components/live-voting/board-decision-mode':`exports.BoardDecisionMode=()=>null;`,
+   '@/components/demo-workspace':`exports.DemoRoundTarget=()=>null;`,
+  };
+- const js=bundle(`import React from'react';import{createRoot}from'react-dom/client';import{LiveLeaderWorkspace}from'@/components/views/leader-dashboard/live-leader-workspace';createRoot(document.getElementById('root')).render(<main><LiveLeaderWorkspace scoped/></main>);`,mocks);
++ const js=bundle(`import React from'react';import{createRoot}from'react-dom/client';import{LiveLeaderWorkspace,ApplicantReviewPreview}from'@/components/views/leader-dashboard/live-leader-workspace';createRoot(document.getElementById('root')).render(<main>{new URLSearchParams(location.search).has("preview")?<ApplicantReviewPreview clubId="${club}" applicationId="${app}" onClose={()=>{}} onChanged={()=>{}}/>:<LiveLeaderWorkspace scoped/>}</main>);`,mocks);
+  const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'outclass-review-editor-'));cp.execFileSync(process.execPath,[path.join(__dirname,'helpers/interview-browser-css.cjs'),path.join(tmp,'style.css')]);const css=fs.readFileSync(path.join(tmp,'style.css'),'utf8');
+  const writes=[],evaluations=[];let reads=0;
+  const server=http.createServer((req,res)=>{
+@@ -37,6 +37,6 @@ test('browser: unassigned reviews have no editor or draft requests; assigned rev
+   assert.equal(evaluations.length,1);assert.equal(evaluations[0].applicationId,app);assert.equal(evaluations[0].score,8);
+   assert.equal(await page.getByRole('spinbutton',{name:'Score (1–10)'}).count(),0);assert.equal(await page.getByRole('textbox',{name:'Overall evaluation feedback',exact:true}).count(),0);assert.equal(await page.getByRole('button',{name:'Finalize evaluation',exact:true}).count(),0);
+   await page.getByText(/Submitted evaluations are read-only/).waitFor();assert.equal(await page.getByRole('button',{name:'Accepted',exact:true}).isEnabled(),true);
+-  const afterFinalization=writes.length;await page.clock.runFor(2000);assert.equal(writes.length,afterFinalization,'a finalized review must not keep autosaving');assert.deepEqual(errors,[]);
++  const afterFinalization=writes.length;await page.clock.runFor(2000);assert.equal(writes.length,afterFinalization,'a finalized review must not keep autosaving');await page.goto(base+'?preview=1');await page.getByRole('heading',{name:'Synthetic Applicant',exact:true}).waitFor();assert.equal(await page.evaluate(()=>window.__pipelineDetails),1);assert.equal(await page.evaluate(()=>window.__pipelineLists||0),0,'single-candidate preview must not request a redundant list');assert.deepEqual(errors,[]);
+  }finally{await browser?.close();await new Promise(r=>server.close(r));fs.rmSync(tmp,{recursive:true,force:true});}
+ });
+diff --git a/tests/review-summary-determinism.test.cjs b/tests/review-summary-determinism.test.cjs
+new file mode 100644
+index 00000000..b3199717
+--- /dev/null
++++ b/tests/review-summary-determinism.test.cjs
+@@ -0,0 +1,7 @@
++const {test}=require('node:test'),assert=require('node:assert/strict'),{load}=require('./helpers/voting-harness.cjs');
++test('visible reviewer references are independent of relation query order and retain repeated references',()=>{
++ const {pipelineListProjection}=load('lib/pipeline-list.ts');const app={id:'app',roundId:'round',status:'SUBMITTED',studentId:'student',student:{email:'visible@example.invalid',studentProfile:null},evaluations:[{interviewerId:'z'},{interviewerId:'a'},{interviewerId:'a'}],roundScore:null};const data=evaluations=>pipelineListProjection({rounds:[],genderCounts:null,applications:[{...app,evaluations}]}).applications[0].evaluations;assert.deepEqual(data(app.evaluations),data([...app.evaluations].reverse()));assert.equal(data(app.evaluations).length,3);
++});
++test('submitted score arithmetic is deterministic across query plans without changing contributors or authority',()=>{
++ const {submittedScoreSummary}=load('lib/interview-review-summary.ts');const records=[{interviewerId:'a',score:1.1,submittedAt:'2026-10-01'},{interviewerId:'b',score:1.1,submittedAt:'2026-10-01'},{interviewerId:'c',score:8.1,submittedAt:'2026-10-01'}];assert.deepEqual(submittedScoreSummary(records,['a','b','c','pending']),submittedScoreSummary([...records].reverse(),['a','b','c','pending']));const result=submittedScoreSummary(records,['a','b','c','pending']);assert.equal(result.submitted,3);assert.equal(result.required,4);assert.equal(result.provisional,true);
++});
+diff --git a/tests/selected-workspace-loader.test.cjs b/tests/selected-workspace-loader.test.cjs
+index 19aa696e..2000ce72 100644
+--- a/tests/selected-workspace-loader.test.cjs
++++ b/tests/selected-workspace-loader.test.cjs
+@@ -10,7 +10,7 @@ function setup(){
+  return{...mod.exports,requests,modules,render(props){cursor=0;return mod.exports.SelectedClubWorkspace(props)},async flush(){for(const[i,fn]of effects.splice(0)){cleanups.get(i)?.();cleanups.set(i,fn())}await tick()},setUser(v){user=v},rotate(){epoch={};currentEpoch=epoch},rotateBeforeCommit(){currentEpoch={}},commitEpoch(){epoch=currentEpoch},setDemo(v){demo=v},setSupport(v){support=v},cleanup(){for(const fn of cleanups.values())fn?.()}};
+ }
+ test('all four selected resources start their guarded read alongside code loading and never reuse another visit',async()=>{
+- const f=setup();for(const kind of ['members','pipeline','tasks','announcements']){const pending=f.loadSelectedClubWorkspace(kind,'club');await tick();assert.equal(f.requests.length,f.modules.length);const r=f.requests.at(-1);assert.equal(r.kind,kind);assert.deepEqual(r.args,kind==='pipeline'?['club',{genderCounts:false}]:['club']);r.resolve({fixture:true});assert.equal((await pending).kind,kind)}
++ const f=setup();for(const kind of ['members','pipeline','tasks','announcements']){const pending=f.loadSelectedClubWorkspace(kind,'club');await tick();assert.equal(f.requests.length,f.modules.length);const r=f.requests.at(-1);assert.equal(r.kind,kind==='pipeline'?'pipelinePage':kind);assert.deepEqual(r.args,kind==='pipeline'?['club',{mode:'applicants',genderCounts:false}]:['club']);r.resolve({fixture:true});assert.equal((await pending).kind,kind)}
+  const pending=f.loadSelectedClubWorkspace('members','club');await tick();assert.equal(f.requests.length,5);f.requests.at(-1).reject(Error('revoked'));await assert.rejects(pending,/revoked/);
+ });
+ test('late navigation/session/account results cannot reveal a previous projection; retry makes a fresh request',async()=>{
+diff --git a/tests/workspace-read-transport.test.cjs b/tests/workspace-read-transport.test.cjs
+index d2aee58e..ca9275b9 100644
+--- a/tests/workspace-read-transport.test.cjs
++++ b/tests/workspace-read-transport.test.cjs
+@@ -9,7 +9,7 @@ test('GET allowlist forwards only validated read arguments, preserves wire dates
+  mocks['next/headers']={cookies:async()=>({get:()=>demo?{value:'1'}:undefined})};
+  const {GET}=load('app/api/workspace/route.ts',mocks),{decodeWorkspaceData}=load('lib/workspace-wire.ts');
+  const get=(kind,args)=>GET(new Request('https://outclass.test/api/workspace?'+new URLSearchParams({kind,args:JSON.stringify(args)})));
+- for(const kind of ['assignedRooms','interviewWorkspace','interviewRounds','roomWorkspace','tasks','meetings','announcements']){
++ for(const kind of ['assignedRooms','interviewWorkspace','interviewRounds','roomWorkspace','pipelineList','pipelinePage','pipelineSelection','tasks','meetings','announcements']){
+    const response=await get(kind,[id]);assert.equal(response.status,200,kind);assert.equal(response.headers.get('cache-control'),'private, no-store');assert.match(response.headers.get('vary'),/(?:^|,\s*)Cookie(?:,|$)/);assert.ok(decodeWorkspaceData(await response.json()).at instanceof Date);assert.match(response.headers.get('x-outclass-trace-id'),/^[\da-f-]{36}$/);
+    assert.equal((await get(kind,[id,{userId:'forged'}])).status,400);assert.equal((await get(kind,['invalid-id'])).status,400);
+  }

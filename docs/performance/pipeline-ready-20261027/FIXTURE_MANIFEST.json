@@ -1,0 +1,72 @@
+{
+  "preparedAt": "2026-10-27T20:34:00.789Z",
+  "scope": "Independent actor/club cohorts, all prepared before either timing profile. Same private credential file and unchanged database rows within every build pair; credential contents never exported.",
+  "cohorts": {
+    "100": {
+      "sha256": "0fb1bc637489f10c398bce67258a5a586cdd23cd4c3d22c997a3b87eedc23162",
+      "applicationRows": 100,
+      "counts": {
+        "clubs": 2,
+        "membersPerClub": 61,
+        "applicantsPerClub": 100,
+        "meetingsPerClub": 1,
+        "tasksPerClub": 1,
+        "announcementsPerClub": 1,
+        "applicantsInMeasuredClub": 100,
+        "scaleHistory": {
+          "essayAnswersPerApplicant": 3,
+          "essayCharacters": 1024,
+          "profileBioCharacters": 1050,
+          "additionalExperiences": 2,
+          "submittedEvaluationsPerApplicant": 2,
+          "rounds": 2,
+          "bookingHistory": false
+        }
+      }
+    },
+    "1000": {
+      "sha256": "9e30265f92284030927d2ea91a15833cd640060b68dc6492c0df7c891ae15a21",
+      "applicationRows": 1000,
+      "counts": {
+        "clubs": 2,
+        "membersPerClub": 61,
+        "applicantsPerClub": 100,
+        "meetingsPerClub": 1,
+        "tasksPerClub": 1,
+        "announcementsPerClub": 1,
+        "applicantsInMeasuredClub": 1000,
+        "scaleHistory": {
+          "essayAnswersPerApplicant": 3,
+          "essayCharacters": 1024,
+          "profileBioCharacters": 1050,
+          "additionalExperiences": 2,
+          "submittedEvaluationsPerApplicant": 2,
+          "rounds": 2,
+          "bookingHistory": false
+        }
+      }
+    },
+    "5000": {
+      "sha256": "743537e508a92bb1f39bcafdc58a9f925bb96ea37b02dc0a23c4f74e740e71a8",
+      "applicationRows": 5000,
+      "counts": {
+        "clubs": 2,
+        "membersPerClub": 61,
+        "applicantsPerClub": 100,
+        "meetingsPerClub": 1,
+        "tasksPerClub": 1,
+        "announcementsPerClub": 1,
+        "applicantsInMeasuredClub": 5000,
+        "scaleHistory": {
+          "essayAnswersPerApplicant": 3,
+          "essayCharacters": 1024,
+          "profileBioCharacters": 1050,
+          "additionalExperiences": 2,
+          "submittedEvaluationsPerApplicant": 2,
+          "rounds": 2,
+          "bookingHistory": false
+        }
+      }
+    }
+  }
+}

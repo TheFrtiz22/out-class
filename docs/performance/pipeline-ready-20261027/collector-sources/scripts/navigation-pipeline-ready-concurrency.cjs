@@ -1,0 +1,26 @@
+// Bounded real HTTP reads against the reserved fixture; never production.
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),http=require('node:http'),{performance}=require('node:perf_hooks'),{gunzipSync}=require('node:zlib');
+const {PrismaClient}=require('@prisma/client'),{Actor}=require('../tests/helpers/onboarding-e2e.cjs'),local=require('./navigation-pipeline-ready-local.cjs');
+function capacityInput(kind,value,repo=local.repo){assert.ok(['pipeline','pipelinePage'].includes(kind));const out=path.resolve(value||'');assert.ok(out.startsWith(path.join(repo,'docs/performance/pipeline-ready-20261027')+path.sep)&&out.endsWith('.json')&&!fs.existsSync(out));return{kind,out,concurrency:[1,2,4],waves:6,planned:42};}
+async function main(){
+ const input=capacityInput(process.argv.find(a=>a.startsWith('--kind='))?.slice(7),process.argv.find(a=>a.startsWith('--out='))?.slice(6)),config=local.config(),fixture=JSON.parse(fs.readFileSync(path.join(local.root,'navigation-fixture.json'))),actor=new Actor(config);await actor.signIn(fixture.email,fixture.password);
+ const url=new URL(config.appUrl+'/api/workspace?'+new URLSearchParams({kind:input.kind,args:JSON.stringify([fixture.clubIds[0],{genderCounts:false}])}));assert.equal(url.origin,'http://127.0.0.1:3107');
+ const poolUrl=new URL(config.status.DB_URL);poolUrl.searchParams.set('connection_limit','1');const monitor=new PrismaClient({datasourceUrl:poolUrl.href}),agent=new http.Agent({keepAlive:true,maxSockets:4}),samples=[],poolSamples=[];let monitoring=true,monitorError=null;
+ const origin=performance.now(),poll=(async()=>{while(monitoring){const [row]=await monitor.$queryRaw`SELECT count(*)::int AS connections, count(*) FILTER (WHERE state='active')::int AS active, count(*) FILTER (WHERE state='idle in transaction')::int AS idle_in_transaction, count(*) FILTER (WHERE wait_event_type='Lock')::int AS lock_waiting FROM pg_stat_activity WHERE datname=current_database() AND usename=current_user AND backend_type='client backend' AND pid<>pg_backend_pid()`;poolSamples.push({offsetMs:performance.now()-origin,...row});await new Promise(resolve=>setTimeout(resolve,25))}})().catch(e=>{monitorError=e.name;monitoring=false});
+ async function read(concurrency,wave,index){return new Promise(resolve=>{
+  const start=performance.now();let completed=false,request;
+  const finish=row=>{if(completed)return;completed=true;clearTimeout(deadline);samples.push({concurrency,wave,index,warmup:wave===0,startOffsetMs:start-origin,endOffsetMs:performance.now()-origin,elapsedMs:performance.now()-start,...row});resolve()};
+  const deadline=setTimeout(()=>{request?.destroy();finish({failed:true,error:'deadline'})},30000);
+  request=http.get(url,{agent,headers:{cookie:actor.cookieHeader(),'accept-encoding':'gzip'}},response=>{
+   const ttfbMs=performance.now()-start,chunks=[];response.on('data',chunk=>chunks.push(chunk));response.once('aborted',()=>finish({failed:true,error:'response_aborted'}));response.once('error',()=>finish({failed:true,error:'response_error'}));
+   response.once('end',()=>{const body=Buffer.concat(chunks);let count=null,valid=false;try{const data=JSON.parse((response.headers['content-encoding']==='gzip'?gunzipSync(body):body).toString()).data;valid=Array.isArray(data.applications);count=data.applications?.length}catch{}
+    const privateNoStore=response.headers['cache-control']==='private, no-store',cookieSensitive=/(?:^|,\s*)Cookie(?:,|$)/i.test(response.headers.vary||''),rawTrace=response.headers['x-outclass-trace-id'];
+    finish({ttfbMs,status:response.statusCode,encodedBodyBytes:body.length,applicationCount:count,privateNoStore,cookieSensitive,serverTiming:response.headers['server-timing']||null,traceId:typeof rawTrace==='string'&&/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(rawTrace)?rawTrace:null,failed:!valid||response.statusCode!==200||!privateNoStore||!cookieSensitive});
+   });
+  });request.once('error',()=>finish({failed:true,error:'request_error'}));
+ })}
+ try{for(const concurrency of input.concurrency)for(let wave=0;wave<input.waves;wave++)await Promise.all(Array.from({length:concurrency},(_,index)=>read(concurrency,wave,index)));assert.equal(samples.length,input.planned);}
+ finally{monitoring=false;await poll;await monitor.$disconnect();agent.destroy();fs.mkdirSync(path.dirname(input.out),{recursive:true});fs.writeFileSync(input.out,JSON.stringify({buildId:fs.readFileSync(path.join(local.dist,'BUILD_ID'),'utf8').trim(),size:fixture.counts.applicantsInMeasuredClub,kind:input.kind,poolLimitPerClient:8,maxConcurrentHttp:4,planned:input.planned,samples,poolSamples,poolMonitorError:monitorError,interpretation:'Separate local server-capacity diagnostic, not browser navigation. One warmup wave then five measured waves per concurrency. Requests within a burst share load and are not independent samples. 25ms same-role connection aggregates exclude the monitor but cannot identify individual Prisma clients or prove hosted capacity. No SQL, values, cookies or identities retained.'},null,2)+'\n')}
+ if(monitorError||samples.some(s=>s.failed))process.exitCode=1;
+}
+module.exports={capacityInput};if(require.main===module)main().catch(e=>{console.error(e.name+': bounded local capacity diagnostic failed');process.exitCode=1});

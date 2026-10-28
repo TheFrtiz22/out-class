@@ -1,82 +1,26 @@
-# OutClass optimization roadmap — review through Phase 15
+# OutClass optimization roadmap — October 28, 2026
 
-## Subsequent production verification — October 27
+Measured main `78402ee611f46b8764898250e46b6dcc8dab7654`; original audit `3017e01d5b55bc8fb38d4f8fbec4906dd93bf619`. This report branch remains unmerged. [Self-contained handoff](CHATGPT_HANDOFF.md), [full latest evidence](pipeline-ready-20261027/README.md).
 
-The sidebar-centering fix was merged as PR 88, main `78402ee611f46b8764898250e46b6dcc8dab7654`, and verified Ready / Production with the actual protected Overview visually checked. All twelve hosted jobs passed, including 1,390 ordinary tests (44 skipped), 50 Auth/settings/runtime cases, 16 selected-navigation cases and 18 authenticated accessibility cases. See [CENTERING_RELEASE.json](followup-20261027/CENTERING_RELEASE.json). This UI adjustment carries no navigation-speed claim.
+**Hold candidate375a00d unmerged.** Large-list entry improves, but small-club interactions regress/add requests. Released Phase1, font/artwork PR85, fresh selected-startup PR87 and centered sidebar PR88 remain on main. Rejected Settings preload/handoff and historical raw SQL join remain excluded; do not merge every historical phase together.
 
-A normal Overview refresh on that deployment produced one successful, uncontrolled production trace: 5,215.747 ms network duration, 5,156.074 ms TTFB, 5,067.30 ms server total and 221.36 ms identity verification; decoded body 1,929 bytes, total transfer 1,182 bytes, encoded body size unavailable. Private `no-store` and `Vary: Cookie` were observed. The database phase aggregates overlapping queries (25,290.15 ms), so it cannot be read as critical-path wall time or summed with nested phases. This observation is separate from all controlled comparisons and does not establish typical production latency, a regression, or a solved root cause. See [PRODUCTION_OVERVIEW_TRACE.json](followup-20261027/PRODUCTION_OVERVIEW_TRACE.json) for limitations and the non-sensitive trace ID.
-
-The next bounded-pipeline candidate is being adapted in a separate worktree from this newer main. Its baseline build and 38 signup/session/MFA checks are complete; current-main candidate performance and integration acceptance remain pending. Preserve the synchronous epoch checks in page, detail, complete-selection and voting handoff paths. Before changing regional infrastructure or authorization, collect enough production critical-path evidence to distinguish repeated query round trips, waits, cold starts and provider variability. No such infrastructure or security change is authorized by these observations.
-
-
-Updated October 27, 2026; audit reference3017e01d5b55bc8fb38d4f8fbec4906dd93bf619; retained experiment source/evidence dd30454. This is a proposed implementation/release plan, not a statement that all changes are approved or deployed. [Handoff](CHATGPT_HANDOFF.md) contains the five ranked bottlenecks, exact measurements and constraints; [JSON](NAVIGATION_BENCHMARKS.json) contains separate historical and latest groups.
-
-## Selected startup release — now on main
-
-The independently tested selected-workspace patch is merged through [PR #87](https://github.com/TheFrtiz22/out-class/pull/87) as `4c27bbe77c7d783e2b84ad06ddb9b3ead7899c59`, preserving main's PR #86 QA fixes. All12 hosted jobs passed; exact-main Vercel inspection confirms **Ready / Production**. Combined QA:1,390 ordinary passes/44 gated skips,50 Auth/settings/runtime passes,16 navigation passes and3 native security suites; build/types/lint pass (21 existing warnings). The broader experimental series remains unmerged.
-
-The separate selected-startup comparison has320 measured outcomes/64 warmups, n=10/group, against measured base06d3e93. Cold p50/p95 improve for all eight local/constrained groups; warm Members/Applicants add fresh-validation cost, Tasks warm constrained maximum grows155.4→201.5ms, and Tasks cold source+click p95 grows5,028.6→5,299.0ms. No universal latency win, exact new-main timing delta or resolved identity cause is claimed. [Release record](followup-20261027/SELECTED_RELEASE.json) links the immutable public report,32-group benchmark JSON, diff and integrated-main verification. The source references and Phase15 tables below remain scoped to their recorded retained experimental builds, not current production.
-
-Next isolate the plain-Prisma bounded pipeline payload/page work against current main, preserving newer QA/privacy/draft behavior. The raw metadata SQL join and rejected Settings changes remain separate. A fresh production protected request returned the public landing page, so no new authenticated hosted trace was collected; the original tabs were left untouched.
-
-## October 27 release and diagnostic followup
-
-The independently ready subset is on main `06d3e93` through PR #85; read-only dashboard inspection confirms **Ready / Production**. Current placement remains Vercel `iad1` / Supabase `us-west-2`. A separate controlled instrumented followup completed 160 browser visits and 3,657 Auth HTTP calls, with 0 Auth failures/incomplete snapshots. HTTP p50/p95/max is 26.30/58.52/313.84ms; unique workspace identity n=1,540 is 30.35/67.04/323.12ms. The historical 4.2-second identity stall did **not** reproduce and remains unresolved. Provider/gateway stage observations narrow the observed waiting but cannot explain that old row or establish hosted causes. No application fix or before/after improvement is claimed by this diagnosis. See [the full followup](followup-20261027/README.md), [structured results](followup-20261027/DIAGNOSTIC_SUMMARY.json) and [current hosted observations](followup-20261027/HOSTED_OBSERVATIONS.json). Datasets remain separate; rejected Phase 14/15 changes remain out.
-
-## Release boundary
-
-The user authorizes committing independently ready changes to main, then fixing remaining issues. Fetch current remote main and preserve subsequent UI/security changes before integration. The isolated ready subset is now on main at `06d3e93` through PR #85, preserving `d031364` and its newer navigation UI; all 12 hosted PR checks and the exact-main-commit Vercel check passed. Do not merge the accumulated Phase 2–15 branch wholesale. The original checkout is on an independent UI branch and must not be reset or switched.
-
-Phase 1 is already in main history. Later code is local retained work, with some earlier approaches superseded. Phase 14/15 experiments are reverted. A test pass does not turn an unexplained adverse benchmark into a performance win. The font/artwork subset completed that isolated verification and integration. All other candidate changes still require their own evidence and release decision.
-
-## Level1 — immediate diagnostic and independently ready work
-
-| Sequence | Work and evidence | Expected impact | Complexity / risk | Required gate |
+|Order|Proposed adjustment|Expected impact / actual evidence|Complexity / risk|Acceptance gate|
 |---:|---|---|---|---|
-| 1 | Preserve the complete evidence and publish the four review files on a diagnostic branch. | Prevent obsolete findings/incorrect pooling from guiding release. No direct latency claim. | Low / low | Immutable input checksums, actual max/n, summary/harness tests, no protected data. |
-| 2 | **DONE on main `06d3e93`:** missing-logo request elimination and unused italic preload removal, independently of list/Settings experiments. | Avoid guessed artwork404s; prior Phase 10 removes200,888 font bytes and improves constrained source p50 by1,242ms in its own cohort. | Low / low | Current-main compatibility, artwork recovery/preview tests, all font faces retained, production build and browser visual/functional checks. Re-measure combined behavior before claiming the historical delta applies to main. |
-| 3 | **DONE on main4c27bbe through PR #87:** selected-workspace code/data overlap, fresh reveal and synchronous stale-epoch fences, separately integrated with main QA fixes. | Phase 2 cold medians improved79.5–83.6% in=100-applicant local cohorts; warm Members/Applicants grew34.9/29.8ms because fresh validation gates reveal. | Medium / medium | Preserve main UI; confirm no old protected content, one current read, genuine later Auth refresh, rapid switches, mobile/pointer and draft continuity. Keep tradeoff explicit. |
-| 4 | Diagnose the multi-request identity stall in the constrained source→Review workload. | Potentially removes multi-second tails; saving not yet attributable or quantifiable. | Medium / low application risk for local-only instrumentation | Request-correlated Auth lifecycle + event loop/process + database observations in affected burst. No successful-authorization caching. |
+|1|Redesign small-cohort compact/detail/selection response policy.|Retain5,000 constrained entry19,737.6→437.3ms p50 gain without one-applicant detail83.7→167.5ms regression/p95102.4→649.0ms.|Medium/high privacy/freshness.|Same required live validation/projection;1/100/1,000/5,000 plus journeys. No arbitrary size threshold from these samples.|
+|2|Remove actual avoidable dependencies in detail/page/search/voting entry.|100 local workflow1,030.4/1,060.5→1,145.5/1,178.8ms, usually9→11 requests; voting cold107.9→141.0ms,1→2.|Medium/medium fan-out risk.|Map dependency chain, overlap independent work, preserve guarded reveal; measure complete journeys/source preparation.|
+|3|Coalesce identical in-flight reads within complete current authority; fence obsolete distinct queries.|Potential savings require measurement; candidate entry mostly1→1 reads and adds detail/selection waits.|Medium/medium security/correctness.|Full actor/club/support/Demo/epoch/arguments scope; no cross-request successful-auth cache; rapid switch/query/revocation cases.|
+|4|Bound metadata/ranking beyond selected hydration.|Candidate remains O(N);5,000 four-reader database aggregate p50/p95206.73/268.04ms.|High/high privacy/collation correctness.|Same snapshot/global facets/totals/cursor/privacy/score parity, realistic histories; no speculative DDL/raw join.|
+|5|Fix reproduced expanded-dock pointer interception independently.|Mixed menu/pointer baseline probes time out; accepted keyboard/CTA timings do not establish pointer usability.|Low–medium/medium focus risk.|Real hover/focus/pointer/keyboard/mobile and rapid switches; no forced click.|
+|6|Collect representative production clicks, cohort sizes and critical paths.|One uncontrolled Overview5,215.747ms network/5,067.30ms server/221.36ms identity; no isolated cause.|Medium/low app risk for sanitized observation.|Correlation/phase overlap/missing data explicit; enough samples for p50/p95; no SQL args/bodies/cookies.|
+|7|Attribute and narrow background shell/Auth fan-out.|Historical repeated startup preparations42→0 without consistent tail win; old4.2s identity stall not reproduced.|Medium/medium live-update risk.|Preserve required refresh/revocation/subscriptions; measure source and full journey.|
+|8|Reduce Settings first-use dependencies with a narrower change.|Historical Profile cold459.5/480.3 versus warm150.3/215.3ms; rejected Review cold p95611.5→1,463.2ms.|Medium/medium tail/bundle/draft risk.|Fresh current-main paired comparison, no speculative preload/stale private handoff; real draft/authority QA.|
+|9|Verify mobile, populated histories and bounded multi-client behavior.|Four-reader local diagnostics/pool8 per client do not establish hosted capacity.|Medium/medium runtime cost.|Real interview/bookings/ballots/histories, explicit membership/errors and pool observation; no unbounded load/pool increase.|
+|10|Integrate only a candidate that clears relevant gates against latest main.|Current security/functionality passes do not erase adverse performance.|Medium/medium release risk.|Preserve newer changes; cold/warm/full journeys, Auth/drafts/native/browser QA, all hosted CI and exact-source deployment verification.|
 
-Use local disposable fixtures and no persistent power/config changes. Preserve every slow row. Earlier sleep-interrupted attempts remain excluded whole with reasons; they do not become replacement pools for accepted timings.
+Next implementation phase:1–3 plus independent5; collect6 before infrastructure decisions. Expected future gains are hypotheses, not additive promises. The investigation/release decision is complete; the optimization backlog is not.
 
-## Level2 — changes blocked on cause or semantics
+Read-only October27 region observations: Verceliad1/Fluid Node24/1CPU/2GB, Supabaseus-west-2/PG17.6.1.166. No regional A/B or measured regional saving. No production config/schema/index/region change, Redis/cache library/Edge Functions or security shortcut is in scope.
 
-| Sequence | Proposed fix | Expected impact / evidence | Complexity / risk | Dependencies and acceptance |
-|---:|---|---|---|---|
-| 5 | Retry strict query-only Settings→Review handoff after the identity tail is explained. | Candidate requests8→6 cold/4→3 warm; constrained medians594.6→465.0/264.9→162.0ms, n=6. Cold p95 worsens611.5→1,463.2ms. | Low code / medium performance risk | Phase 15 rejected patch remains out until a fresh complete paired comparison has no material unexplained regression; retain modified clicks, fresh GETs, revocation and real draft-save replay tests. |
-| 6 | Reduce Settings first-use dependencies while retaining Recruiting code-split benefit. | Retained constrained Profile cold459.5/480.3ms versus warm150.3/215.3ms, n=6. No exclusive React cost established. | Medium / medium | Locate module/read/render/frame stages. Phase 14 speculative preload did not improve cold timing and stays reverted. No eager background private-data fetch. |
-| 7 | Bound pipeline metadata/ranking work. | Native database spans grow25.50→107.06ms at median from1,000→5,000, n=10. Page summaries are bounded; rank scan is not. | High / high privacy/correctness | Same Repeatable Read snapshot, canonical anonymous/self-review/score projection, JS collation, stable order, total/facet/cursor/review parity and native SQL fallback tests. No schema/index rollout. |
-| 8 | Choose fresh-page versus resident-summary interaction contract, then optimize accordingly. | Phase 7 avoided page/search GETs but grew initial payload; Phase 8 superseded it with fresh pages. No universal winner established. | Medium / high freshness risk | Product-visible freshness and authorization requirements first; measure initial entry and repeated interactions together. No TTL-based authorization reuse. |
-| 9 | Coalesce identical current-scope background reads; audit remaining pure-read Server Actions. | Current source still captures about60 requests in Settings cohort. Contribution to identity tail remains suspected. | Medium / medium | Full identity/session/member/club/privacy/support/Demo/query keys; pending-only reuse; mutation invalidation and late-result fencing; no voting snapshot consolidation or live-update suppression. |
+Preserve remotely verified identity/live session/revocation, enablement/member/capability/suspension/support/anonymous/self-review/voting snapshot authority, private no-store/Cookie handling, Demo isolation, drafts and genuine live updates. No cross-request successful-auth cache, stale protected reveal, blanket lock removal or isolation weakening.
 
-## Level3 — scalability and hosted evidence
-
-10. Measure populated member/invitation/task histories, then narrow or page excessive catalogs without changing totals/targeting/authority semantics. Complexity medium; benefit unmeasured.
-11. Run bounded multi-client, active scheduling/voting and realistic review-history workloads. Four-reader loopback tests and25ms role snapshots do not establish saturation limits. Complexity medium; avoid unbounded concurrency or pool increases.
-12. Refresh production deployment SHA, actual function region and effective Prisma pool configuration read-only. Historical iad1→us-west-2 placement is confirmed only as of October 21. Correlate one hosted click with sanitized phases before diagnosing today's regional cost. A same-region preview is a separate future authorized experiment; current production infrastructure restrictions remain.
-13. Validate low-end/mobile CPU, actual paint/input behavior and large-list rendering. Use measured row/CPU costs before proposing virtualization or dependency replacement.
-
-## Top ten changes for architectural review
-
-The ten ranked proposals, impact, complexity and gates are the corresponding table in [CHATGPT_HANDOFF.md](CHATGPT_HANDOFF.md#top-ten-recommended-changes-ordered-implementation-sequence). Roadmap steps above expand execution/release dependencies; they are not ten more changes to apply automatically.
-
-## Security contract and prohibited changes
-
-Keep remotely verified identity, live Auth session/revocation/not_after, enabled account, current membership/capabilities/suspension, support restrictions, anonymous interview/self-review protections and voting snapshot/post-snapshot authority. Preserve private no-store/Cookie-sensitive transport, Demo isolation, current-scope settlement, draft continuity, mutation atomicity and required live updates. Client epochs never authorize reads.
-
-No authorization-success caching between requests, stale private-content flash, blanket lock removal, isolation weakening, new cache library/Redis/Edge Functions, production schema/index changes, region migration, synthetic delay/readiness tricks or automatic deployment of the experimental branch. Never sum overlapping span durations or imply that a local median predicts hosted p95.
-
-## Verification sequence before each ready-subset commit
-
-1. Start from freshly fetched current main in a separate worktree; record base SHA and exact intended patch. Preserve original UI branch and all subsequent main changes.
-2. Include only the reviewed independent app change and required focused regression tests. Inspect server/Auth/database diff explicitly.
-3. Run affected unit/browser tests, type checking, lint and a production build. For transport/authority/query changes, run the selected real Auth/session/anonymous/support/voting/draft/rapid-switch suites plus dedicated native security/concurrency; rebuild disposable fixtures instead of using production data.
-4. Collect before/after cold/warm data with identical fixture, final code, frozen tools, fixed sample membership and host/sleep controls when making a performance claim. Include source/preparation, counts, body bytes, errors, tails and interactions; do not run builds/tests concurrently with accepted collection.
-5. Review all adverse outcomes against the declared acceptance rule. Revert failed experiments and retain their evidence.
-6. Commit the passing ready subset as authorized. Record actual main integration/check status. Keep unresolved experiments separate; do not claim a deployment without deployment evidence.
-7. Tackle identity stalls first, then Settings and pagination tradeoffs, and repeat the final integrated verification before declaring the full series complete.
-
-## Reproduction and evidence
-
-Read [CHATGPT_HANDOFF.md](CHATGPT_HANDOFF.md#tests-evidence-and-commands) and `phase15/REPRODUCTION.md` for the document-only verification commands and full disposable benchmark procedure. Current document-update results are in `review-20261027/VALIDATION.json`. Phase 15 full QA, immutable source/build manifests, failed attempts, controls, privacy and scoped cleanup remain under `phase15/`. No new latency measurements or production changes are introduced by this roadmap.
+Latest evidence:808 measured browser outcomes/184 excluded warmups and140 measured capacity requests/28 warmups. Entire first sleep-invalid supplement excluded, including successful rows. [All52 comparisons](pipeline-ready-20261027/COMPARISON.json), [QA/diff/full report](pipeline-ready-20261027/README.md), [reproduction commands and manual one-applicant setup limitation](pipeline-ready-20261027/REPRODUCTION.md).

@@ -1,0 +1,406 @@
+{
+  "startedAt": "2026-10-28T00:34:13.827Z",
+  "complete": true,
+  "profile": "constrained",
+  "attempt": 1,
+  "base": "78402ee611f46b8764898250e46b6dcc8dab7654",
+  "counts": {
+    "groupsPerBlock": 4,
+    "measuredPerBuildGroup": 10,
+    "measuredPerProfile": 240,
+    "warmupsPerProfile": 48
+  },
+  "toolHashes": {
+    "scripts/navigation-audit.cjs": "ef894a888a99815d1e6fd18d5f9ecb8c5d7e4f52ee7e981603442a55bf9e20ef",
+    "scripts/navigation-pipeline-ready-local.cjs": "ade642b5828be44e49ac789eb4bdfb5f7436d21f773f658ebe58ace04cee55af",
+    "scripts/navigation-selected-ready-host-monitor.cjs": "1efc15070f972406de7a785e96a0b33cda24a304ff68dede639e71f1de8e14b7",
+    "scripts/navigation-pipeline-ready-study.cjs": "150bf5bcfe5b832964d5af8ad300930d9143f3f43cf8b6bd3b4d2471a8c157ba",
+    "scripts/navigation-pipeline-ready-workflow.cjs": "98ab0a615d991eda6555330729b3278b8371263cab37768fcab32441933b36b4",
+    "tests/helpers/onboarding-e2e.cjs": "500e5b6fe0fd73aa89a76763bae7064db76ad1ac96120c036c991619c2d80403"
+  },
+  "planSha256": "34e4cc95581f1ab82d82e6fbaadce74ae73d1281c788ecc3a5c45625be7da62c",
+  "fixtureManifestSha256": "43d006934a9c55803288a4a3077a1527e6b6a61376fe9540db1f2881979abc97",
+  "builds": {
+    "B": "CEAI23ftOJ8ZVtWlKMONI",
+    "A": "EzkQj4yhyR7aSWuTDg8Zk"
+  },
+  "blocks": [
+    {
+      "directory": "size-100-block-1-B-warmup",
+      "size": 100,
+      "variant": "B",
+      "stage": "warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-100-block-1-B-measure",
+      "size": 100,
+      "variant": "B",
+      "stage": "measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-100-block-1-B-workflow.json",
+      "size": 100,
+      "variant": "B",
+      "stage": "workflow",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-100-block-2-A-warmup",
+      "size": 100,
+      "variant": "A",
+      "stage": "warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-100-block-2-A-measure",
+      "size": 100,
+      "variant": "A",
+      "stage": "measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-100-block-2-A-workflow.json",
+      "size": 100,
+      "variant": "A",
+      "stage": "workflow",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-100-block-3-A-warmup",
+      "size": 100,
+      "variant": "A",
+      "stage": "warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-100-block-3-A-measure",
+      "size": 100,
+      "variant": "A",
+      "stage": "measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-100-block-3-A-workflow.json",
+      "size": 100,
+      "variant": "A",
+      "stage": "workflow",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-100-block-4-B-warmup",
+      "size": 100,
+      "variant": "B",
+      "stage": "warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-100-block-4-B-measure",
+      "size": 100,
+      "variant": "B",
+      "stage": "measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-100-block-4-B-workflow.json",
+      "size": 100,
+      "variant": "B",
+      "stage": "workflow",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-1000-block-1-B-warmup",
+      "size": 1000,
+      "variant": "B",
+      "stage": "warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-1000-block-1-B-measure",
+      "size": 1000,
+      "variant": "B",
+      "stage": "measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-1000-block-1-B-workflow.json",
+      "size": 1000,
+      "variant": "B",
+      "stage": "workflow",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-1000-block-2-A-warmup",
+      "size": 1000,
+      "variant": "A",
+      "stage": "warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-1000-block-2-A-measure",
+      "size": 1000,
+      "variant": "A",
+      "stage": "measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-1000-block-2-A-workflow.json",
+      "size": 1000,
+      "variant": "A",
+      "stage": "workflow",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-1000-block-3-A-warmup",
+      "size": 1000,
+      "variant": "A",
+      "stage": "warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-1000-block-3-A-measure",
+      "size": 1000,
+      "variant": "A",
+      "stage": "measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-1000-block-3-A-workflow.json",
+      "size": 1000,
+      "variant": "A",
+      "stage": "workflow",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-1000-block-4-B-warmup",
+      "size": 1000,
+      "variant": "B",
+      "stage": "warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-1000-block-4-B-measure",
+      "size": 1000,
+      "variant": "B",
+      "stage": "measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-1000-block-4-B-workflow.json",
+      "size": 1000,
+      "variant": "B",
+      "stage": "workflow",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-5000-block-1-B-warmup",
+      "size": 5000,
+      "variant": "B",
+      "stage": "warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-5000-block-1-B-measure",
+      "size": 5000,
+      "variant": "B",
+      "stage": "measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-5000-block-1-B-workflow.json",
+      "size": 5000,
+      "variant": "B",
+      "stage": "workflow",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-5000-block-2-A-warmup",
+      "size": 5000,
+      "variant": "A",
+      "stage": "warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-5000-block-2-A-measure",
+      "size": 5000,
+      "variant": "A",
+      "stage": "measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-5000-block-2-A-workflow.json",
+      "size": 5000,
+      "variant": "A",
+      "stage": "workflow",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-5000-block-3-A-warmup",
+      "size": 5000,
+      "variant": "A",
+      "stage": "warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-5000-block-3-A-measure",
+      "size": 5000,
+      "variant": "A",
+      "stage": "measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-5000-block-3-A-workflow.json",
+      "size": 5000,
+      "variant": "A",
+      "stage": "workflow",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-5000-block-4-B-warmup",
+      "size": 5000,
+      "variant": "B",
+      "stage": "warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-5000-block-4-B-measure",
+      "size": 5000,
+      "variant": "B",
+      "stage": "measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-5000-block-4-B-workflow.json",
+      "size": 5000,
+      "variant": "B",
+      "stage": "workflow",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    }
+  ],
+  "failures": [],
+  "completedAt": "2026-10-28T01:38:52.512Z",
+  "hostControl": {
+    "valid": true,
+    "samples": 777,
+    "violations": []
+  },
+  "sleepAudit": {
+    "valid": true,
+    "recognizedRecords": 74167,
+    "events": [],
+    "commandSucceeded": true,
+    "bytesRead": 21762008,
+    "scope": "Actual Sleep/DarkWake/Wake event categories only; raw power log and process details not retained"
+  },
+  "applicationStopped": true,
+  "valid": true
+}

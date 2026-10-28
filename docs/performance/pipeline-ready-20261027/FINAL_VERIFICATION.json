@@ -1,0 +1,19 @@
+{
+  "at": "2026-10-28T14:42:36.994710+00:00",
+  "releaseDecision": "Hold unmerged: confirmed small-cohort detail/request regressions; large-cohort benefits do not justify a general default rollout.",
+  "candidateImplementationCommit": "375a00d54d95f24e7d600a56218b9bf8040a7937",
+  "baseMain": "78402ee611f46b8764898250e46b6dcc8dab7654",
+  "candidateSourceHashesVerified": 861,
+  "applicationFilesChanged": 19,
+  "crmMutationTailByteForByteUnchanged": true,
+  "diagnosticTests": {
+    "pass": 10,
+    "fail": 0,
+    "skip": 0
+  },
+  "applicationQa": "QA.json; application source unchanged after frozen build",
+  "productionConfigurationSchemaIndexSecurityChanges": false,
+  "hostedCandidateCi": "Not requested: candidate is not release eligible; no PR or deployment created.",
+  "archiveScope": "Accepted collector versions verified against protocol hashes; invalid supplement retains its original tool hashes, not an asserted reconstruction.",
+  "cleanup": "CLEANUP.json"
+}

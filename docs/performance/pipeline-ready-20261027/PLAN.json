@@ -1,0 +1,153 @@
+{
+  "startedAt": "2026-10-27T19:40:40.379231+00:00",
+  "base": "78402ee611f46b8764898250e46b6dcc8dab7654",
+  "status": "Candidate production build, 1435 ordinary tests, 50 Auth/settings/runtime cases, 16 existing navigation cases, 16 pipeline integration cases and native PostgreSQL verification passed. Diagnostic collector verification and controlled comparisons pending.",
+  "upstreamPlainPrismaSnapshot": "febb9cfd40b29d8e175a8d7c0c10fc6245f57dbe",
+  "proposedApplicationFiles": [
+    "actions/crm.ts",
+    "app/api/workspace/route.ts",
+    "components/live-voting/board-decision-mode.tsx",
+    "components/selected-club-workspace.tsx",
+    "components/views/leader-dashboard/live-applicant-views.tsx",
+    "components/views/leader-dashboard/live-leader-workspace.tsx",
+    "hooks/use-pipeline-applicant.ts",
+    "hooks/use-pipeline-page.ts",
+    "lib/anonymous-review.ts",
+    "lib/applicant-pagination.ts",
+    "lib/application-review-visibility.ts",
+    "lib/interview-review-summary.ts",
+    "lib/live-applicant-sorting.ts",
+    "lib/pipeline-list.ts",
+    "lib/pipeline-page-read.ts",
+    "lib/pipeline-page.ts",
+    "lib/pipeline-summary.ts",
+    "lib/recruitment-profile.ts",
+    "lib/workspace-api.ts"
+  ],
+  "scope": "Bound default list hydration/payload to100 summaries with freshly guarded server pages and existing complete canonical fallbacks; fresh one-applicant details, complete global facets/quick review/voting authority.",
+  "excluded": [
+    "Raw metadata SQL JOIN (Phase9)",
+    "Settings module deferral/handoff/preload experiments",
+    "Font/logo changes already on main",
+    "Auth context replacement: preserve main synchronous epoch fences",
+    "Production configuration/schema/index/region/dependency changes",
+    "Unused historical useResidentPipeline hook"
+  ],
+  "preservation": [
+    "Main PR86 interview/score-history/draft/notification fixes",
+    "Main PR87 selected startup and fresh reveal",
+    "Subsequent centering fix, if it lands before source freeze",
+    "Remote identity, live session/revocation, account/member/capability/suspension/support/anonymous/voting guards, no-store/Cookie handling and Demo isolation"
+  ],
+  "knownTradeoffs": [
+    "100-applicant detail opening was slower in historical split-reader trials.",
+    "Fresh page/search reads add network waits versus resident complete summaries; evaluate full workflow, not only initial entry.",
+    "Metadata ranking remains O(N), even with bounded selected hydration.",
+    "Historical identity stalls and native burst tails are unresolved; no fabricated root-cause claim."
+  ],
+  "next": "Build/snapshot current-main baseline; port only reviewed pipeline changes; preserve synchronous epoch fences in every new client reader; run existing unit/native/Auth/privacy/concurrency/draft/browser cases and measured100/1000/5000 cold/warm/interaction/bounded-reader comparisons before any release decision.",
+  "measurement": {
+    "cohorts": [
+      100,
+      1000,
+      5000
+    ],
+    "order": [
+      "B",
+      "A",
+      "A",
+      "B"
+    ],
+    "warmupsPerBlockGroup": 1,
+    "measuredPerBlockGroup": 5,
+    "harnessFlags": [
+      "--phase2",
+      "--phase3",
+      "--cold-warm",
+      "--record-failures",
+      "--source-diagnostics"
+    ],
+    "profiles": {
+      "local": "Unthrottled local production build and disposable local Auth/PostgreSQL",
+      "constrained": "CDP80ms latency, 200000B/s down, 93750B/s up, CPU4x"
+    },
+    "navigationGroups": [
+      "Recruiting Overview → Applicants, cold",
+      "Recruiting Overview → Applicants, warm",
+      "Applicants → applicant detail, cold",
+      "Applicants → applicant detail, warm"
+    ],
+    "workflow": {
+      "sequence": [
+        "Overview All applicants CTA",
+        "Open first applicant detail",
+        "Close detail",
+        "Search distant applicant"
+      ],
+      "warmupsPerBlock": 1,
+      "measuredPerBlock": 3,
+      "nPerBuildCohortProfile": 6,
+      "totalMeaning": "Actual first click to final useful content; includes separately reported automation gaps and close action, with no human think-time claim",
+      "condition": "Warm browser context and cached assets; each flow has explicit fresh Overview document preparation",
+      "scope": "Separate supplementary CTA workflow; primary collector retains its unchanged menu/keyboard path. Earlier mixed menu/pointer verification probes were obstructed by the expanded dock and remain outside accepted timing data.",
+      "sourcePreparation": "Direct Overview document before each flow, one warm browser context per block. All actual CTA/detail/close/search time remains measured."
+    },
+    "membership": {
+      "primaryMeasuredPerProfile": 240,
+      "primaryWarmupsPerProfile": 48,
+      "workflowMeasuredPerProfile": 36,
+      "workflowWarmupsPerProfile": 12
+    },
+    "failurePolicy": "Retain every planned outcome; no outlier deletion or replacement. Conditional successful timing distributions always include attempted/failed counts. A host, sleep, source or structural violation excludes the entire profile attempt, including successful rows.",
+    "host": "Read-only5s process/power monitoring, original checkout protection, stable initial power source and low-power mode0; actual Sleep/DarkWake/Wake log audit. No power setting changes. Idle-host agreement requested separately.",
+    "acceptance": "Assess cold/warm entry, detail, distant search, complete common workflow, request/byte/error costs and source preparation separately. Large-cohort entry savings do not excuse security/draft failures or justify hiding adverse small-cohort/detail/search timings. No pooled phase datasets or production latency claim.",
+    "serverCapacity": {
+      "cohorts": [
+        1000,
+        5000
+      ],
+      "concurrency": [
+        1,
+        2,
+        4
+      ],
+      "wavesPerConcurrency": 6,
+      "warmupWaves": 1,
+      "plannedPerBuildCohort": 42,
+      "poolLimitPerClient": 8,
+      "maxConcurrentHttp": 4,
+      "baselineKind": "pipeline",
+      "candidateKind": "pipelinePage",
+      "scope": "Separate local real-HTTP capacity diagnostic after primary runs, not browser navigation. Preserve all errors and correlated burst membership."
+    },
+    "votingSupplement": {
+      "profiles": [
+        "local"
+      ],
+      "cohorts": [
+        100,
+        5000
+      ],
+      "order": [
+        "B",
+        "A",
+        "A",
+        "B"
+      ],
+      "warmupsPerBlockGroup": 1,
+      "measuredPerBlockGroup": 3,
+      "nPerBuildGroup": 6,
+      "harnessFlags": [
+        "--only-voting",
+        "--cold-warm",
+        "--record-failures",
+        "--source-diagnostics"
+      ],
+      "scope": "Separate open/close Voting read-only supplement on the same frozen builds, including the added complete-selection read; no draft creation or ballot/decision mutation."
+    }
+  },
+  "idleAgreement": {
+    "confirmed": true,
+    "scope": "Mac kept open; no competing builds or tests during timing; no power setting changes or charger requirement"
+  }
+}

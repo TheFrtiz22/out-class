@@ -1,0 +1,384 @@
+{
+  "startedAt": "2026-10-28T02:45:05.174Z",
+  "complete": true,
+  "planSha256": "34e4cc95581f1ab82d82e6fbaadce74ae73d1281c788ecc3a5c45625be7da62c",
+  "blocks": [
+    {
+      "kind": "voting",
+      "directory": "voting-size-100-block-1-B-warmup",
+      "size": 100,
+      "variant": "B",
+      "stage": "warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "kind": "voting",
+      "directory": "voting-size-100-block-1-B-measure",
+      "size": 100,
+      "variant": "B",
+      "stage": "measure",
+      "planned": 12,
+      "observed": 12,
+      "failures": 1,
+      "status": 1
+    },
+    {
+      "kind": "voting",
+      "directory": "voting-size-100-block-2-A-warmup",
+      "size": 100,
+      "variant": "A",
+      "stage": "warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "kind": "voting",
+      "directory": "voting-size-100-block-2-A-measure",
+      "size": 100,
+      "variant": "A",
+      "stage": "measure",
+      "planned": 12,
+      "observed": 12,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "kind": "voting",
+      "directory": "voting-size-100-block-3-A-warmup",
+      "size": 100,
+      "variant": "A",
+      "stage": "warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "kind": "voting",
+      "directory": "voting-size-100-block-3-A-measure",
+      "size": 100,
+      "variant": "A",
+      "stage": "measure",
+      "planned": 12,
+      "observed": 12,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "kind": "voting",
+      "directory": "voting-size-100-block-4-B-warmup",
+      "size": 100,
+      "variant": "B",
+      "stage": "warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "kind": "voting",
+      "directory": "voting-size-100-block-4-B-measure",
+      "size": 100,
+      "variant": "B",
+      "stage": "measure",
+      "planned": 12,
+      "observed": 12,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "kind": "voting",
+      "directory": "voting-size-5000-block-1-B-warmup",
+      "size": 5000,
+      "variant": "B",
+      "stage": "warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "kind": "voting",
+      "directory": "voting-size-5000-block-1-B-measure",
+      "size": 5000,
+      "variant": "B",
+      "stage": "measure",
+      "planned": 12,
+      "observed": 12,
+      "failures": 3,
+      "status": 1
+    },
+    {
+      "kind": "voting",
+      "directory": "voting-size-5000-block-2-A-warmup",
+      "size": 5000,
+      "variant": "A",
+      "stage": "warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "kind": "voting",
+      "directory": "voting-size-5000-block-2-A-measure",
+      "size": 5000,
+      "variant": "A",
+      "stage": "measure",
+      "planned": 12,
+      "observed": 12,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "kind": "voting",
+      "directory": "voting-size-5000-block-3-A-warmup",
+      "size": 5000,
+      "variant": "A",
+      "stage": "warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "kind": "voting",
+      "directory": "voting-size-5000-block-3-A-measure",
+      "size": 5000,
+      "variant": "A",
+      "stage": "measure",
+      "planned": 12,
+      "observed": 12,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "kind": "voting",
+      "directory": "voting-size-5000-block-4-B-warmup",
+      "size": 5000,
+      "variant": "B",
+      "stage": "warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "kind": "voting",
+      "directory": "voting-size-5000-block-4-B-measure",
+      "size": 5000,
+      "variant": "B",
+      "stage": "measure",
+      "planned": 12,
+      "observed": 12,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "kind": "capacity",
+      "directory": "capacity-size-1000-B.json",
+      "size": 1000,
+      "variant": "B",
+      "planned": 42,
+      "observed": 42,
+      "failures": 0,
+      "poolMonitorError": null,
+      "status": 0
+    },
+    {
+      "kind": "capacity",
+      "directory": "capacity-size-1000-A.json",
+      "size": 1000,
+      "variant": "A",
+      "planned": 42,
+      "observed": 42,
+      "failures": 0,
+      "poolMonitorError": null,
+      "status": 0
+    },
+    {
+      "kind": "capacity",
+      "directory": "capacity-size-5000-B.json",
+      "size": 5000,
+      "variant": "B",
+      "planned": 42,
+      "observed": 42,
+      "failures": 0,
+      "poolMonitorError": null,
+      "status": 0
+    },
+    {
+      "kind": "capacity",
+      "directory": "capacity-size-5000-A.json",
+      "size": 5000,
+      "variant": "A",
+      "planned": 42,
+      "observed": 42,
+      "failures": 0,
+      "poolMonitorError": null,
+      "status": 0
+    }
+  ],
+  "toolHashes": {
+    "navigation-audit.cjs": "ef894a888a99815d1e6fd18d5f9ecb8c5d7e4f52ee7e981603442a55bf9e20ef",
+    "navigation-pipeline-ready-local.cjs": "ade642b5828be44e49ac789eb4bdfb5f7436d21f773f658ebe58ace04cee55af",
+    "navigation-pipeline-ready-concurrency.cjs": "bd83d70a250ccf62e87de64d54fe2f2a29edfb47db93714930c763c20a10dbfe",
+    "navigation-pipeline-ready-supplement.cjs": "e56d1e1a6f5de31f73ac1696fce5b6836cfd28d31ad28efed234bd5a0c2e8a18",
+    "navigation-selected-ready-host-monitor.cjs": "1efc15070f972406de7a785e96a0b33cda24a304ff68dede639e71f1de8e14b7",
+    "navigation-pipeline-ready-study.cjs": "150bf5bcfe5b832964d5af8ad300930d9143f3f43cf8b6bd3b4d2471a8c157ba"
+  },
+  "completedAt": "2026-10-28T03:03:53.051Z",
+  "hostControl": {
+    "valid": true,
+    "samples": 130,
+    "violations": []
+  },
+  "sleepAudit": {
+    "valid": false,
+    "recognizedRecords": 74328,
+    "events": [
+      {
+        "at": "2026-10-28T02:45:20.000Z",
+        "kind": "Sleep"
+      },
+      {
+        "at": "2026-10-28T02:45:21.000Z",
+        "kind": "Wake"
+      },
+      {
+        "at": "2026-10-28T02:45:26.000Z",
+        "kind": "DarkWake"
+      },
+      {
+        "at": "2026-10-28T02:45:36.000Z",
+        "kind": "Sleep"
+      },
+      {
+        "at": "2026-10-28T02:45:38.000Z",
+        "kind": "Wake"
+      },
+      {
+        "at": "2026-10-28T02:46:11.000Z",
+        "kind": "DarkWake"
+      },
+      {
+        "at": "2026-10-28T02:46:48.000Z",
+        "kind": "Sleep"
+      },
+      {
+        "at": "2026-10-28T02:46:49.000Z",
+        "kind": "Wake"
+      },
+      {
+        "at": "2026-10-28T02:46:58.000Z",
+        "kind": "DarkWake"
+      },
+      {
+        "at": "2026-10-28T02:47:43.000Z",
+        "kind": "Sleep"
+      },
+      {
+        "at": "2026-10-28T02:47:45.000Z",
+        "kind": "Wake"
+      },
+      {
+        "at": "2026-10-28T02:48:10.000Z",
+        "kind": "DarkWake"
+      },
+      {
+        "at": "2026-10-28T02:48:56.000Z",
+        "kind": "Sleep"
+      },
+      {
+        "at": "2026-10-28T02:48:57.000Z",
+        "kind": "Wake"
+      },
+      {
+        "at": "2026-10-28T02:49:06.000Z",
+        "kind": "DarkWake"
+      },
+      {
+        "at": "2026-10-28T02:49:51.000Z",
+        "kind": "Sleep"
+      },
+      {
+        "at": "2026-10-28T02:49:53.000Z",
+        "kind": "Wake"
+      },
+      {
+        "at": "2026-10-28T02:52:58.000Z",
+        "kind": "DarkWake"
+      },
+      {
+        "at": "2026-10-28T02:53:08.000Z",
+        "kind": "Sleep"
+      },
+      {
+        "at": "2026-10-28T02:53:10.000Z",
+        "kind": "Wake"
+      },
+      {
+        "at": "2026-10-28T02:55:30.000Z",
+        "kind": "DarkWake"
+      },
+      {
+        "at": "2026-10-28T02:56:05.000Z",
+        "kind": "Sleep"
+      },
+      {
+        "at": "2026-10-28T02:56:07.000Z",
+        "kind": "Wake"
+      },
+      {
+        "at": "2026-10-28T02:56:23.000Z",
+        "kind": "DarkWake"
+      },
+      {
+        "at": "2026-10-28T02:57:08.000Z",
+        "kind": "Sleep"
+      },
+      {
+        "at": "2026-10-28T02:57:09.000Z",
+        "kind": "Wake"
+      },
+      {
+        "at": "2026-10-28T02:58:19.000Z",
+        "kind": "DarkWake"
+      },
+      {
+        "at": "2026-10-28T02:59:04.000Z",
+        "kind": "Sleep"
+      },
+      {
+        "at": "2026-10-28T02:59:05.000Z",
+        "kind": "Wake"
+      },
+      {
+        "at": "2026-10-28T02:59:08.000Z",
+        "kind": "DarkWake"
+      },
+      {
+        "at": "2026-10-28T02:59:20.000Z",
+        "kind": "Sleep"
+      },
+      {
+        "at": "2026-10-28T02:59:21.000Z",
+        "kind": "Wake"
+      },
+      {
+        "at": "2026-10-28T02:59:27.000Z",
+        "kind": "DarkWake"
+      }
+    ],
+    "commandSucceeded": true,
+    "bytesRead": 21808605,
+    "scope": "Actual Sleep/DarkWake/Wake event categories only; raw power log and process details not retained"
+  },
+  "valid": false,
+  "temporaryAssertionReleased": true
+}

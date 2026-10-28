@@ -1,0 +1,89 @@
+{
+  "at": "2026-10-28T00:23:22.737Z",
+  "base": "78402ee611f46b8764898250e46b6dcc8dab7654",
+  "builds": {
+    "baseline": "CEAI23ftOJ8ZVtWlKMONI",
+    "candidate": "EzkQj4yhyR7aSWuTDg8Zk"
+  },
+  "applicationFilesChanged": [
+    "actions/crm.ts",
+    "app/api/workspace/route.ts",
+    "components/live-voting/board-decision-mode.tsx",
+    "components/selected-club-workspace.tsx",
+    "components/views/leader-dashboard/live-applicant-views.tsx",
+    "components/views/leader-dashboard/live-leader-workspace.tsx",
+    "lib/anonymous-review.ts",
+    "lib/interview-review-summary.ts",
+    "lib/live-applicant-sorting.ts",
+    "lib/recruitment-profile.ts",
+    "lib/workspace-api.ts",
+    "hooks/use-pipeline-applicant.ts",
+    "hooks/use-pipeline-page.ts",
+    "lib/applicant-pagination.ts",
+    "lib/application-review-visibility.ts",
+    "lib/pipeline-list.ts",
+    "lib/pipeline-page-read.ts",
+    "lib/pipeline-page.ts",
+    "lib/pipeline-summary.ts"
+  ],
+  "unit": {
+    "tests": 1492,
+    "pass": 1435,
+    "fail": 0,
+    "skip": 57
+  },
+  "diagnosticHarnessTests": {
+    "pass": 4,
+    "fail": 0
+  },
+  "typecheck": "pass",
+  "productionBuild": "pass",
+  "baselineSignupSessionMfa": {
+    "pass": 38,
+    "fail": 0
+  },
+  "candidateAuthSettingsRuntime": {
+    "pass": 50,
+    "fail": 0
+  },
+  "existingNavigation": {
+    "pass": 16,
+    "fail": 0
+  },
+  "pipelineNavigation": {
+    "pass": 16,
+    "fail": 0
+  },
+  "nativeTransactions": {
+    "pass": 49,
+    "fail": 0
+  },
+  "nativeRecruitmentOffersCommunications": {
+    "pass": 42,
+    "fail": 0
+  },
+  "migrations": {
+    "applied": 57,
+    "rlsTables": 78,
+    "pass": true
+  },
+  "collectorVerification": {
+    "primary": {
+      "baseline": 4,
+      "candidate": 4,
+      "failures": 0
+    },
+    "workflow": {
+      "baseline": 4,
+      "candidate": 4,
+      "failures": 0
+    },
+    "acceptedPerformanceData": false
+  },
+  "productionChanges": false,
+  "notes": [
+    "Initial Phase12 observer used old transport name; only kind changed to pipelinePage, all security assertions retained.",
+    "Initial voting-handoff unit lacked document stub; corrected synthetic harness and added saving-close guard coverage.",
+    "Earlier supplementary workflow probes encountered expanded-dock interception. All attempts retained; final common workflow uses same real Overview CTA and fresh source document in both builds. Primary collector unchanged."
+  ]
+}

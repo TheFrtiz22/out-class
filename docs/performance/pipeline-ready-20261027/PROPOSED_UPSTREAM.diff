@@ -1,0 +1,1464 @@
+diff --git a/actions/crm.ts b/actions/crm.ts
+index b5388dea9efdf4f1e291950889d25eb32e98a014..7c8d8f8748ced44982b5c453458f42b6cb5d512f 100644
+--- a/actions/crm.ts
++++ b/actions/crm.ts
+@@ -1,4 +1,10 @@
+ "use server";
++import type { Prisma } from "@prisma/client";
++import { createHash } from "node:crypto";
++import { readPipelinePage } from "@/lib/pipeline-page-read";
++import { pipelineSummarySelect, pipelineSummaryProjection } from "@/lib/pipeline-summary";
++import { applicationReviewVisibility } from "@/lib/application-review-visibility";
++import { completePipelineSelection, pipelinePageQuery, pipelineSelectionKey, type PipelinePageQuery } from "@/lib/pipeline-page";
+ import {decisionPublicationGuard} from "@/lib/decision-publication-guard";
+ import { clubWriteTransaction } from "@/utils/club-write-transaction";
+ import { publishRecruitmentDecision } from "@/utils/recruitment-offers";
+@@ -15,15 +21,71 @@ import {
+   validateAnonymousText,
+ } from "@/lib/anonymous-review";
+ import { hasPermission } from "@/lib/permissions";
+-import { prisma } from "@/utils/prisma";
++import { prisma, type AppTransactionClient } from "@/utils/prisma";
+ import { requireClubPermission } from "@/utils/auth";
+ import { z } from "zod";
+ import { revalidatePath } from "next/cache";
+-import { interviewCapabilities } from "@/lib/interview-access";
+-import { submittedScoreSummary } from "@/lib/interview-review-summary";
+ 
+ const pipelineFilter = z.object({ applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), gender: z.enum(genderValues).optional(), genderCounts: z.boolean().optional() }).strict();
+ export async function getClubPipeline(clubId: string, input: z.infer<typeof pipelineFilter> = {}) {
++  return (await readClubPipeline(clubId, input)).pipeline;
++}
++
++/** Same live authority and privacy projection; detail collections are read only on opening. */
++export async function getClubPipelineList(clubId: string, input: z.infer<typeof pipelineFilter> = {}) {
++  return (await readClubPipelineSummaries(clubId, input)).pipeline;
++}
++
++export async function getClubPipelinePage(clubId: string, input: PipelinePageQuery = {}) {
++  const query = pipelinePageQuery.parse(input);
++  const { pipeline } = await readPipeline(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: query.genderCounts }, async (tx, where, membership, rounds) => {
++    // Scope binding only. Both ranking and bounded hydration share this fresh
++    // guarded Repeatable Read snapshot; the cursor never grants authority.
++    const scope = createHash("sha256").update(JSON.stringify([clubId, membership, rounds, pipelineSelectionKey(query)])).digest("hex");
++    return readPipelinePage(tx, where, membership, rounds, query, scope);
++  });
++  return { ...pipeline.applications, rounds: pipeline.rounds, genderCounts: pipeline.genderCounts };
++}
++
++/** Explicit whole-selection read for quick review and voting, without identities. */
++export async function getClubPipelineSelection(clubId: string, input: PipelinePageQuery = {}) {
++  const query = pipelinePageQuery.omit({ cursor: true }).parse(input);
++  const { pipeline, membership } = await readClubPipelineSummaries(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: false });
++  return completePipelineSelection(pipeline, query, membership.id, membership.userId);
++}
++
++async function readClubPipeline(clubId: string, input: z.infer<typeof pipelineFilter>) {
++  return readPipeline(clubId, input, async (tx, where, membership) => {
++    const applications = await tx.application.findMany({ where, include: {
++      recruitmentOffer: { select: { status: true, expiresAt: true } },
++      round: true,
++      evaluations: { omit: { notes: true, applicantQuestions: true } },
++      interviewAssignments: { where: { revokedAt: null }, include: { member: true } },
++      student: { include: { studentProfile: { include: { experiences: true } } } },
++      answers: { include: { question: true } },
++      bookings: { include: { slot: true } },
++    } });
++    return applications.map(raw => {
++        const { caps, ownSubmitted, assigned, roundScore, evaluations } = applicationReviewVisibility(raw, membership);
++        const safe = { ...raw }; delete (safe as Partial<typeof raw>).interviewAssignments;
++        const app = { ...safe, evaluations: evaluations.map(e => ({ ...e, notes: null, applicantQuestions: null })) };
++        const projected = !hasPermission(membership, "applicants.identify") || app.round.anonymousReview ? anonymousApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay)) : identifiedApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay), "crm");
++        const canEvaluate = !ownSubmitted && raw.studentId !== membership.userId && (raw.round.anonymousReview ? hasPermission(membership, "applications.review") : caps.participate && assigned);
++        return { ...projected, canEvaluate, publicationGuard:decisionPublicationGuard(raw), recruitmentOffer: raw.recruitmentOffer ?? null, roundScore };
++    });
++  });
++}
++
++async function readClubPipelineSummaries(clubId: string, input: z.infer<typeof pipelineFilter>) {
++  return readPipeline(clubId, input, async (tx, where, membership) => {
++    const applications = await tx.application.findMany({ where, select: pipelineSummarySelect });
++    return applications.map(app => pipelineSummaryProjection(app, membership));
++  });
++}
++
++type PipelineMembership = Awaited<ReturnType<typeof requireClubPermission>>["membership"];
++async function readPipeline<T>(clubId: string, input: z.infer<typeof pipelineFilter>,
++  load: (tx: AppTransactionClient, where: Prisma.ApplicationWhereInput, membership: PipelineMembership, rounds: { id: string; name: string; order: number; type: string; anonymousReview: boolean; genderVisible: boolean }[]) => Promise<T>) {
+   const filter = pipelineFilter.parse(input);
+   // Only members can view the pipeline
+   const { membership } = await requireClubPermission(clubId, [], { allowSuspendedRead: true });
+@@ -51,45 +113,23 @@ export async function getClubPipeline(clubId: string, input: z.infer<typeof pipe
+     }
+     const where = { clubId, ...(filter.applicationId ? { id: filter.applicationId } : {}), status: { not: "DRAFTING" as const }, ...(filter.roundId ? { roundId: filter.roundId } : {}), ...(hasPermission(membership, "applicants.identify") ? {} : { round: { anonymousReview: true } }) };
+     phase = "applications";
+-    const applications = await tx.application.findMany({
+-      where: {
+-        ...where,
+-        ...(filter.gender ? { student: { studentProfile: { gender: filter.gender } } } : {}),
+-      },
+-      include: {
+-        recruitmentOffer: { select: { status: true, expiresAt: true } },
+-        round: true,
+-        student: {
+-          include: { studentProfile: { include: { experiences: true } } },
+-        },
+-        evaluations: { omit: { notes: true, applicantQuestions: true } },
+-        interviewAssignments: { where: { revokedAt: null }, include: { member: true } },
+-        answers: { include: { question: true } },
+-        bookings: { include: { slot: true } },
+-      },
+-    });
++    const applicationWhere = {
++      ...where,
++      ...(filter.gender ? { student: { studentProfile: { gender: filter.gender } } } : {}),
++    };
++    const projectedRounds = rounds.map(r => ({ id: r.id, name: r.name, order: r.order, type: r.type, anonymousReview: r.anonymousReview, genderVisible: hasPermission(membership, "applications.review") && genderVisibility(r.applicantDisplay) }));
++    const applications = await load(tx, applicationWhere, membership, projectedRounds);
+     phase = "counts";
+     const counts = filter.genderCounts ? await tx.application.groupBy({ by: ["studentId"], where }) : [];
+     const profiles = filter.genderCounts ? await tx.studentProfile.groupBy({ by: ["gender"], where: { userId: { in: counts.map(c => c.studentId) } }, _count: true }) : [];
+ 
+     phase = "projection-or-commit";
+-    return {
+-      rounds: rounds.map(r => ({ id: r.id, name: r.name, order: r.order, type: r.type, anonymousReview: r.anonymousReview, genderVisible: hasPermission(membership, "applications.review") && genderVisibility(r.applicantDisplay) })),
++    const pipeline = {
++      rounds: projectedRounds,
+       genderCounts: filter.genderCounts ? genderValues.map(gender => ({ gender, count: profiles.find(p => p.gender === gender)?._count ?? 0 })) : null,
+-      applications: applications.map(raw => {
+-        const ownSubmitted = raw.evaluations.some(e => e.interviewerId === membership.id && e.roundId === raw.roundId && e.submittedAt);
+-        const assignments = raw.interviewAssignments || [];
+-        const assigned = assignments.some(a => a.roundId === raw.roundId && a.memberId === membership.id);
+-        const caps = interviewCapabilities(membership);
+-        const canSeeRound = raw.studentId !== membership.userId && ((caps.readClosing && !assigned) || caps.participate && assigned && ownSubmitted);
+-        const roundScore = canSeeRound ? submittedScoreSummary(raw.evaluations.filter(e => e.roundId === raw.roundId), assignments.filter(a => a.roundId === raw.roundId && interviewCapabilities(a.member).participate).map(a => a.memberId)) : null;
+-        const safe = { ...raw }; delete (safe as Partial<typeof raw>).interviewAssignments;
+-        const app = { ...safe, evaluations: raw.evaluations.filter(e => raw.studentId !== membership.userId && e.submittedAt && (caps.participate && e.interviewerId === membership.id && assignments.some(a => a.memberId === membership.id && a.roundId === e.roundId) || canSeeRound && (e.roundId === raw.roundId || caps.readClosing))).map(e => ({ ...e, notes: null, applicantQuestions: null })) };
+-        const projected = !hasPermission(membership, "applicants.identify") || app.round.anonymousReview ? anonymousApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay)) : identifiedApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay), "crm");
+-        const canEvaluate = !ownSubmitted && raw.studentId !== membership.userId && (raw.round.anonymousReview ? hasPermission(membership, "applications.review") : caps.participate && assigned);
+-        return { ...projected, canEvaluate, publicationGuard:decisionPublicationGuard(raw), recruitmentOffer: raw.recruitmentOffer ?? null, roundScore };
+-      }),
++      applications,
+     };
++    return { pipeline, membership };
+   }, { isolationLevel: "RepeatableRead" });
+   } catch (error) {
+     // Never serialize the exception, query, identifiers, or applicant content.
+diff --git a/app/api/workspace/route.ts b/app/api/workspace/route.ts
+index 30b713af4979b88eddb06f2a636d2612133f5121..7b265320d2b6cbdcd48c2bd2c4e4c3ca5dcb1bb8 100644
+--- a/app/api/workspace/route.ts
++++ b/app/api/workspace/route.ts
+@@ -7,7 +7,8 @@ import { z } from "zod"
+ import { cookies } from "next/headers"
+ import { DEMO_COOKIE } from "@/lib/demo/access"
+ import { getDashboardReviewQueue, getClubWorkspaceOverview, getWorkspaceRounds } from "@/actions/club-overview"
+-import { getClubPipeline } from "@/actions/crm"
++import { getClubPipeline, getClubPipelineList, getClubPipelinePage, getClubPipelineSelection } from "@/actions/crm"
++import { pipelinePageQuery } from "@/lib/pipeline-page"
+ import { getOrganizationMemberManagement } from "@/actions/organization-members"
+ import { getOrganizationInvitations } from "@/actions/club-onboarding"
+ import { getClubDirectory, getPublicClub, getCorkboard } from "@/actions/club-directory"
+@@ -59,6 +60,9 @@ export async function GET(request: Request) {
+       case "overview": data = await getClubWorkspaceOverview(...clubArgs.parse(args)); break
+       case "members": data = await getOrganizationMemberManagement(...clubArgs.parse(args)); break
+       case "pipeline": data = await getClubPipeline(...z.tuple([z.string().uuid(), z.object({ applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), gender: z.enum(genderValues).optional(), genderCounts: z.boolean().optional() }).strict().optional()]).parse(args)); break
++      case "pipelineList": data = await getClubPipelineList(...z.tuple([z.string().uuid(), z.object({ applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), gender: z.enum(genderValues).optional(), genderCounts: z.boolean().optional() }).strict().optional()]).parse(Array.isArray(args) && args.length === 1 ? [args[0], {}] : args)); break
++      case "pipelinePage": data = await getClubPipelinePage(...z.tuple([z.string().uuid(), pipelinePageQuery]).parse(Array.isArray(args) && args.length === 1 ? [args[0], {}] : args)); break
++      case "pipelineSelection": data = await getClubPipelineSelection(...z.tuple([z.string().uuid(), pipelinePageQuery.omit({ cursor: true })]).parse(Array.isArray(args) && args.length === 1 ? [args[0], {}] : args)); break
+       case "rounds": data = await getWorkspaceRounds(...clubArgs.parse(args)); break
+       case "applicationSettings": data = await getApplicationSettings(...clubArgs.parse(args)); break
+       case "pipelineSettings": data = await getPipelineSettings(...clubArgs.parse(args)); break
+diff --git a/components/live-voting/board-decision-mode.tsx b/components/live-voting/board-decision-mode.tsx
+index a68b9e69b435e5d339a50aa5ab3bfb831de18242..bf0b28b6694064198a00f4d535ef390cf7c16258 100644
+--- a/components/live-voting/board-decision-mode.tsx
++++ b/components/live-voting/board-decision-mode.tsx
+@@ -6,7 +6,7 @@ import { compareAcademicYears } from "@/lib/recruitment-profile"
+ import { useCallback, useEffect, useRef, useState } from "react"
+ import { ApplicantDisplayPanel } from "@/components/applicant-intelligence"
+ import { getVotingWorkspace, createVotingSession, submitVotingBallot, commandVotingSession, seedVotingDemo } from "@/lib/workspace-api"
+-import type { getClubPipeline } from "@/lib/workspace-api"
++import type { getClubPipelineList } from "@/lib/workspace-api"
+ import type { AppStatus } from "@prisma/client"
+ import { useSearchParams } from "next/navigation";
+ import { useAuth } from "@/contexts/auth-context"
+@@ -18,13 +18,31 @@ import type { Decision } from "@/lib/voting-engine"
+ import { Button } from "@/components/ui/button"
+ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+ import "./voting-mode.css"
+-type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
++type Pipeline = Awaited<ReturnType<typeof getClubPipelineList>>
++type VotingApplicant = Pick<Pipeline["applications"][number], "id" | "roundId" | "status">
+ type Workspace = Awaited<ReturnType<typeof getVotingWorkspace>>
+ const labels = { PASS: "Pass", HOLD: "Hold / Fringe", NOT_PASS: "Do Not Pass", UNRESOLVED: "Unresolved" }
+-export function BoardDecisionMode(props: { applicants: Pipeline["applications"]; rounds: Pipeline["rounds"]; clubId: string; clubName: string; canDecide: boolean; onDecision: (id: string,status: AppStatus)=>void }) {
++export function BoardDecisionMode(props: { applicants: VotingApplicant[]; loadApplicants?: () => Promise<VotingApplicant[]>; rounds: Pipeline["rounds"]; clubId: string; clubName: string; canDecide: boolean; onDecision: (id: string,status: AppStatus)=>void }) {
++  const { loadApplicants } = props
+   const params = useSearchParams();
+   const [open,setOpen]=useState(params.get("voting") === "1")
+-  return <><Button onClick={()=>setOpen(true)}>Start voting</Button><Dialog open={open} onOpenChange={value => { if (!value && document.querySelector('[data-voting-saving="true"]')) return; setOpen(value) }}><DialogContent aria-describedby={undefined} className="oc-voting-stage inset-0 flex h-dvh w-screen max-w-none translate-x-0 translate-y-0 flex-col overflow-y-auto rounded-none bg-background p-6 sm:max-w-none"><DialogTitle>{props.clubName} · Recruitment voting</DialogTitle>{open&&<VotingBoard {...props} initialSessionId={params.get("sessionId") || undefined} />}</DialogContent></Dialog></>
++  const [visit,setVisit]=useState(0)
++  const [selection,setSelection]=useState<{ loader: typeof loadApplicants; visit: number; applicants: VotingApplicant[] } | null>(null)
++  const [failed,setFailed]=useState(false),[retry,setRetry]=useState(0)
++  useEffect(() => {
++    if (!open || !loadApplicants) return
++    let current = true
++    setSelection(null); setFailed(false)
++    void loadApplicants().then(applicants => { if (current) setSelection({ loader: loadApplicants, visit, applicants }) }).catch(() => { if (current) setFailed(true) })
++    return () => { current = false }
++  }, [open, loadApplicants, retry, visit])
++  const applicants = loadApplicants ? selection?.loader === loadApplicants && selection.visit === visit ? selection.applicants : null : props.applicants
++  function visibility(value: boolean) {
++    if (!value && document.querySelector('[data-voting-saving="true"]')) return
++    if (value) setVisit(current => current + 1)
++    setSelection(null); setFailed(false); setOpen(value)
++  }
++  return <><Button onClick={()=>visibility(true)}>Start voting</Button><Dialog open={open} onOpenChange={visibility}><DialogContent aria-describedby={undefined} className="oc-voting-stage inset-0 flex h-dvh w-screen max-w-none translate-x-0 translate-y-0 flex-col overflow-y-auto rounded-none bg-background p-6 sm:max-w-none"><DialogTitle>{props.clubName} · Recruitment voting</DialogTitle>{open && (failed ? <div role="alert"><p>Couldn’t load the complete applicant selection.</p><Button onClick={() => setRetry(value => value + 1)}>Retry selection</Button></div> : applicants ? <VotingBoard {...props} applicants={applicants} initialSessionId={params.get("sessionId") || undefined} /> : <p role="status">Loading applicant selection…</p>)}</DialogContent></Dialog></>
+ }
+ export function VotingBoard({ clubId, applicants, onDecision, initialSessionId }: Parameters<typeof BoardDecisionMode>[0] & { initialSessionId?: string }) {
+   const demo = useDemoMode()
+diff --git a/components/selected-club-workspace.tsx b/components/selected-club-workspace.tsx
+index 2777aa0d0fb3f4ebea5b87fbd3342936b17cbf20..162b0317fa199c00cb1ff1fc9bb80ca8695d736f 100644
+--- a/components/selected-club-workspace.tsx
++++ b/components/selected-club-workspace.tsx
+@@ -1,8 +1,9 @@
+ "use client"
+ 
+-import { useEffect, useMemo, useState } from "react"
++import { useEffect, useMemo, useRef, useState } from "react"
+ import { useAuth } from "@/contexts/auth-context"
+ import { useDemoMode } from "@/contexts/demo-context"
++import { recordWorkspaceRead } from "@/lib/workspace-read-diagnostics"
+ import { readWorkspace } from "@/lib/workspace-read"
+ import { Button } from "@/components/ui/button"
+ 
+@@ -10,7 +11,7 @@ export type SelectedClubWorkspaceKind = "members" | "pipeline" | "tasks" | "anno
+ 
+ // Only the selected tab starts work. Code and its original guarded GET overlap;
+ // neither module loading nor a previous tab's data can authorize this visit.
+-export async function loadSelectedClubWorkspace(kind: SelectedClubWorkspaceKind, clubId: string) {
++export async function loadSelectedClubWorkspace(kind: SelectedClubWorkspaceKind, clubId: string, mode: "applicants" | "decisions" | "rejected" = "applicants") {
+   switch (kind) {
+     case "members": {
+       const [module, data] = await Promise.all([
+@@ -22,7 +23,7 @@ export async function loadSelectedClubWorkspace(kind: SelectedClubWorkspaceKind,
+     case "pipeline": {
+       const [module, data] = await Promise.all([
+         import("@/components/views/leader-dashboard/live-leader-workspace"),
+-        readWorkspace<Awaited<ReturnType<typeof import("@/actions/crm").getClubPipeline>>>("pipeline", [clubId, { genderCounts: false }]),
++        readWorkspace<Awaited<ReturnType<typeof import("@/actions/crm").getClubPipelinePage>>>("pipelinePage", [clubId, { mode, genderCounts: false }]),
+       ])
+       return { kind, module, data } as const
+     }
+@@ -53,16 +54,20 @@ export function SelectedClubWorkspace({ kind, clubId, privacyScope, personalOnly
+   const [retry, setRetry] = useState(0)
+   // Same full identity/session ownership as interview reads. This is a mounted
+   // visit, not a cache: leaving or changing authority always starts a new GET.
+-  const owner = useMemo(() => ({ user, readAuthority, isImpersonating, clubId, kind, privacyScope, retry, demoReady: demo.ready, demoEnabled: demo.isDemoEnabled }), [user, readAuthority, isImpersonating, clubId, kind, privacyScope, retry, demo.ready, demo.isDemoEnabled])
++  const mode = rejectedOnly ? "rejected" : decisionsOnly ? "decisions" : "applicants"
++  const owner = useMemo(() => ({ user, readAuthority, isImpersonating, clubId, kind, privacyScope, retry, mode, demoReady: demo.ready, demoEnabled: demo.isDemoEnabled }), [user, readAuthority, isImpersonating, clubId, kind, privacyScope, retry, mode, demo.ready, demo.isDemoEnabled])
+   const [result, setResult] = useState<{ owner: object; value?: Loaded; failed?: boolean } | null>(null)
++  const lastRead = useRef<typeof owner | null>(null)
+   useEffect(() => {
+     if (!demo.ready || demo.isDemoEnabled || loading || !user) return
++    recordWorkspaceRead("selected", lastRead.current ? (Object.keys(owner) as (keyof typeof owner)[]).filter(key => lastRead.current![key] !== owner[key]) : ["mount"])
++    lastRead.current = owner
+     let current = true
+-    void loadSelectedClubWorkspace(kind, clubId).then(value => {
++    void loadSelectedClubWorkspace(kind, clubId, mode).then(value => {
+       if (current) setResult({ owner, value })
+     }).catch(() => { if (current) setResult({ owner, failed: true }) })
+     return () => { current = false }
+-  }, [kind, clubId, owner, demo.ready, demo.isDemoEnabled, loading, user])
++  }, [kind, clubId, mode, owner, demo.ready, demo.isDemoEnabled, loading, user])
+   const current = demo.ready && !demo.isDemoEnabled && !loading && result?.owner === owner ? result : null
+   if (current?.failed) return <div role="alert" className="space-y-3"><p>Could not load this workspace. Your access may have changed.</p><Button variant="outline" onClick={() => setRetry(value => value + 1)}>Retry workspace</Button></div>
+   const entry = current?.value
+diff --git a/components/views/leader-dashboard/live-applicant-views.tsx b/components/views/leader-dashboard/live-applicant-views.tsx
+index a4633b46f159249cefd96d9a6c40a7902fedd552..fb8004a3ff34d567a000229343136046611388c0 100644
+--- a/components/views/leader-dashboard/live-applicant-views.tsx
++++ b/components/views/leader-dashboard/live-applicant-views.tsx
+@@ -4,7 +4,7 @@ import { schedulingDateTime } from "@/lib/scheduling-config"
+ import { ShieldCheck } from "@/components/icons"
+ import { SortLabel } from "@/components/product/sort-label"
+ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+-import type { getClubPipeline } from "@/lib/workspace-api"
++import type { getClubPipelineList } from "@/lib/workspace-api"
+ import type { ApplicantSort } from "@/lib/live-applicant-sorting"
+ import { applicantLane, applicantLanes } from "@/lib/applicant-board"
+ import { applicationStatusLabels } from "@/lib/student-applications"
+@@ -13,11 +13,11 @@ import { Badge } from "@/components/ui/badge"
+ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
+ import { formatAverage } from "@/lib/interview-review-summary"
+ 
+-type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
++type Pipeline = Awaited<ReturnType<typeof getClubPipelineList>>
+ type Candidate = Pipeline["applications"][number]
+ export type ApplicantLane = (typeof applicantLanes)[number]["id"]
+-type Props = { applicants: Candidate[]; rounds: Pipeline["rounds"]; open: (app: Candidate) => void; compact: boolean; name: (app: Candidate) => string; average: (app: Candidate) => number | null; sort?: ApplicantSort; descending?: boolean; sortBy?: (key: ApplicantSort) => void; canMove?: (app: Candidate, lane: ApplicantLane) => boolean; move?: (app: Candidate, lane: ApplicantLane) => void; busy?: boolean }
+-export function ApplicantInterview({ app }: { app: Candidate }) {
++type Props = { applicants: Candidate[]; allApplicants?: Candidate[]; laneCounts?: Record<string, number>; rounds: Pipeline["rounds"]; open: (app: Candidate) => void; compact: boolean; name: (app: Candidate) => string; average: (app: Candidate) => number | null; sort?: ApplicantSort; descending?: boolean; sortBy?: (key: ApplicantSort) => void; canMove?: (app: Candidate, lane: ApplicantLane) => boolean; move?: (app: Candidate, lane: ApplicantLane) => void; busy?: boolean }
++export function ApplicantInterview({ app }: { app: Awaited<ReturnType<typeof import("@/lib/workspace-api").getClubPipeline>>["applications"][number] }) {
+   if (app.studentId.startsWith("anonymous-")) return <span>Withheld for anonymous review</span>
+   const selected = relevantInterview(app.bookings)
+   if (!selected) return <span>No booking recorded</span>
+@@ -45,17 +45,18 @@ export function LiveApplicantList({ applicants, rounds, open, compact, name, sor
+     <ul className="divide-y border-y xl:hidden">{applicants.map(app => <li key={app.id}><button type="button" data-applicant-id={app.id} onClick={() => open(app)} className="w-full space-y-3 rounded py-5 text-left focus-visible:outline-2 focus-visible:outline-ring"><span className="flex flex-wrap items-center justify-between gap-2"><ApplicantIdentity label={name(app)} anonymous={app.studentId.startsWith("anonymous-")} /><Badge data-application-status={app.status} variant="secondary">{applicationStatusLabels[app.status]}</Badge></span><span className="block text-xs text-muted-foreground">{rounds.find(round => round.id === app.roundId)?.name || "Round unavailable"} · GPA {app.student.studentProfile?.gpa?.toFixed(2) ?? "—"} · SAT {app.student.studentProfile?.satScore ?? "—"} · ACT {app.student.studentProfile?.actScore ?? "—"}</span><Review app={app} /><span className="block text-xs">Open applicant →</span></button></li>)}</ul>
+   </>
+ }
+-export function LiveApplicantKanban({ applicants, rounds, open, name, canMove, move, busy }: Props) {
++export function LiveApplicantKanban({ applicants, allApplicants = applicants, laneCounts, rounds, open, name, canMove, move, busy }: Props) {
+   const dragging = useRef<string | null>(null)
+   const [over, setOver] = useState<ApplicantLane | null>(null)
+   return <div className="oc-applicant-board grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">{applicantLanes.map(lane => {
+     const cards = applicants.filter(app => applicantLane(app.status) === lane.id)
+-    return <section key={lane.id} aria-label={`${lane.title} applicants`} data-drop-active={over === lane.id} className="min-w-0 rounded-lg border bg-muted/30 p-3 data-[drop-active=true]:border-primary data-[drop-active=true]:bg-secondary" onDragOver={event => { const app = applicants.find(candidate => candidate.id === dragging.current); if (!busy && app && canMove?.(app, lane.id)) { event.preventDefault(); event.dataTransfer.dropEffect = "move"; setOver(lane.id) } }} onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOver(null) }} onDrop={event => { event.preventDefault(); const app = applicants.find(candidate => candidate.id === dragging.current); dragging.current = null; setOver(null); if (!busy && app && canMove?.(app, lane.id)) move?.(app, lane.id) }}><header className="mb-4"><h3 className="oc-card-heading flex items-center justify-between">{lane.title}<span className="text-xs font-normal text-muted-foreground">{cards.length}</span></h3><p className="mt-1 text-xs text-muted-foreground">{lane.description}</p></header>
++    const total = laneCounts?.[lane.id] ?? allApplicants.filter(app => applicantLane(app.status) === lane.id).length
++    return <section key={lane.id} aria-label={`${lane.title} applicants`} data-drop-active={over === lane.id} className="min-w-0 rounded-lg border bg-muted/30 p-3 data-[drop-active=true]:border-primary data-[drop-active=true]:bg-secondary" onDragOver={event => { const app = applicants.find(candidate => candidate.id === dragging.current); if (!busy && app && canMove?.(app, lane.id)) { event.preventDefault(); event.dataTransfer.dropEffect = "move"; setOver(lane.id) } }} onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOver(null) }} onDrop={event => { event.preventDefault(); const app = applicants.find(candidate => candidate.id === dragging.current); dragging.current = null; setOver(null); if (!busy && app && canMove?.(app, lane.id)) move?.(app, lane.id) }}><header className="mb-4"><h3 className="oc-card-heading flex items-center justify-between">{lane.title}<span className="text-xs font-normal text-muted-foreground">{total}</span></h3><p className="mt-1 text-xs text-muted-foreground">{lane.description}</p></header>
+       <ul className="space-y-3">{cards.map(app => <li key={app.id} draggable={!busy && applicantLanes.some(target => canMove?.(app, target.id))} onDragStart={event => { dragging.current = app.id; event.dataTransfer.setData("text/plain", app.id); event.dataTransfer.effectAllowed = "move" }} onDragEnd={() => { dragging.current = null; setOver(null) }} className="rounded-md border bg-card hover:border-primary">
+         <button type="button" data-applicant-id={app.id} onClick={() => { if (!dragging.current) open(app) }} className="w-full space-y-3 rounded-md p-4 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"><ApplicantIdentity label={name(app)} anonymous={app.studentId.startsWith("anonymous-")} /><span className="block text-xs text-muted-foreground">{rounds.find(round => round.id === app.roundId)?.name || "Round unavailable"}</span><Badge data-application-status={app.status} variant="secondary">{applicationStatusLabels[app.status]}</Badge><span className="block text-xs text-muted-foreground"><Review app={app} /></span><span className="block border-t pt-3 text-xs">Review & actions →</span></button>
+         {applicantLanes.some(target => canMove?.(app, target.id)) && <label className="flex items-center gap-2 border-t p-3 text-xs">Move to<select aria-label={`Move ${name(app)} to lane`} disabled={busy} value="" className="min-h-11 min-w-0 flex-1 rounded border bg-background px-2" onChange={event => move?.(app, event.target.value as ApplicantLane)}><option value="">Choose lane</option>{applicantLanes.filter(target => canMove?.(app, target.id)).map(target => <option key={target.id} value={target.id}>{target.title}</option>)}</select></label>}
+       </li>)}</ul>
+-      {!cards.length && <p className="py-6 text-xs text-muted-foreground">No applicants in this lane with the current filters.</p>}
++      {!cards.length && <p className="py-6 text-xs text-muted-foreground">{total ? "No applicants from this lane on this page." : "No applicants in this lane with the current filters."}</p>}
+     </section>
+   })}</div>
+ }
+diff --git a/components/views/leader-dashboard/live-leader-workspace.tsx b/components/views/leader-dashboard/live-leader-workspace.tsx
+index 50e8f66f4b3aab816a938f027576eace84f73c3f..295d64d799b48a25a5973241bd810dbf11e22101 100644
+--- a/components/views/leader-dashboard/live-leader-workspace.tsx
++++ b/components/views/leader-dashboard/live-leader-workspace.tsx
+@@ -1,5 +1,8 @@
+ "use client"
+ import "@/components/product/operational-dashboard.css"
++import { type PipelinePageQuery, type PipelineCursor } from "@/lib/pipeline-page"
++import { usePipelinePage } from "@/hooks/use-pipeline-page"
++import { usePipelineApplicant } from "@/hooks/use-pipeline-applicant"
+ import { useEditorDraft } from "@/hooks/use-editor-draft"
+ import { AutosaveStatus } from "@/components/ui/autosave-status"
+ import { ApplicationCycleAssignment } from "@/components/recruitment-cycles";
+@@ -10,11 +13,10 @@ import { isInterviewRecruitmentRound } from "@/lib/recruitment-lifecycle"
+ import { findReviewerEvaluation } from "@/lib/reviewer-evaluation"
+ import { profilePhotoSource } from "@/lib/profile-photo"
+ import { genderValues } from "@/lib/student-profile"
+-import { compareAcademicYears } from "@/lib/recruitment-profile"
+ import { ApplicantDisplayPanel } from "@/components/applicant-intelligence"
+ import { applicationAttachmentUrl } from "@/lib/student-applications"
+ import { applicationDecisionGroup, decisionGroups, type DecisionGroup } from "@/lib/application-decisions"
+-import { compareApplicants, type ApplicantSort } from "@/lib/live-applicant-sorting"
++import { type ApplicantSort } from "@/lib/live-applicant-sorting"
+ import { applicantLane } from "@/lib/applicant-board"
+ import { LiveApplicantList, LiveApplicantKanban, LiveDecisionList, type ApplicantLane } from "./live-applicant-views"
+ import { useDemoMode } from "@/contexts/demo-context"
+@@ -27,10 +29,10 @@ import Link from "next/link"
+ import { canLeaveWorkspace } from "@/lib/product-navigation"
+ 
+ import { WorkspaceLoading } from "@/components/workspace-loading"
+-import { useEffect, useMemo, useRef, useState } from "react"
++import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+ import { ChevronLeft, ChevronRight, RefreshCw, Search } from "@/components/icons"
+ import { BoardDecisionMode } from "@/components/live-voting/board-decision-mode"
+-import { getClubPipeline, moveApplicantRound, setApplicationStatus, reconsiderRejectedApplication, revokeRecruitmentOffer } from "@/lib/workspace-api"
++import { getClubPipelinePage, getClubPipelineSelection, moveApplicantRound, setApplicationStatus, reconsiderRejectedApplication, revokeRecruitmentOffer } from "@/lib/workspace-api"
+ import { submitEvaluation } from "@/lib/workspace-api"
+ import { useApplicationState } from "@/lib/application-state"
+ import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
+@@ -58,7 +60,7 @@ import {
+ } from "@/components/ui/dialog"
+ import { Badge } from "@/components/ui/badge"
+ 
+-type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
++type Pipeline = Awaited<ReturnType<typeof getClubPipelinePage>>
+ type Candidate = Pipeline["applications"][number]
+ const selectStyle =
+   "h-9 max-w-full rounded-md border border-border bg-background px-2 text-sm focus-visible:outline-2 focus-visible:outline-ring"
+@@ -133,11 +135,12 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+   const previewId = preview?.applicationId
+   const demo = useDemoMode()
+   const { leaderFocus, clearLeaderFocus } = useApplicationState()
+-  const [data, setData] = useState<Pipeline | null>(initialData)
++  const auth = useAuth()
++  const authority = useMemo(() => ({ user: auth.user, readAuthority: auth.readAuthority, support: auth.isImpersonating, loading: auth.loading, membership, demoReady: demo.ready, demoEnabled: demo.isDemoEnabled }), [auth.user, auth.readAuthority, auth.isImpersonating, auth.loading, membership, demo.ready, demo.isDemoEnabled])
+   const [error, setError] = useState("")
+-  const [loading, setLoading] = useState(!initialData)
+   const [revision, setRevision] = useState(0)
+   const [query, setQuery] = useState("")
++  const [position, setPosition] = useState<{ key: string; cursor: PipelineCursor } | null>(null)
+   const [round, setRound] = useState("")
+   const [decisionGroup, setDecisionGroup] = useState<DecisionGroup>("pending")
+   const [status, setStatus] = useState("")
+@@ -155,7 +158,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+   const [sort, setSort] = useState<ApplicantSort>("name")
+   const [descending, setDescending] = useState(false)
+   const [activeId, setActiveId] = useState<string | null>(null)
+-  const [busy, setBusy] = useState(false)
++  const [writing, setBusy] = useState(false)
+   const [message, setMessage] = useState("")
+   const [reconsiderReason, setReconsiderReason] = useState("")
+   const [score, setScore] = useState("")
+@@ -167,33 +170,47 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+   const [boardMove, setBoardMove] = useState<{ id: string; lane: ApplicantLane } | null>(null)
+   const [boardError, setBoardError] = useState("")
+   const mutating = useRef(false)
+-  const firstRead = useRef(validatedInitialData && !!initialData)
+-  const retained = useRef(data), publish = useRef(onData)
+-  retained.current = data
++  const detail = usePipelineApplicant(membership.clubId, previewId || activeId, revision)
++  const readQuery = useMemo<PipelinePageQuery>(() => ({
++    query, mode: rejectedOnly ? "rejected" : decisionsOnly ? "decisions" : "applicants", decisionGroup,
++    ...(round ? { roundId: round } : {}), ...(gender ? { gender: gender as (typeof genderValues)[number] } : {}), genderCounts: showGenderCounts,
++    ...(status ? { status: status as PipelinePageQuery["status"] } : {}), ...(review ? { review: review as PipelinePageQuery["review"] } : {}),
++    ...(major ? { major } : {}), ...(year ? { year } : {}),
++    ...(gpa ? { gpa: Number(gpa) } : {}), ...(sat ? { sat: Number(sat) } : {}), ...(act ? { act: Number(act) } : {}), ...(rating ? { rating: Number(rating) } : {}), sort, descending,
++  }), [query, rejectedOnly, decisionsOnly, decisionGroup, round, gender, showGenderCounts, status, review, major, year, gpa, sat, act, rating, sort, descending])
++  const selectionKey = JSON.stringify([membership.clubId, membership.id, membership.userId, readQuery])
++  const cursor = position?.key === selectionKey ? position.cursor : undefined
++  // A changed filter starts a new selection. Clearing that filter later must
++  // not resurrect the previous selection's page cursor.
++  useEffect(() => { if (position && position.key !== selectionKey) setPosition(null) }, [position, selectionKey])
++  const pageQuery = useMemo(() => ({ ...readQuery, ...(cursor ? { cursor } : {}) }), [readQuery, cursor])
++  const { data: listData, loading: listLoading, ready, invalid: invalidFilter, error: readError, setData, acceptPage, isCurrent } = usePipelinePage({
++    clubId: membership.clubId, query: pageQuery, revision, authority,
++    enabled: !previewId && demo.ready && !auth.loading && !!auth.user, initialData, validatedInitialData,
++  })
++  const latestAuthority = useRef(authority); latestAuthority.current = authority
++  const requestKey = JSON.stringify([selectionKey, cursor, revision])
++  const latestRequest = useRef(requestKey); latestRequest.current = requestKey
++  const pageReady = !!previewId || ready
++  const updating = !previewId && (!pageReady && !invalidFilter || !listData)
++  const busy = writing || updating || invalidFilter
++  const data = previewId ? detail.pipeline : listData
++  const loading = previewId ? !detail.pipeline && !detail.error : listLoading
++  const publish = useRef(onData)
+   publish.current = onData
+-  useEffect(() => { publish.current?.(data) }, [data])
++  useEffect(() => { if (!previewId) publish.current?.(pageReady ? listData : null) }, [listData, pageReady, previewId])
++  const roundsForReview = useRef(data?.rounds)
++  roundsForReview.current = data?.rounds
+   const heading = useRef<HTMLHeadingElement>(null)
+   const search = useRef<HTMLInputElement>(null)
+-  useEffect(() => {
+-    if (firstRead.current) { firstRead.current = false; return }
+-    let current = true
+-    setLoading(!retained.current)
+-    setError("")
+-    
+-    getClubPipeline(membership.clubId, { ...(previewId ? { applicationId: previewId } : {}), ...(round ? { roundId: round } : {}), ...(gender ? { gender: gender as (typeof genderValues)[number] } : {}), genderCounts: showGenderCounts })
+-      .then((result) => {
+-        if (current) setData(result)
+-      })
+-      .catch(() => {
+-        if (current) { setData(null); setError("Couldn’t load this club’s applicants. Please try again.") }
+-      })
+-      .finally(() => {
+-        if (current) setLoading(false)
+-      })
+-    return () => {
+-      current = false
+-    }
+-  }, [membership.clubId, revision, round, gender, showGenderCounts, previewId])
++  useEffect(() => { setError("") }, [authority, revision, pageQuery])
++  const selectionRequestKey = JSON.stringify([selectionKey, revision])
++  const latestSelectionRequest = useRef(selectionRequestKey); latestSelectionRequest.current = selectionRequestKey
++  const loadSelection = useCallback(async () => {
++    const result = await getClubPipelineSelection(membership.clubId, readQuery)
++    if (latestAuthority.current !== authority || latestSelectionRequest.current !== selectionRequestKey) throw new Error("Applicant selection changed")
++    return result.applications
++  }, [membership.clubId, readQuery, authority, selectionRequestKey])
+   useEffect(() => {
+     const key = (event: KeyboardEvent) => {
+       const element = event.target as HTMLElement
+@@ -209,61 +226,33 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+     window.addEventListener("keydown", key)
+     return () => window.removeEventListener("keydown", key)
+   }, [activeId])
+-  const applicants = useMemo(() => (data?.applications || []).filter(a=>rejectedOnly?a.status==="REJECTED":decisionsOnly||a.status!=="REJECTED"), [data,rejectedOnly,decisionsOnly])
+-  const filtered = useMemo(
+-    () =>
+-      applicants
+-        .filter((app) => {
+-          const profile = app.student.studentProfile
+-          return (
+-            `${name(app)} ${app.student.email} ${profile?.major || ""}`
+-              .toLowerCase()
+-              .includes(query.trim().toLowerCase()) &&
+-            (rejectedOnly ? app.status === "REJECTED" : decisionsOnly || app.status !== "REJECTED") &&
+-            (!round || app.roundId === round) &&
+-            (!status || app.status === status) &&
+-            (!decisionsOnly || applicationDecisionGroup(app.status) === decisionGroup) &&
+-            (!major || profile?.major === major) &&
+-            (!year || String(profile?.academicYear) === year) &&
+-            (!gpa || (profile?.gpa != null && profile.gpa > Number(gpa))) &&
+-            (!rating || (average(app) != null && average(app)! >= Number(rating))) &&
+-            (!act || (profile?.actScore != null && profile.actScore > Number(act))) &&
+-            (!sat || (profile?.satScore != null && profile.satScore > Number(sat))) &&
+-            (!review ||
+-              (review === "unreviewed"
+-                ? app.evaluations.length === 0
+-                : app.evaluations.some((item) => item.interviewerId === membership.id)))
+-          )
+-        })
+-        .sort((a, b) => compareApplicants(a, b, sort, descending, data?.rounds)),
+-    [
+-      applicants,
+-      data?.rounds,
+-      rejectedOnly,
+-      decisionsOnly,
+-      decisionGroup,
+-      query,
+-      round,
+-      status,
+-      major,
+-      year,
+-      gpa,
+-      sat,
+-      act,
+-      rating,
+-      review,
+-      sort,
+-      descending,
+-      membership.id,
+-    ],
+-  )
++  const applicants = data?.applications || []
++  const filtered = applicants
++  const pageInfo = !previewId ? listData?.page : undefined
++  const total = pageInfo?.total ?? filtered.length
++  const baseTotal = pageInfo?.baseTotal ?? applicants.length
++  const displayed = { items: pageReady ? filtered : [], page: pageInfo?.index ?? 0, count: pageInfo?.count ?? 1, start: pageInfo?.start ?? 0 }
++  function changePage(next: PipelineCursor | null) {
++    if (!next || busy) return
++    focusPage.current = true
++    setPosition({ key: selectionKey, cursor: next })
++  }
++  const workspaceElement = useRef<HTMLDivElement>(null)
++  const focusPage = useRef(false)
++  useEffect(() => {
++    if (!focusPage.current || !pageReady) return
++    focusPage.current = false
++    if (activeId) return
++    const frame = requestAnimationFrame(() => Array.from(workspaceElement.current?.querySelectorAll<HTMLButtonElement>("[data-applicant-id]") ?? []).find(button => button.getClientRects().length > 0)?.focus())
++    return () => cancelAnimationFrame(frame)
++  }, [displayed.page, activeId, pageReady])
+   const previewOpened = useRef(false), previewOpen = useRef<(app: Candidate) => void>(() => {})
+   useEffect(() => {
+     if (!previewId || !data || loading || previewOpened.current) return
+     const target = data.applications.find(app => app.id === previewId)
+     if (target) { previewOpened.current = true; previewOpen.current(target) }
+   }, [previewId, data, loading])
+-  const active = applicants.find((app) => app.id === activeId)
++  const active = activeId ? detail.application : null
+   const canEvaluate = active?.canEvaluate === true
+   const dirty = canEvaluate && JSON.stringify([score, notes]) !== baseline
+   const draftSave = useEditorDraft({
+@@ -281,21 +270,21 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+     }
+     clearLeaderFocus()
+   }, [data, loading, leaderFocus, membership.clubId, clearLeaderFocus])
+-  function open(app?: Candidate) {
++  function open(app?: Pick<Candidate, "id" | "roundId">, located = false) {
+     if (busy) return
+     const apply = () => {
+     setActiveId(app?.id || null)
++    if (app && !located && !previewId && pageInfo && !filtered.some(item => item.id === app.id)) {
++      setPosition({ key: selectionKey, cursor: { id: app.id, direction: "at", scope: pageInfo.scope } })
++    }
+     if (!app) { setQuickQueue(null); preview?.onClose() }
+     setMessage("")
+     setDecision("")
+     if (app) {
+-      const mine = findReviewerEvaluation(app.evaluations, membership.id, data?.rounds.find(item => item.id === app.roundId))
+-      const value = mine ? String(mine.score) : ""
+-      setScore(value)
+-      setNotes(mine?.notes || "")
+-      setBaseline(JSON.stringify([value, mine?.notes || ""]))
++      setScore("")
++      setNotes("")
++      setBaseline(JSON.stringify(["", ""]))
+       setTargetRound(app.roundId)
+-      requestAnimationFrame(() => heading.current?.focus())
+     } else
+       requestAnimationFrame(() => {
+         Array.from(
+@@ -310,6 +299,36 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+     if (active?.canEvaluate && (draftSave.dirty || draftSave.saving)) void draftSave.flush().then(apply).catch(() => {})
+     else apply()
+   }
++  async function navigateApplicant(direction: -1 | 1) {
++    if (busy || mutating.current || activeIndex < 0) return
++    const adjacent = filtered[activeIndex + direction]
++    if (adjacent) { open(adjacent); return }
++    const next = direction === 1 ? pageInfo?.next : pageInfo?.previous
++    if (!next) return
++    mutating.current = true; setBusy(true)
++    try {
++      if (canEvaluate && (draftSave.dirty || draftSave.saving)) await draftSave.flush()
++      if (!isCurrent()) return
++      const nextQuery = { ...readQuery, cursor: next }
++      const adjacentPage = await getClubPipelinePage(membership.clubId, nextQuery)
++      if (!acceptPage(adjacentPage, nextQuery)) return
++      setPosition({ key: selectionKey, cursor: next })
++      const target = direction === 1 ? adjacentPage.applications[0] : adjacentPage.applications.at(-1)
++      if (target) open(target, true)
++    } catch { setMessage("Couldn’t load the next applicant. Your review stays open.") }
++    finally { mutating.current = false; setBusy(false) }
++  }
++
++  useEffect(() => {
++    if (!active) return
++    const mine = findReviewerEvaluation(active.evaluations, membership.id, roundsForReview.current?.find(item => item.id === active.roundId))
++    const value = mine ? String(mine.score) : ""
++    setScore(value)
++    setNotes(mine?.notes || "")
++    setBaseline(JSON.stringify([value, mine?.notes || ""]))
++    setTargetRound(active.roundId)
++    requestAnimationFrame(() => heading.current?.focus())
++  }, [active, membership.id])
+   previewOpen.current = open
+   async function mutate(kind: "review" | "round" | "decision") {
+     if (!active || mutating.current) return
+@@ -343,8 +362,8 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+                         ...app,
+                         canEvaluate: false,
+                         evaluations: [
+-                          ...app.evaluations.filter((item) => item.id !== result.evaluation.id),
+-                          result.evaluation,
++                          ...app.evaluations,
++                          { interviewerId: result.evaluation.interviewerId },
+                         ],
+                       }
+                     : app,
+@@ -355,6 +374,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+         await draftSave.clear()
+         setBaseline(JSON.stringify([score, notes]))
+         setMessage("Evaluation saved.")
++        setRevision(value => value + 1)
+       } else if (kind === "round") {
+         await moveApplicantRound({
+           clubId: membership.clubId,
+@@ -404,10 +424,12 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+   async function writeStatus(app: Candidate, status: "IN_REVIEW" | "INTERVIEWING" | "WAITLISTED" | "ACCEPTED" | "REJECTED") {
+     await setApplicationStatus({ clubId: membership.clubId, applicationId: app.id, status, expectedStatus: app.status === "DRAFTING" ? undefined : app.status })
+     try {
+-      const refreshed = await getClubPipeline(membership.clubId, { ...(previewId ? { applicationId: previewId } : {}), ...(round ? { roundId: round } : {}), ...(gender ? { gender: gender as (typeof genderValues)[number] } : {}), genderCounts: showGenderCounts })
+-      setData(refreshed)
++      if (!isCurrent()) throw new Error("Applicant scope changed")
++      const refreshed = await getClubPipelinePage(membership.clubId, pageQuery)
++      if (!setData(refreshed)) throw new Error("Applicant scope changed")
+       return refreshed
+     } catch (error) {
++      if (!isCurrent()) throw error
+       setData(null); setActiveId(null); setQuickQueue(null)
+       setError("The status was saved, but applicants could not be refreshed. Reload to check current data and access.")
+       throw error
+@@ -425,10 +447,11 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+     if (!active || !canDecide || !pendingCandidate(active) || mutating.current || !quickQueue) return
+     mutating.current = true; setBusy(true); setMessage("")
+     try {
+-      await draftSave.flush()
+-      const refreshed = await writeStatus(active, status)
++      if (canEvaluate && (draftSave.dirty || draftSave.saving)) await draftSave.flush()
++      await writeStatus(active, status)
+       const remaining = quickQueue.filter(id => id !== active.id)
+-      const next = remaining.map(id => refreshed.applications.find(app => app.id === id)).find(app => app && pendingCandidate(app))
++      const selection = await loadSelection()
++      const next = remaining.map(id => selection.find(app => app.id === id)).find(app => app?.canQuickReview)
+       setQuickQueue(remaining)
+       // Release the guard before opening the next profile; identity comes from the refreshed projection.
+       mutating.current = false; setBusy(false)
+@@ -437,10 +460,33 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+     } catch { setMessage("This decision could not be saved. The candidate stays open. Refresh and check your access before retrying.") }
+     finally { mutating.current = false; setBusy(false) }
+   }
+-  function startQuickReview() {
+-    const queue = filtered.filter(pendingCandidate)
+-    if (!canDecide || !queue.length) return
+-    setQuickQueue(queue.map(app => app.id)); open(queue[0])
++  async function startQuickReview() {
++    if (!canDecide || busy || mutating.current) return
++    const owner = authority, key = requestKey
++    mutating.current = true; setBusy(true); setMessage("")
++    try {
++      const queue = (await loadSelection()).filter(app => app.canQuickReview)
++      if (latestAuthority.current !== owner || latestRequest.current !== key) return
++      setQuickQueue(queue.map(app => app.id))
++      if (queue[0]) open(queue[0])
++    } catch { setMessage("Couldn’t load the complete review selection. Please try again.") }
++    finally { mutating.current = false; setBusy(false) }
++  }
++  async function skipQuickReview() {
++    if (!active || !quickQueue || busy || mutating.current) return
++    const owner = authority, key = requestKey
++    mutating.current = true; setBusy(true)
++    try {
++      if (canEvaluate && (draftSave.dirty || draftSave.saving)) await draftSave.flush()
++      const remaining = quickQueue.filter(id => id !== active.id)
++      const selection = await loadSelection()
++      if (latestAuthority.current !== owner || latestRequest.current !== key) return
++      const next = remaining.map(id => selection.find(app => app.id === id)).find(app => app?.canQuickReview)
++      setQuickQueue(remaining)
++      if (next) open(next)
++      else open()
++    } catch { setMessage("Couldn’t refresh the complete review selection. Your review stays open.") }
++    finally { mutating.current = false; setBusy(false) }
+   }
+   function sortBy(key: ApplicantSort) {
+     if (sort === key) setDescending((value) => !value)
+@@ -450,35 +496,37 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+     }
+   }
+   if (loading) return <WorkspaceLoading label="Loading applicants…" />
+-  if (!data || error)
++  if (!data || error || readError)
+     return (
+       <div role="alert" className="space-y-3">
+-        <p>{error || "No data available."}</p>
+-        <Button variant="outline" onClick={() => setRevision((value) => value + 1)}>
++        <p>{error || (readError ? "Couldn’t load this club’s applicants. Your access may have changed." : previewId && detail.error ? "Couldn’t load this applicant. Your access may have changed." : "No data available.")}</p>
++        <Button variant="outline" onClick={() => { setError(""); setPosition(null); setRevision((value) => value + 1) }}>
+           Try again
+         </Button>
+       </div>
+     )
+   return (
+-    <div className="oc-live-pipeline space-y-6" data-unsaved={draftSave.dirty} data-saving={busy}>
++    <div ref={workspaceElement} className="oc-live-pipeline space-y-6" data-unsaved={draftSave.dirty} data-saving={busy}>
+       <div hidden={!!preview}>
+       {!active && message && <p role="status" className="text-sm">{message}</p>}
+       {decisionsOnly && <>
+-        <div role="group" aria-label="Decision groups" className="flex flex-wrap gap-1 border-b pb-3">{decisionGroups.map(group => <Button key={group.id} variant={decisionGroup === group.id ? "secondary" : "ghost"} aria-pressed={decisionGroup === group.id} onClick={() => setDecisionGroup(group.id)}>{group.label}<span className="ml-2 text-xs font-normal text-muted-foreground">{applicants.filter(app => applicationDecisionGroup(app.status) === group.id).length}</span></Button>)}</div>
++        <div role="group" aria-label="Decision groups" className="flex flex-wrap gap-1 border-b pb-3">{decisionGroups.map(group => <Button key={group.id} variant={decisionGroup === group.id ? "secondary" : "ghost"} aria-pressed={decisionGroup === group.id} onClick={() => setDecisionGroup(group.id)}>{group.label}<span className="ml-2 text-xs font-normal text-muted-foreground">{listData?.facets.decisions[group.id] ?? 0}</span></Button>)}</div>
+         <p className="text-sm text-muted-foreground">{decisionGroup === "pending" ? "Submitted, in-review, and interviewing applications without a recorded decision. Round and status remain separate." : "Recorded application outcomes, visible to the applicant."} Acceptance does not automatically create club membership.</p>
+       </>}
+ {!decisionsOnly && !rejectedOnly && <>
+       <section aria-label="Recruitment review" className="flex flex-wrap items-center justify-between gap-4 border-y py-4">
+         <div><h2 className="oc-card-heading">Recruitment review</h2><p className="mt-1 text-xs text-muted-foreground">Review together or work through candidates one at a time.</p></div>
+         <div className="flex flex-wrap gap-2">
+-          {canDecide && <Button variant="outline" disabled={busy || !filtered.some(pendingCandidate)} onClick={startQuickReview}>Quick review</Button>}
++          {canDecide && <Button variant="outline" disabled={busy || !listData?.facets.quickReview} onClick={() => void startQuickReview()}>Quick review</Button>}
+       {hasPermission(membership, "applications.review") && (["decisions.view", "decisions.manage", "decisions.vote"] as const).some(permission => hasPermission(membership, permission)) && <BoardDecisionMode
+         applicants={filtered}
++        loadApplicants={loadSelection}
+         rounds={data.rounds}
+         clubId={membership.clubId}
+         clubName={membership.club.name}
+         canDecide={hasPermission(membership, "decisions.manage") && hasPermission(membership, "applicants.identify")}
+-        onDecision={(id, status) =>
++        onDecision={(id, status) => {
++          setRevision(value => value + 1)
+           setData((previous) =>
+             previous
+               ? {
+@@ -489,7 +537,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+                 }
+               : previous,
+           )
+-        }
++        }}
+       />}
+ 
+           <Button variant="outline" asChild><Link href={`/club/${membership.clubId}/workspace?section=recruitment&tool=${decisionsOnly ? "applicants" : "decisions"}`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>{decisionsOnly ? "Review applicants" : "Review decisions"}</Link></Button>
+@@ -573,12 +621,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+             onChange={(event) => setMajor(event.target.value)}
+           >
+             <option value="">All majors</option>
+-            {[
+-              ...new Set(
+-                applicants.map((app) => app.student.studentProfile?.major).filter(Boolean),
+-              ),
+-            ]
+-              .sort()
++            {(listData?.facets.majors ?? [])
+               .map((value) => (
+                 <option key={value}>{value}</option>
+               ))}
+@@ -590,14 +633,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+             onChange={(event) => setYear(event.target.value)}
+           >
+             <option value="">All years</option>
+-            {[
+-              ...new Set(
+-                applicants.flatMap((app) =>
+-                  app.student.studentProfile ? [app.student.studentProfile.academicYear] : [],
+-                ),
+-              ),
+-            ]
+-              .sort(compareAcademicYears)
++            {(listData?.facets.years ?? [])
+               .map((value) => (
+                 <option key={value}>{value}</option>
+               ))}
+@@ -639,7 +675,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+       </div>
+       <div className="flex items-center justify-between">
+         <p className="text-xs text-muted-foreground" role="status">
+-          {filtered.length} {decisionsOnly ? "applications in this selection" : `of ${applicants.length} applicants · scores out of 10`}
++          {total} {decisionsOnly ? "applications in this selection" : `of ${baseTotal} applicants · scores out of 10`}
+         </p>
+         {(query || round || status || review || major || year || gpa || sat || act || rating) && (
+           <Button
+@@ -663,11 +699,16 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+       <div className="flex flex-wrap items-center gap-3"><label className="text-sm">Sort applicants <select aria-label="Sort applicants" className={selectStyle} value={sort} onChange={event => sortBy(event.target.value as ApplicantSort)}><option value="name">Name / anonymous ID</option><option value="year">Class year</option><option value="status">Status</option><option value="gpa">GPA</option><option value="sat">SAT</option><option value="act">ACT</option><option value="round">Round</option><option value="score">Rating</option></select></label><Button variant="ghost" size="sm" onClick={() => setDescending(value => !value)}>{descending ? "Descending ↓" : "Ascending ↑"}</Button></div>
+       {view === "kanban" && <p className="text-xs leading-6 text-muted-foreground">Drag a candidate to another column or use Move to. Review the change before it is saved. Interview moves require an interview round.</p>}
+       {rejectedOnly&&<p>Rejected applications are retained here with their reviews and decision history. Reconsideration returns an application to review; it does not change the student’s account or membership.</p>}
+-      {!filtered.length ? <p role="status" className="border-y py-10 text-sm text-muted-foreground">{applicants.length ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No rejected applications. Published rejections appear here with their history preserved." : "Submitted applications will appear here. Student drafts stay private."}</p> : decisionsOnly ? <LiveDecisionList applicants={filtered} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} applicants={filtered} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList sort={sort} descending={descending} sortBy={sortBy} applicants={filtered} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
++      {invalidFilter ? <p role="alert">Enter filters within the displayed numeric ranges.</p> : updating ? <p role="status" aria-live="polite">Updating applicants…</p> : !filtered.length ? <p role="status" className="border-y py-10 text-sm text-muted-foreground">{baseTotal ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No rejected applications. Published rejections appear here with their history preserved." : "Submitted applications will appear here. Student drafts stay private."}</p> : decisionsOnly ? <LiveDecisionList applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} laneCounts={listData?.facets.lanes} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
++      {displayed.count > 1 && <nav aria-label="Applicant pages" className="flex flex-wrap items-center justify-between gap-3">
++        <Button variant="outline" aria-label="Previous applicant page" disabled={busy || !pageInfo?.previous} onClick={() => changePage(pageInfo?.previous ?? null)}>Previous page</Button>
++        <p role="status" className="text-sm">Page {displayed.page + 1} of {displayed.count} · Showing {displayed.start + 1}–{displayed.start + displayed.items.length} of {total}</p>
++        <Button variant="outline" aria-label="Next applicant page" disabled={busy || !pageInfo?.next} onClick={() => changePage(pageInfo?.next ?? null)}>Next page</Button>
++      </nav>}
+       </div>
+       {preview && !active && !data.applications.length && <p role="alert">This applicant is no longer available. <Button onClick={preview.onClose}>Close preview</Button></p>}
+       <Sheet
+-        open={!!active}
++        open={!!activeId}
+         onOpenChange={(value) => {
+           if (!value) open()
+         }}
+@@ -679,6 +720,10 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+             if (dirty || busy) event.preventDefault()
+           }}
+         >
++          {activeId && !active && <>
++            <SheetHeader><SheetTitle>Applicant review</SheetTitle><SheetDescription>{detail.error ? "This applicant could not be loaded. Your access may have changed." : "Loading applicant…"}</SheetDescription></SheetHeader>
++            {detail.error && <div role="alert"><Button variant="outline" onClick={detail.retry}>Retry applicant</Button></div>}
++          </>}
+           {active && (
+             <>
+               {preview?.onNext && <Button variant="outline" disabled={busy} onClick={() => void (canEvaluate ? draftSave.flush() : Promise.resolve()).then(() => preview.onNext?.()).catch(() => {})}>Next assigned review</Button>}
+@@ -721,22 +766,22 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+                     variant="ghost"
+                     size="icon"
+                     aria-label="Previous applicant"
+-                    disabled={busy || activeIndex <= 0}
+-                    onClick={() => open(filtered[activeIndex - 1])}
++                    disabled={busy || activeIndex < 0 || activeIndex === 0 && !pageInfo?.previous}
++                    onClick={() => void navigateApplicant(-1)}
+                   >
+                     <ChevronLeft className="size-4" />
+                   </Button>
+                   <span className="text-xs text-muted-foreground">
+                     {activeIndex >= 0
+-                      ? `${activeIndex + 1} / ${filtered.length}`
++                      ? `${displayed.start + activeIndex + 1} / ${total}`
+                       : "Outside current filters"}
+                   </span>
+                   <Button
+                     variant="ghost"
+                     size="icon"
+                     aria-label="Next applicant"
+-                    disabled={busy || activeIndex < 0 || activeIndex >= filtered.length - 1}
+-                    onClick={() => open(filtered[activeIndex + 1])}
++                    disabled={busy || activeIndex < 0 || activeIndex >= filtered.length - 1 && !pageInfo?.next}
++                    onClick={() => void navigateApplicant(1)}
+                   >
+                     <ChevronRight className="size-4" />
+                   </Button>
+@@ -939,7 +984,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+               </aside></div>
+               </div>
+               {quickQueue && <div className="oc-applicant-review-footer flex flex-wrap items-center justify-end gap-3" role="group" aria-label="Quick review decisions">
+-                <Button variant="ghost" disabled={busy} onClick={() => { const remaining = quickQueue.filter(id => id !== active.id); const next = remaining.map(id => applicants.find(app => app.id === id)).find(app => app && pendingCandidate(app)); setQuickQueue(remaining); if (next) open(next); else open() }}>Skip</Button>
++                <Button variant="ghost" disabled={busy} onClick={() => void skipQuickReview()}>Skip</Button>
+                 <Button variant="outline" disabled={busy || !canDecide || !pendingCandidate(active) || !draftSave.ready || draftSave.recovery != null} onClick={() => void quickDecision("REJECTED")}>Deny & next</Button>
+                 <Button disabled={busy || !canDecide || !pendingCandidate(active) || !draftSave.ready || draftSave.recovery != null} onClick={() => void quickDecision("ACCEPTED")}>{busy ? "Saving…" : "Accept & next"}</Button>
+               </div>}
+diff --git a/hooks/use-pipeline-applicant.ts b/hooks/use-pipeline-applicant.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..aa5aabb347023a97f793886a707a1967507aa4fe
+--- /dev/null
++++ b/hooks/use-pipeline-applicant.ts
+@@ -0,0 +1,27 @@
++"use client"
++
++import { useEffect, useMemo, useState } from "react"
++import { useAuth } from "@/contexts/auth-context"
++import { useDemoMode } from "@/contexts/demo-context"
++import { getClubPipeline } from "@/lib/workspace-api"
++
++type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
++
++/** A fresh, single-applicant read per opening; late or previous-authority results stay hidden. */
++export function usePipelineApplicant(clubId: string, applicationId: string | null, revision: number) {
++  const { user, readAuthority, isImpersonating } = useAuth()
++  const demo = useDemoMode()
++  const [retry, setRetry] = useState(0)
++  const owner = useMemo(() => ({ clubId, applicationId, revision, retry, user, readAuthority, isImpersonating, demoReady: demo.ready, demoEnabled: demo.isDemoEnabled }), [clubId, applicationId, revision, retry, user, readAuthority, isImpersonating, demo.ready, demo.isDemoEnabled])
++  const [result, setResult] = useState<{ owner: object; pipeline: Pipeline | null; error: boolean } | null>(null)
++  useEffect(() => {
++    if (!applicationId || !demo.ready) return
++    let current = true
++    getClubPipeline(clubId, { applicationId }).then(data => {
++      if (current) setResult({ owner, pipeline: data, error: !data.applications.some(app => app.id === applicationId) })
++    }).catch(() => { if (current) setResult({ owner, pipeline: null, error: true }) })
++    return () => { current = false }
++  }, [owner, clubId, applicationId, demo.ready])
++  const current = result?.owner === owner ? result : null
++  return { pipeline: current?.pipeline ?? null, application: current?.pipeline?.applications.find(app => app.id === applicationId) ?? null, error: current?.error ?? false, retry: () => setRetry(value => value + 1) }
++}
+diff --git a/hooks/use-pipeline-page.ts b/hooks/use-pipeline-page.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..5678721682969c210ac93acd60056179b0d5102f
+--- /dev/null
++++ b/hooks/use-pipeline-page.ts
+@@ -0,0 +1,74 @@
++"use client"
++
++import { useCallback, useEffect, useMemo, useRef, useState } from "react"
++import { getClubPipelinePage } from "@/lib/workspace-api"
++import { pipelinePageQuery, type PipelinePageQuery } from "@/lib/pipeline-page"
++import { recordWorkspaceRead } from "@/lib/workspace-read-diagnostics"
++import { serializedWorkspaceRead } from "@/lib/serialized-workspace-read"
++
++type Page = Awaited<ReturnType<typeof getClubPipelinePage>>
++type Context = { clubId: string; authority: object; revision: number; enabled: boolean }
++type Owner = { context: Context; scope: string }
++type Result = { owner: Owner; data: Page | null; failed: boolean }
++const key = (query: PipelinePageQuery) => JSON.stringify(pipelinePageQuery.parse(query))
++
++/** One fresh page per selection. Retained metadata keeps controls editable;
++ * earlier rows stay hidden until the current owner has a validated response. */
++export function usePipelinePage({ clubId, query, revision, authority, enabled, initialData, validatedInitialData }: {
++  clubId: string; query: PipelinePageQuery; revision: number; authority: object; enabled: boolean;
++  initialData: Page | null; validatedInitialData: boolean;
++}) {
++  const parsed = pipelinePageQuery.safeParse(query)
++  const scope = parsed.success ? JSON.stringify(parsed.data) : "invalid"
++  const valid = parsed.success
++  const context = useMemo(() => ({ clubId, authority, revision, enabled }), [clubId, authority, revision, enabled])
++  // A boundary read may supply the next page before its cursor is selected.
++  // Adopt that exact response once, without dispatching the same guarded GET.
++  const prepared = useRef<Owner | null>(null)
++  const owner = useMemo(() => prepared.current?.context === context && prepared.current.scope === scope ? prepared.current : { context, scope }, [context, scope])
++  const [result, setResult] = useState<Result | null>(enabled && valid && validatedInitialData && initialData ? { owner, data: initialData, failed: false } : null)
++  const latest = useRef({ owner, query, valid }), accepted = useRef(result), mounted = useRef(false)
++  latest.current = { owner, query, valid }; accepted.current = result
++  // A prepared owner is a one-render handoff, not a lookup cache. Consume it
++  // on commit, including when another query wins before it can be adopted.
++  useEffect(() => { prepared.current = null }, [owner])
++  const reader = useRef<ReturnType<typeof serializedWorkspaceRead> | null>(null)
++  useEffect(() => {
++    mounted.current = true
++    const instance = serializedWorkspaceRead(async () => {
++      const request = latest.current
++      if (!request.owner.context.enabled) return null
++      // Invalid input must not overwrite the last editable metadata. A changed
++      // authority has none: validate a default page before showing controls,
++      // while keeping all applicant rows hidden until the input is valid.
++      if (!request.valid && accepted.current?.owner.context === request.owner.context && accepted.current.data) return null
++      recordWorkspaceRead("page", ["dispatch"])
++      try { return { owner: request.owner, data: await getClubPipelinePage(request.owner.context.clubId, request.valid ? request.query : {}), failed: false } }
++      catch { return { owner: request.owner, data: null, failed: true } }
++    }, value => { if (value && mounted.current && latest.current.owner === value.owner) setResult(value) }, () => {})
++    reader.current = instance
++    return () => { mounted.current = false; instance.dispose(); if (reader.current === instance) reader.current = null }
++  }, [])
++  useEffect(() => {
++    const hasMetadata = accepted.current?.owner.context === context && !!accepted.current.data
++    if (enabled && (valid || !hasMetadata) && accepted.current?.owner !== owner) void reader.current?.refresh()
++  }, [owner, context, enabled, valid])
++  const isCurrent = useCallback(() => mounted.current && latest.current.owner === owner, [owner])
++  const setData = useCallback((value: Page | null | ((previous: Page | null) => Page | null)) => {
++    if (!mounted.current || latest.current.owner !== owner) return false
++    setResult(previous => mounted.current && latest.current.owner === owner ? { owner, failed: false,
++      data: typeof value === "function" ? value(previous?.owner === owner ? previous.data : null) : value } : previous)
++    return true
++  }, [owner])
++  const acceptPage = useCallback((data: Page, next: PipelinePageQuery) => {
++    if (!mounted.current || latest.current.owner !== owner) return false
++    const nextScope = key(next)
++    const nextOwner = nextScope === owner.scope ? owner : { context, scope: nextScope }
++    prepared.current = nextOwner; setResult({ owner: nextOwner, data, failed: false })
++    return true
++  }, [context, owner])
++  const retained = enabled && result?.owner.context === context ? result : null
++  const current = retained?.owner === owner ? retained : null
++  return { data: retained?.data ?? null, ready: !!current?.data && valid, invalid: !valid,
++    loading: !retained && !current?.failed, error: current?.failed ?? false, setData, acceptPage, isCurrent }
++}
+diff --git a/hooks/use-resident-pipeline.ts b/hooks/use-resident-pipeline.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..3fbd6330b2edcc0d412810d36a51d8ca2d6c958b
+--- /dev/null
++++ b/hooks/use-resident-pipeline.ts
+@@ -0,0 +1,53 @@
++"use client"
++
++import { useCallback, useEffect, useMemo, useRef, useState } from "react"
++import { getClubPipelineList } from "@/lib/workspace-api"
++import { serializedWorkspaceRead } from "@/lib/serialized-workspace-read"
++
++type Summary = Awaited<ReturnType<typeof getClubPipelineList>>
++type Filter = Pick<NonNullable<Parameters<typeof getClubPipelineList>[1]>, "roundId" | "gender" | "genderCounts">
++
++/** Already released summaries belong to one mounted authority/scope. No data or
++ * successful authorization survives a visit, owner change or explicit refresh. */
++export function useResidentPipeline({ clubId, filter, revision, authority, enabled, initialData, validatedInitialData }: {
++  clubId: string; filter: Filter; revision: number; authority: object; enabled: boolean;
++  initialData: Summary | null; validatedInitialData: boolean;
++}) {
++  const scope = JSON.stringify(filter)
++  const owner = useMemo(() => ({ clubId, scope, revision, authority, enabled }), [clubId, scope, revision, authority, enabled])
++  const [result, setResult] = useState<{ owner: object; data: Summary | null; failed: boolean } | null>(
++    enabled && validatedInitialData && initialData ? { owner, data: initialData, failed: false } : null,
++  )
++  const latest = useRef({ owner, clubId, filter }), accepted = useRef(result)
++  latest.current = { owner, clubId, filter }; accepted.current = result
++  const reader = useRef<ReturnType<typeof serializedWorkspaceRead> | null>(null)
++  const mounted = useRef(false)
++  useEffect(() => {
++    mounted.current = true
++    const instance = serializedWorkspaceRead(async () => {
++      const request = latest.current
++      if (!request.owner.enabled) return { owner: request.owner, data: null, failed: false }
++      try { return { owner: request.owner, data: await getClubPipelineList(request.clubId, request.filter), failed: false } }
++      catch { return { owner: request.owner, data: null, failed: true } }
++    }, value => {
++      if (mounted.current && latest.current.owner === value.owner) setResult(value)
++    }, () => {})
++    reader.current = instance
++    return () => { mounted.current = false; instance.dispose(); if (reader.current === instance) reader.current = null }
++  }, [])
++  useEffect(() => {
++    if (!enabled || accepted.current?.owner === owner) return
++    void reader.current?.refresh()
++  }, [owner, enabled])
++  // Async mutation/read completions retain their captured owner. They cannot
++  // replace a newer account, club, privacy, server-filter or refresh result.
++  const isCurrent = useCallback(() => mounted.current && latest.current.owner === owner, [owner])
++  const setData = useCallback((value: Summary | null | ((previous: Summary | null) => Summary | null)) => {
++    if (!mounted.current || latest.current.owner !== owner) return false
++    setResult(previous => mounted.current && latest.current.owner === owner ? { owner, failed: false,
++      data: typeof value === "function" ? value(previous?.owner === owner ? previous.data : null) : value } : previous)
++    return true
++  }, [owner])
++  const current = enabled && result?.owner === owner ? result : null
++  return { data: current?.data ?? null, loading: !current, error: current?.failed ?? false, setData, isCurrent }
++}
+diff --git a/lib/anonymous-review.ts b/lib/anonymous-review.ts
+index cb7c6e9804e1421ab13baecd3f44da1889f67ea1..9e3047d1a2da7d0ed97fe15eff7dd054eb5db93b 100644
+--- a/lib/anonymous-review.ts
++++ b/lib/anonymous-review.ts
+@@ -20,12 +20,19 @@ export function identifiedApplication(app: ReviewApplication, genderVisible = fa
+ export function anonymousApplicantLabel(applicationId: string) {
+   return `Applicant ${applicationId.replaceAll("-", "").slice(-10).toUpperCase()}`;
+ }
++/** Same anonymous list identity for detail and narrow summary reads. */
++export function anonymousListProfile(applicationId: string, p: (({ academicYear: string } | { gradYear: number; transferStudent?: boolean }) & { gpa?: number | null; satScore?: number | null; actScore?: number | null }) | null) {
++  return { firstName: "Applicant", lastName: anonymousApplicantLabel(applicationId).slice("Applicant ".length), major: "",
++    academicYear: p ? ("academicYear" in p ? p.academicYear : academicYear(p)) : "Year unavailable",
++    gpa: supportedGpa(p?.gpa), satScore: p?.satScore ?? null, actScore: p?.actScore ?? null };
++}
++
+ export function anonymousApplication(
+   app: ReviewApplication | LeaderReviewApplication,
+   genderVisible = false,
+ ): LeaderReviewApplication {
+   const p = app.student.studentProfile;
+-  const label = anonymousApplicantLabel(app.id).slice("Applicant ".length);
++  const summary = anonymousListProfile(app.id, p);
+   return {
+     id: app.id,
+     clubId: app.clubId,
+@@ -46,16 +53,16 @@ export function anonymousApplication(
+       studentProfile: {
+         id: `anonymous-${app.id}`,
+         userId: `anonymous-${app.id}`,
+-        firstName: "Applicant",
+-        lastName: label,
++        firstName: summary.firstName,
++        lastName: summary.lastName,
+         computingId: "",
+         scholarStatus: null,
+-        major: "",
+-        academicYear: p ? ("academicYear" in p ? p.academicYear : academicYear(p)) : "Year unavailable",
++        major: summary.major,
++        academicYear: summary.academicYear,
+         gender: genderVisible ? p?.gender ?? null : null,
+-        gpa: supportedGpa(p?.gpa),
+-        satScore: p?.satScore ?? null,
+-        actScore: p?.actScore ?? null,
++        gpa: summary.gpa,
++        satScore: summary.satScore,
++        actScore: summary.actScore,
+         actEnglish: p?.actEnglish ?? null,
+         actMath: p?.actMath ?? null,
+         actReading: p?.actReading ?? null,
+diff --git a/lib/applicant-pagination.ts b/lib/applicant-pagination.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..0734bdf03c7d335e5f63a6017123d32acc9119c9
+--- /dev/null
++++ b/lib/applicant-pagination.ts
+@@ -0,0 +1,9 @@
++export const APPLICANT_PAGE_SIZE = 100
++
++/** Display boundary only: callers retain the complete filtered selection. */
++export function applicantPage<T>(applicants: readonly T[], requested: number) {
++  const count = Math.max(1, Math.ceil(applicants.length / APPLICANT_PAGE_SIZE))
++  const page = Math.max(0, Math.min(count - 1, Math.trunc(requested) || 0))
++  const start = page * APPLICANT_PAGE_SIZE
++  return { page, count, start, items: applicants.slice(start, start + APPLICANT_PAGE_SIZE) }
++}
+diff --git a/lib/application-review-visibility.ts b/lib/application-review-visibility.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..fcaa4d16cace48cf6ffd5f237b36cdadc727e2a5
+--- /dev/null
++++ b/lib/application-review-visibility.ts
+@@ -0,0 +1,22 @@
++import { interviewCapabilities } from "@/lib/interview-access";
++import { submittedScoreSummary } from "@/lib/interview-review-summary";
++import type { ClubAccess } from "@/lib/permissions";
++
++type Review = { interviewerId: string; roundId: string | null; submittedAt: Date | null; score: number };
++type Assignment = { memberId: string; roundId: string; member: ClubAccess };
++type Viewer = ClubAccess & { id: string; userId: string };
++
++/** Shared by full detail and summary reads. No drafts or hidden scores escape. */
++export function applicationReviewVisibility<T extends Review>(app: {
++  studentId: string; roundId: string; evaluations: T[]; interviewAssignments: Assignment[];
++}, membership: Viewer) {
++  const caps = interviewCapabilities(membership);
++  const assignments = app.interviewAssignments || [];
++  const ownSubmitted = app.evaluations.some(e => e.interviewerId === membership.id && e.roundId === app.roundId && e.submittedAt);
++  const assigned = assignments.some(a => a.roundId === app.roundId && a.memberId === membership.id);
++  const canSeeRound = app.studentId !== membership.userId && ((caps.readClosing && !assigned) || caps.participate && assigned && ownSubmitted);
++  const roundScore = canSeeRound ? submittedScoreSummary(app.evaluations.filter(e => e.roundId === app.roundId), assignments.filter(a => a.roundId === app.roundId && interviewCapabilities(a.member).participate).map(a => a.memberId)) : null;
++  const evaluations = app.evaluations.filter(e => app.studentId !== membership.userId && e.submittedAt &&
++    (caps.participate && e.interviewerId === membership.id && assignments.some(a => a.memberId === membership.id && a.roundId === e.roundId) || canSeeRound && (e.roundId === app.roundId || caps.readClosing)));
++  return { caps, ownSubmitted, assigned, roundScore, evaluations };
++}
+diff --git a/lib/interview-review-summary.ts b/lib/interview-review-summary.ts
+index d6d4c126a5dcced1eb030d25b23fe215c080e39c..7af1879e724962f8639fd3e5205e6af504e360ea 100644
+--- a/lib/interview-review-summary.ts
++++ b/lib/interview-review-summary.ts
+@@ -15,6 +15,9 @@ export function submittedScoreSummary(reviews: { interviewerId: string; score: n
+   const submitted = new Map<string, number>();
+   for (const r of reviews) if (r.submittedAt && Number.isFinite(r.score) && r.score >= 1 && r.score <= 10 && !submitted.has(r.interviewerId)) submitted.set(r.interviewerId, r.score);
+   const required = new Set([...assignedIds, ...submitted.keys()]).size;
+-  return { average: submitted.size ? [...submitted.values()].reduce((a,b) => a+b,0) / submitted.size : null, submitted: submitted.size, required, provisional: assignedIds.some(id => !submitted.has(id)) };
++  // Keep the existing contributor/validation rules, but sum in stable member
++  // order so a different SQL plan cannot change floating-point rounding.
++  const ordered = [...submitted].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0);
++  return { average: submitted.size ? ordered.reduce((sum, [, score]) => sum + score, 0) / submitted.size : null, submitted: submitted.size, required, provisional: assignedIds.some(id => !submitted.has(id)) };
+ }
+ export function formatAverage(score: number | null) { return score === null ? "Not scored" : new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(score); }
+diff --git a/lib/live-applicant-sorting.ts b/lib/live-applicant-sorting.ts
+index 1e19b7d527cc01256459cd284503a025d4725a74..9f022d73a30e6d2aad87b2fa30d2720c1008c43c 100644
+--- a/lib/live-applicant-sorting.ts
++++ b/lib/live-applicant-sorting.ts
+@@ -13,7 +13,7 @@ export function compareApplicants(a: SortableApplicant, b: SortableApplicant, ke
+   else if (key === "status") { left = a.status; right = b.status }
+   else { left = name(a); right = name(b) }
+   // Missing values remain at the bottom in both directions; hidden scores stay hidden.
+-  if (left == null || left === "" || right == null || right === "") return left == null || left === "" ? right == null || right === "" ? name(a).localeCompare(name(b)) : 1 : -1
++  if (left == null || left === "" || right == null || right === "") return left == null || left === "" ? right == null || right === "" ? name(a).localeCompare(name(b)) || a.id.localeCompare(b.id) : 1 : -1
+   const compared = key === "year" ? compareAcademicYears(String(left), String(right)) : typeof left === "number" && typeof right === "number" ? left - right : String(left).localeCompare(String(right))
+   return (descending ? -compared : compared) || name(a).localeCompare(name(b)) || a.id.localeCompare(b.id)
+ }
+diff --git a/lib/pipeline-list.ts b/lib/pipeline-list.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..f610065e97fcd2a40474e3a1171c0890bed673ee
+--- /dev/null
++++ b/lib/pipeline-list.ts
+@@ -0,0 +1,34 @@
++import type { getClubPipeline } from "@/actions/crm"
++
++type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
++
++/** Relation plans may return visible references in different orders. Preserve
++ * multiplicity while making the narrow contract independent of SQL row order. */
++export function pipelineReviewerReferences(reviews: readonly { interviewerId: string }[]) {
++  return reviews.map(review => ({ interviewerId: review.interviewerId })).sort((a, b) =>
++    a.interviewerId < b.interviewerId ? -1 : a.interviewerId > b.interviewerId ? 1 : 0)
++}
++
++/** Run only after the canonical per-applicant privacy and score projection. */
++export function pipelineListProjection(data: Pipeline) {
++  return {
++    rounds: data.rounds,
++    genderCounts: data.genderCounts,
++    applications: data.applications.map(app => {
++      const profile = app.student.studentProfile
++      return {
++        id: app.id, roundId: app.roundId, status: app.status, studentId: app.studentId,
++        student: {
++          email: app.student.email,
++          studentProfile: profile ? {
++            firstName: profile.firstName, lastName: profile.lastName, major: profile.major,
++            academicYear: profile.academicYear, gpa: profile.gpa,
++            satScore: profile.satScore, actScore: profile.actScore,
++          } : null,
++        },
++        evaluations: pipelineReviewerReferences(app.evaluations),
++        roundScore: app.roundScore,
++      }
++    }),
++  }
++}
+diff --git a/lib/pipeline-page-read.ts b/lib/pipeline-page-read.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..9c614c3ebe6c23ffa9a99d8a3ea81ca7c3f278d4
+--- /dev/null
++++ b/lib/pipeline-page-read.ts
+@@ -0,0 +1,55 @@
++import { pagePipeline, type PipelinePageQuery } from "@/lib/pipeline-page"
++import { pipelineSummarySelect, pipelineSummaryProjection } from "@/lib/pipeline-summary"
++import type { Prisma } from "@prisma/client"
++import type { AppTransactionClient } from "@/utils/prisma"
++import type { ClubAccess } from "@/lib/permissions"
++
++// Ranking does not need review/assignment collections unless the requested
++// filter or sort observes them. Keep canonical JS collation/privacy semantics.
++const { evaluations: _evaluations, interviewAssignments: _assignments, ...metadataSelect } = pipelineSummarySelect
++export const pipelinePageMetadataSelect = metadataSelect
++export function requiresCompleteReviewMetadata(query: PipelinePageQuery) {
++  return query.review !== undefined || query.rating !== undefined || query.sort === "score"
++}
++
++type Member = ClubAccess & { id: string; userId: string }
++type Rounds = ReturnType<typeof pagePipeline>["rounds"]
++export async function readPipelinePage(tx: AppTransactionClient, where: Prisma.ApplicationWhereInput,
++  member: Member, rounds: Rounds, query: PipelinePageQuery, scope: string) {
++  const project = (app: Parameters<typeof pipelineSummaryProjection>[0]) => pipelineSummaryProjection(app, member)
++  if (requiresCompleteReviewMetadata(query)) {
++    const all = await tx.application.findMany({ where, select: pipelineSummarySelect })
++    return pagePipeline({ rounds, genderCounts: null, applications: all.map(project) }, query, member.id, member.userId, scope)
++  }
++  const metadata = await tx.application.findMany({ where, select: pipelinePageMetadataSelect })
++  // Empty review collections are internal ranking placeholders only. This path
++  // is never used for a review/score-dependent selector or returned as content.
++  const ranked = metadata.map(app => project({ ...app, evaluations: [], interviewAssignments: [] }))
++  const page = pagePipeline({ rounds, genderCounts: null, applications: ranked }, query, member.id, member.userId, scope)
++  if (!page.applications.length) return page
++  const ids = page.applications.map(app => app.id)
++  // Scalar metadata is already part of this same Repeatable Read snapshot.
++  // Read only the selected applicants' dependent collections, retaining the
++  // complete application predicate on each relation query as defense in depth.
++  const evaluations = await tx.evaluation.findMany({
++    where: { applicationId: { in: ids }, application: where, submittedAt: { not: null } },
++    select: { applicationId: true, ...pipelineSummarySelect.evaluations.select },
++  })
++  const assignments = await tx.interviewPanelAssignment.findMany({
++    where: { applicationId: { in: ids }, application: where, revokedAt: null },
++    select: { applicationId: true, ...pipelineSummarySelect.interviewAssignments.select },
++  })
++  function group<T extends { applicationId: string }>(records: T[]) {
++    const grouped = new Map<string, T[]>()
++    for (const record of records) {
++      const list = grouped.get(record.applicationId)
++      if (list) list.push(record); else grouped.set(record.applicationId, [record])
++    }
++    return grouped
++  }
++  const reviewsById = group(evaluations), assignmentsById = group(assignments)
++  const metadataById = new Map(metadata.map(app => [app.id, app]))
++  return { ...page, applications: ids.map(id => project({ ...metadataById.get(id)!,
++    evaluations: reviewsById.get(id) ?? [], interviewAssignments: assignmentsById.get(id) ?? [],
++  })) }
++}
+diff --git a/lib/pipeline-page.ts b/lib/pipeline-page.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..1d1a11bcd85ff03fe0747dbd42ccc246686fe629
+--- /dev/null
++++ b/lib/pipeline-page.ts
+@@ -0,0 +1,88 @@
++import { z } from "zod"
++import type { pipelineListProjection } from "@/lib/pipeline-list"
++import { APPLICANT_PAGE_SIZE } from "@/lib/applicant-pagination"
++import { compareApplicants } from "@/lib/live-applicant-sorting"
++import { compareAcademicYears } from "@/lib/recruitment-profile"
++import { applicationDecisionGroup, decisionGroups } from "@/lib/application-decisions"
++import { applicantLane, applicantLanes } from "@/lib/applicant-board"
++import { genderValues } from "@/lib/student-profile"
++
++// Cursor scope is an equality check, never authorization. Every page and full
++// selection runs the original live guard and canonical privacy projection.
++const cursorSchema = z.object({ id: z.string().uuid(), direction: z.enum(["after", "before", "at"]), scope: z.string().min(1).max(4096) }).strict()
++export const pipelinePageQuery = z.object({
++  query: z.string().max(200).default(""),
++  roundId: z.string().uuid().optional(),
++  gender: z.enum(genderValues).optional(), genderCounts: z.boolean().default(false),
++  mode: z.enum(["applicants", "decisions", "rejected"]).default("applicants"),
++  decisionGroup: z.enum(["pending", "accepted", "waitlisted", "rejected"]).default("pending"),
++  status: z.enum(["SUBMITTED", "IN_REVIEW", "INTERVIEWING", "ACCEPTED", "REJECTED", "WAITLISTED"]).optional(),
++  review: z.enum(["unreviewed", "mine"]).optional(),
++  major: z.string().max(200).optional(), year: z.string().max(100).optional(),
++  gpa: z.number().finite().min(0).max(4).optional(),
++  sat: z.number().int().min(0).max(1600).optional(), act: z.number().int().min(0).max(36).optional(),
++  rating: z.number().finite().min(0).max(10).optional(),
++  sort: z.enum(["name", "round", "year", "gpa", "sat", "act", "status", "score"]).default("name"),
++  descending: z.boolean().default(false), cursor: cursorSchema.optional(),
++}).strict()
++export type PipelinePageQuery = z.input<typeof pipelinePageQuery>
++export type PipelineCursor = z.infer<typeof cursorSchema>
++type List = ReturnType<typeof pipelineListProjection>
++type Candidate = List["applications"][number]
++export type PipelineSelection = Pick<Candidate, "id" | "roundId" | "status"> & { canQuickReview: boolean }
++const applicantName = (app: Candidate) => app.student.studentProfile ? `${app.student.studentProfile.firstName} ${app.student.studentProfile.lastName}` : app.student.email
++
++export function pipelineSelectionKey(input: PipelinePageQuery) {
++  const { cursor: _cursor, ...query } = pipelinePageQuery.parse(input)
++  return JSON.stringify(query)
++}
++
++/** Filtering observes only fields already released by the canonical projector.
++ * Raw identity, unsubmitted evaluations and hidden ratings cannot affect matches.
++ * This scan remains O(N); the wire response and rendered page are bounded. */
++function selectPipeline(data: List, input: PipelinePageQuery, reviewerId: string, userId: string) {
++  const q = pipelinePageQuery.parse(input)
++  const base = data.applications.filter(a => q.mode === "rejected" ? a.status === "REJECTED" : q.mode === "decisions" || a.status !== "REJECTED")
++  const filtered = base.filter(app => {
++    const profile = app.student.studentProfile
++    return `${applicantName(app)} ${app.student.email} ${profile?.major || ""}`.toLowerCase().includes(q.query.trim().toLowerCase()) &&
++      (!q.roundId || app.roundId === q.roundId) && (!q.status || app.status === q.status) &&
++      (q.mode !== "decisions" || applicationDecisionGroup(app.status) === q.decisionGroup) &&
++      (!q.major || profile?.major === q.major) && (!q.year || profile?.academicYear === q.year) &&
++      (q.gpa === undefined || profile?.gpa != null && profile.gpa > q.gpa) &&
++      (q.sat === undefined || profile?.satScore != null && profile.satScore > q.sat) &&
++      (q.act === undefined || profile?.actScore != null && profile.actScore > q.act) &&
++      (q.rating === undefined || app.roundScore?.average != null && app.roundScore.average >= q.rating) &&
++      (!q.review || (q.review === "unreviewed" ? app.evaluations.length === 0 : app.evaluations.some(e => e.interviewerId === reviewerId)))
++  }).sort((a, b) => compareApplicants(a, b, q.sort, q.descending, data.rounds))
++  const canQuickReview = (app: Candidate) => !["ACCEPTED", "REJECTED", "WAITLISTED", "DRAFTING"].includes(app.status) && !app.studentId.startsWith("anonymous-") && app.studentId !== userId
++  return { q, base, filtered, canQuickReview }
++}
++
++export function completePipelineSelection(data: List, input: PipelinePageQuery, reviewerId: string, userId: string): { applications: PipelineSelection[] } {
++  const { filtered, canQuickReview } = selectPipeline(data, input, reviewerId, userId)
++  return { applications: filtered.map(app => ({ id: app.id, roundId: app.roundId, status: app.status, canQuickReview: canQuickReview(app) })) }
++}
++
++export function pagePipeline(data: List, input: PipelinePageQuery, reviewerId: string, userId: string, scope: string) {
++  const { q, base, filtered, canQuickReview } = selectPipeline(data, input, reviewerId, userId)
++  if (q.cursor && q.cursor.scope !== scope) throw new z.ZodError([{ code: "custom", path: ["cursor"], message: "Applicant selection changed. Restart pagination." }])
++  const anchor = q.cursor ? filtered.findIndex(a => a.id === q.cursor!.id) : -1
++  const reset = !!q.cursor && anchor < 0
++  const start = anchor < 0 ? 0 : q.cursor?.direction === "after" ? anchor + 1 : q.cursor?.direction === "before" ? Math.max(0, anchor - APPLICANT_PAGE_SIZE) : Math.floor(anchor / APPLICANT_PAGE_SIZE) * APPLICANT_PAGE_SIZE
++  const applications = filtered.slice(start, start + APPLICANT_PAGE_SIZE)
++  const cursor = (id: string, direction: PipelineCursor["direction"]): PipelineCursor => ({ id, direction, scope })
++  return {
++    rounds: data.rounds, genderCounts: data.genderCounts, applications,
++    page: { scope, start, total: filtered.length, baseTotal: base.length, index: Math.floor(start / APPLICANT_PAGE_SIZE), count: Math.max(1, Math.ceil(filtered.length / APPLICANT_PAGE_SIZE)), reset,
++      previous: start > 0 && applications.length ? cursor(applications[0].id, "before") : null,
++      next: start + applications.length < filtered.length && applications.length ? cursor(applications.at(-1)!.id, "after") : null },
++    facets: {
++      majors: [...new Set(base.map(a => a.student.studentProfile?.major).filter((v): v is string => !!v))].sort(),
++      years: [...new Set(base.flatMap(a => a.student.studentProfile ? [a.student.studentProfile.academicYear] : []))].sort(compareAcademicYears),
++      decisions: Object.fromEntries(decisionGroups.map(g => [g.id, base.filter(a => applicationDecisionGroup(a.status) === g.id).length])),
++      lanes: Object.fromEntries(applicantLanes.map(l => [l.id, filtered.filter(a => applicantLane(a.status) === l.id).length])),
++      quickReview: filtered.filter(canQuickReview).length,
++    },
++  }
++}
+diff --git a/lib/pipeline-summary.ts b/lib/pipeline-summary.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..3aa52f9d334bcb5438f330a7b040b073cca047fb
+--- /dev/null
++++ b/lib/pipeline-summary.ts
+@@ -0,0 +1,38 @@
++import { pipelineReviewerReferences } from "@/lib/pipeline-list";
++import type { Prisma } from "@prisma/client";
++import { anonymousListProfile } from "@/lib/anonymous-review";
++import { recruitmentListProfile } from "@/lib/recruitment-profile";
++import { applicationReviewVisibility } from "@/lib/application-review-visibility";
++import { hasPermission, type ClubAccess } from "@/lib/permissions";
++
++/** Database allowlist, independent of future application/profile schema fields.
++ * The complete metadata set is still read to preserve global privacy-aware
++ * filtering/order/counts. Detail, offer, private draft and member content is not. */
++export const pipelineSummarySelect = {
++  id: true, roundId: true, status: true, studentId: true,
++  round: { select: { anonymousReview: true } },
++  student: { select: { email: true, studentProfile: { select: {
++    firstName: true, lastName: true, major: true, gradYear: true,
++    transferStudent: true, gpa: true, satScore: true, actScore: true,
++  } } } },
++  evaluations: { where: { submittedAt: { not: null } }, select: {
++    interviewerId: true, roundId: true, submittedAt: true, score: true,
++  } },
++  interviewAssignments: { where: { revokedAt: null }, select: {
++    memberId: true, roundId: true, member: { select: { status: true, isOwner: true, permissions: true } },
++  } },
++} satisfies Prisma.ApplicationSelect;
++
++type Summary = Prisma.ApplicationGetPayload<{ select: typeof pipelineSummarySelect }>;
++export function pipelineSummaryProjection(app: Summary, membership: ClubAccess & { id: string; userId: string }) {
++  const anonymous = !hasPermission(membership, "applicants.identify") || app.round.anonymousReview;
++  const { evaluations, roundScore } = applicationReviewVisibility(app, membership);
++  return {
++    id: app.id, roundId: app.roundId, status: app.status,
++    studentId: anonymous ? `anonymous-${app.id}` : app.studentId,
++    student: { email: anonymous ? "" : app.student.email,
++      studentProfile: anonymous ? anonymousListProfile(app.id, app.student.studentProfile) :
++        app.student.studentProfile ? recruitmentListProfile(app.student.studentProfile) : null },
++    evaluations: pipelineReviewerReferences(evaluations), roundScore,
++  };
++}
+diff --git a/lib/recruitment-profile.ts b/lib/recruitment-profile.ts
+index f467013de4e62c2f15fb0bbd64c04a2675c7192e..5f404f7fbed8cce844f7528f7ca341c3599a8e07 100644
+--- a/lib/recruitment-profile.ts
++++ b/lib/recruitment-profile.ts
+@@ -19,14 +19,21 @@ export function academicYear(profile: { gradYear: number; transferStudent?: bool
+   return `${label}${profile.transferStudent ? "*" : ""}`;
+ }
+ export type RecruitmentProfile = Omit<FullStudentProfile, "gradYear" | "highSchool" | "pronouns" | "transferStudent" | "gender"> & { academicYear: string; gender: string | null };
++/** Shared fields for the full profile and the database summary projection. */
++export function recruitmentListProfile(p: Pick<FullStudentProfile, "firstName" | "lastName" | "major" | "gradYear" | "transferStudent" | "gpa" | "satScore" | "actScore">) {
++  return { firstName: p.firstName, lastName: p.lastName, major: p.major,
++    academicYear: academicYear(p), gpa: supportedGpa(p.gpa), satScore: p.satScore, actScore: p.actScore };
++}
++
+ /** Explicit allowlist: schema additions cannot silently become recruiter-visible. */
+ export function recruitmentProfile(p: FullStudentProfile, genderVisible = false): RecruitmentProfile {
++  const summary = recruitmentListProfile(p);
+   return {
+-    id: p.id, userId: p.userId, firstName: p.firstName, lastName: p.lastName, computingId: p.computingId,
+-    major: p.major, scholarStatus: p.scholarStatus, gpa: supportedGpa(p.gpa), satScore: p.satScore,
+-    actScore: p.actScore, actEnglish: p.actEnglish, actMath: p.actMath, actReading: p.actReading, actScience: p.actScience,
++    id: p.id, userId: p.userId, firstName: summary.firstName, lastName: summary.lastName, computingId: p.computingId,
++    major: summary.major, scholarStatus: p.scholarStatus, gpa: summary.gpa, satScore: summary.satScore,
++    actScore: summary.actScore, actEnglish: p.actEnglish, actMath: p.actMath, actReading: p.actReading, actScience: p.actScience,
+     bio: p.bio, linkedinUrl: p.linkedinUrl, resumeUrl: p.resumeUrl, headshotUrl: p.headshotUrl,
+-    experiences: p.experiences, academicYear: academicYear(p), gender: genderVisible ? p.gender : null,
++    experiences: p.experiences, academicYear: summary.academicYear, gender: genderVisible ? p.gender : null,
+   };
+ }
+ export function genderVisibility(value: unknown) {
+diff --git a/lib/workspace-api.ts b/lib/workspace-api.ts
+index dca72fca2990c7d6fde579c0d1114a68de2cedcb..12f1bb98c4360835fa0abaca02e8540e13a7eed2 100644
+--- a/lib/workspace-api.ts
++++ b/lib/workspace-api.ts
+@@ -1,4 +1,6 @@
+ "use client"
++import { pipelineListProjection } from "@/lib/pipeline-list";
++import { pagePipeline, completePipelineSelection, pipelinePageQuery, pipelineSelectionKey } from "@/lib/pipeline-page";
+ import * as pipelineActions from "@/actions/club-settings";
+ import * as pipelineInterviewActions from "@/actions/pipeline-interviews";
+ import * as demoPipeline from "@/lib/demo/pipeline";
+@@ -133,6 +135,26 @@ export const getClubPipeline = adapt((...args: Parameters<typeof crm.getClubPipe
+       .map((a) => { const app = joinedApplication(a.id); const projected = s.clubs.find(c => c.id === clubId)?.rounds.find(r => r.id === a.roundId)?.anonymousReview ? anonymousApplication(app as unknown as ReviewApplication, genderVisibility(s.applicantDisplay[a.roundId]?.config)) : identifiedApplication(app as unknown as ReviewApplication, genderVisibility(s.applicantDisplay[a.roundId]?.config)); const ownSubmitted = a.evaluations.some(e=>e.interviewerId===demoMember().id&&e.roundId===a.roundId&&e.submittedAt); const assigned=s.interviewFoundation.assignments.some(g=>g.applicationId===a.id&&g.roundId===a.roundId&&g.memberId===demoMember().id&&!g.revokedAt);const caps=interviewCapabilities(demoMember());const self=a.studentId===demoMember().userId;const allowed=!self&&((caps.readClosing&&!assigned)||caps.participate&&assigned&&ownSubmitted); const roundScore=allowed?demoInterviews.getInterviewRoundScore({clubId,applicationId:a.id,roundId:a.roundId}):null;return { ...projected, evaluations: projected.evaluations.filter(e=>!self&&e.submittedAt&&(caps.participate&&e.interviewerId===demoMember().id&&s.interviewFoundation.assignments.some(g=>g.applicationId===a.id&&g.roundId===e.roundId&&g.memberId===demoMember().id&&!g.revokedAt)||allowed&&e.roundId===a.roundId)), roundScore, canEvaluate: !self && !ownSubmitted && (s.clubs.find(c=>c.id===clubId)?.rounds.find(r=>r.id===a.roundId)?.anonymousReview ? caps.participate : caps.participate && assigned), recruitmentOffer: s.recruitmentOffers.find(o=>o.applicationId===a.id) ?? null } }),
+   }
+ })
++export const getClubPipelineList = adapt(
++  (...args: Parameters<typeof crm.getClubPipelineList>) => readWorkspace<Awaited<ReturnType<typeof crm.getClubPipelineList>>>("pipelineList", args),
++  async (...args: Parameters<typeof getClubPipeline>) => pipelineListProjection(await getClubPipeline(...args)),
++)
++export const getClubPipelinePage = adapt(
++  (...args: Parameters<typeof crm.getClubPipelinePage>) => readWorkspace<Awaited<ReturnType<typeof crm.getClubPipelinePage>>>("pipelinePage", args),
++  async (clubId, input = {}) => {
++    const query = pipelinePageQuery.parse(input), member = demoMember()
++    const list = await getClubPipelineList(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: query.genderCounts })
++    return pagePipeline(list, query, member.id, member.userId, `demo:${clubId}:${member.id}:${pipelineSelectionKey(query)}`)
++  },
++)
++export const getClubPipelineSelection = adapt(
++  (...args: Parameters<typeof crm.getClubPipelineSelection>) => readWorkspace<Awaited<ReturnType<typeof crm.getClubPipelineSelection>>>("pipelineSelection", args),
++  async (clubId, input = {}) => {
++    const query = pipelinePageQuery.omit({ cursor: true }).parse(input), member = demoMember()
++    const list = await getClubPipelineList(clubId, { roundId: query.roundId, gender: query.gender })
++    return completePipelineSelection(list, query, member.id, member.userId)
++  },
++)
+ export const moveApplicantRound = adapt(crm.moveApplicantRound, (input) => {
+   scopedApplication(input.clubId, input.applicationId)
+   if (

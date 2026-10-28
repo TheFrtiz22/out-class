@@ -1,0 +1,29 @@
+{
+  "base": "78402ee611f46b8764898250e46b6dcc8dab7654",
+  "reason": "Follow-up after the accepted three-cohort run: production Overview showed1 applicant, while100-applicant detail/search/local workflow had costs. Separate paired evidence; never pool into the original datasets.",
+  "measurement": {
+    "cohorts": [
+      1
+    ],
+    "order": [
+      "B",
+      "A",
+      "A",
+      "B"
+    ],
+    "warmupsPerBlockGroup": 1,
+    "measuredPerBlockGroup": 5,
+    "harnessFlags": [
+      "--phase2",
+      "--phase3",
+      "--cold-warm",
+      "--record-failures",
+      "--source-diagnostics"
+    ],
+    "profiles": {
+      "local": "Unthrottled local production build and disposable local Auth/PostgreSQL",
+      "constrained": "CDP80ms latency, 200000B/s down, 93750B/s up, CPU4x"
+    },
+    "scope": "Unchanged primary collector; cold/warm entry and detail plus same-row source-preparation timings. No new application implementation or loading predicate."
+  }
+}

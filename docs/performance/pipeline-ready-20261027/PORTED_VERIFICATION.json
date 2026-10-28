@@ -1,0 +1,19 @@
+{
+  "source": "febb9cfd40b29d8e175a8d7c0c10fc6245f57dbe",
+  "files": [
+    "tests/applicant-pagination.test.cjs",
+    "tests/pipeline-detail-owner.test.cjs",
+    "tests/pipeline-list.test.cjs",
+    "tests/pipeline-page-owner.test.cjs",
+    "tests/pipeline-page-read.test.cjs",
+    "tests/pipeline-page.test.cjs",
+    "tests/review-summary-determinism.test.cjs",
+    "tests/navigation-phase3-e2e.test.cjs",
+    "tests/navigation-phase5-e2e.test.cjs",
+    "tests/navigation-phase6-e2e.test.cjs",
+    "tests/navigation-phase7-e2e.test.cjs",
+    "tests/navigation-phase8-e2e.test.cjs",
+    "scripts/pipeline-scale-fixture.cjs"
+  ],
+  "status": "Adaptation and execution pending"
+}

@@ -1,0 +1,21 @@
+{
+  "at": "2026-10-27T20:25:10.537Z",
+  "stages": [
+    {
+      "name": "existing-selected-navigation",
+      "exitCode": 0
+    },
+    {
+      "name": "scale-1000",
+      "exitCode": 0
+    },
+    {
+      "name": "bounded-pipeline-integration",
+      "exitCode": 0
+    }
+  ],
+  "complete": true,
+  "authAndRuntime": "Passed on identical candidate build in LIVE_QA_ATTEMPT_1.json",
+  "applicationStopped": true,
+  "initialFailure": "Phase12 observer still filtered the old pipeline transport, so observed zero initial page reads. Updated only resource name to pipelinePage; retained every epoch, request-count, fresh-visit and revocation assertion."
+}

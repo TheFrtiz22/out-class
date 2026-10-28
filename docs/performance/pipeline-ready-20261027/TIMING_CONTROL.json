@@ -1,0 +1,19 @@
+{
+  "startedAt": "2026-10-28T00:23:41.573Z",
+  "complete": true,
+  "temporaryIdleSleepAssertion": true,
+  "profiles": [
+    {
+      "profile": "local",
+      "exitCode": 0,
+      "completedAt": "2026-10-28T00:34:13.748Z"
+    },
+    {
+      "profile": "constrained",
+      "exitCode": 0,
+      "completedAt": "2026-10-28T01:38:56.621Z"
+    }
+  ],
+  "temporaryAssertionReleased": true,
+  "completedAt": "2026-10-28T01:38:56.713Z"
+}

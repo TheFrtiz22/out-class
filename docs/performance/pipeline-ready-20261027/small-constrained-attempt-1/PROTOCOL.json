@@ -1,0 +1,125 @@
+{
+  "startedAt": "2026-10-28T14:28:11.760Z",
+  "complete": true,
+  "profile": "constrained",
+  "attempt": 1,
+  "base": "78402ee611f46b8764898250e46b6dcc8dab7654",
+  "counts": {
+    "groupsPerBlock": 4,
+    "measuredPerBuildGroup": 10,
+    "measuredPerProfile": 80,
+    "warmupsPerProfile": 16
+  },
+  "toolHashes": {
+    "scripts/navigation-audit.cjs": "ef894a888a99815d1e6fd18d5f9ecb8c5d7e4f52ee7e981603442a55bf9e20ef",
+    "scripts/navigation-pipeline-ready-local.cjs": "ade642b5828be44e49ac789eb4bdfb5f7436d21f773f658ebe58ace04cee55af",
+    "scripts/navigation-selected-ready-host-monitor.cjs": "1efc15070f972406de7a785e96a0b33cda24a304ff68dede639e71f1de8e14b7",
+    "scripts/navigation-pipeline-small-study.cjs": "334a006d5874af77a8bab4176fb1b200d32333d3fc346d833f3b44bd94ef2de7",
+    "tests/helpers/onboarding-e2e.cjs": "500e5b6fe0fd73aa89a76763bae7064db76ad1ac96120c036c991619c2d80403"
+  },
+  "planSha256": "0e9514d38e78c4b783772b8ca5c7f320014eb2f078a6449b5a887bf6572a1900",
+  "fixtureManifestSha256": "cc0f3d546b65cc850cb3ef2d764d3ddadf4784b6fac3273d3a18a17f92f4bf25",
+  "builds": {
+    "B": "CEAI23ftOJ8ZVtWlKMONI",
+    "A": "EzkQj4yhyR7aSWuTDg8Zk"
+  },
+  "blocks": [
+    {
+      "directory": "size-1-block-1-B-warmup",
+      "size": 1,
+      "variant": "B",
+      "stage": "warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-1-block-1-B-measure",
+      "size": 1,
+      "variant": "B",
+      "stage": "measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-1-block-2-A-warmup",
+      "size": 1,
+      "variant": "A",
+      "stage": "warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-1-block-2-A-measure",
+      "size": 1,
+      "variant": "A",
+      "stage": "measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-1-block-3-A-warmup",
+      "size": 1,
+      "variant": "A",
+      "stage": "warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-1-block-3-A-measure",
+      "size": 1,
+      "variant": "A",
+      "stage": "measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-1-block-4-B-warmup",
+      "size": 1,
+      "variant": "B",
+      "stage": "warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0,
+      "status": 0
+    },
+    {
+      "directory": "size-1-block-4-B-measure",
+      "size": 1,
+      "variant": "B",
+      "stage": "measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": 0,
+      "status": 0
+    }
+  ],
+  "failures": [],
+  "completedAt": "2026-10-28T14:37:32.605Z",
+  "hostControl": {
+    "valid": true,
+    "samples": 114,
+    "violations": []
+  },
+  "sleepAudit": {
+    "valid": true,
+    "recognizedRecords": 75192,
+    "events": [],
+    "commandSucceeded": true,
+    "bytesRead": 22380786,
+    "scope": "Actual Sleep/DarkWake/Wake event categories only; raw power log and process details not retained"
+  },
+  "applicationStopped": true,
+  "valid": true
+}

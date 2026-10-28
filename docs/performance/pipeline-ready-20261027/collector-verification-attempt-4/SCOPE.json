@@ -1,0 +1,4 @@
+{
+  "controlledPerformanceData": false,
+  "scope": "Collector integration verification only. Same Overview CTA and fresh source preparation in a warm browser context on both builds. All prior menu/pointer probes retained separately; no primary comparison has begun."
+}

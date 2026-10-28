@@ -1,0 +1,20 @@
+{
+  "at": "2026-10-28T14:50:17.372883+00:00",
+  "ownedAppStopped": true,
+  "ownedSupabaseProjectStoppedWithoutBackup": true,
+  "ownedContainersRemaining": 0,
+  "ownedVolumesRemaining": 0,
+  "privateFixtureCredentialsCertificatesLogsRemoved": true,
+  "privateCompiledBuildSnapshotsRemoved": true,
+  "privateMarkersAndReviewIndexRemoved": true,
+  "priorInactiveFixture": "None; no restoration required",
+  "originalCheckoutHead": "09f312dc9dedf0084ad0f3f1c2a537856f38bd84",
+  "originalCheckoutStatusUnchanged": true,
+  "unrelatedContainersPreserved": 21,
+  "temporaryAwakeAssertions": "Controller-owned assertions released with exited processes; no power settings changed",
+  "privacyScan": {
+    "pass": true,
+    "distinctPrivateValuesChecked": 17,
+    "jwtShapedValuesFound": 0
+  }
+}

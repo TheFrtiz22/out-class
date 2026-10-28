@@ -1,0 +1,328 @@
+diff --git a/tests/club-workspace-refinements-browser.test.cjs b/tests/club-workspace-refinements-browser.test.cjs
+index 506609cb..15bdc64f 100644
+--- a/tests/club-workspace-refinements-browser.test.cjs
++++ b/tests/club-workspace-refinements-browser.test.cjs
+@@ -11,12 +11,12 @@ async function fixture() {
+   const app = (id, firstName, gpa, sat, score) => ({ id, studentId: id, roundId: 'round', recruitmentCycleId: null, status: 'IN_REVIEW', canEvaluate: false, publicationGuard: 'fixture', student: { email: `${id}@example.invalid`, studentProfile: { firstName, lastName: 'Example', academicYear: 'Second Year', major: 'Economics', gpa, satScore: sat, actScore: 33, resumeUrl: `12345678-1234-4123-8123-123456789abc/12345678-1234-4123-8123-123456789abc.pdf`, experiences: [] } }, evaluations: [], answers: [], bookings: [], roundScore: { average: score, submitted: 2, required: 2, provisional: false } })
+   const initial = () => ({ pipeline: { rounds: [{ id: 'round', name: 'Interview round', order: 0, type: 'INTERVIEW', anonymousReview: false }], applications: [app('alpha', 'Alpha', 3.7, 1450, 8), app('beta', 'Beta', 3.9, 1550, 9)] }, directory: { actor: owner, members: [member('junior', 'Zoe', 'Third Year', 'MEMBER', ['Girls']), member('senior', 'Adam', 'Fourth Year', 'MEMBER', ['Boys']), member('freshman', 'Maya', 'First Year', 'MEMBER')], invitations: [], identifierTypes: [] }, writes: [] })
+   let state = initial()
+-  const api = `async function call(path,input){const response=await fetch('/api/'+path,input?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)}:undefined);if(!response.ok)throw Error('Fixture save rejected');return response.json()}exports.getClubPipeline=()=>call('pipeline');exports.setApplicationStatus=input=>call('status',input);exports.getOrganizationMemberManagement=()=>call('directory');exports.assignOrganizationMemberGroups=input=>call('groups',input);exports.createOrganizationMemberGroups=input=>call('create-groups',input);exports.getApplicantDisplay=()=>call('display');exports.saveApplicantObservation=input=>call('observation',input);exports.deleteApplicantObservation=input=>call('delete-observation',input);exports.listMeetings=async()=>[];exports.submitEvaluation=async()=>({});exports.moveApplicantRound=async()=>({});exports.getRecipientGroups=()=>call('catalog');exports.previewRecipientAudience=()=>call('preview');exports.publishClubAnnouncement=input=>call('announcement',input);exports.getOrganizationSetupChecklist=()=>call('checklist');`
++  const api = `async function call(path,input){const response=await fetch('/api/'+path,input?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)}:undefined);if(!response.ok)throw Error('Fixture save rejected');return response.json()}exports.getClubPipeline=()=>call('pipeline');exports.getClubPipelineList=()=>call('pipeline');exports.getClubPipelinePage=async(club,q={})=>require('@/lib/pipeline-page').pagePipeline(await call('pipeline'),q,'owner','owner','fixture');exports.getClubPipelineSelection=async(club,q={})=>require('@/lib/pipeline-page').completePipelineSelection(await call('pipeline'),q,'owner','owner');exports.setApplicationStatus=input=>call('status',input);exports.getOrganizationMemberManagement=()=>call('directory');exports.assignOrganizationMemberGroups=input=>call('groups',input);exports.createOrganizationMemberGroups=input=>call('create-groups',input);exports.getApplicantDisplay=()=>call('display');exports.saveApplicantObservation=input=>call('observation',input);exports.deleteApplicantObservation=input=>call('delete-observation',input);exports.listMeetings=async()=>[];exports.submitEvaluation=async()=>({});exports.moveApplicantRound=async()=>({});exports.getRecipientGroups=()=>call('catalog');exports.previewRecipientAudience=()=>call('preview');exports.publishClubAnnouncement=input=>call('announcement',input);exports.getOrganizationSetupChecklist=()=>call('checklist');`
+   const empty = 'module.exports=new Proxy({},{get:()=>()=>null});'
+   const mocks = {
+     'next/link': `const React=require('react');module.exports=({href,children,...props})=>React.createElement('a',{...props,href},children);`,
+     'next/navigation': `exports.useSearchParams=()=>new URLSearchParams(location.search);exports.useRouter=()=>({push(){},refresh(){}});`,
+-    '@/contexts/auth-context': `const member=${JSON.stringify(owner)};exports.useAuth=()=>({user:{id:'owner',memberships:[member]},activeClubId:'club',selectClub(){},refreshUser:async()=>{}});`,
++    '@/contexts/auth-context': `const member=${JSON.stringify(owner)};exports.useAuth=()=>window.__refinementAuth??=({user:{id:'owner',memberships:[member]},activeClubId:'club',selectClub(){},refreshUser:async()=>{}});`,
+     '@/contexts/demo-context': 'exports.useDemoMode=()=>({isDemoEnabled:false,ready:true});',
+     '@/lib/application-state': 'exports.useApplicationState=()=>({leaderFocus:null,clearLeaderFocus(){}});',
+     '@/hooks/use-editor-draft': 'exports.useEditorDraft=()=>({ready:true,dirty:false,recovery:null,flush:async()=>{},clear:async()=>{},onBlur(){}});',
+diff --git a/tests/crm-photo-authorization.test.cjs b/tests/crm-photo-authorization.test.cjs
+index 630deccf..5dd361ab 100644
+--- a/tests/crm-photo-authorization.test.cjs
++++ b/tests/crm-photo-authorization.test.cjs
+@@ -25,15 +25,17 @@ function fixture() {
+       return { user: { id: state.actor }, membership: membership() };
+     }
+   };
+-  const matches = where => where.clubId === app.clubId && (!where.id || where.id === app.id) && app.status !== 'DRAFTING';
++  const matches = where => where.AND ? where.AND.every(matches) : (!where.clubId || where.clubId === app.clubId) && (!where.id || typeof where.id === 'object' ? !where.id || where.id.in.includes(app.id) : where.id === app.id) && app.status !== 'DRAFTING';
+   const tx = {
+     $queryRaw: async()=>[],
+     user: { findUnique: async()=>({disabledAt:state.disabled?new Date():null}) },
+     pipelineRound: { findMany: async () => [app.round] },
+     application: {
+-      findMany: async ({ where }) => { if(state.pipelineError)throw state.pipelineError; return (state.pipelineReads++, matches(where)) && (!where.round || app.round.anonymousReview) ? [app] : []; },
++      findMany: async ({ where, include, omit, select }) => { state.pipelineOmit=omit; state.pipelineQuery=include; state.pipelineSelect=select; if(state.pipelineError)throw state.pipelineError; return (state.pipelineReads++, matches(where)) && (!where.round || app.round.anonymousReview) ? [app] : []; },
+       findFirst: async ({ where, select }) => { if(select)state.narrowReads++; return matches(where) ? app : null; }
+     },
++    evaluation: {findMany:async ({where})=>matches(where.application) && where.applicationId.in.includes(app.id) ? app.evaluations.filter(e=>e.submittedAt).map(e=>({...e,applicationId:app.id})):[]},
++    interviewPanelAssignment: {findMany:async ({where})=>matches(where.application) && where.applicationId.in.includes(app.id) ? app.interviewAssignments.map(e=>({...e,applicationId:app.id})):[]},
+     clubMember: { findFirst: async () => membership(), findUnique: async({where})=>state.clubAccess && where.userId_clubId.clubId===clubId ? membership():null },
+     applicantObservation: { findMany: async () => [] }
+   };
+@@ -145,3 +147,58 @@ test('pipeline failure diagnostics identify the failing phase without serializin
+  assert.ok(rows[0][1].elapsedMs>=0);assert.ok(rows[0][1].acquisitionMs>=0);assert.ok(rows[0][1].transactionMs>=0);
+  assert.doesNotMatch(JSON.stringify(rows),/SELECT|private|example|must not log|123e4567/);
+ });
++
++for (const reader of ['getClubPipeline', 'getClubPipelineList', 'getClubPipelinePage']) test(`${reader} repeats authorization and masks anonymous/self/foreign rows`, async()=>{
++ const f=fixture();await f.crm[reader](clubId);f.state.clubAccess=false;await assert.rejects(f.crm[reader](clubId));f.state.clubAccess=true;
++ f.state.permissions=[];await assert.rejects(f.crm[reader](clubId));f.state.permissions=['applications.review'];assert.equal((await f.crm[reader](clubId)).applications.length,0);
++ f.app.round.anonymousReview=true;const row=(await f.crm[reader](clubId)).applications[0];assert.equal(row.student.studentProfile.firstName,'Applicant');assert.equal(row.student.email,'');
++ await assert.rejects(f.crm[reader](id(99)));
++});
++
++test('summary database allowlist excludes detail/offer/member content and reads only submitted reviews',async()=>{
++ const f=fixture();await f.crm.getClubPipelineList(clubId);const selected=f.state.pipelineSelect;
++ assert.deepEqual(Object.keys(selected).sort(),['evaluations','id','interviewAssignments','round','roundId','status','student','studentId']);
++ assert.deepEqual(selected.evaluations,{where:{submittedAt:{not:null}},select:{interviewerId:true,roundId:true,submittedAt:true,score:true}});
++ assert.deepEqual(selected.interviewAssignments,{where:{revokedAt:null},select:{memberId:true,roundId:true,member:{select:{status:true,isOwner:true,permissions:true}}}});
++ assert.deepEqual(selected.student.select.studentProfile.select,{firstName:true,lastName:true,major:true,gradYear:true,transferStudent:true,gpa:true,satScore:true,actScore:true});
++ assert.deepEqual(selected.round,{select:{anonymousReview:true}});
++ await f.crm.getClubPipeline(clubId,{applicationId});assert.ok(f.state.pipelineQuery.answers.include.question);assert.ok(f.state.pipelineQuery.bookings.include.slot);assert.ok(f.state.pipelineQuery.student.include.studentProfile.include.experiences);
++});
++
++test('page cursors bind the freshly authorized projection and selection reads contain no identities',async()=>{
++ const f=fixture(),first=await f.crm.getClubPipelinePage(clubId);assert.equal(first.applications[0].id,applicationId);const cursor={id:applicationId,direction:'at',scope:first.page.scope};
++ f.state.permissions.push('applications.review');await assert.rejects(f.crm.getClubPipelinePage(clubId,{cursor}),/selection changed/);
++ for(const query of [{userId:owner},{limit:1000},{applicationId}])await assert.rejects(f.crm.getClubPipelinePage(clubId,query));
++ const selected=await f.crm.getClubPipelineSelection(clubId);assert.deepEqual(selected.applications,[{id:applicationId,roundId,status:'SUBMITTED',canQuickReview:true}]);assert.doesNotMatch(JSON.stringify(selected),/owner@|Student|Fixture|studentId|headshot|score/);
++ f.state.clubAccess=false;await assert.rejects(f.crm.getClubPipelineSelection(clubId));f.state.clubAccess=true;f.state.permissions=[];await assert.rejects(f.crm.getClubPipelineSelection(clubId));
++});
++
++test('narrow database summaries match canonical full privacy across viewer, profile and review states',async()=>{
++ const f=fixture(),project=load('lib/pipeline-list.ts').pipelineListProjection;
++ const member={status:'ACTIVE',isOwner:false,permissions:['applications.review','applicants.identify']};
++ const originalProfile=structuredClone(f.app.student.studentProfile);
++ let comparisons=0;
++ for(const anonymous of [false,true])for(const profile of [originalProfile,null,{...originalProfile,gpa:5,transferStudent:true}])for(const self of [false,true])for(const role of ['identified','reviewer','participant','president'])for(const submitted of [false,true]){
++  f.state.actor=self?owner:reader;f.state.permissions=role==='identified'?['applicants.identify']:role==='reviewer'?['applications.review']:['applications.review','applicants.identify'];f.state.offices=role==='president'?['PRESIDENT']:[];
++  f.app.round.anonymousReview=anonymous;f.app.student.studentProfile=profile;
++  f.app.interviewAssignments=[{roundId,memberId:id(7),member},{roundId,memberId:id(9),member:{...member,status:'SUSPENDED'}},{roundId:id(99),memberId:id(7),member}];
++  f.app.evaluations=[{roundId,interviewerId:id(7),submittedAt:submitted?new Date():null,score:8},{roundId,interviewerId:id(8),submittedAt:new Date(),score:6},{roundId:id(99),interviewerId:id(8),submittedAt:new Date(),score:9}];
++  const canonical=project(await f.crm.getClubPipeline(clubId));assert.deepEqual(await f.crm.getClubPipelineList(clubId),canonical);
++  assert.deepEqual((await f.crm.getClubPipelinePage(clubId)).applications,canonical.applications);comparisons++;
++ }
++ assert.equal(comparisons,96);
++});
++
++test('summary scores preserve submission barrier, self exclusion, inactive assignments and historical review visibility',async()=>{
++ const f=fixture();f.state.permissions=['applications.review','applicants.identify'];
++ const active={status:'ACTIVE',permissions:f.state.permissions},inactive={...active,status:'SUSPENDED'};
++ f.app.interviewAssignments=[{roundId,memberId:id(7),member:active},{roundId,memberId:id(8),member:inactive}];
++ f.app.evaluations=[{roundId,interviewerId:id(7),submittedAt:null,score:10},{roundId,interviewerId:id(9),submittedAt:new Date(),score:6},{roundId:id(99),interviewerId:id(9),submittedAt:new Date(),score:9}];
++ const row=async()=>(await f.crm.getClubPipelineList(clubId)).applications[0];
++ assert.equal((await row()).roundScore,null);assert.deepEqual((await row()).evaluations,[]);
++ f.state.offices=['PRESIDENT'];assert.equal((await row()).roundScore,null,'office does not bypass assigned reviewer submission');
++ f.app.evaluations[0].submittedAt=new Date();let r=await row();assert.deepEqual(r.roundScore,{average:8,submitted:2,required:2,provisional:false});assert.equal(r.evaluations.length,3);
++ f.state.offices=[];r=await row();assert.equal(r.evaluations.length,2,'ordinary assigned reviewer cannot see another round');
++ f.app.interviewAssignments.push({roundId,memberId:id(10),member:active});assert.equal((await row()).roundScore.provisional,true);
++ f.state.actor=owner;assert.equal((await row()).roundScore,null);assert.deepEqual((await row()).evaluations,[]);
++});
+diff --git a/tests/demo-mode.test.cjs b/tests/demo-mode.test.cjs
+index f6b6e52d..78cc2a2a 100644
+--- a/tests/demo-mode.test.cjs
++++ b/tests/demo-mode.test.cjs
+@@ -164,8 +164,11 @@ test("demo workspace switching preserves one identity and grants leadership only
+   demoStore.mutate(state => { state.perspective = { role: "leader", clubId: state.clubs[0].id } })
+   assert.equal(demoUser().id, student.id)
+   await api.getClubPipeline(s.clubs[0].id)
++  const compact=await api.getClubPipelineList(s.clubs[0].id)
++  assert.ok(compact.applications.every(app=>!("answers" in app)&&!("bookings" in app)))
+   demoStore.mutate(state => { state.perspective = { role: "leader", clubId: state.clubs[1].id } })
+   await assert.rejects(api.getClubPipeline(s.clubs[1].id), /perspective/)
++  await assert.rejects(api.getClubPipelineList(s.clubs[1].id), /perspective/)
+   const foreign = s.applications.find(a => a.clubId === s.clubs[1].id && a.status !== "DRAFTING")
+   await assert.rejects(api.setApplicationStatus({clubId: foreign.clubId, applicationId: foreign.id, status: "ACCEPTED"}), /perspective/)
+   demoStore.stop(); demoStore.start()
+@@ -451,3 +454,8 @@ test('Explore and Corkboard share deterministic demo clubs; saved items survive
+  assert.equal(JSON.stringify(demoStore.get().applications),applications);assert.equal(JSON.stringify(demoStore.get().subscriptions),subscriptions);assert.equal(h.calls(),0);
+  demoStore.reset();assert.deepEqual((await api.getCorkboard()).items,initial.items);assert.equal(h.calls(),0);
+ });
++test('Demo applicant page and complete-selection transports remain isolated and preserve round/search filters',async()=>{
++ const h=harness(),{demoStore}=h.load('lib/demo/store.ts'),api=h.load('lib/workspace-api.ts');demoStore.start();const club=demoStore.get().clubs[0];demoStore.mutate(s=>{s.perspective={role:'leader',clubId:club.id}});
++ const originalFetch=global.fetch;let fetched=0;global.fetch=async()=>{fetched++;throw Error('A Demo read must not reach HTTP')};
++ try{const whole=await api.getClubPipelineList(club.id),page=await api.getClubPipelinePage(club.id),selection=await api.getClubPipelineSelection(club.id);assert.equal(page.page.total,whole.applications.filter(a=>a.status!=='REJECTED').length);assert.equal(selection.applications.length,page.page.total);assert.ok(page.applications.length<=100);const round=whole.rounds[0],filtered=await api.getClubPipelinePage(club.id,{roundId:round.id});assert.ok(filtered.applications.every(a=>a.roundId===round.id));const missing=await api.getClubPipelinePage(club.id,{query:'does not match any fictional candidate'});assert.equal(missing.page.total,0);assert.equal(fetched,0);assert.equal(h.calls(),0);await assert.rejects(api.getClubPipelinePage(demoStore.get().clubs[1].id));}finally{global.fetch=originalFetch}
++});
+diff --git a/tests/live-applicant-views.test.cjs b/tests/live-applicant-views.test.cjs
+index f1aab0cb..55bc976c 100644
+--- a/tests/live-applicant-views.test.cjs
++++ b/tests/live-applicant-views.test.cjs
+@@ -5,7 +5,7 @@ const ts = require('typescript')
+ function compile(file, mocks = {}, extra = '') {
+   const mod = { exports: {} }
+   const code = ts.transpileModule(fs.readFileSync(file, 'utf8') + extra, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText
+-  new Function('require', 'module', 'exports', 'window', 'requestAnimationFrame', code)(name => mocks[name] || (name==='@/hooks/use-editor-draft'?require('./helpers/autosave-ui-harness.cjs').draftStub:name.startsWith('@/lib/') ? compile(name.replace('@/', '') + '.ts') : name.startsWith('@/') || name.startsWith('./') ? new Proxy({}, { get: (_, key) => String(key) }) : require(name)), mod, mod.exports, { addEventListener(){}, removeEventListener(){}, confirm(){ return true } }, () => {})
++  new Function('require', 'module', 'exports', 'window', 'requestAnimationFrame', 'cancelAnimationFrame', code)(name => mocks[name] || (name==='@/hooks/use-editor-draft'?require('./helpers/autosave-ui-harness.cjs').draftStub:name==='@/hooks/use-pipeline-page'?compile('hooks/use-pipeline-page.ts',mocks):name.startsWith('@/lib/') ? compile(name.replace('@/', '') + '.ts') : name.startsWith('@/') || name.startsWith('./') ? new Proxy({}, { get: (_, key) => String(key) }) : require(name)), mod, mod.exports, { addEventListener(){}, removeEventListener(){}, confirm(){ return true } }, () => {}, () => {})
+   return mod.exports
+ }
+ const { applicantLane } = compile('lib/applicant-board.ts')
+@@ -22,13 +22,17 @@ function nodes(node) {
+ const text = node => typeof node === 'string' ? node : Array.isArray(node) ? node.map(text).join('') : node?.props ? text(node.props.children) : ''
+ const flush = () => new Promise(resolve => setImmediate(resolve))
+ function harness(permissions = ['applications.review','applicants.identify','decisions.manage','recruitment.manage'], decisionsOnly = false, rejectedOnly = false) {
+-  const slots = [], effects = [], calls = [], lookups = []
+-  let index = 0, pipeline = { rounds: [{id:'round',name:'Review',order:0}], applications:[{id:'candidate',canEvaluate:true,studentId:'student',roundId:'round',status:'IN_REVIEW',student:{email:'sample@demo.invalid',studentProfile:null},evaluations:[],answers:[],bookings:[]}] }
+-  const react = {useState(initial){const i=index++;if(!(i in slots))slots[i]=initial;return [slots[i],value=>{slots[i]=typeof value==='function'?value(slots[i]):value}]},useRef(initial){const i=index++;return slots[i]??=( {current:initial})},useMemo(fn){index++;return fn()},useEffect(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;effects.push(fn)}}}
+-  const api = {getClubPipeline:async()=>{calls.push(['load']);return structuredClone(pipeline)},setApplicationStatus:async input=>{calls.push(['status',input]);const target=pipeline.applications.find(app=>app.id===input.applicationId);if(input.expectedStatus!==target.status)throw Error('stale');target.status=input.status;if(input.status==='ACCEPTED')target.recruitmentOffer={status:'PENDING',expiresAt:new Date(Date.now()+86400000)};return {success:true}},moveApplicantRound:async input=>{calls.push(['round',input]);if(input.expectedRoundId!==pipeline.applications[0].roundId)throw Error('stale');pipeline.applications[0].roundId=input.newRoundId;pipeline.applications[0].studentId='anonymous-candidate';pipeline.applications[0].student={email:'',studentProfile:{firstName:'Applicant',lastName:'CANDIDATE',experiences:[]}};return {success:true}},submitEvaluation:async input=>{calls.push(['review',input]);return {evaluation:{id:'evaluation',interviewerId:'member',round:'Review',score:input.score,notes:input.notes}}}}
+-  const C = compile('components/views/leader-dashboard/live-leader-workspace.tsx', {react,'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/lib/reviewer-evaluation':{findReviewerEvaluation(...args){const result=compile('lib/reviewer-evaluation.ts').findReviewerEvaluation(...args);lookups.push({round:args[2],result});return result}},'@/lib/workspace-api':api,'@/lib/application-state':{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus(){}})}}, '\nexports.TestWorkspace = ClubWorkspace;').TestWorkspace
++  const slots = [], effects = [], calls = [], lookups = [], setups = new Map(), cleanups = new Map()
++  let changed = false, index = 0, pipeline = { rounds: [{id:'round',name:'Review',order:0}], applications:[{id:'candidate',canEvaluate:true,studentId:'student',roundId:'round',status:'IN_REVIEW',student:{email:'sample@demo.invalid',studentProfile:null},evaluations:[],answers:[],bookings:[]}] }
++  const react = {useState(initial){const i=index++;if(!(i in slots))slots[i]=initial;return [slots[i],value=>{const next=typeof value==='function'?value(slots[i]):value;changed ||= !Object.is(next,slots[i]);slots[i]=next}]},useRef(initial){const i=index++;return slots[i]??=( {current:initial})},useMemo(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i].deps[j]))slots[i]={deps,value:fn()};return slots[i].value},useCallback(fn,deps){return react.useMemo(()=>fn,deps)},useEffect(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;setups.set(i,fn);effects.push([i,fn])}}}
++  const api = {getClubPipelineList:async()=>{calls.push(['load']);return structuredClone(pipeline)},setApplicationStatus:async input=>{calls.push(['status',input]);const target=pipeline.applications.find(app=>app.id===input.applicationId);if(input.expectedStatus!==target.status)throw Error('stale');target.status=input.status;if(input.status==='ACCEPTED')target.recruitmentOffer={status:'PENDING',expiresAt:new Date(Date.now()+86400000)};return {success:true}},moveApplicantRound:async input=>{calls.push(['round',input]);if(input.expectedRoundId!==pipeline.applications[0].roundId)throw Error('stale');pipeline.applications[0].roundId=input.newRoundId;pipeline.applications[0].studentId='anonymous-candidate';pipeline.applications[0].student={email:'',studentProfile:{firstName:'Applicant',lastName:'CANDIDATE',experiences:[]}};return {success:true}},submitEvaluation:async input=>{calls.push(['review',input]);const evaluation={id:'evaluation',interviewerId:'member',round:'Review',score:input.score,notes:input.notes};pipeline.applications[0].evaluations=[evaluation];pipeline.applications[0].canEvaluate=false;return {evaluation}}}
++  const auth={user:{id:'reviewer'},readAuthority:{}};
++  api.getClubPipelinePage=async(club,q={})=>{const data=await api.getClubPipelineList();return compile('lib/pipeline-page.ts').pagePipeline(data,q,'member','reviewer','fixture')};
++  api.getClubPipelineSelection=async(club,q={})=>compile('lib/pipeline-page.ts').completePipelineSelection(await api.getClubPipelineList(),q,'member','reviewer');
++  let detailKey='',detail=null;
++  const C = compile('components/views/leader-dashboard/live-leader-workspace.tsx', {react,'@/contexts/auth-context':{useAuth:()=>auth},'@/hooks/use-pipeline-applicant':{usePipelineApplicant(club,id,revision){const key=`${club}:${id}:${revision}`;if(key!==detailKey){detailKey=key;detail=id?structuredClone(pipeline.applications.find(app=>app.id===id)):null}return{application:detail,error:false,retry(){}}}},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false,ready:true})},'@/lib/reviewer-evaluation':{findReviewerEvaluation(...args){const result=compile('lib/reviewer-evaluation.ts').findReviewerEvaluation(...args);lookups.push({round:args[2],result});return result}},'@/lib/workspace-api':api,'@/lib/application-state':{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus(){}})}}, '\nexports.TestWorkspace = ClubWorkspace;').TestWorkspace
+   const membership = {id:'member',clubId:'club',permissions,club:{name:'Test club'}}
+-  return {calls,api,lookups,addCandidate(app){pipeline.applications.push({...structuredClone(pipeline.applications[0]),...app})},setCanEvaluate(value){pipeline.applications[0].canEvaluate=value},addRound(round){pipeline.rounds.push(round)},setEvaluations(evaluations){pipeline.applications[0].evaluations=evaluations},renameRound(name){pipeline.rounds[0].name=name},setServerRound(roundId){pipeline.applications[0].roundId=roundId},setServerStatus(status){pipeline.applications[0].status=status},render(){index=0;const tree=C({membership,decisionsOnly,rejectedOnly});while(effects.length)effects.shift()();return tree}}
++  return {calls,api,lookups,setViewer(id){auth.user={id};membership.id=id;membership.userId=id},replayEffects(){for(const cleanup of cleanups.values())cleanup?.();cleanups.clear();for(const [slot,setup]of setups)cleanups.set(slot,setup())},addCandidate(app){pipeline.applications.push({...structuredClone(pipeline.applications[0]),...app})},setCanEvaluate(value){pipeline.applications[0].canEvaluate=value},addRound(round){pipeline.rounds.push(round)},setEvaluations(evaluations){pipeline.applications[0].evaluations=evaluations},renameRound(name){pipeline.rounds[0].name=name},setServerRound(roundId){pipeline.applications[0].roundId=roundId},setServerStatus(status){pipeline.applications[0].status=status},render(){for(let step=0;step<20;step++){changed=false;index=0;const tree=C({membership,decisionsOnly,rejectedOnly});while(effects.length){const [slot,setup]=effects.shift();cleanups.get(slot)?.();cleanups.set(slot,setup())}if(!changed)return tree}throw Error('Component failed to settle')}}
+ }
+ const button = (tree,label) => nodes(tree).find(n=>n.type==='Button'&&text(n)===label)
+ const view = tree => nodes(tree).find(n=>['LiveApplicantList','LiveApplicantKanban'].includes(n.type))
+@@ -43,9 +47,9 @@ test('List/Kanban toggle preserves the same filtered server data and does not mu
+ })
+ test('drawer status writes send expectedStatus, reject stale outcomes, and refresh canonical offer state', async () => {
+   const h=harness();h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render()
+-  button(tree,'Accepted').props.onClick();tree=h.render();h.setServerStatus('WAITLISTED');button(tree,'Send now').props.onClick();await flush();tree=h.render()
++  button(tree,'Accepted').props.onClick();tree=h.render();h.setServerStatus('WAITLISTED');button(tree,'Send now').props.onClick();await flush();tree=h.render();await flush();tree=h.render()
+   assert.equal(h.calls.find(c=>c[0]==='status')[1].expectedStatus,'IN_REVIEW');assert.equal(view(tree).props.applicants[0].status,'IN_REVIEW');assert.match(text(tree),/could not be saved/)
+-  h.setServerStatus('IN_REVIEW');button(tree,'Send now').props.onClick();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED');assert.equal(h.calls.filter(c=>c[0]==='load').length,2);await flush();tree=h.render();assert.ok(button(tree,'Rescind pending offer'))
++  h.setServerStatus('IN_REVIEW');button(tree,'Send now').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED');assert.equal(h.calls.filter(c=>c[0]==='load').length,2);await flush();tree=h.render();await flush();tree=h.render();assert.ok(button(tree,'Rescind pending offer'))
+ })
+ test('read/review access alone never exposes enabled round moves or decision buttons', async () => {
+   const h=harness(['applications.review']);h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render()
+@@ -54,8 +58,8 @@ test('read/review access alone never exposes enabled round moves or decision but
+ test('evaluation save updates both presentations and explicit round movement reloads anonymous identity', async () => {
+   const h=harness();h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render()
+   nodes(tree).find(n=>n.props?.id==='review-score').props.onChange({target:{value:'8'}});tree=h.render()
+-  nodes(tree).find(n=>n.type==='form').props.onSubmit({preventDefault(){}});await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].evaluations[0].score,8)
+-  nodes(tree).find(n=>n.props?.id==='move-round').props.onChange({target:{value:'anonymous-round'}});tree=h.render();button(tree,'Move round').props.onClick();await flush();h.render();await flush();tree=h.render()
++  nodes(tree).find(n=>n.type==='form').props.onSubmit({preventDefault(){}});await flush();tree=h.render();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].evaluations[0].interviewerId,'member');assert.equal(h.calls.find(call=>call[0]==='review')[1].score,8)
++  nodes(tree).find(n=>n.props?.id==='move-round').props.onChange({target:{value:'anonymous-round'}});tree=h.render();button(tree,'Move round').props.onClick();await flush();h.render();await flush();tree=h.render();await flush();tree=h.render()
+   assert.equal(view(tree).props.applicants[0].studentId,'anonymous-candidate');assert.equal(view(tree).props.applicants[0].student.email,'');assert.equal(nodes(tree).find(n=>n.type==='Sheet').props.open,false)
+   button(tree,'Kanban').props.onClick();tree=h.render();assert.equal(view(tree).props.applicants[0].studentId,'anonymous-candidate')
+ })
+@@ -85,15 +89,15 @@ test('Decisions reuses expected-status mutations and moves saved outcomes betwee
+   const h=harness(undefined,true);h.render();await flush();let tree=h.render()
+   assert.equal(button(tree,'Kanban'),undefined)
+   decisionList(tree).props.open(decisionList(tree).props.applicants[0]);tree=h.render()
+-  decisionAction(tree,'Accepted').props.onClick();tree=h.render();button(tree,'Send now').props.onClick();await flush();tree=h.render()
++  decisionAction(tree,'Accepted').props.onClick();tree=h.render();button(tree,'Send now').props.onClick();await flush();tree=h.render();await flush();tree=h.render()
+   assert.equal(h.calls.find(c=>c[0]==='status')[1].expectedStatus,'IN_REVIEW')
+   assert.equal(decisionList(tree),undefined)
+-  decisionGroupButton(tree,'Accepted').props.onClick();tree=h.render()
++  decisionGroupButton(tree,'Accepted').props.onClick();tree=h.render();await flush();tree=h.render()
+   assert.equal(decisionList(tree).props.applicants[0].status,'ACCEPTED')
+ })
+ test('Decisions preserves stale failures and hides mutation controls from anonymous reviewers', async () => {
+   const h=harness(undefined,true);h.render();await flush();let tree=h.render();decisionList(tree).props.open(decisionList(tree).props.applicants[0]);tree=h.render()
+-  decisionAction(tree,'Accepted').props.onClick();tree=h.render();h.setServerStatus('REJECTED');button(tree,'Send now').props.onClick();await flush();tree=h.render()
++  decisionAction(tree,'Accepted').props.onClick();tree=h.render();h.setServerStatus('REJECTED');button(tree,'Send now').props.onClick();await flush();tree=h.render();await flush();tree=h.render()
+   assert.equal(decisionList(tree).props.applicants[0].status,'IN_REVIEW');assert.match(text(tree),/could not be saved/)
+   const limited=harness(['applications.review'],true);limited.render();await flush();tree=limited.render();decisionList(tree).props.open(decisionList(tree).props.applicants[0]);tree=limited.render();assert.equal(decisionAction(tree,'Accepted'),undefined)
+ })
+@@ -104,12 +108,12 @@ test('Kanban round moves reject stale data and share the refreshed anonymous pro
+   view(tree).props.open(view(tree).props.applicants[0]);tree=h.render()
+   nodes(tree).find(n=>n.props?.id==='move-round').props.onChange({target:{value:'anonymous-round'}});tree=h.render()
+   h.setServerRound('concurrent-round')
+-  button(tree,'Move round').props.onClick();await flush();tree=h.render()
++  button(tree,'Move round').props.onClick();await flush();tree=h.render();await flush();tree=h.render()
+   assert.equal(h.calls.find(c=>c[0]==='round')[1].expectedRoundId,'round')
+   assert.equal(view(tree).props.applicants[0].roundId,'round')
+   assert.match(text(tree),/could not be saved/)
+   h.setServerRound('round')
+-  button(tree,'Move round').props.onClick();await flush();h.render();await flush();tree=h.render()
++  button(tree,'Move round').props.onClick();await flush();h.render();await flush();tree=h.render();await flush();tree=h.render()
+   assert.equal(view(tree).type,'LiveApplicantKanban')
+   const refreshed=view(tree).props.applicants
+   assert.equal(refreshed[0].roundId,'anonymous-round')
+@@ -122,7 +126,7 @@ test('Kanban decisions use expected status and appear in List after server reloa
+   button(tree,'Kanban').props.onClick();tree=h.render()
+   view(tree).props.open(view(tree).props.applicants[0]);tree=h.render()
+   button(tree,'Accepted').props.onClick();tree=h.render()
+-  button(tree,'Send now').props.onClick();await flush();tree=h.render()
++  button(tree,'Send now').props.onClick();await flush();tree=h.render();await flush();tree=h.render()
+   assert.equal(h.calls.find(c=>c[0]==='status')[1].expectedStatus,'IN_REVIEW')
+   assert.equal(applicantLane(view(tree).props.applicants[0].status),'closed')
+   button(tree,'List').props.onClick();tree=h.render()
+@@ -153,12 +157,12 @@ test('recruitment review comes before filter toggles and is absent from Decision
+ });
+ test('quick review saves expected-status decisions and advances only after success', async () => {
+  const h=harness();h.addCandidate({id:'second',studentId:'student-two',student:{email:'second@demo.invalid',studentProfile:null}});h.render();await flush();let tree=h.render();
+- button(tree,'Quick review').props.onClick();tree=h.render();assert.match(text(tree),/publish the decision immediately/);
+- button(tree,'Accept & next').props.onClick();await flush();tree=h.render();assert.deepEqual(h.calls.find(c=>c[0]==='status')[1],{clubId:'club',applicationId:'candidate',status:'ACCEPTED',expectedStatus:'IN_REVIEW'});assert.match(text(nodes(tree).find(n=>n.type==='SheetTitle')),/second@demo.invalid/);
+- button(tree,'Deny & next').props.onClick();await flush();tree=h.render();assert.equal(h.calls.filter(c=>c[0]==='status').length,2);assert.match(text(tree),/Quick review complete/);
++ button(tree,'Quick review').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.match(text(tree),/publish the decision immediately/);
++ button(tree,'Accept & next').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.deepEqual(h.calls.find(c=>c[0]==='status')[1],{clubId:'club',applicationId:'candidate',status:'ACCEPTED',expectedStatus:'IN_REVIEW'});assert.match(text(nodes(tree).find(n=>n.type==='SheetTitle')),/second@demo.invalid/);
++ button(tree,'Deny & next').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.equal(h.calls.filter(c=>c[0]==='status').length,2);assert.match(text(tree),/Quick review complete/);
+ });
+ test('quick review preserves the candidate after a rejected stale write and skips without publishing',async()=>{
+- const h=harness();h.render();await flush();let tree=h.render();button(tree,'Quick review').props.onClick();tree=h.render();h.setServerStatus('WAITLISTED');button(tree,'Accept & next').props.onClick();await flush();tree=h.render();assert.ok(nodes(tree).find(n=>n.type==='Sheet').props.open);assert.match(text(tree),/candidate stays open/);button(tree,'Skip').props.onClick();await flush();tree=h.render();assert.equal(nodes(tree).find(n=>n.type==='Sheet').props.open,false);assert.equal(h.calls.filter(c=>c[0]==='status').length,1);
++ const h=harness();h.render();await flush();let tree=h.render();button(tree,'Quick review').props.onClick();await flush();tree=h.render();await flush();tree=h.render();h.setServerStatus('WAITLISTED');button(tree,'Accept & next').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.ok(nodes(tree).find(n=>n.type==='Sheet').props.open);assert.match(text(tree),/candidate stays open/);button(tree,'Skip').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.equal(nodes(tree).find(n=>n.type==='Sheet').props.open,false);assert.equal(h.calls.filter(c=>c[0]==='status').length,1);
+ });
+ test('review-only users cannot start quick review or move board candidates',async()=>{
+  const h=harness(['applications.review']);h.render();await flush();let tree=h.render();assert.equal(button(tree,'Quick review'),undefined);button(tree,'Kanban').props.onClick();tree=h.render();const props=view(tree).props;for(const lane of ['review','interview','decision','closed'])assert.equal(props.canMove(props.applicants[0],lane),false);
+@@ -166,12 +170,18 @@ test('review-only users cannot start quick review or move board candidates',asyn
+ test('board drops require an explicit outcome and preserve expected status',async()=>{
+  const h=harness();h.render();await flush();let tree=h.render();button(tree,'Kanban').props.onClick();tree=h.render();const props=view(tree).props;
+  assert.equal(props.canMove(props.applicants[0],'closed'),true);assert.equal(props.canMove(props.applicants[0],'interview'),false);
+- props.move(props.applicants[0],'closed');tree=h.render();assert.equal(h.calls.filter(c=>c[0]==='status').length,0);button(tree,'Accept candidate').props.onClick();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED');assert.equal(h.calls.find(c=>c[0]==='status')[1].expectedStatus,'IN_REVIEW');
++ props.move(props.applicants[0],'closed');tree=h.render();assert.equal(h.calls.filter(c=>c[0]==='status').length,0);button(tree,'Accept candidate').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED');assert.equal(h.calls.find(c=>c[0]==='status')[1].expectedStatus,'IN_REVIEW');
+ });
+ 
+ test('decision status stays unchanged until the server acknowledges publication',async()=>{
+  const h=harness();h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render();button(tree,'Accepted').props.onClick();tree=h.render()
+  const write=h.api.setApplicationStatus;let release;h.api.setApplicationStatus=async input=>{await new Promise(resolve=>{release=resolve});return write(input)}
+  button(tree,'Send now').props.onClick();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'IN_REVIEW');assert.equal(h.calls.some(c=>c[0]==='status'),false)
+- release();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED')
++ release();await flush();tree=h.render();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED')
+ })
++
++test('page reader remains usable after React development effect cleanup and setup replay',async()=>{const h=harness();h.render();await flush();let tree=h.render();assert.ok(view(tree));h.replayEffects();button(tree,'Refresh').props.onClick();h.render();await flush();tree=h.render();assert.ok(view(tree),'effect setup must create a usable reader after disposal');assert.equal(h.calls.filter(c=>c[0]==='load').length,2,'explicit refresh still performs fresh authorization after effect replay')});
++
++test('a different membership identity resets the page cursor before fresh summaries render',async()=>{
++ const h=harness(),id=n=>`123e4567-e89b-12d3-a456-${String(n).padStart(12,'0')}`;for(let i=0;i<201;i++)h.addCandidate({id:id(i)});h.render();await flush();let tree=h.render();nodes(tree).find(n=>n.props?.['aria-label']==='Next applicant page').props.onClick();h.render();await flush();tree=h.render();assert.equal(nodes(tree).find(n=>n.type==='p'&&Array.isArray(n.props?.children)&&n.props.children[0]==='Page ').props.children[1],2);h.setViewer(id(999));h.render();await flush();assert.doesNotThrow(()=>{tree=h.render()});assert.equal(nodes(tree).find(n=>n.type==='p'&&Array.isArray(n.props?.children)&&n.props.children[0]==='Page ').props.children[1],1);assert.equal(h.calls.filter(c=>c[0]==='load').length,3);
++});
+diff --git a/tests/navigation-phase2-e2e.test.cjs b/tests/navigation-phase2-e2e.test.cjs
+index 7787f59e..99c2d710 100644
+--- a/tests/navigation-phase2-e2e.test.cjs
++++ b/tests/navigation-phase2-e2e.test.cjs
+@@ -9,7 +9,7 @@ async function context(browser,f,options={}){return browser.newContext({viewport
+ async function open(page,f,recruiting=false){await page.goto(f.config.appUrl+'/club/'+f.data.clubIds[0]+'/workspace?section='+(recruiting?'recruitment&tool=overview':'overview'));await page.locator(recruiting?'.oc-command-recruiting':'.oc-command-club').filter({visible:true}).first().getByRole('button',{name:'Refresh overview',exact:true}).waitFor();}
+ async function select(page,tour){let link=page.locator(`[data-tour="nav-${tour}"]`).filter({visible:true}).first();if(!await link.count()&&tour==='applicants'){const group=page.getByRole('button',{name:'Applicants',exact:true}).filter({visible:true}).first();await group.focus();await page.keyboard.press('ArrowRight');link=page.locator(`[data-tour="nav-${tour}"]`).filter({visible:true}).first();}await link.focus();await page.keyboard.press('Enter');}
+ test('selected tabs request authorized data while code is still loading, then consume it exactly once', {skip:!configFile},async t=>{
+- const f=await fixture(),browser=await chromium.launch({headless:true});try{for(const[kind,tour,label,text]of cases)await t.test(kind,async()=>{const c=await context(browser,f),page=await c.newPage();let unblock,codeStarted,reads=0;const blocked=[],errors=[];page.on('pageerror',e=>errors.push(e.name));try{await open(page,f,kind==='pipeline');const seen=new Promise(resolve=>unblock=resolve);page.on('request',r=>{const u=new URL(r.url());if(u.pathname==='/api/workspace'&&u.searchParams.get('kind')===kind){reads++;unblock();}});const pendingCode=new Promise(resolve=>codeStarted=resolve);const gate=route=>{blocked.push(route);codeStarted()};await page.route('**/_next/static/chunks/*.js',gate);await select(page,tour);await Promise.race([Promise.all([seen,pendingCode]),new Promise((_,reject)=>setTimeout(()=>reject(Error('Data waited for the blocked code chunk')),3000))]);assert.ok(blocked.length,'The selected component really has an unresolved chunk');assert.equal(await page.getByRole('status').filter({hasText:'Loading workspace…'}).count(),1);await Promise.all(blocked.splice(0).map(r=>r.continue()));await page.unroute('**/_next/static/chunks/*.js',gate);await page.locator(`section[aria-label="${label}"]`).getByText(text,{exact:true}).first().waitFor();assert.equal(reads,1);assert.deepEqual(errors,[]);}finally{await page.unroute('**/_next/static/chunks/*.js');await Promise.allSettled(blocked.map(r=>r.continue()));await c.close();}});}finally{await browser.close();}
++ const f=await fixture(),browser=await chromium.launch({headless:true});try{for(const[kind,tour,label,text]of cases)await t.test(kind,async()=>{const c=await context(browser,f),page=await c.newPage();let unblock,codeStarted,reads=0;const blocked=[],errors=[];page.on('pageerror',e=>errors.push(e.name));try{await open(page,f,kind==='pipeline');const seen=new Promise(resolve=>unblock=resolve);page.on('request',r=>{const u=new URL(r.url());if(u.pathname==='/api/workspace'&&u.searchParams.get('kind')===(kind==='pipeline'?'pipelinePage':kind)){reads++;unblock();}});const pendingCode=new Promise(resolve=>codeStarted=resolve);const gate=route=>{blocked.push(route);codeStarted()};await page.route('**/_next/static/chunks/*.js',gate);await select(page,tour);await Promise.race([Promise.all([seen,pendingCode]),new Promise((_,reject)=>setTimeout(()=>reject(Error('Data waited for the blocked code chunk')),3000))]);assert.ok(blocked.length,'The selected component really has an unresolved chunk');assert.equal(await page.getByRole('status').filter({hasText:'Loading workspace…'}).count(),1);await Promise.all(blocked.splice(0).map(r=>r.continue()));await page.unroute('**/_next/static/chunks/*.js',gate);await page.locator(`section[aria-label="${label}"]`).getByText(text,{exact:true}).first().waitFor();assert.equal(reads,1);assert.deepEqual(errors,[]);}finally{await page.unroute('**/_next/static/chunks/*.js');await Promise.allSettled(blocked.map(r=>r.continue()));await c.close();}});}finally{await browser.close();}
+ });
+ test('rapid selected-tab changes fence late results and a revoked revisit never reveals the old directory',{skip:!configFile},async()=>{
+  const f=await fixture(),browser=await chromium.launch({headless:true}),c=await context(browser,f),page=await c.newPage();let release;try{await open(page,f);let received;const held=new Promise(resolve=>received=resolve);const gate=async route=>{const response=await route.fetch();release=()=>route.fulfill({response});received();};await page.route('**/api/workspace?kind=members&*',gate);await select(page,'members');await held;await select(page,'tasks');await page.getByText('Audit Task',{exact:true}).first().waitFor();await release();await page.unroute('**/api/workspace?kind=members&*',gate);assert.equal(await page.locator('section[aria-label="Members"]').count(),0);await select(page,'members');await page.getByRole('button',{name:'Member details · Audit Student 000',exact:true}).waitFor();await select(page,'overview');await page.locator('.oc-command-club').filter({visible:true}).first().waitFor();assert.equal((await f.actor.client.auth.signOut({scope:'local'})).error,null);await page.evaluate(()=>{window.__phase2Revealed=false;new MutationObserver(()=>{if([...document.querySelectorAll('button')].some(e=>e.getClientRects().length&&e.getAttribute('aria-label')==='Member details · Audit Student 000'))window.__phase2Revealed=true}).observe(document.body,{subtree:true,childList:true,attributes:true})});await select(page,'members');await page.getByRole('alert').filter({hasText:'Could not load this workspace.'}).waitFor();assert.equal(await page.evaluate(()=>window.__phase2Revealed),false);assert.equal(await page.getByRole('button',{name:'Member details · Audit Student 000',exact:true}).count(),0);}finally{if(release)await release().catch(()=>{});await c.close();await browser.close();}
+diff --git a/tests/review-editor-access-browser.test.cjs b/tests/review-editor-access-browser.test.cjs
+index af5ad11a..5673b385 100644
+--- a/tests/review-editor-access-browser.test.cjs
++++ b/tests/review-editor-access-browser.test.cjs
+@@ -5,10 +5,10 @@ test('browser: unassigned reviews have no editor or draft requests; assigned rev
+  const pipeline={rounds:[{id:round,name:'Interview',order:0,type:'INTERVIEW'},{id:'next-round',name:'Next round',order:1,type:'CUSTOM'}],applications:[{id:app,studentId:'synthetic-student',roundId:round,status:'IN_REVIEW',student:{email:'synthetic@demo.invalid',studentProfile:{firstName:'Synthetic',lastName:'Applicant',major:'Economics',experiences:[]}},evaluations:[],answers:[],bookings:[]}]};
+  const mocks={
+   'next/link':`const React=require('react');module.exports=({children,href,...props})=>React.createElement('a',{...props,href},children);`,
+-  '@/contexts/auth-context':`exports.useAuth=()=>({user:{id:'synthetic-reviewer',memberships:[{id:'synthetic-member',clubId:'${club}',userId:'synthetic-reviewer',isOwner:true,status:'ACTIVE',permissions:[],club:{name:'Synthetic club'}}]},activeClubId:'${club}',selectClub(){}});`,
++  '@/contexts/auth-context':`exports.useAuth=()=>window.__reviewAuth??=({user:{id:'synthetic-reviewer',memberships:[{id:'synthetic-member',clubId:'${club}',userId:'synthetic-reviewer',isOwner:true,status:'ACTIVE',permissions:[],club:{name:'Synthetic club'}}]},activeClubId:'${club}',selectClub(){}});`,
+   '@/contexts/demo-context':`exports.useDemoMode=()=>({isDemoEnabled:false,ready:true});`,
+   '@/lib/application-state':`exports.useApplicationState=()=>({leaderFocus:null,clearLeaderFocus(){}});`,
+-  '@/lib/workspace-api':`exports.getClubPipeline=async()=>{const p=${JSON.stringify(pipeline)};p.applications[0].canEvaluate=new URLSearchParams(location.search).has('assigned');return p};exports.submitEvaluation=async input=>{const r=await fetch('/evaluation',{method:'POST',body:JSON.stringify(input)});if(!r.ok)throw Error('Finalization failed');return r.json()};`,
++  '@/lib/workspace-api':`exports.getClubPipeline=async()=>{window.__pipelineDetails=(window.__pipelineDetails||0)+1;const p=${JSON.stringify(pipeline)};p.applications[0].canEvaluate=new URLSearchParams(location.search).has('assigned')&&!window.__reviewFinalized;return p};exports.getClubPipelineList=async()=>{window.__pipelineLists=(window.__pipelineLists||0)+1;return exports.getClubPipeline()};exports.getClubPipelinePage=async(club,q={})=>require('@/lib/pipeline-page').pagePipeline(await exports.getClubPipelineList(),q,'synthetic-member','synthetic-reviewer','fixture');exports.getClubPipelineSelection=async(club,q={})=>require('@/lib/pipeline-page').completePipelineSelection(await exports.getClubPipelineList(),q,'synthetic-member','synthetic-reviewer');exports.submitEvaluation=async input=>{const r=await fetch('/evaluation',{method:'POST',body:JSON.stringify(input)});if(!r.ok)throw Error('Finalization failed');const value=await r.json();window.__reviewFinalized=true;return value};`,
+   '@/actions/editor-drafts':`exports.getEditorDraft=async()=>{const r=await fetch('/draft');return r.json()};exports.saveEditorDraft=async input=>{const r=await fetch('/draft',{method:'POST',body:JSON.stringify(input)});return r.json()};`,
+   '@/components/applicant-intelligence':`exports.ApplicantDisplayPanel=()=>null;`,
+   '@/components/recruitment-attendance-summary':`exports.RecruitmentAttendanceSummary=()=>null;`,
+@@ -18,7 +18,7 @@ test('browser: unassigned reviews have no editor or draft requests; assigned rev
+   '@/components/live-voting/board-decision-mode':`exports.BoardDecisionMode=()=>null;`,
+   '@/components/demo-workspace':`exports.DemoRoundTarget=()=>null;`,
+  };
+- const js=bundle(`import React from'react';import{createRoot}from'react-dom/client';import{LiveLeaderWorkspace}from'@/components/views/leader-dashboard/live-leader-workspace';createRoot(document.getElementById('root')).render(<main><LiveLeaderWorkspace scoped/></main>);`,mocks);
++ const js=bundle(`import React from'react';import{createRoot}from'react-dom/client';import{LiveLeaderWorkspace,ApplicantReviewPreview}from'@/components/views/leader-dashboard/live-leader-workspace';createRoot(document.getElementById('root')).render(<main>{new URLSearchParams(location.search).has("preview")?<ApplicantReviewPreview clubId="${club}" applicationId="${app}" onClose={()=>{}} onChanged={()=>{}}/>:<LiveLeaderWorkspace scoped/>}</main>);`,mocks);
+  const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'outclass-review-editor-'));cp.execFileSync(process.execPath,[path.join(__dirname,'helpers/interview-browser-css.cjs'),path.join(tmp,'style.css')]);const css=fs.readFileSync(path.join(tmp,'style.css'),'utf8');
+  const writes=[],evaluations=[];let reads=0;
+  const server=http.createServer((req,res)=>{
+@@ -37,6 +37,6 @@ test('browser: unassigned reviews have no editor or draft requests; assigned rev
+   assert.equal(evaluations.length,1);assert.equal(evaluations[0].applicationId,app);assert.equal(evaluations[0].score,8);
+   assert.equal(await page.getByRole('spinbutton',{name:'Score (1–10)'}).count(),0);assert.equal(await page.getByRole('textbox',{name:'Overall evaluation feedback',exact:true}).count(),0);assert.equal(await page.getByRole('button',{name:'Finalize evaluation',exact:true}).count(),0);
+   await page.getByText(/Submitted evaluations are read-only/).waitFor();assert.equal(await page.getByRole('button',{name:'Accepted',exact:true}).isEnabled(),true);
+-  const afterFinalization=writes.length;await page.clock.runFor(2000);assert.equal(writes.length,afterFinalization,'a finalized review must not keep autosaving');assert.deepEqual(errors,[]);
++  const afterFinalization=writes.length;await page.clock.runFor(2000);assert.equal(writes.length,afterFinalization,'a finalized review must not keep autosaving');await page.goto(base+'?preview=1');await page.getByRole('heading',{name:'Synthetic Applicant',exact:true}).waitFor();assert.equal(await page.evaluate(()=>window.__pipelineDetails),1);assert.equal(await page.evaluate(()=>window.__pipelineLists||0),0,'single-candidate preview must not request a redundant list');assert.deepEqual(errors,[]);
+  }finally{await browser?.close();await new Promise(r=>server.close(r));fs.rmSync(tmp,{recursive:true,force:true});}
+ });
+diff --git a/tests/workspace-read-transport.test.cjs b/tests/workspace-read-transport.test.cjs
+index d2aee58e..ca9275b9 100644
+--- a/tests/workspace-read-transport.test.cjs
++++ b/tests/workspace-read-transport.test.cjs
+@@ -9,7 +9,7 @@ test('GET allowlist forwards only validated read arguments, preserves wire dates
+  mocks['next/headers']={cookies:async()=>({get:()=>demo?{value:'1'}:undefined})};
+  const {GET}=load('app/api/workspace/route.ts',mocks),{decodeWorkspaceData}=load('lib/workspace-wire.ts');
+  const get=(kind,args)=>GET(new Request('https://outclass.test/api/workspace?'+new URLSearchParams({kind,args:JSON.stringify(args)})));
+- for(const kind of ['assignedRooms','interviewWorkspace','interviewRounds','roomWorkspace','tasks','meetings','announcements']){
++ for(const kind of ['assignedRooms','interviewWorkspace','interviewRounds','roomWorkspace','pipelineList','pipelinePage','pipelineSelection','tasks','meetings','announcements']){
+    const response=await get(kind,[id]);assert.equal(response.status,200,kind);assert.equal(response.headers.get('cache-control'),'private, no-store');assert.match(response.headers.get('vary'),/(?:^|,\s*)Cookie(?:,|$)/);assert.ok(decodeWorkspaceData(await response.json()).at instanceof Date);assert.match(response.headers.get('x-outclass-trace-id'),/^[\da-f-]{36}$/);
+    assert.equal((await get(kind,[id,{userId:'forged'}])).status,400);assert.equal((await get(kind,['invalid-id'])).status,400);
+  }

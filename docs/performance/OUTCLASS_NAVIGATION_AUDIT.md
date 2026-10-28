@@ -1,5 +1,19 @@
 # OutClass navigation performance audit — current review
 
+## Current release decision — October 28, 2026
+
+**The bounded-pipeline candidate remains unmerged.** Current-main comparison complete:808 measured browser outcomes/184 excluded browser warmups, plus140 measured capacity requests/28 warmups. Baseline main `78402ee611f46b8764898250e46b6dcc8dab7654`; candidate implementation `375a00d54d95f24e7d600a56218b9bf8040a7937`; original October21 audit source `3017e01d5b55bc8fb38d4f8fbec4906dd93bf619`.
+
+At5,000, constrained cold entry p50/p95/max19,737.6/20,003.4/20,003.4→437.3/445.4/445.4ms, n=10/build. At one applicant, constrained cold detail83.7/102.4/102.4→167.5/649.0/649.0ms, n=10/build, requests3→4. At100, local common workflow1,030.4/1,060.5/1,060.5→1,145.5/1,178.8/1,178.8ms, n=6/build, usually9→11 requests. Large-list gains do not justify general rollout given these adverse interactions.
+
+[Latest full technical report/all52 tables](pipeline-ready-20261027/README.md), [structured network/server/request/byte/error results](pipeline-ready-20261027/COMPARISON.json), [implementation diff](pipeline-ready-20261027/IMPLEMENTATION.diff), [verification diff](pipeline-ready-20261027/VERIFICATION.diff), [reproduction commands/setup limits](pipeline-ready-20261027/REPRODUCTION.md). First sleep-invalid supplement excluded whole, including successful rows; all accepted protocols have valid controls/zero sleep. Failed pointer probes remain separately disclosed.
+
+QA:1,435 ordinary passes/57 gated skips/0 failures;50 live Auth/settings/runtime,16 existing navigation,16 pipeline integration,49 native transaction and42 native recruitment/offers/communications passes; build/types pass; lint0 errors/21 existing warnings;57 migrations/78 RLS table checks; diagnostic tests10/10. All861 frozen application/config/assets hashes unchanged; CRM mutations byte-for-byte unchanged. No candidate hosted CI/PR/merge/deployment. Owned services/volumes/private credentials/build snapshots removed; original checkout and21 unrelated containers preserved.
+
+Already released: Phase1, font/artwork PR85, fresh selected-startup PR87 and centered sidebar PR88. Exact main78402ee observed Ready/Production October27 with actual protected Overview visual verification. The candidate preserves these newer changes and excludes historical raw SQL join/rejected Settings preload/handoff. Production infrastructure/databases/security behavior unchanged. [Current self-contained review](CHATGPT_HANDOFF.md), [next implementation sequence](OPTIMIZATION_ROADMAP.md).
+
+The following material preserves previous reports with their historical source/date boundaries. Earlier pending/current-raw-join/missing-production-trace statements describe their older experiments and do not supersede this decision. Never pool these historical datasets with the October28 comparison.
+
 ## Subsequent production verification — October 27
 
 The sidebar-centering fix was merged as PR 88, main `78402ee611f46b8764898250e46b6dcc8dab7654`, and verified Ready / Production with the actual protected Overview visually checked. All twelve hosted jobs passed, including 1,390 ordinary tests (44 skipped), 50 Auth/settings/runtime cases, 16 selected-navigation cases and 18 authenticated accessibility cases. See [CENTERING_RELEASE.json](followup-20261027/CENTERING_RELEASE.json). This UI adjustment carries no navigation-speed claim.

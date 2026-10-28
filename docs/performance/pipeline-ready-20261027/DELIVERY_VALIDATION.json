@@ -1,0 +1,21 @@
+{
+  "at": "2026-10-28T15:02:02.150073+00:00",
+  "diagnosticHarnessAndSummaryTests": {
+    "pass": 10,
+    "fail": 0,
+    "skip": 0
+  },
+  "diagnosticBranchReadOnlySummaryAndHistoricalTests": {
+    "pass": 7,
+    "fail": 0,
+    "skip": 0
+  },
+  "latestIndexRecordsVerifiedAgainstComparison": 104,
+  "comparisons": 52,
+  "rawSealedInputs": 270,
+  "localReportLinks": "pass",
+  "originalMainRechecked": "78402ee611f46b8764898250e46b6dcc8dab7654",
+  "historicalDatasetsPreserved": true,
+  "candidateReleaseDecision": "unmerged; not ready for general rollout",
+  "applicationTests": "QA.json; unchanged frozen source; no new application edits during/after measurements"
+}
