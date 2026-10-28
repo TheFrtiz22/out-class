@@ -59,5 +59,22 @@ test('live voting migration preserves legacy history and enforces scope, closed 
   assert.equal((await db.query(`SELECT count(*)::int AS n FROM "UserNotification"`)).rows[0].n,0);
   assert.equal((await db.query(`SELECT relrowsecurity FROM pg_class WHERE relname='VotingRoomCommand'`)).rows[0].relrowsecurity,true);
   for(const role of ['anon','authenticated'])for(const action of ['SELECT','INSERT','UPDATE','DELETE'])assert.equal((await db.query(`SELECT has_table_privilege('${role}','"VotingRoomCommand"','${action}') AS allowed`)).rows[0].allowed,false);
+  await db.exec(fs.readFileSync(path.join(dir,'20261028180000_live_voting_without_ballot','migration.sql'),'utf8'));
+  await db.exec(session('without','cycle','m'));
+  await db.exec(`INSERT INTO "VotingCandidate"("sessionId","applicationId",position,"expectedStatus") VALUES('without','app',0,'IN_REVIEW');
+   INSERT INTO "VotingPass"("sessionId",number) VALUES('without',1);
+   INSERT INTO "VotingPassCandidate"("sessionId","passNumber","applicationId",position) VALUES('without',1,'app',0);
+   UPDATE "VotingSession" SET state='OPEN',"currentPass"=1,"activeApplicationId"='app',"startedAt"=NOW() WHERE id='without';
+   UPDATE "VotingPassCandidate" SET "withoutVote"=true,"ballotState"='CONFIRMED',"confirmedDecision"='PASS',"confirmedBy"='leader',"confirmedAt"=NOW() WHERE "sessionId"='without';`);
+  assert.equal((await db.query(`SELECT count(*)::int n FROM "VotingBallot" WHERE "sessionId"='without'`)).rows[0].n,0);
+  await assert.rejects(db.exec(`UPDATE "VotingPassCandidate" SET "withoutVote"=false WHERE "sessionId"='without'`),/transition|state/);
+  await db.exec(`UPDATE "VotingPassCandidate" SET "confirmedDecision"='HOLD' WHERE "sessionId"='without'; UPDATE "VotingSession" SET state='COMPLETED',"endedAt"=NOW() WHERE id='without';
+   INSERT INTO "PipelineRound"(id,"clubId",name,"order") VALUES('next','club','Next',1);
+   UPDATE "Application" SET "submittedAt"=NOW() WHERE id='app';`);
+  const before=(await db.query(`SELECT count(*)::int n FROM "UserNotification"`)).rows[0].n;
+  await db.exec(`BEGIN; SELECT set_config('outclass.voting_finalization','without',true); UPDATE "Application" SET "roundId"='next' WHERE id='app'; COMMIT;`);
+  assert.equal((await db.query(`SELECT count(*)::int n FROM "UserNotification"`)).rows[0].n,before,'finalization round transition sends no notifications');
+  await db.exec(`UPDATE "Application" SET "roundId"='round' WHERE id='app'`);
+  assert.equal((await db.query(`SELECT count(*)::int n FROM "UserNotification"`)).rows[0].n,before+1,'normal CRM events still notify after transaction-local deferral');
  }finally{await db.close()}
 });

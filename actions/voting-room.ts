@@ -146,7 +146,7 @@ export async function commandLiveVotingRoom(input:unknown) {
     if(s.finalizedAt)throw new RoomConflict("FINALIZED","This session is finalized and read only.");
     if(s.revision!==d.revision)throw retryConflict();
     const pass=s.passes.find(p=>p.number===s.currentPass),current=pass?.candidates.find(c=>c.applicationId===s.activeApplicationId);
-    if(["OPEN_VOTING","CONFIRM"].includes(d.action)&&(!current||!await tx.application.findFirst({where:{id:current.applicationId,clubId:s.clubId,roundId:s.roundId,recruitmentCycleId:s.cycleId,status:s.candidates.find(c=>c.applicationId===current.applicationId)!.expectedStatus}})))throw new RoomConflict("APPLICANT_CHANGED","The applicant's recruitment context changed. Close or end the session and review the application.");
+    if(["OPEN_VOTING","CONFIRM","ACCEPT_WITHOUT_VOTE"].includes(d.action)&&(!current||!await tx.application.findFirst({where:{id:current.applicationId,clubId:s.clubId,roundId:s.roundId,recruitmentCycleId:s.cycleId,status:s.candidates.find(c=>c.applicationId===current.applicationId)!.expectedStatus}})))throw new RoomConflict("APPLICANT_CHANGED","The applicant's recruitment context changed. Close or end the session and review the application.");
     const patch:Prisma.VotingSessionUpdateInput={revision:{increment:1}};
     let overridden=false,previousDecision:string|null=null;
     const updateEntry=async(data:Prisma.VotingPassCandidateUpdateInput,entry=current,number=s.currentPass)=>{
@@ -155,18 +155,22 @@ export async function commandLiveVotingRoom(input:unknown) {
     };
     switch(d.action){
       case "START": case "NEXT_PASS": {
-        if(d.action==="START"?s.state!=="DRAFT":s.state!=="PAUSED"||pass?.state!=="COMPLETED")throw retryConflict();
-        const ids=roomOutcomes(s).filter(o=>o.outcome==="HOLD"||o.outcome==="UNREVIEWED").map(o=>o.applicationId);
+        if(d.action==="START"?s.state!=="DRAFT":!["PAUSED","COMPLETED"].includes(s.state)||pass?.state!=="COMPLETED")throw retryConflict();
+        const ids=roomOutcomes(s).filter(o=>d.action==="START"?o.outcome==="UNREVIEWED":o.outcome==="HOLD").map(o=>o.applicationId);
         if(!ids.length)throw new RoomConflict("EMPTY_QUEUE","No held or unreviewed applicants remain. End the session when ready.");
         await tx.votingPass.create({data:{sessionId:s.id,number:s.currentPass+1,candidates:{create:ids.map((applicationId,position)=>({applicationId,position}))}}});
-        Object.assign(patch,{currentPass:s.currentPass+1,activeApplicationId:ids[0],state:"OPEN",startedAt:s.startedAt??new Date(),joinOpenedAt:s.joinOpenedAt??new Date()});break;
+        Object.assign(patch,{currentPass:s.currentPass+1,activeApplicationId:ids[0],state:"OPEN",endedAt:null,startedAt:s.startedAt??new Date(),joinOpenedAt:s.joinOpenedAt??new Date()});break;
       }
       case "OPEN_VOTING":
         if(s.state!=="OPEN"||current?.ballotState!=="PENDING")throw retryConflict();
         await updateEntry({ballotState:"OPEN",openedAt:new Date()});break;
       case "CLOSE_VOTING":
         if(s.state!=="OPEN"||current?.ballotState!=="OPEN")throw retryConflict();
+        if(current.ballots.length<s.participants.length&&!d.confirmed)throw new RoomConflict("EARLY_CLOSE_CONFIRMATION",`${s.participants.length-current.ballots.length} missing ballots. Confirm early closure; missing votes are not Reject votes.`);
         await updateEntry({ballotState:"CLOSED",closedAt:new Date()});break;
+      case "ACCEPT_WITHOUT_VOTE":
+        if(s.state!=="OPEN"||current?.ballotState!=="PENDING"||!d.confirmed||!d.reason)throw new RoomConflict("CONFIRMATION_REQUIRED","Confirm accepting without a vote and provide a reason.");
+        await updateEntry({ballotState:"CONFIRMED",withoutVote:true,confirmedDecision:"PASS",confirmedBy:user.id,confirmedAt:new Date()});break;
       case "CONFIRM": {
         if(s.state!=="OPEN"||current?.ballotState!=="CLOSED"||!d.choice)throw retryConflict();
         overridden=recommendedOutcome(current,s.participants.length)!==storedChoice[d.choice];
@@ -181,6 +185,7 @@ export async function commandLiveVotingRoom(input:unknown) {
       }
       case "END":
         if(s.state==="COMPLETED")throw retryConflict();
+        if(!d.confirmed)throw new RoomConflict("END_CONFIRMATION_REQUIRED","Confirm ending voting with Hold and Unreviewed applicants preserved.");
         if(current?.ballotState==="OPEN"){
           await updateEntry({ballotState:"CLOSED",closedAt:new Date()});
           await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:"voting.room.close_voting",details:{applicationId:current.applicationId,passNumber:s.currentPass,ended:true}}});
@@ -188,12 +193,11 @@ export async function commandLiveVotingRoom(input:unknown) {
         if(pass?.state==="OPEN")await tx.votingPass.update({where:{sessionId_number:{sessionId:s.id,number:s.currentPass}},data:{state:"COMPLETED",completedAt:new Date()}});
         Object.assign(patch,{state:"COMPLETED",endedAt:new Date()});break;
       case "FINALIZE":
-        if(s.state!=="COMPLETED")throw new RoomConflict("END_REQUIRED","End the session before finalizing its outcomes.");
-        if(!hasPermission(m,"applicants.identify"))throw Error("Finalization identification permission required.");
-        patch.finalizedAt=new Date();break;
+        throw new RoomConflict("PREVIEW_REQUIRED","Use the recruitment mapping preview before finalizing decisions.");
       case "CORRECT": {
         const entry=s.passes.find(p=>p.number===d.passNumber)?.candidates.find(c=>c.applicationId===d.applicationId);
-        if(entry?.ballotState!=="CONFIRMED"||!d.choice||!d.reason)throw new RoomConflict("CORRECTION_REQUIRED","Select a confirmed outcome and supply a correction reason.");
+        if(current?.ballotState==="OPEN")throw new RoomConflict("CLOSE_REQUIRED","Close voting before correcting the queue.");
+        if(entry?.ballotState!=="CONFIRMED"||d.choice!=="HOLD"||!d.reason)throw new RoomConflict("CORRECTION_REQUIRED","Return a confirmed outcome to Hold and supply a correction reason.");
         // Correct only the latest outcome; earlier passes remain historical evidence.
         if([...s.passes].reverse().find(p=>p.candidates.some(c=>c.applicationId===d.applicationId))?.number!==d.passNumber)throw retryConflict();
         previousDecision=entry.confirmedDecision;
@@ -203,7 +207,7 @@ export async function commandLiveVotingRoom(input:unknown) {
     await tx.votingSession.update({where:{id:s.id},data:patch});
     const result={revision:s.revision+1};
     await tx.votingRoomCommand.create({data:{...key,actorId:user.id,fingerprint,result}});
-    await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:`voting.room.${d.action.toLowerCase()}`,reason:d.reason,details:{applicationId:d.applicationId??current?.applicationId??null,passNumber:d.passNumber??s.currentPass,decision:d.choice??null,overridden,previousDecision}}});
+    await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:`voting.room.${d.action.toLowerCase()}`,reason:d.reason,details:{applicationId:d.applicationId??current?.applicationId??null,passNumber:d.passNumber??s.currentPass,decision:d.action==="ACCEPT_WITHOUT_VOTE"?"ACCEPT":d.choice??null,overridden,previousDecision,...(d.action==="CLOSE_VOTING"?{missingBallots:s.participants.length-(current?.ballots.length??0),earlyClosureConfirmed:!!d.confirmed}:{}),...(d.action==="END"?{held:roomOutcomes(s).filter(o=>o.outcome==="HOLD").length,unreviewed:roomOutcomes(s).filter(o=>o.outcome==="UNREVIEWED").length}:{} )}}});
     return result;
   },votingWriteLimits));
 }

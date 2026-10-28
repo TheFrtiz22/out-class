@@ -1148,6 +1148,7 @@ model VotingPass {
   @@id([sessionId, number])
 }
 model VotingPassCandidate {
+  withoutVote Boolean @default(false)
   ballotState String @default("PENDING")
   openedAt DateTime?
   closedAt DateTime?

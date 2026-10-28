@@ -1,10 +1,9 @@
 import { z } from "zod";
 import { votingDisplaySchema, defaultVotingDisplay } from "@/lib/voting-presentation";
-import { ballotOutcome } from "@/lib/voting-engine";
 
 export const roomChoice = z.enum(["ACCEPT", "HOLD", "REJECT"]);
 export const storedChoice = { ACCEPT: "PASS", HOLD: "HOLD", REJECT: "NOT_PASS" } as const;
-export function publicChoice(value: string | null) { return value === "PASS" ? "ACCEPT" : value === "NOT_PASS" ? "REJECT" : value === "HOLD" ? "HOLD" : "UNREVIEWED"; }
+export function publicChoice(value: string | null):"ACCEPT"|"HOLD"|"REJECT"|"UNREVIEWED" { return value === "PASS" ? "ACCEPT" : value === "NOT_PASS" ? "REJECT" : value === "HOLD" ? "HOLD" : "UNREVIEWED"; }
 export const roomScope = z.object({ clubId: z.string().uuid(), sessionId: z.string().uuid() }).strict();
 export const liveRoomFields=["photo","name","major","academicYear","gpa","sat","act","resumeHighlight","interviewScore"] as const;
 export type LiveRoomField=typeof liveRoomFields[number];
@@ -20,7 +19,8 @@ export const createRoomSchema = roomScope.extend({
   presentationOptions:roomPresentationSchema.optional(),
 });
 export const roomCommandSchema = roomScope.extend({ requestId: z.string().uuid(), revision: z.number().int().nonnegative(),
-  action: z.enum(["START", "OPEN_VOTING", "CLOSE_VOTING", "CONFIRM", "ADVANCE", "NEXT_PASS", "END", "FINALIZE", "CORRECT"]),
+  action: z.enum(["START", "OPEN_VOTING", "CLOSE_VOTING", "CONFIRM", "ACCEPT_WITHOUT_VOTE", "ADVANCE", "NEXT_PASS", "END", "FINALIZE", "CORRECT"]),
+  confirmed: z.boolean().optional(),
   applicationId: z.string().uuid().optional(), passNumber: z.number().int().positive().optional(),
   choice: roomChoice.optional(), reason: z.string().trim().min(1).max(1000).optional(),
 });
@@ -38,4 +38,13 @@ export function roomOutcomes(s: { candidates: { applicationId: string }[]; passe
   });
 }
 export function roomTally(entry: RoomEntry) { return { ACCEPT: entry.ballots.filter(b => b.decision === "PASS").length, HOLD: entry.ballots.filter(b => b.decision === "HOLD").length, REJECT: entry.ballots.filter(b => b.decision === "NOT_PASS").length }; }
-export function recommendedOutcome(entry: RoomEntry, count: number) { return ballotOutcome(entry.ballots, count, "NONE", 100).outcome; }
+export function recommendedOutcome(entry: RoomEntry, _count?: number) {
+  const choice=leadingBallotChoice(roomTally(entry));return choice?storedChoice[choice]:null;
+}
+export function leadingBallotChoice(totals:ReturnType<typeof roomTally>){const highest=Math.max(...Object.values(totals)),leaders=Object.entries(totals).filter(([,n])=>n===highest);return highest>0&&leaders.length===1?leaders[0][0] as keyof typeof storedChoice:null;}
+export const finalizationMapping=z.discriminatedUnion("kind",[
+ z.object({kind:z.literal("ADVANCE"),roundId:z.string().uuid()}).strict(),
+ z.object({kind:z.literal("ADMISSION")}).strict(),
+]);
+export const finalizationPreviewInput=roomScope.extend({mapping:finalizationMapping});
+export const finalizeRoomInput=finalizationPreviewInput.extend({requestId:z.string().uuid(),revision:z.number().int().nonnegative(),guard:z.string().regex(/^[a-f0-9]{64}$/),confirmed:z.literal(true)});

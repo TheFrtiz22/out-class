@@ -5,15 +5,16 @@ import { useAuth } from "@/contexts/auth-context";
 import { useDemoMode } from "@/contexts/demo-context";
 import { useLiveVotingRoom } from "@/hooks/use-live-voting-room";
 import { castLiveVotingBallot,commandLiveVotingRoom,getLiveVotingJoinInfo,joinLiveVotingRoom } from "@/lib/voting-room-api";
-import { liveRoomPath,roomBallotSchema,roomCommandSchema } from "@/lib/voting-room";
+import { liveRoomPath,roomBallotSchema } from "@/lib/voting-room";
 import { z } from "zod";
 import { QrCodeCard } from "@/components/qr/qr-code-card";
 import { Button } from "@/components/ui/button";
 import { Dialog,DialogContent,DialogTitle } from "@/components/ui/dialog";
 import { RoomPresentation } from "./room-presentation";
+import {LeaderControls,OutcomeCounts} from "./room-meeting";
 import "./room.css";
 type View="leader"|"present"|"member";
-type Ballot=z.infer<typeof roomBallotSchema>;type Command=z.infer<typeof roomCommandSchema>;
+type Ballot=z.infer<typeof roomBallotSchema>;
 export function LiveVotingEntry({clubId,sessionId,view,demoScoped}:{clubId:string;sessionId:string;view:View;demoScoped:boolean}){
  const auth=useAuth(),demo=useDemoMode(),[member,setMember]=useState("");
  if(auth.loading||!demo.ready)return <main className="vr-page" role="status">Checking sign-in…</main>;
@@ -49,11 +50,12 @@ export function VotingRoom(props:RoomProps){
  }
  if(!room)return <main className="vr-page"><h1>Live voting</h1>{error?<div role="alert" className="vr-error">{error}<Button variant="outline" onClick={()=>void refresh()}>Retry connection</Button></div>:<p role="status">Restoring session…</p>}</main>;
  if(view==="leader"&&!room.permissions.leader)return <main className="vr-page"><h1>Leader controls unavailable</h1><Link href={liveRoomPath(clubId,sessionId,"member",demoScoped)}>Open member view</Link></main>;
- const appId=room.currentApplicantId??(view==="leader"&&room.status==="DRAFT"?(preview||room.outcomes[0]?.applicationId):null),currentChoice=ack?.key===key&&ack.revision>=(entry?.ownBallot?.revision??-1)?ack.choice:entry?.ownBallot?.choice;
+ const appId=room.status==="OPEN"?room.currentApplicantId:view==="leader"&&room.status==="DRAFT"?(preview||room.outcomes[0]?.applicationId):null,currentChoice=ack?.key===key&&ack.revision>=(entry?.ownBallot?.revision??-1)?ack.choice:entry?.ownBallot?.choice;
  const qrCard=<QrCodeCard title="Join this voting session" description="Sign in with your eligible club account." path={liveRoomPath(clubId,sessionId,"member",demoScoped)} filename="outclass-voting-session"/>;
  return <main className={`vr-page ${view==="member"?"vr-member":view==="present"?"vr-present":""}`}>
  <header className="vr-header"><h1>{view==="leader"?"Lead voting":view==="member"?"Your vote":"Live voting"}</h1><div className="vr-actions">{view==="leader"&&<><Link target="_blank" rel="noopener" className="vr-link" href={liveRoomPath(clubId,sessionId,"present",demoScoped)}>Open audience presentation</Link><Link className="vr-link" href={liveRoomPath(clubId,sessionId,"member",demoScoped)}>My voting device</Link></>}{view!=="member"&&<Button ref={qrButton} variant="outline" size="sm" onClick={()=>setQr(true)}>Join QR</Button>}</div></header>
- <div className="vr-stats" aria-label="Session progress"><span>{room.status==="COMPLETED"?"Session ended":entry?.ballotState==="OPEN"?"Voting open":entry?.ballotState==="CLOSED"||entry?.ballotState==="CONFIRMED"?"Voting closed":"Waiting for voting"}</span><span>{room.participation.voted} of {room.participation.eligible} eligible voters voted</span><span>Applicant {entry?entry.position+1:0} of {pass?.candidates.length??room.outcomes.length} · Pass {room.passNumber||1}</span><span>Accepted {room.accepted} · Provisional</span><span>{room.targetSize==null?"Target not set":`Target ${room.targetSize} · Guidance`}</span></div>
+ <div className="vr-stats" aria-label="Session progress"><span>{room.status==="COMPLETED"?"Session ended":entry?.ballotState==="OPEN"?"Voting open":entry?.ballotState==="CLOSED"||entry?.ballotState==="CONFIRMED"?"Voting closed":"Waiting for voting"}</span><span>{room.participation.voted} of {room.participation.eligible} eligible voters voted</span><span>Reviewed {pass?.candidates.filter(c=>c.ballotState==="CONFIRMED").length??0} of {pass?.candidates.length??room.outcomes.length} this pass · Pass {room.passNumber||1}</span></div>
+ <OutcomeCounts room={room}/>
  {room.status==="DRAFT"&&<section aria-label="Waiting room"><h2>Ready when your leader is</h2><p>Voting has not started.</p>{view!=="member"&&qrCard}</section>}
  {view==="leader"&&room.status==="DRAFT"&&<label className="block my-4">Preview applicant<select className="rounded border p-2 ml-2" aria-label="Preview applicant" value={appId??""} onChange={e=>setPreview(e.target.value)}>{room.outcomes.map((a,i)=><option key={a.applicationId} value={a.applicationId}>Applicant {i+1}</option>)}</select></label>}
  {appId&&<RoomPresentation clubId={clubId} sessionId={sessionId} applicationId={appId} identity={`${identity}:${room.accessVersion}`} refreshKey={0} member={member}/>}
@@ -65,23 +67,4 @@ export function VotingRoom(props:RoomProps){
  <p className="sr-only" role="status">{entry?`Applicant ${entry.position+1} of ${pass?.candidates.length}. ${entry.ballotState==="OPEN"?"Voting open":"Voting closed or waiting"}.`:"Waiting for the leader."}</p>
  <Dialog open={qr} onOpenChange={setQr}><DialogContent onCloseAutoFocus={e=>{e.preventDefault();qrButton.current?.focus();}} aria-describedby={undefined} className="max-h-[90dvh] overflow-y-auto"><DialogTitle>Join live voting</DialogTitle>{qrCard}</DialogContent></Dialog>
  </main>;
-}
-type Snapshot=NonNullable<ReturnType<typeof useLiveVotingRoom>["room"]>;
-function LeaderControls({room,refresh,member}:{room:Snapshot;refresh:()=>Promise<void>|undefined;member?:string}){
- const [busy,setBusy]=useState(false),[error,setError]=useState(""),[reason,setReason]=useState(""),[choice,setChoice]=useState<Command["choice"]>("HOLD"),[pending,setPending]=useState<Command|null>(null),lock=useRef(false);
- const entry=room.history.find(p=>p.number===room.passNumber)?.candidates.find(c=>c.applicationId===room.currentApplicantId);
- useEffect(()=>{setReason("");setChoice("HOLD");},[room.currentApplicantId,room.passNumber]);
- async function command(action:Command["action"],retry=false){if(lock.current)return;lock.current=true;setBusy(true);setError("");const body=retry&&pending?pending:{clubId:room.clubId,sessionId:room.id,requestId:crypto.randomUUID(),revision:room.revision,action,...(action==="CONFIRM"?{choice,reason:reason.trim()||undefined}:{})};setPending(body);try{const r=await commandLiveVotingRoom(body,member);if(!r.ok){setPending(null);setError(r.message);await refresh();return;}setPending(null);await refresh();}catch{setError("Command could not be confirmed. Retry the same command before continuing.");}finally{lock.current=false;setBusy(false);}}
- return <section className="vr-leader" aria-label="Leader controls"><h2>Leader controls</h2>{error&&<div role="alert" className="vr-error">{error}{pending&&<Button variant="outline" disabled={busy} onClick={()=>void command(pending.action,true)}>Retry command</Button>}</div>}
- <fieldset disabled={busy||!!pending} className="space-y-3"><legend className="sr-only">Control session</legend><div className="vr-actions">
- {room.status==="DRAFT"&&<Button onClick={()=>void command("START")}>Start session</Button>}
- {room.status==="OPEN"&&entry?.ballotState==="PENDING"&&<Button onClick={()=>void command("OPEN_VOTING")}>Open voting</Button>}
- {room.status==="OPEN"&&entry?.ballotState==="OPEN"&&<Button onClick={()=>void command("CLOSE_VOTING")}>Close voting</Button>}
- {room.status==="OPEN"&&entry?.ballotState==="CONFIRMED"&&<Button onClick={()=>void command("ADVANCE")}>Next applicant</Button>}
- {room.status==="PAUSED"&&room.queue.length>0&&<Button onClick={()=>void command("NEXT_PASS")}>Start next pass · Hold and unreviewed</Button>}
- {room.permissions.canEnd&&room.status!=="COMPLETED"&&<Button variant="outline" onClick={()=>{if(window.confirm("End this session and preserve unresolved applicants? No notifications will be sent."))void command("END")}}>End session</Button>}
- </div>{room.status==="OPEN"&&entry?.ballotState==="CLOSED"&&<div className="vr-actions"><label>Proposed outcome <select aria-label="Proposed outcome" className="rounded border p-2" value={choice} onChange={e=>setChoice(e.target.value as Command["choice"])}><option value="ACCEPT">Accept</option><option value="HOLD">Hold</option><option value="REJECT">Reject</option></select></label><label>Override reason <input className="rounded border p-2" aria-label="Override reason" value={reason} maxLength={1000} onChange={e=>setReason(e.target.value)}/></label><Button onClick={()=>void command("CONFIRM")}>Confirm outcome</Button></div>}</fieldset>
- {busy&&<p role="status">Saving command…</p>}
- <details className="mt-4"><summary>Joined participants · {room.joinedParticipants.filter(p=>p.joined).length}</summary><ul>{room.joinedParticipants.map(p=><li key={p.id}>{p.label} · {p.joined?"Joined":"Waiting"}</li>)}</ul></details>
- </section>;
 }

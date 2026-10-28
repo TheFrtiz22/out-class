@@ -18,17 +18,17 @@ export function requireRoomLeader(s: LiveRoom, m: Member, capability: ClubPermis
 export function projectVotingRoom(s: LiveRoom, m: Member, anonymous: boolean) {
   const permissions = roomAuthority(s,m,anonymous), outcomes = roomOutcomes(s);
   return {
-    id:s.id, clubId:s.clubId, cycleId:s.cycleId!, roundId:s.roundId, revision:s.revision, status:s.state,
+    id:s.id, clubId:s.clubId, cycleId:s.cycleId!, roundId:s.roundId, revision:s.revision, status:s.state,ballotRosterSize:s.participants.length,ballotsReceived:s.passes.find(p=>p.number===s.currentPass)?.candidates.find(c=>c.applicationId===s.activeApplicationId)?.ballots.length??0,
     currentApplicantId:s.activeApplicationId, passNumber:s.currentPass, targetSize:s.targetUnset?null:s.targetSize,
     finalizedAt:s.finalizedAt, displayConfig:s.displayConfig, permissions:{...permissions,
       canEnd:permissions.leader&&hasPermission(m,"decisions.finish"),
-      canFinalize:permissions.leader&&hasPermission(m,"decisions.publish")&&hasPermission(m,"applicants.identify"),
+      canFinalize:permissions.leader&&hasPermission(m,"decisions.manage")&&hasPermission(m,"decisions.publish")&&hasPermission(m,"applicants.identify"),
       canCorrect:permissions.leader&&hasPermission(m,"decisions.manage")},
     outcomes, queue:outcomes.filter(o=>o.outcome==="HOLD"||o.outcome==="UNREVIEWED"), accepted:outcomes.filter(o=>o.outcome==="ACCEPT").length,
     history:s.passes.map(p=>({number:p.number,status:p.state,candidates:p.candidates.map(c=>{
       const own=c.ballots.find(b=>b.memberId===m.id),closed=c.ballotState==="CLOSED"||c.ballotState==="CONFIRMED";
       return {applicationId:c.applicationId,position:c.position,ballotState:c.ballotState,outcome:publicChoice(c.confirmedDecision),
-        ownBallot:own?{choice:publicChoice(own.decision),revision:own.revision}:null,
+        withoutVote:c.withoutVote,ownBallot:own?{choice:publicChoice(own.decision),revision:own.revision}:null,
         ...(closed?{totals:roomTally(c)}:{})};
     })})),
   };

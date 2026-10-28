@@ -1,20 +1,22 @@
 const {load,uuid}=require('./voting-harness.cjs');
 const clubId=uuid(1),roundId=uuid(2),cycleId=uuid(3),sessionId=uuid(4),leaderId=uuid(5),voterId=uuid(6),apps=[uuid(10),uuid(11),uuid(12)];
 function harness(){
- let actor=leaderId,sequence=100,state={sessions:[],receipts:[],audit:[],apps:apps.map(id=>({id,clubId,roundId,recruitmentCycleId:cycleId,status:'IN_REVIEW'}))};
+ let actor=leaderId,sequence=100,state={sessions:[],receipts:[],audit:[],offers:[],notifications:[],apps:apps.map(id=>({id,clubId,roundId,recruitmentCycleId:cycleId,status:'IN_REVIEW',decisionVersion:0,decisionStateRevision:0,studentId:uuid(90),student:{studentProfile:{firstName:'Synthetic',lastName:id.slice(-2)}}}))};
  const members=[leaderId,voterId,uuid(7)].map((id,i)=>({id,userId:id,clubId,status:'ACTIVE',interviewOffices:[],permissions:['applications.review','applicants.identify','decisions.vote',...(i===0?['decisions.manage','decisions.start','decisions.finish','decisions.publish']:[])],user:{disabledAt:null}}));
- const round={id:roundId,clubId,archivedAt:null,anonymousReview:false},cycle={id:cycleId,clubId,archivedAt:null};
+ const round={id:roundId,clubId,name:'Interview',type:'INTERVIEW',order:0,archivedAt:null,anonymousReview:false},cycle={id:cycleId,clubId,archivedAt:null};
  const copy=x=>x==null?x:structuredClone(x),matches=(o,w)=>Object.entries(w??{}).every(([k,v])=>k==='OR'?v.some(x=>matches(o,x)):v&&typeof v==='object'?('in'in v?v.in.includes(o[k]):'not'in v?o[k]!==v.not:'has'in v?o[k]?.includes(v.has):'some'in v?o[k]?.some(x=>matches(x,v.some)):matches(o[k]??{},v)):o[k]===v);
  const sess=id=>state.sessions.find(s=>s.id===id),entry=w=>sess(w.sessionId).passes.find(p=>p.number===w.passNumber).candidates.find(c=>c.applicationId===w.applicationId);
- const defaults={ballotState:'PENDING',openedAt:null,closedAt:null,confirmedDecision:null,confirmedBy:null,confirmedAt:null,override:null};
+ const defaults={withoutVote:false,ballotState:'PENDING',openedAt:null,closedAt:null,confirmedDecision:null,confirmedBy:null,confirmedAt:null,override:null};
  const tx={
-  $queryRaw:async()=>[],$executeRaw:async()=>0,club:{findUnique:async()=>({suspendedAt:null})},
-  user:{findUnique:async({where})=>{const m=members.find(m=>m.userId===where.id);return m?{id:m.userId,disabledAt:m.user.disabledAt}:null}},
+  $queryRaw:async()=>[],$executeRaw:async()=>0,club:{findUnique:async()=>({suspendedAt:null}),findUniqueOrThrow:async()=>({schoolId:uuid(91)})},
+  user:{findUniqueOrThrow:async()=>({email:'synthetic@demo.invalid'}),findUnique:async({where})=>{const m=members.find(m=>m.userId===where.id);return m?{id:m.userId,disabledAt:m.user.disabledAt}:null}},
   clubMember:{findUnique:async({where})=>copy(members.find(m=>matches(m,where.userId_clubId))),findFirst:async({where})=>copy(members.find(m=>matches(m,where))),findMany:async({where})=>copy(members.filter(m=>matches(m,where)))},
   pipelineRound:{findFirst:async({where})=>matches(round,where)?copy(round):null,findMany:async()=>[copy(round)]},recruitmentCycle:{findFirst:async({where})=>matches(cycle,where)?copy(cycle):null,findMany:async()=>[copy(cycle)]},
   interviewRecord:{findFirst:async()=>null},interviewPanelAssignment:{findFirst:async()=>null},
   votingParticipant:{update:async({where,data})=>Object.assign(sess(where.sessionId_memberId.sessionId).participants.find(p=>p.memberId===where.sessionId_memberId.memberId),data)},
-  application:{findMany:async({where})=>copy(state.apps.filter(a=>matches(a,where))),findFirst:async({where})=>copy(state.apps.find(a=>matches(a,where)))},
+  application:{findMany:async({where})=>copy(state.apps.filter(a=>matches(a,where)).map(a=>({...a,round}))),findFirst:async({where})=>{const a=state.apps.find(a=>matches(a,where));return a?copy({...a,round}):null},update:async({where,data})=>{const a=state.apps.find(a=>a.id===where.id);for(const[k,v]of Object.entries(data))a[k]=v&&typeof v==='object'&&'increment'in v?(a[k]??0)+v.increment:v;a.decisionStateRevision++;return copy(a)}},
+  clubInvitation:{findUnique:async({where})=>copy(state.offers.find(o=>o.applicationId===where.applicationId))??null,create:async({data})=>{const o={...data,id:uuid(sequence++),status:'PENDING'};state.offers.push(o);return copy(o)}},
+  userNotification:{create:async({data})=>{state.notifications.push(data);return data},findUnique:async({where})=>state.notifications.find(n=>matches(n,where.userId_eventKey))??null},
   votingSession:{findFirst:async({where})=>copy(state.sessions.find(s=>matches(s,where)))??null,findMany:async({where,select})=>copy(state.sessions.filter(s=>matches({...s,round},where)).map(s=>select?Object.fromEntries(Object.keys(select).map(k=>[k,s[k]])):s)),create:async({data})=>{
    const s={...data,state:'DRAFT',revision:0,currentPass:0,createdAt:new Date(),activeApplicationId:null,startedAt:null,endedAt:null,finalizedAt:null,publishedAt:null,joinOpenedAt:null,participants:data.participants.create,candidates:data.candidates.create,passes:[]};state.sessions.push(s);return copy(s);
   },update:async({where,data})=>{const s=sess(where.id);for(const [k,v]of Object.entries(data))s[k]=k==='revision'?s[k]+v.increment:v;return copy(s)}},
@@ -22,13 +24,13 @@ function harness(){
   votingPassCandidate:{update:async({where,data})=>Object.assign(entry(where.sessionId_passNumber_applicationId),data)},
   votingBallot:{create:async({data})=>{const e=entry(data);if(e.ballots.some(b=>b.memberId===data.memberId))throw Error('unique');e.ballots.push({...data,id:uuid(sequence++),revision:0});return data},update:async({where,data})=>Object.assign(entry(where.sessionId_passNumber_applicationId_memberId).ballots.find(b=>b.memberId===where.sessionId_passNumber_applicationId_memberId.memberId),data)},
   votingRoomCommand:{findUnique:async({where})=>copy(state.receipts.find(r=>matches(r,where.sessionId_requestId))),create:async({data})=>{if(state.receipts.some(r=>r.sessionId===data.sessionId&&r.requestId===data.requestId))throw Error('unique receipt');state.receipts.push(copy(data));return data}},
-  auditLog:{create:async({data})=>{state.audit.push(copy(data));return data}},
+  auditLog:{findFirst:async({where})=>copy([...state.audit].reverse().find(a=>matches(a,where))),create:async({data})=>{state.audit.push(copy(data));return data}},
  };
  let chain=Promise.resolve();const prisma={...tx,$transaction:work=>{const op=chain.then(async()=>{const before=copy(state);try{return copy(await work(tx))}catch(e){state=before;throw e}});chain=op.catch(()=>{});return op;}};
  const mocks={'@/utils/prisma':{prisma},'@/utils/club-write-transaction':{votingWriteLimits:{},clubWriteTransaction:work=>prisma.$transaction(work)},'@/utils/auth':{requireAuth:async()=>({user:{id:actor}}),requireClubPermission:async(c,caps)=>{const m=members.find(m=>m.userId===actor);if(!m||c!==m.clubId||m.status!=='ACTIVE'||m.user.disabledAt||!caps.every(p=>m.permissions.includes(p)))throw Error('Denied');return{user:{id:actor},membership:copy(m)}}},'@/actions/applicant-intelligence':{getApplicantDisplay:()=>{throw Error('Use canonical display harness for presentation tests')}}};
  const api=load('actions/voting-room.ts',mocks),scope={clubId,sessionId};
  const create=(extra={})=>api.createLiveVotingRoom({...scope,cycleId,roundId,leaderMemberIds:[leaderId],participantIds:[leaderId,voterId],applicationIds:apps,targetSize:1,...extra});
- const command=(action,extra={})=>api.commandLiveVotingRoom({...scope,requestId:uuid(sequence++),revision:sess(sessionId).revision,action,...extra});
+ const command=(action,extra={})=>api.commandLiveVotingRoom({...scope,requestId:uuid(sequence++),revision:sess(sessionId).revision,action,...(['CLOSE_VOTING','END'].includes(action)?{confirmed:true}:{}),...extra});
  const vote=(choice,extra={})=>{const s=sess(sessionId),own=entry({sessionId,passNumber:s.currentPass,applicationId:s.activeApplicationId}).ballots.find(b=>b.memberId===actor);return api.castLiveVotingBallot({...scope,requestId:uuid(sequence++),passNumber:s.currentPass,applicationId:s.activeApplicationId,ballotRevision:own?.revision??null,choice,...extra})};
  return{api,create,command,vote,read:()=>api.getLiveVotingRoom(scope),state:()=>state,members,round,cycle,as:id=>actor=id,scope,mocks,tx};
 }

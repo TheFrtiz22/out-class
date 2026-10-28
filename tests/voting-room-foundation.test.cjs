@@ -21,7 +21,7 @@ test('one current ballot is replaceable only while open, retries do not overwrit
  const first={...h.scope,requestId,applicationId:apps[0],passNumber:1,ballotRevision:null,choice:'ACCEPT'};
  ok(await h.vote('REJECT'));ok(await h.api.castLiveVotingBallot(first));assert.equal(h.state().sessions[0].passes[0].candidates[0].ballots.length,1);
  assert.equal((await h.read()).history[0].candidates[0].ownBallot.choice,'REJECT');h.as(leaderId);let view=await h.read();
- assert.equal('totals'in view.history[0].candidates[0],false);assert.equal(view.history[0].candidates[0].ownBallot,null);assert.doesNotMatch(JSON.stringify(view),/memberId|fingerprint|ballots/);
+ assert.equal('totals'in view.history[0].candidates[0],false);assert.equal(view.history[0].candidates[0].ownBallot,null);assert.doesNotMatch(JSON.stringify(view),/"(?:memberId|fingerprint|ballots)":/);assert.equal(view.ballotsReceived,1,'count-only closure information contains no individual choices');
  assert.ok(h.state().audit.filter(a=>a.action.includes('ballot')).every(a=>!('decision'in a.details)));
  ok(await h.command('CLOSE_VOTING'));view=await h.read();assert.deepEqual(view.history[0].candidates[0].totals,{ACCEPT:0,HOLD:0,REJECT:1});
  h.as(voterId);assert.equal((await h.vote('HOLD')).code,'VOTING_CLOSED');ok(await h.api.castLiveVotingBallot(first));
@@ -74,11 +74,9 @@ test('legacy entry points cannot mutate or disclose LIVE rooms or publish applic
  assert.equal((await legacy.getVotingJoinInfo(sessionId)).status,'NOT_JOINABLE');
  const publication=load('utils/voting-publication.ts',h.mocks);await assert.rejects(publication.publishReviewedVotingCandidates(h.tx,h.state().sessions[0],apps,[],leaderId),/does not publish/);
 });
-test('End preserves unreviewed/Hold, finalization separately seals only session without notifications or decisions',async()=>{
+test('End preserves unresolved applicants and the old seal command cannot bypass recruitment mapping preview',async()=>{
  const h=harness();await begin(h);ok(await h.vote('ACCEPT'));ok(await h.command('END'));let view=await h.read();assert.equal(view.status,'COMPLETED');assert.equal(view.finalizedAt,null);assert.equal(view.queue.length,3);assert.equal(view.history[0].candidates[0].ballotState,'CLOSED');
- const requestId=uuid(410),revision=view.revision;ok(await h.command('FINALIZE',{requestId}));ok(await h.api.commandLiveVotingRoom({...h.scope,requestId,revision,action:'FINALIZE'}));
- assert.ok((await h.read()).finalizedAt);assert.equal((await h.command('START')).code,'FINALIZED');assert.ok(h.state().apps.every(a=>a.status==='IN_REVIEW'));
- assert.equal(h.state().audit.filter(a=>a.action==='voting.room.finalize').length,1);
+ assert.equal((await h.command('FINALIZE')).code,'PREVIEW_REQUIRED');assert.equal((await h.read()).finalizedAt,null);assert.ok(h.state().apps.every(a=>a.status==='IN_REVIEW'));
  const code=fs.readFileSync('actions/voting-room.ts','utf8');assert.doesNotMatch(code,/publishRecruitmentDecision|sendEmail|userNotification\.create|application\.update/);
 });
 test('revoked membership, permission changes and disabled accounts deny reads, writes, retries and presentation authority',async()=>{
@@ -94,7 +92,7 @@ test('revocation between snapshot construction and response revalidation prevent
 });
 test('confirmed corrections and overrides require reasons, remain audited, and cannot rewrite earlier passes',async()=>{
  const h=harness();await begin(h);ok(await h.command('CLOSE_VOTING'));assert.equal((await h.command('CONFIRM',{choice:'ACCEPT'})).code,'REASON_REQUIRED');ok(await h.command('CONFIRM',{choice:'HOLD',reason:'Incomplete votes'}));
- assert.equal((await h.command('CORRECT',{applicationId:apps[0],passNumber:1,choice:'REJECT'})).code,'CORRECTION_REQUIRED');ok(await h.command('CORRECT',{applicationId:apps[0],passNumber:1,choice:'REJECT',reason:'Leader correction'}));assert.equal(h.state().audit.at(-1).reason,'Leader correction');
+ assert.equal((await h.command('CORRECT',{applicationId:apps[0],passNumber:1,choice:'REJECT'})).code,'CORRECTION_REQUIRED');ok(await h.command('CORRECT',{applicationId:apps[0],passNumber:1,choice:'HOLD',reason:'Leader correction'}));assert.equal(h.state().audit.at(-1).reason,'Leader correction');
 });
 test('refresh/reconnect restores projected state; failed polling clears it, late responses cannot cross subscriptions',async()=>{
  const h=harness();await begin(h);ok(await h.vote('HOLD'));const {votingRoomSubscription}=load('lib/voting-room-subscription.ts');let reads=0,resolve,seen=[];
