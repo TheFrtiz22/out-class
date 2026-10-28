@@ -30,6 +30,11 @@ export function ExpandingDock({ sections, active, contextKey, renderItem, onHome
   const focusInside = () => rail.current?.contains(document.activeElement) || Array.from(document.querySelectorAll<HTMLElement>("[data-dock-flyout]")).some(node => node.dataset.dockFlyout === owner && node.contains(document.activeElement))
   function cancelExit() { clearTimeout(exitTimer.current) }
   function cancelIntent() { clearTimeout(intentTimer.current) }
+  function entersCompactRail(clientX: number) {
+    // During collapse the animated surface still overlays content. Crossing
+    // that departing area must not expand it again over the intended target.
+    return expanded || clientX <= (rail.current?.getBoundingClientRect().left ?? 0) + 80
+  }
   function hoverGroup(group: Group | null) {
     cancelIntent()
     // Let diagonal travel cross another row on its way to the current flyout.
@@ -80,11 +85,12 @@ export function ExpandingDock({ sections, active, contextKey, renderItem, onHome
   }, [])
   useEffect(() => {
     cancelIntent(); setOpenGroup(null); flyoutHovered.current = false
-    // A route change may move focus to content. Collapse only after that focus settles.
-    scheduleExit()
+    // Navigation hands the pointer back to content, even if its next target
+    // lies beneath the departing expanded surface. A new compact-rail entry
+    // or keyboard focus can expand it again.
+    railHovered.current = false; dockFocused.current = false
+    setExpanded(false); clearHighlight()
     return () => { cancelExit(); cancelIntent() }
-    // Interaction refs intentionally contain the current hover/focus state.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contextKey])
   useEffect(() => {
     const media = window.matchMedia("(min-width: 1024px)")
@@ -105,7 +111,15 @@ export function ExpandingDock({ sections, active, contextKey, renderItem, onHome
   }
   function leaveFlyout() { flyoutHovered.current = false; scheduleExit() }
   return <aside ref={rail} className="oc-expanding-dock hidden lg:block" aria-label="Workspace dock" data-dock-expanded={expanded}
-    onPointerEnter={event => { if (event.pointerType === "mouse" || event.pointerType === "pen") { railHovered.current = true; cancelExit(); setExpanded(true) } }}
+    onPointerEnter={event => { if ((event.pointerType === "mouse" || event.pointerType === "pen") && entersCompactRail(event.clientX)) { railHovered.current = true; cancelExit(); setExpanded(true) } }}
+    onPointerMove={event => {
+      if (expanded || railHovered.current || !["mouse", "pen"].includes(event.pointerType) || !entersCompactRail(event.clientX)) return
+      // Reentering through the departing wide surface may not emit another
+      // pointerenter when the pointer reaches an icon. Honor that real intent.
+      railHovered.current = true; cancelExit(); setExpanded(true)
+      const item = (event.target as HTMLElement).closest<HTMLElement>("[data-dock-item]")
+      if (item) { emphasize(item); hoverGroup((item.dataset.dockGroup as Group | undefined) ?? null) }
+    }}
     onPointerLeave={() => { railHovered.current = false; cancelIntent(); scheduleExit() }}
     onFocusCapture={() => { dockFocused.current = true; cancelIntent(); cancelExit(); setExpanded(true) }} onBlurCapture={event => {
       const next = event.relatedTarget as Node | null
@@ -119,6 +133,7 @@ export function ExpandingDock({ sections, active, contextKey, renderItem, onHome
         <div ref={canvas} className="oc-dock-navigation-content"
           onPointerOver={event => {
             if (event.pointerType !== "mouse" && event.pointerType !== "pen") return
+            if (!entersCompactRail(event.clientX)) return
             const item = (event.target as HTMLElement).closest<HTMLElement>("[data-dock-item]")
             if (!item) return
             cancelExit(); setExpanded(true); emphasize(item)
