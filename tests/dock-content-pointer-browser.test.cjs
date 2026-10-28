@@ -10,6 +10,16 @@ test('flyout destination releases the first content-row pointer target during co
     await page.goto(fixture.base + '/club/fixture-mii/workspace?section=recruitment&role=president', { waitUntil: 'networkidle' });
     const trigger = page.locator('.oc-expanding-dock [data-dock-group="applicants"]');
     await trigger.hover();
+    await page.waitForFunction(() => document.querySelector('.oc-expanding-dock').getBoundingClientRect().width >= 271.9);
+    const menu = page.getByRole('dialog', { name: 'Applicants navigation', exact: true });
+    const parent = await trigger.boundingBox(), lower = await menu.getByRole('link').last().boundingBox();
+    const from = { x: parent.x + 140, y: parent.y + 24 }, to = { x: lower.x + 100, y: lower.y + 22 };
+    await page.mouse.move(from.x, from.y);
+    for (let step = 1; step <= 16; step++) {
+      await page.mouse.move(from.x + (to.x - from.x) * step / 16, from.y + (to.y - from.y) * step / 16);
+      await page.waitForTimeout(60);
+    }
+    assert.equal(await trigger.getAttribute('aria-expanded'), 'true', 'continued diagonal movement retains the intended flyout');
     await page.getByRole('dialog', { name: 'Applicants navigation', exact: true }).getByRole('link', { name: 'All Applicants', exact: true }).click();
     await page.waitForURL('**tool=applicants');
     // A first-column content button in the compact rail's reserved content area.

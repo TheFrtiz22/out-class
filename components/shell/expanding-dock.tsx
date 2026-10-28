@@ -27,9 +27,11 @@ export function ExpandingDock({ sections, active, contextKey, renderItem, onHome
   const railHovered = useRef(false), flyoutHovered = useRef(false)
   const exitTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const intentTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const pendingGroup = useRef<Group | null | undefined>(undefined)
+  const pointerX = useRef<number | null>(null)
   const focusInside = () => rail.current?.contains(document.activeElement) || Array.from(document.querySelectorAll<HTMLElement>("[data-dock-flyout]")).some(node => node.dataset.dockFlyout === owner && node.contains(document.activeElement))
   function cancelExit() { clearTimeout(exitTimer.current) }
-  function cancelIntent() { clearTimeout(intentTimer.current) }
+  function cancelIntent() { clearTimeout(intentTimer.current); pendingGroup.current = undefined }
   function entersCompactRail(clientX: number) {
     // During collapse the animated surface still overlays content. Crossing
     // that departing area must not expand it again over the intended target.
@@ -39,8 +41,12 @@ export function ExpandingDock({ sections, active, contextKey, renderItem, onHome
     cancelIntent()
     // Let diagonal travel cross another row on its way to the current flyout.
     // Staying on the new row commits that intent; entering the flyout cancels it.
-    if (openGroup && openGroup !== group) intentTimer.current = setTimeout(() => setOpenGroup(group), EXIT_DELAY)
+    if (openGroup && openGroup !== group) deferGroup(group)
     else setOpenGroup(group)
+  }
+  function deferGroup(group: Group | null) {
+    cancelIntent(); pendingGroup.current = group
+    intentTimer.current = setTimeout(() => { pendingGroup.current = undefined; setOpenGroup(group) }, EXIT_DELAY)
   }
   function clearHighlight() {
     hoveredItem.current = null
@@ -88,7 +94,7 @@ export function ExpandingDock({ sections, active, contextKey, renderItem, onHome
     // Navigation hands the pointer back to content, even if its next target
     // lies beneath the departing expanded surface. A new compact-rail entry
     // or keyboard focus can expand it again.
-    railHovered.current = false; dockFocused.current = false
+    railHovered.current = false; dockFocused.current = false; pointerX.current = null
     setExpanded(false); clearHighlight()
     return () => { cancelExit(); cancelIntent() }
   }, [contextKey])
@@ -113,7 +119,13 @@ export function ExpandingDock({ sections, active, contextKey, renderItem, onHome
   return <aside ref={rail} className="oc-expanding-dock hidden lg:block" aria-label="Workspace dock" data-dock-expanded={expanded}
     onPointerEnter={event => { if ((event.pointerType === "mouse" || event.pointerType === "pen") && entersCompactRail(event.clientX)) { railHovered.current = true; cancelExit(); setExpanded(true) } }}
     onPointerMove={event => {
-      if (expanded || railHovered.current || !["mouse", "pen"].includes(event.pointerType) || !entersCompactRail(event.clientX)) return
+      if (!["mouse", "pen"].includes(event.pointerType)) return
+      const previousX = pointerX.current; pointerX.current = event.clientX
+      // Slow diagonal travel can cross several rail rows before reaching the
+      // flyout. Continued movement toward it keeps that menu's ownership;
+      // pausing on another row still commits the normal 200ms hover intent.
+      if (expanded && openGroup && pendingGroup.current !== undefined && previousX !== null && event.clientX > previousX) deferGroup(pendingGroup.current)
+      if (expanded || railHovered.current || !entersCompactRail(event.clientX)) return
       // Reentering through the departing wide surface may not emit another
       // pointerenter when the pointer reaches an icon. Honor that real intent.
       railHovered.current = true; cancelExit(); setExpanded(true)
