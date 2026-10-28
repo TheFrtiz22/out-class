@@ -7,6 +7,7 @@ const tokens = read("styles/product-tokens.css")
 const primitives = read("styles/product-components.css")
 const home = read("components/views/student-home.css")
 const operations = read("components/product/operational-dashboard.css")
+const applications = read("components/applications/application-tracker.css")
 const navigation = read("styles/navigation-glass.css")
 
 test("authenticated surfaces share a restrained material vocabulary distinct from navigation", () => {
@@ -26,4 +27,11 @@ test("Home and recruiting / club overview consume the shared content material", 
   assert.match(operations, /\.oc-command-recruiting \.oc-review-console \{[^\n]+--oc-content-radius/)
   assert.match(operations, /\.oc-command-club \.oc-command-context \{[^\n]+--oc-content-radius/)
   assert.match(operations, /\.oc-command-pipeline \{[^\n]+--oc-content-shadow/)
+})
+
+test("application drafts, statuses and writing questions inherit the same calm surfaces", () => {
+  assert.match(applications, /\\.oc-application-management-row \\{[^\\n]+--oc-content-radius/)
+  assert.match(applications, /\\.oc-status-card \\{[^\\n]+--oc-content-radius/)
+  assert.match(applications, /\\.oc-writing-question \\{[^\\n]+--oc-content-radius/)
+  assert.doesNotMatch(applications, /\\.oc-application-row:hover \\{[^\\n]+translateY/)
 })
