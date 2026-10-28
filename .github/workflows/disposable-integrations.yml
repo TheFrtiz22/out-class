@@ -82,7 +82,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - name: Run Next.js / Supabase Auth / SMTP / settings and selected-navigation integration
-        run: node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation
+        run: node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair
 
   local-storage:
     name: Private Storage and native PostgreSQL
