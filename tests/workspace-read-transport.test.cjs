@@ -13,6 +13,13 @@ test('GET allowlist forwards only validated read arguments, preserves wire dates
    const response=await get(kind,[id]);assert.equal(response.status,200,kind);assert.equal(response.headers.get('cache-control'),'private, no-store');assert.match(response.headers.get('vary'),/(?:^|,\s*)Cookie(?:,|$)/);assert.ok(decodeWorkspaceData(await response.json()).at instanceof Date);assert.match(response.headers.get('x-outclass-trace-id'),/^[\da-f-]{36}$/);
    assert.equal((await get(kind,[id,{userId:'forged'}])).status,400);assert.equal((await get(kind,['invalid-id'])).status,400);
  }
+ // Focused task drawers use the same authorized reader with a validated task/assignment scope.
+ const focus={taskId:id,assignmentId:id};
+ assert.equal((await get('tasks',[id,focus])).status,200);
+ assert.deepEqual(seen.at(-1),['getTaskWorkspace',id,focus]);
+ assert.equal((await get('tasks',[id,{taskId:id}])).status,200);
+ for(const focus of [{taskId:'invalid-id'},{taskId:id,assignmentId:'invalid-id'},{taskId:id,userId:id},{assignmentId:id}])assert.equal((await get('tasks',[id,focus])).status,400);
+ allowed=false;assert.equal((await get('tasks',[id,{taskId:id}])).status,403);allowed=true;
  assert.equal((await get('bookingPublication',[{clubId:id,roundId:id}])).status,200);
  assert.equal((await get('bookingPublication',[{clubId:id,roundId:id,userId:id}])).status,400);
  for(const kind of ['meetings','notifications']){assert.equal((await get(kind,[])).status,200);assert.equal((await get(kind,[null])).status,200)}

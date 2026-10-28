@@ -23,6 +23,7 @@ export const dynamic = "force-dynamic"
 export const maxDuration = 60
 const headers = { "Cache-Control": "private, no-store", Vary: "Cookie" }
 const clubArgs = z.tuple([z.string().uuid()])
+const taskArgs = z.union([clubArgs, z.tuple([z.string().uuid(), z.object({ taskId: z.string().uuid(), assignmentId: z.string().uuid().optional() }).strict()])])
 const noArgs = z.tuple([])
 // JSON serializes an explicit undefined optional argument as null.
 const votingArgs = z.preprocess(args => Array.isArray(args) && args.length === 1 ? [args[0], null] : args,
@@ -51,7 +52,7 @@ export async function GET(request: Request) {
       case "interviewRounds": data = await (await import("@/actions/interview-kits")).getInterviewRounds(...clubArgs.parse(args)); break
       case "roomWorkspace": data = await (await import("@/actions/interview-rooms")).getRoomWorkspace(...clubArgs.parse(args)); break
       case "bookingPublication": data = await (await import("@/actions/interview-booking-publication")).getInterviewBookingPublication(...z.tuple([z.object({ clubId: z.string().uuid(), roundId: z.string().uuid() }).strict()]).parse(args)); break
-      case "tasks": data = await (await import("@/actions/tasks")).getTaskWorkspace(...clubArgs.parse(args)); break
+      case "tasks": data = await (await import("@/actions/tasks")).getTaskWorkspace(...taskArgs.parse(args)); break
       case "meetings": data = await (await import("@/actions/meetings")).listMeetings(...z.tuple([z.string().uuid().nullish().transform(value => value ?? undefined)]).parse(Array.isArray(args) && args.length === 0 ? [null] : args)); break
       case "announcements": data = await (await import("@/actions/communications")).getClubAnnouncements(...clubArgs.parse(args)); break
       case "notifications": data = await (await import("@/actions/communications")).getDurableNotifications(...z.tuple([z.string().uuid().nullish().transform(value => value ?? undefined)]).parse(Array.isArray(args) && args.length === 0 ? [null] : args)); break
