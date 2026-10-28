@@ -144,16 +144,17 @@ test("route loader uses the branded mark with a stable image box and accessible 
   assert.equal(light.props.role, "status")
   assert.equal(light.props["aria-busy"], "true")
   assert.equal(light.props["data-variant"], "light")
-  const [identity, label] = light.props.children
-  const [mark, accent] = identity.props.children
+  const identity = light.props.children
+  const [mark, accent, label] = identity.props.children
   assert.equal(identity.props.className, "oc-loading-identity")
   assert.equal(accent.props.className, "oc-loading-line")
+  assert.equal(accent.props["aria-hidden"], "true")
   assert.equal(mark.props.src, "/brand/premium-board/07_favicon.svg")
   assert.equal(mark.props.width, 72)
   assert.equal(mark.props.height, 72)
   assert.equal(mark.props.alt, "")
-  assert.equal(label.props.children, "Loading OutClass")
-  assert.equal(label.props.className, "sr-only")
+  assert.equal(label.props.children, "Loading OutClass…")
+  assert.equal(label.props.className, "oc-loading-caption")
   assert.equal(OutClassLoadingScreen({ variant: "navy" }).props["data-variant"], "navy")
   const Loading = load("app/loading.tsx", { "@/components/outclass-loading-screen": { OutClassLoadingScreen } }).default
   assert.equal(Loading().type, OutClassLoadingScreen)
