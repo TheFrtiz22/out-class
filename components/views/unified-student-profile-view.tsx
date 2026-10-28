@@ -114,7 +114,7 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
   }
   function section(title: string, key: ProfileSection, children: ReactNode, description?: string) {
     return (
-      <section aria-label={title} className="border-t border-border py-8 sm:py-10">
+      <section aria-label={title} className="oc-content-panel">
         <div className="mb-5 flex items-center justify-between gap-4">
           <h3 className="oc-card-heading ">{title}</h3>
           {edit(key)}
@@ -181,8 +181,8 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
           </div>
         </div>
       </header>
-      <div className="grid gap-x-14 lg:grid-cols-[minmax(0,1fr)_220px]">
-        <div className="min-w-0">
+      <div className="grid items-start gap-[var(--oc-content-gap)] lg:grid-cols-[minmax(0,1fr)_16rem]">
+        <div className="oc-workspace-stack">
           {section(
             "Education",
             "education",
@@ -218,7 +218,7 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
             </div>,
           )}
         </div>
-        <aside className="border-t border-border pt-8 lg:pt-10">
+        <aside className="oc-content-panel">
           <h3 className="oc-card-heading ">Profile details</h3>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
             {completed} of {checklist.length} profile details added. These are suggestions, not

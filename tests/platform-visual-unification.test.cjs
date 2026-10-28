@@ -3,7 +3,7 @@ const assert = require("node:assert/strict")
 const fs = require("node:fs")
 
 const read = path => fs.readFileSync(path, "utf8")
-const tokens = read("styles/product-tokens.css")
+const tokens = read("styles/tokens.css") + read("styles/product-tokens.css")
 const primitives = read("styles/product-components.css")
 const home = read("components/views/student-home.css")
 const operations = read("components/product/operational-dashboard.css")
@@ -30,8 +30,8 @@ test("Home and recruiting / club overview consume the shared content material", 
 })
 
 test("application drafts, statuses and writing questions inherit the same calm surfaces", () => {
-  assert.match(applications, /\\.oc-application-management-row \\{[^\\n]+--oc-content-radius/)
-  assert.match(applications, /\\.oc-status-card \\{[^\\n]+--oc-content-radius/)
-  assert.match(applications, /\\.oc-writing-question \\{[^\\n]+--oc-content-radius/)
-  assert.doesNotMatch(applications, /\\.oc-application-row:hover \\{[^\\n]+translateY/)
+  assert.match(applications, /\.oc-application-management-row \{[^\n]+--oc-content-radius/)
+  assert.match(applications, /\.oc-status-card \{[^\n]+--oc-content-radius/)
+  assert.match(applications, /\.oc-writing-question \{[^\n]+--oc-content-radius/)
+  assert.doesNotMatch(applications, /\.oc-application-row:hover \{[^\n]+translateY/)
 })

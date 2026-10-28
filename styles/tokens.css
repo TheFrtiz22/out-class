@@ -1,6 +1,22 @@
 /* OutClass foundations. Semantic variables are the source of truth; Tailwind
    and the existing shadcn APIs consume them through app/globals.css. */
 :root {
+  /* Content geometry is shared across public forms, product and focused modes.
+     Navigation owns its separate optical materials and geometry. */
+  --oc-content-width: 80rem;
+  --oc-reading-width: 48rem;
+  --oc-content-surface: var(--card);
+  --oc-content-soft: var(--muted);
+  --oc-content-soft-blue: var(--info-subtle);
+  --oc-content-edge: var(--border);
+  --oc-content-radius: 1.125rem;
+  --oc-content-radius-small: .875rem;
+  --oc-content-padding: clamp(1rem, 1.55vw, 1.5rem);
+  --oc-content-gap: clamp(1rem, 1.6vw, 1.5rem);
+  --oc-content-shadow: 0 1px 2px rgb(20 45 69 / 4%), 0 10px 24px -20px rgb(20 45 69 / 18%);
+  --oc-content-shadow-hover: 0 3px 8px rgb(20 45 69 / 5%), 0 16px 30px -22px rgb(20 45 69 / 22%);
+  --oc-content-motion: 180ms;
+  --oc-overlay-radius: 1.5rem;
   --background: #f8f7f4;
   --foreground: #14243a;
   --card: #ffffff;
