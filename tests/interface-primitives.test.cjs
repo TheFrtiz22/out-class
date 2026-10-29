@@ -55,14 +55,16 @@ test('contextual loading uses compositor-friendly motion and respects accessibil
   assert.match(stylesheet, /\.oc-skeleton::after \{ animation: none; display: none;/)
   assert.match(stylesheet, /@media \(forced-colors: active\)/)
 })
-test('applicant skeleton reserves recognisable pipeline steps and list rows', () => {
+test('applicant skeleton reserves review actions, filters and responsive applicant records', () => {
   const { LoadingState } = load('components/ui/loading-state.tsx')
   const html = renderToStaticMarkup(React.createElement(LoadingState, {
     label: 'Preparing applicants', layout: 'applicants', rows: 5,
   }))
   assert.match(html, /data-layout="applicants"/)
-  assert.equal((html.match(/oc-loading-pipeline-step/g) || []).length, 3)
-  assert.equal((html.match(/oc-loading-row"/g) || []).length, 5)
+  assert.match(html, /oc-loading-review-toolbar/)
+  assert.match(html, /oc-loading-applicant-filters/)
+  assert.match(html, /oc-loading-applicant-table-head/)
+  assert.equal((html.match(/oc-loading-applicant-record"/g) || []).length, 5)
   assert.equal((html.match(/role="status"/g) || []).length, 1)
   assert.equal((html.match(/Preparing applicants/g) || []).length, 1)
   assert.doesNotMatch(html, /% complete|progressbar/i)

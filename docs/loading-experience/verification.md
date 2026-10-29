@@ -12,10 +12,13 @@ Base: `29100f9c`. Testing uses this checkout and loopback-only disposable fixtur
 | `npm run build` and local fixture production build | Passed, including Next lint/type validation and 65 prerendered pages |
 | `npm run test:migrations` | All 60 migrations applied to fresh/legacy fixtures; all 79 tables retain RLS and browser CRUD denial |
 | `npm run test:a11y` | Passed actual component fixtures and public routes at desktop/320px |
-| Authenticated selected-navigation integration | 10 passed, including four blocked-chunk cases, exact fresh reads, late results, revoked replay, notified authority epoch, desktop/mobile navigation and real font transport |
+| Authenticated selected-navigation integration | 16 passed on the fresh fixture, including four blocked-chunk cases, exact fresh reads, late results, revoked replay, notified authority epoch, desktop/mobile navigation and real font transport |
 | Native PostgreSQL scheduler | 62 tests passed across two suites; bounded locks, polling, progress, rollback and claims exercised |
 | Untouched-main publication baseline | Native publication runner passed all five constituent test groups on an isolated detached `29100f9c` worktree |
+| Authenticated settings integration | 11 passed, including retained shell, role restrictions, saves/history, tablet/mobile and elevated administration |
 | Source whitespace validation | `git diff --check` passed |
+
+A fresh authenticated run also passed account serialization, onboarding/Auth/MFA/SMTP, session revocation, signup privacy, student claims and real PDF import. One settings check initially inspected a button before the new route boundary had resolved; it now awaits that exact control before retaining the same visibility assertion, and all 11 focused settings tests passed.
 
 The full initial baseline had one browser-fixture timeout waiting for selectable PDF text. The full final run passed that test along with all other ungated tests. No PDF behavior or assertions were changed.
 
@@ -29,7 +32,7 @@ See [browser-results.json](evidence/browser-results.json), [layout-results.json]
 - **45 focused layout captures**: interview, voting, candidate presentation, form, document, month calendar, schedule, feed, and table at each width, rendered by the actual `/design-system` route. These are geometry/accessibility checks of shared primitives, not claims of complete authenticated interview/voting/decision workflows.
 - Warm overview refresh stays mounted and disables duplicate refresh. A deliberately aborted member request removes the skeleton, reveals no records, offers Retry, and succeeds after keyboard Enter with exactly one fresh read. The same navigation DOM node survives failure and retry. See `refresh-390.png`, `failure-390.png`, and `retry-390.png`.
 
-The screenshots were examined through review sheets, including desktop/laptop/tablet/phone/narrow-phone captures. Ready examples were also inspected. The visuals exposed a CSS cascade issue that overrode rounded avatar placeholders; its rule was removed. Placeholder actions remain decorative and cannot receive keyboard focus.
+The screenshots were examined through review sheets, including desktop/laptop/tablet/phone/narrow-phone captures. Ready examples were also inspected. The visuals exposed a CSS cascade issue that overrode rounded avatar placeholders; its rule was removed. Comparing the applicant placeholder to the ready page also prompted a final refinement: review actions, filters/sort, a seven-column desktop table, and applicant cards below 1280px. All five pipeline pending→ready pairs were recaptured and verified afterward. Placeholder actions remain decorative and cannot receive keyboard focus.
 
 Reproduce with this checkout running on the reserved `http://127.0.0.1:3147` and the existing strictly validated onboarding fixture copied to the local loading QA configuration:
 
@@ -51,6 +54,6 @@ These scripts refuse a hosted destination. They preserve the original local stac
 
 ## Release limitations and unresolved checks
 
-The local native publication runner is **not consistently green**: one run failed crash-recovery/claim and later permission assertions; a later run stalled/faulted in the mixed-backlog timing test. The untouched-main baseline passed the same runner. Its database/actions/worker/native test sources are unchanged by this branch. This is recorded as an intermittent local integration problem, not declared harmless or fixed. The stalled child was stopped and its dedicated fixture cleaned up. Keep publication CI as a release gate.
+The local native publication runner is **not consistently green**: one run failed crash-recovery/claim and later permission assertions; a later run stalled/faulted in the mixed-backlog timing test. The untouched-main baseline passed the same runner. Its database/actions/worker/native test sources are unchanged by this branch. This is recorded as an intermittent local integration problem, not declared harmless or fixed. The stalled child was stopped and its dedicated fixture cleaned up. The first PR-head GitHub run passed every native integration job, including scheduler and publication/audiences; retain those checks on the final head as release gates.
 
 The 45 environment-gated tests in the full suite were not all provisioned here. Separate migration, scheduler, publication, accessibility, navigation and loading browser checks cover relevant boundaries, but do not substitute for every existing authenticated end-to-end suite. No manual screen-reader session or full authenticated voting/interview/decision-letter workflow is claimed. Release remains gated on required CI. Do not merge or deploy while required checks are failing or pending.

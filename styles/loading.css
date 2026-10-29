@@ -253,3 +253,30 @@ body > .oc-loading-screen {
 
 .oc-loading-calendar[data-calendar-view="week"] .oc-loading-calendar-grid { grid-template-columns: 2rem repeat(7, minmax(0, 1fr)); }
 .oc-loading-calendar[data-calendar-view="week"] .oc-loading-calendar-cell { min-height: 2.75rem; border-inline-start: 1px solid var(--border); }
+
+/* The applicant destination opens in list mode: review actions, filters, sort,
+   seven-column desktop table, and one-column applicant cards below xl. */
+.oc-loading-review-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.25rem; border: 1px solid var(--border); border-radius: var(--oc-radius-lg); background: var(--card); }
+.oc-loading-review-actions, .oc-loading-applicant-sort { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }
+.oc-loading-applicant-filters { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; padding: 1rem; border: 1px solid var(--border); border-radius: var(--oc-radius-lg); background: var(--card); }
+.oc-loading-applicant-search { flex: 1 1 15rem; min-width: 0; }
+.oc-loading-applicant-sort { padding-block: .5rem; }
+.oc-loading-applicant-table { overflow: hidden; border: 1px solid var(--border); border-radius: var(--oc-radius-lg); background: var(--card); }
+.oc-loading-applicant-table-head, .oc-loading-applicant-record { display: grid; grid-template-columns: minmax(0, 2.5fr) minmax(0, 1fr) repeat(3, minmax(0, .7fr)) minmax(0, 1.9fr) minmax(0, 1.3fr); align-items: center; gap: 1.25rem; padding: 1.25rem 1rem; }
+.oc-loading-applicant-record { min-height: 5rem; border-top: 1px solid var(--border); }
+.oc-loading-applicant-identity { display: flex; align-items: center; gap: .75rem; min-width: 0; }
+.oc-loading-applicant-open { display: none; }
+@media (max-width: 1279px) {
+  .oc-loading-applicant-table { display: grid; gap: .75rem; border: 0; background: transparent; overflow: visible; }
+  .oc-loading-applicant-table-head, .oc-loading-applicant-detail { display: none; }
+  .oc-loading-applicant-record { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "identity status" "round round" "review review" "open open"; gap: .875rem; padding: 1.25rem; border: 1px solid var(--border); border-radius: var(--oc-radius-lg); background: var(--card); }
+  .oc-loading-applicant-identity { grid-area: identity; }
+  .oc-loading-applicant-status { grid-area: status; }
+  .oc-loading-applicant-round { grid-area: round; }
+  .oc-loading-applicant-review { grid-area: review; max-width: 15rem; }
+  .oc-loading-applicant-open { display: block; grid-area: open; }
+}
+@media (max-width: 639px) {
+  .oc-loading-review-actions { width: 100%; }
+  .oc-loading-applicant-search { flex-basis: 100%; }
+}

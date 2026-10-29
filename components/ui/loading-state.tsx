@@ -76,15 +76,12 @@ export function LoadingState({
         </div>)}
       </div>}
       {layout === "applicants" && <div className="oc-loading-applicants">
-        <div className="oc-loading-preview-heading"><Skeleton className="h-9 w-56 max-w-full" /><Skeleton className="h-9 w-28 rounded-lg" /></div>
-        <div className="oc-loading-kpis oc-loading-pipeline">
-          {[0, 1, 2].map(index => <div key={index} className="oc-loading-pipeline-step">
-            <Skeleton className="h-3 w-24" /><Skeleton className="mt-4 h-8 w-10" /><Skeleton className="mt-3 h-3 w-28 max-w-full" />
-          </div>)}
-        </div>
-        <div className="oc-loading-filters"><Skeleton className="h-9 w-44 rounded-lg" /><Skeleton className="h-9 w-24 rounded-full" /><Skeleton className="h-9 w-24 rounded-full" /></div>
-        <div className="oc-loading-list">
-          {Array.from({ length: Math.min(count, 8) }, (_, index) => <LoadingRow key={index} index={index} />)}
+        <div className="oc-loading-review-toolbar"><div><Skeleton className="h-5 w-44" /><Skeleton className="mt-3 h-3 w-64 max-w-full" /></div><div className="oc-loading-review-actions">{[0, 1, 2, 3].map(index => <Skeleton key={index} className="h-10 w-24 rounded-lg" />)}</div></div>
+        <div className="oc-loading-applicant-filters"><Skeleton className="h-11 w-28 rounded-lg" /><Skeleton className="oc-loading-applicant-search h-11 rounded-lg" /><Skeleton className="h-10 w-20 rounded-lg" /><Skeleton className="h-10 w-20 rounded-lg" /></div>
+        <Skeleton className="mt-2 h-2 w-40" />
+        <div className="oc-loading-applicant-sort"><Skeleton className="h-3 w-20" /><Skeleton className="h-10 w-44 rounded-lg" /><Skeleton className="h-9 w-24 rounded-lg" /></div>
+        <div className="oc-loading-applicant-table"><div className="oc-loading-applicant-table-head">{[0, 1, 2, 3, 4, 5, 6].map(index => <Skeleton key={index} className="h-3 w-3/5" />)}</div>
+          {Array.from({ length: Math.min(count, 8) }, (_, index) => <LoadingApplicantRow key={index} />)}
         </div>
       </div>}
       {layout === "form" && <div className="oc-loading-form">
@@ -121,5 +118,16 @@ function LoadingRow({ index }: { index: number }) {
     <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
     <div className="oc-loading-row-copy"><Skeleton className={index % 2 ? "h-4 w-2/5" : "h-4 w-3/5"} /><Skeleton className="mt-3 h-3 w-4/5" /></div>
     <Skeleton className="oc-loading-row-action h-5 w-16 rounded-md" />
+  </div>
+}
+
+function LoadingApplicantRow() {
+  return <div className="oc-loading-applicant-record">
+    <div className="oc-loading-applicant-identity"><Skeleton className="size-8 shrink-0 rounded-full" /><div className="min-w-0 flex-1"><Skeleton className="h-3 w-3/4" /><Skeleton className="mt-3 h-2 w-full" /></div></div>
+    <Skeleton className="oc-loading-applicant-round h-3 w-4/5" />
+    {[0, 1, 2].map(index => <Skeleton key={index} className="oc-loading-applicant-detail h-3 w-8" />)}
+    <div className="oc-loading-applicant-review"><Skeleton className="h-3 w-3/4" /><Skeleton className="mt-3 h-2 w-full" /></div>
+    <Skeleton className="oc-loading-applicant-status h-5 w-16 rounded-md" />
+    <Skeleton className="oc-loading-applicant-open h-3 w-28" />
   </div>
 }

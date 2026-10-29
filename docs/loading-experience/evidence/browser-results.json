@@ -90,24 +90,6 @@
     "reducedMotion": "static"
   },
   {
-    "name": "pipeline",
-    "width": 1440,
-    "loading": "pipeline-1440-loading.png",
-    "ready": "pipeline-1440-ready.png",
-    "requests": 1,
-    "before": {
-      "width": 1440,
-      "scrollWidth": 1440,
-      "statuses": 1,
-      "nav": true
-    },
-    "after": {
-      "scrollWidth": 1440,
-      "pending": 0
-    },
-    "reducedMotion": "static"
-  },
-  {
     "name": "scheduling",
     "width": 1440,
     "loading": "scheduling-1440-loading.png",
@@ -220,24 +202,6 @@
     "width": 1280,
     "loading": "announcements-1280-loading.png",
     "ready": "announcements-1280-ready.png",
-    "requests": 1,
-    "before": {
-      "width": 1280,
-      "scrollWidth": 1280,
-      "statuses": 1,
-      "nav": true
-    },
-    "after": {
-      "scrollWidth": 1280,
-      "pending": 0
-    },
-    "reducedMotion": "static"
-  },
-  {
-    "name": "pipeline",
-    "width": 1280,
-    "loading": "pipeline-1280-loading.png",
-    "ready": "pipeline-1280-ready.png",
     "requests": 1,
     "before": {
       "width": 1280,
@@ -378,24 +342,6 @@
     "reducedMotion": "static"
   },
   {
-    "name": "pipeline",
-    "width": 768,
-    "loading": "pipeline-768-loading.png",
-    "ready": "pipeline-768-ready.png",
-    "requests": 1,
-    "before": {
-      "width": 768,
-      "scrollWidth": 768,
-      "statuses": 1,
-      "nav": true
-    },
-    "after": {
-      "scrollWidth": 768,
-      "pending": 0
-    },
-    "reducedMotion": "static"
-  },
-  {
     "name": "scheduling",
     "width": 768,
     "loading": "scheduling-768-loading.png",
@@ -508,24 +454,6 @@
     "width": 390,
     "loading": "announcements-390-loading.png",
     "ready": "announcements-390-ready.png",
-    "requests": 1,
-    "before": {
-      "width": 390,
-      "scrollWidth": 390,
-      "statuses": 1,
-      "nav": true
-    },
-    "after": {
-      "scrollWidth": 390,
-      "pending": 0
-    },
-    "reducedMotion": "static"
-  },
-  {
-    "name": "pipeline",
-    "width": 390,
-    "loading": "pipeline-390-loading.png",
-    "ready": "pipeline-390-ready.png",
     "requests": 1,
     "before": {
       "width": 390,
@@ -666,24 +594,6 @@
     "reducedMotion": "static"
   },
   {
-    "name": "pipeline",
-    "width": 320,
-    "loading": "pipeline-320-loading.png",
-    "ready": "pipeline-320-ready.png",
-    "requests": 1,
-    "before": {
-      "width": 320,
-      "scrollWidth": 320,
-      "statuses": 1,
-      "nav": true
-    },
-    "after": {
-      "scrollWidth": 320,
-      "pending": 0
-    },
-    "reducedMotion": "static"
-  },
-  {
     "name": "scheduling",
     "width": 320,
     "loading": "scheduling-320-loading.png",
@@ -706,6 +616,96 @@
     "width": 320,
     "loading": "application-settings-320-loading.png",
     "ready": "application-settings-320-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 320,
+      "scrollWidth": 320,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 320,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "pipeline",
+    "width": 1440,
+    "loading": "pipeline-1440-loading.png",
+    "ready": "pipeline-1440-ready.png",
+    "requests": 2,
+    "before": {
+      "width": 1440,
+      "scrollWidth": 1440,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 1440,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "pipeline",
+    "width": 1280,
+    "loading": "pipeline-1280-loading.png",
+    "ready": "pipeline-1280-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 1280,
+      "scrollWidth": 1280,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 1280,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "pipeline",
+    "width": 768,
+    "loading": "pipeline-768-loading.png",
+    "ready": "pipeline-768-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 768,
+      "scrollWidth": 768,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 768,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "pipeline",
+    "width": 390,
+    "loading": "pipeline-390-loading.png",
+    "ready": "pipeline-390-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 390,
+      "scrollWidth": 390,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 390,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "pipeline",
+    "width": 320,
+    "loading": "pipeline-320-loading.png",
+    "ready": "pipeline-320-ready.png",
     "requests": 1,
     "before": {
       "width": 320,
