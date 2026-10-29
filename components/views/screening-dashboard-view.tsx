@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
+import { LoadingState } from "@/components/ui/loading-state"
 import { useApplicationState } from "@/lib/application-state"
 import { getRecruitingRules, saveRecruitingRule, previewRecruitingRule, applyRecruitingRuleFlags, getRecruitingRuleFlags, clearRecruitingRuleFlags } from "@/lib/workspace-api"
 import { emptyRuleThresholds, type RulePreview, type RuleThresholds } from "@/lib/recruiting-rules"
@@ -23,7 +24,7 @@ export function ScreeningDashboardView({ clubId, onReview }: { clubId?: string; 
   }, [clubId, reload])
   if (!clubId) return <p className="py-6 text-sm text-muted-foreground">Open Review Tools in a managed club workspace to configure persisted recruiting rules.</p>
   if (error) return <div role="alert" className="py-6"><p>Rules could not be loaded. Check your access and try again.</p><Button onClick={() => setReload(n => n + 1)}>Retry</Button></div>
-  if (!data) return <p role="status" className="py-6">Loading recruiting rules…</p>
+  if (!data) return <LoadingState label="Loading recruiting rules…" layout="workspace" rows={3} />
   const round = data.rounds.find(round => round.id === roundId)
   return <div className="space-y-6 py-6">
     <p className="border-l-2 border-brand-orange pl-3 text-sm text-muted-foreground">Saved rules suggest candidates for rejection review. Only an explicit action applies flags. Application decisions never change here and no messages are sent.</p>
@@ -100,7 +101,7 @@ function RuleEditor({ clubId, round, data, onSaved, onReload, onReview }: { club
       </div>}
     </section>
     {canPreview && <section className="space-y-3 border-t pt-5"><h3 className="oc-card-heading ">Saved review flags</h3><p className="text-xs text-muted-foreground">These are snapshots, not decisions. Preview again to account for updated scores. Applicants who leave this round or receive a decision are omitted.</p>
-      {flags === null ? <p role="status">Loading saved flags…</p> : !flags.length ? <p className="text-sm text-muted-foreground">No active flags in this round.</p> : <><ul className="divide-y">{flags.map(flag => <li key={flag.applicationId} className="space-y-1 py-3 text-sm"><p className="font-medium">{flag.label}</p><p>{flag.reasons.join("; ")}</p><p className="text-xs text-muted-foreground">Version {flag.ruleRevision} · {new Date(flag.flaggedAt).toLocaleString()}</p>{onReview && <Button variant="outline" disabled={busy || dirty} onClick={() => review(flag.applicationId)}>Review applicant</Button>}</li>)}</ul><Button variant="outline" disabled={busy || !data.canApply || dirty} onClick={() => void run(async () => { await clearRecruitingRuleFlags(scope); setFlags([]); setPreview(null); setMessage("Flags cleared. Decisions are unchanged.") })}>Clear saved flags</Button></>}
+      {flags === null ? <LoadingState label="Loading saved review flags…" layout="rows" rows={2} /> : !flags.length ? <p className="text-sm text-muted-foreground">No active flags in this round.</p> : <><ul className="divide-y">{flags.map(flag => <li key={flag.applicationId} className="space-y-1 py-3 text-sm"><p className="font-medium">{flag.label}</p><p>{flag.reasons.join("; ")}</p><p className="text-xs text-muted-foreground">Version {flag.ruleRevision} · {new Date(flag.flaggedAt).toLocaleString()}</p>{onReview && <Button variant="outline" disabled={busy || dirty} onClick={() => review(flag.applicationId)}>Review applicant</Button>}</li>)}</ul><Button variant="outline" disabled={busy || !data.canApply || dirty} onClick={() => void run(async () => { await clearRecruitingRuleFlags(scope); setFlags([]); setPreview(null); setMessage("Flags cleared. Decisions are unchanged.") })}>Clear saved flags</Button></>}
     </section>}
   </div>
 }
