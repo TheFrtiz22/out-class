@@ -1,5 +1,14 @@
-import { LoadingState } from "@/components/ui/loading-state"
+import { LoadingState, type LoadingLayout } from "@/components/ui/loading-state"
 
-export function WorkspaceLoading({ label = "Loading workspace…", rows = 4 }: { label?: string; rows?: number }) {
-  return <LoadingState label={label} rows={rows} />
+/** Match the placeholder geometry to the destination without taking over navigation. */
+export function WorkspaceLoading({
+  label = "Loading workspace…",
+  rows = 4,
+  layout = "workspace",
+}: {
+  label?: string
+  rows?: number
+  layout?: LoadingLayout
+}) {
+  return <LoadingState label={label} layout={layout} rows={rows} />
 }

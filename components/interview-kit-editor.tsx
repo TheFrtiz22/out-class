@@ -13,6 +13,7 @@ import {
 } from "@/lib/workspace-api";
 import type { KitQuestion } from "@/lib/interview-kits";
 import { Button } from "@/components/ui/button";
+import { LoadingState } from "@/components/ui/loading-state";
 import { Textarea } from "@/components/ui/textarea";
 import { ChevronDown, ListChecks } from "@/components/icons";
 import "@/components/clubs/interview-kit-editor.css";
@@ -225,7 +226,7 @@ export function ClubInterviewKitSettings({ clubId, initialRoundId }: { clubId: s
         </Button>
       </div>
     );
-  if (!result) return <p role="status">Loading interview rounds…</p>;
+  if (!result) return <LoadingState label="Loading interview rounds…" layout="rows" rows={3} />;
   if (result.status === "denied") return <p role="alert">Interview setup access denied. Ask your club owner to check your current membership and permissions.</p>;
   const { rounds } = result;
   if (!rounds.length)

@@ -5,6 +5,7 @@ import { UnclaimedProfileNotice } from "@/components/clubs/unclaimed-profile-not
 import { useEffect, useRef, useState } from "react"
 import { ArrowLeft, ArrowRight, CalendarDays, MapPin, Check, ArrowUpRight } from "@/components/icons"
 import { Button } from "@/components/ui/button"
+import { LoadingState } from "@/components/ui/loading-state"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { CorkboardButton } from "@/components/clubs/corkboard-button"
 import { SubscribeButton } from "@/components/clubs/subscribe-button"
@@ -153,7 +154,7 @@ export function ClubProfileView({
       setBusy(false)
     }
   }
-  if (!ready) return <p role="status">Loading club profile…</p>
+  if (!ready) return <LoadingState label="Loading club profile…" layout="workspace" rows={3} />
   return (
     <article className="oc-club-profile">
       <Button variant="ghost" className="oc-club-back" onClick={onBack} disabled={preview}>

@@ -12,6 +12,7 @@ import { MeetingList } from "@/components/meeting-workspace"
 import { ClubTasks } from "@/components/club-tasks"
 import { ClubLogo } from "@/components/club-logo"
 import { Button } from "@/components/ui/button"
+import { LoadingState } from "@/components/ui/loading-state"
 import { memberDate, type MemberOverviewData } from "@/components/member-overview"
 
 export function PersonalClubs({ section }: { section: PersonalSection }) {
@@ -19,7 +20,7 @@ export function PersonalClubs({ section }: { section: PersonalSection }) {
   const [selected, setSelected] = useState("")
   const memberships = user?.memberships || []
   const member = memberships.find(m => m.clubId === selected) || memberships[0]
-  if (loading) return <p role="status">Loading your clubs…</p>
+  if (loading) return <LoadingState label="Loading your clubs…" layout="cards" rows={3} />
   if (!member) return <div className="max-w-xl space-y-3 border-t py-8"><h2 className="oc-section-heading ">You haven’t joined any clubs yet.</h2><p className="text-sm leading-7 text-muted-foreground">Your clubs will appear once you have a membership. An application decision does not automatically create one.</p><Link href="/?workspace=student&view=explore" className="inline-flex min-h-11 items-center gap-2 text-sm underline underline-offset-4">Explore clubs <ArrowRight size={15} /></Link></div>
   if (section !== "meetings" && section !== "tasks") return <div className="oc-personal-clubs max-w-4xl space-y-7"><ul className="oc-membership-grid">{memberships.map(m => <MembershipRow key={m.id} member={m} />)}</ul></div>
   return <div className="max-w-5xl space-y-4"><label className="block max-w-sm text-sm">Your club<select aria-label="Select your club" className="mt-2 block min-h-11 w-full rounded-md border bg-card px-3" value={member.clubId} onChange={e => { if (canLeaveWorkspace()) setSelected(e.target.value) }}>{memberships.map(m => <option key={m.id} value={m.clubId}>{m.club.name}</option>)}</select></label>
@@ -44,7 +45,7 @@ function MembershipRow({ member }: { member: ExtendedMembership }) {
   return <li className="oc-membership-card"><article>
     <div className="flex items-start gap-4"><ClubLogo clubId={clubId} logoUrl={member.club.logoUrl} marketing={member.club.marketing} text={member.club.name.slice(0, 2)} color={member.club.color || "#142d4e"} size="lg" /><div className="min-w-0 flex-1"><h2 className="oc-section-heading break-words">{member.club.name}</h2><p className="mt-2 text-xs text-muted-foreground">{member.title || "Member"}{hasWorkspace(member) ? " · Workspace manager" : ""}</p></div></div>
     <div className="mt-5 border-t pt-4 text-sm leading-7">
-      {failed ? <div role="status" className="flex flex-wrap items-center gap-2"><p className="text-muted-foreground">Couldn’t load the next item.</p><Button variant="ghost" size="sm" onClick={() => setRetry(n => n + 1)}>Retry</Button></div> : !data ? <p role="status" className="text-muted-foreground">Loading club activity…</p> : taskFirst && task ? <><p className="text-xs text-muted-foreground">Your next task{task.dueAt ? ` · ${+new Date(task.dueAt) < Date.now() ? "Overdue" : "Due"} ${memberDate(task.dueAt)}` : " · No due date"}</p><p className="mt-1 break-words font-medium">{task.title}</p></> : meeting ? <><p className="text-xs text-muted-foreground">Next meeting · {memberDate(meeting.date)}</p><p className="mt-1 break-words font-medium">{meeting.title}</p></> : <p className="text-muted-foreground">No upcoming meeting or outstanding personal work.</p>}
+      {failed ? <div role="status" className="flex flex-wrap items-center gap-2"><p className="text-muted-foreground">Couldn’t load the next item.</p><Button variant="ghost" size="sm" onClick={() => setRetry(n => n + 1)}>Retry</Button></div> : !data ? <LoadingState label="Loading club activity…" layout="inline" /> : taskFirst && task ? <><p className="text-xs text-muted-foreground">Your next task{task.dueAt ? ` · ${+new Date(task.dueAt) < Date.now() ? "Overdue" : "Due"} ${memberDate(task.dueAt)}` : " · No due date"}</p><p className="mt-1 break-words font-medium">{task.title}</p></> : meeting ? <><p className="text-xs text-muted-foreground">Next meeting · {memberDate(meeting.date)}</p><p className="mt-1 break-words font-medium">{meeting.title}</p></> : <p className="text-muted-foreground">No upcoming meeting or outstanding personal work.</p>}
     </div>
     <Link href={clubWorkspaceHref(clubId)} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-sm text-sm text-primary underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring">{hasWorkspace(member) ? "Open managed workspace" : "Open member workspace"}<ArrowRight size={15} aria-hidden="true" /><span className="sr-only"> · {member.club.name}</span></Link>
   </article></li>

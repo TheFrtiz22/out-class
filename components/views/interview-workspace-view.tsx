@@ -57,7 +57,7 @@ export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: ()
       <DemoInterviewGuide />
       <div className="oc-interview-container mx-auto max-w-[1800px]">
         {loading ? (
-          <p role="status">Loading interview workspace…</p>
+          <WorkspaceLoading label="Preparing the interview workspace…" layout="workspace" rows={3} />
         ) : !membership ? (
           <div className="max-w-4xl space-y-3 px-5 py-8">
             <PageHeader title="A focused space for a better conversation." />

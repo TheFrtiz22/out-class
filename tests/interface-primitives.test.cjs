@@ -24,7 +24,7 @@ test('native select retains form data, options, labels, disabled state and chang
 })
 test('loading layouts announce one message and keep visual skeletons decorative', () => {
   const { LoadingState } = load('components/ui/loading-state.tsx')
-  for (const layout of ['rows', 'cards', 'inline']) {
+  for (const layout of ['rows', 'cards', 'inline', 'applications', 'applicants', 'workspace']) {
     const html = renderToStaticMarkup(React.createElement(LoadingState, { label: 'Loading meetings', layout, rows: 2 }))
     assert.equal((html.match(/role="status"/g) || []).length, 1)
     assert.equal((html.match(/Loading meetings/g) || []).length, 1)
@@ -40,4 +40,30 @@ test('empty state keeps its named heading and actionable content across presenta
   assert.ok(html.includes(`<h3 id="${label}"`))
   assert.match(html, /No matching clubs/)
   assert.match(html, /<button type="button">Clear filters<\/button>/)
+})
+
+test('contextual loading uses compositor-friendly motion and respects accessibility settings', () => {
+  const stylesheet = fs.readFileSync('styles/interface-primitives.css', 'utf8')
+  const skeleton = fs.readFileSync('components/ui/skeleton.tsx', 'utf8')
+  assert.match(skeleton, /oc-skeleton/)
+  assert.doesNotMatch(skeleton, /animate-pulse/)
+  assert.match(stylesheet, /@keyframes oc-skeleton-sheen/)
+  const keyframe = stylesheet.match(/@keyframes oc-skeleton-sheen\s*\{([\s\S]*?)\n\}/)?.[1] ?? ''
+  assert.match(keyframe, /translate3d\(/)
+  assert.doesNotMatch(keyframe, /(?:width|height|left|top|filter|box-shadow)\s*:/)
+  assert.match(stylesheet, /@media \(prefers-reduced-motion: reduce\)/)
+  assert.match(stylesheet, /\.oc-skeleton::after \{ animation: none; display: none;/)
+  assert.match(stylesheet, /@media \(forced-colors: active\)/)
+})
+test('applicant skeleton reserves recognisable pipeline steps and list rows', () => {
+  const { LoadingState } = load('components/ui/loading-state.tsx')
+  const html = renderToStaticMarkup(React.createElement(LoadingState, {
+    label: 'Preparing applicants', layout: 'applicants', rows: 5,
+  }))
+  assert.match(html, /data-layout="applicants"/)
+  assert.equal((html.match(/oc-loading-pipeline-step/g) || []).length, 3)
+  assert.equal((html.match(/oc-loading-row"/g) || []).length, 5)
+  assert.equal((html.match(/role="status"/g) || []).length, 1)
+  assert.equal((html.match(/Preparing applicants/g) || []).length, 1)
+  assert.doesNotMatch(html, /% complete|progressbar/i)
 })

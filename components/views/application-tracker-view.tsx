@@ -154,7 +154,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
   }
   if (pending || loading)
     return (
-      <LoadingState label="Loading your applications…" rows={3} />
+      <LoadingState label="Preparing your applications…" layout="applications" rows={3} />
     )
   if (!user)
     return (

@@ -449,7 +449,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       setDescending(["score", "gpa", "sat", "act", "year"].includes(key))
     }
   }
-  if (loading) return <WorkspaceLoading label="Loading applicants…" />
+  if (loading) return <WorkspaceLoading label="Preparing your applicant pipeline…" layout="applicants" rows={5} />
   if (!data || error)
     return (
       <div role="alert" className="space-y-3">
