@@ -1,4 +1,5 @@
 "use client";
+import { LoadingState } from "@/components/ui/loading-state"
 import { useEffect, useState, useRef } from "react";
 import { listEventApprovals, reviewCampusEvent } from "@/actions/campus-events";
 import {
@@ -99,7 +100,7 @@ export function EventApprovals() {
         </p>
       )}
       {loading ? (
-        <p role="status">Loading submissions…</p>
+        <LoadingState label="Loading event submissions…" layout="cards" rows={3} />
       ) : (
         <div className="oc-managed-events">
           {events.length ? (

@@ -2,7 +2,7 @@ import { LoaderCircle } from "@/components/icons"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 
-export type LoadingLayout = "inline" | "rows" | "cards" | "applications" | "applicants" | "workspace"
+export type LoadingLayout = "inline" | "rows" | "cards" | "applications" | "applicants" | "workspace" | "form" | "document"
 
 /**
  * Placeholders follow the shape of the content being fetched, not a generic full-screen
@@ -31,9 +31,9 @@ export function LoadingState({
   return <div data-slot="loading-state" data-layout={layout} role="status" aria-busy="true" className={cn("oc-loading-state", className)}>
     <p className="oc-loading-status"><span className="oc-loading-indicator" aria-hidden="true" />{label}</p>
     <div className="oc-loading-preview" aria-hidden="true">
-      {layout === "rows" && <div className="oc-loading-list">
+      {layout === "rows" && <div className="oc-loading-rows-preview">
         <div className="oc-loading-preview-heading"><Skeleton className="h-6 w-40 max-w-full" /><Skeleton className="h-4 w-24" /></div>
-        {Array.from({ length: count }, (_, index) => <LoadingRow key={index} index={index} />)}
+        <div className="oc-loading-list">{Array.from({ length: count }, (_, index) => <LoadingRow key={index} index={index} />)}</div>
       </div>}
       {layout === "cards" && <div className="oc-loading-cards">
         {Array.from({ length: count }, (_, index) => <div key={index} className="oc-loading-card">
@@ -63,6 +63,24 @@ export function LoadingState({
         <div className="oc-loading-filters"><Skeleton className="h-9 w-44 rounded-lg" /><Skeleton className="h-9 w-24 rounded-full" /><Skeleton className="h-9 w-24 rounded-full" /></div>
         <div className="oc-loading-list">
           {Array.from({ length: Math.min(count, 8) }, (_, index) => <LoadingRow key={index} index={index} />)}
+        </div>
+      </div>}
+      {layout === "form" && <div className="oc-loading-form">
+        <div className="oc-loading-preview-heading"><Skeleton className="h-7 w-52 max-w-full" /><Skeleton className="h-8 w-24 rounded-lg" /></div>
+        <div className="oc-loading-form-fields">
+          {Array.from({ length: Math.min(count, 4) }, (_, index) => <div key={index} className="oc-loading-form-field">
+            <Skeleton className="h-3 w-28" />
+            <Skeleton className={index === 1 ? "mt-3 h-24 w-full rounded-xl" : "mt-3 h-11 w-full rounded-lg"} />
+          </div>)}
+        </div>
+        <div className="oc-loading-form-actions"><Skeleton className="h-10 w-28 rounded-lg" /><Skeleton className="h-10 w-36 rounded-lg" /></div>
+      </div>}
+      {layout === "document" && <div className="oc-loading-document">
+        <div className="oc-loading-document-head"><Skeleton className="h-10 w-10 rounded-xl" /><Skeleton className="h-5 w-2/5" /></div>
+        <div className="oc-loading-document-paper">
+          <Skeleton className="h-4 w-1/4" /><Skeleton className="mt-8 h-9 w-3/5" />
+          <Skeleton className="mt-9 h-4 w-1/3" />
+          {Array.from({ length: Math.min(count + 2, 7) }, (_, index) => <Skeleton key={index} className={index === count + 1 ? "mt-3 h-3 w-1/2" : "mt-3 h-3 w-full"} />)}
         </div>
       </div>}
       {layout === "workspace" && <div className="oc-loading-workspace">

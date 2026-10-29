@@ -1,4 +1,5 @@
 "use client";
+import { LoadingState } from "@/components/ui/loading-state"
 import { useEffect,useRef,useState } from "react";
 import type { getLiveVotingPresentation } from "@/actions/voting-room";
 import { getLiveVotingPresentation as read } from "@/lib/voting-room-api";
@@ -15,7 +16,7 @@ export function RoomPresentation({clubId,sessionId,applicationId,identity,refres
   useEffect(()=>{let current=true,busy=false;setState({key,data:null,error:false});setDetails(false);const refresh=async()=>{if(busy)return;busy=true;try{const data=await read({clubId,sessionId,applicationId},member);if(current)setState({key,data,error:false});}catch{if(current)setState({key,data:null,error:true});}finally{busy=false;}};void refresh();const timer=setInterval(()=>void refresh(),5000);return()=>{current=false;clearInterval(timer);};},[clubId,sessionId,applicationId,identity,key,refreshKey,member,retry]);
   const data=state.key===key?state.data:null;
   if(state.key===key&&state.error)return <div role="alert">Applicant information unavailable. <Button variant="outline" onClick={()=>setRetry(v=>v+1)}>Retry presentation</Button></div>;
-  if(!data)return <p role="status">Loading applicant…</p>;
+  if(!data)return <LoadingState label="Loading applicant presentation…" layout="rows" rows={3} />;
   const name=data.sections.find(s=>s.field==="name")?.items[0]??(data.anonymous?"Anonymous applicant":"Applicant");
   const fields=data.sections.filter(s=>s.field!=="name").map(s=>({label:fieldLabels[s.field],text:s.items.join(" · ")||"Not provided"}));
   if(data.requestedFields?.includes("resumeHighlight"))fields.push({label:"Leader-selected résumé excerpt",text:data.resumeHighlight?`Page ${data.resumeHighlight.page} · ${data.resumeHighlight.quote}`:"No authorized excerpt available"});

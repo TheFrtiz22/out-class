@@ -535,7 +535,7 @@ function MeetingAttendance({ meeting }: { meeting: Meeting }) {
           </li>
         ))}
       </ul>
-      {attendanceLoading && <p role="status" className="text-sm text-muted-foreground">Loading attendance…</p>}
+      {attendanceLoading && <LoadingState label="Loading attendance…" layout="inline" />}
       {!attendanceLoading && !error && !rows.length && (
         <p className="text-sm text-muted-foreground">No check-ins yet.</p>
       )}

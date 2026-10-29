@@ -1,4 +1,5 @@
 "use client";
+import { LoadingState } from "@/components/ui/loading-state"
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
@@ -14,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { FileText, Maximize2, UserRound, X } from "@/components/icons";
 
-const ResumePreview = dynamic(() => import("@/components/interview-resume-preview"), { ssr: false, loading: () => <p role="status" className="text-xs text-muted-foreground">Loading résumé…</p> });
+const ResumePreview = dynamic(() => import("@/components/interview-resume-preview"), { ssr: false, loading: () => <LoadingState label="Preparing résumé preview…" layout="inline" /> });
 
 export function InterviewApplicantPanel({ clubId, applicationId, roundId, initialPanel }: InterviewScope & { initialPanel?: Awaited<ReturnType<typeof getInterviewApplicantPanel>> }) {
   const scope = useMemo(() => ({ clubId, applicationId, roundId }), [clubId, applicationId, roundId]);
@@ -58,11 +59,11 @@ export function InterviewApplicantPanel({ clubId, applicationId, roundId, initia
     return () => { current = false; unsubscribe(); resource.invalidate(); };
   }, [resource]);
   useEffect(() => { setWarm(false); if (!url) return; const timer = setTimeout(() => setWarm(true), 250); return () => clearTimeout(timer); }, [url]);
-  const fallback = useMemo(() => resource && url ? <InterviewResumePlaceholder resource={resource} page={initialPage} /> : <p role="status">Loading résumé…</p>, [resource, url, initialPage]);
+  const fallback = useMemo(() => resource && url ? <InterviewResumePlaceholder resource={resource} page={initialPage} /> : <LoadingState label="Loading résumé…" layout="inline" />, [resource, url, initialPage]);
   const name = panel?.profile ? `${panel.profile.firstName} ${panel.profile.lastName}` : "Profile not provided";
   const scholarships = scholarNames(panel?.profile?.scholarStatus);
   return <aside id="interview-context" className="oc-room-applicant min-w-0" aria-label="Applicant panel">
-    {loading && <p role="status" className="text-sm text-muted-foreground">Loading applicant…</p>}
+    {loading && <LoadingState label="Loading applicant details…" layout="rows" rows={2} />}
     <div className="oc-candidate-content">
     {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : panel && <>
       <div className="oc-applicant-identity">

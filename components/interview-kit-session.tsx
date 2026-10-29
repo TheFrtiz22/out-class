@@ -1,4 +1,5 @@
 "use client";
+import { LoadingState } from "@/components/ui/loading-state"
 import { useAutosaveRecovery } from "@/hooks/use-autosave-recovery";
 import { AutosaveStatus } from "@/components/ui/autosave-status";
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
@@ -398,14 +399,7 @@ export function InterviewKitSession({
   }, [serialized, saved, session?.id, saving, error, recovery.recovery]);
   if (!session)
     return (
-      <div className="space-y-3" role="status">
-        {error || "Loading your interview?"}
-        {error && (
-          <Button variant="outline" onClick={() => setRetry((v) => v + 1)}>
-            Retry
-          </Button>
-        )}
-      </div>
+      error ? <div role="alert" className="space-y-3"><p>{error}</p><Button variant="outline" onClick={() => setRetry(v => v + 1)}>Retry</Button></div> : <LoadingState label="Preparing your interview…" layout="workspace" rows={3} />
     );
   function note(questionId: string, notes: string) {
     setDraft((d) => ({
@@ -544,7 +538,7 @@ export function InterviewKitSession({
           {session.instructions && <p className="whitespace-pre-wrap text-xs text-muted-foreground">{session.instructions}</p>}
           <h3 className="text-sm font-medium">Round question bank</h3><p className="text-xs text-muted-foreground">Browse the current kit. Existing interview questions keep their original wording.</p>
           <Input aria-label="Search question bank" placeholder="Search questions…" value={search} onChange={e => setSearch(e.target.value)} />
-          {libraryLoading && <p role="status">Loading question bank…</p>}
+          {libraryLoading && <LoadingState label="Loading round question bank…" layout="rows" rows={2} />}
           {libraryError && <p role="alert">{libraryError} <Button type="button" variant="ghost" onClick={() => setLibraryRetry(v => v + 1)}>Retry bank</Button></p>}
           <ul className="space-y-3">{libraryQuestions.map(q => { const existing = questions.find(item => item.id === q.id); return <li key={q.id} className="space-y-2 border-t pt-3"><p className="break-words text-sm font-medium">{q.prompt}</p>{key(q.guidance)}<Button type="button" size="sm" variant="outline" disabled={disabled || (!existing && draft.additionalQuestions.length >= 30)} onClick={() => void selectBankQuestion(q)}>{existing ? "Open shared question" : "Use question"}</Button></li>; })}</ul>
           {!libraryLoading && !libraryQuestions.length && <p className="text-sm text-muted-foreground">No matching questions in this bank.</p>}

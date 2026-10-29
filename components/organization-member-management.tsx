@@ -1,4 +1,5 @@
 "use client";
+import { LoadingState } from "@/components/ui/loading-state"
 import { getOrganizationMemberManagement } from "@/lib/workspace-read";
 import { MemberGroupBuilder } from "@/components/member-group-builder";
 import { SortLabel } from "@/components/product/sort-label";
@@ -789,7 +790,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
         </div>
       )}
       {loading ? (
-        <p role="status">Loading members…</p>
+        <LoadingState label="Loading member directory…" layout="rows" rows={5} />
       ) : (
         data && (
           <>

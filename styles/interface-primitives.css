@@ -25,7 +25,6 @@
 .oc-loading-state { display: grid; gap: var(--oc-space-content); padding-block: 1rem; min-width: 0; }
 .oc-loading-state[data-layout="inline"] { display: flex; align-items: center; gap: .5rem; font-size: var(--oc-text-small); color: var(--muted-foreground); }
 .oc-loading-state[data-layout="inline"] > svg { flex-shrink: 0; }
-.oc-loading-cards { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: var(--oc-space-content); }
 @media (max-width: 767px) {
   [data-slot="input"], [data-slot="textarea"], [data-slot="native-select"][data-density], [data-slot="select-trigger"][data-size] { font-size: max(1rem, var(--oc-text-small)); }
   [data-slot="button"][data-size], [data-slot="input"], [data-slot="native-select"][data-density], [data-slot="select-trigger"][data-size] { min-height: var(--oc-control-height-large); }
@@ -141,10 +140,26 @@
 }
 .oc-loading-workspace-main .oc-loading-row { padding: 1rem 0; }
 .oc-loading-workspace-main .oc-loading-row:first-of-type { margin-top: .8rem; }
+/* Form and document loaders reserve the shapes of editor inputs and letter paper. */
+.oc-loading-form { padding: clamp(1rem, 2vw, 1.5rem); border: 1px solid var(--border); border-radius: var(--oc-content-radius); background: var(--card); }
+.oc-loading-form-fields { display: grid; gap: 1.25rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.oc-loading-form-field { min-width: 0; }
+.oc-loading-form-field:nth-child(2) { grid-row: span 2; }
+.oc-loading-form-actions { display: flex; justify-content: flex-end; gap: .75rem; margin-top: 1.5rem; }
+.oc-loading-document { width: min(100%, 48rem); margin-inline: auto; }
+.oc-loading-document-head { display: flex; gap: .875rem; align-items: center; margin-bottom: 1.25rem; }
+.oc-loading-document-paper { min-height: 20rem; border: 1px solid var(--border); border-top: 3px solid var(--primary); border-radius: var(--oc-radius-lg); background: var(--card); box-shadow: var(--oc-content-shadow); padding: clamp(1.25rem, 4vw, 3rem); }
+/* The distant rows still represent pending content, but do not create additional independent animation loops. */
+.oc-loading-row:nth-child(n + 6) .oc-skeleton::after { animation: none; }
+.oc-loading-state:not([data-layout="inline"]) .oc-skeleton::after { opacity: .55; animation-duration: 2050ms; }
+
 @media (max-width: 767px) {
   .oc-loading-cards { grid-template-columns: 1fr; }
   .oc-loading-workspace-columns { grid-template-columns: 1fr; }
   .oc-loading-application { padding: 1rem; gap: .75rem; }
+  .oc-loading-form-fields { grid-template-columns: 1fr; }
+  .oc-loading-form-field:nth-child(2) { grid-row: auto; }
+  .oc-loading-form-actions { justify-content: flex-start; flex-wrap: wrap; }
   .oc-loading-application-action, .oc-loading-row-action { display: none; }
   .oc-loading-pipeline-step { padding: .9rem .65rem; }
   .oc-loading-pipeline-step .oc-skeleton { max-width: 100%; }

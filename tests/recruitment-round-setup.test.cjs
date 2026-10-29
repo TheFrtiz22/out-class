@@ -46,7 +46,7 @@ test('round loader reports loading, real empty state, permission denial and fail
  const member={clubId:id(1),status:'ACTIVE',isOwner:true,interviewOffices:['BOARD']},auth={'@/contexts/auth-context':{useAuth:()=>({user:{memberships:[member]}})}};
  for(const [result,expected]of [[{status:'ready',rounds:[]},/No active interview rounds/],[{status:'denied',rounds:[]},/access denied/],[Error('Synthetic unavailable'),/Could not load interview rounds/]]){
   const h=ui('components/interview-kit-editor.tsx','ClubInterviewKitSettings',{clubId:id(1)},{...auth,'@/lib/workspace-api':{getInterviewRounds:async()=>{if(result instanceof Error)throw result;return result}}});
-  assert.match(text(h.render()),/Loading interview rounds/);await flush();const value=text(h.render());assert.match(value,expected);if(result.status!=='ready')assert.doesNotMatch(value,/No active|Create a recruitment/);h.close();
+  assert.ok(nodes(h.render()).some(n=>n.type==='LoadingState'&&/Loading interview rounds/.test(n.props.label)));await flush();const value=text(h.render());assert.match(value,expected);if(result.status!=='ready')assert.doesNotMatch(value,/No active|Create a recruitment/);h.close();
  }
  const requests=[],list={status:'ready',rounds:[{id:id(2),name:'First interviews',canReadKit:true},{id:id(3),name:'Round 2',canReadKit:true}]},api={getInterviewRounds:async()=>list,getInterviewKit:async(c,r)=>{requests.push([c,r]);return{version:7,questions:[]}}};
  const loader=ui('components/interview-kit-editor.tsx','ClubInterviewKitSettings',{clubId:id(1),initialRoundId:id(3)},{...auth,'@/lib/workspace-api':api});loader.render();await flush();const editor=loader.render();assert.equal(editor.props.initialRoundId,id(3));

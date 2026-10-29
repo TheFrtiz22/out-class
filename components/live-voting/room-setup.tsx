@@ -1,4 +1,5 @@
 "use client";
+import { LoadingState } from "@/components/ui/loading-state"
 import { useEffect,useRef,useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -28,12 +29,12 @@ export function VotingRoomSetup({clubId,demoScoped}:{clubId:string;demoScoped:bo
    const result=await createLiveVotingRoom(pending.current);pending.current=null;router.push(liveRoomPath(clubId,result.sessionId,"leader",demoScoped));
   }catch{setError("Session could not be confirmed. Retry uses the same request and preserves your setup.");}finally{lock.current=false;setBusy(false);}
  }
- if(auth.loading||!demo.ready)return <main className="vr-page" role="status">Checking your session…</main>;
+ if(auth.loading||!demo.ready)return <main className="vr-page"><LoadingState label="Checking your session…" layout="inline" /></main>;
  if(!auth.user)return <main className="vr-page"><h1>Prepare live voting</h1><Link href={`/login?next=${encodeURIComponent(`/voting/rooms/new?clubId=${clubId}${demoScoped?"&demo=1":""}`)}`}>Sign in and return</Link></main>;
  if(demoScoped!==demo.isDemoEnabled)return <main className="vr-page"><h1>Voting workspace unavailable</h1><p>Use a link for your current Live or Demo workspace.</p></main>;
  return <main className="vr-page"><div className="vr-form"><header className="vr-header"><h1>Prepare live voting</h1><Link href={`/club/${clubId}/workspace?section=recruitment&tool=applicants`}>Back to applicants</Link></header>
  {error&&<div role="alert" className="vr-error">{error} <Button variant="outline" onClick={()=>pending.current?void prepare():setRetry(v=>v+1)} disabled={busy}>Retry</Button></div>}
- {!data&&!error&&<p role="status">Loading rounds and eligibility…</p>}
+ {!data&&!error&&<LoadingState label="Loading rounds and eligibility…" layout="form" rows={3} />}
  {data&&<><fieldset disabled={busy||!!pending.current} className="space-y-5"><legend className="sr-only">Voting setup</legend>
  <label>Recruitment cycle<select aria-label="Recruitment cycle" value={cycle} onChange={e=>setCycle(e.target.value)}><option value="">Choose cycle</option>{data.cycles.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
  <label>Recruitment round<select aria-label="Recruitment round" value={round} onChange={e=>setRound(e.target.value)}><option value="">Choose round</option>{data.rounds.map(r=><option key={r.id} value={r.id}>{r.name}{r.anonymousReview?" · Anonymous":""}</option>)}</select></label>
