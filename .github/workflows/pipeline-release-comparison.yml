@@ -53,6 +53,10 @@ jobs:
       - name: Freeze both verified production outputs for one runtime checkout
         id: freeze
         run: node scripts/pipeline-release-ci-runtime.cjs freeze
+      - name: Verify both restored builds before sampling
+        env:
+          OUTCLASS_RELEASE_CI_FROZEN_RUNTIME: "1"
+        run: node scripts/pipeline-release-ci-runtime.cjs check
       - name: Compare browser navigation and complete review
         if: success()
         env:
