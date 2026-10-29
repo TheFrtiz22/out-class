@@ -1,0 +1,9 @@
+{
+  "keyboardJump": true,
+  "visibleFocus": true,
+  "databaseDraft": true,
+  "reloadRestored": true,
+  "escapeClosed": true,
+  "focusReturnToQueue": true,
+  "errors": []
+}

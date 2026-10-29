@@ -1,6 +1,6 @@
 # Platform visual unification — implementation and QA
 
-Status: implementation and verification in progress. PR #90 remains draft until the acceptance exceptions below are resolved. No merge or deployment is authorized by this report.
+Status: historical broad-migration record. The approved V2 implementation and current verification results are in [Editorial Campus OS QA](../editorial-campus-os/README.md). PR #90 remains draft for human review. No merge or deployment was performed.
 
 ## Implementation
 

@@ -1,0 +1,1858 @@
+[
+  {
+    "name": "explore",
+    "role": "student",
+    "width": 1440,
+    "height": 900,
+    "zoomEquivalent": 100,
+    "route": "/?workspace=student&view=explore",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "headings": [
+        "Discover clubs",
+        "Featured clubs",
+        "All clubs"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "explore-1440.png",
+    "rendered": true
+  },
+  {
+    "name": "applications",
+    "role": "student",
+    "width": 1440,
+    "height": 900,
+    "zoomEquivalent": 100,
+    "route": "/?workspace=student&view=tracker",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "headings": [
+        "Applications",
+        "Grounds Creative Society"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "applications-1440.png",
+    "rendered": true
+  },
+  {
+    "name": "calendar-month",
+    "role": "member",
+    "width": 1440,
+    "height": 900,
+    "zoomEquivalent": 100,
+    "route": "/?workspace=student&view=calendar",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "headings": [
+        "Calendar",
+        "October 2026"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "calendar-month-1440.png",
+    "rendered": true
+  },
+  {
+    "name": "corkboard",
+    "role": "student",
+    "width": 1440,
+    "height": 900,
+    "zoomEquivalent": 100,
+    "route": "/corkboard",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "headings": [
+        "Corkboard",
+        "Events on Grounds"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "corkboard-1440.png",
+    "rendered": true
+  },
+  {
+    "name": "club-overview",
+    "role": "owner",
+    "width": 1440,
+    "height": 900,
+    "zoomEquivalent": 100,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=overview",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "headings": [
+        "Overview",
+        "1 assignment is overdue",
+        "Your work 3",
+        "Meet this week",
+        "Team work",
+        "Let’s get Grounds Creative Society ready"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "club-overview-1440.png",
+    "rendered": true
+  },
+  {
+    "name": "applicants",
+    "role": "owner",
+    "width": 1440,
+    "height": 900,
+    "zoomEquivalent": 100,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=recruitment&tool=applicants",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "headings": [
+        "All Applicants",
+        "Recruitment review"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "applicants-1440.png",
+    "rendered": true
+  },
+  {
+    "name": "interviews",
+    "role": "owner",
+    "width": 1440,
+    "height": 900,
+    "zoomEquivalent": 100,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=recruitment&tool=interviews",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "headings": [
+        "Interviews",
+        "Recruitment",
+        "Your interview rooms"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "interviews-1440.png",
+    "rendered": true
+  },
+  {
+    "name": "tasks",
+    "role": "owner",
+    "width": 1440,
+    "height": 900,
+    "zoomEquivalent": 100,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=tasks",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "headings": [
+        "Tasks"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "tasks-1440.png",
+    "rendered": true
+  },
+  {
+    "name": "club-settings-application",
+    "role": "owner",
+    "width": 1440,
+    "height": 900,
+    "zoomEquivalent": 100,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=settings&setting=application",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "headings": [
+        "Settings",
+        "Application"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "club-settings-application-1440.png",
+    "rendered": true
+  },
+  {
+    "name": "admin-overview",
+    "role": "admin",
+    "width": 1440,
+    "height": 900,
+    "zoomEquivalent": 100,
+    "route": "/platform",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "headings": [
+        "What needs your attention?",
+        "Needs Attention"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "admin-overview-1440.png",
+    "rendered": true
+  },
+  {
+    "name": "admin-users",
+    "role": "admin",
+    "width": 1440,
+    "height": 900,
+    "zoomEquivalent": 100,
+    "route": "/platform/users",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "headings": [
+        "Users"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "admin-users-1440.png",
+    "rendered": true
+  },
+  {
+    "name": "login",
+    "role": "public",
+    "width": 1440,
+    "height": 900,
+    "zoomEquivalent": 100,
+    "route": "/login",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "headings": [
+        "One profile.Every opportunity.",
+        "Welcome back."
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "login-1440.png",
+    "rendered": true
+  },
+  {
+    "name": "explore",
+    "role": "student",
+    "width": 390,
+    "height": 844,
+    "zoomEquivalent": 100,
+    "route": "/?workspace=student&view=explore",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 390,
+      "pageWidth": 390,
+      "headings": [
+        "Discover clubs",
+        "Featured clubs",
+        "All clubs"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "axe": [],
+    "screenshot": "explore-390.png",
+    "rendered": true
+  },
+  {
+    "name": "applications",
+    "role": "student",
+    "width": 390,
+    "height": 844,
+    "zoomEquivalent": 100,
+    "route": "/?workspace=student&view=tracker",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 390,
+      "pageWidth": 390,
+      "headings": [
+        "Applications",
+        "Grounds Creative Society"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "axe": [],
+    "screenshot": "applications-390.png",
+    "rendered": true
+  },
+  {
+    "name": "calendar-month",
+    "role": "member",
+    "width": 390,
+    "height": 844,
+    "zoomEquivalent": 100,
+    "route": "/?workspace=student&view=calendar",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 390,
+      "pageWidth": 390,
+      "headings": [
+        "Calendar",
+        "October 2026"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "axe": [],
+    "screenshot": "calendar-month-390.png",
+    "rendered": true
+  },
+  {
+    "name": "corkboard",
+    "role": "student",
+    "width": 390,
+    "height": 844,
+    "zoomEquivalent": 100,
+    "route": "/corkboard",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 390,
+      "pageWidth": 390,
+      "headings": [
+        "Corkboard",
+        "Events on Grounds"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "axe": [],
+    "screenshot": "corkboard-390.png",
+    "rendered": true
+  },
+  {
+    "name": "club-overview",
+    "role": "owner",
+    "width": 390,
+    "height": 844,
+    "zoomEquivalent": 100,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=overview",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 390,
+      "pageWidth": 390,
+      "headings": [
+        "Overview",
+        "1 assignment is overdue",
+        "Your work 3",
+        "Meet this week",
+        "Team work",
+        "Let’s get Grounds Creative Society ready"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "axe": [],
+    "screenshot": "club-overview-390.png",
+    "rendered": true
+  },
+  {
+    "name": "applicants",
+    "role": "owner",
+    "width": 390,
+    "height": 844,
+    "zoomEquivalent": 100,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=recruitment&tool=applicants",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 390,
+      "pageWidth": 390,
+      "headings": [
+        "All Applicants",
+        "Recruitment review"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "axe": [],
+    "screenshot": "applicants-390.png",
+    "rendered": true
+  },
+  {
+    "name": "interviews",
+    "role": "owner",
+    "width": 390,
+    "height": 844,
+    "zoomEquivalent": 100,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=recruitment&tool=interviews",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 390,
+      "pageWidth": 390,
+      "headings": [
+        "Interviews",
+        "Recruitment",
+        "Your interview rooms"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "axe": [],
+    "screenshot": "interviews-390.png",
+    "rendered": true
+  },
+  {
+    "name": "tasks",
+    "role": "owner",
+    "width": 390,
+    "height": 844,
+    "zoomEquivalent": 100,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=tasks",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 390,
+      "pageWidth": 390,
+      "headings": [
+        "Tasks"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "axe": [],
+    "screenshot": "tasks-390.png",
+    "rendered": true
+  },
+  {
+    "name": "club-settings-application",
+    "role": "owner",
+    "width": 390,
+    "height": 844,
+    "zoomEquivalent": 100,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=settings&setting=application",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 390,
+      "pageWidth": 390,
+      "headings": [
+        "Settings",
+        "Application"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "axe": [],
+    "screenshot": "club-settings-application-390.png",
+    "rendered": true
+  },
+  {
+    "name": "admin-overview",
+    "role": "admin",
+    "width": 390,
+    "height": 844,
+    "zoomEquivalent": 100,
+    "route": "/platform",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 390,
+      "pageWidth": 390,
+      "headings": [
+        "What needs your attention?",
+        "Needs Attention"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "admin-overview-390.png",
+    "rendered": true
+  },
+  {
+    "name": "admin-users",
+    "role": "admin",
+    "width": 390,
+    "height": 844,
+    "zoomEquivalent": 100,
+    "route": "/platform/users",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 390,
+      "pageWidth": 390,
+      "headings": [
+        "Users"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "axe": [],
+    "screenshot": "admin-users-390.png",
+    "rendered": true
+  },
+  {
+    "name": "login",
+    "role": "public",
+    "width": 390,
+    "height": 844,
+    "zoomEquivalent": 100,
+    "route": "/login",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 390,
+      "pageWidth": 390,
+      "headings": [
+        "One profile.Every opportunity.",
+        "Welcome back."
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "axe": [],
+    "screenshot": "login-390.png",
+    "rendered": true
+  },
+  {
+    "name": "explore",
+    "role": "student",
+    "width": 1280,
+    "height": 800,
+    "zoomEquivalent": 100,
+    "route": "/?workspace=student&view=explore",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1280,
+      "pageWidth": 1280,
+      "headings": [
+        "Discover clubs",
+        "Featured clubs",
+        "All clubs"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "explore-1280.png",
+    "rendered": true
+  },
+  {
+    "name": "applications",
+    "role": "student",
+    "width": 1280,
+    "height": 800,
+    "zoomEquivalent": 100,
+    "route": "/?workspace=student&view=tracker",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1280,
+      "pageWidth": 1280,
+      "headings": [
+        "Applications",
+        "Grounds Creative Society"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "applications-1280.png",
+    "rendered": true
+  },
+  {
+    "name": "calendar-month",
+    "role": "member",
+    "width": 1280,
+    "height": 800,
+    "zoomEquivalent": 100,
+    "route": "/?workspace=student&view=calendar",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1280,
+      "pageWidth": 1280,
+      "headings": [
+        "Calendar",
+        "October 2026"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "calendar-month-1280.png",
+    "rendered": true
+  },
+  {
+    "name": "corkboard",
+    "role": "student",
+    "width": 1280,
+    "height": 800,
+    "zoomEquivalent": 100,
+    "route": "/corkboard",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1280,
+      "pageWidth": 1280,
+      "headings": [
+        "Corkboard",
+        "Events on Grounds"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "corkboard-1280.png",
+    "rendered": true
+  },
+  {
+    "name": "club-overview",
+    "role": "owner",
+    "width": 1280,
+    "height": 800,
+    "zoomEquivalent": 100,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=overview",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1280,
+      "pageWidth": 1280,
+      "headings": [
+        "Overview",
+        "1 assignment is overdue",
+        "Your work 3",
+        "Meet this week",
+        "Team work",
+        "Let’s get Grounds Creative Society ready"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "club-overview-1280.png",
+    "rendered": true
+  },
+  {
+    "name": "applicants",
+    "role": "owner",
+    "width": 1280,
+    "height": 800,
+    "zoomEquivalent": 100,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=recruitment&tool=applicants",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1280,
+      "pageWidth": 1280,
+      "headings": [
+        "All Applicants",
+        "Recruitment review"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "applicants-1280.png",
+    "rendered": true
+  },
+  {
+    "name": "interviews",
+    "role": "owner",
+    "width": 1280,
+    "height": 800,
+    "zoomEquivalent": 100,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=recruitment&tool=interviews",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1280,
+      "pageWidth": 1280,
+      "headings": [
+        "Interviews",
+        "Recruitment",
+        "Your interview rooms"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "interviews-1280.png",
+    "rendered": true
+  },
+  {
+    "name": "tasks",
+    "role": "owner",
+    "width": 1280,
+    "height": 800,
+    "zoomEquivalent": 100,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=tasks",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1280,
+      "pageWidth": 1280,
+      "headings": [
+        "Tasks"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "tasks-1280.png",
+    "rendered": true
+  },
+  {
+    "name": "club-settings-application",
+    "role": "owner",
+    "width": 1280,
+    "height": 800,
+    "zoomEquivalent": 100,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=settings&setting=application",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1280,
+      "pageWidth": 1280,
+      "headings": [
+        "Settings",
+        "Application"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "club-settings-application-1280.png",
+    "rendered": true
+  },
+  {
+    "name": "admin-users",
+    "role": "admin",
+    "width": 1280,
+    "height": 800,
+    "zoomEquivalent": 100,
+    "route": "/platform/users",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1280,
+      "pageWidth": 1280,
+      "headings": [
+        "Users"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "admin-users-1280.png",
+    "rendered": true
+  },
+  {
+    "name": "login",
+    "role": "public",
+    "width": 1280,
+    "height": 800,
+    "zoomEquivalent": 100,
+    "route": "/login",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1280,
+      "pageWidth": 1280,
+      "headings": [
+        "One profile.Every opportunity.",
+        "Welcome back."
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "login-1280.png",
+    "rendered": true
+  },
+  {
+    "name": "explore",
+    "role": "student",
+    "width": 1024,
+    "height": 768,
+    "zoomEquivalent": 100,
+    "route": "/?workspace=student&view=explore",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1024,
+      "pageWidth": 1024,
+      "headings": [
+        "Discover clubs",
+        "Featured clubs",
+        "All clubs"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "explore-1024.png",
+    "rendered": true
+  },
+  {
+    "name": "applications",
+    "role": "student",
+    "width": 1024,
+    "height": 768,
+    "zoomEquivalent": 100,
+    "route": "/?workspace=student&view=tracker",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1024,
+      "pageWidth": 1024,
+      "headings": [
+        "Applications",
+        "Grounds Creative Society"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "applications-1024.png",
+    "rendered": true
+  },
+  {
+    "name": "calendar-month",
+    "role": "member",
+    "width": 1024,
+    "height": 768,
+    "zoomEquivalent": 100,
+    "route": "/?workspace=student&view=calendar",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1024,
+      "pageWidth": 1024,
+      "headings": [
+        "Calendar",
+        "October 2026"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "calendar-month-1024.png",
+    "rendered": true
+  },
+  {
+    "name": "corkboard",
+    "role": "student",
+    "width": 1024,
+    "height": 768,
+    "zoomEquivalent": 100,
+    "route": "/corkboard",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1024,
+      "pageWidth": 1024,
+      "headings": [
+        "Corkboard",
+        "Events on Grounds"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "corkboard-1024.png",
+    "rendered": true
+  },
+  {
+    "name": "club-overview",
+    "role": "owner",
+    "width": 1024,
+    "height": 768,
+    "zoomEquivalent": 100,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=overview",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1024,
+      "pageWidth": 1024,
+      "headings": [
+        "Overview",
+        "1 assignment is overdue",
+        "Your work 3",
+        "Meet this week",
+        "Team work",
+        "Let’s get Grounds Creative Society ready"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "club-overview-1024.png",
+    "rendered": true
+  },
+  {
+    "name": "applicants",
+    "role": "owner",
+    "width": 1024,
+    "height": 768,
+    "zoomEquivalent": 100,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=recruitment&tool=applicants",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1024,
+      "pageWidth": 1024,
+      "headings": [
+        "All Applicants",
+        "Recruitment review"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "applicants-1024.png",
+    "rendered": true
+  },
+  {
+    "name": "interviews",
+    "role": "owner",
+    "width": 1024,
+    "height": 768,
+    "zoomEquivalent": 100,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=recruitment&tool=interviews",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1024,
+      "pageWidth": 1024,
+      "headings": [
+        "Interviews",
+        "Recruitment",
+        "Your interview rooms"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "interviews-1024.png",
+    "rendered": true
+  },
+  {
+    "name": "tasks",
+    "role": "owner",
+    "width": 1024,
+    "height": 768,
+    "zoomEquivalent": 100,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=tasks",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1024,
+      "pageWidth": 1024,
+      "headings": [
+        "Tasks"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "tasks-1024.png",
+    "rendered": true
+  },
+  {
+    "name": "club-settings-application",
+    "role": "owner",
+    "width": 1024,
+    "height": 768,
+    "zoomEquivalent": 100,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=settings&setting=application",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1024,
+      "pageWidth": 1024,
+      "headings": [
+        "Settings",
+        "Application"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "club-settings-application-1024.png",
+    "rendered": true
+  },
+  {
+    "name": "admin-users",
+    "role": "admin",
+    "width": 1024,
+    "height": 768,
+    "zoomEquivalent": 100,
+    "route": "/platform/users",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1024,
+      "pageWidth": 1024,
+      "headings": [
+        "Users"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "admin-users-1024.png",
+    "rendered": true
+  },
+  {
+    "name": "login",
+    "role": "public",
+    "width": 1024,
+    "height": 768,
+    "zoomEquivalent": 100,
+    "route": "/login",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 1024,
+      "pageWidth": 1024,
+      "headings": [
+        "One profile.Every opportunity.",
+        "Welcome back."
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "login-1024.png",
+    "rendered": true
+  },
+  {
+    "name": "explore",
+    "role": "student",
+    "width": 768,
+    "height": 1024,
+    "zoomEquivalent": 100,
+    "route": "/?workspace=student&view=explore",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 768,
+      "pageWidth": 768,
+      "headings": [
+        "Discover clubs",
+        "Featured clubs",
+        "All clubs"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "explore-768.png",
+    "rendered": true
+  },
+  {
+    "name": "applications",
+    "role": "student",
+    "width": 768,
+    "height": 1024,
+    "zoomEquivalent": 100,
+    "route": "/?workspace=student&view=tracker",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 768,
+      "pageWidth": 768,
+      "headings": [
+        "Applications",
+        "Grounds Creative Society"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "applications-768.png",
+    "rendered": true
+  },
+  {
+    "name": "calendar-month",
+    "role": "member",
+    "width": 768,
+    "height": 1024,
+    "zoomEquivalent": 100,
+    "route": "/?workspace=student&view=calendar",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 768,
+      "pageWidth": 768,
+      "headings": [
+        "Calendar",
+        "October 2026"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "calendar-month-768.png",
+    "rendered": true
+  },
+  {
+    "name": "corkboard",
+    "role": "student",
+    "width": 768,
+    "height": 1024,
+    "zoomEquivalent": 100,
+    "route": "/corkboard",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 768,
+      "pageWidth": 768,
+      "headings": [
+        "Corkboard",
+        "Events on Grounds"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "corkboard-768.png",
+    "rendered": true
+  },
+  {
+    "name": "club-overview",
+    "role": "owner",
+    "width": 768,
+    "height": 1024,
+    "zoomEquivalent": 100,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=overview",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 768,
+      "pageWidth": 768,
+      "headings": [
+        "Overview",
+        "1 assignment is overdue",
+        "Your work 3",
+        "Meet this week",
+        "Team work",
+        "Let’s get Grounds Creative Society ready"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "club-overview-768.png",
+    "rendered": true
+  },
+  {
+    "name": "applicants",
+    "role": "owner",
+    "width": 768,
+    "height": 1024,
+    "zoomEquivalent": 100,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=recruitment&tool=applicants",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 768,
+      "pageWidth": 768,
+      "headings": [
+        "All Applicants",
+        "Recruitment review"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "applicants-768.png",
+    "rendered": true
+  },
+  {
+    "name": "interviews",
+    "role": "owner",
+    "width": 768,
+    "height": 1024,
+    "zoomEquivalent": 100,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=recruitment&tool=interviews",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 768,
+      "pageWidth": 768,
+      "headings": [
+        "Interviews",
+        "Recruitment",
+        "Your interview rooms"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "interviews-768.png",
+    "rendered": true
+  },
+  {
+    "name": "tasks",
+    "role": "owner",
+    "width": 768,
+    "height": 1024,
+    "zoomEquivalent": 100,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=tasks",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 768,
+      "pageWidth": 768,
+      "headings": [
+        "Tasks"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "tasks-768.png",
+    "rendered": true
+  },
+  {
+    "name": "club-settings-application",
+    "role": "owner",
+    "width": 768,
+    "height": 1024,
+    "zoomEquivalent": 100,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=settings&setting=application",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 768,
+      "pageWidth": 768,
+      "headings": [
+        "Settings",
+        "Application"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "club-settings-application-768.png",
+    "rendered": true
+  },
+  {
+    "name": "admin-users",
+    "role": "admin",
+    "width": 768,
+    "height": 1024,
+    "zoomEquivalent": 100,
+    "route": "/platform/users",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 768,
+      "pageWidth": 768,
+      "headings": [
+        "Users"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "admin-users-768.png",
+    "rendered": true
+  },
+  {
+    "name": "login",
+    "role": "public",
+    "width": 768,
+    "height": 1024,
+    "zoomEquivalent": 100,
+    "route": "/login",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 768,
+      "pageWidth": 768,
+      "headings": [
+        "One profile.Every opportunity.",
+        "Welcome back."
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "login-768.png",
+    "rendered": true
+  },
+  {
+    "name": "explore",
+    "role": "student",
+    "width": 320,
+    "height": 844,
+    "zoomEquivalent": 100,
+    "route": "/?workspace=student&view=explore",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 320,
+      "pageWidth": 320,
+      "headings": [
+        "Discover clubs",
+        "Featured clubs",
+        "All clubs"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "explore-320.png",
+    "rendered": true
+  },
+  {
+    "name": "applications",
+    "role": "student",
+    "width": 320,
+    "height": 844,
+    "zoomEquivalent": 100,
+    "route": "/?workspace=student&view=tracker",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 320,
+      "pageWidth": 320,
+      "headings": [
+        "Applications",
+        "Grounds Creative Society"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "applications-320.png",
+    "rendered": true
+  },
+  {
+    "name": "calendar-month",
+    "role": "member",
+    "width": 320,
+    "height": 844,
+    "zoomEquivalent": 100,
+    "route": "/?workspace=student&view=calendar",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 320,
+      "pageWidth": 320,
+      "headings": [
+        "Calendar",
+        "October 2026"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "calendar-month-320.png",
+    "rendered": true
+  },
+  {
+    "name": "corkboard",
+    "role": "student",
+    "width": 320,
+    "height": 844,
+    "zoomEquivalent": 100,
+    "route": "/corkboard",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 320,
+      "pageWidth": 320,
+      "headings": [
+        "Corkboard",
+        "Events on Grounds"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "corkboard-320.png",
+    "rendered": true
+  },
+  {
+    "name": "club-overview",
+    "role": "owner",
+    "width": 320,
+    "height": 844,
+    "zoomEquivalent": 100,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=overview",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 320,
+      "pageWidth": 320,
+      "headings": [
+        "Overview",
+        "1 assignment is overdue",
+        "Your work 3",
+        "Meet this week",
+        "Team work",
+        "Let’s get Grounds Creative Society ready"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "club-overview-320.png",
+    "rendered": true
+  },
+  {
+    "name": "applicants",
+    "role": "owner",
+    "width": 320,
+    "height": 844,
+    "zoomEquivalent": 100,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=recruitment&tool=applicants",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 320,
+      "pageWidth": 320,
+      "headings": [
+        "All Applicants",
+        "Recruitment review"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "applicants-320.png",
+    "rendered": true
+  },
+  {
+    "name": "interviews",
+    "role": "owner",
+    "width": 320,
+    "height": 844,
+    "zoomEquivalent": 100,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=recruitment&tool=interviews",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 320,
+      "pageWidth": 320,
+      "headings": [
+        "Interviews",
+        "Recruitment",
+        "Your interview rooms"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "interviews-320.png",
+    "rendered": true
+  },
+  {
+    "name": "tasks",
+    "role": "owner",
+    "width": 320,
+    "height": 844,
+    "zoomEquivalent": 100,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=tasks",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 320,
+      "pageWidth": 320,
+      "headings": [
+        "Tasks"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "tasks-320.png",
+    "rendered": true
+  },
+  {
+    "name": "club-settings-application",
+    "role": "owner",
+    "width": 320,
+    "height": 844,
+    "zoomEquivalent": 100,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=settings&setting=application",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 320,
+      "pageWidth": 320,
+      "headings": [
+        "Settings",
+        "Application"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "club-settings-application-320.png",
+    "rendered": true
+  },
+  {
+    "name": "admin-users",
+    "role": "admin",
+    "width": 320,
+    "height": 844,
+    "zoomEquivalent": 100,
+    "route": "/platform/users",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 320,
+      "pageWidth": 320,
+      "headings": [
+        "Users"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "admin-users-320.png",
+    "rendered": true
+  },
+  {
+    "name": "login",
+    "role": "public",
+    "width": 320,
+    "height": 844,
+    "zoomEquivalent": 100,
+    "route": "/login",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 320,
+      "pageWidth": 320,
+      "headings": [
+        "One profile.Every opportunity.",
+        "Welcome back."
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "login-320.png",
+    "rendered": true
+  },
+  {
+    "name": "explore",
+    "role": "student",
+    "width": 720,
+    "height": 450,
+    "zoomEquivalent": 200,
+    "route": "/?workspace=student&view=explore",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 720,
+      "pageWidth": 720,
+      "headings": [
+        "Discover clubs",
+        "Featured clubs",
+        "All clubs"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "explore-720.png",
+    "rendered": true
+  },
+  {
+    "name": "applications",
+    "role": "student",
+    "width": 720,
+    "height": 450,
+    "zoomEquivalent": 200,
+    "route": "/?workspace=student&view=tracker",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 720,
+      "pageWidth": 720,
+      "headings": [
+        "Applications",
+        "Grounds Creative Society"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "applications-720.png",
+    "rendered": true
+  },
+  {
+    "name": "calendar-month",
+    "role": "member",
+    "width": 720,
+    "height": 450,
+    "zoomEquivalent": 200,
+    "route": "/?workspace=student&view=calendar",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 720,
+      "pageWidth": 720,
+      "headings": [
+        "Calendar",
+        "October 2026"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "calendar-month-720.png",
+    "rendered": true
+  },
+  {
+    "name": "corkboard",
+    "role": "student",
+    "width": 720,
+    "height": 450,
+    "zoomEquivalent": 200,
+    "route": "/corkboard",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 720,
+      "pageWidth": 720,
+      "headings": [
+        "Corkboard",
+        "Events on Grounds"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "corkboard-720.png",
+    "rendered": true
+  },
+  {
+    "name": "club-overview",
+    "role": "owner",
+    "width": 720,
+    "height": 450,
+    "zoomEquivalent": 200,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=overview",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 720,
+      "pageWidth": 720,
+      "headings": [
+        "Overview",
+        "1 assignment is overdue",
+        "Your work 3",
+        "Meet this week",
+        "Team work",
+        "Let’s get Grounds Creative Society ready"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "club-overview-720.png",
+    "rendered": true
+  },
+  {
+    "name": "applicants",
+    "role": "owner",
+    "width": 720,
+    "height": 450,
+    "zoomEquivalent": 200,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=recruitment&tool=applicants",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 720,
+      "pageWidth": 720,
+      "headings": [
+        "All Applicants",
+        "Recruitment review"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "applicants-720.png",
+    "rendered": true
+  },
+  {
+    "name": "interviews",
+    "role": "owner",
+    "width": 720,
+    "height": 450,
+    "zoomEquivalent": 200,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=recruitment&tool=interviews",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 720,
+      "pageWidth": 720,
+      "headings": [
+        "Interviews",
+        "Recruitment",
+        "Your interview rooms"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "interviews-720.png",
+    "rendered": true
+  },
+  {
+    "name": "tasks",
+    "role": "owner",
+    "width": 720,
+    "height": 450,
+    "zoomEquivalent": 200,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=tasks",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 720,
+      "pageWidth": 720,
+      "headings": [
+        "Tasks"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "tasks-720.png",
+    "rendered": true
+  },
+  {
+    "name": "club-settings-application",
+    "role": "owner",
+    "width": 720,
+    "height": 450,
+    "zoomEquivalent": 200,
+    "route": "/club/43533a96-d59e-4583-9618-68c46760938c/workspace?section=settings&setting=application",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 720,
+      "pageWidth": 720,
+      "headings": [
+        "Settings",
+        "Application"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "club-settings-application-720.png",
+    "rendered": true
+  },
+  {
+    "name": "admin-users",
+    "role": "admin",
+    "width": 720,
+    "height": 450,
+    "zoomEquivalent": 200,
+    "route": "/platform/users",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 720,
+      "pageWidth": 720,
+      "headings": [
+        "Users"
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "admin-users-720.png",
+    "rendered": true
+  },
+  {
+    "name": "login",
+    "role": "public",
+    "width": 720,
+    "height": 450,
+    "zoomEquivalent": 200,
+    "route": "/login",
+    "phase": "editorial-expanded",
+    "errors": [],
+    "httpStatus": 200,
+    "geometry": {
+      "viewport": 720,
+      "pageWidth": 720,
+      "headings": [
+        "One profile.Every opportunity.",
+        "Welcome back."
+      ],
+      "alerts": []
+    },
+    "overflow": false,
+    "screenshot": "login-720.png",
+    "rendered": true
+  }
+]
