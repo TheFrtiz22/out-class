@@ -1,11 +1,11 @@
 // Distinct Linux CI BAAB comparison; never combines failed Mac attempts.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{spawnSync}=require('node:child_process'),{createHash}=require('node:crypto');
-const local=require('./pipeline-release-local.cjs'),{source}=require('./pipeline-release-study.cjs'),host=require('./pipeline-release-ci-host.cjs');
+const local=require('./pipeline-release-local.cjs'),{source}=require('./pipeline-release-study.cjs'),host=require('./pipeline-release-ci-host.cjs'),{attest}=require('./pipeline-release-ci-attest.cjs');
 const hash=p=>createHash('sha256').update(fs.readFileSync(path.join(local.repo,p))).digest('hex');
 async function main(){
  const clock=host.begin(),profile=process.argv.find(a=>a.startsWith('--profile='))?.slice(10);assert.ok(['local','constrained'].includes(profile));
  const out=path.join(local.repo,'docs/performance/pipeline-release-repair/ci',profile+'-attempt-'+process.env.GITHUB_RUN_ID+'-'+process.env.GITHUB_RUN_ATTEMPT);assert.ok(!fs.existsSync(out));fs.mkdirSync(out,{recursive:true});
- const builds={B:source(local.variants.B),D:source(local.variants.D)},tools=['scripts/navigation-audit.cjs','scripts/pipeline-release-full-review.cjs','scripts/pipeline-release-ci-study.cjs','scripts/pipeline-release-ci-host.cjs','scripts/pipeline-release-local.cjs','scripts/pipeline-release-study.cjs'];
+ const builds={B:source(local.variants.B),D:source(local.variants.D)},tools=['scripts/navigation-audit.cjs','scripts/pipeline-release-full-review.cjs','scripts/pipeline-release-ci-study.cjs','scripts/pipeline-release-ci-host.cjs','scripts/pipeline-release-ci-attest.cjs','scripts/pipeline-release-local.cjs','scripts/pipeline-release-study.cjs'];
  const plan={startedAt:new Date().toISOString(),profile,environment:clock.metadata,builds,cohorts:[1,100,1000,5000],order:['B','D','D','B'],navigationMeasuredPerBlock:'15 at 1; 5 otherwise',navigationWarmupsPerBlock:2,fullReviewMeasuredPerBlock:5,fullReviewWarmupsPerBlock:2,acceptanceSha256:hash('docs/performance/pipeline-release-repair/ACCEPTANCE.md'),toolHashes:Object.fromEntries(tools.map(p=>[p,hash(p)])),blocks:[],fixtures:[]};
  for(const size of plan.cohorts){const file=path.join(local.root,'pipeline-release-'+size+'.json'),fixture=JSON.parse(fs.readFileSync(file));plan.fixtures.push({size,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex'),counts:fixture.counts,actorMemberships:5});}
  const save=()=>fs.writeFileSync(path.join(out,'PROTOCOL.json'),JSON.stringify(plan,null,2)+'\n');save();
@@ -13,7 +13,7 @@ async function main(){
  try{for(const size of plan.cohorts){fs.copyFileSync(path.join(local.root,'pipeline-release-'+size+'.json'),path.join(local.root,'navigation-fixture.json'));
   for(const [index,variant]of plan.order.entries()){
    for(const[p,h]of Object.entries(plan.toolHashes))assert.equal(hash(p),h);assert.equal(source(local.variants[variant]).digest,builds[variant].digest);await local.start(variant);
-   const block={size,variant,block:index+1,startedAt:new Date().toISOString(),collectors:[]};plan.blocks.push(block);save();const stem='size-'+size+'-block-'+(index+1)+'-'+variant,extra=profile==='constrained'?['--constrained-network']:[];
+   const block={size,variant,block:index+1,startedAt:new Date().toISOString(),collectors:[]};plan.blocks.push(block);block.attestation=await attest(variant,builds[variant],size);save();assert.equal(block.attestation.valid,true,block.attestation.failure);const stem='size-'+size+'-block-'+(index+1)+'-'+variant,extra=profile==='constrained'?['--constrained-network']:[];
    for(const warmup of [true,false]){const directory=stem+'-'+(warmup?'warmup':'measure'),status=run('scripts/navigation-audit.cjs',['--phase2','--phase3','--cold-warm','--record-failures','--source-diagnostics','--samples='+(warmup?2:size===1?15:5),...extra],directory);block.collectors.push({kind:'navigation',warmup,status,directory});save();console.log(profile+' '+directory+' exit '+status);}
    const directory=stem+'-full-review',status=run('scripts/pipeline-release-full-review.cjs',['--samples=5','--warmups=2',...(variant==='B'?['--baseline']:[]),...extra],directory);block.collectors.push({kind:'full-review',status,directory});block.completedAt=new Date().toISOString();save();console.log(profile+' '+directory+' exit '+status);
   }

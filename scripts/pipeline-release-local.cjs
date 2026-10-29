@@ -18,10 +18,10 @@ async function stop(){const listener=spawnSync('lsof',['-tiTCP:3107','-sTCP:LIST
   assert.ok(Object.values(variants).includes(cwd),'Never stop an unrelated server');process.kill(Number(pid),'SIGTERM');
   for(let i=0;i<100;i++){if(!spawnSync('lsof',['-tiTCP:3107','-sTCP:LISTEN'],{encoding:'utf8'}).stdout.trim())return;await new Promise(r=>setTimeout(r,50))}throw Error('Owned server did not stop')}
 async function start(variant){assert.ok(variant in variants);await stop();const cwd=variants[variant],c=config();c.buildDir=path.join(cwd,'.next-publish');fs.writeFileSync(configFile,JSON.stringify(c),{mode:0o600});
-  const fd=fs.openSync(path.join(root,'release-server-'+variant+'.log'),'a');const app=spawn(process.execPath,['node_modules/next/dist/bin/next','start','-p','3107','-H','127.0.0.1'],{cwd,env:environment(),detached:true,stdio:['ignore',fd,fd]});fs.closeSync(fd);app.unref();fs.writeFileSync(path.join(root,'server.pid'),String(app.pid));
+  const fd=fs.openSync(path.join(root,'release-server-'+variant+'.log'),'a');const app=spawn(process.execPath,[path.join(cwd,'node_modules/next/dist/bin/next'),'start',cwd,'-p','3107','-H','127.0.0.1'],{cwd,env:environment(),detached:true,stdio:['ignore',fd,fd]});fs.closeSync(fd);app.unref();fs.writeFileSync(path.join(root,'server.pid'),String(app.pid));
   for(let i=0;i<100;i++){try{if((await fetch(c.appUrl,{signal:AbortSignal.timeout(1000)})).ok)return}catch{}await new Promise(r=>setTimeout(r,200))}throw Error('Owned server did not become ready')}
 module.exports={root,repo,variants,config,environment,stop,start};
 if(require.main===module)(async()=>{const [op,variant='D']=process.argv.slice(2);if(op==='start')await start(variant);else if(op==='stop')await stop();else if(op==='build'){
   await stop();
-  assert.ok(variant in variants);const fd=fs.openSync(path.join(root,'release-build-'+variant+'.log'),'w');const r=spawnSync('npm',['run','build'],{cwd:variants[variant],env:environment(),stdio:['ignore',fd,fd]});fs.closeSync(fd);assert.equal(r.status,0,'Inspect owned build log');
+  assert.ok(variant in variants);const fd=fs.openSync(path.join(root,'release-build-'+variant+'.log'),'w');const r=spawnSync('npm',['--prefix',variants[variant],'run','build','--',variants[variant]],{cwd:variants[variant],env:environment(),stdio:['ignore',fd,fd]});fs.closeSync(fd);assert.equal(r.status,0,'Inspect owned build log');
 }else throw Error('Unknown owned lifecycle operation')})().catch(e=>{console.error(e.name+': '+e.message);process.exitCode=1});

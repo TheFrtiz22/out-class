@@ -54,3 +54,19 @@ not expose physical sleep/power telemetry or noisy-neighbour measurements;
 these limitations are explicit and CI results are never pooled with Mac data.
 Zero collector errors remain required. Acceptance tolerances in ACCEPTANCE.md
 are unchanged. This protocol cannot establish a production p95 guarantee.
+
+CI run `40905121217` is excluded in its entirety, including successful primary
+navigation, smaller-cohort workflows and capacity rows. Its baseline slots made
+`pipelinePage` requests even though exact main has no such endpoint. Filesystem
+source/build hashes alone did not prove the served build. The large baseline
+workflow cardinality failures are therefore instrumentation failures; they are
+not a main-product performance result. All raw outcomes remain preserved.
+
+The next distinct attempt uses separate dependency installations, explicit
+absolute build/start project directories, and before every browser/capacity
+block compares the served build-manifest bytes to that build's disk hash. It
+also verifies the authenticated data contract and exact application count,
+including main's 400 response for the unsupported candidate-only page endpoint.
+A failed attestation stops measurement and is retained. These preflight reads
+are outside timing and precede the same excluded warmups. No application code,
+content predicates, sample sizes or acceptance tolerances changed.

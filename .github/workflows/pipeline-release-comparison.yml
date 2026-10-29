@@ -43,7 +43,7 @@ jobs:
         run: |
           git fetch --depth=1 origin 29100f9cef68ffcba7a250200aa5b5ceb7727cb8
           git worktree add --detach ../../pipeline-release-baseline/out-class 29100f9cef68ffcba7a250200aa5b5ceb7727cb8
-          ln -s "$PWD/node_modules" ../../pipeline-release-baseline/out-class/node_modules
+          pnpm --dir ../../pipeline-release-baseline/out-class install --frozen-lockfile
       - name: Build and verify repaired fixture before measurement
         id: fixture
         run: node scripts/run-onboarding-e2e.cjs --club-integration --pipeline-release-repair --keep
