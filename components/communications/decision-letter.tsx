@@ -1,4 +1,5 @@
 'use client';
+import { LoadingState } from "@/components/ui/loading-state"
 import { useCallback,useEffect,useRef,useState } from 'react';
 import Link from 'next/link';
 import { ClubLogo } from '@/components/club-logo';
@@ -51,7 +52,7 @@ export function DecisionLetterView({applicationId}:{applicationId:string}) {
   }catch{setError('Your response could not be saved. Refresh and try again.');}
   finally{setBusy(false);}
  }
- if(loading)return <main className="decision-layout"><p role="status">Loading your letter…</p></main>;
+ if(loading)return <main className="decision-layout"><LoadingState label="Opening your decision letter…" layout="document" rows={4} /></main>;
  if(!data)return <main className="decision-layout"><h1>Decision letter unavailable</h1><p role="alert">{error||'A formal letter is unavailable for this historical decision.'}</p><Link href="/?workspace=student&view=status&section=status">Return to Status</Link></main>;
  const active=data.isCurrent&&data.currentStatus==='ACCEPTED'&&(!data.letter||data.letter.decision==='ACCEPTED')&&!data.suspended&&data.offer?.status==='PENDING'&&new Date(data.offer.expiresAt)>new Date();
  const offer=data.offer;
