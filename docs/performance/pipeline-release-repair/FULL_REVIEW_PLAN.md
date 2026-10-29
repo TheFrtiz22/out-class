@@ -110,3 +110,16 @@ SHA256, in addition to the frozen-output digest and authenticated data contract.
 The unused Pages manifest URL is not a prerequisite for an App Router build.
 These are source-fidelity controls; the application, milestones, sampling and
 acceptance thresholds remain unchanged. Failed preflights remain retained.
+
+
+A source-level review found that managers also requested selection metadata on
+every ordinary session/history poll. Before accepted repaired timings, that
+redundant work is removed: the initial snapshot still includes selection for
+auto-opening empty-history setup, open setup polls keep it fresh, and ordinary
+closed-setup polls omit it. Explicitly reopening setup requests a fresh snapshot
+and conceals prior eligibility until that exact operation settles; the existing
+workflow/trigger stays mounted to preserve focus restoration. Authority/query
+owner fencing and voting writes remain unchanged. Regression tests cover the
+one-read initial path, omitted polling query, concealed stale eligibility and
+fresh reopen. The changed candidate requires its own complete comparison;
+superseded measurements, if any, are preserved separately.
