@@ -8,6 +8,7 @@ import { getInterviewWorkspace, getInterviewRounds } from "@/lib/workspace-api";
 import { interviewEntryHref, interviewEntryStatus, interviewRoomRoundOptions, type InterviewRoomEntry } from "@/lib/interview-entry";
 import { defaultInterviewDate, groupInterviewDates, readExpandedInterviewDates } from "@/lib/interview-room-dates";
 import { Button } from "@/components/ui/button";
+import { LoadingState } from "@/components/ui/loading-state";
 import { ChevronDown } from "@/components/icons";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import "./interview-rooms-list.css";
@@ -48,7 +49,7 @@ export function InterviewRoomsList({ clubId }: { clubId: string }) {
   const shown = groups.filter(group => !date || group.day === date);
   return <section aria-label="Interview rooms" className="space-y-4 pb-20 md:pb-6">
     <header className="flex flex-wrap items-center justify-between gap-3"><h2 className="oc-section-heading">Your interview rooms</h2><label className="flex items-center gap-2 text-sm">Round<select className="ir-select" aria-label="Filter interview rooms by round" value={roundId} onChange={e => { setRoundId(e.target.value); const url = new URL(window.location.href); if(e.target.value)url.searchParams.set("roundId",e.target.value);else url.searchParams.delete("roundId");window.history.replaceState(null,"",url.pathname+url.search); }}><option value="">All rounds</option>{rounds.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></label><label className="flex items-center gap-2 text-sm">Date<input aria-label="Filter assigned interview date" type="date" className="rounded-md border bg-card px-2 py-1.5" value={date} onChange={e => { const selected = e.target.value; setDate(selected); const url = new URL(window.location.href); if (selected) url.searchParams.set("interviewDate", selected); else url.searchParams.delete("interviewDate"); window.history.replaceState(null, "", url.pathname + url.search); if (selected) rememberDays([...new Set([...openDays, selected])]); }} /></label></header>
-    {loading && <p role="status">Loading assigned interviews…</p>}
+    {loading && <LoadingState label="Loading assigned interviews…" layout="rows" rows={3} />}
     {error && <div role="alert">{error} <Button variant="outline" onClick={() => setRetry(v => v + 1)}>Retry</Button></div>}
     {!loading && !error && !shown.length && <p role="status" className="rounded-lg border border-dashed p-5 text-sm text-muted-foreground">{date && rows.length ? "No assigned interviews on this date." : "No assigned interviews."}</p>}
     {!error && shown.map(({ day, label, entries }) => <Collapsible key={day} open={openDays.includes(day)} onOpenChange={open => rememberDays(open ? [...openDays, day] : openDays.filter(value => value !== day))}>
