@@ -1,4 +1,5 @@
 "use client";
+import { LoadingState } from "@/components/ui/loading-state"
 import { useEffect, useMemo, useRef, useState } from "react";
 import { InterviewResumeLoader as Viewer } from "@/components/interview-resume-loader";
 import { useDemoMode } from "@/contexts/demo-context";
@@ -30,7 +31,7 @@ export function InterviewResumeModeration({ clubId, filters = {}, initialDocumen
     <h2 className="oc-section-heading">Résumé moderation</h2>
     <p className="text-sm text-muted-foreground">Preserved interview documents, including past rounds. Only explicit presidents and vice-presidents can moderate other authors’ comments. The latest 100 documents are shown.</p>
     <Button ref={refreshButton} type="button" variant="outline" size="sm" onClick={() => setRetry(v => v + 1)}>Refresh documents</Button>
-    {loading && <p role="status">Loading saved documents…</p>}{error && <p role="alert" className="text-destructive">{error}</p>}
+    {loading && <LoadingState label="Loading saved interview documents…" layout="rows" rows={3} />}{error && <p role="alert" className="text-destructive">{error}</p>}
     {!loading && !error && !rows.length && <p role="status">No saved interview documents are available. Documents are preserved when an authorized interviewer first opens the résumé.</p>}
     <ul className="space-y-2">{rows.map(row => <li key={row.documentId}><Button type="button" variant="outline" className="h-auto whitespace-normal text-left" onClick={e => { trigger.current = e.currentTarget; setSelected(row); }}>{row.applicantName} · {row.roundName} · Review résumé</Button></li>)}</ul>
     <Dialog open={!!selected} onOpenChange={open => { if (!open) setSelected(null); }}><DialogContent className="flex h-[94dvh] max-w-[96vw] flex-col overflow-hidden sm:max-w-[96vw]" onCloseAutoFocus={e => { e.preventDefault(); (trigger.current?.isConnected ? trigger.current : refreshButton.current)?.focus(); }}>
