@@ -48,12 +48,12 @@ test('contextual loading uses compositor-friendly motion and respects accessibil
   assert.match(skeleton, /oc-skeleton/)
   assert.doesNotMatch(skeleton, /animate-pulse/)
   assert.match(stylesheet, /@keyframes oc-skeleton-sheen/)
-  const keyframe = stylesheet.match(/@keyframes oc-skeleton-sheen\\s*\\{([\\s\\S]*?)\\n\\}/)?.[1] ?? ''
-  assert.match(keyframe, /translate3d\\(/)
-  assert.doesNotMatch(keyframe, /(?:width|height|left|top|filter|box-shadow)\\s*:/)
-  assert.match(stylesheet, /@media \\(prefers-reduced-motion: reduce\\)/)
-  assert.match(stylesheet, /\\.oc-skeleton::after \\{ animation: none; display: none;/)
-  assert.match(stylesheet, /@media \\(forced-colors: active\\)/)
+  const keyframe = stylesheet.match(/@keyframes oc-skeleton-sheen\s*\{([\s\S]*?)\n\}/)?.[1] ?? ''
+  assert.match(keyframe, /translate3d\(/)
+  assert.doesNotMatch(keyframe, /(?:width|height|left|top|filter|box-shadow)\s*:/)
+  assert.match(stylesheet, /@media \(prefers-reduced-motion: reduce\)/)
+  assert.match(stylesheet, /\.oc-skeleton::after \{ animation: none; display: none;/)
+  assert.match(stylesheet, /@media \(forced-colors: active\)/)
 })
 test('applicant skeleton reserves recognisable pipeline steps and list rows', () => {
   const { LoadingState } = load('components/ui/loading-state.tsx')
