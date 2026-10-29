@@ -17,5 +17,10 @@
       "path": "/api/internal/scheduled-communications",
       "schedule": "* * * * *"
     }
-  ]
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "design/platform-wide-visual-unification": false
+    }
+  }
 }
