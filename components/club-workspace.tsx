@@ -304,7 +304,7 @@ function RoundSettings({ clubId, embedded = false, canIdentify = true, onChanged
         </Button>
       </div>
     );
-  if (!rounds) return <p role="status">Loading rounds…</p>;
+  if (!rounds) return <WorkspaceLoading label="Loading recruitment rounds…" layout="rows" rows={3} />;
   return (
     <div className="max-w-3xl space-y-5">
       {!embedded && <ol className="divide-y">
