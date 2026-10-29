@@ -24,7 +24,7 @@ test('native select retains form data, options, labels, disabled state and chang
 })
 test('loading layouts announce one message and keep visual skeletons decorative', () => {
   const { LoadingState } = load('components/ui/loading-state.tsx')
-  for (const layout of ['rows', 'cards', 'inline', 'applications', 'applicants', 'workspace']) {
+  for (const layout of ['rows', 'cards', 'inline', 'applications', 'applicants', 'workspace', 'form', 'document']) {
     const html = renderToStaticMarkup(React.createElement(LoadingState, { label: 'Loading meetings', layout, rows: 2 }))
     assert.equal((html.match(/role="status"/g) || []).length, 1)
     assert.equal((html.match(/Loading meetings/g) || []).length, 1)
@@ -66,4 +66,21 @@ test('applicant skeleton reserves recognisable pipeline steps and list rows', ()
   assert.equal((html.match(/role="status"/g) || []).length, 1)
   assert.equal((html.match(/Preparing applicants/g) || []).length, 1)
   assert.doesNotMatch(html, /% complete|progressbar/i)
+})
+
+test('form and letter placeholders retain editable-workspace structure without fabricated progress', () => {
+  const { LoadingState } = load('components/ui/loading-state.tsx')
+  for (const layout of ['form', 'document']) {
+    const html = renderToStaticMarkup(React.createElement(LoadingState, { label: 'Preparing workspace', layout, rows: 3 }))
+    assert.match(html, new RegExp('data-layout="' + layout + '"'))
+    assert.match(html, /aria-busy="true"/)
+    assert.equal((html.match(/role="status"/g) || []).length, 1)
+    assert.equal((html.match(/Preparing workspace/g) || []).length, 1)
+    assert.match(html, /data-slot="skeleton" aria-hidden="true"/)
+    assert.doesNotMatch(html, /progressbar|[0-9]+% complete/)
+  }
+  const css = fs.readFileSync('styles/interface-primitives.css', 'utf8')
+  assert.match(css, /\.oc-loading-form-fields/)
+  assert.match(css, /\.oc-loading-document-paper/)
+  assert.match(css, /\.oc-loading-row:nth-child\(n \+ 6\)/)
 })
