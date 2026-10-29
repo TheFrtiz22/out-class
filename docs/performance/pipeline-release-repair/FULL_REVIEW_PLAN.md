@@ -86,3 +86,13 @@ still checks the exact served build manifest and the authenticated data
 contract before the same warmups and samples. Frozen artifact build IDs and
 digests are recorded. This changes only runtime orchestration, not application
 source, fixtures, content predicates, measurements or acceptance tolerances.
+
+
+Before any attested frozen-output comparison was collected, main advanced to
+`6e793dea0bd45052fa444749b26d432ae93392cd` (shared contextual/glowing loading
+components and voting walkthrough documentation). The repair was rebased,
+preserving main's loading assertions and all product changes. The new CI
+comparison freezes that exact latest main. Existing attempts against f2192e02
+and 29100f9c remain separate and excluded; tolerances and sample sizes remain
+unchanged. Superseded queued/preparation-only runs may be cancelled; any
+collected raw outcomes must still be retained and excluded.

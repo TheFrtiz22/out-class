@@ -16,7 +16,7 @@ permissions:
 
 concurrency:
   group: pipeline-release-comparison-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   compare:
@@ -41,8 +41,8 @@ jobs:
       - run: pnpm exec playwright install --with-deps chromium
       - name: Prepare exact current-main checkout
         run: |
-          git fetch --depth=1 origin 29100f9cef68ffcba7a250200aa5b5ceb7727cb8
-          git worktree add --detach ../../pipeline-release-baseline/out-class 29100f9cef68ffcba7a250200aa5b5ceb7727cb8
+          git fetch --depth=1 origin 6e793dea0bd45052fa444749b26d432ae93392cd
+          git worktree add --detach ../../pipeline-release-baseline/out-class 6e793dea0bd45052fa444749b26d432ae93392cd
           pnpm --dir ../../pipeline-release-baseline/out-class install --frozen-lockfile
       - name: Build and verify repaired fixture before measurement
         id: fixture
