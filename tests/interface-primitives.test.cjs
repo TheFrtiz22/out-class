@@ -84,3 +84,34 @@ test('form and letter placeholders retain editable-workspace structure without f
   assert.match(css, /\.oc-loading-document-paper/)
   assert.ok(css.includes('.oc-loading-row:nth-child(n + 6)'))
 })
+
+
+test('glowing activity pill is decorative except for its single visible loading label', () => {
+  const { GlowingLoadingPill } = load('components/ui/glowing-loading-pill.tsx')
+  const html = renderToStaticMarkup(React.createElement(GlowingLoadingPill, { label: 'Loading applicants…' }))
+  assert.match(html, /data-slot="glowing-loading-pill"/)
+  assert.match(html, /oc-glow-loading-ring" aria-hidden="true"/)
+  assert.equal((html.match(/Loading applicants…/g) || []).length, 1)
+  assert.doesNotMatch(html, /role="status"|role="progressbar"/)
+  const compact = renderToStaticMarkup(React.createElement(GlowingLoadingPill, { label: 'Checking access…', compact: true }))
+  assert.match(compact, /data-size="compact"/)
+})
+
+test('every shared loading layout includes one glowing capsule while keeping its skeleton preview', () => {
+  const { LoadingState } = load('components/ui/loading-state.tsx')
+  for (const layout of ['rows','cards','inline','applications','applicants','workspace','form','document']) {
+    const html = renderToStaticMarkup(React.createElement(LoadingState, { label: 'Loading information', layout, rows: 2 }))
+    assert.equal((html.match(/data-slot="glowing-loading-pill"/g) || []).length, 1)
+    assert.equal((html.match(/role="status"/g) || []).length, 1)
+    assert.equal((html.match(/Loading information/g) || []).length, 1)
+    if (layout !== 'inline') assert.match(html, /data-slot="skeleton"/)
+  }
+  const dashboard = fs.readFileSync('components/product/dashboard-presentation.tsx','utf8')
+  assert.match(dashboard, /<GlowingLoadingPill label=\{label\} \/>/)
+  const css = fs.readFileSync('styles/interface-primitives.css','utf8')
+  assert.match(css, /@keyframes oc-glow-loading-spin/)
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\)/)
+  assert.match(css, /\.oc-glow-loading-ring::after \{ animation: none; \}/)
+  assert.match(css, /@media \(forced-colors: active\)/)
+  assert.doesNotMatch(css, /oc-loading-presence|oc-loading-indicator/)
+})
