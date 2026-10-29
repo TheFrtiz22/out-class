@@ -1,6 +1,33 @@
 # Live voting room - Parts 1-3 handoff
 
-## Part 4 release checkpoint - October 28, 2026 (in progress)
+## Current Part 4 production checkpoint ? October 28, 2026
+
+**Deployed; full production browser acceptance is still incomplete.** PR [#94](https://github.com/TheFrtiz22/out-class/pull/94) merged as `e666f5c26246c449f195009ddd4ec6d04dbdf63a` after required checks passed on `3db9bd8`. Its initial deployment was `dpl_HqqfH4hMft58MMnMvAJhBcZsYZpZ`. Concurrent main changes have since deployed: www.out-class.net now serves `58a8f29e86eff4c4064248fe0d49ba8066c9f041`, deployment `dpl_GqG9dpKmk5GKT69DkvhyHYjVh4Vv`, which contains the voting merge. Voting actions, utilities and migrations are unchanged between these revisions.
+
+- All three voting migrations below are applied to production in order; all 60 ledger checksums and actual catalog guards verified. Existing records were preserved. Backup/restore rehearsal passed before migration. Promotion was held during cutover and restored afterward. Normal traffic is available; no maintenance/read-only gate remains. Retired pre-voting production artifact hosts have an active deny policy; an unauthenticated probe encountered Vercel SSO, so authenticated artifact-denial acceptance is not claimed.
+- Actual hosted Auth/application HTTP checks pass setup scoping, anonymous field restrictions, outsider/applicant/ineligible denial, duplicate creation, changed votes, hidden open totals, explicit closure, late-vote denial, reasoned tie, concurrent advance protection, no-vote acceptance, early ending, correction, two Hold-only passes and acceptance above target. These are HTTP evidence, not two-browser synchronization evidence.
+- Explicit finalization committed once and preserved unresolved applicant state. Of two simultaneous identical requests, one returned a PostgreSQL `55P03` lock-timeout error (production runtime log); no duplicate finalization or notifications occurred. Same-request retry/browser recovery remains to verify; do not classify the whole concurrent HTTP scenario as passed.
+- Hidden synthetic club `daafab97-0e85-4a6b-83fe-d04fec323bb4` reuses existing synthetic Auth users. Three synthetic legacy-shaped IN_REVIEW applications (`submittedAt=null`) avoid setup messages; this does not test fresh applicant submission. Production notification and email-outbox counts remain zero for this club. Prior clubs/reviews were not reopened. Finalized room `b31974ea-51ac-41ad-9254-6c3e5a18c970` is retained with audit/pass history.
+- Native Chrome incognito leader sign-in succeeded and real setup loaded. Regular Arden session remains untouched. Production two-independent-browser walkthrough is unfinished. Isolated preview Auth acceptance remains blocked by staging's restricted connection compatibility; it was not passed. Local native/disposable/CI evidence above remains valid; physical touch/QR/projector acceptance is not claimed.
+
+Private detailed evidence/checkpoint: `C:\Users\arden\AppData\Local\OutClass-staging-verification\voting-release-20261028`. The earlier checkpoints below are historical and superseded by this current summary.
+
+
+### Hosted follow-up: bounded voting reads (October 29)
+
+Two independent real Chrome sessions (regular QA one voter and Incognito QA owner leader) successfully preserved the join destination through Auth, prepared/previewed/started a synthetic room, and joined the eligible voter. Concurrent joining correctly rejected a stale leader command and showed the joined participant. Subsequent applicant presentation/poll reads failed on production `58a8f29`: Vercel logs show Prisma P2028 expired/not-found interactive transactions in round/cycle reads. These multi-query reads inherited Prisma's five-second timeout.
+
+The follow-up applies explicit `maxWait=5000`, `timeout=30000` only to voting read transactions and session-scoped canonical applicant display, retaining RepeatableRead, current authorization, response revalidation and existing write/lock budgets. No migration or environment change is required. New deterministic regressions simulate six-second projections, cover all eight voting read paths, retained denial, and unchanged non-session display budgets. They pass; the first test attempt lacked the annotation fixture delegate, which was corrected without changing application behavior. Other focused regressions (42 passing in the initial batch) remain valid. Type/lint/build and protected CI are in progress; this follow-up is not yet deployed. Production browser acceptance remains incomplete until retested after its release.
+
+### Leader/member quick guide
+
+1. In the club's Applicants decision controls, choose **Live voting room**. Select the cycle, round, applicants, eligible voters, optional positive target and permitted presentation fields. **Prepare and preview** saves a draft; **Start session** is separate.
+2. Show **Join QR** or share its session link. Members sign in with their eligible club account, join, and choose Accept/Hold/Reject on their own device. They may change their choice while voting is open; totals remain hidden.
+3. The leader opens/closes voting explicitly, confirms missing ballots for early closure, records a reason for a tie/override, confirms the outcome, then advances. Accept without vote requires confirmation/reason and fabricates no ballots.
+4. After a pass, **Review held applicants** starts a fresh Hold-only pass. The target is guidance. **End voting** preserves Hold/Unreviewed and sends no messages.
+5. Choose the intended recruitment mapping, preview exact changes, then explicitly finalize. Sending applicant notifications is a separate action. Finalization does not itself send messages or automatically turn round advancement into final admission.
+
+## Historical Part 4 release checkpoint - October 28, 2026 (superseded)
 
 - PR: https://github.com/TheFrtiz22/out-class/pull/94. Integrated application source `f0f6977` merges current main `a0265dc` into Part 3 `14b3a53`, preserving the newer loading and dock fixes. No production merge or deployment has occurred. This checkpoint's subsequent verification commit changes tests and documentation only.
 - Production remains `a0265dc`, READY deployment `dpl_3jRy2LdbYm4YWDNLR7f7TM912Lhp`. The encrypted replacement credential matches the rotation material and passes strict-TLS READ ONLY authentication as `outclass_production_app`. All 57 applied production checksums match source; only the three voting migrations below remain pending. No production maintenance, promotion settings or credentials were changed.

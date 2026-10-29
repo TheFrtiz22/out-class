@@ -1,4 +1,5 @@
 "use server";
+import { votingReadLimits } from "@/lib/voting-transaction-limits";
 import { prisma } from "@/utils/prisma";
 import { requireClubPermission } from "@/utils/auth";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
@@ -20,11 +21,11 @@ export async function getLiveVotingSummary(input:unknown){
   const rows=await tx.application.findMany({where:{clubId:d.clubId,id:{in:s.candidates.map(c=>c.applicationId)}},include:{round:true,student:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}});
   const rounds=await tx.pipelineRound.findMany({where:{clubId:d.clubId,archivedAt:null,order:{gt:round.order}},orderBy:{order:"asc"},select:{id:true,name:true}});
   return {revision:s.revision,rounds,labels:rows.map(a=>({id:a.id,label:round.anonymousReview||a.round.anonymousReview?anonymousApplicantLabel(a.id):a.student.studentProfile?`${a.student.studentProfile.firstName} ${a.student.studentProfile.lastName}`:"Applicant"}))};
- });
+ },votingReadLimits);
 }
 export async function previewLiveVotingFinalization(input:unknown){
  const d=finalizationPreviewInput.parse(input),{user}=await requireClubPermission(d.clubId,[...caps]);
- return prisma.$transaction(async tx=>{const m=await authorizeClubTransaction(tx,d.clubId,user.id,[...caps,...(d.mapping.kind==="ADVANCE"?["recruitment.manage" as const]:[])],{readOnly:true});const {s}=await loadVotingRoom(tx,d.clubId,d.sessionId);requireRoomLeader(s,m,"decisions.publish");if(s.state!=="COMPLETED"||s.finalizedAt)throw Error("End voting before previewing unfinalized decisions.");return votingFinalizationPlan(tx,s,d.mapping);});
+ return prisma.$transaction(async tx=>{const m=await authorizeClubTransaction(tx,d.clubId,user.id,[...caps,...(d.mapping.kind==="ADVANCE"?["recruitment.manage" as const]:[])],{readOnly:true});const {s}=await loadVotingRoom(tx,d.clubId,d.sessionId);requireRoomLeader(s,m,"decisions.publish");if(s.state!=="COMPLETED"||s.finalizedAt)throw Error("End voting before previewing unfinalized decisions.");return votingFinalizationPlan(tx,s,d.mapping);},votingReadLimits);
 }
 export async function finalizeLiveVotingRoom(input:unknown){
  const d=finalizeRoomInput.parse(input),{user}=await requireClubPermission(d.clubId,[...caps]);

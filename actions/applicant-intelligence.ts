@@ -1,4 +1,5 @@
 "use server";
+import { votingReadLimits } from "@/lib/voting-transaction-limits";
 import { profilePhotoSource } from "@/lib/profile-photo";
 import { z } from "zod";
 import { lockOperationalClub } from "@/lib/club-suspension";
@@ -71,7 +72,7 @@ export async function getApplicantDisplay(input: z.infer<typeof scope>) {
       id: o.id, kind: o.kind, body: o.body, author: o.author.studentProfile ? `${o.author.studentProfile.firstName} ${o.author.studentProfile.lastName}` : "Club reviewer", own: o.authorId === user.id, createdAt: o.createdAt.toISOString(), updatedAt: o.updatedAt.toISOString(),
     })), feedback);
     return { ...display, photo: display.photo ? profilePhotoSource(app.student.studentProfile?.headshotUrl, { clubId: data.clubId, applicationId: data.applicationId, ...(data.sessionId ? { sessionId: data.sessionId } : data.previewConfig ? { mode: "preview" as const } : {}) }) ?? null : null };
-  }, { isolationLevel: "RepeatableRead" });
+  }, { isolationLevel: "RepeatableRead", ...(data.sessionId ? votingReadLimits : {}) });
 }
 export async function saveApplicantObservation(input: unknown) {
   const data = scope.extend({ id: z.string().uuid().optional(), kind: z.enum(["PRO", "CON"]), body: z.string().trim().min(1).max(3000) }).strict().parse(input);
