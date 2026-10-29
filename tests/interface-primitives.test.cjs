@@ -82,5 +82,5 @@ test('form and letter placeholders retain editable-workspace structure without f
   const css = fs.readFileSync('styles/interface-primitives.css', 'utf8')
   assert.match(css, /\.oc-loading-form-fields/)
   assert.match(css, /\.oc-loading-document-paper/)
-  assert.match(css, /\.oc-loading-row:nth-child\(n \+ 6\)/)
+  assert.ok(css.includes('.oc-loading-row:nth-child(n + 6)'))
 })
