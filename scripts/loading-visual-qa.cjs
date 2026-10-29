@@ -22,6 +22,8 @@ const cases = [
 ]
 async function main() {
   const actor = new Actor(config); await actor.signIn(fixture.email, fixture.password)
+  // Use the real test account's action to keep its first-time guide from obscuring evidence.
+  await actor.action('actions/tutorials.ts', 'saveTutorial', [{ experience: 'leader', clubId: fixture.clubIds[0], action: 'skip', step: 0 }])
   const browser = await chromium.launch({ headless: true }), results = []
   try {
     for (const width of (process.env.OUTCLASS_LOADING_QA_WIDTHS || '1440,1280,768,390,320').split(',').map(Number)) {
@@ -44,6 +46,8 @@ async function main() {
           const loader = page.locator(selector).filter({ visible: true }).first()
           await loader.waitFor()
           await requestStarted
+          const skipTutorial = page.getByRole('button', { name: 'Skip', exact: true }).filter({ visible: true })
+          if (await skipTutorial.count()) { await skipTutorial.click(); await skipTutorial.waitFor({ state: 'hidden' }) }
           assert.ok(requests > 0, 'The real data request must be pending')
           const before = await page.evaluate(() => ({ width: innerWidth, scrollWidth: document.documentElement.scrollWidth, statuses: [...document.querySelectorAll('[role="status"][aria-busy="true"]')].filter(e => e.getClientRects().length).length, nav: [...document.querySelectorAll('nav')].some(e => e.getClientRects().length) }))
           assert.ok(before.scrollWidth <= width, `${name} overflows ${width}px`)

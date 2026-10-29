@@ -634,7 +634,7 @@
     "width": 1440,
     "loading": "pipeline-1440-loading.png",
     "ready": "pipeline-1440-ready.png",
-    "requests": 2,
+    "requests": 1,
     "before": {
       "width": 1440,
       "scrollWidth": 1440,
