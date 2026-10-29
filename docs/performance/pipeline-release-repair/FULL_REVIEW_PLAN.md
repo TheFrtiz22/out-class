@@ -22,3 +22,35 @@ errors are retained. Whole sleep/power-invalid attempts remain excluded.
 
 This is stricter verification, not a change to release thresholds or deletion of
 an earlier result. It does not establish a production p95 guarantee.
+
+## Separate current-main CI protocol (declared before collecting)
+
+Main advanced to `29100f9cef68ffcba7a250200aa5b5ceb7727cb8`, including
+PR #92's dock repair, live voting rooms and new product layouts. The repair is
+rebased onto that exact source; earlier Mac runs describe the prior base. CI
+uses two independent GitHub-hosted Linux VMs, one per network/CPU profile. On
+each VM both builds use the same disposable loopback Auth/PostgreSQL fixture.
+Builds, QA and fixture preparation finish before sequential BAAB timing.
+
+The unchanged primary navigation collector measures cold/warm directory/detail
+entry at all four sizes: 30 samples/build/path/condition at one applicant and
+10 elsewhere; two warmups/block are excluded. The separately identified strict
+full-review collector runs all four sizes, ten samples/build/profile plus two
+warmups/block, and expects exactly N rows from main and min(N,100) from repair.
+The earlier workflow incorrectly required min(N,100) from main; **all** earlier
+workflow rows are excluded, including successful smaller-cohort/candidate rows.
+No failed outcome is substituted. The old collector/raw probes are preserved.
+
+Main renamed the former Start voting console to Voting history and introduced
+a separate Live voting room flow. Both CI builds preserve that UI. This
+comparison follows Voting history to exercise the repaired snapshot/selection
+contract; it is not a benchmark of the new persistent live-room flow. Main's
+live-room regression suites remain required. No live-room performance claim.
+
+The local-profile VM additionally measures 140 capacity requests plus 56
+excluded warmup requests at concurrency 1/2/4, pool limit 8. Host controls record
+runner/CPU/cgroup metadata and wall-versus-monotonic elapsed time. GitHub does
+not expose physical sleep/power telemetry or noisy-neighbour measurements;
+these limitations are explicit and CI results are never pooled with Mac data.
+Zero collector errors remain required. Acceptance tolerances in ACCEPTANCE.md
+are unchanged. This protocol cannot establish a production p95 guarantee.

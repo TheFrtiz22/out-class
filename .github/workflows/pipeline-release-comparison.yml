@@ -1,0 +1,72 @@
+name: Pipeline release comparison
+
+# Isolated localhost Auth/PostgreSQL and production builds; no repository secrets.
+# Evidence commits do not restart the comparison. Both builds run sequentially
+# on the same VM. Profiles use separate VMs and distributions.
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/pipeline-release-comparison.yml"
+      - "scripts/pipeline-release-ci-*.cjs"
+      - "scripts/pipeline-release-full-review.cjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pipeline-release-comparison-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  compare:
+    name: Current main versus repair / ${{ matrix.profile }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [local, constrained]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Prepare exact current-main checkout
+        run: |
+          git fetch --depth=1 origin 29100f9cef68ffcba7a250200aa5b5ceb7727cb8
+          git worktree add --detach ../../pipeline-release-baseline/out-class 29100f9cef68ffcba7a250200aa5b5ceb7727cb8
+          ln -s "$PWD/node_modules" ../../pipeline-release-baseline/out-class/node_modules
+      - name: Build and verify repaired fixture before measurement
+        id: fixture
+        run: node scripts/run-onboarding-e2e.cjs --club-integration --pipeline-release-repair --keep
+      - name: Build current main against the same local fixture
+        id: baseline
+        run: node scripts/pipeline-release-local.cjs build B
+      - name: Compare browser navigation and complete review
+        if: success()
+        run: node scripts/pipeline-release-ci-study.cjs --profile=${{ matrix.profile }}
+      - name: Compare bounded reader capacity
+        if: always() && steps.baseline.outcome == 'success' && matrix.profile == 'local'
+        run: node scripts/pipeline-release-ci-capacity.cjs
+      - name: Stop this job's disposable services
+        if: always()
+        run: |
+          if test -f /tmp/outclass-onboarding-e2e/config.json; then
+            node scripts/pipeline-release-local.cjs stop
+            node node_modules/supabase/dist/supabase.js stop --workdir /tmp/outclass-onboarding-e2e --no-backup
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pipeline-release-${{ matrix.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: docs/performance/pipeline-release-repair/ci/
+          if-no-files-found: warn
+          retention-days: 30

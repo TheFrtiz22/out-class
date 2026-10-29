@@ -57,12 +57,12 @@ async function main(){
    await stage('clearSearch','search','Audit Student 000',visibleCount,()=>page.getByRole('textbox',{name:'Search applicants',exact:true}).fill(''));
    await stage('selection','selection','Audit Student 000',size,()=>page.getByRole('button',{name:'Quick review',exact:true}).click());
    await stage('closeSelection','return','',visibleCount,()=>page.locator('[data-slot=sheet-content]').getByRole('button',{name:'Close',exact:true}).click());
-   await stage('votingCold','voting','',0,()=>page.getByRole('button',{name:'Start voting',exact:true}).click());
+   await stage('votingCold','voting','',0,()=>page.getByRole('button',{name:'Voting history',exact:true}).click());
    const setup=()=>page.getByRole('dialog',{name:'New voting session',exact:true});const round=setup().getByRole('combobox',{name:'Recruitment round',exact:true});const options=await round.locator('option').evaluateAll(nodes=>nodes.map(n=>({value:n.value,text:n.textContent})));const applied=options.find(v=>v.text==='Applied');assert.ok(applied);
    await stage('votingPool','votingPool','',size,()=>round.selectOption(applied.value));
    failedAt='closeVotingSetup';await setup().getByRole('button',{name:'Done',exact:true}).click();await setup().waitFor({state:'hidden'});
    await stage('closeVoting','return','',visibleCount,()=>page.locator('.oc-voting-stage').getByRole('button',{name:'Close',exact:true}).click());
-   await stage('votingWarm','voting','',0,()=>page.getByRole('button',{name:'Start voting',exact:true}).click());
+   await stage('votingWarm','voting','',0,()=>page.getByRole('button',{name:'Voting history',exact:true}).click());
    failedAt='closeVotingSetup';await setup().getByRole('button',{name:'Done',exact:true}).click();await setup().waitFor({state:'hidden'});
    await stage('return','return','',visibleCount,()=>page.locator('.oc-voting-stage').getByRole('button',{name:'Close',exact:true}).click());
    failedAt='networkDrain';await drain();
