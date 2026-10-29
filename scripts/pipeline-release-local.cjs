@@ -12,14 +12,10 @@ function environment(){const c=config(),s=c.status,db=new URL(s.DB_URL);db.searc
   SMTP_HOST:'127.0.0.1',SMTP_PORT:'55325',SMTP_USER:'local-test',SMTP_PASSWORD:'local-test',SMTP_FROM_EMAIL:'outclass@virginia.edu',COMMUNICATIONS_EMAIL_ENABLED:'true',RESEND_API_KEY:'',RESEND_FROM_EMAIL:'',
   NODE_EXTRA_CA_CERTS:path.join(root,'mailpit-cert.pem'),VERCEL:'',VERCEL_ENV:''}}
 const variants={B:path.resolve(repo,'../../pipeline-release-baseline/out-class'),D:repo,C:path.resolve(repo,'../../pipeline-release-held/out-class')};
-async function stop(){const listener=spawnSync('lsof',['-tiTCP:3107','-sTCP:LISTEN'],{encoding:'utf8'}).stdout.trim();if(!listener)return;
-  const pid=fs.readFileSync(path.join(root,'server.pid'),'utf8').trim();assert.equal(listener,pid);
-  const cwd=execFileSync('lsof',['-a','-p',pid,'-d','cwd','-Fn'],{encoding:'utf8'}).split('\n').find(v=>v.startsWith('n'))?.slice(1);
-  assert.ok(Object.values(variants).includes(cwd),'Never stop an unrelated server');process.kill(Number(pid),'SIGTERM');
-  for(let i=0;i<100;i++){if(!spawnSync('lsof',['-tiTCP:3107','-sTCP:LISTEN'],{encoding:'utf8'}).stdout.trim())return;await new Promise(r=>setTimeout(r,50))}throw Error('Owned server did not stop')}
-async function start(variant){assert.ok(variant in variants);await stop();const cwd=process.env.OUTCLASS_RELEASE_CI_FROZEN_RUNTIME==='1' ? require('./pipeline-release-ci-runtime.cjs').restore(variant,{root,repo,variants}) : variants[variant],c=config();c.buildDir=path.join(cwd,'.next-publish');fs.writeFileSync(configFile,JSON.stringify(c),{mode:0o600});
+async function stop(){return require('./pipeline-release-process.cjs').stop({port:3107,pidFile:path.join(root,'server.pid'),allowed:Object.values(variants)});}
+async function start(variant){assert.ok(variant in variants);await stop();assert.ok(await require('./pipeline-release-process.cjs').available(3107),'Owned runtime port must be free before startup');const cwd=process.env.OUTCLASS_RELEASE_CI_FROZEN_RUNTIME==='1' ? require('./pipeline-release-ci-runtime.cjs').restore(variant,{root,repo,variants}) : variants[variant],c=config();c.buildDir=path.join(cwd,'.next-publish');fs.writeFileSync(configFile,JSON.stringify(c),{mode:0o600});
   const fd=fs.openSync(path.join(root,'release-server-'+variant+'.log'),'a');const app=spawn(process.execPath,[path.join(cwd,'node_modules/next/dist/bin/next'),'start',cwd,'-p','3107','-H','127.0.0.1'],{cwd,env:environment(),detached:true,stdio:['ignore',fd,fd]});fs.closeSync(fd);app.unref();fs.writeFileSync(path.join(root,'server.pid'),String(app.pid));
-  for(let i=0;i<100;i++){try{if((await fetch(c.appUrl,{signal:AbortSignal.timeout(1000)})).ok)return}catch{}await new Promise(r=>setTimeout(r,200))}throw Error('Owned server did not become ready')}
+  for(let i=0;i<100;i++){try{if((await fetch(c.appUrl,{signal:AbortSignal.timeout(1000)})).ok){require('./pipeline-release-process.cjs').owned(app.pid,[cwd]);return{registeredProcessVerified:true,portVerifiedFreeBeforeStart:true}}}catch{}await new Promise(r=>setTimeout(r,200))}throw Error('Owned server did not become ready')}
 module.exports={root,repo,variants,config,environment,stop,start};
 if(require.main===module)(async()=>{const [op,variant='D']=process.argv.slice(2);if(op==='start')await start(variant);else if(op==='stop')await stop();else if(op==='build'){
   await stop();

@@ -96,3 +96,17 @@ comparison freezes that exact latest main. Existing attempts against f2192e02
 and 29100f9c remain separate and excluded; tolerances and sample sizes remain
 unchanged. Superseded queued/preparation-only runs may be cancelled; any
 collected raw outcomes must still be retained and excluded.
+
+
+Run `40969249318` also failed its unused Pages build-manifest check before
+sampling. No timing is accepted. This did not independently establish the
+server process being served: the old lifecycle trusted an empty lsof port
+inventory and accepted any HTTP 200 as startup readiness. The next attempt
+stops only the registered PID after verifying its working directory, verifies
+that both that process and its port are released, refuses an unregistered
+occupied port, and verifies the new process. The preflight now checks the
+App Router document's exact build ID and a required runtime JavaScript asset's
+SHA256, in addition to the frozen-output digest and authenticated data contract.
+The unused Pages manifest URL is not a prerequisite for an App Router build.
+These are source-fidelity controls; the application, milestones, sampling and
+acceptance thresholds remain unchanged. Failed preflights remain retained.

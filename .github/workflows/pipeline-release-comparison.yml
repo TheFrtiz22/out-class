@@ -54,16 +54,17 @@ jobs:
         id: freeze
         run: node scripts/pipeline-release-ci-runtime.cjs freeze
       - name: Verify both restored builds before sampling
+        id: preflight
         env:
           OUTCLASS_RELEASE_CI_FROZEN_RUNTIME: "1"
-        run: node scripts/pipeline-release-ci-runtime.cjs check
+        run: node scripts/pipeline-release-ci-runtime.cjs check --profile=${{ matrix.profile }}
       - name: Compare browser navigation and complete review
         if: success()
         env:
           OUTCLASS_RELEASE_CI_FROZEN_RUNTIME: "1"
         run: node scripts/pipeline-release-ci-study.cjs --profile=${{ matrix.profile }}
       - name: Compare bounded reader capacity
-        if: always() && steps.freeze.outcome == 'success' && matrix.profile == 'local'
+        if: always() && steps.preflight.outcome == 'success' && matrix.profile == 'local'
         env:
           OUTCLASS_RELEASE_CI_FROZEN_RUNTIME: "1"
         run: node scripts/pipeline-release-ci-capacity.cjs
