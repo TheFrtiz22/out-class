@@ -12,7 +12,7 @@ import {
   MapPin,
 } from "@/components/icons"
 import { PageHeader } from "@/components/product/page-header"
-import { MetricStrip } from "@/components/product/metric-strip"
+import { FeaturedAction } from "@/components/product/featured-action"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ClubLogo } from "@/components/club-logo"
@@ -47,7 +47,7 @@ function SectionTitle({
   title,
   action,
   onClick,
-  icon: Icon,
+  icon: _Icon,
 }: {
   icon: typeof CalendarDays
   id: string
@@ -57,7 +57,7 @@ function SectionTitle({
 }) {
   return (
     <div className="oc-home-section-title">
-      <h2 id={id}><Icon size={19} aria-hidden="true" />{title}</h2>
+      <h2 id={id}>{title}</h2>
       <Button variant="ghost" size="sm" onClick={onClick}>
         {action}
         <ArrowRight size={14} aria-hidden="true" />
@@ -191,7 +191,7 @@ export function StudentDashboardView({
   const agendaUnavailable = realMode && initialData == null
   const agenda = now ? upcomingAgenda(accountEvents, now) : []
   const updates = relevantUpdates(accountNotifications)
-  const next = now ? nextHomeAction(applications, agenda, now) : { kind: "explore" as const }
+  const next = now ? nextHomeAction(applications, agenda, now, accountNotifications) : { kind: "explore" as const }
   function openApplication(app: HomeApplication) {
     focusApplication(app.clubId)
     onNavigate(app.draft ? "tracker" : "status")
@@ -216,20 +216,24 @@ export function StudentDashboardView({
 
   const nextTitle =
     next.kind === "application"
-      ? `Continue your ${next.application.name} application.`
+      ? "Pick up where you left off."
       : next.kind === "event"
         ? next.event.title
-        : applications.length
+        : next.kind === "notification"
+          ? next.notification.title
+          : applications.length
           ? "Explore more clubs."
           : "Find a club to apply to."
   const nextCopy =
     next.kind === "application"
       ? next.application.deadline
-        ? `Application deadline: ${when(next.application.deadline)}.`
-        : "Your draft is ready. Review your responses and pick up where you left off."
+        ? `${next.application.name} · Application deadline: ${when(next.application.deadline)}.`
+        : `${next.application.name} · Your draft is ready. Continue when you are.`
       : next.kind === "event"
         ? `${when(next.event)}${next.event.location ? ` · ${next.event.location}` : ""}`
-        : applications.length
+        : next.kind === "notification"
+          ? next.notification.body
+          : applications.length
           ? "Your applications are together below. Explore other clubs that interest you."
           : "Explore clubs, learn what they do, and start an application when you’re ready."
   const nextLabel =
@@ -237,22 +241,18 @@ export function StudentDashboardView({
       ? "Continue draft"
       : next.kind === "event"
         ? "View event details"
-        : "Explore clubs"
+        : next.kind === "notification" ? "Read update" : "Explore clubs"
 
   return (
     <div className="oc-student-home">
       <PageHeader
-        className="oc-home-header"
-        title="Home"
+        className="oc-home-header" density="editorial"
+        eyebrow={now.toLocaleDateString("en-US", { timeZone: SCHEDULING_TIMEZONE, weekday: "long", month: "long", day: "numeric" })}
+        title={<>Your campus,<br /><em>in motion.</em></>}
         description={user?.profile?.firstName
-          ? `Good to see you, ${user.profile.firstName}. Here’s what needs your attention.`
-          : "Your applications, upcoming events, and next step."}
+          ? `Good to see you, ${user.profile.firstName}. Stay close to what matters.`
+          : "Stay close to what matters. Discover your next move."}
       />
-      {!unavailable && <MetricStrip label="Your campus activity" items={[
-        { label: "applications", value: applications.length },
-        { label: "coming up", value: agenda.length },
-        { label: "new updates", value: updates.filter(update => !update.read).length },
-      ]} />}
       <AvailabilityDashboardRequests />
       <div className="oc-home-columns">
       {unavailable ? (
@@ -265,25 +265,19 @@ export function StudentDashboardView({
         </section>
       ) : (
         <>
-          <section className="oc-home-next" aria-labelledby="home-next-title">
-            <div className="oc-home-section-title"><h2 id="home-next-title"><ArrowRight size={19} aria-hidden="true" />Your next step</h2></div>
-            <div className="oc-home-next-copy">
-              <h3>{nextTitle}</h3>
-              <p>{nextCopy}</p>
-            </div>
-            <Button
-              onClick={() =>
-                next.kind === "application"
-                  ? openApplication(next.application)
-                  : next.kind === "event"
-                    ? openEvent(next.event)
-                    : onNavigate("explore")
-              }
-            >
-              {nextLabel}
-              <ArrowRight size={15} aria-hidden="true" />
-            </Button>
-          </section>
+          <FeaturedAction id="home-next-title" className="oc-home-next"
+            eyebrow={next.kind === "application" ? "Your next step / Application in progress" : next.kind === "event" ? "Your next step / Coming up" : next.kind === "notification" ? "Your next step / Important update" : "Your next step / Discover"}
+            title={nextTitle} description={nextCopy}
+            meta={next.kind === "application" && next.application.responsesSaved !== undefined
+              ? `${next.application.responsesSaved} ${next.application.responsesSaved === 1 ? "response" : "responses"} saved · ${applications.filter(app => app.draft).length} ${applications.filter(app => app.draft).length === 1 ? "draft" : "drafts"} in progress`
+              : next.kind === "event" ? next.event.club : undefined}
+            action={<Button onClick={() => {
+              if (next.kind === "application") openApplication(next.application)
+              else if (next.kind === "event") openEvent(next.event)
+              else if (next.kind === "notification") { focusNotification(next.notification.id); onNavigate("inbox") }
+              else onNavigate("explore")
+            }}>{nextLabel}<ArrowRight size={18} aria-hidden="true" /></Button>}
+          />
         </>
       )}
         <section className="oc-home-applications" aria-labelledby="home-applications-title">

@@ -119,3 +119,31 @@ The shared content maximum is 80rem; reading sections use 48rem where appropriat
 Prefer these recipes to copying border, background, padding and radius utilities into another component. Keep rows/dividers within grouped surfaces, and retain intentional artwork, Corkboard paper, formal decision letters and focused interview/voting arrangements. Do not give every nested field its own card.
 
 The source inventory, exact captured states, screenshot comparisons and acceptance exceptions live in [the visual QA report](visual-unification/report.md). A shared style reaching a screen is not evidence that every state of that screen has been reviewed.
+
+## Editorial Campus OS — V2
+
+The approved V2 compositions supersede the requirement that every dashboard section
+use the same rounded panel. See [implementation and visual QA](editorial-campus-os/README.md).
+
+- `PageHeader density="editorial"` supplies the two-line Caslon masthead for Home
+  and Recruitment. Use real contextual eyebrows, with italic emphasis in the title.
+- `density="expressive"` gives discovery, Applications, club overview and admin a
+  smaller display heading and architectural rule. Compact remains the dense-tool default.
+- `FeaturedAction` is a semantic section with one heading, contextual copy, optional
+  factual metadata and a real action. It owns no routing, fetching or selection logic.
+- `styles/tokens.css` owns editorial display/feature/section sizes, gap, radius,
+  shadow and rule. `styles/product-tokens.css` owns navy structural materials and
+  field colors. `styles/editorial.css` contains opt-in editorial compositions.
+- Home pairs a full-width navy next action with ruled application/update lists and
+  a pale blue agenda. Decorative rings carry no information and receive no focus.
+- Recruitment uses navy for the actual round filter, warm agenda context, and a
+  white booking bottleneck. Counts come from the existing private summary; the
+  review preview stays capped at twelve. The pipeline scrolls inside its boundary.
+- Applicant dossiers pair a document column with a navy evaluation workspace.
+  Responses lead; identity and responses remain subject to the existing server
+  projection. Narrow layouts stack the zones and provide a keyboard-focusable jump
+  to evaluation. Forms keep their visible labels, autosave and permission checks.
+
+Do not apply these large compositions indiscriminately to tables, scheduling or
+writing. Keep their compact tools and reading widths. Retain optical navigation,
+public landing artwork, Corkboard paper and the existing Phosphor icon adapter.

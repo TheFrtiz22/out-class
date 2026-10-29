@@ -28,7 +28,7 @@ import { canLeaveWorkspace } from "@/lib/product-navigation"
 
 import { WorkspaceLoading } from "@/components/workspace-loading"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { ChevronLeft, ChevronRight, RefreshCw, Search } from "@/components/icons"
+import { ArrowRight, ChevronLeft, ChevronRight, RefreshCw, Search } from "@/components/icons"
 import { BoardDecisionMode } from "@/components/live-voting/board-decision-mode"
 import { getClubPipeline, moveApplicantRound, setApplicationStatus, reconsiderRejectedApplication, revokeRecruitmentOffer } from "@/lib/workspace-api"
 import { submitEvaluation } from "@/lib/workspace-api"
@@ -683,7 +683,11 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
             <>
               {preview?.onNext && <Button variant="outline" disabled={busy} onClick={() => void (canEvaluate ? draftSave.flush() : Promise.resolve()).then(() => preview.onNext?.()).catch(() => {})}>Next assigned review</Button>}
               <div className="oc-applicant-drawer-scroll">
-              <SheetHeader className="px-0 pr-10">
+
+              {quickQueue && <div className="rounded-lg bg-secondary p-3 text-sm"><strong>Quick review · {quickQueue.length} remaining</strong><p className="mt-1 text-muted-foreground">Accept & next and Deny & next publish the decision immediately. Skip leaves the candidate unchanged.</p></div>}
+              <div className="oc-applicant-profile-layout"><div className="oc-dossier-document min-w-0 space-y-6">
+              <SheetHeader className="oc-dossier-header px-0 pr-10">
+                <p className="oc-editorial-label">Recruitment / Applicant dossier</p>
                 <Avatar className="size-12">
                   <AvatarImage
                     src={profilePhotoSource(active.student.studentProfile?.headshotUrl)}
@@ -708,9 +712,8 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                 <SheetDescription>
                   {active.studentId.startsWith("anonymous-") ? "Anonymous review · identity and appointments withheld" : [active.student.studentProfile?.major || "Academic profile not provided", active.student.email].filter(Boolean).join(" · ")}
                 </SheetDescription>
+                <Button variant="ghost" className="oc-dossier-jump" onClick={() => document.getElementById("dossier-evaluation")?.focus()}>Jump to review workspace <ArrowRight size={15} aria-hidden="true" /></Button>
               </SheetHeader>
-              {quickQueue && <div className="rounded-lg bg-secondary p-3 text-sm"><strong>Quick review · {quickQueue.length} remaining</strong><p className="mt-1 text-muted-foreground">Accept & next and Deny & next publish the decision immediately. Skip leaves the candidate unchanged.</p></div>}
-              <div className="oc-applicant-profile-layout"><div className="min-w-0 space-y-6">
               {(interviewCapabilities(membership).readClosing || interviewCapabilities(membership).moderateResume) && <nav aria-label="Applicant interview records" className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
                 {([...(interviewCapabilities(membership).readClosing ? [{ tool: "reviews" as const, label: "Submitted reviews" }] : []), ...(interviewCapabilities(membership).moderateResume && !active.studentId.startsWith("anonymous-") ? [{ tool: "resumes" as const, label: "Résumé moderation" }] : [])]).map(item => <Link key={item.tool} className="inline-flex min-h-10 items-center underline" href={applicantInterviewHref(membership.clubId, item.tool, (() => { const query = new URLSearchParams(typeof window === "undefined" ? "" : window.location.search); if (round) query.set("roundId", round); return query.toString(); })(), active.id)} onClick={e => { if (busy || dirty || !canLeaveWorkspace()) e.preventDefault(); }}>{item.label}</Link>)}
               </nav>}
@@ -742,6 +745,32 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                   </Button>
                 </div>
               </div>
+              <section className="oc-dossier-responses space-y-5 border-b border-border pb-6">
+                <h3 className="oc-card-heading ">Application responses</h3>
+                {active.answers.map((answer, index) => (
+                  <div className="oc-dossier-answer" key={answer.id}>
+                    <p className="oc-editorial-label">{String(index + 1).padStart(2, "0")} / Application response</p>
+                    <h4 className="text-sm font-medium leading-6">{answer.question.prompt}</h4>
+                    {answer.question.type === "FILE_UPLOAD" && applicationAttachmentUrl(answer.response, active.id, answer.questionId) ? (
+                      <a
+                        className="mt-2 inline-block text-sm underline"
+                        href={applicationAttachmentUrl(answer.response, active.id, answer.questionId)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Open document (new tab)
+                      </a>
+                    ) : (
+                      <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-7 text-muted-foreground">
+                        {answer.response || "No response"}
+                      </p>
+                    )}
+                  </div>
+                ))}
+                {!active.answers.length && (
+                  <p className="text-sm text-muted-foreground">{active.studentId.startsWith("anonymous-") ? "Responses and files are withheld during anonymous review. Any prepared anonymous content appears in the Profile section." : "No club-specific responses."}</p>
+                )}
+              </section>
               <section className="space-y-3 border-b border-border pb-6">
                 <h3 className="oc-card-heading ">Profile</h3>
                 {active.student.studentProfile ? (
@@ -789,33 +818,9 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                 )}
               </section>
               <section className="space-y-3 border-b pb-6" aria-label="Interview information"><h3 className="oc-card-heading ">Interviews</h3>{active.studentId.startsWith("anonymous-") ? <p className="text-sm text-muted-foreground">Appointments are withheld during anonymous review.</p> : active.bookings.length ? <ul className="divide-y">{active.bookings.map(booking => <li key={booking.id} className="py-3 text-sm"><p>{schedulingDateTime(booking.slot.startTime)} – {slotTime(booking.slot.endTime, SCHEDULING_TIMEZONE)}</p><p className="mt-1 text-muted-foreground">{booking.slot.location || "Location not provided"}</p></li>)}</ul> : <p className="text-sm text-muted-foreground">No interview booking recorded.</p>}</section>
-              <section className="space-y-5 border-b border-border pb-6">
-                <h3 className="oc-card-heading ">Application responses</h3>
-                {active.answers.map((answer) => (
-                  <div key={answer.id}>
-                    <h4 className="text-sm font-medium leading-6">{answer.question.prompt}</h4>
-                    {answer.question.type === "FILE_UPLOAD" && applicationAttachmentUrl(answer.response, active.id, answer.questionId) ? (
-                      <a
-                        className="mt-2 inline-block text-sm underline"
-                        href={applicationAttachmentUrl(answer.response, active.id, answer.questionId)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Open document (new tab)
-                      </a>
-                    ) : (
-                      <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-7 text-muted-foreground">
-                        {answer.response || "No response"}
-                      </p>
-                    )}
-                  </div>
-                ))}
-                {!active.answers.length && (
-                  <p className="text-sm text-muted-foreground">{active.studentId.startsWith("anonymous-") ? "Responses and files are withheld during anonymous review. Any prepared anonymous content appears in the profile above." : "No club-specific responses."}</p>
-                )}
-              </section>
+
               {hasPermission(membership, "applications.review") && <ApplicantDisplayPanel key={active.id} clubId={membership.clubId} applicationId={active.id} refreshKey={JSON.stringify(active.evaluations)} />}
-              </div><div className="oc-applicant-assessment min-w-0 space-y-6"><section className="space-y-4 border-b border-border pb-6">
+              </div><div className="oc-applicant-assessment min-w-0 space-y-6"><header className="oc-review-workspace-heading"><p className="oc-editorial-label">Review workspace</p><h3 id="dossier-evaluation" tabIndex={-1}>Read thoughtfully.<br /><em>Decide confidently.</em></h3><Badge variant="secondary">{applicationStatusLabels[active.status]}</Badge></header><section className="space-y-4 border-b border-border pb-6">
                 <h3 className="oc-card-heading">Evaluations · score and overall feedback</h3>
                 {active.evaluations.map((item) => (
                   <div key={item.id} className="border-l-2 border-border pl-3">

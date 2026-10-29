@@ -55,6 +55,9 @@
   --oc-rail-text: #f6f5f1;
   --oc-rail-muted: #b0c1cc;
   --oc-rail-selected: #2a4156;
+  --oc-rail-rule: #3c5365;
+  --oc-field-muted: var(--muted-foreground);
+  --oc-field-rule: var(--border);
   --oc-surface-blue: #eaf0f2;
   --oc-surface-sage: #e9efe8;
   --oc-surface-lilac: #efedf3;

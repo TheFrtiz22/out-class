@@ -21,12 +21,14 @@ test("authenticated surfaces share a restrained material vocabulary distinct fro
   assert.doesNotMatch(tokens, /backdrop-filter\s*:/, "scrolling content tokens must not add glass blur")
 })
 
-test("Home and recruiting / club overview consume the shared content material", () => {
-  assert.match(home, /\[data-product-shell\] \.oc-home-columns > section \{[^\n]+--oc-content-surface/)
-  assert.doesNotMatch(home, /\[data-product-shell\] \.oc-home-columns > section \{[^\n]+background: transparent/)
-  assert.match(operations, /\.oc-command-recruiting \.oc-review-console \{[^\n]+--oc-content-radius/)
-  assert.match(operations, /\.oc-command-club \.oc-command-context \{[^\n]+--oc-content-radius/)
-  assert.match(operations, /\.oc-command-pipeline \{[^\n]+--oc-content-shadow/)
+test("editorial overview compositions use shared tokens without imposing identical cards", () => {
+  const editorial = read("styles/editorial.css")
+  assert.match(home, /gap: 2rem var\(--oc-editorial-gap\)/)
+  assert.match(home, /\.oc-home-agenda \{[^\n]+var\(--oc-surface-blue\)/)
+  assert.match(editorial, /\.oc-featured-action \{[\s\S]*?background: var\(--oc-rail\)/)
+  assert.match(operations, /\.oc-pipeline-section \{[^\n]+var\(--oc-editorial-radius\)/)
+  assert.match(operations, /\.oc-command-club \.oc-command-context \{[^\n]+border-bottom: 1px solid var\(--command-line\)/)
+  assert.doesNotMatch(home + editorial, /backdrop-filter\s*:/, "editorial content must not compete with optical navigation")
 })
 
 test("application drafts, statuses and writing questions inherit the same calm surfaces", () => {
