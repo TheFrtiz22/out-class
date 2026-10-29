@@ -12,7 +12,7 @@ async function event(tx: AppTransactionClient, actorId: string, clubId: string, 
 /** Caller must recheck decision capability inside this transaction before invoking.
  * All offer, decision and membership mutations share the Club serialization lock.
  */
-export async function publishRecruitmentDecision(tx: AppTransactionClient, input: { clubId: string; applicationId: string; status: AppStatus; expectedStatus?: AppStatus; roundId?: string }, actorId: string, settings?: FrozenLetterSettings, names?: {firstName:string;fullName:string}) {
+export async function publishRecruitmentDecision(tx: AppTransactionClient, input: { clubId: string; applicationId: string; status: AppStatus; expectedStatus?: AppStatus; roundId?: string }, actorId: string, settings?: FrozenLetterSettings, names?: {firstName:string;fullName:string}, delivery: "IMMEDIATE"|"DEFERRED"="IMMEDIATE") {
   await lockOperationalClub(tx, input.clubId);
   const app = await tx.application.findFirst({ where: { id: input.applicationId, clubId: input.clubId }, include: { round: true } });
   if (!app || input.roundId && input.roundId !== app.roundId || input.expectedStatus && input.expectedStatus !== app.status && input.status !== app.status)
@@ -43,7 +43,7 @@ export async function publishRecruitmentDecision(tx: AppTransactionClient, input
     await revokeClubInvitations(tx, { id: existing.id }, actorId, "recruitment.decision.reversal");
   }
   if (app.status !== input.status) await tx.auditLog.create({ data: { actorId, clubId: app.clubId, targetId: app.id, action: "recruitment.decision.published", details: { previousStatus: app.status, status: input.status, roundId: app.roundId } } });
-  if (app.status !== input.status) await publishDecisionCommunication(tx, app.id, actorId, settings, names);
+  if (app.status !== input.status && delivery==="IMMEDIATE") await publishDecisionCommunication(tx, app.id, actorId, settings, names);
   return { previousStatus: app.status };
 }
 

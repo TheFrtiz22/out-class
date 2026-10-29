@@ -24,7 +24,7 @@ async function member(tx: AppTransactionClient, clubId: string, id: string, caps
 async function session(tx: AppTransactionClient, clubId: string, id: string) {
   await tx.$queryRaw`SELECT id FROM "VotingSession" WHERE id=${id} FOR UPDATE`
   const s = await tx.votingSession.findFirst({ where: { id, clubId }, include })
-  if (!s) throw Error("Voting session unavailable.")
+  if (!s || s.mode === "LIVE") throw Error("Voting session unavailable. Live rooms use their protected room commands.")
   return s
 }
 export async function getVotingWorkspace(clubId: string, sessionId?: string) {
@@ -42,9 +42,9 @@ export async function getVotingWorkspace(clubId: string, sessionId?: string) {
     if (JSON.stringify(m) !== JSON.stringify(membership)) throw Error("Voting access changed. Refresh and try again.");
     const leadershipView = hasPermission(m,"decisions.view") || hasPermission(m,"decisions.manage")
     if (!hasPermission(m,"decisions.vote") && !leadershipView) throw Error("Voting access required.")
-    const s = await tx.votingSession.findFirst({ where: { clubId, ...(sessionId ? {id:sessionId} : !leadershipView ? {participants:{some:{memberId:m.id}}} : {}) }, orderBy: {createdAt:"desc"}, include })
+    const s = await tx.votingSession.findFirst({ where: { clubId, mode: {not:"LIVE"}, ...(sessionId ? {id:sessionId} : !leadershipView ? {participants:{some:{memberId:m.id}}} : {}) }, orderBy: {createdAt:"desc"}, include })
     if (s && !leadershipView && !s.participants.some(p=>p.memberId===m.id)) throw Error("You are not a session participant.")
-    const sessions = await tx.votingSession.findMany({where:{clubId,...(!leadershipView?{participants:{some:{memberId:m.id}}}:{})},select:{id:true,state:true,currentPass:true,createdAt:true},orderBy:{createdAt:"desc"}})
+    const sessions = await tx.votingSession.findMany({where:{clubId,mode:{not:"LIVE"},...(!leadershipView?{participants:{some:{memberId:m.id}}}:{})},select:{id:true,state:true,currentPass:true,createdAt:true},orderBy:{createdAt:"desc"}})
     const eligible = hasPermission(m,"decisions.manage") ? (await tx.clubMember.findMany({where:{clubId,status:"ACTIVE"},include:{user:{select:{email:true}}}})).filter(v=>hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")) : []
     const joinedParticipants = hasPermission(m,"decisions.manage") && s ? await tx.clubMember.findMany({where:{clubId,id:{in:s.participants.map(p=>p.memberId)}},include:{user:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}}) : []
     const rounds = await tx.pipelineRound.findMany({where:{clubId,archivedAt:null},orderBy:{order:"asc"}})
@@ -176,6 +176,7 @@ export async function getVotingJoinInfo(sessionId: string) {
   const { user } = await requireAuth()
   const s = await prisma.votingSession.findFirst({where:{id:sessionId},include:{round:true,club:{select:{name:true}},participants:true}})
   if(!s) return {status:"NOT_FOUND" as const}
+  if(s.mode === "LIVE") return {status:"NOT_JOINABLE" as const}
   const m = await prisma.clubMember.findFirst({where:{clubId:s.clubId,userId:user.id}})
   if(!hasPermission(m,"applications.review")||!hasPermission(m,"decisions.vote")||(!s.round.anonymousReview&&!hasPermission(m,"applicants.identify"))) return {status:"UNAUTHORIZED" as const}
   if(s.state==="COMPLETED"||s.publishedAt) return {status:"FINISHED" as const}

@@ -31,7 +31,10 @@ test('release check rejects the production schema that breaks authenticated acco
   const apply = name => db.exec(fs.readFileSync(path.join(dir, name, 'migration.sql'), 'utf8'))
   try {
     await db.exec('CREATE ROLE anon; CREATE ROLE authenticated')
-    for (const name of names.filter(name => !pending.has(name))) await apply(name)
+    // Keep the historical broken baseline before LIVE voting's dependent
+    // notification trigger; apply all newer migrations after the repair.
+    const dependent = names.filter(name => name >= '20261027220000_live_voting_foundation')
+    for (const name of names.filter(name => !pending.has(name) && !dependent.includes(name))) await apply(name)
     await db.exec(`INSERT INTO "User"(id,email) VALUES('release-student','release-fixture@virginia.edu');
       INSERT INTO "Club"(id,slug,name,tagline,description,color,category) VALUES('release-club','release-club','Release Fixture','','','#142d45','Other');
       INSERT INTO "PipelineRound"(id,"clubId",name,"order") VALUES('release-round','release-club','Review',0);
@@ -44,7 +47,7 @@ test('release check rejects the production schema that breaks authenticated acco
     assert.ok(missing.includes('InterviewRecord.submittedQuestions'))
     assert.ok(missing.some(column => column.startsWith('DecisionLetter.')))
     await assert.rejects(db.query('SELECT "decisionVersion" FROM "Application"'), /does not exist/)
-    for (const name of names.filter(name => pending.has(name))) await apply(name)
+    for (const name of names.filter(name => pending.has(name) || dependent.includes(name))) await apply(name)
     assert.deepEqual(missingColumns((await db.query(catalogQuery)).rows), [])
     assert.deepEqual((await db.query('SELECT id,email FROM "User" ORDER BY id')).rows, before)
     assert.deepEqual((await db.query('SELECT id,"studentId",status FROM "Application" ORDER BY id')).rows, application)
