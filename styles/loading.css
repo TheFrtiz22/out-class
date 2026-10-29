@@ -280,3 +280,77 @@ body > .oc-loading-screen {
   .oc-loading-review-actions { width: 100%; }
   .oc-loading-applicant-search { flex-basis: 100%; }
 }
+
+
+/* OutClass glowing activity capsule. Inspired by Framer's Homay spinner
+   appearance; implemented locally with CSS, without importing Framer assets. */
+.oc-glow-loading-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .65rem;
+  max-width: 100%;
+  min-height: 2.125rem;
+  padding: .45rem .9rem .45rem .65rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, .075);
+  background: #141a20;
+  color: #f5f6f7;
+  box-shadow: 0 6px 14px rgba(13, 25, 36, .09), inset 0 1px 0 rgba(255, 255, 255, .075);
+  vertical-align: middle;
+  font-size: var(--oc-text-small);
+  font-weight: var(--oc-weight-medium);
+  line-height: 1.2;
+  letter-spacing: -.008em;
+}
+.oc-glow-loading-pill[data-size="compact"] {
+  min-height: 1.875rem;
+  padding: .32rem .75rem .32rem .5rem;
+  gap: .5rem;
+}
+.oc-glow-loading-ring {
+  position: relative;
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 1.125rem;
+  height: 1.125rem;
+  border: 2.25px solid rgba(255, 255, 255, .22);
+  border-radius: 50%;
+}
+.oc-glow-loading-pill[data-size="compact"] .oc-glow-loading-ring {
+  width: 1rem;
+  height: 1rem;
+  border-width: 2px;
+}
+.oc-glow-loading-ring::after {
+  content: "";
+  position: absolute;
+  inset: -2.25px;
+  border-radius: inherit;
+  border: 2.25px solid transparent;
+  border-top-color: #fff;
+  border-right-color: rgba(255, 255, 255, .82);
+  filter: drop-shadow(0 0 2.5px rgba(255, 255, 255, .62));
+  animation: oc-glow-loading-spin 1.15s linear infinite;
+}
+.oc-glow-loading-pill[data-size="compact"] .oc-glow-loading-ring::after {
+  inset: -2px;
+  border-width: 2px;
+}
+.oc-glow-loading-label {
+  display: inline-block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+@keyframes oc-glow-loading-spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .oc-glow-loading-ring::after { animation: none; }
+}
+@media (forced-colors: active) {
+  .oc-glow-loading-pill { forced-color-adjust: auto; color: ButtonText; border-color: ButtonText; background: ButtonFace; box-shadow: none; }
+  .oc-glow-loading-ring { border-color: GrayText; }
+  .oc-glow-loading-ring::after { border-top-color: ButtonText; border-right-color: ButtonText; filter: none; }
+}

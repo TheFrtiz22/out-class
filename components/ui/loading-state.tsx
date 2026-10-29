@@ -1,4 +1,4 @@
-import { LoaderCircle } from "@/components/icons"
+import { GlowingLoadingPill } from "@/components/ui/glowing-loading-pill"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -25,13 +25,12 @@ export function LoadingState({
   const count = Math.max(1, Math.min(12, Math.floor(rows) || 4))
   if (layout === "inline") {
     return <div data-slot="loading-state" data-layout="inline" role="status" aria-busy="true" className={cn("oc-loading-state", className)}>
-      <LoaderCircle size={16} aria-hidden="true" className="oc-loading-inline-spinner motion-safe:animate-spin" />
-      <span>{label}</span>
+      <GlowingLoadingPill label={label} compact />
     </div>
   }
 
   return <div data-slot="loading-state" data-layout={layout} role="status" aria-busy="true" className={cn("oc-loading-state", className)}>
-    <p className="oc-loading-status">{label}</p>
+    <div className="oc-loading-status"><GlowingLoadingPill label={label} /></div>
     <div className="oc-loading-preview" aria-hidden="true">
       {layout === "feed" && <div className="oc-loading-feed">{Array.from({ length: count }, (_, index) => <div className="oc-loading-feed-item" key={index}>
         <Skeleton className="h-8 w-8 shrink-0 rounded-lg" /><div className="min-w-0 flex-1"><Skeleton className="h-4 w-3/5" /><Skeleton className="mt-3 h-3 w-full" /><Skeleton className="mt-2 h-3 w-4/5" /><Skeleton className="mt-4 h-2 w-20" /></div>
