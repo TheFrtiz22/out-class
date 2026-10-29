@@ -70,3 +70,19 @@ including main's 400 response for the unsupported candidate-only page endpoint.
 A failed attestation stops measurement and is retained. These preflight reads
 are outside timing and precede the same excluded warmups. No application code,
 content predicates, sample sizes or acceptance tolerances changed.
+
+
+Run `40918015976` stopped before timing: both profiles received 404 for the
+expected main build's manifest. Its partial protocols and the failed capacity
+preflight are preserved; no timed outcomes are accepted. This does not establish
+a product regression or identify the underlying cross-checkout runtime cause.
+
+The next distinct attempt reuses the repository's established frozen-output
+restoration approach (`navigation-selected-ready-local.cjs`): freeze both
+completed production outputs, restore one output into a single owned runtime
+checkout between blocks, and verify the entire restored file digest (excluding
+only the build cache). Source files never change during timing. Each block
+still checks the exact served build manifest and the authenticated data
+contract before the same warmups and samples. Frozen artifact build IDs and
+digests are recorded. This changes only runtime orchestration, not application
+source, fixtures, content predicates, measurements or acceptance tolerances.

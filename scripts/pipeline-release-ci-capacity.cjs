@@ -9,7 +9,7 @@ async function main(){
  const out=path.join(local.repo,'docs/performance/pipeline-release-repair/ci/capacity-attempt-'+process.env.GITHUB_RUN_ID+'-'+process.env.GITHUB_RUN_ATTEMPT);assert.ok(!fs.existsSync(out));fs.mkdirSync(out,{recursive:true});
  const started=new Date(),builds={B:source(local.variants.B),D:source(local.variants.D)},plan={startedAt:started.toISOString(),builds,order:['B','D','D','B'],waves:[2,2,3,3],concurrency:[1,2,4],cohorts:[1000,5000],warmup:'One wave per concurrency in every fresh server block' ,poolLimit:8,environment:clock.metadata,attestations:[],rows:[],monitor:[]};
  const digest=p=>createHash('sha256').update(fs.readFileSync(path.join(local.repo,p))).digest('hex');
- plan.toolHashes=Object.fromEntries(['scripts/pipeline-release-ci-capacity.cjs','scripts/pipeline-release-ci-host.cjs','scripts/pipeline-release-ci-attest.cjs','scripts/pipeline-release-local.cjs','scripts/pipeline-release-study.cjs'].map(p=>[p,digest(p)]));
+ plan.toolHashes=Object.fromEntries(['scripts/pipeline-release-ci-capacity.cjs','scripts/pipeline-release-ci-host.cjs','scripts/pipeline-release-ci-attest.cjs','scripts/pipeline-release-ci-runtime.cjs','scripts/pipeline-release-local.cjs','scripts/pipeline-release-study.cjs'].map(p=>[p,digest(p)]));
  fs.writeFileSync(path.join(out,'RESULTS.json'),JSON.stringify(plan,null,2));
  try{for(const size of plan.cohorts){const fixture=JSON.parse(fs.readFileSync(path.join(local.root,'pipeline-release-'+size+'.json')));
   for(const [block,variant]of plan.order.entries()){

@@ -50,11 +50,18 @@ jobs:
       - name: Build current main against the same local fixture
         id: baseline
         run: node scripts/pipeline-release-local.cjs build B
+      - name: Freeze both verified production outputs for one runtime checkout
+        id: freeze
+        run: node scripts/pipeline-release-ci-runtime.cjs freeze
       - name: Compare browser navigation and complete review
         if: success()
+        env:
+          OUTCLASS_RELEASE_CI_FROZEN_RUNTIME: "1"
         run: node scripts/pipeline-release-ci-study.cjs --profile=${{ matrix.profile }}
       - name: Compare bounded reader capacity
-        if: always() && steps.baseline.outcome == 'success' && matrix.profile == 'local'
+        if: always() && steps.freeze.outcome == 'success' && matrix.profile == 'local'
+        env:
+          OUTCLASS_RELEASE_CI_FROZEN_RUNTIME: "1"
         run: node scripts/pipeline-release-ci-capacity.cjs
       - name: Stop this job's disposable services
         if: always()

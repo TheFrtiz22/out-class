@@ -17,7 +17,7 @@ async function stop(){const listener=spawnSync('lsof',['-tiTCP:3107','-sTCP:LIST
   const cwd=execFileSync('lsof',['-a','-p',pid,'-d','cwd','-Fn'],{encoding:'utf8'}).split('\n').find(v=>v.startsWith('n'))?.slice(1);
   assert.ok(Object.values(variants).includes(cwd),'Never stop an unrelated server');process.kill(Number(pid),'SIGTERM');
   for(let i=0;i<100;i++){if(!spawnSync('lsof',['-tiTCP:3107','-sTCP:LISTEN'],{encoding:'utf8'}).stdout.trim())return;await new Promise(r=>setTimeout(r,50))}throw Error('Owned server did not stop')}
-async function start(variant){assert.ok(variant in variants);await stop();const cwd=variants[variant],c=config();c.buildDir=path.join(cwd,'.next-publish');fs.writeFileSync(configFile,JSON.stringify(c),{mode:0o600});
+async function start(variant){assert.ok(variant in variants);await stop();const cwd=process.env.OUTCLASS_RELEASE_CI_FROZEN_RUNTIME==='1' ? require('./pipeline-release-ci-runtime.cjs').restore(variant,{root,repo,variants}) : variants[variant],c=config();c.buildDir=path.join(cwd,'.next-publish');fs.writeFileSync(configFile,JSON.stringify(c),{mode:0o600});
   const fd=fs.openSync(path.join(root,'release-server-'+variant+'.log'),'a');const app=spawn(process.execPath,[path.join(cwd,'node_modules/next/dist/bin/next'),'start',cwd,'-p','3107','-H','127.0.0.1'],{cwd,env:environment(),detached:true,stdio:['ignore',fd,fd]});fs.closeSync(fd);app.unref();fs.writeFileSync(path.join(root,'server.pid'),String(app.pid));
   for(let i=0;i<100;i++){try{if((await fetch(c.appUrl,{signal:AbortSignal.timeout(1000)})).ok)return}catch{}await new Promise(r=>setTimeout(r,200))}throw Error('Owned server did not become ready')}
 module.exports={root,repo,variants,config,environment,stop,start};
