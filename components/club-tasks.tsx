@@ -47,7 +47,8 @@ export function ClubTasks({clubId,embedded=false,initialScope="team",personalOnl
     {!embedded&&<><nav aria-label="Club workspace" className="mb-3 flex flex-wrap gap-3 text-sm"><Link className="underline" href={`/club/${clubId}/workspace`}>Club workspace</Link></nav><PageHeader eyebrow={membership?.club.name??"Your club"} title="Tasks"/></>}
     {demo.isDemoEnabled&&<p className="text-xs text-muted-foreground">Fictional demo work. File uploads are disabled in Demo Mode.</p>}
     {error&&<div role="alert" className="oc-task-error"><p>{error}</p><Button variant="outline" size="sm" disabled={busy} onClick={()=>setRefresh(value=>value+1)}>Refresh tasks</Button></div>}
-    {!loaded?<LoadingState label="Loading tasks…" layout="rows" rows={4} />:workspace&&<>
+    {!loaded && workspace && <LoadingState label="Refreshing tasks…" layout="inline" />}
+    {!loaded&&!workspace?<LoadingState label="Loading tasks…" layout="rows" rows={4} />:workspace&&<>
       <div className="oc-task-totals" role="group" aria-label="Filter by task status">{[{label:"Due",key:"due",filter:"due"},{label:"Missing",key:"missing",filter:"overdue"},{label:"Submitted",key:"submitted",filter:"submitted"}].map(item=><button key={item.key} type="button" className={`oc-task-total oc-task-${item.key}`} data-zero={counts[item.key as keyof typeof counts]===0 || undefined} aria-pressed={filter===item.filter} onClick={()=>{setFilter(item.filter);setQuery("")}}><strong>{counts[item.key as keyof typeof counts]}</strong><span>{item.label}</span></button>)}</div>
       <div className="oc-task-controls">
         {!personalOnly&&workspace.manage&&<div role="group" aria-label="Task workspace" className="oc-task-scope"><Button type="button" variant="secondary" aria-pressed>My Tasks</Button><Button type="button" variant="ghost" disabled={busy} onClick={()=>{setScope("team");setFilter("open")}}>Manage</Button></div>}

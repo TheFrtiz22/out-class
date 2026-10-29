@@ -1,0 +1,362 @@
+[
+  {
+    "layout": "interview",
+    "width": 1440,
+    "screenshot": "layout-interview-1440.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "voting",
+    "width": 1440,
+    "screenshot": "layout-voting-1440.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "presentation",
+    "width": 1440,
+    "screenshot": "layout-presentation-1440.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "form",
+    "width": 1440,
+    "screenshot": "layout-form-1440.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "document",
+    "width": 1440,
+    "screenshot": "layout-document-1440.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "calendar",
+    "width": 1440,
+    "screenshot": "layout-calendar-1440.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "schedule",
+    "width": 1440,
+    "screenshot": "layout-schedule-1440.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "feed",
+    "width": 1440,
+    "screenshot": "layout-feed-1440.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "table",
+    "width": 1440,
+    "screenshot": "layout-table-1440.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "interview",
+    "width": 1280,
+    "screenshot": "layout-interview-1280.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "voting",
+    "width": 1280,
+    "screenshot": "layout-voting-1280.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "presentation",
+    "width": 1280,
+    "screenshot": "layout-presentation-1280.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "form",
+    "width": 1280,
+    "screenshot": "layout-form-1280.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "document",
+    "width": 1280,
+    "screenshot": "layout-document-1280.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "calendar",
+    "width": 1280,
+    "screenshot": "layout-calendar-1280.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "schedule",
+    "width": 1280,
+    "screenshot": "layout-schedule-1280.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "feed",
+    "width": 1280,
+    "screenshot": "layout-feed-1280.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "table",
+    "width": 1280,
+    "screenshot": "layout-table-1280.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "interview",
+    "width": 768,
+    "screenshot": "layout-interview-768.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "voting",
+    "width": 768,
+    "screenshot": "layout-voting-768.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "presentation",
+    "width": 768,
+    "screenshot": "layout-presentation-768.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "form",
+    "width": 768,
+    "screenshot": "layout-form-768.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "document",
+    "width": 768,
+    "screenshot": "layout-document-768.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "calendar",
+    "width": 768,
+    "screenshot": "layout-calendar-768.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "schedule",
+    "width": 768,
+    "screenshot": "layout-schedule-768.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "feed",
+    "width": 768,
+    "screenshot": "layout-feed-768.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "table",
+    "width": 768,
+    "screenshot": "layout-table-768.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "interview",
+    "width": 390,
+    "screenshot": "layout-interview-390.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "voting",
+    "width": 390,
+    "screenshot": "layout-voting-390.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "presentation",
+    "width": 390,
+    "screenshot": "layout-presentation-390.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "form",
+    "width": 390,
+    "screenshot": "layout-form-390.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "document",
+    "width": 390,
+    "screenshot": "layout-document-390.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "calendar",
+    "width": 390,
+    "screenshot": "layout-calendar-390.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "schedule",
+    "width": 390,
+    "screenshot": "layout-schedule-390.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "feed",
+    "width": 390,
+    "screenshot": "layout-feed-390.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "table",
+    "width": 390,
+    "screenshot": "layout-table-390.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "interview",
+    "width": 320,
+    "screenshot": "layout-interview-320.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "voting",
+    "width": 320,
+    "screenshot": "layout-voting-320.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "presentation",
+    "width": 320,
+    "screenshot": "layout-presentation-320.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "form",
+    "width": 320,
+    "screenshot": "layout-form-320.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "document",
+    "width": 320,
+    "screenshot": "layout-document-320.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "calendar",
+    "width": 320,
+    "screenshot": "layout-calendar-320.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "schedule",
+    "width": 320,
+    "screenshot": "layout-schedule-320.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "feed",
+    "width": 320,
+    "screenshot": "layout-feed-320.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  },
+  {
+    "layout": "table",
+    "width": 320,
+    "screenshot": "layout-table-320.png",
+    "reducedMotion": "static",
+    "statusCount": 1,
+    "focusablePlaceholders": 0
+  }
+]

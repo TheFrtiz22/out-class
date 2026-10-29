@@ -47,10 +47,6 @@
 .oc-notification-empty span { font-size: 12px; color: var(--muted-foreground); }
 .oc-notification-error { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 14px; border-bottom: 1px solid rgb(20 45 69 / 9%); background: #f5eee4; font-size: 12px; line-height: 18px; flex-shrink: 0; }
 .oc-notification-error button { flex-shrink: 0; min-height: 44px; min-width: 44px; font-weight: 600; }
-.oc-notification-skeletons { padding: 16px; }
-.oc-notification-skeleton { display: flex; gap: 12px; padding-block: 12px; }
-.oc-notification-skeleton > span { height: 32px; width: 32px; border-radius: 10px; background: #eee8de; }
-.oc-notification-skeleton > span + span { width: 75%; height: 48px; border-radius: 6px; }
 .oc-notification-detail { padding: 8px 18px 18px; }
 .oc-notification-detail h3 { margin: 12px 0; font-family: var(--oc-font-sans); font-size: 15px; font-weight: 600; line-height: 22px; }
 .oc-notification-detail > p:not(.oc-notification-meta) { font-size: 13px; line-height: 22px; color: var(--muted-foreground); white-space: pre-wrap; overflow-wrap: anywhere; margin-block: 12px; }
@@ -69,3 +65,5 @@
 @keyframes oc-notification-in { from { opacity: 0; transform: translateY(-7px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes oc-notification-out { to { opacity: 0; transform: translateY(-5px); } }
 @media (prefers-reduced-motion: reduce) { .oc-notification-panel, .oc-notification-panel[data-state="closed"] { animation: none; } .oc-notification-panel * { transition: none !important; } }
+
+.oc-notification-feed > [data-layout="feed"] { padding-inline: 1rem; }

@@ -3,7 +3,7 @@
 import "./voting-mode.css"
 import { useEffect, useRef } from "react"
 import { MobileJoinScreen } from "./mobile-join-screen"
-import { Check, X, CheckCircle2, Radio, Loader2 } from "@/components/icons"
+import { Clock3, Check, X, CheckCircle2, Radio } from "@/components/icons"
 import { useMemberSession } from "@/lib/use-live-voting"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
@@ -51,7 +51,7 @@ export function MemberVotingPad({
         </header>
         {!session || !applicant ? (
           <div role="status" className="space-y-3 py-12 text-center">
-            <Loader2 className="mx-auto size-7 animate-spin text-neutral-400" />
+            <Clock3 aria-hidden="true" className="mx-auto size-7 text-neutral-400" />
             <h1 className="oc-page-title ">Waiting for the proctor</h1>
             <p className="text-sm leading-6 text-neutral-500">
               Keep the presentation open in another tab of this browser. If this session has
@@ -113,7 +113,7 @@ export function MemberVotingPad({
                   {choice === "pass" ? "Pass" : "No Pass"} vote recorded
                 </p>
                 <p className="flex items-center justify-center gap-2 text-sm text-neutral-500">
-                  <Loader2 className="size-4 animate-spin" />
+                  <Clock3 aria-hidden="true" className="size-4" />
                   Waiting for next applicant...
                 </p>
               </div>

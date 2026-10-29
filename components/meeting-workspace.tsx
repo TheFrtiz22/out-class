@@ -77,7 +77,7 @@ export function MeetingList({ clubId, embedded = false, initialAudience = "ALL",
       <label className="flex items-center gap-3 text-sm">Audience<NativeSelect className="min-h-11 max-w-full rounded-md border bg-card px-3" value={audience} onChange={e => setAudience(e.target.value)}><option value="ALL">All permitted meetings</option><option value="RECRUITMENT">Recruitment / Interest</option><option value="MEMBERS">Members</option></NativeSelect></label>
     </div>
 
-    {loading && <LoadingState label="Loading meetings…" rows={3} />}
+    {loading && <LoadingState label="Loading meetings…" layout="schedule" rows={3} />}
     {error && <div role="alert" className="oc-feedback"><p>{error}</p><Button variant="outline" onClick={() => setRefresh(v => v + 1)}>Retry</Button></div>}
     {!loading && !error && !visible.length && <EmptyState density="compact" align="start" title={`No ${period} meetings for this audience`} description={period === "upcoming" ? "Check Past for earlier agendas and recaps." : "Shared meeting history will appear here."} />}
     <ul className="grid gap-3">{visible.map(meeting => <li key={meeting.id} className="min-w-0">
@@ -348,7 +348,7 @@ export function MeetingDetail({ id, onUpdated }: { id: string; onUpdated?: () =>
         </Button>
       </div>
     );
-  if (!meeting) return <LoadingState label="Loading meeting…" rows={3} />;
+  if (!meeting) return <LoadingState label="Loading meeting…" layout="form" rows={3} />;
   const member = user?.memberships.find((m) => m.clubId === meeting.clubId),
     resources = resourceSchema.array().safeParse(meeting.resources);
   return (

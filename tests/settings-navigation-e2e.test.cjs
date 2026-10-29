@@ -70,6 +70,7 @@ test('settings and authenticated navigation across roles, saves, history and res
     await nav.getByRole('link', { name: 'Account & Security', exact: true }).click();
     await studentPage.getByRole('heading', { name: 'Account & Security', exact: true }).waitFor();
     assert.equal(await studentPage.locator('[data-product-shell]').getAttribute('data-persistence-probe'), 'kept');
+    await studentPage.getByRole('button', { name: 'Send password reset email' }).waitFor();
     assert.ok(await studentPage.getByRole('button', { name: 'Send password reset email' }).isVisible());
     assert.equal(await nav.getByRole('link', { name: 'Account & Security', exact: true }).getAttribute('aria-current'), 'page');
     await noOverflow(studentPage);

@@ -1,4 +1,5 @@
 "use client"
+import { LoadingState } from "@/components/ui/loading-state"
 
 import { useEffect, useState } from "react"
 import type { SchoolRequest } from "@prisma/client"
@@ -51,7 +52,7 @@ export function SchoolRequestReview() {
     <p className="text-sm text-muted-foreground">These are expressions of interest. Reviewing or closing a request never approves a university or grants account access.</p>
     <label className="block space-y-1"><span>Filter by status</span><NativeSelect className="block" value={status} onChange={event => { setStatus(event.target.value); setPage(0) }}><option value="">All requests</option>{schoolRequestStatuses.map(value => <option key={value} value={value}>{value.replaceAll("_", " ")}</option>)}</NativeSelect></label>
     {error && <div role="alert"><p>{error}</p><Button variant="outline" onClick={() => setRefresh(value => value + 1)}>Try again</Button></div>}
-    {loading ? <p role="status">Loading school requests…</p> : !error && <>
+    {loading ? <LoadingState label="Loading school requests…" layout="table" rows={3} /> : !error && <>
       {result.rows.length ? result.rows.map(row => <RequestReview key={`${row.id}:${row.revision}`} row={row} onReviewed={() => setRefresh(value => value + 1)} />) : <p>No matching school requests.</p>}
       <div className="flex items-center gap-4"><Button variant="outline" disabled={page === 0} onClick={() => setPage(value => value - 1)}>Previous</Button><span>Page {page + 1}</span><Button variant="outline" disabled={!result.hasMore} onClick={() => setPage(value => value + 1)}>Next</Button></div>
     </>}

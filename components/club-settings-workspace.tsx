@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
+import { LoadingState } from "@/components/ui/loading-state";
 import { useAuth } from "@/contexts/auth-context";
 import { useDemoMode } from "@/contexts/demo-context";
 import { resolveSettingsTab, settingsSections } from "@/lib/club-settings";
@@ -21,21 +22,25 @@ const ApplicationBuilder = dynamic(() =>
   import("@/components/views/club-manager/application-builder-view").then(
     (m) => m.ApplicationBuilderView,
   ),
+  { loading: () => <LoadingState label="Loading application settings…" layout="form" rows={3} /> },
 );
-const DecisionTemplates = dynamic(() => import("@/components/communications/template-editor").then(m => m.DecisionTemplateEditor));
-const Cycles = dynamic(() => import("@/components/recruitment-cycles").then(m => m.RecruitmentCycles));
+const DecisionTemplates = dynamic(() => import("@/components/communications/template-editor").then(m => m.DecisionTemplateEditor), { loading: () => <LoadingState label="Loading letter settings…" layout="form" rows={3} /> });
+const Cycles = dynamic(() => import("@/components/recruitment-cycles").then(m => m.RecruitmentCycles), { loading: () => <LoadingState label="Loading recruitment cycles…" layout="rows" rows={3} /> });
 const PipelineBuilder = dynamic(() =>
   import(
     "@/components/views/club-manager/interview-pipeline-builder-view"
   ).then((m) => m.InterviewPipelineBuilderView),
+  { loading: () => <LoadingState label="Loading interview rounds…" layout="rows" rows={3} /> },
 );
 const Members = dynamic(() =>
   import("@/components/club-members").then((m) => m.ClubMembers),
+  { loading: () => <LoadingState label="Loading club members…" layout="table" rows={4} /> },
 );
 const Interviews = dynamic(() =>
   import("@/components/interview-management-tabs").then(
     (m) => m.InterviewManagementTabs,
   ),
+  { loading: () => <LoadingState label="Loading interview scheduling…" layout="calendar" rows={3} /> },
 );
 export function ClubSettingsWorkspace({
   clubId,

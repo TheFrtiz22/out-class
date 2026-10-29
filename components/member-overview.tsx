@@ -1,4 +1,5 @@
 "use client"
+import { LoadingState } from "@/components/ui/loading-state"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { listMeetings } from "@/lib/workspace-api"
@@ -38,7 +39,7 @@ export function RecentRecaps({ clubId }: { clubId: string }) {
     return () => { current = false }
   }, [clubId])
   if (failed) return <p role="status" className="text-sm text-muted-foreground">Recent recaps couldn’t load. <Link className="underline" href={clubWorkspaceHref(clubId, "meetings")}>Open Meetings to try again.</Link></p>
-  if (!meetings) return <p role="status" className="text-sm text-muted-foreground">Checking for recent recaps…</p>
+  if (!meetings) return <LoadingState label="Checking for recent recaps…" layout="feed" rows={2} />
   const recent = meetings.filter(m => m.recap?.trim() && +new Date(m.date) <= Date.now()).sort((a, b) => +new Date(b.date) - +new Date(a.date)).slice(0, 2)
   if (!recent.length) return null
   return <section aria-labelledby="member-recent-recaps"><h2 id="member-recent-recaps" className="oc-section-heading mb-4">Recent recaps</h2><ul className="divide-y border-y">{recent.map(meeting => <li key={meeting.id}><Link href={`/meetings/${meeting.id}`} className="block rounded-sm py-5 focus-visible:outline-2 focus-visible:outline-ring"><p className="text-xs text-muted-foreground">{memberDate(meeting.date)}</p><h3 className="oc-card-heading mt-2">{meeting.title}</h3><p className="mt-2 line-clamp-2 break-words text-sm leading-7 text-muted-foreground">{meeting.recap}</p><span className="mt-3 inline-block text-sm underline underline-offset-4">Read recap & resources →</span></Link></li>)}</ul></section>

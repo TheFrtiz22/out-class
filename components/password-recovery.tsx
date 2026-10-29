@@ -1,4 +1,5 @@
 "use client";
+import { LoadingState } from "@/components/ui/loading-state"
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
@@ -133,9 +134,7 @@ export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
                 : "Use a unique password of at least 8 characters. Your account’s security requirements also apply."}
           </p>
           {!ready && (
-            <p role="status" className="mt-6">
-              Preparing secure reset…
-            </p>
+            <LoadingState label="Preparing secure reset…" layout="inline" rows={3} className="mt-6" />
           )}
           {ready && invalid && !done && (
             <div className="mt-6 space-y-4">
@@ -230,7 +229,7 @@ export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
               <Button type="submit" className="w-full" disabled={busy}>
                 {busy && (
                   <Loader2
-                    className="size-4 animate-spin motion-reduce:animate-none"
+                    className="size-4 motion-safe:animate-spin motion-reduce:animate-none"
                     aria-hidden="true"
                   />
                 )}

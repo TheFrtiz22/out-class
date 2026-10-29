@@ -54,7 +54,7 @@ const SCORING_CRITERIA = [
 
 export function LeaderDashboardView() {
   const { user, loading } = useAuth()
-  if (loading) return <WorkspaceLoading label="Loading recruitment workspace" />
+  if (loading) return <WorkspaceLoading label="Loading recruitment workspace…" layout="applicants" />
   if (user) return <LiveLeaderWorkspace />
   return <div className="space-y-5"><p className="border-b border-border pb-4 text-sm text-muted-foreground">Local preview · changes in these tools do not update real applicants.</p><LocalLeaderDashboardView /></div>
 }

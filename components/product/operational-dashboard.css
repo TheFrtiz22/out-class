@@ -134,7 +134,7 @@ button.oc-command-row:hover { background: var(--muted); }
 .oc-applicant-drawer .oc-applicant-resume { border-radius: var(--oc-radius-md); }
 .oc-applicant-drawer > button:not(:last-child) { align-self: start; margin: .75rem 1.5rem 0; }
 .oc-dashboard-loading { padding-block: 1rem; }
-.oc-loading-pipeline { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin: 1.25rem 0; }
+.oc-dashboard-loading .oc-loading-pipeline { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; margin: 1.25rem 0; }
 .oc-loading-records { display: grid; gap: 1rem; padding-top: 1.25rem; }
 @media (prefers-reduced-motion: no-preference) {
   .oc-command-row, .oc-command-pipeline button, .oc-command-link { transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease; }

@@ -59,7 +59,7 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
   }, [user?.id, loading, retry])
   if (loading || pending)
     return (
-      <div aria-busy="true" aria-label="Loading profile" className="max-w-4xl space-y-8">
+      <div role="status" aria-busy="true" className="max-w-4xl space-y-8">
         <Skeleton className="h-28 w-full" />
         <Skeleton className="h-52 w-full" />
         <span className="sr-only">Loading profile</span>

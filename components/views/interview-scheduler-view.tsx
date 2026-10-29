@@ -9,7 +9,7 @@ import { WorkspaceLoading } from "@/components/workspace-loading"
 /** The legacy entry uses the production rooms/bookings and availability tools. */
 export function InterviewSchedulerView({ onNavigate: _onNavigate }: { onNavigate: (view: ViewId) => void }) {
   const { user, activeClubId, loading } = useAuth()
-  if (loading) return <WorkspaceLoading label="Loading interview scheduling…" rows={3} />
+  if (loading) return <WorkspaceLoading label="Loading interview scheduling…" layout="calendar" rows={3} />
   const member = user?.memberships.find(m => m.clubId === activeClubId)
   if (!activeClubId || !hasPermission(member, "interviews.manage")) return <p className="text-sm text-muted-foreground">Choose a club where you manage interview scheduling.</p>
   return <InterviewManagementTabs key={activeClubId} clubId={activeClubId} initialTab="schedule" />

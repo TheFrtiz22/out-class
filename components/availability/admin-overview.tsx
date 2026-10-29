@@ -1,5 +1,6 @@
 "use client"
 
+import { LoadingState } from "@/components/ui/loading-state"
 import { ActionWorkflow } from "@/components/product/action-workflow";
 import {ScheduleAvailabilityRequest,AvailabilitySchedules} from "./scheduled-requests"
 import { useEffect, useMemo, useState } from "react"
@@ -71,7 +72,7 @@ export function AdminAvailabilityOverview({ clubId, roundId: controlledRound, we
       <label className="text-sm">Week of<Input aria-label="Week of" type="date" value={week} onChange={e => { if (e.target.value) { const next = monday(e.target.value); onWeekChange ? onWeekChange(next) : setWeek(next) } }} /></label><p className="text-xs text-muted-foreground">{SCHEDULING_TIMEZONE_LABEL} · 8:00 AM–9:00 PM</p><Button variant="outline" onClick={() => setAttempt(v => v + 1)}>Refresh overview</Button>
     </div>
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}{notice && <p role="status" className="text-sm">{notice}</p>}
-    {loading && <p role="status" className="text-sm">Updating availability…</p>}
+    {loading && <LoadingState label={data ? "Updating availability…" : "Loading team availability…"} layout={data ? "inline" : "calendar"} calendarView="week" />}
     {data && !error && <div className={loading ? "pointer-events-none opacity-50" : ""}>
       <div className="mb-4 flex flex-wrap gap-x-6 gap-y-2 border-y py-3 text-sm"><span><strong>{data.members.length}</strong> eligible</span><span><strong>{data.members.filter(m => m.confirmed).length}</strong> confirmed participants</span><span><strong>{data.members.filter(m => m.response === "SUBMITTED" || m.response === "DECLINED").length}</strong> responses received</span><span><strong>{data.members.filter(m => m.response === "AWAITING").length}</strong> awaiting response</span><span><strong>{data.members.filter(m => m.response === "NOT_REQUESTED").length}</strong> not requested</span></div>
       {roundId && <ActionWorkflow title="Collect availability" description="Choose interviewers, send availability requests, and review responses." trigger="Collect availability" presentation="sheet"><div className="space-y-4" data-saving={busy}>

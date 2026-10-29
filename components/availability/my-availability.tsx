@@ -1,4 +1,5 @@
 "use client"
+import { LoadingState } from "@/components/ui/loading-state"
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { CalendarDays, Check, ChevronLeft, ChevronRight, Copy } from "@/components/icons"
@@ -122,5 +123,5 @@ function RoundEditor({ round, onStatus }: { round: AvailabilityRound; onStatus: 
     return () => { active = false }
   }, [round.clubId, round.id, attempt])
   if (error) return <div role="alert" className="space-y-3 text-sm text-destructive">{error}<Button variant="outline" onClick={() => { setError(""); setAttempt(v => v + 1) }}>Retry loading round</Button></div>
-  return data ? <AvailabilityEditor initial={data.document} onStatus={onStatus} initialConfirmed={data.confirmed} initialDeclined={data.declined} initialWeek={data.preferredWeek} scope={{ clubId: round.clubId, roundId: round.id }} title={data.name} /> : <p role="status">Loading round availability…</p>
+  return data ? <AvailabilityEditor initial={data.document} onStatus={onStatus} initialConfirmed={data.confirmed} initialDeclined={data.declined} initialWeek={data.preferredWeek} scope={{ clubId: round.clubId, roundId: round.id }} title={data.name} /> : <LoadingState label="Loading round availability…" layout="calendar" calendarView="week" rows={3} />
 }

@@ -57,7 +57,7 @@ export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: ()
       <DemoInterviewGuide />
       <div className="oc-interview-container mx-auto max-w-[1800px]">
         {loading ? (
-          <WorkspaceLoading label="Preparing the interview workspace…" layout="workspace" rows={3} />
+          <WorkspaceLoading label="Preparing the interview workspace…" layout="interview" rows={3} />
         ) : !membership ? (
           <div className="max-w-4xl space-y-3 px-5 py-8">
             <PageHeader title="A focused space for a better conversation." />
@@ -290,7 +290,7 @@ function InterviewSession({
       if (!started && epoch === navigation.current) { advancingRef.current = false; setAdvancing(false) }
     }
   }
-  if (loading) return <WorkspaceLoading label="Loading authorized candidates…" rows={3} />
+  if (loading) return <WorkspaceLoading label="Loading authorized candidates…" layout="schedule" rows={3} />
   if (loadError || !data)
     return (
       <div role="alert" className="space-y-4 py-12">

@@ -1,4 +1,5 @@
 "use client"
+import { LoadingState } from "@/components/ui/loading-state"
 import { ActionWorkflow } from "@/components/product/action-workflow";
 import { useEffect, useRef, useState } from "react"
 import { getInterviewBookingPublication, setInterviewBookingPublication } from "@/lib/workspace-api"
@@ -28,7 +29,7 @@ export function InterviewBookingPublication({ clubId, roundId, settings, cycles,
   const blocked = coverage?.slots.filter(s => !s.bookable) ?? []
   return <section aria-label="Publish interview booking" className="space-y-4">
     <header className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-base font-medium">Publish booking</h3><span className="text-sm text-muted-foreground">{bookingState(settings, rooms)}</span></header>
-    {!coverage && !error && <p role="status" className="text-sm">Checking interviewer coverage…</p>}
+    {!coverage && !error && <LoadingState label="Checking interviewer coverage…" layout="inline" rows={3} />}
     {coverage && <p role="status" className="text-sm">{coverage.slots.length - blocked.length} {coverage.slots.length - blocked.length === 1 ? "slot" : "slots"} ready{blocked.length ? ` · ${blocked.length} need attention` : ""}</p>}
     {!!blocked.length && <section><h4 className="text-sm font-medium">Resolve booking issues ({blocked.length})</h4><ul className="mt-2 divide-y text-sm">{blocked.map(row => { const room = rooms.find(r => r.slots.some(s => s.id === row.slotId)), slot = room?.slots.find(s => s.id === row.slotId); return <li key={row.slotId} className="py-2"><button type="button" className="min-h-9 text-left font-medium underline underline-offset-4" onClick={() => onFixSlot?.(row.slotId)}>{room?.name || "Interview"} · {slot ? schedulingDateTime(slot.startTime) : "Time"}</button><p className="text-muted-foreground">{row.reasons.join(" ")}</p></li> })}</ul></section>}
     {coverage && !coverage.slots.length && <div className="space-y-2 text-sm"><p>No upcoming interview times.</p>{onTimes && <Button variant="outline" onClick={onTimes}>Set interview times</Button>}</div>}

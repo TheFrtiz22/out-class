@@ -31,7 +31,7 @@ export function EmailLoginForm({ email, password, error, loading, microsoftLoadi
         <div className="oc-login-password-label"><Label htmlFor="login-password">Password</Label><Link href="/forgot-password" className="oc-login-text-link">Forgot password?</Link></div>
         <Input id="login-password" type="password" autoComplete="current-password" required disabled={busy} value={password} onChange={event => onPasswordChange(event.target.value)} aria-invalid={!!error} aria-describedby={error ? "auth-error" : undefined} />
       </div>
-      <Button type="submit" disabled={busy || !password} className="oc-login-submit">{loading ? <><Loader2 className="size-4 animate-spin" />Signing in…</> : <>Sign in<ArrowRight className="size-4" /></>}</Button>
+      <Button type="submit" disabled={busy || !password} className="oc-login-submit">{loading ? <><Loader2 className="size-4 motion-safe:animate-spin" />Signing in…</> : <>Sign in<ArrowRight className="size-4" /></>}</Button>
       <button type="button" disabled={busy || resendSeconds > 0} onClick={onRequestCode} className="oc-login-text-link oc-login-code-link">{resendSeconds > 0 ? `Use an email code in ${resendSeconds}s` : "Use an email code instead"}</button>
     </form>
   )
