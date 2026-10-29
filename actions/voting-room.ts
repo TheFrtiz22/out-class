@@ -189,6 +189,7 @@ export async function commandLiveVotingRoom(input:unknown) {
         const saved=roomCommandResultSchema.safeParse(receipt?.result),previous=saved.success?saved.data.decision:null;
         const old=pass?.candidates.find(c=>c.applicationId===d.applicationId);
         if(!previous||saved.data!.revision!==s.revision||previous.applicationId!==d.applicationId||previous.passNumber!==d.passNumber||d.passNumber!==s.currentPass||old?.ballotState!=="CONFIRMED"||s.activeApplicationId!==previous.nextApplicationId||!["OPEN","PAUSED"].includes(s.state)||current&&(current.ballots.length>0||current.ballotState!=="PENDING"))throw new RoomConflict("UNDO_UNSAFE","Newer room activity prevents Undo. Use Correct an outcome to return the applicant to Hold.");
+        if(!await tx.application.findFirst({where:{id:old.applicationId,clubId:s.clubId,roundId:s.roundId,recruitmentCycleId:s.cycleId,status:s.candidates.find(c=>c.applicationId===old.applicationId)!.expectedStatus}}))throw new RoomConflict("APPLICANT_CHANGED","The applicant recruitment state changed. Review it before correcting this outcome.");
         previousDecision=old.confirmedDecision;
         await tx.auditLog.create({data:{actorId:user.id,clubId:s.clubId,targetId:s.id,action:"voting.room.undo_authorized",details:{requestId:d.requestId,applicationId:old.applicationId,passNumber:s.currentPass,revision:s.revision,previousDecision}}});
         await tx.$executeRaw`SELECT set_config('outclass.voting_undo',${d.requestId},true)`;

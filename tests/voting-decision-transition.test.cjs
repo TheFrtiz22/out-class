@@ -32,3 +32,8 @@ test('last applicant enters pass summary; no-vote Undo and repeat Holds preserve
  for(let i=0;i<2;i++){await h.command('OPEN_VOTING');await h.command('CLOSE_VOTING');ok(await decide(h,'HOLD'));assert.equal((await h.read()).status,'PAUSED');ok(await h.command('NEXT_PASS'))}
  ok(await pass());assert.equal((await h.read()).passNumber,3);assert.equal((await h.read()).status,'PAUSED');assert.equal(h.state().notifications.length,0);
 });
+
+test('Undo rechecks current permissions, recruitment state and finalization',async()=>{
+ const h=await prepared();const r=await h.command('PASS_WITHOUT_VOTE_AND_ADVANCE',{...context(h),reason:'Recorded',confirmed:true});const undo={applicationId:apps[0],passNumber:1,undoRequestId:r.result.decision.requestId};
+ h.members[0].permissions=h.members[0].permissions.filter(p=>p!=='decisions.manage');await assert.rejects(h.command('UNDO_DECISION',undo),/permission/);h.members[0].permissions.push('decisions.manage');h.state().apps[0].status='REJECTED';assert.equal((await h.command('UNDO_DECISION',undo)).code,'APPLICANT_CHANGED');h.state().sessions[0].finalizedAt=new Date();assert.equal((await h.command('UNDO_DECISION',undo)).code,'FINALIZED');
+});
