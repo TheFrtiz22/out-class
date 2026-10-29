@@ -1,4 +1,5 @@
 "use client";
+import { LoadingState } from "@/components/ui/loading-state"
 import { useEditorDraft } from "@/hooks/use-editor-draft"
 import { AutosaveStatus } from "@/components/ui/autosave-status"
 
@@ -205,7 +206,7 @@ export function ApplicationBuilderView({
         </p>
       )}
       {!loaded ? (
-        !error && <p role="status">Loading application…</p>
+        !error && <LoadingState label="Preparing application settings…" layout="form" rows={3} />
       ) : (
         <>
           <fieldset
