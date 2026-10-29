@@ -1,4 +1,5 @@
 "use server";
+import { votingReadLimits } from "@/lib/voting-transaction-limits";
 import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import { requireAuth, requireClubPermission } from "@/utils/auth";
@@ -29,7 +30,7 @@ export async function getLiveVotingSetup(input:unknown){
     const panel=await tx.interviewPanelAssignment.findFirst({where:{memberId:m.id,revokedAt:null,application:{clubId:d.clubId}},select:{id:true}});
     const allowedFields=liveRoomFields.filter(f=>!(round?.anonymousReview&&["name","photo","major","resumeHighlight","interviewScore"].includes(f))&&(f!=="resumeHighlight"||evidence.moderateResume||!!panel)&&(f!=="interviewScore"||evidence.readClosing||!!ownReview));
     return {memberId:m.id,cycles,rounds,allowedFields,applicants:apps.map(a=>({id:a.id,label:round?.anonymousReview?anonymousApplicantLabel(a.id):a.student.studentProfile?`${a.student.studentProfile.firstName} ${a.student.studentProfile.lastName}`:"Applicant"})),voters:voters.map(v=>({id:v.id,label:v.user.studentProfile?`${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}`:"Club member"}))};
-  });
+  },votingReadLimits);
 }
 
 export async function getVotingHighlightOptions(input:unknown){
@@ -40,7 +41,7 @@ export async function getVotingHighlightOptions(input:unknown){
     const app=await tx.application.findFirst({where:{id:d.applicationId,clubId:d.clubId,roundId:d.roundId,recruitmentCycleId:d.cycleId,status:{not:"DRAFTING"}},include:{round:true}});
     if(!app||app.round.anonymousReview||!hasPermission(m,"applicants.identify"))return [];
     return votingHighlightChoices(tx,d.clubId,app.id,user.id);
-  });
+  },votingReadLimits);
 }
 
 /** Authenticated, generic denial: knowing UUIDs never reveals a club or candidate. */
@@ -56,7 +57,7 @@ export async function getLiveVotingJoinInfo(input:unknown){
     try{if(!roomAuthority(s,m,round.anonymousReview).voter)return {status:"DENIED" as const};}catch{return {status:"DENIED" as const};}
     if(s.state==="COMPLETED"||s.finalizedAt)return {status:"ENDED" as const};
     return {status:s.participants.find(p=>p.memberId===m.id)?.joinedAt?"JOINED" as const:"READY" as const};
-  });
+  },votingReadLimits);
 }
 export async function joinLiveVotingRoom(input:unknown){
   const d=roomScope.parse(input),{user}=await requireClubPermission(d.clubId,["applications.review","decisions.vote"]);

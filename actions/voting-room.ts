@@ -1,4 +1,5 @@
 "use server";
+import { votingReadLimits } from "@/lib/voting-transaction-limits";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/utils/prisma";
 import { requireClubPermission } from "@/utils/auth";
@@ -28,7 +29,7 @@ export async function listLiveVotingRooms(input:unknown) {
       ...(!observer?{OR:[...(leader?[{leaderMemberIds:{has:m.id}}]:[]),...(voter?[{participants:{some:{memberId:m.id}}}]:[])]}:{}),
     },select:{id:true,clubId:true,cycleId:true,roundId:true,state:true,createdAt:true,finalizedAt:true},orderBy:[{createdAt:"desc"},{id:"desc"}],take:100});
     return {rooms,access:accessFingerprint(m)};
-  });
+  },votingReadLimits);
   const {membership}=await requireClubPermission(d.clubId,["applications.review"]);
   if(result.access!==accessFingerprint(membership))throw Error("Voting permissions changed. Reconnect to the room.");
   return result.rooms;
@@ -83,7 +84,7 @@ export async function getLiveVotingRoom(input:unknown) {
     return {snapshot:{...snapshot,accessVersion:roomFingerprint({permissions:m.permissions,offices:m.interviewOffices,anonymous:round.anonymousReview}),fields:options.success?options.data.fields:null,joinedSelf:!!s.participants.find(p=>p.memberId===m.id)?.joinedAt,
       participation:{voted:current?.ballots.filter(b=>eligible.some(m=>m.id===b.memberId)).length??0,eligible:eligible.length},
       joinedParticipants:snapshot.permissions.leader?eligible.map(v=>({id:v.id,label:v.user.studentProfile?`${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}`:"Club member",joined:!!s.participants.find(p=>p.memberId===v.id)?.joinedAt})):[]},access:accessFingerprint(m)};
-  });
+  },votingReadLimits);
   const {membership:m}=await requireClubPermission(d.clubId,["applications.review"]);
   if(result.access!==accessFingerprint(m))throw Error("Voting permissions changed. Reconnect to the room.");
   return result.snapshot;
@@ -105,7 +106,7 @@ export async function getLiveVotingPresentation(input:unknown) {
     const resumeHighlight=highlights.find(h=>h.id===highlightId)??null;
     const interviewScore=!display.anonymous&&options?.fields.includes("interviewScore")?await votingInterviewSummary(tx,d.clubId,d.applicationId,user.id):null;
     return {...display,resumeHighlight,interviewScore,requestedFields:options?.fields??null};
-  });
+  },votingReadLimits);
 }
 
 export async function castLiveVotingBallot(input:unknown) {

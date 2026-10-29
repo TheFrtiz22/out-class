@@ -18,8 +18,16 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 390, height: 844
       await page.evaluate(() => document.fonts.ready);
       assert.equal(await page.locator('link[rel="preload"][as="font"]').count(), 0);
       const initial = await page.evaluate(() => [...document.fonts].filter(f => !f.family.includes('Fallback')).map(f => ({ family: f.family, style: f.style, weight: f.weight, status: f.status })));
-      assert.equal(initial.length, 4); assert.equal(initial.filter(f => f.style === 'italic' && f.status === 'unloaded').length, 2);
-      assert.equal(fonts.length, 2, 'Only the two rendered upright faces transfer');
+      assert.equal(initial.length, 4);
+      assert.equal(initial.filter(f => f.style === 'normal').length, 2);
+      assert.equal(initial.filter(f => f.style === 'italic').length, 2);
+      const demanded = initial.filter(f => f.status === 'loaded');
+      const unloadedItalic = initial.filter(f => f.style === 'italic' && f.status === 'unloaded').length;
+      assert.ok(demanded.length >= 1);
+      assert.equal(fonts.length, demanded.length, 'Only rendered font faces transfer');
+      // The current editorial overview intentionally renders italic text. Each
+      // transferred face must be used by visible text in that exact style.
+      for (const face of demanded) assert.equal(await page.evaluate(face => [...document.querySelectorAll('body *')].some(el => el.getClientRects().length && [...el.childNodes].some(n => n.nodeType === Node.TEXT_NODE && n.textContent.trim()) && getComputedStyle(el).fontStyle === face.style && getComputedStyle(el).fontFamily.includes(face.family.replaceAll('"', ''))), face), true, 'Every initially loaded face is used by visible text');
       const initialUrls = new Set(fonts.map(f => f.url));
       // Demand the actual CSS families at multiple variable weights, as real
       // italic content does. No font API fetch or synthetic font substitution.
@@ -37,7 +45,7 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 390, height: 844
       assert.equal(after.faces.filter(f => f.style === 'italic' && f.status === 'loaded').length, 2);
       assert.equal(after.faces.filter(f => f.style === 'italic' && /400 700|200 900/.test(f.weight)).length, 2);
       assert.deepEqual(after.probes.map(p => p.weight), ['400', '600', '400', '600']); assert.ok(after.probes.every(p => p.style === 'italic' && p.width > 0));
-      assert.equal(new Set(fonts.filter(f => !initialUrls.has(f.url)).map(f => f.url)).size, 2); assert.ok(fonts.every(f => f.status === 200));
+      assert.equal(new Set(fonts.filter(f => !initialUrls.has(f.url)).map(f => f.url)).size, unloadedItalic); assert.ok(fonts.every(f => f.status === 200));
       assert.deepEqual(errors, []);
     } finally { await context.close(); await browser.close(); }
   });
