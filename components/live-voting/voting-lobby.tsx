@@ -1,4 +1,5 @@
 "use client"
+import { LoadingState } from "@/components/ui/loading-state"
 
 import { useEffect, useState } from "react"
 import { QRCodeSVG } from "qrcode.react"
@@ -17,7 +18,7 @@ export function VotingLobby({ session, onBegin }: { session: VotingSession; onBe
     <section className="oc-content-panel space-y-6 border-neutral-200 text-center shadow-none sm:p-8">
       <div><p className="text-xs font-medium uppercase tracking-widest text-neutral-500">Live voting · waiting room</p><h2 className="oc-section-heading mt-3">Join the room.</h2><p className="mt-3 text-sm text-neutral-500">Scan the code or enter the Session PIN to join.</p></div>
       <div className="mx-auto w-full max-w-[360px] rounded-xl border border-neutral-200 bg-white p-3">
-        {origin ? <QRCodeSVG value={joinUrl} size={336} marginSize={4} level="M" title="Scan to join this voting session" className="h-auto w-full" /> : <div role="status" className="aspect-square content-center text-sm text-neutral-500">Preparing session QR…</div>}
+        {origin ? <QRCodeSVG value={joinUrl} size={336} marginSize={4} level="M" title="Scan to join this voting session" className="h-auto w-full" /> : <LoadingState label="Preparing session QR…" layout="inline" rows={3} />}
       </div>
       <div className="space-y-3"><p className="text-sm text-neutral-500">Or open <a href="/vote/" target="_blank" rel="noopener noreferrer" className="font-medium text-black underline underline-offset-4">{origin ? `${new URL(origin).host}/vote` : "/vote"}</a> and enter</p><p className="text-xs uppercase tracking-widest text-neutral-500">Session PIN</p><p aria-label={`Session PIN ${session.pin}`} data-testid="session-pin" className="text-5xl font-semibold tracking-[0.18em] tabular-nums sm:text-6xl">{session.pin}</p></div>
       <p className="text-xs leading-5 text-neutral-500">Demo sync works between tabs in this browser. Scanning from a separate phone requires a connected server. A PIN locates the room; it is not proof of identity.</p>

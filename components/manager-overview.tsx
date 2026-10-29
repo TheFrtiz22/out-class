@@ -8,12 +8,13 @@ import { dashboardDeadlineState } from "@/lib/dashboard-actions"
 import { hasPermission } from "@/lib/permissions"
 import { clubWorkspaceHref } from "@/lib/club-workspace"
 import { memberDate } from "@/components/member-overview"
-import { DashboardDate, DashboardLoading } from "@/components/product/dashboard-presentation"
+import { DashboardDate } from "@/components/product/dashboard-presentation"
 import { DashboardDrawer } from "@/components/product/dashboard-drawer"
+import { LoadingState } from "@/components/ui/loading-state"
 import { Button } from "@/components/ui/button"
 import "@/components/product/operational-dashboard.css"
-const Task = dynamic(() => import("@/components/tasks/dashboard-task").then(m => m.DashboardTask), { loading: () => <DashboardLoading mode="club" label="Loading assignment…" /> })
-const Meeting = dynamic(() => import("@/components/events/dashboard-meeting").then(m => m.DashboardMeeting), { loading: () => <DashboardLoading mode="club" label="Loading meeting…" /> })
+const Task = dynamic(() => import("@/components/tasks/dashboard-task").then(m => m.DashboardTask), { loading: () => <LoadingState layout="form" rows={2} label="Loading assignment…" /> })
+const Meeting = dynamic(() => import("@/components/events/dashboard-meeting").then(m => m.DashboardMeeting), { loading: () => <LoadingState layout="form" rows={3} label="Loading meeting…" /> })
 type Overview = Awaited<ReturnType<typeof getClubWorkspaceOverview>>
 type Preview = { kind: "task"; id: string; assignmentId?: string; title: string; review?: boolean } | { kind: "meeting" | "announcement"; id: string; title: string }
 export function ManagerOverview({ data, refreshing = false, onChanged = () => {}, showRecaps: _showRecaps = true }: { data: Overview; refreshing?: boolean; onChanged?: () => void; showRecaps?: boolean }) {

@@ -1,4 +1,5 @@
 "use client"
+import { LoadingState } from "@/components/ui/loading-state"
 import { useEffect, useState } from "react"
 import { getTaskWorkspace, viewTask } from "@/lib/workspace-api"
 import { TaskDetail } from "@/components/club-tasks"
@@ -22,5 +23,5 @@ export function DashboardTask({ clubId, taskId, assignmentId, review = false, on
     finally { setBusy(false) }
   }
   const task = workspace?.tasks.find(t => t.id === selectedId)
-  return <div className="oc-dashboard-detail space-y-4 py-5" data-saving={busy}>{notice && <p role="status" data-confirmed="true">{notice}</p>}{error && <p role="alert">{error} <Button variant="outline" disabled={busy} onClick={() => setRetry(n => n + 1)}>Retry assignment</Button></p>}{!workspace && !error && <p role="status">Loading assignment…</p>}{workspace && !task && <p role="alert">This assignment is no longer available.</p>}{workspace && selectedId !== taskId && <Button variant="ghost" onClick={() => setSelectedId(taskId)}>Back to project</Button>}{workspace && task && (review && workspace.manage ? <TaskReviewWorkspace workspace={workspace} entries={taskReviewQueue(workspace.tasks)} startId={assignmentId} run={run} busy={busy} onBack={onClose} onDirty={() => {}} /> : <TaskDetail task={task} workspace={workspace} manager={false} run={run} busy={busy} onOpen={task => setSelectedId(task.id)} />)}</div>
+  return <div className="oc-dashboard-detail space-y-4 py-5" data-saving={busy}>{notice && <p role="status" data-confirmed="true">{notice}</p>}{error && <p role="alert">{error} <Button variant="outline" disabled={busy} onClick={() => setRetry(n => n + 1)}>Retry assignment</Button></p>}{!workspace && !error && <LoadingState label="Loading assignment…" layout="form" rows={2} />}{workspace && !task && <p role="alert">This assignment is no longer available.</p>}{workspace && selectedId !== taskId && <Button variant="ghost" onClick={() => setSelectedId(taskId)}>Back to project</Button>}{workspace && task && (review && workspace.manage ? <TaskReviewWorkspace workspace={workspace} entries={taskReviewQueue(workspace.tasks)} startId={assignmentId} run={run} busy={busy} onBack={onClose} onDirty={() => {}} /> : <TaskDetail task={task} workspace={workspace} manager={false} run={run} busy={busy} onOpen={task => setSelectedId(task.id)} />)}</div>
 }

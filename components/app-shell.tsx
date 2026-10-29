@@ -18,28 +18,27 @@ import { WorkspaceLoading } from "@/components/workspace-loading"
 import { LandingPageView } from "@/components/views/landing-page-view"
 import { resolveStudentView, sectionForStudentView, canonicalStudentParams } from "@/lib/student-navigation"
 
-const renderWorkspaceLoading = () => <WorkspaceLoading />
 const renderDestinationLoading = () => <OutClassLoadingScreen />
 
-const OrganizationOwnershipRequests = dynamic(() => import("@/components/organization-ownership-requests").then(module => module.OrganizationOwnershipRequests))
-const PersonalClubs = dynamic(() => import("@/components/personal-clubs").then(module => module.PersonalClubs), { loading: renderWorkspaceLoading })
-const DemoClubSettings = dynamic(() => import("@/components/demo-workspace").then(module => module.DemoClubSettings), { loading: renderWorkspaceLoading })
-const DemoInterviewSchedule = dynamic(() => import("@/components/demo-workspace").then(module => module.DemoInterviewSchedule), { loading: renderWorkspaceLoading })
-const ClubWorkspaceSettings = dynamic(() => import("@/components/club-workspace-settings").then(module => module.ClubWorkspaceSettings), { loading: renderWorkspaceLoading })
+const OrganizationOwnershipRequests = dynamic(() => import("@/components/organization-ownership-requests").then(module => module.OrganizationOwnershipRequests), { loading: () => <WorkspaceLoading label="Checking organization invitations…" layout="feed" rows={2} /> })
+const PersonalClubs = dynamic(() => import("@/components/personal-clubs").then(module => module.PersonalClubs), { loading: () => <WorkspaceLoading label="Loading your clubs…" layout="cards" /> })
+const DemoClubSettings = dynamic(() => import("@/components/demo-workspace").then(module => module.DemoClubSettings), { loading: () => <WorkspaceLoading label="Loading club settings…" layout="form" /> })
+const DemoInterviewSchedule = dynamic(() => import("@/components/demo-workspace").then(module => module.DemoInterviewSchedule), { loading: () => <WorkspaceLoading label="Loading interview schedule…" layout="calendar" /> })
+const ClubWorkspaceSettings = dynamic(() => import("@/components/club-workspace-settings").then(module => module.ClubWorkspaceSettings), { loading: () => <WorkspaceLoading label="Loading club settings…" layout="form" /> })
 const AuthView = dynamic(() => import("@/components/views/auth-view").then(module => module.AuthView), { loading: renderDestinationLoading })
-const StudentDashboardView = dynamic(() => import("@/components/views/student-dashboard-view").then(module => module.StudentDashboardView), { loading: renderWorkspaceLoading })
-const UnifiedStudentProfileView = dynamic(() => import("@/components/views/unified-student-profile-view").then(module => module.UnifiedStudentProfileView), { loading: renderWorkspaceLoading })
-const InboxView = dynamic(() => import("@/components/views/inbox-view").then(module => module.InboxView), { loading: renderWorkspaceLoading })
-const ExploreView = dynamic(() => import("@/components/views/explore-view").then(module => module.ExploreView), { loading: renderWorkspaceLoading })
-const CorkboardView = dynamic(() => import("@/components/views/corkboard-view").then(module => module.CorkboardView), { loading: renderWorkspaceLoading })
-const ApplicationTrackerView = dynamic(() => import("@/components/views/application-tracker-view").then(module => module.ApplicationTrackerView), { loading: renderWorkspaceLoading })
-const CalendarView = dynamic(() => import("@/components/views/calendar-view").then(module => module.CalendarView), { loading: renderWorkspaceLoading })
-const LeaderDashboardView = dynamic(() => import("@/components/views/leader-dashboard-view").then(module => module.LeaderDashboardView), { loading: renderWorkspaceLoading })
-const ClubManagementPortalView = dynamic(() => import("@/components/views/club-management-portal-view").then(module => module.ClubManagementPortalView), { loading: renderWorkspaceLoading })
-const ScreeningDashboardView = dynamic(() => import("@/components/views/screening-dashboard-view").then(module => module.ScreeningDashboardView), { loading: renderWorkspaceLoading })
-const InterviewSchedulerView = dynamic(() => import("@/components/views/interview-scheduler-view").then(module => module.InterviewSchedulerView), { loading: renderWorkspaceLoading })
-const InterviewWorkspaceView = dynamic(() => import("@/components/views/interview-workspace-view").then(module => module.InterviewWorkspaceView), { loading: renderDestinationLoading })
-const BroadcastMessagesView = dynamic(() => import("@/components/views/club-manager/broadcast-messages-view").then(module => module.BroadcastMessagesView), { loading: renderWorkspaceLoading })
+const StudentDashboardView = dynamic(() => import("@/components/views/student-dashboard-view").then(module => module.StudentDashboardView), { loading: () => <WorkspaceLoading label="Loading your dashboard…" layout="workspace" /> })
+const UnifiedStudentProfileView = dynamic(() => import("@/components/views/unified-student-profile-view").then(module => module.UnifiedStudentProfileView), { loading: () => <WorkspaceLoading label="Loading your profile…" layout="form" /> })
+const InboxView = dynamic(() => import("@/components/views/inbox-view").then(module => module.InboxView), { loading: () => <WorkspaceLoading label="Loading your inbox…" layout="feed" /> })
+const ExploreView = dynamic(() => import("@/components/views/explore-view").then(module => module.ExploreView), { loading: () => <WorkspaceLoading label="Loading clubs…" layout="cards" /> })
+const CorkboardView = dynamic(() => import("@/components/views/corkboard-view").then(module => module.CorkboardView), { loading: () => <WorkspaceLoading label="Loading Corkboard…" layout="cards" /> })
+const ApplicationTrackerView = dynamic(() => import("@/components/views/application-tracker-view").then(module => module.ApplicationTrackerView), { loading: () => <WorkspaceLoading label="Preparing your applications…" layout="applications" /> })
+const CalendarView = dynamic(() => import("@/components/views/calendar-view").then(module => module.CalendarView), { loading: () => <WorkspaceLoading label="Loading your schedule…" layout="schedule" /> })
+const LeaderDashboardView = dynamic(() => import("@/components/views/leader-dashboard-view").then(module => module.LeaderDashboardView), { loading: () => <WorkspaceLoading label="Loading recruitment workspace…" layout="applicants" /> })
+const ClubManagementPortalView = dynamic(() => import("@/components/views/club-management-portal-view").then(module => module.ClubManagementPortalView), { loading: () => <WorkspaceLoading label="Loading club management…" layout="workspace" /> })
+const ScreeningDashboardView = dynamic(() => import("@/components/views/screening-dashboard-view").then(module => module.ScreeningDashboardView), { loading: () => <WorkspaceLoading label="Loading recruiting rules…" layout="form" /> })
+const InterviewSchedulerView = dynamic(() => import("@/components/views/interview-scheduler-view").then(module => module.InterviewSchedulerView), { loading: () => <WorkspaceLoading label="Loading interview schedule…" layout="calendar" /> })
+const InterviewWorkspaceView = dynamic(() => import("@/components/views/interview-workspace-view").then(module => module.InterviewWorkspaceView), { loading: () => <WorkspaceLoading label="Preparing interview workspace…" layout="interview" /> })
+const BroadcastMessagesView = dynamic(() => import("@/components/views/club-manager/broadcast-messages-view").then(module => module.BroadcastMessagesView), { loading: () => <WorkspaceLoading label="Loading announcements…" layout="feed" /> })
 const StudentOnboardingWizard = dynamic(() => import("@/components/views/student-onboarding-wizard").then(module => module.StudentOnboardingWizard), { loading: renderDestinationLoading })
 
 const adminViewIds: ViewId[] = [

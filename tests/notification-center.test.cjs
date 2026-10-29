@@ -4,7 +4,7 @@ const fs = require('node:fs'), path = require('node:path'), ts = require('typesc
 function load(file, mocks = {}) {
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText
-  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : name.startsWith('@/') ? load(path.resolve(name.slice(2) + '.ts'), mocks) : require(name), mod, mod.exports)
+  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : name.startsWith('@/components/') ? require('./helpers/component-module.cjs').loadComponent(name.slice(2) + '.tsx') : name.startsWith('@/') ? load(path.resolve(name.slice(2) + '.ts'), mocks) : require(name), mod, mod.exports)
   return mod.exports
 }
 const presentation = load('lib/notification-presentation.ts')

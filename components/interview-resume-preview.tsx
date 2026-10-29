@@ -1,4 +1,5 @@
 ﻿"use client";
+import { LoadingState } from "@/components/ui/loading-state"
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { InterviewResumeResource } from "@/lib/interview-resume-resource";
 import { resumePreviewGesture } from "@/lib/resume-preview-gesture";
@@ -66,7 +67,7 @@ export default function InterviewResumePreview({ resource, name, onExpand, focus
     return () => { current = false; resize?.disconnect(); observer?.disconnect(); rendering.forEach(render => render.cancel()); element.replaceChildren(); };
   }, [resource, revision]);
   return <div className="oc-resume-mini">
-    {!ready && !error && <p role="status">Loading résumé…</p>}
+    {!ready && !error && <LoadingState label="Loading résumé…" layout="inline" rows={3} />}
     {error && <p role="status">Preview unavailable. Use Expand résumé to view or download the document.</p>}
     {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- The read-only region scrolls; the button variant handles Enter/Space. */}
     <div ref={element => { host.current = element; if (focusRef) focusRef.current = element; }} className="oc-resume-preview" role={onExpand ? "button" : "region"} aria-label={`${name} résumé preview. Scroll to read all pages.${onExpand ? " Press Enter to expand." : ""}`} tabIndex={0}

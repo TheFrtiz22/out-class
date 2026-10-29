@@ -37,7 +37,7 @@ export function LoginAuthPanel(props: LoginAuthPanelProps) {
         {step === "email" ? (
           <>
             {MICROSOFT_AUTH_ENABLED && <>
-              <Button type="button" disabled={microsoftLoading || loading} onClick={onMicrosoftLogin} aria-busy={microsoftLoading} className="oc-login-uva">{microsoftLoading ? <><Loader2 className="size-4 animate-spin" />Redirecting…</> : <><MicrosoftIcon />Continue with UVA</>}</Button>
+              <Button type="button" disabled={microsoftLoading || loading} onClick={onMicrosoftLogin} aria-busy={microsoftLoading} className="oc-login-uva">{microsoftLoading ? <><Loader2 className="size-4 motion-safe:animate-spin" />Redirecting…</> : <><MicrosoftIcon />Continue with UVA</>}</Button>
               <button ref={emailToggle} type="button" disabled={loading || microsoftLoading} onClick={onToggleEmail} aria-expanded={emailExpanded} aria-controls="login-email-fields" className="oc-login-email-toggle">{emailExpanded ? "Hide email sign-in" : "Use email instead"}<ChevronDown size={14} /></button>
               <div id="login-email-fields" className="oc-login-email-reveal" data-expanded={emailExpanded} aria-hidden={!emailExpanded} inert={!emailExpanded}>
                 <div role="presentation" className="oc-login-email-inner" onKeyDown={event => { if (event.key === "Escape" && !loading && !microsoftLoading) { onToggleEmail(); emailToggle.current?.focus() } }}><EmailLoginForm {...props} /></div>
@@ -53,7 +53,7 @@ export function LoginAuthPanel(props: LoginAuthPanelProps) {
               {/* eslint-disable-next-line jsx-a11y/no-autofocus -- The request-code action opens this step; focus starts at the labelled OTP field. */}
               <Input key="code" id="verification-code" autoFocus inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required disabled={loading} value={code} onChange={event => onCodeChange(event.target.value)} aria-invalid={!!error} aria-describedby={error ? "auth-error" : undefined} placeholder="000000" className="oc-login-code-input" />
             </div>
-            <Button type="submit" disabled={loading || code.length !== 6} className="oc-login-submit">{loading ? <><Loader2 className="size-4 animate-spin" />Verifying…</> : <>Verify and log in<ArrowRight className="size-4" /></>}</Button>
+            <Button type="submit" disabled={loading || code.length !== 6} className="oc-login-submit">{loading ? <><Loader2 className="size-4 motion-safe:animate-spin" />Verifying…</> : <>Verify and log in<ArrowRight className="size-4" /></>}</Button>
             <div className="oc-login-verify-actions"><button type="button" onClick={onRequestCode} disabled={loading || resendSeconds > 0} className="oc-login-text-link">{resendSeconds > 0 ? `Resend in ${resendSeconds}s` : "Resend code"}</button><button type="button" disabled={loading} onClick={onDifferentEmail} className="oc-login-text-link">Use a different email</button></div>
           </form>
         )}

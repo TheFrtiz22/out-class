@@ -1,4 +1,5 @@
 "use client";
+import { LoadingState } from "@/components/ui/loading-state"
 
 import { onboardingFocus } from '@/lib/onboarding-presentation';
 import Link from 'next/link';
@@ -25,7 +26,7 @@ export function OrganizationSetupChecklist({ clubId, compact = false }: { clubId
   }
   if (dismissed) return null;
   if (failed) return <section className="mb-8 rounded-xl border p-4"><p role="alert" className="text-sm">Could not load organization setup progress.</p><Button variant="ghost" onClick={() => setAttempt(value => value + 1)}>Retry setup checklist</Button></section>;
-  if (!data) return <p role="status" className="mb-8 text-sm text-muted-foreground">Loading your organization setup checklist…</p>;
+  if (!data) return <LoadingState label="Loading your organization setup checklist…" layout="rows" rows={2} />;
   const completed = data.steps.filter(step => step.complete).length, next = data.steps.find(step => !step.complete);
   return <section aria-label="Organization setup checklist" data-density={compact ? "compact" : "roomy"} className="oc-content-panel oc-organization-checklist mb-8 sm:p-6">
     <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0 flex-1"><p className="text-xs uppercase tracking-widest text-muted-foreground">{next ? 'Welcome to your workspace' : 'Organization setup complete'}</p><h2 className="oc-section-heading mt-2 break-words">{next ? `Let’s get ${data.organizationName} ready` : `${data.organizationName} is ready`}</h2><p className="mt-2 text-sm text-muted-foreground">{completed} of {data.steps.length} complete · Progress comes from your saved organization data.</p></div><div className="flex items-center gap-1"><Button variant="ghost" onClick={() => setAttempt(value => value + 1)}>Refresh progress</Button><Button type="button" variant="ghost" size="icon" aria-label="Dismiss setup introduction" onClick={dismiss}><XIcon size={18} aria-hidden="true" /></Button></div></div>

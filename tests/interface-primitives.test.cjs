@@ -24,7 +24,7 @@ test('native select retains form data, options, labels, disabled state and chang
 })
 test('loading layouts announce one message and keep visual skeletons decorative', () => {
   const { LoadingState } = load('components/ui/loading-state.tsx')
-  for (const layout of ['rows', 'cards', 'inline', 'applications', 'applicants', 'workspace', 'form', 'document']) {
+  for (const layout of ['rows', 'cards', 'inline', 'applications', 'applicants', 'workspace', 'form', 'document', 'feed', 'table', 'calendar', 'schedule', 'interview', 'voting', 'presentation']) {
     const html = renderToStaticMarkup(React.createElement(LoadingState, { label: 'Loading meetings', layout, rows: 2 }))
     assert.equal((html.match(/role="status"/g) || []).length, 1)
     assert.equal((html.match(/Loading meetings/g) || []).length, 1)
@@ -43,7 +43,7 @@ test('empty state keeps its named heading and actionable content across presenta
 })
 
 test('contextual loading uses compositor-friendly motion and respects accessibility settings', () => {
-  const stylesheet = fs.readFileSync('styles/interface-primitives.css', 'utf8')
+  const stylesheet = fs.readFileSync('styles/loading.css', 'utf8')
   const skeleton = fs.readFileSync('components/ui/skeleton.tsx', 'utf8')
   assert.match(skeleton, /oc-skeleton/)
   assert.doesNotMatch(skeleton, /animate-pulse/)
@@ -79,7 +79,7 @@ test('form and letter placeholders retain editable-workspace structure without f
     assert.match(html, /data-slot="skeleton" aria-hidden="true"/)
     assert.doesNotMatch(html, /progressbar|[0-9]+% complete/)
   }
-  const css = fs.readFileSync('styles/interface-primitives.css', 'utf8')
+  const css = fs.readFileSync('styles/loading.css', 'utf8')
   assert.match(css, /\.oc-loading-form-fields/)
   assert.match(css, /\.oc-loading-document-paper/)
   assert.ok(css.includes('.oc-loading-row:nth-child(n + 6)'))

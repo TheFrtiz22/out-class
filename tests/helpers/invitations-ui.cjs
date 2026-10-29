@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const ts = require('typescript');
-const nodes = node => !node || typeof node !== 'object' ? [] : Array.isArray(node) ? node.flatMap(nodes) : [node, ...nodes(node.props?.children)];
+const nodes = node => !node || typeof node !== 'object' ? [] : Array.isArray(node) ? node.flatMap(nodes) : [node, ...nodes(node.type?.name === 'LoadingState' ? node.type(node.props) : node.props?.children)];
 function harness(api, file, props, auth = { user: { id: 'user' }, refreshUser: async () => {} }) {
   const state = [], effects = [], cleanups = new Map(), cache = {}, timers = new Map(), toasts = [];
   let cursor = 0, contextValue, timerId = 0;
@@ -27,6 +27,7 @@ function harness(api, file, props, auth = { user: { id: 'user' }, refreshUser: a
       if (name === '@/utils/auth') return { requireAuth: api.requireAuth };
       if (name === '@/utils/profile-onboarding') return { requireCompletedStudentProfile: api.requireCompletedStudentProfile };
       if (name === '@/actions/club-onboarding' || name === '@/actions/club-access' || name === '@/lib/workspace-read') return api;
+      if (name === '@/components/ui/loading-state') return require('./component-module.cjs').loadComponent('components/ui/loading-state.tsx');
       if (name.startsWith('@/components/')) {
         const key = name.split('/').pop().replace(/(^|-)(\w)/g, (_, _prefix, letter) => letter.toUpperCase());
         return { [key === 'Button' ? 'Button' : key]: key };

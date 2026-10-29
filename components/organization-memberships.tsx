@@ -1,4 +1,5 @@
 "use client";
+import { LoadingState } from "@/components/ui/loading-state"
 
 import { onboardingFocus } from "@/lib/onboarding-presentation";
 import Link from "next/link";
@@ -14,7 +15,7 @@ export function OrganizationMemberships() {
   const roles = { OWNER: "Owner", ADMIN: "Admin", RECRUITING_ADMIN: "Recruiting admin", INTERVIEWER: "Interviewer", MEMBER: "Member" } as const;
   return <section aria-label="Your organizations" className="mb-10 space-y-4">
     <h2 className="oc-section-heading ">Your organizations</h2>
-    {loading ? <p role="status" className="rounded-xl border p-5 text-sm">Loading your organizations…</p>
+    {loading ? <LoadingState label="Loading your organizations…" layout="cards" rows={3} />
       : !user ? <div className="rounded-xl border p-5 space-y-3"><p role="alert">Could not load your organizations.</p><Button variant="outline" onClick={() => void refreshUser()}>Retry organizations</Button></div>
       : memberships.length ? <ul className="grid gap-3 sm:grid-cols-2">{memberships.map(member => <li key={member.id} className="oc-content-panel flex min-w-0 flex-col sm:p-5">
         <div className="flex items-start gap-3"><ClubLogo clubId={member.clubId} logoUrl={member.club.logoUrl} marketing={member.club.marketing} color={member.club.color || "#142d4e"} text={member.club.name.slice(0, 2)} /><div className="min-w-0 flex-1"><h3 className="oc-card-heading break-words">{member.club.name}</h3><p className="mt-1 text-sm text-muted-foreground">{member.isOwner ? "Owner" : roles[member.accessRole]}</p></div></div>

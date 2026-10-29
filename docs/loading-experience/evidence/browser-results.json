@@ -1,0 +1,722 @@
+[
+  {
+    "name": "club",
+    "width": 1440,
+    "loading": "club-1440-loading.png",
+    "ready": "club-1440-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 1440,
+      "scrollWidth": 1440,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 1440,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "recruiting",
+    "width": 1440,
+    "loading": "recruiting-1440-loading.png",
+    "ready": "recruiting-1440-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 1440,
+      "scrollWidth": 1440,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 1440,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "members",
+    "width": 1440,
+    "loading": "members-1440-loading.png",
+    "ready": "members-1440-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 1440,
+      "scrollWidth": 1440,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 1440,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "tasks",
+    "width": 1440,
+    "loading": "tasks-1440-loading.png",
+    "ready": "tasks-1440-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 1440,
+      "scrollWidth": 1440,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 1440,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "announcements",
+    "width": 1440,
+    "loading": "announcements-1440-loading.png",
+    "ready": "announcements-1440-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 1440,
+      "scrollWidth": 1440,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 1440,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "pipeline",
+    "width": 1440,
+    "loading": "pipeline-1440-loading.png",
+    "ready": "pipeline-1440-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 1440,
+      "scrollWidth": 1440,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 1440,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "scheduling",
+    "width": 1440,
+    "loading": "scheduling-1440-loading.png",
+    "ready": "scheduling-1440-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 1440,
+      "scrollWidth": 1440,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 1440,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "application-settings",
+    "width": 1440,
+    "loading": "application-settings-1440-loading.png",
+    "ready": "application-settings-1440-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 1440,
+      "scrollWidth": 1440,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 1440,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "club",
+    "width": 1280,
+    "loading": "club-1280-loading.png",
+    "ready": "club-1280-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 1280,
+      "scrollWidth": 1280,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 1280,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "recruiting",
+    "width": 1280,
+    "loading": "recruiting-1280-loading.png",
+    "ready": "recruiting-1280-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 1280,
+      "scrollWidth": 1280,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 1280,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "members",
+    "width": 1280,
+    "loading": "members-1280-loading.png",
+    "ready": "members-1280-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 1280,
+      "scrollWidth": 1280,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 1280,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "tasks",
+    "width": 1280,
+    "loading": "tasks-1280-loading.png",
+    "ready": "tasks-1280-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 1280,
+      "scrollWidth": 1280,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 1280,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "announcements",
+    "width": 1280,
+    "loading": "announcements-1280-loading.png",
+    "ready": "announcements-1280-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 1280,
+      "scrollWidth": 1280,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 1280,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "pipeline",
+    "width": 1280,
+    "loading": "pipeline-1280-loading.png",
+    "ready": "pipeline-1280-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 1280,
+      "scrollWidth": 1280,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 1280,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "scheduling",
+    "width": 1280,
+    "loading": "scheduling-1280-loading.png",
+    "ready": "scheduling-1280-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 1280,
+      "scrollWidth": 1280,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 1280,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "application-settings",
+    "width": 1280,
+    "loading": "application-settings-1280-loading.png",
+    "ready": "application-settings-1280-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 1280,
+      "scrollWidth": 1280,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 1280,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "club",
+    "width": 768,
+    "loading": "club-768-loading.png",
+    "ready": "club-768-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 768,
+      "scrollWidth": 768,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 768,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "recruiting",
+    "width": 768,
+    "loading": "recruiting-768-loading.png",
+    "ready": "recruiting-768-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 768,
+      "scrollWidth": 768,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 768,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "members",
+    "width": 768,
+    "loading": "members-768-loading.png",
+    "ready": "members-768-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 768,
+      "scrollWidth": 768,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 768,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "tasks",
+    "width": 768,
+    "loading": "tasks-768-loading.png",
+    "ready": "tasks-768-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 768,
+      "scrollWidth": 768,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 768,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "announcements",
+    "width": 768,
+    "loading": "announcements-768-loading.png",
+    "ready": "announcements-768-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 768,
+      "scrollWidth": 768,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 768,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "pipeline",
+    "width": 768,
+    "loading": "pipeline-768-loading.png",
+    "ready": "pipeline-768-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 768,
+      "scrollWidth": 768,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 768,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "scheduling",
+    "width": 768,
+    "loading": "scheduling-768-loading.png",
+    "ready": "scheduling-768-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 768,
+      "scrollWidth": 768,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 768,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "application-settings",
+    "width": 768,
+    "loading": "application-settings-768-loading.png",
+    "ready": "application-settings-768-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 768,
+      "scrollWidth": 768,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 768,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "club",
+    "width": 390,
+    "loading": "club-390-loading.png",
+    "ready": "club-390-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 390,
+      "scrollWidth": 390,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 390,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "recruiting",
+    "width": 390,
+    "loading": "recruiting-390-loading.png",
+    "ready": "recruiting-390-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 390,
+      "scrollWidth": 390,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 390,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "members",
+    "width": 390,
+    "loading": "members-390-loading.png",
+    "ready": "members-390-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 390,
+      "scrollWidth": 390,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 390,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "tasks",
+    "width": 390,
+    "loading": "tasks-390-loading.png",
+    "ready": "tasks-390-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 390,
+      "scrollWidth": 390,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 390,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "announcements",
+    "width": 390,
+    "loading": "announcements-390-loading.png",
+    "ready": "announcements-390-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 390,
+      "scrollWidth": 390,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 390,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "pipeline",
+    "width": 390,
+    "loading": "pipeline-390-loading.png",
+    "ready": "pipeline-390-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 390,
+      "scrollWidth": 390,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 390,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "scheduling",
+    "width": 390,
+    "loading": "scheduling-390-loading.png",
+    "ready": "scheduling-390-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 390,
+      "scrollWidth": 390,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 390,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "application-settings",
+    "width": 390,
+    "loading": "application-settings-390-loading.png",
+    "ready": "application-settings-390-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 390,
+      "scrollWidth": 390,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 390,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "club",
+    "width": 320,
+    "loading": "club-320-loading.png",
+    "ready": "club-320-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 320,
+      "scrollWidth": 320,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 320,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "recruiting",
+    "width": 320,
+    "loading": "recruiting-320-loading.png",
+    "ready": "recruiting-320-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 320,
+      "scrollWidth": 320,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 320,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "members",
+    "width": 320,
+    "loading": "members-320-loading.png",
+    "ready": "members-320-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 320,
+      "scrollWidth": 320,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 320,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "tasks",
+    "width": 320,
+    "loading": "tasks-320-loading.png",
+    "ready": "tasks-320-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 320,
+      "scrollWidth": 320,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 320,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "announcements",
+    "width": 320,
+    "loading": "announcements-320-loading.png",
+    "ready": "announcements-320-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 320,
+      "scrollWidth": 320,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 320,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "pipeline",
+    "width": 320,
+    "loading": "pipeline-320-loading.png",
+    "ready": "pipeline-320-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 320,
+      "scrollWidth": 320,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 320,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "scheduling",
+    "width": 320,
+    "loading": "scheduling-320-loading.png",
+    "ready": "scheduling-320-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 320,
+      "scrollWidth": 320,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 320,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  },
+  {
+    "name": "application-settings",
+    "width": 320,
+    "loading": "application-settings-320-loading.png",
+    "ready": "application-settings-320-ready.png",
+    "requests": 1,
+    "before": {
+      "width": 320,
+      "scrollWidth": 320,
+      "statuses": 1,
+      "nav": true
+    },
+    "after": {
+      "scrollWidth": 320,
+      "pending": 0
+    },
+    "reducedMotion": "static"
+  }
+]

@@ -9,10 +9,10 @@ import { memberDate } from "@/components/member-overview"
 import { PageHeader } from "@/components/product/page-header"
 import { Button } from "@/components/ui/button"
 import { LoadingState } from "@/components/ui/loading-state"
-import { DashboardDate, DashboardLoading } from "@/components/product/dashboard-presentation"
+import { DashboardDate } from "@/components/product/dashboard-presentation"
 import { DashboardDrawer } from "@/components/product/dashboard-drawer"
 import "@/components/product/operational-dashboard.css"
-const Review = dynamic(() => import("@/components/views/leader-dashboard/live-leader-workspace").then(m => m.ApplicantReviewPreview), { loading: () => <DashboardLoading mode="recruiting" label="Loading authorized review…" /> })
+const Review = dynamic(() => import("@/components/views/leader-dashboard/live-leader-workspace").then(m => m.ApplicantReviewPreview), { loading: () => <LoadingState layout="form" rows={3} label="Loading authorized review…" /> })
 const Preparation = dynamic(() => import("@/components/interviews/dashboard-preparation").then(m => m.DashboardPreparation), { loading: () => <LoadingState label="Checking interview panel…" layout="rows" rows={2} /> })
 type Overview = Awaited<ReturnType<typeof getClubWorkspaceOverview>>
 export function RecruitingOverview({ data, refreshing = false, onChanged = () => {} }: { data: Overview; refreshing?: boolean; onChanged?: () => void }) {

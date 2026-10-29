@@ -19,7 +19,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { SectionHeading } from "@/components/ui/section-heading"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Divider } from "@/components/ui/divider"
-import { LoadingState } from "@/components/ui/loading-state"
+import { LoadingState, type LoadingLayout } from "@/components/ui/loading-state"
 import { NativeSelect } from "@/components/ui/native-select"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
@@ -31,6 +31,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip
 /** Isolated visual reference. No account mutations or fixture persistence. */
 export default function DesignSystemPage() {
   const [progress, setProgress] = useState(40)
+  const [loadingLayout, setLoadingLayout] = useState<LoadingLayout>("applicants")
   return <main data-outclass-design className="mx-auto max-w-5xl space-y-section px-page py-section">
     <PageHeader eyebrow="OutClass · Campus OS" title="Built for your next chapter." description="Warm, expressive moments. Precise everyday tools. A shared language for students and club leaders." />
     <DesignPatterns />
@@ -63,7 +64,7 @@ export default function DesignSystemPage() {
       <Card><CardHeader><CardTitle>One meaningful container</CardTitle><CardDescription>Use when content needs a distinct boundary.</CardDescription></CardHeader><CardContent className="space-y-3"><Progress value={progress} aria-label="Example profile completion" /><Button variant="outline" size="sm" onClick={() => setProgress(value => value >= 100 ? 0 : value + 20)}>Update progress</Button></CardContent></Card>
       <EmptyState icon={<FileText />} title="Nothing here yet" description="A useful next step is more helpful than an empty dashboard." action={<Button variant="outline" onClick={() => toast("Example action")}>Discover clubs</Button>} />
       <EmptyState density="compact" align="start" tone="outlined" title="No matching applications" description="Try another search or status filter." />
-      <LoadingState label="Loading example records…" rows={2} />
+      <section aria-label="Loading layout reference" className="space-y-4"><label className="oc-field">Loading layout<NativeSelect aria-label="Loading layout" value={loadingLayout} onChange={event => setLoadingLayout(event.target.value as LoadingLayout)}>{(["rows", "cards", "applications", "applicants", "workspace", "form", "document", "feed", "table", "calendar", "schedule", "interview", "voting", "presentation"] as const).map(layout => <option key={layout} value={layout}>{layout}</option>)}</NativeSelect></label><LoadingState label={`Loading ${loadingLayout}…`} layout={loadingLayout} rows={3} /></section>
       <LoadingState label="Refreshing availability…" layout="inline" />
     </section>
     <Divider />

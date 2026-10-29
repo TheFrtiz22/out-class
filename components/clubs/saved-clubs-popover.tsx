@@ -1,4 +1,5 @@
 "use client"
+import { LoadingState } from "@/components/ui/loading-state"
 import Link from "next/link"
 import "./club-discovery.css"
 import { useState } from "react"
@@ -19,7 +20,7 @@ export function SavedClubsPopover({ onNavigate }: { onNavigate?: (view: ViewId) 
     <PopoverContent align="end" sideOffset={8} collisionPadding={16} aria-label="Saved Clubs" className="w-[min(24rem,calc(100vw-2rem))] p-0">
       <header className="flex items-start justify-between gap-3 border-b p-4"><div><h2 className="font-semibold">Saved Clubs</h2><p className="mt-1 text-xs text-muted-foreground">{items.length ? `${items.length} saved ${items.length === 1 ? "club" : "clubs"}` : "Clubs to come back to."}</p></div><Button type="button" variant="ghost" size="icon" className="size-11 shrink-0" aria-label="Close saved clubs" onClick={() => setOpen(false)}><X className="size-4" /></Button></header>
       <div className="max-h-[min(60dvh,28rem)] overflow-y-auto overscroll-contain p-2">
-        {loading ? <p role="status" className="p-4 text-sm text-muted-foreground">Loading saved clubs…</p> : !authenticated ? <div className="space-y-3 p-4 text-sm"><p>Sign in to save clubs and see them here.</p>{onNavigate && <Button onClick={() => { setOpen(false); onNavigate("auth") }}>Sign in</Button>}</div> : <>
+        {loading ? <LoadingState label="Loading saved clubs…" layout="feed" rows={2} className="p-4" /> : !authenticated ? <div className="space-y-3 p-4 text-sm"><p>Sign in to save clubs and see them here.</p>{onNavigate && <Button onClick={() => { setOpen(false); onNavigate("auth") }}>Sign in</Button>}</div> : <>
           {error && <div role="alert" className="space-y-2 p-3 text-sm"><p>{error}</p><Button type="button" size="sm" variant="outline" onClick={() => void refresh()}>Retry saved clubs</Button></div>}
           {items.length ? <ul className="space-y-1">{items.map(({ club }) => <li key={club.id} className="flex items-center gap-1 rounded-lg hover:bg-muted/50">
             <Link href={`/club/${encodeURIComponent(club.id)}`} className="flex min-h-16 min-w-0 flex-1 items-center gap-3 rounded-lg p-3 focus-visible:outline-2 focus-visible:outline-ring" onClick={event => { if (!canLeaveWorkspace()) event.preventDefault(); else if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && event.button === 0) setOpen(false) }}>

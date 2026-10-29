@@ -1,4 +1,5 @@
 "use client";
+import { LoadingState } from "@/components/ui/loading-state"
 import { useEffect, useRef, useState } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { getApplicantDisplay, saveApplicantObservation, deleteApplicantObservation, getApplicantDisplayConfiguration, saveApplicantDisplayConfiguration } from "@/lib/workspace-api";
@@ -37,7 +38,7 @@ export function ApplicantDisplayPanel({ clubId, applicationId, refreshKey = "", 
   }
   if(layout === "slide") return <section ref={slideRef} aria-label="Live candidate presentation" className="oc-voting-slide" aria-live="polite">
     {error && <p role="alert">{error} <Button onClick={()=>setRevision(v=>v+1)}>Reload</Button></p>}
-    {!data&&!error&&<p role="status">Loading authorized candidate…</p>}
+    {!data&&!error&&<LoadingState label="Loading authorized candidate…" layout="form" rows={2} />}
     {data&&<>
       <ApplicantSlide data={data}/>
     </>}
@@ -45,7 +46,7 @@ export function ApplicantDisplayPanel({ clubId, applicationId, refreshKey = "", 
   return <section aria-label={`${mode} applicant information`} className={mode === "review" ? "oc-review-observations space-y-3 rounded-lg border bg-card p-4" : "space-y-5 rounded-lg border bg-card p-5"}>
     <header><h3 className="oc-card-heading">{mode === "review" ? "Pros & cons" : "Applicant information"}</h3>{mode !== "review" && <p className="text-xs text-muted-foreground">Shared Interview and Voting display · filtered for your current review access.</p>}</header>
     {error && <p role="alert" className="text-sm text-destructive">{error} <Button type="button" variant="ghost" onClick={() => setRevision(v => v + 1)}>Reload</Button></p>}
-    {!data && !error && <p role="status">Loading authorized review information…</p>}
+    {!data && !error && <LoadingState label="Loading authorized review information…" layout="form" rows={2} />}
     {data && <>
       {mode !== "review" && <p className="text-xs text-muted-foreground">{data.configured.length} configured fields · {data.visible.length} available.{data.anonymous && " Anonymous review withholds identifying fields and free text."}</p>}
       {mode !== "review" && !!data.withheld.length && <p className="text-xs text-muted-foreground">Withheld: {data.withheld.map(f => fieldLabels[f]).join(", ")}</p>}

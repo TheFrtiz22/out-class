@@ -1,4 +1,5 @@
 "use client"
+import { LoadingState } from "@/components/ui/loading-state"
 
 import { useEffect, useRef, useState } from "react"
 import { QRCodeSVG } from "qrcode.react"
@@ -49,7 +50,7 @@ export function QrCodeCard({ title, description, path, filename }: { title: stri
   return <section className="oc-content-panel border-neutral-200 font-sans text-black shadow-none">
     <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
       <div className="flex size-48 shrink-0 items-center justify-center rounded-lg border border-neutral-200">
-        {origin ? <QRCodeSVG ref={svg} value={url} size={184} level="M" marginSize={4} title={title} /> : <span className="text-sm text-neutral-500">Preparing QR code…</span>}
+        {origin ? <QRCodeSVG ref={svg} value={url} size={184} level="M" marginSize={4} title={title} /> : <LoadingState label="Preparing QR code…" layout="inline" rows={3} />}
       </div>
       <div className="min-w-0 space-y-3">
         <h3 className="oc-card-heading ">{title}</h3><p className="text-sm text-neutral-500">{description}</p>
