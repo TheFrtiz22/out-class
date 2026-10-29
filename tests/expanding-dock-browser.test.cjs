@@ -71,8 +71,11 @@ test('browser: expanding dock, shared motion, safe flyouts, permissions, keyboar
   for(let i=0;i<5;i++){await applicants.hover();await decisions.hover()}
   await expanded(true);assert.equal(await page.locator('[data-dock-flyout]').count(),1)
   // Delay is observable: no immediate collapse, and reentry cancels it.
-  await page.mouse.move(900,650);await page.waitForTimeout(80);await expanded(true)
-  await applicants.hover();await page.waitForTimeout(220);await expanded(true)
+  // Advance browser time explicitly: a busy CI host must not turn the
+  // 80ms observation into a wall-clock wait beyond the exit delay.
+  const exitEpoch=new Date('2030-01-01T12:00:00Z');await page.clock.install({time:new Date(exitEpoch.getTime()-60000)});await page.clock.pauseAt(exitEpoch)
+  await page.mouse.move(900,650);await page.clock.runFor(80);await expanded(true)
+  await applicants.hover();await page.clock.runFor(220);await expanded(true);await page.clock.resume()
   await outside();await expect(page.locator('[data-dock-flyout]')).toHaveCount(0)
   // Group disclosure is navigation-only, so pending forms do not block it; destinations do.
   await page.evaluate(()=>{const guard=document.createElement('div');guard.id='guard';guard.dataset.saving='true';document.body.append(guard)})

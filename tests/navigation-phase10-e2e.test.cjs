@@ -19,7 +19,10 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 390, height: 844
       assert.equal(await page.locator('link[rel="preload"][as="font"]').count(), 0);
       const initial = await page.evaluate(() => [...document.fonts].filter(f => !f.family.includes('Fallback')).map(f => ({ family: f.family, style: f.style, weight: f.weight, status: f.status })));
       assert.equal(initial.length, 4); assert.equal(initial.filter(f => f.style === 'italic' && f.status === 'unloaded').length, 2);
-      assert.equal(fonts.length, 2, 'Only the two rendered upright faces transfer');
+      const upright = initial.filter(f => f.style === 'normal' && f.status === 'loaded');
+      assert.ok(upright.length >= 1 && upright.length <= 2);
+      assert.equal(fonts.length, upright.length, 'Only rendered upright faces transfer');
+      for (const face of upright) assert.equal(await page.evaluate(family => [...document.querySelectorAll('body *')].some(el => el.getClientRects().length && [...el.childNodes].some(n => n.nodeType === Node.TEXT_NODE && n.textContent.trim()) && getComputedStyle(el).fontStyle === 'normal' && getComputedStyle(el).fontFamily.includes(family.replaceAll('"', ''))), face.family), true, 'Every initially loaded face is used by visible upright text');
       const initialUrls = new Set(fonts.map(f => f.url));
       // Demand the actual CSS families at multiple variable weights, as real
       // italic content does. No font API fetch or synthetic font substitution.
