@@ -1,4 +1,4 @@
-import { LoaderCircle } from "@/components/icons"
+import { GlowingLoadingPill } from "@/components/ui/glowing-loading-pill"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -23,13 +23,12 @@ export function LoadingState({
   const count = Math.max(1, Math.min(12, Math.floor(rows) || 4))
   if (layout === "inline") {
     return <div data-slot="loading-state" data-layout="inline" role="status" aria-busy="true" className={cn("oc-loading-state", className)}>
-      <LoaderCircle size={16} aria-hidden="true" className="oc-loading-inline-spinner animate-spin" />
-      <span>{label}</span>
+      <GlowingLoadingPill label={label} compact />
     </div>
   }
 
   return <div data-slot="loading-state" data-layout={layout} role="status" aria-busy="true" className={cn("oc-loading-state", className)}>
-    <p className="oc-loading-status"><span className="oc-loading-indicator" aria-hidden="true" />{label}</p>
+    <div className="oc-loading-status"><GlowingLoadingPill label={label} /></div>
     <div className="oc-loading-preview" aria-hidden="true">
       {layout === "rows" && <div className="oc-loading-rows-preview">
         <div className="oc-loading-preview-heading"><Skeleton className="h-6 w-40 max-w-full" /><Skeleton className="h-4 w-24" /></div>
