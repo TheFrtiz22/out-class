@@ -1,4 +1,5 @@
 "use client";
+import { LoadingState } from "@/components/ui/loading-state"
 import Link from "next/link";
 import { useEffect,useRef,useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
@@ -17,7 +18,7 @@ type View="leader"|"present"|"member";
 type Ballot=z.infer<typeof roomBallotSchema>;
 export function LiveVotingEntry({clubId,sessionId,view,demoScoped}:{clubId:string;sessionId:string;view:View;demoScoped:boolean}){
  const auth=useAuth(),demo=useDemoMode(),[member,setMember]=useState("");
- if(auth.loading||!demo.ready)return <main className="vr-page" role="status">Checking sign-in…</main>;
+ if(auth.loading||!demo.ready)return <main className="vr-page"><LoadingState label="Checking sign-in…" layout="inline" /></main>;
  if(demoScoped!==demo.isDemoEnabled)return <main className="vr-page"><h1>Voting link unavailable in this workspace</h1><p>Use the matching Live or Demo link. This page will not switch environments.</p><Link href="/">Return to OutClass</Link></main>;
  if(!auth.user)return <main className="vr-page"><h1>Join live voting</h1><p>Sign in to check eligibility.</p><Link className="vr-link" href={`/login?next=${encodeURIComponent(liveRoomPath(clubId,sessionId,view,demoScoped))}`}>Sign in and return to this session</Link></main>;
  const demoMember=demoScoped?member||undefined:undefined,identity=`${auth.user.id}:${demoScoped}:${demoMember??"current"}`;
@@ -31,7 +32,7 @@ function MemberJoin(props:RoomProps){
  async function join(){if(lock.current)return;lock.current=true;setBusy(true);setError("");try{await joinLiveVotingRoom({clubId:props.clubId,sessionId:props.sessionId},props.member);setRetry(v=>v+1);}catch{setError("Couldn't join. Your eligibility will be checked again on retry.");}finally{lock.current=false;setBusy(false);}}
  if(info?.status==="JOINED")return <VotingRoom {...props}/>;
  return <main className="vr-page vr-member"><h1>Join live voting</h1>{error&&<div role="alert" className="vr-error">{error}<Button variant="outline" onClick={()=>setRetry(v=>v+1)}>Retry</Button></div>}
- {!info&&!error&&<p role="status">Checking session and membership…</p>}
+ {!info&&!error&&<LoadingState label="Checking session and membership…" layout="inline" rows={3} />}
  {info?.status==="READY"&&<><p>You are eligible. Join to wait for the leader.</p><Button disabled={busy} onClick={()=>void join()}>{busy?"Joining…":"Join session"}</Button></>}
  {info?.status==="DENIED"&&<p role="alert">You do not have access to this voting session. Ask leadership to check your eligibility.</p>}
  {info?.status==="EXPIRED"&&<p role="status">This session link is expired or unavailable.</p>}
@@ -48,7 +49,7 @@ export function VotingRoom(props:RoomProps){
   const body=pendingVote.current??{clubId,sessionId,requestId:crypto.randomUUID(),applicationId:room.currentApplicantId!,passNumber:room.passNumber,choice:choice!,ballotRevision:ownRevision};pendingVote.current=body;setAttempt(body);
   try{const response=await castLiveVotingBallot(body,member);if(!response.ok){pendingVote.current=null;setVoteError(response.message);await refresh();return;}setAck({key:`${body.passNumber}:${body.applicationId}`,choice:body.choice,revision:response.result.ballotRevision});pendingVote.current=null;setAttempt(null);await refresh();}catch{setVoteError("Your vote could not be confirmed. Retry sends the same vote safely.");}finally{voteLock.current=false;setVoteBusy(false);}
  }
- if(!room)return <main className="vr-page"><h1>Live voting</h1>{error?<div role="alert" className="vr-error">{error}<Button variant="outline" onClick={()=>void refresh()}>Retry connection</Button></div>:<p role="status">Restoring session…</p>}</main>;
+ if(!room)return <main className="vr-page"><h1>Live voting</h1>{error?<div role="alert" className="vr-error">{error}<Button variant="outline" onClick={()=>void refresh()}>Retry connection</Button></div>:<LoadingState label="Restoring voting session…" layout={view === "present" ? "presentation" : "voting"} rows={3} />}</main>;
  if(view==="leader"&&!room.permissions.leader)return <main className="vr-page"><h1>Leader controls unavailable</h1><Link href={liveRoomPath(clubId,sessionId,"member",demoScoped)}>Open member view</Link></main>;
  const appId=room.status==="OPEN"?room.currentApplicantId:view==="leader"&&room.status==="DRAFT"?(preview||room.outcomes[0]?.applicationId):null,currentChoice=ack?.key===key&&ack.revision>=(entry?.ownBallot?.revision??-1)?ack.choice:entry?.ownBallot?.choice;
  const qrCard=<QrCodeCard title="Join this voting session" description="Sign in with your eligible club account." path={liveRoomPath(clubId,sessionId,"member",demoScoped)} filename="outclass-voting-session"/>;

@@ -1,6 +1,7 @@
 "use client";
 import { Component, useMemo, useState, type ReactNode, type ComponentProps } from "react";
-import dynamic from "next/dynamic";
+import dynamic from "next/dynamic"
+import { LoadingState } from "@/components/ui/loading-state";
 import type InterviewResumeViewer from "@/components/interview-resume-viewer";
 import { Button } from "@/components/ui/button";
 import "./interview-resume-viewer.css";
@@ -19,7 +20,7 @@ export function InterviewResumeLoader({ fallback, ...props }: ComponentProps<typ
   const Viewer = useMemo(() => {
     void attempt;
     // Keep the literal import inside the SSR-disabled boundary so browser PDF code is not traced into serverless functions.
-    return loadedViewer || dynamic(() => import("@/components/interview-resume-viewer").then(module => { loadedViewer = module.default; return module; }), { ssr: false, loading: () => <>{fallback || <p role="status">Loading viewer…</p>}</> });
+    return loadedViewer || dynamic(() => import("@/components/interview-resume-viewer").then(module => { loadedViewer = module.default; return module; }), { ssr: false, loading: () => <>{fallback || <LoadingState label="Loading viewer…" layout="document" rows={3} />}</> });
   }, [attempt, fallback]);
   return <ViewerBoundary key={attempt} retry={() => setAttempt(v => v + 1)}><Viewer {...props} /></ViewerBoundary>;
 }

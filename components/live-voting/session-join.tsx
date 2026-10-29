@@ -1,4 +1,5 @@
 "use client"
+import { LoadingState } from "@/components/ui/loading-state"
 import { serializedWorkspaceRead } from "@/lib/serialized-workspace-read"
 import Link from "next/link"
 import { useCallback, useEffect, useRef, useState } from "react"
@@ -40,13 +41,13 @@ export function VotingSessionJoin({sessionId,demoScoped}:{sessionId:string;demoS
   if(demoScoped&&!demo.ready)return <main className="p-6" role="status">Opening isolated Demo session…</main>
   if(demoScoped&&!demo.isDemoEnabled)return <main className="mx-auto max-w-lg space-y-4 p-6"><h1 className="oc-page-title">Demo voting join</h1><p>This link belongs to the isolated Demo graph. Enable Demo Mode in your authorized workspace first; it never opens a production voting session.</p><Link className="underline" href="/?workspace=leader">Open workspace</Link></main>
   if(!demoScoped&&demo.isDemoEnabled)return <main className="p-6"><h1 className="oc-page-title">Production voting unavailable in Demo Mode</h1><p>Use the Demo-scoped QR link or exit Demo Mode.</p></main>
-  if(!permitted)return <main className="mx-auto max-w-lg space-y-4 p-6"><h1 className="oc-page-title">Join live voting</h1>{auth.loading?<p role="status">Checking your sign-in…</p>:<><p>Sign in to verify your club membership and voting permissions.</p><a className="inline-flex min-h-11 items-center underline" href={`/login?next=${encodeURIComponent(votingJoinPath(sessionId))}`}>Sign in and return to this session</a></>}</main>
+  if(!permitted)return <main className="mx-auto max-w-lg space-y-4 p-6"><h1 className="oc-page-title">Join live voting</h1>{auth.loading?<LoadingState label="Checking your sign-in…" layout="inline" rows={3} />:<><p>Sign in to verify your club membership and voting permissions.</p><a className="inline-flex min-h-11 items-center underline" href={`/login?next=${encodeURIComponent(votingJoinPath(sessionId))}`}>Sign in and return to this session</a></>}</main>
   return <main className="mx-auto min-h-dvh max-w-6xl space-y-5 p-4 sm:p-6">
     <p role="status" aria-atomic="true" className="sr-only">{joined ? candidate ? `Pass ${s?.currentPass}. Candidate ${(pass?.candidates.findIndex(c=>c.applicationId===candidate.applicationId)??0)+1} of ${pass?.candidates.length}. ${data?.canVote && !ballot ? "Voting is open. Review the candidate below." : "Your ballot is recorded or voting is closed."}` : "Joined. Waiting for leadership to start the next pass." : ""}</p>
     <header><p className="text-sm text-muted-foreground">OutClass · {demoScoped?"Isolated Demo voting":"Live voting"}</p><h1 className="oc-page-title">{joined?"Session voting":"Join this voting session"}</h1><p className="text-sm text-muted-foreground">Server state refreshes every five seconds. Ballots do not publish application decisions.</p></header>
     {error&&<p role="alert" className="text-destructive">{error} <Button variant="outline" onClick={()=>void refresh()}>Retry</Button></p>}
     {!joined&&<>
-      {!info&&!error&&<p role="status">Checking session and membership…</p>}
+      {!info&&!error&&<LoadingState label="Checking session and membership…" layout="inline" rows={3} />}
       {info&&("clubName" in info?<section className="oc-content-panel space-y-4"><h2 className="text-xl">{info.clubName}</h2>{info.status==="ALREADY_JOINED"&&<p>You have already joined. Your ballots are preserved.</p>}
         {demoScoped&&<label className="block">Demo member <select className="ml-2 rounded border p-2" value={member} onChange={e=>setMember(e.target.value)}><option value="">Current Demo leader</option>{demo.state?.memberships.filter(m=>m.clubId===info.clubId).map(m=><option key={m.id} value={m.id}>{demo.state?.students.find(u=>u.id===m.userId)?.profile.firstName??m.id}</option>)}</select></label>}
         <Button className="min-h-11" disabled={busy} onClick={()=>void join()}>{busy?"Joining…":info.status==="ALREADY_JOINED"?"Enter voting":"Join session"}</Button></section>:<p role="status">{messages[info.status]}</p>)}

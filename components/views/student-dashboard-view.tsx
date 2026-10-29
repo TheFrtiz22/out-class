@@ -203,7 +203,7 @@ export function StudentDashboardView({
 
   if (loading || !hydrated || !now)
     return (
-      <div className="oc-student-home" role="status" aria-label="Loading your recruiting season">
+      <div className="oc-student-home" role="status" aria-busy="true">
         <Skeleton className="h-3 w-40" />
         <Skeleton className="mt-2 h-10 w-32" />
         <Skeleton className="mt-2 h-4 w-60 max-w-full" />

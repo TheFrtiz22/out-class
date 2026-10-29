@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { LoadingState } from "@/components/ui/loading-state"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 import { Bell, Maximize2, CheckCheck, Check, Mail, Archive, MoreHorizontal, ArrowLeft, ArrowUpRight, CalendarDays, FileText, Megaphone, ListChecks, Users2 } from "@/components/icons"
@@ -95,7 +96,7 @@ export function NotificationCenter({ unread, pendingInvitations, loadState, onRe
         {loadState.failed && <div className="oc-notification-error" role="alert"><span>Couldn’t load updates. Showing saved updates.</span><button tabIndex={0} type="button" onClick={onRetry}>Retry</button></div>}
         {selected ? <article className="oc-notification-detail"><button tabIndex={0} type="button" className="oc-notification-back" onClick={back}><ArrowLeft size={16} aria-hidden="true" />Back</button><p className="oc-notification-meta">{selected.club}</p><h3 ref={selectedHeading} tabIndex={-1}>{selected.title}</h3>{selected.body.map((paragraph, index) => <p key={index}>{paragraph}</p>)}{selected.locationChange && <p>Updated location: {selected.locationChange.newLocation}<br />Previously: {selected.locationChange.oldLocation}</p>}<button tabIndex={0} type="button" className="oc-notification-text-action" disabled={busy} onClick={() => void run(() => state.setNotificationsRead([selected.id], !selected.read))}>{selected.read ? "Mark unread" : "Mark read"}</button>{selected.durableId && <button tabIndex={0} type="button" className="oc-notification-text-action" disabled={busy} onClick={() => void run(async () => { const success = await state.deleteNotifications([selected.id]); if (success) setSelectedId(null); return success })}>Dismiss</button>}</article> : <>
           {(invitations.invitations.length > 0 || invitations.failed) && <section className="oc-notification-invitations" aria-label="Pending invitations"><p>Invitations await your response</p>{invitations.failed && <div className="oc-notification-error" role="alert"><span>Couldn’t check invitations.</span><button tabIndex={0} type="button" onClick={invitations.refresh}>Retry</button></div>}<ul>{invitations.invitations.map(invitation => <OrganizationInvitationCard key={invitation.id} invitation={invitation} onChanged={invitations.changed} allowDecline compact tabIndex={0} />)}</ul></section>}
-          {loadState.loading && !state.notifications.length && <div className="oc-notification-skeletons" role="status"><span className="sr-only">Loading notifications…</span>{[0, 1, 2].map(i => <div className="oc-notification-skeleton" key={i}><span /><span /></div>)}</div>}
+          {loadState.loading && !state.notifications.length && <LoadingState label="Loading notifications…" layout="feed" rows={3} />}
           <ul className="oc-notification-items">{feed.map(item => {
             const destination = notificationDestination(item, state.trackedApps)
             return <li key={item.id} data-notification-id={item.id} data-unread={!item.read}><div className="oc-notification-row">{destination.kind === "href" ? <Link tabIndex={0} aria-disabled={busy} className="oc-notification-open" href={destination.href} prefetch={false} onClick={event => {

@@ -1,4 +1,5 @@
 "use client"
+import { LoadingState } from "@/components/ui/loading-state"
 
 import { useEffect, useState } from "react"
 import { getInterviewerEligibility, setInterviewerEligibility } from "@/actions/availability"
@@ -33,7 +34,7 @@ export function InterviewerEligibilityControls({ clubId, selectedIds, onSaved, i
   if (demo.isDemoEnabled) return null
   return <section className={`${individual ? "border-t pt-4" : "rounded-xl border p-4"} space-y-4`} data-eligibility-controls data-saving={busy} data-unsaved={!!data && JSON.stringify(roles) !== JSON.stringify(data.roles)}>
     <h3 className="oc-card-heading">Interviewer eligibility</h3><p className="text-xs leading-5 text-muted-foreground">Eligibility is specific to this club. It grants no administrative or applicant-access permissions. Individual settings override role defaults; round settings override both.</p>
-    {!data && !error && <p role="status" className="text-sm">Loading eligibility…</p>}
+    {!data && !error && <LoadingState label="Loading eligibility…" layout="table" rows={3} />}
     {data && <fieldset disabled={busy} className="space-y-4">{!individual && <section><h4 className="text-sm font-medium">Eligible membership roles</h4><div className="my-3 flex flex-wrap gap-4">{organizationRoles.map(role => <label key={role} className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={roles.includes(role)} onChange={e => setRoles(values => e.target.checked ? [...values, role] : values.filter(v => v !== role))} />{organizationRoleLabels[role]}</label>)}</div><Button variant="outline" onClick={() => void save()}>Save role defaults</Button></section>}
       {(individual || selectedIds.length > 0) && <><label className="block text-sm">Eligibility scope<select value={roundId} className="oc-av-select mt-1 block w-full sm:w-auto" onChange={e => setRoundId(e.target.value)}><option value="">This club · all rounds by default</option>{data.rounds.map(round => <option key={round.id} value={round.id}>{round.name}</option>)}</select></label>
       <p className="text-sm">{selected.length ? `${selected.length} active member${selected.length === 1 ? "" : "s"} selected` : "Select members in the directory to update them together."}</p>

@@ -1,4 +1,5 @@
 "use client";
+import { LoadingState } from "@/components/ui/loading-state"
 
 import { useEffect, useRef, useState } from "react";
 import { createOrganizationAndInvitePresident, getOrganizationOnboardingSchools } from "@/actions/platform-organization-onboarding";
@@ -80,7 +81,7 @@ export function OrganizationOnboardingForm({ onCreated, onClose, onBusy }: { onC
     } catch { setError("Could not confirm creation. Retry this submission to recover its result without creating duplicates."); }
     finally { submitting.current = false; setBusy(false); onBusy(false); }
   }}>
-    {loading && <p role="status" className="text-sm">Loading available schools…</p>}
+    {loading && <LoadingState label="Loading available schools…" layout="inline" rows={3} />}
     {loadError && <p role="alert" className="text-sm text-destructive">{loadError} <Button type="button" variant="outline" disabled={loading} onClick={() => setLoadVersion(version => version + 1)}>Retry schools</Button></p>}
     <fieldset disabled={busy || loading || !!loadError} className="space-y-4">
       <label className="block space-y-2 text-sm font-medium">School

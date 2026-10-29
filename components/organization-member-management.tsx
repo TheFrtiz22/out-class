@@ -790,7 +790,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
         </div>
       )}
       {loading ? (
-        <LoadingState label="Loading member directory…" layout="rows" rows={5} />
+        <LoadingState label="Loading member directory…" layout="table" rows={5} />
       ) : (
         data && (
           <>

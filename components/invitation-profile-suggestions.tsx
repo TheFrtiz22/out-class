@@ -1,4 +1,5 @@
 "use client";
+import { LoadingState } from "@/components/ui/loading-state"
 
 import { useEffect, useRef, useState } from 'react';
 import { getOrganizationInvitations } from '@/actions/club-onboarding';
@@ -18,7 +19,7 @@ export function InvitationProfileSuggestions({ enabled, onDefaults }: { enabled:
     return () => { current = false; };
   }, [enabled, attempt]);
   if (!enabled) return null;
-  if (loading) return <p role="status" className="mb-5 text-sm text-muted-foreground">Checking for profile details from your invitations… You can edit your profile below.</p>;
+  if (loading) return <LoadingState label="Checking for profile details from your invitations… You can edit your profile below." layout="inline" rows={3} />;
   if (failed) return <div className="mb-5 space-y-2 rounded-xl border p-4"><p className="text-sm text-muted-foreground">Could not check invitation details. You can complete your profile now; invitations require a verified university email.</p><Button variant="ghost" onClick={() => setAttempt(value => value + 1)}>Retry profile suggestions</Button></div>;
   if (!invitations.length) return null;
   const owners = invitations.filter(invitation => invitation.requestedRole === 'OWNER');

@@ -24,7 +24,7 @@ export function ScreeningDashboardView({ clubId, onReview }: { clubId?: string; 
   }, [clubId, reload])
   if (!clubId) return <p className="py-6 text-sm text-muted-foreground">Open Review Tools in a managed club workspace to configure persisted recruiting rules.</p>
   if (error) return <div role="alert" className="py-6"><p>Rules could not be loaded. Check your access and try again.</p><Button onClick={() => setReload(n => n + 1)}>Retry</Button></div>
-  if (!data) return <LoadingState label="Loading recruiting rules…" layout="workspace" rows={3} />
+  if (!data) return <LoadingState label="Loading recruiting rules…" layout="form" rows={3} />
   const round = data.rounds.find(round => round.id === roundId)
   return <div className="space-y-6 py-6">
     <p className="border-l-2 border-brand-orange pl-3 text-sm text-muted-foreground">Saved rules suggest candidates for rejection review. Only an explicit action applies flags. Application decisions never change here and no messages are sent.</p>

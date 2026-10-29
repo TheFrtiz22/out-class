@@ -526,7 +526,7 @@ export function StudentOnboardingWizard({
                   className="mt-2 h-11 w-full rounded-md border border-primary bg-primary font-semibold text-white shadow-none hover:bg-primary/90"
                 >
                   {loading ? (
-                    <Loader2 className="size-4 animate-spin" />
+                    <Loader2 className="size-4 motion-safe:animate-spin" />
                   ) : (
                     <>
                       Continue
@@ -594,7 +594,7 @@ export function StudentOnboardingWizard({
                   className="h-11 w-full rounded-md border border-primary bg-primary font-semibold text-white shadow-none hover:bg-primary/90"
                 >
                   {loading ? (
-                    <Loader2 className="size-4 animate-spin" />
+                    <Loader2 className="size-4 motion-safe:animate-spin" />
                   ) : (
                     <>
                       Verify email
@@ -834,7 +834,7 @@ export function StudentOnboardingWizard({
                     className="h-11 flex-1 rounded-md border border-primary bg-primary font-semibold text-white shadow-none hover:bg-primary/90"
                   >
                     {loading ? (
-                      <Loader2 className="size-4 animate-spin" />
+                      <Loader2 className="size-4 motion-safe:animate-spin" />
                     ) : (
                       <>
                         Finish

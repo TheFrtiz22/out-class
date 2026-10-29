@@ -72,7 +72,7 @@ export function SelectedClubWorkspace({ kind, clubId, privacyScope, personalOnly
   const current = demo.ready && !demo.isDemoEnabled && !loading && isReadAuthorityCurrent(readAuthority) && result?.owner === owner ? result : null
   if (current?.failed) return <div role="alert" className="space-y-3"><p>Could not load this workspace. Your access may have changed.</p><Button variant="outline" onClick={() => setRetry(value => value + 1)}>Retry workspace</Button></div>
   const entry = current?.value
-  if (!entry) return <WorkspaceLoading label={kind === "pipeline" ? "Preparing your applicant pipeline…" : kind === "members" ? "Loading club members…" : kind === "tasks" ? "Loading club tasks…" : "Loading announcements…"} layout={kind === "pipeline" ? "applicants" : kind === "announcements" ? "cards" : "rows"} rows={kind === "pipeline" ? 5 : 3} />
+  if (!entry) return <WorkspaceLoading label={kind === "pipeline" ? "Preparing your applicant pipeline…" : kind === "members" ? "Loading club members…" : kind === "tasks" ? "Loading club tasks…" : "Loading announcements…"} layout={kind === "pipeline" ? "applicants" : kind === "announcements" ? "feed" : kind === "members" ? "table" : "rows"} rows={kind === "pipeline" ? 5 : 3} />
   switch (entry.kind) {
     case "members": { const View = entry.module.ClubMembers; return <View clubId={clubId} initialDirectory={entry.data} validatedInitialData /> }
     case "pipeline": { const View = entry.module.LiveLeaderWorkspace; return <View scoped decisionsOnly={decisionsOnly} rejectedOnly={rejectedOnly} initialData={{ clubId, pipeline: entry.data }} validatedInitialData /> }

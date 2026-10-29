@@ -1,4 +1,5 @@
 "use client";
+import { LoadingState } from "@/components/ui/loading-state"
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useDemoMode } from "@/contexts/demo-context";
@@ -48,7 +49,7 @@ export function MeetingCheckIn() {
         </p>
       )}
       {loading ? (
-        <p role="status">Checking your session…</p>
+        <LoadingState label="Checking your session…" layout="inline" rows={3} />
       ) : !user ? (
         <>
           <p>
