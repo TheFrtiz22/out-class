@@ -73,7 +73,7 @@ function StepProgress({ current }: { current: number }) {
   return (
     <div className="mb-8">
       {/* Step counter text */}
-      <p className="mb-3 text-center text-xs font-medium text-neutral-500">
+      <p className="mb-3 text-center text-xs font-medium text-muted-foreground">
         Step {current} of {STEPS.length}
       </p>
 
@@ -146,10 +146,10 @@ function ResumeDropZone({
       <div className="flex items-center gap-3 rounded-md border border-neutral-200 bg-neutral-50 p-3">
         <FileText className="size-5 shrink-0 text-primary" />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-neutral-900">
+          <p className="truncate text-sm font-medium text-foreground">
             {file.name}
           </p>
-          <p className="text-xs text-neutral-500">
+          <p className="text-xs text-muted-foreground">
             {(file.size / 1024).toFixed(0)} KB
           </p>
         </div>
@@ -190,7 +190,7 @@ function ResumeDropZone({
       <p className="text-sm font-medium text-neutral-700">
         Drag & drop your resume here
       </p>
-      <p className="text-xs text-neutral-500">PDF only, up to 10 MB</p>
+      <p className="text-xs text-muted-foreground">PDF only, up to 10 MB</p>
       <input
         ref={inputRef}
         type="file"
@@ -421,7 +421,7 @@ export function StudentOnboardingWizard({
   if (isImpersonating && !initialUser) return <p className="p-4">Account registration is unavailable during impersonation. <Link className="underline" href="/?workspace=student">Open the user’s workspace</Link> to review their existing profile.</p>
 
   return (
-    <div className={embedded ? "font-sans" : "flex min-h-svh items-center justify-center bg-neutral-50 px-4 py-10 font-sans"}>
+    <div className={embedded ? "font-sans" : "flex min-h-svh items-center justify-center bg-background px-4 py-10 font-sans"}>
       <div className="mx-auto w-full max-w-[480px]">
         {onBack && <Button variant="ghost" onClick={onBack} disabled={loading} className="mb-4"><ArrowLeft className="size-4" />Back to home</Button>}
         {/* Logo */}
@@ -432,12 +432,12 @@ export function StudentOnboardingWizard({
         <InvitationProfileSuggestions enabled={accountCreated && !isImpersonating} onDefaults={applyInvitationDefaults} />
 
         {/* Card */}
-        <div className="rounded-xl border border-neutral-200 bg-white px-6 py-8 sm:px-8">
+        <div className="oc-content-panel">
           <StepProgress current={step} />
 
           {/* Global error */}
           {globalError && (
-            <div role="alert" className="mb-5 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+            <div role="alert" className="oc-feedback mb-5">
               {globalError}
             </div>
           )}
@@ -446,10 +446,10 @@ export function StudentOnboardingWizard({
           {step === 1 && (
             <>
               <div className="mb-6">
-                <h2 className="oc-section-heading text-neutral-900">
+                <h2 className="oc-section-heading text-foreground">
                   {accountCreated ? "Let’s finish your profile" : "Create your account"}
                 </h2>
-                <p className="mt-1.5 text-sm text-neutral-500">
+                <p className="mt-1.5 text-sm text-muted-foreground">
                   {accountCreated ? "Review your name below. We’ll help you complete your academics and optional experience next." : "Use your UVA email to get started."}
                 </p>
               </div>
@@ -504,7 +504,7 @@ export function StudentOnboardingWizard({
                     className="h-11 rounded-md border-neutral-200"
                     {...step1Form.register("email")}
                   />
-                  <p className="text-xs text-neutral-500">
+                  <p className="text-xs text-muted-foreground">
                     {accountCreated ? "Your sign-in email is kept with your account. Invitations are matched using your verified university identity." : "Only @virginia.edu addresses are accepted."}
                   </p>
                   {step1Form.formState.errors.email && (
@@ -517,7 +517,7 @@ export function StudentOnboardingWizard({
                 {!accountCreated && <div className="space-y-1.5">
                   <Label htmlFor="password">Password</Label>
                   <Input id="password" type="password" autoComplete="new-password" {...step1Form.register("password")} />
-                  <p className="text-xs text-neutral-500">At least 8 characters. Use this password to sign in again.</p>
+                  <p className="text-xs text-muted-foreground">At least 8 characters. Use this password to sign in again.</p>
                   {step1Form.formState.errors.password && <p className="text-xs text-red-600">{step1Form.formState.errors.password.message}</p>}
                 </div>}
                 <Button
@@ -542,12 +542,12 @@ export function StudentOnboardingWizard({
           {step === 2 && (
             <>
               <div className="mb-6">
-                <h2 className="oc-section-heading text-neutral-900">
+                <h2 className="oc-section-heading text-foreground">
                   Verify your email
                 </h2>
-                <p className="mt-1.5 text-sm text-neutral-500">
+                <p className="mt-1.5 text-sm text-muted-foreground">
                   If this address can be registered, we’ll send a 6-digit code to{" "}
-                  <strong className="break-all font-medium text-neutral-900">
+                  <strong className="break-all font-medium text-foreground">
                     {wizardData.current.accountBasics?.email}
                   </strong>. Already registered? Sign in below.
                 </p>
@@ -609,7 +609,7 @@ export function StudentOnboardingWizard({
                     type="button"
                     onClick={resendCode}
                     disabled={loading || resendSeconds > 0}
-                    className="font-medium text-neutral-600 hover:text-neutral-900"
+                    className="font-medium text-neutral-600 hover:text-foreground"
                   >
                     {resendSeconds > 0 ? `Resend in ${resendSeconds}s` : "Didn’t receive it? Resend code"}
                   </button>
@@ -623,7 +623,7 @@ export function StudentOnboardingWizard({
                       step2Form.reset()
                       setGlobalError("")
                     }}
-                    className="font-medium text-neutral-600 hover:text-neutral-900"
+                    className="font-medium text-neutral-600 hover:text-foreground"
                   >
                     Use a different email
                   </button>
@@ -636,10 +636,10 @@ export function StudentOnboardingWizard({
           {step === 3 && (
             <>
               <div className="mb-6">
-                <h2 className="oc-section-heading text-neutral-900">
+                <h2 className="oc-section-heading text-foreground">
                   Academic profile
                 </h2>
-                <p className="mt-1.5 text-sm text-neutral-500">
+                <p className="mt-1.5 text-sm text-muted-foreground">
                   Clubs use this to understand your background. GPA and test
                   scores are optional.
                 </p>
@@ -758,10 +758,10 @@ export function StudentOnboardingWizard({
           {step === 4 && (
             <>
               <div className="mb-6">
-                <h2 className="oc-section-heading text-neutral-900">
+                <h2 className="oc-section-heading text-foreground">
                   Experience & assets
                 </h2>
-                <p className="mt-1.5 text-sm text-neutral-500">
+                <p className="mt-1.5 text-sm text-muted-foreground">
                   Add your LinkedIn and resume to strengthen your profile. Both
                   are optional — you can always add them later.
                 </p>
@@ -824,7 +824,7 @@ export function StudentOnboardingWizard({
                     onClick={onSkipStep4}
                     disabled={loading}
                     variant="secondary"
-                    className="h-11 flex-1 rounded-md border border-neutral-300 bg-white font-medium text-neutral-900 shadow-none hover:bg-neutral-50"
+                    className="h-11 flex-1 rounded-md border border-neutral-300 bg-white font-medium text-foreground shadow-none hover:bg-neutral-50"
                   >
                     Skip for now
                   </Button>

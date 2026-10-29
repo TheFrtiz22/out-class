@@ -1,7 +1,7 @@
 .oc-discovery,
 .oc-corkboard,
 .oc-club-profile {
-  max-width: 1120px;
+  max-width: var(--oc-content-width);
   margin: auto;
   color: var(--foreground);
 }

@@ -1,0 +1,114 @@
+[
+  {
+    "screen": "home",
+    "width": 1440,
+    "height": 900,
+    "errors": [],
+    "geometry": {
+      "viewport": 1440,
+      "width": 1440,
+      "headings": [
+        "Home",
+        "Your next step",
+        "Your applications",
+        "Coming up",
+        "Updates for you"
+      ]
+    },
+    "overflow": false
+  },
+  {
+    "screen": "recruitment",
+    "width": 1440,
+    "height": 900,
+    "errors": [],
+    "geometry": {
+      "viewport": 1440,
+      "width": 1440,
+      "headings": [
+        "Recruitment",
+        "Your review queue is clear",
+        "Current pipeline",
+        "Your review queue 0",
+        "Booking follow-up",
+        "Voting & decisions",
+        "Interviews this week",
+        "Next seven days"
+      ]
+    },
+    "overflow": false
+  },
+  {
+    "screen": "applicant",
+    "width": 1440,
+    "height": 900,
+    "errors": [],
+    "unavailable": "No eligible review in fixture"
+  },
+  {
+    "screen": "empty-home",
+    "width": 1440,
+    "height": 900,
+    "errors": [],
+    "geometry": {
+      "viewport": 1440,
+      "width": 1440,
+      "headings": [
+        "Home",
+        "Your next step",
+        "Your applications",
+        "Coming up",
+        "Updates for you"
+      ]
+    },
+    "overflow": false
+  },
+  {
+    "screen": "assigned-recruitment",
+    "width": 1440,
+    "height": 900,
+    "errors": [],
+    "geometry": {
+      "viewport": 1440,
+      "width": 1440,
+      "headings": [
+        "Recruitment",
+        "1 review is ready for you",
+        "Current pipeline",
+        "Your review queue 1",
+        "Booking follow-up",
+        "Voting & decisions",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage",
+        "Your applicant workspace"
+      ]
+    },
+    "overflow": false
+  },
+  {
+    "screen": "applicant",
+    "width": 1440,
+    "height": 900,
+    "errors": [],
+    "geometry": {
+      "viewport": 1440,
+      "width": 1440,
+      "headings": [
+        "Recruitment",
+        "1 review is ready for you",
+        "Current pipeline",
+        "Your review queue 1",
+        "Booking follow-up",
+        "Voting & decisions",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage",
+        "Your applicant workspace",
+        "Alex Sample 1"
+      ]
+    },
+    "overflow": false,
+    "note": "Identified assigned reviewer; original capture filename used an incorrect role label."
+  }
+]

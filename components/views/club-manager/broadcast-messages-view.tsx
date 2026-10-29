@@ -202,7 +202,7 @@ export function BroadcastMessagesView() {
           </div>
 
           {/* Location override toggle */}
-          <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4">
+          <div className="oc-content-panel flex flex-col gap-3 border-slate-200">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-2">
                 <MapPinned className="size-4 text-muted-foreground" />

@@ -308,7 +308,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
   function open(item: StudentApplication) { lastOpened.current = item.id; setActiveId(item.id); setNotice("") }
   return (
     <div ref={content} className="oc-applications mx-auto max-w-5xl space-y-5" data-application-scope={scope}>
-      <PageHeader title={statusView ? "Status" : "Applications"} description={statusView ? "Where things stand, and what to do next." : "Work on your drafts, check requirements, and review submitted responses."} action={<Button variant="ghost" size="sm" onClick={() => setRetry(value => value + 1)}><RefreshCw className="size-3.5" />Refresh</Button>} />
+      <PageHeader density="expressive" title={statusView ? "Status" : "Applications"} description={statusView ? "Where things stand, and what to do next." : "Work on your drafts, check requirements, and review submitted responses."} action={<Button variant="ghost" size="sm" onClick={() => setRetry(value => value + 1)}><RefreshCw className="size-3.5" />Refresh</Button>} />
       {applications.length > 0 && !statusView && <MetricStrip label="Application management" items={[
         { label: "drafts", value: applications.filter(item => item.status === "DRAFTING").length },
         { label: "submitted", value: submitted.length },

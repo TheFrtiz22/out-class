@@ -5,7 +5,7 @@ export default async function AccessPage({ params }: { params: Promise<{ clubId:
   const { clubId } = await params
   const data = await getClubAccess(clubId)
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="oc-content-panel oc-workspace-stack max-w-4xl">
       <Link href={`/club/${clubId}/workspace?section=members`} className="underline">
         Back to club members
       </Link>

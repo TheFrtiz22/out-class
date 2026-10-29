@@ -1,0 +1,3642 @@
+{
+  "baseline": "795e92c13c95b428f743c716247d55f58152e1d0",
+  "note": "Discovery is not visual verification. Actual reviewed states are recorded separately in coverage.md and evidence/results.json.",
+  "routes": [
+    {
+      "file": "app/about/page.tsx",
+      "route": "/about",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/applications/[applicationId]/decision/page.tsx",
+      "route": "/applications/[applicationId]/decision",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/auth/student-claim/page.tsx",
+      "route": "/auth/student-claim",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/check-in/page.tsx",
+      "route": "/check-in",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/club-access/[clubId]/page.tsx",
+      "route": "/club-access/[clubId]",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/club-claims/[clubId]/page.tsx",
+      "route": "/club-claims/[clubId]",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/club/[clubId]/page.tsx",
+      "route": "/club/[clubId]",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/club/[clubId]/tasks/page.tsx",
+      "route": "/club/[clubId]/tasks",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/club/[clubId]/workspace/page.tsx",
+      "route": "/club/[clubId]/workspace",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/corkboard/page.tsx",
+      "route": "/corkboard",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/decisions/page.tsx",
+      "route": "/decisions",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/design-system/page.tsx",
+      "route": "/design-system",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/error.tsx",
+      "route": "/",
+      "kind": "error",
+      "reviewed": false
+    },
+    {
+      "file": "app/forgot-password/page.tsx",
+      "route": "/forgot-password",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/interviews/book/page.tsx",
+      "route": "/interviews/book",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/interviews/page.tsx",
+      "route": "/interviews",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/invitations/[id]/page.tsx",
+      "route": "/invitations/[id]",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/live-voting/page.tsx",
+      "route": "/live-voting",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/loading.tsx",
+      "route": "/",
+      "kind": "loading",
+      "reviewed": false
+    },
+    {
+      "file": "app/login/page.tsx",
+      "route": "/login",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/meetings/[id]/page.tsx",
+      "route": "/meetings/[id]",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/meetings/page.tsx",
+      "route": "/meetings",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/not-found.tsx",
+      "route": "/",
+      "kind": "not-found",
+      "reviewed": false
+    },
+    {
+      "file": "app/page.tsx",
+      "route": "/",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/platform/[section]/page.tsx",
+      "route": "/platform/[section]",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/platform/claims/page.tsx",
+      "route": "/platform/claims",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/platform/clubs/page.tsx",
+      "route": "/platform/clubs",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/platform/events/page.tsx",
+      "route": "/platform/events",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/platform/login/page.tsx",
+      "route": "/platform/login",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/platform/page.tsx",
+      "route": "/platform",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/platform/school-requests/page.tsx",
+      "route": "/platform/school-requests",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/platform/view-as/page.tsx",
+      "route": "/platform/view-as",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/preview/page.tsx",
+      "route": "/preview",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/request-school/page.tsx",
+      "route": "/request-school",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/reset-password/page.tsx",
+      "route": "/reset-password",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/saved-clubs/page.tsx",
+      "route": "/saved-clubs",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/settings/account/page.tsx",
+      "route": "/settings/account",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/settings/availability/page.tsx",
+      "route": "/settings/availability",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/settings/interviews/page.tsx",
+      "route": "/settings/interviews",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/settings/notifications/page.tsx",
+      "route": "/settings/notifications",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/settings/organizations/page.tsx",
+      "route": "/settings/organizations",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/settings/page.tsx",
+      "route": "/settings",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/settings/profile/page.tsx",
+      "route": "/settings/profile",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/signup/page.tsx",
+      "route": "/signup",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/uva/page.tsx",
+      "route": "/uva",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/vote/page.tsx",
+      "route": "/vote",
+      "kind": "page",
+      "reviewed": false
+    },
+    {
+      "file": "app/voting/[sessionId]/join/page.tsx",
+      "route": "/voting/[sessionId]/join",
+      "kind": "page",
+      "reviewed": false
+    }
+  ],
+  "surfaces": [
+    {
+      "file": "components/account-avatar.tsx",
+      "exports": [
+        "AccountAvatar"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/admin/admin-club-import.tsx",
+      "exports": [
+        "AdminClubImport"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/admin/admin-clubs.tsx",
+      "exports": [
+        "AdminClubs"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/admin/admin-corkboard.tsx",
+      "exports": [
+        "AdminCorkboard"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "selected"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/admin/admin-directory.tsx",
+      "exports": [
+        "AdminRecord",
+        "AdminDirectory"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "empty",
+        "error",
+        "selected",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/admin/admin-onboarding.tsx",
+      "exports": [
+        "AdminOnboarding"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/admin/admin-permissions.tsx",
+      "exports": [
+        "AdminPermissions"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "selected",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/admin/admin-recovery.tsx",
+      "exports": [
+        "AdminRecovery"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/admin/admin-reports.tsx",
+      "exports": [
+        "AdminReports"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "empty",
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/admin/admin-settings.tsx",
+      "exports": [
+        "AdminSettings"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/admin/admin-shell.tsx",
+      "exports": [
+        "AdminShell"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/admin/school-request-review.tsx",
+      "exports": [
+        "SchoolRequestReview"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/app-shell.tsx",
+      "exports": [
+        "AppShell"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/applicant-intelligence.tsx",
+      "exports": [
+        "ApplicantDisplayPanel",
+        "ApplicantDisplaySettings",
+        "ApplicantSlide"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/applicant-interview-reviews.tsx",
+      "exports": [
+        "ApplicantInterviewReviews"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/applications/application-form.tsx",
+      "exports": [
+        "ApplicationForm"
+      ],
+      "overlays": [
+        "Ready to send your application?"
+      ],
+      "states": [
+        "loading",
+        "error",
+        "selected",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/applications/application-journey-card.tsx",
+      "exports": [
+        "ApplicationJourneyCard"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/applications/application-management-card.tsx",
+      "exports": [
+        "ApplicationManagementCard"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/applications/application-status-card.tsx",
+      "exports": [
+        "applicantDate",
+        "ApplicationStatusProgress",
+        "ApplicationStatusCard"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/applications/application-status-detail.tsx",
+      "exports": [
+        "ApplicationStatusDetail"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/applications/question-field.tsx",
+      "exports": [
+        "QuestionField"
+      ],
+      "overlays": [],
+      "states": [
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/applications/recruitment-offer.tsx",
+      "exports": [
+        "RecruitmentOffer"
+      ],
+      "overlays": [],
+      "states": [
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/auth-session-boundary.tsx",
+      "exports": [
+        "AuthSessionBoundary"
+      ],
+      "overlays": [],
+      "states": [
+        "loading"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/auth/email-login-form.tsx",
+      "exports": [
+        "EmailLoginForm"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/auth/login-auth-panel.tsx",
+      "exports": [
+        "LoginAuthPanel"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/auth/login-brand-panel.tsx",
+      "exports": [
+        "LoginBrandPanel"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/auth/login-page-view.tsx",
+      "exports": [
+        "LoginPageView"
+      ],
+      "overlays": [],
+      "states": [
+        "error"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/auth/product-preview-cards.tsx",
+      "exports": [
+        "ProductPreviewCards"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/auth/signup-page-view.tsx",
+      "exports": [
+        "SignupPageView"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/availability/admin-overview.tsx",
+      "exports": [
+        "AdminAvailabilityOverview"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "selected",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/availability/availability-button.tsx",
+      "exports": [
+        "AvailabilityButton"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/availability/dashboard-requests.tsx",
+      "exports": [
+        "AvailabilityDashboardRequests"
+      ],
+      "overlays": [],
+      "states": [
+        "error"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/availability/interviewer-eligibility.tsx",
+      "exports": [
+        "InterviewerEligibilityControls"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "selected",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/availability/my-availability.tsx",
+      "exports": [
+        "AvailabilityEditor",
+        "MyAvailability"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "empty",
+        "error",
+        "selected",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/availability/scheduled-requests.tsx",
+      "exports": [
+        "ScheduleAvailabilityRequest",
+        "AvailabilitySchedules"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "selected",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/availability/weekly-calendar.tsx",
+      "exports": [
+        "WeeklyCalendar"
+      ],
+      "overlays": [],
+      "states": [
+        "selected"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/claim-form.tsx",
+      "exports": [
+        "ClaimForm"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/claim-review.tsx",
+      "exports": [
+        "ClaimReview"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/club-access-editor.tsx",
+      "exports": [
+        "ClubAccessEditor"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "selected",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/club-announcements.tsx",
+      "exports": [
+        "ClubAnnouncements"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/club-logo.tsx",
+      "exports": [
+        "ClubLogo"
+      ],
+      "overlays": [],
+      "states": [
+        "error"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/club-members.tsx",
+      "exports": [
+        "ClubMembers"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "selected",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/club-profile-settings.tsx",
+      "exports": [
+        "ClubProfileSettings"
+      ],
+      "overlays": [],
+      "states": [
+        "error"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/club-settings-workspace.tsx",
+      "exports": [
+        "ClubSettingsWorkspace"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "selected",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/club-tasks.tsx",
+      "exports": [
+        "ClubTasks",
+        "TaskDetail"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "empty",
+        "error",
+        "selected",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/club-workspace-settings.tsx",
+      "exports": [
+        "ClubWorkspaceSettings"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/club-workspace-switcher.tsx",
+      "exports": [
+        "ClubWorkspaceSwitcher"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/club-workspace.tsx",
+      "exports": [
+        "ClubWorkspace"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "selected",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/clubs/club-profile-editor.tsx",
+      "exports": [
+        "ClubProfileEditor"
+      ],
+      "overlays": [],
+      "states": [
+        "empty",
+        "error",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/clubs/corkboard-button.tsx",
+      "exports": [
+        "CorkboardButton"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/clubs/directory-logo.tsx",
+      "exports": [
+        "DirectoryLogo"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/clubs/discovery-card.tsx",
+      "exports": [
+        "DiscoveryCard"
+      ],
+      "overlays": [],
+      "states": [
+        "error"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/clubs/logo-background-picker.tsx",
+      "exports": [
+        "LogoBackgroundPicker"
+      ],
+      "overlays": [],
+      "states": [
+        "loading"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/clubs/marketing-profile.tsx",
+      "exports": [
+        "MarketingProfile",
+        "MarketingSections",
+        "ProfileStatistics",
+        "MemberOutcomes"
+      ],
+      "overlays": [],
+      "states": [
+        "loading"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/clubs/profile-image-input.tsx",
+      "exports": [
+        "ProfileImageInput"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/clubs/recruitment-timeline.tsx",
+      "exports": [
+        "RecruitmentTimeline"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/clubs/saved-clubs-popover.tsx",
+      "exports": [
+        "SavedClubsPopover"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/clubs/subscribe-button.tsx",
+      "exports": [
+        "SubscribeButton"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/clubs/unclaimed-profile-notice.tsx",
+      "exports": [
+        "UnclaimedProfileNotice"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/communication-schedules.tsx",
+      "exports": [
+        "initialTiming",
+        "ScheduleFields",
+        "ScheduledCommunications"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/communications-inbox.tsx",
+      "exports": [
+        "CommunicationsInbox"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/communications-preferences.tsx",
+      "exports": [
+        "CommunicationsPreferences"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/communications/decision-letter.tsx",
+      "exports": [
+        "LetterPaper",
+        "DecisionLetterView"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/communications/template-editor.tsx",
+      "exports": [
+        "DecisionTemplateEditor"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "selected",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/customization/crm-view-manager.tsx",
+      "exports": [
+        "CRMViewManager"
+      ],
+      "overlays": [],
+      "states": [
+        "empty",
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/dashboard-layout.tsx",
+      "exports": [
+        "DashboardLayout"
+      ],
+      "overlays": [],
+      "states": [
+        "loading"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/decision-schedules.tsx",
+      "exports": [
+        "ScheduleDecision",
+        "DecisionSchedules"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/demo-controls.tsx",
+      "exports": [
+        "DemoMenuItems"
+      ],
+      "overlays": [],
+      "states": [
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/demo-workspace.tsx",
+      "exports": [
+        "DemoRoundTarget",
+        "DemoInterviewGuide",
+        "DemoClubSettings",
+        "DemoInterviewSchedule"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/edit-student-profile-dialog.tsx",
+      "exports": [
+        "EditStudentProfileDialog"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/events/club-events.tsx",
+      "exports": [
+        "ClubEvents"
+      ],
+      "overlays": [
+        "Remove from Corkboard?"
+      ],
+      "states": [
+        "loading",
+        "error",
+        "selected",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/events/club-meetings-workspace.tsx",
+      "exports": [
+        "ClubMeetingsWorkspace"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/events/dashboard-meeting.tsx",
+      "exports": [
+        "DashboardMeeting"
+      ],
+      "overlays": [],
+      "states": [
+        "error"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/events/event-approvals.tsx",
+      "exports": [
+        "EventApprovals"
+      ],
+      "overlays": [
+        ""
+      ],
+      "states": [
+        "loading",
+        "error",
+        "selected",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/events/event-discovery-actions.tsx",
+      "exports": [
+        "EventSaveButton",
+        "EventCalendarButton"
+      ],
+      "overlays": [],
+      "states": [
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/events/event-flyer.tsx",
+      "exports": [
+        "EventFlyer"
+      ],
+      "overlays": [],
+      "states": [
+        "error"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/events/event-schedule-fields.tsx",
+      "exports": [
+        "EventScheduleFields"
+      ],
+      "overlays": [],
+      "states": [
+        "error"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/events/public-event-board.tsx",
+      "exports": [
+        "PublicEventBoard",
+        "RsvpControls"
+      ],
+      "overlays": [
+        ""
+      ],
+      "states": [
+        "loading",
+        "empty",
+        "error",
+        "selected",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/events/smart-event-card.tsx",
+      "exports": [
+        "SmartEventCard"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/home-entry.tsx",
+      "exports": [
+        "HomeEntry"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/icons.tsx",
+      "exports": [
+        "Archive",
+        "ArrowDown",
+        "ArrowLeft",
+        "ArrowRight",
+        "ArrowUp",
+        "ArrowUpRight",
+        "BarChart3",
+        "Bell",
+        "BookOpen",
+        "Bookmark",
+        "BookmarkCheck",
+        "Briefcase",
+        "BriefcaseBusiness",
+        "Building2",
+        "CalendarClock",
+        "CalendarDays",
+        "CalendarPlus",
+        "Camera",
+        "ChartNoAxesColumnIncreasing",
+        "ChartNoAxesCombined",
+        "Check",
+        "CheckCheck",
+        "CheckCircle2",
+        "CheckIcon",
+        "ChevronDown",
+        "ChevronDownIcon",
+        "ChevronLeft",
+        "ChevronLeftIcon",
+        "ChevronRight",
+        "ChevronRightIcon",
+        "ChevronUp",
+        "ChevronUpIcon",
+        "ChevronsUpDown",
+        "Circle",
+        "CircleHelp",
+        "CircleIcon",
+        "ClipboardCheck",
+        "ClipboardList",
+        "Clock",
+        "Clock3",
+        "Compass",
+        "Copy",
+        "DoorOpen",
+        "Download",
+        "ExternalLink",
+        "Eye",
+        "FileCheck2",
+        "FileDown",
+        "FilePenLine",
+        "FileText",
+        "Globe",
+        "Globe2",
+        "GraduationCap",
+        "GripVertical",
+        "GripVerticalIcon",
+        "Heart",
+        "Home",
+        "IdCard",
+        "ImageIcon",
+        "ImagePlus",
+        "Info",
+        "Instagram",
+        "Layers",
+        "LayoutGrid",
+        "Lightbulb",
+        "Link2",
+        "LinkIcon",
+        "Linkedin",
+        "ListChecks",
+        "Loader2",
+        "Loader2Icon",
+        "LoaderCircle",
+        "Lock",
+        "LockKeyhole",
+        "LogIn",
+        "LogOut",
+        "Mail",
+        "MailOpen",
+        "MapPin",
+        "MapPinned",
+        "Maximize2",
+        "Megaphone",
+        "Menu",
+        "MessageSquare",
+        "MessageSquareText",
+        "MinusIcon",
+        "Monitor",
+        "MoreHorizontal",
+        "MoreHorizontalIcon",
+        "Mountain",
+        "Palette",
+        "PanelLeftIcon",
+        "PartyPopper",
+        "Pause",
+        "Pencil",
+        "Play",
+        "Plus",
+        "Radio",
+        "RefreshCw",
+        "RotateCcw",
+        "Rows3",
+        "Search",
+        "SearchIcon",
+        "Send",
+        "Settings",
+        "Settings2",
+        "Shield",
+        "ShieldAlert",
+        "ShieldCheck",
+        "Shuffle",
+        "SlidersHorizontal",
+        "Smartphone",
+        "Sparkles",
+        "StickyNote",
+        "Table2",
+        "Trash2",
+        "Triangle",
+        "TriangleAlert",
+        "Trophy",
+        "Unlock",
+        "Upload",
+        "UploadCloud",
+        "UserCog",
+        "UserPlus",
+        "UserRound",
+        "Users",
+        "Users2",
+        "Video",
+        "X",
+        "XCircle",
+        "XIcon",
+        "Zap"
+      ],
+      "overlays": [],
+      "states": [
+        "selected"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/interview-access-setup.tsx",
+      "exports": [
+        "InterviewAccessSetup"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "denied",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/interview-applicant-panel.tsx",
+      "exports": [
+        "InterviewApplicantPanel"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/interview-kit-editor.tsx",
+      "exports": [
+        "InterviewKitEditor",
+        "RoundKitEditor",
+        "ClubInterviewKitSettings"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "denied",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/interview-kit-session.tsx",
+      "exports": [
+        "InterviewKitSession"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "empty",
+        "error",
+        "selected",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/interview-management-tabs.tsx",
+      "exports": [
+        "InterviewManagementTabs"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/interview-resume-loader.tsx",
+      "exports": [
+        "InterviewResumeLoader"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/interview-resume-moderation.tsx",
+      "exports": [
+        "InterviewResumeModeration"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "selected"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/interview-resume-placeholder.tsx",
+      "exports": [
+        "InterviewResumePlaceholder"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/interview-resume-preview.tsx",
+      "exports": [
+        "InterviewResumePreview"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/interview-resume-viewer.tsx",
+      "exports": [
+        "InterviewResumeViewer"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "selected",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/interview-review-references.tsx",
+      "exports": [
+        "RoundScore",
+        "EarlierRounds"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/interview-submitted-reviews.tsx",
+      "exports": [
+        "InterviewSubmittedReviews"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "selected"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/interview-timer.tsx",
+      "exports": [
+        "InterviewTimer"
+      ],
+      "overlays": [],
+      "states": [
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/interviews/applicant-booking.tsx",
+      "exports": [
+        "ApplicantBooking"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/interviews/booking-link-page.tsx",
+      "exports": [
+        "BookingLinkPage"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/interviews/booking-picker.tsx",
+      "exports": [
+        "BookingPicker"
+      ],
+      "overlays": [],
+      "states": [
+        "empty",
+        "error",
+        "selected",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/interviews/booking-publication.tsx",
+      "exports": [
+        "InterviewBookingPublication"
+      ],
+      "overlays": [
+        "Pause new bookings?"
+      ],
+      "states": [
+        "error",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/interviews/create-room-dialog.tsx",
+      "exports": [
+        "CreateRoomDialog"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "selected",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/interviews/dashboard-preparation.tsx",
+      "exports": [
+        "DashboardPreparation"
+      ],
+      "overlays": [],
+      "states": [
+        "error"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/interviews/interview-read-scope.tsx",
+      "exports": [
+        "InterviewReadScope",
+        "useAssignedInterviewRooms"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/interviews/interview-rooms-list.tsx",
+      "exports": [
+        "InterviewRoomsList"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "selected"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/interviews/my-panel-schedule.tsx",
+      "exports": [
+        "MyInterviewPanelSchedule"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/interviews/panel-preview-workspace.tsx",
+      "exports": [
+        "PanelPreviewWorkspace"
+      ],
+      "overlays": [
+        "Assignment rules",
+        "Interviewers ·",
+        "Assign despite availability?",
+        "Publication history",
+        "Schedule changes"
+      ],
+      "states": [
+        "loading",
+        "error",
+        "selected",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/interviews/panel-publication-history.tsx",
+      "exports": [
+        "PanelChangeList",
+        "PanelPublicationHistory"
+      ],
+      "overlays": [],
+      "states": [
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/interviews/pipeline-interview-status.tsx",
+      "exports": [
+        "PipelineInterviewStatus"
+      ],
+      "overlays": [],
+      "states": [
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/interviews/room-manager.tsx",
+      "exports": [
+        "RoomManager"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "selected",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/invitation-email-controls.tsx",
+      "exports": [
+        "InvitationEmailControls"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/invitation-profile-suggestions.tsx",
+      "exports": [
+        "InvitationProfileSuggestions"
+      ],
+      "overlays": [],
+      "states": [
+        "loading"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/invitation-response.tsx",
+      "exports": [
+        "InvitationResponse"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/invitation-schedules.tsx",
+      "exports": [
+        "InvitationScheduleComposer",
+        "InvitationSchedules"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "selected",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/landing/campus-backdrop.tsx",
+      "exports": [
+        "CampusBackdrop"
+      ],
+      "overlays": [],
+      "states": [
+        "loading"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/landing/feature-orbit.tsx",
+      "exports": [
+        "FeatureOrbit"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/landing/footer-controls.tsx",
+      "exports": [
+        "FooterAudienceLinks",
+        "FooterBackToTop"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/landing/hero-feature-stack.tsx",
+      "exports": [
+        "HeroFeatureStack"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/landing/interactive-footer-wordmark.tsx",
+      "exports": [
+        "InteractiveFooterWordmark"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/landing/journey-example-state.tsx",
+      "exports": [
+        "journeySample"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/landing/journey-scenes.tsx",
+      "exports": [
+        "JourneyScenePreview"
+      ],
+      "overlays": [],
+      "states": [
+        "selected"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/landing/landing-hero.tsx",
+      "exports": [
+        "LandingHero"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/landing/landing-intro.tsx",
+      "exports": [
+        "LandingIntro"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/landing/landing-navigation.tsx",
+      "exports": [
+        "LandingNavigation"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/landing/launch-clubs.tsx",
+      "exports": [
+        "LaunchClubs"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/landing/perspective-switcher.tsx",
+      "exports": [
+        "PerspectiveSwitcher"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/landing/product-motion.tsx",
+      "exports": [
+        "useDemoState",
+        "DemoPlaybackProvider",
+        "ProductMotion",
+        "ProductMotionControl",
+        "ProductDemoProgress",
+        "DemoCursor"
+      ],
+      "overlays": [],
+      "states": [
+        "selected",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/landing/product-stories.tsx",
+      "exports": [
+        "ProductJourney"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/landing/public-faq.tsx",
+      "exports": [
+        "PublicFaq"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/landing/public-footer.tsx",
+      "exports": [
+        "PublicFooter"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/landing/public-information-page.tsx",
+      "exports": [
+        "PublicInformationPage"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/landing/public-navigation.tsx",
+      "exports": [
+        "PublicNavigation"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/landing/rolling-navigation-label.tsx",
+      "exports": [
+        "RollingNavigationLabel"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/landing/school-request-form.tsx",
+      "exports": [
+        "SchoolRequestForm"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/landing/scroll-indicator.tsx",
+      "exports": [
+        "ScrollIndicator"
+      ],
+      "overlays": [],
+      "states": [
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/live-voting/board-decision-mode.tsx",
+      "exports": [
+        "BoardDecisionMode",
+        "VotingBoard"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "empty",
+        "error",
+        "selected",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/live-voting/live-voting-launcher.tsx",
+      "exports": [
+        "LiveVotingLauncher"
+      ],
+      "overlays": [
+        "Set the target. Start the discussion.",
+        "Local voting preview"
+      ],
+      "states": [
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/live-voting/member-voting-pad.tsx",
+      "exports": [
+        "MemberVotingPad"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/live-voting/mobile-join-screen.tsx",
+      "exports": [
+        "MobileJoinScreen"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/live-voting/proctor-presentation-view.tsx",
+      "exports": [
+        "ProctorPresentationView"
+      ],
+      "overlays": [
+        "End this voting session?"
+      ],
+      "states": [
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/live-voting/session-join.tsx",
+      "exports": [
+        "VotingSessionJoin"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/live-voting/voting-lobby.tsx",
+      "exports": [
+        "VotingLobby"
+      ],
+      "overlays": [],
+      "states": [
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/manager-overview.tsx",
+      "exports": [
+        "ManagerOverview"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "empty",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/meeting-group-invitation.tsx",
+      "exports": [
+        "MeetingGroupInvitation"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/meeting-workspace.tsx",
+      "exports": [
+        "MeetingList",
+        "MeetingCreateAction",
+        "MeetingDetail"
+      ],
+      "overlays": [
+        "Meeting details"
+      ],
+      "states": [
+        "loading",
+        "empty",
+        "error",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/member-group-builder.tsx",
+      "exports": [
+        "MemberGroupBuilder"
+      ],
+      "overlays": [],
+      "states": [
+        "empty",
+        "error",
+        "selected",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/member-overview.tsx",
+      "exports": [
+        "memberDate",
+        "MemberOverview",
+        "RecentRecaps"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/motion/scroll-motion.tsx",
+      "exports": [
+        "ScrollMotion",
+        "SectionReveal",
+        "TextReveal",
+        "PreviewReveal",
+        "StaggerReveal",
+        "DepthTransition",
+        "StickyStory",
+        "StatReveal"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/organization-invitation-card.tsx",
+      "exports": [
+        "OrganizationInvitationCard"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/organization-member-management.tsx",
+      "exports": [
+        "OrganizationMemberManagement"
+      ],
+      "overlays": [
+        "Bulk permissions",
+        ""
+      ],
+      "states": [
+        "loading",
+        "error",
+        "selected",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/organization-memberships.tsx",
+      "exports": [
+        "OrganizationMemberships"
+      ],
+      "overlays": [],
+      "states": [
+        "loading"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/organization-ownership-requests.tsx",
+      "exports": [
+        "OrganizationOwnershipRequests"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "empty",
+        "error",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/organization-setup-checklist.tsx",
+      "exports": [
+        "OrganizationSetupChecklist"
+      ],
+      "overlays": [],
+      "states": [
+        "loading"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/outclass-loading-screen.tsx",
+      "exports": [
+        "OutClassLoadingScreen"
+      ],
+      "overlays": [],
+      "states": [
+        "loading"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/outclass-logo.tsx",
+      "exports": [
+        "OutClassLogo"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/password-recovery.tsx",
+      "exports": [
+        "PasswordRecovery"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/personal-clubs.tsx",
+      "exports": [
+        "PersonalClubs"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "selected"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/platform-organization-onboarding.tsx",
+      "exports": [
+        "PlatformOrganizationOnboarding",
+        "OrganizationOnboardingForm"
+      ],
+      "overlays": [
+        "Create organization &amp; invite president"
+      ],
+      "states": [
+        "loading",
+        "error",
+        "selected",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/platform-view-banner.tsx",
+      "exports": [
+        "PlatformViewBanner"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/product/action-workflow.tsx",
+      "exports": [
+        "ActionWorkflow"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/product/campus-illustration.tsx",
+      "exports": [
+        "CampusIllustration"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/product/dashboard-drawer.tsx",
+      "exports": [
+        "DashboardDrawer"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/product/dashboard-presentation.tsx",
+      "exports": [
+        "DashboardDate",
+        "DashboardLoading"
+      ],
+      "overlays": [],
+      "states": [
+        "loading"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/product/design-patterns.tsx",
+      "exports": [
+        "DesignPatterns"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/product/metric-strip.tsx",
+      "exports": [
+        "MetricStrip"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/product/page-header.tsx",
+      "exports": [
+        "PageHeader"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/product/segmented-control.tsx",
+      "exports": [
+        "SegmentedControl"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/product/sort-label.tsx",
+      "exports": [
+        "SortLabel"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/profile-photo-crop.tsx",
+      "exports": [
+        "ProfilePhotoCrop"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/qr/leads-table.tsx",
+      "exports": [
+        "LeadsTable"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/qr/meeting-check-in.tsx",
+      "exports": [
+        "MeetingCheckIn"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "denied",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/qr/public-club-page.tsx",
+      "exports": [
+        "PublicClubPage"
+      ],
+      "overlays": [],
+      "states": [
+        "empty"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/qr/qr-code-card.tsx",
+      "exports": [
+        "QrCodeCard"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/recipient-audiences.tsx",
+      "exports": [
+        "AudienceEditor",
+        "AudiencePreview",
+        "RecipientGroups"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "selected",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/recruiting-overview.tsx",
+      "exports": [
+        "RecruitingOverview"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "empty",
+        "error",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/recruitment-attendance-summary.tsx",
+      "exports": [
+        "RecruitmentAttendanceSummary"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/recruitment-cycles.tsx",
+      "exports": [
+        "RecruitmentCycles",
+        "ApplicationCycleAssignment"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "selected",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/recruitment-review-settings.tsx",
+      "exports": [
+        "RecruitmentReviewSettings"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/resume-import-dialog.tsx",
+      "exports": [
+        "ResumeImportDialog"
+      ],
+      "overlays": [
+        "Import your résumé"
+      ],
+      "states": [
+        "error",
+        "selected",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/reveal-applicant.tsx",
+      "exports": [
+        "RevealApplicant"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/roster-csv-importer.tsx",
+      "exports": [
+        "RosterCsvImporter"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/route-content.tsx",
+      "exports": [
+        "RouteContent"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/selected-club-workspace.tsx",
+      "exports": [
+        "SelectedClubWorkspace"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "selected"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/settings/account-settings.tsx",
+      "exports": [
+        "AccountSettings"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/settings/personal-settings-layout.tsx",
+      "exports": [
+        "PersonalSettingsLayout"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/shell/authenticated-page-layout.tsx",
+      "exports": [],
+      "overlays": [],
+      "states": [
+        "error"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/shell/dock-brand.tsx",
+      "exports": [
+        "DockBrand"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/shell/expanding-dock.tsx",
+      "exports": [
+        "ExpandingDock"
+      ],
+      "overlays": [],
+      "states": [
+        "selected",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/shell/floating-header-controls.tsx",
+      "exports": [
+        "FloatingModeNavigation",
+        "FloatingSearchTrigger"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/shell/mobile-navigation.tsx",
+      "exports": [
+        "MobileNavigation"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/shell/navigation-search.tsx",
+      "exports": [
+        "NavigationSearch"
+      ],
+      "overlays": [
+        "Search OutClass"
+      ],
+      "states": [
+        "empty",
+        "error",
+        "selected",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/shell/navigation.tsx",
+      "exports": [
+        "ShellNavigation"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/shell/notification-center.tsx",
+      "exports": [
+        "NotificationCenter"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "empty",
+        "error",
+        "selected",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/shell/product-shell.tsx",
+      "exports": [
+        "ProductShell"
+      ],
+      "overlays": [
+        "Workspace navigation"
+      ],
+      "states": [
+        "loading",
+        "error",
+        "selected",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/shell/route-workspace-shell.tsx",
+      "exports": [
+        "RouteWorkspaceShell"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/shell/workspace-navigation.tsx",
+      "exports": [
+        "WorkspaceNavigation"
+      ],
+      "overlays": [],
+      "states": [
+        "selected"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/shell/workspace-selector.tsx",
+      "exports": [
+        "WorkspaceSelector"
+      ],
+      "overlays": [],
+      "states": [
+        "selected"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/status-badge.tsx",
+      "exports": [
+        "StatusBadge"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/support-session-sync.tsx",
+      "exports": [
+        "notifySupportSessionChanged",
+        "SupportSessionSync"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/tasks/dashboard-task.tsx",
+      "exports": [
+        "DashboardTask"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "selected",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/tasks/task-assignment-builder.tsx",
+      "exports": [
+        "TaskAssignmentBuilder"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "selected",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/tasks/task-audience-builder.tsx",
+      "exports": [
+        "TaskMemberList",
+        "TaskRecipientPreview",
+        "TaskAudienceBuilder"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "selected"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/tasks/task-manager-workspace.tsx",
+      "exports": [
+        "TaskManagerWorkspace"
+      ],
+      "overlays": [],
+      "states": [
+        "empty",
+        "error",
+        "selected",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/tasks/task-review-workspace.tsx",
+      "exports": [
+        "TaskReviewWorkspace"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/tutorial-walkthrough.tsx",
+      "exports": [
+        "TutorialWalkthrough"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/alert-dialog.tsx",
+      "exports": [],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/autosave-status.tsx",
+      "exports": [
+        "AutosaveStatus"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/avatar.tsx",
+      "exports": [],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/badge.tsx",
+      "exports": [],
+      "overlays": [],
+      "states": [
+        "error"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/button.tsx",
+      "exports": [],
+      "overlays": [],
+      "states": [
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/card.tsx",
+      "exports": [],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/checkbox.tsx",
+      "exports": [],
+      "overlays": [],
+      "states": [
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/collapsible.tsx",
+      "exports": [],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/command.tsx",
+      "exports": [],
+      "overlays": [],
+      "states": [
+        "empty",
+        "selected",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/dialog.tsx",
+      "exports": [],
+      "overlays": [],
+      "states": [
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/divider.tsx",
+      "exports": [],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/dropdown-menu.tsx",
+      "exports": [],
+      "overlays": [],
+      "states": [
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/empty-state.tsx",
+      "exports": [
+        "EmptyState"
+      ],
+      "overlays": [],
+      "states": [
+        "empty"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/empty.tsx",
+      "exports": [],
+      "overlays": [],
+      "states": [
+        "empty"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/icon-button.tsx",
+      "exports": [
+        "IconButton"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/input-otp.tsx",
+      "exports": [],
+      "overlays": [],
+      "states": [
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/input.tsx",
+      "exports": [],
+      "overlays": [],
+      "states": [
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/label.tsx",
+      "exports": [],
+      "overlays": [],
+      "states": [
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/loading-state.tsx",
+      "exports": [
+        "LoadingState"
+      ],
+      "overlays": [],
+      "states": [
+        "loading"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/native-select.tsx",
+      "exports": [
+        "NativeSelect",
+        "NativeSelectField"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/popover.tsx",
+      "exports": [],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/progress.tsx",
+      "exports": [],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/search.tsx",
+      "exports": [
+        "Search"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/section-heading.tsx",
+      "exports": [
+        "SectionHeading"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/select.tsx",
+      "exports": [],
+      "overlays": [],
+      "states": [
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/separator.tsx",
+      "exports": [],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/sheet.tsx",
+      "exports": [],
+      "overlays": [],
+      "states": [
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/skeleton.tsx",
+      "exports": [],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/slider.tsx",
+      "exports": [],
+      "overlays": [],
+      "states": [
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/sonner.tsx",
+      "exports": [],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/surface.tsx",
+      "exports": [
+        "Surface"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/switch.tsx",
+      "exports": [],
+      "overlays": [],
+      "states": [
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/table.tsx",
+      "exports": [],
+      "overlays": [],
+      "states": [
+        "selected"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/tabs.tsx",
+      "exports": [],
+      "overlays": [],
+      "states": [
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/textarea.tsx",
+      "exports": [],
+      "overlays": [],
+      "states": [
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/ui/tooltip.tsx",
+      "exports": [],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/views/application-tracker-view.tsx",
+      "exports": [
+        "ApplicationTrackerView"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "empty",
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/views/auth-view.tsx",
+      "exports": [
+        "AuthView"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/views/branding/color-picker.tsx",
+      "exports": [
+        "ColorPicker"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/views/calendar-view.tsx",
+      "exports": [
+        "CalendarView"
+      ],
+      "overlays": [
+        "Virginia Venture Fund interview"
+      ],
+      "states": [
+        "selected",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/views/club-management-portal-view.tsx",
+      "exports": [
+        "ClubManagementPortalView"
+      ],
+      "overlays": [
+        "Invite a new executive"
+      ],
+      "states": [
+        "error"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/views/club-manager/application-builder-view.tsx",
+      "exports": [
+        "ApplicationBuilderView"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/views/club-manager/broadcast-messages-view.tsx",
+      "exports": [
+        "BroadcastMessagesView"
+      ],
+      "overlays": [],
+      "states": [
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/views/club-manager/interview-pipeline-builder-view.tsx",
+      "exports": [
+        "InterviewPipelineBuilderView"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/views/club-profile-view.tsx",
+      "exports": [
+        "ClubProfileView"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/views/corkboard-view.tsx",
+      "exports": [
+        "CorkboardView"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/views/explore-view.tsx",
+      "exports": [
+        "ExploreView"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "empty",
+        "error",
+        "selected"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/views/inbox-view.tsx",
+      "exports": [
+        "InboxView"
+      ],
+      "overlays": [],
+      "states": [
+        "selected",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/views/interview-scheduler-view.tsx",
+      "exports": [
+        "InterviewSchedulerView"
+      ],
+      "overlays": [],
+      "states": [
+        "loading"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/views/interview-workspace-view.tsx",
+      "exports": [
+        "InterviewWorkspaceView"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/views/landing-page-view.tsx",
+      "exports": [
+        "LandingPageView"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/views/leader-dashboard-view.tsx",
+      "exports": [
+        "LeaderDashboardView"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "empty",
+        "error",
+        "selected",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/views/leader-dashboard/live-applicant-views.tsx",
+      "exports": [
+        "ApplicantInterview",
+        "LiveApplicantList",
+        "LiveApplicantKanban",
+        "LiveDecisionList"
+      ],
+      "overlays": [],
+      "states": [
+        "selected",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/views/leader-dashboard/live-leader-workspace.tsx",
+      "exports": [
+        "LiveLeaderWorkspace",
+        "ApplicantReviewPreview"
+      ],
+      "overlays": [
+        "",
+        "Update application status?"
+      ],
+      "states": [
+        "loading",
+        "error",
+        "selected",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/views/leader-dashboard/pipeline-view.tsx",
+      "exports": [
+        "PipelineView"
+      ],
+      "overlays": [],
+      "states": [],
+      "reviewed": false
+    },
+    {
+      "file": "components/views/leader-dashboard/speed-review-mode.tsx",
+      "exports": [
+        "SpeedReviewMode"
+      ],
+      "overlays": [],
+      "states": [
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/views/saved-clubs-view.tsx",
+      "exports": [
+        "SavedClubsView"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "empty",
+        "error",
+        "selected",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/views/scheduler/slot-card.tsx",
+      "exports": [
+        "SlotCard"
+      ],
+      "overlays": [],
+      "states": [
+        "empty"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/views/scheduler/student-booking-preview.tsx",
+      "exports": [
+        "StudentBookingPreview"
+      ],
+      "overlays": [],
+      "states": [
+        "error",
+        "selected",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/views/screening-dashboard-view.tsx",
+      "exports": [
+        "ScreeningDashboardView"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "empty",
+        "error",
+        "disabled",
+        "saving"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/views/student-dashboard-view.tsx",
+      "exports": [
+        "StudentDashboardView"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "empty"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/views/student-onboarding-wizard.tsx",
+      "exports": [
+        "StudentOnboardingWizard"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "selected",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/views/unified-student-profile-view.tsx",
+      "exports": [
+        "UnifiedStudentProfileView"
+      ],
+      "overlays": [],
+      "states": [
+        "loading",
+        "error",
+        "disabled"
+      ],
+      "reviewed": false
+    },
+    {
+      "file": "components/workspace-loading.tsx",
+      "exports": [
+        "WorkspaceLoading"
+      ],
+      "overlays": [],
+      "states": [
+        "loading"
+      ],
+      "reviewed": false
+    }
+  ],
+  "conditionalNavigationSources": [
+    {
+      "file": "lib/views.ts",
+      "keys": [
+        "student-dashboard",
+        "explore",
+        "corkboard",
+        "tracker",
+        "status",
+        "calendar",
+        "student-profile",
+        "leader-dashboard",
+        "interview-scheduler",
+        "interview-workspace",
+        "broadcast-messages",
+        "club-manager",
+        "landing",
+        "auth",
+        "student-onboarding",
+        "student-dashboard",
+        "explore",
+        "corkboard",
+        "tracker",
+        "inbox",
+        "calendar",
+        "leader-dashboard",
+        "screening-dashboard",
+        "interview-scheduler",
+        "interview-workspace",
+        "club-manager",
+        "club-management-portal"
+      ]
+    },
+    {
+      "file": "lib/product-navigation.ts",
+      "keys": [
+        "explore",
+        "apply",
+        "clubs",
+        "student-dashboard",
+        "calendar",
+        "inbox",
+        "student-profile",
+        "settings",
+        "explore",
+        "corkboard",
+        "applications",
+        "status",
+        "clubs",
+        "meetings",
+        "tasks",
+        "applications",
+        "status",
+        "explore"
+      ]
+    },
+    {
+      "file": "lib/club-workspace.ts",
+      "keys": [
+        "applicants",
+        "applicants",
+        "rounds",
+        "interviews",
+        "kits"
+      ]
+    },
+    {
+      "file": "lib/settings-navigation.ts",
+      "keys": [
+        "profile",
+        "account",
+        "notifications",
+        "organizations",
+        "availability"
+      ]
+    },
+    {
+      "file": "lib/admin-navigation.ts",
+      "keys": [
+        "overview",
+        "events",
+        "claims",
+        "school-requests",
+        "permissions",
+        "settings",
+        "audit"
+      ]
+    }
+  ]
+}

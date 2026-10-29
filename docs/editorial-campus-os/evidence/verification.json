@@ -1,0 +1,39 @@
+{
+  "referenceStates": 39,
+  "expandedStates": 79,
+  "referenceViolations": 0,
+  "expandedViolations": 0,
+  "expandedAxeScans": 11,
+  "browserErrors": 0,
+  "pageOverflow": 0,
+  "fullSuite": {
+    "passed": 1432,
+    "failed": 0,
+    "skipped": 45
+  },
+  "liveSuites": {
+    "writing": "passed",
+    "operations": "passed",
+    "settings": {
+      "passed": 11,
+      "failed": 0
+    }
+  },
+  "finalFocusedTests": {
+    "passed": 14,
+    "failed": 0
+  },
+  "lint": {
+    "errors": 0,
+    "existingWarnings": 21
+  },
+  "typecheck": "passed",
+  "productionBuild": "passed",
+  "migrations": {
+    "passed": 60,
+    "protectedTables": 79
+  },
+  "referenceMethod": "Exact Figma browser exports; editable-node MCP quota blocked",
+  "browser": "Chromium, actual local production build",
+  "deployment": "not performed"
+}

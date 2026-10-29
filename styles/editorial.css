@@ -1,0 +1,52 @@
+/* Campus OS compositions. Optical navigation and public artwork have separate owners. */
+.oc-page-header[data-density="editorial"] {
+  align-items: flex-end; padding-block: 1rem 1.75rem; margin-bottom: 1.75rem;
+  border-bottom: 1px solid var(--oc-editorial-rule);
+}
+.oc-page-header[data-density="editorial"] h1 {
+  font-size: var(--oc-editorial-display); line-height: 1.04; font-weight: 400;
+  letter-spacing: -.045em; margin-top: 1rem; overflow-wrap: anywhere; text-wrap: balance;
+}
+.oc-page-header[data-density="editorial"] h1 em { font-weight: 400; }
+.oc-page-header[data-density="editorial"] .oc-eyebrow, .oc-editorial-label {
+  color: var(--brand-ink); font-family: var(--oc-font-sans); font-size: .6875rem;
+  font-weight: 600; letter-spacing: .065em; line-height: 1.5; text-transform: uppercase;
+}
+.oc-page-header[data-density="editorial"] .oc-page-description { margin-top: 1.25rem; font-size: 1rem; line-height: 1.6; }
+.oc-featured-action {
+  position: relative; isolation: isolate; display: grid; grid-template-columns: minmax(0,1fr) auto;
+  align-items: end; gap: 1.5rem; padding: clamp(1.5rem,3vw,2.25rem);
+  border-radius: var(--oc-editorial-radius); background: var(--oc-rail); color: var(--oc-rail-text);
+  box-shadow: var(--oc-editorial-shadow); overflow-wrap: anywhere;
+}
+.oc-featured-action::before { content: ''; position: absolute; left: 0; top: 1.75rem; width: 5px; height: 4rem; border-radius: 4px; background: var(--brand-orange); }
+.oc-featured-action .oc-editorial-label { color: var(--oc-rail-muted); }
+.oc-featured-action h2 { max-width: 24ch; margin-top: .8rem; font-family: var(--oc-font-display); font-size: var(--oc-editorial-feature); font-weight: 400; line-height: 1.15; letter-spacing: -.025em; text-wrap: pretty; }
+.oc-featured-description { max-width: 62ch; margin-top: 1rem; color: var(--oc-rail-muted); font-size: .9375rem; line-height: 1.6; }
+.oc-featured-meta { margin-top: 1.25rem; padding-top: .75rem; border-top: 1px solid color-mix(in srgb,var(--oc-rail-muted) 28%,transparent); color: var(--oc-rail-muted); font-size: .75rem; }
+.oc-featured-action-control { min-width: 0; }
+.oc-featured-action-control > button { min-height: 44px; white-space: normal; background: var(--brand-subtle); color: var(--brand-ink); border-radius: 999px; padding-inline: 1.25rem; }
+.oc-featured-action-control > button:hover { background: var(--card); }
+.oc-featured-action-control > button:focus-visible { outline: 2px solid var(--oc-rail-text); outline-offset: 5px; }
+@media (max-width: 700px) {
+  .oc-page-header[data-density="editorial"] { padding-top: .5rem; padding-bottom: 1.25rem; margin-bottom: 1.25rem; }
+  .oc-page-header[data-density="editorial"] h1 { font-size: clamp(2.5rem,9vw,3.5rem); }
+  .oc-featured-action { grid-template-columns: minmax(0,1fr); gap: 1.25rem; border-radius: 1.125rem; }
+  .oc-featured-action h2 { font-size: clamp(1.75rem,6vw,2.25rem); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .oc-featured-action-control > button svg { transition: transform var(--oc-duration-micro) ease; }
+  .oc-featured-action-control > button:hover svg { transform: translateX(3px); }
+}
+
+/* Related workflows borrow the hierarchy at a scale appropriate to their work. */
+.oc-admin-editorial { grid-template-columns: minmax(0,1.65fr) minmax(0,1fr); column-gap: var(--oc-editorial-gap); }
+.oc-admin-editorial > .oc-page-header { grid-column: 1 / -1; }
+.oc-admin-attention.oc-content-panel { padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.oc-admin-attention .oc-panel-heading { padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.oc-admin-attention .oc-panel-heading h2 { font-family: var(--oc-font-display); font-weight: 400; font-size: var(--oc-editorial-section); }
+.oc-admin-editorial > [aria-label="Platform metrics"] { padding: 1.25rem; border-radius: var(--oc-editorial-radius); background: var(--oc-surface-blue); }
+.oc-admin-editorial .oc-metric-strip { grid-template-columns: minmax(0,1fr); margin: 0; gap: 0; }
+.oc-admin-editorial .oc-metric-strip > div { min-height: 3.75rem; padding: .75rem 0; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; background: transparent; box-shadow: none; }
+.oc-admin-editorial .oc-metric-strip > div:last-child { border-bottom: 0; }
+@media (max-width: 800px) { .oc-admin-editorial { grid-template-columns: minmax(0,1fr); } }

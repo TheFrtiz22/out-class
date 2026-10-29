@@ -145,7 +145,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
   return (
     <div className="oc-discovery" data-explore-section={section} ref={resultsRef}>
       <div className="oc-explore-heading">
-        <PageHeader title="Discover clubs" action={<SavedClubsPopover onNavigate={onNavigate} />} />
+        <PageHeader density="expressive" eyebrow="Find your people" title="Discover clubs" description="Follow your interests. Make room for something new." action={<SavedClubsPopover onNavigate={onNavigate} />} />
       </div>
       <div className="oc-directory-search">
         <Search size={20} aria-hidden="true" />
@@ -190,7 +190,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
       )}
       <div className="oc-directory-recruitment" role="group" aria-label="Recruitment availability">{[{ value: "all", label: "All clubs" }, { value: "open", label: "Applications open" }, { value: "closed", label: "Not currently open" }, { value: "closing", label: "Closing soon" }].map(option => <button type="button" key={option.value} aria-pressed={filters.recruitment === option.value} onClick={() => change("recruitment", option.value)}>{option.label}<span>{recruitmentCounts[option.value as keyof typeof recruitmentCounts]}</span></button>)}</div>
       <p className="my-3 text-xs leading-5 text-muted-foreground">Availability reflects applications on OutClass. Check each club’s website for external recruitment.</p>
-      <div className="oc-directory-tools">
+      <div className="oc-directory-tools oc-toolbar">
         <details>
 
           <summary>

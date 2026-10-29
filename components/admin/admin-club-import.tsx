@@ -51,7 +51,7 @@ export function AdminClubImport({ schoolId, onComplete }: { schoolId: string; on
     } catch (e) { setPlan([]); setError(`${e instanceof Error ? e.message : 'Import stopped.'} Earlier completed clubs are preserved. Select the package again to review current state before retrying.`) }
     finally { setBusy(false) }
   }
-  return <details className="rounded-xl border bg-card p-5"><summary className="cursor-pointer font-semibold">Import researched club profiles</summary><div className="mt-5 space-y-4">
+  return <details className="oc-content-panel"><summary className="cursor-pointer font-semibold">Import researched club profiles</summary><div className="mt-5 space-y-4">
     <p className="text-sm text-muted-foreground">Review a JSON profile package and its local images. Creates or updates public profiles in this school; new clubs start with applications closed and existing recruitment settings stay unchanged. Existing memberships, applicants and history are preserved. Each upload and save requires fresh Admin verification.</p>
     <label className="block space-y-2 text-sm">Profile JSON<Input type="file" accept="application/json,.json" disabled={busy} onChange={e => { void review(e.target.files?.[0]); e.target.value = '' }} /></label>
     <label className="block space-y-2 text-sm">Profile images<Input type="file" multiple accept="image/png,image/jpeg,image/webp" disabled={busy} onChange={e => setImages(Array.from(e.target.files || []))} /></label>

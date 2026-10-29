@@ -5,7 +5,7 @@ import { OutClassLogo } from "@/components/outclass-logo"
 import { Button } from "@/components/ui/button"
 
 export default function ErrorPage({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
-  return <main className="mx-auto flex min-h-[80dvh] max-w-xl flex-col justify-center px-6 py-16">
+  return <main data-workspace-detail className="mx-auto flex min-h-[80dvh] max-w-xl flex-col justify-center px-6 py-16">
     <Link href="/" aria-label="OutClass home" className="mb-12 w-fit"><OutClassLogo /></Link>
     <h1 className="oc-page-title ">We couldn’t load this page.</h1>
     <p role="alert" className="mt-4 text-sm leading-relaxed text-muted-foreground">Please try again. If the problem continues, return to OutClass and reopen the page.</p>

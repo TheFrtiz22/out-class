@@ -120,11 +120,11 @@ export function ClubSettingsWorkspace({
           </Link>
         ))}
       </nav>
-      <Link href="/settings" className="mt-6 flex min-h-14 w-full items-center justify-between gap-2 rounded-lg border border-primary/20 bg-card px-3 py-3 text-sm font-semibold text-primary hover:bg-secondary focus-visible:outline-2 focus-visible:outline-ring" onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Switch to Personal settings <ArrowUpRight aria-hidden="true" size={18} /></Link>
+      <Link href="/settings" className="oc-settings-personal-link" onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Switch to Personal settings <ArrowUpRight aria-hidden="true" size={18} /></Link>
       </aside>
-      <div className="min-w-0" data-saving={busy}>
+      <div className="oc-workspace-stack" data-saving={busy}>
         {error && (
-          <p role="alert" className="mb-4 text-sm text-destructive">
+          <p role="alert" className="oc-feedback mb-4">
             {error}
           </p>
         )}
@@ -137,7 +137,7 @@ export function ClubSettingsWorkspace({
           <div hidden={active !== "general"}>
             <ClubProfileSettings clubId={clubId} onSaved={onSaved} />
             {!demo.isDemoEnabled && (
-              <section className="mt-6 border-t pt-5">
+              <section className="oc-form-section mt-6">
                 <h2 className="oc-section-heading">Profile visibility</h2>
                 <label className="mt-3 inline-flex min-h-11 items-center gap-3 text-sm">
                   <input

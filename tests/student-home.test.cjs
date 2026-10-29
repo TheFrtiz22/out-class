@@ -151,3 +151,13 @@ test("updates prioritize unread urgent messages without mutating inbox order", (
   )
   assert.equal(rows[0].id, "read")
 })
+
+test("urgent unread updates become the next action without displacing an imminent appointment", () => {
+  const notification = {id:"urgent",title:"Booking opens",body:"Choose a time",urgent:true,read:false,createdAt:now.toISOString()}
+  const drafts = homeApplications([app()], [], [])
+  assert.equal(nextHomeAction(drafts, [], now, [notification]).kind, "notification")
+  assert.equal(nextHomeAction(drafts, [], now, [{...notification, read:true}]).kind, "application")
+  assert.equal(nextHomeAction([], [], now, [notification]).notification.id, "urgent")
+  const imminent = event("soon", "2026-09-21", "11:00 AM")
+  assert.equal(nextHomeAction(drafts, [imminent], now, [notification]).kind, "event")
+})

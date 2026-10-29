@@ -1,0 +1,50 @@
+/* Explicit composition recipes. Apply at the owning screen; no navigation overrides. */
+.oc-workspace-stack { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: var(--oc-content-gap); min-width: 0; }
+.oc-content-panel { min-width: 0; padding: var(--oc-content-padding); border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); }
+.oc-panel-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; margin-bottom: 1rem; }
+.oc-panel-heading h2, .oc-form-section h2 { font-size: var(--oc-text-card); font-weight: 600; line-height: 1.4; letter-spacing: -.015em; }
+.oc-panel-heading p, .oc-form-section > p { margin-top: .35rem; max-width: 42rem; color: var(--muted-foreground); font-size: var(--oc-text-small); line-height: 1.6; }
+.oc-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; min-width: 0; padding: .875rem 1rem; border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius-small); background: var(--oc-content-surface); }
+.oc-toolbar > :is(label,div) { min-width: 0; }
+.oc-toolbar > input { flex: 1 1 15rem; min-width: 0; }
+.oc-toolbar label { display: grid; grid-template-columns: minmax(0, 1fr); gap: .375rem; font-size: var(--oc-text-small); font-weight: 500; }
+.oc-toolbar label:has([type="checkbox"], [role="checkbox"]) { display: flex; align-items: center; min-height: 2.75rem; }
+.oc-form-section { min-width: 0; display: grid; gap: 1rem; padding: var(--oc-content-padding); border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); background: var(--oc-content-surface); }
+.oc-form-section > label, .oc-field { display: grid; min-width: 0; gap: .5rem; font-size: var(--oc-text-small); font-weight: 500; }
+.oc-field > :is(p,small), .oc-form-section label > :is(p,small) { font-weight: 400; color: var(--muted-foreground); }
+.oc-form-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .75rem; padding-block: 1rem; border-top: 1px solid var(--oc-content-edge); }
+.oc-data-surface { min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); }
+.oc-data-surface table { width: 100%; font-size: var(--oc-text-small); font-variant-numeric: tabular-nums; text-align: left; }
+.oc-data-surface thead { background: var(--oc-content-soft); }
+.oc-data-surface th { height: 2.75rem; color: var(--muted-foreground); font-size: var(--oc-text-caption); font-weight: 600; }
+.oc-data-surface :is(th,td) { padding: .875rem 1rem; vertical-align: middle; }
+.oc-data-surface tbody tr + tr { border-top: 1px solid var(--oc-content-edge); }
+.oc-data-surface tbody tr:hover { background: var(--oc-content-soft); }
+.oc-data-surface tbody tr:focus-within { background: var(--oc-content-soft-blue); }
+.oc-feedback { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; padding: .875rem 1rem; border: 1px solid var(--border); border-inline-start: 3px solid var(--info); border-radius: var(--oc-content-radius-small); background: var(--info-subtle); font-size: var(--oc-text-small); line-height: 1.6; overflow-wrap: anywhere; }
+.oc-feedback[role="alert"] { border-inline-start-color: var(--destructive); background: var(--error-subtle); color: var(--destructive); }
+.oc-detail-panel { min-width: 0; border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); overflow-wrap: anywhere; }
+.oc-detail-panel > header { padding: var(--oc-content-padding); border-bottom: 1px solid var(--oc-content-edge); }
+/* Headers reserve the close target; Radix continues to own focus and dismissal. */
+[data-slot="dialog-content"][data-close-button]:not(.oc-navigation-search) > :is([data-slot="dialog-header"], [data-slot="dialog-title"]) { padding-inline-end: 2.75rem; }
+[data-slot="dialog-content"] > [data-slot="dialog-description"] { max-width: 44rem; }
+[data-slot="dialog-content"] > [data-slot="dialog-footer"] { padding-top: 1rem; border-top: 1px solid var(--border); }
+.oc-workspace-stack [data-slot="tabs"] { min-width: 0; gap: 1rem; }
+@media (max-width: 767px) {
+  .oc-toolbar { padding: .75rem; gap: .625rem; }
+  .oc-toolbar > input { flex-basis: 100%; }
+  .oc-toolbar > label { flex: 1 1 8rem; }
+  .oc-workspace-stack [data-slot="tabs-trigger"], .oc-segmented-control button { min-height: 2.75rem; }
+  .oc-form-actions > [data-slot="button"] { flex: 1 1 auto; }
+}
+@media (forced-colors: active) {
+  .oc-content-panel, .oc-form-section, .oc-toolbar, .oc-data-surface, .oc-detail-panel, .oc-feedback { border-color: CanvasText; box-shadow: none; }
+  .oc-data-surface tr:focus-within { outline: 2px solid Highlight; outline-offset: -2px; }
+}
+
+/* Content alignment is independent of the floating navigation reservation. */
+[data-product-shell] main.oc-workspace-content { max-width: var(--oc-content-width); }
+
+.oc-workspace-stack[hidden], .oc-content-panel[hidden], .oc-form-section[hidden] { display: none; }
+
+.oc-standalone-workspace { min-width: 0; width: 100%; max-width: var(--oc-content-width); margin-inline: auto; padding: clamp(1.25rem, 3vw, 2.5rem) var(--oc-space-page); }

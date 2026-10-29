@@ -28,8 +28,8 @@ function TabsList({
       data-slot="tabs-list"
       data-variant={variant}
       className={cn(
-        'group/tabs text-muted-foreground inline-flex h-9 w-fit items-center justify-center',
-        variant === 'underline' ? 'gap-4 rounded-none border-b border-border bg-transparent p-0' : 'rounded-md bg-muted p-[3px]',
+        'group/tabs text-muted-foreground inline-flex min-h-10 w-fit max-w-full items-center justify-start overflow-x-auto',
+        variant === 'underline' ? 'gap-4 rounded-none border-b border-border bg-transparent p-0' : 'gap-1 rounded-full bg-muted p-[3px]',
         className,
       )}
       {...props}
@@ -45,7 +45,7 @@ function TabsTrigger({
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
       className={cn(
-        "data-[state=active]:bg-background dark:data-[state=active]:text-foreground focus-visible:border-ring focus-visible:ring-ring focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,background-color,border-color,box-shadow] motion-micro focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-none group-data-[variant=underline]/tabs:rounded-none group-data-[variant=underline]/tabs:border-0 group-data-[variant=underline]/tabs:border-b-2 group-data-[variant=underline]/tabs:bg-transparent group-data-[variant=underline]/tabs:px-0 group-data-[variant=underline]/tabs:data-[state=active]:border-primary [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "data-[state=active]:bg-background dark:data-[state=active]:text-foreground focus-visible:border-ring focus-visible:ring-ring focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground inline-flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-full border border-transparent px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-[color,background-color,border-color,box-shadow] motion-micro focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-none group-data-[variant=underline]/tabs:rounded-none group-data-[variant=underline]/tabs:border-0 group-data-[variant=underline]/tabs:border-b-2 group-data-[variant=underline]/tabs:bg-transparent group-data-[variant=underline]/tabs:px-0 group-data-[variant=underline]/tabs:data-[state=active]:border-primary [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       {...props}

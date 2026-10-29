@@ -22,7 +22,7 @@ export function InvitationProfileSuggestions({ enabled, onDefaults }: { enabled:
   if (failed) return <div className="mb-5 space-y-2 rounded-xl border p-4"><p className="text-sm text-muted-foreground">Could not check invitation details. You can complete your profile now; invitations require a verified university email.</p><Button variant="ghost" onClick={() => setAttempt(value => value + 1)}>Retry profile suggestions</Button></div>;
   if (!invitations.length) return null;
   const owners = invitations.filter(invitation => invitation.requestedRole === 'OWNER');
-  return <section className="mb-6 space-y-3 rounded-xl border bg-card p-4 sm:p-5" aria-label="Welcome to your organizations">
+  return <section className="oc-content-panel mb-6 space-y-3 sm:p-5" aria-label="Welcome to your organizations">
     {owners.length ? owners.map(invitation => <p key={invitation.id} className="font-medium">You’re the designated administrator for {invitation.club.name}.</p>) : <p className="font-medium">Your organizations are waiting for you.</p>}
     <p className="text-sm leading-6 text-muted-foreground">We’ve used available invitation details to suggest your name and graduation year. Review and edit them below, then complete your profile. Your pending invitations will be ready afterward{owners.length ? ', with a Claim organization button for your administrator requests' : ''}.</p>
   </section>;

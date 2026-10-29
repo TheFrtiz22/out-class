@@ -1,0 +1,863 @@
+[
+  {
+    "screen": "home",
+    "width": 1440,
+    "height": 900,
+    "errors": [],
+    "geometry": {
+      "viewport": 1440,
+      "width": 1440,
+      "headings": [
+        "Your campus,in motion.",
+        "Pick up where you left off.",
+        "Your applications",
+        "Coming up",
+        "Updates for you"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "home",
+    "width": 1280,
+    "height": 800,
+    "errors": [],
+    "geometry": {
+      "viewport": 1280,
+      "width": 1280,
+      "headings": [
+        "Your campus,in motion.",
+        "Pick up where you left off.",
+        "Your applications",
+        "Coming up",
+        "Updates for you"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "home",
+    "width": 1024,
+    "height": 768,
+    "errors": [],
+    "geometry": {
+      "viewport": 1024,
+      "width": 1024,
+      "headings": [
+        "Your campus,in motion.",
+        "Pick up where you left off.",
+        "Your applications",
+        "Coming up",
+        "Updates for you"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "home",
+    "width": 768,
+    "height": 1024,
+    "errors": [],
+    "geometry": {
+      "viewport": 768,
+      "width": 768,
+      "headings": [
+        "Your campus,in motion.",
+        "Pick up where you left off.",
+        "Your applications",
+        "Coming up",
+        "Updates for you"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "home",
+    "width": 390,
+    "height": 844,
+    "errors": [],
+    "geometry": {
+      "viewport": 390,
+      "width": 390,
+      "headings": [
+        "Your campus,in motion.",
+        "Pick up where you left off.",
+        "Your applications",
+        "Coming up",
+        "Updates for you"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "home",
+    "width": 320,
+    "height": 844,
+    "errors": [],
+    "geometry": {
+      "viewport": 320,
+      "width": 320,
+      "headings": [
+        "Your campus,in motion.",
+        "Pick up where you left off.",
+        "Your applications",
+        "Coming up",
+        "Updates for you"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "recruitment",
+    "width": 1440,
+    "height": 900,
+    "errors": [],
+    "geometry": {
+      "viewport": 1440,
+      "width": 1440,
+      "headings": [
+        "Recruitment,in focus.",
+        "1 review is ready for you",
+        "Current pipeline",
+        "Booking follow-up",
+        "Your review queue 1",
+        "Voting & decisions",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "recruitment",
+    "width": 1280,
+    "height": 800,
+    "errors": [],
+    "geometry": {
+      "viewport": 1280,
+      "width": 1280,
+      "headings": [
+        "Recruitment,in focus.",
+        "1 review is ready for you",
+        "Current pipeline",
+        "Booking follow-up",
+        "Your review queue 1",
+        "Voting & decisions",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "recruitment",
+    "width": 1024,
+    "height": 768,
+    "errors": [],
+    "geometry": {
+      "viewport": 1024,
+      "width": 1024,
+      "headings": [
+        "Recruitment,in focus.",
+        "1 review is ready for you",
+        "Current pipeline",
+        "Booking follow-up",
+        "Your review queue 1",
+        "Voting & decisions",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "recruitment",
+    "width": 768,
+    "height": 1024,
+    "errors": [],
+    "geometry": {
+      "viewport": 768,
+      "width": 768,
+      "headings": [
+        "Recruitment,in focus.",
+        "1 review is ready for you",
+        "Current pipeline",
+        "Booking follow-up",
+        "Your review queue 1",
+        "Voting & decisions",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "recruitment",
+    "width": 390,
+    "height": 844,
+    "errors": [],
+    "geometry": {
+      "viewport": 390,
+      "width": 390,
+      "headings": [
+        "Recruitment,in focus.",
+        "1 review is ready for you",
+        "Current pipeline",
+        "Booking follow-up",
+        "Your review queue 1",
+        "Voting & decisions",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "recruitment",
+    "width": 320,
+    "height": 844,
+    "errors": [],
+    "geometry": {
+      "viewport": 320,
+      "width": 320,
+      "headings": [
+        "Recruitment,in focus.",
+        "1 review is ready for you",
+        "Current pipeline",
+        "Booking follow-up",
+        "Your review queue 1",
+        "Voting & decisions",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "empty-home",
+    "width": 1440,
+    "height": 900,
+    "errors": [],
+    "geometry": {
+      "viewport": 1440,
+      "width": 1440,
+      "headings": [
+        "Your campus,in motion.",
+        "Open project showcase",
+        "Your applications",
+        "Coming up",
+        "Updates for you"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "empty-home",
+    "width": 390,
+    "height": 844,
+    "errors": [],
+    "geometry": {
+      "viewport": 390,
+      "width": 390,
+      "headings": [
+        "Your campus,in motion.",
+        "Open project showcase",
+        "Your applications",
+        "Coming up",
+        "Updates for you"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "empty-home",
+    "width": 320,
+    "height": 844,
+    "errors": [],
+    "geometry": {
+      "viewport": 320,
+      "width": 320,
+      "headings": [
+        "Your campus,in motion.",
+        "Open project showcase",
+        "Your applications",
+        "Coming up",
+        "Updates for you"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "assigned-recruitment",
+    "width": 1440,
+    "height": 900,
+    "errors": [],
+    "geometry": {
+      "viewport": 1440,
+      "width": 1440,
+      "headings": [
+        "Recruitment,in focus.",
+        "2 reviews are ready for you",
+        "Current pipeline",
+        "Booking follow-up",
+        "Your review queue 2",
+        "Voting & decisions",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "applicant",
+    "width": 1440,
+    "height": 900,
+    "errors": [],
+    "identifiedLongResponseVerified": true,
+    "geometry": {
+      "viewport": 1440,
+      "width": 1440,
+      "headings": [
+        "Recruitment,in focus.",
+        "2 reviews are ready for you",
+        "Current pipeline",
+        "Booking follow-up",
+        "Your review queue 2",
+        "Voting & decisions",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage",
+        "Alex Sample 1"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "assigned-recruitment",
+    "width": 1280,
+    "height": 800,
+    "errors": [],
+    "geometry": {
+      "viewport": 1280,
+      "width": 1280,
+      "headings": [
+        "Recruitment,in focus.",
+        "2 reviews are ready for you",
+        "Current pipeline",
+        "Booking follow-up",
+        "Your review queue 2",
+        "Voting & decisions",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "applicant",
+    "width": 1280,
+    "height": 800,
+    "errors": [],
+    "identifiedLongResponseVerified": true,
+    "geometry": {
+      "viewport": 1280,
+      "width": 1280,
+      "headings": [
+        "Recruitment,in focus.",
+        "2 reviews are ready for you",
+        "Current pipeline",
+        "Booking follow-up",
+        "Your review queue 2",
+        "Voting & decisions",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage",
+        "Alex Sample 1"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "assigned-recruitment",
+    "width": 1024,
+    "height": 768,
+    "errors": [],
+    "geometry": {
+      "viewport": 1024,
+      "width": 1024,
+      "headings": [
+        "Recruitment,in focus.",
+        "2 reviews are ready for you",
+        "Current pipeline",
+        "Booking follow-up",
+        "Your review queue 2",
+        "Voting & decisions",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "applicant",
+    "width": 1024,
+    "height": 768,
+    "errors": [],
+    "identifiedLongResponseVerified": true,
+    "geometry": {
+      "viewport": 1024,
+      "width": 1024,
+      "headings": [
+        "Recruitment,in focus.",
+        "2 reviews are ready for you",
+        "Current pipeline",
+        "Booking follow-up",
+        "Your review queue 2",
+        "Voting & decisions",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage",
+        "Alex Sample 1"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "assigned-recruitment",
+    "width": 768,
+    "height": 1024,
+    "errors": [],
+    "geometry": {
+      "viewport": 768,
+      "width": 768,
+      "headings": [
+        "Recruitment,in focus.",
+        "2 reviews are ready for you",
+        "Current pipeline",
+        "Booking follow-up",
+        "Your review queue 2",
+        "Voting & decisions",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "applicant",
+    "width": 768,
+    "height": 1024,
+    "errors": [],
+    "identifiedLongResponseVerified": true,
+    "geometry": {
+      "viewport": 768,
+      "width": 768,
+      "headings": [
+        "Recruitment,in focus.",
+        "2 reviews are ready for you",
+        "Current pipeline",
+        "Booking follow-up",
+        "Your review queue 2",
+        "Voting & decisions",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage",
+        "Alex Sample 1"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "assigned-recruitment",
+    "width": 390,
+    "height": 844,
+    "errors": [],
+    "geometry": {
+      "viewport": 390,
+      "width": 390,
+      "headings": [
+        "Recruitment,in focus.",
+        "2 reviews are ready for you",
+        "Current pipeline",
+        "Booking follow-up",
+        "Your review queue 2",
+        "Voting & decisions",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "applicant",
+    "width": 390,
+    "height": 844,
+    "errors": [],
+    "identifiedLongResponseVerified": true,
+    "geometry": {
+      "viewport": 390,
+      "width": 390,
+      "headings": [
+        "Recruitment,in focus.",
+        "2 reviews are ready for you",
+        "Current pipeline",
+        "Booking follow-up",
+        "Your review queue 2",
+        "Voting & decisions",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage",
+        "Alex Sample 1"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "assigned-recruitment",
+    "width": 320,
+    "height": 844,
+    "errors": [],
+    "geometry": {
+      "viewport": 320,
+      "width": 320,
+      "headings": [
+        "Recruitment,in focus.",
+        "2 reviews are ready for you",
+        "Current pipeline",
+        "Booking follow-up",
+        "Your review queue 2",
+        "Voting & decisions",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "applicant",
+    "width": 320,
+    "height": 844,
+    "errors": [],
+    "identifiedLongResponseVerified": true,
+    "geometry": {
+      "viewport": 320,
+      "width": 320,
+      "headings": [
+        "Recruitment,in focus.",
+        "2 reviews are ready for you",
+        "Current pipeline",
+        "Booking follow-up",
+        "Your review queue 2",
+        "Voting & decisions",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage",
+        "Alex Sample 1"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "anonymous-recruitment",
+    "width": 1440,
+    "height": 900,
+    "errors": [],
+    "geometry": {
+      "viewport": 1440,
+      "width": 1440,
+      "headings": [
+        "Recruitment,in focus.",
+        "1 review is ready for you",
+        "Current pipeline",
+        "Your review queue 1",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "anonymous-applicant",
+    "width": 1440,
+    "height": 900,
+    "errors": [],
+    "anonymityVerified": true,
+    "geometry": {
+      "viewport": 1440,
+      "width": 1440,
+      "headings": [
+        "Recruitment,in focus.",
+        "1 review is ready for you",
+        "Current pipeline",
+        "Your review queue 1",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage",
+        "Applicant 65B842F730"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "anonymous-recruitment",
+    "width": 1280,
+    "height": 800,
+    "errors": [],
+    "geometry": {
+      "viewport": 1280,
+      "width": 1280,
+      "headings": [
+        "Recruitment,in focus.",
+        "1 review is ready for you",
+        "Current pipeline",
+        "Your review queue 1",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "anonymous-applicant",
+    "width": 1280,
+    "height": 800,
+    "errors": [],
+    "anonymityVerified": true,
+    "geometry": {
+      "viewport": 1280,
+      "width": 1280,
+      "headings": [
+        "Recruitment,in focus.",
+        "1 review is ready for you",
+        "Current pipeline",
+        "Your review queue 1",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage",
+        "Applicant 65B842F730"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "anonymous-recruitment",
+    "width": 1024,
+    "height": 768,
+    "errors": [],
+    "geometry": {
+      "viewport": 1024,
+      "width": 1024,
+      "headings": [
+        "Recruitment,in focus.",
+        "1 review is ready for you",
+        "Current pipeline",
+        "Your review queue 1",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "anonymous-applicant",
+    "width": 1024,
+    "height": 768,
+    "errors": [],
+    "anonymityVerified": true,
+    "geometry": {
+      "viewport": 1024,
+      "width": 1024,
+      "headings": [
+        "Recruitment,in focus.",
+        "1 review is ready for you",
+        "Current pipeline",
+        "Your review queue 1",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage",
+        "Applicant 65B842F730"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "anonymous-recruitment",
+    "width": 768,
+    "height": 1024,
+    "errors": [],
+    "geometry": {
+      "viewport": 768,
+      "width": 768,
+      "headings": [
+        "Recruitment,in focus.",
+        "1 review is ready for you",
+        "Current pipeline",
+        "Your review queue 1",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "anonymous-applicant",
+    "width": 768,
+    "height": 1024,
+    "errors": [],
+    "anonymityVerified": true,
+    "geometry": {
+      "viewport": 768,
+      "width": 768,
+      "headings": [
+        "Recruitment,in focus.",
+        "1 review is ready for you",
+        "Current pipeline",
+        "Your review queue 1",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage",
+        "Applicant 65B842F730"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "anonymous-recruitment",
+    "width": 390,
+    "height": 844,
+    "errors": [],
+    "geometry": {
+      "viewport": 390,
+      "width": 390,
+      "headings": [
+        "Recruitment,in focus.",
+        "1 review is ready for you",
+        "Current pipeline",
+        "Your review queue 1",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "anonymous-applicant",
+    "width": 390,
+    "height": 844,
+    "errors": [],
+    "anonymityVerified": true,
+    "geometry": {
+      "viewport": 390,
+      "width": 390,
+      "headings": [
+        "Recruitment,in focus.",
+        "1 review is ready for you",
+        "Current pipeline",
+        "Your review queue 1",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage",
+        "Applicant 65B842F730"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "anonymous-recruitment",
+    "width": 320,
+    "height": 844,
+    "errors": [],
+    "geometry": {
+      "viewport": 320,
+      "width": 320,
+      "headings": [
+        "Recruitment,in focus.",
+        "1 review is ready for you",
+        "Current pipeline",
+        "Your review queue 1",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  },
+  {
+    "screen": "anonymous-applicant",
+    "width": 320,
+    "height": 844,
+    "errors": [],
+    "anonymityVerified": true,
+    "geometry": {
+      "viewport": 320,
+      "width": 320,
+      "headings": [
+        "Recruitment,in focus.",
+        "1 review is ready for you",
+        "Current pipeline",
+        "Your review queue 1",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage",
+        "Applicant 65B842F730"
+      ]
+    },
+    "overflow": false,
+    "axe": []
+  }
+]

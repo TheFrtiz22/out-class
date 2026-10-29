@@ -1,0 +1,22 @@
+{
+  "applications": 1200,
+  "rounds": 6,
+  "queue": 12,
+  "bytes": 4286,
+  "localReadMs": 63,
+  "screens": [
+    {
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "overflow": false
+    },
+    {
+      "width": 320,
+      "overflow": false
+    }
+  ],
+  "keyboardRoundFilter": true
+}

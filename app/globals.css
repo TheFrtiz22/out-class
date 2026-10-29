@@ -7,6 +7,8 @@
 @import "../styles/product-workflows.css";
 @import "../styles/loading.css";
 @import "../styles/interface-primitives.css";
+@import "../styles/workspace-composition.css";
+@import "../styles/editorial.css";
 @import "../styles/navigation-glass.css";
 @config "../tailwind.config.js";
 

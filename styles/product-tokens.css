@@ -55,10 +55,18 @@
   --oc-rail-text: #f6f5f1;
   --oc-rail-muted: #b0c1cc;
   --oc-rail-selected: #2a4156;
+  --oc-rail-rule: #3c5365;
+  --oc-field-muted: var(--muted-foreground);
+  --oc-field-rule: var(--border);
   --oc-surface-blue: #eaf0f2;
   --oc-surface-sage: #e9efe8;
   --oc-surface-lilac: #efedf3;
   --oc-surface-warm: #f4ede1;
+  /* Shared content material: intentionally quieter than the optical navigation. */
+  --oc-content-surface: #fffefa;
+  --oc-content-soft: #f1f4f3;
+  --oc-content-soft-blue: #eaf0f2;
+  --oc-content-edge: #e0e5e3;
   --oc-control-height: 2.5rem;
   --oc-shell-rail-width: 15.5rem;
   --oc-shell-header-height: 4rem;

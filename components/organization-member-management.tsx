@@ -497,7 +497,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 </span>
               </div>
             )}
-            <div className="min-w-0 overflow-x-auto rounded-md border">
+            <div className="oc-data-surface">
               <table className={onboardingTable.table}>
                 <caption className="sr-only">
                   Organization members and invitations

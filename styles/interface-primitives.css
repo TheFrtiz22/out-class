@@ -19,7 +19,7 @@
 .oc-empty-state[data-density="compact"] { padding-block: var(--oc-space-content); }
 .oc-empty-state[data-align="center"] { align-items: center; text-align: center; }
 .oc-empty-state[data-align="start"] { align-items: flex-start; text-align: left; }
-.oc-empty-state[data-tone="subtle"], .oc-empty-state[data-tone="outlined"] { padding-inline: var(--oc-space-content); border-radius: var(--oc-radius-lg); }
+.oc-empty-state[data-tone="subtle"], .oc-empty-state[data-tone="outlined"] { padding-inline: var(--oc-space-content); border-radius: var(--oc-content-radius); }
 .oc-empty-state[data-tone="subtle"] { background: var(--muted); }
 .oc-empty-state[data-tone="outlined"] { border: 1px solid var(--border); background: var(--card); }
 .oc-loading-state { display: grid; gap: var(--oc-space-content); padding-block: 1rem; min-width: 0; }
@@ -41,6 +41,16 @@
 .oc-native-select-field:has(select:disabled) .oc-native-select-caret { opacity: .5; }
 
 .oc-native-select-field > select:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+
+/* The mobile target is 44px; the checkmark box stays square. Scope to content,
+   leaving notification-center and navigation controls on their own layer. */
+:is(.oc-workspace-content, [data-workspace-detail], .oc-workspace-drawer) button[data-slot="checkbox"] {
+  position: relative; min-width: 1rem; min-height: 1rem; width: 1rem; height: 1rem;
+}
+@media (max-width: 767px) {
+  :is(.oc-workspace-content, [data-workspace-detail], .oc-workspace-drawer) label:has([data-slot="checkbox"]) { min-height: 2.75rem; }
+  :is(.oc-workspace-content, [data-workspace-detail], .oc-workspace-drawer) button[data-slot="checkbox"]::after { content: ""; position: absolute; inset: -.875rem; }
+}
 
 
 /* Contextual loading: recognizable page geometry, not a blank status paragraph.

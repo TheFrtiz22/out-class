@@ -34,7 +34,7 @@ export function PersonalSettingsLayout({ children }: { children: ReactNode }) {
           {managed.length > 0 && <div className="mt-5 border-t pt-4"><p className="px-3 pb-2 text-xs font-medium text-muted-foreground">Organization settings</p>{managed.map(member => <Link key={member.clubId} href={`/club/${encodeURIComponent(member.clubId)}/workspace?section=settings`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}><span className="truncate">{member.club.name}</span></Link>)}</div>}
         </nav>
       </aside>
-      <div className="min-w-0 max-w-5xl" data-settings-content>{children}</div>
+      <div className="oc-workspace-stack max-w-5xl" data-settings-content>{children}</div>
     </div>
   </div>
 }

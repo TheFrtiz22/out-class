@@ -17,11 +17,11 @@ export function ClubMeetingsWorkspace({ clubId, clubName, canSeeAttendees, legac
     const href = `/club/${encodeURIComponent(clubId)}/workspace?${next}`;
     if (!navigateWithinClub(href)) router.push(href);
   }
-  return <div className="min-w-0 space-y-6">
-    <div role="group" aria-label="Meetings workspace" className="flex flex-wrap gap-2 border-b pb-4">
+  return <div className="oc-workspace-stack">
+    <div role="group" aria-label="Meetings workspace" className="oc-toolbar">
       <Button variant={events ? "ghost" : "secondary"} aria-pressed={!events} onClick={() => select(false)}>Member Meetings</Button>
       <Button variant={events ? "secondary" : "ghost"} aria-pressed={events} onClick={() => select(true)}>Corkboard Events</Button>
     </div>
-    {events ? isDemoEnabled ? <section className="rounded-lg border p-6"><h2 className="oc-section-heading">Corkboard Events</h2><p className="mt-3 text-sm text-muted-foreground">Corkboard event management is not available in Demo yet. Switch out of Demo to manage your club’s events.</p></section> : <ClubEvents clubId={clubId} clubName={clubName} canSeeAttendees={canSeeAttendees} /> : <MeetingList clubId={clubId} embedded initialAudience="ALL" />}
+    {events ? isDemoEnabled ? <section className="oc-content-panel"><h2 className="oc-section-heading">Corkboard Events</h2><p className="mt-3 text-sm text-muted-foreground">Corkboard event management is not available in Demo yet. Switch out of Demo to manage your club’s events.</p></section> : <ClubEvents clubId={clubId} clubName={clubName} canSeeAttendees={canSeeAttendees} /> : <MeetingList clubId={clubId} embedded initialAudience="ALL" />}
   </div>;
 }

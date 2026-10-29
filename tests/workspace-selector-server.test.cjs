@@ -14,6 +14,7 @@ test('direct Admin page keeps server allowlist, active grant, MFA and elevation 
   ]){
    const cache={},reads=[],count=async()=>{reads.push('protected metric');return 1}
    const mocks={
+    '@/components/icons':{ArrowRight:()=>null,ArrowUpRight:()=>null},
     '@/utils/auth':{requireAuth:async()=>({user:{id:scenario.id,role:'ADMIN',adminRoles:[{isOwner:true}]}})},
     '@/utils/prisma':{prisma:{platformAdmin:{findUnique:async()=>({active:scenario.grant})},...Object.fromEntries(['user','club','eventPublication','clubClaim','platformReport','meeting'].map(name=>[name,{count}])),auditLog:{create:async()=>{}}}},
     '@/utils/supabase/server':{createClient:async()=>({auth:{mfa:{getAuthenticatorAssuranceLevel:async()=>({data:{currentLevel:scenario.aal}})}}})},

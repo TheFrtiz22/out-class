@@ -7,7 +7,7 @@ export function LeadsTable({ attendance, applicantIds, clubId }: { attendance: A
   const [search, setSearch] = useState("")
   const students = Array.from(new Map(attendance.filter(row => row.clubId === clubId && !applicantIds.has(row.studentId)).map(row => [row.studentId, row.student])).values())
   const visible = students.filter(student => `${student.name} ${student.email} ${student.major} ${student.year}`.toLowerCase().includes(search.toLowerCase()))
-  return <section className="space-y-4 rounded-xl border border-neutral-200 bg-white p-5 font-sans text-black shadow-none">
+  return <section className="oc-content-panel space-y-4 border-neutral-200 font-sans text-black shadow-none">
     <div><h2 className="oc-section-heading ">Interested Leads <span className="text-neutral-500">({students.length})</span></h2><p className="mt-1 text-sm text-neutral-500">Students who checked in at an event and haven’t started an application.</p></div>
     <Input aria-label="Search interested leads" placeholder="Search leads…" value={search} onChange={event => setSearch(event.target.value)} className="max-w-sm shadow-none" />
     <Table><TableHeader><TableRow>{["Name", "Year", "Major", "Events Attended"].map(label => <TableHead key={label}>{label}</TableHead>)}</TableRow></TableHeader><TableBody>

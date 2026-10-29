@@ -157,7 +157,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
     setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
   return (
-    <div className="oc-calendar-workspace space-y-5">
+    <div className="oc-calendar-workspace oc-workspace-stack">
       <header className="flex flex-wrap items-start justify-between gap-5">
         <div>
           <p className="text-sm text-muted-foreground">
@@ -208,7 +208,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
           />
         </div>
       )}
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="oc-toolbar">
         <Input
           aria-label="Search calendar"
           placeholder="Search events, clubs, or locations"
@@ -246,12 +246,12 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
           </>
         )}
       </div>
-      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_280px]">
+      <div className="grid min-w-0 items-start gap-[var(--oc-content-gap)] xl:grid-cols-[minmax(0,1fr)_17rem]">
         <div
           className={
             view === "agenda"
-              ? "min-w-0"
-              : "min-w-0 overflow-x-auto rounded-lg border border-border bg-card"
+              ? "oc-content-panel"
+              : "oc-data-surface"
           }
         >
           {view === "agenda" ? (
@@ -338,9 +338,9 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
             <>
               {view === "month" ? (
                 <div className="min-w-[650px]">
-                  <div className="grid grid-cols-7 border-b bg-neutral-50">
+                  <div className="grid grid-cols-7 border-b bg-muted">
                     {weekdays.map((day) => (
-                      <div key={day} className="p-3 text-center text-xs text-neutral-500">
+                      <div key={day} className="p-3 text-center text-xs text-muted-foreground">
                         {day}
                       </div>
                     ))}
@@ -355,7 +355,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                           className={cn(
                             "min-h-32 space-y-1 border-b border-r border-neutral-100 p-2",
                             day.getMonth() !== cursor.getMonth() &&
-                              "bg-neutral-50 text-neutral-400",
+                              "bg-muted text-muted-foreground",
                           )}
                         >
                           <button
@@ -445,7 +445,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                             ))}
                           </div>
                         ) : (
-                          <p className="text-sm text-neutral-500">
+                          <p className="text-sm text-muted-foreground">
                             No events match your filters for this day.
                           </p>
                         )}
@@ -492,9 +492,9 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                     type="button"
                     key={event.id}
                     onClick={() => open(event)}
-                    className="w-full rounded-lg border p-3 text-left hover:bg-neutral-50"
+                    className="w-full rounded-[var(--oc-content-radius-small)] border border-border bg-card p-3 text-left hover:bg-muted"
                   >
-                    <p className="text-xs text-neutral-500">
+                    <p className="text-xs text-muted-foreground">
                       {dateFromKey(event.date).toLocaleDateString("en-US", {
                         month: "short",
                         day: "numeric",
@@ -505,7 +505,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                   </button>
                 ))}
                 {!upcoming.length && (
-                  <p className="text-sm text-neutral-500">No upcoming events match your filters.</p>
+                  <p className="text-sm text-muted-foreground">No upcoming events match your filters.</p>
                 )}
               </div>
             </section>
@@ -539,7 +539,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                   (selected.type === "Deadline" ? "Online application" : "Location not announced")}
               </p>
               {application && (
-                <p className="text-xs text-neutral-500">Application status: {application.status}</p>
+                <p className="text-xs text-muted-foreground">Application status: {application.status}</p>
               )}
               <p className="text-sm leading-6 text-neutral-600">
                 {selected.description ??
@@ -550,7 +550,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                       : "Review this club event and manage your attendance below.")}
               </p>
               {selected.readOnly && (
-                <p className="text-sm text-neutral-500">
+                <p className="text-sm text-muted-foreground">
                   Contact the club if you need to change these arrangements.
                 </p>
               )}
@@ -688,7 +688,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
               />
             </>
           ) : (
-            <p className="text-sm text-neutral-500">
+            <p className="text-sm text-muted-foreground">
               No future interview slots have been published.
             </p>
           )}

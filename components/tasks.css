@@ -1,5 +1,5 @@
 .oc-personal-tasks, .oc-task-manager { min-width: 0; }
-.oc-task-totals { display: flex; flex-wrap: wrap; gap: .25rem; }
+.oc-task-totals { display: flex; flex-wrap: wrap; gap: .5rem; }
 .oc-task-total { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; min-height: 2.75rem; padding: .5rem .75rem; border: 1px solid var(--border); border-radius: var(--oc-radius-md); background: transparent; color: var(--muted-foreground); cursor: pointer; }
 .oc-task-total strong { color: var(--foreground); font-size: 1rem; font-weight: 600; font-variant-numeric: tabular-nums; }
 .oc-task-total span { font-size: var(--oc-text-small); }
@@ -20,7 +20,7 @@
 .oc-task-empty { display: grid; justify-items: start; gap: .5rem; padding: 1.5rem 0; border-top: 1px solid var(--border); }
 .oc-task-empty p { max-width: 34rem; font-size: var(--oc-text-small); color: var(--muted-foreground); }
 .oc-task-empty > button { margin-top: .25rem; }
-.oc-task-list { list-style: none; padding: 0; margin: 0; border: 1px solid var(--border); border-radius: var(--oc-radius-lg); background: var(--card); overflow: hidden; }
+.oc-task-list { list-style: none; padding: 0; margin: 0; border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); overflow: hidden; }
 .oc-task-list:empty { display: none; }
 .oc-task-list > li + li { border-top: 1px solid var(--border); }
 .oc-task-row { display: grid; grid-template-columns: 2rem minmax(0, 1fr) auto; width: 100%; align-items: center; gap: .875rem; padding: .875rem 1rem; text-align: left; color: var(--foreground); transition: background-color var(--oc-duration-micro); }
@@ -71,7 +71,7 @@
 .oc-task-view-tabs [aria-current="page"] { color:var(--primary); font-weight:600; border-bottom-color:var(--brand-orange); }
 .oc-task-view-tabs button span { padding:.1rem .4rem; border-radius:var(--oc-radius-sm); background:var(--brand-subtle); color:var(--brand-ink); font-size:var(--oc-text-caption); }
 .oc-manager-task-list { display:grid; gap:.5rem; padding:0; list-style:none; }
-.oc-manager-task-row { display:grid; grid-template-columns:1rem minmax(0,1fr) auto; gap:1rem; align-items:start; padding:.875rem 1rem; border:1px solid var(--border); border-radius:var(--oc-radius-lg); background:var(--card); }
+.oc-manager-task-row { display:grid; grid-template-columns:1rem minmax(0,1fr) auto; gap:1rem; align-items:start; padding:.875rem 1rem; border:1px solid var(--oc-content-edge); border-radius:var(--oc-content-radius); background:var(--oc-content-surface); box-shadow:var(--oc-content-shadow); }
 .oc-manager-task-row > input { margin-top:.4rem; }
 .oc-manager-task-copy { min-width:0; }
 .oc-task-title-button { font-size:var(--oc-text-body); text-align:left; font-weight:600; color:var(--foreground); overflow-wrap:anywhere; }
@@ -128,13 +128,13 @@
 .oc-builder-actions, .oc-review-actions { display:flex; justify-content:flex-end; flex-wrap:wrap; gap:.75rem; padding-top:.5rem; }
 .oc-review-top > p { font-size:var(--oc-text-caption); color:var(--muted-foreground); }
 .oc-review-heading { display:grid; gap:.75rem; }
-.oc-review-submission { display:grid; gap:1rem; padding:1.25rem; border:1px solid var(--border); border-radius:var(--oc-radius-lg); background:var(--card); }
+.oc-review-submission { display:grid; gap:1rem; padding:var(--oc-content-padding); border:1px solid var(--oc-content-edge); border-radius:var(--oc-content-radius); background:var(--oc-content-surface); box-shadow:var(--oc-content-shadow); }
 .oc-review-navigation { padding-top:1rem; border-top:1px solid var(--border); }
 .oc-review-finished { display:grid; justify-items:start; gap:1rem; padding:2rem 0; }
 .oc-task-project summary { cursor:pointer; display:grid; gap:.35rem; min-height:2.75rem; }
 .oc-task-project summary span { font-size:var(--oc-text-caption); color:var(--muted-foreground); }
 .oc-task-members, .oc-task-progress-members { padding:0; list-style:none; display:grid; gap:.75rem; }
-.oc-task-members > li { background:var(--card); border:1px solid var(--border); border-radius:var(--oc-radius-lg); }
+.oc-task-members > li { background:var(--oc-content-surface); box-shadow:var(--oc-content-shadow); border:1px solid var(--oc-content-edge); border-radius:var(--oc-content-radius); }
 .oc-task-members > li > button { display:flex; align-items:center; gap:1rem; width:100%; text-align:left; padding:1rem; }
 .oc-task-members button > div { min-width:0; flex:1; }
 .oc-task-members strong, .oc-task-progress-members strong { font-size:var(--oc-text-small); font-weight:600; overflow-wrap:anywhere; }

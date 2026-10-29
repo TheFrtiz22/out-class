@@ -1,8 +1,8 @@
 /* One journey pattern across Applications, Interviews and Decisions. */
 .oc-applications { container-type: inline-size; }
 .oc-application-list { display: grid; gap: 1rem; list-style: none; padding: 0; }
-.oc-application-row { position: relative; display: grid; grid-template-columns: minmax(0,1fr) 14rem; gap: 1rem 1.25rem; padding: 1.25rem; border-left: 3px solid transparent; border-radius: var(--oc-radius-lg); background: var(--card); box-shadow: var(--oc-shadow-surface); transition: transform var(--oc-duration-ui) var(--oc-ease-out), box-shadow var(--oc-duration-ui); }
-.oc-application-row:hover { border-color: var(--brand-orange); transform: translateY(-2px); box-shadow: var(--oc-shadow-popover); }
+.oc-application-row { position: relative; display: grid; grid-template-columns: minmax(0,1fr) 14rem; gap: 1rem 1.25rem; padding: var(--oc-content-padding); border: 1px solid var(--oc-content-edge); border-left: 3px solid transparent; border-radius: var(--oc-content-radius); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); transition: border-color var(--oc-content-motion), box-shadow var(--oc-content-motion); }
+.oc-application-row:hover { box-shadow: var(--oc-content-shadow-hover); }
 .oc-application-row:focus-within { outline: 2px solid var(--ring); outline-offset: 4px; }
 .oc-application-row[data-status="DRAFTING"] { border-left-color: var(--brand-orange); }
 .oc-application-row[data-status="ACCEPTED"] { border-left-color: var(--success); background: color-mix(in srgb,var(--success-subtle) 60%,var(--card)); }
@@ -11,7 +11,7 @@
 .oc-application-identity > div:not(:first-child) { flex: 1; min-width: 0; }
 .oc-application-identity h2 { font-size: var(--oc-text-card); font-weight: var(--oc-weight-semibold); letter-spacing: var(--oc-tracking-heading); overflow-wrap: anywhere; }
 .oc-application-identity button { font-size: inherit; font-weight: inherit; text-align: left; cursor: pointer; }
-.oc-application-identity button::after { content: ""; position: absolute; inset: 0; border-radius: var(--oc-radius-lg); }
+.oc-application-identity button::after { content: ""; position: absolute; inset: 0; border-radius: var(--oc-content-radius); }
 .oc-application-identity button:focus-visible { outline: none; }
 .oc-application-round { font-size: var(--oc-text-caption); color: var(--muted-foreground); margin-top: .35rem; overflow-wrap: anywhere; }
 .oc-application-status { margin-left: auto; flex-shrink: 0; padding: .3rem .6rem; border: 0; border-radius: var(--oc-radius-sm); font-size: var(--oc-size-11); }
@@ -43,11 +43,11 @@
 
 /* Forms and submissions stay separate from the post-application status journey. */
 .oc-status-list, .oc-application-management-list { display: grid; gap: .875rem; list-style: none; padding: 0; }
-.oc-application-management-row { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; padding: 1rem 1.25rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--oc-radius-md); }
+.oc-application-management-row { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; padding: var(--oc-content-padding); background: var(--oc-content-surface); border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); box-shadow: var(--oc-content-shadow); }
 .oc-application-management-row h2, .oc-status-card h2 { font-size: var(--oc-text-card); font-weight: var(--oc-weight-semibold); overflow-wrap: anywhere; }
 .oc-application-management-row p { margin-top: .3rem; font-size: var(--oc-text-caption); color: var(--muted-foreground); }
 .oc-management-state { display: inline-flex; align-items: center; gap: .4rem; font-size: var(--oc-text-caption); color: var(--muted-foreground); }
-.oc-status-card { padding: 1.1rem 1.25rem; border: 1px solid var(--border); border-left: 3px solid transparent; border-radius: var(--oc-radius-lg); background: var(--card); box-shadow: var(--oc-shadow-surface); }
+.oc-status-card { padding: var(--oc-content-padding); border: 1px solid var(--oc-content-edge); border-left: 3px solid transparent; border-radius: var(--oc-content-radius); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); }
 .oc-status-card[data-attention="true"] { border-left-color: var(--brand-orange); }
 .oc-status-card[data-status="ACCEPTED"], .oc-status-detail-update[data-status="ACCEPTED"] { border-left-color: var(--success); background: var(--oc-surface-sage); }
 .oc-status-card[data-status="WAITLISTED"] { border-left-color: var(--warning); }
@@ -64,7 +64,7 @@
 .oc-status-next > div { flex: 1 1 18rem; min-width: 0; }
 .oc-status-next p { font-size: var(--oc-text-caption); color: var(--muted-foreground); overflow-wrap: anywhere; }
 .oc-status-next .oc-status-next-label, .oc-status-next .oc-status-interview { display: flex; gap: .4rem; align-items: center; margin-bottom: .3rem; color: var(--foreground); font-size: var(--oc-text-small); font-weight: 600; }
-.oc-status-detail-update { padding: 1.25rem; border: 1px solid var(--border); border-left: 3px solid var(--brand-orange); border-radius: var(--oc-radius-lg); background: var(--card); }
+.oc-status-detail-update { padding: var(--oc-content-padding); border: 1px solid var(--oc-content-edge); border-left: 3px solid var(--brand-orange); border-radius: var(--oc-content-radius); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); }
 @media (max-width: 639px) {
   .oc-applications[data-application-scope="status"] .oc-segmented-control { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; width: 100%; }
   .oc-applications[data-application-scope="status"] .oc-segmented-control button { flex: 0 0 auto; white-space: nowrap; }
@@ -106,7 +106,7 @@
 .oc-writing-progress { display: grid; gap: .5rem; }
 .oc-writing-progress [data-slot="progress"] { height: 4px; }
 .oc-writing-questions { display: grid; gap: 1rem; min-width: 0; }
-.oc-writing-question { display: grid; gap: .75rem; min-width: 0; padding: 1.25rem 1.5rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--oc-radius-lg); }
+.oc-writing-question { display: grid; gap: .75rem; min-width: 0; padding: var(--oc-content-padding); background: var(--oc-content-surface); border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); box-shadow: var(--oc-content-shadow); }
 .oc-writing-question:focus-within { border-color: var(--ring); }
 .oc-writing-question label { overflow-wrap: anywhere; }
 .oc-writing-textarea { width: 100%; padding: 1rem; background: var(--background); }

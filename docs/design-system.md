@@ -31,7 +31,7 @@ changing every screen's spacing in a foundations change.
 
 The intentional current font exception is documented in [the typography audit](typography-audit.md) and [Campus OS](outclass-campus-os.md). The October 2 migration replaced Horsham Serial with self-hosted Libre Caslon Text. Do not silently restore Horsham or add another downloaded family.
 
-Public marketing and authentication use Caslon throughout. Authenticated product shells, focused workspaces, and the reference page use system sans for operational text and Caslon for display/page/dialog headings. `styles/product-tokens.css` owns that context, including portaled overlays. `app/layout.tsx` loads actual Caslon normal/italic weights 400–700; synthetic faces remain disabled. Brand artwork keeps its original typography; invitation emails retain Arial for email compatibility.
+Public marketing and authentication use Caslon throughout. Authenticated product shells, focused workspaces, and the reference page use self-hosted Source Sans 3 for operational text and Caslon for display/page/dialog headings. `styles/product-tokens.css` owns that context, including portaled overlays. `app/layout.tsx` loads actual Caslon normal/italic weights 400–700; synthetic faces remain disabled. Brand artwork keeps its original typography; invitation emails retain Arial for email compatibility.
 
 ## Components
 
@@ -98,3 +98,52 @@ logos and images. These decisions are recorded, not implemented by this visual
 foundations change. Email ownership enforcement, faculty roles, recruitment
 cycles, backend hardening, removal of unsupported endorsement copy, and connecting
 mock workflows remain separate implementation work.
+
+
+## Platform adoption — October 28, 2026
+
+The whole-platform migration extends these foundations. `styles/tokens.css` owns shared content geometry and fallbacks; `styles/product-tokens.css` supplies the authenticated palette. `styles/workspace-composition.css` contains explicit, opt-in recipes used by screen owners:
+
+| Recipe | Purpose |
+| --- | --- |
+| `oc-workspace-stack` | One responsive column with bounded grid tracks and a shared section gap |
+| `oc-content-panel` | Solid grouped content with an 18px radius, quiet edge and low elevation |
+| `oc-toolbar` | Search, filtering and secondary actions with consistent field alignment |
+| `oc-form-section`, `oc-field`, `oc-form-actions` | Grouped fields, visible labels and a clear action boundary |
+| `oc-data-surface` | A dense data region whose scrolling stays inside its own boundary |
+| `oc-detail-panel` | Contextual reading pane, sharing the content material |
+| `oc-feedback` | Honest inline information/error feedback with text and a semantic edge |
+
+The shared content maximum is 80rem; reading sections use 48rem where appropriate. Adaptive panel padding/gaps are 1–1.5rem. Controls retain their 36/40/44px size roles. Mobile checkbox labels/hit areas remain 44px while their visible boxes stay square. Dialog headings reserve space for the close control. Settings save actions sit above the mobile dock. Content panels use solid materials; optical navigation remains independent.
+
+Prefer these recipes to copying border, background, padding and radius utilities into another component. Keep rows/dividers within grouped surfaces, and retain intentional artwork, Corkboard paper, formal decision letters and focused interview/voting arrangements. Do not give every nested field its own card.
+
+The source inventory, exact captured states, screenshot comparisons and acceptance exceptions live in [the visual QA report](visual-unification/report.md). A shared style reaching a screen is not evidence that every state of that screen has been reviewed.
+
+## Editorial Campus OS — V2
+
+The approved V2 compositions supersede the requirement that every dashboard section
+use the same rounded panel. See [implementation and visual QA](editorial-campus-os/README.md).
+
+- `PageHeader density="editorial"` supplies the two-line Caslon masthead for Home
+  and Recruitment. Use real contextual eyebrows, with italic emphasis in the title.
+- `density="expressive"` gives discovery, Applications, club overview and admin a
+  smaller display heading and architectural rule. Compact remains the dense-tool default.
+- `FeaturedAction` is a semantic section with one heading, contextual copy, optional
+  factual metadata and a real action. It owns no routing, fetching or selection logic.
+- `styles/tokens.css` owns editorial display/feature/section sizes, gap, radius,
+  shadow and rule. `styles/product-tokens.css` owns navy structural materials and
+  field colors. `styles/editorial.css` contains opt-in editorial compositions.
+- Home pairs a full-width navy next action with ruled application/update lists and
+  a pale blue agenda. Decorative rings carry no information and receive no focus.
+- Recruitment uses navy for the actual round filter, warm agenda context, and a
+  white booking bottleneck. Counts come from the existing private summary; the
+  review preview stays capped at twelve. The pipeline scrolls inside its boundary.
+- Applicant dossiers pair a document column with a navy evaluation workspace.
+  Responses lead; identity and responses remain subject to the existing server
+  projection. Narrow layouts stack the zones and provide a keyboard-focusable jump
+  to evaluation. Forms keep their visible labels, autosave and permission checks.
+
+Do not apply these large compositions indiscriminately to tables, scheduling or
+writing. Keep their compact tools and reading widths. Retain optical navigation,
+public landing artwork, Corkboard paper and the existing Phosphor icon adapter.

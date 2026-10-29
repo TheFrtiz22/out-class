@@ -110,11 +110,13 @@ export function relevantUpdates(notifications: Notification[]) {
 export type NextAction =
   | { kind: "application"; application: HomeApplication }
   | { kind: "event"; event: ClubEvent }
+  | { kind: "notification"; notification: Notification }
   | { kind: "explore" }
 export function nextHomeAction(
   apps: HomeApplication[],
   agenda: ClubEvent[],
   now: Date,
+  notifications: Notification[] = [],
 ): NextAction {
   const draft = apps.find((app) => app.draft)
   const deadline = apps
@@ -128,6 +130,8 @@ export function nextHomeAction(
     return deadlineTime <= eventTime
       ? { kind: "application", application: deadline! }
       : { kind: "event", event }
+  const urgentUpdate = relevantUpdates(notifications).find(update => update.urgent && !update.read)
+  if (urgentUpdate) return { kind: "notification", notification: urgentUpdate }
   if (draft) return { kind: "application", application: draft }
   if (event) return { kind: "event", event }
   return { kind: "explore" }

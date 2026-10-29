@@ -112,7 +112,7 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
           <div className="w-[70%] overflow-y-auto border-r border-neutral-200 bg-white p-6 shadow-none">
             <div className="mx-auto max-w-2xl space-y-6">
               {/* Base profile header */}
-              <div className="flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-none">
+              <div className="oc-content-panel flex items-center gap-4 border-gray-200 shadow-none">
                 <Avatar className="size-14">
                   <AvatarFallback className="bg-foreground/10 text-lg font-semibold text-foreground">
                     {candidate.initials}
@@ -134,7 +134,7 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
               <div className="space-y-3">
                 <h3 className="oc-card-heading text-foreground">Essay Responses</h3>
                 {candidate.essays.map((essay, i) => (
-                  <div key={i} className="rounded-lg border border-gray-200 bg-white p-4 shadow-none">
+                  <div key={i} className="oc-content-panel border-gray-200 shadow-none">
                     <p className="text-xs font-medium text-gray-500">{essay.question}</p>
                     <p className="mt-1.5 text-pretty text-sm leading-relaxed text-foreground">{essay.answer}</p>
                   </div>

@@ -119,10 +119,10 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
     <div className="oc-inbox-workspace mx-auto max-w-6xl space-y-6 text-foreground">
       {tabs}
       {invitations.length > 0 && <OrganizationOwnershipRequests enabled includeDismissed />}
-      <div className="space-y-4 border-b border-border pb-5">
+      <div className="oc-content-panel space-y-4">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="relative min-w-52 flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-neutral-400" />
+          <div className="relative min-w-0 basis-52 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               aria-label="Search notifications"
               placeholder="Search notifications, clubs, or keywords"
@@ -173,7 +173,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
               aria-pressed={filter === value}
               onClick={() => setFilter(value)}
               className={cn(
-                "rounded-md px-3 py-2 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                "min-h-11 rounded-full px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                 filter === value
                   ? "bg-secondary text-foreground"
                   : "text-muted-foreground hover:bg-secondary/60",
@@ -199,7 +199,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
           aria-label="Notification list"
           className={cn("min-w-0 overflow-hidden", selected && "hidden lg:block")}
         >
-          <div className="flex min-h-14 flex-wrap items-center gap-3 border-b border-neutral-200 px-4 py-3">
+          <div className="flex min-h-14 flex-wrap items-center gap-3 border-b border-border px-4 py-3">
             <Checkbox
               aria-label="Select all visible notifications"
               checked={allChecked ? true : checkedIds.length > 0 ? "indeterminate" : false}
@@ -208,7 +208,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                 setChecked(allChecked ? new Set() : new Set(filtered.map((item) => item.id)))
               }
             />
-            <span className="text-xs text-neutral-500" role="status">
+            <span className="text-xs text-muted-foreground" role="status">
               {checkedIds.length ? `${checkedIds.length} selected` : `${filtered.length} results`}
             </span>
             {checkedIds.length > 0 && (
@@ -299,7 +299,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                             color={item.color}
                             className="size-7 shrink-0 rounded-md text-[length:var(--oc-size-10)]"
                           />
-                          <span className="text-xs text-neutral-500">{item.club}</span>
+                          <span className="text-xs text-muted-foreground">{item.club}</span>
                           {!item.read && (
                             <span className="ml-auto shrink-0 text-[length:var(--oc-size-11)] font-medium text-primary">
                               <span
@@ -318,10 +318,10 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                         >
                           {item.title}
                         </p>
-                        <p className="line-clamp-2 text-xs leading-relaxed text-neutral-500">
+                        <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
                           {item.preview}
                         </p>
-                        <div className="flex flex-wrap items-center gap-2 text-[length:var(--oc-size-11)] text-neutral-500">
+                        <div className="flex flex-wrap items-center gap-2 text-[length:var(--oc-size-11)] text-muted-foreground">
                           {item.urgent && (
                             <span className="rounded bg-secondary px-1.5 py-0.5 font-medium text-foreground">
                               Urgent
@@ -339,7 +339,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="size-7 shrink-0 text-neutral-400 hover:text-red-600"
+                        className="size-11 shrink-0 text-muted-foreground hover:text-destructive"
                         aria-label={`Delete ${item.title}`}
                         onClick={() => remove([item.id])}
                       >
@@ -356,7 +356,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                 <p className="text-sm font-medium">
                   {items.length ? "No matching notifications" : "No notifications here yet"}
                 </p>
-                <p className="text-xs text-neutral-500">
+                <p className="text-xs text-muted-foreground">
                   {items.length
                     ? "Try another keyword or clear your filters."
                     : "New task assignments and review updates will appear here."}
@@ -372,16 +372,16 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
         </section>
         <section
           aria-label="Notification details"
-          className={cn("min-w-0 lg:border-l lg:border-border lg:pl-6", !selected && "hidden")}
+          className={cn("oc-detail-panel min-w-0", !selected && "hidden")}
         >
           {!selected ? (
-            <div className="flex min-h-96 flex-col items-center justify-center gap-3 p-8 text-center text-neutral-500">
+            <div className="flex min-h-96 flex-col items-center justify-center gap-3 p-8 text-center text-muted-foreground">
               <Bell className="size-8 text-neutral-300" />
               <p className="text-sm">Choose a notification to read the full update.</p>
             </div>
           ) : (
             <>
-              <div className="space-y-5 border-b border-neutral-200 p-5 sm:p-6">
+              <div className="space-y-5 border-b border-border p-5 sm:p-6">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -411,11 +411,11 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                   />
                   <div>
                     <p className="text-sm font-semibold">{selected.club}</p>
-                    <p className="text-xs text-neutral-500">{selected.senderTitle}</p>
+                    <p className="text-xs text-muted-foreground">{selected.senderTitle}</p>
                   </div>
                 </div>
                 <div>
-                  <p className="mb-2 text-xs text-neutral-500">
+                  <p className="mb-2 text-xs text-muted-foreground">
                     {selected.type} · {selected.fullDate}
                   </p>
                   <h2
@@ -456,12 +456,12 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                   </p>
                 ))}
                 {selected.locationChange && (
-                  <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
+                  <div className="rounded-lg border border-border bg-muted p-4">
                     <p className="flex items-center gap-2 text-sm font-medium">
                       <MapPin className="size-4" />
                       {selected.locationChange.newLocation}
                     </p>
-                    <p className="mt-1 text-xs text-neutral-500">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       Previously: {selected.locationChange.oldLocation}
                     </p>
                   </div>
@@ -494,7 +494,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                   </Button>
                 )}
               </div>
-              <p className="border-t border-neutral-200 px-6 py-4 text-xs text-neutral-500">
+              <p className="border-t border-border px-6 py-4 text-xs text-muted-foreground">
                 {"Club updates stay here so you can return to them anytime."}
               </p>
             </>
