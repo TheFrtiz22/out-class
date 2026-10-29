@@ -9,11 +9,11 @@ import { fieldLabels } from "@/lib/applicant-display";
 import { formatAverage } from "@/lib/interview-review-summary";
 import Image from "next/image";
 type Data=Awaited<ReturnType<typeof getLiveVotingPresentation>>;
-export function RoomPresentation({clubId,sessionId,applicationId,identity,refreshKey,member,onReady}:{clubId:string;sessionId:string;applicationId:string;identity:string;refreshKey:number;member?:string;onReady?:()=>void}){
+export function RoomPresentation({clubId,sessionId,applicationId,identity,refreshKey,member,onReady,paused=false}:{clubId:string;sessionId:string;applicationId:string;identity:string;refreshKey:number;member?:string;onReady?:()=>void;paused?:boolean}){
   const origin=useRef<HTMLButtonElement|null>(null);
   function openDetails(e:React.MouseEvent<HTMLButtonElement>){origin.current=e.currentTarget;setDetails(true);}
   const key=`${identity}:${applicationId}`, [state,setState]=useState<{key:string;data:Data|null;error:boolean}>({key,data:null,error:false}),[details,setDetails]=useState(false),[retry,setRetry]=useState(0);
-  useEffect(()=>{let current=true,busy=false;setState({key,data:null,error:false});setDetails(false);const refresh=async()=>{if(busy)return;busy=true;try{const data=await read({clubId,sessionId,applicationId},member);if(current){setState({key,data,error:false});onReady?.();}}catch{if(current)setState({key,data:null,error:true});}finally{busy=false;}};void refresh();const timer=setInterval(()=>void refresh(),5000);return()=>{current=false;clearInterval(timer);};},[clubId,sessionId,applicationId,identity,key,refreshKey,member,retry,onReady]);
+  useEffect(()=>{if(paused)return;let current=true,busy=false;setState({key,data:null,error:false});setDetails(false);const refresh=async()=>{if(busy)return;busy=true;try{const data=await read({clubId,sessionId,applicationId},member);if(current){setState({key,data,error:false});onReady?.();}}catch{if(current)setState({key,data:null,error:true});}finally{busy=false;}};void refresh();const timer=setInterval(()=>void refresh(),5000);return()=>{current=false;clearInterval(timer);};},[clubId,sessionId,applicationId,identity,key,refreshKey,member,retry,onReady,paused]);
   const data=state.key===key?state.data:null;
   if(state.key===key&&state.error)return <div role="alert">Applicant information unavailable. <Button variant="outline" onClick={()=>setRetry(v=>v+1)}>Retry presentation</Button></div>;
   if(!data)return <LoadingState label="Loading applicant presentation…" layout="presentation" rows={3} />;
