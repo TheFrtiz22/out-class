@@ -22,7 +22,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm validate
-      # Vercel's Git integration deploys the authenticated App Router application.
+      # The Vercel job below deploys the authenticated App Router application.
       # Never publish the obsolete static out/ directory to GitHub Pages.
   accessibility:
     runs-on: ubuntu-latest
@@ -81,3 +81,84 @@ jobs:
       # This runner pins localhost, creates/removes its own disposable PostgreSQL
       # container and supplies no production credentials or outbound email keys.
       - run: node scripts/test-decision-transactions-local.cjs
+  vercel:
+    name: Vercel deployment
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs:
+      - validate
+      - accessibility
+      - authenticated-accessibility
+      - native-application-transactions
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    concurrency:
+      group: vercel-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
+    environment:
+      name: ${{ (github.event_name == 'pull_request' || github.ref != 'refs/heads/main') && 'vercel-preview' || 'vercel-production' }}
+    env:
+      VERCEL_DEPLOY_ENV: ${{ (github.event_name == 'pull_request' || github.ref != 'refs/heads/main') && 'preview' || 'production' }}
+      VERCEL_GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - name: Install pinned Vercel CLI
+        run: npm install --global vercel@65.7.0
+      - name: Check Vercel credentials
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::error::Configure VERCEL_TOKEN in the selected GitHub environment."
+            exit 1
+          fi
+          if [ -z "$VERCEL_ORG_ID" ]; then
+            echo "::error::Configure VERCEL_ORG_ID in the selected GitHub environment."
+            exit 1
+          fi
+          if [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "::error::Configure VERCEL_PROJECT_ID in the selected GitHub environment."
+            exit 1
+          fi
+      - name: Link Vercel project
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: vercel link --yes --project="$VERCEL_PROJECT_ID" --scope="$VERCEL_ORG_ID" --token="$VERCEL_TOKEN"
+      - name: Pull production Vercel environment
+        if: env.VERCEL_DEPLOY_ENV == 'production'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+      - name: Pull preview Vercel environment
+        if: env.VERCEL_DEPLOY_ENV == 'preview'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: vercel pull --yes --environment=preview --git-branch="$VERCEL_GIT_BRANCH" --token="$VERCEL_TOKEN"
+      - name: Build Vercel deployment
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ "$VERCEL_DEPLOY_ENV" = "production" ]; then
+            vercel build --prod --token="$VERCEL_TOKEN"
+          else
+            vercel build --token="$VERCEL_TOKEN"
+          fi
+      - name: Deploy production
+        if: env.VERCEL_DEPLOY_ENV == 'production'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: vercel deploy --prebuilt --prod --yes --token="$VERCEL_TOKEN"
+      - name: Deploy preview
+        if: env.VERCEL_DEPLOY_ENV == 'preview'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: vercel deploy --prebuilt --yes --token="$VERCEL_TOKEN"

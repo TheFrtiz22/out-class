@@ -36,7 +36,7 @@ async function run() {
    const record={name,role,width,height,zoomEquivalent:width===720?200:100,route,phase,errors}
    try {
      if(name==='admin-overview'){await page.goto(c.appUrl+'/platform/login');await page.getByLabel('Password',{exact:true}).fill(c.admin.password);await page.getByRole('button',{name:'Continue securely'}).click();await page.getByLabel('Authenticator code').fill(totp(c.admin.totpSecret));await page.getByRole('button',{name:'Verify and enter'}).click();await page.waitForURL('**/platform')}
-     await page.goto(c.appUrl+route,{waitUntil:'networkidle',timeout:30000}); await page.locator('body').waitFor(); await page.evaluate(()=>document.fonts.ready)
+     const response=await page.goto(c.appUrl+route,{waitUntil:'networkidle',timeout:30000});record.httpStatus=response?.status();if(name==='preview'&&record.httpStatus===404){record.expectedGuard=true;record.guard='Presenter route requires an authorized Demo session';const previous=results.findIndex(r=>r.name===name&&r.width===width);if(previous>=0)results.splice(previous,1);results.push(record);fs.writeFileSync(path.join(out,'results.json'),JSON.stringify(results,null,2));console.log(`GUARDED ${name} ${width}`);await page.close();continue} await page.locator('body').waitFor(); await page.evaluate(()=>document.fonts.ready)
      await page.locator('.oc-dashboard-loading').waitFor({state:'hidden'})
      if(tab) await page.getByRole('button',{name:tab,exact:true}).click()
      await page.waitForTimeout(150)
