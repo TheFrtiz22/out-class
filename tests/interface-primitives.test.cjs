@@ -52,7 +52,7 @@ test('contextual loading uses compositor-friendly motion and respects accessibil
   assert.match(keyframe, /translate3d\(/)
   assert.doesNotMatch(keyframe, /(?:width|height|left|top|filter|box-shadow)\s*:/)
   assert.match(stylesheet, /@media \(prefers-reduced-motion: reduce\)/)
-  assert.match(stylesheet, /\.oc-skeleton::after \{ animation: none; display: none;/)
+  assert.match(stylesheet, /\.oc-loading-preview::after[^}]*animation: none; display: none;/)
   assert.match(stylesheet, /@media \(forced-colors: active\)/)
 })
 test('applicant skeleton reserves review actions, filters and responsive applicant records', () => {
@@ -84,36 +84,61 @@ test('form and letter placeholders retain editable-workspace structure without f
   const css = fs.readFileSync('styles/loading.css', 'utf8')
   assert.match(css, /\.oc-loading-form-fields/)
   assert.match(css, /\.oc-loading-document-paper/)
-  assert.ok(css.includes('.oc-loading-row:nth-child(n + 6)'))
+  assert.doesNotMatch(css, /\.oc-skeleton::after[^}]*animation:/)
 })
 
 
-test('glowing activity pill is decorative except for its single visible loading label', () => {
-  const { GlowingLoadingPill } = load('components/ui/glowing-loading-pill.tsx')
-  const html = renderToStaticMarkup(React.createElement(GlowingLoadingPill, { label: 'Loading applicants…' }))
-  assert.match(html, /data-slot="glowing-loading-pill"/)
-  assert.match(html, /oc-glow-loading-ring" aria-hidden="true"/)
-  assert.equal((html.match(/Loading applicants…/g) || []).length, 1)
-  assert.doesNotMatch(html, /role="status"|role="progressbar"/)
-  const compact = renderToStaticMarkup(React.createElement(GlowingLoadingPill, { label: 'Checking access…', compact: true }))
-  assert.match(compact, /data-size="compact"/)
+test('activity is decorative, context-sized and uses the shared Phosphor arc', () => {
+  const { LoadingIndicator } = load('components/ui/loading-indicator.tsx')
+  for (const size of ['sm', 'md', 'lg']) {
+    const html = renderToStaticMarkup(React.createElement(LoadingIndicator, { size }))
+    assert.match(html, /data-slot="loading-indicator"/)
+    assert.match(html, /aria-hidden="true"/)
+    assert.doesNotMatch(html, /role="status"|role="progressbar"/)
+    assert.match(html, /<svg/)
+  }
 })
 
-test('every shared loading layout includes one glowing capsule while keeping its skeleton preview', () => {
+test('skeleton regions announce once without adding a separate visible status row', () => {
   const { LoadingState } = load('components/ui/loading-state.tsx')
   for (const layout of ['rows','cards','inline','applications','applicants','workspace','form','document']) {
     const html = renderToStaticMarkup(React.createElement(LoadingState, { label: 'Loading information', layout, rows: 2 }))
-    assert.equal((html.match(/data-slot="glowing-loading-pill"/g) || []).length, 1)
     assert.equal((html.match(/role="status"/g) || []).length, 1)
     assert.equal((html.match(/Loading information/g) || []).length, 1)
-    if (layout !== 'inline') assert.match(html, /data-slot="skeleton"/)
+    if (layout === 'inline') assert.match(html, /data-slot="loading-indicator"/)
+    else {
+      assert.doesNotMatch(html, /data-slot="loading-indicator"/)
+      assert.match(html, /class="sr-only">Loading information/)
+      assert.match(html, /data-slot="skeleton"/)
+    }
   }
-  const dashboard = fs.readFileSync('components/product/dashboard-presentation.tsx','utf8')
-  assert.match(dashboard, /<GlowingLoadingPill label=\{label\} \/>/)
   const css = fs.readFileSync('styles/loading.css','utf8')
-  assert.match(css, /@keyframes oc-glow-loading-spin/)
-  assert.match(css, /@media \(prefers-reduced-motion: reduce\)/)
-  assert.match(css, /\.oc-glow-loading-ring::after \{ animation: none; \}/)
-  assert.match(css, /@media \(forced-colors: active\)/)
-  assert.doesNotMatch(css, /oc-loading-presence|oc-loading-indicator/)
+  assert.match(css, /\.oc-loading-indicator \{ animation: none; \}/)
+  assert.doesNotMatch(css, /oc-glow-loading|oc-loading-status|oc-loading-inline-spinner/)
+})
+
+test('pending buttons keep their resting content, accessible name, and disabled state', () => {
+  const { Button } = load('components/ui/button.tsx')
+  const content = React.createElement('span', null, 'Refresh overview')
+  const ready = renderToStaticMarkup(React.createElement(Button, { loading: false }, content))
+  const busy = renderToStaticMarkup(React.createElement(Button, { loading: true }, content))
+  assert.match(ready, /oc-button-content/)
+  assert.doesNotMatch(ready, /data-slot="loading-indicator"/)
+  assert.match(busy, /disabled=""/)
+  assert.match(busy, /aria-busy="true"/)
+  assert.match(busy, /Refresh overview/)
+  assert.equal((busy.match(/data-slot="loading-indicator"/g) || []).length, 1)
+  assert.doesNotMatch(busy, /role="status"|aria-hidden="true"[^>]*>Refresh overview/)
+  const slotted = renderToStaticMarkup(React.createElement(Button, { asChild: true }, React.createElement('a', {href:'/settings'}, 'Settings')))
+  assert.match(slotted, /<a/)
+  assert.doesNotMatch(slotted, /<span class="oc-button-content"/)
+})
+
+test('interview loading reserves the room header, candidate, questions and notes instead of a schedule', () => {
+  const { LoadingState } = load('components/ui/loading-state.tsx')
+  const html = renderToStaticMarkup(React.createElement(LoadingState, {layout:'interview'}))
+  for (const part of ['header','presence','columns','applicant','questions','notes']) assert.ok(html.includes(`oc-loading-interview-${part}`))
+  assert.doesNotMatch(html, /oc-loading-schedule|data-slot="loading-indicator"/)
+  const workspace = fs.readFileSync('components/views/interview-workspace-view.tsx', 'utf8')
+  assert.match(workspace, /if \(loading\) return <WorkspaceLoading[^>]*layout="interview"/)
 })

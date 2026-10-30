@@ -46,3 +46,10 @@
   :is(.oc-workspace-content, [data-workspace-detail], .oc-workspace-drawer) label:has([data-slot="checkbox"]) { min-height: 2.75rem; }
   :is(.oc-workspace-content, [data-workspace-detail], .oc-workspace-drawer) button[data-slot="checkbox"]::after { content: ""; position: absolute; inset: -.875rem; }
 }
+
+/* Keep both the resting label and its icons in layout; pending never resizes the action. */
+[data-slot="button"][data-loading], [data-slot="button"]:has(> .oc-button-content) { position: relative; }
+.oc-button-content { display: inline-flex; align-items: center; justify-content: center; gap: inherit; }
+[data-slot="button"][data-loading="true"] > .oc-button-content { opacity: 0; }
+[data-slot="button"][data-loading="true"] { opacity: 1; }
+[data-slot="button"] > .oc-button-loading { position: absolute; inset: 0; margin: auto; }

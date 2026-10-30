@@ -1,7 +1,8 @@
 'use client'
 
 import type { CSSProperties } from 'react'
-import { CheckCircle2, Info, Loader2, TriangleAlert, XCircle } from '@/components/icons'
+import { CheckCircle2, Info, TriangleAlert, XCircle } from '@/components/icons'
+import { LoadingIndicator } from '@/components/ui/loading-indicator'
 import { Toaster as Sonner, type ToasterProps } from 'sonner'
 
 const Toaster = ({ style, ...props }: ToasterProps) => {
@@ -9,7 +10,7 @@ const Toaster = ({ style, ...props }: ToasterProps) => {
     <Sonner
       theme="light"
       richColors
-      icons={{ success: <CheckCircle2 size={20} />, info: <Info size={20} />, warning: <TriangleAlert size={20} />, error: <XCircle size={20} />, loading: <Loader2 size={20} className="motion-safe:animate-spin" /> }}
+      icons={{ success: <CheckCircle2 size={20} />, info: <Info size={20} />, warning: <TriangleAlert size={20} />, error: <XCircle size={20} />, loading: <LoadingIndicator size="lg" /> }}
       offset={{ bottom: "var(--oc-toast-offset, 24px)" }}
       mobileOffset={{ bottom: "var(--oc-toast-offset, 24px)", left: "16px", right: "16px" }}
       className="toaster group"

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, type FormEvent } from "react"
-import { ArrowRight, Check, Loader2 } from "@/components/icons"
+import { ArrowRight, Check } from "@/components/icons"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -67,7 +67,7 @@ export function SchoolRequestForm() {
     </fieldset>
     <p id="request-contact-note" className="text-sm leading-6 text-muted-foreground">Your contact details will be shared with OutClass administrators to review your request and follow up. A request does not approve your university or create an account.</p>
     {error && <div ref={errorSummary} tabIndex={-1} role="alert" className="oc-request-error"><p>{error}</p><span>Your details are still here. You can try again.</span></div>}
-    <Button className="oc-request-submit" type="submit" disabled={busy}>{busy ? <><Loader2 className="motion-safe:animate-spin" size={16} aria-hidden="true" />Submitting…</> : <>Submit school request <ArrowRight size={16} aria-hidden="true" /></>}</Button>
+    <Button className="oc-request-submit" type="submit" disabled={busy} loading={busy}>Submit school request <ArrowRight size={16} aria-hidden="true" /></Button>
     <p className="oc-public-note" role="status">{busy ? "Saving your school request…" : "No account needed. Just an interest in what’s next."}</p>
   </form>
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
-import { CheckCircle2, Clock3, Loader2 } from "@/components/icons"
+import { CheckCircle2, Clock3 } from "@/components/icons"
 import { isUvaEmail } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -29,7 +29,7 @@ export function MobileJoinScreen({ onJoin, pending = false, error = "", memberNa
       <div className="space-y-2"><Label htmlFor="join-email">UVA email</Label><Input id="join-email" type="email" autoComplete="email" autoCapitalize="none" spellCheck={false} value={email} onChange={event => { setEmail(event.target.value); setValidation("") }} placeholder="computingid@virginia.edu" className="h-12 bg-white shadow-none" required /></div>
       <div className="space-y-2"><Label htmlFor="join-pin">Session PIN</Label><Input id="join-pin" inputMode="numeric" autoComplete="off" pattern="[0-9]{6}" maxLength={6} value={pin} onChange={event => { setPin(event.target.value.replace(/\D/g, "")); setValidation("") }} placeholder="000000" className="h-14 bg-white text-center text-2xl tracking-[0.3em] shadow-none" required /></div>
       {(validation || error) && <p role="alert" className="text-sm text-rose-700">{validation || error}</p>}
-      <Button type="submit" disabled={pending} className="h-12 w-full bg-black text-white shadow-none hover:bg-neutral-800">{pending ? <><Loader2 className="size-4 motion-safe:animate-spin" />Joining…</> : "Join demo session"}</Button>
+      <Button type="submit" disabled={pending} loading={pending} className="h-12 w-full bg-black text-white shadow-none hover:bg-neutral-800">Join demo session</Button>
     </form>
     <p className="text-xs leading-5 text-neutral-500">Demo only: email + PIN checks the sample roster; it does not verify email ownership. Try <button type="button" onClick={() => setEmail("pn4gk@virginia.edu")} className="text-black underline">pn4gk@virginia.edu (Priya)</button>. Verified sign-in and club membership must be supplied by the production auth service.</p>
   </section>

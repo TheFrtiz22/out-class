@@ -1,0 +1,861 @@
+[
+  {
+    "name": "applicants",
+    "width": 1440,
+    "errors": [],
+    "requests": [
+      "/api/workspace",
+      "/api/workspace",
+      "/api/workspace"
+    ],
+    "loading": {
+      "layout": "applicants",
+      "text": "Preparing your applicant pipeline…",
+      "statuses": 1,
+      "top": 236.375
+    },
+    "loaded": {
+      "width": 1440,
+      "headings": [
+        "All Applicants",
+        "Recruitment review",
+        "Academic & review filters"
+      ],
+      "alerts": []
+    }
+  },
+  {
+    "name": "applications",
+    "width": 1440,
+    "errors": [],
+    "requests": [
+      "/api/workspace",
+      "/api/workspace",
+      "/api/workspace",
+      "/"
+    ],
+    "loading": {
+      "layout": "applications",
+      "text": "Preparing your applications…",
+      "statuses": 1,
+      "top": 111
+    },
+    "loaded": {
+      "width": 1440,
+      "headings": [
+        "Applications",
+        "Grounds Creative Society",
+        "Campus Design Society"
+      ],
+      "alerts": []
+    }
+  },
+  {
+    "name": "recruiting",
+    "width": 1440,
+    "errors": [],
+    "requests": [
+      "/api/workspace",
+      "/api/workspace",
+      "/api/workspace"
+    ],
+    "loading": {
+      "layout": null,
+      "text": "Loading club activity…",
+      "statuses": 1,
+      "top": 236.375
+    },
+    "loaded": {
+      "width": 1440,
+      "headings": [
+        "Recruitment,in focus.",
+        "1 review is ready for you",
+        "Current pipeline",
+        "Booking follow-up",
+        "Your review queue 1",
+        "Voting & decisions",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage"
+      ],
+      "alerts": []
+    }
+  },
+  {
+    "name": "settings",
+    "width": 1440,
+    "errors": [],
+    "requests": [
+      "/api/workspace",
+      "/api/workspace",
+      "/api/workspace"
+    ],
+    "loading": {
+      "layout": "form",
+      "text": "Preparing application settings…",
+      "statuses": 1,
+      "top": 491.953125
+    },
+    "loaded": {
+      "width": 1440,
+      "headings": [
+        "Settings",
+        "Application",
+        "Question 1"
+      ],
+      "alerts": []
+    }
+  },
+  {
+    "name": "members",
+    "width": 1440,
+    "errors": [],
+    "requests": [
+      "/api/workspace",
+      "/api/workspace",
+      "/api/workspace"
+    ],
+    "loading": {
+      "layout": "table",
+      "text": "Loading member directory…",
+      "statuses": 1,
+      "top": 280.375
+    },
+    "loaded": {
+      "width": 1440,
+      "headings": [
+        "Settings"
+      ],
+      "alerts": []
+    }
+  },
+  {
+    "name": "interview",
+    "width": 1440,
+    "errors": [],
+    "requests": [
+      "/api/workspace",
+      "/api/workspace"
+    ],
+    "loading": {
+      "layout": "interview",
+      "text": "Preparing interview workspace…",
+      "statuses": 1,
+      "top": 0
+    },
+    "loaded": {
+      "width": 1440,
+      "headings": [
+        "Alex Sample 1",
+        "Interview questions",
+        "Available questions · 3",
+        "Completed questions 0"
+      ],
+      "alerts": []
+    }
+  },
+  {
+    "name": "letter",
+    "width": 1440,
+    "errors": [],
+    "requests": [
+      "/api/workspace",
+      "/api/workspace",
+      "/applications/064e3abb-8943-4316-a282-33f0a9b239f3/decision"
+    ],
+    "loading": {
+      "layout": "document",
+      "text": "Opening your decision letter…",
+      "statuses": 1,
+      "top": 32
+    },
+    "loaded": {
+      "width": 1440,
+      "headings": [
+        "Your recruitment decision"
+      ],
+      "alerts": []
+    }
+  },
+  {
+    "name": "applicants",
+    "width": 1280,
+    "errors": [],
+    "requests": [
+      "/api/workspace",
+      "/api/workspace",
+      "/api/workspace"
+    ],
+    "loading": {
+      "layout": "applicants",
+      "text": "Preparing your applicant pipeline…",
+      "statuses": 1,
+      "top": 234.28125
+    },
+    "loaded": {
+      "width": 1280,
+      "headings": [
+        "All Applicants",
+        "Recruitment review",
+        "Academic & review filters"
+      ],
+      "alerts": []
+    }
+  },
+  {
+    "name": "applications",
+    "width": 1280,
+    "errors": [],
+    "requests": [
+      "/api/workspace",
+      "/api/workspace",
+      "/api/workspace",
+      "/"
+    ],
+    "loading": {
+      "layout": "applications",
+      "text": "Preparing your applications…",
+      "statuses": 1,
+      "top": 111
+    },
+    "loaded": {
+      "width": 1280,
+      "headings": [
+        "Applications",
+        "Grounds Creative Society",
+        "Campus Design Society"
+      ],
+      "alerts": []
+    }
+  },
+  {
+    "name": "recruiting",
+    "width": 1280,
+    "errors": [],
+    "requests": [
+      "/api/workspace",
+      "/api/workspace",
+      "/api/workspace"
+    ],
+    "loading": {
+      "layout": null,
+      "text": "Loading club activity…",
+      "statuses": 1,
+      "top": 234.28125
+    },
+    "loaded": {
+      "width": 1280,
+      "headings": [
+        "Recruitment,in focus.",
+        "1 review is ready for you",
+        "Current pipeline",
+        "Booking follow-up",
+        "Your review queue 1",
+        "Voting & decisions",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage"
+      ],
+      "alerts": []
+    }
+  },
+  {
+    "name": "settings",
+    "width": 1280,
+    "errors": [],
+    "requests": [
+      "/api/workspace",
+      "/api/workspace",
+      "/api/workspace"
+    ],
+    "loading": {
+      "layout": "form",
+      "text": "Loading application settings…",
+      "statuses": 1,
+      "top": 368.28125
+    },
+    "loaded": {
+      "width": 1280,
+      "headings": [
+        "Settings",
+        "Application",
+        "Question 1"
+      ],
+      "alerts": []
+    }
+  },
+  {
+    "name": "members",
+    "width": 1280,
+    "errors": [],
+    "requests": [
+      "/api/workspace",
+      "/api/workspace",
+      "/api/workspace"
+    ],
+    "loading": {
+      "layout": "table",
+      "text": "Loading club members…",
+      "statuses": 1,
+      "top": 234.28125
+    },
+    "loaded": {
+      "width": 1280,
+      "headings": [
+        "Settings"
+      ],
+      "alerts": []
+    }
+  },
+  {
+    "name": "interview",
+    "width": 1280,
+    "errors": [],
+    "requests": [
+      "/api/workspace",
+      "/api/workspace",
+      "/api/workspace"
+    ],
+    "loading": {
+      "layout": "interview",
+      "text": "Loading interview workspace…",
+      "statuses": 1,
+      "top": 0
+    },
+    "loaded": {
+      "width": 1280,
+      "headings": [
+        "Alex Sample 1",
+        "Interview questions",
+        "Available questions · 3",
+        "Completed questions 0"
+      ],
+      "alerts": []
+    }
+  },
+  {
+    "name": "letter",
+    "width": 1280,
+    "errors": [],
+    "requests": [
+      "/api/workspace",
+      "/api/workspace",
+      "/applications/064e3abb-8943-4316-a282-33f0a9b239f3/decision"
+    ],
+    "loading": {
+      "layout": "document",
+      "text": "Opening your decision letter…",
+      "statuses": 1,
+      "top": 32
+    },
+    "loaded": {
+      "width": 1280,
+      "headings": [
+        "Your recruitment decision"
+      ],
+      "alerts": []
+    }
+  },
+  {
+    "name": "applicants",
+    "width": 768,
+    "errors": [],
+    "requests": [
+      "/api/workspace",
+      "/api/workspace",
+      "/api/workspace"
+    ],
+    "loading": {
+      "layout": "applicants",
+      "text": "Preparing your applicant pipeline…",
+      "statuses": 1,
+      "top": 227.8125
+    },
+    "loaded": {
+      "width": 768,
+      "headings": [
+        "All Applicants",
+        "Recruitment review",
+        "Academic & review filters"
+      ],
+      "alerts": []
+    }
+  },
+  {
+    "name": "applications",
+    "width": 768,
+    "errors": [],
+    "requests": [
+      "/api/workspace",
+      "/api/workspace",
+      "/api/workspace",
+      "/"
+    ],
+    "loading": {
+      "layout": "applications",
+      "text": "Preparing your applications…",
+      "statuses": 1,
+      "top": 107
+    },
+    "loaded": {
+      "width": 768,
+      "headings": [
+        "Applications",
+        "Grounds Creative Society",
+        "Campus Design Society"
+      ],
+      "alerts": []
+    }
+  },
+  {
+    "name": "recruiting",
+    "width": 768,
+    "errors": [],
+    "requests": [
+      "/api/workspace",
+      "/api/workspace",
+      "/api/workspace"
+    ],
+    "loading": {
+      "layout": null,
+      "text": "Loading club activity…",
+      "statuses": 1,
+      "top": 227.8125
+    },
+    "loaded": {
+      "width": 768,
+      "headings": [
+        "Recruitment,in focus.",
+        "1 review is ready for you",
+        "Current pipeline",
+        "Booking follow-up",
+        "Your review queue 1",
+        "Voting & decisions",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage"
+      ],
+      "alerts": []
+    }
+  },
+  {
+    "name": "settings",
+    "width": 768,
+    "errors": [],
+    "requests": [
+      "/api/workspace",
+      "/api/workspace",
+      "/api/workspace"
+    ],
+    "loading": {
+      "layout": "form",
+      "text": "Preparing application settings…",
+      "statuses": 1,
+      "top": 621.609375
+    },
+    "loaded": {
+      "width": 768,
+      "headings": [
+        "Settings",
+        "Application",
+        "Question 1"
+      ],
+      "alerts": []
+    }
+  },
+  {
+    "name": "members",
+    "width": 768,
+    "errors": [],
+    "requests": [
+      "/api/workspace",
+      "/api/workspace",
+      "/api/workspace"
+    ],
+    "loading": {
+      "layout": "table",
+      "text": "Loading club members…",
+      "statuses": 1,
+      "top": 375.8125
+    },
+    "loaded": {
+      "width": 768,
+      "headings": [
+        "Settings"
+      ],
+      "alerts": []
+    }
+  },
+  {
+    "name": "interview",
+    "width": 768,
+    "errors": [],
+    "requests": [
+      "/api/workspace",
+      "/api/workspace",
+      "/api/workspace"
+    ],
+    "loading": {
+      "layout": "interview",
+      "text": "Loading interview workspace…",
+      "statuses": 1,
+      "top": 0
+    },
+    "loaded": {
+      "width": 768,
+      "headings": [
+        "Alex Sample 1",
+        "Interview questions",
+        "Available questions · 3",
+        "Completed questions 0"
+      ],
+      "alerts": []
+    }
+  },
+  {
+    "name": "letter",
+    "width": 768,
+    "errors": [],
+    "requests": [
+      "/api/workspace",
+      "/api/workspace",
+      "/applications/064e3abb-8943-4316-a282-33f0a9b239f3/decision"
+    ],
+    "loading": {
+      "layout": "document",
+      "text": "Opening your decision letter…",
+      "statuses": 1,
+      "top": 32
+    },
+    "loaded": {
+      "width": 768,
+      "headings": [
+        "Your recruitment decision"
+      ],
+      "alerts": []
+    }
+  },
+  {
+    "name": "applicants",
+    "width": 390,
+    "errors": [],
+    "requests": [
+      "/api/workspace",
+      "/api/workspace",
+      "/api/workspace"
+    ],
+    "loading": {
+      "layout": "applicants",
+      "text": "Preparing your applicant pipeline…",
+      "statuses": 1,
+      "top": 269.8125
+    },
+    "loaded": {
+      "width": 390,
+      "headings": [
+        "All Applicants",
+        "Recruitment review",
+        "Academic & review filters"
+      ],
+      "alerts": []
+    }
+  },
+  {
+    "name": "applications",
+    "width": 390,
+    "errors": [],
+    "requests": [
+      "/api/workspace",
+      "/api/workspace",
+      "/api/workspace",
+      "/"
+    ],
+    "loading": {
+      "layout": "applications",
+      "text": "Preparing your applications…",
+      "statuses": 1,
+      "top": 153
+    },
+    "loaded": {
+      "width": 390,
+      "headings": [
+        "Applications",
+        "Grounds Creative Society",
+        "Campus Design Society"
+      ],
+      "alerts": []
+    }
+  },
+  {
+    "name": "recruiting",
+    "width": 390,
+    "errors": [],
+    "requests": [
+      "/api/workspace",
+      "/api/workspace",
+      "/api/workspace"
+    ],
+    "loading": {
+      "layout": null,
+      "text": "Loading club activity…",
+      "statuses": 1,
+      "top": 269.8125
+    },
+    "loaded": {
+      "width": 390,
+      "headings": [
+        "Recruitment,in focus.",
+        "1 review is ready for you",
+        "Current pipeline",
+        "Booking follow-up",
+        "Your review queue 1",
+        "Voting & decisions",
+        "Interviews this week",
+        "Next seven days",
+        "Your review coverage"
+      ],
+      "alerts": []
+    }
+  },
+  {
+    "name": "settings",
+    "width": 390,
+    "errors": [],
+    "requests": [
+      "/api/workspace",
+      "/api/workspace",
+      "/api/workspace"
+    ],
+    "loading": {
+      "layout": "form",
+      "text": "Preparing application settings…",
+      "statuses": 1,
+      "top": 687.609375
+    },
+    "loaded": {
+      "width": 390,
+      "headings": [
+        "Settings",
+        "Application",
+        "Question 1"
+      ],
+      "alerts": []
+    }
+  },
+  {
+    "name": "members",
+    "width": 390,
+    "errors": [],
+    "requests": [
+      "/api/workspace",
+      "/api/workspace",
+      "/api/workspace"
+    ],
+    "loading": {
+      "layout": "table",
+      "text": "Loading club members…",
+      "statuses": 1,
+      "top": 421.8125
+    },
+    "loaded": {
+      "width": 390,
+      "headings": [
+        "Settings"
+      ],
+      "alerts": []
+    }
+  },
+  {
+    "name": "interview",
+    "width": 390,
+    "errors": [],
+    "requests": [
+      "/api/workspace",
+      "/api/workspace",
+      "/api/workspace"
+    ],
+    "loading": {
+      "layout": "interview",
+      "text": "Loading interview workspace…",
+      "statuses": 1,
+      "top": 0
+    },
+    "loaded": {
+      "width": 390,
+      "headings": [
+        "Alex Sample 1",
+        "Interview questions",
+        "Available questions · 3",
+        "Completed questions 0"
+      ],
+      "alerts": []
+    }
+  },
+  {
+    "name": "letter",
+    "width": 390,
+    "errors": [],
+    "requests": [
+      "/api/workspace",
+      "/api/workspace",
+      "/applications/064e3abb-8943-4316-a282-33f0a9b239f3/decision"
+    ],
+    "loading": {
+      "layout": "document",
+      "text": "Opening your decision letter…",
+      "statuses": 1,
+      "top": 20
+    },
+    "loaded": {
+      "width": 390,
+      "headings": [
+        "Your recruitment decision"
+      ],
+      "alerts": []
+    }
+  },
+  {
+    "name": "actions",
+    "width": 1440,
+    "errors": [],
+    "refresh": {
+      "before": {
+        "x": 1039,
+        "y": 360.84375,
+        "width": 130.21875,
+        "height": 40
+      },
+      "during": {
+        "x": 1039,
+        "y": 360.84375,
+        "width": 130.21875,
+        "height": 40
+      },
+      "preserved": true
+    },
+    "failureReleasesLoader": true,
+    "dialog": {
+      "rest": {
+        "x": 918.859375,
+        "y": 518.9296875,
+        "width": 112.140625,
+        "height": 40
+      },
+      "pending": {
+        "x": 918.859375,
+        "y": 518.9296875,
+        "width": 112.140625,
+        "height": 40
+      },
+      "failureReleasesLoader": true
+    }
+  },
+  {
+    "name": "actions",
+    "width": 1280,
+    "errors": [],
+    "refresh": {
+      "before": {
+        "x": 905,
+        "y": 346.875,
+        "width": 130.21875,
+        "height": 40
+      },
+      "during": {
+        "x": 905,
+        "y": 346.875,
+        "width": 130.21875,
+        "height": 40
+      },
+      "preserved": true
+    },
+    "failureReleasesLoader": true,
+    "dialog": {
+      "rest": {
+        "x": 838.859375,
+        "y": 518.9296875,
+        "width": 112.140625,
+        "height": 40
+      },
+      "pending": {
+        "x": 838.859375,
+        "y": 518.9296875,
+        "width": 112.140625,
+        "height": 40
+      },
+      "failureReleasesLoader": true
+    }
+  },
+  {
+    "name": "actions",
+    "width": 768,
+    "errors": [],
+    "refresh": {
+      "before": {
+        "x": 19.1875,
+        "y": 460.5,
+        "width": 130.21875,
+        "height": 40
+      },
+      "during": {
+        "x": 19.1875,
+        "y": 460.5,
+        "width": 130.21875,
+        "height": 40
+      },
+      "preserved": true
+    },
+    "failureReleasesLoader": true,
+    "dialog": {
+      "rest": {
+        "x": 582.859375,
+        "y": 518.9296875,
+        "width": 112.140625,
+        "height": 40
+      },
+      "pending": {
+        "x": 582.859375,
+        "y": 518.9296875,
+        "width": 112.140625,
+        "height": 40
+      },
+      "failureReleasesLoader": true
+    }
+  },
+  {
+    "name": "actions",
+    "width": 390,
+    "errors": [],
+    "refresh": {
+      "before": {
+        "x": 16,
+        "y": 488.6875,
+        "width": 130.21875,
+        "height": 44
+      },
+      "during": {
+        "x": 16,
+        "y": 488.6875,
+        "width": 130.21875,
+        "height": 44
+      },
+      "preserved": true
+    },
+    "failureReleasesLoader": true,
+    "dialog": {
+      "rest": {
+        "x": 240.859375,
+        "y": 532.4296875,
+        "width": 112.140625,
+        "height": 44
+      },
+      "pending": {
+        "x": 240.859375,
+        "y": 532.4296875,
+        "width": 112.140625,
+        "height": 44
+      },
+      "failureReleasesLoader": true
+    }
+  }
+]
