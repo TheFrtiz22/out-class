@@ -112,43 +112,46 @@ body > .oc-loading-screen {
   .oc-loading-line::after { transform: translate3d(80%, 0, 0); }
 }
 
-/* Contextual loading: recognizable page geometry, not a blank status paragraph.
-   The low-contrast highlight moves only via transform and never blocks interaction. */
+/* The preview owns one slow, shared sheen. Individual placeholder blocks stay still. */
 .oc-skeleton {
-  position: relative;
   display: block;
-  overflow: hidden;
-  isolation: isolate;
   background: color-mix(in srgb, var(--muted) 86%, var(--border));
 }
-.oc-skeleton::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 54%), transparent);
-  transform: translate3d(-105%, 0, 0);
-  animation: oc-skeleton-sheen 2050ms ease-in-out infinite;
+.oc-loading-state { display: grid; min-width: 0; }
+.oc-loading-state[data-layout="inline"] {
+  display: flex; align-items: center; gap: .5rem; padding-block: .5rem;
+  font-size: var(--oc-text-small); line-height: var(--oc-leading-compact); color: var(--muted-foreground);
+}
+.oc-loading-state[data-layout="inline"] > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.oc-loading-state:not([data-layout="inline"]) { padding-block: .25rem 1.25rem; width: 100%; }
+.oc-loading-preview, .oc-dashboard-loading > div[aria-hidden="true"] {
+  position: relative; overflow: hidden; isolation: isolate;
+}
+.oc-loading-preview::after, .oc-dashboard-loading > div[aria-hidden="true"]::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--background) 28%, transparent), transparent);
+  transform: translate3d(-100%, 0, 0);
+  animation: oc-skeleton-sheen 2800ms ease-in-out infinite;
 }
 @keyframes oc-skeleton-sheen {
-  from { transform: translate3d(-105%, 0, 0); }
-  to { transform: translate3d(105%, 0, 0); }
+  from { transform: translate3d(-100%, 0, 0); }
+  to { transform: translate3d(100%, 0, 0); }
 }
-.oc-loading-state { display: grid; min-width: 0; }
-.oc-loading-state[data-layout="inline"] { display: flex; align-items: center; gap: .5rem; padding-block: .5rem; font-size: var(--oc-text-small); color: var(--muted-foreground); }
-.oc-loading-state[data-layout="inline"] > svg { flex-shrink: 0; }
-.oc-loading-state:not([data-layout="inline"]) { gap: .75rem; padding-block: .25rem 1.25rem; width: 100%; }
-.oc-loading-status {
-  display: inline-flex;
-  align-items: center;
-  gap: .6rem;
-  width: fit-content;
-  max-width: 100%;
-  margin: 0;
-  color: var(--muted-foreground);
-  font-size: var(--oc-text-small);
-  line-height: 1.5;
-  font-weight: var(--oc-weight-medium);
+
+/* One native Phosphor arc, no container or competing effects. */
+.oc-loading-indicator {
+  display: inline-flex; align-items: center; justify-content: center;
+  inline-size: 1rem; block-size: 1rem; flex: 0 0 auto;
+  color: inherit; vertical-align: middle;
+  animation: oc-loading-spin 1000ms linear infinite;
+}
+.oc-loading-indicator[data-size="sm"] { inline-size: .875rem; block-size: .875rem; }
+.oc-loading-indicator[data-size="lg"] { inline-size: 1.25rem; block-size: 1.25rem; }
+.oc-loading-indicator > svg { inline-size: 100%; block-size: 100%; }
+@keyframes oc-loading-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .oc-loading-indicator { animation: none; }
+  .oc-loading-preview::after, .oc-dashboard-loading > div[aria-hidden="true"]::after { animation: none; display: none; }
 }
 .oc-loading-preview { min-width: 0; width: 100%; }
 .oc-loading-preview-heading {
@@ -198,10 +201,6 @@ body > .oc-loading-screen {
 .oc-loading-document { width: min(100%, 48rem); margin-inline: auto; }
 .oc-loading-document-head { display: flex; gap: .875rem; align-items: center; margin-bottom: 1.25rem; }
 .oc-loading-document-paper { min-height: 20rem; border: 1px solid var(--border); border-top: 3px solid var(--primary); border-radius: var(--oc-radius-lg); background: var(--card); box-shadow: var(--oc-content-shadow); padding: clamp(1.25rem, 4vw, 3rem); }
-/* The distant rows still represent pending content, but do not create additional independent animation loops. */
-.oc-loading-row:nth-child(n + 6) .oc-skeleton::after { animation: none; }
-.oc-loading-state:not([data-layout="inline"]) .oc-skeleton::after { opacity: .55; animation-duration: 2050ms; }
-
 @media (max-width: 767px) {
   .oc-loading-cards { grid-template-columns: 1fr; }
   .oc-loading-workspace-columns { grid-template-columns: 1fr; }
@@ -214,13 +213,9 @@ body > .oc-loading-screen {
   .oc-loading-pipeline-step .oc-skeleton { max-width: 100%; }
   .oc-loading-row { padding: 1rem; }
 }
-@media (prefers-reduced-motion: reduce) {
-  .oc-skeleton::after { animation: none; display: none; }
-  .oc-loading-inline-spinner { animation: none; }
-}
 @media (forced-colors: active) {
   .oc-skeleton { background: Canvas; border: 1px solid CanvasText; }
-  .oc-skeleton::after { display: none; }
+  .oc-loading-preview::after, .oc-dashboard-loading > div[aria-hidden="true"]::after { display: none; }
 }
 
 /* Compact feeds, member tables, calendars and live review surfaces share the same
@@ -235,8 +230,7 @@ body > .oc-loading-screen {
 .oc-loading-calendar-cell { min-width: 0; min-height: clamp(3.25rem, 7vw, 6rem); padding: .5rem; border-top: 1px solid var(--border); }
 .oc-loading-schedule-row { display: flex; gap: 1.25rem; align-items: center; padding-block: 1.25rem; }
 .oc-loading-schedule-row + .oc-loading-schedule-row { border-top: 1px solid var(--border); }
-.oc-loading-interview { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 1.5rem; }
-.oc-loading-interview-context, .oc-loading-interview-review, .oc-loading-ballot { min-width: 0; padding: clamp(1rem, 2vw, 1.5rem); border: 1px solid var(--border); border-radius: var(--oc-radius-lg); background: var(--card); }
+.oc-loading-ballot { min-width: 0; padding: clamp(1rem, 2vw, 1.5rem); border: 1px solid var(--border); border-radius: var(--oc-radius-lg); background: var(--card); }
 .oc-loading-presentation { min-width: 0; padding-block: 1rem; }
 .oc-loading-presentation-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2rem; margin-top: 2rem; }
 .oc-loading-voting { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 1.5rem; }
@@ -244,8 +238,7 @@ body > .oc-loading-screen {
 @media (max-width: 767px) {
   .oc-loading-table-head, .oc-loading-table-row { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 1rem; padding-inline: 0; }
   .oc-loading-table-head > :nth-child(n + 3), .oc-loading-table-row > :nth-child(n + 3) { display: none; }
-  .oc-loading-interview, .oc-loading-voting { grid-template-columns: minmax(0, 1fr); }
-  .oc-loading-interview-context > .oc-skeleton:last-child { height: 3rem; }
+  .oc-loading-voting { grid-template-columns: minmax(0, 1fr); }
   .oc-loading-presentation-fields { grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
   .oc-loading-calendar { padding: .75rem; }
   .oc-loading-calendar-cell { padding: .375rem; }
@@ -281,76 +274,25 @@ body > .oc-loading-screen {
   .oc-loading-applicant-search { flex-basis: 100%; }
 }
 
-
-/* OutClass glowing activity capsule. Inspired by Framer's Homay spinner
-   appearance; implemented locally with CSS, without importing Framer assets. */
-.oc-glow-loading-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: .65rem;
-  max-width: 100%;
-  min-height: 2.125rem;
-  padding: .45rem .9rem .45rem .65rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, .075);
-  background: #141a20;
-  color: #f5f6f7;
-  box-shadow: 0 6px 14px rgba(13, 25, 36, .09), inset 0 1px 0 rgba(255, 255, 255, .075);
-  vertical-align: middle;
-  font-size: var(--oc-text-small);
-  font-weight: var(--oc-weight-medium);
-  line-height: 1.2;
-  letter-spacing: -.008em;
+/* The interview room opens into a full-width header and three working columns. */
+.oc-loading-state[data-layout="interview"] { padding: 0; }
+.oc-loading-interview-header {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 1rem;
+  min-height: 3.75rem; padding: .75rem 1.5rem; border-bottom: 1px solid var(--border); background: var(--card);
 }
-.oc-glow-loading-pill[data-size="compact"] {
-  min-height: 1.875rem;
-  padding: .32rem .75rem .32rem .5rem;
-  gap: .5rem;
+.oc-loading-interview-presence { padding: .75rem 1.5rem; border-bottom: 1px solid var(--border); }
+.oc-loading-interview-columns { display: grid; grid-template-columns: minmax(0, 1fr); }
+.oc-loading-interview-columns > * { min-width: 0; padding: var(--oc-content-padding); }
+.oc-loading-interview-applicant, .oc-loading-interview-questions { border-bottom: 1px solid var(--border); }
+.oc-loading-interview-questions { min-height: 24rem; }
+.oc-loading-interview-notes { min-height: 20rem; }
+@media (min-width: 1024px) {
+  .oc-loading-interview-columns {
+    grid-template-columns: minmax(190px, 26fr) minmax(0, 49fr) minmax(190px, 25fr);
+    min-height: calc(100dvh - 6rem);
+  }
+  .oc-loading-interview-applicant, .oc-loading-interview-questions { border-bottom: 0; border-right: 1px solid var(--border); }
 }
-.oc-glow-loading-ring {
-  position: relative;
-  display: inline-block;
-  flex: 0 0 auto;
-  width: 1.125rem;
-  height: 1.125rem;
-  border: 2.25px solid rgba(255, 255, 255, .22);
-  border-radius: 50%;
-}
-.oc-glow-loading-pill[data-size="compact"] .oc-glow-loading-ring {
-  width: 1rem;
-  height: 1rem;
-  border-width: 2px;
-}
-.oc-glow-loading-ring::after {
-  content: "";
-  position: absolute;
-  inset: -2.25px;
-  border-radius: inherit;
-  border: 2.25px solid transparent;
-  border-top-color: #fff;
-  border-right-color: rgba(255, 255, 255, .82);
-  filter: drop-shadow(0 0 2.5px rgba(255, 255, 255, .62));
-  animation: oc-glow-loading-spin 1.15s linear infinite;
-}
-.oc-glow-loading-pill[data-size="compact"] .oc-glow-loading-ring::after {
-  inset: -2px;
-  border-width: 2px;
-}
-.oc-glow-loading-label {
-  display: inline-block;
-  min-width: 0;
-  overflow-wrap: anywhere;
-  text-wrap: pretty;
-}
-@keyframes oc-glow-loading-spin {
-  to { transform: rotate(360deg); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .oc-glow-loading-ring::after { animation: none; }
-}
-@media (forced-colors: active) {
-  .oc-glow-loading-pill { forced-color-adjust: auto; color: ButtonText; border-color: ButtonText; background: ButtonFace; box-shadow: none; }
-  .oc-glow-loading-ring { border-color: GrayText; }
-  .oc-glow-loading-ring::after { border-top-color: ButtonText; border-right-color: ButtonText; filter: none; }
+@media (max-width: 767px) {
+  .oc-loading-interview-header { min-height: 7rem; }
 }
