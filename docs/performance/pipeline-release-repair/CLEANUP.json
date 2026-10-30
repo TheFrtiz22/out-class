@@ -60,5 +60,10 @@
     "onboardingConfigAndPidFilesExist": true,
     "dockerApiAvailable": false,
     "action": "No further local lifecycle or Docker startup/stop was attempted. Later files may belong to other work and were preserved. The earlier timestamped cleanup evidence describes only this task\u2019s owned services."
+  },
+  "finalSupplementCleanup": {
+    "scope": "Fresh isolated GitHub VMs only; no local shared fixture root or other user service touched.",
+    "controller": "scripts/run-pipeline-release-gated-qa.cjs stops only its spawned process groups and named projects; removes private config/certificate files after successful project stop. Failed product assertions remain nonzero. No runtime secrets uploaded.",
+    "macObserverQA": "Real headless Chromium reproduction closed the browser in finally; no local Supabase/Docker service was started or modified."
   }
 }

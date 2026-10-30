@@ -47,3 +47,13 @@ the unchanged dependent assertions. Independent Admin-session scenarios now
 continue in their separate fixture even if the earlier Admin assertions fail;
 the controller preserves a nonzero exit for every failed test. Only the two
 affected matrix jobs are repeated via `run-release-functional-repair`.
+
+
+Final outcome: canonical sequencing resolved fixture prerequisites. All remaining
+specific cases ran, with 51/52 separately passing. One original Admin-session
+literal /Admin workspace/ route expectation remains failed against current
+Administration markup. The returned page is the authorized Admin shell; this
+observation is not substituted for that test passing. A transient reserved-port
+bind failure was retried once with identical source and passed. Full failure/
+retry history and exact counters remain in GATED_SUPPLEMENT_QA.json. No further
+broad fixture/product work is part of this rejected performance candidate.

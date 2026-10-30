@@ -1,7 +1,9 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-30T14:41:52.472Z",
-  "latestMain": "6e793dea0bd45052fa444749b26d432ae93392cd",
+  "generatedAt": "2026-10-30T15:26:27.965Z",
+  "latestMain": "bc22b0a30b98cbfab785ea3da5215a9351b76109",
+  "measuredMain": "6e793dea0bd45052fa444749b26d432ae93392cd",
+  "latestMainIsMeasured": false,
   "heldCandidate": "375a00d54d95f24e7d600a56218b9bf8040a7937",
   "percentiles": "Nearest rank, no interpolation. Failed attempts remain counted; failed milestones have null latency. n10 p95 is the maximum and is not a production p95 guarantee.",
   "metricNotes": [
@@ -10,6 +12,7 @@
     "Encoded bytes remain null when any contributing response size is unknown; known partial bytes and unknown counts are separate.",
     "Browser aborted counters represent requestfailed events; workflow transport causes are not subdivided. Native aborted/pending classifications are unavailable separately from failed transport rows.",
     "Server-Timing spans may overlap; their durations must not be added as mutually exclusive stages. Pure pool acquisition/locks and detailed Auth transport are unavailable.",
+    "OBSERVER_QA.json independently reproduces missed text-only readiness in the measured strict-review observer. Its recorded journey durations remain unchanged and may include observation delay; no particular past tail is proved to have that cause. Future release clearance requires corrected-observer comparison. The independent primary directory gate is unchanged.",
     "The strict full-review readiness observer inspects visible rows; observer/actionability/automation costs are part of these instrumented journey durations and can scale with DOM size. They are not isolated app execution or production-user timings.",
     "Complete-review timing follows the current Voting history console. Persistent live rooms are covered functionally, not timed.",
     "Filtering, sorting, pagination, revocation, rapid navigation and drafts have canonical/browser functional checks; separate controlled latency distributions for all of those operations are not available."
@@ -90330,5 +90333,7 @@
   ],
   "functionalClearance": true,
   "performanceClearance": false,
+  "strictReviewObserverClearance": false,
+  "strictReviewObserverEvidence": "OBSERVER_QA.json: measured collector omitted characterData; all recorded values/statuses retained without subtraction or removal. No new performance run is launched for the independently failed candidate.",
   "productionReady": false
 }

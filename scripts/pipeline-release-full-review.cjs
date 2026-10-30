@@ -20,7 +20,7 @@ function installStage({kind,text,count}){
  const check=()=>{if(!state.start||state.ready||state.scheduled||!predicate())return;state.scheduled=true;requestAnimationFrame(()=>requestAnimationFrame(()=>{if(predicate()){state.ready=performance.now();const root=[...document.querySelectorAll('[role="dialog"],.oc-live-pipeline')].filter(visible).at(-1);const control=[...root?.querySelectorAll('button,input,select,a[href]')||[]].find(e=>visible(e)&&!e.disabled);state.interactive=control?performance.now():0}else state.scheduled=false}))};
  const begin=()=>{if(!state.start)state.start=performance.now();queueMicrotask(check)};
  document.addEventListener('click',begin,true);document.addEventListener('input',begin,true);document.addEventListener('change',begin,true);
- const observer=new MutationObserver(check);observer.observe(document.body,{subtree:true,attributes:true,childList:true});
+ const observer=new MutationObserver(check);observer.observe(document.body,{subtree:true,attributes:true,childList:true,characterData:true});
  state.check=check;state.finish=()=>{observer.disconnect();document.removeEventListener('click',begin,true);document.removeEventListener('input',begin,true);document.removeEventListener('change',begin,true);return{origin:performance.timeOrigin,start:state.start,ready:state.ready,interactive:state.interactive}};
 }
 const safeRoute=input=>{const u=new URL(input);return u.pathname==='/api/workspace'?u.pathname+'?kind='+u.searchParams.get('kind'):u.pathname.replace(/[\da-f]{8}-[\da-f-]{27,}/ig,'[fixture-id]')};

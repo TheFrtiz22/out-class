@@ -1,13 +1,26 @@
 # Security and functional verification
 
+Final gated outcome: 51 of the 52 ordinary gated scenarios have their own
+separate passing evidence; none remains unrun. This includes actual club-assets,
+active-room authority/revocation, recipient audiences, invitation/communication
+scheduling, publication, private decision letters and Admin workspace. The one
+original Admin-session route test still fails its legacy literal /Admin
+workspace/ expectation, while returned HTML contains the authorized Admin
+product shell and current heading. No assertion is weakened and this test is
+not counted as passing. Initial fixture/MFA/event prerequisite failures and the
+successful unchanged-source port-startup retry remain in GATED_SUPPLEMENT_QA.json.
+The gated supplement workflow therefore retains a failed conclusion for that
+one scenario. Pipeline release remains rejected independently by performance.
+
+
 Current candidate `4d52103e0ca70086c8ff4f3e913a7bd11f377005` is rebased onto main
 `6e793dea0bd45052fa444749b26d432ae93392cd`, with application digest
 `99077a7ff37acb0b67cb919c4ec4b1b95bc0401750472cc65f26b3aaeb029be1`. All twelve hosted verification jobs pass.
 `HOSTED_QA_CURRENT.json` identifies exact jobs and sanitized counters. Earlier
 source/check attempts remain in HOSTED_QA.json and LOCAL_QA_LOGS.json separately.
-These are functional results. The separate accepted local comparison passes local performance and capacity gates; constrained gates are pending.
+These are functional results on measured main 6e793dea. The pipeline fails the frozen constrained entry gate; recorded strict-review tails and observer clearance remain unresolved. All capacity gates pass. This is not release clearance.
 
-## Current-main verification
+## Measured-main verification (6e793dea)
 
 | Check | Result and evidence |
 |---|---|
@@ -112,8 +125,7 @@ service shutdown, private fixture deletion and preservation of unrelated work.
 
 Additional real dashboard and application-writing journeys pass as separate
 CI jobs on source 330ada23 with the same application digest. See ADDITIONAL_QA.json.
-GATED_COVERAGE.json maps all 52 ordinary skips: 41 are covered by separately
-passing integrations and 11 specific scenarios were not run in this repair.
+GATED_COVERAGE.json maps all 52 ordinary skips and is updated per specific supplement outcome. After the first supplement, 45 have separate passing evidence, three reached failing assertions with missing fixture prerequisites, and four were not reached. Corrected sequencing retries are recorded separately; none is automatically counted as passing.
 Those omissions are retained explicitly and no blanket production-ready
 clearance is claimed. No failed test was converted to a skip.
 
@@ -126,3 +138,16 @@ five more subtest failures. This is a real failed verification, not a gated skip
 or a startup-only failure. No scheduler code/test changes exist against current
 main; that does not establish the cause or clear the failure. The identical
 source passed previous full runs. The unchanged-source retry (job 123855873757) passed every original assertion, including actual backend termination and recovery. Failure and retry details are retained in EVIDENCE_COMMIT_QA.json. This records intermittent recovery-test instability; it does not establish a cause or erase the initial failed verification. Keep that issue visible alongside the gated omissions in release review.
+
+
+Final-source boundary: remote main advanced after timing to bc22b0a3 (#101
+live-room transitions/guarded undo). Its 19 changed files do not overlap the 25
+repair application files, but no timed/fully verified integration onto that
+source is claimed. The table's 60 migrations/79 tables refer to measured main;
+the upstream new migration is not this repair's schema change.
+
+OBSERVER_QA.json reproduces a strict-review text-mutation observation gap in real
+Chromium and verifies the future characterData correction. It does not establish
+or erase the cause of past tail samples. The independent one-applicant primary
+entry p50 failure remains. No security assertion is removed to obtain a passing
+performance result; pipeline application 4d52103e is rejected for release.

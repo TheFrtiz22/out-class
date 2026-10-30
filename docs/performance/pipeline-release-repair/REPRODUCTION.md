@@ -97,3 +97,14 @@ Commands pass `--cohort=1|100|1000|5000` and `--readiness-timeout-ms=180000` to
 both builds' collectors. The no-cohort/default-all study retains its original
 30-second observer wait. See FULL_REVIEW_PLAN.md for the predeclared reason,
 whole-attempt exclusions, unchanged milestones and acceptance limits.
+
+
+Final reproduction boundary: the recorded local source is 4d52103e and the
+completed constrained cohort tools are 3d4f4128, both against main 6e793dea.
+Current tools include the post-measurement characterData observer fix. Therefore
+running current tools is a new comparison, not a replay of those old observer
+semantics. No old times may be adjusted or pooled with it. The fixed-study
+summarizer deliberately retains false strict-observer release clearance and
+all recorded numeric gate outcomes. This application candidate is rejected;
+no additional performance collection is requested here. Final remote main is
+bc22b0a3 and was inspected, not measured by this study.

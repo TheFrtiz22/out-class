@@ -1,13 +1,15 @@
 {
-  "sealedAt": "2026-10-30T15:07:43.618Z",
+  "sealedAt": "2026-10-30T15:28:51.435Z",
   "algorithm": "SHA-256",
   "base": "6e793dea0bd45052fa444749b26d432ae93392cd",
+  "finalRemoteMain": "bc22b0a30b98cbfab785ea3da5215a9351b76109",
+  "branchIncorporatesFinalRemoteMain": false,
   "measuredApplicationCommit": "4d52103e0ca70086c8ff4f3e913a7bd11f377005",
   "applicationDigest": "99077a7ff37acb0b67cb919c4ec4b1b95bc0401750472cc65f26b3aaeb029be1",
   "applicationSourceFilesVerified": 963,
   "performanceClearance": false,
   "productionReady": false,
-  "entryListDigest": "e78cc0bed950637902fb1177b45f108fc68888ae11a151d8c967e3acf456a8be",
+  "entryListDigest": "0fdc825fed1f6f33ebe4e7ee703621c41084e1f5082ad57ab20a3e9cefcb201c",
   "scope": "Every changed file against base, including application/tooling/tests and all retained raw evidence. Excludes this self-referential seal only. Historical evidence read from other commits is referenced by hash in SOURCE_BASELINE.json and BENCHMARKS.json.",
   "entries": [
     {
@@ -77,8 +79,8 @@
     },
     {
       "path": "docs/performance/pipeline-release-repair/BENCHMARKS.json",
-      "bytes": 5401231,
-      "sha256": "e31cd987fa8df1ed9c998de07da8c9ced9512dc532e8e05cd9939268e1773d86"
+      "bytes": 5401981,
+      "sha256": "db2d6ec0a2c0c25d814e932c6d3ad5318cf2a58e12086529d4f1043dd50185a4"
     },
     {
       "path": "docs/performance/pipeline-release-repair/CANCELLED_CI_PREPARATIONS.json",
@@ -87,28 +89,28 @@
     },
     {
       "path": "docs/performance/pipeline-release-repair/CHANGED_FILES.json",
-      "bytes": 181039,
-      "sha256": "05bdecb703dfab0b416223cc2f6d7bcbd5f2f60f2da1396c97c1bdc6069fcc55"
+      "bytes": 181332,
+      "sha256": "c92f2c14220c135d06530bfca5213115bdcc16b2398ae8252ff33dc7dc5ea6f0"
     },
     {
       "path": "docs/performance/pipeline-release-repair/CHATGPT_HANDOFF.md",
-      "bytes": 15541,
-      "sha256": "f0416fae0d0f995b2383c83bead645d0030818ae1fd62d202c832a8cbc7aaf7e"
+      "bytes": 18294,
+      "sha256": "1ceb87921fbbfb76a36a450893b2746974985b5281e8be624da1726b9c63c8c1"
     },
     {
       "path": "docs/performance/pipeline-release-repair/CLEANUP.json",
-      "bytes": 2893,
-      "sha256": "98ea3ecbb4175a28832cba0b64af7209a4c484e81ada6227fe2a2b4eb875662f"
+      "bytes": 3448,
+      "sha256": "2eca0f6a8615cd91d55b1755f1abc77fe7617d51d68e9fc68aa49ab6a0b24174"
     },
     {
       "path": "docs/performance/pipeline-release-repair/CONTROLLED_RESULTS.md",
-      "bytes": 7052,
-      "sha256": "853b8ba11434fd84efbac07a0e3bb85a0555442962a802e619446736f00ae552"
+      "bytes": 9221,
+      "sha256": "c6113b28e63963d33da453eeb86f8f270374e016706a9bb7e487531f0999b7a9"
     },
     {
       "path": "docs/performance/pipeline-release-repair/DOCK_INTERACTION_REPORT.md",
-      "bytes": 2514,
-      "sha256": "dbfd21febbb10150ed57fd0bd672d74d085d23e3e5e1e7d55a05b97d4315ed28"
+      "bytes": 2517,
+      "sha256": "57a1766af68add8101b7060d7986488ea3d51faf47b2e3c91e06c52de77655ba"
     },
     {
       "path": "docs/performance/pipeline-release-repair/EVIDENCE_COMMIT_QA.json",
@@ -117,23 +119,23 @@
     },
     {
       "path": "docs/performance/pipeline-release-repair/FULL_REVIEW_PLAN.md",
-      "bytes": 10950,
-      "sha256": "6348ad1b1581f60696dda14a12bdebecd6f56dd62ae38b93f9da1507e49d800b"
+      "bytes": 11795,
+      "sha256": "cf9fbb9e0a0a7d9711d33dd6344d23c84d8fc9c450a71cb09e2aa2e20f67c69d"
     },
     {
       "path": "docs/performance/pipeline-release-repair/GATED_COVERAGE.json",
-      "bytes": 24710,
-      "sha256": "26f7189c6ff933fb6962d05507151cd4bf71949d94c90aa36dc1b3b6916baac8"
+      "bytes": 25937,
+      "sha256": "6df4b8e349d6ed05a35e45630f80192eb8317e57a62d4d19ab21e89cd934db8c"
     },
     {
       "path": "docs/performance/pipeline-release-repair/GATED_QA_PLAN.md",
-      "bytes": 3144,
-      "sha256": "d0118cd27db8be2753fd13bc13a23b5494afdc6c9053283df3051a67e1e98dc8"
+      "bytes": 3771,
+      "sha256": "2e32c2b95f881d31b518ff2b5700688ebffb2bac42a570d94847148794a36c24"
     },
     {
       "path": "docs/performance/pipeline-release-repair/GATED_SUPPLEMENT_QA.json",
-      "bytes": 24716,
-      "sha256": "52c9eac6ba57fecf9abf0a3d381b9fcfc92e7bf7a76c5ea2c802712e44abaad8"
+      "bytes": 45973,
+      "sha256": "2e55650ef0e44297751a60a7f5cea1e170642ff796b84fb28fe3deecc610e95d"
     },
     {
       "path": "docs/performance/pipeline-release-repair/GATED_TEST_TITLES.json",
@@ -152,8 +154,8 @@
     },
     {
       "path": "docs/performance/pipeline-release-repair/IMPLEMENTATION.md",
-      "bytes": 10653,
-      "sha256": "bef47fb0f9866f58140fd3ac0a87713691f21ad68719e9526a1e713920192989"
+      "bytes": 12320,
+      "sha256": "91560f9e5905009e909a418c838230858ae2ab86881185d000d3c530e1db7bb0"
     },
     {
       "path": "docs/performance/pipeline-release-repair/LOCAL_FIXTURE_PROFILE.json",
@@ -166,39 +168,44 @@
       "sha256": "ce9626fa421458663ab94e03b482915c6d04e2471589d768c56c70c8b59faa75"
     },
     {
+      "path": "docs/performance/pipeline-release-repair/OBSERVER_QA.json",
+      "bytes": 1378,
+      "sha256": "bf91dae522f9203e509f582cbca729807d8fd6d6110dc496abc03879ccbcf511"
+    },
+    {
       "path": "docs/performance/pipeline-release-repair/PRODUCTION_OBSERVABILITY.json",
       "bytes": 2074,
       "sha256": "f439a970264ee929d7a4983d9a7468cb2457efe6395d0900942b37310b3cc0e8"
     },
     {
       "path": "docs/performance/pipeline-release-repair/RELEASE_DECISION.md",
-      "bytes": 5543,
-      "sha256": "30c2fee3a26fdde8c471bbd8c5d9bc3bfc8d0ef33cb40c49c18852b9ad445578"
+      "bytes": 6264,
+      "sha256": "06bf6256df72dfacb9df96af78884397561be3c881c469599f8c8764333e6ffe"
     },
     {
       "path": "docs/performance/pipeline-release-repair/REPRODUCTION.md",
-      "bytes": 5651,
-      "sha256": "ae89172d4e2fab0968ed5576679e495990260ecb97f3c6afbe368b383b9e7ae5"
+      "bytes": 6324,
+      "sha256": "59ced0900edde45277324f6f46755f315ba6b9bb9a3c00d51ceea3667b058119"
     },
     {
       "path": "docs/performance/pipeline-release-repair/ROOT_CAUSE.md",
-      "bytes": 9659,
-      "sha256": "3dece3e7e228cecd5684bfb014a1e8660d5dfa9d9eded03bda9c3f3a5069f6d1"
+      "bytes": 10296,
+      "sha256": "064db86d7450d97da956131825ab04e6fe3a61e4f8fca13cf0e3975a7e2891bd"
     },
     {
       "path": "docs/performance/pipeline-release-repair/SECURITY_AND_FUNCTIONAL_QA.md",
-      "bytes": 9276,
-      "sha256": "ca9fc29d58d39809ef590b929cec9458c444860ab4abe76598001b57eb293b16"
+      "bytes": 11207,
+      "sha256": "25f8b797d684417268d85f07f0eeb4c9db82f35225f8b72082561d2c68cbb1fd"
     },
     {
       "path": "docs/performance/pipeline-release-repair/SOURCE_BASELINE.json",
-      "bytes": 5686,
-      "sha256": "98b18c8ca4bcaadead00b39f114641271ed2e3f4d1dd9d1815fb0adbaef93097"
+      "bytes": 5946,
+      "sha256": "5f8bc9ae6037f0322e15202c3b127cfa21461240ae87ce98f4b50d5dbc27aa83"
     },
     {
       "path": "docs/performance/pipeline-release-repair/SOURCE_PROOF.json",
-      "bytes": 5366,
-      "sha256": "507d16fdc80fc9f77a3df29211797dee3a4b3139642f714036850a9f43a02ccb"
+      "bytes": 5793,
+      "sha256": "864beb2ad9e1e126e940eb3a9e8a382d62aacf496744b3024cde4315f854cad8"
     },
     {
       "path": "docs/performance/pipeline-release-repair/capacity-attempt-1/RESULTS.json",
@@ -5172,8 +5179,8 @@
     },
     {
       "path": "scripts/pipeline-release-full-review.cjs",
-      "bytes": 12912,
-      "sha256": "d540504b390d46aa4d075fee8f72d3e64ebbd84e968a9f31d58a9675abde6074"
+      "bytes": 12931,
+      "sha256": "b96849e2ea567269460170f5b5cecc2addc6c707262aed092420322f47a976c1"
     },
     {
       "path": "scripts/pipeline-release-local.cjs",
@@ -5217,8 +5224,8 @@
     },
     {
       "path": "scripts/summarize-pipeline-release-repair.cjs",
-      "bytes": 18336,
-      "sha256": "72dfc0c450e44aa4dc836d2b47af105316ceca06e57cfb401392d253257230a3"
+      "bytes": 19166,
+      "sha256": "38184f92fbffce62624d6ddf2978e14477a2f081dac17c516dabd4a99b3a3962"
     },
     {
       "path": "tests/club-workspace-refinements-browser.test.cjs",

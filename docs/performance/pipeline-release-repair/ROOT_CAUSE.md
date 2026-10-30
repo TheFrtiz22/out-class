@@ -163,3 +163,15 @@ it with a normal pipeline response would lose its transactional authority.
 Initial voting setup consumes the selection already in its own snapshot;
 closed-setup polls omit selection, open setup polls refresh it, and explicitly
 reopening conceals previous eligibility until that exact new read settles.
+
+
+## Final boundary
+
+The extra ordinary detail and serial voting-selection dependencies are removed,
+but the candidate does not pass release. Constrained one-applicant cold entry
+p50 is 608.3 ms against the frozen 607.53 ms limit. The strict-review observer can
+miss text-only updates (independently reproduced in OBSERVER_QA.json); recorded
+tails remain unchanged and cannot be attributed exclusively to application/Auth
+work. The whole incomplete 5,000 constrained cohort is excluded. Main later
+advanced to bc22b0a3 with disjoint live-room transition/undo changes; results
+remain pinned to 6e793dea/4d52103e. See RELEASE_DECISION.md.

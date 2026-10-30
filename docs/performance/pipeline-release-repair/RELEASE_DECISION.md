@@ -1,58 +1,83 @@
 # Release decision: PARTIALLY ACCEPT
 
-**Accept the independently verified dock repair. Hold the pipeline repair in
-draft; do not merge or deploy it without passing controlled performance gates.**
-Main incorporated the separate dock PR #92. This task performed no merge or
-production deployment.
-
-The pipeline code repairs the demonstrated dependencies: bounded visible-page
-hydration includes canonical details, on-page review avoids C's extra detail
-GET, complete coverage is reusable only by its current owner, and voting-history
-setup includes candidate selection in its existing authorized snapshot. Global
-facets, canonical ordering, privacy, fresh server authorization, stale-result
-fences and transactional writes are preserved. All twelve current-main functional/native/build/accessibility jobs pass for
-4d52103e, and both later CI-only workflows pass. Local performance and capacity pass; the incomplete constrained attempt is excluded and its complete-cohort repeat is pending. All completed measurement blocks passed served-build attestation.
-
-The first valid current-main/D local comparison is accepted: 560 measured browser outcomes, 160 excluded warmups, no useful-content, HTTP or page failures. All local latency and request gates pass, including one-applicant cold detail 51.5/62.0 → 53.2/65.0 ms p50/p95, 100-applicant strict complete review 5174.4/5657.3 → 5204.9/5807.0 ms, and cold/warm Voting history. No extra one-applicant detail GET or 100-applicant whole-workflow guarded read is observed. The strict review is longer than the older historical workflow; its observer/automation costs are explicit.
-
-At 5,000 applicants local cold directory is 8148.3/8547.6 → 624.7/687.3 ms, a 92.3%/92.0% reduction. The constrained job in run 40974037305 hit its 180-minute budget in the final baseline block. Its full partial artifact is retained and excluded. A separate, predeclared whole-cohort repeat is required; the constrained gates remain uncleared. All six capacity groups at 1,000/5,000 with concurrency 1/2/4 pass: 140 successful measured requests plus 56 excluded warmups, pool limit eight. See CONTROLLED_RESULTS.md and BENCHMARKS.json for counts, maxima, bytes, request/span/error metrics and artifacts.
-
-Whole Mac attempts, screening, source-mismatched CI, failed preflights and superseded partial-source comparisons remain excluded, including their successful rows. All 52 accepted historical B/C comparison groups remain separate context. The fixed tolerances in ACCEPTANCE.md have not changed.
-
-The ordinary suite has 52 environment-gated skips. Separate passing integrations cover 41; 11 specific scenarios were not run and are enumerated in GATED_COVERAGE.json. Real dashboard and application-writing jobs additionally pass on CI-only source 330ada23, with identical application digest. These omissions prevent blanket production-ready clearance under the frozen regression gate.
-
-Remaining release risks are the full-detail visible-page payload (especially
-large essays and appointment histories), O(N) metadata/ranking and selection,
-small-sample tail uncertainty, and unmeasured production behavior. New live
-voting rooms are preserved and functionally tested; these comparisons exercise
-the retained Voting history console. The measured synthetic clubs have no
-booking/ballot history. No production region/pool/schema/configuration change
-or broad metadata rewrite is justified by this evidence.
-
-Production access succeeded on retry, but aggregate searches returned no
-matching sanitized phase events in 24h or pipeline failure events in 1h. No
-fresh correlated browser/server trace explains the historical stall. Do not
-attribute it to Auth transport or database geography.
-
-Next step: complete the served-build-attested BAAB comparison, assess the frozen
-limits without changing them, and update this decision from the retained raw
-results. A failed performance gate rejects that pipeline implementation for
-release; retain the independent dock fix and reviewable data-contract changes.
-No production-ready claim is authorized by the current evidence.
-
-Ordinary manager session/history polls now omit selection metadata. Initial
-entry still includes it to avoid a serial setup request, and open setup polls
-refresh it. Explicit reopening hides prior eligibility until that exact fresh
-operation settles. The workflow/trigger remains mounted for focus restoration.
-No eligibility or authorization cache replaces those guards. Initial large
-history entry and populated booking/ballot-history performance remain unmeasured.
+Final gated outcome: 51 of the 52 ordinary gated scenarios have their own
+separate passing evidence; none remains unrun. This includes actual club-assets,
+active-room authority/revocation, recipient audiences, invitation/communication
+scheduling, publication, private decision letters and Admin workspace. The one
+original Admin-session route test still fails its legacy literal /Admin
+workspace/ expectation, while returned HTML contains the authorized Admin
+product shell and current heading. No assertion is weakened and this test is
+not counted as passing. Initial fixture/MFA/event prerequisite failures and the
+successful unchanged-source port-startup retry remain in GATED_SUPPLEMENT_QA.json.
+The gated supplement workflow therefore retains a failed conclusion for that
+one scenario. Pipeline release remains rejected independently by performance.
 
 
-Evidence-commit follow-up: source 4085b134 changes only reports/analysis and retains
-the measured application digest. Its audience job 123852886157 reached an
-existing scheduler native backend-termination recovery assertion failure
-(expected failed=1, actual=0 after a P1017 failure-marker event), followed by
-five more subtest failures. This is a real failed verification, not a gated skip
-or a startup-only failure. No scheduler code/test changes exist against current
-main; that does not establish the cause or clear the failure. The identical
-source passed previous full runs. The unchanged-source retry (job 123855873757) passed every original assertion, including actual backend termination and recovery. Failure and retry details are retained in EVIDENCE_COMMIT_QA.json. This records intermittent recovery-test instability; it does not establish a cause or erase the initial failed verification. Keep that issue visible alongside the gated omissions in release review.
+**Accept the independently verified dock repair. Reject pipeline application
+`4d52103e` for release and keep PR #93 in draft.** Preserve the narrow data-contract
+implementation for review; do not merge the held experiment or deploy this repair.
+No release threshold was changed after results.
+
+The code removes the demonstrated extra detail and serial voting-selection
+reads, preserves canonical global semantics and current authorization, and
+scales well locally. That is useful engineering evidence, but it does not clear
+the frozen release gates:
+
+| Requirement | Result |
+|---|---|
+| One-applicant detail, local/constrained | Numeric p50/p95 and request limits pass. Constrained cold: 225.6/259.9 → 243.7/272.6 ms, n30/build; no extra detail GET. |
+| One-applicant constrained cold directory | **FAIL:** p50 552.3 → 608.3 ms (+10.14%); limit 607.53 ms, exceeded by 0.77 ms. P95 passes. Borderline screening failure is not statistical significance, and is not waived. |
+| Complete review | Recorded local numeric limits pass. Constrained one-applicant p95 5.81 → 33.55 seconds and 100-applicant 11.27 → 37.59 seconds fail. The measured strict observer can miss text-only readiness; its application-latency interpretation and release clearance are unresolved. |
+| 100-applicant guarded request maximum | Recorded constrained 10 → 11 fails the automated count gate; the extra request is a background notification during the long observation window, not a duplicate pipeline detail/selection read. Median stays ten → ten. |
+| Voting history | Recorded cold/warm 100-applicant numeric limits pass on both profiles, n10/build. The strict collector limitation remains explicit. |
+| 5,000 scalability | Local cold directory 8148.3/8547.6 → 624.7/687.3 ms: 92.3%/92.0% lower. Required constrained comparison is **missing**: the entire incomplete 5,000 cohort is excluded, including primary and candidate successes. |
+| Bounded capacity | All six groups pass at 1,000/5,000, concurrency 1/2/4, application pool eight; 140 measured successful requests, 56 excluded warmups. |
+
+The mechanical numeric tally is 26 PASS, six FAIL, two MISSING; strict-review
+observer clearance is additionally false. `CONTROLLED_RESULTS.md` and
+`BENCHMARKS.json` retain all sample counts, maxima, bytes, source preparation,
+journey/network milestones, requests/spans/errors and exact raw references.
+Local has 560 measured browser outcomes/160 warmups. Complete constrained
+1/100/1,000 cohorts have 460/120, each paired on its own VM. No failed/slow row
+is dropped and no successful row from an excluded whole attempt is restored.
+
+`OBSERVER_QA.json` independently reproduces a missed text-only completion in
+Chromium. The future collector now observes character data too. This does not
+prove the cause of any particular past tail, subtract elapsed time, turn a gate
+into PASS, or affect the independent primary-directory failure. No further
+performance run is launched for this rejected candidate.
+
+All twelve hosted application-source validation jobs passed, including build,
+types, migrations/RLS, real Auth/settings/navigation/pipeline, native security/
+transactions/recruitment and accessibility. Ordinary suite: 1,483 pass, 52 gated
+skips, zero failures; lint zero errors/22 warnings. Dashboard/writing journeys
+also passed. An evidence-only native scheduler recovery assertion failed once
+and passed unchanged on retry; both remain in EVIDENCE_COMMIT_QA.json.
+The gated supplement adds real active-room, communications, Corkboard and
+private decision-letter checks. Its initial dependent Admin/asset tests lacked
+required fixture preparation; failures are retained and corrected sequencing outcomes are retained below. GATED_COVERAGE.json and GATED_SUPPLEMENT_QA.json give the exact
+per-scenario outcome, never treating a related native suite as a substitute.
+
+Main advanced after the measured freeze to
+`bc22b0a30b98cbfab785ea3da5215a9351b76109` (#101 live-room transitions/guarded undo).
+Its 19 changed files were inspected and do not overlap the 25 repair application
+files. Measurements remain pinned to main `6e793dea` and application `4d52103e`;
+this held branch does not claim a timed/verified integration onto `bc22b0a3`.
+Any future candidate must preserve that work and start from then-current main.
+
+The separate dock PR #92 passed real unforced mouse, keyboard/Escape/focus,
+reduced-motion and touch/mobile checks and both hosted workflows. Main merged
+it externally as `a0265dcb`. This task merged no candidate into main and made no
+production deployment, write, schema/configuration, region or pool change.
+
+Remaining risks: full-detail visible-page payloads with real essays/history,
+O(N) metadata/ranking/selection, small-sample tails, current-main integration and
+unmeasured production behavior. Production aggregate searches found no matching
+sanitized traces; they do not explain the historical 4.2-second identity stall.
+Do not attribute it to Auth or geography.
+
+The next engineering step is a distinct revision against current main: resolve
+the one-applicant entry cost, use the corrected observer for strict review,
+and complete a bounded, fully attested 5,000 constrained protocol. Retain the
+accepted dock and reviewable contract/ownership/security work. Do not restart a
+broad audit, waive these gates or infer production readiness from local gains.

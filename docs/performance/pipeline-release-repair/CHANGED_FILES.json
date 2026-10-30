@@ -1,9 +1,11 @@
 {
   "base": "6e793dea0bd45052fa444749b26d432ae93392cd",
+  "finalRemoteMain": "bc22b0a30b98cbfab785ea3da5215a9351b76109",
+  "branchIncorporatesFinalRemoteMain": false,
   "measuredApplicationCommit": "4d52103e0ca70086c8ff4f3e913a7bd11f377005",
   "applicationDigest": "99077a7ff37acb0b67cb919c4ec4b1b95bc0401750472cc65f26b3aaeb029be1",
-  "sourceHeadBeforeEvidenceCommit": "eda66c577d594b06f0052cbadc23a4ddc6573493",
-  "note": "Exact paths changed against measured/current main, including retained unsuccessful raw attempts. Self hashes are avoided: this manifest lists itself and the seal; the seal hashes this manifest and all other listed files except itself. Credentials/runtime configuration are not included.",
+  "sourceHeadBeforeEvidenceCommit": "90d34a4882e8ffc9f1ecde34af3a085eb3bbc537",
+  "note": "Exact paths changed against measured main 6e793dea (final remote main bc22 is separately inspected and unmeasured), including retained unsuccessful raw attempts. Self hashes are avoided: this manifest lists itself and the seal; the seal hashes this manifest and all other listed files except itself. Credentials/runtime configuration are not included.",
   "files": [
     {
       "path": ".github/workflows/disposable-integrations.yml",
@@ -131,6 +133,10 @@
     },
     {
       "path": "docs/performance/pipeline-release-repair/LOCAL_QA_LOGS.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/OBSERVER_QA.json",
       "category": "evidence"
     },
     {

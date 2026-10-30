@@ -1,6 +1,6 @@
 # Implementation and tradeoffs
 
-The repair initially used `f2192e02` and is now rebased onto exact current main
+The repair initially used `f2192e02` and is now rebased onto exact measured main
 `6e793dea0bd45052fa444749b26d432ae93392cd`. It retains Phase 1, PRs
 85/87/88/89, the independently merged dock fix, live voting rooms, transaction
 budgets, contextual loading and the current layouts. Source proof is recorded
@@ -124,3 +124,29 @@ CHANGED_FILES.json lists every changed code/test/tool/evidence path;
 EVIDENCE_SEAL.json hashes their bytes and verifies all 963 measured application
 source files still match the frozen digest. Failed/interrupted raw attempts are
 part of that evidence, never successful observations restored into a distribution.
+
+## Final measured outcome and test infrastructure
+
+This application candidate is rejected for release: constrained one-applicant
+cold directory misses the original p50 limit, strict-review measurements have
+uncleared recorded tails/observer limitations, and the complete 5,000 constrained
+cohort is missing. See RELEASE_DECISION.md; no threshold or old outcome changes.
+The strict readiness observer now also observes character data. A real Chromium
+DOM reproduction demonstrates the old missed text-only update and the fix;
+OBSERVER_QA.json limits what can be inferred about past tails. No new performance
+run is launched for this independently failed application candidate.
+
+The opt-in gated supplement runs existing HTTP/Auth/Storage scenarios on fresh
+CI VMs, separate from timing. `prepare-corkboard-e2e.cjs` adds the already fixed
+Admin-session project/ports, `run-pipeline-release-gated-qa.cjs` owns only those
+fixtures/servers, and the decision helper accepts the maintained fixed Corkboard
+fixture alongside its original custom REST fixture. Five unsafe configurations
+were rejected. Product assertions are unchanged; failures remain nonzero while
+independent fixture phases continue. The canonical Corkboard journey must precede
+dependent Admin/asset checks to verify MFA and publish the required event.
+GATED_QA_PLAN.md and GATED_SUPPLEMENT_QA.json retain preparation failures/retries.
+
+Final remote main is bc22b0a3; its subsequent live-room transition/undo changes
+are inspected but not measured here. The application repair remains bound to
+4d52103e/6e793dea and is held. No incompatible upstream change is reverted or
+claimed as part of this repair.

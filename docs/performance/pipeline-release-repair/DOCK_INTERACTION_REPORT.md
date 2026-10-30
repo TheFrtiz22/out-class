@@ -36,4 +36,4 @@ identified in the isolated report and QA logs. A later successful run does not
 erase either failure. See `docs/performance/dock-pointer-release-repair/REPORT.md`
 for implementation detail. `SOURCE_PROOF.json` shows zero additional dock diff
 in the pipeline repair against current main. Dock acceptance is independent of
-the pipeline's pending performance gates.
+the pipeline's failed/missing release gates.

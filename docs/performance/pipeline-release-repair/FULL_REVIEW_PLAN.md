@@ -169,3 +169,16 @@ No observer work is removed, deferred, subtracted or replaced. Each job allows
 360 minutes overall and a 315-minute study step, preserving cleanup/upload time.
 Whole assigned cohorts—not successful rows from old attempts—are the new
 analysis units. Application digest remains 99077a7ff37acb0b67cb919c4ec4b1b95bc0401750472cc65f26b3aaeb029be1.
+
+
+The assigned 5,000 constrained cohort in run 40993113523 did not complete within
+its 315-minute study step; first baseline full review also had observer failures.
+The entire assigned unit is excluded, including primary and candidate successes.
+The complete 1/100/1,000 assigned units retain all rows and original numeric
+outcomes. Primary one-applicant cold directory misses the frozen p50 limit.
+A later independent Chromium fixture proves the strict observer can miss
+characterData-only readiness. The future observer now includes it; no past
+latency is subtracted, row removed or failed gate turned into PASS. This does
+not establish the cause of any particular old tail. Strict observer release
+clearance is false and the application is rejected independently by primary
+entry. No further performance retry is launched for this candidate.

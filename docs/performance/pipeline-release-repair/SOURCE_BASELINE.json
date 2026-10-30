@@ -96,8 +96,9 @@
     "repairAtFreeze": "5d7eed15b14d04c4df3beb194d29e7e205521b62"
   },
   "finalMainVerification": {
-    "at": "2026-10-30T02:13:00Z",
-    "sha": "6e793dea0bd45052fa444749b26d432ae93392cd",
-    "method": "git fetch origin main; origin/main unchanged from exact measured baseline"
+    "at": "2026-10-30T15:11:00Z",
+    "sha": "bc22b0a30b98cbfab785ea3da5215a9351b76109",
+    "measuredMain": "6e793dea0bd45052fa444749b26d432ae93392cd",
+    "sinceMeasured": "PR101 atomic live-room applicant transitions/guarded undo, 19 files including an upstream migration. No overlap with the repair 25 application files. Not measured by this study; held repair remains explicitly bound to measured source and is rejected for release."
   }
 }
