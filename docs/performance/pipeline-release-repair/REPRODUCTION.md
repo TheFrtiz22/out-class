@@ -78,3 +78,14 @@ Other repository validation commands are `pnpm validate`,
 `node scripts/run-disposable-postgres.cjs security`, and the existing disposable
 integration workflow. Hosted check links and log summaries identify the exact
 commands run for this repair. No deployment or merge is part of reproduction.
+
+
+A constrained-only repeat can use `run-constrained-performance-comparison` on
+the PR. It leaves the completed local comparison untouched. Future jobs allow
+360 minutes overall, with a 315-minute collection step so owned cleanup and raw
+upload retain time if collection reaches its budget. Upload paths include only
+that run/attempt, avoiding duplicate historical raw files already committed.
+These lifecycle safeguards change no application source, workload, warmups,
+sampling, served-build checks or acceptance thresholds. Do not launch a repeat
+unless the prior profile is incomplete/invalid or a new unresolved concern
+justifies it; preserve and exclude a whole incomplete attempt.

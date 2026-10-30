@@ -98,7 +98,7 @@ No schema/index/region/pool/production configuration changes, new cache
 frameworks, external infrastructure or private-authorization caching are added.
 
 The corrected CI comparison uses separate dependency installations, explicit
-absolute build/start directories and served-manifest/data-contract attestation
+absolute build/start directories and served document/runtime-asset/data-contract attestation
 before every timed block. The first CI attempt failed source attestation on
 retrospective request inspection and is wholly excluded. See FULL_REVIEW_PLAN.md.
 The earlier workflow collector is preserved as failed instrumentation; the new
@@ -112,3 +112,15 @@ refresh it. Explicit reopening hides prior eligibility until that exact fresh
 operation settles. The workflow/trigger remains mounted for focus restoration.
 No eligibility or authorization cache replaces those guards. Initial large
 history entry and populated booking/ballot-history performance remain unmeasured.
+
+
+Evidence tooling adds `scripts/summarize-pipeline-release-repair.cjs` to rebuild
+BENCHMARKS.json from retained raw rows. It requires whole-attempt completion,
+source/tool/clock verification and every served-build attestation, excludes
+warmups, preserves missing sizes/null milestones and calculates the unchanged
+frozen gates. CONTROLLED_RESULTS.md presents the distributions without pooling
+profiles or treating observer-heavy workflow durations as production timings.
+CHANGED_FILES.json lists every changed code/test/tool/evidence path;
+EVIDENCE_SEAL.json hashes their bytes and verifies all 963 measured application
+source files still match the frozen digest. Failed/interrupted raw attempts are
+part of that evidence, never successful observations restored into a distribution.

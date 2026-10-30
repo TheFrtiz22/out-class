@@ -63,3 +63,23 @@ Full-workflow encoded totals remain null where response sizes are missing. Known
 Measured clubs have three answers, two submitted evaluations, two rounds and 61 active members. Shared profiles are enriched repeatedly. Booking/ballot history and large real essays are not represented. Global scalar metadata/ranking and explicit complete selection remain O(N); canonical details are limited to the visible page of at most 100.
 
 No invalid attempt contributes successful samples. Historical B/C context, all Mac attempts, source-mismatched CI, preflight failures and superseded partial source attempts remain separately preserved with disposition and hashes.
+
+
+Local measured network bookkeeping (observations across the separately labeled
+windows; these are not unique-user or production counts):
+
+| Collector/build | Outcomes | requestfailed events | Pending at capture | Unknown response sizes |
+|---|---:|---:|---:|---:|
+| Primary / B | 240 | 82 | 3 | 6 |
+| Primary / D | 240 | 92 | 0 | 0 |
+| Strict review / B | 40 | 64 | 0 | 74 |
+| Strict review / D | 40 | 84 | 0 | 84 |
+
+All have zero useful-content/HTTP/page failures. requestfailed counters can
+include abandoned prefetch or navigation; the available workflow data do not
+classify each transport cause. Three baseline background requests remained
+pending at the primary capture; their network-completion metrics remain null.
+Byte totals are null whenever any contributing size is unknown. The raw primary
+collector's partial known-byte sum is retained unchanged, and the summarizer
+labels complete totals conservatively. Native capacity has no failed request;
+separate native abort/pending classifications were not observed.

@@ -121,3 +121,45 @@ including successful rows, remains excluded for actual sleep events. New runs
 have separate source/fixture/build/protocol records and must not be pooled with
 those historical groups. See `BENCHMARKS.json` and `RELEASE_DECISION.md` for the
 eventual measured recommendation; passing correctness is not performance proof.
+
+## Current complete-review dependency graph
+
+```mermaid
+flowchart TD
+  O[Prepared Overview and overlapping destination code] --> P[Fresh pipeline read]
+  P --> B[Main: all full applications]
+  P --> D[Repair: global scalar metadata plus at most 100 full applications]
+  B --> R[Open and switch: resident detail plus original independent panel reads]
+  D --> R
+  R --> S[Search and clear]
+  S --> BS[Main: canonical local selection from whole dataset]
+  S --> DS[Repair: local only when coverage is complete; otherwise one fresh page per query]
+  BS --> Q[Complete quick-review selection]
+  DS --> Q
+  Q --> BQ[Main: resident canonical IDs]
+  Q --> DQ[Repair: current complete coverage or one guarded scalar selection]
+  BQ --> V[Cold and warm Voting history snapshots]
+  DQ --> V
+  V --> F[Select full Applied pool with current snapshot eligibility]
+  F --> E[Discard setup via actual confirmation and return]
+```
+
+At 100, both variants make ten guarded workspace reads and 19 total observed
+requests per strict local journey. The repair's complete page supplies search
+and quick-review selection without new transport. At 1,000 and 5,000, D makes
+three additional meaningful guarded reads compared with main's resident path:
+search page, clear-search page, and complete scalar selection. The first page
+cannot determine arbitrary matches or all eligible IDs outside its 100 records.
+The new query also supersedes earlier coverage; returning to the unscoped query
+must not revive data after a denied or obsolete guarded operation. These reads
+are intentional correctness/authority dependencies, not duplicate detail or
+component-remount reads. Local 1,000 request count is 19→22. At 5,000 main's
+longer measured window also overlaps genuine existing notification, view-as,
+communications and voting polls; its 44–47→22 total count is not evidence that
+those background systems were removed. All requests remain in the raw rows.
+
+The Applied-pool operation remains a separate current voting snapshot. Combining
+it with a normal pipeline response would lose its transactional authority.
+Initial voting setup consumes the selection already in its own snapshot;
+closed-setup polls omit selection, open setup polls refresh it, and explicitly
+reopening conceals previous eligibility until that exact new read settles.

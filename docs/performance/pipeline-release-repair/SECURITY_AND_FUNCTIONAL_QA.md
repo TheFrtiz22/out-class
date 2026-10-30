@@ -116,3 +116,13 @@ GATED_COVERAGE.json maps all 52 ordinary skips: 41 are covered by separately
 passing integrations and 11 specific scenarios were not run in this repair.
 Those omissions are retained explicitly and no blanket production-ready
 clearance is claimed. No failed test was converted to a skip.
+
+
+Evidence-commit follow-up: source 4085b134 changes only reports/analysis and retains
+the measured application digest. Its audience job 123852886157 reached an
+existing scheduler native backend-termination recovery assertion failure
+(expected failed=1, actual=0 after a P1017 failure-marker event), followed by
+five more subtest failures. This is a real failed verification, not a gated skip
+or a startup-only failure. No scheduler code/test changes exist against current
+main; that does not establish the cause or clear the failure. The identical
+source passed previous full runs. The unchanged-source retry (job 123855873757) passed every original assertion, including actual backend termination and recovery. Failure and retry details are retained in EVIDENCE_COMMIT_QA.json. This records intermittent recovery-test instability; it does not establish a cause or erase the initial failed verification. Keep that issue visible alongside the gated omissions in release review.

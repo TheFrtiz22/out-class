@@ -2,7 +2,7 @@
   "base": "6e793dea0bd45052fa444749b26d432ae93392cd",
   "measuredApplicationCommit": "4d52103e0ca70086c8ff4f3e913a7bd11f377005",
   "applicationDigest": "99077a7ff37acb0b67cb919c4ec4b1b95bc0401750472cc65f26b3aaeb029be1",
-  "sourceHeadBeforeEvidenceCommit": "330ada2342abfd2200770b40402a4fb1296648df",
+  "sourceHeadBeforeEvidenceCommit": "4085b134b93b33de344cf5e9d86b3188b2605e48",
   "note": "Exact paths changed against measured/current main, including retained unsuccessful raw attempts. Self hashes are avoided: this manifest lists itself and the seal; the seal hashes this manifest and all other listed files except itself. Credentials/runtime configuration are not included.",
   "files": [
     {
@@ -79,6 +79,10 @@
     },
     {
       "path": "docs/performance/pipeline-release-repair/DOCK_INTERACTION_REPORT.md",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/EVIDENCE_COMMIT_QA.json",
       "category": "evidence"
     },
     {

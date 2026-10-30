@@ -18,14 +18,14 @@ concurrency:
 
 jobs:
   compare:
-    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'run-performance-comparison'
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'run-performance-comparison' || github.event.label.name == 'run-constrained-performance-comparison'
     name: Current main versus repair / ${{ matrix.profile }}
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 360
     strategy:
       fail-fast: false
       matrix:
-        profile: [local, constrained]
+        profile: ${{ fromJSON(github.event.label.name == 'run-constrained-performance-comparison' && '["constrained"]' || '["local","constrained"]') }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -58,6 +58,8 @@ jobs:
           OUTCLASS_RELEASE_CI_FROZEN_RUNTIME: "1"
         run: node scripts/pipeline-release-ci-runtime.cjs check --profile=${{ matrix.profile }}
       - name: Compare browser navigation and complete review
+        # Leave time for owned cleanup and raw upload if collection exceeds its budget.
+        timeout-minutes: 315
         if: success()
         env:
           OUTCLASS_RELEASE_CI_FROZEN_RUNTIME: "1"
@@ -78,6 +80,9 @@ jobs:
         if: always()
         with:
           name: pipeline-release-${{ matrix.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: docs/performance/pipeline-release-repair/ci/
+          path: |
+            docs/performance/pipeline-release-repair/ci/${{ matrix.profile }}-attempt-${{ github.run_id }}-${{ github.run_attempt }}/
+            docs/performance/pipeline-release-repair/ci/capacity-attempt-${{ github.run_id }}-${{ github.run_attempt }}/
+            docs/performance/pipeline-release-repair/ci/preflight-${{ matrix.profile }}-${{ github.run_id }}-${{ github.run_attempt }}.json
           if-no-files-found: warn
           retention-days: 30

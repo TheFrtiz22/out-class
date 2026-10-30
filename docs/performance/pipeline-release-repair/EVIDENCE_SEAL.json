@@ -1,5 +1,5 @@
 {
-  "sealedAt": "2026-10-30T02:18:19.678Z",
+  "sealedAt": "2026-10-30T02:33:54.475Z",
   "algorithm": "SHA-256",
   "base": "6e793dea0bd45052fa444749b26d432ae93392cd",
   "measuredApplicationCommit": "4d52103e0ca70086c8ff4f3e913a7bd11f377005",
@@ -7,7 +7,7 @@
   "applicationSourceFilesVerified": 963,
   "performanceClearance": false,
   "productionReady": false,
-  "entryListDigest": "e09316f92cadfdef926870b355468741d3c7b4cdc05013577898c5d2d5a781ad",
+  "entryListDigest": "0912f832c7927536e7d473329d90a394c53fde48f80520860b2960a5e4aaf88b",
   "scope": "Every changed file against base, including application/tooling/tests and all retained raw evidence. Excludes this self-referential seal only. Historical evidence read from other commits is referenced by hash in SOURCE_BASELINE.json and BENCHMARKS.json.",
   "entries": [
     {
@@ -17,8 +17,8 @@
     },
     {
       "path": ".github/workflows/pipeline-release-comparison.yml",
-      "bytes": 3461,
-      "sha256": "45a7c8e67fa80604fd00e65f64342263b0c6f428e130ba597bf45e448e435059"
+      "bytes": 4115,
+      "sha256": "ebe7661b82a8e26fe5c1678804b16d7837b40a3407ab59ad4d03ed9eab3573f0"
     },
     {
       "path": "actions/crm.ts",
@@ -72,8 +72,8 @@
     },
     {
       "path": "docs/performance/pipeline-release-repair/BENCHMARKS.json",
-      "bytes": 3877955,
-      "sha256": "d0cc89ebb33252ae92db979e5ff30f0a64e141b3cfa2b5546cdd8d08814d3043"
+      "bytes": 3877953,
+      "sha256": "982bf9d749e18d76dea61a482661004ea39066450266e023ba69061628642eb0"
     },
     {
       "path": "docs/performance/pipeline-release-repair/CANCELLED_CI_PREPARATIONS.json",
@@ -82,13 +82,13 @@
     },
     {
       "path": "docs/performance/pipeline-release-repair/CHANGED_FILES.json",
-      "bytes": 131148,
-      "sha256": "8f1199efc749242ff33e1a9772aadb330f4645944184e465489f013266d3e12b"
+      "bytes": 131272,
+      "sha256": "7a9ba45ea3bca31a72e0f22598c6aae66ccd105b75170d3d9a36771dd476982c"
     },
     {
       "path": "docs/performance/pipeline-release-repair/CHATGPT_HANDOFF.md",
-      "bytes": 14279,
-      "sha256": "c11c5123a1bcd6bd98046f05f16b239eedae3736234ed9ce6361cab26f7eaec6"
+      "bytes": 15257,
+      "sha256": "97285206b98e002b64de07a4146cc8a066d1cf09eb3d21874d8ecd6a375ab38b"
     },
     {
       "path": "docs/performance/pipeline-release-repair/CLEANUP.json",
@@ -97,13 +97,18 @@
     },
     {
       "path": "docs/performance/pipeline-release-repair/CONTROLLED_RESULTS.md",
-      "bytes": 5919,
-      "sha256": "0077d8df193f6abc6d39d5f32345121ee40717f685896df114e4ebda901ed48c"
+      "bytes": 6944,
+      "sha256": "81c894ce1e95ac4446908b9b3f393761ab55def7b7ebaaedcedeaa4f2121b408"
     },
     {
       "path": "docs/performance/pipeline-release-repair/DOCK_INTERACTION_REPORT.md",
       "bytes": 2514,
       "sha256": "dbfd21febbb10150ed57fd0bd672d74d085d23e3e5e1e7d55a05b97d4315ed28"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/EVIDENCE_COMMIT_QA.json",
+      "bytes": 3872,
+      "sha256": "2f05cd6722e1d280520e1b86d5f72c123250537df730d3effc25d6abd03aef90"
     },
     {
       "path": "docs/performance/pipeline-release-repair/FULL_REVIEW_PLAN.md",
@@ -132,8 +137,8 @@
     },
     {
       "path": "docs/performance/pipeline-release-repair/IMPLEMENTATION.md",
-      "bytes": 9855,
-      "sha256": "1ca2c1d914adfd2c2e0d400d2485506378db75dadec60a301219509ea35f4cb4"
+      "bytes": 10653,
+      "sha256": "bef47fb0f9866f58140fd3ac0a87713691f21ad68719e9526a1e713920192989"
     },
     {
       "path": "docs/performance/pipeline-release-repair/LOCAL_FIXTURE_PROFILE.json",
@@ -152,23 +157,23 @@
     },
     {
       "path": "docs/performance/pipeline-release-repair/RELEASE_DECISION.md",
-      "bytes": 4391,
-      "sha256": "a3d60956350cdf8bea9b1b2a66e80d548fb4388668eca1b405c44f55715f2821"
+      "bytes": 5369,
+      "sha256": "6230c6cd667c6dcd5cee89a0808d231d13c3ab290cf1f2cb9b1b24984ae500d4"
     },
     {
       "path": "docs/performance/pipeline-release-repair/REPRODUCTION.md",
-      "bytes": 4500,
-      "sha256": "b3d5ee8d025a0573984d2c3d24de5429d5dac5343110cf0ee8d0fe71c7998483"
+      "bytes": 5187,
+      "sha256": "c474ae0cf86b7a634dced5545133d227edc8ece1334e9aa7bf4e99a6d093a92d"
     },
     {
       "path": "docs/performance/pipeline-release-repair/ROOT_CAUSE.md",
-      "bytes": 7340,
-      "sha256": "46ac9c331f8e2d9f20b26f950d75bda4300d5916dcb1dbd59c83bba750030a35"
+      "bytes": 9659,
+      "sha256": "3dece3e7e228cecd5684bfb014a1e8660d5dfa9d9eded03bda9c3f3a5069f6d1"
     },
     {
       "path": "docs/performance/pipeline-release-repair/SECURITY_AND_FUNCTIONAL_QA.md",
-      "bytes": 8298,
-      "sha256": "1bb8c7acb9c42206f6e72acaa9bd29e01f72e6dde55aed32021721b8b9018836"
+      "bytes": 9276,
+      "sha256": "ca9fc29d58d39809ef590b929cec9458c444860ab4abe76598001b57eb293b16"
     },
     {
       "path": "docs/performance/pipeline-release-repair/SOURCE_BASELINE.json",
@@ -3867,8 +3872,8 @@
     },
     {
       "path": "scripts/summarize-pipeline-release-repair.cjs",
-      "bytes": 17808,
-      "sha256": "d2036589b31ee3e68c1e91dde11bcb59b16393729554fd343941ef05ddd10c01"
+      "bytes": 18086,
+      "sha256": "64445bd06f2572a11db81e4abfaf721cb56bc69914c45e10003d49905d46c89d"
     },
     {
       "path": "tests/club-workspace-refinements-browser.test.cjs",

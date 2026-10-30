@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-30T02:14:56.690Z",
+  "generatedAt": "2026-10-30T02:21:39.975Z",
   "latestMain": "6e793dea0bd45052fa444749b26d432ae93392cd",
   "heldCandidate": "375a00d54d95f24e7d600a56218b9bf8040a7937",
   "percentiles": "Nearest rank, no interpolation. Failed attempts remain counted; failed milestones have null latency. n10 p95 is the maximum and is not a production p95 guarantee.",
@@ -59978,8 +59978,8 @@
           "max": 4749.0999999996275
         },
         "networkCompleteMs": {
-          "samples": 10,
-          "p50": 8764.5,
+          "samples": 8,
+          "p50": 8789.5,
           "p95": 9079.900146484375,
           "max": 9079.900146484375
         },
@@ -59990,7 +59990,7 @@
           "max": 5
         },
         "encodedBodyBytes": {
-          "samples": 10,
+          "samples": 7,
           "p50": 1635,
           "p95": 1635,
           "max": 1635
