@@ -6,7 +6,7 @@ import { requireClubPermission } from "@/utils/auth";
 import { clubWriteTransaction, votingWriteLimits } from "@/utils/club-write-transaction";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { hasPermission } from "@/lib/permissions";
-import { createRoomSchema, roomScope, roomCommandSchema, roomBallotSchema, uniqueSelection, roomOutcomes, storedChoice, recommendedOutcome,roomPresentationSchema,roomDisplayConfig } from "@/lib/voting-room";
+import { createRoomSchema, roomScope, roomCommandSchema, roomBallotSchema, uniqueSelection, roomOutcomes, storedChoice, recommendedOutcome,roomPresentationSchema,roomDisplayConfig, roomCommandResultSchema } from "@/lib/voting-room";
 import { loadVotingRoom, requireRoomLeader, roomAuthority, projectVotingRoom, roomFingerprint } from "@/utils/voting-room";
 import { getApplicantDisplay } from "@/actions/applicant-intelligence";
 import { z } from "zod";
@@ -140,14 +140,17 @@ export async function commandLiveVotingRoom(input:unknown) {
   return domainResult(()=>clubWriteTransaction(async tx=>{
     const m=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review","decisions.start"]);
     const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId,true);roomAuthority(s,m,round.anonymousReview);
-    requireRoomLeader(s,m,d.action==="END"?"decisions.finish":d.action==="FINALIZE"?"decisions.publish":d.action==="CORRECT"?"decisions.manage":"decisions.start");
+    requireRoomLeader(s,m,d.action==="END"?"decisions.finish":d.action==="FINALIZE"?"decisions.publish":["CORRECT","UNDO_DECISION"].includes(d.action)?"decisions.manage":"decisions.start");
     const fingerprint=roomFingerprint(d),key={sessionId:s.id,requestId:d.requestId};
     const prior=await tx.votingRoomCommand.findUnique({where:{sessionId_requestId:key}});
-    if(prior){if(prior.actorId!==user.id||prior.fingerprint!==fingerprint)throw Error("Request ID reused with different content.");return z.object({revision:z.number().int().nonnegative()}).strict().parse(prior.result);}
+    if(prior){if(prior.actorId!==user.id||prior.fingerprint!==fingerprint)throw Error("Request ID reused with different content.");return roomCommandResultSchema.parse(prior.result);}
     if(s.finalizedAt)throw new RoomConflict("FINALIZED","This session is finalized and read only.");
     if(s.revision!==d.revision)throw retryConflict();
     const pass=s.passes.find(p=>p.number===s.currentPass),current=pass?.candidates.find(c=>c.applicationId===s.activeApplicationId);
-    if(["OPEN_VOTING","CONFIRM","ACCEPT_WITHOUT_VOTE"].includes(d.action)&&(!current||!await tx.application.findFirst({where:{id:current.applicationId,clubId:s.clubId,roundId:s.roundId,recruitmentCycleId:s.cycleId,status:s.candidates.find(c=>c.applicationId===current.applicationId)!.expectedStatus}})))throw new RoomConflict("APPLICANT_CHANGED","The applicant's recruitment context changed. Close or end the session and review the application.");
+    if(["OPEN_VOTING","CONFIRM","ACCEPT_WITHOUT_VOTE","DECIDE_AND_ADVANCE","PASS_WITHOUT_VOTE_AND_ADVANCE"].includes(d.action)&&(!current||!await tx.application.findFirst({where:{id:current.applicationId,clubId:s.clubId,roundId:s.roundId,recruitmentCycleId:s.cycleId,status:s.candidates.find(c=>c.applicationId===current.applicationId)!.expectedStatus}})))throw new RoomConflict("APPLICANT_CHANGED","The applicant's recruitment context changed. Close or end the session and review the application.");
+    const advancing=["DECIDE_AND_ADVANCE","PASS_WITHOUT_VOTE_AND_ADVANCE"].includes(d.action);
+    if(advancing&&(d.applicationId!==s.activeApplicationId||d.passNumber!==s.currentPass))throw retryConflict();
+    let decision:z.infer<typeof roomCommandResultSchema>["decision"];
     const patch:Prisma.VotingSessionUpdateInput={revision:{increment:1}};
     let overridden=false,previousDecision:string|null=null;
     const updateEntry=async(data:Prisma.VotingPassCandidateUpdateInput,entry=current,number=s.currentPass)=>{
@@ -169,14 +172,31 @@ export async function commandLiveVotingRoom(input:unknown) {
         if(s.state!=="OPEN"||current?.ballotState!=="OPEN")throw retryConflict();
         if(current.ballots.length<s.participants.length&&!d.confirmed)throw new RoomConflict("EARLY_CLOSE_CONFIRMATION",`${s.participants.length-current.ballots.length} missing ballots. Confirm early closure; missing votes are not Reject votes.`);
         await updateEntry({ballotState:"CLOSED",closedAt:new Date()});break;
+      case "PASS_WITHOUT_VOTE_AND_ADVANCE":
       case "ACCEPT_WITHOUT_VOTE":
         if(s.state!=="OPEN"||current?.ballotState!=="PENDING"||!d.confirmed||!d.reason)throw new RoomConflict("CONFIRMATION_REQUIRED","Confirm accepting without a vote and provide a reason.");
         await updateEntry({ballotState:"CONFIRMED",withoutVote:true,confirmedDecision:"PASS",confirmedBy:user.id,confirmedAt:new Date()});break;
+      case "DECIDE_AND_ADVANCE":
       case "CONFIRM": {
         if(s.state!=="OPEN"||current?.ballotState!=="CLOSED"||!d.choice)throw retryConflict();
         overridden=recommendedOutcome(current,s.participants.length)!==storedChoice[d.choice];
         if(overridden&&!d.reason)throw new RoomConflict("REASON_REQUIRED","Provide a reason to confirm an outcome different from the completed ballot result.");
         await updateEntry({ballotState:"CONFIRMED",confirmedDecision:storedChoice[d.choice],confirmedBy:user.id,confirmedAt:new Date()});break;
+      }
+      case "UNDO_DECISION": {
+        requireRoomLeader(s,m,"decisions.manage");
+        const receipt=d.undoRequestId?await tx.votingRoomCommand.findUnique({where:{sessionId_requestId:{sessionId:s.id,requestId:d.undoRequestId}}}):null;
+        const saved=roomCommandResultSchema.safeParse(receipt?.result),previous=saved.success?saved.data.decision:null;
+        const old=pass?.candidates.find(c=>c.applicationId===d.applicationId);
+        if(!previous||saved.data!.revision!==s.revision||previous.applicationId!==d.applicationId||previous.passNumber!==d.passNumber||d.passNumber!==s.currentPass||old?.ballotState!=="CONFIRMED"||s.activeApplicationId!==previous.nextApplicationId||!["OPEN","PAUSED"].includes(s.state)||current&&(current.ballots.length>0||current.ballotState!=="PENDING"))throw new RoomConflict("UNDO_UNSAFE","Newer room activity prevents Undo. Use Correct an outcome to return the applicant to Hold.");
+        if(!await tx.application.findFirst({where:{id:old.applicationId,clubId:s.clubId,roundId:s.roundId,recruitmentCycleId:s.cycleId,status:s.candidates.find(c=>c.applicationId===old.applicationId)!.expectedStatus}}))throw new RoomConflict("APPLICANT_CHANGED","The applicant recruitment state changed. Review it before correcting this outcome.");
+        previousDecision=old.confirmedDecision;
+        await tx.auditLog.create({data:{actorId:user.id,clubId:s.clubId,targetId:s.id,action:"voting.room.undo_authorized",details:{requestId:d.requestId,applicationId:old.applicationId,passNumber:s.currentPass,revision:s.revision,previousDecision}}});
+        await tx.$executeRaw`SELECT set_config('outclass.voting_undo',${d.requestId},true)`;
+        await updateEntry({ballotState:old.withoutVote?"PENDING":"CLOSED",withoutVote:false,confirmedDecision:null,confirmedBy:null,confirmedAt:null},old);
+        await tx.$executeRaw`SELECT set_config('outclass.voting_undo','',true)`;
+        await tx.votingPass.update({where:{sessionId_number:{sessionId:s.id,number:s.currentPass}},data:{state:"OPEN",completedAt:null}});
+        Object.assign(patch,{activeApplicationId:old.applicationId,state:"OPEN"});break;
       }
       case "ADVANCE": {
         if(s.state!=="OPEN"||current?.ballotState!=="CONFIRMED")throw retryConflict();
@@ -205,10 +225,16 @@ export async function commandLiveVotingRoom(input:unknown) {
         await updateEntry({confirmedDecision:storedChoice[d.choice],confirmedBy:user.id,confirmedAt:new Date()},entry,d.passNumber);break;
       }
     }
+    if(advancing){
+      const next=pass!.candidates.find(c=>c.position>current!.position&&c.ballotState==="PENDING");
+      Object.assign(patch,{activeApplicationId:next?.applicationId??null});
+      if(!next){await tx.votingPass.update({where:{sessionId_number:{sessionId:s.id,number:s.currentPass}},data:{state:"COMPLETED",completedAt:new Date()}});patch.state="PAUSED";}
+      decision={requestId:d.requestId,applicationId:current!.applicationId,passNumber:s.currentPass,choice:d.action==="PASS_WITHOUT_VOTE_AND_ADVANCE"?"ACCEPT":d.choice!,nextApplicationId:next?.applicationId??null,withoutVote:d.action==="PASS_WITHOUT_VOTE_AND_ADVANCE"};
+    }
     await tx.votingSession.update({where:{id:s.id},data:patch});
-    const result={revision:s.revision+1};
+    const result={revision:s.revision+1,...(decision?{decision}:{}),...(d.action==="UNDO_DECISION"?{undone:true}:{})};
     await tx.votingRoomCommand.create({data:{...key,actorId:user.id,fingerprint,result}});
-    await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:`voting.room.${d.action.toLowerCase()}`,reason:d.reason,details:{applicationId:d.applicationId??current?.applicationId??null,passNumber:d.passNumber??s.currentPass,decision:d.action==="ACCEPT_WITHOUT_VOTE"?"ACCEPT":d.choice??null,overridden,previousDecision,...(d.action==="CLOSE_VOTING"?{missingBallots:s.participants.length-(current?.ballots.length??0),earlyClosureConfirmed:!!d.confirmed}:{}),...(d.action==="END"?{held:roomOutcomes(s).filter(o=>o.outcome==="HOLD").length,unreviewed:roomOutcomes(s).filter(o=>o.outcome==="UNREVIEWED").length}:{} )}}});
+    await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:`voting.room.${d.action.toLowerCase()}`,reason:d.reason,details:{applicationId:d.applicationId??current?.applicationId??null,passNumber:d.passNumber??s.currentPass,decision:["ACCEPT_WITHOUT_VOTE","PASS_WITHOUT_VOTE_AND_ADVANCE"].includes(d.action)?"ACCEPT":d.choice??null,overridden,previousDecision,...(d.action==="CLOSE_VOTING"?{missingBallots:s.participants.length-(current?.ballots.length??0),earlyClosureConfirmed:!!d.confirmed}:{}),...(d.action==="END"?{held:roomOutcomes(s).filter(o=>o.outcome==="HOLD").length,unreviewed:roomOutcomes(s).filter(o=>o.outcome==="UNREVIEWED").length}:{} )}}});
     return result;
   },votingWriteLimits));
 }

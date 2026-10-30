@@ -18,7 +18,6 @@ import {
   Upload,
   FileText,
   X,
-  Loader2,
   Check,
 } from "@/components/icons"
 
@@ -522,17 +521,11 @@ export function StudentOnboardingWizard({
                 </div>}
                 <Button
                   type="submit"
+                  loading={loading}
                   disabled={loading}
                   className="mt-2 h-11 w-full rounded-md border border-primary bg-primary font-semibold text-white shadow-none hover:bg-primary/90"
                 >
-                  {loading ? (
-                    <Loader2 className="size-4 motion-safe:animate-spin" />
-                  ) : (
-                    <>
-                      Continue
-                      <ArrowRight className="size-4" />
-                    </>
-                  )}
+                  Continue <ArrowRight className="size-4" />
                 </Button>
               </form>
             </>
@@ -590,17 +583,11 @@ export function StudentOnboardingWizard({
 
                 <Button
                   type="submit"
+                  loading={loading}
                   disabled={loading || step2Form.watch("code").length !== 6}
                   className="h-11 w-full rounded-md border border-primary bg-primary font-semibold text-white shadow-none hover:bg-primary/90"
                 >
-                  {loading ? (
-                    <Loader2 className="size-4 motion-safe:animate-spin" />
-                  ) : (
-                    <>
-                      Verify email
-                      <ArrowRight className="size-4" />
-                    </>
-                  )}
+                  Verify email <ArrowRight className="size-4" />
                 </Button>
 
                 {notice && <p role="status" className="text-center text-sm">{notice}</p>}
@@ -830,17 +817,11 @@ export function StudentOnboardingWizard({
                   </Button>
                   <Button
                     type="submit"
+                    loading={loading}
                     disabled={loading}
                     className="h-11 flex-1 rounded-md border border-primary bg-primary font-semibold text-white shadow-none hover:bg-primary/90"
                   >
-                    {loading ? (
-                      <Loader2 className="size-4 motion-safe:animate-spin" />
-                    ) : (
-                      <>
-                        Finish
-                        <Check className="size-4" />
-                      </>
-                    )}
+                    Finish <Check className="size-4" />
                   </Button>
                 </div>
               </form>

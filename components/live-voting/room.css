@@ -7,3 +7,12 @@
 @media(prefers-reduced-motion:no-preference){.vr-page button{transition:background-color .12s ease}}
 .vr-leader label{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:8px 0}.vr-leader input,.vr-leader select{max-width:100%;min-height:40px;border:1px solid var(--border);border-radius:6px;background:var(--card);padding:8px}.vr-leader details{margin:12px 0}.vr-leader summary{cursor:pointer;min-height:44px;align-content:center}.vr-leader summary:focus-visible{outline:2px solid var(--ring);outline-offset:3px}.vr-leader h2{margin:12px 0}.vr-summary-lists{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0}.vr-summary-lists>section{border:1px solid var(--border);background:var(--card);border-radius:8px;padding:14px}.vr-summary-lists h3{margin-bottom:8px}.vr-summary-lists .vr-accepted{border-left:3px solid var(--primary)}.vr-leader [aria-label="Finalize decisions"]{border-top:1px solid var(--border);margin-top:16px;padding-top:8px}
 @media(max-width:600px){.vr-summary-lists{grid-template-columns:1fr}.vr-leader .vr-actions{align-items:stretch}.vr-leader label{align-items:flex-start;flex-direction:column}}
+
+.vr-slide-stage{position:relative;overflow:hidden;min-height:300px;display:grid;align-items:start;isolation:isolate}
+.vr-slide-stage>div{grid-area:1/1;min-width:0;width:100%}.vr-slide-out{pointer-events:none;visibility:hidden}.vr-slide-stage .vr-slide-in{position:relative}
+.vr-slide-sliding .vr-slide-out{visibility:visible;animation:vr-out 550ms cubic-bezier(.22,.61,.36,1) both}
+.vr-slide-sliding .vr-slide-in{animation:vr-in 550ms cubic-bezier(.22,.61,.36,1) both}
+.vr-decision-saved{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-height:44px;margin:8px 0;color:var(--primary)}
+@keyframes vr-out{from{transform:translateX(0);opacity:1}to{transform:translateX(-100%);opacity:0}}
+@keyframes vr-in{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@media(prefers-reduced-motion:reduce){.vr-slide-sliding .vr-slide-in,.vr-slide-sliding .vr-slide-out{animation:none}.vr-slide-out{display:none}}

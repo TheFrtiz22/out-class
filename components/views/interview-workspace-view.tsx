@@ -290,7 +290,7 @@ function InterviewSession({
       if (!started && epoch === navigation.current) { advancingRef.current = false; setAdvancing(false) }
     }
   }
-  if (loading) return <WorkspaceLoading label="Loading authorized candidates…" layout="schedule" rows={3} />
+  if (loading) return <WorkspaceLoading label="Loading interview workspace…" layout="interview" rows={3} />
   if (loadError || !data)
     return (
       <div role="alert" className="space-y-4 py-12">

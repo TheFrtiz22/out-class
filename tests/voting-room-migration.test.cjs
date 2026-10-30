@@ -68,6 +68,16 @@ test('live voting migration preserves legacy history and enforces scope, closed 
    UPDATE "VotingPassCandidate" SET "withoutVote"=true,"ballotState"='CONFIRMED',"confirmedDecision"='PASS',"confirmedBy"='leader',"confirmedAt"=NOW() WHERE "sessionId"='without';`);
   assert.equal((await db.query(`SELECT count(*)::int n FROM "VotingBallot" WHERE "sessionId"='without'`)).rows[0].n,0);
   await assert.rejects(db.exec(`UPDATE "VotingPassCandidate" SET "withoutVote"=false WHERE "sessionId"='without'`),/transition|state/);
+  await db.exec(fs.readFileSync(path.join(dir,'20261029190000_voting_guarded_undo','migration.sql'),'utf8'));
+  const undo=`UPDATE "VotingPassCandidate" SET "ballotState"='PENDING',"withoutVote"=false,"confirmedDecision"=NULL,"confirmedBy"=NULL,"confirmedAt"=NULL WHERE "sessionId"='without'`;
+  await assert.rejects(db.exec(undo),/transition/);
+  await db.exec(`INSERT INTO "AuditLog"(id,"actorId",action,"targetId","clubId",details) VALUES('undo','leader','voting.room.undo_authorized','without','club','{"requestId":"undo-request","applicationId":"app","passNumber":1,"revision":0}');`);
+  await db.exec(`BEGIN; SELECT set_config('outclass.voting_undo','undo-request',true); ${undo}; COMMIT;`);
+  assert.equal((await db.query(`SELECT "ballotState" FROM "VotingPassCandidate" WHERE "sessionId"='without'`)).rows[0].ballotState,'PENDING');
+  assert.equal((await db.query(`SELECT count(*)::int n FROM "VotingBallot" WHERE "sessionId"='without'`)).rows[0].n,0);
+  await db.exec(`UPDATE "VotingPassCandidate" SET "withoutVote"=true,"ballotState"='CONFIRMED',"confirmedDecision"='PASS',"confirmedBy"='leader',"confirmedAt"=NOW() WHERE "sessionId"='without'; UPDATE "VotingSession" SET revision=1 WHERE id='without';`);
+  await assert.rejects(db.exec(`BEGIN; SELECT set_config('outclass.voting_undo','undo-request',true); ${undo}; COMMIT;`),/transition/);
+  await db.exec('ROLLBACK');
   await db.exec(`UPDATE "VotingPassCandidate" SET "confirmedDecision"='HOLD' WHERE "sessionId"='without'; UPDATE "VotingSession" SET state='COMPLETED',"endedAt"=NOW() WHERE id='without';
    INSERT INTO "PipelineRound"(id,"clubId",name,"order") VALUES('next','club','Next',1);
    UPDATE "Application" SET "submittedAt"=NOW() WHERE id='app';`);

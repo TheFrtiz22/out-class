@@ -3,7 +3,7 @@ import { LoadingState } from "@/components/ui/loading-state"
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { ArrowLeft, Loader2, ShieldCheck } from "@/components/icons";
+import { ArrowLeft, ShieldCheck } from "@/components/icons";
 import { OutClassLogo } from "@/components/outclass-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -226,16 +226,8 @@ export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
                   {error}
                 </p>
               )}
-              <Button type="submit" className="w-full" disabled={busy}>
-                {busy && (
-                  <Loader2
-                    className="size-4 motion-safe:animate-spin motion-reduce:animate-none"
-                    aria-hidden="true"
-                  />
-                )}
-                {busy
-                  ? "Please wait…"
-                  : mode === "request"
+              <Button type="submit" className="w-full" disabled={busy} loading={busy}>
+                {mode === "request"
                     ? "Send reset link"
                     : "Update password"}
               </Button>

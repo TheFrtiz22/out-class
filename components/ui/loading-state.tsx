@@ -1,4 +1,4 @@
-import { GlowingLoadingPill } from "@/components/ui/glowing-loading-pill"
+import { LoadingIndicator } from "@/components/ui/loading-indicator"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -25,12 +25,12 @@ export function LoadingState({
   const count = Math.max(1, Math.min(12, Math.floor(rows) || 4))
   if (layout === "inline") {
     return <div data-slot="loading-state" data-layout="inline" role="status" aria-busy="true" className={cn("oc-loading-state", className)}>
-      <GlowingLoadingPill label={label} compact />
+      <LoadingIndicator /><span>{label}</span>
     </div>
   }
 
   return <div data-slot="loading-state" data-layout={layout} role="status" aria-busy="true" className={cn("oc-loading-state", className)}>
-    <div className="oc-loading-status"><GlowingLoadingPill label={label} /></div>
+    <span className="sr-only">{label}</span>
     <div className="oc-loading-preview" aria-hidden="true">
       {layout === "feed" && <div className="oc-loading-feed">{Array.from({ length: count }, (_, index) => <div className="oc-loading-feed-item" key={index}>
         <Skeleton className="h-8 w-8 shrink-0 rounded-lg" /><div className="min-w-0 flex-1"><Skeleton className="h-4 w-3/5" /><Skeleton className="mt-3 h-3 w-full" /><Skeleton className="mt-2 h-3 w-4/5" /><Skeleton className="mt-4 h-2 w-20" /></div>
@@ -45,8 +45,13 @@ export function LoadingState({
       </div>}
       {layout === "schedule" && <div className="oc-loading-schedule">{Array.from({ length: Math.min(count, 6) }, (_, index) => <div className="oc-loading-schedule-row" key={index}><div><Skeleton className="h-3 w-10" /><Skeleton className="mt-3 h-7 w-9" /></div><div className="min-w-0 flex-1"><Skeleton className="h-4 w-3/5" /><Skeleton className="mt-3 h-3 w-4/5" /><Skeleton className="mt-3 h-3 w-2/5" /></div><Skeleton className="oc-loading-row-action h-8 w-24" /></div>)}</div>}
       {layout === "interview" && <div className="oc-loading-interview">
-        <aside className="oc-loading-interview-context"><Skeleton className="size-16 rounded-full" /><Skeleton className="mt-5 h-5 w-3/4" /><Skeleton className="mt-3 h-3 w-full" /><Skeleton className="mt-7 h-32 w-full" /></aside>
-        <div className="oc-loading-interview-review"><Skeleton className="h-4 w-32" /><Skeleton className="mt-5 h-7 w-4/5" /><Skeleton className="mt-6 h-40 w-full" /><div className="oc-loading-form-actions"><Skeleton className="h-10 w-24" /><Skeleton className="h-10 w-32" /></div><Skeleton className="mt-7 h-3 w-32" /><Skeleton className="mt-3 h-20 w-full" /></div>
+        <div className="oc-loading-interview-header"><Skeleton className="h-6 w-24" /><Skeleton className="h-4 w-52 max-w-full" /><Skeleton className="h-8 w-20" /><Skeleton className="ml-auto h-9 w-36" /></div>
+        <div className="oc-loading-interview-presence"><Skeleton className="h-3 w-32" /></div>
+        <div className="oc-loading-interview-columns">
+          <aside className="oc-loading-interview-applicant"><div className="flex items-center gap-4"><Skeleton className="h-28 w-24 shrink-0" /><Skeleton className="h-4 w-2/5" /></div><Skeleton className="mt-7 h-56 w-full" /></aside>
+          <div className="oc-loading-interview-questions"><div className="flex items-center justify-between gap-4"><Skeleton className="h-5 w-40" /><Skeleton className="h-3 w-20" /></div><Skeleton className="mt-6 h-3 w-28" />{Array.from({ length: Math.min(count, 3) }, (_, index) => <div className="border-b border-border py-5" key={index}><Skeleton className={index % 2 ? "h-4 w-4/5" : "h-4 w-full"} /></div>)}</div>
+          <aside className="oc-loading-interview-notes"><Skeleton className="h-3 w-32" /><Skeleton className="mt-3 h-36 w-full" /><Skeleton className="mt-8 h-3 w-24" /><Skeleton className="mt-8 h-5 w-36" /><Skeleton className="mt-5 h-3 w-4/5" /></aside>
+        </div>
       </div>}
       {(layout === "presentation" || layout === "voting") && <div className={cn("oc-loading-presentation", layout === "voting" && "oc-loading-voting")}>
         <div><div className="flex items-center gap-4"><Skeleton className="size-16 shrink-0 rounded-full" /><Skeleton className="h-7 w-2/5" /></div><div className="oc-loading-presentation-fields">{Array.from({ length: Math.min(count, 4) }, (_, index) => <div key={index}><Skeleton className="h-3 w-24" /><Skeleton className="mt-4 h-4 w-4/5" /><Skeleton className="mt-3 h-3 w-3/5" /></div>)}</div></div>
