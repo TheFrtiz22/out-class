@@ -1,5 +1,5 @@
 {
-  "sealedAt": "2026-10-30T14:40:12.690Z",
+  "sealedAt": "2026-10-30T15:07:43.618Z",
   "algorithm": "SHA-256",
   "base": "6e793dea0bd45052fa444749b26d432ae93392cd",
   "measuredApplicationCommit": "4d52103e0ca70086c8ff4f3e913a7bd11f377005",
@@ -7,7 +7,7 @@
   "applicationSourceFilesVerified": 963,
   "performanceClearance": false,
   "productionReady": false,
-  "entryListDigest": "6c22904e8f81422fd7fbd33ad3822c3450ee1a9a9d63f3078b0203eeee3b90e0",
+  "entryListDigest": "e78cc0bed950637902fb1177b45f108fc68888ae11a151d8c967e3acf456a8be",
   "scope": "Every changed file against base, including application/tooling/tests and all retained raw evidence. Excludes this self-referential seal only. Historical evidence read from other commits is referenced by hash in SOURCE_BASELINE.json and BENCHMARKS.json.",
   "entries": [
     {
@@ -22,8 +22,8 @@
     },
     {
       "path": ".github/workflows/pipeline-release-functional-supplement.yml",
-      "bytes": 1220,
-      "sha256": "660be036034185c780157a14ab21f544092289f0698195f2f1b8947e524c02cd"
+      "bytes": 1395,
+      "sha256": "2bcbd698e3b8ec1650cf6a3009c2d536b24940c32414ecc6428fbd7cf46210e7"
     },
     {
       "path": "actions/crm.ts",
@@ -72,13 +72,13 @@
     },
     {
       "path": "docs/performance/pipeline-release-repair/ARCHIVES.json",
-      "bytes": 5533,
-      "sha256": "8945212563ed5d7c9dfd0abf128bcc3d29ea511e2e104b8a6460c71918d432c5"
+      "bytes": 7795,
+      "sha256": "0fe1fbfdc66f26000688e0a0b5cf00f0f1d449d67c82f4e45623fc19527dbc53"
     },
     {
       "path": "docs/performance/pipeline-release-repair/BENCHMARKS.json",
-      "bytes": 4139701,
-      "sha256": "bdb5ed6cf083e40d9f59470efcbe4deea780612bd06c210e24797890b52e9794"
+      "bytes": 5401231,
+      "sha256": "e31cd987fa8df1ed9c998de07da8c9ced9512dc532e8e05cd9939268e1773d86"
     },
     {
       "path": "docs/performance/pipeline-release-repair/CANCELLED_CI_PREPARATIONS.json",
@@ -87,8 +87,8 @@
     },
     {
       "path": "docs/performance/pipeline-release-repair/CHANGED_FILES.json",
-      "bytes": 154926,
-      "sha256": "97d8ac6a609dfb91f9601a01e49858a04a4248409dcb494394f18d91ced05585"
+      "bytes": 181039,
+      "sha256": "05bdecb703dfab0b416223cc2f6d7bcbd5f2f60f2da1396c97c1bdc6069fcc55"
     },
     {
       "path": "docs/performance/pipeline-release-repair/CHATGPT_HANDOFF.md",
@@ -122,13 +122,18 @@
     },
     {
       "path": "docs/performance/pipeline-release-repair/GATED_COVERAGE.json",
-      "bytes": 20216,
-      "sha256": "0efdfa967d4d179633104793d6605918a5d15f90a2d70f880ce01e3f76fdb2ea"
+      "bytes": 24710,
+      "sha256": "26f7189c6ff933fb6962d05507151cd4bf71949d94c90aa36dc1b3b6916baac8"
     },
     {
       "path": "docs/performance/pipeline-release-repair/GATED_QA_PLAN.md",
-      "bytes": 2299,
-      "sha256": "5b148d3bb4d3fe7d04feb9fdf08c478c1e2ddfad88163a4b304a580db7650a9d"
+      "bytes": 3144,
+      "sha256": "d0118cd27db8be2753fd13bc13a23b5494afdc6c9053283df3051a67e1e98dc8"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/GATED_SUPPLEMENT_QA.json",
+      "bytes": 24716,
+      "sha256": "52c9eac6ba57fecf9abf0a3d381b9fcfc92e7bf7a76c5ea2c802712e44abaad8"
     },
     {
       "path": "docs/performance/pipeline-release-repair/GATED_TEST_TITLES.json",
@@ -1534,6 +1539,666 @@
       "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-4-B-warmup/collector.log",
       "bytes": 506,
       "sha256": "9321f66c3e54a746d83f34b7957024228b95edd58a647a7fa3c5b81372a4b1d0"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/PROTOCOL.json",
+      "bytes": 229393,
+      "sha256": "3dad8fb9dec3fe73f60a1859d476892ff2052b913c420c43a88cc8345130a50b"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-1-B-full-review/collector.log",
+      "bytes": 168,
+      "sha256": "83eb1405bd1a3b5f91a80276655d54ec4e54c0c5c99dcd7831fe4568ef2bd43e"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-1-B-full-review/workflow.json",
+      "bytes": 240238,
+      "sha256": "73672a0a0e7f9e142d957b42a2132a6c6bed3dba9fcf2f29641e1edbe43d9d1a"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-1-B-measure/browser-samples.json",
+      "bytes": 2027539,
+      "sha256": "19e7b65f6cfcefcccbd318a38da9384bc584e663785d3edd3d284968de8ee849"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-1-B-measure/browser-summary.json",
+      "bytes": 4242,
+      "sha256": "76331eb2b5f9ee2beaa1db5b2b7bb05358a3a1f08b6ba929b68fc516247c35e0"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-1-B-measure/collector.log",
+      "bytes": 3654,
+      "sha256": "5f6b1377ded6eba7727ed58683cf2587552554b8aa0ad258040836437101d932"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-1-B-warmup/browser-samples.json",
+      "bytes": 269371,
+      "sha256": "4bf7b6a34d9f05370ae8a6e590c50fcd0ae629935ba5389d06f10901af4c4cd7"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-1-B-warmup/browser-summary.json",
+      "bytes": 4214,
+      "sha256": "4456257345e173e0eb9f3e31ee3b8c878976eb766b18baa39f592839415d74f0"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-1-B-warmup/collector.log",
+      "bytes": 476,
+      "sha256": "08bb5b234ca19b936075d03720f96024e9635a175558f87ed51bf597ea32b628"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-2-D-full-review/collector.log",
+      "bytes": 168,
+      "sha256": "83eb1405bd1a3b5f91a80276655d54ec4e54c0c5c99dcd7831fe4568ef2bd43e"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-2-D-full-review/workflow.json",
+      "bytes": 241648,
+      "sha256": "94025838bed7fe94edb2e61798182df49b29ff7c7b103514ee6edb898b9f4a44"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-2-D-measure/browser-samples.json",
+      "bytes": 2008045,
+      "sha256": "aae5b80329e922b42c05c7de435db5142bc03108d0dc87d61be89dc34fded322"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-2-D-measure/browser-summary.json",
+      "bytes": 4239,
+      "sha256": "c6df240182d10ab0d44573fd43f1ff9bc814225310cd0e38c2552b3865c8c8a0"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-2-D-measure/collector.log",
+      "bytes": 3654,
+      "sha256": "71f747afa9fd541c4ab4aa4b5b7ed21f080b1326548bd8baee701122c223fee6"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-2-D-warmup/browser-samples.json",
+      "bytes": 270320,
+      "sha256": "c354d9437d7bba911d096e4e87cf9a977c96b4abded11c741651e5404e80f544"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-2-D-warmup/browser-summary.json",
+      "bytes": 4221,
+      "sha256": "969ed7894f098ab3e2b55d84bb5b918647046987088d4498206077e1b4115075"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-2-D-warmup/collector.log",
+      "bytes": 476,
+      "sha256": "ca63fe5dea2be16e0e18fe3cbea35571fc2923bc294dd95137e151574b0c0e80"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-3-D-full-review/collector.log",
+      "bytes": 168,
+      "sha256": "83eb1405bd1a3b5f91a80276655d54ec4e54c0c5c99dcd7831fe4568ef2bd43e"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-3-D-full-review/workflow.json",
+      "bytes": 240276,
+      "sha256": "7bd4cccd22b9544ec45503b6a0a0ed3f0fb46435f96382c364d7b17a2536e9f6"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-3-D-measure/browser-samples.json",
+      "bytes": 2023604,
+      "sha256": "74a7057dc3d555ce5656723a28c4d159da8d4e156217009a740775237ba47eee"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-3-D-measure/browser-summary.json",
+      "bytes": 4242,
+      "sha256": "d5b63a0dc183c496596a72fd4de90440f6c2d47fb2ede9cae9a7fb7116c410a4"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-3-D-measure/collector.log",
+      "bytes": 3654,
+      "sha256": "e9188bd61bb812762a6c62387338dbbc2591737bf7de84b34ae8d962445b58c9"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-3-D-warmup/browser-samples.json",
+      "bytes": 270430,
+      "sha256": "50386eb26ffe398ae82a8d07a15747a01229f1f47bb7fbecbf28ad9f7daa44f3"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-3-D-warmup/browser-summary.json",
+      "bytes": 4225,
+      "sha256": "a86a8988f123d9d482640f626795f6bc04d63513426ee1a32d72e464eb5f34d3"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-3-D-warmup/collector.log",
+      "bytes": 476,
+      "sha256": "f3f792f06a70af9813c6a6fc63575708fc603ae5d21366f12996c2533f2b665e"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-4-B-full-review/collector.log",
+      "bytes": 168,
+      "sha256": "83eb1405bd1a3b5f91a80276655d54ec4e54c0c5c99dcd7831fe4568ef2bd43e"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-4-B-full-review/workflow.json",
+      "bytes": 239804,
+      "sha256": "da3050bfe20098cdce94e541d0f2c9972c0ff39ca59731051274e52df336a8ea"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-4-B-measure/browser-samples.json",
+      "bytes": 2028954,
+      "sha256": "430c5c028da33abe535053d7e52124e878663e28d5e6861d34a2722e4eae88b9"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-4-B-measure/browser-summary.json",
+      "bytes": 4258,
+      "sha256": "ff78ec0c902b8e9c3afab97fb2d03020d831f017c9eb8414b3fadf3cda497139"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-4-B-measure/collector.log",
+      "bytes": 3654,
+      "sha256": "85339b94214da5786a488b8626431d26c3f33fe3c17b6d0fd37ac6e407c4c218"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-4-B-warmup/browser-samples.json",
+      "bytes": 271877,
+      "sha256": "a768088d427cafcf9606e64d889c70753848b03b6b00e8999075b8eb9ff9bed1"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-4-B-warmup/browser-summary.json",
+      "bytes": 4209,
+      "sha256": "6e1100a28a5791d8ee36391ce49b44e662388db3eb9aeb88c8c3f0c6e4e67355"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-4-B-warmup/collector.log",
+      "bytes": 476,
+      "sha256": "2f13eb02a2455689641adb247964125e70a903be72e94babd3eafcd402b1cbfb"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/PROTOCOL.json",
+      "bytes": 229446,
+      "sha256": "c3a5ff941e95a70c933376e6d6eceaec96eb474fdcb19c1d5753325835a7aea4"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-1-B-full-review/collector.log",
+      "bytes": 182,
+      "sha256": "1279d720adeec1183eada1b282c2e6db4449509e0b25727e7924887e6b8a453c"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-1-B-full-review/workflow.json",
+      "bytes": 251300,
+      "sha256": "2841fcd4cfe08781577ba31b38cc4fc7548be044aa43ba3d94d7b17aaabaf5ac"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-1-B-measure/browser-samples.json",
+      "bytes": 669203,
+      "sha256": "aac6860a5f55de760e2868655161e1cc06e67063131a161c543f5b5dec919951"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-1-B-measure/browser-summary.json",
+      "bytes": 4243,
+      "sha256": "e558880313db8ace2aa5abd29d28eb36400564fb0ee61ffa6dc221a45c425589"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-1-B-measure/collector.log",
+      "bytes": 1200,
+      "sha256": "2868ffb5348b95174c052b036117c3cf29675c91ead025796ef6705f39b3126a"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-1-B-warmup/browser-samples.json",
+      "bytes": 268001,
+      "sha256": "fbb3f5005201f4b1caa3a0ae12c224f0cd0d66089d2c5fe91553bc39cbe73f39"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-1-B-warmup/browser-summary.json",
+      "bytes": 4257,
+      "sha256": "8d10e1eb63864ffcf0a90f52f783b239369791a357e36a539e38e6a1a730f441"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-1-B-warmup/collector.log",
+      "bytes": 480,
+      "sha256": "40aa8429f6c5ed5a352ca487f09e4ba4d6c8ef5073939423a9fe878e32adb29c"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-2-D-full-review/collector.log",
+      "bytes": 182,
+      "sha256": "1279d720adeec1183eada1b282c2e6db4449509e0b25727e7924887e6b8a453c"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-2-D-full-review/workflow.json",
+      "bytes": 252756,
+      "sha256": "e0a7544fce36c192c78c36b5752437a7190da0b6bba180c61476af8bd04532bc"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-2-D-measure/browser-samples.json",
+      "bytes": 669034,
+      "sha256": "a2b5b82acd0fa9ad28e1086483295a653f49ee704f070f0abfc91a5f6b95ddd3"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-2-D-measure/browser-summary.json",
+      "bytes": 4249,
+      "sha256": "63cb618fab9177744f48643b636efffec51325cb5a47c4522df71540b4706ef3"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-2-D-measure/collector.log",
+      "bytes": 1200,
+      "sha256": "8222a8bbf89582dcd2fe873e6b773108d7d63611616c1eeac37638f479d01965"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-2-D-warmup/browser-samples.json",
+      "bytes": 268727,
+      "sha256": "1c45284541075f2fae92196a28b2b066725c9ec93ee9ccb48bbc3ac4636ecf4c"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-2-D-warmup/browser-summary.json",
+      "bytes": 4258,
+      "sha256": "d0087bfe96015e0c788d06573a9411d8eaada34115a08a3acab51ebc2fe957f8"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-2-D-warmup/collector.log",
+      "bytes": 480,
+      "sha256": "b6f5e2f20f7ee242a12ad0a19c0c7b86eea6d46e2b21a7deda12a01535dc5d74"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-3-D-full-review/collector.log",
+      "bytes": 182,
+      "sha256": "1279d720adeec1183eada1b282c2e6db4449509e0b25727e7924887e6b8a453c"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-3-D-full-review/workflow.json",
+      "bytes": 251332,
+      "sha256": "995db98390085f47733c80cfc900216d3546b4f1a3f98e7eaab525a0325af7dc"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-3-D-measure/browser-samples.json",
+      "bytes": 668993,
+      "sha256": "627ed3140adcef600a020a8fcb63337c753df33e9cb5cfd8f36fdbdf25abe568"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-3-D-measure/browser-summary.json",
+      "bytes": 4261,
+      "sha256": "c6e31907736d25fd4f04d36acbc6ae6e6d1ece9175a0f83fc5443d19c748caff"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-3-D-measure/collector.log",
+      "bytes": 1200,
+      "sha256": "7bc59b043e4efc86cfed9e44369975423c5f0268caa33e559f24b3d16c4d6f82"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-3-D-warmup/browser-samples.json",
+      "bytes": 268535,
+      "sha256": "f771614269bb2a13aa3bb5b8d9e428088af74c80af53c2189d8b0251e07c1b70"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-3-D-warmup/browser-summary.json",
+      "bytes": 4255,
+      "sha256": "a8d7250baf7a87306d83d48dc05e3e006b1a46bafc590e5fa21839f955ea285e"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-3-D-warmup/collector.log",
+      "bytes": 480,
+      "sha256": "426db4f6354798163a5b50817eb6ab97de4236f741dd209e2282fddc5bcd1454"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-4-B-full-review/collector.log",
+      "bytes": 182,
+      "sha256": "1279d720adeec1183eada1b282c2e6db4449509e0b25727e7924887e6b8a453c"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-4-B-full-review/workflow.json",
+      "bytes": 252301,
+      "sha256": "718ac5b3e8fd841c6096d56873719b1652fde16f2faad98bcd4da4bdda45e3be"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-4-B-measure/browser-samples.json",
+      "bytes": 668861,
+      "sha256": "027870cde1819f57d4ee25dbf985e955bb9533db500191714fe5610a89c86e6c"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-4-B-measure/browser-summary.json",
+      "bytes": 4243,
+      "sha256": "010023130a92ca96e81b1b1161a7debf76b3e9d01d28010abce0e6028709bdf2"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-4-B-measure/collector.log",
+      "bytes": 1200,
+      "sha256": "1e155406418dac11e425098abf530f1f634c7d993a02086b449a613347fa23e9"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-4-B-warmup/browser-samples.json",
+      "bytes": 268335,
+      "sha256": "16ba86ba0e5d57785bb62084b4c7c182e9b2831bc84a7932f938df721793158e"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-4-B-warmup/browser-summary.json",
+      "bytes": 4257,
+      "sha256": "d6fa5a90d06f8353a180f3a854fe6a10742149e7e8b023b9594a688de9fbfbce"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-4-B-warmup/collector.log",
+      "bytes": 480,
+      "sha256": "50f81ede5104dd8321a011d917a025f72fd9c0cf22f5d3153a6e42334bd1ee45"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/PROTOCOL.json",
+      "bytes": 229467,
+      "sha256": "45a6e03b6c88c3ffc512d418bc949530f990a34f4a9dde021249a74e6f9d8cfb"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-1-B-full-review/collector.log",
+      "bytes": 189,
+      "sha256": "fa30b50996e47e3d32afcdc604ab8330461cf42250d41fdf744a97c549b84bce"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-1-B-full-review/workflow.json",
+      "bytes": 286310,
+      "sha256": "0d9845b0638c265a94be1142e9f9e2d358816f033864be93c2e436f9188220a9"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-1-B-measure/browser-samples.json",
+      "bytes": 676230,
+      "sha256": "4f23c81d8ec318db3d9810f07f5710b5c98e4981f56291d7e56948e04bd7fcf2"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-1-B-measure/browser-summary.json",
+      "bytes": 4288,
+      "sha256": "16af743d4b0a41b708ec296890a5a38db64abc95b947dfb93a8e61a5a8b9bd35"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-1-B-measure/collector.log",
+      "bytes": 1210,
+      "sha256": "ada840e02fa78271b23a46d0bedd74d00e164759834eab0c78f02ee49183ccd2"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-1-B-warmup/browser-samples.json",
+      "bytes": 272413,
+      "sha256": "e0c516cc6296c428511ac2b257f61cd7c454d5195ad7683d138d045fc1058c12"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-1-B-warmup/browser-summary.json",
+      "bytes": 4279,
+      "sha256": "1bcadff5614bea1e314d9cdac57785f011812c5957ce397d481f2a84a4d9fea1"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-1-B-warmup/collector.log",
+      "bytes": 484,
+      "sha256": "73364e055ee5f7037b2acc08948d773b84f2f152e4646814ccb6ac0d7bbaca5a"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-2-D-full-review/collector.log",
+      "bytes": 189,
+      "sha256": "fa30b50996e47e3d32afcdc604ab8330461cf42250d41fdf744a97c549b84bce"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-2-D-full-review/workflow.json",
+      "bytes": 264006,
+      "sha256": "38a65151189439988886713b746a4454302d1bf411c125adf2715ac50d67da09"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-2-D-measure/browser-samples.json",
+      "bytes": 678548,
+      "sha256": "8177938f12ef507313abd20d8f7b1faada576aa498e98feacc2fd972e0578864"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-2-D-measure/browser-summary.json",
+      "bytes": 4256,
+      "sha256": "c83ad8539bbb33708d7450d2b00715570da9c29baf90c7371964ed47c41ce1b0"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-2-D-measure/collector.log",
+      "bytes": 1200,
+      "sha256": "3b6074e9ee76258cffa4f07b1a80ebbf0d65c69ccb3f6df287e771d00f6f6dcb"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-2-D-warmup/browser-samples.json",
+      "bytes": 271815,
+      "sha256": "14e8a54fd4e9c9f7f3eafba631545ad3d6345d46e3ae28bd32907a6c89f674c3"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-2-D-warmup/browser-summary.json",
+      "bytes": 4259,
+      "sha256": "ffcff2e3e9cc95b882360cd87d1648c49ffc5771d3551c0a5d07b2ce13e7a5c9"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-2-D-warmup/collector.log",
+      "bytes": 480,
+      "sha256": "9872ba2f2c8e344b063f7b86485c091dc99923616b95245a12db4b9afcd0488c"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-3-D-full-review/collector.log",
+      "bytes": 189,
+      "sha256": "fa30b50996e47e3d32afcdc604ab8330461cf42250d41fdf744a97c549b84bce"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-3-D-full-review/workflow.json",
+      "bytes": 264134,
+      "sha256": "fb45e6985b71951fedf75583d2e81bbf92200e8493a3b47dcfa12cad799f3717"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-3-D-measure/browser-samples.json",
+      "bytes": 678137,
+      "sha256": "9c797dc544c83de54f2130881cbbe6196e15c2aa8c3c36c60dc9e4b5959225ea"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-3-D-measure/browser-summary.json",
+      "bytes": 4250,
+      "sha256": "527830b28878fbc50c50dc8750d4b204186da4c129125bb2fea945429f6a3606"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-3-D-measure/collector.log",
+      "bytes": 1200,
+      "sha256": "75825e99244d6b560f042c3f5afc9543a84ea9d17ec393059778738fe794fe72"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-3-D-warmup/browser-samples.json",
+      "bytes": 273146,
+      "sha256": "40af76a5bebe0b3c75c5f6c0538c919b02fddd3cdd18f1c5ac37813240312d51"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-3-D-warmup/browser-summary.json",
+      "bytes": 4246,
+      "sha256": "c01069292bade9c862c9ac934194b4e306d6cb1c21515dd113515fceb254b1da"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-3-D-warmup/collector.log",
+      "bytes": 480,
+      "sha256": "ddb1a87962a7ed412e5cf9294ceb8333064aa41f6fabaa1b219747c0198b35c6"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-4-B-full-review/collector.log",
+      "bytes": 189,
+      "sha256": "fa30b50996e47e3d32afcdc604ab8330461cf42250d41fdf744a97c549b84bce"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-4-B-full-review/workflow.json",
+      "bytes": 286575,
+      "sha256": "c1653a502663fd9840f8cc7a8172b8b3dbd2c0d37c5e007ef0bed7f8a988a509"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-4-B-measure/browser-samples.json",
+      "bytes": 678581,
+      "sha256": "e22c9cd928cdd3b6814c5cffaa26026cc8eab5dea533e553435fa1d2e4bf197b"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-4-B-measure/browser-summary.json",
+      "bytes": 4278,
+      "sha256": "3290a58e4c13dae47c339f0ab950d7414244efca4dd1379907bcbda7268c7c3a"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-4-B-measure/collector.log",
+      "bytes": 1210,
+      "sha256": "cd1343150f041e6655ee1bdde4c4bf428c5fb3171be1b47781f98f3564dac67e"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-4-B-warmup/browser-samples.json",
+      "bytes": 272563,
+      "sha256": "302a966d3beccffe8af6b50f4394aecc79543404631775556fd70b8379f24112"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-4-B-warmup/browser-summary.json",
+      "bytes": 4280,
+      "sha256": "ff9038bc0713638e73fbc4c38332b59a9660a37f61b8dfa36048810fca8d857d"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-4-B-warmup/collector.log",
+      "bytes": 484,
+      "sha256": "1793fbd39847fea36e0588e553ac23977c8340ac79570a1421d72000bbb04cac"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/PROTOCOL.json",
+      "bytes": 228056,
+      "sha256": "4fc6296062c923c0ff6c643c90e987cb386bec9390010a7ca5c065db6d1bab2f"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-1-B-full-review/collector.log",
+      "bytes": 193,
+      "sha256": "dedacf5ed3147a5658efcafe8fecda92ed396b5bf41122c22b66976819279561"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-1-B-full-review/workflow.json",
+      "bytes": 515634,
+      "sha256": "e2b1c5e2d10066a730f981af1a50878bf65c4fc2051b3d0677d1380f9943c78e"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-1-B-measure/browser-samples.json",
+      "bytes": 747357,
+      "sha256": "20497a9d72d0753baa38b100aa75c020a9769cdf13ace522ecbe877628db3a70"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-1-B-measure/browser-summary.json",
+      "bytes": 4343,
+      "sha256": "02d05db92a486d1bd12bd6b002eb136057f14091ed5361f26514b6d37ee7830e"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-1-B-measure/collector.log",
+      "bytes": 1234,
+      "sha256": "71e110542c9ffbc93329247f174ace86419b96363bdc5a0806b11003c1d4e0a3"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-1-B-warmup/browser-samples.json",
+      "bytes": 300375,
+      "sha256": "3818c342473aa30b918af39508af31ccdd3ffc8c91250be09677001a9e275daf"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-1-B-warmup/browser-summary.json",
+      "bytes": 4347,
+      "sha256": "d46e23cd063906c7b7d7ef6ee6347eae31e63aba4308fdde3238a1805bfd6723"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-1-B-warmup/collector.log",
+      "bytes": 493,
+      "sha256": "3d4ce642f8d0c24d8a2fbc7dea562fbd36365593fceb87b6c3d773c4e00c8e1c"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-2-D-full-review/collector.log",
+      "bytes": 189,
+      "sha256": "3d45a2dcd5fa726bb499aa902612a586adb08098baaf8fae73682cdc5d8772bb"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-2-D-full-review/workflow.json",
+      "bytes": 265151,
+      "sha256": "2680a696f4ab279a3736f3ea67c96c4779b2bde0b8cc28011762e3aab9bcca74"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-2-D-measure/browser-samples.json",
+      "bytes": 681008,
+      "sha256": "c6679d14bfe7ae6b85aaec0addeda7fe6f5fc6b7ee8435ae7bce38dce0e1441b"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-2-D-measure/browser-summary.json",
+      "bytes": 4248,
+      "sha256": "3239c469e46c124b5802bf41d302c3438dfab56162fb2da510666b94c042f448"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-2-D-measure/collector.log",
+      "bytes": 1200,
+      "sha256": "71559d04a7aea1ad4eb4346847a28acd810d5efbe1f07ef281bc3f6fc8e82bae"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-2-D-warmup/browser-samples.json",
+      "bytes": 273547,
+      "sha256": "db9eb86d143f97b185a4316527800734612a8d88593b8fd184723b7785352dd3"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-2-D-warmup/browser-summary.json",
+      "bytes": 4252,
+      "sha256": "e3ef9859ac5fb624d9cd5621fddf7597ffb99e866ff99727bbd3db13e1c58222"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-2-D-warmup/collector.log",
+      "bytes": 480,
+      "sha256": "1cd2e3305446cd1511e96be96a9bd8399ddd8cf9bd3046f82087ddb1b5718d59"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-3-D-full-review/collector.log",
+      "bytes": 189,
+      "sha256": "3d45a2dcd5fa726bb499aa902612a586adb08098baaf8fae73682cdc5d8772bb"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-3-D-full-review/workflow.json",
+      "bytes": 265115,
+      "sha256": "df36fd0b3b92a02cf9f3059d3ddd67bf70a0de4827ba2473c803ae2fab4c11a7"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-3-D-measure/browser-samples.json",
+      "bytes": 681554,
+      "sha256": "56385037d656eff0fbc5e91b9c82bd79097732f1da7f2aca27e0d8e1541cde5e"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-3-D-measure/browser-summary.json",
+      "bytes": 4256,
+      "sha256": "5fcb789b1ccd09a8a7236c29dd7677121a02913839183e2da2f557ab7d47dfe3"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-3-D-measure/collector.log",
+      "bytes": 1200,
+      "sha256": "8ed197b0acc6c395986be78adda9b68cc23a479bf812d57d027237a28d8a7ab5"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-3-D-warmup/browser-samples.json",
+      "bytes": 273043,
+      "sha256": "d738586d13a461a7853a4f409421f97e5c4562e02fff4e4a353271cd4ada5f78"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-3-D-warmup/browser-summary.json",
+      "bytes": 4243,
+      "sha256": "b25009d9bdb47c94677f2d0d831083c035162b427ce4240fc8eb4a85b064b4f3"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-3-D-warmup/collector.log",
+      "bytes": 480,
+      "sha256": "6cad8865211bcb1f00b068dc008e3c5c6eb4c59e20ea8e2a9d33821b4382c482"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-4-B-full-review/collector.log",
+      "bytes": 166,
+      "sha256": "606db684a82983e99d044a808ad77ce7004c542d76ea9874b65726679fda87ef"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-4-B-full-review/workflow.json",
+      "bytes": 440156,
+      "sha256": "a9584e50bf975b025d0c29afb079c5ec9b7cc6c5b337cae7eb7c0e9c6541f47b"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-4-B-measure/browser-samples.json",
+      "bytes": 749159,
+      "sha256": "2254a8996fae0bc3288dc934eedb323c03f17d4d94d0fa7ae4d8ee37694b25f2"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-4-B-measure/browser-summary.json",
+      "bytes": 4347,
+      "sha256": "c2526f3d30cfd01ebdd36540fcee0668cea36d784f8efc7e3af8e8b60bd01d58"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-4-B-measure/collector.log",
+      "bytes": 1235,
+      "sha256": "cacb50bb951a805d9dfd255dd8d84d21ff1fb34128dd683e2c24034b53987f6f"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-4-B-warmup/browser-samples.json",
+      "bytes": 300010,
+      "sha256": "3c96d88e9812be9b68e0e9c2fe1378f46ae35a9edb1d6c82eb213c8049d2a329"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-4-B-warmup/browser-summary.json",
+      "bytes": 4343,
+      "sha256": "17f07a964ad73dee245d46c38475a9497c00e0a498880af3d3226dc35dabcf6c"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-4-B-warmup/collector.log",
+      "bytes": 493,
+      "sha256": "4c06a9340f778f5c9d919117930e3f236cda03ec8db3939de76e4a990605733c"
     },
     {
       "path": "docs/performance/pipeline-release-repair/ci/local-attempt-40905121217-1/PROTOCOL.json",
@@ -2954,6 +3619,26 @@
       "path": "docs/performance/pipeline-release-repair/ci/preflight-constrained-40974037305-1.json",
       "bytes": 1781,
       "sha256": "859ad83178f58aaabdf4a4dc9bf1a4554f81713198b4822a30fb7aa6f1010eab"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/preflight-constrained-cohort-1-40993113523-1.json",
+      "bytes": 1781,
+      "sha256": "c5a8ec6bf8c12e1adb7d3f9688fb8afc788267a3db00dccc6c5fc4941850371e"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/preflight-constrained-cohort-100-40993113523-1.json",
+      "bytes": 1781,
+      "sha256": "cd2edc9d673a0bb9d59f606e8408b966e2e048f2aaafebe65744ec72686804b0"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/preflight-constrained-cohort-1000-40993113523-1.json",
+      "bytes": 1781,
+      "sha256": "62354f6f590a9ea8b82a0a79c525342dbc46b49f1e4f5a24dfc42658dc123e15"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/preflight-constrained-cohort-5000-40993113523-1.json",
+      "bytes": 1781,
+      "sha256": "173df7f604f3f66a7a804fc894d7ab5a72b0f82b7cbebd81a081f71959320918"
     },
     {
       "path": "docs/performance/pipeline-release-repair/ci/preflight-local-40969249318-1.json",
@@ -4527,8 +5212,8 @@
     },
     {
       "path": "scripts/run-pipeline-release-gated-qa.cjs",
-      "bytes": 6166,
-      "sha256": "f90ae68b22da9eafbbb2fb0a10d571e001f4aaa3c478b351a407bf4a978df00b"
+      "bytes": 6551,
+      "sha256": "06dde9f08af4d7a290637a77339c8f8b2b7ec3b1501d95270860c7613faa02d7"
     },
     {
       "path": "scripts/summarize-pipeline-release-repair.cjs",

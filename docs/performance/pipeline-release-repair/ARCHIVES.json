@@ -91,6 +91,50 @@
       "createdAt": "2026-10-30T02:35:39Z",
       "url": "https://github.com/TheFrtiz22/out-class/actions/runs/40974037305/artifacts/12949513820",
       "disposition": "Original 180-minute job deadline cancelled final baseline block. All partial outcomes excluded, including completed smaller cohorts and candidate successes. Baseline 5000 had observer timeout failures before job cancellation. Owned-process cleanup also failed after cancellation; ephemeral runner teardown is platform-owned. Artifact uploaded successfully, ZIP digest verified and raw bytes safely extracted unchanged."
+    },
+    {
+      "artifactId": 12962569235,
+      "runId": 40993113523,
+      "profile": "constrained",
+      "cohort": 5000,
+      "attempt": 1,
+      "zipSha256": "73049bf9224225c3db0ee466421e420fc77a572e9a13bb85859fc9f88c793a93",
+      "createdAt": "2026-10-30T08:06:43Z",
+      "url": "https://github.com/TheFrtiz22/out-class/actions/runs/40993113523/artifacts/12962569235",
+      "disposition": "Collection failed after extended budget; whole assigned cohort excluded, including successes. ZIP verified and raw bytes safely extracted unchanged."
+    },
+    {
+      "artifactId": 12952700900,
+      "runId": 40993113523,
+      "profile": "constrained",
+      "cohort": 1000,
+      "attempt": 1,
+      "zipSha256": "8e5ec52478546526eabacd756267be93ea017e2a167f9169fa4f281b029f7b50",
+      "createdAt": "2026-10-30T03:40:52Z",
+      "url": "https://github.com/TheFrtiz22/out-class/actions/runs/40993113523/artifacts/12952700900",
+      "disposition": "Whole assigned cohort completed; final attestation/functional/sample checks must pass before timing acceptance. ZIP verified and raw bytes safely extracted unchanged."
+    },
+    {
+      "artifactId": 12951708199,
+      "runId": 40993113523,
+      "profile": "constrained",
+      "cohort": 1,
+      "attempt": 1,
+      "zipSha256": "6326225132da1fdad2b6a48f211fab76c462962365c76f61fdd6b6a2276df8ac",
+      "createdAt": "2026-10-30T03:28:28Z",
+      "url": "https://github.com/TheFrtiz22/out-class/actions/runs/40993113523/artifacts/12951708199",
+      "disposition": "Whole assigned cohort completed; final attestation/functional/sample checks must pass before timing acceptance. ZIP verified and raw bytes safely extracted unchanged."
+    },
+    {
+      "artifactId": 12951376485,
+      "runId": 40993113523,
+      "profile": "constrained",
+      "cohort": 100,
+      "attempt": 1,
+      "zipSha256": "09de942ca6e3b2067c4a576aced5c5f6bc16a0e4d5288f1d9394c701e9e3a137",
+      "createdAt": "2026-10-30T03:16:08Z",
+      "url": "https://github.com/TheFrtiz22/out-class/actions/runs/40993113523/artifacts/12951376485",
+      "disposition": "Whole assigned cohort completed; final attestation/functional/sample checks must pass before timing acceptance. ZIP verified and raw bytes safely extracted unchanged."
     }
   ]
 }

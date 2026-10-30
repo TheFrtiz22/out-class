@@ -12,14 +12,14 @@ concurrency:
   cancel-in-progress: false
 jobs:
   verify:
-    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'run-release-functional-supplement'
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'run-release-functional-supplement' || github.event.label.name == 'run-release-functional-repair'
     name: Remaining gated workflows / ${{ matrix.suite }}
     runs-on: ubuntu-latest
     timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
-        suite: [corkboard, admin, active, communications]
+        suite: ${{ fromJSON(github.event.label.name == 'run-release-functional-repair' && '["corkboard","admin"]' || '["corkboard","admin","active","communications"]') }}
     steps:
       - uses: actions/checkout@v4
         with:

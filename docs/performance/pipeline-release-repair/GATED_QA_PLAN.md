@@ -34,3 +34,16 @@ repository and are not uploaded. The workflow is opt-in via
 `run-release-functional-supplement` or dispatch. A failed product assertion
 remains a failed verification and is retained; coverage advances only after the
 specific full scenario passes. Tests/builds here never run on a timing VM.
+
+
+The first supplement passed active navigation (three cases), communications
+(five cases), Corkboard and decision communications. The asset test ran before
+the Corkboard journey because Node orders input test files; its MFA factor was
+still enrolled/unverified. The Admin fixture likewise lacked both that verified
+factor and the capacity-150 published event that its suspension assertion
+requires. The maintained Corkboard journey supplies both through actual Auth
+MFA and guarded product actions. The retry executes that journey first, then
+the unchanged dependent assertions. Independent Admin-session scenarios now
+continue in their separate fixture even if the earlier Admin assertions fail;
+the controller preserves a nonzero exit for every failed test. Only the two
+affected matrix jobs are repeated via `run-release-functional-repair`.

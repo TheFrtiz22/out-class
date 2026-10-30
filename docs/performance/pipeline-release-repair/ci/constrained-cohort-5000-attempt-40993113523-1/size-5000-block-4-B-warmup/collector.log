@@ -1,0 +1,8 @@
+recruiting → applicants cold 1/2: 34850.8 ms, 8 requests
+recruiting → applicants cold 2/2: 33851.8 ms, 8 requests
+recruiting → applicants warm 1/2: 34163.0 ms, 6 requests
+recruiting → applicants warm 2/2: 34140.5 ms, 6 requests
+applicants → applicantDetail cold 1/2: 16712.8 ms, 9 requests
+applicants → applicantDetail cold 2/2: 16486.3 ms, 8 requests
+applicants → applicantDetail warm 1/2: 16674.6 ms, 10 requests
+applicants → applicantDetail warm 2/2: 16739.0 ms, 9 requests

@@ -8,32 +8,44 @@
         "tests/account-data-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797549075,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+      "jobId": 124124095776,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair",
+      "source": "eda66c577d594b06f0052cbadc23a4ddc6573493; same measured application digest",
+      "runId": 41073688186,
+      "note": "Specific existing scenario passed in the gated supplement; not substituted by another suite."
     },
     {
       "title": "active Interview Rooms: distinct reviewers, concurrent reads and immediate assignment revocation",
       "files": [
         "tests/active-interview-navigation-e2e.test.cjs"
       ],
-      "status": "not_run_in_this_repair",
-      "note": "Ordinary skip retained; passing a related native/HTTP suite is not substituted for this specific test."
+      "status": "covered_by_separate_passing_integration",
+      "note": "Specific existing scenario passed in the gated supplement; not substituted by another suite.",
+      "source": "eda66c577d594b06f0052cbadc23a4ddc6573493; same measured application digest",
+      "jobId": 124124095776,
+      "runId": 41073688186
     },
     {
       "title": "real local Admin session survives elevation, navigation and refresh and rejects revoked authority",
       "files": [
         "tests/admin-session-e2e.test.cjs"
       ],
-      "status": "not_run_in_this_repair",
-      "note": "Ordinary skip retained; passing a related native/HTTP suite is not substituted for this specific test."
+      "status": "failed_in_separate_integration",
+      "note": "Specific existing scenario reached its original assertions; failure and fixture prerequisite details retained in GATED_SUPPLEMENT_QA.json.",
+      "source": "eda66c577d594b06f0052cbadc23a4ddc6573493; same measured application digest",
+      "jobId": 124124095732,
+      "runId": 41073688186
     },
     {
       "title": "disposable real Auth/password/MFA elevation, Admin routes/actions, invitations, reports, impersonation and logout",
       "files": [
         "tests/admin-workspace-e2e.test.cjs"
       ],
-      "status": "not_run_in_this_repair",
-      "note": "Ordinary skip retained; passing a related native/HTTP suite is not substituted for this specific test."
+      "status": "failed_in_separate_integration",
+      "note": "Specific existing scenario reached its original assertions; failure and fixture prerequisite details retained in GATED_SUPPLEMENT_QA.json.",
+      "source": "eda66c577d594b06f0052cbadc23a4ddc6573493; same measured application digest",
+      "jobId": 124124095732,
+      "runId": 41073688186
     },
     {
       "title": "application writing and branding through real sessions, server actions, PostgreSQL and browser reloads",
@@ -77,8 +89,11 @@
       "files": [
         "tests/club-assets-e2e.test.cjs"
       ],
-      "status": "not_run_in_this_repair",
-      "note": "Ordinary skip retained; passing a related native/HTTP suite is not substituted for this specific test."
+      "status": "failed_in_separate_integration",
+      "note": "Specific existing scenario reached its original assertions; failure and fixture prerequisite details retained in GATED_SUPPLEMENT_QA.json.",
+      "source": "eda66c577d594b06f0052cbadc23a4ddc6573493; same measured application digest",
+      "jobId": 124124095803,
+      "runId": 41073688186
     },
     {
       "title": "scheduling through local Auth, production actions and authenticated cron",
@@ -102,8 +117,11 @@
       "files": [
         "tests/communications-e2e.test.cjs"
       ],
-      "status": "not_run_in_this_repair",
-      "note": "Ordinary skip retained; passing a related native/HTTP suite is not substituted for this specific test."
+      "status": "covered_by_separate_passing_integration",
+      "note": "Specific existing scenario passed in the gated supplement; not substituted by another suite.",
+      "source": "eda66c577d594b06f0052cbadc23a4ddc6573493; same measured application digest",
+      "jobId": 124124095289,
+      "runId": 41073688186
     },
     {
       "title": "native decision communications: atomic snapshots, ownership, history, retries and outbox",
@@ -119,16 +137,22 @@
       "files": [
         "tests/corkboard-e2e.test.cjs"
       ],
-      "status": "not_run_in_this_repair",
-      "note": "Ordinary skip retained; passing a related native/HTTP suite is not substituted for this specific test."
+      "status": "covered_by_separate_passing_integration",
+      "note": "Specific existing scenario passed in the gated supplement; not substituted by another suite.",
+      "source": "eda66c577d594b06f0052cbadc23a4ddc6573493; same measured application digest",
+      "jobId": 124124095803,
+      "runId": 41073688186
     },
     {
       "title": "real Auth, RSC, PostgreSQL, private Storage and shared email-provider decision lifecycle",
       "files": [
         "tests/decision-communications-e2e.test.cjs"
       ],
-      "status": "not_run_in_this_repair",
-      "note": "Ordinary skip retained; passing a related native/HTTP suite is not substituted for this specific test."
+      "status": "covered_by_separate_passing_integration",
+      "note": "Specific existing scenario passed in the gated supplement; not substituted by another suite.",
+      "source": "eda66c577d594b06f0052cbadc23a4ddc6573493; same measured application digest",
+      "jobId": 124124095803,
+      "runId": 41073688186
     },
     {
       "title": "decision lifecycle through local Auth/Storage and production server actions",
@@ -206,8 +230,11 @@
         "tests/navigation-phase1-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797549075,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+      "jobId": 124124095776,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair",
+      "source": "eda66c577d594b06f0052cbadc23a4ddc6573493; same measured application digest",
+      "runId": 41073688186,
+      "note": "Specific existing scenario passed in the gated supplement; not substituted by another suite."
     },
     {
       "title": "workspace avoids unused font transfers and renders real italic/variable faces on demand at 1440px",
@@ -215,8 +242,11 @@
         "tests/navigation-phase10-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797549075,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+      "jobId": 124124095776,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair",
+      "source": "eda66c577d594b06f0052cbadc23a4ddc6573493; same measured application digest",
+      "runId": 41073688186,
+      "note": "Specific existing scenario passed in the gated supplement; not substituted by another suite."
     },
     {
       "title": "workspace avoids unused font transfers and renders real italic/variable faces on demand at 390px",
@@ -224,8 +254,11 @@
         "tests/navigation-phase10-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797549075,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+      "jobId": 124124095776,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair",
+      "source": "eda66c577d594b06f0052cbadc23a4ddc6573493; same measured application digest",
+      "runId": 41073688186,
+      "note": "Specific existing scenario passed in the gated supplement; not substituted by another suite."
     },
     {
       "title": "constrained startup fences an already-notified Auth epoch, revisits read fresh, and revoked cookies reveal no old applicants",
@@ -233,8 +266,11 @@
         "tests/navigation-phase12-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797549075,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+      "jobId": 124124095776,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair",
+      "source": "eda66c577d594b06f0052cbadc23a4ddc6573493; same measured application digest",
+      "runId": 41073688186,
+      "note": "Specific existing scenario passed in the gated supplement; not substituted by another suite."
     },
     {
       "title": "selected tabs request authorized data while code is still loading, then consume it exactly once",
@@ -242,8 +278,11 @@
         "tests/navigation-phase2-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797549075,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+      "jobId": 124124095776,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair",
+      "source": "eda66c577d594b06f0052cbadc23a4ddc6573493; same measured application digest",
+      "runId": 41073688186,
+      "note": "Specific existing scenario passed in the gated supplement; not substituted by another suite."
     },
     {
       "title": "rapid selected-tab changes fence late results and a revoked revisit never reveals the old directory",
@@ -251,8 +290,11 @@
         "tests/navigation-phase2-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797549075,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+      "jobId": 124124095776,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair",
+      "source": "eda66c577d594b06f0052cbadc23a4ddc6573493; same measured application digest",
+      "runId": 41073688186,
+      "note": "Specific existing scenario passed in the gated supplement; not substituted by another suite."
     },
     {
       "title": "pointer and mobile touch navigation retain one fresh read, usable content and responsive layout",
@@ -260,8 +302,11 @@
         "tests/navigation-phase2-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797549075,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+      "jobId": 124124095776,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair",
+      "source": "eda66c577d594b06f0052cbadc23a4ddc6573493; same measured application digest",
+      "runId": 41073688186,
+      "note": "Specific existing scenario passed in the gated supplement; not substituted by another suite."
     },
     {
       "title": "server pages and explicit selections preserve complete authorized sets, privacy and live revocation",
@@ -314,8 +359,11 @@
         "tests/onboarding-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797549075,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+      "jobId": 124124095776,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair",
+      "source": "eda66c577d594b06f0052cbadc23a4ddc6573493; same measured application digest",
+      "runId": 41073688186,
+      "note": "Specific existing scenario passed in the gated supplement; not substituted by another suite."
     },
     {
       "title": "operational dashboards authorize summaries and persist inline work with real sessions",
@@ -395,8 +443,11 @@
         "tests/resume-import-runtime.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797549075,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+      "jobId": 124124095776,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair",
+      "source": "eda66c577d594b06f0052cbadc23a4ddc6573493; same measured application digest",
+      "runId": 41073688186,
+      "note": "Specific existing scenario passed in the gated supplement; not substituted by another suite."
     },
     {
       "title": "real PostgreSQL voting polling versus scheduler progress",
@@ -422,8 +473,11 @@
         "tests/session-revocation-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797549075,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+      "jobId": 124124095776,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair",
+      "source": "eda66c577d594b06f0052cbadc23a4ddc6573493; same measured application digest",
+      "runId": 41073688186,
+      "note": "Specific existing scenario passed in the gated supplement; not substituted by another suite."
     },
     {
       "title": "settings and authenticated navigation across roles, saves, history and responsive layouts",
@@ -431,8 +485,11 @@
         "tests/settings-navigation-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797549075,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+      "jobId": 124124095776,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair",
+      "source": "eda66c577d594b06f0052cbadc23a4ddc6573493; same measured application digest",
+      "runId": 41073688186,
+      "note": "Specific existing scenario passed in the gated supplement; not substituted by another suite."
     },
     {
       "title": "signup privacy on real Next, Auth, SMTP and desktop/mobile browsers",
@@ -440,8 +497,11 @@
         "tests/signup-privacy-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797549075,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+      "jobId": 124124095776,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair",
+      "source": "eda66c577d594b06f0052cbadc23a4ddc6573493; same measured application digest",
+      "runId": 41073688186,
+      "note": "Specific existing scenario passed in the gated supplement; not substituted by another suite."
     },
     {
       "title": "student invitations claim and resend through the compatibility runtime without Auth token SQL",
@@ -449,8 +509,11 @@
         "tests/student-claim-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797549075,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+      "jobId": 124124095776,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair",
+      "source": "eda66c577d594b06f0052cbadc23a4ddc6573493; same measured application digest",
+      "runId": 41073688186,
+      "note": "Specific existing scenario passed in the gated supplement; not substituted by another suite."
     },
     {
       "title": "native LIVE voting: locked races, changed ballots, scope/revocation, held passes and silent retry-safe finalization",
@@ -463,8 +526,9 @@
     }
   ],
   "counts": {
-    "covered_by_separate_passing_integration": 41,
-    "not_run_in_this_repair": 11
+    "covered_by_separate_passing_integration": 45,
+    "failed_in_separate_integration": 3,
+    "not_run_in_this_repair": 4
   },
-  "productionClearance": "Unrun environment-gated scenarios remain explicit; no blanket production-ready claim."
+  "productionClearance": "Failed and unrun scenarios remain explicit; no production-ready clearance."
 }

@@ -2,7 +2,7 @@
   "base": "6e793dea0bd45052fa444749b26d432ae93392cd",
   "measuredApplicationCommit": "4d52103e0ca70086c8ff4f3e913a7bd11f377005",
   "applicationDigest": "99077a7ff37acb0b67cb919c4ec4b1b95bc0401750472cc65f26b3aaeb029be1",
-  "sourceHeadBeforeEvidenceCommit": "3d4f4128579b2ed0e9f63ad344e56d5c48302da9",
+  "sourceHeadBeforeEvidenceCommit": "eda66c577d594b06f0052cbadc23a4ddc6573493",
   "note": "Exact paths changed against measured/current main, including retained unsuccessful raw attempts. Self hashes are avoided: this manifest lists itself and the seal; the seal hashes this manifest and all other listed files except itself. Credentials/runtime configuration are not included.",
   "files": [
     {
@@ -103,6 +103,10 @@
     },
     {
       "path": "docs/performance/pipeline-release-repair/GATED_QA_PLAN.md",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/GATED_SUPPLEMENT_QA.json",
       "category": "evidence"
     },
     {
@@ -1227,6 +1231,534 @@
     },
     {
       "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-4-B-warmup/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/PROTOCOL.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-1-B-full-review/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-1-B-full-review/workflow.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-1-B-measure/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-1-B-measure/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-1-B-measure/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-1-B-warmup/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-1-B-warmup/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-1-B-warmup/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-2-D-full-review/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-2-D-full-review/workflow.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-2-D-measure/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-2-D-measure/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-2-D-measure/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-2-D-warmup/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-2-D-warmup/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-2-D-warmup/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-3-D-full-review/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-3-D-full-review/workflow.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-3-D-measure/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-3-D-measure/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-3-D-measure/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-3-D-warmup/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-3-D-warmup/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-3-D-warmup/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-4-B-full-review/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-4-B-full-review/workflow.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-4-B-measure/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-4-B-measure/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-4-B-measure/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-4-B-warmup/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-4-B-warmup/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1-attempt-40993113523-1/size-1-block-4-B-warmup/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/PROTOCOL.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-1-B-full-review/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-1-B-full-review/workflow.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-1-B-measure/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-1-B-measure/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-1-B-measure/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-1-B-warmup/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-1-B-warmup/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-1-B-warmup/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-2-D-full-review/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-2-D-full-review/workflow.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-2-D-measure/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-2-D-measure/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-2-D-measure/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-2-D-warmup/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-2-D-warmup/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-2-D-warmup/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-3-D-full-review/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-3-D-full-review/workflow.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-3-D-measure/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-3-D-measure/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-3-D-measure/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-3-D-warmup/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-3-D-warmup/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-3-D-warmup/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-4-B-full-review/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-4-B-full-review/workflow.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-4-B-measure/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-4-B-measure/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-4-B-measure/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-4-B-warmup/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-4-B-warmup/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-100-attempt-40993113523-1/size-100-block-4-B-warmup/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/PROTOCOL.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-1-B-full-review/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-1-B-full-review/workflow.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-1-B-measure/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-1-B-measure/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-1-B-measure/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-1-B-warmup/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-1-B-warmup/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-1-B-warmup/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-2-D-full-review/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-2-D-full-review/workflow.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-2-D-measure/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-2-D-measure/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-2-D-measure/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-2-D-warmup/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-2-D-warmup/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-2-D-warmup/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-3-D-full-review/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-3-D-full-review/workflow.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-3-D-measure/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-3-D-measure/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-3-D-measure/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-3-D-warmup/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-3-D-warmup/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-3-D-warmup/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-4-B-full-review/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-4-B-full-review/workflow.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-4-B-measure/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-4-B-measure/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-4-B-measure/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-4-B-warmup/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-4-B-warmup/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-1000-attempt-40993113523-1/size-1000-block-4-B-warmup/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/PROTOCOL.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-1-B-full-review/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-1-B-full-review/workflow.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-1-B-measure/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-1-B-measure/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-1-B-measure/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-1-B-warmup/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-1-B-warmup/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-1-B-warmup/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-2-D-full-review/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-2-D-full-review/workflow.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-2-D-measure/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-2-D-measure/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-2-D-measure/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-2-D-warmup/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-2-D-warmup/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-2-D-warmup/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-3-D-full-review/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-3-D-full-review/workflow.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-3-D-measure/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-3-D-measure/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-3-D-measure/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-3-D-warmup/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-3-D-warmup/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-3-D-warmup/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-4-B-full-review/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-4-B-full-review/workflow.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-4-B-measure/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-4-B-measure/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-4-B-measure/collector.log",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-4-B-warmup/browser-samples.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-4-B-warmup/browser-summary.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-cohort-5000-attempt-40993113523-1/size-5000-block-4-B-warmup/collector.log",
       "category": "evidence"
     },
     {
@@ -2363,6 +2895,22 @@
     },
     {
       "path": "docs/performance/pipeline-release-repair/ci/preflight-constrained-40974037305-1.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/preflight-constrained-cohort-1-40993113523-1.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/preflight-constrained-cohort-100-40993113523-1.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/preflight-constrained-cohort-1000-40993113523-1.json",
+      "category": "evidence"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/preflight-constrained-cohort-5000-40993113523-1.json",
       "category": "evidence"
     },
     {
