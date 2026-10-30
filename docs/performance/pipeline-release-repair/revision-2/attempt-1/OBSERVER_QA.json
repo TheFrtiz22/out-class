@@ -1,0 +1,23 @@
+{
+  "at": "2026-10-30T17:06:41.699Z",
+  "browser": "156.0.8078.4",
+  "collectorSha256": "61d4c9d25a36f37e7f4871e7197d1065e11bbd7ec06942f9d5d5d6d5d7fd57a9",
+  "results": [
+    {
+      "kind": "textOnlyDetailWith5000Rows",
+      "origin": 1793380001411,
+      "start": 120.09999996423721,
+      "ready": 219.5999999642372,
+      "interactive": 219.80000001192093,
+      "rowGeometryReads": 0
+    },
+    {
+      "kind": "directory5000MutationBurst",
+      "origin": 1793380001411,
+      "start": 251.80000001192093,
+      "ready": 286.39999997615814,
+      "interactive": 286.5999999642372,
+      "rowGeometryReads": 10000
+    }
+  ]
+}

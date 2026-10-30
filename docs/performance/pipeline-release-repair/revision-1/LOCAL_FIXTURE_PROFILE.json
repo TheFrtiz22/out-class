@@ -1,0 +1,87 @@
+{
+  "at": "2026-10-29T16:47:30.619Z",
+  "environment": "Excluded Mac attempts only; CI independently regenerates the same preparation procedure",
+  "cohorts": [
+    {
+      "size": 1,
+      "actualApplications": 1,
+      "members": 61,
+      "rounds": 2,
+      "answersPerApplication": {
+        "3": 1
+      },
+      "evaluationsPerApplication": {
+        "2": 1
+      },
+      "bookingsPerApplication": {
+        "0": 1
+      },
+      "experiencesPerProfile": {
+        "9": 1
+      }
+    },
+    {
+      "size": 100,
+      "actualApplications": 100,
+      "members": 61,
+      "rounds": 2,
+      "answersPerApplication": {
+        "3": 100
+      },
+      "evaluationsPerApplication": {
+        "2": 100
+      },
+      "bookingsPerApplication": {
+        "0": 100
+      },
+      "experiencesPerProfile": {
+        "7": 99,
+        "9": 1
+      }
+    },
+    {
+      "size": 1000,
+      "actualApplications": 1000,
+      "members": 61,
+      "rounds": 2,
+      "answersPerApplication": {
+        "3": 1000
+      },
+      "evaluationsPerApplication": {
+        "2": 1000
+      },
+      "bookingsPerApplication": {
+        "0": 1000
+      },
+      "experiencesPerProfile": {
+        "2": 900,
+        "7": 99,
+        "9": 1
+      }
+    },
+    {
+      "size": 5000,
+      "actualApplications": 5000,
+      "members": 61,
+      "rounds": 2,
+      "answersPerApplication": {
+        "3": 5000
+      },
+      "evaluationsPerApplication": {
+        "2": 5000
+      },
+      "bookingsPerApplication": {
+        "0": 5000
+      },
+      "experiencesPerProfile": {
+        "2": 4900,
+        "7": 99,
+        "9": 1
+      }
+    }
+  ],
+  "notes": [
+    "Shared first 100 profiles are enriched on multiple cohort passes; do not assume only two experiences per profile.",
+    "No submitted history or immutability protections were deleted. No booking or ballot history was populated; native tests exercise those histories separately."
+  ]
+}

@@ -1,83 +1,48 @@
-# Release decision: PARTIALLY ACCEPT
+# Release decision
 
-Final gated outcome: 51 of the 52 ordinary gated scenarios have their own
-separate passing evidence; none remains unrun. This includes actual club-assets,
-active-room authority/revocation, recipient audiences, invitation/communication
-scheduling, publication, private decision letters and Admin workspace. The one
-original Admin-session route test still fails its legacy literal /Admin
-workspace/ expectation, while returned HTML contains the authorized Admin
-product shell and current heading. No assertion is weakened and this test is
-not counted as passing. Initial fixture/MFA/event prerequisite failures and the
-successful unchanged-source port-startup retry remain in GATED_SUPPLEMENT_QA.json.
-The gated supplement workflow therefore retains a failed conclusion for that
-one scenario. Pipeline release remains rejected independently by performance.
+Recommendation: **ACCEPT** for the repaired application in [PR #93](https://github.com/TheFrtiz22/out-class/pull/93).
 
+Measured main: `0a40de7cbcad158cf60d96c258610b832d818da8`. Held experiment: `375a00d54d95f24e7d600a56218b9bf8040a7937`. Repaired application source: `d0d6f2778239b5d3b921663780a01c7542f04fa3`. The repaired application digest is `df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7` over 965 files. Final evidence-only commits must preserve this fingerprint; exact final PR checks and the unchanged measured-main identity are verified immediately before merge. GitHub assigns the resulting merge SHA afterward.
 
-**Accept the independently verified dock repair. Reject pipeline application
-`4d52103e` for release and keep PR #93 in draft.** Preserve the narrow data-contract
-implementation for review; do not merge the held experiment or deploy this repair.
-No release threshold was changed after results.
+All 34 frozen numerical/request gates pass, all 16 browser comparison units and the native capacity unit are complete and attested, and all 18 independent functional CI jobs pass. The large-cohort gain is preserved without exceeding the predeclared one-applicant or 100-applicant tolerances. No acceptance threshold was changed after results.
 
-The code removes the demonstrated extra detail and serial voting-selection
-reads, preserves canonical global semantics and current authorization, and
-scales well locally. That is useful engineering evidence, but it does not clear
-the frozen release gates:
+Current evidence includes 1120 measured browser outcomes, 320 excluded browser warmups, 140 measured capacity requests and 56 excluded capacity warmups. All included current useful-content, HTTP/page and native capacity outcomes succeed. Canceled route/prefetch traffic is retained separately.
 
-| Requirement | Result |
-|---|---|
-| One-applicant detail, local/constrained | Numeric p50/p95 and request limits pass. Constrained cold: 225.6/259.9 → 243.7/272.6 ms, n30/build; no extra detail GET. |
-| One-applicant constrained cold directory | **FAIL:** p50 552.3 → 608.3 ms (+10.14%); limit 607.53 ms, exceeded by 0.77 ms. P95 passes. Borderline screening failure is not statistical significance, and is not waived. |
-| Complete review | Recorded local numeric limits pass. Constrained one-applicant p95 5.81 → 33.55 seconds and 100-applicant 11.27 → 37.59 seconds fail. The measured strict observer can miss text-only readiness; its application-latency interpretation and release clearance are unresolved. |
-| 100-applicant guarded request maximum | Recorded constrained 10 → 11 fails the automated count gate; the extra request is a background notification during the long observation window, not a duplicate pipeline detail/selection read. Median stays ten → ten. |
-| Voting history | Recorded cold/warm 100-applicant numeric limits pass on both profiles, n10/build. The strict collector limitation remains explicit. |
-| 5,000 scalability | Local cold directory 8148.3/8547.6 → 624.7/687.3 ms: 92.3%/92.0% lower. Required constrained comparison is **missing**: the entire incomplete 5,000 cohort is excluded, including primary and candidate successes. |
-| Bounded capacity | All six groups pass at 1,000/5,000, concurrency 1/2/4, application pool eight; 140 measured successful requests, 56 excluded warmups. |
+Milliseconds below are p50 / p95; each row uses its own paired unit.
 
-The mechanical numeric tally is 26 PASS, six FAIL, two MISSING; strict-review
-observer clearance is additionally false. `CONTROLLED_RESULTS.md` and
-`BENCHMARKS.json` retain all sample counts, maxima, bytes, source preparation,
-journey/network milestones, requests/spans/errors and exact raw references.
-Local has 560 measured browser outcomes/160 warmups. Complete constrained
-1/100/1,000 cohorts have 460/120, each paired on its own VM. No failed/slow row
-is dropped and no successful row from an excluded whole attempt is restored.
+| Profile | Applicants | Cold directory main ms | Repair ms | Main complete review ms | Repair ms |
+|---|---:|---:|---:|---:|---:|
+| local | 1 | 182.9 / 218.0 | 188.3 / 210.8 | 4017.6 / 4094.1 | 3943.9 / 4380.6 |
+| local | 100 | 325.3 / 402.8 | 339.4 / 382.4 | 5239.2 / 5640.7 | 5162.3 / 5615.0 |
+| local | 1000 | 1645.5 / 1759.0 | 396.2 / 475.9 | 14322.1 / 14488.7 | 4894.8 / 5075.9 |
+| local | 5000 | 6484.5 / 6610.2 | 461.9 / 504.5 | 182765.5 / 190411.8 | 7327.5 / 7761.9 |
+| constrained | 1 | 457.7 / 504.1 | 492.3 / 524.1 | 4915.6 / 33955.3 | 4847.1 / 5035.5 |
+| constrained | 100 | 1222.3 / 1346.3 | 1242.4 / 1417.3 | 10749.5 / 11308.9 | 10666.0 / 11104.7 |
+| constrained | 1000 | 5724.7 / 6185.5 | 946.7 / 978.8 | 71362.3 / 72349.3 | 12260.6 / 12657.6 |
+| constrained | 5000 | 41276.7 / 41750.4 | 1641.1 / 1755.7 | 467066.4 / 531595.2 | 12286.3 / 12918.8 |
 
-`OBSERVER_QA.json` independently reproduces a missed text-only completion in
-Chromium. The future collector now observes character data too. This does not
-prove the cause of any particular past tail, subtract elapsed time, turn a gate
-into PASS, or affect the independent primary-directory failure. No further
-performance run is launched for this rejected candidate.
+| Profile | Detail | Main ms | Repair ms | Guarded reads main / repair |
+|---|---|---:|---:|---:|
+| local | cold | 51.9 / 56.9 | 54.3 / 58.5 | 2 / 2 |
+| local | warm | 37.4 / 65.6 | 38.1 / 43.9 | 2 / 2 |
+| constrained | cold | 174.2 / 198.4 | 186.1 / 218.4 | 2 / 2 |
+| constrained | warm | 128.6 / 155.2 | 140.3 / 157.6 | 2 / 2 |
 
-All twelve hosted application-source validation jobs passed, including build,
-types, migrations/RLS, real Auth/settings/navigation/pipeline, native security/
-transactions/recruitment and accessibility. Ordinary suite: 1,483 pass, 52 gated
-skips, zero failures; lint zero errors/22 warnings. Dashboard/writing journeys
-also passed. An evidence-only native scheduler recovery assertion failed once
-and passed unchanged on retry; both remain in EVIDENCE_COMMIT_QA.json.
-The gated supplement adds real active-room, communications, Corkboard and
-private decision-letter checks. Its initial dependent Admin/asset tests lacked
-required fixture preparation; failures are retained and corrected sequencing outcomes are retained below. GATED_COVERAGE.json and GATED_SUPPLEMENT_QA.json give the exact
-per-scenario outcome, never treating a related native suite as a substitute.
+| Profile | Voting entry | Main ms | Repair ms |
+|---|---|---:|---:|
+| local | votingCold | 294.7 / 343.6 | 298.8 / 344.3 |
+| local | votingWarm | 276.3 / 355.2 | 289.3 / 303.7 |
+| constrained | votingCold | 714.8 / 779.8 | 727.3 / 779.3 |
+| constrained | votingWarm | 701.3 / 746.6 | 733.0 / 817.3 |
 
-Main advanced after the measured freeze to
-`bc22b0a30b98cbfab785ea3da5215a9351b76109` (#101 live-room transitions/guarded undo).
-Its 19 changed files were inspected and do not overlap the 25 repair application
-files. Measurements remain pinned to main `6e793dea` and application `4d52103e`;
-this held branch does not claim a timed/verified integration onto `bc22b0a3`.
-Any future candidate must preserve that work and start from then-current main.
+At 100 applicants the complete workflow retains ten guarded requests per sample in both profiles. At 1000/5000 the bounded workflow normally needs three additional fresh reads for global search/reset and complete selection; their latency and bytes remain inside the measured journey. Very slow baseline journeys can trigger additional background polls; raw counts are retained. At 5000/four native readers, p95 changes from 4646.3ms to 487.0ms with zero errors. Every other capacity gate also passes.
 
-The separate dock PR #92 passed real unforced mouse, keyboard/Escape/focus,
-reduced-motion and touch/mobile checks and both hosted workflows. Main merged
-it externally as `a0265dcb`. This task merged no candidate into main and made no
-production deployment, write, schema/configuration, region or pool change.
+Every cohort/profile/collector has its own complete B/D/D/B comparison on one fresh Linux VM. Both production builds, served assets/data contracts, collector hashes and continuous host clocks are attested before accepting a unit. Two warmups per block are excluded. Navigation uses n30 per build/path/condition for one applicant and n10 elsewhere; complete review uses n10 per build/cohort/profile. Nearest-rank p95 at n10 equals the maximum. These are controlled CI screening results, with observer/automation costs included, and do not establish hosted latency guarantees. The constrained profile applies 80ms latency, 200000 B/s down, 93750 B/s up and 4x CPU throttling. Native capacity uses a separate pool limit of eight with 1/2/4 readers. Hosts, incomplete units, sources and historical rows are never pooled.
 
-Remaining risks: full-detail visible-page payloads with real essays/history,
-O(N) metadata/ranking/selection, small-sample tails, current-main integration and
-unmeasured production behavior. Production aggregate searches found no matching
-sanitized traces; they do not explain the historical 4.2-second identity stall.
-Do not attribute it to Auth or geography.
+Functional verification includes 1499 ordinary passes, zero failures, 52 separately covered gated scenarios, production build/types/lint, 61 fresh/legacy migrations, 79 RLS tables, real Auth/MFA/session revocation, canonical privacy/count/order/selection, voting snapshots/live authority, native concurrency and real desktop/touch/history/drafts/accessibility flows. Dock #92 and feedback #103 are already part of measured main. The failed local parallel PDF/browser run is retained; all 22 cases in those files passed unchanged sequentially and the fresh entire CI suite passed.
 
-The next engineering step is a distinct revision against current main: resolve
-the one-applicant entry cost, use the corrected observer for strict review,
-and complete a bounded, fully attested 5,000 constrained protocol. Retain the
-accepted dock and reviewable contract/ownership/security work. Do not restart a
-broad audit, waive these gates or infer production readiness from local gains.
+Global metadata/ranking and explicit complete selection remain O(N). The initial full-detail projection and rendered directory stay bounded to 100 applications; no deferred whole-pipeline hydration is hidden outside measurement. Constrained 100-applicant warm voting is close to its fixed tolerance, despite passing. Raw route/prefetch cancellations remain separately reported; unknown total byte sizes stay null, and received chunks from canceled responses are partial observations. Server-Timing spans overlap. Separate timing distributions for every filter, paging, history and revocation operation are unavailable; those paths have functional coverage. The historical production identity stall remains unattributed: no new correlated production browser/server trace, pure pool/lock attribution or Auth transport subdivision is available. No production deployment, configuration, schema, index, region or pool change is part of this work.
+
+The held experiment is historical context only: its accepted comparison contains 808 browser outcomes plus 140 capacity requests, excluding 184 browser and 28 capacity warmups. The first sleep-invalid supplement, including successes, stays excluded. Revision 1 (application `4d52103e`, evidence `b2d8883d`) failed the frozen one-applicant constrained cold-directory p50 limit by 0.77ms and had an incomplete constrained 5000 unit. Its reports are preserved byte-for-byte under `revision-1/`; original raw files remain in their original directories. Revision 2 attempt 1 (`511fd305`, application digest `0ce8317a…`) completed all eight small units but failed four voting/journey gates. Its complete 720 measured outcomes, 160 warmups, source proof and rejection remain under `revision-2/attempt-1/`. No old success, tail or failed attempt is paired with current source.
+
+The user explicitly authorizes merging the verified repair. Before merge, seal all retained evidence, confirm the same application digest, require final PR-head checks to pass and confirm main still equals the measured baseline. Merge with the exact expected head SHA, then verify the resulting main tree equals the verified feature tree. No manual production deployment follows. A measured metadata/ranking follow-up and separately authorized correlated production tracing are the next engineering work.

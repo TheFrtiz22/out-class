@@ -1,5 +1,6 @@
 {
-  "applicationCommit": "4d52103e0ca70086c8ff4f3e913a7bd11f377005",
+  "candidate": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+  "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
   "ordinarySkipped": 52,
   "rows": [
     {
@@ -8,11 +9,11 @@
         "tests/account-data-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 124138693036,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair",
-      "source": "90d34a4882e8ffc9f1ecde34af3a085eb3bbc537; same measured application digest",
-      "runId": 41077842521,
-      "note": "Specific original scenario outcome retained; see GATED_SUPPLEMENT_QA.json for fixture/legacy-copy assertion details."
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525715,
+      "runId": 41120761637,
+      "job": "Local Auth, settings and navigation"
     },
     {
       "title": "active Interview Rooms: distinct reviewers, concurrent reads and immediate assignment revocation",
@@ -20,21 +21,23 @@
         "tests/active-interview-navigation-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "note": "Specific existing scenario passed in the gated supplement; not substituted by another suite.",
-      "source": "eda66c577d594b06f0052cbadc23a4ddc6573493; same measured application digest",
-      "jobId": 124124095776,
-      "runId": 41073688186
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286556051,
+      "runId": 41120776403,
+      "job": "Remaining gated workflows / active"
     },
     {
       "title": "real local Admin session survives elevation, navigation and refresh and rejects revoked authority",
       "files": [
         "tests/admin-session-e2e.test.cjs"
       ],
-      "status": "failed_in_separate_integration",
-      "note": "Specific original scenario outcome retained; see GATED_SUPPLEMENT_QA.json for fixture/legacy-copy assertion details.",
-      "source": "90d34a4882e8ffc9f1ecde34af3a085eb3bbc537; same measured application digest",
-      "jobId": 124138693036,
-      "runId": 41077842521
+      "status": "covered_by_separate_passing_integration",
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286556344,
+      "runId": 41120776403,
+      "job": "Remaining gated workflows / admin"
     },
     {
       "title": "disposable real Auth/password/MFA elevation, Admin routes/actions, invitations, reports, impersonation and logout",
@@ -42,10 +45,11 @@
         "tests/admin-workspace-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "note": "Specific original scenario outcome retained; see GATED_SUPPLEMENT_QA.json for fixture/legacy-copy assertion details.",
-      "source": "90d34a4882e8ffc9f1ecde34af3a085eb3bbc537; same measured application digest",
-      "jobId": 124138693036,
-      "runId": 41077842521
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286556344,
+      "runId": 41120776403,
+      "job": "Remaining gated workflows / admin"
     },
     {
       "title": "application writing and branding through real sessions, server actions, PostgreSQL and browser reloads",
@@ -53,9 +57,11 @@
         "tests/application-writing-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "source": "330ada2342abfd2200770b40402a4fb1296648df; same application digest as measured 4d52103e",
-      "jobId": 123817456110,
-      "runId": 40980012132
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525690,
+      "runId": 41120761637,
+      "job": "Applicant workflow / application-writing"
     },
     {
       "title": "scheduled availability requests on actual bounded PostgreSQL",
@@ -63,8 +69,11 @@
         "tests/availability-schedules-native.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797549013,
-      "command": "node scripts/test-decision-publication-local.cjs"
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525989,
+      "runId": 41120761637,
+      "job": "Native PostgreSQL / audiences"
     },
     {
       "title": "Events: desktop/tablet/mobile views share filters, saves, RSVP, details and pagination; calendar downloads actual instants",
@@ -72,8 +81,11 @@
         "tests/campus-event-discovery-browser.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797548943,
-      "command": "node scripts/run-disposable-postgres.cjs events"
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525840,
+      "runId": 41120761637,
+      "job": "Native PostgreSQL / events"
     },
     {
       "title": "native Prisma: account-scoped idempotent saves, shared filtered pagination, publication restrictions and existing RSVP",
@@ -81,8 +93,11 @@
         "tests/campus-event-discovery.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797548943,
-      "command": "node scripts/run-disposable-postgres.cjs events"
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525840,
+      "runId": 41120761637,
+      "job": "Native PostgreSQL / events"
     },
     {
       "title": "real local club assets: elevated Admin/leader writes, browser denial, assignment boundaries, suspension and authoritative replacement/removal",
@@ -90,10 +105,11 @@
         "tests/club-assets-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "note": "Specific original scenario passed after canonical fixture setup; all failed assertions and startup retries remain in GATED_SUPPLEMENT_QA.json.",
-      "source": "90d34a4882e8ffc9f1ecde34af3a085eb3bbc537; same measured application digest",
-      "jobId": 124146624493,
-      "runId": 41077842521
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286556259,
+      "runId": 41120776403,
+      "job": "Remaining gated workflows / corkboard"
     },
     {
       "title": "scheduling through local Auth, production actions and authenticated cron",
@@ -101,10 +117,11 @@
         "tests/communication-schedules-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "note": "Specific original scenario outcome retained; see GATED_SUPPLEMENT_QA.json for fixture/legacy-copy assertion details.",
-      "source": "90d34a4882e8ffc9f1ecde34af3a085eb3bbc537; same measured application digest",
-      "jobId": 124138693036,
-      "runId": 41077842521
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286556344,
+      "runId": 41120776403,
+      "job": "Remaining gated workflows / admin"
     },
     {
       "title": "scheduled publication on bounded native PostgreSQL",
@@ -112,8 +129,11 @@
         "tests/communication-schedules-native.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797549013,
-      "command": "node scripts/test-decision-publication-local.cjs"
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525989,
+      "runId": 41120761637,
+      "job": "Native PostgreSQL / audiences"
     },
     {
       "title": "announcements over real Next HTTP, verified local Auth and PostgreSQL; provider delivery is mocked",
@@ -121,10 +141,11 @@
         "tests/communications-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "note": "Specific existing scenario passed in the gated supplement; not substituted by another suite.",
-      "source": "eda66c577d594b06f0052cbadc23a4ddc6573493; same measured application digest",
-      "jobId": 124124095289,
-      "runId": 41073688186
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286556285,
+      "runId": 41120776403,
+      "job": "Remaining gated workflows / communications"
     },
     {
       "title": "native decision communications: atomic snapshots, ownership, history, retries and outbox",
@@ -132,8 +153,11 @@
         "tests/communications-native.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797548920,
-      "command": "node scripts/test-decision-transactions-local.cjs"
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525811,
+      "runId": 41120761637,
+      "job": "Native PostgreSQL / transactions"
     },
     {
       "title": "real local Auth + server actions + PostgreSQL + private Storage: moderation, revision replacement, privacy, RSVP concurrency and attendee authorization",
@@ -141,10 +165,11 @@
         "tests/corkboard-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "note": "Specific original scenario passed after canonical fixture setup; all failed assertions and startup retries remain in GATED_SUPPLEMENT_QA.json.",
-      "source": "90d34a4882e8ffc9f1ecde34af3a085eb3bbc537; same measured application digest",
-      "jobId": 124146624493,
-      "runId": 41077842521
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286556259,
+      "runId": 41120776403,
+      "job": "Remaining gated workflows / corkboard"
     },
     {
       "title": "real Auth, RSC, PostgreSQL, private Storage and shared email-provider decision lifecycle",
@@ -152,10 +177,11 @@
         "tests/decision-communications-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "note": "Specific original scenario passed after canonical fixture setup; all failed assertions and startup retries remain in GATED_SUPPLEMENT_QA.json.",
-      "source": "90d34a4882e8ffc9f1ecde34af3a085eb3bbc537; same measured application digest",
-      "jobId": 124146624493,
-      "runId": 41077842521
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286556259,
+      "runId": 41120776403,
+      "job": "Remaining gated workflows / corkboard"
     },
     {
       "title": "decision lifecycle through local Auth/Storage and production server actions",
@@ -163,10 +189,11 @@
         "tests/decision-publication-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "note": "Specific original scenario outcome retained; see GATED_SUPPLEMENT_QA.json for fixture/legacy-copy assertion details.",
-      "source": "90d34a4882e8ffc9f1ecde34af3a085eb3bbc537; same measured application digest",
-      "jobId": 124138693036,
-      "runId": 41077842521
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286556344,
+      "runId": 41120776403,
+      "job": "Remaining gated workflows / admin"
     },
     {
       "title": "decision controls, cycles and scheduled publication on bounded PostgreSQL",
@@ -174,8 +201,11 @@
         "tests/decision-publication-native.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797549013,
-      "command": "node scripts/test-decision-publication-local.cjs"
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525989,
+      "runId": 41120761637,
+      "job": "Native PostgreSQL / audiences"
     },
     {
       "title": "decision/invitation transaction repair on isolated native PostgreSQL",
@@ -183,8 +213,11 @@
         "tests/decision-transactions-native.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797548920,
-      "command": "node scripts/test-decision-transactions-local.cjs"
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525811,
+      "runId": 41120761637,
+      "job": "Native PostgreSQL / transactions"
     },
     {
       "title": "isolated native database + Supabase: authorized flyers, replacement/removal/cascade cleanup, public serving and all-day edits",
@@ -192,8 +225,11 @@
         "tests/event-storage-native.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797548743,
-      "command": "node scripts/run-availability-e2e.cjs --event-storage"
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525560,
+      "runId": 41120761637,
+      "job": "Private Storage and native PostgreSQL"
     },
     {
       "title": "native collaboration: ordered simultaneous picks, revision conflicts, exact queue advancement, invitations and revocation",
@@ -201,8 +237,11 @@
         "tests/interview-collaboration-native.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797548853,
-      "command": "node scripts/run-disposable-postgres.cjs security"
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525788,
+      "runId": 41120761637,
+      "job": "Native PostgreSQL / security"
     },
     {
       "title": "native PostgreSQL interview transactions: independent drafts, simultaneous finish, annotations, revocation and immutable anonymous reopening",
@@ -210,8 +249,11 @@
         "tests/interview-native-concurrency.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797548853,
-      "command": "node scripts/run-disposable-postgres.cjs security"
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525788,
+      "runId": 41120761637,
+      "job": "Native PostgreSQL / security"
     },
     {
       "title": "scheduled invitation dispatch through local Auth and production actions",
@@ -219,10 +261,11 @@
         "tests/invitation-schedules-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "note": "Specific original scenario outcome retained; see GATED_SUPPLEMENT_QA.json for fixture/legacy-copy assertion details.",
-      "source": "90d34a4882e8ffc9f1ecde34af3a085eb3bbc537; same measured application digest",
-      "jobId": 124138693036,
-      "runId": 41077842521
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286556344,
+      "runId": 41120776403,
+      "job": "Remaining gated workflows / admin"
     },
     {
       "title": "invitation scheduling and fair worker on actual bounded PostgreSQL",
@@ -230,8 +273,11 @@
         "tests/invitation-schedules-native.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797549013,
-      "command": "node scripts/test-decision-publication-local.cjs"
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525989,
+      "runId": 41120761637,
+      "job": "Native PostgreSQL / audiences"
     },
     {
       "title": "Phase 1 GET reads preserve live authority, no-store, Demo isolation and concurrent browser navigation",
@@ -239,11 +285,11 @@
         "tests/navigation-phase1-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 124138693036,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair",
-      "source": "90d34a4882e8ffc9f1ecde34af3a085eb3bbc537; same measured application digest",
-      "runId": 41077842521,
-      "note": "Specific original scenario outcome retained; see GATED_SUPPLEMENT_QA.json for fixture/legacy-copy assertion details."
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525715,
+      "runId": 41120761637,
+      "job": "Local Auth, settings and navigation"
     },
     {
       "title": "workspace avoids unused font transfers and renders real italic/variable faces on demand at 1440px",
@@ -251,11 +297,11 @@
         "tests/navigation-phase10-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 124138693036,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair",
-      "source": "90d34a4882e8ffc9f1ecde34af3a085eb3bbc537; same measured application digest",
-      "runId": 41077842521,
-      "note": "Specific original scenario outcome retained; see GATED_SUPPLEMENT_QA.json for fixture/legacy-copy assertion details."
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525715,
+      "runId": 41120761637,
+      "job": "Local Auth, settings and navigation"
     },
     {
       "title": "workspace avoids unused font transfers and renders real italic/variable faces on demand at 390px",
@@ -263,11 +309,11 @@
         "tests/navigation-phase10-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 124138693036,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair",
-      "source": "90d34a4882e8ffc9f1ecde34af3a085eb3bbc537; same measured application digest",
-      "runId": 41077842521,
-      "note": "Specific original scenario outcome retained; see GATED_SUPPLEMENT_QA.json for fixture/legacy-copy assertion details."
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525715,
+      "runId": 41120761637,
+      "job": "Local Auth, settings and navigation"
     },
     {
       "title": "constrained startup fences an already-notified Auth epoch, revisits read fresh, and revoked cookies reveal no old applicants",
@@ -275,11 +321,11 @@
         "tests/navigation-phase12-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 124138693036,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair",
-      "source": "90d34a4882e8ffc9f1ecde34af3a085eb3bbc537; same measured application digest",
-      "runId": 41077842521,
-      "note": "Specific original scenario outcome retained; see GATED_SUPPLEMENT_QA.json for fixture/legacy-copy assertion details."
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525715,
+      "runId": 41120761637,
+      "job": "Local Auth, settings and navigation"
     },
     {
       "title": "selected tabs request authorized data while code is still loading, then consume it exactly once",
@@ -287,11 +333,11 @@
         "tests/navigation-phase2-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 124138693036,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair",
-      "source": "90d34a4882e8ffc9f1ecde34af3a085eb3bbc537; same measured application digest",
-      "runId": 41077842521,
-      "note": "Specific original scenario outcome retained; see GATED_SUPPLEMENT_QA.json for fixture/legacy-copy assertion details."
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525715,
+      "runId": 41120761637,
+      "job": "Local Auth, settings and navigation"
     },
     {
       "title": "rapid selected-tab changes fence late results and a revoked revisit never reveals the old directory",
@@ -299,11 +345,11 @@
         "tests/navigation-phase2-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 124138693036,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair",
-      "source": "90d34a4882e8ffc9f1ecde34af3a085eb3bbc537; same measured application digest",
-      "runId": 41077842521,
-      "note": "Specific original scenario outcome retained; see GATED_SUPPLEMENT_QA.json for fixture/legacy-copy assertion details."
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525715,
+      "runId": 41120761637,
+      "job": "Local Auth, settings and navigation"
     },
     {
       "title": "pointer and mobile touch navigation retain one fresh read, usable content and responsive layout",
@@ -311,11 +357,11 @@
         "tests/navigation-phase2-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 124138693036,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair",
-      "source": "90d34a4882e8ffc9f1ecde34af3a085eb3bbc537; same measured application digest",
-      "runId": 41077842521,
-      "note": "Specific original scenario outcome retained; see GATED_SUPPLEMENT_QA.json for fixture/legacy-copy assertion details."
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525715,
+      "runId": 41120761637,
+      "job": "Local Auth, settings and navigation"
     },
     {
       "title": "server pages and explicit selections preserve complete authorized sets, privacy and live revocation",
@@ -323,8 +369,11 @@
         "tests/navigation-phase5-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797549075,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525715,
+      "runId": 41120761637,
+      "job": "Local Auth, settings and navigation"
     },
     {
       "title": "fresh page boundaries avoid duplicate reads, full quick-review/voting selection survives pagination and reopen validates again",
@@ -332,8 +381,11 @@
         "tests/navigation-phase5-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797549075,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525715,
+      "runId": 41120761637,
+      "job": "Local Auth, settings and navigation"
     },
     {
       "title": "rapid global searches coalesce obsolete reads, retain keyboard focus and never show a late previous selection",
@@ -341,8 +393,11 @@
         "tests/navigation-phase5-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797549075,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525715,
+      "runId": 41120761637,
+      "job": "Local Auth, settings and navigation"
     },
     {
       "title": "editable review drafts survive the 100/101 server-page boundary and return navigation",
@@ -350,8 +405,11 @@
         "tests/navigation-phase5-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797549075,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525715,
+      "runId": 41120761637,
+      "job": "Local Auth, settings and navigation"
     },
     {
       "title": "native PostgreSQL: concurrent claims, duplicate imports, email delivery, and owner suspensions",
@@ -359,8 +417,11 @@
         "tests/onboarding-concurrency.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797548853,
-      "command": "node scripts/run-disposable-postgres.cjs security"
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525788,
+      "runId": 41120761637,
+      "job": "Native PostgreSQL / security"
     },
     {
       "title": "complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and captured SMTP",
@@ -368,11 +429,11 @@
         "tests/onboarding-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 124138693036,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair",
-      "source": "90d34a4882e8ffc9f1ecde34af3a085eb3bbc537; same measured application digest",
-      "runId": 41077842521,
-      "note": "Specific original scenario outcome retained; see GATED_SUPPLEMENT_QA.json for fixture/legacy-copy assertion details."
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525715,
+      "runId": 41120761637,
+      "job": "Local Auth, settings and navigation"
     },
     {
       "title": "operational dashboards authorize summaries and persist inline work with real sessions",
@@ -380,9 +441,11 @@
         "tests/operational-dashboards-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "source": "330ada2342abfd2200770b40402a4fb1296648df; same application digest as measured 4d52103e",
-      "jobId": 123817456356,
-      "runId": 40980012132
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525760,
+      "runId": 41120761637,
+      "job": "Applicant workflow / dashboards"
     },
     {
       "title": "all four cohorts retain complete canonical counts, filters, ranking, details and voting selections",
@@ -390,8 +453,11 @@
         "tests/pipeline-release-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797549075,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525715,
+      "runId": 41120761637,
+      "job": "Local Auth, settings and navigation"
     },
     {
       "title": "complete-page and voting reads never reuse successful authority after permission, suspension or session revocation",
@@ -399,8 +465,11 @@
         "tests/pipeline-release-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797549075,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525715,
+      "runId": 41120761637,
+      "job": "Local Auth, settings and navigation"
     },
     {
       "title": "real desktop pointer and mobile touch support detail switching, global search and history for every cohort",
@@ -408,8 +477,11 @@
         "tests/pipeline-release-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797549075,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525715,
+      "runId": 41120761637,
+      "job": "Local Auth, settings and navigation"
     },
     {
       "title": "recipient groups through real local Auth and production Next server actions",
@@ -417,10 +489,11 @@
         "tests/recipient-audiences-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "note": "Specific original scenario outcome retained; see GATED_SUPPLEMENT_QA.json for fixture/legacy-copy assertion details.",
-      "source": "90d34a4882e8ffc9f1ecde34af3a085eb3bbc537; same measured application digest",
-      "jobId": 124138693036,
-      "runId": 41077842521
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286556344,
+      "runId": 41120776403,
+      "job": "Remaining gated workflows / admin"
     },
     {
       "title": "recipient audiences on bounded native PostgreSQL",
@@ -428,8 +501,11 @@
         "tests/recipient-audiences-native.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797549013,
-      "command": "node scripts/test-decision-publication-local.cjs"
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525989,
+      "runId": 41120761637,
+      "job": "Native PostgreSQL / audiences"
     },
     {
       "title": "native recruitment authorization races, immutable round rename, feedback and narrow photos",
@@ -437,8 +513,11 @@
         "tests/recruitment-native.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797548920,
-      "command": "node scripts/test-decision-transactions-local.cjs"
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525811,
+      "runId": 41120761637,
+      "job": "Native PostgreSQL / transactions"
     },
     {
       "title": "native offers: publication, student authority, membership, retries and races",
@@ -446,8 +525,11 @@
         "tests/recruitment-offers-native.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797548920,
-      "command": "node scripts/test-decision-transactions-local.cjs"
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525811,
+      "runId": 41120761637,
+      "job": "Native PostgreSQL / transactions"
     },
     {
       "title": "isolated built Next action loads PDF.js and its worker, returns proposals and structured failures",
@@ -455,11 +537,11 @@
         "tests/resume-import-runtime.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 124138693036,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair",
-      "source": "90d34a4882e8ffc9f1ecde34af3a085eb3bbc537; same measured application digest",
-      "runId": 41077842521,
-      "note": "Specific original scenario outcome retained; see GATED_SUPPLEMENT_QA.json for fixture/legacy-copy assertion details."
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525715,
+      "runId": 41120761637,
+      "job": "Local Auth, settings and navigation"
     },
     {
       "title": "real PostgreSQL voting polling versus scheduler progress",
@@ -467,8 +549,11 @@
         "tests/scheduler-polling-native.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797548991,
-      "command": "node scripts/test-scheduler-polling-local.cjs"
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525980,
+      "runId": 41120761637,
+      "job": "Native PostgreSQL / scheduler"
     },
     {
       "title": "release defects on actual bounded PostgreSQL/Prisma",
@@ -476,8 +561,11 @@
         "tests/scheduler-release-native.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797548991,
-      "command": "node scripts/test-scheduler-polling-local.cjs"
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525980,
+      "runId": 41120761637,
+      "job": "Native PostgreSQL / scheduler"
     },
     {
       "title": "captured ordinary-session cookies cannot replay protected reads or profile writes after revocation",
@@ -485,11 +573,11 @@
         "tests/session-revocation-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 124138693036,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair",
-      "source": "90d34a4882e8ffc9f1ecde34af3a085eb3bbc537; same measured application digest",
-      "runId": 41077842521,
-      "note": "Specific original scenario outcome retained; see GATED_SUPPLEMENT_QA.json for fixture/legacy-copy assertion details."
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525715,
+      "runId": 41120761637,
+      "job": "Local Auth, settings and navigation"
     },
     {
       "title": "settings and authenticated navigation across roles, saves, history and responsive layouts",
@@ -497,11 +585,11 @@
         "tests/settings-navigation-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 124138693036,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair",
-      "source": "90d34a4882e8ffc9f1ecde34af3a085eb3bbc537; same measured application digest",
-      "runId": 41077842521,
-      "note": "Specific original scenario outcome retained; see GATED_SUPPLEMENT_QA.json for fixture/legacy-copy assertion details."
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525715,
+      "runId": 41120761637,
+      "job": "Local Auth, settings and navigation"
     },
     {
       "title": "signup privacy on real Next, Auth, SMTP and desktop/mobile browsers",
@@ -509,11 +597,11 @@
         "tests/signup-privacy-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 124138693036,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair",
-      "source": "90d34a4882e8ffc9f1ecde34af3a085eb3bbc537; same measured application digest",
-      "runId": 41077842521,
-      "note": "Specific original scenario outcome retained; see GATED_SUPPLEMENT_QA.json for fixture/legacy-copy assertion details."
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525715,
+      "runId": 41120761637,
+      "job": "Local Auth, settings and navigation"
     },
     {
       "title": "student invitations claim and resend through the compatibility runtime without Auth token SQL",
@@ -521,11 +609,11 @@
         "tests/student-claim-e2e.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 124138693036,
-      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair",
-      "source": "90d34a4882e8ffc9f1ecde34af3a085eb3bbc537; same measured application digest",
-      "runId": 41077842521,
-      "note": "Specific original scenario outcome retained; see GATED_SUPPLEMENT_QA.json for fixture/legacy-copy assertion details."
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525715,
+      "runId": 41120761637,
+      "job": "Local Auth, settings and navigation"
     },
     {
       "title": "native LIVE voting: locked races, changed ballots, scope/revocation, held passes and silent retry-safe finalization",
@@ -533,13 +621,18 @@
         "tests/voting-room-native.test.cjs"
       ],
       "status": "covered_by_separate_passing_integration",
-      "jobId": 123797548853,
-      "command": "node scripts/run-disposable-postgres.cjs security"
+      "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+      "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+      "jobId": 124286525788,
+      "runId": 41120761637,
+      "job": "Native PostgreSQL / security"
     }
   ],
   "counts": {
-    "covered_by_separate_passing_integration": 51,
-    "failed_in_separate_integration": 1
+    "passed": 52,
+    "failed": 0,
+    "unrun": 0
   },
-  "productionClearance": "51 specific scenarios separately pass; one original Admin-session legacy-copy assertion remains failed. None is unrun. No production-ready clearance; performance gates also fail independently."
+  "independentFunctionalClearance": true,
+  "releaseClearance": "Pending all performance and final-head gates; no skip reclassified as an ordinary pass"
 }

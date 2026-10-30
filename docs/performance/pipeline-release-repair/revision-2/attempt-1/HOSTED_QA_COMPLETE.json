@@ -1,0 +1,292 @@
+{
+  "applicationCommit": "511fd3056af12af9f25a2c48ad9eda5d35393c50",
+  "testHead": "41d645dca56898a8da176b3cd7a1efaa0d8e51c4",
+  "applicationDigest": "0ce8317a8ef94ae7d750628f0652e3d07aa991b651776b32dc6815a8f17fa38e",
+  "jobs": [
+    {
+      "jobId": 124206346948,
+      "unit": "final-disposable",
+      "name": "Applicant workflow / application-writing",
+      "runId": 41097209314,
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "jobId": 124206347058,
+      "unit": "final-disposable",
+      "name": "Native PostgreSQL / events",
+      "runId": 41097209314,
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "jobId": 124206347111,
+      "unit": "final-disposable",
+      "name": "Native PostgreSQL / audiences",
+      "runId": 41097209314,
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "jobId": 124206347140,
+      "unit": "final-disposable",
+      "name": "Native PostgreSQL / scheduler",
+      "runId": 41097209314,
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "jobId": 124206347158,
+      "unit": "final-disposable",
+      "name": "Native PostgreSQL / security",
+      "runId": 41097209314,
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "jobId": 124206347163,
+      "unit": "final-disposable",
+      "name": "Private Storage and native PostgreSQL",
+      "runId": 41097209314,
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "jobId": 124206347190,
+      "conclusion": "success",
+      "counters": [
+        "# tests 1",
+        "# suites 0",
+        "# pass 1",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# todo 0",
+        "# duration_ms 45854.337995"
+      ],
+      "validation": [
+        "All Prisma migrations applied through the authoritative deployment command."
+      ],
+      "logUnavailable": false,
+      "unit": "final-disposable",
+      "name": "Applicant workflow / dashboards",
+      "runId": 41097209314,
+      "status": "completed"
+    },
+    {
+      "jobId": 124206347230,
+      "conclusion": "success",
+      "counters": [
+        "# tests 50",
+        "# suites 0",
+        "# pass 50",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# todo 0",
+        "# duration_ms 126695.315664",
+        "# tests 16",
+        "# suites 0",
+        "# pass 16",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# todo 0",
+        "# duration_ms 51644.48635",
+        "# tests 11",
+        "# suites 0",
+        "# pass 11",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# todo 0",
+        "# duration_ms 101737.878802"
+      ],
+      "validation": [
+        "All Prisma migrations applied through the authoritative deployment command."
+      ],
+      "logUnavailable": false,
+      "unit": "final-disposable",
+      "name": "Local Auth, settings and navigation",
+      "runId": 41097209314,
+      "status": "completed"
+    },
+    {
+      "jobId": 124206347249,
+      "unit": "final-disposable",
+      "name": "Native PostgreSQL / transactions",
+      "runId": 41097209314,
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "jobId": 124206347303,
+      "unit": "final-disposable",
+      "name": "Integration infrastructure coverage",
+      "runId": 41097209314,
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "jobId": 124205876167,
+      "conclusion": "success",
+      "counters": [
+        "# tests 1550",
+        "# suites 0",
+        "# pass 1498",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 52",
+        "# todo 0",
+        "# duration_ms 507896.080233"
+      ],
+      "validation": [
+        "ok 198 - complete migration chain enforces moderation, revision withdrawal, flyer ownership, RSVP constraints and restrictive database/storage RLS",
+        "# Subtest: additive settings migration retains application history, backfills order/capabilities, enforces types and restrictive RLS, and uses indexed lookup plans",
+        "ok 307 - additive settings migration retains application history, backfills order/capabilities, enforces types and restrictive RLS, and uses indexed lookup plans",
+        "# Subtest: all onboarding tables retain independent restrictive RLS even with browser grants and permissive policies",
+        "ok 897 - all onboarding tables retain independent restrictive RLS even with browser grants and permissive policies",
+        "# Subtest: first-login discovery and atomic ownership acceptance run against all repository migrations",
+        "ok 908 - first-login discovery and atomic ownership acceptance run against all repository migrations",
+        "> my-v0-project@0.1.0 test:migrations",
+        "All 61 migrations applied on fresh and legacy databases; all 79 tables enforce RLS and deny browser-role CRUD.",
+        "✖ 22 problems (0 errors, 22 warnings)"
+      ],
+      "logUnavailable": false,
+      "unit": "final-validate",
+      "name": "validate",
+      "runId": 41097209325,
+      "status": "completed"
+    },
+    {
+      "jobId": 124205876423,
+      "unit": "final-validate",
+      "name": "accessibility",
+      "runId": 41097209325,
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "jobId": 124205876578,
+      "unit": "final-validate",
+      "name": "native-application-transactions",
+      "runId": 41097209325,
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "jobId": 124205876715,
+      "unit": "final-validate",
+      "name": "authenticated-accessibility",
+      "runId": 41097209325,
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "jobId": 124202590918,
+      "unit": "gated",
+      "name": "Remaining gated workflows / corkboard",
+      "conclusion": "success",
+      "counters": [
+        "# tests 1",
+        "# suites 0",
+        "# pass 1",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# todo 0",
+        "# duration_ms 5601.653572",
+        "# tests 9",
+        "# suites 0",
+        "# pass 9",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# todo 0",
+        "# duration_ms 7708.620484"
+      ],
+      "runId": 41096229223,
+      "status": "completed"
+    },
+    {
+      "jobId": 124202591390,
+      "unit": "gated",
+      "name": "Remaining gated workflows / admin",
+      "conclusion": "success",
+      "counters": [],
+      "adminSubtests": [],
+      "runId": 41096229223,
+      "status": "completed"
+    },
+    {
+      "jobId": 124202591436,
+      "unit": "gated",
+      "name": "Remaining gated workflows / active",
+      "conclusion": "success",
+      "counters": [
+        "# tests 50",
+        "# suites 0",
+        "# pass 50",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# todo 0",
+        "# duration_ms 123393.004206",
+        "# tests 16",
+        "# suites 0",
+        "# pass 16",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# todo 0",
+        "# duration_ms 49403.965504",
+        "# tests 3",
+        "# suites 0",
+        "# pass 3",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# todo 0",
+        "# duration_ms 1852.872784"
+      ],
+      "runId": 41096229223,
+      "status": "completed"
+    },
+    {
+      "jobId": 124202591475,
+      "unit": "gated",
+      "name": "Remaining gated workflows / communications",
+      "conclusion": "success",
+      "counters": [
+        "# tests 5",
+        "# suites 0",
+        "# pass 5",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# todo 0",
+        "# duration_ms 4102.416399"
+      ],
+      "runId": 41096229223,
+      "status": "completed"
+    }
+  ],
+  "standardJobs": 14,
+  "supplementalJobs": 4,
+  "allJobsPassed": true,
+  "ordinary": {
+    "total": 1550,
+    "passed": 1498,
+    "failed": 0,
+    "skipped": 52
+  },
+  "migrations": {
+    "count": 61,
+    "rlsTables": 79,
+    "pass": true
+  },
+  "independentFunctionalClearance": true,
+  "performanceClearance": false,
+  "releaseClearance": false,
+  "note": "Completed previous-source verification. Counters may overlap; do not sum as independent tests. Gated Admin logs required fresh-cache read fallback after connector errors; sanitized receipt recorded separately. The subsequent source d0d6f277 requires its own fresh verification."
+}

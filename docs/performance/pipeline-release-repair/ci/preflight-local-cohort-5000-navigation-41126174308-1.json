@@ -1,0 +1,48 @@
+{
+  "profile": "local",
+  "proofs": [
+    {
+      "variant": "B",
+      "runtime": "Frozen production outputs restored into one owned runtime checkout",
+      "frozenOutput": {
+        "buildId": "MovzL4D1ZrgIMdsWoUiJ8",
+        "digest": "ee0f3a6668c2e0ba8bf3aa51b000ea1dae7b0c1b835f012a79ee4660286c5500",
+        "files": 717
+      },
+      "expectedBuildId": "MovzL4D1ZrgIMdsWoUiJ8",
+      "documentStatus": 200,
+      "documentContainsBuildId": true,
+      "runtimeAsset": "static/chunks/webpack-6c90ab094c81f0e5.js",
+      "assetStatus": 200,
+      "expectedAssetSha256": "c8015d746a6cbb46e0fdf63c0aafe8c4b5945db0a163b98757e36cc0cdda06ff",
+      "servedAssetSha256": "c8015d746a6cbb46e0fdf63c0aafe8c4b5945db0a163b98757e36cc0cdda06ff",
+      "valid": true,
+      "readKind": "pipeline",
+      "readStatus": 200,
+      "applications": 100,
+      "expectedApplications": 100,
+      "unsupportedPageStatus": 400
+    },
+    {
+      "variant": "D",
+      "runtime": "Frozen production outputs restored into one owned runtime checkout",
+      "frozenOutput": {
+        "buildId": "1IL2Vpi1neqXamCvkzAB8",
+        "digest": "00a92bcc02238b86eb6bd918d17e22c7ade89f80c3de95dbff37c62a40887e86",
+        "files": 717
+      },
+      "expectedBuildId": "1IL2Vpi1neqXamCvkzAB8",
+      "documentStatus": 200,
+      "documentContainsBuildId": true,
+      "runtimeAsset": "static/chunks/webpack-f96e1b4fe944ff3b.js",
+      "assetStatus": 200,
+      "expectedAssetSha256": "4546146a472f03c44c4e275896502596fb2ba4669fbeadd0fef0c1aad744970b",
+      "servedAssetSha256": "4546146a472f03c44c4e275896502596fb2ba4669fbeadd0fef0c1aad744970b",
+      "valid": true,
+      "readKind": "pipelinePage",
+      "readStatus": 200,
+      "applications": 100,
+      "expectedApplications": 100
+    }
+  ]
+}

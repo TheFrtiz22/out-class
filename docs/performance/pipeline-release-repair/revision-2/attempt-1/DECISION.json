@@ -1,0 +1,82 @@
+{
+  "candidate": "511fd3056af12af9f25a2c48ad9eda5d35393c50",
+  "applicationDigest": "0ce8317a8ef94ae7d750628f0652e3d07aa991b651776b32dc6815a8f17fa38e",
+  "recommendation": "REJECT this source; repair and collect a new complete comparison",
+  "completedAssignedUnits": 8,
+  "failedGates": [
+    {
+      "name": "100 votingWarm local",
+      "status": "FAIL",
+      "before": {
+        "samples": 10,
+        "p50": 205.09999999997672,
+        "p95": 236.09999999997672,
+        "max": 236.09999999997672
+      },
+      "after": {
+        "samples": 10,
+        "p50": 229.60000000009313,
+        "p95": 264.9000000000233,
+        "max": 264.9000000000233
+      },
+      "p50Limit": 225.09999999997672,
+      "p95Limit": 276.0999999999767
+    },
+    {
+      "name": "one applicant complete review constrained",
+      "status": "FAIL",
+      "before": {
+        "samples": 10,
+        "p50": 4481.60009765625,
+        "p95": 4651,
+        "max": 4651
+      },
+      "after": {
+        "samples": 10,
+        "p50": 4478.300048828125,
+        "p95": 33732.199951171875,
+        "max": 33732.199951171875
+      },
+      "p50Limit": 4929.760107421875,
+      "p95Limit": 5348.65
+    },
+    {
+      "name": "one applicant continuous journey constrained",
+      "status": "FAIL",
+      "before": {
+        "samples": 10,
+        "p50": 5611.0634765625,
+        "p95": 5804.741455078125,
+        "max": 5804.741455078125
+      },
+      "after": {
+        "samples": 10,
+        "p50": 5617.21533203125,
+        "p95": 34919.738525390625,
+        "max": 34919.738525390625
+      },
+      "p50Limit": 6172.16982421875,
+      "p95Limit": 6675.452673339843
+    },
+    {
+      "name": "100 votingWarm constrained",
+      "status": "FAIL",
+      "before": {
+        "samples": 10,
+        "p50": 544.0999999999767,
+        "p95": 584.2000000000698,
+        "max": 584.2000000000698
+      },
+      "after": {
+        "samples": 10,
+        "p50": 586.8000000000466,
+        "p95": 685.5999999999767,
+        "max": 685.5999999999767
+      },
+      "p50Limit": 571.3049999999755,
+      "p95Limit": 642.6200000000769
+    }
+  ],
+  "unrunLargeUnits": "Not launched after small-source failures; still mandatory for any later release",
+  "allRawRowsPreserved": true
+}

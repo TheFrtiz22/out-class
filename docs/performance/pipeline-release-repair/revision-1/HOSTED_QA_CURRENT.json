@@ -1,0 +1,167 @@
+{
+  "sourceCommit": "4d52103e0ca70086c8ff4f3e913a7bd11f377005",
+  "base": "6e793dea0bd45052fa444749b26d432ae93392cd",
+  "applicationDigest": "99077a7ff37acb0b67cb919c4ec4b1b95bc0401750472cc65f26b3aaeb029be1",
+  "allTwelveJobsPassed": true,
+  "validationRun": 40974037258,
+  "integrationRun": 40974037262,
+  "jobs": [
+    {
+      "id": 123797548470,
+      "name": "validate",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 123797548674,
+      "name": "authenticated-accessibility",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 123797548744,
+      "name": "accessibility",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 123797548920,
+      "name": "native-application-transactions",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 123797548743,
+      "name": "Private Storage and native PostgreSQL",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 123797548853,
+      "name": "Native PostgreSQL / security",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 123797548943,
+      "name": "Native PostgreSQL / events",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 123797548991,
+      "name": "Native PostgreSQL / scheduler",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 123797549013,
+      "name": "Native PostgreSQL / audiences",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 123797549043,
+      "name": "Native PostgreSQL / transactions",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 123797549075,
+      "name": "Local Auth, settings and navigation",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 123797549118,
+      "name": "Integration infrastructure coverage",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "logSummaries": [
+    {
+      "name": "validate",
+      "jobId": 123797548470,
+      "url": "https://github.com/TheFrtiz22/out-class/actions/runs/40974037258/job/123797548470",
+      "summary": [
+        "2026-10-29T23:41:24.2478076Z # tests 1535",
+        "2026-10-29T23:41:24.2478440Z # pass 1483",
+        "2026-10-29T23:41:24.2478610Z # fail 0",
+        "2026-10-29T23:41:24.2478947Z # skipped 52",
+        "2026-10-29T23:41:26.8342304Z All 60 migrations applied on fresh and legacy databases; all 79 tables enforce RLS and deny browser-role CRUD.",
+        "2026-10-29T23:41:42.2757595Z ✖ 22 problems (0 errors, 22 warnings)"
+      ]
+    },
+    {
+      "name": "authenticatedPipeline",
+      "jobId": 123797549075,
+      "url": "https://github.com/TheFrtiz22/out-class/actions/runs/40974037262/job/123797549075",
+      "summary": [
+        "2026-10-29T23:36:07.2535504Z All Prisma migrations applied through the authoritative deployment command.",
+        "2026-10-29T23:40:04.4609168Z # tests 50",
+        "2026-10-29T23:40:04.4609893Z # pass 50",
+        "2026-10-29T23:40:04.4610211Z # fail 0",
+        "2026-10-29T23:40:04.4611345Z # skipped 0",
+        "2026-10-29T23:40:57.8927892Z # tests 16",
+        "2026-10-29T23:40:57.8929052Z # pass 16",
+        "2026-10-29T23:40:57.8929752Z # fail 0",
+        "2026-10-29T23:40:57.8931018Z # skipped 0",
+        "2026-10-29T23:42:51.9455562Z # tests 11",
+        "2026-10-29T23:42:51.9456289Z # pass 11",
+        "2026-10-29T23:42:51.9456623Z # fail 0",
+        "2026-10-29T23:42:51.9457344Z # skipped 0"
+      ]
+    },
+    {
+      "name": "nativeTransactionsAndOffers",
+      "jobId": 123797548920,
+      "url": "https://github.com/TheFrtiz22/out-class/actions/runs/40974037258/job/123797548920",
+      "summary": [
+        "2026-10-29T23:36:51.7174801Z # tests 49",
+        "2026-10-29T23:36:51.7180726Z # pass 49",
+        "2026-10-29T23:36:51.7181125Z # fail 0",
+        "2026-10-29T23:36:51.7181815Z # skipped 0",
+        "2026-10-29T23:37:12.5276572Z # tests 42",
+        "2026-10-29T23:37:12.5277105Z # pass 42",
+        "2026-10-29T23:37:12.5277676Z # fail 0",
+        "2026-10-29T23:37:12.5279075Z # skipped 0"
+      ]
+    },
+    {
+      "name": "nativeSecurity",
+      "jobId": 123797548853,
+      "url": "https://github.com/TheFrtiz22/out-class/actions/runs/40974037262/job/123797548853",
+      "summary": [
+        "2026-10-29T23:35:11.4424871Z # tests 8",
+        "2026-10-29T23:35:11.4425645Z # pass 8",
+        "2026-10-29T23:35:11.4426193Z # fail 0",
+        "2026-10-29T23:35:11.4427630Z # skipped 0",
+        "2026-10-29T23:35:12.4589814Z PASS: security integration suites ran against disposable PostgreSQL"
+      ]
+    },
+    {
+      "name": "authenticatedA11y",
+      "jobId": 123797548674,
+      "url": "https://github.com/TheFrtiz22/out-class/actions/runs/40974037258/job/123797548674",
+      "summary": [
+        "2026-10-29T23:36:13.2179347Z All Prisma migrations applied through the authoritative deployment command.",
+        "2026-10-29T23:38:50.6819933Z # tests 18",
+        "2026-10-29T23:38:50.6820608Z # pass 18",
+        "2026-10-29T23:38:50.6820916Z # fail 0",
+        "2026-10-29T23:38:50.6821594Z # skipped 0"
+      ]
+    },
+    {
+      "name": "publicA11y",
+      "jobId": 123797548744,
+      "url": "https://github.com/TheFrtiz22/out-class/actions/runs/40974037258/job/123797548744",
+      "summary": [
+        "2026-10-29T23:36:56.0722239Z # tests 27",
+        "2026-10-29T23:36:56.0722725Z # pass 27",
+        "2026-10-29T23:36:56.0722955Z # fail 0",
+        "2026-10-29T23:36:56.0723516Z # skipped 0"
+      ]
+    }
+  ]
+}

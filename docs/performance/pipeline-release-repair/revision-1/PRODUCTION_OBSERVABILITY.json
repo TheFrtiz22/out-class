@@ -1,0 +1,52 @@
+{
+  "at": "2026-10-28T15:44:35.850036+00:00",
+  "readOnly": true,
+  "projectDiscovery": "Succeeded: out-class",
+  "projectDetails": {
+    "status": 403,
+    "reason": "Connector lacks outclassuva team scope"
+  },
+  "runtimeLogs": {
+    "status": 403,
+    "reason": "Logs API returned forbidden before any results; not evidence of absent logs"
+  },
+  "cliFallback": "No vercel executable installed; no credentials/config changed",
+  "newCorrelatedProductionRequests": 0,
+  "historicalOverview": {
+    "networkMs": 5215.747,
+    "serverTotalMs": 5067.3,
+    "identityMs": 221.36,
+    "observations": 1,
+    "source": "980522d7:docs/performance/followup-20261027/PRODUCTION_OVERVIEW_TRACE.json"
+  },
+  "unavailable": [
+    "Fresh production browser/server correlation",
+    "Auth transport subdivisions",
+    "Pure pool acquisition",
+    "Lock contention linked to requests",
+    "Production cohort distribution"
+  ],
+  "conclusion": "The initial 403 access limitation was resolved on retry, but no matching sanitized phase/failure traces were returned. Historical identity stall remains unattributed. This task changed no production region, pool, schema, configuration or deployment; main documents separate voting rollout work by others.",
+  "retry": {
+    "at": "2026-10-29T22:57:20Z",
+    "projectDetails": "Succeeded; project and current deployment metadata readable",
+    "runtimeLogs": "Succeeded; aggregate-only queries, no individual production records requested",
+    "queries": [
+      {
+        "event": "recruitment.pipeline.read.failure",
+        "window": "1h",
+        "groupBy": "level",
+        "matchingGroups": 0
+      },
+      {
+        "event": "workspace.phases",
+        "window": "24h",
+        "groupBy": "level",
+        "matchingGroups": 0
+      }
+    ],
+    "meaning": "No matching sanitized events returned in the queried retained windows; not evidence that no slow request occurred or that tracing is enabled/disabled. No fresh browser/server-correlated trace obtained.",
+    "applicationRequestsGenerated": 0,
+    "productionMutations": 0
+  }
+}

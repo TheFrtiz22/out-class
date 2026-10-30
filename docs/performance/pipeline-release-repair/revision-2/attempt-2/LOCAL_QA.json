@@ -1,0 +1,48 @@
+{
+  "at": "2026-10-30T20:14:52.848240+00:00",
+  "candidate": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+  "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+  "environment": "Mac Node26.9.0; functional/static QA only, never timing evidence",
+  "focused": {
+    "passed": 31,
+    "failed": 0,
+    "skipped": 0
+  },
+  "typecheck": "PASS",
+  "lint": {
+    "errors": 0,
+    "warnings": 22
+  },
+  "concurrentOrdinary": {
+    "total": 1551,
+    "passed": 1496,
+    "failed": 3,
+    "skipped": 52,
+    "durationMs": 417887.702667,
+    "failures": [
+      "interview-enter-browser: expected edit count 1, observed 0",
+      "interview-foundation: Highlight validation timed out",
+      "resume-import: malformed PDF hit processing timeout instead of parser rejection"
+    ]
+  },
+  "unchangedSequentialFailureCheck": {
+    "files": [
+      "tests/interview-enter-browser.test.cjs",
+      "tests/interview-foundation.test.cjs",
+      "tests/resume-import.test.cjs"
+    ],
+    "total": 22,
+    "passed": 22,
+    "failed": 0,
+    "skipped": 0,
+    "durationMs": 55107.89075
+  },
+  "note": "The three local failures remain recorded. Passing sequential checks do not reclassify the full parallel run. Fresh isolated full CI is required for release. No benchmark timing was collected on this Mac.",
+  "logsSha256": {
+    "concurrentOrdinary": "165035b5060d4410d93bb82e27d6ecff750192f627c5d0210a8d3442482253f7",
+    "sequentialFailureCheck": "bf560159c648a5be12b48ae53264bf72e3105e06df39e44ff587df1ca91b0c25",
+    "focused": "ef88ec4f008f8627c37a1e473f7c15ae2e2f6061075237f266a262d95acc0390",
+    "types": "7da6452aa37538bc1cec2c414adc9ac2f8dfdd59afdd7e07fce582e9b6a3ac4e",
+    "lint": "b43d743b85df609a4db382340a08109e768de22758c0b450b9106254df639f62"
+  }
+}

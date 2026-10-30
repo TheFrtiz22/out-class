@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-30T15:09:04.257Z",
+  "oldFunctionSha256": "06f5bebc83b91982305e3cb31e10a3119d27b4bc338f8440c03d9c8e364e2646",
+  "fixedFunctionSha256": "7083587056fb15ac8668c49ac99fd13884e9aba502e01bcaba1e664ea20d2599",
+  "verifiedBrowser": "156.0.8078.4",
+  "oldBehaviour": {
+    "predicateContentReady": true,
+    "observerReady": false
+  },
+  "reproduction": "A real visible detail sheet changed only a review text node from Loading authorized review information\u2026 to its completed value after an unforced click. The old observer did not notice until an unrelated attribute changed. Adding characterData:true observed readiness without that unrelated mutation.",
+  "scope": "Independent DOM reproduction proves a possible observation delay. Past raw rows do not record exact DOM mutation times, so it does not prove the cause of a particular 26\u201328 second recorded tail. No old latency is subtracted, removed or reclassified as a pass. Primary directory observer and its independent failed p50 gate are unchanged.",
+  "futureCollectorFix": "Observe characterData as well as childList/attributes; future performance clearance requires a new complete comparison with that observer. No more performance collection is launched for this rejected application candidate.",
+  "fixedCollectorFileSha256": "b96849e2ea567269460170f5b5cecc2addc6c707262aed092420322f47a976c1"
+}

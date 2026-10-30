@@ -1,0 +1,286 @@
+{
+  "candidate": "511fd3056af12af9f25a2c48ad9eda5d35393c50",
+  "applicationDigest": "0ce8317a8ef94ae7d750628f0652e3d07aa991b651776b32dc6815a8f17fa38e",
+  "runs": {
+    "small": 41096229641,
+    "gated": 41096229223,
+    "disposable": 41096174296,
+    "validate": 41096174532
+  },
+  "jobs": [
+    {
+      "jobId": 124202590918,
+      "unit": "gated",
+      "name": "Remaining gated workflows / corkboard",
+      "conclusion": "success",
+      "counters": [
+        "# tests 1",
+        "# suites 0",
+        "# pass 1",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# todo 0",
+        "# duration_ms 5601.653572",
+        "# tests 9",
+        "# suites 0",
+        "# pass 9",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# todo 0",
+        "# duration_ms 7708.620484"
+      ]
+    },
+    {
+      "jobId": 124202591390,
+      "unit": "gated",
+      "name": "Remaining gated workflows / admin",
+      "status": "in_progress",
+      "conclusion": null
+    },
+    {
+      "jobId": 124202591436,
+      "unit": "gated",
+      "name": "Remaining gated workflows / active",
+      "status": "in_progress",
+      "conclusion": null
+    },
+    {
+      "jobId": 124202591475,
+      "unit": "gated",
+      "name": "Remaining gated workflows / communications",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "jobId": 124202400337,
+      "unit": "disposable",
+      "name": "Private Storage and native PostgreSQL",
+      "conclusion": "success",
+      "counters": []
+    },
+    {
+      "jobId": 124202400573,
+      "unit": "disposable",
+      "name": "Applicant workflow / application-writing",
+      "conclusion": "success",
+      "counters": [
+        "# tests 1",
+        "# suites 0",
+        "# pass 1",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# todo 0",
+        "# duration_ms 14190.726343"
+      ]
+    },
+    {
+      "jobId": 124202400764,
+      "unit": "disposable",
+      "name": "Integration infrastructure coverage",
+      "conclusion": "success",
+      "counters": []
+    },
+    {
+      "jobId": 124202400813,
+      "unit": "disposable",
+      "name": "Native PostgreSQL / scheduler",
+      "conclusion": "success",
+      "counters": [
+        "# tests 5",
+        "# suites 0",
+        "# pass 5",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# todo 0",
+        "# duration_ms 9990.544113",
+        "# tests 57",
+        "# suites 0",
+        "# pass 57",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# todo 0",
+        "# duration_ms 105572.560075"
+      ]
+    },
+    {
+      "jobId": 124202400863,
+      "unit": "disposable",
+      "name": "Applicant workflow / dashboards",
+      "conclusion": "failure",
+      "failure": "tests/operational-dashboards-e2e.test.cjs expected obsolete Refreshing… label after main #103 made labels stable. Keep disabled-state assertion on Refresh overview and additionally assert aria-busy=true; preserve content, recovery and other assertions.",
+      "sourceCommit": "511fd3056af12af9f25a2c48ad9eda5d35393c50"
+    },
+    {
+      "jobId": 124202400873,
+      "unit": "disposable",
+      "name": "Local Auth, settings and navigation",
+      "status": "in_progress",
+      "conclusion": null
+    },
+    {
+      "jobId": 124202400931,
+      "unit": "disposable",
+      "name": "Native PostgreSQL / security",
+      "conclusion": "success",
+      "counters": [
+        "# tests 9",
+        "# suites 0",
+        "# pass 9",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# todo 0",
+        "# duration_ms 15530.677946"
+      ]
+    },
+    {
+      "jobId": 124202400958,
+      "unit": "disposable",
+      "name": "Native PostgreSQL / transactions",
+      "conclusion": "success",
+      "counters": [
+        "# tests 49",
+        "# suites 0",
+        "# pass 49",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# todo 0",
+        "# duration_ms 106000.123233",
+        "# tests 42",
+        "# suites 0",
+        "# pass 42",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# todo 0",
+        "# duration_ms 21492.003363"
+      ]
+    },
+    {
+      "jobId": 124202400972,
+      "unit": "disposable",
+      "name": "Native PostgreSQL / events",
+      "conclusion": "success",
+      "counters": [
+        "# tests 5",
+        "# suites 0",
+        "# pass 5",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# todo 0",
+        "# duration_ms 10969.703452"
+      ]
+    },
+    {
+      "jobId": 124202401092,
+      "unit": "disposable",
+      "name": "Native PostgreSQL / audiences",
+      "conclusion": "success",
+      "counters": [
+        "# tests 8",
+        "# suites 0",
+        "# pass 8",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# todo 0",
+        "# duration_ms 1855.009552",
+        "# tests 7",
+        "# suites 0",
+        "# pass 7",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# todo 0",
+        "# duration_ms 3607.20155",
+        "# tests 16",
+        "# suites 0",
+        "# pass 16",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# todo 0",
+        "# duration_ms 88654.423159",
+        "# tests 16",
+        "# suites 0",
+        "# pass 16",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# todo 0",
+        "# duration_ms 1720.855113",
+        "# tests 18",
+        "# suites 0",
+        "# pass 18",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# todo 0",
+        "# duration_ms 2325.303022"
+      ]
+    },
+    {
+      "jobId": 124202400495,
+      "unit": "validate",
+      "name": "validate",
+      "status": "in_progress",
+      "conclusion": null
+    },
+    {
+      "jobId": 124202400653,
+      "unit": "validate",
+      "name": "authenticated-accessibility",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "jobId": 124202400774,
+      "unit": "validate",
+      "name": "native-application-transactions",
+      "conclusion": "success",
+      "counters": [
+        "# tests 49",
+        "# suites 0",
+        "# pass 49",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# todo 0",
+        "# duration_ms 105876.676203",
+        "# tests 42",
+        "# suites 0",
+        "# pass 42",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# todo 0",
+        "# duration_ms 21100.521732"
+      ]
+    },
+    {
+      "jobId": 124202400781,
+      "unit": "validate",
+      "name": "accessibility",
+      "conclusion": "success",
+      "counters": [
+        "# tests 27",
+        "# suites 0",
+        "# pass 27",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# todo 0",
+        "# duration_ms 116061.488768"
+      ]
+    }
+  ],
+  "clearance": false,
+  "note": "Partial receipt. Final source-head verification and all required cases must pass. Duplicate suites are not additive independent tests."
+}

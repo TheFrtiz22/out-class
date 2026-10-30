@@ -1,0 +1,48 @@
+{
+  "profile": "constrained",
+  "proofs": [
+    {
+      "variant": "B",
+      "runtime": "Frozen production outputs restored into one owned runtime checkout",
+      "frozenOutput": {
+        "buildId": "idJ-vlsl-0j-iFmcs8LOC",
+        "digest": "44575c6af9c1aad9af932293d90715cddb8137ab83c80bc8c26fc05a42d24ff3",
+        "files": 717
+      },
+      "expectedBuildId": "idJ-vlsl-0j-iFmcs8LOC",
+      "documentStatus": 200,
+      "documentContainsBuildId": true,
+      "runtimeAsset": "static/chunks/webpack-02e509142b2d8a5f.js",
+      "assetStatus": 200,
+      "expectedAssetSha256": "c8177205f15d20eeee48f025b0543ea3930b6fc033dd9f406738cd4fbdbdd5be",
+      "servedAssetSha256": "c8177205f15d20eeee48f025b0543ea3930b6fc033dd9f406738cd4fbdbdd5be",
+      "valid": true,
+      "readKind": "pipeline",
+      "readStatus": 200,
+      "applications": 100,
+      "expectedApplications": 100,
+      "unsupportedPageStatus": 400
+    },
+    {
+      "variant": "D",
+      "runtime": "Frozen production outputs restored into one owned runtime checkout",
+      "frozenOutput": {
+        "buildId": "YX-eRUMdvU3SPPx47Mmqz",
+        "digest": "d1fecca9dd262e4d2b3b0d38b52b6df22e2248bf66186bcd8f1d3e9d26213131",
+        "files": 717
+      },
+      "expectedBuildId": "YX-eRUMdvU3SPPx47Mmqz",
+      "documentStatus": 200,
+      "documentContainsBuildId": true,
+      "runtimeAsset": "static/chunks/webpack-1a328015f8454e6f.js",
+      "assetStatus": 200,
+      "expectedAssetSha256": "d0034c16502b05f8303517409a3d1ef2e289537dc2dd0f027827c3bac82805c7",
+      "servedAssetSha256": "d0034c16502b05f8303517409a3d1ef2e289537dc2dd0f027827c3bac82805c7",
+      "valid": true,
+      "readKind": "pipelinePage",
+      "readStatus": 200,
+      "applications": 100,
+      "expectedApplications": 100
+    }
+  ]
+}

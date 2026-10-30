@@ -6,7 +6,7 @@ repair, its browser regression and its report. Final branch commit:
 [production validation](https://github.com/TheFrtiz22/out-class/actions/runs/40754283885)
 and [disposable integrations](https://github.com/TheFrtiz22/out-class/actions/runs/40754284015).
 Main subsequently incorporated it as `a0265dcb`; that merge was external to this
-repair task. No merge or production deployment was executed by this task.
+repair task. No production deployment is performed by this task. The later authorized pipeline merge is a separate action.
 
 The rail reserves 108px of content space but expands to 272px. A destination
 click previously scheduled a conditional exit; retained hover/focus ownership
@@ -35,5 +35,5 @@ The original failed regression and first failed hosted diagonal probe remain
 identified in the isolated report and QA logs. A later successful run does not
 erase either failure. See `docs/performance/dock-pointer-release-repair/REPORT.md`
 for implementation detail. `SOURCE_PROOF.json` shows zero additional dock diff
-in the pipeline repair against current main. Dock acceptance is independent of
-the pipeline's failed/missing release gates.
+in the pipeline repair against current main. Dock acceptance is independently verified; current pipeline acceptance is recorded
+in RELEASE_DECISION.md.

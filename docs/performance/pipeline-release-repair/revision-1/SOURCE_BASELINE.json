@@ -1,0 +1,104 @@
+{
+  "at": "2026-10-28T15:14:33.190608+00:00",
+  "main": "f2192e02e5e218537f4dda8a4333aecab1602993",
+  "measuredMain": "78402ee611f46b8764898250e46b6dcc8dab7654",
+  "held": "375a00d54d95f24e7d600a56218b9bf8040a7937",
+  "initialWorktrees": "/Users/jesseklinger/Documents/out-class                                                             09f312dc [codex/liquid-glass-navigation]\n/private/tmp/outclass-communications-runtime-repair                                                 e373362d [fix/production-communications-runtime] prunable\n/private/tmp/outclass-llc-61                                                                        073720c1 [codex/outclass-llc-identity-20261020] prunable\n/private/tmp/outclass-merge-all-20261016                                                            34265979 [codex/merge-all-branches-20261016] prunable\n/Users/jesseklinger/.codex/worktrees/application-writing-review/out-class                           31feec0b [codex/premium-dashboard-design]\n/Users/jesseklinger/.codex/worktrees/performance-ready/out-class                                    78402ee6 [main]\n/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class                                    980522d7 [codex/performance-followup-20261027]\n/Users/jesseklinger/.codex/worktrees/pipeline-ready-20261027/out-class                              dfc666d8 [codex/performance-pipeline-ready-20261027]\n/Users/jesseklinger/.codex/worktrees/pipeline-release-repair/out-class                              f2192e02 [codex/pipeline-release-repair-20261028]\n/Users/jesseklinger/.local/share/outclass-release/readiness-20261002-143910/legacy-verification-fix 247f34b3 [fix/release-legacy-email-verification]\n",
+  "initialContainers": [
+    "supabase_pg_meta_outclass-announcement-e2e|running",
+    "supabase_storage_outclass-announcement-e2e|running",
+    "supabase_rest_outclass-announcement-e2e|running",
+    "supabase_realtime_outclass-announcement-e2e|running",
+    "supabase_inbucket_outclass-announcement-e2e|running",
+    "supabase_auth_outclass-announcement-e2e|running",
+    "supabase_kong_outclass-announcement-e2e|exited",
+    "supabase_db_outclass-announcement-e2e|running",
+    "outclass-release-rehearsal-20261002|exited",
+    "supabase_db_out-class|running",
+    "supabase_studio_out-class|running",
+    "supabase_pg_meta_out-class|running",
+    "supabase_edge_runtime_out-class|exited",
+    "supabase_storage_out-class|running",
+    "supabase_rest_out-class|running",
+    "supabase_realtime_out-class|running",
+    "supabase_inbucket_out-class|running",
+    "supabase_auth_out-class|running",
+    "supabase_kong_out-class|running",
+    "supabase_vector_out-class|running",
+    "supabase_analytics_out-class|running"
+  ],
+  "sources": [
+    {
+      "path": "docs/performance/OUTCLASS_NAVIGATION_AUDIT.md",
+      "bytes": 86237,
+      "sha256": "199a1c9b20088dec637d78d693533e5b2565391c38e3b147d96b97035c8369af",
+      "source": "980522d7"
+    },
+    {
+      "path": "docs/performance/NAVIGATION_BENCHMARKS.json",
+      "bytes": 1447511,
+      "sha256": "caec8d769c538f7342b59e25546c65fcb0c11a64c89c2a2531c5eb66501552b5",
+      "source": "980522d7"
+    },
+    {
+      "path": "docs/performance/OPTIMIZATION_ROADMAP.md",
+      "bytes": 5265,
+      "sha256": "7b51d58a4e73b8ba4deefdbe74ad78fa55994f03b2f8e90a2c9c5fc0a6b522a6",
+      "source": "980522d7"
+    },
+    {
+      "path": "docs/performance/CHATGPT_HANDOFF.md",
+      "bytes": 16148,
+      "sha256": "3024c809ea6d427f98b835b6a331c90e0d18481b2beca7fe6b553bb5e655ce61",
+      "source": "980522d7"
+    },
+    {
+      "path": "docs/performance/pipeline-ready-20261027/README.md",
+      "bytes": 21794,
+      "sha256": "c925cb67dd5eb5c1822a83f4ef53533e7143f34e7509a31d1522e8c2a8888a2b",
+      "source": "980522d7"
+    },
+    {
+      "path": "docs/performance/pipeline-ready-20261027/COMPARISON.json",
+      "bytes": 12120997,
+      "sha256": "fb1d4e2ceb5053dd833db7138ab4593c1cb6a64705919f80814c6e98fe9d0d30",
+      "source": "980522d7"
+    },
+    {
+      "path": "docs/performance/pipeline-ready-20261027/IMPLEMENTATION.diff",
+      "bytes": 102712,
+      "sha256": "83ad5dc5b09e115ff9bc7a13cfc91ebe015f2745e4505ba6c85a891c2e1bc934",
+      "source": "980522d7"
+    },
+    {
+      "path": "docs/performance/pipeline-ready-20261027/REPRODUCTION.md",
+      "bytes": 8015,
+      "sha256": "e8b4184528fa39b257a3fcd67cdf6c6e03e77d14ddc0a183ea8828e16c98e7fb",
+      "source": "980522d7"
+    },
+    {
+      "path": "docs/performance/pipeline-ready-20261027/FINAL_VERIFICATION.json",
+      "bytes": 974,
+      "sha256": "8de1ef8297b50a42a39b5a321cb7bfdc06f864f7102992891b1e1685db09e7c5",
+      "source": "980522d7"
+    }
+  ],
+  "latestIntegrationBase": {
+    "sha": "6e793dea0bd45052fa444749b26d432ae93392cd",
+    "date": "2026-10-29",
+    "repairAtFreeze": "4d52103e0ca70086c8ff4f3e913a7bd11f377005",
+    "sincePrevious": "PR98/99 contextual/glowing loading components and PR100 voting walkthrough documentation. No additional pipeline data algorithm or schema change. Rebase preserves current loading assertions."
+  },
+  "previousIntegrationBase": {
+    "sha": "29100f9cef68ffcba7a250200aa5b5ceb7727cb8",
+    "date": "2026-10-29",
+    "sinceInitial": "Main incorporated PR92 independently, persistent live voting rooms, explicit live-room read budgets, contextual loading and visual layouts. Repair rebased preserving those changes.",
+    "repairAtFreeze": "5d7eed15b14d04c4df3beb194d29e7e205521b62"
+  },
+  "finalMainVerification": {
+    "at": "2026-10-30T15:11:00Z",
+    "sha": "bc22b0a30b98cbfab785ea3da5215a9351b76109",
+    "measuredMain": "6e793dea0bd45052fa444749b26d432ae93392cd",
+    "sinceMeasured": "PR101 atomic live-room applicant transitions/guarded undo, 19 files including an upstream migration. No overlap with the repair 25 application files. Not measured by this study; held repair remains explicitly bound to measured source and is rejected for release."
+  }
+}

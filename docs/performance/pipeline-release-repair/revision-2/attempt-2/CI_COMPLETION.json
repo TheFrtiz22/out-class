@@ -1,0 +1,402 @@
+{
+  "at": "2026-10-30 23:56:18 UTC",
+  "candidate": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+  "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+  "runs": [
+    {
+      "unit": "validate",
+      "run": 41120761640,
+      "jobs": [
+        {
+          "id": 124286513317,
+          "name": "accessibility",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": []
+        },
+        {
+          "id": 124286513480,
+          "name": "native-application-transactions",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": []
+        },
+        {
+          "id": 124286513597,
+          "name": "authenticated-accessibility",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": []
+        },
+        {
+          "id": 124286513683,
+          "name": "validate",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": []
+        }
+      ]
+    },
+    {
+      "unit": "disposable",
+      "run": 41120761637,
+      "jobs": [
+        {
+          "id": 124286525560,
+          "name": "Private Storage and native PostgreSQL",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": []
+        },
+        {
+          "id": 124286525690,
+          "name": "Applicant workflow / application-writing",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": []
+        },
+        {
+          "id": 124286525715,
+          "name": "Local Auth, settings and navigation",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": []
+        },
+        {
+          "id": 124286525739,
+          "name": "Integration infrastructure coverage",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": []
+        },
+        {
+          "id": 124286525760,
+          "name": "Applicant workflow / dashboards",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": []
+        },
+        {
+          "id": 124286525788,
+          "name": "Native PostgreSQL / security",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": []
+        },
+        {
+          "id": 124286525811,
+          "name": "Native PostgreSQL / transactions",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": []
+        },
+        {
+          "id": 124286525840,
+          "name": "Native PostgreSQL / events",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": []
+        },
+        {
+          "id": 124286525980,
+          "name": "Native PostgreSQL / scheduler",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": []
+        },
+        {
+          "id": 124286525989,
+          "name": "Native PostgreSQL / audiences",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": []
+        }
+      ]
+    },
+    {
+      "unit": "gated",
+      "run": 41120776403,
+      "jobs": [
+        {
+          "id": 124286556051,
+          "name": "Remaining gated workflows / active",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": []
+        },
+        {
+          "id": 124286556259,
+          "name": "Remaining gated workflows / corkboard",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": []
+        },
+        {
+          "id": 124286556285,
+          "name": "Remaining gated workflows / communications",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": []
+        },
+        {
+          "id": 124286556344,
+          "name": "Remaining gated workflows / admin",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": []
+        }
+      ]
+    },
+    {
+      "unit": "small",
+      "run": 41120776662,
+      "jobs": [
+        {
+          "id": 124286558024,
+          "name": "Current main versus repair / constrained / cohort 1 / navigation",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": [
+            {
+              "name": "Stop this job's disposable services",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 15
+            }
+          ]
+        },
+        {
+          "id": 124286558219,
+          "name": "Current main versus repair / local / cohort 100 / navigation",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": [
+            {
+              "name": "Stop this job's disposable services",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 15
+            }
+          ]
+        },
+        {
+          "id": 124286558232,
+          "name": "Current main versus repair / constrained / cohort 1 / full-review",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": [
+            {
+              "name": "Stop this job's disposable services",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 15
+            }
+          ]
+        },
+        {
+          "id": 124286558234,
+          "name": "Current main versus repair / local / cohort 1 / full-review",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": [
+            {
+              "name": "Stop this job's disposable services",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 15
+            }
+          ]
+        },
+        {
+          "id": 124286558256,
+          "name": "Current main versus repair / constrained / cohort 100 / navigation",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": [
+            {
+              "name": "Stop this job's disposable services",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 15
+            }
+          ]
+        },
+        {
+          "id": 124286558310,
+          "name": "Current main versus repair / local / cohort 1 / navigation",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": [
+            {
+              "name": "Stop this job's disposable services",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 15
+            }
+          ]
+        },
+        {
+          "id": 124286558321,
+          "name": "Current main versus repair / local / cohort 100 / full-review",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": [
+            {
+              "name": "Stop this job's disposable services",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 15
+            }
+          ]
+        },
+        {
+          "id": 124286558350,
+          "name": "Current main versus repair / constrained / cohort 100 / full-review",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": [
+            {
+              "name": "Stop this job's disposable services",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 15
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "unit": "large",
+      "run": 41126174308,
+      "jobs": [
+        {
+          "id": 124305174732,
+          "name": "Current main versus repair / local / cohort 1000 / navigation",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": [
+            {
+              "name": "Stop this job's disposable services",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 15
+            }
+          ]
+        },
+        {
+          "id": 124305175058,
+          "name": "Current main versus repair / local / cohort 1000 / full-review",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": [
+            {
+              "name": "Stop this job's disposable services",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 15
+            }
+          ]
+        },
+        {
+          "id": 124305175113,
+          "name": "Current main versus repair / local / cohort all / capacity",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": [
+            {
+              "name": "Stop this job's disposable services",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 15
+            }
+          ]
+        },
+        {
+          "id": 124305175126,
+          "name": "Current main versus repair / local / cohort 5000 / full-review",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": [
+            {
+              "name": "Stop this job's disposable services",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 15
+            }
+          ]
+        },
+        {
+          "id": 124305175135,
+          "name": "Current main versus repair / constrained / cohort 1000 / full-review",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": [
+            {
+              "name": "Stop this job's disposable services",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 15
+            }
+          ]
+        },
+        {
+          "id": 124305175141,
+          "name": "Current main versus repair / constrained / cohort 1000 / navigation",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": [
+            {
+              "name": "Stop this job's disposable services",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 15
+            }
+          ]
+        },
+        {
+          "id": 124305175185,
+          "name": "Current main versus repair / constrained / cohort 5000 / navigation",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": [
+            {
+              "name": "Stop this job's disposable services",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 15
+            }
+          ]
+        },
+        {
+          "id": 124305175292,
+          "name": "Current main versus repair / constrained / cohort 5000 / full-review",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": [
+            {
+              "name": "Stop this job's disposable services",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 15
+            }
+          ]
+        },
+        {
+          "id": 124305175327,
+          "name": "Current main versus repair / local / cohort 5000 / navigation",
+          "status": "completed",
+          "conclusion": "success",
+          "cleanup": [
+            {
+              "name": "Stop this job's disposable services",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 15
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "all35JobsPassed": true
+}

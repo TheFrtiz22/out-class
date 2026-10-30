@@ -1,47 +1,38 @@
-# Revision 2 repair
+# Repaired implementation
 
-This revision integrates main `0a40de7c`. It is a new candidate; revision 1's
-rejection, raw observations and whole-attempt exclusions remain preserved at
-`b2d8883d` and in the existing reports. Release clearance is pending the new
-protocol and final functional checks.
+Current measured source is `d0d6f2778239b5d3b921663780a01c7542f04fa3` against main
+`0a40de7cbcad158cf60d96c258610b832d818da8`. `SOURCE_PROOF.json` records all 965
+application-file hashes and the exact 26 application files changed from main.
+All 34 frozen gates and independent functional verification pass in the complete performance matrix.
 
-The initial page previously selected each application's round relation after
-the guarded transaction had already selected the club's active rounds. The
-page now uses a complete internal round-privacy map from that same transaction's
-club-round read. Archived rounds are included internally so their applicants
-retain canonical anonymity, but remain absent from public round controls and
-gender eligibility. Missing privacy information fails closed before hydration.
-Both ordinary and review-dependent metadata omit the redundant round relation;
-canonical full-detail hydration remains bounded to the visible page. Cursor
-scope includes the complete round-privacy map. The separate voting-selection
-reader retains its canonical round relation because its snapshot caller does
-not supply that map. Authorization, isolation and writes are unchanged.
+| Area | Final behavior and purpose |
+|---|---|
+| Guarded pipeline reads | `actions/crm.ts` keeps fresh existing authority and Repeatable Read. Global canonical metadata determines exact filters/order/counts/facets/cursors; full canonical details are hydrated only for the selected visible page, at most 100 applications. |
+| Snapshot round privacy | Page and complete selection reuse all club rounds from the same transaction through `readPipelineMetadata`. Archived round privacy stays available internally; public controls and gender eligibility remain active-round-only. Missing privacy fails closed. No redundant application-round relation is selected. |
+| Detail and page ownership | The current page owns its canonical details. Opening/switching within it adds no duplicate application-detail GET. Independent Applicant Display and attendance reads remain fresh. Page boundaries adopt a newly guarded response once. |
+| Complete coverage | The hook preserves the exact initial server response. It derives local filters only after an actual query change within still-valid complete coverage. Completion follows the unscoped data actually supplied, without any cohort threshold. New reads supersede old coverage even after denial or query races. |
+| Authority fencing | Identity, read epoch, support mode, club/privacy scope, Demo readiness, query and mutation revision own results. A notification fences stale dispatches and completions before React commits. No successful server authorization is cached. |
+| Pending-read coalescing | Only identical simultaneous operations for the same full owner/read kind/arguments share a promise. Entries are removed after either settlement. Existing serialized latest-query handling remains. |
+| Voting selection | Complete candidate IDs are built inside the existing voting snapshot using canonical privacy/filter/order rules. Closed-setup polls omit selection scans; opening setup requires its exact fresh read token. Live post-snapshot permission/participant checks and every write remain unchanged. |
+| Overview CTA | All applicants uses the existing query-only club navigator, preserving history and modified links while eliminating an unused RSC dependency. It still starts one fresh guarded page GET. Real desktop/touch integration asserts both properties. |
+| Canonical projections | Shared full-detail/list/review/profile helpers preserve anonymous text, self-review exclusions, submitted-review barriers, exact nested ordering and existing output fields. No broad metadata restructuring, raw SQL join or new index was introduced. |
+| Functional repair | Admin-session checks now identify the authenticated semantic shell; dashboard refresh checks use the stable label plus disabled and aria-busy state. Existing MFA, revocation, content, error-recovery and all other assertions remain. |
+| Controlled fixtures | One/100/1000/5000 cohorts are automatic, isolated and disposable. CI freezes both production outputs and verifies served document/assets plus each authenticated data contract before every BAAB block. Owned cleanup never targets unrelated services. |
+| Collector correction | Strict readiness observes character-data changes, checks only stage-relevant DOM and coalesces mutation bursts. Two-frame/full-content predicates and unforced interactions remain. Bounded sanitized read causes and long tasks support tail diagnosis without protected values. |
 
-The page hook previously reran the full canonical selector against an already
-ranked, exact server response when that page happened to cover the whole
-selection. It now retains that exact response for its current owner and derives
-a local page only when the query changes within still-valid complete coverage.
-Authority epoch, mutation revision, supersession, denial and owner fencing are
-retained. This policy uses actual coverage, without a cohort-size threshold.
+Global metadata/ranking and explicit complete selection remain O(N). The initial
+wire detail projection and directory rendering remain bounded; no delayed full
+application hydration was moved outside measurement. Voting's explicitly opened
+complete candidate pool is still correct for the whole eligible selection.
 
-The Admin-session integration test now identifies the authenticated Admin
-shell by `data-product-shell="admin"`. The obsolete “Admin workspace” copy had
-caused the previous failure. Status, redirect, protected overview, MFA/AAL2,
-session binding, revocation, disabled-account and support assertions remain.
+`SOURCE_PROOF.json` confirms byte-identical CRM/voting write tails and voting
+post-snapshot checks, plus no schema, migration, package, deployment configuration
+or additional dock changes from measured main. The independent dock repair was
+already merged through #92. Main's #101/#102 voting behavior and #103 contextual
+loading feedback are retained.
 
-The strict collector observes character-data changes, avoids inspecting
-unrelated rows during sheet/dialog stages and coalesces mutation bursts before
-two-frame readiness checks. Independent real Chromium QA is recorded in
-`OBSERVER_QA.json`. Its 5000-row detail fixture completed after a text-node-only
-change with zero directory geometry reads. The directory burst performed only
-the two required scans. No old recorded delay is subtracted or reclassified.
-
-The new CI matrix separates each cohort/profile/collector into its own paired
-B/D/D/B unit, with a dedicated capacity unit. `PROTOCOL.md` declares this before
-measurements and retains the original samples, warmups and limits.
-
-Focused checks cover canonical privacy, locale ordering, facets, scores,
-filters, cursors, bounded hydration, archived rounds, missing-round denial,
-exact response reuse and stale authority/query/mutation protection. Full
-ordinary and hosted disposable checks are additionally required; an ordinary
-suite's environment-gated skips do not establish integration clearance.
+`attempt-1/` preserves the prior source's complete rejected small-cohort results.
+`attempt-2/` contains current-source local and hosted QA, including the failed
+local parallel PDF/browser run, unchanged sequential passing checks, and the
+fresh full CI pass. The final controlled numerical outcome belongs in
+`BENCHMARKS.json`; old successes or tails are never pooled into it.

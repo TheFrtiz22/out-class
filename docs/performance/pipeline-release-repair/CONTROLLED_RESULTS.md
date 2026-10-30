@@ -1,86 +1,120 @@
-# Controlled comparison: release gates not cleared
+# Controlled current-source results
 
-Exact measured main: `6e793dea0bd45052fa444749b26d432ae93392cd`. Measured application: `4d52103e0ca70086c8ff4f3e913a7bd11f377005`, digest `99077a7ff37acb0b67cb919c4ec4b1b95bc0401750472cc65f26b3aaeb029be1`. Constrained repeat tools: `3d4f4128579b2ed0e9f63ad344e56d5c48302da9`; application bytes are identical. Times below are p50/p95 milliseconds, nearest rank. Each cohort/profile/build pair uses one isolated GitHub Linux VM, loopback real Auth/PostgreSQL, production builds and full served-output/data-contract attestation. Different hosts/profiles/cohorts are never pooled. This is not production timing.
+Application source: `d0d6f2778239b5d3b921663780a01c7542f04fa3`. Measured main: `0a40de7cbcad158cf60d96c258610b832d818da8`.
+Application digest: `df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7`. Each table row is its own paired unit; hosts and historical sources are not pooled.
 
-Main subsequently advanced to `bc22b0a30b98cbfab785ea3da5215a9351b76109` (#101 live-room transitions/guarded undo). Those changes were inspected, not timed by this study. No current-main or production clearance follows from older-source results.
+Current release clearance: **PASS**. Quantiles are nearest rank; milliseconds below are p50 / p95. n10 p95 is its maximum, not a hosted SLO.
 
-## Primary cold entry and detail
+Browser measured outcomes: 1120; excluded browser warmups: 320.
 
-| Profile | Applicants | Directory B → D (ms) | Detail B → D (ms) | n/build/path | Directory bytes p50 B → D |
-|---|---:|---|---|---:|---:|
-| local | 1 | 208.3/246.8 → 210.1/271.4 | 51.5/62.0 → 53.2/65.0 | 30 | 33513 → 36559 |
-| local | 100 | 351.7/458.4 → 352.7/437.7 | 127.5/137.8 → 127.9/144.3 | 10 | 100465 → 104554 |
-| local | 1,000 | 1715.0/1851.6 → 406.6/470.8 | 814.1/854.6 → 131.6/140.1 | 10 | 588487 → 104418 |
-| local | 5,000 | 8148.3/8547.6 → 624.7/687.3 | 4792.5/4834.6 → 127.1/139.4 | 10 | 2735369 → 105378 |
-| constrained | 1 | 552.3/612.9 → 608.3/669.3 | 225.6/259.9 → 243.7/272.6 | 30 | 33516 → 36552 |
-| constrained | 100 | 1293.7/1381.3 → 1299.6/1329.8 | 566.1/614.0 → 576.5/602.2 | 10 | 103746 → 106518 |
-| constrained | 1,000 | 8133.5/8571.9 → 1317.4/1383.3 | 3376.4/3504.6 → 560.9/590.0 | 10 | 589811 → 104050 |
-| constrained | 5,000 | Whole incomplete cohort excluded | Unavailable | — | — |
+## Directory entry
 
-One-applicant cold directory constrained p50 is 552.3→608.3 ms (+10.14%); the predeclared limit is 607.53 ms. It fails by 0.77 ms. The p95 limit passes. This is a screening-rule failure, not a claim of statistical significance. No tolerance is changed or result discarded. One-applicant detail passes both profiles and adds no pipeline detail GET: four→four total observed cold-window requests, two→two guarded workspace GETs. The historical three→four B/C count used an older source/window.
+| Profile | Applicants | Condition | n per build | Main ms | Repair ms |
+|---|---:|---|---:|---:|---:|
+| local | 1 | cold | 30 | 182.9 / 218.0 | 188.3 / 210.8 |
+| local | 1 | warm | 30 | 126.9 / 147.9 | 129.6 / 168.9 |
+| local | 100 | cold | 10 | 325.3 / 402.8 | 339.4 / 382.4 |
+| local | 100 | warm | 10 | 259.6 / 288.4 | 265.3 / 306.3 |
+| local | 1000 | cold | 10 | 1645.5 / 1759.0 | 396.2 / 475.9 |
+| local | 1000 | warm | 10 | 1564.2 / 1707.9 | 312.0 / 358.6 |
+| local | 5000 | cold | 10 | 6484.5 / 6610.2 | 461.9 / 504.5 |
+| local | 5000 | warm | 10 | 6134.1 / 6337.2 | 415.8 / 444.8 |
+| constrained | 1 | cold | 30 | 457.7 / 504.1 | 492.3 / 524.1 |
+| constrained | 1 | warm | 30 | 204.3 / 238.7 | 214.4 / 236.5 |
+| constrained | 100 | cold | 10 | 1222.3 / 1346.3 | 1242.4 / 1417.3 |
+| constrained | 100 | warm | 10 | 1037.4 / 1083.8 | 1051.8 / 1121.6 |
+| constrained | 1000 | cold | 10 | 5724.7 / 6185.5 | 946.7 / 978.8 |
+| constrained | 1000 | warm | 10 | 5629.1 / 5768.8 | 784.0 / 860.3 |
+| constrained | 5000 | cold | 10 | 41276.7 / 41750.4 | 1641.1 / 1755.7 |
+| constrained | 5000 | warm | 10 | 41016.7 / 41627.9 | 1407.1 / 1541.3 |
 
-## Recorded strict complete-review journey
+## One-applicant detail
 
-Includes source preparation, visible independent review/attendance readiness, switching, search/clear, complete quick-review selection, cold/warm Voting history, full Applied pool, setup discard and return. It is longer than the historical common workflow. These are instrumented journey durations: observer/actionability/automation costs scale with DOM size.
+| Profile | Condition | n per build | Main ms | Repair ms | Guarded requests main / repair (median) |
+|---|---|---:|---:|---:|---:|
+| local | cold | 30 | 51.9 / 56.9 | 54.3 / 58.5 | 2 / 2 |
+| local | warm | 30 | 37.4 / 65.6 | 38.1 / 43.9 | 2 / 2 |
+| constrained | cold | 30 | 174.2 / 198.4 | 186.1 / 218.4 | 2 / 2 |
+| constrained | warm | 30 | 128.6 / 155.2 | 140.3 / 157.6 | 2 / 2 |
 
-**Observer limitation:** OBSERVER_QA.json independently reproduces missed text-only readiness in the measured collector; unrelated later DOM changes can end an observation delay. The corrected observer is implemented for future comparisons. Past rows do not record exact DOM mutation times, so this does not prove the cause of a particular tail. Every recorded value, failed gate and slow row remains unchanged. These timings cannot establish isolated application/Auth stalls or production p95; strict-review release clearance remains false. No corrected performance rerun is launched for this independently failed candidate.
+## Complete review, search, selection and voting journey
 
-| Profile | Applicants | Recorded whole journey B → D (ms) | Source-through-content B → D (ms) | n/build | Requests p50/max B → D |
-|---|---:|---|---|---:|---|
-| local | 1 | 4228.3/4672.2 → 4195.1/4544.8 | 5455.3/5885.0 → 5414.1/5731.6 | 10 | 16/16 → 16/16 |
-| local | 100 | 5174.4/5657.3 → 5204.9/5807.0 | 6393.7/6827.8 → 6390.5/7041.0 | 10 | 19/19 → 19/19 |
-| local | 1,000 | 17875.5/18249.6 → 5812.8/5888.8 | 19223.3/19691.3 → 7012.6/7114.8 | 10 | 19/19 → 22/22 |
-| local | 5,000 | 174456.6/182596.7 → 7414.3/7485.9 | 175840.7/185072.6 → 8614.2/8715.9 | 10 | 44/47 → 22/22 |
-| constrained | 1 | 5456.2/5812.3 → 5451.5/33549.9 | 7032.8/7515.3 → 6943.1/35235.6 | 10 | 16/16 → 16/19 |
-| constrained | 100 | 10881.1/11272.9 → 11339.5/37587.0 | 12518.4/12951.7 → 12985.4/39251.3 | 10 | 19/19 → 19/21 |
-| constrained | 1,000 | 73999.3/76684.3 → 12619.3/12953.8 | 75963.4/78632.4 → 14369.0/14633.2 | 10 | 29/29 → 22/23 |
-| constrained | 5,000 | Whole incomplete cohort excluded | Unavailable | — | — |
+| Profile | Applicants | n per build | Main journey ms | Repair journey ms | Main continuous source-through-content ms | Repair continuous ms | Guarded requests main / repair (median) |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| local | 1 | 10 | 4017.6 / 4094.1 | 3943.9 / 4380.6 | 5095.9 / 5245.6 | 5081.9 / 5549.8 | 8 / 8 |
+| local | 100 | 10 | 5239.2 / 5640.7 | 5162.3 / 5615.0 | 6456.8 / 6892.9 | 6398.4 / 6817.6 | 10 / 10 |
+| local | 1000 | 10 | 14322.1 / 14488.7 | 4894.8 / 5075.9 | 15487.1 / 15635.4 | 6007.7 / 6192.9 | 10 / 13 |
+| local | 5000 | 10 | 182765.5 / 190411.8 | 7327.5 / 7761.9 | 185221.3 / 192494.3 | 8581.1 / 8963.0 | 28 / 13 |
+| constrained | 1 | 10 | 4915.6 / 33955.3 | 4847.1 / 5035.5 | 6332.5 / 35448.6 | 6405.4 / 6552.5 | 8 / 8 |
+| constrained | 100 | 10 | 10749.5 / 11308.9 | 10666.0 / 11104.7 | 12397.9 / 12941.9 | 12274.6 / 12744.5 | 10 / 10 |
+| constrained | 1000 | 10 | 71362.3 / 72349.3 | 12260.6 / 12657.6 | 73448.0 / 74267.3 | 13879.7 / 14336.0 | 17 / 13 |
+| constrained | 5000 | 10 | 467066.4 / 531595.2 | 12286.3 / 12918.8 | 477773.6 / 535540.0 | 13594.6 / 14240.3 | 48 / 13 |
 
-Constrained one-applicant recorded p95 is 5.81→33.55 seconds, with 28.41 seconds in detail readiness. At 100 it is 11.27→37.59 seconds, with 26.57 seconds in switch readiness. Relevant guarded responses were short; the data do not establish an Auth or database cause. One background notification GET overlaps each long observation. At 100 the recorded guarded-count maximum is 10→11, so the automated count gate fails; this is not an added pipeline detail/selection read. Median whole-workflow guarded count remains ten→ten.
+## 100-applicant voting entry
 
-| Profile | 100-applicant Voting history | B p50/p95 (ms) | D p50/p95 (ms) |
+| Profile | Path | Main ms | Repair ms |
 |---|---|---:|---:|
-| local | votingCold | 283.3/341.3 | 291.0/314.9 |
-| local | votingWarm | 280.5/322.4 | 284.9/314.9 |
-| constrained | votingCold | 767.9/836.9 | 782.7/842.2 |
-| constrained | votingWarm | 723.6/806.2 | 753.6/868.8 |
+| local | votingCold | 294.7 / 343.6 | 298.8 / 344.3 |
+| local | votingWarm | 276.3 / 355.2 | 289.3 / 303.7 |
+| constrained | votingCold | 714.8 / 779.8 | 727.3 / 779.3 |
+| constrained | votingWarm | 701.3 / 746.6 | 733.0 / 817.3 |
 
-All four recorded 100-applicant voting numeric limits pass, n10/build. Initial setup IDs remain in the existing transactional voting snapshot. Closed-setup polling omits selection; explicit reopen requires a fresh exact read. Persistent live rooms are functionally checked separately, not timed. The strict collector limitation remains explicit.
+## Native bounded reader capacity
 
-## Bounded reader capacity
-
-| Applicants | Readers | B p50/p95 (ms) | D p50/p95 (ms) | n/build |
+| Applicants | Readers | n per build | Main ms | Repair ms |
 |---:|---:|---:|---:|---:|
-| 1,000 | 1 | 518.3/544.4 | 170.8/216.8 | 5 |
-| 1,000 | 2 | 724.4/762.6 | 211.1/262.7 | 10 |
-| 1,000 | 4 | 1320.4/1367.9 | 351.6/364.3 | 20 |
-| 5,000 | 1 | 2382.8/2407.4 | 385.9/399.2 | 5 |
-| 5,000 | 2 | 3680.4/3774.8 | 482.5/524.0 | 10 |
-| 5,000 | 4 | 6873.8/7201.6 | 869.9/893.9 | 20 |
+| 1000 | 1 | 5 | 290.0 / 328.2 | 102.0 / 104.4 |
+| 1000 | 2 | 10 | 442.2 / 484.3 | 127.0 / 175.8 |
+| 1000 | 4 | 20 | 859.6 / 867.8 | 190.5 / 230.6 |
+| 5000 | 1 | 5 | 1435.1 / 1477.3 | 201.2 / 210.6 |
+| 5000 | 2 | 10 | 2357.4 / 2390.6 | 251.3 / 298.2 |
+| 5000 | 4 | 20 | 4454.7 / 4646.3 | 462.4 / 487.0 |
 
-All 140 measured capacity requests succeed; 56 warmups are excluded. All six p95 gates pass. Pool eight applies to the application pool. Correlated bursts are labeled. Monitor maxima: five application connections, four active, four idle in transaction, zero waiting on locks, excluding the monitor. These are HTTP durations, not whole-navigation capacity or production guarantees.
+## Data-transfer and observation limits
 
-## Sampling, errors and exclusions
+The initial directory returns/renders at most 100 canonical full applications. Global metadata and explicit complete selection remain O(N). At 1000/5000 the bounded workflow needs fresh global search/reset and complete-selection reads; their cost remains in the full journey. At 100 applicants the guarded count stays ten.
 
-Local completed: 560 measured browser outcomes plus 160 excluded warmups. Completed constrained cohorts 1/100/1,000: 460 measured outcomes plus 120 warmups, each cohort on its own VM. All included outcomes have zero useful-content, HTTP and page failures. One-applicant primary n30/build/path/condition; others n10. Strict n10/build/cohort. n10 p95 is the maximum, not a production-tail guarantee.
+Route/prefetch cancellations are retained separately from HTTP/page/useful-content failures. Unknown total byte sizes remain null; known partial bytes and missing counts are separate. Do not turn partial byte observations into a total-transfer reduction. Every raw outcome retains its requests and available Server-Timing spans; overlapping spans must not be summed as disjoint phases.
 
-| Profile/collector/build | Outcomes | requestfailed events | Pending at capture | Unknown body sizes |
-|---|---:|---:|---:|---:|
-| local/navigation/B | 240 | 82 | 3 | 6 |
-| local/navigation/D | 240 | 92 | 0 | 0 |
-| local/full-review/B | 40 | 64 | 0 | 74 |
-| local/full-review/D | 40 | 84 | 0 | 84 |
-| constrained/navigation/B | 200 | 0 | 0 | 0 |
-| constrained/navigation/D | 200 | 2 | 0 | 0 |
-| constrained/full-review/B | 30 | 23 | 0 | 33 |
-| constrained/full-review/D | 30 | 21 | 0 | 21 |
+These are instrumented CI/Chromium/CDP comparisons, including actionability and observer overhead. They do not establish production latency or isolate app CPU. Separate latency distributions for every filter/paging/history operation are unavailable; those paths have independent functional coverage.
 
-requestfailed events may include abandoned prefetch/navigation; workflow transport causes are not individually classified. Native abort/pending classifications are unavailable separately. Complete byte totals and network completion are null when unobserved; known partial sums/missing counts remain separate. Server spans can overlap and must not be added.
+All prior rejected sources, unsuccessful attempts and whole-unit exclusions remain separate under revision-1/, revision-2/attempt-1/ and their original raw directories. None is pooled here.
 
-The first constrained all-cohort attempt hit its 180-minute overall limit. The separate 5,000 repeat hit its 315-minute collection-step limit in final main full-review; first main full-review also had observer failures. **Both whole incomplete units are excluded, including all primary and repaired successes.** No numeric 5,000 constrained comparison or 90% gate is claimed. ZIP hashes and unmodified raw files are retained. No further performance run is launched for this candidate.
+## Frozen gates
 
-All historical B/C context, Mac screening/sleep/power/source interruptions, first CI source mismatch, preflight failures and superseded preparation/partial-source attempts remain separately preserved. The historical first sleep-invalid supplement stays wholly excluded. No old successful row is restored.
-
-The frozen numeric gate tally is 26 PASS, 6 FAIL, 2 MISSING. These are mechanical recorded-data outcomes; observer clearance is additionally false. Recommendation: accept dock independently; reject this pipeline candidate for release.
-
-Fixtures have three answers/two submitted evaluations per application, two rounds and 61 active members, with repeated shared-profile enrichment. Booking/ballot history and large real essays are absent. Canonical full detail is bounded to 100; global metadata/ranking and explicit selection remain O(N). Production latency, pool/region experiments and the historic 4.2-second identity stall remain unmeasured/unattributed.
+| Gate | Status |
+|---|---|
+| one applicant detail local cold | PASS |
+| one applicant directory local cold | PASS |
+| one applicant detail local warm | PASS |
+| one applicant directory local warm | PASS |
+| one applicant complete review local | PASS |
+| one applicant continuous journey local | PASS |
+| 100 complete review local | PASS |
+| 100 continuous source-through-content local | PASS |
+| 100 votingCold local | PASS |
+| 100 votingWarm local | PASS |
+| one applicant guarded detail requests local cold | PASS |
+| one applicant guarded detail requests local warm | PASS |
+| 100 complete review guarded requests local | PASS |
+| one applicant detail constrained cold | PASS |
+| one applicant directory constrained cold | PASS |
+| one applicant detail constrained warm | PASS |
+| one applicant directory constrained warm | PASS |
+| one applicant complete review constrained | PASS |
+| one applicant continuous journey constrained | PASS |
+| 100 complete review constrained | PASS |
+| 100 continuous source-through-content constrained | PASS |
+| 100 votingCold constrained | PASS |
+| 100 votingWarm constrained | PASS |
+| one applicant guarded detail requests constrained cold | PASS |
+| one applicant guarded detail requests constrained warm | PASS |
+| 100 complete review guarded requests constrained | PASS |
+| 5000 constrained directory cold | PASS |
+| 5000 constrained directory warm | PASS |
+| capacity 1000 readers-1 | PASS |
+| capacity 1000 readers-2 | PASS |
+| capacity 1000 readers-4 | PASS |
+| capacity 5000 readers-1 | PASS |
+| capacity 5000 readers-2 | PASS |
+| capacity 5000 readers-4 | PASS |
