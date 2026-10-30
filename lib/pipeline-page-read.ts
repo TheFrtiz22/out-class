@@ -17,22 +17,28 @@ export function requiresCompleteReviewMetadata(query: PipelinePageQuery) {
 
 type Member = ClubAccess & { id: string; userId: string }
 type Rounds = ReturnType<typeof pagePipeline>["rounds"]
-export async function readPipelinePage(tx: AppTransactionClient, where: Prisma.ApplicationWhereInput,
-  member: Member, rounds: Rounds, query: PipelinePageQuery, scope: string,
-  hydrate: (ids: string[]) => Promise<ReturnType<typeof pipelineDetailProjection>[]>,
-  roundPrivacy: ReadonlyMap<string, boolean>) {
+/** The caller supplies all club rounds from this same guarded snapshot. */
+export async function readPipelineMetadata(tx: AppTransactionClient, where: Prisma.ApplicationWhereInput,
+  member: Member, query: PipelinePageQuery, roundPrivacy: ReadonlyMap<string, boolean>) {
   const completeReviews = requiresCompleteReviewMetadata(query)
   const metadata = completeReviews
     ? await tx.application.findMany({ where, select: pipelinePageReviewMetadataSelect })
     : (await tx.application.findMany({ where, select: pipelinePageMetadataSelect }))
       .map(app => ({ ...app, evaluations: [], interviewAssignments: [] }))
-  const ranked = metadata.map(app => {
+  return metadata.map(app => {
     // Reuse the club's round read from this same snapshot, including archived
     // rounds. An absent round must never make anonymous applicants identified.
     const anonymousReview = roundPrivacy.get(app.roundId)
     if (anonymousReview === undefined) throw new Error("Applicant round unavailable. Reload applicants.")
     return pipelineSummaryProjection({ ...app, round: { anonymousReview } }, member)
   })
+}
+
+export async function readPipelinePage(tx: AppTransactionClient, where: Prisma.ApplicationWhereInput,
+  member: Member, rounds: Rounds, query: PipelinePageQuery, scope: string,
+  hydrate: (ids: string[]) => Promise<ReturnType<typeof pipelineDetailProjection>[]>,
+  roundPrivacy: ReadonlyMap<string, boolean>) {
+  const ranked = await readPipelineMetadata(tx, where, member, query, roundPrivacy)
   const page = pagePipeline({ rounds, genderCounts: null, applications: ranked }, query, member.id, member.userId, scope)
   const ids = page.applications.map(app => app.id)
   // The visible page is the unit of hydration. Reuse its canonical detail

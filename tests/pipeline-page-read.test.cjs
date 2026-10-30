@@ -2,6 +2,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict');
 const {load,uuid}=require('./helpers/voting-harness.cjs');
 const {readPipelinePage,pipelinePageMetadataSelect,pipelinePageReviewMetadataSelect,requiresCompleteReviewMetadata}=load('lib/pipeline-page-read.ts');
 const {pipelineSummaryProjection}=load('lib/pipeline-summary.ts'),{pagePipeline}=load('lib/pipeline-page.ts');
+const {completePipelineSelection}=load('lib/pipeline-page.ts'),{readPipelineSelection}=load('lib/pipeline-selection-read.ts');
 const round=uuid(700),anonymousRound=uuid(703),archivedRound=uuid(704),roundPrivacy=new Map([[round,false],[anonymousRound,true],[archivedRound,true]]),viewer=uuid(701),student=uuid(702),rounds=[{id:round,name:'Round',order:0,type:'APPLICATION_REVIEW',anonymousReview:false,genderVisible:false}];
 const member={id:viewer,userId:student,isOwner:true,status:'ACTIVE',interviewOffices:['PRESIDENT']};
 const raw=Array.from({length:251},(_,i)=>({id:uuid(1000+i),roundId:i%3===0?(i%2?anonymousRound:archivedRound):round,status:['SUBMITTED','INTERVIEWING','ACCEPTED','REJECTED','WAITLISTED'][i%5],studentId:i===0?student:uuid(2000+i),round:{anonymousReview:i%3===0},student:{email:`visible${i}@example.invalid`,studentProfile:i%7?{firstName:['Éva','李','Ann','ann','Zoe'][i%5],lastName:'Student '+i,major:i%2?'Math':'Physics',gradYear:2027+i%9,transferStudent:!!(i%2),gpa:i%4?3.4:null,satScore:1300+i%200,actScore:30}:null},evaluations:[{interviewerId:uuid(800),roundId:round,score:8,submittedAt:new Date()}],interviewAssignments:[]}));
@@ -28,4 +29,13 @@ test('empty pages avoid relation reads and scope mismatches fail closed',async()
 
 test('missing round privacy fails closed before detail hydration',async()=>{
  await assert.rejects(()=>readPipelinePage(database(),{},member,rounds,{},'scope',()=>{throw Error('Must not hydrate unknown privacy')},new Map([[round,false]])),/Applicant round unavailable/);
+});
+
+test('complete selection shares snapshot round privacy and canonical global order without detail or round relations',async()=>{
+ for(const m of [member,{...member,isOwner:false,permissions:['applications.review']}])for(const q of [{},{query:'student'},{mode:'decisions',decisionGroup:'accepted'},{mode:'rejected'},{sort:'gpa'},{sort:'score'},{review:'mine'},{rating:0}]){
+  const tx=database(),expected=completePipelineSelection({rounds,genderCounts:null,applications:raw.map(a=>pipelineSummaryProjection(a,m))},q,m.id,m.userId);
+  assert.deepEqual(await readPipelineSelection(tx,{},m,q,rounds,roundPrivacy),expected);
+  assert.equal(tx.calls.length,1);assert.equal('round' in tx.calls[0].select,false);
+ }
+ await assert.rejects(()=>readPipelineSelection(database(),{},member,{},rounds,new Map([[round,false]])),/Applicant round unavailable/);
 });

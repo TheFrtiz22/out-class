@@ -52,7 +52,7 @@ export async function getClubPipelinePage(clubId: string, input: PipelinePageQue
 export async function getClubPipelineSelection(clubId: string, input: PipelinePageQuery = {}) {
   const query = pipelinePageQuery.omit({ cursor: true }).parse(input);
   const { pipeline } = await readPipeline(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: false },
-    (tx, where, membership, rounds) => readPipelineSelection(tx, where, membership, query, rounds));
+    (tx, where, membership, rounds, roundPrivacy) => readPipelineSelection(tx, where, membership, query, rounds, roundPrivacy));
   return pipeline.applications;
 }
 

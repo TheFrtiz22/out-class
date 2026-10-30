@@ -50,11 +50,12 @@ export async function getVotingWorkspace(clubId: string, sessionId?: string, sel
     const sessions = await tx.votingSession.findMany({where:{clubId,mode:{not:"LIVE"},...(!leadershipView?{participants:{some:{memberId:m.id}}}:{})},select:{id:true,state:true,currentPass:true,createdAt:true},orderBy:{createdAt:"desc"}})
     const eligible = hasPermission(m,"decisions.manage") ? (await tx.clubMember.findMany({where:{clubId,status:"ACTIVE"},include:{user:{select:{email:true}}}})).filter(v=>hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")) : []
     const joinedParticipants = hasPermission(m,"decisions.manage") && s ? await tx.clubMember.findMany({where:{clubId,id:{in:s.participants.map(p=>p.memberId)}},include:{user:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}}) : []
-    const rounds = await tx.pipelineRound.findMany({where:{clubId,archivedAt:null},orderBy:{order:"asc"}})
+    const allRounds = await tx.pipelineRound.findMany({where:{clubId},orderBy:{order:"asc"}})
+    const rounds = allRounds.filter(round => round.archivedAt == null)
     // Setup's canonical candidate IDs belong to this voting snapshot, not a
     // separate pipeline read before it. Session/ballot reads and post-snapshot
     // live authority remain unchanged.
-    const candidateSelection = await readVotingCandidateSelection(tx, clubId, m, rounds, query);
+    const candidateSelection = await readVotingCandidateSelection(tx, clubId, m, rounds, query, new Map(allRounds.map(round => [round.id, round.anonymousReview])));
     return { candidateSelection, sessions, joinedParticipants:joinedParticipants.map(v=>({id:v.id,label:v.user.studentProfile ? `${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}` : "Club member", joinedAt:s!.participants.find(p=>p.memberId===v.id)?.joinedAt??null})), session:s, summary:s ? summarizeVoting(s):null, memberId:m.id, canManage:hasPermission(m,"decisions.manage"), canStart:hasPermission(m,"decisions.start"), canReopen:hasPermission(m,"decisions.reopen"), canFinish:hasPermission(m,"decisions.finish"), canPublish:hasPermission(m,"decisions.publish")&&hasPermission(m,"applicants.identify"), canVote:hasPermission(m,"decisions.vote") && !!s?.participants.some(p=>p.memberId===m.id), eligible:eligible.map(v=>({id:v.id,label:v.user.email})), rounds:rounds.map(r=>({id:r.id,name:r.name})), academicYears: s ? (await tx.application.findMany({where:{id:{in:s.candidates.map(c=>c.applicationId)},clubId},select:{id:true,student:{select:{studentProfile:{select:{gradYear:true,transferStudent:true}}}}}})).map(a => ({ id:a.id, academicYear:a.student.studentProfile ? academicYear(a.student.studentProfile) : "Year unavailable" })):[] }
   },{isolationLevel:"RepeatableRead"})
   // Revalidate after releasing the snapshot: suspension, account disablement,
