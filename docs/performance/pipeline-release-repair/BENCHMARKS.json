@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-30T15:26:27.965Z",
+  "generatedAt": "2026-10-30T15:29:58.219Z",
   "latestMain": "bc22b0a30b98cbfab785ea3da5215a9351b76109",
   "measuredMain": "6e793dea0bd45052fa444749b26d432ae93392cd",
   "latestMainIsMeasured": false,
@@ -90333,6 +90333,12 @@
   ],
   "functionalClearance": true,
   "performanceClearance": false,
+  "functionalClearanceScope": "Only included benchmark collector outcomes; independent scenario verification is separate.",
+  "gatedScenarioCounts": {
+    "covered_by_separate_passing_integration": 51,
+    "failed_in_separate_integration": 1
+  },
+  "independentFunctionalQAClearance": false,
   "strictReviewObserverClearance": false,
   "strictReviewObserverEvidence": "OBSERVER_QA.json: measured collector omitted characterData; all recorded values/statuses retained without subtraction or removal. No new performance run is launched for the independently failed candidate.",
   "productionReady": false

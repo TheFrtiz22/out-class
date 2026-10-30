@@ -4,7 +4,7 @@
   "branchIncorporatesFinalRemoteMain": false,
   "measuredApplicationCommit": "4d52103e0ca70086c8ff4f3e913a7bd11f377005",
   "applicationDigest": "99077a7ff37acb0b67cb919c4ec4b1b95bc0401750472cc65f26b3aaeb029be1",
-  "sourceHeadBeforeEvidenceCommit": "90d34a4882e8ffc9f1ecde34af3a085eb3bbc537",
+  "sourceHeadBeforeEvidenceCommit": "fc0782ef18690a7519ed2b42f59f00050149147d",
   "note": "Exact paths changed against measured main 6e793dea (final remote main bc22 is separately inspected and unmeasured), including retained unsuccessful raw attempts. Self hashes are avoided: this manifest lists itself and the seal; the seal hashes this manifest and all other listed files except itself. Credentials/runtime configuration are not included.",
   "files": [
     {

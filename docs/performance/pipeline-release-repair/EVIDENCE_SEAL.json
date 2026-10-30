@@ -1,5 +1,5 @@
 {
-  "sealedAt": "2026-10-30T15:28:51.435Z",
+  "sealedAt": "2026-10-30T15:29:58.769Z",
   "algorithm": "SHA-256",
   "base": "6e793dea0bd45052fa444749b26d432ae93392cd",
   "finalRemoteMain": "bc22b0a30b98cbfab785ea3da5215a9351b76109",
@@ -9,7 +9,7 @@
   "applicationSourceFilesVerified": 963,
   "performanceClearance": false,
   "productionReady": false,
-  "entryListDigest": "0fdc825fed1f6f33ebe4e7ee703621c41084e1f5082ad57ab20a3e9cefcb201c",
+  "entryListDigest": "88dcb5f052cc34f5238f2dec267198aec5d5f7703df1971386fa6da993deebf2",
   "scope": "Every changed file against base, including application/tooling/tests and all retained raw evidence. Excludes this self-referential seal only. Historical evidence read from other commits is referenced by hash in SOURCE_BASELINE.json and BENCHMARKS.json.",
   "entries": [
     {
@@ -79,8 +79,8 @@
     },
     {
       "path": "docs/performance/pipeline-release-repair/BENCHMARKS.json",
-      "bytes": 5401981,
-      "sha256": "db2d6ec0a2c0c25d814e932c6d3ad5318cf2a58e12086529d4f1043dd50185a4"
+      "bytes": 5402273,
+      "sha256": "24de5fd35afbfefef21bd3404a8f70d52e706cf5acce9380e140ce0dc9d736df"
     },
     {
       "path": "docs/performance/pipeline-release-repair/CANCELLED_CI_PREPARATIONS.json",
@@ -90,7 +90,7 @@
     {
       "path": "docs/performance/pipeline-release-repair/CHANGED_FILES.json",
       "bytes": 181332,
-      "sha256": "c92f2c14220c135d06530bfca5213115bdcc16b2398ae8252ff33dc7dc5ea6f0"
+      "sha256": "a98f7939c27060bc7fbcb43f94cc7aa717b858a04f828abbb8c5e90c459b052d"
     },
     {
       "path": "docs/performance/pipeline-release-repair/CHATGPT_HANDOFF.md",
@@ -5224,8 +5224,8 @@
     },
     {
       "path": "scripts/summarize-pipeline-release-repair.cjs",
-      "bytes": 19166,
-      "sha256": "38184f92fbffce62624d6ddf2978e14477a2f081dac17c516dabd4a99b3a3962"
+      "bytes": 19501,
+      "sha256": "7ab1b0a7eae3dc60922b7fa5f326bcc16cd6c9eb55697e93df90e768f1d3e099"
     },
     {
       "path": "tests/club-workspace-refinements-browser.test.cjs",
