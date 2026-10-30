@@ -1,5 +1,19 @@
 # Live voting room - Parts 1-3 handoff
 
+## Current decision-transition checkpoint - October 30, 2026
+
+PR #101 merged as `bc22b0a30b98cbfab785ea3da5215a9351b76109`; deployment `dpl_CqZ4LAPX1HmPrVV7iDtXDyVQMseu` is Ready/Production and serves www.out-class.net. All 12 required checks passed on reviewed head `6203b95a`. Migration `20261029190000_voting_guarded_undo` is applied, with all 61 ledger entries/checksums verified and original function ownership retained. Fresh encrypted production snapshot restored all 80 public tables with matching row counts/content digests; the exact guard migration was rehearsed on that restore. Prior 60 migration records were unchanged. No maintenance, credential rotation or unrelated migration occurred.
+
+Live Chrome QA owner and an independently authenticated QA one HTTP voter confirmed current labels, explicit opening/closure, private member choice and visible pending feedback. Pass committed exactly one combined decision/advance audit and selected the second applicant. The browser exposed a queued-refresh UI gap: an existing polling read made refresh() return early, so the outgoing decision buttons briefly re-enabled after acknowledgement before authoritative snapshot delivery. Server applicant/pass/revision guards prevented duplicate decisions or skips.
+
+Live DOM geometry also confirmed the header and applicant-stage height were stable, but a duplicate closed-total panel above leader controls disappeared on advance, moving those controls by 82.6 CSS pixels. The follow-up removes that duplicate for leaders; closed totals remain in their confirmation controls and in member/audience views. The regression compares header, stage height and leader-control document positions before/after.
+
+The scoped follow-up keeps controls locked to the server-acknowledged revision until that snapshot arrives, then retains the applicant transition lock. Its deterministic real-component browser regression holds a stale polling response across command acknowledgement. It fails against the original production component at the disabled outgoing-action assertion and passes with the fix. Type checking and changed-file lint pass. No new migration or backend change is needed. Protected checks and follow-up deployment remain pending; do not call the complete production transition verified yet.
+
+Browser limitations: Chrome control recovered after a reconnect; in-app control returns `browser.user is unavailable`. Current Chrome leader/member/audience pages share QA owner authentication. The separate QA one voter uses actual hosted Auth/HTTP, not a second independently authenticated browser. Preserve this distinction. Native/local two-context coverage remains valid.
+
+Private checkpoint/evidence: `C:\Users\arden\AppData\Local\OutClass-staging-verification\voting-transition-release-20261030`. Partial live room `6a7644a3-e096-43ec-ac2a-926370c6285d` remains Open, pass 1, second applicant pending after one Pass. Applications, reviews and original grants are unchanged; notifications/outbox remain zero. Finish the follow-up, explicitly end that partial synthetic meeting, then use a fresh session with the same existing synthetic applicants for the final browser run. Earlier release/implementation entries below are historical evidence.
+
 ## Decision transition update - October 29, 2026 (implementation and release in progress)
 
 - [x] Live and isolated Demo use Pass / Hold / Do not pass labels without changing stored ballot values.
