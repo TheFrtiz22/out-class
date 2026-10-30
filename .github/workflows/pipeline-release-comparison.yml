@@ -1,14 +1,12 @@
 name: Pipeline release comparison
 
 # Isolated localhost Auth/PostgreSQL and production builds; no repository secrets.
-# Evidence commits do not restart the comparison. Both builds run sequentially
+# Apply run-performance-comparison to the PR to opt in; documentation pushes
+# do not restart expensive measurements. Both builds run sequentially
 # on the same VM. Profiles use separate VMs and distributions.
 on:
   pull_request:
-    paths:
-      - ".github/workflows/pipeline-release-comparison.yml"
-      - "scripts/pipeline-release-ci-*.cjs"
-      - "scripts/pipeline-release-full-review.cjs"
+    types: [labeled]
   workflow_dispatch:
 
 permissions:
@@ -16,10 +14,11 @@ permissions:
 
 concurrency:
   group: pipeline-release-comparison-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   compare:
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'run-performance-comparison'
     name: Current main versus repair / ${{ matrix.profile }}
     runs-on: ubuntu-latest
     timeout-minutes: 180

@@ -123,3 +123,13 @@ owner fencing and voting writes remain unchanged. Regression tests cover the
 one-read initial path, omitted polling query, concealed stale eligibility and
 fresh reopen. The changed candidate requires its own complete comparison;
 superseded measurements, if any, are preserved separately.
+
+
+After application/source freeze at `4d52103e`, the existing real dashboard and
+application-writing suites are added as separate disposable CI jobs. They do
+not run on either measurement VM or mutate its fixture. These CI-only changes
+do not alter the measured application digest. Benchmark triggers become an
+explicit PR label (`run-performance-comparison`) or workflow dispatch, so
+documentary/evidence commits do not recollect identical inputs. Existing
+collections are not cancelled by those later commits. Sampling, source/served
+checks, profiles, warmups and frozen acceptance tolerances are unchanged.
