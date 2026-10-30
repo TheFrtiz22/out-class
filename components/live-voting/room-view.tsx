@@ -6,11 +6,12 @@ import { useAuth } from "@/contexts/auth-context";
 import { useDemoMode } from "@/contexts/demo-context";
 import { useLiveVotingRoom } from "@/hooks/use-live-voting-room";
 import { castLiveVotingBallot,commandLiveVotingRoom,getLiveVotingJoinInfo,joinLiveVotingRoom } from "@/lib/voting-room-api";
-import { liveRoomPath,roomBallotSchema } from "@/lib/voting-room";
+import { liveRoomPath,roomBallotSchema,outcomeLabels } from "@/lib/voting-room";
 import { z } from "zod";
 import { QrCodeCard } from "@/components/qr/qr-code-card";
 import { Button } from "@/components/ui/button";
 import { Dialog,DialogContent,DialogTitle } from "@/components/ui/dialog";
+import { ApplicantTransition } from "./applicant-transition";
 import { RoomPresentation } from "./room-presentation";
 import {LeaderControls,OutcomeCounts} from "./room-meeting";
 import "./room.css";
@@ -41,6 +42,7 @@ function MemberJoin(props:RoomProps){
 }
 export function VotingRoom(props:RoomProps){
  const {clubId,sessionId,view,demoScoped,identity,member}=props,{room,error,refresh}=useLiveVotingRoom(clubId,sessionId,identity,member),[qr,setQr]=useState(false),[preview,setPreview]=useState(""),[voteError,setVoteError]=useState(""),[voteBusy,setVoteBusy]=useState(false),[attempt,setAttempt]=useState<Ballot|null>(null),[ack,setAck]=useState<{key:string;choice:string;revision:number}|null>(null);
+ const [readyApplicant,setReadyApplicant]=useState<string|null>(null);
  const voteLock=useRef(false),pendingVote=useRef<Ballot|null>(null),qrButton=useRef<HTMLButtonElement>(null);
  const pass=room?.history.find(p=>p.number===room?.passNumber),entry=pass?.candidates.find(c=>c.applicationId===room?.currentApplicantId),key=`${room?.passNumber}:${room?.currentApplicantId}`;
  async function vote(choice?:Ballot["choice"]){
@@ -59,12 +61,12 @@ export function VotingRoom(props:RoomProps){
  <OutcomeCounts room={room}/>
  {room.status==="DRAFT"&&<section aria-label="Waiting room"><h2>Ready when your leader is</h2><p>Voting has not started.</p>{view!=="member"&&qrCard}</section>}
  {view==="leader"&&room.status==="DRAFT"&&<label className="block my-4">Preview applicant<select className="rounded border p-2 ml-2" aria-label="Preview applicant" value={appId??""} onChange={e=>setPreview(e.target.value)}>{room.outcomes.map((a,i)=><option key={a.applicationId} value={a.applicationId}>Applicant {i+1}</option>)}</select></label>}
- {appId&&<RoomPresentation clubId={clubId} sessionId={sessionId} applicationId={appId} identity={`${identity}:${room.accessVersion}`} refreshKey={0} member={member}/>}
+ <ApplicantTransition key={`${identity}:${room.accessVersion}`} applicantId={appId} passNumber={room.passNumber} onReady={setReadyApplicant} summary={room.status!=="OPEN"&&room.status!=="DRAFT"}><RoomPresentation clubId={clubId} sessionId={sessionId} applicationId={appId??""} identity={`${identity}:${room.accessVersion}`} refreshKey={0} member={member}/></ApplicantTransition>
  {room.status==="PAUSED"&&<p role="status">Pass complete. Waiting for leadership.</p>}
  {room.status==="COMPLETED"&&<p role="status">Session ended. Unresolved applicants and saved votes are preserved. No applicant notifications were sent.</p>}
- {view==="member"&&<section className="vr-ballot"><p role="status" className="py-1">{voteBusy?`Saving ${attempt?.choice.toLowerCase()}…`:currentChoice?`Saved: ${currentChoice.toLowerCase()}`:"No vote saved"}</p>{voteError&&<div role="alert" className="vr-error">{voteError}{pendingVote.current?<Button variant="outline" disabled={voteBusy} onClick={()=>void vote()}>Retry vote</Button>:<Button variant="outline" onClick={()=>void refresh()}>Refresh voting state</Button>}</div>}<div className="vr-votes" aria-label="Your ballot">{(["ACCEPT","HOLD","REJECT"] as const).map(c=><Button key={c} variant={currentChoice===c?"default":"outline"} aria-pressed={currentChoice===c} disabled={voteBusy||!!pendingVote.current||!room.permissions.voter||entry?.ballotState!=="OPEN"||room.status!=="OPEN"} onClick={()=>void vote(c)}>{c==="ACCEPT"?"Accept":c==="HOLD"?"Hold":"Reject"}</Button>)}</div></section>}
- {entry&&"totals"in entry&&entry.totals&&<section aria-label="Closed ballot totals" className="py-4"><h2>Closed voting</h2><p>Accept {entry.totals.ACCEPT} · Hold {entry.totals.HOLD} · Reject {entry.totals.REJECT}</p></section>}
- {view==="leader"&&<LeaderControls room={room} refresh={refresh} member={member}/>}
+ {view==="member"&&<section className="vr-ballot"><p role="status" className="py-1">{voteBusy?`Saving ${attempt?.choice?outcomeLabels[attempt.choice]:"vote"}…`:currentChoice?`Saved: ${outcomeLabels[currentChoice as keyof typeof outcomeLabels].toLowerCase()}`:"No vote saved"}</p>{voteError&&<div role="alert" className="vr-error">{voteError}{pendingVote.current?<Button variant="outline" disabled={voteBusy} onClick={()=>void vote()}>Retry vote</Button>:<Button variant="outline" onClick={()=>void refresh()}>Refresh voting state</Button>}</div>}<div className="vr-votes" aria-label="Your ballot">{(["ACCEPT","HOLD","REJECT"] as const).map(c=><Button key={c} variant={currentChoice===c?"default":"outline"} aria-pressed={currentChoice===c} disabled={readyApplicant!==`${room.passNumber}:${appId}`||voteBusy||!!pendingVote.current||!room.permissions.voter||entry?.ballotState!=="OPEN"||room.status!=="OPEN"} onClick={()=>void vote(c)}>{outcomeLabels[c]}</Button>)}</div></section>}
+ {entry&&"totals"in entry&&entry.totals&&<section aria-label="Closed ballot totals" className="py-4"><h2>Closed voting</h2><p>Pass {entry.totals.ACCEPT} · Hold {entry.totals.HOLD} · Do not pass {entry.totals.REJECT}</p></section>}
+ {view==="leader"&&<LeaderControls room={room} refresh={refresh} member={member} transitioning={!!appId&&readyApplicant!==`${room.passNumber}:${appId}`}/>}
  <p className="sr-only" role="status">{entry?`Applicant ${entry.position+1} of ${pass?.candidates.length}. ${entry.ballotState==="OPEN"?"Voting open":"Voting closed or waiting"}.`:"Waiting for the leader."}</p>
  <Dialog open={qr} onOpenChange={setQr}><DialogContent onCloseAutoFocus={e=>{e.preventDefault();qrButton.current?.focus();}} aria-describedby={undefined} className="max-h-[90dvh] overflow-y-auto"><DialogTitle>Join live voting</DialogTitle>{qrCard}</DialogContent></Dialog>
  </main>;

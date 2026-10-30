@@ -19,7 +19,8 @@ export const createRoomSchema = roomScope.extend({
   presentationOptions:roomPresentationSchema.optional(),
 });
 export const roomCommandSchema = roomScope.extend({ requestId: z.string().uuid(), revision: z.number().int().nonnegative(),
-  action: z.enum(["START", "OPEN_VOTING", "CLOSE_VOTING", "CONFIRM", "ACCEPT_WITHOUT_VOTE", "ADVANCE", "NEXT_PASS", "END", "FINALIZE", "CORRECT"]),
+  action: z.enum(["START", "OPEN_VOTING", "CLOSE_VOTING", "CONFIRM", "ACCEPT_WITHOUT_VOTE", "ADVANCE", "NEXT_PASS", "END", "FINALIZE", "CORRECT", "DECIDE_AND_ADVANCE", "PASS_WITHOUT_VOTE_AND_ADVANCE", "UNDO_DECISION"]),
+  undoRequestId: z.string().uuid().optional(),
   confirmed: z.boolean().optional(),
   applicationId: z.string().uuid().optional(), passNumber: z.number().int().positive().optional(),
   choice: roomChoice.optional(), reason: z.string().trim().min(1).max(1000).optional(),
@@ -48,3 +49,8 @@ export const finalizationMapping=z.discriminatedUnion("kind",[
 ]);
 export const finalizationPreviewInput=roomScope.extend({mapping:finalizationMapping});
 export const finalizeRoomInput=finalizationPreviewInput.extend({requestId:z.string().uuid(),revision:z.number().int().nonnegative(),guard:z.string().regex(/^[a-f0-9]{64}$/),confirmed:z.literal(true)});
+
+export const outcomeLabels={ACCEPT:"Pass",HOLD:"Hold",REJECT:"Do not pass",UNREVIEWED:"Unreviewed"} as const;
+export const savedOutcomeLabels={ACCEPT:"Passed",HOLD:"Held",REJECT:"Not passed"} as const;
+export const decisionReceiptSchema=z.object({requestId:z.string().uuid(),applicationId:z.string().uuid(),passNumber:z.number().int().positive(),choice:roomChoice,nextApplicationId:z.string().uuid().nullable(),withoutVote:z.boolean()}).strict();
+export const roomCommandResultSchema=z.object({revision:z.number().int().nonnegative(),decision:decisionReceiptSchema.optional(),undone:z.boolean().optional()}).strict();
