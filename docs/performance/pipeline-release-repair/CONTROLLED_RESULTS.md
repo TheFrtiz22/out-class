@@ -56,7 +56,7 @@ Pool limit eight applies to the application connection pool. Correlated burst sa
 
 ## Evidence and limits
 
-Local: 560 measured browser outcomes, 160 excluded browser warmups, zero functional/HTTP/page failures. All local latency/request gates and all six capacity gates pass. The constrained comparison remains pending. The fixed tolerances were declared in ACCEPTANCE.md before candidate results; no limit changed. Thirty samples/build/path/condition at one applicant, ten elsewhere; n10 p95 is the maximum and is not a statistically reliable production p95.
+Local: 560 measured browser outcomes, 160 excluded browser warmups, zero functional/HTTP/page failures. All local latency/request gates and all six capacity gates pass. The constrained whole attempt timed out and is excluded, including successful rows. A new complete-cohort repeat remains pending (FULL_REVIEW_PLAN.md). The fixed tolerances were declared in ACCEPTANCE.md before candidate results; no limit changed. Thirty samples/build/path/condition at one applicant, ten elsewhere; n10 p95 is the maximum and is not a statistically reliable production p95.
 
 Full-workflow encoded totals remain null where response sizes are missing. Known partial byte sums and unknown counts are retained separately. Requestfailed events are counted as aborts without inventing transport-cause classifications; native abort/pending classification is unavailable. Server-Timing spans can overlap and must not be summed.
 

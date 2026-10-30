@@ -133,3 +133,39 @@ explicit PR label (`run-performance-comparison`) or workflow dispatch, so
 documentary/evidence commits do not recollect identical inputs. Existing
 collections are not cancelled by those later commits. Sampling, source/served
 checks, profiles, warmups and frozen acceptance tolerances are unchanged.
+
+
+## Whole-cohort constrained repeat (declared before its measurements)
+
+Run 40974037305's constrained job reached its original 180-minute overall limit
+in the final main/5,000 block. Its partial artifact is retained and excluded in
+its entirety, including all completed smaller cohorts and repaired outcomes.
+Before cancellation, main/5,000 primary and strict-review entry exceeded the
+collector's 30-second observer wait despite successful pipeline HTTP 200s. This
+is a recorded failed observation, not a numeric baseline latency; do not replace
+it with its lower bound or treat it as a passing comparison. No new constrained
+D distribution is accepted from that attempt. The independent complete local
+and capacity attempts remain valid.
+
+The unchanged larger-job-budget repeat 40992655672 was superseded during
+preparation, before timing, because it would repeat that same observer limit.
+A fresh constrained repeat assigns each of 1/100/1,000/5,000 to its own isolated
+VM. Each VM still compares BOTH exact builds sequentially in complete BAAB
+blocks with the original per-cohort sample counts and excluded warmups. No
+within-cohort distribution combines hosts or attempts. Each cohort must finish
+its four blocks, final source/tool checks and wall/monotonic audit; missing or
+failed cohorts leave their original gates uncleared. The four cohort jobs may
+run in parallel on distinct VMs. Local/capacity are not recollected.
+
+Both B and D receive the SAME bounded 180-second observer/action wait in this
+new repeat, including source preparation. Content predicates, two animation
+frames, independent review/attendance readiness, real unforced controls,
+network/CPU profile, fixture preparation, sample counts and release latency/
+request/error thresholds are unchanged. The old 30-second timeouts remain
+failures in their original raw attempt. The longer observer budget is not an
+acceptable user-latency SLO or a relaxed relative release gate; it permits a
+completed numeric control measurement rather than censoring slow main views.
+No observer work is removed, deferred, subtracted or replaced. Each job allows
+360 minutes overall and a 315-minute study step, preserving cleanup/upload time.
+Whole assigned cohorts—not successful rows from old attempts—are the new
+analysis units. Application digest remains 99077a7ff37acb0b67cb919c4ec4b1b95bc0401750472cc65f26b3aaeb029be1.

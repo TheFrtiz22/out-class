@@ -1,0 +1,12 @@
+RECORDED FAILURE recruiting → applicants cold 1/5 measured
+RECORDED FAILURE recruiting → applicants cold 2/5 measured
+RECORDED FAILURE recruiting → applicants cold 3/5 measured
+RECORDED FAILURE recruiting → applicants cold 4/5 measured
+RECORDED FAILURE recruiting → applicants cold 5/5 measured
+RECORDED FAILURE recruiting → applicants warm 1/5 warm target
+RECORDED FAILURE recruiting → applicants warm 2/5 warm target
+RECORDED FAILURE recruiting → applicants warm 3/5 warm target
+RECORDED FAILURE recruiting → applicants warm 4/5 warm target
+RECORDED FAILURE recruiting → applicants warm 5/5 warm target
+RECORDED FAILURE applicants → applicantDetail cold 1/5 source
+RECORDED FAILURE applicants → applicantDetail cold 2/5 source

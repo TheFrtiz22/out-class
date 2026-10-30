@@ -89,3 +89,11 @@ These lifecycle safeguards change no application source, workload, warmups,
 sampling, served-build checks or acceptance thresholds. Do not launch a repeat
 unless the prior profile is incomplete/invalid or a new unresolved concern
 justifies it; preserve and exclude a whole incomplete attempt.
+
+
+The constrained-only label now partitions all four cohorts onto separate VMs;
+each uses the same source/fixture generation and complete within-VM BAAB pair.
+Commands pass `--cohort=1|100|1000|5000` and `--readiness-timeout-ms=180000` to
+both builds' collectors. The no-cohort/default-all study retains its original
+30-second observer wait. See FULL_REVIEW_PLAN.md for the predeclared reason,
+whole-attempt exclusions, unchanged milestones and acceptance limits.

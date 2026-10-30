@@ -81,6 +81,16 @@
       "url": "https://github.com/TheFrtiz22/out-class/actions/runs/40974037305/artifacts/12945949521",
       "createdAt": "2026-10-30T01:25:33Z",
       "disposition": "Complete served-build/source/tool/clock-attested comparison. ZIP digest verified before safe extraction; raw contents unchanged. All 560 measured browser outcomes and 140 capacity requests retained separately from 160 and 56 warmups."
+    },
+    {
+      "artifactId": 12949513820,
+      "runId": 40974037305,
+      "profile": "constrained",
+      "attempt": 1,
+      "zipSha256": "a74cf1ecf6528e0f8181b97ec89365623edc8783cc9d7b927ba1779ab2af247d",
+      "createdAt": "2026-10-30T02:35:39Z",
+      "url": "https://github.com/TheFrtiz22/out-class/actions/runs/40974037305/artifacts/12949513820",
+      "disposition": "Original 180-minute job deadline cancelled final baseline block. All partial outcomes excluded, including completed smaller cohorts and candidate successes. Baseline 5000 had observer timeout failures before job cancellation. Owned-process cleanup also failed after cancellation; ephemeral runner teardown is platform-owned. Artifact uploaded successfully, ZIP digest verified and raw bytes safely extracted unchanged."
     }
   ]
 }

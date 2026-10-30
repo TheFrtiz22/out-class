@@ -34,7 +34,7 @@ async function main(){
  const actor=new Actor(config);await actor.signIn(fixture.email,fixture.password);
  const browser=await chromium.launch({headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage(),requests=[],errors=[],pending=new Set(),samples=[];
  page.on('dialog',dialog=>dialog.accept());
- page.setDefaultTimeout(30000);const cdp=await context.newCDPSession(page);
+ const readinessTimeoutMs=Number(process.argv.find(a=>a.startsWith('--readiness-timeout-ms='))?.split('=')[1]||30000);assert.ok(Number.isInteger(readinessTimeoutMs)&&readinessTimeoutMs>=30000&&readinessTimeoutMs<=180000);page.setDefaultTimeout(readinessTimeoutMs);const cdp=await context.newCDPSession(page);
  if(process.argv.includes('--constrained-network')){await cdp.send('Network.enable');await cdp.send('Network.emulateNetworkConditions',{offline:false,latency:80,downloadThroughput:200000,uploadThroughput:93750,connectionType:'cellular4g'});await cdp.send('Emulation.setCPUThrottlingRate',{rate:4});}
  page.on('pageerror',e=>errors.push(e.name));
  page.on('request',request=>{requests.push({request,route:safeRoute(request.url()),type:request.resourceType(),start:performance.timeOrigin+performance.now(),end:null,status:null,bytes:null});if(request.resourceType()!=='eventsource')pending.add(request)});
@@ -71,7 +71,7 @@ async function main(){
   const httpErrors=rows.filter(r=>r.status>=400).length,pageErrors=errors.slice(errorOffset);if(httpErrors||pageErrors.length){failed||='transport_or_page_error';process.exitCode=1;}
   samples.push({index,warmup:index<warmups,condition:'fresh_source_warm_assets_after_warmups',failed,failedAt:failed?failedAt:null,source,stages,sourceThroughContentMs:journeyEnd===null?null:journeyEnd-(performance.timeOrigin+sourceStart),sourceThroughNetworkMs:performance.now()-sourceStart,meaningfulMs:journeyStart===null||journeyEnd===null?null:journeyEnd-journeyStart,networkCompleteMs:pending.size||journeyStart===null?null:performance.timeOrigin+performance.now()-journeyStart,requestCount:rows.length,encodedBodyBytes:unknown?null:rows.reduce((n,r)=>n+r.encodedBodyBytes,0),knownBodyBytes:rows.reduce((n,r)=>n+(r.encodedBodyBytes||0),0),unknownBodyByteCount:unknown,httpErrors,pageErrors,aborted:rows.filter(r=>r.failed).length,pending:rows.filter(r=>r.endMs===null&&r.type!=='eventsource').length,requests:rows});
   console.log('workflow '+size+' '+(index+1)+'/'+(n+warmups)+' '+(failed||'complete'));
-  fs.mkdirSync(path.dirname(out),{recursive:true});fs.writeFileSync(out,JSON.stringify({size,baseline,expectedVisibleRows:visibleCount,predicate:'full answers, review information and attendance ready',buildId:fs.readFileSync(path.join(config.buildDir,'BUILD_ID'),'utf8').trim(),samples},null,2)+'\n');
+  fs.mkdirSync(path.dirname(out),{recursive:true});fs.writeFileSync(out,JSON.stringify({size,baseline,readinessTimeoutMs,expectedVisibleRows:visibleCount,predicate:'full answers, review information and attendance ready',buildId:fs.readFileSync(path.join(config.buildDir,'BUILD_ID'),'utf8').trim(),samples},null,2)+'\n');
  }}finally{await context.close();await browser.close();}
 }
 module.exports={installStage,safeRoute};

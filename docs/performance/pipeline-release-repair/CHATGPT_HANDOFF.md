@@ -125,7 +125,7 @@ coverage. A Storage startup failure was retained and its retry passed.
 
 All twelve latest-main hosted verification jobs pass for candidate 4d52103e.
 The CI-only 330ada23 commit also passes both standard workflows and the two additional real dashboard/writing jobs, with identical application source.
-The attested comparison is run 40974037305. Local collection completed with 560 measured browser outcomes, 160 excluded warmups, no functional/HTTP/page failures, and every local gate passing. Capacity completed with 140 measured requests and 56 excluded warmups, all successful and all six p95 gates passing. Constrained collection is still in progress. A focused local 24-case owner/coalescing/voting-board
+The attested comparison is run 40974037305. Local collection completed with 560 measured browser outcomes, 160 excluded warmups, no functional/HTTP/page failures, and every local gate passing. Capacity completed with 140 measured requests and 56 excluded warmups, all successful and all six p95 gates passing. The constrained job reached its 180-minute limit; its entire partial attempt is retained and excluded. The predeclared repeat assigns each complete paired cohort to its own VM and gives both builds the same 180-second observer wait, retaining original content predicates, samples and release thresholds. See FULL_REVIEW_PLAN.md. A focused local 24-case owner/coalescing/voting-board
 batch and three frozen-output/process provenance tests also pass. SECURITY_AND_FUNCTIONAL_QA.md and machine-readable QA
 manifests identify exact sources, commands, counters and log references.
 

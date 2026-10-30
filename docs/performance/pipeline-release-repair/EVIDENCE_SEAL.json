@@ -1,5 +1,5 @@
 {
-  "sealedAt": "2026-10-30T02:33:54.475Z",
+  "sealedAt": "2026-10-30T02:40:53.565Z",
   "algorithm": "SHA-256",
   "base": "6e793dea0bd45052fa444749b26d432ae93392cd",
   "measuredApplicationCommit": "4d52103e0ca70086c8ff4f3e913a7bd11f377005",
@@ -7,7 +7,7 @@
   "applicationSourceFilesVerified": 963,
   "performanceClearance": false,
   "productionReady": false,
-  "entryListDigest": "0912f832c7927536e7d473329d90a394c53fde48f80520860b2960a5e4aaf88b",
+  "entryListDigest": "43dc0c067779514cf4d509e5a394bf835ab485ca1d595d92cec2ed1c2b052802",
   "scope": "Every changed file against base, including application/tooling/tests and all retained raw evidence. Excludes this self-referential seal only. Historical evidence read from other commits is referenced by hash in SOURCE_BASELINE.json and BENCHMARKS.json.",
   "entries": [
     {
@@ -17,8 +17,8 @@
     },
     {
       "path": ".github/workflows/pipeline-release-comparison.yml",
-      "bytes": 4115,
-      "sha256": "ebe7661b82a8e26fe5c1678804b16d7837b40a3407ab59ad4d03ed9eab3573f0"
+      "bytes": 4434,
+      "sha256": "7155323bb1ce610da2e2ab65e00605f36cc3f89f5ae6c0f970e4e210a05f82c6"
     },
     {
       "path": "actions/crm.ts",
@@ -67,28 +67,28 @@
     },
     {
       "path": "docs/performance/pipeline-release-repair/ARCHIVES.json",
-      "bytes": 4732,
-      "sha256": "2c5dcc40ba6c815639b41357225ec805d907cc91103006a539a20892a51e2d8f"
+      "bytes": 5533,
+      "sha256": "8945212563ed5d7c9dfd0abf128bcc3d29ea511e2e104b8a6460c71918d432c5"
     },
     {
       "path": "docs/performance/pipeline-release-repair/BENCHMARKS.json",
-      "bytes": 3877953,
-      "sha256": "982bf9d749e18d76dea61a482661004ea39066450266e023ba69061628642eb0"
+      "bytes": 4139701,
+      "sha256": "bdb5ed6cf083e40d9f59470efcbe4deea780612bd06c210e24797890b52e9794"
     },
     {
       "path": "docs/performance/pipeline-release-repair/CANCELLED_CI_PREPARATIONS.json",
-      "bytes": 15796,
-      "sha256": "4e82deff4c19c30019a6e5fd194c8f9e2da9e6d422c8a22de890f1c14afa0217"
+      "bytes": 20101,
+      "sha256": "2547d1572839e503b2dac57ee0913bafad17cc384597913ec4e021b5f710720f"
     },
     {
       "path": "docs/performance/pipeline-release-repair/CHANGED_FILES.json",
-      "bytes": 131272,
-      "sha256": "7a9ba45ea3bca31a72e0f22598c6aae66ccd105b75170d3d9a36771dd476982c"
+      "bytes": 154414,
+      "sha256": "0cf9f81fc35ce6a88720cfeee7ea9e97063d750a7aec01fe68a76ff01aa41f54"
     },
     {
       "path": "docs/performance/pipeline-release-repair/CHATGPT_HANDOFF.md",
-      "bytes": 15257,
-      "sha256": "97285206b98e002b64de07a4146cc8a066d1cf09eb3d21874d8ecd6a375ab38b"
+      "bytes": 15541,
+      "sha256": "f0416fae0d0f995b2383c83bead645d0030818ae1fd62d202c832a8cbc7aaf7e"
     },
     {
       "path": "docs/performance/pipeline-release-repair/CLEANUP.json",
@@ -97,8 +97,8 @@
     },
     {
       "path": "docs/performance/pipeline-release-repair/CONTROLLED_RESULTS.md",
-      "bytes": 6944,
-      "sha256": "81c894ce1e95ac4446908b9b3f393761ab55def7b7ebaaedcedeaa4f2121b408"
+      "bytes": 7052,
+      "sha256": "853b8ba11434fd84efbac07a0e3bb85a0555442962a802e619446736f00ae552"
     },
     {
       "path": "docs/performance/pipeline-release-repair/DOCK_INTERACTION_REPORT.md",
@@ -112,8 +112,8 @@
     },
     {
       "path": "docs/performance/pipeline-release-repair/FULL_REVIEW_PLAN.md",
-      "bytes": 8565,
-      "sha256": "09e22e18f24c9ce2120ef996501ea9d7f5224a8e8cf734026a3315987cecafb1"
+      "bytes": 10950,
+      "sha256": "6348ad1b1581f60696dda14a12bdebecd6f56dd62ae38b93f9da1507e49d800b"
     },
     {
       "path": "docs/performance/pipeline-release-repair/GATED_COVERAGE.json",
@@ -157,13 +157,13 @@
     },
     {
       "path": "docs/performance/pipeline-release-repair/RELEASE_DECISION.md",
-      "bytes": 5369,
-      "sha256": "6230c6cd667c6dcd5cee89a0808d231d13c3ab290cf1f2cb9b1b24984ae500d4"
+      "bytes": 5543,
+      "sha256": "30c2fee3a26fdde8c471bbd8c5d9bc3bfc8d0ef33cb40c49c18852b9ad445578"
     },
     {
       "path": "docs/performance/pipeline-release-repair/REPRODUCTION.md",
-      "bytes": 5187,
-      "sha256": "c474ae0cf86b7a634dced5545133d227edc8ece1334e9aa7bf4e99a6d093a92d"
+      "bytes": 5651,
+      "sha256": "ae89172d4e2fab0968ed5576679e495990260ecb97f3c6afbe368b383b9e7ae5"
     },
     {
       "path": "docs/performance/pipeline-release-repair/ROOT_CAUSE.md",
@@ -894,6 +894,636 @@
       "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40972376658-1/size-1-block-1-B-warmup/collector.log",
       "bytes": 476,
       "sha256": "fcdc19c208e04fd46d71e4dbe4533e8e0311d7db453e6ed44c45c2ab87d59ce2"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/PROTOCOL.json",
+      "bytes": 248240,
+      "sha256": "e3df33deec6e76ce5b2d612b1786825ee5ad2257a479a0a6b2b4703c9fbdf734"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-1-B-full-review/collector.log",
+      "bytes": 168,
+      "sha256": "83eb1405bd1a3b5f91a80276655d54ec4e54c0c5c99dcd7831fe4568ef2bd43e"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-1-B-full-review/workflow.json",
+      "bytes": 240103,
+      "sha256": "d43edff81d7b6faa4809cc65cbead7389bcf5a737cb8a8e06017f9829f921d17"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-1-B-measure/browser-samples.json",
+      "bytes": 2005706,
+      "sha256": "db96529f56ede29170ab7aebb30c70b9ec79ffad7409bb9d2f61ace80a4a392b"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-1-B-measure/browser-summary.json",
+      "bytes": 4255,
+      "sha256": "a8b2e7af405c2ef5f77027ff167f7f009ddd4ae3994694b978d1d4ef72df6310"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-1-B-measure/collector.log",
+      "bytes": 3654,
+      "sha256": "ae9968cce961565c9d82ce16199c6bcc835b3f7154d3c579ea833a9c52e08f0c"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-1-B-warmup/browser-samples.json",
+      "bytes": 270512,
+      "sha256": "6d7e499d2d61c30d88aa9e0f2de7ce89be6178194b93da1f359bd60043142d1b"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-1-B-warmup/browser-summary.json",
+      "bytes": 4220,
+      "sha256": "6c6518829f199c4f0234269cb3a57ec7d6d7ba41bc7c99c46343b4271110f638"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-1-B-warmup/collector.log",
+      "bytes": 476,
+      "sha256": "0e9534ee4b9d41c0b584a409d551e0da9067003c5191803a16e86db35fab134c"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-2-D-full-review/collector.log",
+      "bytes": 168,
+      "sha256": "83eb1405bd1a3b5f91a80276655d54ec4e54c0c5c99dcd7831fe4568ef2bd43e"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-2-D-full-review/workflow.json",
+      "bytes": 240055,
+      "sha256": "7da2d254ccda8a6a03e75f4d08581a962be46388e1534f639dbfc4495b3d6d59"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-2-D-measure/browser-samples.json",
+      "bytes": 2009253,
+      "sha256": "b49f79e1eb80165596c47e3b2c6b36832d0cffe191e3e6b0e4134d01312fa383"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-2-D-measure/browser-summary.json",
+      "bytes": 4257,
+      "sha256": "f5241ebea6fd3277f819c547689bd6e675fd3d6615038729201ac629ed3bae5f"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-2-D-measure/collector.log",
+      "bytes": 3654,
+      "sha256": "be0df6b6a8266ee23092d9dcfdba5e8c69a439b94e14ae7e93b3ca61eec25a0a"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-2-D-warmup/browser-samples.json",
+      "bytes": 270700,
+      "sha256": "6ea5f581f1467ac61a83db31ff6a26407a4def42daa25df3501e3a2c33debf20"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-2-D-warmup/browser-summary.json",
+      "bytes": 4212,
+      "sha256": "4231bb701b8c57ce54f1b49f46f9cb6d23fbb57a7686f3adb59a6c81d0b0c5ff"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-2-D-warmup/collector.log",
+      "bytes": 476,
+      "sha256": "032fd869cf3d12108eb063a1cb4ef69c391752398532e9edf26e21d0aaef104f"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-3-D-full-review/collector.log",
+      "bytes": 168,
+      "sha256": "83eb1405bd1a3b5f91a80276655d54ec4e54c0c5c99dcd7831fe4568ef2bd43e"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-3-D-full-review/workflow.json",
+      "bytes": 239734,
+      "sha256": "6bfdd11a99bcd763f012666145477f35c23e492f31b493430d5a255a999b3281"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-3-D-measure/browser-samples.json",
+      "bytes": 2009004,
+      "sha256": "65724a05c40b62fa9e2286becb070642e7dc22e84097827c71290c72e54ce052"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-3-D-measure/browser-summary.json",
+      "bytes": 4244,
+      "sha256": "acdf7228c3bca906c2416d810a00b272226c7f5a899fcd1aa268516503caf723"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-3-D-measure/collector.log",
+      "bytes": 3654,
+      "sha256": "f3a7a7b595298adf2ed7ae0e50beb4424ef0383e30785792f734c13a5d5fb556"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-3-D-warmup/browser-samples.json",
+      "bytes": 269544,
+      "sha256": "6056e53c47f1ca46caf81896307ba83d8c1440cdc4acc4064e2648dbc1609d0a"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-3-D-warmup/browser-summary.json",
+      "bytes": 4213,
+      "sha256": "99f0072a4c4e5e4f0bb40cffdc7a4b37b4a7c775ff7717f976ced6ede72e9f34"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-3-D-warmup/collector.log",
+      "bytes": 476,
+      "sha256": "cf1e4cffaa73cfd8888ed136a46b4652b7fc22d46b383c9fe360a82078bf7331"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-4-B-full-review/collector.log",
+      "bytes": 168,
+      "sha256": "83eb1405bd1a3b5f91a80276655d54ec4e54c0c5c99dcd7831fe4568ef2bd43e"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-4-B-full-review/workflow.json",
+      "bytes": 239438,
+      "sha256": "ef307e6abf1e86c34bb7ec907e8f10dec8ac9dc068e3cf73bb703799dcd91196"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-4-B-measure/browser-samples.json",
+      "bytes": 2015744,
+      "sha256": "9f9d219f571c71d23a4e497da1dacefba2d86d6004f218dccb8a32db44a1b118"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-4-B-measure/browser-summary.json",
+      "bytes": 4247,
+      "sha256": "baab1d26e6f326a425119d94acbe26729fdc3776a7de2d07a270c3a588c68dff"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-4-B-measure/collector.log",
+      "bytes": 3654,
+      "sha256": "7090f47f7bf46813c54708f892eb04c9ac6ad62ddc130dc76da51f7546bb0162"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-4-B-warmup/browser-samples.json",
+      "bytes": 269781,
+      "sha256": "3bf6d03e33f3e8908a4aa8ab0dba39f00bcbd2d58f907138b75bf57970e07a15"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-4-B-warmup/browser-summary.json",
+      "bytes": 4214,
+      "sha256": "00b4c89653b376067cede0ead56b468fa327c8057774c43e8bcdcb5a94e74ef9"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1-block-4-B-warmup/collector.log",
+      "bytes": 476,
+      "sha256": "5463369028ead6e790b0125c06b07b5e3ec3b49c3f6706b5e5ed32e78ca3cfa1"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-1-B-full-review/collector.log",
+      "bytes": 182,
+      "sha256": "1279d720adeec1183eada1b282c2e6db4449509e0b25727e7924887e6b8a453c"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-1-B-full-review/workflow.json",
+      "bytes": 251382,
+      "sha256": "fa6f63ec0b9e0200abf5316bdd3991bfb3e84283037a446b60c7dba05364e389"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-1-B-measure/browser-samples.json",
+      "bytes": 669149,
+      "sha256": "a192c9854b2756310c08c90f7bafb364c3a363826f8d16e074ca1e408c0474c5"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-1-B-measure/browser-summary.json",
+      "bytes": 4244,
+      "sha256": "e6ab92ff791c0669ba8dc582c2a33ad4e861e9d2d250c5eb78708ab79fa628b7"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-1-B-measure/collector.log",
+      "bytes": 1200,
+      "sha256": "5dad4d6d4150eb0b7118b49a0dd43a9d60d743dfccdb9cc33bda543ae7f963a1"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-1-B-warmup/browser-samples.json",
+      "bytes": 268180,
+      "sha256": "39b6838b58ababd11f1ff5cf87fcccbecb3aa136b197d73c1bea75e548f4aec8"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-1-B-warmup/browser-summary.json",
+      "bytes": 4246,
+      "sha256": "6d83217edb4e152cb61e516d03df38459bf774a3f3be3ae6c38b661476a076e8"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-1-B-warmup/collector.log",
+      "bytes": 480,
+      "sha256": "869ddfd124d5ea3d3ee5e740d021a0b0e21046cb9cef50a4cecf3eb5e973ec6d"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-2-D-full-review/collector.log",
+      "bytes": 182,
+      "sha256": "1279d720adeec1183eada1b282c2e6db4449509e0b25727e7924887e6b8a453c"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-2-D-full-review/workflow.json",
+      "bytes": 251616,
+      "sha256": "2e3ae9f2238afa69d47ea025269cbef143a3125534573c1b381e2899ab375458"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-2-D-measure/browser-samples.json",
+      "bytes": 670910,
+      "sha256": "2b22e699dcd93044ca338f9cf4b07b7f10217cc64f28b113e72b3cf66218b056"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-2-D-measure/browser-summary.json",
+      "bytes": 4248,
+      "sha256": "88879eac788e5e9397a0fe991ed72107dc15a67a3c35539af47d56bc8dd013d2"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-2-D-measure/collector.log",
+      "bytes": 1200,
+      "sha256": "72fe0946f2785c39b8631c3e953ab0b7056b3598abfe6dc352f65e90f0d46bb1"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-2-D-warmup/browser-samples.json",
+      "bytes": 267941,
+      "sha256": "fdb0731d59c09b44940989cc56c01ec1ef6cd7f4e10aa0154acff8141a3a8609"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-2-D-warmup/browser-summary.json",
+      "bytes": 4244,
+      "sha256": "f25ec932c25d72874de041461471b997187a17456de92c34cca173943f31193c"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-2-D-warmup/collector.log",
+      "bytes": 480,
+      "sha256": "427d1639106a2608bb75f6889c48dbb72128d67b6e8b8e039ab621d81e961f19"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-3-D-full-review/collector.log",
+      "bytes": 182,
+      "sha256": "1279d720adeec1183eada1b282c2e6db4449509e0b25727e7924887e6b8a453c"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-3-D-full-review/workflow.json",
+      "bytes": 251660,
+      "sha256": "249cb78ace370309686f19e04d6b65a405c7f3f841cc5d18d141f86d2e1104fa"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-3-D-measure/browser-samples.json",
+      "bytes": 670026,
+      "sha256": "299e17f74ce2725755a85654020ee45273a457b9ae2a42813b7d94259a7ff554"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-3-D-measure/browser-summary.json",
+      "bytes": 4252,
+      "sha256": "cbd43992c1769dfbaec333daaa8b466364e5ac73f7b89fb39b79874cca3950c7"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-3-D-measure/collector.log",
+      "bytes": 1200,
+      "sha256": "10e36b7f9ee335e546415cffa650c7e0bc3a4082a02ab068982e4b29c13f44ad"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-3-D-warmup/browser-samples.json",
+      "bytes": 268527,
+      "sha256": "4a187426fddce890c11ae0d73b8ee0ec9b83de238c326cb8596bd2a9cc7670eb"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-3-D-warmup/browser-summary.json",
+      "bytes": 4245,
+      "sha256": "e02dcaa9b3dc5890991ebe45a95e4f997b4c0015886bf4365a753203ea881113"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-3-D-warmup/collector.log",
+      "bytes": 480,
+      "sha256": "2270bb273fe8bedba88f88716e136ec9daf2beb0266229d9dc01bcb56fc41d19"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-4-B-full-review/collector.log",
+      "bytes": 182,
+      "sha256": "1279d720adeec1183eada1b282c2e6db4449509e0b25727e7924887e6b8a453c"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-4-B-full-review/workflow.json",
+      "bytes": 252131,
+      "sha256": "4f86ea570aeb5b7dc1169f01e769c43ceafeaf1bbdf11c513fa50e66d21d9e60"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-4-B-measure/browser-samples.json",
+      "bytes": 669099,
+      "sha256": "e9975a870d435499586bfd874b6802b06be1c2ef7d79f96880944447ccf4e058"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-4-B-measure/browser-summary.json",
+      "bytes": 4256,
+      "sha256": "e355c1af8e9c1f15b1366ea75115f1f9db2a5c372603ba0762bab11f6322d383"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-4-B-measure/collector.log",
+      "bytes": 1200,
+      "sha256": "534d3ebda7ad71cda7ce3ae89e8e2dcf6f65bdd884465c149dd80714e4940f7b"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-4-B-warmup/browser-samples.json",
+      "bytes": 268334,
+      "sha256": "076f0b44eef7b64fcf4f6188c2be29432a6c40e217ef2b66fd968092e78541d0"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-4-B-warmup/browser-summary.json",
+      "bytes": 4246,
+      "sha256": "14f53d511566a5c02691b400f11f31c2fcb427219d961730444abfc63991bc67"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-100-block-4-B-warmup/collector.log",
+      "bytes": 480,
+      "sha256": "6f98f7721ada92365d20303b40bd96e3c29290e640e615f1e028817cbc41a39d"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-1-B-full-review/collector.log",
+      "bytes": 189,
+      "sha256": "fa30b50996e47e3d32afcdc604ab8330461cf42250d41fdf744a97c549b84bce"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-1-B-full-review/workflow.json",
+      "bytes": 286670,
+      "sha256": "cd36304b8368400f818495eda660db4562499e87b2207c562ad354087509375f"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-1-B-measure/browser-samples.json",
+      "bytes": 675515,
+      "sha256": "f0cc343aa7007cff76cd4cc23b1544a51a4edce918c57f0ab2950cafae6044b6"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-1-B-measure/browser-summary.json",
+      "bytes": 4289,
+      "sha256": "15055be175f5b4b56126638786d10852464c1b2cf3232a0b7f7d164ae88250f4"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-1-B-measure/collector.log",
+      "bytes": 1210,
+      "sha256": "3640570015877631633fd8672bd6c3fd564cc18c1473c42bb8ff966b5978eea4"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-1-B-warmup/browser-samples.json",
+      "bytes": 271273,
+      "sha256": "1fb45cb7db1934709ba75a504c9239405de285d3c29aa03f612c6b881c23e3c6"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-1-B-warmup/browser-summary.json",
+      "bytes": 4282,
+      "sha256": "d08038f24af11edbda833ca3176eb216b8b477dd5b71699e472a3b3d855f3314"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-1-B-warmup/collector.log",
+      "bytes": 484,
+      "sha256": "e2152a0647dad1c64d6b931270e9b70604a752c13289ccd036fffc13fa41d6f6"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-2-D-full-review/collector.log",
+      "bytes": 189,
+      "sha256": "fa30b50996e47e3d32afcdc604ab8330461cf42250d41fdf744a97c549b84bce"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-2-D-full-review/workflow.json",
+      "bytes": 264124,
+      "sha256": "5e18d2d7b7f7a575a113c49faaeb92b4d9f886189f97b7d36b4381162ba55196"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-2-D-measure/browser-samples.json",
+      "bytes": 669166,
+      "sha256": "b126b807c0117702bf3297e92adce48c56bd839a2a645665ff66e89bda3e5f05"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-2-D-measure/browser-summary.json",
+      "bytes": 4252,
+      "sha256": "50bc2fa341202563a125049f3a4a40c5f6a14471653a77d52456c5054a4c86ca"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-2-D-measure/collector.log",
+      "bytes": 1200,
+      "sha256": "afc0cfba61bf9d5d667f3ab8ddaefb19d97b7feab713c8025c67f0288682cab3"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-2-D-warmup/browser-samples.json",
+      "bytes": 272538,
+      "sha256": "1be0370e6f1b91ad94a01f14a96db8f537ff0dfeafaee93764b899a28921d465"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-2-D-warmup/browser-summary.json",
+      "bytes": 4255,
+      "sha256": "02a73132a8d0be752eea7f9671af39faed015d443d7ec3000f9fba962237ac22"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-2-D-warmup/collector.log",
+      "bytes": 480,
+      "sha256": "83b37b075b5ff74c0a39958d836b26a79a942772af710cf8aa206a35d443d437"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-3-D-full-review/collector.log",
+      "bytes": 189,
+      "sha256": "fa30b50996e47e3d32afcdc604ab8330461cf42250d41fdf744a97c549b84bce"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-3-D-full-review/workflow.json",
+      "bytes": 263646,
+      "sha256": "d71b31249dfbfca2a9ee8062654298a9bdf7ffd8d485afd8260edd0a0e1b60d9"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-3-D-measure/browser-samples.json",
+      "bytes": 669262,
+      "sha256": "2dd19f184da56ebbe9e73423c93ce434a6dc5374a9f0078abab5eef4d11f4d6b"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-3-D-measure/browser-summary.json",
+      "bytes": 4259,
+      "sha256": "4fbe28a2b56847780163073e71e8bf1a8216e816c46584e48a3c48c211e5495a"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-3-D-measure/collector.log",
+      "bytes": 1200,
+      "sha256": "47588d7eaf36afd9e1964ddc6cec11d0a416054675ce2dd8db7fed15be6f9548"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-3-D-warmup/browser-samples.json",
+      "bytes": 268616,
+      "sha256": "3d6d7525ad7e59e985697a7f1957642e3a11e3643df616c50d2b1eef1a2ddefd"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-3-D-warmup/browser-summary.json",
+      "bytes": 4251,
+      "sha256": "273f99443122ed36364615d35d9c2c2976ecbcf980cfd7bc1983b9c5cf54ce35"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-3-D-warmup/collector.log",
+      "bytes": 480,
+      "sha256": "d09a6e87f15a46afb55c9f5b6c5c5a885280c82a3c6e1a0a086248dd4675591d"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-4-B-full-review/collector.log",
+      "bytes": 189,
+      "sha256": "fa30b50996e47e3d32afcdc604ab8330461cf42250d41fdf744a97c549b84bce"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-4-B-full-review/workflow.json",
+      "bytes": 286002,
+      "sha256": "d2f5a1a525f205aa52b94f906816687ce11f1ce1e1e3e0b282d008727cec80fb"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-4-B-measure/browser-samples.json",
+      "bytes": 670219,
+      "sha256": "7e5bd216bd1fbeeb220f76ba6b105bb08b5fee944439c02aab8fa962bc678ce0"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-4-B-measure/browser-summary.json",
+      "bytes": 4285,
+      "sha256": "f548c67d2429c7b6478bfeaba65d142f4778d7d81caae700502fa75362bdcce1"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-4-B-measure/collector.log",
+      "bytes": 1210,
+      "sha256": "1814b33f94fbfe3fe1cb7980e82e1c126e9be87eec43c030e65b3cf2c1053086"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-4-B-warmup/browser-samples.json",
+      "bytes": 268474,
+      "sha256": "60e771b88dd2ad191ab4b5f4adf734d7258c956f599eb8a53217960bf34b85bb"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-4-B-warmup/browser-summary.json",
+      "bytes": 4278,
+      "sha256": "9aeddcd99d0647e59e3c9b55affc337d36a606b5e60ad67d21a23749f45fc303"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-1000-block-4-B-warmup/collector.log",
+      "bytes": 484,
+      "sha256": "17d04ae969f12ed69abef5df0f3222d2d7389c8b34f8494a431246f817aa9d44"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-1-B-full-review/collector.log",
+      "bytes": 217,
+      "sha256": "74cdf9ae9796373cd39ea15009709717797f7a67fc7ab8879c4fa84accaa6e93"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-1-B-full-review/workflow.json",
+      "bytes": 198755,
+      "sha256": "4dcc83219054427833d93f50e04093cacc9a3c0a6a92cc10a7c8af2914aefe71"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-1-B-measure/browser-samples.json",
+      "bytes": 897287,
+      "sha256": "644a7f8a86a9e05f0c4d5be2ca3eb5cd8e2771a7d8f8c2d35eb183fe5a832d61"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-1-B-measure/browser-summary.json",
+      "bytes": 8092,
+      "sha256": "d61118498c6aa7c9e6453558f3faef40258f331da5432b1589edf536afaa9d9e"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-1-B-measure/collector.log",
+      "bytes": 1265,
+      "sha256": "52033920cecc1af09ef1e904ba13a4b64f49099c97624d66e52a080cc3c96083"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-1-B-warmup/browser-samples.json",
+      "bytes": 358304,
+      "sha256": "4fbb43952f486c5d0ad9ac6a57a66f67bfd0cf65db7b91c3ab16a16a593101ab"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-1-B-warmup/browser-summary.json",
+      "bytes": 5749,
+      "sha256": "a592fd683480a8991d70cdf6ac3eeddd98fb54f7226fdfc51bd703226f04d3a6"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-1-B-warmup/collector.log",
+      "bytes": 506,
+      "sha256": "9321f66c3e54a746d83f34b7957024228b95edd58a647a7fa3c5b81372a4b1d0"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-2-D-full-review/collector.log",
+      "bytes": 189,
+      "sha256": "3d45a2dcd5fa726bb499aa902612a586adb08098baaf8fae73682cdc5d8772bb"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-2-D-full-review/workflow.json",
+      "bytes": 268160,
+      "sha256": "80783110b31067e9c6e8e1f14086eb20f73594bd0f7406d7faf980a0e1cf2341"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-2-D-measure/browser-samples.json",
+      "bytes": 676112,
+      "sha256": "28990a70a7e2ffa3b6cf75d8b3dbd40fce87a7158af8d6eeeec0072e249756cc"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-2-D-measure/browser-summary.json",
+      "bytes": 4257,
+      "sha256": "09bbe5a5b774e7899d772728db3734c620bd7930bf31882f83d510a7c28a73f4"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-2-D-measure/collector.log",
+      "bytes": 1200,
+      "sha256": "03d38c7afbb48261f2d123bc2cf776f3d5229894191e692309d9751526c0c976"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-2-D-warmup/browser-samples.json",
+      "bytes": 272603,
+      "sha256": "241a6a153a8c3a0c3dfe87fcb6971c0b0e6b2f1bcb46c4f0fdad6e7a2f242479"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-2-D-warmup/browser-summary.json",
+      "bytes": 4247,
+      "sha256": "923a7fd54e305bd844aa3c0e2869f06db203c5f6b9c92e7dcb4f952b636665ff"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-2-D-warmup/collector.log",
+      "bytes": 480,
+      "sha256": "83b9f0926df3b8f29e62b8698db2cf2ec923ec627d07480a0c480ecb4c408c5d"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-3-D-full-review/collector.log",
+      "bytes": 189,
+      "sha256": "3d45a2dcd5fa726bb499aa902612a586adb08098baaf8fae73682cdc5d8772bb"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-3-D-full-review/workflow.json",
+      "bytes": 267137,
+      "sha256": "9eb4a74d23d924ee002c9d54cb7cda6e4f24707835aa5c7025c0cf1cc2da1380"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-3-D-measure/browser-samples.json",
+      "bytes": 676896,
+      "sha256": "586a83a508cfe888a02bd1b06c473059b1cb2706124d1256d17b3f83e7c80c42"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-3-D-measure/browser-summary.json",
+      "bytes": 4253,
+      "sha256": "52d8a722b3f8f2c67798eb7d340047871f75dda22d918d8ab8b20b44134746a7"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-3-D-measure/collector.log",
+      "bytes": 1200,
+      "sha256": "646d9c967844d9c5a25a72039e17971faf2a0d23895bd9ef6eaa0d0f69c7b83f"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-3-D-warmup/browser-samples.json",
+      "bytes": 271476,
+      "sha256": "b270fed8ca1dc3821b72929b103c2fc44a9ebd6cc1df1a780235c50ccce8c1cc"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-3-D-warmup/browser-summary.json",
+      "bytes": 4250,
+      "sha256": "edd823d06180bb6d2c4ebc08a55b95207dcda9ddfd2531295eee89d64dd973cf"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-3-D-warmup/collector.log",
+      "bytes": 480,
+      "sha256": "7ce30989d1ddea2493e6e9b7f5989cdbb9f4116cadec23413ede9775e6de2dab"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-4-B-measure/browser-samples.json",
+      "bytes": 395044,
+      "sha256": "e1b2eb097afe55b2f1c03a9e39bc22a88aa40436d4b010cdf823df9deae097d1"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-4-B-measure/collector.log",
+      "bytes": 753,
+      "sha256": "d65278e59643257a896fc1468e082a7ea0a6eb1cb6575f454ec9b002c982e7a7"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-4-B-warmup/browser-samples.json",
+      "bytes": 356860,
+      "sha256": "048dadf8f80f1c4bf17e4c849ed2a8cab7982c2733a0d7cbde7fa1d684e0e409"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-4-B-warmup/browser-summary.json",
+      "bytes": 5749,
+      "sha256": "d64654da52f1a5f194693faa521850c2491adeee6c33539bd5c26213607b3858"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/constrained-attempt-40974037305-1/size-5000-block-4-B-warmup/collector.log",
+      "bytes": 506,
+      "sha256": "9321f66c3e54a746d83f34b7957024228b95edd58a647a7fa3c5b81372a4b1d0"
     },
     {
       "path": "docs/performance/pipeline-release-repair/ci/local-attempt-40905121217-1/PROTOCOL.json",
@@ -2309,6 +2939,11 @@
       "path": "docs/performance/pipeline-release-repair/ci/preflight-constrained-40972376658-1.json",
       "bytes": 1781,
       "sha256": "6488bf465860c932828ffa6946960a1d8fd916300294895b8de65bb9ba78030f"
+    },
+    {
+      "path": "docs/performance/pipeline-release-repair/ci/preflight-constrained-40974037305-1.json",
+      "bytes": 1781,
+      "sha256": "859ad83178f58aaabdf4a4dc9bf1a4554f81713198b4822a30fb7aa6f1010eab"
     },
     {
       "path": "docs/performance/pipeline-release-repair/ci/preflight-local-40969249318-1.json",
@@ -3796,6 +4431,11 @@
       "sha256": "72f3da441fd8675464ca91db1ec6683e4eef4260c8b02d1f2902d2005832f9f1"
     },
     {
+      "path": "scripts/navigation-audit.cjs",
+      "bytes": 49859,
+      "sha256": "2f682fdbd742822aa4da90e94a98eef0c749b7349d977351ebd93ccb91869626"
+    },
+    {
       "path": "scripts/pipeline-release-capacity.cjs",
       "bytes": 5477,
       "sha256": "77514fc2f45b9f069157f4237a04514c129d363f021e3853d4c45c1eca567538"
@@ -3817,13 +4457,13 @@
     },
     {
       "path": "scripts/pipeline-release-ci-runtime.cjs",
-      "bytes": 3895,
-      "sha256": "6d30030b4fdeed5bbce4e4e3972adfd5c481053b89c51353081662c70a939df7"
+      "bytes": 4058,
+      "sha256": "92ec907d4d87930dd8d310aa507b480396fda473e9b7f877fdcba59ad0755c28"
     },
     {
       "path": "scripts/pipeline-release-ci-study.cjs",
-      "bytes": 4940,
-      "sha256": "17329981c9cd1a420ac85c89c53b45cd4675656341462a3fc8b4f7369959d1bb"
+      "bytes": 5412,
+      "sha256": "24f367f3e09fa8c91d2d4955fe6152bf8f6ecd8a952af17889a45d34ff72111b"
     },
     {
       "path": "scripts/pipeline-release-fixtures.cjs",
@@ -3837,8 +4477,8 @@
     },
     {
       "path": "scripts/pipeline-release-full-review.cjs",
-      "bytes": 12660,
-      "sha256": "8d9dd8c6395dc26e3179752b6c480d137a4b376d8707ebc0fd6f69c83ebbc630"
+      "bytes": 12912,
+      "sha256": "d540504b390d46aa4d075fee8f72d3e64ebbd84e968a9f31d58a9675abde6074"
     },
     {
       "path": "scripts/pipeline-release-local.cjs",
@@ -3872,8 +4512,8 @@
     },
     {
       "path": "scripts/summarize-pipeline-release-repair.cjs",
-      "bytes": 18086,
-      "sha256": "64445bd06f2572a11db81e4abfaf721cb56bc69914c45e10003d49905d46c89d"
+      "bytes": 18336,
+      "sha256": "72dfc0c450e44aa4dc836d2b47af105316ceca06e57cfb401392d253257230a3"
     },
     {
       "path": "tests/club-workspace-refinements-browser.test.cjs",
