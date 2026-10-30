@@ -37003,7 +37003,7 @@
       "profile": "local",
       "size": 1,
       "variant": "B",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "cold",
       "artifacts": [
         "ci/local-cohort-1-navigation-attempt-41120776662-1/size-1-block-1-B-measure/browser-samples.json",
@@ -37324,7 +37324,7 @@
       "profile": "local",
       "size": 1,
       "variant": "B",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "warm",
       "artifacts": [
         "ci/local-cohort-1-navigation-attempt-41120776662-1/size-1-block-1-B-measure/browser-samples.json",
@@ -37540,7 +37540,7 @@
       "profile": "local",
       "size": 1,
       "variant": "B",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "cold",
       "artifacts": [
         "ci/local-cohort-1-navigation-attempt-41120776662-1/size-1-block-1-B-measure/browser-samples.json",
@@ -37862,7 +37862,7 @@
       "profile": "local",
       "size": 1,
       "variant": "B",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "warm",
       "artifacts": [
         "ci/local-cohort-1-navigation-attempt-41120776662-1/size-1-block-1-B-measure/browser-samples.json",
@@ -38163,7 +38163,7 @@
       "profile": "local",
       "size": 1,
       "variant": "D",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "cold",
       "artifacts": [
         "ci/local-cohort-1-navigation-attempt-41120776662-1/size-1-block-2-D-measure/browser-samples.json",
@@ -38484,7 +38484,7 @@
       "profile": "local",
       "size": 1,
       "variant": "D",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "warm",
       "artifacts": [
         "ci/local-cohort-1-navigation-attempt-41120776662-1/size-1-block-2-D-measure/browser-samples.json",
@@ -38700,7 +38700,7 @@
       "profile": "local",
       "size": 1,
       "variant": "D",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "cold",
       "artifacts": [
         "ci/local-cohort-1-navigation-attempt-41120776662-1/size-1-block-2-D-measure/browser-samples.json",
@@ -39022,7 +39022,7 @@
       "profile": "local",
       "size": 1,
       "variant": "D",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "warm",
       "artifacts": [
         "ci/local-cohort-1-navigation-attempt-41120776662-1/size-1-block-2-D-measure/browser-samples.json",
@@ -39323,7 +39323,7 @@
       "profile": "local",
       "size": 1,
       "variant": "B",
-      "path": "Overview → Applicants → detail/review → switch → search → selection → cold/warm Voting history → return",
+      "path": "Overview \u2192 Applicants \u2192 detail/review \u2192 switch \u2192 search \u2192 selection \u2192 cold/warm Voting history \u2192 return",
       "condition": "fresh_source_warm_assets_after_warmups",
       "artifacts": [
         "ci/local-cohort-1-full-review-attempt-41120776662-1/size-1-block-1-B-full-review/workflow.json",
@@ -40038,7 +40038,7 @@
       "profile": "local",
       "size": 1,
       "variant": "D",
-      "path": "Overview → Applicants → detail/review → switch → search → selection → cold/warm Voting history → return",
+      "path": "Overview \u2192 Applicants \u2192 detail/review \u2192 switch \u2192 search \u2192 selection \u2192 cold/warm Voting history \u2192 return",
       "condition": "fresh_source_warm_assets_after_warmups",
       "artifacts": [
         "ci/local-cohort-1-full-review-attempt-41120776662-1/size-1-block-2-D-full-review/workflow.json",
@@ -40753,7 +40753,7 @@
       "profile": "local",
       "size": 100,
       "variant": "B",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "cold",
       "artifacts": [
         "ci/local-cohort-100-navigation-attempt-41120776662-1/size-100-block-1-B-measure/browser-samples.json",
@@ -41074,7 +41074,7 @@
       "profile": "local",
       "size": 100,
       "variant": "B",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "warm",
       "artifacts": [
         "ci/local-cohort-100-navigation-attempt-41120776662-1/size-100-block-1-B-measure/browser-samples.json",
@@ -41290,7 +41290,7 @@
       "profile": "local",
       "size": 100,
       "variant": "B",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "cold",
       "artifacts": [
         "ci/local-cohort-100-navigation-attempt-41120776662-1/size-100-block-1-B-measure/browser-samples.json",
@@ -41612,7 +41612,7 @@
       "profile": "local",
       "size": 100,
       "variant": "B",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "warm",
       "artifacts": [
         "ci/local-cohort-100-navigation-attempt-41120776662-1/size-100-block-1-B-measure/browser-samples.json",
@@ -41913,7 +41913,7 @@
       "profile": "local",
       "size": 100,
       "variant": "D",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "cold",
       "artifacts": [
         "ci/local-cohort-100-navigation-attempt-41120776662-1/size-100-block-2-D-measure/browser-samples.json",
@@ -42234,7 +42234,7 @@
       "profile": "local",
       "size": 100,
       "variant": "D",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "warm",
       "artifacts": [
         "ci/local-cohort-100-navigation-attempt-41120776662-1/size-100-block-2-D-measure/browser-samples.json",
@@ -42450,7 +42450,7 @@
       "profile": "local",
       "size": 100,
       "variant": "D",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "cold",
       "artifacts": [
         "ci/local-cohort-100-navigation-attempt-41120776662-1/size-100-block-2-D-measure/browser-samples.json",
@@ -42772,7 +42772,7 @@
       "profile": "local",
       "size": 100,
       "variant": "D",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "warm",
       "artifacts": [
         "ci/local-cohort-100-navigation-attempt-41120776662-1/size-100-block-2-D-measure/browser-samples.json",
@@ -43073,7 +43073,7 @@
       "profile": "local",
       "size": 100,
       "variant": "B",
-      "path": "Overview → Applicants → detail/review → switch → search → selection → cold/warm Voting history → return",
+      "path": "Overview \u2192 Applicants \u2192 detail/review \u2192 switch \u2192 search \u2192 selection \u2192 cold/warm Voting history \u2192 return",
       "condition": "fresh_source_warm_assets_after_warmups",
       "artifacts": [
         "ci/local-cohort-100-full-review-attempt-41120776662-1/size-100-block-1-B-full-review/workflow.json",
@@ -43802,7 +43802,7 @@
       "profile": "local",
       "size": 100,
       "variant": "D",
-      "path": "Overview → Applicants → detail/review → switch → search → selection → cold/warm Voting history → return",
+      "path": "Overview \u2192 Applicants \u2192 detail/review \u2192 switch \u2192 search \u2192 selection \u2192 cold/warm Voting history \u2192 return",
       "condition": "fresh_source_warm_assets_after_warmups",
       "artifacts": [
         "ci/local-cohort-100-full-review-attempt-41120776662-1/size-100-block-2-D-full-review/workflow.json",
@@ -44537,7 +44537,7 @@
       "profile": "constrained",
       "size": 1,
       "variant": "B",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "cold",
       "artifacts": [
         "ci/constrained-cohort-1-navigation-attempt-41120776662-1/size-1-block-1-B-measure/browser-samples.json",
@@ -44858,7 +44858,7 @@
       "profile": "constrained",
       "size": 1,
       "variant": "B",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "warm",
       "artifacts": [
         "ci/constrained-cohort-1-navigation-attempt-41120776662-1/size-1-block-1-B-measure/browser-samples.json",
@@ -45074,7 +45074,7 @@
       "profile": "constrained",
       "size": 1,
       "variant": "B",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "cold",
       "artifacts": [
         "ci/constrained-cohort-1-navigation-attempt-41120776662-1/size-1-block-1-B-measure/browser-samples.json",
@@ -45396,7 +45396,7 @@
       "profile": "constrained",
       "size": 1,
       "variant": "B",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "warm",
       "artifacts": [
         "ci/constrained-cohort-1-navigation-attempt-41120776662-1/size-1-block-1-B-measure/browser-samples.json",
@@ -45697,7 +45697,7 @@
       "profile": "constrained",
       "size": 1,
       "variant": "D",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "cold",
       "artifacts": [
         "ci/constrained-cohort-1-navigation-attempt-41120776662-1/size-1-block-2-D-measure/browser-samples.json",
@@ -46018,7 +46018,7 @@
       "profile": "constrained",
       "size": 1,
       "variant": "D",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "warm",
       "artifacts": [
         "ci/constrained-cohort-1-navigation-attempt-41120776662-1/size-1-block-2-D-measure/browser-samples.json",
@@ -46234,7 +46234,7 @@
       "profile": "constrained",
       "size": 1,
       "variant": "D",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "cold",
       "artifacts": [
         "ci/constrained-cohort-1-navigation-attempt-41120776662-1/size-1-block-2-D-measure/browser-samples.json",
@@ -46556,7 +46556,7 @@
       "profile": "constrained",
       "size": 1,
       "variant": "D",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "warm",
       "artifacts": [
         "ci/constrained-cohort-1-navigation-attempt-41120776662-1/size-1-block-2-D-measure/browser-samples.json",
@@ -46857,7 +46857,7 @@
       "profile": "constrained",
       "size": 1,
       "variant": "B",
-      "path": "Overview → Applicants → detail/review → switch → search → selection → cold/warm Voting history → return",
+      "path": "Overview \u2192 Applicants \u2192 detail/review \u2192 switch \u2192 search \u2192 selection \u2192 cold/warm Voting history \u2192 return",
       "condition": "fresh_source_warm_assets_after_warmups",
       "artifacts": [
         "ci/constrained-cohort-1-full-review-attempt-41120776662-1/size-1-block-1-B-full-review/workflow.json",
@@ -47684,7 +47684,7 @@
       "profile": "constrained",
       "size": 1,
       "variant": "D",
-      "path": "Overview → Applicants → detail/review → switch → search → selection → cold/warm Voting history → return",
+      "path": "Overview \u2192 Applicants \u2192 detail/review \u2192 switch \u2192 search \u2192 selection \u2192 cold/warm Voting history \u2192 return",
       "condition": "fresh_source_warm_assets_after_warmups",
       "artifacts": [
         "ci/constrained-cohort-1-full-review-attempt-41120776662-1/size-1-block-2-D-full-review/workflow.json",
@@ -48399,7 +48399,7 @@
       "profile": "constrained",
       "size": 100,
       "variant": "B",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "cold",
       "artifacts": [
         "ci/constrained-cohort-100-navigation-attempt-41120776662-1/size-100-block-1-B-measure/browser-samples.json",
@@ -48720,7 +48720,7 @@
       "profile": "constrained",
       "size": 100,
       "variant": "B",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "warm",
       "artifacts": [
         "ci/constrained-cohort-100-navigation-attempt-41120776662-1/size-100-block-1-B-measure/browser-samples.json",
@@ -48936,7 +48936,7 @@
       "profile": "constrained",
       "size": 100,
       "variant": "B",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "cold",
       "artifacts": [
         "ci/constrained-cohort-100-navigation-attempt-41120776662-1/size-100-block-1-B-measure/browser-samples.json",
@@ -49258,7 +49258,7 @@
       "profile": "constrained",
       "size": 100,
       "variant": "B",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "warm",
       "artifacts": [
         "ci/constrained-cohort-100-navigation-attempt-41120776662-1/size-100-block-1-B-measure/browser-samples.json",
@@ -49559,7 +49559,7 @@
       "profile": "constrained",
       "size": 100,
       "variant": "D",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "cold",
       "artifacts": [
         "ci/constrained-cohort-100-navigation-attempt-41120776662-1/size-100-block-2-D-measure/browser-samples.json",
@@ -49880,7 +49880,7 @@
       "profile": "constrained",
       "size": 100,
       "variant": "D",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "warm",
       "artifacts": [
         "ci/constrained-cohort-100-navigation-attempt-41120776662-1/size-100-block-2-D-measure/browser-samples.json",
@@ -50096,7 +50096,7 @@
       "profile": "constrained",
       "size": 100,
       "variant": "D",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "cold",
       "artifacts": [
         "ci/constrained-cohort-100-navigation-attempt-41120776662-1/size-100-block-2-D-measure/browser-samples.json",
@@ -50418,7 +50418,7 @@
       "profile": "constrained",
       "size": 100,
       "variant": "D",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "warm",
       "artifacts": [
         "ci/constrained-cohort-100-navigation-attempt-41120776662-1/size-100-block-2-D-measure/browser-samples.json",
@@ -50719,7 +50719,7 @@
       "profile": "constrained",
       "size": 100,
       "variant": "B",
-      "path": "Overview → Applicants → detail/review → switch → search → selection → cold/warm Voting history → return",
+      "path": "Overview \u2192 Applicants \u2192 detail/review \u2192 switch \u2192 search \u2192 selection \u2192 cold/warm Voting history \u2192 return",
       "condition": "fresh_source_warm_assets_after_warmups",
       "artifacts": [
         "ci/constrained-cohort-100-full-review-attempt-41120776662-1/size-100-block-1-B-full-review/workflow.json",
@@ -51469,7 +51469,7 @@
       "profile": "constrained",
       "size": 100,
       "variant": "D",
-      "path": "Overview → Applicants → detail/review → switch → search → selection → cold/warm Voting history → return",
+      "path": "Overview \u2192 Applicants \u2192 detail/review \u2192 switch \u2192 search \u2192 selection \u2192 cold/warm Voting history \u2192 return",
       "condition": "fresh_source_warm_assets_after_warmups",
       "artifacts": [
         "ci/constrained-cohort-100-full-review-attempt-41120776662-1/size-100-block-2-D-full-review/workflow.json",
@@ -52204,7 +52204,7 @@
       "profile": "local",
       "size": 1000,
       "variant": "B",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "cold",
       "artifacts": [
         "ci/local-cohort-1000-navigation-attempt-41126174308-1/size-1000-block-1-B-measure/browser-samples.json",
@@ -52525,7 +52525,7 @@
       "profile": "local",
       "size": 1000,
       "variant": "B",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "warm",
       "artifacts": [
         "ci/local-cohort-1000-navigation-attempt-41126174308-1/size-1000-block-1-B-measure/browser-samples.json",
@@ -52741,7 +52741,7 @@
       "profile": "local",
       "size": 1000,
       "variant": "B",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "cold",
       "artifacts": [
         "ci/local-cohort-1000-navigation-attempt-41126174308-1/size-1000-block-1-B-measure/browser-samples.json",
@@ -53063,7 +53063,7 @@
       "profile": "local",
       "size": 1000,
       "variant": "B",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "warm",
       "artifacts": [
         "ci/local-cohort-1000-navigation-attempt-41126174308-1/size-1000-block-1-B-measure/browser-samples.json",
@@ -53364,7 +53364,7 @@
       "profile": "local",
       "size": 1000,
       "variant": "D",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "cold",
       "artifacts": [
         "ci/local-cohort-1000-navigation-attempt-41126174308-1/size-1000-block-2-D-measure/browser-samples.json",
@@ -53685,7 +53685,7 @@
       "profile": "local",
       "size": 1000,
       "variant": "D",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "warm",
       "artifacts": [
         "ci/local-cohort-1000-navigation-attempt-41126174308-1/size-1000-block-2-D-measure/browser-samples.json",
@@ -53901,7 +53901,7 @@
       "profile": "local",
       "size": 1000,
       "variant": "D",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "cold",
       "artifacts": [
         "ci/local-cohort-1000-navigation-attempt-41126174308-1/size-1000-block-2-D-measure/browser-samples.json",
@@ -54223,7 +54223,7 @@
       "profile": "local",
       "size": 1000,
       "variant": "D",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "warm",
       "artifacts": [
         "ci/local-cohort-1000-navigation-attempt-41126174308-1/size-1000-block-2-D-measure/browser-samples.json",
@@ -54524,7 +54524,7 @@
       "profile": "local",
       "size": 1000,
       "variant": "B",
-      "path": "Overview → Applicants → detail/review → switch → search → selection → cold/warm Voting history → return",
+      "path": "Overview \u2192 Applicants \u2192 detail/review \u2192 switch \u2192 search \u2192 selection \u2192 cold/warm Voting history \u2192 return",
       "condition": "fresh_source_warm_assets_after_warmups",
       "artifacts": [
         "ci/local-cohort-1000-full-review-attempt-41126174308-1/size-1000-block-1-B-full-review/workflow.json",
@@ -55253,7 +55253,7 @@
       "profile": "local",
       "size": 1000,
       "variant": "D",
-      "path": "Overview → Applicants → detail/review → switch → search → selection → cold/warm Voting history → return",
+      "path": "Overview \u2192 Applicants \u2192 detail/review \u2192 switch \u2192 search \u2192 selection \u2192 cold/warm Voting history \u2192 return",
       "condition": "fresh_source_warm_assets_after_warmups",
       "artifacts": [
         "ci/local-cohort-1000-full-review-attempt-41126174308-1/size-1000-block-2-D-full-review/workflow.json",
@@ -56058,7 +56058,7 @@
       "profile": "local",
       "size": 5000,
       "variant": "B",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "cold",
       "artifacts": [
         "ci/local-cohort-5000-navigation-attempt-41126174308-1/size-5000-block-1-B-measure/browser-samples.json",
@@ -56379,7 +56379,7 @@
       "profile": "local",
       "size": 5000,
       "variant": "B",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "warm",
       "artifacts": [
         "ci/local-cohort-5000-navigation-attempt-41126174308-1/size-5000-block-1-B-measure/browser-samples.json",
@@ -56595,7 +56595,7 @@
       "profile": "local",
       "size": 5000,
       "variant": "B",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "cold",
       "artifacts": [
         "ci/local-cohort-5000-navigation-attempt-41126174308-1/size-5000-block-1-B-measure/browser-samples.json",
@@ -56917,7 +56917,7 @@
       "profile": "local",
       "size": 5000,
       "variant": "B",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "warm",
       "artifacts": [
         "ci/local-cohort-5000-navigation-attempt-41126174308-1/size-5000-block-1-B-measure/browser-samples.json",
@@ -57218,7 +57218,7 @@
       "profile": "local",
       "size": 5000,
       "variant": "D",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "cold",
       "artifacts": [
         "ci/local-cohort-5000-navigation-attempt-41126174308-1/size-5000-block-2-D-measure/browser-samples.json",
@@ -57539,7 +57539,7 @@
       "profile": "local",
       "size": 5000,
       "variant": "D",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "warm",
       "artifacts": [
         "ci/local-cohort-5000-navigation-attempt-41126174308-1/size-5000-block-2-D-measure/browser-samples.json",
@@ -57755,7 +57755,7 @@
       "profile": "local",
       "size": 5000,
       "variant": "D",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "cold",
       "artifacts": [
         "ci/local-cohort-5000-navigation-attempt-41126174308-1/size-5000-block-2-D-measure/browser-samples.json",
@@ -58077,7 +58077,7 @@
       "profile": "local",
       "size": 5000,
       "variant": "D",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "warm",
       "artifacts": [
         "ci/local-cohort-5000-navigation-attempt-41126174308-1/size-5000-block-2-D-measure/browser-samples.json",
@@ -58378,7 +58378,7 @@
       "profile": "local",
       "size": 5000,
       "variant": "B",
-      "path": "Overview → Applicants → detail/review → switch → search → selection → cold/warm Voting history → return",
+      "path": "Overview \u2192 Applicants \u2192 detail/review \u2192 switch \u2192 search \u2192 selection \u2192 cold/warm Voting history \u2192 return",
       "condition": "fresh_source_warm_assets_after_warmups",
       "artifacts": [
         "ci/local-cohort-5000-full-review-attempt-41126174308-1/size-5000-block-1-B-full-review/workflow.json",
@@ -59277,7 +59277,7 @@
       "profile": "local",
       "size": 5000,
       "variant": "D",
-      "path": "Overview → Applicants → detail/review → switch → search → selection → cold/warm Voting history → return",
+      "path": "Overview \u2192 Applicants \u2192 detail/review \u2192 switch \u2192 search \u2192 selection \u2192 cold/warm Voting history \u2192 return",
       "condition": "fresh_source_warm_assets_after_warmups",
       "artifacts": [
         "ci/local-cohort-5000-full-review-attempt-41126174308-1/size-5000-block-2-D-full-review/workflow.json",
@@ -60082,7 +60082,7 @@
       "profile": "constrained",
       "size": 1000,
       "variant": "B",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "cold",
       "artifacts": [
         "ci/constrained-cohort-1000-navigation-attempt-41126174308-1/size-1000-block-1-B-measure/browser-samples.json",
@@ -60403,7 +60403,7 @@
       "profile": "constrained",
       "size": 1000,
       "variant": "B",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "warm",
       "artifacts": [
         "ci/constrained-cohort-1000-navigation-attempt-41126174308-1/size-1000-block-1-B-measure/browser-samples.json",
@@ -60619,7 +60619,7 @@
       "profile": "constrained",
       "size": 1000,
       "variant": "B",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "cold",
       "artifacts": [
         "ci/constrained-cohort-1000-navigation-attempt-41126174308-1/size-1000-block-1-B-measure/browser-samples.json",
@@ -60941,7 +60941,7 @@
       "profile": "constrained",
       "size": 1000,
       "variant": "B",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "warm",
       "artifacts": [
         "ci/constrained-cohort-1000-navigation-attempt-41126174308-1/size-1000-block-1-B-measure/browser-samples.json",
@@ -61242,7 +61242,7 @@
       "profile": "constrained",
       "size": 1000,
       "variant": "D",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "cold",
       "artifacts": [
         "ci/constrained-cohort-1000-navigation-attempt-41126174308-1/size-1000-block-2-D-measure/browser-samples.json",
@@ -61563,7 +61563,7 @@
       "profile": "constrained",
       "size": 1000,
       "variant": "D",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "warm",
       "artifacts": [
         "ci/constrained-cohort-1000-navigation-attempt-41126174308-1/size-1000-block-2-D-measure/browser-samples.json",
@@ -61779,7 +61779,7 @@
       "profile": "constrained",
       "size": 1000,
       "variant": "D",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "cold",
       "artifacts": [
         "ci/constrained-cohort-1000-navigation-attempt-41126174308-1/size-1000-block-2-D-measure/browser-samples.json",
@@ -62101,7 +62101,7 @@
       "profile": "constrained",
       "size": 1000,
       "variant": "D",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "warm",
       "artifacts": [
         "ci/constrained-cohort-1000-navigation-attempt-41126174308-1/size-1000-block-2-D-measure/browser-samples.json",
@@ -62402,7 +62402,7 @@
       "profile": "constrained",
       "size": 1000,
       "variant": "B",
-      "path": "Overview → Applicants → detail/review → switch → search → selection → cold/warm Voting history → return",
+      "path": "Overview \u2192 Applicants \u2192 detail/review \u2192 switch \u2192 search \u2192 selection \u2192 cold/warm Voting history \u2192 return",
       "condition": "fresh_source_warm_assets_after_warmups",
       "artifacts": [
         "ci/constrained-cohort-1000-full-review-attempt-41126174308-1/size-1000-block-1-B-full-review/workflow.json",
@@ -63322,7 +63322,7 @@
       "profile": "constrained",
       "size": 1000,
       "variant": "D",
-      "path": "Overview → Applicants → detail/review → switch → search → selection → cold/warm Voting history → return",
+      "path": "Overview \u2192 Applicants \u2192 detail/review \u2192 switch \u2192 search \u2192 selection \u2192 cold/warm Voting history \u2192 return",
       "condition": "fresh_source_warm_assets_after_warmups",
       "artifacts": [
         "ci/constrained-cohort-1000-full-review-attempt-41126174308-1/size-1000-block-2-D-full-review/workflow.json",
@@ -64127,7 +64127,7 @@
       "profile": "constrained",
       "size": 5000,
       "variant": "B",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "cold",
       "artifacts": [
         "ci/constrained-cohort-5000-navigation-attempt-41126174308-1/size-5000-block-1-B-measure/browser-samples.json",
@@ -64539,7 +64539,7 @@
       "profile": "constrained",
       "size": 5000,
       "variant": "B",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "warm",
       "artifacts": [
         "ci/constrained-cohort-5000-navigation-attempt-41126174308-1/size-5000-block-1-B-measure/browser-samples.json",
@@ -64925,7 +64925,7 @@
       "profile": "constrained",
       "size": 5000,
       "variant": "B",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "cold",
       "artifacts": [
         "ci/constrained-cohort-5000-navigation-attempt-41126174308-1/size-5000-block-1-B-measure/browser-samples.json",
@@ -65419,7 +65419,7 @@
       "profile": "constrained",
       "size": 5000,
       "variant": "B",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "warm",
       "artifacts": [
         "ci/constrained-cohort-5000-navigation-attempt-41126174308-1/size-5000-block-1-B-measure/browser-samples.json",
@@ -65894,7 +65894,7 @@
       "profile": "constrained",
       "size": 5000,
       "variant": "D",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "cold",
       "artifacts": [
         "ci/constrained-cohort-5000-navigation-attempt-41126174308-1/size-5000-block-2-D-measure/browser-samples.json",
@@ -66215,7 +66215,7 @@
       "profile": "constrained",
       "size": 5000,
       "variant": "D",
-      "path": "recruiting → applicants",
+      "path": "recruiting \u2192 applicants",
       "condition": "warm",
       "artifacts": [
         "ci/constrained-cohort-5000-navigation-attempt-41126174308-1/size-5000-block-2-D-measure/browser-samples.json",
@@ -66431,7 +66431,7 @@
       "profile": "constrained",
       "size": 5000,
       "variant": "D",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "cold",
       "artifacts": [
         "ci/constrained-cohort-5000-navigation-attempt-41126174308-1/size-5000-block-2-D-measure/browser-samples.json",
@@ -66753,7 +66753,7 @@
       "profile": "constrained",
       "size": 5000,
       "variant": "D",
-      "path": "applicants → applicantDetail",
+      "path": "applicants \u2192 applicantDetail",
       "condition": "warm",
       "artifacts": [
         "ci/constrained-cohort-5000-navigation-attempt-41126174308-1/size-5000-block-2-D-measure/browser-samples.json",
@@ -67054,7 +67054,7 @@
       "profile": "constrained",
       "size": 5000,
       "variant": "B",
-      "path": "Overview → Applicants → detail/review → switch → search → selection → cold/warm Voting history → return",
+      "path": "Overview \u2192 Applicants \u2192 detail/review \u2192 switch \u2192 search \u2192 selection \u2192 cold/warm Voting history \u2192 return",
       "condition": "fresh_source_warm_assets_after_warmups",
       "artifacts": [
         "ci/constrained-cohort-5000-full-review-attempt-41126174308-1/size-5000-block-1-B-full-review/workflow.json",
@@ -67977,7 +67977,7 @@
       "profile": "constrained",
       "size": 5000,
       "variant": "D",
-      "path": "Overview → Applicants → detail/review → switch → search → selection → cold/warm Voting history → return",
+      "path": "Overview \u2192 Applicants \u2192 detail/review \u2192 switch \u2192 search \u2192 selection \u2192 cold/warm Voting history \u2192 return",
       "condition": "fresh_source_warm_assets_after_warmups",
       "artifacts": [
         "ci/constrained-cohort-5000-full-review-attempt-41126174308-1/size-5000-block-2-D-full-review/workflow.json",
@@ -71962,9 +71962,9 @@
   "performanceClearance": true,
   "independentFunctionalQAClearance": true,
   "independentFunctionalEvidence": [
-    "attempt-2/HOSTED_QA.json",
-    "attempt-2/GATED_COVERAGE.json",
-    "attempt-2/LOCAL_QA.json"
+    "revision-2/attempt-2/HOSTED_QA.json",
+    "revision-2/attempt-2/GATED_COVERAGE.json",
+    "revision-2/attempt-2/LOCAL_QA.json"
   ],
   "releaseClearance": true,
   "mergeVerification": "Application acceptance only; verify final PR head checks, identical application digest and measured-main identity immediately before merge.",
@@ -72053,13 +72053,13 @@
         "kind": "navigation",
         "size": 100,
         "profile": "local",
-        "path": "recruiting → applicants",
+        "path": "recruiting \u2192 applicants",
         "condition": "cold",
         "before": {
           "kind": "navigation",
           "size": 100,
           "profile": "local",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "cold",
           "variant": "B",
           "artifacts": [
@@ -72210,7 +72210,7 @@
           "kind": "navigation",
           "size": 100,
           "profile": "local",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "cold",
           "variant": "A",
           "artifacts": [
@@ -72454,13 +72454,13 @@
         "kind": "navigation",
         "size": 100,
         "profile": "local",
-        "path": "recruiting → applicants",
+        "path": "recruiting \u2192 applicants",
         "condition": "warm",
         "before": {
           "kind": "navigation",
           "size": 100,
           "profile": "local",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "warm",
           "variant": "B",
           "artifacts": [
@@ -72611,7 +72611,7 @@
           "kind": "navigation",
           "size": 100,
           "profile": "local",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "warm",
           "variant": "A",
           "artifacts": [
@@ -72855,13 +72855,13 @@
         "kind": "navigation",
         "size": 100,
         "profile": "local",
-        "path": "applicants → applicantDetail",
+        "path": "applicants \u2192 applicantDetail",
         "condition": "cold",
         "before": {
           "kind": "navigation",
           "size": 100,
           "profile": "local",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "cold",
           "variant": "B",
           "artifacts": [
@@ -73012,7 +73012,7 @@
           "kind": "navigation",
           "size": 100,
           "profile": "local",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "cold",
           "variant": "A",
           "artifacts": [
@@ -73256,13 +73256,13 @@
         "kind": "navigation",
         "size": 100,
         "profile": "local",
-        "path": "applicants → applicantDetail",
+        "path": "applicants \u2192 applicantDetail",
         "condition": "warm",
         "before": {
           "kind": "navigation",
           "size": 100,
           "profile": "local",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "warm",
           "variant": "B",
           "artifacts": [
@@ -73413,7 +73413,7 @@
           "kind": "navigation",
           "size": 100,
           "profile": "local",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "warm",
           "variant": "A",
           "artifacts": [
@@ -73657,13 +73657,13 @@
         "kind": "workflow",
         "size": 100,
         "profile": "local",
-        "path": "Overview CTA → detail → close → distant search",
+        "path": "Overview CTA \u2192 detail \u2192 close \u2192 distant search",
         "condition": "warm_browser_context_fresh_source",
         "before": {
           "kind": "workflow",
           "size": 100,
           "profile": "local",
-          "path": "Overview CTA → detail → close → distant search",
+          "path": "Overview CTA \u2192 detail \u2192 close \u2192 distant search",
           "condition": "warm_browser_context_fresh_source",
           "variant": "B",
           "artifacts": [
@@ -73814,7 +73814,7 @@
           "kind": "workflow",
           "size": 100,
           "profile": "local",
-          "path": "Overview CTA → detail → close → distant search",
+          "path": "Overview CTA \u2192 detail \u2192 close \u2192 distant search",
           "condition": "warm_browser_context_fresh_source",
           "variant": "A",
           "artifacts": [
@@ -74058,13 +74058,13 @@
         "kind": "navigation",
         "size": 1000,
         "profile": "local",
-        "path": "recruiting → applicants",
+        "path": "recruiting \u2192 applicants",
         "condition": "cold",
         "before": {
           "kind": "navigation",
           "size": 1000,
           "profile": "local",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "cold",
           "variant": "B",
           "artifacts": [
@@ -74215,7 +74215,7 @@
           "kind": "navigation",
           "size": 1000,
           "profile": "local",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "cold",
           "variant": "A",
           "artifacts": [
@@ -74459,13 +74459,13 @@
         "kind": "navigation",
         "size": 1000,
         "profile": "local",
-        "path": "recruiting → applicants",
+        "path": "recruiting \u2192 applicants",
         "condition": "warm",
         "before": {
           "kind": "navigation",
           "size": 1000,
           "profile": "local",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "warm",
           "variant": "B",
           "artifacts": [
@@ -74616,7 +74616,7 @@
           "kind": "navigation",
           "size": 1000,
           "profile": "local",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "warm",
           "variant": "A",
           "artifacts": [
@@ -74860,13 +74860,13 @@
         "kind": "navigation",
         "size": 1000,
         "profile": "local",
-        "path": "applicants → applicantDetail",
+        "path": "applicants \u2192 applicantDetail",
         "condition": "cold",
         "before": {
           "kind": "navigation",
           "size": 1000,
           "profile": "local",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "cold",
           "variant": "B",
           "artifacts": [
@@ -75017,7 +75017,7 @@
           "kind": "navigation",
           "size": 1000,
           "profile": "local",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "cold",
           "variant": "A",
           "artifacts": [
@@ -75261,13 +75261,13 @@
         "kind": "navigation",
         "size": 1000,
         "profile": "local",
-        "path": "applicants → applicantDetail",
+        "path": "applicants \u2192 applicantDetail",
         "condition": "warm",
         "before": {
           "kind": "navigation",
           "size": 1000,
           "profile": "local",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "warm",
           "variant": "B",
           "artifacts": [
@@ -75418,7 +75418,7 @@
           "kind": "navigation",
           "size": 1000,
           "profile": "local",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "warm",
           "variant": "A",
           "artifacts": [
@@ -75662,13 +75662,13 @@
         "kind": "workflow",
         "size": 1000,
         "profile": "local",
-        "path": "Overview CTA → detail → close → distant search",
+        "path": "Overview CTA \u2192 detail \u2192 close \u2192 distant search",
         "condition": "warm_browser_context_fresh_source",
         "before": {
           "kind": "workflow",
           "size": 1000,
           "profile": "local",
-          "path": "Overview CTA → detail → close → distant search",
+          "path": "Overview CTA \u2192 detail \u2192 close \u2192 distant search",
           "condition": "warm_browser_context_fresh_source",
           "variant": "B",
           "artifacts": [
@@ -75819,7 +75819,7 @@
           "kind": "workflow",
           "size": 1000,
           "profile": "local",
-          "path": "Overview CTA → detail → close → distant search",
+          "path": "Overview CTA \u2192 detail \u2192 close \u2192 distant search",
           "condition": "warm_browser_context_fresh_source",
           "variant": "A",
           "artifacts": [
@@ -76063,13 +76063,13 @@
         "kind": "navigation",
         "size": 5000,
         "profile": "local",
-        "path": "recruiting → applicants",
+        "path": "recruiting \u2192 applicants",
         "condition": "cold",
         "before": {
           "kind": "navigation",
           "size": 5000,
           "profile": "local",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "cold",
           "variant": "B",
           "artifacts": [
@@ -76220,7 +76220,7 @@
           "kind": "navigation",
           "size": 5000,
           "profile": "local",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "cold",
           "variant": "A",
           "artifacts": [
@@ -76464,13 +76464,13 @@
         "kind": "navigation",
         "size": 5000,
         "profile": "local",
-        "path": "recruiting → applicants",
+        "path": "recruiting \u2192 applicants",
         "condition": "warm",
         "before": {
           "kind": "navigation",
           "size": 5000,
           "profile": "local",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "warm",
           "variant": "B",
           "artifacts": [
@@ -76621,7 +76621,7 @@
           "kind": "navigation",
           "size": 5000,
           "profile": "local",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "warm",
           "variant": "A",
           "artifacts": [
@@ -76865,13 +76865,13 @@
         "kind": "navigation",
         "size": 5000,
         "profile": "local",
-        "path": "applicants → applicantDetail",
+        "path": "applicants \u2192 applicantDetail",
         "condition": "cold",
         "before": {
           "kind": "navigation",
           "size": 5000,
           "profile": "local",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "cold",
           "variant": "B",
           "artifacts": [
@@ -77022,7 +77022,7 @@
           "kind": "navigation",
           "size": 5000,
           "profile": "local",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "cold",
           "variant": "A",
           "artifacts": [
@@ -77266,13 +77266,13 @@
         "kind": "navigation",
         "size": 5000,
         "profile": "local",
-        "path": "applicants → applicantDetail",
+        "path": "applicants \u2192 applicantDetail",
         "condition": "warm",
         "before": {
           "kind": "navigation",
           "size": 5000,
           "profile": "local",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "warm",
           "variant": "B",
           "artifacts": [
@@ -77423,7 +77423,7 @@
           "kind": "navigation",
           "size": 5000,
           "profile": "local",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "warm",
           "variant": "A",
           "artifacts": [
@@ -77667,13 +77667,13 @@
         "kind": "workflow",
         "size": 5000,
         "profile": "local",
-        "path": "Overview CTA → detail → close → distant search",
+        "path": "Overview CTA \u2192 detail \u2192 close \u2192 distant search",
         "condition": "warm_browser_context_fresh_source",
         "before": {
           "kind": "workflow",
           "size": 5000,
           "profile": "local",
-          "path": "Overview CTA → detail → close → distant search",
+          "path": "Overview CTA \u2192 detail \u2192 close \u2192 distant search",
           "condition": "warm_browser_context_fresh_source",
           "variant": "B",
           "artifacts": [
@@ -77824,7 +77824,7 @@
           "kind": "workflow",
           "size": 5000,
           "profile": "local",
-          "path": "Overview CTA → detail → close → distant search",
+          "path": "Overview CTA \u2192 detail \u2192 close \u2192 distant search",
           "condition": "warm_browser_context_fresh_source",
           "variant": "A",
           "artifacts": [
@@ -78068,13 +78068,13 @@
         "kind": "navigation",
         "size": 100,
         "profile": "constrained",
-        "path": "recruiting → applicants",
+        "path": "recruiting \u2192 applicants",
         "condition": "cold",
         "before": {
           "kind": "navigation",
           "size": 100,
           "profile": "constrained",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "cold",
           "variant": "B",
           "artifacts": [
@@ -78225,7 +78225,7 @@
           "kind": "navigation",
           "size": 100,
           "profile": "constrained",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "cold",
           "variant": "A",
           "artifacts": [
@@ -78469,13 +78469,13 @@
         "kind": "navigation",
         "size": 100,
         "profile": "constrained",
-        "path": "recruiting → applicants",
+        "path": "recruiting \u2192 applicants",
         "condition": "warm",
         "before": {
           "kind": "navigation",
           "size": 100,
           "profile": "constrained",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "warm",
           "variant": "B",
           "artifacts": [
@@ -78626,7 +78626,7 @@
           "kind": "navigation",
           "size": 100,
           "profile": "constrained",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "warm",
           "variant": "A",
           "artifacts": [
@@ -78870,13 +78870,13 @@
         "kind": "navigation",
         "size": 100,
         "profile": "constrained",
-        "path": "applicants → applicantDetail",
+        "path": "applicants \u2192 applicantDetail",
         "condition": "cold",
         "before": {
           "kind": "navigation",
           "size": 100,
           "profile": "constrained",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "cold",
           "variant": "B",
           "artifacts": [
@@ -79027,7 +79027,7 @@
           "kind": "navigation",
           "size": 100,
           "profile": "constrained",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "cold",
           "variant": "A",
           "artifacts": [
@@ -79271,13 +79271,13 @@
         "kind": "navigation",
         "size": 100,
         "profile": "constrained",
-        "path": "applicants → applicantDetail",
+        "path": "applicants \u2192 applicantDetail",
         "condition": "warm",
         "before": {
           "kind": "navigation",
           "size": 100,
           "profile": "constrained",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "warm",
           "variant": "B",
           "artifacts": [
@@ -79428,7 +79428,7 @@
           "kind": "navigation",
           "size": 100,
           "profile": "constrained",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "warm",
           "variant": "A",
           "artifacts": [
@@ -79672,13 +79672,13 @@
         "kind": "workflow",
         "size": 100,
         "profile": "constrained",
-        "path": "Overview CTA → detail → close → distant search",
+        "path": "Overview CTA \u2192 detail \u2192 close \u2192 distant search",
         "condition": "warm_browser_context_fresh_source",
         "before": {
           "kind": "workflow",
           "size": 100,
           "profile": "constrained",
-          "path": "Overview CTA → detail → close → distant search",
+          "path": "Overview CTA \u2192 detail \u2192 close \u2192 distant search",
           "condition": "warm_browser_context_fresh_source",
           "variant": "B",
           "artifacts": [
@@ -79829,7 +79829,7 @@
           "kind": "workflow",
           "size": 100,
           "profile": "constrained",
-          "path": "Overview CTA → detail → close → distant search",
+          "path": "Overview CTA \u2192 detail \u2192 close \u2192 distant search",
           "condition": "warm_browser_context_fresh_source",
           "variant": "A",
           "artifacts": [
@@ -80073,13 +80073,13 @@
         "kind": "navigation",
         "size": 1000,
         "profile": "constrained",
-        "path": "recruiting → applicants",
+        "path": "recruiting \u2192 applicants",
         "condition": "cold",
         "before": {
           "kind": "navigation",
           "size": 1000,
           "profile": "constrained",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "cold",
           "variant": "B",
           "artifacts": [
@@ -80230,7 +80230,7 @@
           "kind": "navigation",
           "size": 1000,
           "profile": "constrained",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "cold",
           "variant": "A",
           "artifacts": [
@@ -80474,13 +80474,13 @@
         "kind": "navigation",
         "size": 1000,
         "profile": "constrained",
-        "path": "recruiting → applicants",
+        "path": "recruiting \u2192 applicants",
         "condition": "warm",
         "before": {
           "kind": "navigation",
           "size": 1000,
           "profile": "constrained",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "warm",
           "variant": "B",
           "artifacts": [
@@ -80631,7 +80631,7 @@
           "kind": "navigation",
           "size": 1000,
           "profile": "constrained",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "warm",
           "variant": "A",
           "artifacts": [
@@ -80875,13 +80875,13 @@
         "kind": "navigation",
         "size": 1000,
         "profile": "constrained",
-        "path": "applicants → applicantDetail",
+        "path": "applicants \u2192 applicantDetail",
         "condition": "cold",
         "before": {
           "kind": "navigation",
           "size": 1000,
           "profile": "constrained",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "cold",
           "variant": "B",
           "artifacts": [
@@ -81032,7 +81032,7 @@
           "kind": "navigation",
           "size": 1000,
           "profile": "constrained",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "cold",
           "variant": "A",
           "artifacts": [
@@ -81276,13 +81276,13 @@
         "kind": "navigation",
         "size": 1000,
         "profile": "constrained",
-        "path": "applicants → applicantDetail",
+        "path": "applicants \u2192 applicantDetail",
         "condition": "warm",
         "before": {
           "kind": "navigation",
           "size": 1000,
           "profile": "constrained",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "warm",
           "variant": "B",
           "artifacts": [
@@ -81433,7 +81433,7 @@
           "kind": "navigation",
           "size": 1000,
           "profile": "constrained",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "warm",
           "variant": "A",
           "artifacts": [
@@ -81677,13 +81677,13 @@
         "kind": "workflow",
         "size": 1000,
         "profile": "constrained",
-        "path": "Overview CTA → detail → close → distant search",
+        "path": "Overview CTA \u2192 detail \u2192 close \u2192 distant search",
         "condition": "warm_browser_context_fresh_source",
         "before": {
           "kind": "workflow",
           "size": 1000,
           "profile": "constrained",
-          "path": "Overview CTA → detail → close → distant search",
+          "path": "Overview CTA \u2192 detail \u2192 close \u2192 distant search",
           "condition": "warm_browser_context_fresh_source",
           "variant": "B",
           "artifacts": [
@@ -81834,7 +81834,7 @@
           "kind": "workflow",
           "size": 1000,
           "profile": "constrained",
-          "path": "Overview CTA → detail → close → distant search",
+          "path": "Overview CTA \u2192 detail \u2192 close \u2192 distant search",
           "condition": "warm_browser_context_fresh_source",
           "variant": "A",
           "artifacts": [
@@ -82078,13 +82078,13 @@
         "kind": "navigation",
         "size": 5000,
         "profile": "constrained",
-        "path": "recruiting → applicants",
+        "path": "recruiting \u2192 applicants",
         "condition": "cold",
         "before": {
           "kind": "navigation",
           "size": 5000,
           "profile": "constrained",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "cold",
           "variant": "B",
           "artifacts": [
@@ -82235,7 +82235,7 @@
           "kind": "navigation",
           "size": 5000,
           "profile": "constrained",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "cold",
           "variant": "A",
           "artifacts": [
@@ -82479,13 +82479,13 @@
         "kind": "navigation",
         "size": 5000,
         "profile": "constrained",
-        "path": "recruiting → applicants",
+        "path": "recruiting \u2192 applicants",
         "condition": "warm",
         "before": {
           "kind": "navigation",
           "size": 5000,
           "profile": "constrained",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "warm",
           "variant": "B",
           "artifacts": [
@@ -82636,7 +82636,7 @@
           "kind": "navigation",
           "size": 5000,
           "profile": "constrained",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "warm",
           "variant": "A",
           "artifacts": [
@@ -82880,13 +82880,13 @@
         "kind": "navigation",
         "size": 5000,
         "profile": "constrained",
-        "path": "applicants → applicantDetail",
+        "path": "applicants \u2192 applicantDetail",
         "condition": "cold",
         "before": {
           "kind": "navigation",
           "size": 5000,
           "profile": "constrained",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "cold",
           "variant": "B",
           "artifacts": [
@@ -83037,7 +83037,7 @@
           "kind": "navigation",
           "size": 5000,
           "profile": "constrained",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "cold",
           "variant": "A",
           "artifacts": [
@@ -83281,13 +83281,13 @@
         "kind": "navigation",
         "size": 5000,
         "profile": "constrained",
-        "path": "applicants → applicantDetail",
+        "path": "applicants \u2192 applicantDetail",
         "condition": "warm",
         "before": {
           "kind": "navigation",
           "size": 5000,
           "profile": "constrained",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "warm",
           "variant": "B",
           "artifacts": [
@@ -83438,7 +83438,7 @@
           "kind": "navigation",
           "size": 5000,
           "profile": "constrained",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "warm",
           "variant": "A",
           "artifacts": [
@@ -83682,13 +83682,13 @@
         "kind": "workflow",
         "size": 5000,
         "profile": "constrained",
-        "path": "Overview CTA → detail → close → distant search",
+        "path": "Overview CTA \u2192 detail \u2192 close \u2192 distant search",
         "condition": "warm_browser_context_fresh_source",
         "before": {
           "kind": "workflow",
           "size": 5000,
           "profile": "constrained",
-          "path": "Overview CTA → detail → close → distant search",
+          "path": "Overview CTA \u2192 detail \u2192 close \u2192 distant search",
           "condition": "warm_browser_context_fresh_source",
           "variant": "B",
           "artifacts": [
@@ -83839,7 +83839,7 @@
           "kind": "workflow",
           "size": 5000,
           "profile": "constrained",
-          "path": "Overview CTA → detail → close → distant search",
+          "path": "Overview CTA \u2192 detail \u2192 close \u2192 distant search",
           "condition": "warm_browser_context_fresh_source",
           "variant": "A",
           "artifacts": [
@@ -84083,13 +84083,13 @@
         "kind": "navigation",
         "size": 1,
         "profile": "local",
-        "path": "recruiting → applicants",
+        "path": "recruiting \u2192 applicants",
         "condition": "cold",
         "before": {
           "kind": "navigation",
           "size": 1,
           "profile": "local",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "cold",
           "variant": "B",
           "artifacts": [
@@ -84240,7 +84240,7 @@
           "kind": "navigation",
           "size": 1,
           "profile": "local",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "cold",
           "variant": "A",
           "artifacts": [
@@ -84484,13 +84484,13 @@
         "kind": "navigation",
         "size": 1,
         "profile": "local",
-        "path": "recruiting → applicants",
+        "path": "recruiting \u2192 applicants",
         "condition": "warm",
         "before": {
           "kind": "navigation",
           "size": 1,
           "profile": "local",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "warm",
           "variant": "B",
           "artifacts": [
@@ -84641,7 +84641,7 @@
           "kind": "navigation",
           "size": 1,
           "profile": "local",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "warm",
           "variant": "A",
           "artifacts": [
@@ -84885,13 +84885,13 @@
         "kind": "navigation",
         "size": 1,
         "profile": "local",
-        "path": "applicants → applicantDetail",
+        "path": "applicants \u2192 applicantDetail",
         "condition": "cold",
         "before": {
           "kind": "navigation",
           "size": 1,
           "profile": "local",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "cold",
           "variant": "B",
           "artifacts": [
@@ -85042,7 +85042,7 @@
           "kind": "navigation",
           "size": 1,
           "profile": "local",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "cold",
           "variant": "A",
           "artifacts": [
@@ -85286,13 +85286,13 @@
         "kind": "navigation",
         "size": 1,
         "profile": "local",
-        "path": "applicants → applicantDetail",
+        "path": "applicants \u2192 applicantDetail",
         "condition": "warm",
         "before": {
           "kind": "navigation",
           "size": 1,
           "profile": "local",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "warm",
           "variant": "B",
           "artifacts": [
@@ -85443,7 +85443,7 @@
           "kind": "navigation",
           "size": 1,
           "profile": "local",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "warm",
           "variant": "A",
           "artifacts": [
@@ -85687,13 +85687,13 @@
         "kind": "navigation",
         "size": 1,
         "profile": "constrained",
-        "path": "recruiting → applicants",
+        "path": "recruiting \u2192 applicants",
         "condition": "cold",
         "before": {
           "kind": "navigation",
           "size": 1,
           "profile": "constrained",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "cold",
           "variant": "B",
           "artifacts": [
@@ -85844,7 +85844,7 @@
           "kind": "navigation",
           "size": 1,
           "profile": "constrained",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "cold",
           "variant": "A",
           "artifacts": [
@@ -86088,13 +86088,13 @@
         "kind": "navigation",
         "size": 1,
         "profile": "constrained",
-        "path": "recruiting → applicants",
+        "path": "recruiting \u2192 applicants",
         "condition": "warm",
         "before": {
           "kind": "navigation",
           "size": 1,
           "profile": "constrained",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "warm",
           "variant": "B",
           "artifacts": [
@@ -86245,7 +86245,7 @@
           "kind": "navigation",
           "size": 1,
           "profile": "constrained",
-          "path": "recruiting → applicants",
+          "path": "recruiting \u2192 applicants",
           "condition": "warm",
           "variant": "A",
           "artifacts": [
@@ -86489,13 +86489,13 @@
         "kind": "navigation",
         "size": 1,
         "profile": "constrained",
-        "path": "applicants → applicantDetail",
+        "path": "applicants \u2192 applicantDetail",
         "condition": "cold",
         "before": {
           "kind": "navigation",
           "size": 1,
           "profile": "constrained",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "cold",
           "variant": "B",
           "artifacts": [
@@ -86646,7 +86646,7 @@
           "kind": "navigation",
           "size": 1,
           "profile": "constrained",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "cold",
           "variant": "A",
           "artifacts": [
@@ -86890,13 +86890,13 @@
         "kind": "navigation",
         "size": 1,
         "profile": "constrained",
-        "path": "applicants → applicantDetail",
+        "path": "applicants \u2192 applicantDetail",
         "condition": "warm",
         "before": {
           "kind": "navigation",
           "size": 1,
           "profile": "constrained",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "warm",
           "variant": "B",
           "artifacts": [
@@ -87047,7 +87047,7 @@
           "kind": "navigation",
           "size": 1,
           "profile": "constrained",
-          "path": "applicants → applicantDetail",
+          "path": "applicants \u2192 applicantDetail",
           "condition": "warm",
           "variant": "A",
           "artifacts": [
@@ -87291,13 +87291,13 @@
         "kind": "voting",
         "size": 100,
         "profile": "local",
-        "path": "applicants → voting",
+        "path": "applicants \u2192 voting",
         "condition": "cold",
         "before": {
           "kind": "voting",
           "size": 100,
           "profile": "local",
-          "path": "applicants → voting",
+          "path": "applicants \u2192 voting",
           "condition": "cold",
           "variant": "B",
           "artifacts": [
@@ -87448,7 +87448,7 @@
           "kind": "voting",
           "size": 100,
           "profile": "local",
-          "path": "applicants → voting",
+          "path": "applicants \u2192 voting",
           "condition": "cold",
           "variant": "A",
           "artifacts": [
@@ -87692,13 +87692,13 @@
         "kind": "voting",
         "size": 100,
         "profile": "local",
-        "path": "applicants → voting",
+        "path": "applicants \u2192 voting",
         "condition": "warm",
         "before": {
           "kind": "voting",
           "size": 100,
           "profile": "local",
-          "path": "applicants → voting",
+          "path": "applicants \u2192 voting",
           "condition": "warm",
           "variant": "B",
           "artifacts": [
@@ -87849,7 +87849,7 @@
           "kind": "voting",
           "size": 100,
           "profile": "local",
-          "path": "applicants → voting",
+          "path": "applicants \u2192 voting",
           "condition": "warm",
           "variant": "A",
           "artifacts": [
@@ -88093,13 +88093,13 @@
         "kind": "voting",
         "size": 100,
         "profile": "local",
-        "path": "voting → applicants",
+        "path": "voting \u2192 applicants",
         "condition": "cold",
         "before": {
           "kind": "voting",
           "size": 100,
           "profile": "local",
-          "path": "voting → applicants",
+          "path": "voting \u2192 applicants",
           "condition": "cold",
           "variant": "B",
           "artifacts": [
@@ -88250,7 +88250,7 @@
           "kind": "voting",
           "size": 100,
           "profile": "local",
-          "path": "voting → applicants",
+          "path": "voting \u2192 applicants",
           "condition": "cold",
           "variant": "A",
           "artifacts": [
@@ -88494,13 +88494,13 @@
         "kind": "voting",
         "size": 100,
         "profile": "local",
-        "path": "voting → applicants",
+        "path": "voting \u2192 applicants",
         "condition": "warm",
         "before": {
           "kind": "voting",
           "size": 100,
           "profile": "local",
-          "path": "voting → applicants",
+          "path": "voting \u2192 applicants",
           "condition": "warm",
           "variant": "B",
           "artifacts": [
@@ -88651,7 +88651,7 @@
           "kind": "voting",
           "size": 100,
           "profile": "local",
-          "path": "voting → applicants",
+          "path": "voting \u2192 applicants",
           "condition": "warm",
           "variant": "A",
           "artifacts": [
@@ -88895,13 +88895,13 @@
         "kind": "voting",
         "size": 5000,
         "profile": "local",
-        "path": "applicants → voting",
+        "path": "applicants \u2192 voting",
         "condition": "cold",
         "before": {
           "kind": "voting",
           "size": 5000,
           "profile": "local",
-          "path": "applicants → voting",
+          "path": "applicants \u2192 voting",
           "condition": "cold",
           "variant": "B",
           "artifacts": [
@@ -89052,7 +89052,7 @@
           "kind": "voting",
           "size": 5000,
           "profile": "local",
-          "path": "applicants → voting",
+          "path": "applicants \u2192 voting",
           "condition": "cold",
           "variant": "A",
           "artifacts": [
@@ -89296,13 +89296,13 @@
         "kind": "voting",
         "size": 5000,
         "profile": "local",
-        "path": "applicants → voting",
+        "path": "applicants \u2192 voting",
         "condition": "warm",
         "before": {
           "kind": "voting",
           "size": 5000,
           "profile": "local",
-          "path": "applicants → voting",
+          "path": "applicants \u2192 voting",
           "condition": "warm",
           "variant": "B",
           "artifacts": [
@@ -89453,7 +89453,7 @@
           "kind": "voting",
           "size": 5000,
           "profile": "local",
-          "path": "applicants → voting",
+          "path": "applicants \u2192 voting",
           "condition": "warm",
           "variant": "A",
           "artifacts": [
@@ -89697,13 +89697,13 @@
         "kind": "voting",
         "size": 5000,
         "profile": "local",
-        "path": "voting → applicants",
+        "path": "voting \u2192 applicants",
         "condition": "cold",
         "before": {
           "kind": "voting",
           "size": 5000,
           "profile": "local",
-          "path": "voting → applicants",
+          "path": "voting \u2192 applicants",
           "condition": "cold",
           "variant": "B",
           "artifacts": [
@@ -89854,7 +89854,7 @@
           "kind": "voting",
           "size": 5000,
           "profile": "local",
-          "path": "voting → applicants",
+          "path": "voting \u2192 applicants",
           "condition": "cold",
           "variant": "A",
           "artifacts": [
@@ -90098,13 +90098,13 @@
         "kind": "voting",
         "size": 5000,
         "profile": "local",
-        "path": "voting → applicants",
+        "path": "voting \u2192 applicants",
         "condition": "warm",
         "before": {
           "kind": "voting",
           "size": 5000,
           "profile": "local",
-          "path": "voting → applicants",
+          "path": "voting \u2192 applicants",
           "condition": "warm",
           "variant": "B",
           "artifacts": [
@@ -90255,7 +90255,7 @@
           "kind": "voting",
           "size": 5000,
           "profile": "local",
-          "path": "voting → applicants",
+          "path": "voting \u2192 applicants",
           "condition": "warm",
           "variant": "A",
           "artifacts": [
@@ -92909,5 +92909,6 @@
     }
   ],
   "currentRawSummary": "revision-2/BENCHMARKS.json",
-  "authorization": "User explicitly requested fixing PR93 and merging it to main after verification. The held375a experiment remains excluded. No manual deployment authorized or performed."
+  "authorization": "User explicitly requested fixing PR93 and merging it to main after verification. The held375a experiment remains excluded. No manual deployment authorized or performed.",
+  "evidencePaths": "Raw comparison attempt/artifact paths resolve from this release-repair root. Independent functional evidence paths include revision-2/. The reproducible current-only source report remains revision-2/BENCHMARKS.json."
 }

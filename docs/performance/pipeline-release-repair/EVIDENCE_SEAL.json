@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-10-30T23:56:41.859Z",
+  "generatedAt": "2026-10-30T23:58:30.338Z",
   "measuredMain": "0a40de7cbcad158cf60d96c258610b832d818da8",
   "measuredApplicationSource": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
-  "parentHeadBeforeEvidenceCommit": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+  "parentHeadBeforeEvidenceCommit": "8865550457d2baff032fe62b6552969602e824f9",
   "applicationFiles": 965,
   "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
   "applicationHashes": {
@@ -982,12 +982,12 @@
   "independentFunctionalClearance": true,
   "applicationReleaseClearance": true,
   "evidenceFiles": 1493,
-  "evidenceDigest": "dd90117f96cd8beb71994108f5dddc04e6df30e39e469125043a77e089b22939",
+  "evidenceDigest": "f2388f3aa09ff35b85288738ff9598569740997e01da58f196e8f1b8231a7599",
   "evidenceHashes": {
     "ACCEPTANCE.md": "7fd297207c75d3a955590398b4720e9492c2ef2f7c2e50da51e3b3eb8201822b",
     "ADDITIONAL_QA.json": "6f17c905c55474fb5fd7d286cb7e3be736a9a6c15e9828b7186063e8f9323142",
     "ARCHIVES.json": "38a869dde1d1d6c17d48d7cd37b88bbdaf133fc846fb1e8b6c3d9b9f14518ff0",
-    "BENCHMARKS.json": "ceb3f1b1177fff1b4bd7b75a13dc59b674cf00b2e8404f062d61ff86d3ca1100",
+    "BENCHMARKS.json": "0ca1fda272c39180f282cfef6a9f90ae8ff4e8d7e7981e6cce6d68a1ee2148a6",
     "CANCELLED_CI_PREPARATIONS.json": "2547d1572839e503b2dac57ee0913bafad17cc384597913ec4e021b5f710720f",
     "CHANGED_FILES.json": "b96361ce2eac7ec86ef0a08d33c4cf44e209b7c9ae841c555ba594b0b81e01b9",
     "CHATGPT_HANDOFF.md": "e67b393820704d79cb68c30d8ab502744f0d923812d5faff9b33db6d778dd3bf",
