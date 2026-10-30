@@ -1,0 +1,237 @@
+{
+  "generatedAt": "2026-10-28T20:15:32.161Z",
+  "sampleCount": 15,
+  "groups": [
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "meaningfulMs": {
+        "samples": 12,
+        "p50": 356.2,
+        "p95": 1141.2,
+        "max": 1141.2
+      },
+      "interactiveMs": {
+        "samples": 12,
+        "p50": 356.6,
+        "p95": 1141.5,
+        "max": 1141.5
+      },
+      "clickToUrlMs": {
+        "samples": 12,
+        "p50": 2.3,
+        "p95": 5.6,
+        "max": 5.6
+      },
+      "networkCompleteMs": {
+        "samples": 12,
+        "p50": 308.7,
+        "p95": 9006.5,
+        "max": 9006.5
+      },
+      "scriptMs": {
+        "samples": 12,
+        "p50": 113.24,
+        "p95": 278.95,
+        "max": 278.95
+      },
+      "taskMs": {
+        "samples": 12,
+        "p50": 419.79,
+        "p95": 958.53,
+        "max": 958.53
+      },
+      "requestCount": {
+        "samples": 12,
+        "p50": 5,
+        "p95": 5,
+        "max": 5
+      },
+      "encodedBodyBytes": {
+        "samples": 12,
+        "p50": 32857,
+        "p95": 32857,
+        "max": 32857
+      }
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "warm",
+      "meaningfulMs": {
+        "samples": 15,
+        "p50": 144.1,
+        "p95": 480.1,
+        "max": 480.1
+      },
+      "interactiveMs": {
+        "samples": 15,
+        "p50": 145.6,
+        "p95": 481.2,
+        "max": 481.2
+      },
+      "clickToUrlMs": {
+        "samples": 15,
+        "p50": 0.9,
+        "p95": 1.8,
+        "max": 1.8
+      },
+      "networkCompleteMs": {
+        "samples": 15,
+        "p50": 116.5,
+        "p95": 3145.8,
+        "max": 3145.8
+      },
+      "scriptMs": {
+        "samples": 15,
+        "p50": 30.28,
+        "p95": 59.46,
+        "max": 59.46
+      },
+      "taskMs": {
+        "samples": 15,
+        "p50": 109.68,
+        "p95": 273.68,
+        "max": 273.68
+      },
+      "requestCount": {
+        "samples": 15,
+        "p50": 1,
+        "p95": 1,
+        "max": 1
+      },
+      "encodedBodyBytes": {
+        "samples": 15,
+        "p50": 2064,
+        "p95": 2064,
+        "max": 2064
+      }
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "meaningfulMs": {
+        "samples": 15,
+        "p50": 87.5,
+        "p95": 110.9,
+        "max": 110.9
+      },
+      "interactiveMs": {
+        "samples": 15,
+        "p50": 87.6,
+        "p95": 111,
+        "max": 111
+      },
+      "clickToUrlMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "networkCompleteMs": {
+        "samples": 15,
+        "p50": 157.5,
+        "p95": 179.1,
+        "max": 179.1
+      },
+      "scriptMs": {
+        "samples": 15,
+        "p50": 32.48,
+        "p95": 40.71,
+        "max": 40.71
+      },
+      "taskMs": {
+        "samples": 15,
+        "p50": 148.17,
+        "p95": 184.2,
+        "max": 184.2
+      },
+      "requestCount": {
+        "samples": 15,
+        "p50": 3,
+        "p95": 3,
+        "max": 3
+      },
+      "encodedBodyBytes": {
+        "samples": 15,
+        "p50": 909,
+        "p95": 909,
+        "max": 909
+      }
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "meaningfulMs": {
+        "samples": 15,
+        "p50": 43.4,
+        "p95": 48.5,
+        "max": 48.5
+      },
+      "interactiveMs": {
+        "samples": 15,
+        "p50": 43.6,
+        "p95": 48.9,
+        "max": 48.9
+      },
+      "clickToUrlMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "networkCompleteMs": {
+        "samples": 15,
+        "p50": 138.9,
+        "p95": 152.4,
+        "max": 152.4
+      },
+      "scriptMs": {
+        "samples": 15,
+        "p50": 20.43,
+        "p95": 32.58,
+        "max": 32.58
+      },
+      "taskMs": {
+        "samples": 15,
+        "p50": 103.84,
+        "p95": 137.94,
+        "max": 137.94
+      },
+      "requestCount": {
+        "samples": 15,
+        "p50": 3,
+        "p95": 3,
+        "max": 3
+      },
+      "encodedBodyBytes": {
+        "samples": 15,
+        "p50": 909,
+        "p95": 909,
+        "max": 909
+      }
+    }
+  ],
+  "failures": [
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 6,
+      "stage": "source",
+      "error": "page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\u001b[22m\n"
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 9,
+      "stage": "source",
+      "error": "page.waitForFunction: Timeout 30000ms exceeded."
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 14,
+      "stage": "source",
+      "error": "page.waitForFunction: Timeout 30000ms exceeded."
+    }
+  ]
+}

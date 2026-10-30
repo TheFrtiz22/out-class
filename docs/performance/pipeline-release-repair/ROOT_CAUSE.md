@@ -1,11 +1,17 @@
 # Request dependencies and the release blocker
 
-Source baseline: current main `f2192e02e5e218537f4dda8a4333aecab1602993`.
+Initial integration base: `f2192e02e5e218537f4dda8a4333aecab1602993`.
+Latest integration/comparison base: `6e793dea0bd45052fa444749b26d432ae93392cd`.
 Measured historical B: `78402ee611f46b8764898250e46b6dcc8dab7654`.
 Held C: `375a00d54d95f24e7d600a56218b9bf8040a7937`.
 The October 28 decision on diagnostic commit `980522d7` supersedes historical
 claims about resident summaries, raw SQL metadata and Settings experiments.
-The only subsequent main change is PR 89's loading feedback; it is preserved.
+The initial baseline differed from measured B by PR 89's loading feedback.
+Main later incorporated the dock fix, persistent live voting rooms, current
+layouts, contextual loading and explicit live-room read budgets. The repair is
+rebased preserving those changes. The request chains below describe the held
+experiment and the retained applicant/voting-history console. New persistent
+live rooms are not a performance claim of this repair.
 
 ## Confirmed causes
 

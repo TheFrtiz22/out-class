@@ -1,0 +1,470 @@
+{
+  "applicationCommit": "4d52103e0ca70086c8ff4f3e913a7bd11f377005",
+  "ordinarySkipped": 52,
+  "rows": [
+    {
+      "title": "real account HTTP and RSC keep internal templates behind recruiting permission across campuses and overlapping memberships",
+      "files": [
+        "tests/account-data-e2e.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797549075,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+    },
+    {
+      "title": "active Interview Rooms: distinct reviewers, concurrent reads and immediate assignment revocation",
+      "files": [
+        "tests/active-interview-navigation-e2e.test.cjs"
+      ],
+      "status": "not_run_in_this_repair",
+      "note": "Ordinary skip retained; passing a related native/HTTP suite is not substituted for this specific test."
+    },
+    {
+      "title": "real local Admin session survives elevation, navigation and refresh and rejects revoked authority",
+      "files": [
+        "tests/admin-session-e2e.test.cjs"
+      ],
+      "status": "not_run_in_this_repair",
+      "note": "Ordinary skip retained; passing a related native/HTTP suite is not substituted for this specific test."
+    },
+    {
+      "title": "disposable real Auth/password/MFA elevation, Admin routes/actions, invitations, reports, impersonation and logout",
+      "files": [
+        "tests/admin-workspace-e2e.test.cjs"
+      ],
+      "status": "not_run_in_this_repair",
+      "note": "Ordinary skip retained; passing a related native/HTTP suite is not substituted for this specific test."
+    },
+    {
+      "title": "application writing and branding through real sessions, server actions, PostgreSQL and browser reloads",
+      "files": [
+        "tests/application-writing-e2e.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "source": "330ada2342abfd2200770b40402a4fb1296648df; same application digest as measured 4d52103e",
+      "jobId": 123817456110,
+      "runId": 40980012132
+    },
+    {
+      "title": "scheduled availability requests on actual bounded PostgreSQL",
+      "files": [
+        "tests/availability-schedules-native.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797549013,
+      "command": "node scripts/test-decision-publication-local.cjs"
+    },
+    {
+      "title": "Events: desktop/tablet/mobile views share filters, saves, RSVP, details and pagination; calendar downloads actual instants",
+      "files": [
+        "tests/campus-event-discovery-browser.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797548943,
+      "command": "node scripts/run-disposable-postgres.cjs events"
+    },
+    {
+      "title": "native Prisma: account-scoped idempotent saves, shared filtered pagination, publication restrictions and existing RSVP",
+      "files": [
+        "tests/campus-event-discovery.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797548943,
+      "command": "node scripts/run-disposable-postgres.cjs events"
+    },
+    {
+      "title": "real local club assets: elevated Admin/leader writes, browser denial, assignment boundaries, suspension and authoritative replacement/removal",
+      "files": [
+        "tests/club-assets-e2e.test.cjs"
+      ],
+      "status": "not_run_in_this_repair",
+      "note": "Ordinary skip retained; passing a related native/HTTP suite is not substituted for this specific test."
+    },
+    {
+      "title": "scheduling through local Auth, production actions and authenticated cron",
+      "files": [
+        "tests/communication-schedules-e2e.test.cjs"
+      ],
+      "status": "not_run_in_this_repair",
+      "note": "Ordinary skip retained; passing a related native/HTTP suite is not substituted for this specific test."
+    },
+    {
+      "title": "scheduled publication on bounded native PostgreSQL",
+      "files": [
+        "tests/communication-schedules-native.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797549013,
+      "command": "node scripts/test-decision-publication-local.cjs"
+    },
+    {
+      "title": "announcements over real Next HTTP, verified local Auth and PostgreSQL; provider delivery is mocked",
+      "files": [
+        "tests/communications-e2e.test.cjs"
+      ],
+      "status": "not_run_in_this_repair",
+      "note": "Ordinary skip retained; passing a related native/HTTP suite is not substituted for this specific test."
+    },
+    {
+      "title": "native decision communications: atomic snapshots, ownership, history, retries and outbox",
+      "files": [
+        "tests/communications-native.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797548920,
+      "command": "node scripts/test-decision-transactions-local.cjs"
+    },
+    {
+      "title": "real local Auth + server actions + PostgreSQL + private Storage: moderation, revision replacement, privacy, RSVP concurrency and attendee authorization",
+      "files": [
+        "tests/corkboard-e2e.test.cjs"
+      ],
+      "status": "not_run_in_this_repair",
+      "note": "Ordinary skip retained; passing a related native/HTTP suite is not substituted for this specific test."
+    },
+    {
+      "title": "real Auth, RSC, PostgreSQL, private Storage and shared email-provider decision lifecycle",
+      "files": [
+        "tests/decision-communications-e2e.test.cjs"
+      ],
+      "status": "not_run_in_this_repair",
+      "note": "Ordinary skip retained; passing a related native/HTTP suite is not substituted for this specific test."
+    },
+    {
+      "title": "decision lifecycle through local Auth/Storage and production server actions",
+      "files": [
+        "tests/decision-publication-e2e.test.cjs"
+      ],
+      "status": "not_run_in_this_repair",
+      "note": "Ordinary skip retained; passing a related native/HTTP suite is not substituted for this specific test."
+    },
+    {
+      "title": "decision controls, cycles and scheduled publication on bounded PostgreSQL",
+      "files": [
+        "tests/decision-publication-native.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797549013,
+      "command": "node scripts/test-decision-publication-local.cjs"
+    },
+    {
+      "title": "decision/invitation transaction repair on isolated native PostgreSQL",
+      "files": [
+        "tests/decision-transactions-native.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797548920,
+      "command": "node scripts/test-decision-transactions-local.cjs"
+    },
+    {
+      "title": "isolated native database + Supabase: authorized flyers, replacement/removal/cascade cleanup, public serving and all-day edits",
+      "files": [
+        "tests/event-storage-native.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797548743,
+      "command": "node scripts/run-availability-e2e.cjs --event-storage"
+    },
+    {
+      "title": "native collaboration: ordered simultaneous picks, revision conflicts, exact queue advancement, invitations and revocation",
+      "files": [
+        "tests/interview-collaboration-native.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797548853,
+      "command": "node scripts/run-disposable-postgres.cjs security"
+    },
+    {
+      "title": "native PostgreSQL interview transactions: independent drafts, simultaneous finish, annotations, revocation and immutable anonymous reopening",
+      "files": [
+        "tests/interview-native-concurrency.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797548853,
+      "command": "node scripts/run-disposable-postgres.cjs security"
+    },
+    {
+      "title": "scheduled invitation dispatch through local Auth and production actions",
+      "files": [
+        "tests/invitation-schedules-e2e.test.cjs"
+      ],
+      "status": "not_run_in_this_repair",
+      "note": "Ordinary skip retained; passing a related native/HTTP suite is not substituted for this specific test."
+    },
+    {
+      "title": "invitation scheduling and fair worker on actual bounded PostgreSQL",
+      "files": [
+        "tests/invitation-schedules-native.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797549013,
+      "command": "node scripts/test-decision-publication-local.cjs"
+    },
+    {
+      "title": "Phase 1 GET reads preserve live authority, no-store, Demo isolation and concurrent browser navigation",
+      "files": [
+        "tests/navigation-phase1-e2e.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797549075,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+    },
+    {
+      "title": "workspace avoids unused font transfers and renders real italic/variable faces on demand at 1440px",
+      "files": [
+        "tests/navigation-phase10-e2e.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797549075,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+    },
+    {
+      "title": "workspace avoids unused font transfers and renders real italic/variable faces on demand at 390px",
+      "files": [
+        "tests/navigation-phase10-e2e.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797549075,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+    },
+    {
+      "title": "constrained startup fences an already-notified Auth epoch, revisits read fresh, and revoked cookies reveal no old applicants",
+      "files": [
+        "tests/navigation-phase12-e2e.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797549075,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+    },
+    {
+      "title": "selected tabs request authorized data while code is still loading, then consume it exactly once",
+      "files": [
+        "tests/navigation-phase2-e2e.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797549075,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+    },
+    {
+      "title": "rapid selected-tab changes fence late results and a revoked revisit never reveals the old directory",
+      "files": [
+        "tests/navigation-phase2-e2e.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797549075,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+    },
+    {
+      "title": "pointer and mobile touch navigation retain one fresh read, usable content and responsive layout",
+      "files": [
+        "tests/navigation-phase2-e2e.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797549075,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+    },
+    {
+      "title": "server pages and explicit selections preserve complete authorized sets, privacy and live revocation",
+      "files": [
+        "tests/navigation-phase5-e2e.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797549075,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+    },
+    {
+      "title": "fresh page boundaries avoid duplicate reads, full quick-review/voting selection survives pagination and reopen validates again",
+      "files": [
+        "tests/navigation-phase5-e2e.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797549075,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+    },
+    {
+      "title": "rapid global searches coalesce obsolete reads, retain keyboard focus and never show a late previous selection",
+      "files": [
+        "tests/navigation-phase5-e2e.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797549075,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+    },
+    {
+      "title": "editable review drafts survive the 100/101 server-page boundary and return navigation",
+      "files": [
+        "tests/navigation-phase5-e2e.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797549075,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+    },
+    {
+      "title": "native PostgreSQL: concurrent claims, duplicate imports, email delivery, and owner suspensions",
+      "files": [
+        "tests/onboarding-concurrency.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797548853,
+      "command": "node scripts/run-disposable-postgres.cjs security"
+    },
+    {
+      "title": "complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and captured SMTP",
+      "files": [
+        "tests/onboarding-e2e.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797549075,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+    },
+    {
+      "title": "operational dashboards authorize summaries and persist inline work with real sessions",
+      "files": [
+        "tests/operational-dashboards-e2e.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "source": "330ada2342abfd2200770b40402a4fb1296648df; same application digest as measured 4d52103e",
+      "jobId": 123817456356,
+      "runId": 40980012132
+    },
+    {
+      "title": "all four cohorts retain complete canonical counts, filters, ranking, details and voting selections",
+      "files": [
+        "tests/pipeline-release-e2e.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797549075,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+    },
+    {
+      "title": "complete-page and voting reads never reuse successful authority after permission, suspension or session revocation",
+      "files": [
+        "tests/pipeline-release-e2e.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797549075,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+    },
+    {
+      "title": "real desktop pointer and mobile touch support detail switching, global search and history for every cohort",
+      "files": [
+        "tests/pipeline-release-e2e.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797549075,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+    },
+    {
+      "title": "recipient groups through real local Auth and production Next server actions",
+      "files": [
+        "tests/recipient-audiences-e2e.test.cjs"
+      ],
+      "status": "not_run_in_this_repair",
+      "note": "Ordinary skip retained; passing a related native/HTTP suite is not substituted for this specific test."
+    },
+    {
+      "title": "recipient audiences on bounded native PostgreSQL",
+      "files": [
+        "tests/recipient-audiences-native.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797549013,
+      "command": "node scripts/test-decision-publication-local.cjs"
+    },
+    {
+      "title": "native recruitment authorization races, immutable round rename, feedback and narrow photos",
+      "files": [
+        "tests/recruitment-native.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797548920,
+      "command": "node scripts/test-decision-transactions-local.cjs"
+    },
+    {
+      "title": "native offers: publication, student authority, membership, retries and races",
+      "files": [
+        "tests/recruitment-offers-native.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797548920,
+      "command": "node scripts/test-decision-transactions-local.cjs"
+    },
+    {
+      "title": "isolated built Next action loads PDF.js and its worker, returns proposals and structured failures",
+      "files": [
+        "tests/resume-import-runtime.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797549075,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+    },
+    {
+      "title": "real PostgreSQL voting polling versus scheduler progress",
+      "files": [
+        "tests/scheduler-polling-native.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797548991,
+      "command": "node scripts/test-scheduler-polling-local.cjs"
+    },
+    {
+      "title": "release defects on actual bounded PostgreSQL/Prisma",
+      "files": [
+        "tests/scheduler-release-native.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797548991,
+      "command": "node scripts/test-scheduler-polling-local.cjs"
+    },
+    {
+      "title": "captured ordinary-session cookies cannot replay protected reads or profile writes after revocation",
+      "files": [
+        "tests/session-revocation-e2e.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797549075,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+    },
+    {
+      "title": "settings and authenticated navigation across roles, saves, history and responsive layouts",
+      "files": [
+        "tests/settings-navigation-e2e.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797549075,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+    },
+    {
+      "title": "signup privacy on real Next, Auth, SMTP and desktop/mobile browsers",
+      "files": [
+        "tests/signup-privacy-e2e.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797549075,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+    },
+    {
+      "title": "student invitations claim and resend through the compatibility runtime without Auth token SQL",
+      "files": [
+        "tests/student-claim-e2e.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797549075,
+      "command": "node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair"
+    },
+    {
+      "title": "native LIVE voting: locked races, changed ballots, scope/revocation, held passes and silent retry-safe finalization",
+      "files": [
+        "tests/voting-room-native.test.cjs"
+      ],
+      "status": "covered_by_separate_passing_integration",
+      "jobId": 123797548853,
+      "command": "node scripts/run-disposable-postgres.cjs security"
+    }
+  ],
+  "counts": {
+    "covered_by_separate_passing_integration": 41,
+    "not_run_in_this_repair": 11
+  },
+  "productionClearance": "Unrun environment-gated scenarios remain explicit; no blanket production-ready claim."
+}

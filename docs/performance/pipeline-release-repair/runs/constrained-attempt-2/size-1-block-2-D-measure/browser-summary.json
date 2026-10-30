@@ -1,0 +1,286 @@
+{
+  "generatedAt": "2026-10-28T21:09:35.202Z",
+  "sampleCount": 15,
+  "groups": [
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "meaningfulMs": {
+        "samples": 15,
+        "p50": 343.4,
+        "p95": 363.5,
+        "max": 363.5
+      },
+      "interactiveMs": {
+        "samples": 15,
+        "p50": 344.2,
+        "p95": 364.3,
+        "max": 364.3
+      },
+      "clickToUrlMs": {
+        "samples": 15,
+        "p50": 1.9,
+        "p95": 2.4,
+        "max": 2.4
+      },
+      "networkCompleteMs": {
+        "samples": 15,
+        "p50": 296.7,
+        "p95": 310.9,
+        "max": 310.9
+      },
+      "scriptMs": {
+        "samples": 15,
+        "p50": 79.16,
+        "p95": 131.52,
+        "max": 131.52
+      },
+      "taskMs": {
+        "samples": 15,
+        "p50": 281.59,
+        "p95": 438.27,
+        "max": 438.27
+      },
+      "requestCount": {
+        "samples": 15,
+        "p50": 5,
+        "p95": 5,
+        "max": 5
+      },
+      "encodedBodyBytes": {
+        "samples": 15,
+        "p50": 35613,
+        "p95": 35613,
+        "max": 35613
+      }
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "warm",
+      "meaningfulMs": {
+        "samples": 12,
+        "p50": 141.3,
+        "p95": 1058.3,
+        "max": 1058.3
+      },
+      "interactiveMs": {
+        "samples": 12,
+        "p50": 143,
+        "p95": 1058.4,
+        "max": 1058.4
+      },
+      "clickToUrlMs": {
+        "samples": 12,
+        "p50": 0.8,
+        "p95": 2.8,
+        "max": 2.8
+      },
+      "networkCompleteMs": {
+        "samples": 12,
+        "p50": 113.3,
+        "p95": 12876.7,
+        "max": 12876.7
+      },
+      "scriptMs": {
+        "samples": 12,
+        "p50": 28.48,
+        "p95": 122.28,
+        "max": 122.28
+      },
+      "taskMs": {
+        "samples": 12,
+        "p50": 104.72,
+        "p95": 699.2,
+        "max": 699.2
+      },
+      "requestCount": {
+        "samples": 12,
+        "p50": 1,
+        "p95": 1,
+        "max": 1
+      },
+      "encodedBodyBytes": {
+        "samples": 12,
+        "p50": 2283,
+        "p95": 2283,
+        "max": 2283
+      }
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "meaningfulMs": {
+        "samples": 11,
+        "p50": 100.3,
+        "p95": 632.8,
+        "max": 632.8
+      },
+      "interactiveMs": {
+        "samples": 11,
+        "p50": 100.3,
+        "p95": 633,
+        "max": 633
+      },
+      "clickToUrlMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "networkCompleteMs": {
+        "samples": 11,
+        "p50": 171.4,
+        "p95": 1333.4,
+        "max": 1333.4
+      },
+      "scriptMs": {
+        "samples": 11,
+        "p50": 39.6,
+        "p95": 260.97,
+        "max": 260.97
+      },
+      "taskMs": {
+        "samples": 11,
+        "p50": 162.4,
+        "p95": 1083.9,
+        "max": 1083.9
+      },
+      "requestCount": {
+        "samples": 11,
+        "p50": 3,
+        "p95": 3,
+        "max": 3
+      },
+      "encodedBodyBytes": {
+        "samples": 11,
+        "p50": 909,
+        "p95": 909,
+        "max": 909
+      }
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "meaningfulMs": {
+        "samples": 12,
+        "p50": 40.2,
+        "p95": 53,
+        "max": 53
+      },
+      "interactiveMs": {
+        "samples": 12,
+        "p50": 40.2,
+        "p95": 53,
+        "max": 53
+      },
+      "clickToUrlMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "networkCompleteMs": {
+        "samples": 12,
+        "p50": 139.7,
+        "p95": 7836.9,
+        "max": 7836.9
+      },
+      "scriptMs": {
+        "samples": 12,
+        "p50": 20.73,
+        "p95": 28.67,
+        "max": 28.67
+      },
+      "taskMs": {
+        "samples": 12,
+        "p50": 102.47,
+        "p95": 122.67,
+        "max": 122.67
+      },
+      "requestCount": {
+        "samples": 12,
+        "p50": 3,
+        "p95": 3,
+        "max": 3
+      },
+      "encodedBodyBytes": {
+        "samples": 12,
+        "p50": 909,
+        "p95": 909,
+        "max": 909
+      }
+    }
+  ],
+  "failures": [
+    {
+      "path": "recruiting → applicants",
+      "condition": "warm",
+      "index": 3,
+      "stage": "source",
+      "error": "page.waitForFunction: Timeout 30000ms exceeded."
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "warm",
+      "index": 9,
+      "stage": "source",
+      "error": "page.waitForFunction: Timeout 30000ms exceeded."
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "warm",
+      "index": 13,
+      "stage": "source",
+      "error": "page.waitForFunction: Timeout 30000ms exceeded."
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "error": "page.waitForFunction: Timeout 30000ms exceeded."
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "index": 7,
+      "stage": "source",
+      "error": "page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=applicants\", waiting until \"domcontentloaded\"\u001b[22m\n"
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "index": 13,
+      "stage": "source",
+      "error": "page.waitForFunction: Timeout 30000ms exceeded."
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "index": 14,
+      "stage": "source",
+      "error": "page.waitForFunction: Timeout 30000ms exceeded."
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 6,
+      "stage": "source",
+      "error": "page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=applicants\", waiting until \"domcontentloaded\"\u001b[22m\n"
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 9,
+      "stage": "source",
+      "error": "page.waitForFunction: Timeout 30000ms exceeded."
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 11,
+      "stage": "measured",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-applicant-id]').visible().first()\u001b[22m\n\u001b[2m    - locator resolved to <button type=\"button\" data-applicant-id=\"[fixture-id]\" class=\"min-h-11 rounded text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is visible, enabled and stable\u001b[22m\n\u001b[2m    - scrolling into view if needed\u001b[22m\n\u001b[2m    - done scrolling\u001b[22m\n\u001b[2m    - <div aria-hidden=\"true\" data-state=\"closed\" data-aria-hidden=\"true\" data-slot=\"sheet-overlay\" class=\"data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-[var(--oc-z-overlay)] bg-[var(--overlay)]\"></div> intercepts pointer events\u001b[22m\n\u001b[2m  - retrying click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is visible, enabled and stable\u001b[22m\n\u001b[2m    - scrolling into view if needed\u001b[22m\n\u001b[2m    - done scrolling\u001b[22m\n\u001b[2m    - <html lang=\"en\" class=\"__variable_a911d7 __variable_dd2669\">…</html> intercepts pointer events\u001b[22m\n\u001b[2m  - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n"
+    }
+  ]
+}

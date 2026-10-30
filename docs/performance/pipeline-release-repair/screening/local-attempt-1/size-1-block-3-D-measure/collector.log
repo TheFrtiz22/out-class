@@ -1,0 +1,4 @@
+RECORDED FAILURE recruiting → applicants cold 1/1 source
+RECORDED FAILURE recruiting → applicants warm 1/1 source
+RECORDED FAILURE applicants → applicantDetail cold 1/1 source
+applicants → applicantDetail warm 1/1: 31.7 ms, 3 requests

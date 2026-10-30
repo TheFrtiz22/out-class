@@ -1,0 +1,19 @@
+{
+  "proofs": [
+    {
+      "variant": "B",
+      "runtime": "Frozen production outputs restored into one owned runtime checkout",
+      "frozenOutput": {
+        "buildId": "e2QBTxTZwhn4e3DU-_D-a",
+        "digest": "a758f3e5e6cf604ac16219a571cfe4a4a5a54b2e3afd47069a7f2ecf22c5f09b",
+        "files": 719
+      },
+      "expectedBuildId": "e2QBTxTZwhn4e3DU-_D-a",
+      "manifestStatus": 404,
+      "expectedManifestSha256": "033e0dfe81033c6496143567a8d03c18128222ad30238b9ef36c750c14bd1547",
+      "servedManifestSha256": "0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5",
+      "valid": false,
+      "failure": "served_build_manifest_mismatch"
+    }
+  ]
+}

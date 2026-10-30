@@ -1,0 +1,965 @@
+{
+  "environment": "local Next production build + disposable local Supabase",
+  "fixture": {
+    "clubs": 2,
+    "membersPerClub": 61,
+    "applicantsPerClub": 100,
+    "meetingsPerClub": 1,
+    "tasksPerClub": 1,
+    "announcementsPerClub": 1,
+    "applicantsInMeasuredClub": 1,
+    "scaleHistory": {
+      "essayAnswersPerApplicant": 3,
+      "essayCharacters": 1024,
+      "profileBioCharacters": 1050,
+      "additionalExperiences": 2,
+      "submittedEvaluationsPerApplicant": 2,
+      "rounds": 2,
+      "bookingHistory": false
+    }
+  },
+  "sampleCount": 15,
+  "metricsNotes": {
+    "profile": "Local unthrottled",
+    "meaningfulMs": "DOM content predicate followed by two requestAnimationFrame callbacks; paint proxy, not screenshot timing",
+    "interactiveMs": "first enabled visible control after content predicate; no mutation is invoked",
+    "requestOffsets": "relative to captured DOM click timestamp",
+    "networkCompleteMs": "observed non-SSE requests drained after useful content; includes background traffic",
+    "cpu": "CDP delta through settle, so includes post-content background work",
+    "react": "production commit notifications only; profiler render durations unavailable"
+  },
+  "samples": [
+    {
+      "preparation": {
+        "elapsedMs": 48,
+        "meaningfulMs": null,
+        "dom": null,
+        "heapUsedBytes": 511256,
+        "heapTotalBytes": 1048576,
+        "authorityEvents": [],
+        "requests": [
+          {
+            "route": "/club/[fixture-id]/workspace",
+            "type": "document",
+            "method": "GET",
+            "status": null,
+            "failed": true,
+            "pending": false,
+            "startMs": 8,
+            "endMs": 9,
+            "traceId": null,
+            "serverTiming": null,
+            "encodedBodyBytes": null,
+            "ttfbMs": null,
+            "transferMs": null
+          }
+        ]
+      },
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 0,
+      "failed": true,
+      "stage": "source",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\nCall log:\n  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\n",
+      "diagnostic": {
+        "tool": null,
+        "pipeline": false,
+        "sheet": false,
+        "alerts": 0
+      },
+      "clickToContentLowerBoundMs": null,
+      "meaningfulMs": null,
+      "interactiveMs": null,
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "requests": [
+        {
+          "route": "/club/[fixture-id]/workspace",
+          "type": "document",
+          "method": "GET",
+          "status": null,
+          "failed": true,
+          "failureReason": "net::ERR_CONNECTION_REFUSED",
+          "encodedBodyBytes": null
+        }
+      ]
+    },
+    {
+      "preparation": {
+        "elapsedMs": 43,
+        "meaningfulMs": null,
+        "dom": null,
+        "heapUsedBytes": 511256,
+        "heapTotalBytes": 1048576,
+        "authorityEvents": [],
+        "requests": [
+          {
+            "route": "/club/[fixture-id]/workspace",
+            "type": "document",
+            "method": "GET",
+            "status": null,
+            "failed": true,
+            "pending": false,
+            "startMs": 6,
+            "endMs": 7,
+            "traceId": null,
+            "serverTiming": null,
+            "encodedBodyBytes": null,
+            "ttfbMs": null,
+            "transferMs": null
+          }
+        ]
+      },
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 1,
+      "failed": true,
+      "stage": "source",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\nCall log:\n  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\n",
+      "diagnostic": {
+        "tool": null,
+        "pipeline": false,
+        "sheet": false,
+        "alerts": 0
+      },
+      "clickToContentLowerBoundMs": null,
+      "meaningfulMs": null,
+      "interactiveMs": null,
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "requests": [
+        {
+          "route": "/club/[fixture-id]/workspace",
+          "type": "document",
+          "method": "GET",
+          "status": null,
+          "failed": true,
+          "failureReason": "net::ERR_CONNECTION_REFUSED",
+          "encodedBodyBytes": null
+        }
+      ]
+    },
+    {
+      "preparation": {
+        "elapsedMs": 41,
+        "meaningfulMs": null,
+        "dom": null,
+        "heapUsedBytes": 511256,
+        "heapTotalBytes": 1048576,
+        "authorityEvents": [],
+        "requests": [
+          {
+            "route": "/club/[fixture-id]/workspace",
+            "type": "document",
+            "method": "GET",
+            "status": null,
+            "failed": true,
+            "pending": false,
+            "startMs": 2,
+            "endMs": 4,
+            "traceId": null,
+            "serverTiming": null,
+            "encodedBodyBytes": null,
+            "ttfbMs": null,
+            "transferMs": null
+          }
+        ]
+      },
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 2,
+      "failed": true,
+      "stage": "source",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\nCall log:\n  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\n",
+      "diagnostic": {
+        "tool": null,
+        "pipeline": false,
+        "sheet": false,
+        "alerts": 0
+      },
+      "clickToContentLowerBoundMs": null,
+      "meaningfulMs": null,
+      "interactiveMs": null,
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "requests": [
+        {
+          "route": "/club/[fixture-id]/workspace",
+          "type": "document",
+          "method": "GET",
+          "status": null,
+          "failed": true,
+          "failureReason": "net::ERR_CONNECTION_REFUSED",
+          "encodedBodyBytes": null
+        }
+      ]
+    },
+    {
+      "preparation": {
+        "elapsedMs": 41,
+        "meaningfulMs": null,
+        "dom": null,
+        "heapUsedBytes": 511256,
+        "heapTotalBytes": 1048576,
+        "authorityEvents": [],
+        "requests": [
+          {
+            "route": "/club/[fixture-id]/workspace",
+            "type": "document",
+            "method": "GET",
+            "status": null,
+            "failed": true,
+            "pending": false,
+            "startMs": 2,
+            "endMs": 3,
+            "traceId": null,
+            "serverTiming": null,
+            "encodedBodyBytes": null,
+            "ttfbMs": null,
+            "transferMs": null
+          }
+        ]
+      },
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 3,
+      "failed": true,
+      "stage": "source",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\nCall log:\n  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\n",
+      "diagnostic": {
+        "tool": null,
+        "pipeline": false,
+        "sheet": false,
+        "alerts": 0
+      },
+      "clickToContentLowerBoundMs": null,
+      "meaningfulMs": null,
+      "interactiveMs": null,
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "requests": [
+        {
+          "route": "/club/[fixture-id]/workspace",
+          "type": "document",
+          "method": "GET",
+          "status": null,
+          "failed": true,
+          "failureReason": "net::ERR_CONNECTION_REFUSED",
+          "encodedBodyBytes": null
+        }
+      ]
+    },
+    {
+      "preparation": {
+        "elapsedMs": 32,
+        "meaningfulMs": null,
+        "dom": null,
+        "heapUsedBytes": 511256,
+        "heapTotalBytes": 1048576,
+        "authorityEvents": [],
+        "requests": [
+          {
+            "route": "/club/[fixture-id]/workspace",
+            "type": "document",
+            "method": "GET",
+            "status": null,
+            "failed": true,
+            "pending": false,
+            "startMs": 2,
+            "endMs": 4,
+            "traceId": null,
+            "serverTiming": null,
+            "encodedBodyBytes": null,
+            "ttfbMs": null,
+            "transferMs": null
+          }
+        ]
+      },
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 4,
+      "failed": true,
+      "stage": "source",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\nCall log:\n  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\n",
+      "diagnostic": {
+        "tool": null,
+        "pipeline": false,
+        "sheet": false,
+        "alerts": 0
+      },
+      "clickToContentLowerBoundMs": null,
+      "meaningfulMs": null,
+      "interactiveMs": null,
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "requests": [
+        {
+          "route": "/club/[fixture-id]/workspace",
+          "type": "document",
+          "method": "GET",
+          "status": null,
+          "failed": true,
+          "failureReason": "net::ERR_CONNECTION_REFUSED",
+          "encodedBodyBytes": null
+        }
+      ]
+    },
+    {
+      "preparation": {
+        "elapsedMs": 35,
+        "meaningfulMs": null,
+        "dom": null,
+        "heapUsedBytes": 511256,
+        "heapTotalBytes": 1048576,
+        "authorityEvents": [],
+        "requests": [
+          {
+            "route": "/club/[fixture-id]/workspace",
+            "type": "document",
+            "method": "GET",
+            "status": null,
+            "failed": true,
+            "pending": false,
+            "startMs": 3,
+            "endMs": 4,
+            "traceId": null,
+            "serverTiming": null,
+            "encodedBodyBytes": null,
+            "ttfbMs": null,
+            "transferMs": null
+          }
+        ]
+      },
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 5,
+      "failed": true,
+      "stage": "source",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\nCall log:\n  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\n",
+      "diagnostic": {
+        "tool": null,
+        "pipeline": false,
+        "sheet": false,
+        "alerts": 0
+      },
+      "clickToContentLowerBoundMs": null,
+      "meaningfulMs": null,
+      "interactiveMs": null,
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "requests": [
+        {
+          "route": "/club/[fixture-id]/workspace",
+          "type": "document",
+          "method": "GET",
+          "status": null,
+          "failed": true,
+          "failureReason": "net::ERR_CONNECTION_REFUSED",
+          "encodedBodyBytes": null
+        }
+      ]
+    },
+    {
+      "preparation": {
+        "elapsedMs": 39,
+        "meaningfulMs": null,
+        "dom": null,
+        "heapUsedBytes": 511256,
+        "heapTotalBytes": 1048576,
+        "authorityEvents": [],
+        "requests": [
+          {
+            "route": "/club/[fixture-id]/workspace",
+            "type": "document",
+            "method": "GET",
+            "status": null,
+            "failed": true,
+            "pending": false,
+            "startMs": 3,
+            "endMs": 4,
+            "traceId": null,
+            "serverTiming": null,
+            "encodedBodyBytes": null,
+            "ttfbMs": null,
+            "transferMs": null
+          }
+        ]
+      },
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 6,
+      "failed": true,
+      "stage": "source",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\nCall log:\n  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\n",
+      "diagnostic": {
+        "tool": null,
+        "pipeline": false,
+        "sheet": false,
+        "alerts": 0
+      },
+      "clickToContentLowerBoundMs": null,
+      "meaningfulMs": null,
+      "interactiveMs": null,
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "requests": [
+        {
+          "route": "/club/[fixture-id]/workspace",
+          "type": "document",
+          "method": "GET",
+          "status": null,
+          "failed": true,
+          "failureReason": "net::ERR_CONNECTION_REFUSED",
+          "encodedBodyBytes": null
+        }
+      ]
+    },
+    {
+      "preparation": {
+        "elapsedMs": 40,
+        "meaningfulMs": null,
+        "dom": null,
+        "heapUsedBytes": 511256,
+        "heapTotalBytes": 1048576,
+        "authorityEvents": [],
+        "requests": [
+          {
+            "route": "/club/[fixture-id]/workspace",
+            "type": "document",
+            "method": "GET",
+            "status": null,
+            "failed": true,
+            "pending": false,
+            "startMs": 3,
+            "endMs": 5,
+            "traceId": null,
+            "serverTiming": null,
+            "encodedBodyBytes": null,
+            "ttfbMs": null,
+            "transferMs": null
+          }
+        ]
+      },
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 7,
+      "failed": true,
+      "stage": "source",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\nCall log:\n  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\n",
+      "diagnostic": {
+        "tool": null,
+        "pipeline": false,
+        "sheet": false,
+        "alerts": 0
+      },
+      "clickToContentLowerBoundMs": null,
+      "meaningfulMs": null,
+      "interactiveMs": null,
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "requests": [
+        {
+          "route": "/club/[fixture-id]/workspace",
+          "type": "document",
+          "method": "GET",
+          "status": null,
+          "failed": true,
+          "failureReason": "net::ERR_CONNECTION_REFUSED",
+          "encodedBodyBytes": null
+        }
+      ]
+    },
+    {
+      "preparation": {
+        "elapsedMs": 36,
+        "meaningfulMs": null,
+        "dom": null,
+        "heapUsedBytes": 526632,
+        "heapTotalBytes": 1048576,
+        "authorityEvents": [],
+        "requests": [
+          {
+            "route": "/club/[fixture-id]/workspace",
+            "type": "document",
+            "method": "GET",
+            "status": null,
+            "failed": true,
+            "pending": false,
+            "startMs": 3,
+            "endMs": 4,
+            "traceId": null,
+            "serverTiming": null,
+            "encodedBodyBytes": null,
+            "ttfbMs": null,
+            "transferMs": null
+          }
+        ]
+      },
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 8,
+      "failed": true,
+      "stage": "source",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\nCall log:\n  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\n",
+      "diagnostic": {
+        "tool": null,
+        "pipeline": false,
+        "sheet": false,
+        "alerts": 0
+      },
+      "clickToContentLowerBoundMs": null,
+      "meaningfulMs": null,
+      "interactiveMs": null,
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "requests": [
+        {
+          "route": "/club/[fixture-id]/workspace",
+          "type": "document",
+          "method": "GET",
+          "status": null,
+          "failed": true,
+          "failureReason": "net::ERR_CONNECTION_REFUSED",
+          "encodedBodyBytes": null
+        }
+      ]
+    },
+    {
+      "preparation": {
+        "elapsedMs": 40,
+        "meaningfulMs": null,
+        "dom": null,
+        "heapUsedBytes": 511256,
+        "heapTotalBytes": 1048576,
+        "authorityEvents": [],
+        "requests": [
+          {
+            "route": "/club/[fixture-id]/workspace",
+            "type": "document",
+            "method": "GET",
+            "status": null,
+            "failed": true,
+            "pending": false,
+            "startMs": 3,
+            "endMs": 5,
+            "traceId": null,
+            "serverTiming": null,
+            "encodedBodyBytes": null,
+            "ttfbMs": null,
+            "transferMs": null
+          }
+        ]
+      },
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 9,
+      "failed": true,
+      "stage": "source",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\nCall log:\n  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\n",
+      "diagnostic": {
+        "tool": null,
+        "pipeline": false,
+        "sheet": false,
+        "alerts": 0
+      },
+      "clickToContentLowerBoundMs": null,
+      "meaningfulMs": null,
+      "interactiveMs": null,
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "requests": [
+        {
+          "route": "/club/[fixture-id]/workspace",
+          "type": "document",
+          "method": "GET",
+          "status": null,
+          "failed": true,
+          "failureReason": "net::ERR_CONNECTION_REFUSED",
+          "encodedBodyBytes": null
+        }
+      ]
+    },
+    {
+      "preparation": {
+        "elapsedMs": 33,
+        "meaningfulMs": null,
+        "dom": null,
+        "heapUsedBytes": 511256,
+        "heapTotalBytes": 1048576,
+        "authorityEvents": [],
+        "requests": [
+          {
+            "route": "/club/[fixture-id]/workspace",
+            "type": "document",
+            "method": "GET",
+            "status": null,
+            "failed": true,
+            "pending": false,
+            "startMs": 3,
+            "endMs": 5,
+            "traceId": null,
+            "serverTiming": null,
+            "encodedBodyBytes": null,
+            "ttfbMs": null,
+            "transferMs": null
+          }
+        ]
+      },
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 10,
+      "failed": true,
+      "stage": "source",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\nCall log:\n  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\n",
+      "diagnostic": {
+        "tool": null,
+        "pipeline": false,
+        "sheet": false,
+        "alerts": 0
+      },
+      "clickToContentLowerBoundMs": null,
+      "meaningfulMs": null,
+      "interactiveMs": null,
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "requests": [
+        {
+          "route": "/club/[fixture-id]/workspace",
+          "type": "document",
+          "method": "GET",
+          "status": null,
+          "failed": true,
+          "failureReason": "net::ERR_CONNECTION_REFUSED",
+          "encodedBodyBytes": null
+        }
+      ]
+    },
+    {
+      "preparation": {
+        "elapsedMs": 35,
+        "meaningfulMs": null,
+        "dom": null,
+        "heapUsedBytes": 522472,
+        "heapTotalBytes": 1048576,
+        "authorityEvents": [],
+        "requests": [
+          {
+            "route": "/club/[fixture-id]/workspace",
+            "type": "document",
+            "method": "GET",
+            "status": null,
+            "failed": true,
+            "pending": false,
+            "startMs": 3,
+            "endMs": 4,
+            "traceId": null,
+            "serverTiming": null,
+            "encodedBodyBytes": null,
+            "ttfbMs": null,
+            "transferMs": null
+          }
+        ]
+      },
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 11,
+      "failed": true,
+      "stage": "source",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\nCall log:\n  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\n",
+      "diagnostic": {
+        "tool": null,
+        "pipeline": false,
+        "sheet": false,
+        "alerts": 0
+      },
+      "clickToContentLowerBoundMs": null,
+      "meaningfulMs": null,
+      "interactiveMs": null,
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "requests": [
+        {
+          "route": "/club/[fixture-id]/workspace",
+          "type": "document",
+          "method": "GET",
+          "status": null,
+          "failed": true,
+          "failureReason": "net::ERR_CONNECTION_REFUSED",
+          "encodedBodyBytes": null
+        }
+      ]
+    },
+    {
+      "preparation": {
+        "elapsedMs": 38,
+        "meaningfulMs": null,
+        "dom": null,
+        "heapUsedBytes": 511256,
+        "heapTotalBytes": 1048576,
+        "authorityEvents": [],
+        "requests": [
+          {
+            "route": "/club/[fixture-id]/workspace",
+            "type": "document",
+            "method": "GET",
+            "status": null,
+            "failed": true,
+            "pending": false,
+            "startMs": 3,
+            "endMs": 4,
+            "traceId": null,
+            "serverTiming": null,
+            "encodedBodyBytes": null,
+            "ttfbMs": null,
+            "transferMs": null
+          }
+        ]
+      },
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 12,
+      "failed": true,
+      "stage": "source",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\nCall log:\n  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\n",
+      "diagnostic": {
+        "tool": null,
+        "pipeline": false,
+        "sheet": false,
+        "alerts": 0
+      },
+      "clickToContentLowerBoundMs": null,
+      "meaningfulMs": null,
+      "interactiveMs": null,
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "requests": [
+        {
+          "route": "/club/[fixture-id]/workspace",
+          "type": "document",
+          "method": "GET",
+          "status": null,
+          "failed": true,
+          "failureReason": "net::ERR_CONNECTION_REFUSED",
+          "encodedBodyBytes": null
+        }
+      ]
+    },
+    {
+      "preparation": {
+        "elapsedMs": 36,
+        "meaningfulMs": null,
+        "dom": null,
+        "heapUsedBytes": 548740,
+        "heapTotalBytes": 1048576,
+        "authorityEvents": [],
+        "requests": [
+          {
+            "route": "/club/[fixture-id]/workspace",
+            "type": "document",
+            "method": "GET",
+            "status": null,
+            "failed": true,
+            "pending": false,
+            "startMs": 4,
+            "endMs": 4,
+            "traceId": null,
+            "serverTiming": null,
+            "encodedBodyBytes": null,
+            "ttfbMs": null,
+            "transferMs": null
+          }
+        ]
+      },
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 13,
+      "failed": true,
+      "stage": "source",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\nCall log:\n  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\n",
+      "diagnostic": {
+        "tool": null,
+        "pipeline": false,
+        "sheet": false,
+        "alerts": 0
+      },
+      "clickToContentLowerBoundMs": null,
+      "meaningfulMs": null,
+      "interactiveMs": null,
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "requests": [
+        {
+          "route": "/club/[fixture-id]/workspace",
+          "type": "document",
+          "method": "GET",
+          "status": null,
+          "failed": true,
+          "failureReason": "net::ERR_CONNECTION_REFUSED",
+          "encodedBodyBytes": null
+        }
+      ]
+    },
+    {
+      "preparation": {
+        "elapsedMs": 38,
+        "meaningfulMs": null,
+        "dom": null,
+        "heapUsedBytes": 511256,
+        "heapTotalBytes": 1048576,
+        "authorityEvents": [],
+        "requests": [
+          {
+            "route": "/club/[fixture-id]/workspace",
+            "type": "document",
+            "method": "GET",
+            "status": null,
+            "failed": true,
+            "pending": false,
+            "startMs": 2,
+            "endMs": 3,
+            "traceId": null,
+            "serverTiming": null,
+            "encodedBodyBytes": null,
+            "ttfbMs": null,
+            "transferMs": null
+          }
+        ]
+      },
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 14,
+      "failed": true,
+      "stage": "source",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\nCall log:\n  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\n",
+      "diagnostic": {
+        "tool": null,
+        "pipeline": false,
+        "sheet": false,
+        "alerts": 0
+      },
+      "clickToContentLowerBoundMs": null,
+      "meaningfulMs": null,
+      "interactiveMs": null,
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "requests": [
+        {
+          "route": "/club/[fixture-id]/workspace",
+          "type": "document",
+          "method": "GET",
+          "status": null,
+          "failed": true,
+          "failureReason": "net::ERR_CONNECTION_REFUSED",
+          "encodedBodyBytes": null
+        }
+      ]
+    }
+  ],
+  "failures": [
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\nCall log:\n  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\n"
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 1,
+      "stage": "source",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\nCall log:\n  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\n"
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 2,
+      "stage": "source",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\nCall log:\n  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\n"
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 3,
+      "stage": "source",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\nCall log:\n  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\n"
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 4,
+      "stage": "source",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\nCall log:\n  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\n"
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 5,
+      "stage": "source",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\nCall log:\n  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\n"
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 6,
+      "stage": "source",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\nCall log:\n  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\n"
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 7,
+      "stage": "source",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\nCall log:\n  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\n"
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 8,
+      "stage": "source",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\nCall log:\n  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\n"
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 9,
+      "stage": "source",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\nCall log:\n  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\n"
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 10,
+      "stage": "source",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\nCall log:\n  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\n"
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 11,
+      "stage": "source",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\nCall log:\n  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\n"
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 12,
+      "stage": "source",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\nCall log:\n  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\n"
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 13,
+      "stage": "source",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\nCall log:\n  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\n"
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 14,
+      "stage": "source",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\nCall log:\n  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=overview\", waiting until \"domcontentloaded\"\n"
+    }
+  ]
+}

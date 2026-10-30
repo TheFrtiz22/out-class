@@ -1,6 +1,10 @@
 # Implementation and tradeoffs
 
-The repair is built on `f2192e02`, retaining Phase 1, PRs 85/87/88 and PR 89.
+The repair initially used `f2192e02` and is now rebased onto exact current main
+`6e793dea0bd45052fa444749b26d432ae93392cd`. It retains Phase 1, PRs
+85/87/88/89, the independently merged dock fix, live voting rooms, transaction
+budgets, contextual loading and the current layouts. Source proof is recorded
+in `SOURCE_PROOF.json`.
 The held candidate was read as source material, not merged or cherry-picked.
 Only its bounded paging/projection/ownership pieces were ported and revised.
 Settings preload/handoff and the historical raw metadata SQL join remain out.
@@ -88,7 +92,23 @@ fencing, in-flight-only reuse, pagination/draft boundaries and complete voting
 selection. No failure is converted into a skip.
 
 The independent dock implementation and its separate PR are documented in
-`DOCK_INTERACTION_REPORT.md`. No dock code is included in this pipeline branch.
+`DOCK_INTERACTION_REPORT.md`. No additional dock change appears in this pipeline diff against current main.
 
 No schema/index/region/pool/production configuration changes, new cache
 frameworks, external infrastructure or private-authorization caching are added.
+
+The corrected CI comparison uses separate dependency installations, explicit
+absolute build/start directories and served-manifest/data-contract attestation
+before every timed block. The first CI attempt failed source attestation on
+retrospective request inspection and is wholly excluded. See FULL_REVIEW_PLAN.md.
+The earlier workflow collector is preserved as failed instrumentation; the new
+full-review collector checks each build’s exact visible row count and waits for
+review/attendance information before switching. Voting history is measured; new
+persistent live rooms remain covered by main’s regression suite, not these timings.
+
+Ordinary manager session/history polls now omit selection metadata. Initial
+entry still includes it to avoid a serial setup request, and open setup polls
+refresh it. Explicit reopening hides prior eligibility until that exact fresh
+operation settles. The workflow/trigger remains mounted for focus restoration.
+No eligibility or authorization cache replaces those guards. Initial large
+history entry and populated booking/ballot-history performance remain unmeasured.
