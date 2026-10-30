@@ -39,11 +39,11 @@ export async function getClubPipelineList(clubId: string, input: z.infer<typeof 
 
 export async function getClubPipelinePage(clubId: string, input: PipelinePageQuery = {}) {
   const query = pipelinePageQuery.parse(input);
-  const { pipeline } = await readPipeline(clubId, { roundId: query.gender || query.genderCounts ? query.roundId : undefined, gender: query.gender, genderCounts: query.genderCounts }, async (tx, where, membership, rounds) => {
+  const { pipeline } = await readPipeline(clubId, { roundId: query.gender || query.genderCounts ? query.roundId : undefined, gender: query.gender, genderCounts: query.genderCounts }, async (tx, where, membership, rounds, roundPrivacy) => {
     // Scope binding only. Both ranking and bounded hydration share this fresh
     // guarded Repeatable Read snapshot; the cursor never grants authority.
-    const scope = createHash("sha256").update(JSON.stringify([clubId, membership, rounds, pipelineSelectionKey(query)])).digest("hex");
-    return readPipelinePage(tx, where, membership, rounds, query, scope, ids => loadPipelineDetails(tx, { ...where, id: { in: ids } }, membership));
+    const scope = createHash("sha256").update(JSON.stringify([clubId, membership, rounds, [...roundPrivacy], pipelineSelectionKey(query)])).digest("hex");
+    return readPipelinePage(tx, where, membership, rounds, query, scope, ids => loadPipelineDetails(tx, { ...where, id: { in: ids } }, membership), roundPrivacy);
   });
   return { ...pipeline.applications, rounds: pipeline.rounds, genderCounts: pipeline.genderCounts };
 }
@@ -74,7 +74,7 @@ async function readClubPipelineSummaries(clubId: string, input: z.infer<typeof p
 
 type PipelineMembership = Awaited<ReturnType<typeof requireClubPermission>>["membership"];
 async function readPipeline<T>(clubId: string, input: z.infer<typeof pipelineFilter>,
-  load: (tx: AppTransactionClient, where: Prisma.ApplicationWhereInput, membership: PipelineMembership, rounds: { id: string; name: string; order: number; type: string; anonymousReview: boolean; genderVisible: boolean }[]) => Promise<T>) {
+  load: (tx: AppTransactionClient, where: Prisma.ApplicationWhereInput, membership: PipelineMembership, rounds: { id: string; name: string; order: number; type: string; anonymousReview: boolean; genderVisible: boolean }[], roundPrivacy: ReadonlyMap<string, boolean>) => Promise<T>) {
   const filter = pipelineFilter.parse(input);
   // Only members can view the pipeline
   const { membership } = await requireClubPermission(clubId, [], { allowSuspendedRead: true });
@@ -90,11 +90,12 @@ async function readPipeline<T>(clubId: string, input: z.infer<typeof pipelineFil
   try { return await prisma.$transaction(async tx => {
     transactionStarted = Date.now();
     phase = "rounds";
-    const rounds = await tx.pipelineRound.findMany({
-      where: { clubId, archivedAt: null },
+    const allRounds = await tx.pipelineRound.findMany({
+      where: { clubId },
       orderBy: { order: "asc" },
-      select: { id: true, name: true, order: true, type: true, anonymousReview: true, applicantDisplay: true },
+      select: { id: true, name: true, order: true, type: true, anonymousReview: true, applicantDisplay: true, archivedAt: true },
     });
+    const rounds = allRounds.filter(r => r.archivedAt == null);
     const selectedRound = rounds.find(r => r.id === filter.roundId);
     if (filter.gender || filter.genderCounts) {
       if (!selectedRound || !genderVisibility(selectedRound.applicantDisplay) || !hasPermission(membership, "applications.review")) throw new Error("Gender visibility must be explicitly enabled for this round.");
@@ -107,7 +108,7 @@ async function readPipeline<T>(clubId: string, input: z.infer<typeof pipelineFil
       ...(filter.gender ? { student: { studentProfile: { gender: filter.gender } } } : {}),
     };
     const projectedRounds = rounds.map(r => ({ id: r.id, name: r.name, order: r.order, type: r.type, anonymousReview: r.anonymousReview, genderVisible: hasPermission(membership, "applications.review") && genderVisibility(r.applicantDisplay) }));
-    const applications = await load(tx, applicationWhere, membership, projectedRounds);
+    const applications = await load(tx, applicationWhere, membership, projectedRounds, new Map(allRounds.map(r => [r.id, r.anonymousReview])));
     phase = "counts";
     const counts = filter.genderCounts ? await tx.application.groupBy({ by: ["studentId"], where }) : [];
     const profiles = filter.genderCounts ? await tx.studentProfile.groupBy({ by: ["gender"], where: { userId: { in: counts.map(c => c.studentId) } }, _count: true }) : [];

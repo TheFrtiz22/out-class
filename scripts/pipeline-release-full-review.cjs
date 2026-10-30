@@ -7,17 +7,22 @@ function installStage({kind,text,count}){
  const visible=e=>e&&e.getClientRects().length>0;
  const state={start:0,ready:0,interactive:0,scheduled:false};window.__releaseStage=state;
  const predicate=()=>{
-  const rows=[...document.querySelectorAll('.oc-live-pipeline [data-applicant-id]')].filter(visible);
-  const sheet=[...document.querySelectorAll('[data-slot="sheet-content"]')].find(visible);
+  if(['entry','return','search','filter'].includes(kind)){
+   const rows=[...document.querySelectorAll('.oc-live-pipeline [data-applicant-id]')].filter(visible);
+   if(rows.length!==count||document.body.textContent.includes('Updating applicants…'))return false;
+   if(kind==='search'||kind==='filter')return rows.some(e=>e.textContent.includes(text));
+   return ![...document.querySelectorAll('[data-slot="sheet-content"]')].some(visible)&&!document.querySelector('.oc-voting-stage');
+  }
+  if(['detail','switch','selection'].includes(kind)){
+   const sheet=[...document.querySelectorAll('[data-slot="sheet-content"]')].find(visible);
+   return sheet&&sheet.textContent.includes(text)&&sheet.textContent.includes('Synthetic application evidence.')&&!sheet.textContent.includes('Loading authorized review information…')&&!sheet.textContent.includes('Loading interest-meeting attendance…')&&(kind!=='selection'||sheet.textContent.includes('Quick review · '+count+' remaining'));
+  }
   const setup=[...document.querySelectorAll('[role="dialog"]')].find(e=>visible(e)&&(e.getAttribute('aria-label')==='New voting session'||document.getElementById(e.getAttribute('aria-labelledby'))?.textContent==='New voting session'));
-  if(kind==='entry'||kind==='return')return rows.length===count&&!sheet&&!document.querySelector('.oc-voting-stage')&&!document.body.textContent.includes('Updating applicants…');
-  if(kind==='detail'||kind==='switch'||kind==='selection')return sheet&&sheet.textContent.includes(text)&&sheet.textContent.includes('Synthetic application evidence.')&&!sheet.textContent.includes('Loading authorized review information…')&&!sheet.textContent.includes('Loading interest-meeting attendance…')&&(kind!=='selection'||sheet.textContent.includes('Quick review · '+count+' remaining'));
-  if(kind==='search'||kind==='filter')return rows.length===count&&rows.some(e=>e.textContent.includes(text))&&!document.body.textContent.includes('Updating applicants…');
   if(kind==='voting')return setup&&[...setup.querySelectorAll('select')].some(e=>e.closest('label')?.textContent.includes('Recruitment round'));
   if(kind==='votingPool')return setup&&setup.querySelectorAll('fieldset')[0]?.querySelectorAll('input[type=checkbox]').length===count;
   return false;
  };
- const check=()=>{if(!state.start||state.ready||state.scheduled||!predicate())return;state.scheduled=true;requestAnimationFrame(()=>requestAnimationFrame(()=>{if(predicate()){state.ready=performance.now();const root=[...document.querySelectorAll('[role="dialog"],.oc-live-pipeline')].filter(visible).at(-1);const control=[...root?.querySelectorAll('button,input,select,a[href]')||[]].find(e=>visible(e)&&!e.disabled);state.interactive=control?performance.now():0}else state.scheduled=false}))};
+ const check=()=>{if(!state.start||state.ready||state.scheduled)return;state.scheduled=true;requestAnimationFrame(()=>{if(!predicate()){state.scheduled=false;return}requestAnimationFrame(()=>{if(predicate()){state.ready=performance.now();const root=[...document.querySelectorAll('[role="dialog"],.oc-live-pipeline')].filter(visible).at(-1);const control=[...root?.querySelectorAll('button,input,select,a[href]')||[]].find(e=>visible(e)&&!e.disabled);state.interactive=control?performance.now():0}else state.scheduled=false})})};
  const begin=()=>{if(!state.start)state.start=performance.now();queueMicrotask(check)};
  document.addEventListener('click',begin,true);document.addEventListener('input',begin,true);document.addEventListener('change',begin,true);
  const observer=new MutationObserver(check);observer.observe(document.body,{subtree:true,attributes:true,childList:true,characterData:true});

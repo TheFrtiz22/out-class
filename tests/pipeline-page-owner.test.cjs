@@ -14,7 +14,7 @@ test('a covered complete page filters locally but never crosses authority or mut
  const applications=['Ada','Zoe'].map((firstName,i)=>({id:id(i),roundId:id(9),status:'IN_REVIEW',studentId:id(i+20),student:{email:firstName+'@example.invalid',studentProfile:{firstName,lastName:'Student',major:'Economics',academicYear:'Second Year'}},evaluations:[],roundScore:null,answers:[firstName+' detail']}));
  const page={...pagePipeline({rounds:[],genderCounts:null,applications},{},'member','user','scope'),coverage:{complete:true,mode:'applicants'}};
  let p={...props(),reviewerId:'member',userId:'user',validatedInitialData:true,initialData:page};
- assert.equal(h.render(p).ready,true);p={...p,query:{query:'Zoe'}};
+ const initial=h.render(p);assert.equal(initial.ready,true);assert.equal(initial.data,page,'retain the exact server-ranked page until the query changes');p={...p,query:{query:'Zoe'}};
  let v=h.render(p);assert.equal(v.ready,true);assert.deepEqual(v.data.applications.map(a=>a.answers),[['Zoe detail']]);assert.equal(h.requests.length,0);
  const old=v;h.notifyEpoch();assert.equal(old.isCurrent(),false);assert.equal(h.render(p).data,null);
  h.commitEpoch();h.render(p);assert.equal(h.requests.length,1);h.requests[0].resolve({...page,coverage:{complete:false,mode:'applicants'}});await tick();h.render(p);

@@ -1,0 +1,30 @@
+{
+  "at": "2026-10-30T17:08:11.922754+00:00",
+  "environment": "Mac Node 26.9.0; unit/static QA only; no timing evidence",
+  "ordinary": {
+    "tests": 1549,
+    "passed": 1497,
+    "failed": 0,
+    "skipped": 52,
+    "note": "Final archived-round CRM case separately verified after this run; fresh CI reruns full final source."
+  },
+  "finalFocused": {
+    "crmPassed": 17,
+    "pageAndOwnerPassed": 17,
+    "failed": 0
+  },
+  "typecheck": "PASS",
+  "lint": {
+    "errors": 0,
+    "warnings": 22
+  },
+  "correctedDuringPreparation": "Initial typecheck caught the selection reader sharing the page metadata allowlist. Its canonical round relation was restored explicitly; final typecheck passed. No timings collected before this correction.",
+  "logSha256": {
+    "ordinary": "f9f4b8024dd7c8bc638d9d1ba1abc0bfca809a2eb7275d116df95b7ae28ce19f",
+    "types": "7da6452aa37538bc1cec2c414adc9ac2f8dfdd59afdd7e07fce582e9b6a3ac4e",
+    "lint": "b43d743b85df609a4db382340a08109e768de22758c0b450b9106254df639f62",
+    "crm": "9fe4ee932db7532ec35663ce7d4a5ff8ab72c74c7608c9bc31b99f2569514be6",
+    "page": "945b16d7a472a53842ef0c6f65f32c8cd301fc21c8422d1b0bb43792e6f24132"
+  },
+  "integrationClearance": "Pending fresh isolated CI; ordinary environment skips are not considered passing integrations."
+}

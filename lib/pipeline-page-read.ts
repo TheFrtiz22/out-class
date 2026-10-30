@@ -7,7 +7,9 @@ import type { ClubAccess } from "@/lib/permissions"
 
 // Ranking does not need review/assignment collections unless the requested
 // filter or sort observes them. Keep canonical JS collation/privacy semantics.
-const { evaluations: _evaluations, interviewAssignments: _assignments, ...metadataSelect } = pipelineSummarySelect
+const { round: _round, ...reviewMetadataSelect } = pipelineSummarySelect
+export const pipelinePageReviewMetadataSelect = reviewMetadataSelect
+const { evaluations: _evaluations, interviewAssignments: _assignments, ...metadataSelect } = reviewMetadataSelect
 export const pipelinePageMetadataSelect = metadataSelect
 export function requiresCompleteReviewMetadata(query: PipelinePageQuery) {
   return query.review !== undefined || query.rating !== undefined || query.sort === "score"
@@ -17,13 +19,20 @@ type Member = ClubAccess & { id: string; userId: string }
 type Rounds = ReturnType<typeof pagePipeline>["rounds"]
 export async function readPipelinePage(tx: AppTransactionClient, where: Prisma.ApplicationWhereInput,
   member: Member, rounds: Rounds, query: PipelinePageQuery, scope: string,
-  hydrate: (ids: string[]) => Promise<ReturnType<typeof pipelineDetailProjection>[]>) {
+  hydrate: (ids: string[]) => Promise<ReturnType<typeof pipelineDetailProjection>[]>,
+  roundPrivacy: ReadonlyMap<string, boolean>) {
   const completeReviews = requiresCompleteReviewMetadata(query)
   const metadata = completeReviews
-    ? await tx.application.findMany({ where, select: pipelineSummarySelect })
+    ? await tx.application.findMany({ where, select: pipelinePageReviewMetadataSelect })
     : (await tx.application.findMany({ where, select: pipelinePageMetadataSelect }))
       .map(app => ({ ...app, evaluations: [], interviewAssignments: [] }))
-  const ranked = metadata.map(app => pipelineSummaryProjection(app, member))
+  const ranked = metadata.map(app => {
+    // Reuse the club's round read from this same snapshot, including archived
+    // rounds. An absent round must never make anonymous applicants identified.
+    const anonymousReview = roundPrivacy.get(app.roundId)
+    if (anonymousReview === undefined) throw new Error("Applicant round unavailable. Reload applicants.")
+    return pipelineSummaryProjection({ ...app, round: { anonymousReview } }, member)
+  })
   const page = pagePipeline({ rounds, genderCounts: null, applications: ranked }, query, member.id, member.userId, scope)
   const ids = page.applications.map(app => app.id)
   // The visible page is the unit of hydration. Reuse its canonical detail

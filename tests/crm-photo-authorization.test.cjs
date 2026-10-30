@@ -29,7 +29,7 @@ function fixture() {
   const tx = {
     $queryRaw: async()=>[],
     user: { findUnique: async()=>({disabledAt:state.disabled?new Date():null}) },
-    pipelineRound: { findMany: async () => [app.round] },
+    pipelineRound: { findMany: async options => { state.roundQuery = options; return [app.round]; } },
     application: {
       findMany: async ({ where, include, omit, select }) => { state.pipelineOmit=omit; state.pipelineQuery=include; state.pipelineSelect=select; if(state.pipelineError)throw state.pipelineError; return (state.pipelineReads++, matches(where)) && (!where.round || app.round.anonymousReview) ? [app] : []; },
       findFirst: async ({ where, select }) => { if(select)state.narrowReads++; return matches(where) ? app : null; }
@@ -201,4 +201,16 @@ test('summary scores preserve submission barrier, self exclusion, inactive assig
  f.state.offices=[];r=await row();assert.equal(r.evaluations.length,2,'ordinary assigned reviewer cannot see another round');
  f.app.interviewAssignments.push({roundId,memberId:id(10),member:active});assert.equal((await row()).roundScore.provisional,true);
  f.state.actor=owner;assert.equal((await row()).roundScore,null);assert.deepEqual((await row()).evaluations,[]);
+});
+
+test('page reuses archived round privacy without exposing archived controls or allowing gender access',async()=>{
+ const f=fixture();f.app.round.archivedAt=new Date();f.app.round.anonymousReview=true;
+ const page=await f.crm.getClubPipelinePage(clubId);
+ assert.deepEqual(f.state.roundQuery.where,{clubId});
+ assert.equal(f.state.roundQuery.select.archivedAt,true);
+ assert.deepEqual(page.rounds,[]);
+ assert.equal(page.applications[0].student.email,'');
+ assert.match(page.applications[0].studentId,/^anonymous-/);
+ f.state.permissions=['applications.review','applicants.identify'];
+ await assert.rejects(()=>f.crm.getClubPipelinePage(clubId,{roundId,gender:'Female'}),/Gender visibility/);
 });

@@ -39,8 +39,9 @@ export function usePipelinePage({ clubId, query, revision, authority, enabled, i
   const superseded = useRef<Result | null>(null)
   if (result?.owner.context === context) complete.current = result !== superseded.current && !result.failed && result.data?.coverage?.complete ? { context, data: result.data } : null
   const source = complete.current?.context === context ? complete.current.data : null
-  const local = useMemo(() => valid && source && !query.gender && !query.genderCounts && (query.mode ?? "applicants") === source.coverage.mode
-    ? { ...source, ...pagePipeline(source, query, reviewerId, userId, source.page.scope) } : null, [valid, source, query, reviewerId, userId])
+  const exact = result?.owner === owner
+  const local = useMemo(() => !exact && valid && source && !query.gender && !query.genderCounts && (query.mode ?? "applicants") === source.coverage.mode
+    ? { ...source, ...pagePipeline(source, query, reviewerId, userId, source.page.scope) } : null, [exact, valid, source, query, reviewerId, userId])
   // A prepared owner is a one-render handoff, not a lookup cache. Consume it
   // on commit, including when another query wins before it can be adopted.
   useEffect(() => { prepared.current = null }, [owner])
