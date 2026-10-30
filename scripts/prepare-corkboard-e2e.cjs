@@ -6,7 +6,8 @@ const fs = require("node:fs"),
   { randomUUID } = require("node:crypto");
 const { createClient } = require("@supabase/supabase-js"),
   { PrismaClient } = require("@prisma/client");
-const root = path.join(os.tmpdir(), "outclass-corkboard-e2e"),
+const project = process.argv.includes("--admin-session") ? "outclass-admin-session-e2e" : "outclass-corkboard-e2e", appPort = project === "outclass-admin-session-e2e" ? 3109 : 3108, portOffset = project === "outclass-admin-session-e2e" ? 6000 : 2000;
+const root = path.join(os.tmpdir(), project),
   repo = path.resolve(__dirname, "..");
 function run(binary, args, env = process.env) {
   const r = spawnSync(binary, args, { cwd: repo, env, encoding: "utf8" });
@@ -19,11 +20,11 @@ function run(binary, args, env = process.env) {
     .readFileSync("supabase/config.toml", "utf8")
     .replace(
       'project_id = "out-class"',
-      'project_id = "outclass-corkboard-e2e"',
+      `project_id = "${project}"`,
     );
   for (const port of [54321, 54322, 54323, 54324, 54325, 54327, 54320, 54329])
-    config = config.replaceAll(String(port), String(port + 2000));
-  config = config.replaceAll("http://127.0.0.1:3000", "http://127.0.0.1:3108");
+    config = config.replaceAll(String(port), String(port + portOffset));
+  config = config.replaceAll("http://127.0.0.1:3000", `http://127.0.0.1:${appPort}`);
   const start = config.indexOf("[auth.mfa.totp]"),
     end = config.indexOf("[auth.mfa.phone]", start);
   config =
@@ -33,7 +34,7 @@ function run(binary, args, env = process.env) {
       .replace("enroll_enabled = false", "enroll_enabled = true")
       .replace("verify_enabled = false", "verify_enabled = true") +
     config.slice(end);
-  if (!/^project_id = "outclass-corkboard-e2e"$/m.test(config))
+  if (!config.split("\n").includes(`project_id = "${project}"`))
     throw Error("Non-test project rejected");
   fs.writeFileSync(path.join(root, "supabase/config.toml"), config);
   for (const name of fs.readdirSync("supabase/templates").filter(name => name.endsWith(".html")))
@@ -42,7 +43,7 @@ function run(binary, args, env = process.env) {
       path.join(root, "supabase/templates", name),
     );
   console.log(
-    "Starting disposable Corkboard project on localhost ports 56321–56329.",
+    `Starting disposable ${project} project on its dedicated localhost ports.`,
   );
   const out = run("supabase", [
     "start",
@@ -56,7 +57,7 @@ function run(binary, args, env = process.env) {
     run("supabase", ["status", "--workdir", root, "-o", "json"]),
   );
   if (
-    !/^postgresql:\/\/.*@(127\.0\.0\.1|localhost):56322\//.test(status.DB_URL)
+    !(["127.0.0.1", "localhost"].includes(new URL(status.DB_URL).hostname) && new URL(status.DB_URL).port === String(54322 + portOffset))
   )
     throw Error("Non-local database rejected");
   const env = {
@@ -77,7 +78,7 @@ function run(binary, args, env = process.env) {
   if (fs.existsSync(existingConfig)) {
     const old = JSON.parse(fs.readFileSync(existingConfig));
     if (
-      old.projectId !== "outclass-corkboard-e2e" ||
+      old.projectId !== project ||
       old.status.DB_URL !== status.DB_URL
     )
       throw Error("Unexpected local fixture configuration");
@@ -164,8 +165,9 @@ function run(binary, args, env = process.env) {
   identities.admin.totpSecret = factor.data.totp.secret;
   identities.admin.factorId = factor.data.id;
   const settings = {
-    projectId: "outclass-corkboard-e2e",
-    appUrl: "http://127.0.0.1:3108",
+    projectId: project,
+    appUrl: `http://127.0.0.1:${appPort}`,
+    buildDir: path.join(repo, ".next-publish"),
     status,
     identities,
     clubId: club.id,
