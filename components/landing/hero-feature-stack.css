@@ -1,11 +1,11 @@
 /* A compact, quiet index-card stage. Only three cards show any depth. */
-.oc-feature-stack { --oc-feature-height: 208px; position: relative; width: 100%; max-width: 390px; min-width: 0; justify-self: center; padding-top: 42px; color: #fff7ec; }
+.oc-feature-stack { --oc-feature-height: 232px; position: relative; width: 100%; max-width: 390px; min-width: 0; justify-self: center; padding-top: 42px; color: #fff7ec; }
 .oc-feature-stage { position: relative; height: calc(var(--oc-feature-height) + 62px); perspective: 1100px; perspective-origin: 50% 50%; transform-style: preserve-3d; }
 .oc-feature-card { position: absolute; inset: 0 0 auto; height: var(--oc-feature-height); transform-origin: 50% 50%; border: 1px solid rgb(255 247 236 / 22%); border-radius: 8px; background: linear-gradient(145deg, rgb(32 56 83 / 87%), rgb(13 33 57 / 86%)); box-shadow: 0 20px 55px rgb(2 14 30 / 25%), inset 0 1px 0 rgb(255 255 255 / 10%); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); backface-visibility: hidden; pointer-events: none; }
-.oc-feature-ink { padding: 26px 28px; }
+.oc-feature-ink { display: flex; flex-direction: column; gap: 20px; min-width: 0; height: 100%; padding: 26px 28px; }
 .oc-feature-category { display: flex; align-items: center; gap: 16px; margin: 0; font-family: var(--oc-font-sans); font-size: 10px; line-height: 1.6; letter-spacing: .14em; font-weight: 500; text-transform: uppercase; }
 .oc-feature-category > span { color: #f3a16f; letter-spacing: .06em; font-variant-numeric: tabular-nums; }
-.oc-feature-statement { max-width: 340px; margin: 30px 0 0; font-family: var(--oc-font-display); font-size: clamp(1.6rem, 2.4vw, 2.15rem); font-weight: 400; line-height: 1.3; letter-spacing: -.035em; text-wrap: balance; }
+.oc-feature-statement { max-width: 100%; min-width: 0; margin: 0; font-family: var(--oc-font-display); font-size: clamp(1.6rem, 2.4vw, 2.15rem); font-weight: 400; line-height: 1.3; letter-spacing: -.035em; text-wrap: balance; }
 .oc-feature-controls { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: -26px; position: relative; }
 .oc-feature-position { margin-right: auto; padding-left: 2px; font-size: 11px; letter-spacing: .08em; font-variant-numeric: tabular-nums; }
 .oc-feature-position > span { color: #fff7ec88; }
@@ -25,7 +25,7 @@
 @media (max-width: 540px) {
   .oc-feature-stack { --oc-feature-height: 192px; padding-top: 36px; }
   .oc-feature-ink { padding: 28px 26px; }
-  .oc-feature-statement { margin-top: 24px; font-size: clamp(1.5rem, 6.5vw, 1.85rem); }
+  .oc-feature-statement { font-size: clamp(1.5rem, 6.5vw, 1.85rem); }
   .oc-feature-stage { height: calc(var(--oc-feature-height) + 36px); }
   .oc-feature-controls { margin-top: -10px; }
   .oc-hero-introduction { gap: 16px; }

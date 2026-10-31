@@ -233,14 +233,7 @@ button.oc-command-row:hover { background: var(--muted); }
   .oc-applicant-assessment, .oc-dossier-answer { padding: 1.25rem; }
 }
 
-.oc-recruitment-masthead .oc-page-header-action { max-width: 23rem; flex: 1 1 18rem; }
-.oc-recruitment-masthead .oc-command-context { display: block; padding: 1.25rem 0 0 1.5rem; border-left: 1px solid var(--border); }
-.oc-recruitment-masthead .oc-command-refresh { margin-top: 1rem; }
 .oc-review-workspace-heading [data-slot="badge"] { background: var(--brand-subtle); color: var(--primary); border: 0; border-radius: 999px; padding: .5rem .9rem; }
-@media (max-width: 800px) {
- .oc-recruitment-masthead .oc-page-header-action { max-width: none; flex-basis: 100%; }
- .oc-recruitment-masthead .oc-command-context { padding: .75rem 0 0; border-left: 0; }
-}
 
 .oc-dossier-jump { width: fit-content; padding-inline: 0; color: var(--brand-ink); }
 #dossier-evaluation:focus { outline: 2px solid var(--oc-rail-text); outline-offset: 6px; border-radius: 2px; }
@@ -248,3 +241,7 @@ button.oc-command-row:hover { background: var(--muted); }
  .oc-booking-priority .oc-command-row { align-items: flex-start; flex-direction: column; }
  .oc-booking-priority .oc-command-row > a { display: inline-flex; align-items: center; min-height: 44px; }
 }
+
+/* Operational details stay beside their refresh action, above the pipeline. */
+.oc-recruiting-status { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem 1.5rem; margin-bottom: 1.25rem; }
+.oc-recruiting-status .oc-command-context-meta { margin: 0; }

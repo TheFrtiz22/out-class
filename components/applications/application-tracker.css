@@ -104,7 +104,6 @@
 .oc-writing-workspace .oc-writing-identity h1 { font-size: clamp(1.25rem, 2vw, 1.65rem); line-height: 1.25; margin-top: .2rem; }
 .oc-writing-form { display: grid; gap: 1rem; min-width: 0; }
 .oc-writing-progress { display: grid; gap: .5rem; }
-.oc-writing-progress [data-slot="progress"] { height: 4px; }
 .oc-writing-questions { display: grid; gap: 1rem; min-width: 0; }
 .oc-writing-question { display: grid; gap: .75rem; min-width: 0; padding: var(--oc-content-padding); background: var(--oc-content-surface); border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); box-shadow: var(--oc-content-shadow); }
 .oc-writing-question:focus-within { border-color: var(--ring); }

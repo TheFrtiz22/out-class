@@ -1,8 +1,4 @@
 .oc-student-home { max-width: 1120px; container-type: inline-size; margin-inline: auto; color: var(--foreground); font-family: var(--oc-font-sans); }
-.oc-home-header { position: relative; }
-/* Quiet orbital geometry from the V2 direction; never a fabricated activity metric. */
-.oc-home-header::after { content: ''; position: absolute; right: 1.5rem; top: 1rem; width: 12rem; aspect-ratio: 1; border: 1px solid var(--border); border-radius: 50%; box-shadow: 0 0 0 1.75rem color-mix(in srgb,var(--border) 24%,transparent); pointer-events: none; z-index: -1; }
-.oc-home-header .oc-page-header-copy { max-width: 75%; }
 .oc-home-columns { display: grid; grid-template-columns: minmax(0,1.85fr) minmax(0,1fr); gap: 2rem var(--oc-editorial-gap); align-items: start; }
 .oc-home-columns > section { min-width: 0; }
 .oc-home-columns > .oc-home-next { grid-column: 1 / -1; }
@@ -46,15 +42,12 @@
 .oc-student-home button:focus-visible { outline: 2px solid var(--ring); outline-offset: 4px; }
 .oc-home-application:hover, .oc-home-agenda-row:hover, .oc-home-update:hover { background: var(--muted); }
 @container (max-width: 850px) {
-  .oc-home-header::after { width: 8rem; top: 2rem; right: 1rem; }
   .oc-home-columns { grid-template-columns: minmax(0,1.5fr) minmax(0,1fr); gap: 1.5rem; }
   .oc-home-application { grid-template-columns: 32px minmax(0,1fr) 14px; }
   .oc-home-application [data-slot="badge"] { grid-column: 2; justify-self: start; }
   .oc-home-row-arrow { grid-column: 3; grid-row: 1; }
 }
 @container (max-width: 640px) {
-  .oc-home-header::after { display: none; }
-  .oc-home-header .oc-page-header-copy { max-width: 100%; }
   .oc-home-columns { grid-template-columns: minmax(0,1fr); }
   .oc-home-agenda { grid-column: 1; grid-row: auto; padding: 1.25rem; }
 }

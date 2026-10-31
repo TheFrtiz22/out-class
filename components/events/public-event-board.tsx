@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import Link from "next/link";
 import { z } from "zod";
 import { useSearchParams } from "next/navigation";
@@ -48,7 +48,7 @@ const initialFilters: EventFilters = {
   sort: "soonest",
   page: 0,
 };
-export function PublicEventBoard() {
+export function PublicEventBoard({ toolbarAction }: { toolbarAction?: ReactNode } = {}) {
   const { user } = useAuth(),
     identity = user?.id || "";
   const [filters, setFilters] = useState(initialFilters),
@@ -158,10 +158,6 @@ export function PublicEventBoard() {
       className="oc-event-board-section"
       aria-label="Public campus events"
     >
-      <div className="oc-event-discovery-heading">
-        <div><h2>Events on Grounds</h2><p>Find your next reason to get out there.</p></div>
-        <SegmentedControl label="Event view" value={view} onChange={changeView} animated className="oc-event-view-switch" options={[{ value: "corkboard", label: "Corkboard" }, { value: "list", label: "List View" }]} />
-      </div>
       {linkedLoading && <LoadingState label="Opening linked event…" layout="inline" />}
       {linkedError && <div role="alert" className="mb-4 space-y-2"><p>{linkedError}</p><Button variant="outline" onClick={() => setLinkedRetry(n => n + 1)}>Retry event</Button></div>}
       {linkedMissing && <p role="status" className="mb-4 text-sm text-muted-foreground">This event is no longer available. Browse the campus events below.</p>}
@@ -181,6 +177,7 @@ export function PublicEventBoard() {
           ))}
         </div>
         {identity && <button type="button" className="oc-event-pill oc-event-saved-filter" aria-pressed={!!filters.savedOnly} onClick={() => filter({ savedOnly: !filters.savedOnly })}>Saved events</button>}
+        <div className="oc-event-toolbar-actions">
         <label className="oc-event-search">
           <Search size={16} aria-hidden="true" />
           <Input
@@ -271,6 +268,9 @@ export function PublicEventBoard() {
             </Button>
           </div>
         </details>
+        <SegmentedControl label="Event view" value={view} onChange={changeView} animated className="oc-event-view-switch" options={[{ value: "corkboard", label: "Corkboard" }, { value: "list", label: "List View" }]} />
+        {toolbarAction}
+        </div>
       </div>
       {saves.error && <div role="alert" className="oc-event-save-error"><p>{saves.error}</p>{!saves.ready && <Button variant="outline" onClick={saves.retry}>Retry saved events</Button>}</div>}
       <p className="oc-event-result" role="status" aria-live="polite">
