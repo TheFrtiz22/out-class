@@ -47,3 +47,5 @@ Application-writing tests also check closed-intake draft editing, autosave, manu
 - Existing task/empty-state/saved-club browser regression: passed after updating its exact expected heading to Virtual Corkboard. No behavioral assertions were removed.
 - Production browser audit: 24/24 screen states and 48/48 carousel statements passed, with no page errors or horizontal overflow.
 - Full regression suite: 1551 cases; 1499 passed, 0 failed, 52 environment-gated cases skipped.
+
+The authenticated dashboard integration test also checks the remaining-review count in the existing review queue, replacing its expectation for the intentionally removed masthead headline. Its database persistence, permission, and workflow assertions are retained.
