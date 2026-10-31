@@ -246,12 +246,12 @@ export function StudentDashboardView({
   return (
     <div className="oc-student-home">
       <PageHeader
-        className="oc-home-header" density="editorial"
+        className="oc-home-header"
         eyebrow={now.toLocaleDateString("en-US", { timeZone: SCHEDULING_TIMEZONE, weekday: "long", month: "long", day: "numeric" })}
-        title={<>Your campus,<br /><em>in motion.</em></>}
+        title="Home"
         description={user?.profile?.firstName
-          ? `Good to see you, ${user.profile.firstName}. Stay close to what matters.`
-          : "Stay close to what matters. Discover your next move."}
+          ? `Good to see you, ${user.profile.firstName}.`
+          : undefined}
       />
       <AvailabilityDashboardRequests />
       <div className="oc-home-columns">

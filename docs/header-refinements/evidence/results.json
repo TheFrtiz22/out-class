@@ -1,0 +1,578 @@
+[
+  {
+    "name": "landing-student",
+    "width": 1440,
+    "errors": [],
+    "slides": [
+      {
+        "text": "01DiscoverFind the clubs that feel like you.",
+        "left": 29,
+        "right": 29,
+        "bottom": 79.5625,
+        "aligned": true
+      },
+      {
+        "text": "02ApplyOne profile. Endless possibilities.",
+        "left": 29,
+        "right": 29,
+        "bottom": 79.5625,
+        "aligned": true
+      },
+      {
+        "text": "03InterviewsYour next conversation, scheduled.",
+        "left": 29,
+        "right": 29,
+        "bottom": 34.84375,
+        "aligned": true
+      },
+      {
+        "text": "04StatusEvery opportunity. Clearly in view.",
+        "left": 29,
+        "right": 29,
+        "bottom": 79.5625,
+        "aligned": true
+      },
+      {
+        "text": "05CommunityYour people are out there.",
+        "left": 29,
+        "right": 29,
+        "bottom": 79.5625,
+        "aligned": true
+      },
+      {
+        "text": "06For club leadersA better way to build your team.",
+        "left": 29,
+        "right": 29,
+        "bottom": 79.5625,
+        "aligned": true
+      }
+    ]
+  },
+  {
+    "name": "landing-leader",
+    "width": 1440,
+    "errors": [],
+    "slides": [
+      {
+        "text": "01Set UpMake your club’s workspace your own.",
+        "left": 29,
+        "right": 29,
+        "bottom": 79.5625,
+        "aligned": true
+      },
+      {
+        "text": "02RecruitYour questions. One clear process.",
+        "left": 29,
+        "right": 29,
+        "bottom": 79.5625,
+        "aligned": true
+      },
+      {
+        "text": "03ReviewGive every application a thoughtful read.",
+        "left": 29,
+        "right": 29,
+        "bottom": 34.84375,
+        "aligned": true
+      },
+      {
+        "text": "04InterviewA coordinated team. An approved plan.",
+        "left": 29,
+        "right": 29,
+        "bottom": 79.5625,
+        "aligned": true
+      },
+      {
+        "text": "05DecideBring the next step into focus.",
+        "left": 29,
+        "right": 29,
+        "bottom": 79.5625,
+        "aligned": true
+      },
+      {
+        "text": "06ManageWelcome your people. Keep going.",
+        "left": 29,
+        "right": 29,
+        "bottom": 79.5625,
+        "aligned": true
+      }
+    ]
+  },
+  {
+    "name": "home",
+    "width": 1440,
+    "errors": [],
+    "pageWidth": 1440
+  },
+  {
+    "name": "recruiting",
+    "width": 1440,
+    "errors": [],
+    "intake": "Intake open\nDeadline Wed, Nov 4, 11:56 AM\nRefresh overview",
+    "pageWidth": 1440
+  },
+  {
+    "name": "application",
+    "width": 1440,
+    "errors": [],
+    "responses": 1,
+    "pageWidth": 1440
+  },
+  {
+    "name": "corkboard",
+    "width": 1440,
+    "errors": [],
+    "toolbar": {
+      "search": {
+        "x": 628.15625,
+        "y": 198.328125,
+        "width": 342.875,
+        "height": 40
+      },
+      "view": {
+        "x": 1066.15625,
+        "y": 195.1875,
+        "width": 184,
+        "height": 46.296875
+      },
+      "saved": {
+        "x": 1258.15625,
+        "y": 196.328125,
+        "width": 123.84375,
+        "height": 44
+      }
+    },
+    "pageWidth": 1440
+  },
+  {
+    "name": "landing-student",
+    "width": 1280,
+    "errors": [],
+    "slides": [
+      {
+        "text": "01DiscoverFind the clubs that feel like you.",
+        "left": 29,
+        "right": 29,
+        "bottom": 89.15625,
+        "aligned": true
+      },
+      {
+        "text": "02ApplyOne profile. Endless possibilities.",
+        "left": 29,
+        "right": 29,
+        "bottom": 89.15625,
+        "aligned": true
+      },
+      {
+        "text": "03InterviewsYour next conversation, scheduled.",
+        "left": 29,
+        "right": 29,
+        "bottom": 89.15625,
+        "aligned": true
+      },
+      {
+        "text": "04StatusEvery opportunity. Clearly in view.",
+        "left": 29,
+        "right": 29,
+        "bottom": 89.15625,
+        "aligned": true
+      },
+      {
+        "text": "05CommunityYour people are out there.",
+        "left": 29,
+        "right": 29,
+        "bottom": 89.15625,
+        "aligned": true
+      },
+      {
+        "text": "06For club leadersA better way to build your team.",
+        "left": 29,
+        "right": 29,
+        "bottom": 89.15625,
+        "aligned": true
+      }
+    ]
+  },
+  {
+    "name": "landing-leader",
+    "width": 1280,
+    "errors": [],
+    "slides": [
+      {
+        "text": "01Set UpMake your club’s workspace your own.",
+        "left": 29,
+        "right": 29,
+        "bottom": 89.15625,
+        "aligned": true
+      },
+      {
+        "text": "02RecruitYour questions. One clear process.",
+        "left": 29,
+        "right": 29,
+        "bottom": 89.15625,
+        "aligned": true
+      },
+      {
+        "text": "03ReviewGive every application a thoughtful read.",
+        "left": 29,
+        "right": 29,
+        "bottom": 89.15625,
+        "aligned": true
+      },
+      {
+        "text": "04InterviewA coordinated team. An approved plan.",
+        "left": 29,
+        "right": 29,
+        "bottom": 89.15625,
+        "aligned": true
+      },
+      {
+        "text": "05DecideBring the next step into focus.",
+        "left": 29,
+        "right": 29,
+        "bottom": 89.15625,
+        "aligned": true
+      },
+      {
+        "text": "06ManageWelcome your people. Keep going.",
+        "left": 29,
+        "right": 29,
+        "bottom": 89.15625,
+        "aligned": true
+      }
+    ]
+  },
+  {
+    "name": "home",
+    "width": 1280,
+    "errors": [],
+    "pageWidth": 1280
+  },
+  {
+    "name": "recruiting",
+    "width": 1280,
+    "errors": [],
+    "intake": "Intake open\nDeadline Wed, Nov 4, 11:56 AM\nRefresh overview",
+    "pageWidth": 1280
+  },
+  {
+    "name": "application",
+    "width": 1280,
+    "errors": [],
+    "responses": 1,
+    "pageWidth": 1280
+  },
+  {
+    "name": "corkboard",
+    "width": 1280,
+    "errors": [],
+    "toolbar": {
+      "search": {
+        "x": 601.828125,
+        "y": 196.234375,
+        "width": 235.203125,
+        "height": 40
+      },
+      "view": {
+        "x": 932.15625,
+        "y": 193.09375,
+        "width": 184,
+        "height": 46.296875
+      },
+      "saved": {
+        "x": 1124.15625,
+        "y": 194.234375,
+        "width": 123.84375,
+        "height": 44
+      }
+    },
+    "pageWidth": 1280
+  },
+  {
+    "name": "landing-student",
+    "width": 768,
+    "errors": [],
+    "slides": [
+      {
+        "text": "01DiscoverFind the clubs that feel like you.",
+        "left": 29,
+        "right": 29,
+        "bottom": 65.96875,
+        "aligned": true
+      },
+      {
+        "text": "02ApplyOne profile. Endless possibilities.",
+        "left": 29,
+        "right": 29,
+        "bottom": 65.96875,
+        "aligned": true
+      },
+      {
+        "text": "03InterviewsYour next conversation, scheduled.",
+        "left": 29,
+        "right": 29,
+        "bottom": 65.96875,
+        "aligned": true
+      },
+      {
+        "text": "04StatusEvery opportunity. Clearly in view.",
+        "left": 29,
+        "right": 29,
+        "bottom": 65.96875,
+        "aligned": true
+      },
+      {
+        "text": "05CommunityYour people are out there.",
+        "left": 29,
+        "right": 29,
+        "bottom": 65.96875,
+        "aligned": true
+      },
+      {
+        "text": "06For club leadersA better way to build your team.",
+        "left": 29,
+        "right": 29,
+        "bottom": 65.96875,
+        "aligned": true
+      }
+    ]
+  },
+  {
+    "name": "landing-leader",
+    "width": 768,
+    "errors": [],
+    "slides": [
+      {
+        "text": "01Set UpMake your club’s workspace your own.",
+        "left": 29,
+        "right": 29,
+        "bottom": 65.96875,
+        "aligned": true
+      },
+      {
+        "text": "02RecruitYour questions. One clear process.",
+        "left": 29,
+        "right": 29,
+        "bottom": 65.96875,
+        "aligned": true
+      },
+      {
+        "text": "03ReviewGive every application a thoughtful read.",
+        "left": 29,
+        "right": 29,
+        "bottom": 65.96875,
+        "aligned": true
+      },
+      {
+        "text": "04InterviewA coordinated team. An approved plan.",
+        "left": 29,
+        "right": 29,
+        "bottom": 65.96875,
+        "aligned": true
+      },
+      {
+        "text": "05DecideBring the next step into focus.",
+        "left": 29,
+        "right": 29,
+        "bottom": 65.96875,
+        "aligned": true
+      },
+      {
+        "text": "06ManageWelcome your people. Keep going.",
+        "left": 29,
+        "right": 29,
+        "bottom": 65.96875,
+        "aligned": true
+      }
+    ]
+  },
+  {
+    "name": "home",
+    "width": 768,
+    "errors": [],
+    "pageWidth": 768
+  },
+  {
+    "name": "recruiting",
+    "width": 768,
+    "errors": [],
+    "intake": "Intake open\nDeadline Wed, Nov 4, 11:56 AM\nRefresh overview",
+    "pageWidth": 768
+  },
+  {
+    "name": "application",
+    "width": 768,
+    "errors": [],
+    "responses": 1,
+    "pageWidth": 768
+  },
+  {
+    "name": "corkboard",
+    "width": 768,
+    "errors": [],
+    "toolbar": {
+      "search": {
+        "x": 45.328125,
+        "y": 245.765625,
+        "width": 292.515625,
+        "height": 40
+      },
+      "view": {
+        "x": 432.96875,
+        "y": 242.625,
+        "width": 184,
+        "height": 46.296875
+      },
+      "saved": {
+        "x": 624.96875,
+        "y": 243.765625,
+        "width": 123.84375,
+        "height": 44
+      }
+    },
+    "pageWidth": 768
+  },
+  {
+    "name": "landing-student",
+    "width": 390,
+    "errors": [],
+    "slides": [
+      {
+        "text": "01DiscoverFind the clubs that feel like you.",
+        "left": 27,
+        "right": 27,
+        "bottom": 61.125,
+        "aligned": true
+      },
+      {
+        "text": "02ApplyOne profile. Endless possibilities.",
+        "left": 27,
+        "right": 27,
+        "bottom": 61.125,
+        "aligned": true
+      },
+      {
+        "text": "03InterviewsYour next conversation, scheduled.",
+        "left": 27,
+        "right": 27,
+        "bottom": 61.125,
+        "aligned": true
+      },
+      {
+        "text": "04StatusEvery opportunity. Clearly in view.",
+        "left": 27,
+        "right": 27,
+        "bottom": 61.125,
+        "aligned": true
+      },
+      {
+        "text": "05CommunityYour people are out there.",
+        "left": 27,
+        "right": 27,
+        "bottom": 94.0625,
+        "aligned": true
+      },
+      {
+        "text": "06For club leadersA better way to build your team.",
+        "left": 27,
+        "right": 27,
+        "bottom": 61.125,
+        "aligned": true
+      }
+    ]
+  },
+  {
+    "name": "landing-leader",
+    "width": 390,
+    "errors": [],
+    "slides": [
+      {
+        "text": "01Set UpMake your club’s workspace your own.",
+        "left": 27,
+        "right": 27,
+        "bottom": 61.125,
+        "aligned": true
+      },
+      {
+        "text": "02RecruitYour questions. One clear process.",
+        "left": 27,
+        "right": 27,
+        "bottom": 61.125,
+        "aligned": true
+      },
+      {
+        "text": "03ReviewGive every application a thoughtful read.",
+        "left": 27,
+        "right": 27,
+        "bottom": 61.125,
+        "aligned": true
+      },
+      {
+        "text": "04InterviewA coordinated team. An approved plan.",
+        "left": 27,
+        "right": 27,
+        "bottom": 61.125,
+        "aligned": true
+      },
+      {
+        "text": "05DecideBring the next step into focus.",
+        "left": 27,
+        "right": 27,
+        "bottom": 61.125,
+        "aligned": true
+      },
+      {
+        "text": "06ManageWelcome your people. Keep going.",
+        "left": 27,
+        "right": 27,
+        "bottom": 61.125,
+        "aligned": true
+      }
+    ]
+  },
+  {
+    "name": "home",
+    "width": 390,
+    "errors": [],
+    "pageWidth": 390
+  },
+  {
+    "name": "recruiting",
+    "width": 390,
+    "errors": [],
+    "intake": "Intake open\nDeadline Wed, Nov 4, 11:56 AM\nRefresh overview",
+    "pageWidth": 390
+  },
+  {
+    "name": "application",
+    "width": 390,
+    "errors": [],
+    "responses": 1,
+    "pageWidth": 390
+  },
+  {
+    "name": "corkboard",
+    "width": 390,
+    "errors": [],
+    "toolbar": {
+      "search": {
+        "x": 41.765625,
+        "y": 335.625,
+        "width": 199.390625,
+        "height": 44
+      },
+      "view": {
+        "x": 16,
+        "y": 388.625,
+        "width": 226.15625,
+        "height": 46.296875
+      },
+      "saved": {
+        "x": 250.15625,
+        "y": 389.765625,
+        "width": 123.84375,
+        "height": 44
+      }
+    },
+    "pageWidth": 390
+  }
+]

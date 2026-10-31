@@ -7,7 +7,6 @@ import { handleClubLink } from "@/lib/workspace-navigation"
 import { getDashboardReviewQueue, type getClubWorkspaceOverview } from "@/lib/workspace-api"
 import { hasPermission } from "@/lib/permissions"
 import { memberDate } from "@/components/member-overview"
-import { PageHeader } from "@/components/product/page-header"
 import { Button } from "@/components/ui/button"
 import { LoadingState } from "@/components/ui/loading-state"
 import { DashboardDate } from "@/components/product/dashboard-presentation"
@@ -38,10 +37,13 @@ export function RecruitingOverview({ data, refreshing = false, onChanged = () =>
     ...op.scheduled.map(s => ({ id: s.id, title: s.kind === "DECISION" ? "Decision publication scheduled" : "Communication scheduled", at: s.scheduledAt })),
   ].sort((a, b) => +new Date(a.at) - +new Date(b.at))
   return <div className="oc-command-center oc-command-recruiting" aria-busy={refreshing}>
-    <PageHeader className="oc-recruitment-masthead" density="editorial" eyebrow={club.name}
-      title={<>Recruitment,<br /><em>in focus.</em></>}
-      description="Every candidate. Every round. A clear next move."
-      action={<div className="oc-command-context"><div><p className="oc-command-eyebrow">{op.cycles.length ? op.cycles.map(c => c.name).join(" · ") : "No active cycle recorded"}</p><h2>{!op.intake ? "Recruitment access is limited" : pending ? `${pending} review${pending === 1 ? " is" : "s are"} ready for you` : "Your review queue is clear"}</h2><div className="oc-command-context-meta">{op.intake ? <><span className="oc-command-status" data-state={closed ? "closed" : "open"}>Intake {closed ? "closed" : "open"}</span><span>{deadline ? `Deadline ${memberDate(deadline)}` : "No deadline set"}</span></> : <span>Applicant summaries are unavailable with your access</span>}</div></div><Button className="oc-command-refresh" variant="outline" disabled={refreshing} loading={refreshing} onClick={onChanged}>Refresh overview</Button></div>} />
+    <div className="oc-recruiting-status">
+      <div className="oc-command-context-meta">
+        {op.cycles.length > 0 && <span>{op.cycles.map(c => c.name).join(" · ")}</span>}
+        {op.intake ? <><span className="oc-command-status" data-state={closed ? "closed" : "open"}>Intake {closed ? "closed" : "open"}</span><span>{deadline ? `Deadline ${memberDate(deadline)}` : "No deadline set"}</span></> : <span>Applicant summaries are unavailable with your access</span>}
+      </div>
+      <Button className="oc-command-refresh" variant="outline" disabled={refreshing} loading={refreshing} onClick={onChanged}>Refresh overview</Button>
+    </div>
     {!hasPermission(membership, "applicants.identify") && hasPermission(membership, "applications.review") && <p className="oc-command-footnote">Anonymous rounds only. Identity, files and unapproved free text remain withheld.</p>}
     {op.rounds.length > 0 ? <section className="oc-command-section oc-pipeline-section" aria-labelledby="dashboard-pipeline"><header><h2 id="dashboard-pipeline">Current pipeline</h2><span>Configured rounds · active applicants</span></header><div className="oc-command-pipeline" role="group" aria-label="Filter review queue by round"><button aria-pressed={!round} onClick={() => setRound("")}><span className="oc-pipeline-step">Overview</span><span className="oc-pipeline-label">All rounds</span><strong>{op.rounds.reduce((n, r) => n + r.count, 0)}<small>applicants</small></strong><span className="oc-pipeline-pending">{pending} {pending === 1 ? "review" : "reviews"} remaining for you</span></button>{op.rounds.map((r, i) => <button key={r.id} aria-pressed={round === r.id} onClick={() => setRound(round === r.id ? "" : r.id)}><span className="oc-pipeline-step">{String(i + 1).padStart(2, "0")}<ArrowRight size={13} aria-hidden="true" /></span><span className="oc-pipeline-label">{r.name}</span><strong>{r.count}<small>{r.count === 1 ? "applicant" : "applicants"}</small></strong><span className="oc-pipeline-pending" data-pending={r.pending > 0 || r.needsBooking > 0}>{r.needsBooking > 0 && hasPermission(membership, "interviews.manage") ? `${r.needsBooking} awaiting booking · ` : ""}{r.pending ? `${r.pending} ${r.pending === 1 ? "review" : "reviews"} for you` : "No reviews waiting for you"}</span></button>)}</div></section> : <p className="oc-command-empty">{hasPermission(membership, "recruitment.manage") ? <>No recruiting rounds configured. <Link className="underline" href={`${base}&tool=interviews`}>Set up recruitment <ArrowRight aria-hidden="true" size={14} /></Link></> : "No rounds are available with your current review access."}</p>}
     <div className="oc-command-columns"><div>

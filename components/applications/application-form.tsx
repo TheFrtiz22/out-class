@@ -17,7 +17,6 @@ import {
 } from "@/lib/workspace-api"
 import { uploadProfileFile } from "@/lib/workspace-api"
 import { answerErrors, wordCount, applicationResponseProgress } from "@/lib/student-applications"
-import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -168,7 +167,6 @@ export function ApplicationForm({
           <p>{required.length ? `${completed} of ${required.length} required responses ready` : "No required questions"}</p>
           <AutosaveStatus save={autosave} />
         </div>
-        <Progress value={progress.percent} aria-label="Required application responses ready" />
       </div>
       {(missingProfile || missingScores) && <div className="oc-writing-profile-warning" role="note" aria-label="Missing profile requirements">
         <p>{missingProfile ? "Complete your shared profile before submitting." : `${testRequirementLabels[(application.club.testRequirement || "OPTIONAL") as keyof typeof testRequirementLabels]}. Add the missing scores to your profile before submitting.`}</p>
