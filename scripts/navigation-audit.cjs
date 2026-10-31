@@ -12,6 +12,8 @@ assert.ok(!(process.argv.includes('--hydration-fixture') && process.argv.include
 const profile = require('./navigation-fixture-config.cjs').fixtureProfile(process.argv.includes('--crossover-fixture') ? 'crossover' : process.argv.includes('--hydration-fixture'));
 const root = profile.root;
 const fixtureFile = path.join(root, 'navigation-fixture.json');
+const readinessTimeoutMs=Number(process.argv.find(a=>a.startsWith('--readiness-timeout-ms='))?.split('=')[1]||30000);
+assert.ok(Number.isInteger(readinessTimeoutMs)&&readinessTimeoutMs>=30000&&readinessTimeoutMs<=180000,'Bounded observer deadline');
 const outDir = path.resolve(process.argv.find(a => a.startsWith('--out='))?.slice(6) || 'docs/performance/evidence');
 function distribution(values) {
   const a = values.filter(Number.isFinite).sort((a,b)=>a-b);
@@ -133,7 +135,7 @@ function installBrowserObservers(options) {
   for(const method of ['pushState','replaceState']){const original=history[method];history[method]=function(...args){const result=original.apply(this,args);if(window.__navAudit.armed && window.__navAudit.click && !window.__navAudit.url)window.__navAudit.url=performance.now();return result;};}
 }
 async function waitReady(page, desc) {
-  await page.waitForFunction(d=>(!d.href||location.pathname===new URL(d.href,location.origin).pathname)&&(!d.clubLabel||[...document.querySelectorAll('.oc-workspace-switcher-trigger, [aria-label^="Switch club:"]')].some(el=>el.textContent.includes(d.clubLabel)))&&[...document.querySelectorAll(d.selector)].some(el=>el.getClientRects().length&&el.textContent.includes(d.text)),desc,{timeout:30000});
+  await page.waitForFunction(d=>(!d.href||location.pathname===new URL(d.href,location.origin).pathname)&&(!d.clubLabel||[...document.querySelectorAll('.oc-workspace-switcher-trigger, [aria-label^="Switch club:"]')].some(el=>el.textContent.includes(d.clubLabel)))&&[...document.querySelectorAll(d.selector)].some(el=>el.getClientRects().length&&el.textContent.includes(d.text)),desc,{timeout:readinessTimeoutMs});
 }
 async function main() {
   const config=profile.readConfig(path.join(root,'config.json'));
@@ -171,7 +173,7 @@ async function main() {
   async function session(participant=0) {
     const context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:cookieSets[participant],origins:[]}});
     await context.addInitScript(installBrowserObservers,{diagnoseHydration:process.argv.includes('--diagnose-hydration'),fontDiagnostics:process.argv.includes('--font-diagnostics')});
-    const page=await context.newPage(),cdp=await context.newCDPSession(page);
+    const page=await context.newPage(),cdp=await context.newCDPSession(page);page.setDefaultTimeout(readinessTimeoutMs);
     if(process.argv.includes('--probe-hydration-dom')){
       assert.ok(process.argv.includes('--diagnose-hydration'),'DOM probing is diagnostic only');
       await page.route('**/_next/static/chunks/fbbc4d8e-*.js',async route=>{
@@ -342,7 +344,7 @@ async function main() {
     if(to==='personal'||to==='club2'||from==='personal'||from==='club2')await page.getByRole('menuitem',{name:to==='personal'?'Personal workspace':to==='club2'?/Navigation Audit Club 2/:/Navigation Audit Club 1/}).click();
     else await clickTarget(s,from,to);
     await page.evaluate(()=>window.__navAudit.check());
-    await page.waitForFunction(()=>window.__navAudit.ready>0,null,{timeout:30000});
+    await page.waitForFunction(()=>window.__navAudit.ready>0,null,{timeout:readinessTimeoutMs});
     await settle(s);
     const afterMetrics=Object.fromEntries((await s.cdp.send('Performance.getMetrics')).metrics.map(x=>[x.name,x.value]));
     const marks=await page.evaluate(()=>{const a=window.__navAudit;a.armed=false;a.observer.disconnect();return{click:a.click,origin:performance.timeOrigin,url:a.url,ready:a.ready,interactive:a.interactive,longTasks:a.longTasks.filter(t=>t.start>=a.click&&t.start<a.ready),commits:a.commits.filter(t=>t>=a.click&&t<=a.ready).length};});
@@ -436,7 +438,7 @@ async function main() {
         }
       } catch(e){failures.push({path:from+' → '+to,condition,error:String(e.message).slice(0,1800)});console.log('UNAVAILABLE '+from+' → '+to+' '+condition+': '+String(e.message).slice(0,800));if(shared)console.log('Fixture UI diagnostics: '+await shared.page.locator('body').innerText().then(s=>s.slice(0,1800)).catch(()=>''));}
       finally {if(shared)await shared.context.close();}
-      fs.writeFileSync(path.join(outDir,outputStem+'-samples.json'),JSON.stringify({environment:'local Next production build + disposable local Supabase',fixture:fixture.counts,sampleCount,metricsNotes:{profile:process.argv.includes('--constrained-network')?'Local CDP 80ms latency, 1.6Mbps down/0.75Mbps up, CPU4x':'Local unthrottled',meaningfulMs:'DOM content predicate followed by two requestAnimationFrame callbacks; paint proxy, not screenshot timing',interactiveMs:'first enabled visible control after content predicate; no mutation is invoked',requestOffsets:'relative to captured DOM click timestamp',networkCompleteMs:'observed non-SSE requests drained after useful content; includes background traffic',cpu:'CDP delta through settle, so includes post-content background work',react:'production commit notifications only; profiler render durations unavailable'},samples:allSamples,failures},null,2));
+      fs.writeFileSync(path.join(outDir,outputStem+'-samples.json'),JSON.stringify({environment:'local Next production build + disposable local Supabase',fixture:fixture.counts,sampleCount,metricsNotes:{readinessTimeoutMs,profile:process.argv.includes('--constrained-network')?'Local CDP 80ms latency, 1.6Mbps down/0.75Mbps up, CPU4x':'Local unthrottled',meaningfulMs:'DOM content predicate followed by two requestAnimationFrame callbacks; paint proxy, not screenshot timing',interactiveMs:'first enabled visible control after content predicate; no mutation is invoked',requestOffsets:'relative to captured DOM click timestamp',networkCompleteMs:'observed non-SSE requests drained after useful content; includes background traffic',cpu:'CDP delta through settle, so includes post-content background work',react:'production commit notifications only; profiler render durations unavailable'},samples:allSamples,failures},null,2));
     }
     const groups=[...new Set(allSamples.map(s=>s.path+'|'+s.condition))].map(key=>{const samples=allSamples.filter(s=>s.path+'|'+s.condition===key);return{path:samples[0].path,condition:samples[0].condition,meaningfulMs:distribution(samples.map(s=>s.meaningfulMs)),interactiveMs:distribution(samples.map(s=>s.interactiveMs)),clickToUrlMs:distribution(samples.map(s=>s.clickToUrlMs)),networkCompleteMs:distribution(samples.map(s=>s.networkCompleteMs)),scriptMs:distribution(samples.map(s=>s.scriptMs)),taskMs:distribution(samples.map(s=>s.taskMs)),requestCount:distribution(samples.map(s=>s.requestCount)),encodedBodyBytes:distribution(samples.map(s=>s.encodedBodyBytes))};});
     fs.writeFileSync(path.join(outDir,outputStem+'-summary.json'),JSON.stringify({generatedAt:new Date().toISOString(),sampleCount,groups,failures},null,2));

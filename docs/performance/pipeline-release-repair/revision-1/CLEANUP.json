@@ -1,0 +1,69 @@
+{
+  "at": "2026-10-29T17:08:11.982Z",
+  "ownedProject": "outclass-onboarding-e2e",
+  "ownedServerStopped": true,
+  "supabaseStopExit": 0,
+  "ownedContainersRemaining": [],
+  "unrelatedContainersUnchangedAcrossCleanup": true,
+  "unrelatedContainers": [
+    "outclass-release-rehearsal-20261002|exited",
+    "supabase_analytics_out-class|running",
+    "supabase_auth_out-class|running",
+    "supabase_auth_outclass-announcement-e2e|running",
+    "supabase_auth_outclass-dashboards-e2e|running",
+    "supabase_db_out-class|running",
+    "supabase_db_outclass-announcement-e2e|running",
+    "supabase_db_outclass-dashboards-e2e|running",
+    "supabase_edge_runtime_out-class|exited",
+    "supabase_inbucket_out-class|running",
+    "supabase_inbucket_outclass-announcement-e2e|running",
+    "supabase_inbucket_outclass-dashboards-e2e|running",
+    "supabase_kong_out-class|running",
+    "supabase_kong_outclass-announcement-e2e|exited",
+    "supabase_kong_outclass-dashboards-e2e|running",
+    "supabase_pg_meta_out-class|running",
+    "supabase_pg_meta_outclass-announcement-e2e|running",
+    "supabase_pg_meta_outclass-dashboards-e2e|running",
+    "supabase_realtime_out-class|running",
+    "supabase_realtime_outclass-announcement-e2e|running",
+    "supabase_realtime_outclass-dashboards-e2e|running",
+    "supabase_rest_out-class|running",
+    "supabase_rest_outclass-announcement-e2e|running",
+    "supabase_rest_outclass-dashboards-e2e|running",
+    "supabase_storage_out-class|running",
+    "supabase_storage_outclass-announcement-e2e|running",
+    "supabase_storage_outclass-dashboards-e2e|running",
+    "supabase_studio_out-class|running",
+    "supabase_vector_out-class|running"
+  ],
+  "removedPrivateFiles": [
+    "config.json",
+    "server.pid",
+    "mailpit-key.pem",
+    "mailpit-cert.pem",
+    "navigation-fixture.json",
+    "ui-fixture.json",
+    "pipeline-release-1.json",
+    "pipeline-release-100.json",
+    "pipeline-release-1000.json",
+    "pipeline-release-5000.json",
+    "pipeline-release-fixtures.json"
+  ],
+  "kept": "Isolated source worktrees, raw failed benchmark outcomes and private diagnostic logs remain available. No original checkout, unrelated service, historical evidence or production resource was changed by cleanup.",
+  "originalCheckout": {
+    "head": "c67cca5fbf19caa27e2e43f40664b13c02abe41a",
+    "status": "M scripts/check-platform-visual-unification.cjs",
+    "note": "Other user work advanced this checkout during the task; observed changes are preserved, not reset."
+  },
+  "laterReadOnlyObservation": {
+    "at": "2026-10-30T00:24:24Z",
+    "onboardingConfigAndPidFilesExist": true,
+    "dockerApiAvailable": false,
+    "action": "No further local lifecycle or Docker startup/stop was attempted. Later files may belong to other work and were preserved. The earlier timestamped cleanup evidence describes only this task\u2019s owned services."
+  },
+  "finalSupplementCleanup": {
+    "scope": "Fresh isolated GitHub VMs only; no local shared fixture root or other user service touched.",
+    "controller": "scripts/run-pipeline-release-gated-qa.cjs stops only its spawned process groups and named projects; removes private config/certificate files after successful project stop. Failed product assertions remain nonzero. No runtime secrets uploaded.",
+    "macObserverQA": "Real headless Chromium reproduction closed the browser in finally; no local Supabase/Docker service was started or modified."
+  }
+}

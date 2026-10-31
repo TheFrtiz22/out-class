@@ -1,0 +1,98 @@
+{
+  "sourceCommit": "7a0151f2b488abeb67519aa5205ae03aedb509b7",
+  "base": "29100f9cef68ffcba7a250200aa5b5ceb7727cb8",
+  "sameApplicationSourceAfter": "5d7eed15b14d04c4df3beb194d29e7e205521b62",
+  "note": "Later commits here change comparison tooling/docs only. Original failed Supabase Storage startup is retained; retry status is recorded separately.",
+  "jobs": [
+    {
+      "name": "validate",
+      "jobId": 123557660591,
+      "url": "https://github.com/TheFrtiz22/out-class/actions/runs/40905120737/job/123557660591",
+      "summary": [
+        "2026-10-29T15:57:20.0035622Z # tests 1528",
+        "2026-10-29T15:57:20.0036342Z # pass 1476",
+        "2026-10-29T15:57:20.0036687Z # fail 0",
+        "2026-10-29T15:57:20.0037373Z # skipped 52",
+        "2026-10-29T15:57:23.5086988Z All 60 migrations applied on fresh and legacy databases; all 79 tables enforce RLS and deny browser-role CRUD.",
+        "2026-10-29T15:57:43.0487462Z \u2716 22 problems (0 errors, 22 warnings)"
+      ]
+    },
+    {
+      "name": "authenticatedPipeline",
+      "jobId": 123557662210,
+      "url": "https://github.com/TheFrtiz22/out-class/actions/runs/40905120742/job/123557662210",
+      "summary": [
+        "2026-10-29T15:49:09.5713387Z All Prisma migrations applied through the authoritative deployment command.",
+        "2026-10-29T15:51:58.3376904Z # tests 50",
+        "2026-10-29T15:51:58.3377258Z # pass 50",
+        "2026-10-29T15:51:58.3377421Z # fail 0",
+        "2026-10-29T15:51:58.3378122Z # skipped 0",
+        "2026-10-29T15:52:39.9759067Z # tests 16",
+        "2026-10-29T15:52:39.9759411Z # pass 16",
+        "2026-10-29T15:52:39.9759577Z # fail 0",
+        "2026-10-29T15:52:39.9759950Z # skipped 0",
+        "2026-10-29T15:54:03.8205917Z # tests 11",
+        "2026-10-29T15:54:03.8206298Z # pass 11",
+        "2026-10-29T15:54:03.8210084Z # fail 0",
+        "2026-10-29T15:54:03.8210489Z # skipped 0"
+      ]
+    },
+    {
+      "name": "native",
+      "jobId": 123557661057,
+      "url": "https://github.com/TheFrtiz22/out-class/actions/runs/40905120737/job/123557661057",
+      "summary": [
+        "2026-10-29T15:50:05.9868916Z # tests 49",
+        "2026-10-29T15:50:05.9869545Z # pass 49",
+        "2026-10-29T15:50:05.9869866Z # fail 0",
+        "2026-10-29T15:50:05.9871174Z # skipped 0",
+        "2026-10-29T15:50:21.3813327Z # tests 42",
+        "2026-10-29T15:50:21.3818223Z # pass 42",
+        "2026-10-29T15:50:21.3818516Z # fail 0",
+        "2026-10-29T15:50:21.3818981Z # skipped 0"
+      ]
+    },
+    {
+      "name": "security",
+      "jobId": 123557662473,
+      "url": "https://github.com/TheFrtiz22/out-class/actions/runs/40905120742/job/123557662473",
+      "summary": [
+        "2026-10-29T15:48:52.1793581Z # tests 8",
+        "2026-10-29T15:48:52.1794108Z # pass 8",
+        "2026-10-29T15:48:52.1794329Z # fail 0",
+        "2026-10-29T15:48:52.1794813Z # skipped 0",
+        "2026-10-29T15:48:52.9717018Z PASS: security integration suites ran against disposable PostgreSQL"
+      ]
+    },
+    {
+      "name": "authenticatedA11y",
+      "jobId": 123557661111,
+      "url": "https://github.com/TheFrtiz22/out-class/actions/runs/40905120737/job/123557661111",
+      "summary": [
+        "2026-10-29T15:49:18.0989689Z All Prisma migrations applied through the authoritative deployment command.",
+        "2026-10-29T15:51:12.5163623Z # tests 18",
+        "2026-10-29T15:51:12.5163971Z # pass 18",
+        "2026-10-29T15:51:12.5164123Z # fail 0",
+        "2026-10-29T15:51:12.5164378Z # skipped 0"
+      ]
+    },
+    {
+      "name": "publicA11y",
+      "jobId": 123557661366,
+      "url": "https://github.com/TheFrtiz22/out-class/actions/runs/40905120737/job/123557661366",
+      "summary": [
+        "2026-10-29T15:50:17.1069268Z # tests 27",
+        "2026-10-29T15:50:17.1069711Z # pass 27",
+        "2026-10-29T15:50:17.1069903Z # fail 0",
+        "2026-10-29T15:50:17.1070433Z # skipped 0"
+      ]
+    }
+  ],
+  "storageStartupRetry": {
+    "originalJob": 123557662498,
+    "result": "Supabase startup failed before product tests",
+    "retryJob": 123600594619,
+    "retryResult": "success",
+    "run": 40905120742
+  }
+}

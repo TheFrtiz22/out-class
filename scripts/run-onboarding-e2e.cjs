@@ -7,7 +7,8 @@ const {PrismaClient}=require('@prisma/client');
 const {totp,confirmationMessage,readConfig}=require('../tests/helpers/onboarding-e2e.cjs');
 const dashboards=process.argv.includes('--dashboards'),writing=process.argv.includes('--application-writing')||dashboards,appPort=dashboards?3115:writing?3109:3107;
 const projectId=dashboards?'outclass-dashboards-e2e':writing?'outclass-application-writing-e2e':'outclass-onboarding-e2e',portPrefix=dashboards?(process.env.OUTCLASS_DASHBOARD_E2E_PORT_PREFIX||'593'):writing?'573':'553';
-const selectedNavigation=process.argv.includes('--selected-navigation');
+const releaseRepair=process.argv.includes('--pipeline-release-repair');
+const selectedNavigation=process.argv.includes('--selected-navigation')||releaseRepair;
 if(selectedNavigation&&(writing||!process.argv.includes('--club-integration')))throw Error('--selected-navigation requires --club-integration on the onboarding fixture.');
 if(!/^[1-5]\d{2}$|^6[0-4]\d$/.test(portPrefix))throw Error('A disposable port prefix must reserve a valid three-digit local range.');
 const repo=path.resolve(__dirname,'..'),root=path.join(os.tmpdir(),projectId);
@@ -118,7 +119,16 @@ async function ready(url,headers={}){
   const navigationResult=spawnSync(process.execPath,['--test','--test-concurrency=1',...navigationTests],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
   if(navigationResult.status!==0)throw Error('Selected navigation integration failed; inspect the disposable test log.');
  }
- if(keep){console.log(`Keeping the isolated app for review at ${settings.appUrl}. Local test configuration: ${configFile}`);return;}
+ if(releaseRepair){
+  logged(process.execPath,['scripts/pipeline-release-fixtures.cjs'],'pipeline-release-fixtures.log',env);
+  const fixture=path.join(root,'navigation-fixture.json');
+  fs.copyFileSync(path.join(root,'pipeline-release-1000.json'),fixture);
+  try{
+   const repairResult=spawnSync(process.execPath,['--test','--test-concurrency=1','tests/pipeline-release-e2e.test.cjs','tests/navigation-phase5-e2e.test.cjs'],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
+   if(repairResult.status!==0)throw Error('Pipeline release integration failed; inspect the disposable test log.');
+  }finally{fs.copyFileSync(path.join(root,'pipeline-release-100.json'),fixture);}
+ }
+ if(keep){app.unref();console.log(`Keeping the isolated app for review at ${settings.appUrl}. Local test configuration: ${configFile}`);return;}
 })().catch(error=>{console.error(error.message);process.exitCode=1;}).finally(()=>{
  if(!keep&&stackTouched){if(app)app.kill('SIGTERM');const [binary,args]=invocation('supabase',['stop','--workdir',root,'--no-backup']);const result=spawnSync(binary,args,{cwd:repo,encoding:'utf8'});fs.writeFileSync(path.join(root,'cleanup.log'),(result.stdout||'')+(result.stderr||''));
   if(result.status===0)for(const name of ['config.json','server.pid','mailpit-key.pem','mailpit-cert.pem'])fs.rmSync(path.join(root,name),{force:true});

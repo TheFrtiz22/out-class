@@ -1,0 +1,126 @@
+{
+  "sourceCommit": "b2d8883da60a991c22e7596fd2dccc9cf981461b",
+  "reason": "Byte-exact historical root reports before revision 2 replaces the current reports. All relative artifact paths in these original files resolve from their original parent pipeline-release-repair directory; shared raw evidence remains there unchanged.",
+  "files": [
+    {
+      "originalPath": "docs/performance/pipeline-release-repair/ACCEPTANCE.md",
+      "sha256": "7fd297207c75d3a955590398b4720e9492c2ef2f7c2e50da51e3b3eb8201822b"
+    },
+    {
+      "originalPath": "docs/performance/pipeline-release-repair/ADDITIONAL_QA.json",
+      "sha256": "6f17c905c55474fb5fd7d286cb7e3be736a9a6c15e9828b7186063e8f9323142"
+    },
+    {
+      "originalPath": "docs/performance/pipeline-release-repair/ARCHIVES.json",
+      "sha256": "0fe1fbfdc66f26000688e0a0b5cf00f0f1d449d67c82f4e45623fc19527dbc53"
+    },
+    {
+      "originalPath": "docs/performance/pipeline-release-repair/BENCHMARKS.json",
+      "sha256": "24de5fd35afbfefef21bd3404a8f70d52e706cf5acce9380e140ce0dc9d736df"
+    },
+    {
+      "originalPath": "docs/performance/pipeline-release-repair/CANCELLED_CI_PREPARATIONS.json",
+      "sha256": "2547d1572839e503b2dac57ee0913bafad17cc384597913ec4e021b5f710720f"
+    },
+    {
+      "originalPath": "docs/performance/pipeline-release-repair/CHANGED_FILES.json",
+      "sha256": "a98f7939c27060bc7fbcb43f94cc7aa717b858a04f828abbb8c5e90c459b052d"
+    },
+    {
+      "originalPath": "docs/performance/pipeline-release-repair/CHATGPT_HANDOFF.md",
+      "sha256": "1ceb87921fbbfb76a36a450893b2746974985b5281e8be624da1726b9c63c8c1"
+    },
+    {
+      "originalPath": "docs/performance/pipeline-release-repair/CLEANUP.json",
+      "sha256": "2eca0f6a8615cd91d55b1755f1abc77fe7617d51d68e9fc68aa49ab6a0b24174"
+    },
+    {
+      "originalPath": "docs/performance/pipeline-release-repair/CONTROLLED_RESULTS.md",
+      "sha256": "c6113b28e63963d33da453eeb86f8f270374e016706a9bb7e487531f0999b7a9"
+    },
+    {
+      "originalPath": "docs/performance/pipeline-release-repair/DOCK_INTERACTION_REPORT.md",
+      "sha256": "57a1766af68add8101b7060d7986488ea3d51faf47b2e3c91e06c52de77655ba"
+    },
+    {
+      "originalPath": "docs/performance/pipeline-release-repair/EVIDENCE_COMMIT_QA.json",
+      "sha256": "2f05cd6722e1d280520e1b86d5f72c123250537df730d3effc25d6abd03aef90"
+    },
+    {
+      "originalPath": "docs/performance/pipeline-release-repair/EVIDENCE_SEAL.json",
+      "sha256": "f1feaf6f98146c23babb139a1dfeb1d4e7f7337aeb57adadc83791bd5a5619d9"
+    },
+    {
+      "originalPath": "docs/performance/pipeline-release-repair/FULL_REVIEW_PLAN.md",
+      "sha256": "cf9fbb9e0a0a7d9711d33dd6344d23c84d8fc9c450a71cb09e2aa2e20f67c69d"
+    },
+    {
+      "originalPath": "docs/performance/pipeline-release-repair/GATED_COVERAGE.json",
+      "sha256": "6df4b8e349d6ed05a35e45630f80192eb8317e57a62d4d19ab21e89cd934db8c"
+    },
+    {
+      "originalPath": "docs/performance/pipeline-release-repair/GATED_QA_PLAN.md",
+      "sha256": "2e32c2b95f881d31b518ff2b5700688ebffb2bac42a570d94847148794a36c24"
+    },
+    {
+      "originalPath": "docs/performance/pipeline-release-repair/GATED_SUPPLEMENT_QA.json",
+      "sha256": "2e55650ef0e44297751a60a7f5cea1e170642ff796b84fb28fe3deecc610e95d"
+    },
+    {
+      "originalPath": "docs/performance/pipeline-release-repair/GATED_TEST_TITLES.json",
+      "sha256": "1ebf1d9b4b3068964767a3c93d3be44bfe8cb9d4467da1643eb204c110ce3b71"
+    },
+    {
+      "originalPath": "docs/performance/pipeline-release-repair/HOSTED_QA.json",
+      "sha256": "193577126f90ca8871aeee00770fc15d65341f943566e1b33463964519d763fd"
+    },
+    {
+      "originalPath": "docs/performance/pipeline-release-repair/HOSTED_QA_CURRENT.json",
+      "sha256": "6248b3abf43b843e3aece519303223fcd13d823152f794ec9556d21096d6a713"
+    },
+    {
+      "originalPath": "docs/performance/pipeline-release-repair/IMPLEMENTATION.md",
+      "sha256": "91560f9e5905009e909a418c838230858ae2ab86881185d000d3c530e1db7bb0"
+    },
+    {
+      "originalPath": "docs/performance/pipeline-release-repair/LOCAL_FIXTURE_PROFILE.json",
+      "sha256": "c0b9464b34d4b8a55bd8fd1da99fe5654692d031545938ab0927294caf1d19a2"
+    },
+    {
+      "originalPath": "docs/performance/pipeline-release-repair/LOCAL_QA_LOGS.json",
+      "sha256": "ce9626fa421458663ab94e03b482915c6d04e2471589d768c56c70c8b59faa75"
+    },
+    {
+      "originalPath": "docs/performance/pipeline-release-repair/OBSERVER_QA.json",
+      "sha256": "bf91dae522f9203e509f582cbca729807d8fd6d6110dc496abc03879ccbcf511"
+    },
+    {
+      "originalPath": "docs/performance/pipeline-release-repair/PRODUCTION_OBSERVABILITY.json",
+      "sha256": "f439a970264ee929d7a4983d9a7468cb2457efe6395d0900942b37310b3cc0e8"
+    },
+    {
+      "originalPath": "docs/performance/pipeline-release-repair/RELEASE_DECISION.md",
+      "sha256": "06bf6256df72dfacb9df96af78884397561be3c881c469599f8c8764333e6ffe"
+    },
+    {
+      "originalPath": "docs/performance/pipeline-release-repair/REPRODUCTION.md",
+      "sha256": "59ced0900edde45277324f6f46755f315ba6b9bb9a3c00d51ceea3667b058119"
+    },
+    {
+      "originalPath": "docs/performance/pipeline-release-repair/ROOT_CAUSE.md",
+      "sha256": "064db86d7450d97da956131825ab04e6fe3a61e4f8fca13cf0e3975a7e2891bd"
+    },
+    {
+      "originalPath": "docs/performance/pipeline-release-repair/SECURITY_AND_FUNCTIONAL_QA.md",
+      "sha256": "25f8b797d684417268d85f07f0eeb4c9db82f35225f8b72082561d2c68cbb1fd"
+    },
+    {
+      "originalPath": "docs/performance/pipeline-release-repair/SOURCE_BASELINE.json",
+      "sha256": "5f8bc9ae6037f0322e15202c3b127cfa21461240ae87ce98f4b50d5dbc27aa83"
+    },
+    {
+      "originalPath": "docs/performance/pipeline-release-repair/SOURCE_PROOF.json",
+      "sha256": "864beb2ad9e1e126e940eb3a9e8a382d62aacf496744b3024cde4315f854cad8"
+    }
+  ]
+}

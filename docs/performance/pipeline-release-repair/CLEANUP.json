@@ -1,0 +1,21 @@
+{
+  "at": "2026-10-30T23:56:41.038979+00:00",
+  "source": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+  "priorCleanup": "revision-1/CLEANUP.json",
+  "currentRuntime": "Fresh disposable GitHub VMs; no current local Supabase, Docker or Next server was started or stopped. Local Chromium/PGlite test resources were owned and closed by their harnesses. Shared node_modules symlink and generated client were not changed.",
+  "comparisonCleanup": {
+    "jobs": 17,
+    "allExplicitStopStepsPassed": true,
+    "receipt": "revision-2/attempt-2/CI_COMPLETION.json"
+  },
+  "functionalJobs": "All18 pass; their existing disposable harnesses own cleanup. No unrelated local service was stopped.",
+  "removedPrivateFiles": [
+    {
+      "path": "/tmp/outclass-r2-admin-job-124202591390.log",
+      "sha256": "3d1e32378fb62b3540d1f7d3caed16e09ea08835696444e04ffb71325fc760d6",
+      "disposition": "Owned temporary full old Admin job log removed after sanitized counters/hash receipt preserved under revision-2/attempt-1/ADMIN_LOG_RECEIPT.json."
+    }
+  ],
+  "retained": "Isolated repair worktree, all immutable raw evidence including failures, and sanitized receipts. No source worktree was deleted. Original checkout work is preserved.",
+  "production": "No mutation, manual deployment, region, pool, schema or configuration change."
+}

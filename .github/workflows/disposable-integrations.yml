@@ -82,7 +82,27 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - name: Run Next.js / Supabase Auth / SMTP / settings and selected-navigation integration
-        run: node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation
+        run: node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair
+
+  applicant-workflow-regressions:
+    name: Applicant workflow / ${{ matrix.suite }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [dashboards, application-writing]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Verify existing real Auth and production-build applicant journeys
+        run: node scripts/run-onboarding-e2e.cjs --${{ matrix.suite }}
 
   local-storage:
     name: Private Storage and native PostgreSQL

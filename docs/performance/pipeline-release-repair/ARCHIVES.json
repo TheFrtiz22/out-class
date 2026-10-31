@@ -1,0 +1,5 @@
+{
+  "current": "revision-2/ARTIFACTS.json",
+  "prior": "revision-1/ARCHIVES.json",
+  "policy": "ZIP SHA256 verified before path-safe, symlink-free extraction. Raw artifacts remain immutable. No signed download URLs or runtime secrets are retained. Historical and superseded attempt receipts remain distinct."
+}

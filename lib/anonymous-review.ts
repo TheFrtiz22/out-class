@@ -20,12 +20,19 @@ export function identifiedApplication(app: ReviewApplication, genderVisible = fa
 export function anonymousApplicantLabel(applicationId: string) {
   return `Applicant ${applicationId.replaceAll("-", "").slice(-10).toUpperCase()}`;
 }
+/** Same anonymous list identity for detail and narrow summary reads. */
+export function anonymousListProfile(applicationId: string, p: (({ academicYear: string } | { gradYear: number; transferStudent?: boolean }) & { gpa?: number | null; satScore?: number | null; actScore?: number | null }) | null) {
+  return { firstName: "Applicant", lastName: anonymousApplicantLabel(applicationId).slice("Applicant ".length), major: "",
+    academicYear: p ? ("academicYear" in p ? p.academicYear : academicYear(p)) : "Year unavailable",
+    gpa: supportedGpa(p?.gpa), satScore: p?.satScore ?? null, actScore: p?.actScore ?? null };
+}
+
 export function anonymousApplication(
   app: ReviewApplication | LeaderReviewApplication,
   genderVisible = false,
 ): LeaderReviewApplication {
   const p = app.student.studentProfile;
-  const label = anonymousApplicantLabel(app.id).slice("Applicant ".length);
+  const summary = anonymousListProfile(app.id, p);
   return {
     id: app.id,
     clubId: app.clubId,
@@ -46,16 +53,16 @@ export function anonymousApplication(
       studentProfile: {
         id: `anonymous-${app.id}`,
         userId: `anonymous-${app.id}`,
-        firstName: "Applicant",
-        lastName: label,
+        firstName: summary.firstName,
+        lastName: summary.lastName,
         computingId: "",
         scholarStatus: null,
-        major: "",
-        academicYear: p ? ("academicYear" in p ? p.academicYear : academicYear(p)) : "Year unavailable",
+        major: summary.major,
+        academicYear: summary.academicYear,
         gender: genderVisible ? p?.gender ?? null : null,
-        gpa: supportedGpa(p?.gpa),
-        satScore: p?.satScore ?? null,
-        actScore: p?.actScore ?? null,
+        gpa: summary.gpa,
+        satScore: summary.satScore,
+        actScore: summary.actScore,
         actEnglish: p?.actEnglish ?? null,
         actMath: p?.actMath ?? null,
         actReading: p?.actReading ?? null,

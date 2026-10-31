@@ -1,0 +1,66 @@
+{
+  "baseline": "0a40de7cbcad158cf60d96c258610b832d818da8",
+  "candidate": "511fd3056af12af9f25a2c48ad9eda5d35393c50",
+  "applicationDigest": "0ce8317a8ef94ae7d750628f0652e3d07aa991b651776b32dc6815a8f17fa38e",
+  "smallRun": 41096229641,
+  "units": [
+    {
+      "runId": 41096229641,
+      "profile": "local",
+      "size": 1,
+      "collector": "navigation",
+      "directory": "ci/local-cohort-1-navigation-attempt-41096229641-1"
+    },
+    {
+      "runId": 41096229641,
+      "profile": "local",
+      "size": 1,
+      "collector": "full-review",
+      "directory": "ci/local-cohort-1-full-review-attempt-41096229641-1"
+    },
+    {
+      "runId": 41096229641,
+      "profile": "local",
+      "size": 100,
+      "collector": "navigation",
+      "directory": "ci/local-cohort-100-navigation-attempt-41096229641-1"
+    },
+    {
+      "runId": 41096229641,
+      "profile": "local",
+      "size": 100,
+      "collector": "full-review",
+      "directory": "ci/local-cohort-100-full-review-attempt-41096229641-1"
+    },
+    {
+      "runId": 41096229641,
+      "profile": "constrained",
+      "size": 1,
+      "collector": "navigation",
+      "directory": "ci/constrained-cohort-1-navigation-attempt-41096229641-1"
+    },
+    {
+      "runId": 41096229641,
+      "profile": "constrained",
+      "size": 1,
+      "collector": "full-review",
+      "directory": "ci/constrained-cohort-1-full-review-attempt-41096229641-1"
+    },
+    {
+      "runId": 41096229641,
+      "profile": "constrained",
+      "size": 100,
+      "collector": "navigation",
+      "directory": "ci/constrained-cohort-100-navigation-attempt-41096229641-1"
+    },
+    {
+      "runId": 41096229641,
+      "profile": "constrained",
+      "size": 100,
+      "collector": "full-review",
+      "directory": "ci/constrained-cohort-100-full-review-attempt-41096229641-1"
+    }
+  ],
+  "capacity": null,
+  "largeUnits": "Pending small-unit review; declared in PROTOCOL.md, not optional for release."
+}

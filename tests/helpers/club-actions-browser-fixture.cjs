@@ -50,7 +50,7 @@ async function fixture(){
  const rpc=`async function call(name,args){const r=await fetch('/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,args})});const data=await r.json();if(!r.ok)throw Error(data.error);return data}`
  const mocks=Object.fromEntries(Object.entries(groups).map(([module,names])=>[module,rpc+names.map(name=>`exports.${name}=(...args)=>call('${name}',args);`).join('')]))
  Object.assign(mocks,{
-  '@/contexts/auth-context':`exports.useAuth=()=>({user:window.initial.user,refreshUser:async()=>{},loading:false})`,
+  '@/contexts/auth-context':`const epoch={},isReadAuthorityCurrent=value=>value===epoch;exports.useAuth=()=>({readAuthority:epoch,isReadAuthorityCurrent,user:window.initial.user,refreshUser:async()=>{},loading:false})`,
   '@/contexts/demo-context':`exports.useDemoMode=()=>({isDemoEnabled:false,ready:true})`,
   'next/link':`const React=require('react');module.exports=({children,href,...props})=>React.createElement('a',{href,...props},children)`,
   'next/navigation':`exports.useSearchParams=()=>new URLSearchParams(location.search)`,

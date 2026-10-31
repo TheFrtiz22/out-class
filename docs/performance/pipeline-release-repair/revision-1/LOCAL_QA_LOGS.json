@@ -1,0 +1,853 @@
+{
+  "logs": [
+    {
+      "file": "/tmp/outclass-repair-ordinary-final.log",
+      "sha256": "9da5902523b1622c357885f9fa1ca5a50cfdf2387f60ff084177a79aea6141d7",
+      "bytes": 166328,
+      "source": "Prior f2192e02-base repair unless latest-targeted (rebased 7a0151f2 application source)",
+      "counters": [
+        [
+          "tests",
+          "1482"
+        ],
+        [
+          "suites",
+          "0"
+        ],
+        [
+          "pass",
+          "1432"
+        ],
+        [
+          "fail",
+          "0"
+        ],
+        [
+          "cancelled",
+          "0"
+        ],
+        [
+          "skipped",
+          "50"
+        ]
+      ],
+      "failedAttempt": false,
+      "note": "Logs retained locally; only hashes/counters exported. Failed attempts are not replaced by later success."
+    },
+    {
+      "file": "/tmp/outclass-repair-auth-final.log",
+      "sha256": "13c245c0339d8fd91c0a5322bc906f1570c86c405b88fdd9365b74104c0f9c2e",
+      "bytes": 14256,
+      "source": "Prior f2192e02-base repair unless latest-targeted (rebased 7a0151f2 application source)",
+      "counters": [
+        [
+          "tests",
+          "50"
+        ],
+        [
+          "suites",
+          "0"
+        ],
+        [
+          "pass",
+          "50"
+        ],
+        [
+          "fail",
+          "0"
+        ],
+        [
+          "cancelled",
+          "0"
+        ],
+        [
+          "skipped",
+          "0"
+        ]
+      ],
+      "failedAttempt": false,
+      "note": "Logs retained locally; only hashes/counters exported. Failed attempts are not replaced by later success."
+    },
+    {
+      "file": "/tmp/outclass-repair-selected-final.log",
+      "sha256": "d4a8869ee668fd2fe304b4532b505cee6476c3fda1b03ca2962bac659bcea9c7",
+      "bytes": 2118,
+      "source": "Prior f2192e02-base repair unless latest-targeted (rebased 7a0151f2 application source)",
+      "counters": [
+        [
+          "tests",
+          "16"
+        ],
+        [
+          "suites",
+          "0"
+        ],
+        [
+          "pass",
+          "16"
+        ],
+        [
+          "fail",
+          "0"
+        ],
+        [
+          "cancelled",
+          "0"
+        ],
+        [
+          "skipped",
+          "0"
+        ]
+      ],
+      "failedAttempt": false,
+      "note": "Logs retained locally; only hashes/counters exported. Failed attempts are not replaced by later success."
+    },
+    {
+      "file": "/tmp/outclass-repair-pipeline-live-2.log",
+      "sha256": "785c77e8c807d1fdfce3ecea050abe06e02a5ef3379bb2bee8d5ca733241aa94",
+      "bytes": 1075,
+      "source": "Prior f2192e02-base repair unless latest-targeted (rebased 7a0151f2 application source)",
+      "counters": [
+        [
+          "tests",
+          "10"
+        ],
+        [
+          "suites",
+          "0"
+        ],
+        [
+          "pass",
+          "10"
+        ],
+        [
+          "fail",
+          "0"
+        ],
+        [
+          "cancelled",
+          "0"
+        ],
+        [
+          "skipped",
+          "0"
+        ]
+      ],
+      "failedAttempt": false,
+      "note": "Logs retained locally; only hashes/counters exported. Failed attempts are not replaced by later success."
+    },
+    {
+      "file": "/tmp/outclass-repair-mobile-live-3.log",
+      "sha256": "ff8a0b1f2c6cfa31ccf21ec76814ba50cc6798cc29d0ce1a828e13b54a66f160",
+      "bytes": 520,
+      "source": "Prior f2192e02-base repair unless latest-targeted (rebased 7a0151f2 application source)",
+      "counters": [
+        [
+          "tests",
+          "1"
+        ],
+        [
+          "suites",
+          "0"
+        ],
+        [
+          "pass",
+          "1"
+        ],
+        [
+          "fail",
+          "0"
+        ],
+        [
+          "cancelled",
+          "0"
+        ],
+        [
+          "skipped",
+          "0"
+        ]
+      ],
+      "failedAttempt": false,
+      "note": "Logs retained locally; only hashes/counters exported. Failed attempts are not replaced by later success."
+    },
+    {
+      "file": "/tmp/outclass-repair-round-build.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "source": "Prior f2192e02-base repair unless latest-targeted (rebased 7a0151f2 application source)",
+      "counters": [],
+      "failedAttempt": false,
+      "note": "Logs retained locally; only hashes/counters exported. Failed attempts are not replaced by later success."
+    },
+    {
+      "file": "/tmp/outclass-repair-round-live.log",
+      "sha256": "67c36be56153d4ec00fb72d4aefe022f6768591ed89e86bdb1b24fda933ef15e",
+      "bytes": 983,
+      "source": "Prior f2192e02-base repair unless latest-targeted (rebased 7a0151f2 application source)",
+      "counters": [
+        [
+          "tests",
+          "7"
+        ],
+        [
+          "suites",
+          "0"
+        ],
+        [
+          "pass",
+          "7"
+        ],
+        [
+          "fail",
+          "0"
+        ],
+        [
+          "cancelled",
+          "0"
+        ],
+        [
+          "skipped",
+          "0"
+        ]
+      ],
+      "failedAttempt": false,
+      "note": "Logs retained locally; only hashes/counters exported. Failed attempts are not replaced by later success."
+    },
+    {
+      "file": "/tmp/outclass-repair-round-unit.log",
+      "sha256": "fd2c84447607fa63285a868ae3937dd93b5857d7bd94a87efaae6ea96639752a",
+      "bytes": 4257,
+      "source": "Prior f2192e02-base repair unless latest-targeted (rebased 7a0151f2 application source)",
+      "counters": [
+        [
+          "tests",
+          "37"
+        ],
+        [
+          "suites",
+          "0"
+        ],
+        [
+          "pass",
+          "37"
+        ],
+        [
+          "fail",
+          "0"
+        ],
+        [
+          "cancelled",
+          "0"
+        ],
+        [
+          "skipped",
+          "0"
+        ]
+      ],
+      "failedAttempt": false,
+      "note": "Logs retained locally; only hashes/counters exported. Failed attempts are not replaced by later success."
+    },
+    {
+      "file": "/tmp/outclass-repair-native.log",
+      "sha256": "88662072f4f22d9d43b3ff2088e10f88e0d52283b2eefb530df75c4afe45fede",
+      "bytes": 19634,
+      "source": "Prior f2192e02-base repair unless latest-targeted (rebased 7a0151f2 application source)",
+      "counters": [
+        [
+          "tests",
+          "49"
+        ],
+        [
+          "suites",
+          "0"
+        ],
+        [
+          "pass",
+          "49"
+        ],
+        [
+          "fail",
+          "0"
+        ],
+        [
+          "cancelled",
+          "0"
+        ],
+        [
+          "skipped",
+          "0"
+        ],
+        [
+          "tests",
+          "42"
+        ],
+        [
+          "suites",
+          "0"
+        ],
+        [
+          "pass",
+          "42"
+        ],
+        [
+          "fail",
+          "0"
+        ],
+        [
+          "cancelled",
+          "0"
+        ],
+        [
+          "skipped",
+          "0"
+        ]
+      ],
+      "failedAttempt": false,
+      "note": "Logs retained locally; only hashes/counters exported. Failed attempts are not replaced by later success."
+    },
+    {
+      "file": "/tmp/outclass-repair-native-security.log",
+      "sha256": "3968c493988bb2141b5abbbfcea9d0ce121f4837d547903ecb517c777ba60669",
+      "bytes": 9701,
+      "source": "Prior f2192e02-base repair unless latest-targeted (rebased 7a0151f2 application source)",
+      "counters": [
+        [
+          "tests",
+          "3"
+        ],
+        [
+          "suites",
+          "0"
+        ],
+        [
+          "pass",
+          "3"
+        ],
+        [
+          "fail",
+          "0"
+        ],
+        [
+          "cancelled",
+          "0"
+        ],
+        [
+          "skipped",
+          "0"
+        ]
+      ],
+      "failedAttempt": false,
+      "note": "Logs retained locally; only hashes/counters exported. Failed attempts are not replaced by later success."
+    },
+    {
+      "file": "/tmp/outclass-repair-migrations.log",
+      "sha256": "84fc5c908d06b0aa7738fe12e3ad16eeae3769e9b2569f0f560b3ec1644b07d2",
+      "bytes": 1159,
+      "source": "Prior f2192e02-base repair unless latest-targeted (rebased 7a0151f2 application source)",
+      "counters": [],
+      "failedAttempt": false,
+      "note": "Logs retained locally; only hashes/counters exported. Failed attempts are not replaced by later success."
+    },
+    {
+      "file": "/tmp/outclass-repair-migration-path.log",
+      "sha256": "dcc55da3ebf332a156d932f9e92625e44a9178296f0f07b92e29cef283f655dc",
+      "bytes": 164,
+      "source": "Prior f2192e02-base repair unless latest-targeted (rebased 7a0151f2 application source)",
+      "counters": [],
+      "failedAttempt": false,
+      "note": "Logs retained locally; only hashes/counters exported. Failed attempts are not replaced by later success."
+    },
+    {
+      "file": "/tmp/outclass-repair-types-verified.log",
+      "sha256": "7da6452aa37538bc1cec2c414adc9ac2f8dfdd59afdd7e07fce582e9b6a3ac4e",
+      "bytes": 49,
+      "source": "Prior f2192e02-base repair unless latest-targeted (rebased 7a0151f2 application source)",
+      "counters": [],
+      "failedAttempt": false,
+      "note": "Logs retained locally; only hashes/counters exported. Failed attempts are not replaced by later success."
+    },
+    {
+      "file": "/tmp/outclass-repair-lint-final.log",
+      "sha256": "34705c2ee9f37487cd8fd4e2f8399ad800cad996d7387e073003a44e9e7490af",
+      "bytes": 6684,
+      "source": "Prior f2192e02-base repair unless latest-targeted (rebased 7a0151f2 application source)",
+      "counters": [],
+      "failedAttempt": false,
+      "note": "Logs retained locally; only hashes/counters exported. Failed attempts are not replaced by later success."
+    },
+    {
+      "file": "/tmp/outclass-repair-owner-final.log",
+      "sha256": "4b73e46a8b22e32b6565033c751f2357d9426a956608c0ff367f029138e72a54",
+      "bytes": 1486,
+      "source": "Prior f2192e02-base repair unless latest-targeted (rebased 7a0151f2 application source)",
+      "counters": [
+        [
+          "tests",
+          "13"
+        ],
+        [
+          "suites",
+          "0"
+        ],
+        [
+          "pass",
+          "13"
+        ],
+        [
+          "fail",
+          "0"
+        ],
+        [
+          "cancelled",
+          "0"
+        ],
+        [
+          "skipped",
+          "0"
+        ]
+      ],
+      "failedAttempt": false,
+      "note": "Logs retained locally; only hashes/counters exported. Failed attempts are not replaced by later success."
+    },
+    {
+      "file": "/tmp/outclass-repair-latest-targeted.log",
+      "sha256": "df867385ad65ae5740b4d837088a0895453ee810c0c9e8fd388f405029ecd6a7",
+      "bytes": 3449,
+      "source": "Prior f2192e02-base repair unless latest-targeted (rebased 7a0151f2 application source)",
+      "counters": [
+        [
+          "tests",
+          "30"
+        ],
+        [
+          "suites",
+          "0"
+        ],
+        [
+          "pass",
+          "30"
+        ],
+        [
+          "fail",
+          "0"
+        ],
+        [
+          "cancelled",
+          "0"
+        ],
+        [
+          "skipped",
+          "0"
+        ]
+      ],
+      "failedAttempt": false,
+      "note": "Logs retained locally; only hashes/counters exported. Failed attempts are not replaced by later success."
+    },
+    {
+      "file": "/tmp/outclass-repair-ordinary-attempt-1.log",
+      "sha256": "e161df3c5c6743d18935bec37f584815c2ef53270a7d2696752d286158961c4d",
+      "bytes": 223522,
+      "source": "Prior f2192e02-base repair unless latest-targeted (rebased 7a0151f2 application source)",
+      "counters": [
+        [
+          "tests",
+          "1460"
+        ],
+        [
+          "suites",
+          "0"
+        ],
+        [
+          "pass",
+          "1378"
+        ],
+        [
+          "fail",
+          "38"
+        ],
+        [
+          "cancelled",
+          "0"
+        ],
+        [
+          "skipped",
+          "44"
+        ]
+      ],
+      "failedAttempt": true,
+      "note": "Logs retained locally; only hashes/counters exported. Failed attempts are not replaced by later success."
+    },
+    {
+      "file": "/tmp/outclass-repair-ordinary-attempt-2.log",
+      "sha256": "362e8761c2b9a7a3cd94e288e144bcfc90000c6308fdc681dc3dc9c984dd50e3",
+      "bytes": 166080,
+      "source": "Prior f2192e02-base repair unless latest-targeted (rebased 7a0151f2 application source)",
+      "counters": [
+        [
+          "tests",
+          "1481"
+        ],
+        [
+          "suites",
+          "0"
+        ],
+        [
+          "pass",
+          "1431"
+        ],
+        [
+          "fail",
+          "0"
+        ],
+        [
+          "cancelled",
+          "0"
+        ],
+        [
+          "skipped",
+          "50"
+        ]
+      ],
+      "failedAttempt": true,
+      "note": "Logs retained locally; only hashes/counters exported. Failed attempts are not replaced by later success."
+    },
+    {
+      "file": "/tmp/outclass-repair-pipeline-live.log",
+      "sha256": "06c1b0a1a4778ea6b3cbbcb710ec1c0aeeb2d9da70da67f52f62f1f065c2b1da",
+      "bytes": 1201011,
+      "source": "Prior f2192e02-base repair unless latest-targeted (rebased 7a0151f2 application source)",
+      "counters": [
+        [
+          "tests",
+          "20"
+        ],
+        [
+          "suites",
+          "0"
+        ],
+        [
+          "pass",
+          "17"
+        ],
+        [
+          "fail",
+          "3"
+        ],
+        [
+          "cancelled",
+          "0"
+        ],
+        [
+          "skipped",
+          "0"
+        ]
+      ],
+      "failedAttempt": true,
+      "note": "Logs retained locally; only hashes/counters exported. Failed attempts are not replaced by later success."
+    },
+    {
+      "file": "/tmp/outclass-repair-mobile-live.log",
+      "sha256": "5d55b618dd7f6ba84d4eff78286314f4f6ba52e22d1e12937f8987f5ba2968b0",
+      "bytes": 8706,
+      "source": "Prior f2192e02-base repair unless latest-targeted (rebased 7a0151f2 application source)",
+      "counters": [
+        [
+          "tests",
+          "1"
+        ],
+        [
+          "suites",
+          "0"
+        ],
+        [
+          "pass",
+          "0"
+        ],
+        [
+          "fail",
+          "1"
+        ],
+        [
+          "cancelled",
+          "0"
+        ],
+        [
+          "skipped",
+          "0"
+        ]
+      ],
+      "failedAttempt": true,
+      "note": "Logs retained locally; only hashes/counters exported. Failed attempts are not replaced by later success."
+    },
+    {
+      "file": "/tmp/outclass-repair-mobile-live-2.log",
+      "sha256": "cef6d2ba6c8433b7a74073c60885c00780e0433ddef7bce4058a73e876cba7e0",
+      "bytes": 1032,
+      "source": "Prior f2192e02-base repair unless latest-targeted (rebased 7a0151f2 application source)",
+      "counters": [
+        [
+          "tests",
+          "1"
+        ],
+        [
+          "suites",
+          "0"
+        ],
+        [
+          "pass",
+          "0"
+        ],
+        [
+          "fail",
+          "1"
+        ],
+        [
+          "cancelled",
+          "0"
+        ],
+        [
+          "skipped",
+          "0"
+        ]
+      ],
+      "failedAttempt": true,
+      "note": "Logs retained locally; only hashes/counters exported. Failed attempts are not replaced by later success."
+    },
+    {
+      "file": "/tmp/outclass-repair-current-main-targeted.log",
+      "sha256": "f75205aea982df6461f68ff93fef201d1809532b05ddb65c2689768e9ec6c1a1",
+      "bytes": 2538,
+      "source": "68885345 application source; same application as b321ba44",
+      "counters": [
+        [
+          "tests",
+          "22"
+        ],
+        [
+          "suites",
+          "0"
+        ],
+        [
+          "pass",
+          "22"
+        ],
+        [
+          "fail",
+          "0"
+        ],
+        [
+          "cancelled",
+          "0"
+        ],
+        [
+          "skipped",
+          "0"
+        ]
+      ],
+      "failedAttempt": false
+    },
+    {
+      "file": "/tmp/outclass-release-harness-tests.log",
+      "sha256": "09c3492ddc1c5f26169b5b8bd8a7a46294d63f6da972c735fad218be3dabf9c2",
+      "bytes": 495,
+      "source": "Server/frozen-output harness regression tests before b321ba44",
+      "counters": [
+        [
+          "tests",
+          "3"
+        ],
+        [
+          "suites",
+          "0"
+        ],
+        [
+          "pass",
+          "3"
+        ],
+        [
+          "fail",
+          "0"
+        ],
+        [
+          "cancelled",
+          "0"
+        ],
+        [
+          "skipped",
+          "0"
+        ]
+      ],
+      "failedAttempt": false
+    },
+    {
+      "file": "/tmp/outclass-repair-voting-poll-scope.log",
+      "sha256": "fc4227268958e8ae17249593b0e66f55242d71b839f1dd1543017675ae1faa79",
+      "bytes": 8030,
+      "source": "Voting polling repair development; final application 4d52103e",
+      "counters": [
+        [
+          "tests",
+          "8"
+        ],
+        [
+          "suites",
+          "0"
+        ],
+        [
+          "pass",
+          "0"
+        ],
+        [
+          "fail",
+          "8"
+        ],
+        [
+          "cancelled",
+          "0"
+        ],
+        [
+          "skipped",
+          "0"
+        ]
+      ],
+      "failedAttempt": true,
+      "note": "First harness option declaration failed and was corrected; original test behavior/assertions preserved."
+    },
+    {
+      "file": "/tmp/outclass-repair-voting-poll-scope-2.log",
+      "sha256": "51ff8d0fa38aee1bfd7efce03123966b9278c9101119d77b80bd3588d9a69fc5",
+      "bytes": 1079,
+      "source": "Voting polling repair development; final application 4d52103e",
+      "counters": [
+        [
+          "tests",
+          "8"
+        ],
+        [
+          "suites",
+          "0"
+        ],
+        [
+          "pass",
+          "8"
+        ],
+        [
+          "fail",
+          "0"
+        ],
+        [
+          "cancelled",
+          "0"
+        ],
+        [
+          "skipped",
+          "0"
+        ]
+      ],
+      "failedAttempt": false,
+      "note": "First harness option declaration failed and was corrected; original test behavior/assertions preserved."
+    },
+    {
+      "file": "/tmp/outclass-repair-voting-poll-final.log",
+      "sha256": "39c24e40be4a137e6805f551ef4a22c4086ab78192b811b5a41e091c650ba476",
+      "bytes": 2783,
+      "source": "Voting polling repair development; final application 4d52103e",
+      "counters": [
+        [
+          "tests",
+          "24"
+        ],
+        [
+          "suites",
+          "0"
+        ],
+        [
+          "pass",
+          "24"
+        ],
+        [
+          "fail",
+          "0"
+        ],
+        [
+          "cancelled",
+          "0"
+        ],
+        [
+          "skipped",
+          "0"
+        ]
+      ],
+      "failedAttempt": false,
+      "note": "First harness option declaration failed and was corrected; original test behavior/assertions preserved."
+    },
+    {
+      "file": "/tmp/outclass-repair-voting-poll-final-2.log",
+      "sha256": "810b96f0fabcad9b8b136a3da8e1f2a909797f4130068624238555ff6de518ef",
+      "bytes": 2774,
+      "source": "Voting polling repair development; final application 4d52103e",
+      "counters": [
+        [
+          "tests",
+          "24"
+        ],
+        [
+          "suites",
+          "0"
+        ],
+        [
+          "pass",
+          "24"
+        ],
+        [
+          "fail",
+          "0"
+        ],
+        [
+          "cancelled",
+          "0"
+        ],
+        [
+          "skipped",
+          "0"
+        ]
+      ],
+      "failedAttempt": false,
+      "note": "First harness option declaration failed and was corrected; original test behavior/assertions preserved."
+    },
+    {
+      "file": "/tmp/outclass-repair-voting-poll-final-3.log",
+      "sha256": "9b96995a939fdde20abacc008d331dae621d32b17b184402562ef24b1fd2f0c6",
+      "bytes": 2781,
+      "source": "Voting polling repair development; final application 4d52103e",
+      "counters": [
+        [
+          "tests",
+          "24"
+        ],
+        [
+          "suites",
+          "0"
+        ],
+        [
+          "pass",
+          "24"
+        ],
+        [
+          "fail",
+          "0"
+        ],
+        [
+          "cancelled",
+          "0"
+        ],
+        [
+          "skipped",
+          "0"
+        ]
+      ],
+      "failedAttempt": false,
+      "note": "First harness option declaration failed and was corrected; original test behavior/assertions preserved."
+    }
+  ]
+}

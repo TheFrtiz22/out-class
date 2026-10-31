@@ -1,0 +1,48 @@
+{
+  "profile": "constrained",
+  "proofs": [
+    {
+      "variant": "B",
+      "runtime": "Frozen production outputs restored into one owned runtime checkout",
+      "frozenOutput": {
+        "buildId": "MQD0EeCte998vMmDfinke",
+        "digest": "1ec570438b197d18a1309a27c684efa6b38fa4d592ac51af741eb6d856b7999e",
+        "files": 717
+      },
+      "expectedBuildId": "MQD0EeCte998vMmDfinke",
+      "documentStatus": 200,
+      "documentContainsBuildId": true,
+      "runtimeAsset": "static/chunks/webpack-7044b7ddcf8577f1.js",
+      "assetStatus": 200,
+      "expectedAssetSha256": "edd8c7d6c451f1b3a9d42612ed0f5188fd5353434961f7e23a8fde687f4f6265",
+      "servedAssetSha256": "edd8c7d6c451f1b3a9d42612ed0f5188fd5353434961f7e23a8fde687f4f6265",
+      "valid": true,
+      "readKind": "pipeline",
+      "readStatus": 200,
+      "applications": 100,
+      "expectedApplications": 100,
+      "unsupportedPageStatus": 400
+    },
+    {
+      "variant": "D",
+      "runtime": "Frozen production outputs restored into one owned runtime checkout",
+      "frozenOutput": {
+        "buildId": "ATI-xwvnboHhYEh5qp6d1",
+        "digest": "f97e791af22d077fe89f96d4763e4830c1d1bd549956a82f12f7f6542625ff42",
+        "files": 717
+      },
+      "expectedBuildId": "ATI-xwvnboHhYEh5qp6d1",
+      "documentStatus": 200,
+      "documentContainsBuildId": true,
+      "runtimeAsset": "static/chunks/webpack-c2462581f6f885cf.js",
+      "assetStatus": 200,
+      "expectedAssetSha256": "9c56dd21125e583eb76a27f55e3f462334e3e959fc77cd6706fb72ed582c0265",
+      "servedAssetSha256": "9c56dd21125e583eb76a27f55e3f462334e3e959fc77cd6706fb72ed582c0265",
+      "valid": true,
+      "readKind": "pipelinePage",
+      "readStatus": 200,
+      "applications": 100,
+      "expectedApplications": 100
+    }
+  ]
+}

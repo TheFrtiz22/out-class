@@ -1,0 +1,93 @@
+name: Pipeline release comparison
+
+# Isolated localhost Auth/PostgreSQL and production builds; no repository secrets.
+# Apply run-performance-comparison to the PR to opt in; documentation pushes
+# do not restart expensive measurements. Both builds run sequentially
+# on the same VM. Profiles use separate VMs and distributions.
+on:
+  pull_request:
+    types: [labeled]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pipeline-release-comparison-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  compare:
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'run-performance-comparison' || github.event.label.name == 'run-constrained-performance-comparison' || github.event.label.name == 'run-release-revision-2-screening' || github.event.label.name == 'run-release-revision-2-large'
+    name: Current main versus repair / ${{ matrix.profile }} / cohort ${{ matrix.cohort }} / ${{ matrix.collector }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: ${{ fromJSON(github.event.label.name == 'run-constrained-performance-comparison' && '["constrained"]' || '["local","constrained"]') }}
+        cohort: ${{ fromJSON(github.event.label.name == 'run-release-revision-2-screening' && '["1","100"]' || github.event.label.name == 'run-release-revision-2-large' && '["1000","5000"]' || '["1","100","1000","5000"]') }}
+        collector: [navigation, full-review]
+        include: ${{ fromJSON(github.event.label.name == 'run-release-revision-2-screening' && '[]' || '[{"profile":"local","cohort":"all","collector":"capacity"}]') }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Verify full-review observer independently
+        run: node scripts/verify-pipeline-release-observer.cjs
+      - name: Prepare exact current-main checkout
+        run: |
+          git fetch --depth=1 origin 0a40de7cbcad158cf60d96c258610b832d818da8
+          git worktree add --detach ../../pipeline-release-baseline/out-class 0a40de7cbcad158cf60d96c258610b832d818da8
+          pnpm --dir ../../pipeline-release-baseline/out-class install --frozen-lockfile
+      - name: Build and verify repaired fixture before measurement
+        id: fixture
+        run: node scripts/run-onboarding-e2e.cjs --club-integration --pipeline-release-repair --keep
+      - name: Build current main against the same local fixture
+        id: baseline
+        run: node scripts/pipeline-release-local.cjs build B
+      - name: Freeze both verified production outputs for one runtime checkout
+        id: freeze
+        run: node scripts/pipeline-release-ci-runtime.cjs freeze
+      - name: Verify both restored builds before sampling
+        id: preflight
+        env:
+          OUTCLASS_RELEASE_CI_FROZEN_RUNTIME: "1"
+        run: node scripts/pipeline-release-ci-runtime.cjs check --profile=${{ matrix.profile }} --cohort=${{ matrix.cohort }} --collector=${{ matrix.collector }}
+      - name: Compare browser navigation and complete review
+        # Leave time for owned cleanup and raw upload if collection exceeds its budget.
+        timeout-minutes: 315
+        if: success() && matrix.collector != 'capacity'
+        env:
+          OUTCLASS_RELEASE_CI_FROZEN_RUNTIME: "1"
+        run: node scripts/pipeline-release-ci-study.cjs --profile=${{ matrix.profile }} --cohort=${{ matrix.cohort }} --collector=${{ matrix.collector }}
+      - name: Compare bounded reader capacity
+        if: always() && steps.preflight.outcome == 'success' && matrix.collector == 'capacity'
+        env:
+          OUTCLASS_RELEASE_CI_FROZEN_RUNTIME: "1"
+        run: node scripts/pipeline-release-ci-capacity.cjs
+      - name: Stop this job's disposable services
+        if: always()
+        run: |
+          if test -f /tmp/outclass-onboarding-e2e/config.json; then
+            node scripts/pipeline-release-local.cjs stop
+            node node_modules/supabase/dist/supabase.js stop --workdir /tmp/outclass-onboarding-e2e --no-backup
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pipeline-release-${{ matrix.profile }}-cohort-${{ matrix.cohort }}-${{ matrix.collector }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            docs/performance/pipeline-release-repair/ci/${{ matrix.profile }}-cohort-${{ matrix.cohort }}-${{ matrix.collector }}-attempt-${{ github.run_id }}-${{ github.run_attempt }}/
+            docs/performance/pipeline-release-repair/ci/capacity-attempt-${{ github.run_id }}-${{ github.run_attempt }}/
+            docs/performance/pipeline-release-repair/ci/preflight-${{ matrix.profile }}-cohort-${{ matrix.cohort }}-${{ matrix.collector }}-${{ github.run_id }}-${{ github.run_attempt }}.json
+          if-no-files-found: warn
+          retention-days: 30

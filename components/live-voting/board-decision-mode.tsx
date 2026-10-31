@@ -4,9 +4,10 @@ import { ActionWorkflow } from "@/components/product/action-workflow";
 import { ScheduleDecision } from "@/components/decision-schedules";
 import { serializedWorkspaceRead } from "@/lib/serialized-workspace-read"
 import { compareAcademicYears } from "@/lib/recruitment-profile"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ApplicantDisplayPanel } from "@/components/applicant-intelligence"
 import { getVotingWorkspace, createVotingSession, submitVotingBallot, commandVotingSession, seedVotingDemo } from "@/lib/workspace-api"
+import type { PipelinePageQuery } from "@/lib/pipeline-page"
 import type { getClubPipeline } from "@/lib/workspace-api"
 import type { AppStatus } from "@prisma/client"
 import { useSearchParams } from "next/navigation";
@@ -23,8 +24,10 @@ import Link from "next/link";
 import { hasPermission } from "@/lib/permissions";
 type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
 type Workspace = Awaited<ReturnType<typeof getVotingWorkspace>>
+type SetupRead = { owner: object }
+type VotingSnapshotRead = { workspace: Workspace; setup: SetupRead | null }
 const labels = { PASS: "Pass", HOLD: "Hold / Fringe", NOT_PASS: "Do Not Pass", UNRESOLVED: "Unresolved" }
-export function BoardDecisionMode(props: { applicants: Pipeline["applications"]; rounds: Pipeline["rounds"]; clubId: string; clubName: string; canDecide: boolean; onDecision: (id: string,status: AppStatus)=>void }) {
+export function BoardDecisionMode(props: { selectionQuery?: PipelinePageQuery; applicants: Pipeline["applications"]; rounds: Pipeline["rounds"]; clubId: string; clubName: string; canDecide: boolean; onDecision: (id: string,status: AppStatus)=>void }) {
   const params = useSearchParams();
   const auth=useAuth(),demo=useDemoMode();
   const membership=demo.isDemoEnabled?demo.state?.memberships.find(m=>m.clubId===props.clubId&&m.isOwner):auth.user?.memberships.find(m=>m.clubId===props.clubId);
@@ -32,18 +35,27 @@ export function BoardDecisionMode(props: { applicants: Pipeline["applications"];
   const [open,setOpen]=useState(params.get("voting") === "1")
   return <>{canPrepare&&<Button asChild><Link href={`/voting/rooms/new?clubId=${props.clubId}${demo.isDemoEnabled?"&demo=1":""}`}>Live voting room</Link></Button>}<Button variant="outline" onClick={()=>setOpen(true)}>Voting history</Button><Dialog open={open} onOpenChange={value => { if (!value && document.querySelector('[data-voting-saving="true"]')) return; setOpen(value) }}><DialogContent aria-describedby={undefined} className="oc-voting-stage inset-0 flex h-dvh w-screen max-w-none translate-x-0 translate-y-0 flex-col overflow-y-auto rounded-none bg-background p-6 sm:max-w-none"><DialogTitle>{props.clubName} · Recruitment voting</DialogTitle>{open&&<VotingBoard {...props} initialSessionId={params.get("sessionId") || undefined} />}</DialogContent></Dialog></>
 }
-export function VotingBoard({ clubId, applicants, onDecision, initialSessionId }: Parameters<typeof BoardDecisionMode>[0] & { initialSessionId?: string }) {
+export function VotingBoard({ clubId, applicants: fallbackApplicants, selectionQuery, onDecision, initialSessionId }: Parameters<typeof BoardDecisionMode>[0] & { initialSessionId?: string }) {
   const demo = useDemoMode()
   const auth = useAuth()
-  const reader = useRef<ReturnType<typeof serializedWorkspaceRead<Workspace>> | null>(null)
+  const reader = useRef<ReturnType<typeof serializedWorkspaceRead<VotingSnapshotRead>> | null>(null)
   const initializedSession = useRef<string | undefined>(undefined)
   const [rawData,setData]=useState<Workspace|null>(null),[error,setError]=useState(""),[busy,setBusy]=useState(false)
   const [sessionId,setSessionId]=useState<string | undefined>(initialSessionId),[round,setRound]=useState(""),[target,setTarget]=useState(40),[rule,setRule]=useState("NONE"),[threshold,setThreshold]=useState(100),[members,setMembers]=useState<string[]>([])
-  const scope=JSON.stringify([clubId,sessionId,demo.isDemoEnabled,auth.user?.id])
-  const [dataScope,setDataScope]=useState("")
-  const data=dataScope===scope?rawData:null
+  const scope=JSON.stringify([clubId,sessionId,demo.isDemoEnabled,auth.user?.id,selectionQuery])
+  const owner = useMemo(() => ({ scope, user: auth.user, epoch: auth.readAuthority, support: auth.isImpersonating, ready: demo.ready }), [scope, auth.user, auth.readAuthority, auth.isImpersonating, demo.ready])
+  const [dataOwner,setDataOwner]=useState<object | null>(null)
+  const data=auth.isReadAuthorityCurrent(auth.readAuthority) && dataOwner===owner?rawData:null
+  const applicants = selectionQuery ? data?.candidateSelection?.applications ?? [] : fallbackApplicants
   const [previewCandidate,setPreviewCandidate]=useState("")
   const [creating, setCreating] = useState(false)
+  // Initial entry must support setup without a serial selection request. Once
+  // loaded, ordinary session/history polls need no candidate-selection scan.
+  const selectionNeeded = useRef(true)
+  selectionNeeded.current = creating || !data
+  const requestedSetup = useRef<SetupRead | null>(null)
+  const [readySetup,setReadySetup] = useState<SetupRead | null>(null)
+  const setupReady = selectionQuery === undefined || !!data?.candidateSelection && (!requestedSetup.current || requestedSetup.current.owner !== owner || readySetup === requestedSetup.current)
   const setupSeen = useRef(false)
   useEffect(() => { if (data && !data.session && data.canManage && !setupSeen.current) { setupSeen.current = true; setCreating(true) } }, [data])
   const [previewFits,setPreviewFits]=useState<boolean|null>(null),[presentFits,setPresentFits]=useState<boolean|null>(null)
@@ -52,11 +64,17 @@ export function VotingBoard({ clubId, applicants, onDecision, initialSessionId }
   const refresh=useCallback(()=>reader.current?.refresh()??Promise.resolve(),[])
   useEffect(()=>{
     setData(null);setError("")
-    const reads=serializedWorkspaceRead(()=>getVotingWorkspace(clubId,sessionId),value=>{setDataScope(scope);setData(value);setError("")},error=>{setData(null);setError(error instanceof Error?error.message:"Session unavailable.")})
+    const reads=serializedWorkspaceRead(async()=>{
+      if (!auth.isReadAuthorityCurrent(auth.readAuthority)) throw new Error("Voting access changed")
+      const includeSelection = selectionQuery !== undefined && selectionNeeded.current
+      const setup = includeSelection && requestedSetup.current?.owner === owner ? requestedSetup.current : null
+      const workspace = await (includeSelection ? getVotingWorkspace(clubId,sessionId,selectionQuery) : getVotingWorkspace(clubId,sessionId))
+      return { workspace, setup }
+    },({workspace,setup})=>{if(auth.isReadAuthorityCurrent(auth.readAuthority)){setDataOwner(owner);setData(workspace);if(setup&&requestedSetup.current===setup&&workspace.candidateSelection)setReadySetup(setup);setError("")}},error=>{setData(null);setError(error instanceof Error?error.message:"Session unavailable.")})
     reader.current=reads;void reads.poll()
     const timer=setInterval(()=>void reads.poll(),5000)
     return()=>{reads.dispose();if(reader.current===reads)reader.current=null;clearInterval(timer)}
-  },[clubId,sessionId,demo.isDemoEnabled,auth.user?.id,scope])
+  },[clubId,sessionId,demo.isDemoEnabled,auth.user,auth.readAuthority,auth.isImpersonating,auth.isReadAuthorityCurrent,selectionQuery,scope,owner])
   async function run(work:()=>Promise<unknown>){if(busy)return;setBusy(true);try{await work();await refresh()}catch(e){setError(e instanceof Error?e.message:"Could not save.")}finally{setBusy(false)}}
   const s=data?.session,summary=data?.summary,current=s?.passes.find(p=>p.number===s.currentPass),shown=s?.passes.find(p=>p.number===(viewPass||s.currentPass))
   const liveNavigation=!!s&&current?.state==="OPEN"&&["OPEN","PAUSED"].includes(s.state)&&(!viewPass||viewPass===s.currentPass)
@@ -87,7 +105,7 @@ export function VotingBoard({ clubId, applicants, onDecision, initialSessionId }
     {!data&&!error&&<LoadingState label="Loading voting workspace…" layout="voting" rows={3} />}
     {data&&<>
       {!!data.sessions.length&&<label className="oc-voting-session-picker block">Session history <select className="rounded border bg-background p-2" value={sessionId??data.session?.id??""} onChange={e=>{setData(null);setSessionId(e.target.value);setIndex(0);setViewPass(0);setSelected([]);setPublishReview(false)}}>{data.sessions.map(v=><option key={v.id} value={v.id}>{new Date(v.createdAt).toLocaleString()} · {v.state} · Pass {v.currentPass}</option>)}</select></label>}
-      {data.canManage&&<ActionWorkflow title="New voting session" description="Choose candidates and authorized voters. Review the display before opening the lobby." trigger="New voting session" open={creating} onOpenChange={setCreating}><form data-saving={busy} className="space-y-3 rounded-lg border p-4" onSubmit={e=>{e.preventDefault();void run(async()=>{const id=await createVotingSession({clubId,roundId:round,applicationIds:applicants.filter(a=>a.roundId===round&&a.status!=="DRAFTING"&&(!creationCandidates.length||creationCandidates.includes(a.id))).map(a=>a.id),displayConfig,participantIds:members,targetSize:target,autoAdvance:rule,threshold});setSessionId(id);setCreating(false);setSelected([]);setViewPass(0)})}}>
+      {data.canManage&&<ActionWorkflow title="New voting session" description="Choose candidates and authorized voters. Review the display before opening the lobby." trigger="New voting session" open={creating} onOpenChange={value=>{setCreating(value);setReadySetup(null);requestedSetup.current=value&&selectionQuery?{owner}:null;if(value&&selectionQuery){selectionNeeded.current=true;void refresh()}}}>{setupReady ? <form data-saving={busy} className="space-y-3 rounded-lg border p-4" onSubmit={e=>{e.preventDefault();void run(async()=>{const id=await createVotingSession({clubId,roundId:round,applicationIds:applicants.filter(a=>a.roundId===round&&a.status!=="DRAFTING"&&(!creationCandidates.length||creationCandidates.includes(a.id))).map(a=>a.id),displayConfig,participantIds:members,targetSize:target,autoAdvance:rule,threshold});setSessionId(id);setCreating(false);setSelected([]);setViewPass(0)})}}>
         <label className="block">Recruitment round <select required className="rounded border bg-background p-2" value={round} onChange={e=>{setRound(e.target.value);setCreationCandidates([]);setPreviewCandidate("")}}><option value="">Choose round</option>{data.rounds.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></label>
         <p className="text-xs text-muted-foreground">Snapshots submitted candidates in this round from the current applicant selection. Existing sessions remain in history.</p>
         <fieldset><legend className="mb-2 text-sm font-medium">Candidate pool · all submitted candidates unless selected below</legend>{applicants.filter(a=>a.roundId===round&&a.status!=="DRAFTING").map((a,i)=><label key={a.id} className="block min-h-9"><input type="checkbox" checked={creationCandidates.includes(a.id)} onChange={e=>setCreationCandidates(v=>e.target.checked?[...v,a.id]:v.filter(id=>id!==a.id))}/> Candidate {i+1}</label>)}</fieldset>
@@ -103,7 +121,7 @@ export function VotingBoard({ clubId, applicants, onDecision, initialSessionId }
         <fieldset><legend>Authorized voting participants</legend>{data.eligible.map(m=><label key={m.id} className="mr-4 inline-flex min-h-11 items-center gap-2"><input type="checkbox" checked={members.includes(m.id)} onChange={e=>setMembers(v=>e.target.checked?[...v,m.id]:v.filter(id=>id!==m.id))}/>{m.label}</label>)}</fieldset>
         {previewApplicant && !setupWarning && <div className="oc-voting-preview"><h3 className="mb-2 font-medium">Candidate display preview</h3><ApplicantDisplayPanel clubId={clubId} applicationId={previewApplicant.id} mode="voting" layout="slide" previewConfig={displayConfig} onFitChange={setPreviewFits} /></div>}
         {error && <p role="alert" className="text-destructive">{error}</p>}<Button disabled={busy||!members.length||!round||!!setupWarning||!previewFits}>Create draft session</Button>
-      </form></ActionWorkflow>}
+      </form> : <LoadingState label="Loading eligible candidates…" layout="rows" rows={3} />}</ActionWorkflow>}
       {s&&summary?<>
         <div className="oc-voting-session-summary"><p className="font-semibold">{votingSessionStage(s)} · Pass {s.currentPass} · {data.rounds.find(r=>r.id===s.roundId)?.name}</p><dl className="oc-voting-session-metrics">{[["Target", summary.target], ["Passed", summary.passed], ["Hold", summary.held], ["Not passed", summary.notPassed], ["Unresolved / remaining", summary.remaining], ["Processed", `${summary.processed} / ${summary.total}`]].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>{summary.targetReached&&<p role="status" className="font-semibold text-emerald-700">Target reached. Leadership can continue voting and review.</p>}{s.publishedAt&&<p>Published {new Date(s.publishedAt).toLocaleString()} · session sealed.</p>}</div>
         {data.canManage&&s.state==="DRAFT"&&!s.joinOpenedAt&&<section className="space-y-3 rounded-lg border p-4"><h3>Session display setup</h3><fieldset className="grid gap-3 sm:grid-cols-3"><legend>These are the fields voting participants will see during this session.</legend>{liveVotingFields.map(f=><label key={f} className="flex min-h-9 items-center gap-2"><input type="checkbox" checked={displayFields.includes(f)} onChange={e=>setDisplayFields(v=>e.target.checked?[...v,f]:v.filter(x=>x!==f))}/> {fieldLabels[f]}</label>)}</fieldset>{setupWarning&&<p role="alert">{setupWarning}</p>}{s.candidates[0]&&!setupWarning&&<div className="oc-voting-preview"><h3 className="mb-3 font-semibold">Candidate display preview</h3><label className="mb-3 block">Preview candidate <select className="rounded border bg-background p-2" value={s.candidates.find(c=>c.applicationId===previewCandidate)?.applicationId??s.candidates[0].applicationId} onChange={e=>setPreviewCandidate(e.target.value)}>{s.candidates.map((c,i)=><option key={c.applicationId} value={c.applicationId}>Candidate {i+1}</option>)}</select></label><ApplicantDisplayPanel clubId={clubId} applicationId={s.candidates.find(c=>c.applicationId===previewCandidate)?.applicationId??s.candidates[0].applicationId} mode="voting" layout="slide" previewConfig={displayConfig} onFitChange={setPreviewFits}/></div>}<Button disabled={busy||!!setupWarning} onClick={()=>void run(()=>command("CONFIGURE",{displayConfig}))}>Save display configuration</Button><p className="text-sm">Opening the lobby locks the display snapshot. The voting roster freezes when the first pass starts.</p></section>}

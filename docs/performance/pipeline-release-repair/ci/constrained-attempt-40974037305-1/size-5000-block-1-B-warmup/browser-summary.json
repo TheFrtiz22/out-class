@@ -1,0 +1,272 @@
+{
+  "generatedAt": "2026-10-30T01:43:54.969Z",
+  "sampleCount": 2,
+  "groups": [
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "meaningfulMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "interactiveMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "clickToUrlMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "networkCompleteMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "scriptMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "taskMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "requestCount": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "encodedBodyBytes": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      }
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "warm",
+      "meaningfulMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "interactiveMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "clickToUrlMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "networkCompleteMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "scriptMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "taskMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "requestCount": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "encodedBodyBytes": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      }
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "meaningfulMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "interactiveMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "clickToUrlMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "networkCompleteMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "scriptMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "taskMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "requestCount": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "encodedBodyBytes": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      }
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "meaningfulMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "interactiveMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "clickToUrlMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "networkCompleteMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "scriptMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "taskMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "requestCount": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "encodedBodyBytes": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      }
+    }
+  ],
+  "failures": [
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 0,
+      "stage": "measured",
+      "error": "page.waitForFunction: Timeout 30000ms exceeded."
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 1,
+      "stage": "measured",
+      "error": "page.waitForFunction: Timeout 30000ms exceeded."
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "warm",
+      "index": 0,
+      "stage": "warm target",
+      "error": "page.waitForFunction: Timeout 30000ms exceeded."
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "warm",
+      "index": 1,
+      "stage": "warm target",
+      "error": "page.waitForFunction: Timeout 30000ms exceeded."
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "stage": "source",
+      "error": "page.waitForFunction: Timeout 30000ms exceeded."
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "index": 1,
+      "stage": "source",
+      "error": "page.waitForFunction: Timeout 30000ms exceeded."
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "error": "page.waitForFunction: Timeout 30000ms exceeded."
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 1,
+      "stage": "source",
+      "error": "page.waitForFunction: Timeout 30000ms exceeded."
+    }
+  ]
+}

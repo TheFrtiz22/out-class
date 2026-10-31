@@ -42,7 +42,7 @@ test('real local Admin session survives elevation, navigation and refresh and re
     const response = await admin.request(route), html = await response.text();
     assert.equal(response.status, 200, route);
     assert.ok(!/http-equiv="refresh"|NEXT_REDIRECT/.test(html), route + ' must not silently redirect');
-    assert.match(html, /Admin workspace/);
+    assert.match(html, /data-product-shell="admin"/, 'Allowed requests must render the authenticated Admin shell');
     if (route === '/platform') assert.match(html, /Needs Attention/);
     return html;
   }

@@ -13,7 +13,7 @@ export function compareApplicants(a: SortableApplicant, b: SortableApplicant, ke
   else if (key === "status") { left = a.status; right = b.status }
   else { left = name(a); right = name(b) }
   // Missing values remain at the bottom in both directions; hidden scores stay hidden.
-  if (left == null || left === "" || right == null || right === "") return left == null || left === "" ? right == null || right === "" ? name(a).localeCompare(name(b)) : 1 : -1
+  if (left == null || left === "" || right == null || right === "") return left == null || left === "" ? right == null || right === "" ? name(a).localeCompare(name(b)) || a.id.localeCompare(b.id) : 1 : -1
   const compared = key === "year" ? compareAcademicYears(String(left), String(right)) : typeof left === "number" && typeof right === "number" ? left - right : String(left).localeCompare(String(right))
   return (descending ? -compared : compared) || name(a).localeCompare(name(b)) || a.id.localeCompare(b.id)
 }

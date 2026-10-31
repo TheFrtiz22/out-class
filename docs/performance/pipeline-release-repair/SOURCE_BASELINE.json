@@ -1,0 +1,12 @@
+{
+  "measuredMain": "0a40de7cbcad158cf60d96c258610b832d818da8",
+  "held": "375a00d54d95f24e7d600a56218b9bf8040a7937",
+  "measuredApplicationSource": "d0d6f2778239b5d3b921663780a01c7542f04fa3",
+  "applicationFiles": 965,
+  "applicationDigest": "df971d7995db833ce7730354b270c88e0d26091758bc7153163cfbeb33860bb7",
+  "latestMainVerification": "Confirm immediately before exact-head merge; do not relabel an advanced main as measured.",
+  "priorBaselineEvidence": "revision-1/SOURCE_BASELINE.json",
+  "sourceAndWriteProof": "SOURCE_PROOF.json",
+  "integration": "Main0a includes independent dock92, subsequent voting/security fixes and contextual feedback103; incorporated before revision2 measurement.",
+  "protocol": "Frozen ACCEPTANCE.md thresholds remain byte-identical; revision-2/PROTOCOL.md declares new baseline and independent units before measurement; ATTEMPT_2_PLAN.md declares current source repair before its measurements."
+}

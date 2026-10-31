@@ -1,4 +1,11 @@
 "use server";
+import type { Prisma } from "@prisma/client";
+import { createHash } from "node:crypto";
+import { readPipelinePage } from "@/lib/pipeline-page-read";
+import { pipelineSummarySelect, pipelineSummaryProjection } from "@/lib/pipeline-summary";
+import { pipelineDetailInclude, pipelineDetailProjection } from "@/lib/pipeline-detail";
+import { readPipelineSelection } from "@/lib/pipeline-selection-read";
+import { pipelinePageQuery, pipelineSelectionKey, type PipelinePageQuery } from "@/lib/pipeline-page";
 import {decisionPublicationGuard} from "@/lib/decision-publication-guard";
 import { clubWriteTransaction } from "@/utils/club-write-transaction";
 import { publishRecruitmentDecision } from "@/utils/recruitment-offers";
@@ -15,15 +22,59 @@ import {
   validateAnonymousText,
 } from "@/lib/anonymous-review";
 import { hasPermission } from "@/lib/permissions";
-import { prisma } from "@/utils/prisma";
+import { prisma, type AppTransactionClient } from "@/utils/prisma";
 import { requireClubPermission } from "@/utils/auth";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { interviewCapabilities } from "@/lib/interview-access";
-import { submittedScoreSummary } from "@/lib/interview-review-summary";
 
 const pipelineFilter = z.object({ applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), gender: z.enum(genderValues).optional(), genderCounts: z.boolean().optional() }).strict();
 export async function getClubPipeline(clubId: string, input: z.infer<typeof pipelineFilter> = {}) {
+  return (await readClubPipeline(clubId, input)).pipeline;
+}
+
+/** Same live authority and privacy projection; detail collections are read only on opening. */
+export async function getClubPipelineList(clubId: string, input: z.infer<typeof pipelineFilter> = {}) {
+  return (await readClubPipelineSummaries(clubId, input)).pipeline;
+}
+
+export async function getClubPipelinePage(clubId: string, input: PipelinePageQuery = {}) {
+  const query = pipelinePageQuery.parse(input);
+  const { pipeline } = await readPipeline(clubId, { roundId: query.gender || query.genderCounts ? query.roundId : undefined, gender: query.gender, genderCounts: query.genderCounts }, async (tx, where, membership, rounds, roundPrivacy) => {
+    // Scope binding only. Both ranking and bounded hydration share this fresh
+    // guarded Repeatable Read snapshot; the cursor never grants authority.
+    const scope = createHash("sha256").update(JSON.stringify([clubId, membership, rounds, [...roundPrivacy], pipelineSelectionKey(query)])).digest("hex");
+    return readPipelinePage(tx, where, membership, rounds, query, scope, ids => loadPipelineDetails(tx, { ...where, id: { in: ids } }, membership), roundPrivacy);
+  });
+  return { ...pipeline.applications, rounds: pipeline.rounds, genderCounts: pipeline.genderCounts };
+}
+
+/** Explicit whole-selection read for quick review and voting, without identities. */
+export async function getClubPipelineSelection(clubId: string, input: PipelinePageQuery = {}) {
+  const query = pipelinePageQuery.omit({ cursor: true }).parse(input);
+  const { pipeline } = await readPipeline(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: false },
+    (tx, where, membership, rounds, roundPrivacy) => readPipelineSelection(tx, where, membership, query, rounds, roundPrivacy));
+  return pipeline.applications;
+}
+
+async function loadPipelineDetails(tx: AppTransactionClient, where: Prisma.ApplicationWhereInput, membership: PipelineMembership) {
+  const applications = await tx.application.findMany({ where, include: pipelineDetailInclude });
+  return applications.map(raw => pipelineDetailProjection(raw, membership));
+}
+
+async function readClubPipeline(clubId: string, input: z.infer<typeof pipelineFilter>) {
+  return readPipeline(clubId, input, (tx, where, membership) => loadPipelineDetails(tx, where, membership));
+}
+
+async function readClubPipelineSummaries(clubId: string, input: z.infer<typeof pipelineFilter>) {
+  return readPipeline(clubId, input, async (tx, where, membership) => {
+    const applications = await tx.application.findMany({ where, select: pipelineSummarySelect });
+    return applications.map(app => pipelineSummaryProjection(app, membership));
+  });
+}
+
+type PipelineMembership = Awaited<ReturnType<typeof requireClubPermission>>["membership"];
+async function readPipeline<T>(clubId: string, input: z.infer<typeof pipelineFilter>,
+  load: (tx: AppTransactionClient, where: Prisma.ApplicationWhereInput, membership: PipelineMembership, rounds: { id: string; name: string; order: number; type: string; anonymousReview: boolean; genderVisible: boolean }[], roundPrivacy: ReadonlyMap<string, boolean>) => Promise<T>) {
   const filter = pipelineFilter.parse(input);
   // Only members can view the pipeline
   const { membership } = await requireClubPermission(clubId, [], { allowSuspendedRead: true });
@@ -39,11 +90,12 @@ export async function getClubPipeline(clubId: string, input: z.infer<typeof pipe
   try { return await prisma.$transaction(async tx => {
     transactionStarted = Date.now();
     phase = "rounds";
-    const rounds = await tx.pipelineRound.findMany({
-      where: { clubId, archivedAt: null },
+    const allRounds = await tx.pipelineRound.findMany({
+      where: { clubId },
       orderBy: { order: "asc" },
-      select: { id: true, name: true, order: true, type: true, anonymousReview: true, applicantDisplay: true },
+      select: { id: true, name: true, order: true, type: true, anonymousReview: true, applicantDisplay: true, archivedAt: true },
     });
+    const rounds = allRounds.filter(r => r.archivedAt == null);
     const selectedRound = rounds.find(r => r.id === filter.roundId);
     if (filter.gender || filter.genderCounts) {
       if (!selectedRound || !genderVisibility(selectedRound.applicantDisplay) || !hasPermission(membership, "applications.review")) throw new Error("Gender visibility must be explicitly enabled for this round.");
@@ -51,45 +103,23 @@ export async function getClubPipeline(clubId: string, input: z.infer<typeof pipe
     }
     const where = { clubId, ...(filter.applicationId ? { id: filter.applicationId } : {}), status: { not: "DRAFTING" as const }, ...(filter.roundId ? { roundId: filter.roundId } : {}), ...(hasPermission(membership, "applicants.identify") ? {} : { round: { anonymousReview: true } }) };
     phase = "applications";
-    const applications = await tx.application.findMany({
-      where: {
-        ...where,
-        ...(filter.gender ? { student: { studentProfile: { gender: filter.gender } } } : {}),
-      },
-      include: {
-        recruitmentOffer: { select: { status: true, expiresAt: true } },
-        round: true,
-        student: {
-          include: { studentProfile: { include: { experiences: true } } },
-        },
-        evaluations: { omit: { notes: true, applicantQuestions: true } },
-        interviewAssignments: { where: { revokedAt: null }, include: { member: true } },
-        answers: { include: { question: true } },
-        bookings: { include: { slot: true } },
-      },
-    });
+    const applicationWhere = {
+      ...where,
+      ...(filter.gender ? { student: { studentProfile: { gender: filter.gender } } } : {}),
+    };
+    const projectedRounds = rounds.map(r => ({ id: r.id, name: r.name, order: r.order, type: r.type, anonymousReview: r.anonymousReview, genderVisible: hasPermission(membership, "applications.review") && genderVisibility(r.applicantDisplay) }));
+    const applications = await load(tx, applicationWhere, membership, projectedRounds, new Map(allRounds.map(r => [r.id, r.anonymousReview])));
     phase = "counts";
     const counts = filter.genderCounts ? await tx.application.groupBy({ by: ["studentId"], where }) : [];
     const profiles = filter.genderCounts ? await tx.studentProfile.groupBy({ by: ["gender"], where: { userId: { in: counts.map(c => c.studentId) } }, _count: true }) : [];
 
     phase = "projection-or-commit";
-    return {
-      rounds: rounds.map(r => ({ id: r.id, name: r.name, order: r.order, type: r.type, anonymousReview: r.anonymousReview, genderVisible: hasPermission(membership, "applications.review") && genderVisibility(r.applicantDisplay) })),
+    const pipeline = {
+      rounds: projectedRounds,
       genderCounts: filter.genderCounts ? genderValues.map(gender => ({ gender, count: profiles.find(p => p.gender === gender)?._count ?? 0 })) : null,
-      applications: applications.map(raw => {
-        const ownSubmitted = raw.evaluations.some(e => e.interviewerId === membership.id && e.roundId === raw.roundId && e.submittedAt);
-        const assignments = raw.interviewAssignments || [];
-        const assigned = assignments.some(a => a.roundId === raw.roundId && a.memberId === membership.id);
-        const caps = interviewCapabilities(membership);
-        const canSeeRound = raw.studentId !== membership.userId && ((caps.readClosing && !assigned) || caps.participate && assigned && ownSubmitted);
-        const roundScore = canSeeRound ? submittedScoreSummary(raw.evaluations.filter(e => e.roundId === raw.roundId), assignments.filter(a => a.roundId === raw.roundId && interviewCapabilities(a.member).participate).map(a => a.memberId)) : null;
-        const safe = { ...raw }; delete (safe as Partial<typeof raw>).interviewAssignments;
-        const app = { ...safe, evaluations: raw.evaluations.filter(e => raw.studentId !== membership.userId && e.submittedAt && (caps.participate && e.interviewerId === membership.id && assignments.some(a => a.memberId === membership.id && a.roundId === e.roundId) || canSeeRound && (e.roundId === raw.roundId || caps.readClosing))).map(e => ({ ...e, notes: null, applicantQuestions: null })) };
-        const projected = !hasPermission(membership, "applicants.identify") || app.round.anonymousReview ? anonymousApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay)) : identifiedApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay), "crm");
-        const canEvaluate = !ownSubmitted && raw.studentId !== membership.userId && (raw.round.anonymousReview ? hasPermission(membership, "applications.review") : caps.participate && assigned);
-        return { ...projected, canEvaluate, publicationGuard:decisionPublicationGuard(raw), recruitmentOffer: raw.recruitmentOffer ?? null, roundScore };
-      }),
+      applications,
     };
+    return { pipeline, membership };
   }, { isolationLevel: "RepeatableRead" });
   } catch (error) {
     // Never serialize the exception, query, identifiers, or applicant content.

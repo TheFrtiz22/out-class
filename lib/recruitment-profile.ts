@@ -19,14 +19,21 @@ export function academicYear(profile: { gradYear: number; transferStudent?: bool
   return `${label}${profile.transferStudent ? "*" : ""}`;
 }
 export type RecruitmentProfile = Omit<FullStudentProfile, "gradYear" | "highSchool" | "pronouns" | "transferStudent" | "gender"> & { academicYear: string; gender: string | null };
+/** Shared fields for the full profile and the database summary projection. */
+export function recruitmentListProfile(p: Pick<FullStudentProfile, "firstName" | "lastName" | "major" | "gradYear" | "transferStudent" | "gpa" | "satScore" | "actScore">) {
+  return { firstName: p.firstName, lastName: p.lastName, major: p.major,
+    academicYear: academicYear(p), gpa: supportedGpa(p.gpa), satScore: p.satScore, actScore: p.actScore };
+}
+
 /** Explicit allowlist: schema additions cannot silently become recruiter-visible. */
 export function recruitmentProfile(p: FullStudentProfile, genderVisible = false): RecruitmentProfile {
+  const summary = recruitmentListProfile(p);
   return {
-    id: p.id, userId: p.userId, firstName: p.firstName, lastName: p.lastName, computingId: p.computingId,
-    major: p.major, scholarStatus: p.scholarStatus, gpa: supportedGpa(p.gpa), satScore: p.satScore,
-    actScore: p.actScore, actEnglish: p.actEnglish, actMath: p.actMath, actReading: p.actReading, actScience: p.actScience,
+    id: p.id, userId: p.userId, firstName: summary.firstName, lastName: summary.lastName, computingId: p.computingId,
+    major: summary.major, scholarStatus: p.scholarStatus, gpa: summary.gpa, satScore: summary.satScore,
+    actScore: summary.actScore, actEnglish: p.actEnglish, actMath: p.actMath, actReading: p.actReading, actScience: p.actScience,
     bio: p.bio, linkedinUrl: p.linkedinUrl, resumeUrl: p.resumeUrl, headshotUrl: p.headshotUrl,
-    experiences: p.experiences, academicYear: academicYear(p), gender: genderVisible ? p.gender : null,
+    experiences: p.experiences, academicYear: summary.academicYear, gender: genderVisible ? p.gender : null,
   };
 }
 export function genderVisibility(value: unknown) {
