@@ -85,7 +85,7 @@ export function ProductShell({ children, mode, modes, items, active, title, club
     const refresh = async () => {
       if (running) { again = true; return }
       running = true
-      try { const items = await getTaskNotifications(); if (active) { syncTaskNotifications(items); setTaskLoad({ loading: false, failed: false }) } }
+      try { const items = await getTaskNotifications(); if (active) { syncTaskNotifications(items, userId); setTaskLoad({ loading: false, failed: false }) } }
       catch { if (active) setTaskLoad({ loading: false, failed: true }) }
       finally { running = false; if (again && active) { again = false; void refresh() } }
     }
