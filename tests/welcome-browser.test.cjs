@@ -19,10 +19,10 @@ test('browser: hydrates safely, follows local time and workspace changes, and fi
   const personal = { mode: 'personal', applications: [{ id: 'app', clubId: 'one', status: 'SUBMITTED', club: { name: 'One' } }], events: [], memberClubIds: [] }
   const membership = { id: 'member', status: 'ACTIVE', permissions: ['applications.review'] }
   const club = { mode: 'club', clubId: 'one', membership, data: { club: { id: 'one' }, membership, work: [], operations: { tasks: { overdue: 0, awaitingReview: null }, team: null, rounds: [{ pending: 12, needsBooking: 0 }], bookings: [], meetings: [], announcements: [], reviewWork: [], intake: null } } }
-  const controls = ['personal', 'club', 'other', 'revoked', 'loading', 'deadline', 'long name']
+  const controls = ['personal', 'club', 'other', 'revoked', 'loading', 'deadline', 'long name', 'unmount']
   const headerProps = { context: personal, now: null, firstName: 'Alex', eyebrow: 'OutClass', density: 'compact' }
   const ssr = renderToString(React.createElement(React.Fragment, null, React.createElement('main', null, React.createElement(WelcomeHeader, headerProps)), React.createElement('nav', { 'aria-label': 'Test controls' }, controls.map(mode => React.createElement('button', { key: mode }, mode)))))
-  const js = bundle(`import React,{useState}from'react';import{hydrateRoot}from'react-dom/client';import{LocalWelcomeHeader as WelcomeHeader}from'@/components/product/welcome-header';const personal=${JSON.stringify(personal)},club=${JSON.stringify(club)},controls=${JSON.stringify(controls)};function App(){const[mode,setMode]=useState('personal');let context=personal;if(mode==='club')context=club;if(mode==='other')context={...club,clubId:'two'};if(mode==='revoked')context={...club,membership:{...club.membership,permissions:[]}};if(mode==='loading')context={...personal,applications:null};if(mode==='deadline')context={...personal,applications:[{...personal.applications[0],status:'DRAFTING',club:{name:'One',applicationDeadline:'2026-11-02T01:00:00Z'}}]};return <><main><WelcomeHeader context={context} firstName={mode==='long name'?'Alexandria-Christina': 'Alex'} eyebrow="OutClass" density="compact"/></main><nav aria-label="Test controls">{controls.map(value=><button key={value} onClick={()=>setMode(value)}>{value}</button>)}</nav></>};hydrateRoot(document.getElementById('root'),<App/>,{onRecoverableError:error=>window.hydrationErrors.push(error.message)});`)
+  const js = bundle(`import React,{useState}from'react';import{hydrateRoot}from'react-dom/client';import{LocalWelcomeHeader as WelcomeHeader}from'@/components/product/welcome-header';const personal=${JSON.stringify(personal)},club=${JSON.stringify(club)},controls=${JSON.stringify(controls)};function App(){const[mode,setMode]=useState('personal');let context=personal;if(mode==='club')context=club;if(mode==='other')context={...club,clubId:'two'};if(mode==='revoked')context={...club,membership:{...club.membership,permissions:[]}};if(mode==='loading')context={...personal,applications:null};if(mode==='deadline')context={...personal,applications:[{...personal.applications[0],status:'DRAFTING',club:{name:'One',applicationDeadline:'2026-11-02T01:00:00Z'}}]};return <><main>{mode !== 'unmount' && <WelcomeHeader context={context} firstName={mode==='long name'?'Alexandria-Christina': 'Alex'} eyebrow="OutClass" density="compact"/>}</main><nav aria-label="Test controls">{controls.map(value=><button key={value} onClick={()=>setMode(value)}>{value}</button>)}</nav></>};hydrateRoot(document.getElementById('root'),<App/>,{onRecoverableError:error=>window.hydrationErrors.push(error.message)});`)
   const css = ['styles/tokens.css', 'styles/typography.css', 'styles/product-tokens.css', 'styles/product-components.css', 'styles/editorial.css', 'components/product/welcome-header.css'].map(file => fs.readFileSync(file, 'utf8')).join('\n')
   const server = http.createServer((req, res) => {
     if (req.url === '/fixture.js') { res.setHeader('content-type', 'text/javascript'); return res.end(js) }
@@ -80,5 +80,27 @@ test('browser: hydrates safely, follows local time and workspace changes, and fi
       await page.screenshot({ path: `/tmp/outclass-welcome/${viewport.width}.png`, fullPage: true })
       await context.close()
     }
+    // Fake clock installation replaces the native timer functions and can hide
+    // illegal Window receivers. Exercise the real browser APIs separately.
+    const nativeContext = await browser.newContext()
+    try {
+      const page = await nativeContext.newPage(), errors = []
+      page.on('pageerror', error => errors.push(error.message))
+      await page.goto(`http://127.0.0.1:${server.address().port}`)
+      await page.waitForFunction(() => /^(Good morning|Good afternoon|Good evening|Still up)/.test(document.querySelector('h1')?.textContent ?? '') || document.querySelector('#root')?.childElementCount === 0, { timeout: 3000 })
+      assert.deepEqual(errors, [], 'native timer setup must not crash the dashboard')
+      assert.equal(await page.getByRole('heading', { level: 1 }).count(), 1)
+      await page.evaluate(() => {
+        dispatchEvent(new Event('focus'))
+        dispatchEvent(new Event('pageshow'))
+        document.dispatchEvent(new Event('visibilitychange'))
+      })
+      await page.getByRole('button', { name: 'unmount', exact: true }).click()
+      assert.equal(await page.getByRole('heading', { level: 1 }).count(), 0)
+      await page.getByRole('button', { name: 'personal', exact: true }).click()
+      assert.equal(await page.getByRole('heading', { level: 1 }).count(), 1)
+      assert.deepEqual(errors, [], 'native timer refresh and cleanup must preserve the dashboard')
+      assert.deepEqual(await page.evaluate(() => window.hydrationErrors), [])
+    } finally { await nativeContext.close() }
   } finally { await browser?.close(); await new Promise(resolve => server.close(resolve)) }
 })
