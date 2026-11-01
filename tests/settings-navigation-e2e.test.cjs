@@ -141,7 +141,8 @@ test('settings and authenticated navigation across roles, saves, history and res
     await open(leaderPage, `/club/${first.id}/workspace?section=recruitment&tool=cycles`);
     await leaderPage.waitForURL('**/workspace?section=settings&setting=cycles');
     await open(leaderPage, `/club/${first.id}/workspace?section=recruitment&tool=letters`);
-    await leaderPage.waitForURL('**/workspace?section=settings&setting=notifications');
+    await leaderPage.waitForURL('**/workspace?section=recruitment&tool=decisions&decisionTab=letters');
+    await leaderPage.getByRole('navigation', {name:'Decisions navigation'}).waitFor();
     await leaderPage.getByText('Decision Letters', { exact: true }).waitFor();
     await open(leaderPage, `/club/${first.id}/tasks?taskView=mine`);
     assert.ok(new URL(leaderPage.url()).searchParams.get('section') === 'tasks');

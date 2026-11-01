@@ -3,10 +3,10 @@ test('rendered setup to two isolated role pages: join, changes, lost response re
  const f=await fixture(),browser=await chromium.launch({headless:true});const leader=await browser.newPage({viewport:{width:1280,height:800}}),context=await browser.newContext({viewport:{width:390,height:844}}),member=await context.newPage();
  const errors=[];for(const p of[leader,member])p.on('pageerror',e=>errors.push(e.message));
  try{
-  await leader.goto(`${f.url}/voting/rooms/new?clubId=${f.clubId}&actor=leader`);await leader.getByRole('button',{name:'Prepare and preview'}).waitFor();
+  await leader.goto(`${f.url}/voting/rooms/new?clubId=${f.clubId}&actor=leader`);await leader.getByRole('button',{name:'Start voting session'}).waitFor();
   for(const name of['Major','Academic year','SAT','ACT','Leader-selected résumé excerpt','Cumulative interview score'])await leader.getByRole('checkbox',{name,exact:true}).check();
   await leader.getByRole('combobox',{name:'Saved résumé highlight',exact:true}).selectOption('00000000-0000-4000-8000-000000000500');
-  await leader.getByRole('button',{name:'Prepare and preview'}).click();await leader.getByRole('button',{name:'Start session',exact:true}).waitFor();
+  await leader.getByRole('button',{name:'Start voting session'}).click();await leader.getByRole('button',{name:'Start session',exact:true}).waitFor();
   await leader.getByRole('heading',{name:'QA Applicant One',exact:true}).waitFor();const id=new URL(leader.url()).pathname.split('/').at(-1),base=`${f.url}/voting/rooms/${id}?clubId=${f.clubId}`;
   await member.goto(`${base}&view=member&actor=member`);await member.getByRole('button',{name:'Join session',exact:true}).click();await member.getByText('Voting has not started.',{exact:true}).waitFor();
   await leader.getByText('Joined participants · 1',{exact:true}).waitFor();await leader.getByRole('button',{name:'Start session',exact:true}).click();await leader.getByRole('button',{name:'Open voting',exact:true}).click();await member.getByRole('button',{name:'Pass',exact:true}).waitFor({state:'visible'});
@@ -22,7 +22,7 @@ test('rendered setup to two isolated role pages: join, changes, lost response re
   const outsider=await browser.newPage();const denied=outsider.waitForResponse(r=>r.url().endsWith('/action'));await outsider.goto(`${base}&view=member&actor=outsider`);assert.deepEqual(await(await denied).json(),{status:'DENIED'});await outsider.getByText('You do not have access to this voting session.',{exact:false}).waitFor();assert.equal(await outsider.getByRole('heading',{name:'QA Applicant One'}).count(),0);
   f.h.members[1].permissions=[];await member.getByText('You do not have access to this voting session.',{exact:false}).waitFor();assert.equal(await member.getByRole('heading',{name:'QA Applicant One'}).count(),0);assert.deepEqual(errors,[]);
   const guest=await browser.newPage();let guestRequests=0;guest.on('request',r=>{if(r.url().endsWith('/action'))guestRequests++});await guest.goto(`${base}&view=member&actor=guest`);const login=guest.getByRole('link',{name:'Sign in and return to this session'});await login.waitFor();assert.ok((await login.getAttribute('href')).includes(encodeURIComponent(`/voting/rooms/${id}?clubId=${f.clubId}&view=member`)));assert.equal(guestRequests,0);
-  f.h.members[1].permissions=['applications.review','applicants.identify','decisions.vote'];leader.once('dialog',d=>d.accept());await leader.getByRole('button',{name:'End voting',exact:true}).click();await member.getByText('This session has ended. Your saved votes are preserved.',{exact:true}).waitFor();
+  f.h.members[1].permissions=['applications.review','applicants.identify','decisions.vote'];leader.once('dialog',d=>d.accept());await leader.getByRole('button',{name:'End voting',exact:true}).click();await member.getByRole('region',{name:'Voting summary',exact:true}).waitFor();assert.equal(await member.getByRole('region',{name:'Leader controls'}).count(),0);
   await member.goto(`${f.url}/voting/rooms/00000000-0000-4000-8000-000000009999?clubId=${f.clubId}&actor=member`);await member.getByText('This session link is expired or unavailable.',{exact:true}).waitFor();
  }finally{await browser.close();await f.close()}
 });

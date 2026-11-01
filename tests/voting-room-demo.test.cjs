@@ -1,4 +1,13 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');const {harness}=require('./helpers/demo-harness.cjs');
+test('Demo navigation resolves selected IDs and projects session metadata without live calls or snapshot writes',async()=>{
+ const h=harness(),{demoStore}=h.load('lib/demo/store.ts');demoStore.start();demoStore.mutate(s=>s.perspective={role:'leader',clubId:s.clubs[0].id});
+ const state=demoStore.get(),clubId=state.clubs[0].id,roundId=state.clubs[0].rounds.find(r=>r.name==='Interview').id,leader=state.memberships.find(m=>m.clubId===clubId&&m.isOwner),api=h.load('lib/voting-room-api.ts');
+ const setup=await api.getLiveVotingSetup({clubId,roundId,cycleId:clubId}),ids=setup.applicants.slice(0,2).map(a=>a.id),sessionId=crypto.randomUUID();
+ await api.createLiveVotingRoom({clubId,sessionId,roundId,cycleId:clubId,applicationIds:ids,participantIds:[leader.id],leaderMemberIds:[leader.id]});
+ let writes=0;const save=localStorage.setItem.bind(localStorage);localStorage.setItem=(...args)=>{writes++;save(...args)};
+ const selected=await api.resolveLiveVotingSelection({clubId,applicationIds:ids});assert.deepEqual(selected.scopes[0].applicationIds,ids);
+ const rows=await api.listLiveVotingRooms({clubId,roundId,cycleId:clubId});assert.equal(rows[0].id,sessionId);assert.equal(rows[0].applicantCount,2);assert.equal(rows[0].view,'leader');assert.equal(rows[0].roundName,'Interview');assert.equal(writes,0);assert.equal(h.calls(),0);assert.doesNotMatch(JSON.stringify(rows),/ballots|participants|studentProfile/);demoStore.stop();
+});
 test('isolated live-room Demo prepares, joins, votes, changes, refreshes and retries with zero live actions and unchanged reads do not persist',async()=>{
  const h=harness(),{demoStore}=h.load('lib/demo/store.ts');demoStore.start();demoStore.mutate(s=>s.perspective={role:'leader',clubId:s.clubs[0].id});
  const s=demoStore.get(),clubId=s.clubs[0].id,roundId=s.clubs[0].rounds.find(r=>r.name==='Interview').id;

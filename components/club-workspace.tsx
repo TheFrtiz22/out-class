@@ -38,6 +38,10 @@ const LiveLeaderWorkspace = dynamic(() => import("@/components/views/leader-dash
 const InterviewWorkspaceView = dynamic(() => import("@/components/views/interview-workspace-view").then(m => m.InterviewWorkspaceView), { loading: () => <WorkspaceLoading label="Preparing interview workspace…" layout="interview" rows={3} /> });
 const InterviewManagementTabs = dynamic(() => import("@/components/interview-management-tabs").then(m => m.InterviewManagementTabs), { loading: () => <WorkspaceLoading label="Loading interview scheduling…" layout="calendar" rows={3} /> });
 const ApplicantInterviewReviews = dynamic(() => import("@/components/applicant-interview-reviews").then(m => m.ApplicantInterviewReviews), { loading: () => <WorkspaceLoading label="Loading submitted reviews…" layout="rows" rows={3} /> });
+import { decisionsHref } from "@/lib/voting-navigation";
+import { DecisionsNavigation } from "@/components/live-voting/decisions-navigation";
+const VotingRoomLanding=dynamic(()=>import("@/components/live-voting/room-landing").then(m=>m.VotingRoomLanding),{loading:()=> <WorkspaceLoading label="Loading voting sessions?" layout="rows" rows={3}/>});
+const DecisionTemplateEditor=dynamic(()=>import("@/components/communications/template-editor").then(m=>m.DecisionTemplateEditor),{loading:()=> <WorkspaceLoading label="Loading decision letters?" layout="form" rows={3}/>});
 import { DecisionSchedules } from "@/components/decision-schedules";
 import { RecruitmentReviewSettings } from "@/components/recruitment-review-settings";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -59,7 +63,7 @@ export function ClubWorkspace({
   const router = useRouter();
   const params = useSearchParams();
   // Keep cycle bookmarks while locating configuration in Settings.
-  const legacyConfiguration = params.get("section") === "recruitment" && ["cycles", "letters"].includes(params.get("tool") ?? "");
+  const legacyConfiguration = params.get("section") === "recruitment" && params.get("tool") === "cycles";
   useEffect(() => {
     if (!legacyConfiguration) return;
     const next = new URLSearchParams(params.toString());
@@ -67,6 +71,8 @@ export function ClubWorkspace({
     const href = `/club/${encodeURIComponent(clubId)}/workspace?${next}`;
     if (!navigateWithinClub(href, true)) router.replace(href);
   }, [legacyConfiguration, clubId, params, router]);
+  const oldDecisionTab=params.get("section")==="recruitment"&&["voting","letters"].includes(params.get("tool")??"");
+  useEffect(()=>{if(!oldDecisionTab)return;const next=new URLSearchParams(params.toString());next.set("decisionTab",params.get("tool")==="voting"?"voting":"letters");next.set("tool","decisions");const href=`/club/${encodeURIComponent(clubId)}/workspace?${next}`;if(!navigateWithinClub(href,true))router.replace(href);},[oldDecisionTab,params,clubId,router]);
   const legacyInterviewTool = params.get("section") === "settings" && params.get("setting") === "interviews" && ["rooms", "schedule", "availability"].includes(params.get("interviewTab") ?? "");
   useEffect(() => {
     if (!legacyInterviewTool) return;
@@ -79,7 +85,8 @@ export function ClubWorkspace({
   const legacyEvents = params.get("section") === "events";
   const section = legacyEvents ? "meetings" : params.get("section") ?? "overview";
   const taskView = params.get("taskView") ?? undefined;
-  const tool = params.get("tool") ?? undefined;
+  const tool = oldDecisionTab ? "decisions" : params.get("tool") ?? undefined;
+  const decisionTab=params.get("decisionTab")||(params.get("tool")==="voting"?"voting":params.get("tool")==="letters"?"letters":"overview");
   const moved = legacyApplicantInterviewHref(clubId, params.toString());
   useEffect(() => { if (moved && !navigateWithinClub(moved, true)) router.replace(moved); }, [moved, router]);
   const interviewMode = section === "recruitment" && tool === "interviews" && params.get("interview") === "1";
@@ -196,7 +203,8 @@ export function ClubWorkspace({
             {section === "members" && (demo.isDemoEnabled ? <ClubMembers key={clubId} clubId={clubId} /> : <SelectedClubWorkspace kind="members" clubId={clubId} privacyScope={scope} />)}
             {section === "settings" && <ClubSettingsWorkspace key={clubId} clubId={clubId} onSaved={() => { setRetry(n => n + 1); setPrivacyRevision(n => n + 1) }} />}
             {section === "announcements" && (demo.isDemoEnabled ? <ClubAnnouncements key={clubId} clubId={clubId} /> : <SelectedClubWorkspace kind="announcements" clubId={clubId} privacyScope={scope} />)}
-            {section === "recruitment" && (active === "resumes" || active === "reviews" ? <ApplicantInterviewReviews clubId={clubId} tool={active} /> : active === "scheduled-decisions" ? <DecisionSchedules clubId={clubId} /> : active === "overview" && current ? <RecruitingOverview data={current} refreshing={overviewPending} onChanged={() => setRetry(n => n + 1)} /> : active === "interviews" ? <div className="space-y-3">{(hasPermission(membership, "interviews.manage") || interviewCapabilities(membership).editKit || interviewCapabilities(membership).participate || interviewCapabilities(membership).readClosing) && <RecruitmentWorkspace clubId={clubId} member={membership} onInterview={() => setInterviewMode(true)} initialTool="kits" />}</div> : <>{(active === "decisions" || active === "rejected") && <p className="mb-5 text-sm text-muted-foreground">{active === "decisions" ? "Publish final decisions with a formal letter and inbox notification. Decision-availability email follows the student’s application-email preferences." : active === "rejected" ? "Review retained rejected applications and their history. Use explicit reconsideration to return an eligible application to review." : "Review submitted applications and move candidates through your club’s rounds."}</p>}{(demo.isDemoEnabled ? <LiveLeaderWorkspace key={privacyRevision} scoped rejectedOnly={active === "rejected"} decisionsOnly={active === "decisions"} /> : <SelectedClubWorkspace kind="pipeline" clubId={clubId} privacyScope={scope} rejectedOnly={active === "rejected"} decisionsOnly={active === "decisions"} />)}</>)}
+            {section === "recruitment" && active === "decisions" && <DecisionsNavigation clubId={clubId} member={membership}/>}
+            {section === "recruitment" && (active === "decisions" && decisionTab === "voting" ? <VotingRoomLanding clubId={clubId}/> : active === "decisions" && decisionTab === "letters" && !hasPermission(membership,"recruitment.manage")&&!hasPermission(membership,"decisions.manage") ? <p role="alert">Decision letters are unavailable with your current access.</p> : active === "decisions" && decisionTab === "letters" ? <div className="space-y-4"><h2 className="oc-section-heading">Decision letters</h2><p className="text-sm text-muted-foreground">Voting does not send applicant messages. Prepare letters here; review and send decisions separately.</p>{hasPermission(membership,"recruitment.manage")?<DecisionTemplateEditor clubId={clubId}/>:<p role="status">Letter template editing requires recruitment management access.</p>}<Button variant="outline" asChild><Link href={decisionsHref(clubId,"overview",params.toString())}>Review decisions and send letters</Link></Button></div> : active === "resumes" || active === "reviews" ? <ApplicantInterviewReviews clubId={clubId} tool={active} /> : active === "scheduled-decisions" ? <DecisionSchedules clubId={clubId} /> : active === "overview" && current ? <RecruitingOverview data={current} refreshing={overviewPending} onChanged={() => setRetry(n => n + 1)} /> : active === "interviews" ? <div className="space-y-3">{(hasPermission(membership, "interviews.manage") || interviewCapabilities(membership).editKit || interviewCapabilities(membership).participate || interviewCapabilities(membership).readClosing) && <RecruitmentWorkspace clubId={clubId} member={membership} onInterview={() => setInterviewMode(true)} initialTool="kits" />}</div> : <>{(active === "decisions" || active === "rejected") && <p className="mb-5 text-sm text-muted-foreground">{active === "decisions" ? "Publish final decisions with a formal letter and inbox notification. Decision-availability email follows the student’s application-email preferences." : active === "rejected" ? "Review retained rejected applications and their history. Use explicit reconsideration to return an eligible application to review." : "Review submitted applications and move candidates through your club’s rounds."}</p>}{(demo.isDemoEnabled ? <LiveLeaderWorkspace key={privacyRevision} scoped rejectedOnly={active === "rejected"} decisionsOnly={active === "decisions"} /> : <SelectedClubWorkspace kind="pipeline" clubId={clubId} privacyScope={scope} rejectedOnly={active === "rejected"} decisionsOnly={active === "decisions"} />)}</>)}
           </section>}
         </>}
         <Sheet open={!!reviewTool && !!membership && mode === "recruiting" && nav.some(n => n.id === reviewTool && n.quiet)} onOpenChange={open => { if (!open) { if (document.querySelector('[data-saving="true"]')) return; if (document.querySelector('[data-rule-dirty="true"]') && !window.confirm("Discard unsaved rule changes?")) return; setReviewTool(null); if (tool === "rounds" || tool === "rules") { const next = new URLSearchParams(params.toString()); next.set("tool", "overview"); router.replace(`/club/${encodeURIComponent(clubId)}/workspace?${next}`) } } }}>

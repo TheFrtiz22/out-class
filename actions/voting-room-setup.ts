@@ -21,6 +21,7 @@ export async function getLiveVotingSetup(input:unknown){
     const cycles=await tx.recruitmentCycle.findMany({where:{clubId:d.clubId,archivedAt:null},select:{id:true,name:true},orderBy:{createdAt:"desc"}});
     const rounds=await tx.pipelineRound.findMany({where:{clubId:d.clubId,archivedAt:null},select:{id:true,name:true,anonymousReview:true},orderBy:{order:"asc"}});
     const round=rounds.find(r=>r.id===d.roundId),cycle=cycles.find(c=>c.id===d.cycleId);
+    if(d.roundId&&!round||d.cycleId&&!cycle)throw Error("The selected cycle or round is unavailable in this club.");
     if(round&&!round.anonymousReview&&!hasPermission(m,"applicants.identify"))throw Error("Identified review permission required.");
     const apps=round&&cycle?await tx.application.findMany({where:{clubId:d.clubId,roundId:round.id,recruitmentCycleId:cycle.id,status:{in:["SUBMITTED","IN_REVIEW","INTERVIEWING","WAITLISTED"]}},select:{id:true,student:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}},orderBy:[{submittedAt:"asc"},{id:"asc"}]}):[];
     const members=await tx.clubMember.findMany({where:{clubId:d.clubId,status:"ACTIVE",user:{disabledAt:null}},include:{user:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}});
@@ -73,4 +74,16 @@ export async function joinLiveVotingRoom(input:unknown){
     }
     return {joined:true};
   },votingWriteLimits);
+}
+
+/** Resolve only currently authorized, eligible IDs; never disclose foreign applicants. */
+export async function resolveLiveVotingSelection(input:unknown){
+ const {votingSelectionSchema,selectionScopes}=await import("@/lib/voting-navigation");
+ const d=votingSelectionSchema.parse(input);if(new Set(d.applicationIds).size!==d.applicationIds.length)throw Error("Duplicate applicant selection.");
+ const {user}=await requireClubPermission(d.clubId,["applications.review","decisions.manage","decisions.start"]);
+ return prisma.$transaction(async tx=>{
+  const m=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review","decisions.manage","decisions.start"],{readOnly:true});
+  const rows=await tx.application.findMany({where:{clubId:d.clubId,id:{in:d.applicationIds},round:{archivedAt:null,...(!hasPermission(m,"applicants.identify")?{anonymousReview:true}:{})},recruitmentCycle:{archivedAt:null}},select:{id:true,roundId:true,recruitmentCycleId:true,status:true,round:{select:{name:true}},recruitmentCycle:{select:{name:true}}}});
+  return selectionScopes(rows,d.applicationIds);
+ },votingReadLimits);
 }

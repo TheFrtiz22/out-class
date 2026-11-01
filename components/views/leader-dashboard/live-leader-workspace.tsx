@@ -25,6 +25,8 @@ import { RevealApplicant } from "@/components/reveal-applicant"
 import { hasPermission } from "@/lib/permissions"
 import { interviewCapabilities } from "@/lib/interview-access"
 import { applicantInterviewHref } from "@/lib/applicant-interview-navigation"
+import { useRouter } from "next/navigation"
+import { saveVotingSelection,votingSetupHref } from "@/lib/voting-navigation"
 import Link from "next/link"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
 
@@ -132,12 +134,18 @@ export function ApplicantReviewPreview({ clubId, applicationId, onClose, onChang
 }
 
 function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false, initialData = null, onData, preview, validatedInitialData = false }: { validatedInitialData?: boolean; preview?: { applicationId: string; onClose: () => void; onChanged: () => void; onNext?: () => void }; membership: ExtendedMembership; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: Pipeline | null; onData?: (data: Pipeline | null) => void }) {
+  const router=useRouter();
+  const [votingSelection,setVotingSelection]=useState<string[]>([]);
   const previewId = preview?.applicationId
   const demo = useDemoMode()
   const { leaderFocus, clearLeaderFocus } = useApplicationState()
   const auth = useAuth()
   const { readAuthority, isReadAuthorityCurrent } = auth
   const authority = useMemo(() => ({ user: auth.user, readAuthority: auth.readAuthority, support: auth.isImpersonating, loading: auth.loading, membership, demoReady: demo.ready, demoEnabled: demo.isDemoEnabled }), [auth.user, auth.readAuthority, auth.isImpersonating, auth.loading, membership, demo.ready, demo.isDemoEnabled])
+  const canStartVoting=hasPermission(membership,"applications.review")&&hasPermission(membership,"decisions.manage")&&hasPermission(membership,"decisions.start");
+  useEffect(()=>setVotingSelection([]),[auth.user?.id,membership.id,demo.isDemoEnabled]);
+  const votingChoice=canStartVoting&&!decisionsOnly&&!rejectedOnly?{ids:votingSelection,toggle:(id:string)=>setVotingSelection(old=>old.includes(id)?old.filter(v=>v!==id):[...old,id])}:undefined;
+  function startSelectedVoting(){if(!auth.user||!votingSelection.length||!canLeaveWorkspace())return;try{const key=saveVotingSelection(sessionStorage,{userId:auth.user.id,clubId:membership.clubId,demo:demo.isDemoEnabled,applicationIds:votingSelection});router.push(votingSetupHref(membership.clubId,demo.isDemoEnabled?"demo=1":"",key));}catch{setMessage("Could not retain the applicant selection in this tab. Allow session storage and retry.")}}
   const [error, setError] = useState("")
   const [revision, setRevision] = useState(0)
   const [query, setQuery] = useState("")
@@ -682,10 +690,11 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
           </Button>
         )}
       </div>
+      {votingChoice&&<div className="flex flex-wrap items-center gap-3"><span className="text-sm">{votingSelection.length} selected for voting</span><Button variant="outline" disabled={!votingSelection.length||busy} onClick={startSelectedVoting}>Start voting with selected applicants</Button>{votingSelection.length>0&&<Button variant="ghost" onClick={()=>setVotingSelection([])}>Clear selection</Button>}</div>}
       <div className="flex flex-wrap items-center gap-3"><label className="text-sm">Sort applicants <select aria-label="Sort applicants" className={selectStyle} value={sort} onChange={event => sortBy(event.target.value as ApplicantSort)}><option value="name">Name / anonymous ID</option><option value="year">Class year</option><option value="status">Status</option><option value="gpa">GPA</option><option value="sat">SAT</option><option value="act">ACT</option><option value="round">Round</option><option value="score">Rating</option></select></label><Button variant="ghost" size="sm" onClick={() => setDescending(value => !value)}>{descending ? "Descending ↓" : "Ascending ↑"}</Button></div>
       {view === "kanban" && <p className="text-xs leading-6 text-muted-foreground">Drag a candidate to another column or use Move to. Review the change before it is saved. Interview moves require an interview round.</p>}
       {rejectedOnly&&<p>Rejected applications are retained here with their reviews and decision history. Reconsideration returns an application to review; it does not change the student’s account or membership.</p>}
-      {invalidFilter ? <p role="alert">Enter filters within the displayed numeric ranges.</p> : updating ? <p role="status" aria-live="polite">Updating applicants…</p> : !filtered.length ? <p role="status" className="border-y py-10 text-sm text-muted-foreground">{baseTotal ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No rejected applications. Published rejections appear here with their history preserved." : "Submitted applications will appear here. Student drafts stay private."}</p> : decisionsOnly ? <LiveDecisionList applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} laneCounts={listData?.facets.lanes} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
+      {invalidFilter ? <p role="alert">Enter filters within the displayed numeric ranges.</p> : updating ? <p role="status" aria-live="polite">Updating applicants…</p> : !filtered.length ? <p role="status" className="border-y py-10 text-sm text-muted-foreground">{baseTotal ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No rejected applications. Published rejections appear here with their history preserved." : "Submitted applications will appear here. Student drafts stay private."}</p> : decisionsOnly ? <LiveDecisionList applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban votingSelection={votingChoice} canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} laneCounts={listData?.facets.lanes} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList votingSelection={votingChoice} sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
       {displayed.count > 1 && <nav aria-label="Applicant pages" className="flex flex-wrap items-center justify-between gap-3">
         <Button variant="outline" aria-label="Previous applicant page" disabled={busy || !pageInfo?.previous} onClick={() => changePage(pageInfo?.previous ?? null)}>Previous page</Button>
         <p role="status" className="text-sm">Page {displayed.page + 1} of {displayed.count} · Showing {displayed.start + 1}–{displayed.start + displayed.items.length} of {total}</p>

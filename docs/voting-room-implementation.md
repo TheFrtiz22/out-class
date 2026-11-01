@@ -1,5 +1,7 @@
 # Live voting room - Parts 1-3 handoff
 
+Latest navigation work: [Voting room navigation](voting-room-navigation.md). The dated release entries below remain historical evidence; see the navigation handoff for its current release gate.
+
 ## Current decision-transition checkpoint - October 30, 2026
 
 PR #101 merged as `bc22b0a30b98cbfab785ea3da5215a9351b76109`; deployment `dpl_CqZ4LAPX1HmPrVV7iDtXDyVQMseu` is Ready/Production and serves www.out-class.net. All 12 required checks passed on reviewed head `6203b95a`. Migration `20261029190000_voting_guarded_undo` is applied, with all 61 ledger entries/checksums verified and original function ownership retained. Fresh encrypted production snapshot restored all 80 public tables with matching row counts/content digests; the exact guard migration was rehearsed on that restore. Prior 60 migration records were unchanged. No maintenance, credential rotation or unrelated migration occurred.
