@@ -6,7 +6,7 @@ export type HomeApplicationSource = {
   clubId: string
   status: string
   submittedAt?: Date | string | null
-  club: { name: string; color?: string | null; logoUrl?: string | null; marketing?: unknown }
+  club: { name: string; color?: string | null; logoUrl?: string | null; marketing?: unknown; applicationOpen?: boolean; applicationDeadline?: Date | string | null }
   answers?: { response: string }[]
 }
 export type HomeApplication = {

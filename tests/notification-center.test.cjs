@@ -193,3 +193,19 @@ test('modified clicks retain native link behavior and denied draft navigation pe
   const denied = notificationClickHarness({ allowed: false })
   assert.equal(denied.click().defaultPrevented, true); assert.deepEqual(denied.events, [])
 })
+
+test('welcome task facts survive inbox deduplication/archive and are replaced by the next authorized task read', async () => {
+  const h = harness(), href = '/club/club/workspace?section=tasks&taskId=task'
+  const taskActivity = { assignmentId: 'assignment', dueAt: '2026-11-01T09:00:00Z', needsSubmission: true }
+  const item = notification('local', { durableId: undefined, clubId: 'club', taskHref: href, taskActivity })
+  h.sync([dto('saved', { type: 'TASK', href })])
+  h.render().syncTaskNotifications([item], 'student')
+  assert.equal(h.render().notifications.length, 1)
+  assert.deepEqual(h.render().personalTaskActivities, { userId: 'student', items: [{ clubId: 'club', taskActivity }] })
+  await h.render().deleteNotifications(['durable-saved'])
+  assert.deepEqual(h.render().personalTaskActivities.items[0].taskActivity, taskActivity)
+  h.render().syncTaskNotifications([], 'student')
+  assert.deepEqual(h.render().personalTaskActivities, { userId: 'student', items: [] })
+  h.render().syncTaskNotifications([item], 'other-student')
+  assert.equal(h.render().personalTaskActivities.userId, 'other-student')
+})

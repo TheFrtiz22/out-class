@@ -102,6 +102,8 @@ function renderSettingsWorkspace(member, requested, section = 'settings') {
    if(name==='@/lib/utils') return {cn:(...s)=>s.filter(Boolean).join(' ')}
    if(name==='@/components/shell/product-shell') return {ProductShell:passthrough}
    if(name==='@/components/club-settings-workspace') return component('components/club-settings-workspace.tsx')
+   if(name==='@/components/product/welcome-header') return component('components/product/welcome-header.tsx')
+   if(name==='@/lib/welcome') return load('lib/welcome.ts')
    if(name==='@/components/product/page-header') return component('components/product/page-header.tsx')
    if(name==='./campus-illustration') return component('components/product/campus-illustration.tsx')
    if(['@/lib/club-settings','@/lib/product-navigation','@/lib/permissions','@/lib/interview-access','@/lib/club-workspace','@/lib/workspace-navigation'].includes(name)) return load(name.replace('@/','')+'.ts')
@@ -127,9 +129,9 @@ for(const [name,member,requested,effective,illustration] of settingsCases) test(
  else assert.doesNotMatch(html,/oc-campus-illustration|data-illustrated/)
 })
 
-test('club Overview keeps its name and heading without repetitive public profile shortcuts or artwork',()=>{
+test('club Overview keeps its club name and neutral welcome without repetitive public profile shortcuts or artwork',()=>{
  const html=renderSettingsWorkspace({isOwner:true},null,'overview');
- assert.match(html,/<h1>Overview<\/h1>/);assert.match(html,/Fixture Club/);
+ assert.match(html,/<h1[^>]*>.*Welcome to OutClass\..*<\/h1>/);assert.match(html,/Fixture Club/);
  assert.doesNotMatch(html,/Public club profile|href="\/club\/visual-fixture-club"/);
  assert.doesNotMatch(html,/oc-campus-illustration|data-illustrated|oc-campus-ribbon/);
 })
