@@ -1,3 +1,4 @@
+import {meetingDetails} from "@/lib/voting-session-setup";
 import type { Prisma } from "@prisma/client";
 import { hasPermission, type ClubPermission } from "@/lib/permissions";
 import { roomOutcomes, roomTally, publicChoice } from "@/lib/voting-room";
@@ -18,6 +19,7 @@ export function requireRoomLeader(s: LiveRoom, m: Member, capability: ClubPermis
 export function projectVotingRoom(s: LiveRoom, m: Member, anonymous: boolean) {
   const permissions = roomAuthority(s,m,anonymous), outcomes = roomOutcomes(s);
   return {
+    meeting:(()=>{const m=meetingDetails((s.presentationOptions as {meeting?:unknown})?.meeting);if(!m)return null;const {announcedUserIds,...visible}=m;return {...visible,announced:announcedUserIds.length>0};})(),
     id:s.id, clubId:s.clubId, cycleId:s.cycleId!, roundId:s.roundId, revision:s.revision, status:s.state,ballotRosterSize:s.participants.length,ballotsReceived:s.passes.find(p=>p.number===s.currentPass)?.candidates.find(c=>c.applicationId===s.activeApplicationId)?.ballots.length??0,
     currentApplicantId:s.activeApplicationId, passNumber:s.currentPass, targetSize:s.targetUnset?null:s.targetSize,
     finalizedAt:s.finalizedAt, displayConfig:s.displayConfig, permissions:{...permissions,

@@ -1,10 +1,10 @@
 import { z } from "zod"
 import type { ClubPermission } from "@/lib/permissions"
-export const draftKinds = ["club-profile", "application-builder", "pipeline", "announcement", "task", "event", "decision-templates", "profile", "meeting", "task-feedback", "task-submission", "review"] as const
+export const draftKinds = ["club-profile", "application-builder", "pipeline", "announcement", "task", "event", "decision-templates", "profile", "meeting", "task-feedback", "task-submission", "review", "voting-setup"] as const
 export const editorScopeSchema = z.object({ kind: z.enum(draftKinds), clubId: z.string().uuid().optional(), resourceId: z.string().max(180).default("main") })
 export type EditorScope = z.input<typeof editorScopeSchema>
 export const draftPermissions: Record<Exclude<EditorScope["kind"], "profile" | "task-submission">, ClubPermission> = {
-  meeting: "meetings.manage", "task-feedback": "tasks.manage", review: "applications.review",
+  "voting-setup": "decisions.start", meeting: "meetings.manage", "task-feedback": "tasks.manage", review: "applications.review",
   "club-profile": "club.settings", "application-builder": "application.manage", pipeline: "recruitment.manage",
   announcement: "meetings.manage", task: "tasks.manage", event: "meetings.manage", "decision-templates": "recruitment.manage",
 }

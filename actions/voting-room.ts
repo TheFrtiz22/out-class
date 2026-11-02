@@ -1,4 +1,6 @@
 "use server";
+import {validateVotingSetup,notifyVotingVoters} from "@/utils/voting-room-setup";
+import {meetingDetails,resolveVotingMeeting} from "@/lib/voting-session-setup";
 import { votingReadLimits } from "@/lib/voting-transaction-limits";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/utils/prisma";
@@ -27,8 +29,8 @@ export async function listLiveVotingRooms(input:unknown) {
     const rooms=await tx.votingSession.findMany({where:{clubId:d.clubId,mode:"LIVE",...(d.cycleId?{cycleId:d.cycleId}:{}),...(d.roundId?{roundId:d.roundId}:{}),
       ...(!hasPermission(m,"applicants.identify")?{round:{anonymousReview:true}}:{}),
       ...(!observer?{OR:[...(leader?[{leaderMemberIds:{has:m.id}}]:[]),...(voter?[{participants:{some:{memberId:m.id}}}]:[])]}:{}),
-    },select:{id:true,clubId:true,cycleId:true,roundId:true,state:true,createdAt:true,updatedAt:true,finalizedAt:true,round:{select:{name:true}},cycle:{select:{name:true}},_count:{select:{candidates:true}},leaderMemberIds:true,participants:{where:{memberId:m.id},select:{joinedAt:true}}},orderBy:[{createdAt:"desc"},{id:"desc"}],take:100});
-    return {rooms:rooms.map(({leaderMemberIds,participants,round,cycle,_count,...room})=>({...room,roundName:round?.name??"Recruitment round",cycleName:cycle?.name??"Recruitment cycle",applicantCount:_count?.candidates??0,view:leaderMemberIds?.includes(m.id)&&leader?"leader" as const:participants?.length&&voter?"member" as const:"present" as const,joined:!!participants?.[0]?.joinedAt})),access:accessFingerprint(m)};
+    },select:{id:true,clubId:true,cycleId:true,roundId:true,state:true,createdAt:true,updatedAt:true,finalizedAt:true,presentationOptions:true,round:{select:{name:true}},cycle:{select:{name:true}},_count:{select:{candidates:true}},leaderMemberIds:true,participants:{where:{memberId:m.id},select:{joinedAt:true}}},orderBy:[{createdAt:"desc"},{id:"desc"}],take:100});
+    return {rooms:rooms.map(({leaderMemberIds,participants,round,cycle,_count,presentationOptions,...room})=>({...room,meeting:(()=>{const m=meetingDetails((presentationOptions as {meeting?:unknown})?.meeting);if(!m)return null;const {announcedUserIds,...visible}=m;return visible;})(),roundName:round?.name??"Recruitment round",cycleName:cycle?.name??"Recruitment cycle",applicantCount:_count?.candidates??0,view:leaderMemberIds?.includes(m.id)&&leader?"leader" as const:participants?.length&&voter?"member" as const:"present" as const,joined:!!participants?.[0]?.joinedAt})),access:accessFingerprint(m)};
   },votingReadLimits);
   const {membership}=await requireClubPermission(d.clubId,["applications.review"]);
   if(result.access!==accessFingerprint(membership))throw Error("Voting permissions changed. Reconnect to the room.");
@@ -48,21 +50,12 @@ export async function createLiveVotingRoom(input:unknown) {
       if(prior.clubId!==d.clubId||receipt?.actorId!==user.id||receipt.fingerprint!==fingerprint)throw Error("Session ID already used.");
       const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId);roomAuthority(s,actor,round.anonymousReview);return {sessionId:s.id};
     }
-    const round=await tx.pipelineRound.findFirst({where:{id:d.roundId,clubId:d.clubId,archivedAt:null}});
-    const cycle=await tx.recruitmentCycle.findFirst({where:{id:d.cycleId,clubId:d.clubId,archivedAt:null}});
-    if(!round||!cycle)throw Error("Current club, cycle and round required.");
-    if(d.presentationOptions){
-      if(round.anonymousReview&&d.presentationOptions.fields.some(f=>["photo","name","major","resumeHighlight","interviewScore"].includes(f)))throw Error("Identifying fields are unavailable in anonymous rounds.");
-      if(Object.keys(d.presentationOptions.highlights).some(id=>!d.applicationIds.includes(id)))throw Error("Highlight applicant scope mismatch.");
-    }
-    const apps=await tx.application.findMany({where:{id:{in:d.applicationIds},clubId:d.clubId,roundId:d.roundId,recruitmentCycleId:d.cycleId,status:{in:["SUBMITTED","IN_REVIEW","INTERVIEWING","WAITLISTED"]}}});
-    if(apps.length!==d.applicationIds.length)throw Error("Select eligible applicants from this cycle and round.");
-    const memberIds=[...new Set([...d.participantIds,...d.leaderMemberIds])].sort();
-    await tx.$queryRaw(Prisma.sql`SELECT id FROM "ClubMember" WHERE "clubId"=${d.clubId} AND id IN (${Prisma.join(memberIds)}) ORDER BY id FOR SHARE`);
-    const members=await tx.clubMember.findMany({where:{clubId:d.clubId,id:{in:memberIds}},include:{user:{select:{disabledAt:true}}}});
-    if(members.length!==memberIds.length||members.some(m=>m.user.disabledAt||!hasPermission(m,"applications.review")||(!round.anonymousReview&&!hasPermission(m,"applicants.identify"))||(d.participantIds.includes(m.id)&&!hasPermission(m,"decisions.vote"))||(d.leaderMemberIds.includes(m.id)&&!hasPermission(m,"decisions.start"))))throw Error("Current voter and leader permissions required.");
-    for(const [appId,id] of Object.entries(d.presentationOptions?.highlights??{}))if(!(await votingHighlightChoices(tx,d.clubId,appId,user.id)).some(q=>q.id===id))throw Error("Selected résumé highlight is unavailable.");
-    await tx.votingSession.create({data:{id:d.sessionId,mode:"LIVE",clubId:d.clubId,cycleId:d.cycleId,roundId:d.roundId,leaderMemberIds:d.leaderMemberIds,targetSize:d.targetSize??1,targetUnset:d.targetSize==null,presentationOptions:d.presentationOptions??{},displayConfig:d.presentationOptions?roomDisplayConfig(d.presentationOptions.fields):d.displayConfig,autoAdvance:"NONE",createdBy:user.id,participants:{create:d.participantIds.map(memberId=>({memberId}))},candidates:{create:d.applicationIds.map((applicationId,position)=>({applicationId,position,expectedStatus:apps.find(a=>a.id===applicationId)!.status}))}}});
+    const {apps,members}=await validateVotingSetup(tx,d,user);
+    const meeting=d.presentationOptions?.meeting?resolveVotingMeeting(d.presentationOptions.meeting):null;
+    if(d.notifyVoters&&(!meeting||meeting.timing!=="LATER"))throw Error("Notify selected voters is available when scheduling a session.");
+    const presentationOptions=d.presentationOptions?{...d.presentationOptions,...(meeting?{meeting:{...meeting,announcedUserIds:d.notifyVoters?members.filter(m=>d.participantIds.includes(m.id)).map(m=>m.userId):[]}}:{})}:{};
+    await tx.votingSession.create({data:{id:d.sessionId,mode:"LIVE",clubId:d.clubId,cycleId:d.cycleId,roundId:d.roundId,leaderMemberIds:d.leaderMemberIds,targetSize:d.targetSize??1,targetUnset:d.targetSize==null,presentationOptions,displayConfig:d.presentationOptions?roomDisplayConfig(d.presentationOptions.fields):d.displayConfig,autoAdvance:"NONE",createdBy:user.id,participants:{create:d.participantIds.map(memberId=>({memberId}))},candidates:{create:d.applicationIds.map((applicationId,position)=>({applicationId,position,expectedStatus:apps.find(a=>a.id===applicationId)!.status}))}}});
+    if(d.notifyVoters&&meeting)await notifyVotingVoters(tx,d.clubId,d.sessionId,d.sessionId,members.filter(m=>d.participantIds.includes(m.id)).map(m=>m.userId),"scheduled",meeting.name);
     const result={sessionId:d.sessionId};
     await tx.votingRoomCommand.create({data:{sessionId:d.sessionId,requestId:d.sessionId,actorId:user.id,fingerprint,result}});
     await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:d.sessionId,action:"voting.room.created",details:{cycleId:d.cycleId,roundId:d.roundId,candidateCount:d.applicationIds.length,voterCount:d.participantIds.length,targetSize:d.targetSize}}});
@@ -159,6 +152,15 @@ export async function commandLiveVotingRoom(input:unknown) {
     };
     switch(d.action){
       case "START": case "NEXT_PASS": {
+        if(d.action==="START"){
+          const meeting=meetingDetails((s.presentationOptions as {meeting?:unknown})?.meeting);
+          if(meeting?.status==='CANCELLED')throw new RoomConflict("CANCELLED","This session was cancelled.");
+          if(meeting?.plannedAt&&+new Date(meeting.plannedAt)>Date.now()&&!d.confirmed)throw new RoomConflict("EARLY_CONFIRMATION_REQUIRED","Confirm starting before the planned time.");
+          const validated=await validateVotingSetup(tx,createRoomSchema.parse({clubId:s.clubId,sessionId:s.id,cycleId:s.cycleId,roundId:s.roundId,leaderMemberIds:s.leaderMemberIds,participantIds:s.participants.map(p=>p.memberId),applicationIds:s.candidates.map(c=>c.applicationId),targetSize:s.targetUnset?null:s.targetSize,presentationOptions:roomPresentationSchema.safeParse(s.presentationOptions).success?s.presentationOptions:undefined}),user);
+          if(validated.apps.some(a=>s.candidates.find(c=>c.applicationId===a.id)?.expectedStatus!==a.status))throw new RoomConflict("SELECTION_CHANGED","Applicant eligibility changed. Review the saved selection before starting.");
+          if(d.confirmed)await tx.$queryRaw`SELECT set_config('outclass.voting_early_start','confirmed',true)`;
+        }
+
         if(d.action==="START"?s.state!=="DRAFT":!["PAUSED","COMPLETED"].includes(s.state)||pass?.state!=="COMPLETED")throw retryConflict();
         const ids=roomOutcomes(s).filter(o=>d.action==="START"?o.outcome==="UNREVIEWED":o.outcome==="HOLD").map(o=>o.applicationId);
         if(!ids.length)throw new RoomConflict("EMPTY_QUEUE","No held or unreviewed applicants remain. End the session when ready.");

@@ -10,7 +10,7 @@ export function decisionsHref(clubId:string, tab:"overview"|"voting"|"letters"="
 }
 export function votingSetupHref(clubId:string,search="",selectionKey?:string){
   const source=new URLSearchParams(search),q=new URLSearchParams({clubId});
-  for(const key of ["cycleId","roundId","demo"])if(source.get(key))q.set(key,source.get(key)!);
+  for(const key of ["cycleId","roundId","demo","draft","session"])if(source.get(key))q.set(key,source.get(key)!);
   if(selectionKey)q.set("selection",selectionKey);
   return `/voting/rooms/new?${q}`;
 }

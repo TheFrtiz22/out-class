@@ -38,7 +38,7 @@ export function LeaderControls({room,refresh,member,transitioning=false}:{room:R
  return <section className="vr-leader" aria-label="Leader controls"><h2>Leader controls</h2>
  {error&&<div role="alert" className="vr-error">{error}{pending&&<Button disabled={busy} variant="outline" onClick={()=>void send(pending.action,{},true)}>Retry command</Button>}</div>}
  <fieldset disabled={busy||!!pending||waitingForSnapshot||transitioning||!!room.finalizedAt} className="space-y-4"><legend className="sr-only">Voting meeting controls</legend><div className="vr-actions">
- {room.status==="DRAFT"&&<Button onClick={()=>void send("START")}>Start session</Button>}
+ {room.status==="DRAFT"&&<Button onClick={()=>{const early=room.meeting?.plannedAt&&+new Date(room.meeting.plannedAt)>Date.now();if(!early||window.confirm('Start this scheduled session early? Voting will begin only when you open a ballot.'))void send("START",{confirmed:!!early});}}>Start session</Button>}
  {room.status==="OPEN"&&entry?.ballotState==="PENDING"&&<Button onClick={()=>void send("OPEN_VOTING")}>Open voting</Button>}
  {room.status==="OPEN"&&entry?.ballotState==="OPEN"&&<Button onClick={()=>{if(!missing||window.confirm(`${missing} ballots are missing from the session roster. Close voting early? Missing ballots are not Do not pass votes.`))void send("CLOSE_VOTING",{confirmed:true})}}>Close voting</Button>}
  {room.status==="OPEN"&&entry?.ballotState==="CONFIRMED"&&<Button onClick={()=>void send("ADVANCE",{applicationId:room.currentApplicantId!,passNumber:room.passNumber})}>Continue saved decision</Button>}

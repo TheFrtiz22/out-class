@@ -1,5 +1,21 @@
 # Live voting room - Parts 1-3 handoff
 
+## Current setup checkpoint — November 2, 2026
+
+Work in progress on `codex/voting-session-setup`, based on `99ddef05` (PR #109, already merged and deployed before this task). The three-step setup is implemented locally and is **not released**. No production migrations, deployment, credential or applicant changes have been made in this task.
+
+The existing VotingSession stores optional meeting metadata in its presentationOptions JSON. Scheduled meetings remain DRAFT until an explicit, authorized START command. Unfinished setup uses the existing private EditorDraft with leadership checks and revisioned autosave; Demo drafts and notification intents remain in isolated browser state. Existing session ballots, pass history, finalization and applicant communications are separate.
+
+Implemented: details with explicit IANA timezone/DST occurrence, applicant/voter search and selection, explicit E-board defaults, independent advisory target, authorized presentation preview, save draft/restore, scheduling, waiting-room QR, pre-start roster/details editing, cancellation, explicit notification consent, exact-session links, current eligibility checks at start, early-start confirmation, and scheduled/draft landing groups.
+
+Migration `20261102010000_voting_session_setup` changes guards only: transaction-scoped replacement of the unstarted roster before any pass; cancelled/early-start meeting guards. No tables, columns, historical rewrites or schema reset. Disposable PGlite full-chain regression passes, preserving legacy publication and browser-role denial. Native PostgreSQL 17.11 rehearsal now passes the full fresh migration chain and seven real-runtime-role voting checks, including the new setup CAS/roster/notification guards. The labelled disposable server was stopped. Fresh production backup/restore verification and production application remain pending.
+
+Evidence so far: original 25 voting foundation/setup/Demo regressions pass. Eight new server/calendar/private-draft regressions pass. New real-component browser workflow passes draft save/reload, all three steps, scheduling without starting, editing, cancellation, and desktop/mobile overflow checks. All three affected existing navigation/member browser checks now pass. The waiting-room timeout was a duplicated mock key overwriting its existing join method; corrected without weakening assertions. Demo restart/date normalization passes. Standalone type checking and full lint pass (22 existing warnings). The first disconnected production build passed. The integrated run exposed a generic draft-fixture bundling failure from an unnecessary Demo import; optional persistence now enters only through the setup caller, and the focused private-draft hydration/lost-acknowledgement/publication regression passes. Final integrated CI/build remains required after that correction.
+
+Synthetic screenshots: `test-results/voting-session-setup/review-desktop.png` and `review-mobile.png` (local real-component fixture, not hosted acceptance). Required final integrated tests/build, PR/CI/merge and live verification remain pending. Production read-only management-API inventory confirms all 61 applied migration checksums; only the separate migration-history security migration and this setup guard migration are unapplied. The older root rotation credential is rejected, and the saved temporary operator is expired; the established authenticated management account still reads the ledger and can obtain its supported temporary operator when release gates pass. No password reset is needed or authorized. Do not claim live readiness from these results.
+
+The prior navigation release receipt remains at `C:\Users\arden\AppData\Local\OutClass-staging-verification\voting-navigation-20261101\release-receipt.md`. Its synthetic DRAFT room `5ab1664c-e3ca-4e2b-aa47-467cd09563de` still needs safe explicit end/cancellation cleanup; no submitted reviews should be modified. Preserve all original fixture records and dated evidence below.
+
 Latest navigation work: [Voting room navigation](voting-room-navigation.md). The dated release entries below remain historical evidence; see the navigation handoff for its current release gate.
 
 ## Current decision-transition checkpoint - October 30, 2026

@@ -4,6 +4,9 @@ import * as setup from "@/actions/voting-room-setup";
 import * as demo from "@/lib/demo/voting-room";
 import { demoStore } from "@/lib/demo/store";
 import * as finalization from "@/actions/voting-room-finalization";
+import * as plans from '@/actions/voting-session-setup';
+function planAction<K extends keyof typeof plans>(key:K){return (async(input:Parameters<(typeof plans)[K]>[0])=>demoStore.active()?demo.sessionSetup(key,input):plans[key](input)) as (input:Parameters<(typeof plans)[K]>[0])=>ReturnType<(typeof plans)[K]>;}
+export const listVotingSetupDrafts=planAction('listVotingSetupDrafts'),getVotingSessionSetup=planAction('getVotingSessionSetup'),updateVotingSessionSetup=planAction('updateVotingSessionSetup'),cancelVotingSession=planAction('cancelVotingSession'),previewVotingSetup=planAction('previewVotingSetup');
 function finalAction<K extends keyof typeof finalization>(key:K){return (async(input:Parameters<(typeof finalization)[K]>[0])=>{
  if(demoStore.active())return demo.meeting(key,input);
  return finalization[key](input);

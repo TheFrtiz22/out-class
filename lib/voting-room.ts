@@ -1,4 +1,5 @@
 import { z } from "zod";
+import {meetingDetailsSchema} from "@/lib/voting-session-setup";
 import { votingDisplaySchema, defaultVotingDisplay } from "@/lib/voting-presentation";
 
 export const roomChoice = z.enum(["ACCEPT", "HOLD", "REJECT"]);
@@ -7,7 +8,7 @@ export function publicChoice(value: string | null):"ACCEPT"|"HOLD"|"REJECT"|"UNR
 export const roomScope = z.object({ clubId: z.string().uuid(), sessionId: z.string().uuid() }).strict();
 export const liveRoomFields=["photo","name","major","academicYear","gpa","sat","act","resumeHighlight","interviewScore"] as const;
 export type LiveRoomField=typeof liveRoomFields[number];
-export const roomPresentationSchema=z.object({fields:z.array(z.enum(liveRoomFields)).max(9).refine(v=>new Set(v).size===v.length),highlights:z.record(z.string().uuid(),z.string().uuid()).default({})}).strict();
+export const roomPresentationSchema=z.object({fields:z.array(z.enum(liveRoomFields)).max(9).refine(v=>new Set(v).size===v.length),highlights:z.record(z.string().uuid(),z.string().uuid()).default({}),meeting:meetingDetailsSchema.optional()}).strict();
 export function roomDisplayConfig(fields:LiveRoomField[]){return {version:1 as const,fields:fields.filter((f):f is Exclude<LiveRoomField,"resumeHighlight"|"interviewScore">=>f!=="resumeHighlight"&&f!=="interviewScore")};}
 export function liveRoomPath(clubId:string,sessionId:string,view:"leader"|"present"|"member"="member",demo=false){return `/voting/rooms/${encodeURIComponent(sessionId)}?clubId=${encodeURIComponent(clubId)}&view=${view}${demo?"&demo=1":""}`;}
 export const createRoomSchema = roomScope.extend({
@@ -16,7 +17,7 @@ export const createRoomSchema = roomScope.extend({
   participantIds: z.array(z.string().uuid()).min(1).max(500),
   applicationIds: z.array(z.string().uuid()).min(1).max(2000),
   targetSize: z.number().int().min(1).max(2000).nullable().default(null), displayConfig: votingDisplaySchema.default(defaultVotingDisplay),
-  presentationOptions:roomPresentationSchema.optional(),
+  presentationOptions:roomPresentationSchema.optional(), notifyVoters:z.boolean().optional(),
 });
 export const roomCommandSchema = roomScope.extend({ requestId: z.string().uuid(), revision: z.number().int().nonnegative(),
   action: z.enum(["START", "OPEN_VOTING", "CLOSE_VOTING", "CONFIRM", "ACCEPT_WITHOUT_VOTE", "ADVANCE", "NEXT_PASS", "END", "FINALIZE", "CORRECT", "DECIDE_AND_ADVANCE", "PASS_WITHOUT_VOTE_AND_ADVANCE", "UNDO_DECISION"]),
