@@ -4,6 +4,7 @@ const {harness,load,clubId,cycleId,roundId,apps,voterId,uuid}=require('./helpers
 const navigation=load('lib/voting-navigation.ts',{});
 
 test('canonical links preserve scope without accepting a return URL or applicant names',()=>{
+ for(const [old,tab] of [['voting','voting'],['letters','letters'],['decision-letters','letters'],['applicants',null]])assert.equal(navigation.legacyDecisionTab(old),tab);
  const href=navigation.decisionsHref(clubId,'voting',`cycleId=${cycleId}&roundId=${roundId}&demo=1&sessionId=${uuid(4)}&next=https://evil.invalid`);
  const q=new URL(href,'http://fixture').searchParams;
  assert.equal(q.get('decisionTab'),'voting');assert.equal(q.get('roundId'),roundId);assert.equal(q.get('cycleId'),cycleId);assert.equal(q.get('demo'),'1');assert.equal(q.has('next'),false);assert.equal(q.has('sessionId'),false);

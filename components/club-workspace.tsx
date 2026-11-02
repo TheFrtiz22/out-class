@@ -39,7 +39,7 @@ const LiveLeaderWorkspace = dynamic(() => import("@/components/views/leader-dash
 const InterviewWorkspaceView = dynamic(() => import("@/components/views/interview-workspace-view").then(m => m.InterviewWorkspaceView), { loading: () => <WorkspaceLoading label="Preparing interview workspace…" layout="interview" rows={3} /> });
 const InterviewManagementTabs = dynamic(() => import("@/components/interview-management-tabs").then(m => m.InterviewManagementTabs), { loading: () => <WorkspaceLoading label="Loading interview scheduling…" layout="calendar" rows={3} /> });
 const ApplicantInterviewReviews = dynamic(() => import("@/components/applicant-interview-reviews").then(m => m.ApplicantInterviewReviews), { loading: () => <WorkspaceLoading label="Loading submitted reviews…" layout="rows" rows={3} /> });
-import { decisionsHref } from "@/lib/voting-navigation";
+import { decisionsHref,legacyDecisionTab } from "@/lib/voting-navigation";
 import { DecisionsNavigation } from "@/components/live-voting/decisions-navigation";
 const VotingRoomLanding=dynamic(()=>import("@/components/live-voting/room-landing").then(m=>m.VotingRoomLanding),{loading:()=> <WorkspaceLoading label="Loading voting sessions…" layout="rows" rows={3}/>});
 const DecisionTemplateEditor=dynamic(()=>import("@/components/communications/template-editor").then(m=>m.DecisionTemplateEditor),{loading:()=> <WorkspaceLoading label="Loading decision letters…" layout="form" rows={3}/>});
@@ -72,8 +72,8 @@ export function ClubWorkspace({
     const href = `/club/${encodeURIComponent(clubId)}/workspace?${next}`;
     if (!navigateWithinClub(href, true)) router.replace(href);
   }, [legacyConfiguration, clubId, params, router]);
-  const oldDecisionTab=params.get("section")==="recruitment"&&["voting","letters"].includes(params.get("tool")??"");
-  useEffect(()=>{if(!oldDecisionTab)return;const next=new URLSearchParams(params.toString());next.set("decisionTab",params.get("tool")==="voting"?"voting":"letters");next.set("tool","decisions");const href=`/club/${encodeURIComponent(clubId)}/workspace?${next}`;if(!navigateWithinClub(href,true))router.replace(href);},[oldDecisionTab,params,clubId,router]);
+  const oldDecisionTab=params.get("section")==="recruitment"&&!!legacyDecisionTab(params.get("tool"));
+  useEffect(()=>{if(!oldDecisionTab)return;const next=new URLSearchParams(params.toString());next.set("decisionTab",legacyDecisionTab(params.get("tool"))!);next.set("tool","decisions");const href=`/club/${encodeURIComponent(clubId)}/workspace?${next}`;if(!navigateWithinClub(href,true))router.replace(href);},[oldDecisionTab,params,clubId,router]);
   const legacyInterviewTool = params.get("section") === "settings" && params.get("setting") === "interviews" && ["rooms", "schedule", "availability"].includes(params.get("interviewTab") ?? "");
   useEffect(() => {
     if (!legacyInterviewTool) return;
@@ -87,7 +87,7 @@ export function ClubWorkspace({
   const section = legacyEvents ? "meetings" : params.get("section") ?? "overview";
   const taskView = params.get("taskView") ?? undefined;
   const tool = oldDecisionTab ? "decisions" : params.get("tool") ?? undefined;
-  const decisionTab=params.get("decisionTab")||(params.get("tool")==="voting"?"voting":params.get("tool")==="letters"?"letters":"overview");
+  const decisionTab=params.get("decisionTab")||(legacyDecisionTab(params.get("tool"))??"overview");
   const moved = legacyApplicantInterviewHref(clubId, params.toString());
   useEffect(() => { if (moved && !navigateWithinClub(moved, true)) router.replace(moved); }, [moved, router]);
   const interviewMode = section === "recruitment" && tool === "interviews" && params.get("interview") === "1";

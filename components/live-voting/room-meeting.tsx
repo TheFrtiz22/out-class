@@ -8,6 +8,7 @@ import {commandLiveVotingRoom,getLiveVotingSummary,previewLiveVotingFinalization
 import type {useLiveVotingRoom} from "@/hooks/use-live-voting-room";
 import {roomCommandSchema,leadingBallotChoice,outcomeLabels,savedOutcomeLabels} from "@/lib/voting-room";
 import type {z} from "zod";
+import {decisionsHref} from "@/lib/voting-navigation";
 import {useDemoMode} from "@/contexts/demo-context";
 type Room=NonNullable<ReturnType<typeof useLiveVotingRoom>["room"]>;
 type Command=z.infer<typeof roomCommandSchema>;
@@ -52,7 +53,7 @@ export function LeaderControls({room,refresh,member,transitioning=false}:{room:R
 
  {(room.status==="PAUSED"||room.status==="COMPLETED")&&<section aria-label="Voting summary"><h2>{room.status==="PAUSED"?"Pass complete":"Voting summary"}</h2>{summaryError?<p role="alert">Couldn’t load applicant labels. <Button variant="outline" onClick={()=>setReload(v=>v+1)}>Retry summary</Button></p>:!summary?<LoadingState label="Loading summary…" layout="table" rows={3} />:<div className="vr-summary-lists">{(["ACCEPT","HOLD","REJECT","UNREVIEWED"] as const).map(kind=><section key={kind} className={kind==="ACCEPT"?"vr-accepted":""}><h3>{kind==="ACCEPT"?"Passed · Provisional":outcomeNames[kind]}</h3><ul>{room.outcomes.filter(o=>o.outcome===kind).map(o=><li key={o.applicationId}>{label(o.applicationId)}</li>)}</ul>{!counts(kind)&&<p>None</p>}</section>)}</div>}<details><summary>Voting-pass history</summary>{room.history.map(p=><section key={p.number}><h3>Pass {p.number}</h3><ul>{p.candidates.map(c=><li key={c.applicationId}>{label(c.applicationId)} · {outcomeNames[c.outcome]}{c.withoutVote?" · Passed without a vote": "totals"in c&&c.totals?` · Pass ${c.totals.ACCEPT}, Hold ${c.totals.HOLD}, Do not pass ${c.totals.REJECT}`:" · Unfinished"}</li>)}</ul></section>)}</details></section>}
  {room.status==="COMPLETED"&&room.permissions.canFinalize&&!room.finalizedAt&&summary&&<Finalization room={room} summary={summary} refresh={refresh} blocked={busy||!!pending||waitingForSnapshot}/>}
- {room.finalizedAt&&<><p role="status">Decisions finalized. Finalization did not send applicant messages. <Link className="vr-link" href={`/club/${room.clubId}/workspace?section=recruitment&tool=decision-letters`}>Open applicant communications</Link></p>{room.permissions.canFinalize&&<Notify room={room}/>}</>}
+ {room.finalizedAt&&<><p role="status">Decisions finalized. Finalization did not send applicant messages. <Link className="vr-link" href={decisionsHref(room.clubId,"letters",new URLSearchParams({cycleId:room.cycleId??"",roundId:room.roundId}).toString())}>Open applicant communications</Link></p>{room.permissions.canFinalize&&<Notify room={room}/>}</>}
  <details className="mt-4"><summary>Joined participants · {room.joinedParticipants.filter(p=>p.joined).length}</summary><ul>{room.joinedParticipants.map(p=><li key={p.id}>{p.label} · {p.joined?"Joined":"Waiting"}</li>)}</ul></details>
  </section>;
 }
