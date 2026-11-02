@@ -41,8 +41,8 @@ const InterviewManagementTabs = dynamic(() => import("@/components/interview-man
 const ApplicantInterviewReviews = dynamic(() => import("@/components/applicant-interview-reviews").then(m => m.ApplicantInterviewReviews), { loading: () => <WorkspaceLoading label="Loading submitted reviews…" layout="rows" rows={3} /> });
 import { decisionsHref } from "@/lib/voting-navigation";
 import { DecisionsNavigation } from "@/components/live-voting/decisions-navigation";
-const VotingRoomLanding=dynamic(()=>import("@/components/live-voting/room-landing").then(m=>m.VotingRoomLanding),{loading:()=> <WorkspaceLoading label="Loading voting sessions?" layout="rows" rows={3}/>});
-const DecisionTemplateEditor=dynamic(()=>import("@/components/communications/template-editor").then(m=>m.DecisionTemplateEditor),{loading:()=> <WorkspaceLoading label="Loading decision letters?" layout="form" rows={3}/>});
+const VotingRoomLanding=dynamic(()=>import("@/components/live-voting/room-landing").then(m=>m.VotingRoomLanding),{loading:()=> <WorkspaceLoading label="Loading voting sessions…" layout="rows" rows={3}/>});
+const DecisionTemplateEditor=dynamic(()=>import("@/components/communications/template-editor").then(m=>m.DecisionTemplateEditor),{loading:()=> <WorkspaceLoading label="Loading decision letters…" layout="form" rows={3}/>});
 import { DecisionSchedules } from "@/components/decision-schedules";
 import { RecruitmentReviewSettings } from "@/components/recruitment-review-settings";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
