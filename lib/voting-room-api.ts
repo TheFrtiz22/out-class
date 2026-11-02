@@ -25,3 +25,5 @@ export const joinLiveVotingRoom=async(input:unknown,member?:string)=>{
   if(demoStore.active())return demo.join(input,member);
   if(member)throw Error("Demo identity is unavailable in production.");return setup.joinLiveVotingRoom(input);
 };
+
+export const resolveLiveVotingSelection=async(input:unknown)=>demoStore.active()?demo.resolveSelection(input):setup.resolveLiveVotingSelection(input);

@@ -35,7 +35,7 @@ export async function join(input:unknown,member?:string){return typeof navigator
 class DemoConflict extends Error{constructor(public result:{ok:false;code:string;message:string}){super(result.message);}}
 async function perform<K extends keyof typeof Live>(method:K,input:unknown,member?:string):Promise<Awaited<ReturnType<(typeof Live)[K]>>>{
  let result:unknown;
- if(method==="listLiveVotingRooms"){const d=input as {clubId:string;cycleId?:string;roundId?:string},c=context(d.clubId,member);result=c.state.votingSessions.filter(s=>s.mode==="LIVE"&&s.clubId===d.clubId&&(!d.roundId||s.roundId===d.roundId)&&(!d.cycleId||s.cycleId===d.cycleId)&&(s.leaderMemberIds.includes(c.m.id)||s.participants.some(p=>p.memberId===c.m.id))).map(s=>({id:s.id,clubId:s.clubId,cycleId:s.cycleId,roundId:s.roundId,state:s.state,createdAt:s.createdAt,finalizedAt:s.finalizedAt}));}
+ if(method==="listLiveVotingRooms"){const d=input as {clubId:string;cycleId?:string;roundId?:string},c=context(d.clubId,member);result=c.state.votingSessions.filter(s=>s.mode==="LIVE"&&s.clubId===d.clubId&&(!d.roundId||s.roundId===d.roundId)&&(!d.cycleId||s.cycleId===d.cycleId)).flatMap(s=>{const round=c.club.rounds.find(r=>r.id===s.roundId);if(!round)return [];let role;try{role=roomAuthority(s,c.m,!!round.anonymousReview)}catch{return []}return [{id:s.id,clubId:s.clubId,cycleId:s.cycleId,roundId:s.roundId,state:s.state,createdAt:s.createdAt,updatedAt:s.updatedAt,finalizedAt:s.finalizedAt,roundName:round.name,cycleName:"Demo recruitment cycle",applicantCount:s.candidates.length,view:role.leader?"leader" as const:role.voter?"member" as const:"present" as const,joined:!!s.participants.find(p=>p.memberId===c.m.id)?.joinedAt}];});}
  else if(method==="createLiveVotingRoom"){
   const d=createRoomSchema.parse(input),c=context(d.clubId);[d.applicationIds,d.participantIds,d.leaderMemberIds].forEach(uniqueSelection);if(!hasPermission(c.m,"decisions.manage")||!hasPermission(c.m,"decisions.start")||!d.leaderMemberIds.includes(c.m.id)||d.cycleId!==c.club.id)throw Error("Demo setup denied.");
   if(d.leaderMemberIds.some(id=>!c.state.memberships.some(m=>m.id===id&&m.clubId===d.clubId&&hasPermission(m,"applications.review")&&hasPermission(m,"decisions.start"))))throw Error("Demo leadership denied.");
@@ -119,3 +119,9 @@ async function meetingUnlocked<K extends keyof typeof Final>(method:K,input:unkn
  return result as Awaited<ReturnType<(typeof Final)[K]>>;
 }
 export async function meeting<K extends keyof typeof Final>(method:K,input:unknown):Promise<Awaited<ReturnType<(typeof Final)[K]>>>{return ["finalizeLiveVotingRoom","sendLiveVotingNotifications"].includes(method)&&typeof navigator!=="undefined"&&navigator.locks?navigator.locks.request("outclass-demo-voting-room",()=>meetingUnlocked(method,input)):meetingUnlocked(method,input);}
+
+export async function resolveSelection(input:unknown):Promise<Awaited<ReturnType<typeof Setup.resolveLiveVotingSelection>>>{
+ const {votingSelectionSchema,selectionScopes}=await import("@/lib/voting-navigation");const d=votingSelectionSchema.parse(input),c=context(d.clubId);
+ if(!hasPermission(c.m,"decisions.manage")||!hasPermission(c.m,"decisions.start"))throw Error("Demo setup denied.");
+ return selectionScopes(c.state.applications.filter(a=>a.clubId===d.clubId&&d.applicationIds.includes(a.id)&&c.club.rounds.some(r=>r.id===a.roundId&&(r.anonymousReview||hasPermission(c.m,"applicants.identify")))).map(a=>({...a,recruitmentCycleId:c.club.id,round:{name:c.club.rounds.find(r=>r.id===a.roundId)!.name},recruitmentCycle:{name:"Demo recruitment cycle"}})),d.applicationIds);
+}

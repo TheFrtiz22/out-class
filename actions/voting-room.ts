@@ -27,8 +27,8 @@ export async function listLiveVotingRooms(input:unknown) {
     const rooms=await tx.votingSession.findMany({where:{clubId:d.clubId,mode:"LIVE",...(d.cycleId?{cycleId:d.cycleId}:{}),...(d.roundId?{roundId:d.roundId}:{}),
       ...(!hasPermission(m,"applicants.identify")?{round:{anonymousReview:true}}:{}),
       ...(!observer?{OR:[...(leader?[{leaderMemberIds:{has:m.id}}]:[]),...(voter?[{participants:{some:{memberId:m.id}}}]:[])]}:{}),
-    },select:{id:true,clubId:true,cycleId:true,roundId:true,state:true,createdAt:true,finalizedAt:true},orderBy:[{createdAt:"desc"},{id:"desc"}],take:100});
-    return {rooms,access:accessFingerprint(m)};
+    },select:{id:true,clubId:true,cycleId:true,roundId:true,state:true,createdAt:true,updatedAt:true,finalizedAt:true,round:{select:{name:true}},cycle:{select:{name:true}},_count:{select:{candidates:true}},leaderMemberIds:true,participants:{where:{memberId:m.id},select:{joinedAt:true}}},orderBy:[{createdAt:"desc"},{id:"desc"}],take:100});
+    return {rooms:rooms.map(({leaderMemberIds,participants,round,cycle,_count,...room})=>({...room,roundName:round?.name??"Recruitment round",cycleName:cycle?.name??"Recruitment cycle",applicantCount:_count?.candidates??0,view:leaderMemberIds?.includes(m.id)&&leader?"leader" as const:participants?.length&&voter?"member" as const:"present" as const,joined:!!participants?.[0]?.joinedAt})),access:accessFingerprint(m)};
   },votingReadLimits);
   const {membership}=await requireClubPermission(d.clubId,["applications.review"]);
   if(result.access!==accessFingerprint(membership))throw Error("Voting permissions changed. Reconnect to the room.");

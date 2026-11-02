@@ -1,6 +1,7 @@
 import { interviewCapabilities } from "@/lib/interview-access"
 import { availableSettings } from "@/lib/club-settings"
 import { hasPermission, type ClubAccess } from "@/lib/permissions"
+import { decisionsHref } from "@/lib/voting-navigation"
 import { applicantInterviewHref } from "@/lib/applicant-interview-navigation"
 export type PersonalSection = "explore" | "categories" | "corkboard" | "calendar" | "applications" | "status" | "clubs" | "meetings" | "tasks"
 export type PersonalMode = "explore" | "apply" | "clubs"
@@ -42,7 +43,7 @@ export function managerNavigation(member: ClubAccess, clubId: string, mode: stri
       ...(interviewCapabilities(member).moderateResume ? [item("resumes", "Résumé moderation", "recruitment", { navGroup: "applicants" as const, href: applicantInterviewHref(clubId, "resumes", search) })] : []),
       ...(interviewCapabilities(member).readClosing ? [item("reviews", "Submitted reviews", "recruitment", { navGroup: "applicants" as const, href: applicantInterviewHref(clubId, "reviews", search) })] : []),
       ...(hasPermission(member, "applications.review") || hasPermission(member, "interviews.manage") || interviewCapabilities(member).editKit ? [item("interviews", "Interviews", "recruitment")] : []),
-      ...(read ? [item("decisions", "All Decisions", "recruitment", { navGroup: "decisions" as const })] : []),
+      ...(read || hasPermission(member,"recruitment.manage") ? [item("decisions", "Decisions", "recruitment", { navGroup: "decisions" as const, href: decisionsHref(clubId,"overview",search) })] : []),
       ...((hasPermission(member,"decisions.manage")||hasPermission(member,"decisions.publish"))&&hasPermission(member,"applicants.identify") ? [item("scheduled-decisions","Scheduled Decisions","recruitment", { navGroup: "decisions" as const })] : []),
       ...(hasPermission(member, "recruitment.manage") ? [item("rounds", "Anonymous Review", "recruitment", { quiet: true }), item("rules", "Auto-Reject Rules", "recruitment", { quiet: true })] : []),
       ...(hasPermission(member, "meetings.manage") ? [{ ...item("announcements", "Announcements"), href: `${href("announcements")}&mode=recruiting` }] : []),

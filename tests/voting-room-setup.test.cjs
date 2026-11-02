@@ -9,7 +9,7 @@ test('setup discovers exact cycle/round applicants, never identities in anonymou
  const h=harness();for(const [i,a]of h.state().apps.entries())a.student={studentProfile:{firstName:'Synthetic',lastName:String(i)}};
  const api=load('actions/voting-room-setup.ts',h.mocks);
  assert.equal((await api.getLiveVotingSetup(selection)).applicants.length,3);
- assert.equal((await api.getLiveVotingSetup({...selection,cycleId:uuid(99)})).applicants.length,0);
+ await assert.rejects(api.getLiveVotingSetup({...selection,cycleId:uuid(99)}),/cycle or round is unavailable/);
  h.round.anonymousReview=true;const anonymous=await api.getLiveVotingSetup(selection);
  assert.doesNotMatch(JSON.stringify(anonymous.applicants),/Synthetic/);assert.ok(!anonymous.allowedFields.includes('photo'));assert.ok(!anonymous.allowedFields.includes('interviewScore'));
  h.as(voterId);await assert.rejects(api.getLiveVotingSetup(selection),/Denied/);
