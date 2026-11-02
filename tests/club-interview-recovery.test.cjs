@@ -18,6 +18,7 @@ function render(search,{permission=true,selected=true,loading=false}={}) {
   '@/lib/campus-illustrations':{clubCampusIllustration:()=>undefined},
   '@/lib/interview-access':{interviewCapabilities:()=>({participate:true})},
   '@/lib/workspace-navigation':nav.exports,
+  '@/lib/voting-navigation':require('./helpers/interview-harness.cjs').harness().load('lib/voting-navigation.ts'),
   '@/lib/interview-entry':require('./helpers/interview-harness.cjs').harness().load('lib/interview-entry.ts'),
   '@/lib/applicant-interview-navigation':require('./helpers/interview-harness.cjs').harness().load('lib/applicant-interview-navigation.ts'),
  };
