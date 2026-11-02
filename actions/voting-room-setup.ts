@@ -30,7 +30,7 @@ export async function getLiveVotingSetup(input:unknown){
     const ownReview=await tx.interviewRecord.findFirst({where:{interviewerId:m.id,completedAt:{not:null},application:{clubId:d.clubId}},select:{id:true}});
     const panel=await tx.interviewPanelAssignment.findFirst({where:{memberId:m.id,revokedAt:null,application:{clubId:d.clubId}},select:{id:true}});
     const allowedFields=liveRoomFields.filter(f=>!(round?.anonymousReview&&["name","photo","major","resumeHighlight","interviewScore"].includes(f))&&(f!=="resumeHighlight"||evidence.moderateResume||!!panel)&&(f!=="interviewScore"||evidence.readClosing||!!ownReview));
-    return {memberId:m.id,cycles,rounds,allowedFields,applicants:apps.map(a=>({id:a.id,label:round?.anonymousReview?anonymousApplicantLabel(a.id):a.student.studentProfile?`${a.student.studentProfile.firstName} ${a.student.studentProfile.lastName}`:"Applicant"})),voters:voters.map(v=>({id:v.id,label:v.user.studentProfile?`${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}`:"Club member"}))};
+    return {memberId:m.id,timeZone:"America/New_York",cycles,rounds,allowedFields,applicants:apps.map(a=>({id:a.id,label:round?.anonymousReview?anonymousApplicantLabel(a.id):a.student.studentProfile?`${a.student.studentProfile.firstName} ${a.student.studentProfile.lastName}`:"Applicant"})),voters:voters.map(v=>({id:v.id,defaultSelected:!!v.interviewOffices?.some(o=>["PRESIDENT","VICE_PRESIDENT","BOARD"].includes(o)),label:v.user.studentProfile?`${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}`:"Club member"}))};
   },votingReadLimits);
 }
 

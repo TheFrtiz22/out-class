@@ -1,4 +1,5 @@
 "use server";
+import {meetingDetails} from "@/lib/voting-session-setup";
 import { votingReadLimits } from "@/lib/voting-transaction-limits";
 import { prisma } from "@/utils/prisma";
 import { requireClubPermission } from "@/utils/auth";
@@ -25,7 +26,7 @@ export async function getLiveVotingSummary(input:unknown){
 }
 export async function previewLiveVotingFinalization(input:unknown){
  const d=finalizationPreviewInput.parse(input),{user}=await requireClubPermission(d.clubId,[...caps]);
- return prisma.$transaction(async tx=>{const m=await authorizeClubTransaction(tx,d.clubId,user.id,[...caps,...(d.mapping.kind==="ADVANCE"?["recruitment.manage" as const]:[])],{readOnly:true});const {s}=await loadVotingRoom(tx,d.clubId,d.sessionId);requireRoomLeader(s,m,"decisions.publish");if(s.state!=="COMPLETED"||s.finalizedAt)throw Error("End voting before previewing unfinalized decisions.");return votingFinalizationPlan(tx,s,d.mapping);},votingReadLimits);
+ return prisma.$transaction(async tx=>{const m=await authorizeClubTransaction(tx,d.clubId,user.id,[...caps,...(d.mapping.kind==="ADVANCE"?["recruitment.manage" as const]:[])],{readOnly:true});const {s}=await loadVotingRoom(tx,d.clubId,d.sessionId);requireRoomLeader(s,m,"decisions.publish");if(meetingDetails((s.presentationOptions as {meeting?:unknown})?.meeting)?.status==='CANCELLED'||s.state!=="COMPLETED"||s.finalizedAt)throw Error("End voting before previewing unfinalized decisions.");return votingFinalizationPlan(tx,s,d.mapping);},votingReadLimits);
 }
 export async function finalizeLiveVotingRoom(input:unknown){
  const d=finalizeRoomInput.parse(input),{user}=await requireClubPermission(d.clubId,[...caps]);
@@ -33,7 +34,7 @@ export async function finalizeLiveVotingRoom(input:unknown){
   const m=await authorizeClubTransaction(tx,d.clubId,user.id,[...caps,...(d.mapping.kind==="ADVANCE"?["recruitment.manage" as const]:[])]);const {s}=await loadVotingRoom(tx,d.clubId,d.sessionId,true);requireRoomLeader(s,m,"decisions.publish");
   const fingerprint=roomFingerprint(d),key={sessionId:s.id,requestId:d.requestId},prior=await tx.votingRoomCommand.findUnique({where:{sessionId_requestId:key}});
   if(prior){if(prior.actorId!==user.id||prior.fingerprint!==fingerprint)throw Error("Request ID reused with different content.");return {revision:s.revision};}
-  if(s.state!=="COMPLETED"||s.finalizedAt||s.revision!==d.revision)throw Error("Session changed. Preview decisions again.");
+  if(meetingDetails((s.presentationOptions as {meeting?:unknown})?.meeting)?.status==='CANCELLED'||s.state!=="COMPLETED"||s.finalizedAt||s.revision!==d.revision)throw Error("Session changed. Preview decisions again.");
   await tx.$queryRaw(Prisma.sql`SELECT id FROM "Application" WHERE "clubId"=${d.clubId} AND id IN (${Prisma.join(s.candidates.map(c=>c.applicationId))}) ORDER BY id FOR UPDATE`);
   const plan=await votingFinalizationPlan(tx,s,d.mapping);if(plan.guard!==d.guard)throw Error("Applicant or pipeline state changed. Preview decisions again.");
   await tx.$queryRaw`SELECT set_config('outclass.voting_finalization',${s.id},true)`;

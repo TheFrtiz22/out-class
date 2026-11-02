@@ -22,7 +22,7 @@ async function authorize(tx: AppTransactionClient, scope: ReturnType<typeof edit
     if (!user || user.disabledAt) throw Error("Account unavailable.")
   } else {
     if (!scope.clubId) throw Error("Club required.")
-    await authorizeClubTransaction(tx, scope.clubId, userId, [draftPermissions[scope.kind]])
+    await authorizeClubTransaction(tx, scope.clubId, userId, scope.kind === "voting-setup" ? ["applications.review", "decisions.manage", "decisions.start"] : [draftPermissions[scope.kind]])
   }
 }
 export async function getEditorDraft(input: EditorScope) {
