@@ -1,0 +1,11 @@
+/* Reserve space at the existing heading scale as local greetings change. */
+.oc-welcome-header h1 { min-block-size: 1lh; overflow-wrap: anywhere; }
+.oc-welcome-header .oc-page-description { min-block-size: 2lh; text-wrap: pretty; }
+.oc-welcome-text { display: block; }
+@media (max-width: 700px) {
+  .oc-welcome-header h1 { min-block-size: 2lh; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .oc-welcome-text { animation: oc-welcome-opacity 180ms ease-out; }
+  @keyframes oc-welcome-opacity { from { opacity: .85; } to { opacity: 1; } }
+}

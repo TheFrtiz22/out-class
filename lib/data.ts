@@ -304,6 +304,8 @@ export type Notification = {
   durableId?: string
   href?: string
   taskHref?: string
+  /** Structured assignment facts from the existing authorized task notification read. */
+  taskActivity?: { assignmentId: string; dueAt: string | null; needsSubmission: boolean }
   eventId?: string
   createdAt?: string
   clubId?: string

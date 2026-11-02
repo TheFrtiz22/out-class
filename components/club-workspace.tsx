@@ -2,6 +2,7 @@
 import { ClubMeetingsWorkspace } from "@/components/events/club-meetings-workspace";
 import dynamic from "next/dynamic";
 import { PageHeader } from "@/components/product/page-header"
+import { LocalWelcomeHeader as WelcomeHeader } from "@/components/product/welcome-header"
 import { OrganizationSetupChecklist } from "@/components/organization-setup-checklist";
 import { organizationCapabilities } from "@/lib/organization-authorization";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -195,7 +196,9 @@ export function ClubWorkspace({
         onReviewTool={id => { reviewTrigger.current = document.activeElement as HTMLElement; setReviewTool(id) }} items={nav} active={active} title={nav.find(n => n.id === active)?.label || "Club workspace"} onSelect={() => {}} onNavigate={navigate}>
         {loading || needsSelection ? <p role="status">Opening club workspace…</p> : !membership ? <div className="space-y-4"><h1 className="oc-page-title ">Club workspace unavailable</h1><p>Sign in with a current club membership to access this workspace.</p><Link href="/" className="underline">Return to OutClass</Link></div> : <>
           {!manager && <Link className="mb-5 inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4" href="/?workspace=student&view=my-clubs">← All my clubs</Link>}
-          <PageHeader density={section === "overview" ? "expressive" : "compact"} eyebrow={membership.club.name} title={manager && mode === "recruiting" && active === "overview" ? "Recruitment" : nav.find(n => n.id === active)?.label || "Workspace"} />
+          {active === "overview" && allowed
+            ? <WelcomeHeader density={section === "overview" ? "expressive" : "compact"} eyebrow={membership.club.name} firstName={user?.profile?.firstName} context={{ mode: "club", clubId, membership, data: error ? null : current }} />
+            : <PageHeader density={section === "overview" ? "expressive" : "compact"} eyebrow={membership.club.name} title={nav.find(n => n.id === active)?.label || "Workspace"} />}
           {needsOverview && error ? <div role="alert" className="oc-dashboard-error"><p>{error}</p><Button variant="outline" onClick={() => setRetry(n => n + 1)}>Retry</Button></div> : needsOverview && !current ? <DashboardLoading mode={mode === "recruiting" ? "recruiting" : "club"} /> : !allowed ? <p role="alert">This section isn’t available with your current access.</p> : <section key={`${section === "settings" ? authorizationScope : scope}:${section}:${active}`} className="shell-content-enter" aria-label={nav.find(n => n.id === active)?.label}>
             {section === "overview" && current && (manager ? <><ManagerOverview data={current} refreshing={overviewPending} onChanged={() => setRetry(n => n + 1)} />{!demo.isDemoEnabled && organizationCapabilities(current.membership).canTransferOwnership && <OrganizationSetupChecklist key={`${clubId}:${retry}`} clubId={clubId} compact />}</> : <ManagerOverview data={current} refreshing={overviewPending} onChanged={() => setRetry(n => n + 1)} />)}
             {section === "tasks" && (demo.isDemoEnabled ? <ClubTasks clubId={clubId} embedded personalOnly={!manager} initialScope={taskView === "mine" ? "mine" : manager ? "team" : "mine"} /> : <SelectedClubWorkspace kind="tasks" clubId={clubId} privacyScope={scope} personalOnly={!manager} initialScope={taskView === "mine" ? "mine" : manager ? "team" : "mine"} />)}

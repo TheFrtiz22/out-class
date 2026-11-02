@@ -2,7 +2,7 @@
 import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
 import { AvailabilityDashboardRequests } from "@/components/availability/dashboard-requests"
 
-import { useEffect, useState } from "react"
+import { useWelcomeClock } from "@/hooks/use-welcome-clock"
 import {
   ArrowRight,
   CalendarDays,
@@ -11,7 +11,7 @@ import {
   Bell,
   MapPin,
 } from "@/components/icons"
-import { PageHeader } from "@/components/product/page-header"
+import { WelcomeHeader } from "@/components/product/welcome-header"
 import { FeaturedAction } from "@/components/product/featured-action"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -156,21 +156,12 @@ export function StudentDashboardView({
     focusEvent,
     trackedApps,
     notifications,
+    personalTaskActivities,
     focusNotification,
     hydrated,
   } = useApplicationState()
   const { user, loading } = useAuth()
-  const [now, setNow] = useState<Date | null>(null)
-  useEffect(() => {
-    const refresh = () => setNow(new Date())
-    refresh()
-    const timer = setInterval(refresh, 60000)
-    document.addEventListener("visibilitychange", refresh)
-    return () => {
-      clearInterval(timer)
-      document.removeEventListener("visibilitychange", refresh)
-    }
-  }, [])
+  const now = useWelcomeClock()
   const realMode = authenticated || !!user || initialData != null
   // Real records always win, including an empty array. Never fall back to browser demo applications.
   const realApps = user
@@ -201,16 +192,23 @@ export function StudentDashboardView({
     onNavigate("calendar")
   }
 
+  const welcome = <WelcomeHeader
+    className="oc-home-header"
+    now={now} firstName={user?.profile?.firstName}
+    eyebrow={now?.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }) ?? "Your OutClass"}
+    context={{ mode: "personal", applications: loading || !hydrated ? null : realApps ?? null, events: accountEvents, notifications: personalTaskActivities?.userId === user?.id ? personalTaskActivities?.items : [], memberClubIds: user?.memberships.filter(m => m.status === "ACTIVE").map(m => m.clubId) ?? [] }}
+  />
+
   if (loading || !hydrated || !now)
     return (
-      <div className="oc-student-home" role="status" aria-busy="true">
-        <Skeleton className="h-3 w-40" />
-        <Skeleton className="mt-2 h-10 w-32" />
-        <Skeleton className="mt-2 h-4 w-60 max-w-full" />
-        <Skeleton className="mt-4 h-10 w-full" />
-        <Skeleton className="mt-4 h-28 w-full" />
-        <Skeleton className="mt-4 h-64 w-full" />
-        <span className="sr-only">Loading your recruiting season…</span>
+      <div className="oc-student-home">
+        {welcome}
+        <div role="status" aria-busy="true" aria-label="Loading your recruiting season">
+          <Skeleton className="mt-4 h-10 w-full" />
+          <Skeleton className="mt-4 h-28 w-full" />
+          <Skeleton className="mt-4 h-64 w-full" />
+          <span className="sr-only">Loading your recruiting season…</span>
+        </div>
       </div>
     )
 
@@ -245,14 +243,7 @@ export function StudentDashboardView({
 
   return (
     <div className="oc-student-home">
-      <PageHeader
-        className="oc-home-header"
-        eyebrow={now.toLocaleDateString("en-US", { timeZone: SCHEDULING_TIMEZONE, weekday: "long", month: "long", day: "numeric" })}
-        title="Home"
-        description={user?.profile?.firstName
-          ? `Good to see you, ${user.profile.firstName}.`
-          : undefined}
-      />
+      {welcome}
       <AvailabilityDashboardRequests />
       <div className="oc-home-columns">
       {unavailable ? (

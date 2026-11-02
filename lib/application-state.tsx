@@ -48,7 +48,8 @@ type ApplicationStateValue = {
   syncApplications: (apps: TrackedApplication[]) => void
   syncApplicationBookings: (apps: NonNullable<CalendarSource["applications"]>) => void
   trackedApps: TrackedApplication[]
-  syncTaskNotifications: (items: Notification[]) => void
+  syncTaskNotifications: (items: Notification[], userId?: string) => void
+  personalTaskActivities: { userId?: string; items: Pick<Notification, "clubId" | "taskActivity">[] } | null
   notifications: Notification[]
   durableUnread: number
   durableCursor: string | null
@@ -112,6 +113,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
   const [trackedApps, setTrackedApps] = useState<TrackedApplication[]>(initialData ? serverApps : seedTrackedApplications)
   const dismissedTaskNotifications = useRef(new Set<string>())
   const [notifications, storeNotifications] = useState<Notification[]>(initialData ? [] : seedNotifications)
+  const [personalTaskActivities, setPersonalTaskActivities] = useState<ApplicationStateValue["personalTaskActivities"]>(null)
   // Keep action snapshots current even when React batches multiple updates.
   const notificationSnapshot = useRef(notifications)
   const setNotifications = useCallback((next: SetStateAction<Notification[]>) => {
@@ -119,7 +121,9 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
     notificationSnapshot.current = value
     storeNotifications(value)
   }, [])
-  const syncTaskNotifications = useCallback((items: Notification[]) => {
+  const syncTaskNotifications = useCallback((items: Notification[], userId?: string) => {
+    // Welcome activity follows current assignments, even when their inbox entry is archived or deduplicated.
+    setPersonalTaskActivities({ userId, items: items.map(({ clubId, taskActivity }) => ({ clubId, taskActivity })) })
     setNotifications(previous => [...previous.filter(item => !item.taskHref || item.durableId), ...items.filter(item => !dismissedTaskNotifications.current.has(item.id) && !previous.some(old => old.durableId && old.taskHref === item.taskHref)).map(item => ({...item, read:previous.find(old=>old.id===item.id)?.read ?? item.read}))])
   }, [setNotifications])
   const pendingNotifications = useRef(new Map<string, { token: symbol; read?: boolean; archived?: boolean }>())
@@ -172,7 +176,9 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
     if (!demo.isDemoEnabled || !demo.state) return
     setTrackedApps(serverApps)
     setEvents([...studentCalendarEvents(demoDashboard()).map(event => event.type === "Other" && !event.id.startsWith("meeting-") ? { ...event, type: event.title.includes("coffee chat") ? "Coffee Chat" as const : "Interest Meeting" as const } : event), ...demoDeadlines()])
-    setNotifications(demoNotifications())
+    const taskUpdates: Notification[] = demoNotifications()
+    setNotifications(taskUpdates)
+    setPersonalTaskActivities({ userId: demoStore.get().students[0]?.id, items: taskUpdates.map(({ clubId, taskActivity }) => ({ clubId, taskActivity })) })
     setResponses(demo.state.responses)
   }, [demo.state, demo.isDemoEnabled, setNotifications])
   const events = useMemo(() => baseEvents.map((event) => ({ ...event, response: responses[event.id] ?? event.response })), [baseEvents, responses])
@@ -432,7 +438,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
       syncApplications: setTrackedApps,
       syncApplicationBookings,
       trackedApps,
-      notifications, syncTaskNotifications, durableUnread, durableCursor, syncDurableNotifications, markAllNotificationsRead,
+      notifications, personalTaskActivities, syncTaskNotifications, durableUnread, durableCursor, syncDurableNotifications, markAllNotificationsRead,
       events: calendarEvents,
       appliedClubIds,
       isApplied,
@@ -451,7 +457,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
       leaderFocus, clearLeaderFocus, syncApplicationBookings,
       hydrated,
       trackedApps,
-      notifications, syncTaskNotifications, durableUnread, durableCursor, syncDurableNotifications, markAllNotificationsRead,
+      notifications, personalTaskActivities, syncTaskNotifications, durableUnread, durableCursor, syncDurableNotifications, markAllNotificationsRead,
       calendarEvents,
       appliedClubIds,
       isApplied,
