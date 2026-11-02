@@ -19,6 +19,10 @@ Back to Decisions preserves the authoritative session club/cycle/round. Leaving 
 - Changed-file lint passed after removing an unnecessary checkbox-label click handler; repository warnings remain pre-existing.
 - Local desktop/mobile screenshots are synthetic real-component fixtures, not hosted full-shell acceptance.
 
+## Integrated validation update
+
+Current main greeting work (#107/#108) was preserved. Integrated CI passed 13/14 jobs; validation exposed an old navigation expectation and two fixtures missing the newly required router boundary. Those fixture-only corrections retain the original review/authorization assertions; all 33 affected tests passed locally. An additional shortcut regression checks the actual Applicants handler, stable selection storage, no write on navigation and denial to review-only users. Final protected validation remains required.
+
 ## Release gate
 
 No schema, dependency, database configuration or migration changes. Protected CI, merge, matching automatic Vercel deployment and authenticated synthetic production entry-point checks are pending. Do not infer hosted verification from local fixtures. Physical touch hardware is unavailable. Record actual release evidence after deployment; preserve earlier implementation evidence under its original revision.
