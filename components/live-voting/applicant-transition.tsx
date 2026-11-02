@@ -31,7 +31,7 @@ export function ApplicantTransition({applicantId,passNumber,children,onReady,sum
   const reduced=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const timer=setTimeout(finish,reduced?0:550);return()=>clearTimeout(timer);
  },[phase,key,onReady]);
- return <><div ref={root} style={{minHeight:height}} className={`vr-slide-stage vr-slide-${phase}`} aria-busy={phase!=="ready"}>
+ return <><div ref={root} style={{minHeight:applicantId||phase!=="ready"?height:0}} className={`vr-slide-stage vr-slide-${phase}`} aria-busy={phase!=="ready"}>
  {outgoing&&<div className="vr-slide-out" key={outgoing.key} inert aria-hidden="true">{typeof outgoing.node.type==="string"?outgoing.node:cloneElement(outgoing.node,{onReady:undefined,paused:true})}</div>}
  <div className="vr-slide-in" key={key} inert={phase==="sliding"}>{node}</div>
  </div><p className="sr-only" role="status" aria-live="polite">{announce}</p></>;
