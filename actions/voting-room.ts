@@ -12,7 +12,8 @@ import { createRoomSchema, roomScope, roomCommandSchema, roomBallotSchema, uniqu
 import { loadVotingRoom, requireRoomLeader, roomAuthority, projectVotingRoom, roomFingerprint } from "@/utils/voting-room";
 import { getApplicantDisplay } from "@/actions/applicant-intelligence";
 import { z } from "zod";
-import { votingHighlightChoices,votingInterviewSummary } from "@/utils/voting-room-presentation";
+import { votingSelectedHighlight,votingSelectedEvidence } from "@/utils/voting-room-presentation";
+import {selectedVotingDisplay} from "@/lib/voting-slide-fields";
 
 class RoomConflict extends Error { constructor(public code:string,message:string){super(message);} }
 async function domainResult<T>(work:()=>Promise<T>) { try { return {ok:true as const,result:await work()}; } catch(e) { if(e instanceof RoomConflict)return {ok:false as const,code:e.code,message:e.message}; throw e; } }
@@ -94,11 +95,10 @@ export async function getLiveVotingPresentation(input:unknown) {
     const app=await tx.application.findFirst({where:{id:d.applicationId,clubId:d.clubId,roundId:s.roundId,recruitmentCycleId:s.cycleId,status:{not:"DRAFTING"}}});
     if(!app||!s.candidates.some(c=>c.applicationId===app.id)||(!role.leader&&s.activeApplicationId!==app.id)||display.anonymous!==round.anonymousReview)throw Error("Presentation changed. Refresh the room.");
     const parsed=roomPresentationSchema.safeParse(s.presentationOptions),options=parsed.success?parsed.data:null;
-    const highlightId=options?.highlights[d.applicationId];
-    const highlights=!display.anonymous&&options?.fields.includes("resumeHighlight")&&highlightId?await votingHighlightChoices(tx,d.clubId,d.applicationId,user.id):[];
-    const resumeHighlight=highlights.find(h=>h.id===highlightId)??null;
-    const interviewScore=!display.anonymous&&options?.fields.includes("interviewScore")?await votingInterviewSummary(tx,d.clubId,d.applicationId,user.id):null;
-    return {...display,resumeHighlight,interviewScore,requestedFields:options?.fields??null};
+    const highlight=await votingSelectedHighlight(tx,{clubId:d.clubId,applicationId:d.applicationId,roundId:s.roundId},user.id,!!options?.fields.includes("resumeHighlight"),display.anonymous,options?.highlights[d.applicationId]);
+    const evidence=await votingSelectedEvidence(tx,d.clubId,d.applicationId,user.id,options?.fields??[],display.anonymous,s.roundId);
+    const selectedDisplay=selectedVotingDisplay(display,options?.fields);
+    return {...selectedDisplay,...evidence,...highlight,requestedFields:[...selectedDisplay.visible,...("resumeHighlight"in highlight?["resumeHighlight" as const]:[]),...(evidence.interviewScore?["interviewScore" as const]:[]),...(evidence.finalInterviewThoughts?["finalInterviewThoughts" as const]:[])]};
   },votingReadLimits);
 }
 

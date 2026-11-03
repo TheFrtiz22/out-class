@@ -10,7 +10,7 @@ export async function validateVotingSetup(tx:AppTransactionClient,d:z.output<typ
     const cycle=await tx.recruitmentCycle.findFirst({where:{id:d.cycleId,clubId:d.clubId,archivedAt:null}});
     if(!round||!cycle)throw Error("Current club, cycle and round required.");
     if(d.presentationOptions){
-      if(round.anonymousReview&&d.presentationOptions.fields.some(f=>["photo","name","major","resumeHighlight","interviewScore"].includes(f)))throw Error("Identifying fields are unavailable in anonymous rounds.");
+      if(round.anonymousReview&&d.presentationOptions.fields.some(f=>["photo","name","major","resumeHighlight","interviewScore","finalInterviewThoughts"].includes(f)))throw Error("Identifying fields are unavailable in anonymous rounds.");
       if(Object.keys(d.presentationOptions.highlights).some(id=>!d.applicationIds.includes(id)))throw Error("Highlight applicant scope mismatch.");
     }
     const apps=await tx.application.findMany({where:{id:{in:d.applicationIds},clubId:d.clubId,roundId:d.roundId,recruitmentCycleId:d.cycleId,status:{in:["SUBMITTED","IN_REVIEW","INTERVIEWING","WAITLISTED"]}}});

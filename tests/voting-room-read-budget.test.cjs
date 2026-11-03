@@ -12,7 +12,7 @@ test('hosted voting reads retain authorization when projection latency exceeds P
  };
  h.tx.interviewResumeAnnotation={findMany:async()=>[]};
  const setup=load('actions/voting-room-setup.ts',h.mocks),meeting=load('actions/voting-room-finalization.ts',h.mocks);
- h.mocks['@/actions/applicant-intelligence']={getApplicantDisplay:async()=>({anonymous:false})};
+ h.mocks['@/actions/applicant-intelligence']={getApplicantDisplay:async()=>({applicationId:h.state().apps[0].id,roundId,anonymous:false,configured:['name'],visible:['name'],withheld:[],sections:[{field:'name',label:'Name',items:['Synthetic applicant']}],photo:null,links:[],observations:[]})};
  const room=load('actions/voting-room.ts',h.mocks);
  await room.listLiveVotingRooms({clubId});await room.getLiveVotingRoom(h.scope);
  await room.getLiveVotingPresentation({...h.scope,applicationId:h.state().apps[0].id});
