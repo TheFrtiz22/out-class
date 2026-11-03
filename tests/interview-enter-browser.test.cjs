@@ -79,7 +79,7 @@ test('interview composer Enter actions, multiline, validation, duplicate guards,
     await general.fill('Mobile comment'); await general.press('Shift+Enter'); await page.keyboard.type('second line'); await general.press('Enter'); await general.waitFor({ state: 'hidden' })
     await page.getByRole('button', { name: 'Close résumé', exact: true }).click()
     await page.getByRole('button', { name: 'End current interview', exact: true }).click()
-    const applicantQuestions = page.getByRole('textbox', { name: 'Questions the applicant asked', exact: true })
+    const applicantQuestions = page.getByRole('textbox', { name: 'Final interview thoughts', exact: true })
     await applicantQuestions.fill('Discussion'); await applicantQuestions.press('Enter'); await page.keyboard.type('Continues')
     assert.equal(await applicantQuestions.inputValue(), 'Discussion\nContinues')
     assert.equal(await page.getByRole('region', { name: 'Submitted review', exact: true }).count(), 0)

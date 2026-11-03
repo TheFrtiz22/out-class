@@ -1,4 +1,5 @@
 "use server";
+import { validateFinalInterviewThoughts } from "@/lib/interview-final-thoughts";
 import { anonymousApplicantLabel } from "@/lib/anonymous-review";
 
 import { roundConfigurationSchema } from "@/lib/club-settings";
@@ -114,6 +115,7 @@ export async function saveInterviewSession(input: z.infer<typeof scope> & { revi
     let evaluation = null;
     const submittedAt = data.complete ? new Date() : null;
     if (data.complete) {
+      validateFinalInterviewThoughts(data.draft.finalInterviewThoughts);
       const score = interviewScoreSchema.parse(data.draft.score);
       // Unknown historical rounds need reconciliation, never name-based matching or duplicates.
       if (await tx.evaluation.findFirst({ where: { applicationId: app.id, interviewerId: member.id, roundId: null } })) throw new Error("Historical evaluation needs explicit round reconciliation before submission.");
@@ -142,7 +144,7 @@ export async function getEarlierInterviewReviews(input: unknown) {
       if (!e || e.applicationId !== data.applicationId || e.roundId !== r.roundId || e.interviewerId !== r.interviewerId || r.interviewer.clubId !== data.clubId) return [];
       const parsed = submittedQuestionsSchema.safeParse(r.submittedQuestions);
       const p = r.interviewer.user.studentProfile;
-      return [{ id: r.id, roundId: r.roundId, roundName: r.round.name, reviewer: p ? `${p.firstName} ${p.lastName}` : "Interviewer", submittedAt: e.submittedAt!.toISOString(), questions: parsed.success ? parsed.data : null, additionalNotes: e.notes || "", applicantQuestions: e.applicantQuestions || "", score: e.score }];
+      return [{ id: r.id, roundId: r.roundId, roundName: r.round.name, reviewer: p ? `${p.firstName} ${p.lastName}` : "Interviewer", submittedAt: e.submittedAt!.toISOString(), questions: parsed.success ? parsed.data : null, additionalNotes: e.notes || "", applicantQuestions: e.applicantQuestions || "", finalInterviewThoughts: interviewDraftSchema.safeParse(r.draft).data?.finalInterviewThoughts || "", score: e.score }];
     });
   }, interviewTransactionOptions);
 }
@@ -211,6 +213,7 @@ export async function getSubmittedInterviewReview(input: z.infer<typeof scope> &
     const anonymous = scopeAnonymous || record.anonymousReview;
     const draft = interviewDraftSchema.parse(record.draft);
     return { id: record.id, interviewerId: record.interviewerId, roundId: record.roundId, anonymous, textUnavailable: anonymous, submittedAt: anonymous ? null : record.completedAt.toISOString(), score: record.evaluation?.score ?? draft.score,
+      finalInterviewThoughts: anonymous ? "" : draft.finalInterviewThoughts || "",
       applicantQuestions: anonymous ? "" : record.evaluation?.applicantQuestions ?? draft.applicantQuestions ?? "", additionalNotes: anonymous ? "" : record.evaluation?.notes ?? draft.additionalNotes ?? draft.overallReview, readOnly: true as const };
   }, interviewTransactionOptions);
 }
