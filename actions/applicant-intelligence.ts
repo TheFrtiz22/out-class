@@ -46,7 +46,7 @@ export async function getApplicantDisplay(input: z.infer<typeof scope>) {
       }
       config=readVotingDisplay(voting.displayConfig);
     }
-    const observations = app.round.anonymousReview ? [] : await tx.applicantObservation.findMany({ where: { applicationId: app.id }, include: { author: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } }, orderBy: [{ createdAt: "asc" }, { id: "asc" }] });
+    const observations = app.round.anonymousReview ? [] : await tx.applicantObservation.findMany({ where: { applicationId: app.id, kind: {in:['PRO','CON']} }, include: { author: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } }, orderBy: [{ createdAt: "asc" }, { id: "asc" }] });
     // Config selects content; it cannot grant closing-review rights. Only explicit
     // interview leadership may disclose submitted final feedback in this panel.
     // Owners/recruiters/voting participants gain no implicit private-evidence access.
@@ -84,7 +84,7 @@ export async function saveApplicantObservation(input: unknown) {
     // Free text can identify an applicant. Preserve existing observations without exposing them anonymously.
     if (app.round.anonymousReview) throw new Error("Pros and Cons are withheld during anonymous review.");
     if (data.id) {
-      const changed = await tx.applicantObservation.updateMany({ where: { id: data.id, applicationId: app.id, authorId: user.id }, data: { body: data.body, kind: data.kind } });
+      const changed = await tx.applicantObservation.updateMany({ where: { id: data.id, applicationId: app.id, authorId: user.id, kind:{in:['PRO','CON']} }, data: { body: data.body, kind: data.kind } });
       if (changed.count !== 1) throw new Error("Only the author can edit this observation.");
     } else {
       await tx.applicantObservation.create({ data: { applicationId: app.id, authorId: user.id, kind: data.kind, body: data.body, anonymousReview: false } });
@@ -101,7 +101,7 @@ export async function deleteApplicantObservation(input: unknown) {
     await tx.$queryRaw`SELECT id FROM "Application" WHERE id=${data.applicationId} FOR UPDATE`;
     const { app } = await authorized(tx, data, membership.id);
     if (app.round.anonymousReview) throw new Error("Pros and Cons are withheld during anonymous review.");
-    const removed = await tx.applicantObservation.deleteMany({ where: { id: data.id, applicationId: app.id, authorId: user.id } });
+    const removed = await tx.applicantObservation.deleteMany({ where: { id: data.id, applicationId: app.id, authorId: user.id, kind:{in:['PRO','CON']} } });
     if (removed.count !== 1) throw new Error("Only the author can delete this observation.");
     await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, targetId: app.id, action: "applicant.observation.delete" } });
     return { success: true };

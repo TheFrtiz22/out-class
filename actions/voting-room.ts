@@ -14,6 +14,7 @@ import { getApplicantDisplay } from "@/actions/applicant-intelligence";
 import { z } from "zod";
 import { votingSelectedHighlight,votingSelectedEvidence } from "@/utils/voting-room-presentation";
 import {selectedVotingDisplay} from "@/lib/voting-slide-fields";
+import {lockVotingObservations,votingObservations} from '@/utils/additional-observations';
 
 class RoomConflict extends Error { constructor(public code:string,message:string){super(message);} }
 async function domainResult<T>(work:()=>Promise<T>) { try { return {ok:true as const,result:await work()}; } catch(e) { if(e instanceof RoomConflict)return {ok:false as const,code:e.code,message:e.message}; throw e; } }
@@ -98,7 +99,8 @@ export async function getLiveVotingPresentation(input:unknown) {
     const highlight=await votingSelectedHighlight(tx,{clubId:d.clubId,applicationId:d.applicationId,roundId:s.roundId},user.id,!!options?.fields.includes("resumeHighlight"),display.anonymous,options?.highlights[d.applicationId]);
     const evidence=await votingSelectedEvidence(tx,d.clubId,d.applicationId,user.id,options?.fields??[],display.anonymous,s.roundId);
     const selectedDisplay=selectedVotingDisplay(display,options?.fields);
-    return {...selectedDisplay,...evidence,...highlight,requestedFields:[...selectedDisplay.visible,...("resumeHighlight"in highlight?["resumeHighlight" as const]:[]),...(evidence.interviewScore?["interviewScore" as const]:[]),...(evidence.finalInterviewThoughts?["finalInterviewThoughts" as const]:[])]};
+    const observations=await votingObservations(tx,s,app.id,user.id,!!options?.fields.includes('additionalObservations'),display.anonymous);
+    return {...selectedDisplay,...evidence,...highlight,...observations,requestedFields:[...selectedDisplay.visible,...("resumeHighlight"in highlight?["resumeHighlight" as const]:[]),...(evidence.interviewScore?["interviewScore" as const]:[]),...(evidence.finalInterviewThoughts?["finalInterviewThoughts" as const]:[]),...(observations.additionalObservations?['additionalObservations' as const]:[])]};
   },votingReadLimits);
 }
 
@@ -164,6 +166,7 @@ export async function commandLiveVotingRoom(input:unknown) {
         if(d.action==="START"?s.state!=="DRAFT":!["PAUSED","COMPLETED"].includes(s.state)||pass?.state!=="COMPLETED")throw retryConflict();
         const ids=roomOutcomes(s).filter(o=>d.action==="START"?o.outcome==="UNREVIEWED":o.outcome==="HOLD").map(o=>o.applicationId);
         if(!ids.length)throw new RoomConflict("EMPTY_QUEUE","No held or unreviewed applicants remain. End the session when ready.");
+        if(d.action==='START'&&!round.anonymousReview&&roomPresentationSchema.safeParse(s.presentationOptions).data?.fields.includes('additionalObservations'))await lockVotingObservations(tx,s,user.id);
         await tx.votingPass.create({data:{sessionId:s.id,number:s.currentPass+1,candidates:{create:ids.map((applicationId,position)=>({applicationId,position}))}}});
         Object.assign(patch,{currentPass:s.currentPass+1,activeApplicationId:ids[0],state:"OPEN",endedAt:null,startedAt:s.startedAt??new Date(),joinOpenedAt:s.joinOpenedAt??new Date()});break;
       }

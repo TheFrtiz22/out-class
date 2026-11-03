@@ -6,10 +6,10 @@ export const roomChoice = z.enum(["ACCEPT", "HOLD", "REJECT"]);
 export const storedChoice = { ACCEPT: "PASS", HOLD: "HOLD", REJECT: "NOT_PASS" } as const;
 export function publicChoice(value: string | null):"ACCEPT"|"HOLD"|"REJECT"|"UNREVIEWED" { return value === "PASS" ? "ACCEPT" : value === "NOT_PASS" ? "REJECT" : value === "HOLD" ? "HOLD" : "UNREVIEWED"; }
 export const roomScope = z.object({ clubId: z.string().uuid(), sessionId: z.string().uuid() }).strict();
-export const liveRoomFields=["photo","name","major","academicYear","gpa","sat","act","resumeHighlight","interviewScore","finalInterviewThoughts"] as const;
+export const liveRoomFields=["photo","name","major","academicYear","gpa","sat","act","resumeHighlight","interviewScore","finalInterviewThoughts","additionalObservations"] as const;
 export type LiveRoomField=typeof liveRoomFields[number];
 export const roomPresentationSchema=z.object({fields:z.array(z.enum(liveRoomFields)).max(liveRoomFields.length).refine(v=>new Set(v).size===v.length),highlights:z.record(z.string().uuid(),z.string().uuid()).default({}),meeting:meetingDetailsSchema.optional()}).strict();
-export function roomDisplayConfig(fields:LiveRoomField[]){return {version:1 as const,fields:liveRoomFields.filter((f):f is Exclude<LiveRoomField,"resumeHighlight"|"interviewScore"|"finalInterviewThoughts">=>fields.includes(f)&&f!=="resumeHighlight"&&f!=="interviewScore"&&f!=="finalInterviewThoughts")};}
+export function roomDisplayConfig(fields:LiveRoomField[]){return {version:1 as const,fields:liveRoomFields.filter((f):f is Exclude<LiveRoomField,"resumeHighlight"|"interviewScore"|"finalInterviewThoughts"|"additionalObservations">=>fields.includes(f)&&!["resumeHighlight","interviewScore","finalInterviewThoughts","additionalObservations"].includes(f))};}
 export function liveRoomPath(clubId:string,sessionId:string,view:"leader"|"present"|"member"="member",demo=false){return `/voting/rooms/${encodeURIComponent(sessionId)}?clubId=${encodeURIComponent(clubId)}&view=${view}${demo?"&demo=1":""}`;}
 export const createRoomSchema = roomScope.extend({
   cycleId: z.string().uuid(), roundId: z.string().uuid(),

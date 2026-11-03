@@ -1,4 +1,5 @@
 "use client";
+import {AdditionalObservations} from '@/components/additional-observations';
 import { LoadingState } from "@/components/ui/loading-state"
 import { useEffect, useRef, useState } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -42,6 +43,7 @@ export function ApplicantDisplayPanel({ clubId, applicationId, refreshKey = "", 
     {data&&<>
       <ApplicantSlide data={data}/>
     </>}
+    {mode==='review'&&data&&!data.anonymous&&<AdditionalObservations key={applicationId} clubId={clubId} applicationId={applicationId}/>}
   </section>;
   return <section aria-label={`${mode} applicant information`} className={mode === "review" ? "oc-review-observations space-y-3 rounded-lg border bg-card p-4" : "space-y-5 rounded-lg border bg-card p-5"}>
     <header><h3 className="oc-card-heading">{mode === "review" ? "Pros & cons" : "Applicant information"}</h3>{mode !== "review" && <p className="text-xs text-muted-foreground">Shared Interview and Voting display · filtered for your current review access.</p>}</header>

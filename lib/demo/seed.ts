@@ -427,6 +427,8 @@ export function createDemoSeed(anchor = dayKey(new Date(), SCHEDULING_TIMEZONE))
     votingSessions,
     votingAudit,
     observations: observations as (import("@/lib/applicant-display").ObservationView & { applicationId: string })[],
+    additionalObservations: [] as import('./additional-observations').DemoAdditionalObservation[],
+    additionalObservationPins: {} as import('./additional-observations').DemoObservationPins,
     recruitingRules,
     recruitingFlags: [] as DemoRecruitingFlag[],
     recruitingRuleAudit: [] as DemoRuleAudit[],
