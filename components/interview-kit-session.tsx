@@ -1,4 +1,5 @@
 "use client";
+import { FINAL_INTERVIEW_THOUGHTS_WORD_LIMIT, interviewThoughtWordCount } from "@/lib/interview-final-thoughts";
 import { LoadingState } from "@/components/ui/loading-state"
 import { useAutosaveRecovery } from "@/hooks/use-autosave-recovery";
 import { AutosaveStatus } from "@/components/ui/autosave-status";
@@ -326,6 +327,10 @@ export function InterviewKitSession({
         setError("Choose an overall score before ending the post-interview.");
         return false;
       }
+      if (complete && interviewThoughtWordCount(draftRef.current.finalInterviewThoughts) > FINAL_INTERVIEW_THOUGHTS_WORD_LIMIT) {
+        setError("Final interview thoughts must be 50 words or fewer. Shorten your draft, then retry.");
+        return false;
+      }
       if (complete && newQuestion.trim()) {
         setError("Add or clear the additional question before completing.");
         return;
@@ -562,13 +567,15 @@ export function InterviewKitSession({
           <h2 ref={closingHeading} tabIndex={-1} data-candidate-focus>{session.completedAt ? "Interview complete" : "Post-interview"}</h2><p className="text-sm text-muted-foreground">{session.completedAt ? "Your review was submitted and is read only. Other interviewers finish independently." : "Take time to discuss before choosing your own score."}</p>
           {session.completedAt && <RoundScore scope={{ clubId, applicationId, roundId }} />}
           <a href="#interview-completed" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4 lg:hidden">Miscellaneous notes and question review</a>
-          <fieldset disabled={disabled} className="space-y-3"><label htmlFor="applicant-questions">Questions the applicant asked</label><Textarea id="applicant-questions" rows={4} maxLength={20000} value={draft.applicantQuestions || ""} onChange={e => setDraft(d => ({ ...d, applicantQuestions: e.target.value }))} />
+          <fieldset disabled={disabled} className="space-y-3"><label htmlFor="final-interview-thoughts">Final interview thoughts</label>
+            {session.completedAt ? <p className="whitespace-pre-wrap break-words">{draft.finalInterviewThoughts || "None recorded."}</p> : <><p id="final-interview-thoughts-help" className="text-sm text-muted-foreground">Summarize your assessment in 2–3 sentences. Maximum 50 words.</p><Textarea id="final-interview-thoughts" rows={4} aria-describedby="final-interview-thoughts-help final-interview-thoughts-count" aria-invalid={interviewThoughtWordCount(draft.finalInterviewThoughts) > FINAL_INTERVIEW_THOUGHTS_WORD_LIMIT} value={draft.finalInterviewThoughts || ""} onChange={e => setDraft(d => ({ ...d, finalInterviewThoughts: e.target.value }))} /><p id="final-interview-thoughts-count" role="status" className={interviewThoughtWordCount(draft.finalInterviewThoughts) > FINAL_INTERVIEW_THOUGHTS_WORD_LIMIT ? "text-sm text-destructive" : "text-sm text-muted-foreground"}>{interviewThoughtWordCount(draft.finalInterviewThoughts)} / 50 words</p>{interviewThoughtWordCount(draft.finalInterviewThoughts) > FINAL_INTERVIEW_THOUGHTS_WORD_LIMIT && <p className="text-sm text-destructive">Shorten your draft to 50 words before submitting. Your text is retained.</p>}</>}
+            {draft.applicantQuestions && <section aria-label="Historical applicant questions"><h3>Questions the applicant asked · Historical</h3><p className="whitespace-pre-wrap break-words">{draft.applicantQuestions}</p></section>}
             {!session.completedAt && <div className="oc-score-history"><h3>Previous five applicants in this room</h3>{historyError ? <p role="alert">{historyError} <Button type="button" variant="ghost" onClick={() => setHistoryRetry(v => v + 1)}>Retry history</Button></p> : history === null ? <LoadingState label="Loading your scores…" layout="rows" rows={2} /> : history.length ? <ul>{history.map(h => <li key={h.id}><span>{h.name}</span><span>{h.score} / 10</span></li>)}</ul> : <p className="text-xs text-muted-foreground">No previous completed interviews available.</p>}</div>}
             <label htmlFor="interview-score" className="block">Overall score · <span aria-live="polite">{draft.score === null ? "Not scored" : `${draft.score} / 10`}</span></label>
             {session.completedAt ? <p>{draft.score === null ? "Not scored" : `${draft.score} / 10`}</p> : <input id="interview-score" type="range" min={1} max={10} step={0.5} value={draft.score ?? 1} disabled={disabled} aria-valuetext={draft.score === null ? "Not scored; interact to select a score" : `${draft.score} out of 10`} className="min-h-11 w-full accent-foreground cursor-pointer disabled:opacity-50" onChange={e => { const score = Number(e.currentTarget.value); setDraft(d => ({ ...d, score })); }} onPointerUp={e => { const score = Number(e.currentTarget.value); setDraft(d => ({ ...d, score })); }} onKeyDown={scoreKey} />}
             {!session.completedAt && <p className="text-xs text-muted-foreground">1–10 in half-point steps. Select with pointer or touch, or use the arrow keys, Home and End.</p>}
           </fieldset>
-          {!session.completedAt ? <div className="flex flex-wrap gap-2"><Button type="button" disabled={completing || ending || draft.score === null} onClick={() => void persist(true)}>{completing ? "Submitting…" : "End post-interview"}</Button><Button type="button" variant="ghost" disabled={ending || completing} onClick={() => { setExpandedQuestions([]); setClosing(false); }}>Keep interviewing</Button></div> : <div className="space-y-3">
+          {!session.completedAt ? <div className="flex flex-wrap gap-2"><Button type="button" disabled={completing || ending || draft.score === null || interviewThoughtWordCount(draft.finalInterviewThoughts) > FINAL_INTERVIEW_THOUGHTS_WORD_LIMIT} onClick={() => void persist(true)}>{completing ? "Submitting…" : "End post-interview"}</Button><Button type="button" variant="ghost" disabled={ending || completing} onClick={() => { setExpandedQuestions([]); setClosing(false); }}>Keep interviewing</Button></div> : <div className="space-y-3">
             {nextError && <p role="alert" className="text-sm text-destructive">{nextError}</p>}
             {noMoreApplicants && <p role="status" className="font-medium">No more applicants</p>}
             {onNextApplicant && <Button type="button" disabled={nextBusy} onClick={() => void nextApplicant()}>{nextBusy ? "Loading next candidate…" : noMoreApplicants ? "Check for new assignments" : "Next candidate →"}</Button>}

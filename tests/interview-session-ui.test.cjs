@@ -16,7 +16,7 @@ function harness(existing, overrides = {}){
  let sharedView=null;const collab={clientId:'tab',get view(){return sharedView},error:'',refresh:async()=>{},dismiss:async()=>{},select:overrides.select || (async id=>({revision:1,question:[...record.questions,{id:'q2',prompt:'New kit question',guidance:'New guidance'}].find(q=>q.id===id)}))};
  const code=ts.transpileModule(fs.readFileSync('components/interview-kit-session.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText
  const motion={exports:{}};new Function('module','exports',ts.transpileModule(fs.readFileSync('lib/interview-question-motion.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(motion,motion.exports)
- new Function('require','module','exports','setTimeout','clearTimeout',code)(name=>name==='react'?react:name==='@/hooks/use-autosave-recovery'?{useAutosaveRecovery:options=>{recoveryOptions=options;return {recovery:null,onBlur(){void options.flush().catch(()=>{})}}}}:name==='@/hooks/use-interview-workspace'?{useInterviewWorkspace:()=>collab}:name==='@/lib/demo/interview-collaboration'?{}:name==='@/lib/interview-question-motion'?motion.exports:name==='@/lib/composer-enter'?require('./helpers/interview-harness.cjs').harness().load('lib/composer-enter.ts'):name==='@/lib/workspace-api'?api:name==='@/lib/interview-kits'?{emptyInterviewDraft:{questionNotes:[],additionalQuestions:[],overallReview:'',score:null}}:name.startsWith('@/components/')?new Proxy({},{get:(_,key)=>key}):require(name),mod,mod.exports,fn=>{timers.set(++timerId,fn);return timerId},id=>timers.delete(id))
+ new Function('require','module','exports','setTimeout','clearTimeout',code)(name=>name==='react'?react:name==='@/hooks/use-autosave-recovery'?{useAutosaveRecovery:options=>{recoveryOptions=options;return {recovery:null,onBlur(){void options.flush().catch(()=>{})}}}}:name==='@/hooks/use-interview-workspace'?{useInterviewWorkspace:()=>collab}:name==='@/lib/demo/interview-collaboration'?{}:name==='@/lib/interview-question-motion'?motion.exports:name==='@/lib/composer-enter'?require('./helpers/interview-harness.cjs').harness().load('lib/composer-enter.ts'):name==='@/lib/workspace-api'?api:name==='@/lib/interview-final-thoughts'?require('./helpers/interview-harness.cjs').harness().load('lib/interview-final-thoughts.ts'):name==='@/lib/interview-kits'?{emptyInterviewDraft:{questionNotes:[],additionalQuestions:[],overallReview:'',score:null}}:name.startsWith('@/components/')?new Proxy({},{get:(_,key)=>key}):require(name),mod,mod.exports,fn=>{timers.set(++timerId,fn);return timerId},id=>timers.delete(id))
  const props={clubId:'club',applicationId:'app',roundId:'round',formRef:{current:null},onState(){},onComplete(...args){calls.push(['complete',...args])}, ...overrides}
  return {calls,record,blur(){return recoveryOptions.flush()},shared(value){sharedView=value},fail(value){fail=value},loseResponse(){lost=true},defer(value){defer=value},render(){index=0;const tree=mod.exports.InterviewKitSession(props);while(effects.length)effects.shift()();return tree},tick(){const pending=[...timers.values()];timers.clear();pending.forEach(fn=>fn())}}
 }
@@ -50,12 +50,27 @@ test('Proceed never submits an unfinished review and Stay here leaves private co
 });
 test('fresh and legacy drafts stay in interview until explicit ending; saved phase belongs only to that personal record',async()=>{
  const h=harness();h.record.draft.score=8.5;h.record.draft.applicantQuestions='Legacy discussion';h.record.draft.additionalNotes='Keep legitimate notes';h.render();await flush();let t=h.render();
- assert.ok(button(t,'End current interview'));assert.equal(scoreInput(t),undefined);assert.equal(nodes(t).find(n=>n.props?.id==='applicant-questions'),undefined);assert.doesNotMatch(text(t),/Your previous five/);assert.equal(button(t,'Next candidate →'),undefined);
+ assert.ok(button(t,'End current interview'));assert.equal(scoreInput(t),undefined);assert.equal(nodes(t).find(n=>n.props?.id==='final-interview-thoughts'),undefined);assert.doesNotMatch(text(t),/Your previous five/);assert.equal(button(t,'Next candidate →'),undefined);
  const before=harness(structuredClone(h.record));before.render();await flush();assert.ok(button(before.render(),'End current interview'));
  button(t,'End current interview').props.onClick();await flush();t=h.render();assert.equal(h.record.draft.postInterview,true);assert.equal(h.record.completedAt,null);
- const resumed=harness(structuredClone(h.record));resumed.render();await flush();t=resumed.render();assert.ok(scoreInput(t));assert.equal(nodes(t).find(n=>n.props?.id==='applicant-questions').props.value,'Legacy discussion');
+ const resumed=harness(structuredClone(h.record));resumed.render();await flush();t=resumed.render();assert.ok(scoreInput(t));assert.equal(nodes(t).find(n=>n.props?.id==='final-interview-thoughts').props.value,'');assert.match(text(t),/Questions the applicant asked · HistoricalLegacy discussion/);
  const fresh=harness();fresh.render();await flush();assert.ok(button(fresh.render(),'End current interview'));assert.equal(fresh.record.draft.score,null);assert.equal(scoreInput(fresh.render()),undefined);
  const prepared=harness(structuredClone(h.record),{initialSession:structuredClone(h.record)});t=prepared.render();assert.ok(scoreInput(t));assert.equal(nodes(t).find(n=>n.props?.id==='additional-interview-notes').props.value,'Keep legitimate notes');
+});
+
+test('final thoughts counter preserves over-limit pasted drafts through save and reload, blocks finish, and never repurposes historical questions',async()=>{
+ const h=harness();h.record.draft.applicantQuestions='Historical applicant question';h.render();await flush();let t=h.render();
+ assert.equal(nodes(t).find(n=>n.props?.id==='final-interview-thoughts'),undefined);
+ button(t,'End current interview').props.onClick();await flush();t=h.render();scoreInput(t).props.onChange({currentTarget:{value:'8.5'}});t=h.render();
+ for(const count of [0,49,50,51]){
+  const value=Array.from({length:count},(_,i)=>`word${i}`).join('\n');
+  nodes(t).find(n=>n.props?.id==='final-interview-thoughts').props.onChange({target:{value}});t=h.render();
+  assert.match(text(t),new RegExp(`${count} / 50 words`));assert.equal(button(t,'End post-interview').props.disabled,count>50);
+  assert.equal(nodes(t).find(n=>n.props?.id==='final-interview-thoughts').props.maxLength,undefined);
+ }
+ h.tick();await flush();t=h.render();assert.equal(h.record.draft.finalInterviewThoughts.split('\n').length,51);assert.equal(h.record.draft.applicantQuestions,'Historical applicant question');assert.equal(h.record.completedAt,null);
+ const reload=harness(structuredClone(h.record));reload.render();await flush();t=reload.render();assert.match(text(t),/51 \/ 50 words/);assert.equal(button(t,'End post-interview').props.disabled,true);
+ nodes(t).find(n=>n.props?.id==='final-interview-thoughts').props.onChange({target:{value:'Latest assessment.'}});t=reload.render();button(t,'End post-interview').props.onClick();await flush();t=reload.render();assert.equal(reload.record.draft.finalInterviewThoughts,'Latest assessment.');assert.equal(reload.record.draft.applicantQuestions,'Historical applicant question');assert.ok(reload.record.completedAt);assert.equal(nodes(t).find(n=>n.props?.id==='final-interview-thoughts'),undefined);assert.match(text(t),/Latest assessment/);
 });
 test('completion requires acknowledged Save and close; failed text stays open with retry',async()=>{
  const h=harness();h.render();await flush();let t=h.render();select(t,'Snapshot question');await flush();t=h.render();edit(t,'Private answer');t=h.render()
@@ -119,8 +134,8 @@ test('finish flushes latest text after autosave and double clicks create one fin
  assert.equal(h.record.draft.additionalNotes,'Latest consensus, own assessment');assert.equal(h.calls.filter(c=>c[0]==='save'&&c[1].complete).length,1);assert.equal(h.record.draft.score,7.5);
 });
 test('failed finish retains closing text and exposes explicit final retry',async()=>{
- const h=harness();h.render();await flush();let t=h.render();button(t,'End current interview').props.onClick();await flush();t=h.render();nodes(t).find(n=>n.props?.id==='applicant-questions').props.onChange({target:{value:'What happens next?'}});t=h.render();scoreInput(t).props.onChange({currentTarget:{value:'8.5'}});t=h.render();h.fail(true);button(t,'End post-interview').props.onClick();await flush();t=h.render();assert.equal(nodes(t).find(n=>n.props?.id==='applicant-questions').props.value,'What happens next?');assert.equal(h.record.completedAt,null);
- h.fail(false);button(t,'Retry end post-interview').props.onClick();await flush();assert.equal(h.record.draft.applicantQuestions,'What happens next?');assert.ok(h.record.completedAt);
+ const h=harness();h.render();await flush();let t=h.render();button(t,'End current interview').props.onClick();await flush();t=h.render();nodes(t).find(n=>n.props?.id==='final-interview-thoughts').props.onChange({target:{value:'What happens next?'}});t=h.render();scoreInput(t).props.onChange({currentTarget:{value:'8.5'}});t=h.render();h.fail(true);button(t,'End post-interview').props.onClick();await flush();t=h.render();assert.equal(nodes(t).find(n=>n.props?.id==='final-interview-thoughts').props.value,'What happens next?');assert.equal(h.record.completedAt,null);
+ h.fail(false);button(t,'Retry end post-interview').props.onClick();await flush();assert.equal(h.record.draft.finalInterviewThoughts,'What happens next?');assert.ok(h.record.completedAt);
 });
 test('lost successful response retries the identical final revision and locks without duplicate completion',async()=>{
  const h=harness();h.render();await flush();let t=h.render();button(t,'End current interview').props.onClick();await flush();t=h.render();scoreInput(t).props.onChange({currentTarget:{value:'10'}});t=h.render();h.loseResponse();button(t,'End post-interview').props.onClick();await flush();t=h.render();assert.match(text(t),/Your interview could not be saved/);assert.doesNotMatch(text(t),/Response interrupted/);assert.equal(h.record.revision,2);assert.ok(h.record.completedAt);button(t,'Retry end post-interview').props.onClick();await flush();t=h.render();assert.equal(h.record.revision,2);assert.equal(button(t,'End post-interview'),undefined);assert.equal(h.calls.filter(c=>c[0]==='complete').length,1);assert.deepEqual(h.calls.filter(c=>c[0]==='save'&&c[1].complete).map(c=>c[1].revision),[1,1]);
@@ -136,9 +151,9 @@ test('post-interview replaces only the middle, keeps side nodes and notes, and r
  assert.ok(nodes(t).includes(context)); assert.equal(nodes(t).find(n=>n.props?.id==='interview-completed').type,side.type);assert.equal(nodes(t).find(n=>n.props?.id==='additional-interview-notes').props.value,'');assert.match(text(nodes(t).find(n=>n.props?.id==='interview-completed')),/Used · Not marked complete/);
  assert.equal(nodes(t).some(n=>n.props?.['aria-label']==='Available questions'),false);
  assert.equal(nodes(t).find(n=>n.props?.id==='active-notes-q1'),undefined);
- nodes(t).find(n=>n.props?.id==='applicant-questions').props.onChange({target:{value:'Can I join a project?'}}); t=h.render();
+ nodes(t).find(n=>n.props?.id==='final-interview-thoughts').props.onChange({target:{value:'Can I join a project?'}}); t=h.render();
  h.tick();await flush();t=h.render();assert.equal(h.record.draft.postInterview,true);assert.equal(h.record.draft.score,null);
- const reload=harness(structuredClone(h.record),{context});reload.render();await flush();t=reload.render();assert.ok(button(t,'End post-interview').props.disabled);assert.equal(nodes(t).find(n=>n.props?.id==='applicant-questions').props.value,'Can I join a project?');
+ const reload=harness(structuredClone(h.record),{context});reload.render();await flush();t=reload.render();assert.ok(button(t,'End post-interview').props.disabled);assert.equal(nodes(t).find(n=>n.props?.id==='final-interview-thoughts').props.value,'Can I join a project?');
  button(t,'Keep interviewing').props.onClick();t=reload.render();assert.equal(nodes(t).find(n=>n.props?.id==='active-notes-q1'),undefined);select(t,'Snapshot question');await flush();t=reload.render();assert.equal(nodes(t).find(n=>n.props?.id==='active-notes-q1').props.value,'Keep my question draft');
 });
 
@@ -228,12 +243,12 @@ test('explicit finish owns the save queue when blur and finish await the same au
  const h=harness();h.render();await flush();let t=h.render();button(t,'End current interview').props.onClick();await flush();t=h.render();
  scoreInput(t).props.onChange({currentTarget:{value:'8'}});t=h.render();
  let release;h.defer(new Promise(resolve=>release=resolve));h.tick();
- nodes(t).find(n=>n.props?.id==='applicant-questions').props.onChange({target:{value:'Latest question, entered while saving'}});t=h.render();
+ nodes(t).find(n=>n.props?.id==='final-interview-thoughts').props.onChange({target:{value:'Latest question, entered while saving'}});t=h.render();
  nodes(t).find(n=>n.props?.id==='additional-interview-notes').props.onChange({target:{value:'Latest discussion'}});t=h.render();scoreInput(t).props.onChange({currentTarget:{value:'9.5'}});t=h.render();
  const blur=h.blur();const finish=button(t,'End post-interview');const first=finish.props.onClick();finish.props.onClick();
  release();await blur;await first;await flush();t=h.render();
  assert.ok(h.record.completedAt,'one explicit click must submit rather than silently return to editing');
- assert.equal(h.record.draft.score,9.5);assert.equal(h.record.draft.applicantQuestions,'Latest question, entered while saving');assert.equal(h.record.draft.additionalNotes,'Latest discussion');
+ assert.equal(h.record.draft.score,9.5);assert.equal(h.record.draft.finalInterviewThoughts,'Latest question, entered while saving');assert.equal(h.record.draft.additionalNotes,'Latest discussion');
  assert.equal(h.calls.filter(c=>c[0]==='save'&&c[1].complete).length,1);assert.equal(h.calls.filter(c=>c[0]==='complete').length,1);
  assert.deepEqual(h.calls.filter(c=>c[0]==='save').map(c=>c[1].revision),[0,1,2]);
 });
@@ -241,19 +256,19 @@ test('explicit finish owns the save queue when blur and finish await the same au
 
 test('revision conflict preserves the latest closing review and retry refreshes only its revision',async()=>{
  const h=harness(undefined,{rejectRevision:true});h.render();await flush();let t=h.render();button(t,'End current interview').props.onClick();await flush();t=h.render();
- scoreInput(t).props.onChange({currentTarget:{value:'9.5'}});t=h.render();nodes(t).find(n=>n.props?.id==='applicant-questions').props.onChange({target:{value:'Retain the latest answer'}});t=h.render();
+ scoreInput(t).props.onChange({currentTarget:{value:'9.5'}});t=h.render();nodes(t).find(n=>n.props?.id==='final-interview-thoughts').props.onChange({target:{value:'Retain the latest answer'}});t=h.render();
  h.record.revision++;button(t,'End post-interview').props.onClick();await flush();t=h.render();
- assert.equal(h.record.completedAt,null);assert.equal(nodes(t).find(n=>n.props?.id==='applicant-questions').props.value,'Retain the latest answer');assert.equal(scoreInput(t).props.value,9.5);assert.equal(h.calls.filter(c=>c[0]==='complete').length,0);
+ assert.equal(h.record.completedAt,null);assert.equal(nodes(t).find(n=>n.props?.id==='final-interview-thoughts').props.value,'Retain the latest answer');assert.equal(scoreInput(t).props.value,9.5);assert.equal(h.calls.filter(c=>c[0]==='complete').length,0);
  button(t,'Refresh revision, keep my text').props.onClick();await flush();t=h.render();button(t,'Retry end post-interview').props.onClick();await flush();t=h.render();
- assert.ok(h.record.completedAt);assert.equal(h.record.draft.applicantQuestions,'Retain the latest answer');assert.equal(h.record.draft.score,9.5);assert.equal(h.calls.filter(c=>c[0]==='complete').length,1);
+ assert.ok(h.record.completedAt);assert.equal(h.record.draft.finalInterviewThoughts,'Retain the latest answer');assert.equal(h.record.draft.score,9.5);assert.equal(h.calls.filter(c=>c[0]==='complete').length,1);
 });
 
 test('failed pending autosave cannot consume finish; failed submission retains input for explicit retry',async()=>{
  const h=harness();h.render();await flush();let t=h.render();button(t,'End current interview').props.onClick();await flush();t=h.render();scoreInput(t).props.onChange({currentTarget:{value:'7.5'}});t=h.render();
  let release;h.defer(new Promise(r=>release=r));h.fail(true);h.tick();
- nodes(t).find(n=>n.props?.id==='applicant-questions').props.onChange({target:{value:'Keep this on failure'}});t=h.render();const blur=h.blur().catch(()=>{});button(t,'End post-interview').props.onClick();release();await blur;await flush();t=h.render();
- assert.equal(h.record.completedAt,null);assert.ok(button(t,'Retry end post-interview'));assert.equal(nodes(t).find(n=>n.props?.id==='applicant-questions').props.value,'Keep this on failure');assert.equal(h.calls.filter(c=>c[0]==='save'&&c[1].complete).length,1);
- h.fail(false);button(t,'Retry end post-interview').props.onClick();await flush();assert.ok(h.record.completedAt);assert.equal(h.record.draft.applicantQuestions,'Keep this on failure');assert.equal(h.calls.filter(c=>c[0]==='complete').length,1);
+ nodes(t).find(n=>n.props?.id==='final-interview-thoughts').props.onChange({target:{value:'Keep this on failure'}});t=h.render();const blur=h.blur().catch(()=>{});button(t,'End post-interview').props.onClick();release();await blur;await flush();t=h.render();
+ assert.equal(h.record.completedAt,null);assert.ok(button(t,'Retry end post-interview'));assert.equal(nodes(t).find(n=>n.props?.id==='final-interview-thoughts').props.value,'Keep this on failure');assert.equal(h.calls.filter(c=>c[0]==='save'&&c[1].complete).length,1);
+ h.fail(false);button(t,'Retry end post-interview').props.onClick();await flush();assert.ok(h.record.completedAt);assert.equal(h.record.draft.finalInterviewThoughts,'Keep this on failure');assert.equal(h.calls.filter(c=>c[0]==='complete').length,1);
 });
 
 

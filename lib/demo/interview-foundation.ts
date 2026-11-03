@@ -1,4 +1,5 @@
 import { interviewHistoryWindow, previousApplicantScores } from "@/lib/interview-score-history";
+import { validateFinalInterviewThoughts } from "@/lib/interview-final-thoughts";
 import { anonymousApplicantLabel } from "@/lib/anonymous-review";
 import { demoStore, demoMember } from "./store";
 import { annotationContentSchema, interviewCapabilities, interviewOfficesSchema, interviewScopeSchema, interviewScoreSchema, type InterviewScope } from "@/lib/interview-access";
@@ -102,6 +103,7 @@ export function saveInterviewSession(input: InterviewScope & { revision: number;
     validateAdditionalQuestionSnapshots(record.draft, draft, [...kitSchema.parse(round.interviewKit), ...(shared?.questions || [])]);
     let evaluation = null;
     if (input.complete) {
+      validateFinalInterviewThoughts(draft.finalInterviewThoughts);
       const score = interviewScoreSchema.parse(draft.score);
       const old = target.evaluations.find(e => e.interviewerId === member.id && e.roundId === round.id);
       if (old?.submittedAt) throw new Error("Submitted evaluation is immutable.");
@@ -145,7 +147,7 @@ export function getSubmittedInterviewReview(input: InterviewScope & { interviewe
   const r = s.interviews.find(r => r.applicationId === input.applicationId && r.roundId === input.roundId && r.interviewerId === input.interviewerId && r.completedAt);
   if (!r) throw new Error("Submitted review unavailable.");
   const e = s.applications.find(a => a.id === input.applicationId)!.evaluations.find(e => e.roundId === input.roundId && e.interviewerId === input.interviewerId);
-  const club=s.clubs.find(c=>c.id===input.clubId)!;const anonymous=!!(r.anonymousReview||club.rounds.find(round=>round.id===input.roundId)?.anonymousReview||club.rounds.find(round=>round.id===s.applications.find(a=>a.id===input.applicationId)!.roundId)?.anonymousReview);if(anonymous&&!caps.readClosing)throw Error("Leadership required.");return { id: r.id, interviewerId: r.interviewerId, roundId: r.roundId, anonymous,textUnavailable:anonymous,submittedAt: anonymous?null:r.completedAt, score: e?.score ?? r.draft.score, applicantQuestions: anonymous ? "" : e?.applicantQuestions ?? r.draft.applicantQuestions ?? "", additionalNotes: anonymous ? "" : e?.notes ?? r.draft.additionalNotes ?? r.draft.overallReview, readOnly: true };
+  const club=s.clubs.find(c=>c.id===input.clubId)!;const anonymous=!!(r.anonymousReview||club.rounds.find(round=>round.id===input.roundId)?.anonymousReview||club.rounds.find(round=>round.id===s.applications.find(a=>a.id===input.applicationId)!.roundId)?.anonymousReview);if(anonymous&&!caps.readClosing)throw Error("Leadership required.");return { id: r.id, interviewerId: r.interviewerId, roundId: r.roundId, anonymous,textUnavailable:anonymous,submittedAt: anonymous?null:r.completedAt, score: e?.score ?? r.draft.score, finalInterviewThoughts: anonymous ? "" : r.draft.finalInterviewThoughts || "", applicantQuestions: anonymous ? "" : e?.applicantQuestions ?? r.draft.applicantQuestions ?? "", additionalNotes: anonymous ? "" : e?.notes ?? r.draft.additionalNotes ?? r.draft.overallReview, readOnly: true };
 }
 export function getPreviousInterviewScores(input: InterviewScope) {
   const { s, member, caps } = access(input);
@@ -177,7 +179,7 @@ export function getEarlierInterviewReviews(input: unknown) {
     if (!e) return [];
     const member = s.memberships.find(m => m.id === r.interviewerId && m.clubId === scope.clubId), p = s.students.find(p => p.id === member?.userId)?.profile;
     const parsed = submittedQuestionsSchema.safeParse(r.submittedQuestions);
-    return [{ id: r.id, roundId: r.roundId, roundName: rounds.find(old => old.id === r.roundId)!.name, reviewer: p ? `${p.firstName} ${p.lastName}` : "Interviewer", submittedAt: new Date(e.submittedAt!).toISOString(), questions: parsed.success ? parsed.data : null, additionalNotes: e.notes || "", applicantQuestions: e.applicantQuestions || "", score: e.score }];
+    return [{ id: r.id, roundId: r.roundId, roundName: rounds.find(old => old.id === r.roundId)!.name, reviewer: p ? `${p.firstName} ${p.lastName}` : "Interviewer", submittedAt: new Date(e.submittedAt!).toISOString(), questions: parsed.success ? parsed.data : null, additionalNotes: e.notes || "", applicantQuestions: e.applicantQuestions || "", finalInterviewThoughts: r.draft.finalInterviewThoughts || "", score: e.score }];
   });
 }
 export function getInterviewRoundScore(input: unknown) {
