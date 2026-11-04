@@ -1,5 +1,15 @@
 # Live voting room - Parts 1-3 handoff
 
+## Observation runtime access correction — November 4, 2026
+
+**Application deployed; full hosted acceptance awaits this correction.** PR #115 merged as `6c495fbd398cbf924a49c6841900847227b52114`; Vercel production `9sTuk56oquQj58rRaEbXSoz7pvPi` succeeded. Its 14 required checks passed (1,552 tests passed, zero failed, 52 skipped). Only `20261103190000_additional_observations` was applied to production, verified at ledger count 63, preserving old ledger entries/data and leaving the unrelated ledger-privacy migration pending. No maintenance, credential rotation or permission-grant changes to members occurred.
+
+A production read-only catalog check caught a release gap before hosted write testing: `VotingObservationReference` is postgres-owned with RLS enabled, zero policies, and the existing application login is neither superuser nor BYPASSRLS. SELECT/INSERT table privileges alone cannot read or create frozen references. The original disposable tests checked grants/security and performed inserts as their owner; that did not prove runtime access. No original migration is edited or falsely replayed.
+
+Forward-only correction `20261103200000_additional_observation_runtime_access` adds SELECT and INSERT policies for **only the existing bounded server role**. RLS, browser-role denial, reference scope/immutability, audit history and all server-side applicant/member checks remain. It grants no UPDATE/DELETE and does not add a browser policy or BYPASSRLS. The enhanced disposable regression matches core-table runtime ownership, proves original reference reads return zero and inserts fail with RLS, applies the correction, then proves runtime read/insert succeeds, update remains denied and browser CRUD stays denied. This focused regression passes.
+
+The correction contains no UI/action/model changes; existing feature tests/evidence remain applicable. Final required CI, a fresh backup/recovery rehearsal, production forward migration and matching protected merge/deployment are pending on `codex/additional-observation-runtime-access`. Earlier preparation/implementation statuses below retain their original attribution and are superseded by this summary. The prior production data archive is retained, but its freshness gate will not be relaxed for the next migration.
+
 ## Additional observations — November 3, 2026
 
 Implementation branch `codex/additional-observations`, based on PR #114's main tree (`fa5ef869`). This section supersedes no prior evidence. Release is pending required validation, recovery readiness and migration; no production changes have been made for this feature yet.
