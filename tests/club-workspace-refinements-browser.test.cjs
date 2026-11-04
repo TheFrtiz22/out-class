@@ -14,10 +14,7 @@ async function fixture() {
   const api = `async function call(path,input){const response=await fetch('/api/'+path,input?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)}:undefined);if(!response.ok)throw Error('Fixture save rejected');return response.json()}exports.getClubPipeline=()=>call('pipeline');exports.getClubPipelineList=()=>call('pipeline');exports.getClubPipelinePage=async(club,q={})=>require('@/lib/pipeline-page').pagePipeline(await call('pipeline'),q,'owner','owner','fixture');exports.getClubPipelineSelection=async(club,q={})=>require('@/lib/pipeline-page').completePipelineSelection(await call('pipeline'),q,'owner','owner');exports.setApplicationStatus=input=>call('status',input);exports.getOrganizationMemberManagement=()=>call('directory');exports.assignOrganizationMemberGroups=input=>call('groups',input);exports.createOrganizationMemberGroups=input=>call('create-groups',input);exports.getApplicantDisplay=()=>call('display');exports.saveApplicantObservation=input=>call('observation',input);exports.deleteApplicantObservation=input=>call('delete-observation',input);exports.listMeetings=async()=>[];exports.submitEvaluation=async()=>({});exports.moveApplicantRound=async()=>({});exports.getRecipientGroups=()=>call('catalog');exports.previewRecipientAudience=()=>call('preview');exports.publishClubAnnouncement=input=>call('announcement',input);exports.getOrganizationSetupChecklist=()=>call('checklist');`
   const empty = 'module.exports=new Proxy({},{get:()=>()=>null});'
   const mocks = {
-    // QR rendering/short-link writes are covered by qr-branded-system; this fixture
-    // exercises directory/profile UI and must not bundle Node-only QR dependencies.
-    '@/components/qr/qr-code-card': empty,
-    '@/components/qr/outclass-qr-code': empty,
+    // Short-link writes are outside this directory/profile fixture.
     '@/actions/short-links': 'exports.createShortLink=async()=>null;',
     '@/lib/additional-observations-api': `exports.getAdditionalObservations=async()=>[];exports.saveAdditionalObservation=async()=>{throw Error('Observation writes are outside this directory/profile fixture')};`,
     'next/link': `const React=require('react');module.exports=({href,children,...props})=>React.createElement('a',{...props,href},children);`,
