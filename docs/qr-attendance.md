@@ -44,4 +44,11 @@ Until this backend is connected, newly created events are available only in the
 browser where they were created. Downloaded profile codes work on the deployed
 origin; localhost codes require a reachable host before use on printed flyers.
 
-QR rendering uses qrcode.react: https://github.com/zpao/qrcode.react
+## Universal Branded QR Architecture
+
+All QR codes across OutClass use the centralized branded QR system located in `@/lib/qr` and `@/components/qr/outclass-qr-code`:
+- **Visual Identity:** Deep OutClass Navy (`#142d4e`), organic rounded modules with smooth connected pill/capsule shapes, circular concentric finder patterns (1:1:3:1:1 radial ratio), and the official OutClass interlocking OC monogram centered in an Apple-style squircle badge (rx ~20.5%).
+- **Error Correction:** QR error correction level H (~30% recovery) is strictly enforced to protect data payload integrity while accommodating the center monogram badge.
+- **Short-link Optimization:** Internal event, meeting, and recruitment flows automatically use compact OutClass short URLs (`/q/[code]`) stored securely in `PlatformContent`. This keeps QR matrix dimensions compact (e.g. 33x33) with large, highly legible modules for reliable mobile, projection, and print scanning.
+- **Export Capabilities:** 2048px high-resolution PNG downloads, vector SVG downloads, and presenter full-screen view.
+- **Standard Component:** Developers must always use `<OutClassQRCode value={url} ... />` from `@/components/qr/outclass-qr-code` rather than introducing external or generic QR code libraries.
