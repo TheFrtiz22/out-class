@@ -26,7 +26,7 @@ import {
   meetingAttendance,
 } from "@/lib/workspace-api";
 import { meetingInputSchema, resourceSchema } from "@/lib/meetings";
-import { QRCodeSVG } from "qrcode.react";
+import { OutClassQRCode } from "@/components/qr/outclass-qr-code";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -411,7 +411,7 @@ function MeetingAttendance({ meeting }: { meeting: Meeting }) {
   const demo = useDemoMode();
   const [attendanceLoading, setAttendanceLoading] = useState(true);
   const [open, setOpen] = useState(false),
-    [code, setCode] = useState<{ token: string; expiresAt: string } | null>(
+    [code, setCode] = useState<{ token: string; expiresAt: string; shortUrl?: string; shortCode?: string } | null>(
       null,
     ),
     [error, setError] = useState(""),
@@ -499,20 +499,29 @@ function MeetingAttendance({ meeting }: { meeting: Meeting }) {
         {open ? "Close check-in" : "Open attendance QR"}
       </Button>
       {open && valid && (
-        <div className="space-y-3">
-          <QRCodeSVG
-            value={`${window.location.origin}/check-in?meetingId=${meeting.id}#token=${code.token}`}
-            size={208}
-            marginSize={4}
-            title={`Check in to ${meeting.title}`}
+        <div className="space-y-4">
+          <OutClassQRCode
+            value={code.shortUrl ? `${window.location.origin}${code.shortUrl}` : `${window.location.origin}/check-in?meetingId=${meeting.id}#token=${code.token}`}
+            size={220}
+            variant="default"
+            showLogo={true}
+            downloadable={true}
+            presenterMode={true}
+            title={meeting.title}
+            description="Scan with your smartphone camera to confirm attendance."
+            filename={`check-in-${meeting.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+            ariaLabel={`Check in to ${meeting.title}`}
           />
-          <p role="status" className="text-sm">
+          <p role="status" className="text-sm text-neutral-600">
             Current code expires in{" "}
-            {Math.max(
-              0,
-              Math.ceil((new Date(code.expiresAt).getTime() - now) / 1000),
-            )}{" "}
-            seconds.
+            <span className="font-semibold text-neutral-900">
+              {Math.max(
+                0,
+                Math.ceil((new Date(code.expiresAt).getTime() - now) / 1000),
+              )}{" "}
+              seconds
+            </span>
+            . Codes refresh every minute.
           </p>
         </div>
       )}

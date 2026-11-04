@@ -16,6 +16,9 @@ export const interviewDraftSchema = z.object({
   // The screen belongs to this interviewer's versioned JSON draft, not the panel.
   postInterview: z.boolean().optional(),
   applicantQuestions: z.string().max(20000).optional(),
+  // Distinct from historical applicant questions; private until completion.
+  // Over-limit drafts remain saveable. Validate the word limit on submission.
+  finalInterviewThoughts: z.string().optional(),
   additionalNotes: z.string().max(20000).optional(),
   completedQuestionIds: z.array(z.string().uuid()).max(80).optional(),
   questionNotes: z

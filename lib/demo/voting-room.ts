@@ -1,3 +1,4 @@
+import {pinDemoObservations,demoVotingObservations} from './additional-observations';
 import {stageVotingNotices} from "./voting-session-notifications";
 import {meetingDetails,resolveVotingMeeting} from "@/lib/voting-session-setup";
 import type * as Plans from "@/actions/voting-session-setup";
@@ -10,8 +11,9 @@ import { roomAuthority,requireRoomLeader,projectVotingRoom,type LiveRoom } from 
 import { editorValue } from "@/lib/editor-value";
 import { hasPermission } from "@/lib/permissions";
 import { anonymousApplicantLabel,type ReviewApplication } from "@/lib/anonymous-review";
+import {selectedVotingDisplay} from "@/lib/voting-slide-fields";
 import { projectApplicantDisplay } from "@/lib/applicant-display";
-import { submittedScoreSummary } from "@/lib/interview-review-summary";
+import { votingScoreEvidence, type VotingInterviewThought } from "@/lib/voting-interview-evidence";
 import { interviewCapabilities } from "@/lib/interview-access";
 import { z } from "zod";
 import type * as Final from "@/actions/voting-room-finalization";
@@ -25,7 +27,7 @@ export async function getSetup(input:unknown):Promise<Awaited<ReturnType<typeof 
  const d=input as {clubId:string;cycleId?:string;roundId?:string},c=context(d.clubId);if(!hasPermission(c.m,"decisions.manage")||!hasPermission(c.m,"decisions.start"))throw Error("Demo setup denied.");
  const r=c.club.rounds.find(r=>r.id===d.roundId),anonymous=!!r?.anonymousReview;
  return {memberId:c.m.id,timeZone:"America/New_York",cycles:[{id:c.club.id,name:"Demo recruitment cycle"}],rounds:c.club.rounds.map(r=>({id:r.id,name:r.name,anonymousReview:r.anonymousReview??false})),
- allowedFields:liveRoomFields.filter(f=>!anonymous||["academicYear","gpa","sat","act"].includes(f)),
+ allowedFields:liveRoomFields.filter(f=>(!anonymous||["academicYear","gpa","sat","act"].includes(f))&&(!["interviewScore","finalInterviewThoughts"].includes(f)||interviewCapabilities(c.m).readClosing||c.state.interviews.some(r=>r.clubId===d.clubId&&r.interviewerId===c.m.id&&r.completedAt))),
  applicants:c.state.applications.filter(a=>a.clubId===d.clubId&&a.roundId===d.roundId&&d.cycleId===c.club.id&&["SUBMITTED","IN_REVIEW","INTERVIEWING","WAITLISTED"].includes(a.status)).map(a=>({id:a.id,label:anonymous?anonymousApplicantLabel(a.id):label(c.state,a.studentId)})),
  voters:c.state.memberships.filter(m=>m.clubId===d.clubId&&hasPermission(m,"applications.review")&&hasPermission(m,"decisions.vote")&&(anonymous||hasPermission(m,"applicants.identify"))).map(m=>({id:m.id,defaultSelected:!!m.interviewOffices?.some(o=>["PRESIDENT","VICE_PRESIDENT","BOARD"].includes(o)),label:label(c.state,m.userId)}))};
 }
@@ -67,7 +69,7 @@ async function perform<K extends keyof typeof Live>(method:K,input:unknown,membe
      if(advancing&&(b.applicationId!==s.activeApplicationId||b.passNumber!==s.currentPass))throw new DemoConflict({ok:false,code:"STALE_STATE",message:"The applicant changed. Refresh before continuing."});
      let decision;
      switch(b.action){
-      case "START":case "NEXT_PASS":{if(b.action==="START"){const planned=meetingDetails((s.presentationOptions as {meeting?:unknown})?.meeting);if(planned?.status==='CANCELLED')throw Error('Session cancelled.');if(planned?.plannedAt&&+new Date(planned.plannedAt)>Date.now()&&!b.confirmed)throw new DemoConflict({ok:false,code:'EARLY_CONFIRMATION_REQUIRED',message:'Confirm starting before the planned time.'});if(s.candidates.some(a=>{const app=state.applications.find(v=>v.id===a.applicationId);return !app||app.clubId!==s.clubId||app.roundId!==s.roundId||app.status!==a.expectedStatus||!['SUBMITTED','IN_REVIEW','INTERVIEWING','WAITLISTED'].includes(app.status)})||s.participants.some(p=>!state.memberships.some(v=>v.id===p.memberId&&v.clubId===s.clubId&&hasPermission(v,'applications.review')&&hasPermission(v,'decisions.vote')&&(c.round.anonymousReview||hasPermission(v,'applicants.identify')))))throw Error('Saved eligibility changed. Review setup before starting.');}if(b.action==="START"?s.state!=="DRAFT":!["PAUSED","COMPLETED"].includes(s.state))throw Error("Demo transition denied.");const ids=roomOutcomes(s).filter(o=>b.action==="START"?o.outcome==="UNREVIEWED":o.outcome==="HOLD").map(o=>o.applicationId);if(!ids.length)throw Error("No applicants remain.");s.currentPass++;s.passes.push({sessionId:s.id,number:s.currentPass,state:"OPEN",startedAt:now,completedAt:null,candidates:ids.map((applicationId,position)=>({sessionId:s.id,passNumber:s.currentPass,applicationId,position,withoutVote:false,ballotState:"PENDING",openedAt:null,closedAt:null,confirmedDecision:null,confirmedBy:null,confirmedAt:null,override:null,overrideBy:null,overrideAt:null,ballots:[]}))});s.activeApplicationId=ids[0];s.state="OPEN";s.endedAt=null;s.startedAt??=now;s.joinOpenedAt??=now;break;}
+      case "START":case "NEXT_PASS":{if(b.action==="START"){const planned=meetingDetails((s.presentationOptions as {meeting?:unknown})?.meeting);if(planned?.status==='CANCELLED')throw Error('Session cancelled.');if(planned?.plannedAt&&+new Date(planned.plannedAt)>Date.now()&&!b.confirmed)throw new DemoConflict({ok:false,code:'EARLY_CONFIRMATION_REQUIRED',message:'Confirm starting before the planned time.'});if(s.candidates.some(a=>{const app=state.applications.find(v=>v.id===a.applicationId);return !app||app.clubId!==s.clubId||app.roundId!==s.roundId||app.status!==a.expectedStatus||!['SUBMITTED','IN_REVIEW','INTERVIEWING','WAITLISTED'].includes(app.status)})||s.participants.some(p=>!state.memberships.some(v=>v.id===p.memberId&&v.clubId===s.clubId&&hasPermission(v,'applications.review')&&hasPermission(v,'decisions.vote')&&(c.round.anonymousReview||hasPermission(v,'applicants.identify')))))throw Error('Saved eligibility changed. Review setup before starting.');}if(b.action==="START"?s.state!=="DRAFT":!["PAUSED","COMPLETED"].includes(s.state))throw Error("Demo transition denied.");const ids=roomOutcomes(s).filter(o=>b.action==="START"?o.outcome==="UNREVIEWED":o.outcome==="HOLD").map(o=>o.applicationId);if(!ids.length)throw Error("No applicants remain.");if(b.action==='START'&&!c.round.anonymousReview&&roomPresentationSchema.safeParse(s.presentationOptions).data?.fields.includes('additionalObservations'))pinDemoObservations(state,s);s.currentPass++;s.passes.push({sessionId:s.id,number:s.currentPass,state:"OPEN",startedAt:now,completedAt:null,candidates:ids.map((applicationId,position)=>({sessionId:s.id,passNumber:s.currentPass,applicationId,position,withoutVote:false,ballotState:"PENDING",openedAt:null,closedAt:null,confirmedDecision:null,confirmedBy:null,confirmedAt:null,override:null,overrideBy:null,overrideAt:null,ballots:[]}))});s.activeApplicationId=ids[0];s.state="OPEN";s.endedAt=null;s.startedAt??=now;s.joinOpenedAt??=now;break;}
       case "OPEN_VOTING":if(entry?.ballotState!=="PENDING")throw Error("Demo state changed.");entry.ballotState="OPEN";entry.openedAt=now;break;
       case "CLOSE_VOTING":if(entry?.ballotState!=="OPEN")throw Error("Demo state changed.");if(entry.ballots.length<s.participants.length&&!b.confirmed)throw new DemoConflict({ok:false,code:"EARLY_CLOSE_CONFIRMATION",message:"Confirm early closure with missing ballots."});entry.ballotState="CLOSED";entry.closedAt=now;break;
       case "PASS_WITHOUT_VOTE_AND_ADVANCE":case "ACCEPT_WITHOUT_VOTE":if(entry?.ballotState!=="PENDING"||!b.confirmed||!b.reason)throw Error("Confirm and give a reason.");Object.assign(entry,{ballotState:"CONFIRMED",withoutVote:true,confirmedDecision:"PASS",confirmedAt:now,confirmedBy:c.m.userId});break;
@@ -125,13 +127,29 @@ export async function resolveSelection(input:unknown):Promise<Awaited<ReturnType
  return selectionScopes(c.state.applications.filter(a=>a.clubId===d.clubId&&d.applicationIds.includes(a.id)&&c.club.rounds.some(r=>r.id===a.roundId&&(r.anonymousReview||hasPermission(c.m,"applicants.identify")))).map(a=>({...a,recruitmentCycleId:c.club.id,round:{name:c.club.rounds.find(r=>r.id===a.roundId)!.name},recruitmentCycle:{name:"Demo recruitment cycle"}})),d.applicationIds);
 }
 
-function demoPresentation(c:Pick<ReturnType<typeof find>,"state"|"m"|"round"|"club">&{s:Pick<LiveRoom,"presentationOptions">},applicationId:string){const a=c.state.applications.find(a=>a.id===applicationId)!;
+function demoPresentation(c:Pick<ReturnType<typeof find>,"state"|"m"|"round"|"club">&{s:Pick<LiveRoom,"presentationOptions">&Partial<Pick<LiveRoom,"id"|"clubId"|"startedAt">>},applicationId:string){const a=c.state.applications.find(a=>a.id===applicationId)!;
    const person=c.state.students.find(p=>p.id===a.studentId)!,app={...a,student:{...person,studentProfile:person.profile},answers:[],evaluations:[],bookings:[]} as unknown as ReviewApplication;
-   const opts=roomPresentationSchema.safeParse(c.s.presentationOptions),config=opts.success?roomDisplayConfig(opts.data.fields):{version:1 as const,fields:[]};const base=projectApplicantDisplay(app,{...c.round,applicantDisplay:{}},config,[]);
-   const allowed=interviewCapabilities(c.m).readClosing;const reviews=allowed&&!base.anonymous?a.evaluations.filter(e=>e.submittedAt&&c.club.rounds.some(r=>r.id===e.roundId&&!r.anonymousReview)):[];
-   const scores=submittedScoreSummary(reviews.map(e=>({...e,interviewerId:`${e.roundId}:${e.interviewerId}`})),[]);
-   const quote=opts.success&&opts.data.fields.includes("resumeHighlight")&&!base.anonymous?excerptChoices(c.state,c.m,applicationId).find(q=>q.id===opts.data.highlights[applicationId])??null:null;
-   return {...base,photo:base.visible.includes("photo")?person.profile.headshotUrl??null:null,requestedFields:opts.success?opts.data.fields:null,resumeHighlight:quote,interviewScore:opts.success&&opts.data.fields.includes("interviewScore")?{average:scores.average,submitted:scores.submitted,rounds:new Set(reviews.map(e=>e.roundId)).size,scope:"Submitted reviews across authorized identified interview rounds; weighted by review count",withheld:!allowed}:null};
+   const opts=roomPresentationSchema.safeParse(c.s.presentationOptions),config=opts.success?roomDisplayConfig(opts.data.fields):{version:1 as const,fields:[]};const base=selectedVotingDisplay(projectApplicantDisplay(app,{...c.round,applicantDisplay:{}},config,[]),opts.success?opts.data.fields:[]);
+   const fields=opts.success?opts.data.fields:[],caps=interviewCapabilities(c.m);
+   const allowed=!base.anonymous&&a.studentId!==c.m.userId?c.club.rounds.filter(r=>{
+     if(!['INTERVIEW','GROUP_INTERVIEW'].includes(r.type)||r.anonymousReview||r.id!==a.roundId&&!a.evaluations.some(e=>e.roundId===r.id&&e.submittedAt))return false;
+     const panel=c.state.interviewFoundation.assignments.some(g=>g.applicationId===a.id&&g.roundId===r.id&&g.memberId===c.m.id&&!g.revokedAt)&&caps.participate;
+     const own=a.evaluations.some(e=>e.roundId===r.id&&e.interviewerId===c.m.id&&e.submittedAt);
+     return (caps.readClosing||panel)&&((caps.readClosing&&!(a.roundId===r.id&&panel))||own);
+   }).sort((a,b)=>a.order-b.order||a.id.localeCompare(b.id)):[];
+   const reviews=a.evaluations.filter(e=>e.submittedAt&&allowed.some(r=>r.id===e.roundId)&&c.state.memberships.some(m=>m.id===e.interviewerId&&m.clubId===c.club.id)&&!c.state.interviews.some(r=>r.applicationId===a.id&&r.roundId===e.roundId&&r.interviewerId===e.interviewerId&&r.anonymousReview));
+   const thoughts:VotingInterviewThought[]=fields.includes('finalInterviewThoughts')?[...c.state.interviews].sort((a,b)=>+(new Date(b.completedAt||0))-+(new Date(a.completedAt||0))||b.id.localeCompare(a.id)).flatMap(r=>{
+     const round=allowed.find(old=>old.id===r.roundId),evaluation=reviews.find(e=>e.interviewerId===r.interviewerId&&e.roundId===r.roundId),member=c.state.memberships.find(m=>m.id===r.interviewerId&&m.clubId===c.club.id);
+     if(r.applicationId!==a.id||r.clubId!==c.club.id||!r.completedAt||r.anonymousReview||!round||!evaluation||!member||!r.draft.finalInterviewThoughts?.trim())return [];
+     const profile=c.state.students.find(p=>p.id===member.userId)?.profile;
+     return [{id:r.id,roundId:round.id,roundName:round.name,interviewer:profile?`${profile.firstName} ${profile.lastName}`:'Interviewer',text:r.draft.finalInterviewThoughts}];
+   }):[];
+   const quote=fields.includes('resumeHighlight')&&!base.anonymous?excerptChoices(c.state,c.m,applicationId).find(q=>q.id===opts.data?.highlights[applicationId]):undefined;
+   const canReadResume=!base.anonymous&&(!!quote||caps.moderateResume||c.state.interviewFoundation.assignments.some(g=>g.applicationId===a.id&&g.roundId===a.roundId&&g.memberId===c.m.id&&!g.revokedAt&&caps.participate));
+   const highlight=fields.includes('resumeHighlight')&&canReadResume?{resumeHighlight:quote??null}:{};
+   const evidence={...(allowed.length&&fields.includes('interviewScore')?{interviewScore:votingScoreEvidence(allowed,reviews)}:{}),...(allowed.length&&fields.includes('finalInterviewThoughts')?{finalInterviewThoughts:thoughts}:{})};
+   const observations=demoVotingObservations(c.state,{id:c.s.id??'',clubId:c.club.id,startedAt:c.s.startedAt??null},applicationId,c.m.userId,fields.includes('additionalObservations'),base.anonymous);
+   return {...base,...observations,photo:base.visible.includes('photo')?person.profile.headshotUrl??null:null,...evidence,...highlight,requestedFields:[...base.visible,...('resumeHighlight'in highlight?['resumeHighlight' as const]:[]),...(evidence.interviewScore?['interviewScore' as const]:[]),...(evidence.finalInterviewThoughts?['finalInterviewThoughts' as const]:[]),...(observations.additionalObservations?['additionalObservations' as const]:[])]};
 }
 
 async function sessionSetupUnlocked<K extends keyof typeof Plans>(method:K,input:unknown):Promise<Awaited<ReturnType<(typeof Plans)[K]>>>{

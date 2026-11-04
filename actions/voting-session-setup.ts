@@ -11,7 +11,9 @@ import {loadVotingRoom,requireRoomLeader,roomFingerprint} from "@/utils/voting-r
 import {validateVotingSetup,notifyVotingVoters} from "@/utils/voting-room-setup";
 import {hasPermission} from "@/lib/permissions";
 import {getApplicantDisplay} from '@/actions/applicant-intelligence';
-import {votingHighlightChoices,votingInterviewSummary} from '@/utils/voting-room-presentation';
+import {votingObservations} from '@/utils/additional-observations';
+import {selectedVotingDisplay} from "@/lib/voting-slide-fields";
+import {votingSelectedHighlight,votingSelectedEvidence} from '@/utils/voting-room-presentation';
 import {getLiveVotingSetup} from '@/actions/voting-room-setup';
 const permissions=["applications.review","decisions.manage","decisions.start"] as const;
 export async function previewVotingSetup(input:unknown){
@@ -19,7 +21,11 @@ export async function previewVotingSetup(input:unknown){
  const setup=await getLiveVotingSetup({clubId:d.clubId,cycleId:d.cycleId,roundId:d.roundId}),{user}=await requireClubPermission(d.clubId,[...permissions]);
  if(!setup.applicants.some(a=>a.id===d.applicationId)||d.options.fields.some(f=>!setup.allowedFields.includes(f)))throw Error('Presentation is unavailable with the current eligibility or field permissions.');
  const display=await getApplicantDisplay({clubId:d.clubId,applicationId:d.applicationId,previewConfig:roomDisplayConfig(d.options.fields)});
- return prisma.$transaction(async tx=>{const member=await authorizeClubTransaction(tx,d.clubId,user.id,[...permissions],{readOnly:true});const round=await tx.pipelineRound.findFirst({where:{id:d.roundId,clubId:d.clubId,archivedAt:null}}),app=await tx.application.findFirst({where:{id:d.applicationId,clubId:d.clubId,roundId:d.roundId,recruitmentCycleId:d.cycleId,status:{in:['SUBMITTED','IN_REVIEW','INTERVIEWING','WAITLISTED']}}});if(!round||!app||display.anonymous!==round.anonymousReview||!round.anonymousReview&&!hasPermission(member,"applicants.identify"))throw Error('Applicant context changed. Refresh the preview.');return {...display,requestedFields:d.options.fields,resumeHighlight:!display.anonymous&&d.options.fields.includes('resumeHighlight')?(await votingHighlightChoices(tx,d.clubId,d.applicationId,user.id)).find(h=>h.id===d.options.highlights[d.applicationId])??null:null,interviewScore:!display.anonymous&&d.options.fields.includes('interviewScore')?await votingInterviewSummary(tx,d.clubId,d.applicationId,user.id):null};},votingReadLimits);
+ return prisma.$transaction(async tx=>{const member=await authorizeClubTransaction(tx,d.clubId,user.id,[...permissions],{readOnly:true});const round=await tx.pipelineRound.findFirst({where:{id:d.roundId,clubId:d.clubId,archivedAt:null}}),app=await tx.application.findFirst({where:{id:d.applicationId,clubId:d.clubId,roundId:d.roundId,recruitmentCycleId:d.cycleId,status:{in:['SUBMITTED','IN_REVIEW','INTERVIEWING','WAITLISTED']}}});if(!round||!app||display.anonymous!==round.anonymousReview||!round.anonymousReview&&!hasPermission(member,"applicants.identify"))throw Error('Applicant context changed. Refresh the preview.');const evidence=await votingSelectedEvidence(tx,d.clubId,d.applicationId,user.id,d.options.fields,display.anonymous,d.roundId);
+ const highlight=await votingSelectedHighlight(tx,d,user.id,d.options.fields.includes('resumeHighlight'),display.anonymous,d.options.highlights[d.applicationId]);
+ const selectedDisplay=selectedVotingDisplay(display,d.options.fields);
+ const observations=await votingObservations(tx,{id:'',startedAt:null,clubId:d.clubId,cycleId:d.cycleId},app.id,user.id,d.options.fields.includes('additionalObservations'),display.anonymous);
+ return {...selectedDisplay,...evidence,...highlight,...observations,requestedFields:[...selectedDisplay.visible,...('resumeHighlight'in highlight?['resumeHighlight' as const]:[]),...(evidence.interviewScore?['interviewScore' as const]:[]),...(evidence.finalInterviewThoughts?['finalInterviewThoughts' as const]:[]),...(observations.additionalObservations?['additionalObservations' as const]:[])]};},votingReadLimits);
 }
 export async function listVotingSetupDrafts(input:unknown){
  const {clubId}=z.object({clubId:z.string().uuid()}).strict().parse(input),{user}=await requireClubPermission(clubId,[...permissions]);

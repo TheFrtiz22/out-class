@@ -109,6 +109,7 @@ model Experience {
 // ==========================================
 
 model Club {
+  additionalObservations ApplicantObservation[]
   recruitmentCycles RecruitmentCycle[]
   scheduledCommunications ScheduledCommunication[]
   recipientGroups RecipientGroup[]
@@ -209,6 +210,7 @@ enum ClubRole {
 // ==========================================
 
 model PipelineRound {
+  additionalObservations ApplicantObservation[]
   bookingPublishedAt DateTime?
   bookingPaused Boolean @default(false)
   bookingRevision Int @default(0)
@@ -1075,13 +1077,39 @@ model ApplicantObservation {
   anonymousReview Boolean
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  // Additional observations retain their original review context and append-only revisions.
+  clubId String?
+  club Club? @relation(fields: [clubId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  cycleId String?
+  cycle RecruitmentCycle? @relation(fields: [cycleId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  roundId String?
+  round PipelineRound? @relation(fields: [roundId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  interactionContext String?
+  revision Int @default(1)
+  history Json @default("[]")
+  deletedAt DateTime?
+  presentationReferences VotingObservationReference[]
 
   @@index([applicationId, createdAt])
   @@index([authorId])
 }
 
+model VotingObservationReference {
+  sessionId String
+  session VotingSession @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  observationId String
+  observation ApplicantObservation @relation(fields: [observationId], references: [id], onDelete: Restrict)
+  applicationId String
+  revision Int
+  snapshot Json
+  createdAt DateTime @default(now())
+  @@id([sessionId, observationId])
+  @@index([sessionId, applicationId])
+}
+
 // Durable decisions are separate from published application statuses.
 model VotingSession {
+  observationReferences VotingObservationReference[]
   targetUnset Boolean @default(false)
   presentationOptions Json @default("{}")
   mode String @default("LEGACY")
@@ -1594,6 +1622,7 @@ model ScheduledCommunication {
 }
 
 model RecruitmentCycle {
+ additionalObservations ApplicantObservation[]
  votingSessions VotingSession[]
   interviewBookingRounds PipelineRound[] @relation("InterviewBookingCycle")
  id String @id @default(uuid())
