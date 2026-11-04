@@ -2,7 +2,11 @@
 import { assertClubOperational, lockOperationalClub } from "@/lib/club-suspension";
 import { publicMeetingVisibility } from "@/lib/campus-events";
 import { createHash, randomBytes } from "node:crypto";
-import { generateRandomShortCode } from "@/lib/short-links";
+import {
+  closeMeetingCheckInShortLinks,
+  createMeetingCheckInShortLink,
+  deleteStaleMeetingCheckInShortLinks,
+} from "@/lib/short-link-store";
 import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import { requireAuth, requireClubPermission } from "@/utils/auth";
@@ -121,33 +125,21 @@ export async function issueMeetingCheckIn(clubId: string, meetingId: string) {
         issuedBy: user.id,
       },
     });
-    let shortCode: string | undefined;
-    let shortUrl: string | undefined;
-    if ("platformContent" in tx && (tx as unknown as { platformContent?: unknown }).platformContent) {
-      try {
-        shortCode = generateRandomShortCode(6);
-        await (tx as unknown as { platformContent: { create: (arg: unknown) => Promise<unknown> } }).platformContent.create({
-          data: {
-            key: `shortlink:${shortCode}`,
-            value: {
-              code: shortCode,
-              target: `/check-in?meetingId=${meetingId}#token=${token}`,
-              type: "meeting-check-in",
-              createdAt: now.toISOString(),
-              expiresAt: expiresAt.toISOString(),
-              revoked: false,
-              revokedAt: null,
-              revocationReason: null,
-              clubId,
-              eventId: meetingId,
-            },
-          },
-        });
-        shortUrl = `/q/${shortCode}`;
-      } catch {
-        // Fall back gracefully to direct check-in if short-link creation encounters an issue
-      }
-    }
+    // The compact /q link is part of the same transaction as its token. Links
+    // whose tokens can no longer be valid are removed so raw tokens do not
+    // accumulate in PlatformContent.
+    await deleteStaleMeetingCheckInShortLinks(
+      tx,
+      meetingId,
+      new Date(now.getTime() - TOKEN_LIFETIME_MS),
+    );
+    const { code: shortCode, shortUrl } = await createMeetingCheckInShortLink(tx, {
+      clubId,
+      meetingId,
+      token,
+      createdAt: now,
+      expiresAt,
+    });
     return { token, expiresAt: expiresAt.toISOString(), shortCode, shortUrl };
   });
 }
@@ -159,6 +151,7 @@ export async function closeMeetingCheckIn(clubId: string, meetingId: string) {
     if (!(await tx.meeting.findFirst({ where: { id: meetingId, clubId } })))
       throw new Error("Meeting unavailable.");
     await tx.meetingCheckInToken.deleteMany({ where: { meetingId } });
+    await closeMeetingCheckInShortLinks(tx, meetingId);
     return { success: true };
   });
 }
