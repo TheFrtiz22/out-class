@@ -39,5 +39,6 @@ try{
  run(process.execPath,['--test','tests/decision-publication-native.test.cjs'],{env});
  run(process.execPath,['--test','tests/recipient-audiences-native.test.cjs'],{env});
  run(process.execPath,['--test','tests/communication-schedules-native.test.cjs'],{env});
+ run(process.execPath,['--test','tests/notification-worker-native.test.cjs'],{env});
  run(process.execPath,['node_modules/prisma/build/index.js','migrate','status'],{env});
 }finally{spawnSync('docker',['rm','-f',name],{stdio:'ignore'});}
