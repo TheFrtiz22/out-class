@@ -20,7 +20,10 @@ export function MeetingCheckIn() {
     setId(url.searchParams.get("meetingId") || "");
     setToken(
       (previous) =>
-        previous || new URLSearchParams(url.hash.slice(1)).get("token") || "",
+        previous ||
+        new URLSearchParams(url.hash.slice(1)).get("token") ||
+        url.searchParams.get("token") ||
+        "",
     );
     if (url.hash)
       window.history.replaceState(null, "", url.pathname + url.search);
