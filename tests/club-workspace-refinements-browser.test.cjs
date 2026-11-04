@@ -14,6 +14,8 @@ async function fixture() {
   const api = `async function call(path,input){const response=await fetch('/api/'+path,input?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)}:undefined);if(!response.ok)throw Error('Fixture save rejected');return response.json()}exports.getClubPipeline=()=>call('pipeline');exports.getClubPipelineList=()=>call('pipeline');exports.getClubPipelinePage=async(club,q={})=>require('@/lib/pipeline-page').pagePipeline(await call('pipeline'),q,'owner','owner','fixture');exports.getClubPipelineSelection=async(club,q={})=>require('@/lib/pipeline-page').completePipelineSelection(await call('pipeline'),q,'owner','owner');exports.setApplicationStatus=input=>call('status',input);exports.getOrganizationMemberManagement=()=>call('directory');exports.assignOrganizationMemberGroups=input=>call('groups',input);exports.createOrganizationMemberGroups=input=>call('create-groups',input);exports.getApplicantDisplay=()=>call('display');exports.saveApplicantObservation=input=>call('observation',input);exports.deleteApplicantObservation=input=>call('delete-observation',input);exports.listMeetings=async()=>[];exports.submitEvaluation=async()=>({});exports.moveApplicantRound=async()=>({});exports.getRecipientGroups=()=>call('catalog');exports.previewRecipientAudience=()=>call('preview');exports.publishClubAnnouncement=input=>call('announcement',input);exports.getOrganizationSetupChecklist=()=>call('checklist');`
   const empty = 'module.exports=new Proxy({},{get:()=>()=>null});'
   const mocks = {
+    // Short-link writes are outside this directory/profile fixture.
+    '@/actions/short-links': 'exports.createShortLink=async()=>null;',
     '@/lib/additional-observations-api': `exports.getAdditionalObservations=async()=>[];exports.saveAdditionalObservation=async()=>{throw Error('Observation writes are outside this directory/profile fixture')};`,
     'next/link': `const React=require('react');module.exports=({href,children,...props})=>React.createElement('a',{...props,href},children);`,
     'next/navigation': `exports.useSearchParams=()=>new URLSearchParams(location.search);exports.useRouter=()=>({push(){},refresh(){}});`,
@@ -81,6 +83,12 @@ test('browser: sortable lists, wide applicant profile, drag/drop, quick decision
   await page.getByRole('heading',{name:'Pros & cons',exact:true}).waitFor()
   assert.ok((await page.locator('.oc-review-observations').boundingBox()).height<350)
   assert.equal(await page.locator('.oc-review-observations textarea').count(),0)
+  const observations=page.getByRole('region',{name:'Additional observations',exact:true})
+  await observations.getByRole('button',{name:'Add observation',exact:true}).click()
+  await observations.getByRole('textbox',{name:'Observation',exact:true}).waitFor()
+  await observations.getByText('0 / 50 words',{exact:true}).waitFor()
+  await observations.getByRole('button',{name:'Cancel',exact:true}).click()
+  await page.waitForFunction(()=>document.activeElement?.textContent==='Add observation')
   const status=page.locator('[data-application-status]').first()
   assert.deepEqual(await status.evaluate(element=>({background:getComputedStyle(element).backgroundColor,radius:getComputedStyle(element).borderRadius})),{background:'rgba(0, 0, 0, 0)',radius:'0px'})
   await resumeResponse
