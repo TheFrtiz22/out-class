@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
       await tx.adminElevation.updateMany({ where: { actorId: actor.id, revokedAt: null }, data: { revokedAt: now } });
       const elevation = await tx.adminElevation.create({ data: { actorId: actor.id, tokenHash: elevationHash(elevationToken), authSessionId: claims.data.claims.session_id, factorId: challenge.factorId, passwordVerifiedAt: challenge.passwordVerifiedAt, mfaVerifiedAt: now, createdAt: now, expiresAt: new Date(now.getTime() + ADMIN_ELEVATION_LIFETIME) } });
       await tx.adminElevationChallenge.update({ where: { id: challenge.id }, data: { consumedAt: now, encryptedCredentials: "" } });
-      await tx.auditLog.create({ data: { actorId: actor.id, action: "platform.elevation.create", targetId: elevation.id, details: { result: "success", factorId: challenge.factorId, expiresAt: elevation.expiresAt.toISOString() } } });
+      await tx.auditLog.create({ data: { actorId: actor.id, action: "platform.elevation.create", targetId: elevation.id, details: { result: "success", factorId: challenge.factorId, expiresAt: elevation.expiresAt?.toISOString() } } });
       return { elevationToken, session: { access_token: verified.data.access_token, refresh_token: verified.data.refresh_token } };
     }, { timeout: 20000 });
     if ("error" in result) throw new AdminAccessError("ADMIN_ELEVATION_REQUIRED", result.error ?? "Admin authentication failed.");

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { QRCodeSVG } from "qrcode.react"
+import { OutClassQRCode } from "@/components/qr/outclass-qr-code"
 import { ArrowRight, Users } from "lucide-react"
 import { connectedParticipants, type VotingSession } from "@/lib/live-voting"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -16,8 +16,21 @@ export function VotingLobby({ session, onBegin }: { session: VotingSession; onBe
   return <div className="mx-auto grid w-full max-w-6xl gap-8 px-5 py-8 font-sans text-neutral-950 lg:grid-cols-[minmax(0,1fr)_360px] lg:py-12">
     <section className="space-y-6 rounded-2xl border border-neutral-200 bg-white p-6 text-center shadow-none sm:p-8">
       <div><p className="text-xs font-medium uppercase tracking-widest text-neutral-500">Live voting · waiting room</p><h2 className="oc-section-heading mt-3">Join the room.</h2><p className="mt-3 text-sm text-neutral-500">Scan the code or enter the Session PIN to join.</p></div>
-      <div className="mx-auto w-full max-w-[360px] rounded-xl border border-neutral-200 bg-white p-3">
-        {origin ? <QRCodeSVG value={joinUrl} size={336} marginSize={4} level="M" title="Scan to join this voting session" className="h-auto w-full" /> : <div role="status" className="aspect-square content-center text-sm text-neutral-500">Preparing session QR…</div>}
+      <div className="mx-auto flex justify-center">
+        {origin ? (
+          <OutClassQRCode
+            value={joinUrl}
+            size={280}
+            variant="compact"
+            showLogo={true}
+            ariaLabel="Scan to join this voting session"
+            title="Voting Session Join"
+          />
+        ) : (
+          <div role="status" className="flex size-[280px] items-center justify-center text-sm text-neutral-500">
+            Preparing session QR…
+          </div>
+        )}
       </div>
       <div className="space-y-3"><p className="text-sm text-neutral-500">Or open <a href="/vote/" target="_blank" rel="noopener noreferrer" className="font-medium text-black underline underline-offset-4">{origin ? `${new URL(origin).host}/vote` : "/vote"}</a> and enter</p><p className="text-xs uppercase tracking-widest text-neutral-500">Session PIN</p><p aria-label={`Session PIN ${session.pin}`} data-testid="session-pin" className="text-5xl font-semibold tracking-[0.18em] tabular-nums sm:text-6xl">{session.pin}</p></div>
       <p className="text-xs leading-5 text-neutral-500">Demo sync works between tabs in this browser. Scanning from a separate phone requires a connected server. A PIN locates the room; it is not proof of identity.</p>
