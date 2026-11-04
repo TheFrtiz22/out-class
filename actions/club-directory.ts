@@ -170,16 +170,17 @@ export async function getPublicClub(
   }
 }
 
-/** Idempotent start: never replace answers or reset an existing application. */
-export async function startClubApplication(clubId: string) {
+/** Idempotent start: never replace answers or reset an existing application.
+ * After a rejection, a new application can start in the club's next cycle; the
+ * reason is returned (not thrown) because production redacts thrown messages. */
+export async function startClubApplication(clubId: string): Promise<{ applicationId: string; unavailable?: never } | { applicationId: null; unavailable: string }> {
   const { requireAuth } = await import("@/utils/auth");
+  const { currentApplication, reapplicationUnavailable } = await import("@/lib/recruitment-cycle");
   const { user } = await requireAuth();
   return prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${clubId} FOR UPDATE`;
-    const existing = await tx.application.findUnique({
-      where: { studentId_clubId: { studentId: user.id, clubId } },
-      select: { id: true },
-    });
+    await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${user.id} FOR UPDATE`;
+    const existing = await currentApplication(tx, user.id, clubId);
     if (existing) return { applicationId: existing.id };
     await assertClubOperational(tx, clubId);
     const club = await tx.club.findUnique({
@@ -188,16 +189,16 @@ export async function startClubApplication(clubId: string) {
     });
     if (!club || !applicationAvailability(club))
       throw new Error("Applications are closed for this club.");
+    const unavailable = await reapplicationUnavailable(tx, user.id, clubId);
+    if (unavailable) return { applicationId: null, unavailable };
     const round = await tx.pipelineRound.findFirst({
       where: { clubId, archivedAt: null },
       orderBy: { order: "asc" },
     });
     if (!round)
       throw new Error("Applications are not available for this club.");
-    const application = await tx.application.upsert({
-      where: { studentId_clubId: { studentId: user.id, clubId } },
-      update: {},
-      create: {
+    const application = await tx.application.create({
+      data: {
         studentId: user.id,
         clubId,
         roundId: round.id,

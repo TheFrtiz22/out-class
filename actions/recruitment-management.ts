@@ -44,6 +44,8 @@ export async function reconsiderRejectedApplication(input:unknown){
   await authorizeClubTransaction(tx,d.clubId,user.id,["decisions.manage","applicants.identify"]);
   const app=await tx.application.findFirst({where:{id:d.applicationId,clubId:d.clubId,status:"REJECTED",round:{archivedAt:null}}});
   if(!app||decisionPublicationGuard(app)!==d.expectedGuard)throw Error("Rejected application changed or unavailable.");
+  // Reopening is unavailable once the student has re-applied: review their current application instead.
+  if(await tx.application.findFirst({where:{studentId:app.studentId,clubId:d.clubId,status:{not:"REJECTED"}},select:{id:true}}))throw Error("This student has re-applied. Review their current application instead.");
   const result=await tx.application.updateMany({where:{id:app.id,clubId:d.clubId,status:"REJECTED",decisionVersion:app.decisionVersion,decisionStateRevision:app.decisionStateRevision},data:{status:"IN_REVIEW",decisionVersion:{increment:1}}});
   if(result.count!==1)throw Error("Rejected application changed or unavailable.");
   await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:d.applicationId,action:"recruitment.reconsidered",reason:d.reason,details:{previousStatus:"REJECTED",status:"IN_REVIEW",previousVersion:app.decisionVersion}}});

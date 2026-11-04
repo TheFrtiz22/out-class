@@ -35,7 +35,7 @@ test('disposable real Auth/password/MFA elevation, Admin routes/actions, invitat
  // Suspension regression uses only the pre-existing disposable club and local Auth identities.
  await db.clubMember.upsert({where:{userId_clubId:{userId:c.identities.student.id,clubId:c.clubId}},create:{userId:c.identities.student.id,clubId:c.clubId,permissions:[],status:'ACTIVE'},update:{}});
  const historyRound=await db.pipelineRound.create({data:{clubId:c.clubId,name:'Suspension history '+randomUUID(),order:99}});
- const application=await db.application.upsert({where:{studentId_clubId:{studentId:c.identities.student.id,clubId:c.clubId}},create:{studentId:c.identities.student.id,clubId:c.clubId,roundId:historyRound.id,status:'DRAFTING'},update:{}});
+ const application=(await db.application.findFirst({where:{studentId:c.identities.student.id,clubId:c.clubId,status:{not:'REJECTED'}}}))??await db.application.create({data:{studentId:c.identities.student.id,clubId:c.clubId,roundId:historyRound.id,status:'DRAFTING'}});
  const published=await db.meeting.findFirstOrThrow({where:{clubId:c.clubId,publication:{is:{status:'PUBLISHED',capacity:150}},date:{gt:new Date()}},include:{publication:true}});
  await db.eventRsvp.upsert({where:{eventId_userId:{eventId:published.id,userId:c.identities.student.id}},create:{eventId:published.id,userId:c.identities.student.id},update:{}});
  const snapshot=async()=>JSON.stringify(await db.club.findUniqueOrThrow({where:{id:c.clubId},select:{members:{orderBy:{id:'asc'}},applications:{orderBy:{id:'asc'},include:{answers:true,evaluations:true,bookings:true}},pipelineRounds:{orderBy:{id:'asc'}},events:{orderBy:{id:'asc'},include:{publication:true,flyers:true,rsvps:{orderBy:{userId:'asc'}}}}}}));

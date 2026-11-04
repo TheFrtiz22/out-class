@@ -306,7 +306,10 @@ model Application {
   evaluations Evaluation[]
   bookings    InterviewBooking[]
 
-  @@unique([studentId, clubId])
+  // At most one non-REJECTED application per student and club: partial unique
+  // index "Application_one_open_per_student_club" (migration SQL; Prisma
+  // cannot express partial indexes). Rejected students may re-apply.
+  @@index([studentId, clubId])
   @@unique([id, clubId])
   @@index([clubId], map: "Application_clubId_idx")
   @@index([roundId], map: "Application_roundId_idx")

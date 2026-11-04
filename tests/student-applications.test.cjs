@@ -20,8 +20,10 @@ function setup({ status = 'DRAFTING', profile = true, questions = [question], te
     studentProfile: { findUnique: async () => profile ? (typeof profile === 'object' ? profile : { id: 'profile' }) : null },
     applicationQuestion: { findMany: async args => { calls.push(['questions', args]); return questions } },
     pipelineRound: { findFirst: async () => ({ id: 'first-round' }) },
+    recruitmentCycle: { findMany: async () => [] },
     application: {
-      findUnique: async args => { calls.push(['owner', args]); return { id: 'app', status } },
+      // The current application is the student's non-rejected one for the club.
+      findFirst: async args => { calls.push(['owner', args]); return { id: 'app', status } },
       updateMany: async args => { calls.push(['update', args]); return { count: status === 'DRAFTING' ? 1 : 0 } },
     },
     applicationAnswer: {
@@ -54,7 +56,7 @@ test('question ownership, duplicates, and unsafe attachment links are rejected',
 test('draft save is authenticated, conditional on draft state, and preserves status', async () => {
   const { saveApplicationDraft, calls } = setup()
   await saveApplicationDraft({ clubId, answers: [{ questionId, response: '' }] })
-  assert.deepEqual(calls.find(([name]) => name === 'owner')[1].where, { studentId_clubId: { studentId: 'student', clubId } })
+  assert.deepEqual(calls.find(([name]) => name === 'owner')[1].where, { studentId: 'student', clubId, status: { not: 'REJECTED' } })
   const update = calls.find(([name]) => name === 'update')[1]
   assert.deepEqual(update.where, { id: 'app', studentId: 'student', status: 'DRAFTING' })
   assert.deepEqual(update.data, { status: 'DRAFTING' })

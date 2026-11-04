@@ -202,12 +202,16 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
 
   const applyToClub = useCallback(
     (club: ClubRef) => {
-      if (appliedClubIds.has(club.id)) return
+      // A server application id that differs from the tracked one is a new
+      // application to the same club (re-application after a rejection): it
+      // replaces the tracked entry. Otherwise one tracked entry per club.
+      const tracked = trackedApps.find((app) => app.clubId === club.id)
+      if (tracked && (!club.applicationId || tracked.id === club.applicationId)) return
 
       const timestamp = Date.now()
 
       setTrackedApps((prev) => [
-        ...prev,
+        ...prev.filter((app) => app.clubId !== club.id),
         {
           id: club.applicationId ?? `trk-${timestamp}`,
           clubId: club.id,
@@ -250,7 +254,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
 
 
     },
-    [appliedClubIds, setNotifications],
+    [trackedApps, setNotifications],
   )
 
   const setNotificationsRead = useCallback(async (ids: string[], read: boolean) => {

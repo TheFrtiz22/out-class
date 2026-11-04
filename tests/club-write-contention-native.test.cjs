@@ -63,7 +63,10 @@ test('club-wide write contention under simulated cross-region latency', { skip: 
     '@/utils/auth': { requireAuth: async () => ({ user: request.getStore() }) },
   };
   const current = loader(mocks)('actions/applications.ts');
-  const previous = loader(mocks, { 'actions/applications.ts': execFileSync('git', ['show', 'origin/main:actions/applications.ts'], { encoding: 'utf8' }) })('actions/applications.ts');
+  // Optional before/after comparison: OUTCLASS_CONTENTION_BASELINE_REF=origin/main
+  // (the ref's applications.ts must compile against the current schema).
+  const baselineRef = process.env.OUTCLASS_CONTENTION_BASELINE_REF;
+  const previous = baselineRef ? loader(mocks, { 'actions/applications.ts': execFileSync('git', ['show', `${baselineRef}:actions/applications.ts`], { encoding: 'utf8' }) })('actions/applications.ts') : null;
 
   const club = await operator.club.create({ data: { slug: `contention-${randomUUID()}`, name: 'Contention Club', tagline: '', description: '', color: '#142d4e', category: 'Academic', applicationOpen: true } });
   await operator.pipelineRound.create({ data: { clubId: club.id, name: 'Applied', order: 0 } });
@@ -97,7 +100,7 @@ test('club-wide write contention under simulated cross-region latency', { skip: 
   const report = [];
   for (const rtt of RTT_SCENARIOS) {
     rttMs = rtt;
-    for (const [label, api] of [['main (club FOR UPDATE)', previous], ['branch (club FOR SHARE + student lock)', current]]) {
+    for (const [label, api] of [...(previous ? [[`baseline ${baselineRef}`, previous]] : []), ['current (club FOR SHARE + student lock)', current]]) {
       const result = await burst(api, await students(CONCURRENT_STUDENTS));
       report.push({ rttMs: rtt, version: label, ...result });
       t.diagnostic(`rtt=${rtt}ms ${label}: ${result.succeeded}/${result.attempted} saved, p50=${result.p50}ms p95=${result.p95}ms max=${result.max}ms${result.errors.length ? ' errors=' + JSON.stringify(result.errors) : ''}`);
@@ -106,7 +109,7 @@ test('club-wide write contention under simulated cross-region latency', { skip: 
   if (process.env.OUTCLASS_CONTENTION_REPORT) fs.writeFileSync(process.env.OUTCLASS_CONTENTION_REPORT, JSON.stringify({ students: CONCURRENT_STUDENTS, report }, null, 2));
 
   // The branch must save every concurrent student's draft at every simulated latency.
-  for (const row of report.filter(r => r.version.startsWith('branch'))) assert.equal(row.succeeded, row.attempted, `rtt=${row.rttMs}ms: ${JSON.stringify(row.errors)}`);
+  for (const row of report.filter(r => r.version.startsWith('current'))) assert.equal(row.succeeded, row.attempted, `rtt=${row.rttMs}ms: ${JSON.stringify(row.errors)}`);
 
   await t.test('one student\'s concurrent first saves stay ordered without a unique-constraint error', async () => {
     rttMs = RTT_SCENARIOS[RTT_SCENARIOS.length - 1];
