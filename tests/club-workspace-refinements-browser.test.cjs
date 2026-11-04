@@ -81,6 +81,12 @@ test('browser: sortable lists, wide applicant profile, drag/drop, quick decision
   await page.getByRole('heading',{name:'Pros & cons',exact:true}).waitFor()
   assert.ok((await page.locator('.oc-review-observations').boundingBox()).height<350)
   assert.equal(await page.locator('.oc-review-observations textarea').count(),0)
+  const observations=page.getByRole('region',{name:'Additional observations',exact:true})
+  await observations.getByRole('button',{name:'Add observation',exact:true}).click()
+  await observations.getByRole('textbox',{name:'Observation',exact:true}).waitFor()
+  await observations.getByText('0 / 50 words',{exact:true}).waitFor()
+  await observations.getByRole('button',{name:'Cancel',exact:true}).click()
+  await page.waitForFunction(()=>document.activeElement?.textContent==='Add observation')
   const status=page.locator('[data-application-status]').first()
   assert.deepEqual(await status.evaluate(element=>({background:getComputedStyle(element).backgroundColor,radius:getComputedStyle(element).borderRadius})),{background:'rgba(0, 0, 0, 0)',radius:'0px'})
   await resumeResponse
