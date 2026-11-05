@@ -1137,6 +1137,29 @@ model VotingBallotRule {
   @@id([sessionId, passNumber, applicationId, version])
 }
 
+// Leader-prepared applicant highlights (editable) and their per-pass immutable copies.
+model VotingSlidePreparation {
+  sessionId String
+  applicationId String
+  candidate VotingCandidate @relation(fields: [sessionId, applicationId], references: [sessionId, applicationId], onDelete: Restrict)
+  highlights Json @default("[]")
+  revision Int @default(1)
+  updatedBy String
+  updatedAt DateTime @default(now())
+  @@id([sessionId, applicationId])
+}
+
+model VotingSlideLock {
+  sessionId String
+  passNumber Int
+  applicationId String
+  candidate VotingPassCandidate @relation(fields: [sessionId, passNumber, applicationId], references: [sessionId, passNumber, applicationId], onDelete: Restrict)
+  highlights Json
+  preparationRevision Int
+  createdAt DateTime @default(now())
+  @@id([sessionId, passNumber, applicationId])
+}
+
 // Durable decisions are separate from published application statuses.
 model VotingSession {
   observationReferences VotingObservationReference[]
@@ -1192,6 +1215,7 @@ model VotingCandidate {
   expectedStatus AppStatus
   publishedStatus AppStatus?
   passes VotingPassCandidate[]
+  slidePreparation VotingSlidePreparation?
   @@id([sessionId, applicationId])
   @@unique([sessionId, position])
 }
@@ -1224,6 +1248,7 @@ model VotingPassCandidate {
   overrideAt DateTime?
   ballots VotingBallot[]
   ballotRules VotingBallotRule[]
+  slideLock VotingSlideLock?
   @@id([sessionId, passNumber, applicationId])
   @@unique([sessionId, passNumber, position])
 }

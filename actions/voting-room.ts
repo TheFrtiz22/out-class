@@ -17,6 +17,7 @@ import {selectedVotingDisplay} from "@/lib/voting-slide-fields";
 import {lockVotingObservations,votingObservations} from '@/utils/additional-observations';
 import {currentEligibleVoterIds,latestBallotRule,ballotRuleResult,sessionRules} from '@/utils/voting-rules';
 import {describeVotingRules,ruleResultSummary} from '@/lib/voting-rules';
+import {lockPreparedSlides,presentedSlideHighlights} from '@/utils/voting-slide-preparation';
 
 class RoomConflict extends Error { constructor(public code:string,message:string){super(message);} }
 async function domainResult<T>(work:()=>Promise<T>) { try { return {ok:true as const,result:await work()}; } catch(e) { if(e instanceof RoomConflict)return {ok:false as const,code:e.code,message:e.message}; throw e; } }
@@ -91,10 +92,10 @@ export async function getLiveVotingRoom(input:unknown) {
 }
 
 export async function getLiveVotingPresentation(input:unknown) {
-  const d=roomScope.extend({applicationId:roomBallotSchema.shape.applicationId}).parse(input);
+  const d=roomScope.extend({applicationId:roomBallotSchema.shape.applicationId,preparation:z.boolean().optional()}).parse(input);
   // The canonical display action independently rechecks session/current candidate,
   // cycle, anonymity, field and submitted-feedback permissions in its transaction.
-  const display=await getApplicantDisplay(d),{user}=await requireClubPermission(d.clubId,["applications.review"]);
+  const display=await getApplicantDisplay({clubId:d.clubId,sessionId:d.sessionId,applicationId:d.applicationId}),{user}=await requireClubPermission(d.clubId,["applications.review"]);
   return prisma.$transaction(async tx=>{
     const m=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review"],{readOnly:true});
     const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId);const role=roomAuthority(s,m,round.anonymousReview);
@@ -105,7 +106,10 @@ export async function getLiveVotingPresentation(input:unknown) {
     const evidence=await votingSelectedEvidence(tx,d.clubId,d.applicationId,user.id,options?.fields??[],display.anonymous,s.roundId);
     const selectedDisplay=selectedVotingDisplay(display,options?.fields);
     const observations=await votingObservations(tx,s,app.id,user.id,!!options?.fields.includes('additionalObservations'),display.anonymous);
-    return {...selectedDisplay,...evidence,...highlight,...observations,requestedFields:[...selectedDisplay.visible,...("resumeHighlight"in highlight?["resumeHighlight" as const]:[]),...(evidence.interviewScore?["interviewScore" as const]:[]),...(evidence.finalInterviewThoughts?["finalInterviewThoughts" as const]:[]),...(observations.additionalObservations?['additionalObservations' as const]:[])]};
+    // Preparation preview shows the leader's unlocked working copy; everyone else sees the locked pass copy.
+    if(d.preparation)requireRoomLeader(s,m,"decisions.manage");
+    const prepared=await presentedSlideHighlights(tx,s,app.id,user.id,display.anonymous,!!d.preparation);
+    return {...selectedDisplay,...evidence,...highlight,...observations,...prepared,requestedFields:[...selectedDisplay.visible,...("resumeHighlight"in highlight?["resumeHighlight" as const]:[]),...(evidence.interviewScore?["interviewScore" as const]:[]),...(evidence.finalInterviewThoughts?["finalInterviewThoughts" as const]:[]),...(observations.additionalObservations?['additionalObservations' as const]:[])]};
   },votingReadLimits);
 }
 
@@ -175,6 +179,8 @@ export async function commandLiveVotingRoom(input:unknown) {
         if(!ids.length)throw new RoomConflict("EMPTY_QUEUE","No held or unreviewed applicants remain. End the session when ready.");
         if(d.action==='START'&&!round.anonymousReview&&roomPresentationSchema.safeParse(s.presentationOptions).data?.fields.includes('additionalObservations'))await lockVotingObservations(tx,s,user.id);
         await tx.votingPass.create({data:{sessionId:s.id,number:s.currentPass+1,candidates:{create:ids.map((applicationId,position)=>({applicationId,position}))}}});
+        // Freeze prepared highlights for this pass before any applicant in it is presented.
+        if(!round.anonymousReview)await lockPreparedSlides(tx,s.id,s.currentPass+1,ids);
         Object.assign(patch,{currentPass:s.currentPass+1,activeApplicationId:ids[0],state:"OPEN",endedAt:null,startedAt:s.startedAt??new Date(),joinOpenedAt:s.joinOpenedAt??new Date()});break;
       }
       case "OPEN_VOTING": {
