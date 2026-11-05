@@ -43,7 +43,7 @@ export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: ()
       onExit?.()
   }
   return (
-    <main data-workspace-detail className="oc-interview-room min-h-dvh bg-background text-foreground">
+    <main className="oc-interview-room min-h-dvh bg-background text-foreground">
       {!membership && <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border bg-card px-5 py-4 sm:px-8">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" disabled={saving} onClick={exit}>

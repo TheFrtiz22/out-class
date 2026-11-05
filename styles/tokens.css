@@ -1,4 +1,4 @@
-/* OutClass foundations. Semantic variables are the source of truth; Tailwind
+/* OutClass foundations: the single palette for every surface. Semantic variables are the source of truth; Tailwind
    and the existing shadcn APIs consume them through app/globals.css. */
 :root {
   /* Editorial composition: display scale is independent of operational controls. */
@@ -14,10 +14,10 @@
      Navigation owns its separate optical materials and geometry. */
   --oc-content-width: 80rem;
   --oc-reading-width: 48rem;
-  --oc-content-surface: var(--card);
-  --oc-content-soft: var(--muted);
-  --oc-content-soft-blue: var(--info-subtle);
-  --oc-content-edge: var(--border);
+  --oc-content-surface: #fffefa;
+  --oc-content-soft: #f1f4f3;
+  --oc-content-soft-blue: #eaf0f2;
+  --oc-content-edge: #e0e5e3;
   --oc-content-radius: 1.125rem;
   --oc-content-radius-small: .875rem;
   --oc-content-padding: clamp(1rem, 1.55vw, 1.5rem);
@@ -26,23 +26,23 @@
   --oc-content-shadow-hover: 0 3px 8px rgb(20 45 69 / 5%), 0 16px 30px -22px rgb(20 45 69 / 22%);
   --oc-content-motion: 180ms;
   --oc-overlay-radius: 1.5rem;
-  --background: #f8f7f4;
-  --foreground: #14243a;
-  --card: #ffffff;
+  --background: #f6f5f1;
+  --foreground: #1c2d40;
+  --card: #fffefa;
   --card-foreground: var(--foreground);
-  --popover: #ffffff;
+  --popover: #fffefa;
   --popover-foreground: var(--foreground);
-  --primary: #142d4e;
+  --primary: #142d45;
   --primary-foreground: #ffffff;
-  --secondary: #eeefed;
-  --secondary-foreground: #344256;
-  --muted: #f1f2f1;
-  --muted-foreground: #586473;
-  --accent: #edf0f3;
-  --accent-foreground: var(--foreground);
-  --brand-orange: #e85b19;
-  --brand-subtle: #fff1e8;
-  --brand-ink: #a63b0b;
+  --secondary: #eaece8;
+  --secondary-foreground: #34485a;
+  --muted: #edeee9;
+  --muted-foreground: #52606d;
+  --accent: #e7ebe7;
+  --accent-foreground: #142d45;
+  --brand-orange: #e8793e;
+  --brand-subtle: #fceadd;
+  --brand-ink: #9f3d12;
   --destructive: #ac3544;
   --destructive-foreground: #ffffff;
   --error-subtle: #fbeef0;
@@ -54,9 +54,9 @@
   --info-subtle: #edf3fa;
   --interview: #655080;
   --interview-subtle: #f1eef7;
-  --border: #dce0e3;
+  --border: #dfe3dd;
   --input: #8793a0;
-  --ring: #295c88;
+  --ring: #ba501f;
   --overlay: rgb(12 25 43 / 42%);
   --chart-1: #295c88;
   --chart-2: #296448;
@@ -64,48 +64,48 @@
   --chart-4: #655080;
   --chart-5: #14243a;
   --radius: 0.625rem;
-  --oc-radius-sm: 0.25rem;
-  --oc-radius-md: 0.375rem;
-  --oc-radius-lg: 0.625rem;
-  --oc-radius-xl: 0.75rem;
-  --oc-shadow-surface: 0 1px 2px rgb(20 36 58 / 4%);
-  --oc-shadow-popover: 0 4px 20px rgb(20 36 58 / 10%);
-  --oc-shadow-modal: 0 16px 64px rgb(20 36 58 / 16%);
+  --oc-radius-sm: .375rem;
+  --oc-radius-md: .625rem;
+  --oc-radius-lg: 1rem;
+  --oc-radius-xl: 1.375rem;
+  --oc-shadow-surface: 0 1px 3px rgb(20 45 69 / 5%);
+  --oc-shadow-popover: 0 6px 12px rgb(20 45 69 / 6%), 0 20px 56px rgb(20 45 69 / 12%);
+  --oc-shadow-modal: 0 24px 100px rgb(20 45 69 / 22%);
   --oc-shadow-surface-hover: 0 4px 12px rgb(20 45 69 / 9%);
   --oc-control-height: 2.5rem;
   --oc-control-height-compact: 2.25rem;
   --oc-control-height-large: 2.75rem;
-  --oc-density-gap: 1.5rem;
-  --oc-density-inset: 1.5rem;
+  --oc-density-gap: 1.25rem;
+  --oc-density-inset: 1.25rem;
   --oc-density-header-gap: .375rem;
   --oc-density-row: .75rem;
   --oc-space-unit: 0.25rem;
   --oc-space-control: 0.75rem;
-  --oc-space-content: 1.5rem;
-  --oc-space-section: clamp(2rem, 5vw, 4rem);
-  --oc-space-page: clamp(1.25rem, 4vw, 3rem);
+  --oc-space-content: 1.25rem;
+  --oc-space-section: 1.5rem;
+  --oc-space-page: clamp(1rem, 2.5vw, 2rem);
   /* Sans for controls and body copy; Caslon for the editorial display voice. */
   --oc-font-sans: var(--font-source-sans-3), Arial, sans-serif;
   --oc-font-display: var(--font-libre-caslon-text), Georgia, serif;
   --oc-weight-regular: 400;
   --oc-weight-medium: 500;
-  --oc-weight-semibold: 700; /* Compatibility alias for existing components. */
-  --oc-weight-bold: 700;
-  --oc-weight-title: 700;
-  --oc-weight-display: 700;
-  --oc-leading-heading: 1.25;
-  --oc-leading-compact: 1.5;
-  --oc-tracking-heading: -0.025em;
-  --oc-text-section: clamp(1.375rem, 2vw, 1.75rem);
-  --oc-text-card: 1.125rem;
+  --oc-weight-semibold: 600; /* Compatibility alias for existing components. */
+  --oc-weight-bold: 650;
+  --oc-weight-title: 500;
+  --oc-weight-display: 500;
+  --oc-leading-heading: 1.14;
+  --oc-leading-compact: 1.45;
+  --oc-tracking-heading: -.03em;
+  --oc-text-section: clamp(1.25rem, 1.6vw, 1.5rem);
+  --oc-text-card: 1.0625rem;
   --oc-text-modal: 1.375rem;
   --oc-text-small: 0.875rem;
-  --oc-text-metric: clamp(1.875rem, 4vw, 2.875rem);
+  --oc-text-metric: 1.75rem;
   --oc-text-hero: clamp(3rem, 5.7vw, 4.75rem);
   --oc-text-hero-mobile: clamp(2.375rem, 10.7vw, 3.5rem);
   --oc-text-caption: 0.75rem;
-  --oc-text-body: 1rem;
-  --oc-text-title: clamp(1.75rem, 2.5vw, 2.25rem);
+  --oc-text-body: .9375rem;
+  --oc-text-title: clamp(1.625rem, 2.2vw, 1.875rem);
   --oc-text-display: clamp(2rem, 4vw, 3.5rem);
   --oc-leading-body: 1.6;
   --oc-leading-display: 1.15;
@@ -135,9 +135,9 @@
   --oc-z-popover: 60;
   --oc-z-tooltip: 70;
   --oc-z-toast: 80;
-  --oc-duration-micro: 180ms;
-  --oc-duration-ui: 300ms;
-  --oc-duration-entrance: 650ms;
+  --oc-duration-micro: 140ms;
+  --oc-duration-ui: 220ms;
+  --oc-duration-entrance: 360ms;
   --oc-duration-signature: 900ms;
   --oc-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --oc-ease-ui: cubic-bezier(0.2, 0, 0, 1);
@@ -149,4 +149,19 @@
   --sidebar-accent-foreground: var(--foreground);
   --sidebar-border: var(--border);
   --sidebar-ring: var(--ring);
+  /* Former product-only tokens (rail, surfaces, field, shell geometry). */
+  --oc-rail: #142d45;
+  --oc-rail-text: #f6f5f1;
+  --oc-rail-muted: #b0c1cc;
+  --oc-rail-selected: #2a4156;
+  --oc-rail-rule: #3c5365;
+  --oc-field-muted: var(--muted-foreground);
+  --oc-field-rule: var(--border);
+  --oc-surface-blue: #eaf0f2;
+  --oc-surface-sage: #e9efe8;
+  --oc-surface-lilac: #efedf3;
+  --oc-surface-warm: #f4ede1;
+  --oc-shell-rail-width: 15.5rem;
+  --oc-shell-header-height: 4rem;
+  --oc-shell-mobile-height: 4.75rem;
 }
