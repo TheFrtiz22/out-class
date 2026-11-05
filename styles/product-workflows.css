@@ -23,21 +23,20 @@
 [data-product-shell] .ir-calendar button[aria-pressed="true"], [data-product-shell] .ir-times button[aria-pressed="true"] { background: var(--primary); color: var(--primary-foreground); outline: 2px solid var(--brand-orange); outline-offset: 2px; }
 [data-product-shell] .ir-empty { border: 0; background: var(--oc-surface-blue); }
 [data-product-shell] .oc-scheduling-location { border: 1px solid var(--oc-content-edge); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); border-radius: var(--oc-content-radius); }
-[data-workspace-detail] { font-family: var(--oc-font-sans); }
-[data-workspace-detail] .oc-focused-interview { --oc-focus-header-height: 4rem; background: var(--background); color: var(--foreground); }
-[data-workspace-detail] .oc-focused-interview > header { background: var(--oc-rail); color: var(--oc-rail-text); border: 0; padding: .75rem 1.5rem; }
-[data-workspace-detail] .oc-focused-interview > header :is(.text-muted-foreground,.text-primary) { color: var(--oc-rail-muted); }
-[data-workspace-detail] .oc-focused-interview > header button { color: var(--oc-rail-text); }
-[data-workspace-detail] .oc-focused-interview > header button:hover { background: var(--oc-rail-selected); }
-[data-workspace-detail] .oc-focused-interview > header [data-slot="button"].border { border-color: var(--oc-rail-muted); background: transparent; }
-[data-workspace-detail] .oc-focused-interview .oc-interview-columns > [aria-label="Candidate context"] { background: var(--oc-surface-blue); border-color: transparent; }
-[data-workspace-detail] .oc-focused-interview .oc-active-question { border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); box-shadow: var(--oc-content-shadow); padding: var(--oc-density-inset); }
-[data-workspace-detail] .oc-focused-interview .oc-active-question h2 { font-family: var(--oc-font-display); font-size: clamp(1.25rem,1.8vw,1.5rem); font-weight: 400; line-height: 1.35; }
-[data-workspace-detail] .oc-focused-interview .oc-active-question textarea { background: var(--background); border-color: var(--input); border-radius: var(--oc-radius-md); padding: 1rem; line-height: 1.75; }
-[data-workspace-detail] .oc-focused-interview .oc-question-agenda { border: 0; background: transparent; padding: 0; }
-[data-workspace-detail] .oc-focused-interview .oc-question-agenda [aria-current="step"] { background: var(--brand-subtle); color: var(--brand-ink); }
-[data-workspace-detail] .oc-focused-interview #interview-library { background: var(--card); border: 0; }
-[data-workspace-detail] .oc-focused-interview #interview-library li { border: 0; background: var(--background); border-radius: var(--oc-radius-md); padding: 1rem; }
+.oc-interview-room .oc-focused-interview { --oc-focus-header-height: 4rem; background: var(--background); color: var(--foreground); }
+.oc-interview-room .oc-focused-interview > header { background: var(--oc-rail); color: var(--oc-rail-text); border: 0; padding: .75rem 1.5rem; }
+.oc-interview-room .oc-focused-interview > header :is(.text-muted-foreground,.text-primary) { color: var(--oc-rail-muted); }
+.oc-interview-room .oc-focused-interview > header button { color: var(--oc-rail-text); }
+.oc-interview-room .oc-focused-interview > header button:hover { background: var(--oc-rail-selected); }
+.oc-interview-room .oc-focused-interview > header [data-slot="button"].border { border-color: var(--oc-rail-muted); background: transparent; }
+.oc-interview-room .oc-focused-interview .oc-interview-columns > [aria-label="Candidate context"] { background: var(--oc-surface-blue); border-color: transparent; }
+.oc-interview-room .oc-focused-interview .oc-active-question { border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); box-shadow: var(--oc-content-shadow); padding: var(--oc-density-inset); }
+.oc-interview-room .oc-focused-interview .oc-active-question h2 { font-family: var(--oc-font-display); font-size: clamp(1.25rem,1.8vw,1.5rem); font-weight: 400; line-height: 1.35; }
+.oc-interview-room .oc-focused-interview .oc-active-question textarea { background: var(--background); border-color: var(--input); border-radius: var(--oc-radius-md); padding: 1rem; line-height: 1.75; }
+.oc-interview-room .oc-focused-interview .oc-question-agenda { border: 0; background: transparent; padding: 0; }
+.oc-interview-room .oc-focused-interview .oc-question-agenda [aria-current="step"] { background: var(--brand-subtle); color: var(--brand-ink); }
+.oc-interview-room .oc-focused-interview #interview-library { background: var(--card); border: 0; }
+.oc-interview-room .oc-focused-interview #interview-library li { border: 0; background: var(--background); border-radius: var(--oc-radius-md); padding: 1rem; }
 .oc-voting-stage { background: var(--background); }
 .oc-voting-stage > header { background: var(--oc-rail); color: var(--oc-rail-text); border: 0; }
 .oc-voting-stage > header :is(.text-neutral-500,.text-muted-foreground) { color: var(--oc-rail-muted); }
@@ -50,8 +49,8 @@
 .oc-voting-pad { background: var(--background); font-family: var(--oc-font-sans); }
 .oc-voting-pad button[aria-pressed="true"] { outline: 3px solid var(--brand-orange); outline-offset: 3px; }
 @media (max-width: 639px) {
-  [data-workspace-detail] .oc-focused-interview > header { padding: 1rem; }
-  [data-workspace-detail] .oc-focused-interview .oc-active-question, .oc-voting-stage .oc-voting-candidate { padding: 1.25rem; }
+  .oc-interview-room .oc-focused-interview > header { padding: 1rem; }
+  .oc-interview-room .oc-focused-interview .oc-active-question, .oc-voting-stage .oc-voting-candidate { padding: 1.25rem; }
   [data-product-shell] .oc-applicant-board { display: grid; grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: 88%; overflow-x: auto; padding: .25rem .25rem 1rem; scroll-snap-type: x mandatory; }
   [data-product-shell] .oc-applicant-board > section { scroll-snap-align: start; }
 }
@@ -78,7 +77,7 @@
 [data-product-shell] .oc-organization-checklist[data-density="compact"] > div p:last-child { margin-top: .25rem; }
 [data-product-shell] .oc-organization-checklist[data-density="compact"] > details { margin-top: .5rem; }
 [data-product-shell] .oc-organization-checklist[data-density="compact"] > a { margin-top: .5rem; padding-block: .5rem; }
-[data-workspace-detail] .oc-focused-interview .oc-interview-columns { gap: var(--oc-density-gap); }
+.oc-interview-room .oc-focused-interview .oc-interview-columns { gap: var(--oc-density-gap); }
 .oc-voting-stage > header { padding-block: .75rem; }
 .oc-voting-stage .oc-voting-candidate > :not(:last-child) { margin-bottom: 1rem; }
 .oc-voting-stage .oc-voting-candidate dl { padding-block: .75rem; }

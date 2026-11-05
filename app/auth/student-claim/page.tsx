@@ -7,7 +7,7 @@ export default function StudentClaimPage() {
   const [email, setEmail] = useState(""), [password, setPassword] = useState(""), [error, setError] = useState(""), [busy, setBusy] = useState(false);
   const [tokenHash, setTokenHash] = useState("");
   useEffect(() => { setTokenHash(new URLSearchParams(window.location.hash.slice(1)).get("token_hash") || ""); window.history.replaceState(null, "", "/auth/student-claim"); }, []);
-  return <main data-workspace-detail className="mx-auto max-w-lg space-y-5 p-8"><PageHeader title="Claim your OutClass account" description="Choose your own password. Use the UVA address that received the invitation." />
+  return <main className="mx-auto max-w-lg space-y-5 p-8"><PageHeader title="Claim your OutClass account" description="Choose your own password. Use the UVA address that received the invitation." />
     <form className="oc-form-section" onSubmit={async e => { e.preventDefault(); setBusy(true); setError(""); try {
       const response = await fetch("/api/auth/student-claim", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password, tokenHash }) });
       const result = await response.json(); if (!response.ok) throw Error(result.error);

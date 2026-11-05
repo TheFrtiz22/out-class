@@ -39,12 +39,12 @@
 
 /* The mobile target is 44px; the checkmark box stays square. Scope to content,
    leaving notification-center and navigation controls on their own layer. */
-:is(.oc-workspace-content, [data-workspace-detail], .oc-workspace-drawer) button[data-slot="checkbox"] {
+:is(main, [role="main"], .oc-voting-stage, .oc-workspace-drawer) button[data-slot="checkbox"] {
   position: relative; min-width: 1rem; min-height: 1rem; width: 1rem; height: 1rem;
 }
 @media (max-width: 767px) {
-  :is(.oc-workspace-content, [data-workspace-detail], .oc-workspace-drawer) label:has([data-slot="checkbox"]) { min-height: 2.75rem; }
-  :is(.oc-workspace-content, [data-workspace-detail], .oc-workspace-drawer) button[data-slot="checkbox"]::after { content: ""; position: absolute; inset: -.875rem; }
+  :is(main, [role="main"], .oc-voting-stage, .oc-workspace-drawer) label:has([data-slot="checkbox"]) { min-height: 2.75rem; }
+  :is(main, [role="main"], .oc-voting-stage, .oc-workspace-drawer) button[data-slot="checkbox"]::after { content: ""; position: absolute; inset: -.875rem; }
 }
 
 /* Keep both the resting label and its icons in layout; pending never resizes the action. */

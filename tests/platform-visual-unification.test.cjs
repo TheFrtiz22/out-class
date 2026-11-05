@@ -3,7 +3,7 @@ const assert = require("node:assert/strict")
 const fs = require("node:fs")
 
 const read = path => fs.readFileSync(path, "utf8")
-const tokens = read("styles/tokens.css") + read("styles/product-tokens.css")
+const tokens = read("styles/tokens.css")
 const primitives = read("styles/product-components.css")
 const home = read("components/views/student-home.css")
 const operations = read("components/product/operational-dashboard.css")
@@ -36,4 +36,17 @@ test("application drafts, statuses and writing questions inherit the same calm s
   assert.match(applications, /\.oc-status-card \{[^\n]+--oc-content-radius/)
   assert.match(applications, /\.oc-writing-question \{[^\n]+--oc-content-radius/)
   assert.doesNotMatch(applications, /\.oc-application-row:hover \{[^\n]+translateY/)
+})
+
+test("OutClass has exactly one palette: tokens.css :root, with no scoped override", () => {
+  const { execFileSync } = require("node:child_process")
+  assert.ok(!fs.existsSync("styles/product-tokens.css"), "product-tokens.css was merged into tokens.css")
+  assert.doesNotMatch(read("app/globals.css"), /product-tokens/)
+  for (const token of ["--background:", "--primary:", "--ring:", "--oc-rail:", "--oc-surface-blue:", "--oc-shell-rail-width:"]) {
+    assert.equal(tokens.split(token).length - 1, 1, `${token} is declared once`)
+  }
+  const css = execFileSync("git", ["ls-files", "*.css"], { encoding: "utf8" }).split("\n").filter(Boolean)
+  for (const file of css) assert.doesNotMatch(read(file), /data-workspace-detail|data-outclass-design/, file)
+  const markup = execFileSync("git", ["ls-files", "app", "components"], { encoding: "utf8" }).split("\n").filter(file => file.endsWith(".tsx"))
+  for (const file of markup) assert.doesNotMatch(read(file), /data-workspace-detail|data-outclass-design/, file)
 })

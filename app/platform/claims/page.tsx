@@ -11,7 +11,7 @@ export default async function Page() {
   const claims = await adminPageLoad("/platform/claims", () => listClubClaims("PENDING"), "ADMIN_DATA_LOAD_FAILED");
   if (claims.supportCode) return <AdminRecovery supportCode={claims.supportCode} />;
   return (
-    <section data-workspace-detail className="mx-auto max-w-4xl space-y-6 px-5 py-10">
+    <section className="mx-auto max-w-4xl space-y-6 px-5 py-10">
       <Link className="underline" href="/platform">
         Platform administration
       </Link>

@@ -13,9 +13,9 @@
 }
 @media (max-width: 639px) {
   .oc-workspace-drawer { max-width: 100vw; }
-  [data-workspace-detail] input:not([type="checkbox"]):not([type="radio"]),
-  [data-workspace-detail] textarea,
-  [data-workspace-detail] select,
+  :is(main, [role="main"], .oc-voting-stage) input:not([type="checkbox"]):not([type="radio"]),
+  :is(main, [role="main"], .oc-voting-stage) textarea,
+  :is(main, [role="main"], .oc-voting-stage) select,
   [data-product-shell] input:not([type="checkbox"]):not([type="radio"]),
   [data-product-shell] textarea,
   [data-product-shell] select,
@@ -24,8 +24,8 @@
   .oc-workspace-drawer select,
   .oc-interview-candidate input,
   .oc-interview-candidate textarea { font-size: var(--oc-size-16); max-width: 100%; }
-  [data-workspace-detail] button,
-  [data-workspace-detail] select,
+  :is(main, [role="main"], .oc-voting-stage) button,
+  :is(main, [role="main"], .oc-voting-stage) select,
   [data-product-shell] button,
   [data-product-shell] select,
   .oc-workspace-drawer button,
@@ -35,7 +35,7 @@
   [data-product-shell] main { padding-inline: 1rem; }
 }
 
-[data-workspace-detail] { min-width: 0; overflow-wrap: anywhere; }
+:is(main, [role="main"], .oc-voting-stage) { min-width: 0; overflow-wrap: anywhere; }
 
 .oc-context-sidebar nav [data-navigation-toggle][data-active="true"] { color: var(--oc-rail-text); font-weight: 600; }
 .oc-workspace-nav-children { overflow: hidden; }

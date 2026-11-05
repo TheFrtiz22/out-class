@@ -352,7 +352,7 @@ export function MeetingDetail({ id, onUpdated }: { id: string; onUpdated?: () =>
   const member = user?.memberships.find((m) => m.clubId === meeting.clubId),
     resources = resourceSchema.array().safeParse(meeting.resources);
   return (
-    <article data-workspace-detail className="mx-auto max-w-5xl space-y-8">
+    <article className="mx-auto max-w-5xl space-y-8">
       <header className="space-y-4 border-b pb-7">
         <p className="text-sm text-muted-foreground">
           {meeting.club.name} ·{" "}

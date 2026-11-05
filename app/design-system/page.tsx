@@ -32,7 +32,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip
 export default function DesignSystemPage() {
   const [progress, setProgress] = useState(40)
   const [loadingLayout, setLoadingLayout] = useState<LoadingLayout>("applicants")
-  return <main data-outclass-design className="mx-auto max-w-5xl space-y-section px-page py-section">
+  return <main className="mx-auto max-w-5xl space-y-section px-page py-section">
     <PageHeader eyebrow="OutClass · Campus OS" title="Built for your next chapter." description="Warm, expressive moments. Precise everyday tools. A shared language for students and club leaders." />
     <DesignPatterns />
     <Divider />
