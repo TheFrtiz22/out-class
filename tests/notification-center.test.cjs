@@ -35,6 +35,7 @@ test('exact task, decision, interview and invitation destinations are preserved;
   for (const href of ['/applications/a/decision?letterId=v2', '/club/b/workspace?section=recruitment&tool=interviews&assignmentId=x', '/invitations/invite', '/settings/interviews']) assert.deepEqual(presentation.notificationDestination(notification('a', { href })), { kind: 'href', href })
   assert.deepEqual(presentation.notificationDestination(notification('a', { taskHref: '/club/c/workspace?section=tasks&taskId=t' })), { kind: 'href', href: '/club/c/workspace?section=tasks&taskId=t' })
   assert.deepEqual(presentation.notificationDestination(notification('a', { href: '/?workspace=student&view=inbox', type: 'Announcement' })), { kind: 'detail' })
+  assert.deepEqual(presentation.notificationDestination(notification('a', { href: '/inbox', type: 'Announcement' })), { kind: 'detail' })
   assert.deepEqual(presentation.notificationDestination(notification('a', { href: undefined, eventId: 'event' })), { kind: 'calendar', eventId: 'event' })
 })
 test('legacy application actions retain draft/status semantics and missing destinations remain readable', () => {
@@ -118,7 +119,7 @@ test('platform notification expansion reaches the existing inbox while profile a
   })
   const shell = AdminShell({ children: null }).props.children
   for (const view of ['inbox', 'student-profile', 'student-dashboard']) shell.props.onNavigate(view)
-  assert.deepEqual(destinations, ['/?workspace=student&view=inbox', '/?workspace=student&view=student-profile', '/?workspace=student'])
+  assert.deepEqual(destinations, ['/inbox', '/profile', '/home'])
 })
 
 function notificationClickHarness({ read = false, result = true, allowed = true, sameClub = true } = {}) {

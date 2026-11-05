@@ -4,6 +4,8 @@ import { getLaunchClubs } from "@/lib/launch-clubs"
 import { safeReturnPath, isUvaEmail } from "@/lib/auth"
 import { canAccessDemo, DEMO_COOKIE } from "@/lib/demo/access"
 import { HomeEntry } from "@/components/home-entry"
+import { STUDENT_HOME, isLeaderWorkspaceView, leaderWorkspaceHref, legacyStudentRedirect } from "@/lib/navigation"
+import { hasWorkspace } from "@/lib/permissions"
 import { getStudentDashboardData } from "@/actions/applications"
 import { getSessionUser } from "@/utils/auth"
 import { cookies } from "next/headers"
@@ -39,6 +41,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
     })
     redirect(`/signup${query.size ? `?${query}` : ""}`)
   }
+  // Old student workspace URLs (middleware normally redirects these first; see middleware.ts).
+  const legacyQuery = new URLSearchParams()
+  Object.entries(params).forEach(([key, value]) => { for (const item of Array.isArray(value) ? value : value === undefined ? [] : [value]) legacyQuery.append(key, item) })
+  const legacyDestination = legacyStudentRedirect(legacyQuery)
+  if (legacyDestination) redirect(legacyDestination)
   const next = safeReturnPath(typeof params.next === "string" ? params.next : undefined)
   const cookieStore = await cookies()
   const { data: { user: login }, error: authError } = await getSessionUser()
@@ -61,6 +68,20 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   if (user) {
     const account = await prisma.user.findUnique({ where: { id: user.id }, select: { disabledAt: true } })
     if (account?.disabledAt) return <main className="p-8">Your account is unavailable. Contact OutClass support.</main>
+    // Old leader views on the homepage open the matching club workspace section. The club is the
+    // first active, unsuspended membership with workspace access (same rule as sign-in); without
+    // one the visitor gets Home, as the student view replaced these before.
+    const requestedView = typeof params.view === "string" ? params.view : null
+    if (isLeaderWorkspaceView(requestedView)) {
+      const leader = await prisma.user.findUnique({ where: { id: user.id }, select: { memberships: { where: { status: "ACTIVE", club: { suspendedAt: null } }, orderBy: { clubId: "asc" }, select: { clubId: true, status: true, isOwner: true, permissions: true, interviewOffices: true } } } })
+      const club = leader?.memberships.find(hasWorkspace)
+      const focus = { applicantId: typeof params.applicantId === "string" ? params.applicantId : null, roundId: typeof params.roundId === "string" ? params.roundId : null }
+      redirect(club ? leaderWorkspaceHref(requestedView, club.clubId, focus) : STUDENT_HOME)
+    }
+    // Signed-in visitors skip the marketing page (after the disabled check, before any data read).
+    // Leader and demo entry URLs keep their own handling; old student workspace URLs were
+    // already redirected to their paths by middleware.
+    if (!["workspace", "view", "demoClub", "error"].some(key => params[key] !== undefined)) redirect(next !== "/" ? next : STUDENT_HOME)
     try {
       initialData = await getStudentDashboardData()
     } catch (e) {

@@ -2,11 +2,25 @@ import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
 import { DEMO_COOKIE } from '@/lib/demo/access'
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/utils/supabase/middleware'
+import { legacyStudentRedirect, STUDENT_ROUTES } from "@/lib/navigation"
 
 export async function middleware(request: NextRequest) {
   // Protect both the presenter route and its sample assets before static-file shortcuts.
   let path = request.nextUrl.pathname
   try { path = decodeURIComponent(path) } catch { return new NextResponse(null, { status: 400 }) }
+  // Student workspace views moved from `/?workspace=student&view=…` to real paths. Old URLs live
+  // on in stored notifications and sent email, so this redirect stays (307 until the paths are
+  // proven in production; then 308). Next rewrites a 127.0.0.1/[::1] host to localhost in any
+  // middleware redirect, which drops host-scoped session cookies, so loopback-IP requests fall
+  // through to the same mapping in app/page.tsx, whose redirect keeps the browser's host.
+  if (path === "/" && ["GET", "HEAD"].includes(request.method) && !/^(127\.0\.0\.1|\[::1\])(:\d+)?$/.test(request.headers.get("host") ?? "")) {
+    const destination = legacyStudentRedirect(request.nextUrl.searchParams)
+    if (destination) {
+      const response = NextResponse.redirect(new URL(destination, request.url), 307)
+      response.headers.set("Cache-Control", "private, no-store")
+      return response
+    }
+  }
   if (path === "/preview" || path.startsWith("/preview/") || path === "/demo" || path.startsWith("/demo/")) {
     if (!["GET", "HEAD"].includes(request.method) || request.cookies.get(DEMO_COOKIE)?.value !== "1" || request.cookies.has(PLATFORM_VIEW_COOKIE)) {
       return new NextResponse(null, { status: 404, headers: { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow" } })
@@ -37,7 +51,9 @@ export async function middleware(request: NextRequest) {
   const response = ownsAuth ? NextResponse.next() : await createClient(request)
   // Product views share the homepage URL. Preserve their query parameters and
   // authentication while explicitly keeping those responses out of search.
-  const accountView = request.nextUrl.pathname === "/" && ["workspace", "view", "demoClub", "next", "error", "signup"].some(key => request.nextUrl.searchParams.has(key))
+  const accountView = request.nextUrl.pathname === "/" && ["workspace", "view", "demoClub", "next", "error", "signup"].some(key => request.nextUrl.searchParams.has(key)) ||
+    // /corkboard predates the move and stays a public page.
+    STUDENT_ROUTES.some(route => route.path !== "/corkboard" && route.path === request.nextUrl.pathname)
   const accountCookie = request.cookies.has(PLATFORM_VIEW_COOKIE) || request.cookies.get(DEMO_COOKIE)?.value === "1" || request.cookies.getAll().some(cookie => /^sb-.+-auth-token(?:\.\d+)?$/.test(cookie.name))
   if (accountView || accountCookie) response.headers.set("X-Robots-Tag", "noindex, nofollow")
   return response

@@ -2,6 +2,7 @@
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { SavedClubsView } from "@/components/views/saved-clubs-view";
+import { studentPath } from "@/lib/navigation"
 export default function Page() {
   const router = useRouter();
   return (
@@ -13,7 +14,7 @@ export default function Page() {
         Campus Corkboard
       </Link>
       <SavedClubsView
-        onNavigate={(view) => router.push(`/?workspace=student&view=${view}`)}
+        onNavigate={(view) => router.push(studentPath(view))}
       />
     </div>
   );

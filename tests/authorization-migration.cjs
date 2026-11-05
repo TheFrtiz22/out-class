@@ -144,6 +144,18 @@ const assert = require("node:assert/strict")
   await assert.rejects(db.exec(`UPDATE "TaskAssignment" SET "reviewedAt"=NOW() WHERE id='former-work'`), /check constraint/)
   await db.exec(`UPDATE "TaskAssignment" SET "revisionRequestedAt"=NULL, "reviewedAt"=NOW() WHERE id='former-work'`)
   console.log("Task workflow migration preserves existing responses, validates revision requests, and persists group labels.")
+  // Notification triggers link to real student paths; old hrefs are redirected by middleware.
+  for (const fn of ['outclass_application_notification', 'outclass_booking_notification']) {
+    const source = (await db.query(`SELECT prosrc, prosecdef, proconfig, proacl::text AS acl FROM pg_proc WHERE proname=$1`, [fn])).rows
+    assert.equal(source.length, 1, fn)
+    assert.ok(source[0].prosrc.includes("'/applications'"), `${fn} links to /applications`)
+    assert.ok(!source[0].prosrc.includes('workspace=student'), `${fn} no longer emits the homepage workspace URL`)
+    // Same invoker security and no SET clauses as every earlier definition; the REVOKE from PUBLIC survives.
+    assert.equal(source[0].prosecdef, false, fn); assert.equal(source[0].proconfig, null, fn)
+    assert.ok(source[0].acl && !/(^|[{,])=X/.test(source[0].acl), `${fn} is not executable by PUBLIC`)
+  }
+  assert.equal((await db.query(`SELECT count(*)::int AS n FROM pg_trigger WHERE tgfoid IN (SELECT oid FROM pg_proc WHERE proname IN ('outclass_application_notification','outclass_booking_notification'))`)).rows[0].n > 0, true)
+  console.log("Notification triggers emit /applications and remain attached.")
   // Every application table must be private, including tables added after the original capability migration.
   const tables = (await db.query(`SELECT c.relname, c.relrowsecurity FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relkind='r'`)).rows
   for (const table of tables) {

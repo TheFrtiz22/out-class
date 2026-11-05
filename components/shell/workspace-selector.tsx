@@ -16,7 +16,7 @@ export function WorkspaceSelector({ access, current, clubId, onSwitch, children,
   const settings = club && inSettings ? availableSettings(club) : []
   const section = settings.find(section => section.id === params.get("setting")) ?? settings[0]
   const options: ProductNavItem[] = [
-    ...(access.personal ? [{ id: "personal", label: "Personal", href: inSettings ? "/settings" : "/?workspace=student" }] : []),
+    ...(access.personal ? [{ id: "personal", label: "Personal", href: inSettings ? "/settings" : "/home" }] : []),
     ...(club ? [{ id: "leader", label: "Club Leader", href: section ? `/club/${encodeURIComponent(club.clubId)}/workspace?section=settings&setting=${section.id}` : clubWorkspaceHref(club.clubId) }] : []),
     ...(access.admin ? [{ id: "admin", label: "Admin", href: "/platform" }] : []),
   ]

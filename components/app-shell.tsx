@@ -1,14 +1,14 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import { useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { clubWorkspaceHref } from "@/lib/club-workspace"
 import type { PersonalSection } from "@/lib/product-navigation"
 import { useDemoMode } from "@/contexts/demo-context"
 import { signInReturnPath, authEntryHref } from "@/lib/auth"
 import { useAuth } from "@/contexts/auth-context"
 import { demoDashboard } from "@/lib/demo/store"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { type AppMode, type ViewId } from "@/lib/views"
 import { ApplicationStateProvider } from "@/lib/application-state"
@@ -17,6 +17,7 @@ import { OutClassLoadingScreen } from "@/components/outclass-loading-screen"
 import { WorkspaceLoading } from "@/components/workspace-loading"
 import { LandingPageView } from "@/components/views/landing-page-view"
 import { resolveStudentView, sectionForStudentView, canonicalStudentParams } from "@/lib/student-navigation"
+import { STUDENT_HOME, studentPath, studentRouteForPath } from "@/lib/navigation"
 
 const renderDestinationLoading = () => <OutClassLoadingScreen />
 
@@ -63,9 +64,13 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
   const demo = useDemoMode()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [personalSection, setPersonalSection] = useState<PersonalSection>(() => canonicalStudentParams(new URLSearchParams(searchParams.toString()))?.section ?? "explore")
+  const pathname = usePathname()
+  // Personal workspace views have real paths (/home, /explore, …); the homepage only serves landing and sign-in.
+  const searchKey = searchParams.toString()
+  const pathRoute = useMemo(() => embedded ? null : studentRouteForPath(pathname, new URLSearchParams(searchKey)), [embedded, pathname, searchKey])
+  const [personalSection, setPersonalSection] = useState<PersonalSection>(() => pathRoute?.section ?? canonicalStudentParams(new URLSearchParams(searchParams.toString()))?.section ?? "explore")
   const showLanding = !embedded && initialView === "landing" && !searchParams.has("workspace") && !searchParams.has("view") && !searchParams.has("demoClub") && !searchParams.has("next")
-  const wantsStudent = searchParams.get("workspace") === "student"
+  const wantsStudent = !!pathRoute || searchParams.get("workspace") === "student"
   const { selectClub, user, isImpersonating } = useAuth()
   const initialData = demo.isDemoEnabled ? demoDashboard() : realInitialData
   // ── Read auth error from URL query params (e.g. /?error=uva_only) ──
@@ -84,9 +89,9 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
   }, [])
 
   const [view, setView] = useState<ViewId>(
-    initialAuthRole ? "auth" : showLanding ? "landing" : demo.isDemoEnabled ? (searchParams.has("demoClub") ? "explore" : !wantsStudent && demo.state?.perspective.role === "leader" ? "leader-dashboard" : "student-dashboard") : initialSession
+    initialAuthRole ? "auth" : showLanding ? "landing" : demo.isDemoEnabled ? pathRoute ? pathRoute.view : (searchParams.has("demoClub") ? "explore" : !wantsStudent && demo.state?.perspective.role === "leader" ? "leader-dashboard" : "student-dashboard") : initialSession
       ? hasProfile
-        ? "student-dashboard"
+        ? pathRoute?.view ?? "student-dashboard"
         : "student-onboarding"
       : initialView
   )
@@ -99,7 +104,7 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
       setPersonalSection(nextSection)
       const params = new URLSearchParams({ workspace: "student", view: next })
       if (!["explore", "corkboard"].includes(nextSection)) params.set("section", nextSection)
-      const href = `${embedded ? "/preview" : "/"}?${params}`
+      const href = embedded ? `/preview?${params}` : studentPath(next, nextSection)
       // Already-open student workspaces share a persistent client shell. Native
       // history keeps URL/back navigation in sync without reloading homepage data.
       if (user && resolveStudentView(view)) window.history.pushState(null, "", href)
@@ -124,6 +129,19 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
       if (route.params.toString() !== searchParams.toString()) router.replace(`${embedded ? "/preview" : "/"}?${route.params}`)
     }
   }, [searchParams, showLanding, embedded, router, initialAuthRole])
+
+  // Back/forward between student paths, and direct entry to a specific path.
+  // /home mirrors the old `/?workspace=student`: it does not skip onboarding.
+  const syncedPath = useRef<string | null>(null)
+  useEffect(() => {
+    if (!pathRoute) return
+    const key = `${pathname}?${searchKey}`
+    const first = syncedPath.current === null
+    if (syncedPath.current === key) return
+    syncedPath.current = key
+    setPersonalSection(pathRoute.section)
+    if (!first || pathname !== STUDENT_HOME) setView(pathRoute.view)
+  }, [pathRoute, pathname, searchKey])
 
   function handleEnter(next: ViewId) {
     if (!adminViewIds.includes(next)) {

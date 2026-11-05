@@ -116,7 +116,7 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
     }
   }
 
-  if (isImpersonating) return <main className="p-8">Exit impersonation above before changing authentication. <Link className="underline" href="/?workspace=student">Return to the user’s workspace</Link></main>
+  if (isImpersonating) return <main className="p-8">Exit impersonation above before changing authentication. <Link className="underline" href="/home">Return to the user’s workspace</Link></main>
 
   return (
     <div className="oc-login">

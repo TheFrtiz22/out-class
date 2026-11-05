@@ -9,6 +9,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { useApplicationState } from "@/lib/application-state"
 import { hasWorkspace } from "@/lib/permissions"
 import { AuthSessionBoundary } from "@/components/auth-session-boundary"
+import { isLeaderWorkspaceView, leaderWorkspaceHref } from "@/lib/navigation"
 import { OutClassLoadingScreen } from "@/components/outclass-loading-screen"
 export interface DashboardLayoutProps {
   children: ReactNode; view: ViewId; appMode: AppMode; onNavigate: (view: ViewId, section?: PersonalSection) => void;
@@ -24,18 +25,13 @@ function DashboardContent({ children, view, appMode, onNavigate, personalSection
   const { leaderFocus, focusApplication } = useApplicationState()
   const applicationClubId = useSearchParams().get("applicationClubId")
   useEffect(() => { if (applicationClubId) focusApplication(applicationClubId) }, [applicationClubId, focusApplication])
-  const leaderView = ["leader-dashboard", "interview-scheduler", "club-manager", "broadcast-messages", "screening-dashboard", "club-management-portal"].includes(view)
+  const leaderView = isLeaderWorkspaceView(view)
   const managed = user?.memberships.find(m => m.clubId === (leaderFocus?.clubId || activeClubId) && hasWorkspace(m))
   const managedClubId = managed?.clubId
   useEffect(() => {
-    if (!leaderView || !managedClubId) return
-    const section = view === "club-manager" || view === "club-management-portal" ? "settings" : view === "broadcast-messages" ? "announcements" : "recruitment"
-    const query = new URLSearchParams({ section })
-    if (section === "recruitment") query.set("tool", view === "interview-scheduler" ? "interviews" : view === "screening-dashboard" ? "rules" : "applicants")
-    if (leaderFocus?.applicantId) query.set("applicantId", leaderFocus.applicantId)
-    if (leaderFocus?.roundId) query.set("roundId", leaderFocus.roundId)
-    router.replace(`/club/${encodeURIComponent(managedClubId)}/workspace?${query}`)
-  }, [leaderView, managedClubId, view, leaderFocus, router])
+    if (!isLeaderWorkspaceView(view) || !managedClubId) return
+    router.replace(leaderWorkspaceHref(view, managedClubId, { applicantId: leaderFocus?.applicantId, roundId: leaderFocus?.roundId }))
+  }, [managedClubId, view, leaderFocus, router])
   const section = view === "status" ? "status" : view === "tracker" ? "applications" : view === "corkboard" ? "corkboard" : view === "explore" ? personalSection === "categories" ? "categories" : "explore" : personalSection
   const mode = personalMode(section)
   const items = personalItems(mode)

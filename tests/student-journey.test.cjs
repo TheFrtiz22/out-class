@@ -84,6 +84,7 @@ test('public club entry retains unified Status, submitted responses, Calendar, a
   const code = ts.transpileModule(fs.readFileSync('components/qr/public-club-page.tsx', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } }).outputText
   dependencies['@/components/landing/public-navigation'] = { PublicNavigation: 'PublicNavigation' }
   dependencies['@/components/views/landing.css'] = {}
+  dependencies['@/lib/navigation'] = require('./helpers/navigation-module.cjs')
   new Function('require', 'module', 'exports', 'window', code)(name => dependencies[name] || require(name), mod, mod.exports, window)
   function nodes(node) { return !node || typeof node !== 'object' ? [] : [node, ...[node.props?.children].flat(Infinity).flatMap(nodes)] }
   const render = () => { cursor = 0; return nodes(mod.exports.PublicClubPage({ club: { id: 'club' } })) }
@@ -102,5 +103,5 @@ test('public club entry retains unified Status, submitted responses, Calendar, a
   tracker.props.onNavigate('calendar')
   assert.ok(render().find(node => node.type === 'Calendar'))
   tracker.props.onNavigate('student-profile')
-  assert.equal(window.location.href, '/?workspace=student&view=student-profile')
+  assert.equal(window.location.href, '/profile')
 })

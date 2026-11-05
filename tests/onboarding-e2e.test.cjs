@@ -84,10 +84,10 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
   const resumeHtml=await resume.text();assert.ok(resumeHtml.includes('finish your profile'));assert.ok(!/autocomplete="new-password"/i.test(resumeHtml));
   await assertEntryRedirect(actor,'/login?next=%2Finvitations%2Fpending','/signup?next=%2Finvitations%2Fpending');
   await actor.profile('OTP Test',2028);
-  await assertEntryRedirect(actor,'/signup','/?workspace=student');
-  await assertEntryRedirect(actor,'/login','/?workspace=student');
-  await assertEntryRedirect(actor,'/signup?next=%2Fplatform','/?workspace=student');
-  assert.equal((await actor.request('/')).status,200);
+  await assertEntryRedirect(actor,'/signup','/home');
+  await assertEntryRedirect(actor,'/login','/home');
+  await assertEntryRedirect(actor,'/signup?next=%2Fplatform','/home');
+  await assertEntryRedirect(actor,'/','/home');
   assert.equal((await actor.request('/api/users/me')).status,200);
   await actor.client.auth.signOut();await actor.signIn(email,password);
   assert.equal((await actor.request('/api/users/me')).status,200);

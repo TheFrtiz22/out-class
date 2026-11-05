@@ -7,7 +7,8 @@ export function notificationDestination(item: Notification, applications: Pick<T
     // Announcements currently target the general inbox. Read them inline rather
     // than moving there; Expand and View all remain the explicit inbox actions.
     const url = new URL(href, "https://outclass.local")
-    if (url.searchParams.get("view") === "inbox") return { kind: "detail" } as const
+    // Stored rows may still carry the pre-path `/?workspace=student&view=inbox` form.
+    if (url.pathname === "/inbox" || url.searchParams.get("view") === "inbox") return { kind: "detail" } as const
     return { kind: "href", href } as const
   }
   if (item.eventId || item.type === "Interview Invite" || item.locationChange) return { kind: "calendar", eventId: item.eventId } as const

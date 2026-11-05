@@ -175,8 +175,9 @@ test('sign-in intent overrides a saved demo perspective or existing session and 
     const changes = [], effects = []
     const { AppShell } = load('components/app-shell.tsx', {
       'next/dynamic': { __esModule: true, default: () => 'LazyView' },
-      'next/navigation': { useRouter: () => ({}), useSearchParams: () => new URLSearchParams() },
-      react: { useState: value => [value, next => changes.push(next)], useEffect: fn => effects.push(fn) },
+      'next/navigation': { useRouter: () => ({}), useSearchParams: () => new URLSearchParams(), usePathname: () => '/' },
+      '@/lib/navigation': require('./helpers/navigation-module.cjs'),
+      react: { useState: value => [value, next => changes.push(next)], useEffect: fn => effects.push(fn), useRef: current => ({ current }), useMemo: fn => fn() },
       '@/contexts/auth-context': { useAuth: () => ({ user: null, selectClub() {} }) },
       '@/contexts/demo-context': { useDemoMode: () => ({ isDemoEnabled: true, state: { perspective: { role: 'leader', clubId: 'sample' } } }) },
       '@/lib/demo/store': { demoDashboard: () => ({}) },
