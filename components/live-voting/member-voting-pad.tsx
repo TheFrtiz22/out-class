@@ -35,7 +35,7 @@ export function MemberVotingPad({
     !session.memberIds.includes(memberId) &&
     session.memberIds.length >= session.memberCount
   return (
-    <div data-workspace-detail role={embedded ? "group" : "main"} aria-label="Member voting"
+    <div role={embedded ? "group" : "main"} aria-label="Member voting"
       className={`oc-voting-pad ${embedded ? "" : "min-h-svh px-5 py-8"} flex items-center justify-center bg-background font-sans text-foreground`}
     >
       <div className="oc-content-panel w-full max-w-md space-y-7 border-neutral-200 shadow-none">

@@ -38,7 +38,7 @@ export default function PlatformLogin() {
       </main>
     )
   return (
-    <main data-workspace-detail className="mx-auto max-w-2xl space-y-6 p-8">
+    <main className="mx-auto max-w-2xl space-y-6 p-8">
       <Link href="/" className="underline">
         Back to OutClass
       </Link>
