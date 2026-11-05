@@ -3,7 +3,7 @@ import { memberGroupSplitSchema, planMemberGroups } from "@/lib/member-groups";
 import { revokeClubInvitations } from "@/utils/revoke-club-invitations";
 import { memberAcademicProfile } from "@/lib/recruitment-profile";
 
-import { panelPublicationLock } from "@/utils/panel-publication";
+import { lockSchedulingPeople } from "@/utils/panel-publication";
 import { assertOfficialPanelConflicts } from "@/utils/official-panel-conflicts";
 import { lockOperationalClub } from "@/lib/club-suspension";
 import { interviewCapabilities, interviewOfficesSchema, interviewScopeSchema } from "@/lib/interview-access";
@@ -95,7 +95,6 @@ export async function setInterviewPanelAssignment(input: unknown) {
   const data = interviewScopeSchema.extend({ memberId: id, assigned: z.boolean() }).strict().parse(input);
   const { user } = await requireAuth({ verifyEmail: true });
   return prisma.$transaction(async tx => {
-    await panelPublicationLock(tx);
     const actor = await actorFor(tx, data.clubId, user.id);
     // Assignment conveys private evidence access; ordinary schedulers cannot self-grant.
     if (!interviewCapabilities(actor).manageGrants) throw new Error("Only an active owner can grant panel access.");
@@ -103,6 +102,8 @@ export async function setInterviewPanelAssignment(input: unknown) {
     const app = await tx.application.findFirst({ where: { id: data.applicationId, clubId: data.clubId, status: { not: "DRAFTING" } } });
     const round = await tx.pipelineRound.findFirst({ where: { id: data.roundId, clubId: data.clubId } });
     if (!target || !app || !round || app.studentId === target.userId) throw new Error("Panel scope unavailable.");
+    // A grant adds the target's official commitments across clubs.
+    if (data.assigned) await lockSchedulingPeople(tx, { exclusive: [target.userId] });
     if (data.assigned && (target.user.disabledAt || !interviewCapabilities(target).participate || app.roundId !== round.id || round.anonymousReview)) throw new Error("Active identified reviewer and current round required.");
     const key = { applicationId: app.id, roundId: round.id, memberId: target.id };
     const old = await tx.interviewPanelAssignment.findUnique({ where: { applicationId_roundId_memberId: key } });
