@@ -244,3 +244,22 @@ test('unparseable input fails closed', () => {
   const r = runHook('not json');
   assert.equal(r.status, 2);
 });
+
+
+test('Git repository selectors determine HEAD independently of the session repo', () => {
+  for (const selector of [`--git-dir=${onMain}/.git`, `--git-dir ${onMain}/.git`]) {
+    assert.equal(decide(`git ${selector} push origin HEAD`, onFeature), 'deny');
+    assert.equal(decide(`git ${selector} push`, onFeature), 'deny');
+  }
+  assert.equal(decide(`git --git-dir=${onFeature}/.git push origin HEAD`, onMain), 'allow');
+  assert.equal(decide(`git -C ${onMain} --git-dir=.git push origin HEAD`, onFeature), 'deny');
+  assert.equal(decide(`git --git-dir=${notARepo}/missing push origin HEAD`, onFeature), 'deny');
+});
+
+test('unrelated Docker commands never exempt sibling database clients', () => {
+  for (const separator of [' && ', '; ', ' | ', '\n']) {
+    assert.equal(decide('docker exec oc-test true' + separator + 'pg_restore --dbname="$REMOTE_URL" dump.sql'), 'ask');
+    assert.equal(decide('psql -h remote.example -c "SELECT 1"' + separator + 'docker compose exec db true'), 'ask');
+  }
+  assert.equal(decide('echo "docker exec oc-test true" && pg_dump -h remote.example app'), 'ask');
+});

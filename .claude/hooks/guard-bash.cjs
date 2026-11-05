@@ -146,14 +146,17 @@ const GIT_OPTS_WITH_VALUE = new Set(['-C', '-c', '--git-dir', '--work-tree', '--
 
 function parseGit(argv, cwd) {
   let dir = cwd;
+  let gitDir;
   let i = 1;
   while (i < argv.length && argv[i].startsWith('-')) {
     const w = argv[i];
+    if (w === '--git-dir') { gitDir = argv[i + 1]; i += 2; continue; }
+    if (w.startsWith('--git-dir=')) { gitDir = w.slice('--git-dir='.length); i++; continue; }
     if (w === '-C') { dir = resolveDir(dir, argv[i + 1]); i += 2; continue; }
     if (GIT_OPTS_WITH_VALUE.has(w)) { i += 2; continue; }
     i += 1;
   }
-  return { sub: argv[i], rest: argv.slice(i + 1), dir };
+  return { sub: argv[i], rest: argv.slice(i + 1), dir, gitDir };
 }
 
 function resolveDir(base, p) {
@@ -162,9 +165,9 @@ function resolveDir(base, p) {
   return (base || process.cwd()).replace(/\/$/, '') + '/' + p;
 }
 
-function currentBranch(dir) {
+function currentBranch(dir, gitDir) {
   try {
-    return execFileSync('git', ['-C', dir || process.cwd(), 'symbolic-ref', '--quiet', '--short', 'HEAD'], {
+    return execFileSync('git', ['-C', dir || process.cwd(), ...(gitDir === undefined ? [] : ['--git-dir', gitDir]), 'symbolic-ref', '--quiet', '--short', 'HEAD'], {
       encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 3000,
     }).trim();
   } catch {
@@ -172,7 +175,7 @@ function currentBranch(dir) {
   }
 }
 
-function checkGitPush(rest, dir) {
+function checkGitPush(rest, dir, gitDir) {
   const flags = rest.filter((w) => w.startsWith('-'));
   const positional = [];
   const VALUE_FLAGS = new Set(['--repo', '-o', '--push-option', '--receive-pack', '--exec', '--signed']);
@@ -192,7 +195,7 @@ function checkGitPush(rest, dir) {
 
   if (refspecs.length === 0) {
     // Destination comes from git config (push.default, upstream). Resolve the current branch.
-    const branch = currentBranch(dir);
+    const branch = currentBranch(dir, gitDir);
     if (branch === null) return deny('Cannot determine the current branch for a push without a refspec. Push an explicit feature branch: `git push origin <branch>`.');
     if (PROTECTED_BRANCHES.has(branch)) return deny(`You are on \`${branch}\`; a bare push would update it. Create a --no-track feature branch.`);
     return ask(`Push without an explicit refspec from \`${branch}\`: the destination depends on push.default and upstream config. Prefer \`git push -u origin ${branch}\`.`);
@@ -202,7 +205,7 @@ function checkGitPush(rest, dir) {
     const short = dst.replace(/^refs\/heads\//, '');
     if (PROTECTED_BRANCHES.has(short)) return deny(`Pushing to \`${short}\` is blocked. Open a PR from a feature branch.`);
     if (short === 'HEAD' || (!r.includes(':') && (r === 'HEAD' || r === '@'))) {
-      const branch = currentBranch(dir);
+      const branch = currentBranch(dir, gitDir);
       if (branch === null || PROTECTED_BRANCHES.has(branch)) return deny('`HEAD` resolves to a protected or unknown branch here. Push a named feature branch.');
     }
   }
@@ -213,8 +216,8 @@ function checkGitPush(rest, dir) {
 }
 
 function checkGit(argv, cwd) {
-  const { sub, rest, dir } = parseGit(argv, cwd);
-  if (sub === 'push') return checkGitPush(rest, dir);
+  const { sub, rest, dir, gitDir } = parseGit(argv, cwd);
+  if (sub === 'push') return checkGitPush(rest, dir, gitDir);
   const joined = rest.join(' ');
   if ((sub === 'branch' && /(--set-upstream-to|-u)[= ]?origin\/(main|master)\b/.test(joined)) ||
       ((sub === 'switch' || sub === 'checkout') && /(^|\s)(--track|-t)(\s|=|$)/.test(joined) && /origin\/(main|master)\b/.test(joined))) {
@@ -290,11 +293,11 @@ function checkSecrets(argv, segment) {
   return null;
 }
 
-function checkDbClients(argv, segment, fullCommand) {
+function checkDbClients(argv, segment) {
   const head = basename(argv[0] ?? '');
   if (!['psql', 'pg_dump', 'pg_dumpall', 'pg_restore'].includes(head)) return null;
-  // `docker exec <container> psql ...` is the repo's disposable-Postgres pattern.
-  if (/\bdocker\s+(exec|compose\s+exec)\b/.test(segment) || /\bdocker\s+(exec|compose\s+exec)\b/.test(fullCommand)) return null;
+  // Docker-wrapped calls have docker as their command head. A sibling Docker
+  // invocation must never exempt this direct database-client invocation.
   if (/localhost|127\.0\.0\.1|\[::1\]|host\.docker\.internal/.test(segment)) return null;
   return ask(`\`${head}\` against a non-local database needs owner approval. Prefer disposable Postgres or the read-only MCP server.`);
 }
@@ -332,7 +335,7 @@ function evaluate(command, cwd, depth = 0) {
     if (head === 'supabase') bump(checkSupabase(argv));
     if (head === 'vercel') bump(checkVercel(argv));
     bump(checkPackageScript(argv));
-    bump(checkDbClients(argv, segment, command));
+    bump(checkDbClients(argv, segment));
     if (worst.decision === 'deny') return worst;
   }
   return worst;
