@@ -1,7 +1,6 @@
 "use client"
 import { recordWorkspaceRead } from "@/lib/workspace-read-diagnostics";
 
-import { createClient } from "@/utils/supabase/client";
 import { hasWorkspace } from "@/lib/permissions";
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { User, StudentProfile, Application, ClubMember } from '@prisma/client';
@@ -47,7 +46,11 @@ export function AuthProvider({ children, initialUser = null, isImpersonating = f
   const isReadAuthorityCurrent = React.useCallback((authority: object | undefined) => currentReadAuthority.current === authority, []);
   useEffect(() => {
     if (isDemoEnabled || !hasSession) return;
-    let token: string | undefined;
+    let token: string | undefined, cancelled = false, unsubscribe = () => {};
+    // The Supabase browser client loads only for signed-in sessions, keeping it
+    // out of every page's root bundle (signed-out visitors never subscribe).
+    void import("@/utils/supabase/client").then(({ createClient }) => {
+    if (cancelled) return;
     const { data: { subscription } } = createClient().auth.onAuthStateChange((event, session) => {
       const next = session?.access_token ?? "";
       if (token !== undefined ? next !== token : event !== "INITIAL_SESSION") {
@@ -60,7 +63,9 @@ export function AuthProvider({ children, initialUser = null, isImpersonating = f
       }
       token = next;
     });
-    return () => subscription.unsubscribe();
+    unsubscribe = () => subscription.unsubscribe();
+    });
+    return () => { cancelled = true; unsubscribe(); };
   }, [isDemoEnabled, hasSession]);
   const [selectedClubId, setSelectedClubId] = useState("");
   const generation = React.useRef(0), bootstrap = React.useRef({ user: initialUser, demo: isDemoEnabled });
