@@ -6,6 +6,14 @@ const nextConfig = {
     : process.env.NODE_ENV === "development" ? ".next-dev" : ".next",
   experimental: { serverActions: { bodySizeLimit: "12mb" } },
   poweredByHeader: false,
+  // Interface icons are one module each (components/icons/<Name>.tsx) behind the
+  // components/icons.tsx re-export list. Marking exactly those files
+  // side-effect-free lets webpack resolve each page to only the icons it uses
+  // instead of bundling every icon wherever any icon is imported.
+  webpack(config) {
+    config.module.rules.push({ test: /[\\/]components[\\/]icons(?:\.tsx|[\\/][^\\/]+\.tsx)$/, sideEffects: false })
+    return config
+  },
   serverExternalPackages: ["pdfjs-dist", "@napi-rs/canvas"],
   // Native PDF workers resolve the package manifest at runtime, outside the bundle.
   outputFileTracingIncludes: { "/*": ["./prisma/certs/supabase-root.crt", "./public/brand/premium-board/07_favicon.svg", "./public/apple-icon.png", "./node_modules/pdfjs-dist/package.json", "./node_modules/pdfjs-dist/legacy/build/*.mjs", "./node_modules/pdfjs-dist/cmaps/**", "./node_modules/pdfjs-dist/standard_fonts/**", "./node_modules/.pnpm/@napi-rs+canvas*/**/*"] },
