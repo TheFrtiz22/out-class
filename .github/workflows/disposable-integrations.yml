@@ -3,19 +3,10 @@ name: Disposable integration verification
 # No repository secrets, hosted Auth, production database or external SMTP
 # credentials. Each job provisions its own local fixture on a fresh runner.
 on:
+  # Runs on every PR (no paths filter): its jobs are required status checks on
+  # main, and GitHub never reports a filtered-out required check, which blocks
+  # docs- and config-only PRs forever.
   pull_request:
-    paths:
-      - "actions/**"
-      - "app/**"
-      - "components/**"
-      - "lib/**"
-      - "prisma/**"
-      - "scripts/**"
-      - "supabase/**"
-      - "tests/**"
-      - "package.json"
-      - "pnpm-lock.yaml"
-      - ".github/workflows/disposable-integrations.yml"
   workflow_dispatch:
   schedule:
     - cron: "17 5 * * 1"

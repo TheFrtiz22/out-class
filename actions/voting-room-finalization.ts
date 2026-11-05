@@ -36,7 +36,7 @@ export async function finalizeLiveVotingRoom(input:unknown){
   if(prior){if(prior.actorId!==user.id||prior.fingerprint!==fingerprint)throw Error("Request ID reused with different content.");return {revision:s.revision};}
   if(meetingDetails((s.presentationOptions as {meeting?:unknown})?.meeting)?.status==='CANCELLED'||s.state!=="COMPLETED"||s.finalizedAt||s.revision!==d.revision)throw Error("Session changed. Preview decisions again.");
   await tx.$queryRaw(Prisma.sql`SELECT id FROM "Application" WHERE "clubId"=${d.clubId} AND id IN (${Prisma.join(s.candidates.map(c=>c.applicationId))}) ORDER BY id FOR UPDATE`);
-  const plan=await votingFinalizationPlan(tx,s,d.mapping);if(plan.guard!==d.guard)throw Error("Applicant or pipeline state changed. Preview decisions again.");
+  const plan=await votingFinalizationPlan(tx,s,d.mapping);if(plan.stale.length)throw Error(`Application changed since voting began: ${plan.stale.map(a=>`${a.label} (${a.reason})`).join("; ")}. Nothing was finalized; review these applicants first.`);if(plan.guard!==d.guard)throw Error("Applicant or pipeline state changed. Preview decisions again.");
   await tx.$queryRaw`SELECT set_config('outclass.voting_finalization',${s.id},true)`;
   for(const c of plan.changes){
    if(c.outcome==="HOLD"||c.outcome==="UNREVIEWED")continue;
