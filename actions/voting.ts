@@ -12,7 +12,7 @@ import { Prisma } from "@prisma/client"
 import { prisma, type AppTransactionClient } from "@/utils/prisma"
 import { requireAuth, requireClubPermission } from "@/utils/auth"
 import { hasPermission, type ClubPermission } from "@/lib/permissions"
-import { ballotOutcome, summarizeVoting, createVotingSchema, votingScope, votingCommandSchema, decisionSchema } from "@/lib/voting-engine"
+import { ballotOutcome, summarizeVoting, projectLegacyVoting, createVotingSchema, votingScope, votingCommandSchema, decisionSchema } from "@/lib/voting-engine"
 import { readVotingDisplay } from "@/lib/voting-presentation"
 const include = { participants: true, candidates: { orderBy: { position: "asc" as const } }, passes: { orderBy: { number: "asc" as const }, include: { candidates: { orderBy: { position: "asc" as const }, include: { ballots: true } } } } }
 async function member(tx: AppTransactionClient, clubId: string, id: string, caps: ClubPermission[]) {
@@ -56,7 +56,7 @@ export async function getVotingWorkspace(clubId: string, sessionId?: string, sel
     // separate pipeline read before it. Session/ballot reads and post-snapshot
     // live authority remain unchanged.
     const candidateSelection = await readVotingCandidateSelection(tx, clubId, m, rounds, query, new Map(allRounds.map(round => [round.id, round.anonymousReview])));
-    return { candidateSelection, sessions, joinedParticipants:joinedParticipants.map(v=>({id:v.id,label:v.user.studentProfile ? `${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}` : "Club member", joinedAt:s!.participants.find(p=>p.memberId===v.id)?.joinedAt??null})), session:s, summary:s ? summarizeVoting(s):null, memberId:m.id, canManage:hasPermission(m,"decisions.manage"), canStart:hasPermission(m,"decisions.start"), canReopen:hasPermission(m,"decisions.reopen"), canFinish:hasPermission(m,"decisions.finish"), canPublish:hasPermission(m,"decisions.publish")&&hasPermission(m,"applicants.identify"), canVote:hasPermission(m,"decisions.vote") && !!s?.participants.some(p=>p.memberId===m.id), eligible:eligible.map(v=>({id:v.id,label:v.user.email})), rounds:rounds.map(r=>({id:r.id,name:r.name})), academicYears: s ? (await tx.application.findMany({where:{id:{in:s.candidates.map(c=>c.applicationId)},clubId},select:{id:true,student:{select:{studentProfile:{select:{gradYear:true,transferStudent:true}}}}}})).map(a => ({ id:a.id, academicYear:a.student.studentProfile ? academicYear(a.student.studentProfile) : "Year unavailable" })):[] }
+    return { candidateSelection, sessions, joinedParticipants:joinedParticipants.map(v=>({id:v.id,label:v.user.studentProfile ? `${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}` : "Club member", joinedAt:s!.participants.find(p=>p.memberId===v.id)?.joinedAt??null})), ...(s?(({session,summary})=>({session,summary}))(projectLegacyVoting(s,m.id,summarizeVoting(s))):{session:null,summary:null}), memberId:m.id, canManage:hasPermission(m,"decisions.manage"), canStart:hasPermission(m,"decisions.start"), canReopen:hasPermission(m,"decisions.reopen"), canFinish:hasPermission(m,"decisions.finish"), canPublish:hasPermission(m,"decisions.publish")&&hasPermission(m,"applicants.identify"), canVote:hasPermission(m,"decisions.vote") && !!s?.participants.some(p=>p.memberId===m.id), eligible:eligible.map(v=>({id:v.id,label:v.user.email})), rounds:rounds.map(r=>({id:r.id,name:r.name})), academicYears: s ? (await tx.application.findMany({where:{id:{in:s.candidates.map(c=>c.applicationId)},clubId},select:{id:true,student:{select:{studentProfile:{select:{gradYear:true,transferStudent:true}}}}}})).map(a => ({ id:a.id, academicYear:a.student.studentProfile ? academicYear(a.student.studentProfile) : "Year unavailable" })):[] }
   },{isolationLevel:"RepeatableRead"})
   // Revalidate after releasing the snapshot: suspension, account disablement,
   // support-session expiry, and membership/role revocation must deny its payload.
@@ -104,7 +104,7 @@ export async function submitVotingBallot(input: unknown) {
     const after=ballotOutcome([...c.ballots,{decision:d.decision}],s.participants.length,s.autoAdvance,s.threshold)
     await tx.votingBallot.create({data:{sessionId:s.id,passNumber:d.passNumber,applicationId:d.applicationId,memberId:membership.id,decision:d.decision}})
     await tx.votingSession.update({where:{id:s.id},data:{revision:{increment:1}}})
-    await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:"voting.ballot.submitted",details:{applicationId:d.applicationId,pass:d.passNumber,decision:d.decision}}})
+    await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:"voting.ballot.submitted",details:{applicationId:d.applicationId,pass:d.passNumber}}})
     if(after.automatic&&!before.automatic) await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:"voting.candidate.auto-advanced",details:{applicationId:d.applicationId,pass:d.passNumber,rule:s.autoAdvance,threshold:s.threshold}}})
     return {success:true}
   }, votingWriteLimits)

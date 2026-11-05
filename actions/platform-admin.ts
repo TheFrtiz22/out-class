@@ -1,4 +1,5 @@
 "use server";
+import { redactBallotAudit } from "@/lib/ballot-audit-privacy";
 import { revokeClubInvitations } from "@/utils/revoke-club-invitations";
 import { publishRecruitmentDecision } from "@/utils/recruitment-offers";
 import { z } from "zod";
@@ -327,7 +328,7 @@ export async function readPlatformResource(
         orderBy: [{ createdAt: "desc" }, { id: "asc" }],
       });
     case "audit":
-      return prisma.auditLog.findMany({
+      return (await prisma.auditLog.findMany({
         ...paging,
         where: {
           ...club,
@@ -349,7 +350,7 @@ export async function readPlatformResource(
             : {}),
         },
         orderBy: [{ createdAt: "desc" }, { id: "asc" }],
-      });
+      })).map(redactBallotAudit);
   }
 }
 

@@ -375,7 +375,7 @@ export function createDemoSeed(anchor = dayKey(new Date(), SCHEDULING_TIMEZONE))
   })))
   const applicantDisplay = Object.fromEntries(mii.rounds.map(r => [r.id, { config: structuredClone(defaultDisplayConfig), version: 1 }]))
   const recruitingRules: DemoRecruitingRule[] = [{ roundId: reviewRound.id, minGpa: 3.3, minSat: 1350, minAct: 28, revision: 1, updatedAt: at(-4) }]
-  type Session = NonNullable<Awaited<ReturnType<typeof import("@/actions/voting").getVotingWorkspace>>["session"]>
+  type Session = import("@/lib/demo/voting").DemoVotingSession
   function votingFixture(n: number, pool: typeof applications, published: boolean): Session {
     const id = uid(32, n), started = at(published ? -5 : -1), decisions = ["PASS", "PASS", "HOLD", "NOT_PASS", "HOLD", "HOLD"] as const
     const choice = (app: typeof applications[number], i: number) => published ? app.status === "ACCEPTED" ? "PASS" : app.status === "WAITLISTED" ? "HOLD" : "NOT_PASS" : decisions[i]

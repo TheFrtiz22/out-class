@@ -1,4 +1,5 @@
 "use server";
+import { redactBallotAudit } from "@/lib/ballot-audit-privacy";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { inspectPlatformRecord } from "@/actions/platform-admin";
@@ -78,7 +79,7 @@ export async function inspectAdminClub(clubId: string, reason: string) {
     claims: { take: 100 }, events: { select: { id: true, title: true, date: true, publication: { select: { status: true } } }, take: 100 },
     _count: { select: { applications: true, members: true } },
   } });
-  const activity = await prisma.auditLog.findMany({ where: { clubId }, orderBy: { createdAt: "desc" }, take: 30 });
+  const activity = (await prisma.auditLog.findMany({ where: { clubId }, orderBy: { createdAt: "desc" }, take: 30 })).map(redactBallotAudit);
   await prisma.auditLog.create({ data: { actorId: actor.id, action: "platform.club.inspect", targetId: clubId, clubId, reason, details: { result: "success" } } });
   return { club, activity };
 }
