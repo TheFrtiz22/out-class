@@ -11,10 +11,10 @@ Every merge to `main` auto-deploys to production. This skill is the gate. You (t
 1. Application gates: `pnpm run test`, `pnpm run test:migrations`, `pnpm run lint`, `pnpm run typecheck`. Record pass, fail and skip counts for each, verbatim.
 2. `node scripts/check-disposable-integration-coverage.cjs`. Record skipped and gated suites, and whether each skip is environmental or a real gap.
 3. If `.claude/` changed: `pnpm run test:agent-hooks`. Report it separately; it is not an application test.
-4. If the change touches identity, data access, Storage, cron or migrations: write `git diff origin/main...HEAD` to a file, then invoke `authz-reviewer` with the file path, the test counts and the acceptance criteria.
+4. Write `git diff origin/main...HEAD` to a file, then invoke every reviewer whose row in `docs/agent-ops/README.md` matches the diff (`authz-reviewer` for identity, data access, Storage, cron or migrations; `migration-reviewer`, `nextjs-reviewer`, `failure-path-reviewer`, `test-gap-reviewer` by area), in parallel, each with the file path, the test counts and the acceptance criteria.
 5. If the change includes a migration:
    - Rehearse it on disposable Postgres (`node scripts/run-disposable-postgres.cjs` or the relevant `scripts/test-*-local.cjs`).
-   - List every `SECURITY DEFINER` function and confirm it sets `search_path` (the established pattern is `SET search_path = ''` or `pg_catalog, public`).
+   - List every `SECURITY DEFINER` function and confirm it sets `search_path` (`SET search_path = ''` with schema-qualified names for definer functions, as in `20261104230000_inbox_realtime_signal`; `pg_catalog, public` is used for trigger functions).
    - List every GRANT, REVOKE and `CREATE POLICY … TO` with role and reason. Grants to `outclass_production_app` and narrowly scoped policies `TO authenticated` (as in the realtime inbox migration) are established patterns. A new grant to `anon`, `authenticated` or `PUBLIC` needs a written reason and an `outclass-authz-matrix` test.
    - Applying it to production requires the owner's written approval in chat. The tripwire escalates `prisma migrate deploy` and `db:deploy` for this reason.
 6. Diff review: no `.env` values, no service-role keys in client code, Phosphor icons only, QR only via `@/lib/qr`, no new email send path.
