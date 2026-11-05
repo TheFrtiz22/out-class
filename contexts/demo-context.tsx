@@ -1,21 +1,13 @@
 "use client"
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
+import { DemoContext, useDemoMode } from "@/contexts/demo-mode"
+export { useDemoMode }
 import { resolveStudentView } from "@/lib/student-navigation"
 import { demoStore } from "@/lib/demo/store"
 import type { DemoState } from "@/lib/demo/seed"
 import { OutClassLoadingScreen } from "@/components/outclass-loading-screen"
 
-type DemoContextValue = {
-  isDemoEnabled: boolean
-  allowed: boolean
-  ready: boolean
-  state: DemoState | null
-  toggleDemo: () => Promise<void>
-  resetDemo: () => void
-  viewAs: (role: "student" | "leader", clubId?: string) => void
-  error: string
-}
-const Context = createContext<DemoContextValue | null>(null)
+const Context = DemoContext
 export function DemoDataProvider({
   children,
   allowed = false,
@@ -176,9 +168,4 @@ export function DemoDataProvider({
       ) : error ? null : <OutClassLoadingScreen />}
     </Context.Provider>
   )
-}
-export function useDemoMode() {
-  const value = useContext(Context)
-  if (!value) throw new Error("DemoDataProvider is required")
-  return value
 }
