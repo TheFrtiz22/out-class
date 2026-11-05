@@ -2,7 +2,12 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useDemoMode } from "@/contexts/demo-context"
-import { getCorkboard, setCorkboardClub } from "@/lib/workspace-api"
+// Loaded on first use so every page's root bundle does not include the full
+// workspace adapter layer (all features plus demo fallbacks).
+// After the first read (on mount) the module is cached and calls are issued
+// synchronously, so saves keep their immediate request ordering.
+let workspaceModule: typeof import("@/lib/workspace-api") | null = null
+const workspaceApi = async () => (workspaceModule ??= await import("@/lib/workspace-api"))
 import type { DirectoryClub } from "@/lib/club-directory"
 import type { CorkboardItem } from "@/lib/corkboard"
 
@@ -24,7 +29,7 @@ export function CorkboardProvider({ children }: { children: ReactNode }) {
     if (!identity || pendingWrites.current.size) return
     const request = ++revision.current
     try {
-      const result = await getCorkboard()
+      const result = await (workspaceModule ?? await workspaceApi()).getCorkboard()
       if (request === revision.current && owner.current === identity) setState({ identity, items: result.items, loading: false, error: "" })
     } catch {
       if (request === revision.current && owner.current === identity) setState(previous => ({ ...previous, identity, items: [], loading: false, error: "We couldn’t load your Corkboard. Please try again." }))
@@ -51,7 +56,7 @@ export function CorkboardProvider({ children }: { children: ReactNode }) {
     setState(value => ({ ...value, error: "", items: saved ? previous ? value.items : [{ club, savedAt: new Date().toISOString() }, ...value.items] : value.items.filter(item => item.club.id !== club.id) }))
     let succeeded = false
     try {
-      const result = await setCorkboardClub({ clubId: club.id, saved })
+      const result = await (workspaceModule ?? await workspaceApi()).setCorkboardClub({ clubId: club.id, saved })
       succeeded = true
       if (owner.current === identity && result.savedAt) setState(value => ({ ...value, items: value.items.map(item => item.club.id === club.id ? { ...item, savedAt: result.savedAt! } : item) }))
     } catch {

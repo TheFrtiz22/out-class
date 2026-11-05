@@ -2,8 +2,19 @@
 import { LoadingState } from "@/components/ui/loading-state"
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
-import { useDemoMode } from "@/contexts/demo-context";
-import { checkInMeeting, getMeeting } from "@/lib/workspace-api";
+import { useDemoMode } from "@/contexts/demo-mode";
+import { checkInMeeting as checkInLive, getMeeting as getMeetingLive } from "@/actions/meetings";
+
+// Students open this page on a phone right after scanning. Import the two live
+// Server Actions directly; the full workspace adapter (every feature plus the
+// demo store and seed data) loads only when Demo Mode is enabled.
+const demoWorkspace = () => import("@/lib/workspace-api");
+async function getMeeting(demo: boolean, id: string) {
+  return demo ? (await demoWorkspace()).getMeeting(id) : getMeetingLive(id);
+}
+async function checkInMeeting(demo: boolean, id: string, token: string) {
+  return demo ? (await demoWorkspace()).checkInMeeting(id, token) : checkInLive(id, token);
+}
 import type { CheckInResult } from "@/lib/meetings";
 import { Button } from "@/components/ui/button";
 export function MeetingCheckIn() {
@@ -31,7 +42,7 @@ export function MeetingCheckIn() {
   useEffect(() => {
     let current = true;
     if (user && id)
-      getMeeting(id)
+      getMeeting(demo.isDemoEnabled, id)
         .then((m) => {
           if (current) setTitle(m.title);
         })
@@ -94,7 +105,7 @@ export function MeetingCheckIn() {
               setBusy(true);
               setError("");
               try {
-                setResult(await checkInMeeting(id, token));
+                setResult(await checkInMeeting(demo.isDemoEnabled, id, token));
               } catch (e) {
                 setError(
                   e instanceof Error

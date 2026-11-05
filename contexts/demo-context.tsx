@@ -1,21 +1,17 @@
 "use client"
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
+import { DemoContext, useDemoMode } from "@/contexts/demo-mode"
+export { useDemoMode }
 import { resolveStudentView } from "@/lib/student-navigation"
-import { demoStore } from "@/lib/demo/store"
+// The demo store and seed data load only when Demo Mode is enabled, so they are
+// not part of every page's root bundle. Presenter-only.
+type DemoStoreModule = typeof import("@/lib/demo/store")
+let loadedStore: DemoStoreModule | null = null
+const loadDemoStore = async () => (loadedStore ??= await import("@/lib/demo/store"))
 import type { DemoState } from "@/lib/demo/seed"
 import { OutClassLoadingScreen } from "@/components/outclass-loading-screen"
 
-type DemoContextValue = {
-  isDemoEnabled: boolean
-  allowed: boolean
-  ready: boolean
-  state: DemoState | null
-  toggleDemo: () => Promise<void>
-  resetDemo: () => void
-  viewAs: (role: "student" | "leader", clubId?: string) => void
-  error: string
-}
-const Context = createContext<DemoContextValue | null>(null)
+const Context = DemoContext
 export function DemoDataProvider({
   children,
   allowed = false,
@@ -35,17 +31,25 @@ export function DemoDataProvider({
   const [epoch, setEpoch] = useState(0)
   const [cleanupRetry, setCleanupRetry] = useState(0)
   useEffect(() => {
-    const unsubscribe = demoStore.subscribe(() =>
-      setState(demoStore.active() ? demoStore.get() : null),
-    )
-    if (enabled && allowed) {
-      try {
-        demoStore.start(template)
-      } catch {
-        setError("Demo storage is unavailable. Allow browser storage or turn Demo Mode off.")
-      }
-    } else demoStore.stop()
     let current = true
+    let unsubscribe = () => {}
+    if (enabled && allowed) {
+      loadDemoStore()
+        .then(({ demoStore }) => {
+          if (!current) return
+          unsubscribe = demoStore.subscribe(() =>
+            setState(demoStore.active() ? demoStore.get() : null),
+          )
+          try {
+            demoStore.start(template)
+          } catch {
+            setError("Demo storage is unavailable. Allow browser storage or turn Demo Mode off.")
+          }
+        })
+        .catch(() => {
+          if (current) setError("Demo Mode could not load. Check your connection and try again.")
+        })
+    } else loadedStore?.demoStore.stop()
     if (clearStaleSession) {
       setReady(false)
       setError("")
@@ -65,8 +69,8 @@ export function DemoDataProvider({
     } else setReady(true)
     const sync = (event: StorageEvent) => {
       if (event.key === "outclass.demo-mode-change") window.location.reload()
-      if (event.key === "outclass.presentation.v1" && demoStore.active()) {
-        try { demoStore.refresh() } catch { setError("Demo could not refresh. Retry or reset Demo Mode.") }
+      if (event.key === "outclass.presentation.v1" && loadedStore?.demoStore.active()) {
+        try { loadedStore.demoStore.refresh() } catch { setError("Demo could not refresh. Retry or reset Demo Mode.") }
       }
     }
     window.addEventListener("storage", sync)
@@ -93,7 +97,7 @@ export function DemoDataProvider({
         }
         throw new Error(reasons[result?.reason] || "Demo mode could not be changed. Check your access and try again.")
       }
-      if (enabled) demoStore.stop()
+      if (enabled) loadedStore?.demoStore.stop()
       try {
         localStorage.setItem("outclass.demo-mode-change", String(Date.now()))
       } catch {
@@ -107,6 +111,8 @@ export function DemoDataProvider({
   function viewAs(role: "student" | "leader", clubId = state?.clubs[0].id) {
     if (!clubId) return
     try {
+      if (!loadedStore) throw new Error("Demo Mode is not loaded.")
+      const { demoStore } = loadedStore
       const current = demoStore.get()
       const url = new URL(window.location.href)
       url.searchParams.delete("demoClub")
@@ -135,7 +141,8 @@ export function DemoDataProvider({
   function resetDemo() {
     try {
       localStorage.removeItem("outclass.demo.customization.v1")
-      demoStore.reset()
+      if (!loadedStore) throw new Error("Demo Mode is not loaded.")
+      loadedStore.demoStore.reset()
       const url = new URL(window.location.href)
       // A full navigation resets route-local state and Next's cached search parameters,
       // including resets initiated inside a club workspace.
@@ -156,6 +163,7 @@ export function DemoDataProvider({
         isDemoEnabled: enabled && allowed,
         state,
         error,
+        demoIdentity: state && loadedStore?.demoStore.active() ? loadedStore.demoUser() : null,
         toggleDemo,
         viewAs,
         resetDemo,
@@ -176,9 +184,4 @@ export function DemoDataProvider({
       ) : error ? null : <OutClassLoadingScreen />}
     </Context.Provider>
   )
-}
-export function useDemoMode() {
-  const value = useContext(Context)
-  if (!value) throw new Error("DemoDataProvider is required")
-  return value
 }

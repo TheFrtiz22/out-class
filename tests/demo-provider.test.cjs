@@ -26,7 +26,7 @@ function provider({ storageFails = false, role = 'student' } = {}) {
   const changes = [], store = { subscribe: fn => { listeners.add(fn); return () => listeners.delete(fn) }, stop() { active = false }, active: () => active, get: () => demoState, start() { if (storageFails) throw Error('Storage unavailable'); active = true; listeners.forEach(fn => fn()) }, mutate(fn) { fn(demoState); changes.push(structuredClone(demoState)); listeners.forEach(fn => fn()) }, reset() { changes.push('reset') } }
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync('contexts/demo-context.tsx', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText
-  const mocks = { react, '@/components/outclass-loading-screen': { OutClassLoadingScreen: 'OutClassLoadingScreen' }, '@/lib/demo/store': { demoStore: store }, '@/lib/student-navigation': { resolveStudentView: value => ['corkboard','tracker','explore'].includes(value) ? value : null } }
+  const mocks = { react, '@/contexts/demo-mode': { DemoContext: react.createContext(null), useDemoMode() {} }, '@/components/outclass-loading-screen': { OutClassLoadingScreen: 'OutClassLoadingScreen' }, '@/lib/demo/store': { demoStore: store, demoUser: () => ({ id: 'demo-student' }) }, '@/lib/student-navigation': { resolveStudentView: value => ['corkboard','tracker','explore'].includes(value) ? value : null } }
   const fetch = (...args) => new Promise((resolve, reject) => requests.push({ args, resolve, reject }))
   const window = { addEventListener() {}, removeEventListener() {}, location: { href: 'http://localhost/preview?workspace=student&view=corkboard&section=decisions&demoClub=mii', reload() {}, assign(url) { window.location.href = String(url) } }, history: { replaceState(_state, _title, url) { window.location.href = String(url) } } }
   new Function('require', 'module', 'exports', 'fetch', 'window', 'localStorage', code)(name => mocks[name] || require(name), mod, mod.exports, fetch, window, {removeItem(){}})
@@ -37,6 +37,10 @@ function provider({ storageFails = false, role = 'student' } = {}) {
   }
 }
 const settle = () => new Promise(resolve => setImmediate(resolve))
+// Demo data loads with a dynamic import once Demo Mode is enabled; perspective
+// and reset controls exist only in that state.
+const enabledDemo = { clearStaleSession: false, enabled: true, allowed: true }
+async function demoReady(h, props = enabledDemo) { h.render(props); h.effects(); await settle(); return props }
 test('failed stale-cookie cleanup keeps live account children gated; retry clears rather than enables demo', async () => {
   const h = provider()
   assert.equal(h.render().props.children[1].type, 'OutClassLoadingScreen')
@@ -63,6 +67,8 @@ test('normal users mount without demo calls; successful stale cleanup precedes a
   assert.equal(normal.render({ clearStaleSession: false }).props.children[1].props.children, 'NORMAL_ACCOUNT')
   normal.effects()
   assert.equal(normal.requests.length, 0)
+  await settle()
+  assert.equal(normal.render({ clearStaleSession: false }).props.value.demoIdentity, null, 'normal accounts never receive a demo identity')
   const stale = provider()
   stale.render()
   stale.effects()
@@ -72,32 +78,35 @@ test('normal users mount without demo calls; successful stale cleanup precedes a
   assert.equal(stale.render().props.children[1].props.children, 'NORMAL_ACCOUNT')
 })
 
-test('demo initialization uses the branded fallback only until isolated data is ready', () => {
+test('demo initialization uses the branded fallback only until isolated data is ready', async () => {
   const h = provider(), props = { clearStaleSession: false, enabled: true, allowed: true }
   assert.equal(h.render(props).props.children[1].type, 'OutClassLoadingScreen')
   h.effects()
+  assert.equal(h.render(props).props.children[1].type, 'OutClassLoadingScreen', 'still loading until demo data is ready')
+  await settle()
   const ready = h.render(props)
   assert.equal(ready.props.children[1].props.children, 'NORMAL_ACCOUNT')
   assert.equal(ready.props.value.state.perspective.clubId, 'mii')
+  assert.deepEqual(ready.props.value.demoIdentity, { id: 'demo-student' }, 'the sample student identity is provided once demo data is ready')
   assert.equal(h.requests.length, 0)
 })
 
-test('demo storage failures expose the existing exit action without an indefinite loader', () => {
+test('demo storage failures expose the existing exit action without an indefinite loader', async () => {
   const h = provider({ storageFails: true }), props = { clearStaleSession: false, enabled: true, allowed: true }
-  h.render(props); h.effects()
+  h.render(props); h.effects(); await settle()
   const failed = h.render(props)
   assert.equal(failed.props.children[0].props.role, 'alert')
   assert.equal(failed.props.children[0].props.children[1].props.children, 'Exit demo')
   assert.equal(failed.props.children[1], null)
 })
 
-test('demo perspective changes and reset clear obsolete student view/section routing without touching live data', () => {
-  const h = provider(), tree = h.render({ clearStaleSession: false })
+test('demo perspective changes and reset clear obsolete student view/section routing without touching live data', async () => {
+  const h = provider(), props = await demoReady(h), tree = h.render(props)
   tree.props.value.viewAs('leader', 'mii')
   assert.equal(h.changes[0].perspective.role, 'leader')
   assert.equal(new URL(h.window.location.href).search, '')
   h.window.location.href = 'http://localhost/preview?workspace=student&view=tracker&section=interviews'
-  h.render({ clearStaleSession: false }).props.value.resetDemo()
+  h.render(props).props.value.resetDemo()
   assert.equal(h.changes[1], 'reset')
   const resetUrl = new URL(h.window.location.href)
   assert.equal(resetUrl.searchParams.get('view'), 'student-dashboard')
@@ -106,19 +115,19 @@ test('demo perspective changes and reset clear obsolete student view/section rou
   assert.equal(h.requests.length, 0)
 })
 
-test('an explicit student bookmark survives the perspective change needed to open it', () => {
-  const h = provider()
-  h.render({ clearStaleSession: false }).props.value.viewAs('student', 'mii')
+test('an explicit student bookmark survives the perspective change needed to open it', async () => {
+  const h = provider(), props = await demoReady(h)
+  h.render(props).props.value.viewAs('student', 'mii')
   const url = new URL(h.window.location.href)
   assert.equal(url.searchParams.get('workspace'), 'student')
   assert.equal(url.searchParams.get('view'), 'corkboard')
   assert.equal(url.searchParams.has('demoClub'), false)
 })
 
-test('reset from a club route returns to canonical student Home instead of re-entering leadership', () => {
- const h = provider()
+test('reset from a club route returns to canonical student Home instead of re-entering leadership', async () => {
+ const h = provider(), props = await demoReady(h)
  h.window.location.href = 'http://localhost/club/mii/workspace?section=recruitment&tool=decisions'
- h.render({clearStaleSession:false}).props.value.resetDemo()
+ h.render(props).props.value.resetDemo()
  const url = new URL(h.window.location.href)
  assert.equal(url.pathname, '/')
  assert.equal(url.searchParams.get('view'), 'student-dashboard')
@@ -126,9 +135,8 @@ test('reset from a club route returns to canonical student Home instead of re-en
  assert.equal(url.searchParams.has('tool'), false)
 })
 
-test('reselecting the active demo leader preserves the interview route and mounted drafts', () => {
-  const h = provider({ role: 'leader' }), props = { clearStaleSession: false, enabled: true, allowed: true }
-  h.render(props); h.effects()
+test('reselecting the active demo leader preserves the interview route and mounted drafts', async () => {
+  const h = provider({ role: 'leader' }), props = await demoReady(h)
   const tree = h.render(props), key = tree.props.children[1].key
   const href = 'http://localhost/club/mii/workspace?section=recruitment&tool=interviews&interview=1&roundId=round&applicantId=app'
   h.window.location.href = href
@@ -140,9 +148,8 @@ test('reselecting the active demo leader preserves the interview route and mount
   assert.equal(h.requests.length, 0)
 })
 
-test('opening a direct demo interview link from a saved student perspective retains its full destination', () => {
-  const h = provider(), props = { clearStaleSession: false, enabled: true, allowed: true }
-  h.render(props); h.effects()
+test('opening a direct demo interview link from a saved student perspective retains its full destination', async () => {
+  const h = provider(), props = await demoReady(h)
   const href = 'http://localhost/club/mii/workspace?section=recruitment&tool=interviews&interview=1&roundId=round&applicantId=app'
   h.window.location.href = href + '&demoClub=mii'
   h.render(props).props.value.viewAs('leader', 'mii')
@@ -154,13 +161,13 @@ test('opening a direct demo interview link from a saved student perspective reta
   assert.equal(h.requests.length, 0)
 })
 
-test('preserving club deep links never permits management of another demo club', () => {
-  const h = provider()
+test('preserving club deep links never permits management of another demo club', async () => {
+  const h = provider(), props = await demoReady(h)
   const href = 'http://localhost/club/other/workspace?section=recruitment&tool=interviews&interview=1'
   h.window.location.href = href
-  h.render({ clearStaleSession: false }).props.value.viewAs('leader', 'other')
+  h.render(props).props.value.viewAs('leader', 'other')
   assert.equal(h.window.location.href, href)
   assert.deepEqual(h.changes, [])
   assert.equal(h.requests.length, 0)
-  assert.equal(h.render({ clearStaleSession: false }).props.children[0].props.role, 'alert')
+  assert.equal(h.render(props).props.children[0].props.role, 'alert')
 })

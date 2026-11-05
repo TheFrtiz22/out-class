@@ -36,13 +36,12 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-import { demoUser } from "@/lib/demo/store";
 import { useDemoMode } from "@/contexts/demo-context";
 
 export function AuthProvider({ children, initialUser = null, isImpersonating = false, hasSession = true }: { children: React.ReactNode; initialUser?: PopulatedUser | null; isImpersonating?: boolean; hasSession?: boolean }) {
   const [user, setUser] = useState<PopulatedUser | null>(initialUser);
   const [loading, setLoading] = useState(!initialUser && hasSession);
-  const { isDemoEnabled, state, viewAs } = useDemoMode();
+  const { isDemoEnabled, state, viewAs, demoIdentity } = useDemoMode();
   const [readAuthority, setReadAuthority] = useState<object>({});
   const currentReadAuthority = React.useRef(readAuthority);
   const isReadAuthorityCurrent = React.useCallback((authority: object | undefined) => currentReadAuthority.current === authority, []);
@@ -104,7 +103,7 @@ export function AuthProvider({ children, initialUser = null, isImpersonating = f
     setUser(newUser);
   };
 
-  const identity = isDemoEnabled && state ? demoUser() as unknown as PopulatedUser : !hasSession ? null : bootstrapChanged ? initialUser : user;
+  const identity = isDemoEnabled && state && demoIdentity ? demoIdentity as unknown as PopulatedUser : !hasSession ? null : bootstrapChanged ? initialUser : user;
   const workspaces = identity?.memberships.filter(hasWorkspace) || [];
   const activeClubId = workspaces.find(m => m.clubId === (isDemoEnabled ? state?.perspective.clubId : selectedClubId))?.clubId || workspaces[0]?.clubId || "";
   const selectClub = (clubId: string) => {
