@@ -160,13 +160,16 @@ test("route loader uses the branded mark with a stable image box and accessible 
   assert.equal(Loading().type, OutClassLoadingScreen)
 })
 
-test("root providers keep demo data and workspace adapters out of every page's bundle", () => {
+test("root providers keep demo data, workspace adapters and the Supabase client out of every page's bundle", () => {
   const source = file => fs.readFileSync(file, "utf8")
   const staticImport = (text, module) => new RegExp(`^import(?!\\s+type\\b)[^;\\n]*from\\s+["']${module}["']`, "m").test(text)
   for (const file of ["contexts/auth-context.tsx", "contexts/demo-context.tsx", "contexts/demo-mode.ts", "contexts/corkboard-context.tsx"]) {
     assert.equal(staticImport(source(file), "@/lib/demo/store"), false, `${file} must not statically import the demo store`)
     assert.equal(staticImport(source(file), "@/lib/workspace-api"), false, `${file} must not statically import the workspace adapters`)
   }
+  for (const file of ["contexts/auth-context.tsx", "components/shell/product-shell.tsx"])
+    assert.equal(staticImport(source(file), "@/utils/supabase/client"), false, `${file} must load the Supabase browser client on demand`)
+  assert.match(source("contexts/auth-context.tsx"), /import\("@\/utils\/supabase\/client"\)/, "signed-in sessions load the auth listener on demand")
   assert.match(source("contexts/demo-context.tsx"), /import\("@\/lib\/demo\/store"\)/, "demo data loads on demand")
   assert.match(source("contexts/corkboard-context.tsx"), /import\("@\/lib\/workspace-api"\)/, "corkboard adapters load on demand")
 })
