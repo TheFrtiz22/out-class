@@ -1,7 +1,7 @@
 "use server"
 import { ownPanelAssignments } from "@/utils/official-panel-schedule"
 
-import { lockOperationalClub } from "@/lib/club-suspension";
+import { assertClubOperational } from "@/lib/club-suspension";
 import { publicMeetingVisibility } from "@/lib/campus-events";
 
 import { applicationAvailability } from "@/lib/club-settings"
@@ -17,16 +17,19 @@ async function persistApplication(input: z.infer<typeof applicationInputSchema>,
   const parsed = applicationInputSchema.parse(input)
   const { clubWriteTransaction } = await import("@/utils/club-write-transaction")
   const applicationId = await clubWriteTransaction(async (tx) => {
-    await lockOperationalClub(tx, parsed.clubId)
+    // FOR SHARE (not FOR UPDATE) on the club: leader configuration changes,
+    // decisions and suspension still serialize against this save, but different
+    // students' autosaves no longer queue behind one club-wide lock. The student
+    // row lock keeps one student's concurrent tabs ordered for the unique
+    // (studentId, clubId) application.
+    await assertClubOperational(tx, parsed.clubId)
+    await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${user.id} FOR UPDATE`
     const configuration = await tx.club.findUnique({ where: { id: parsed.clubId }, select: { applicationOpen: true, applicationDeadline: true, testRequirement: true } })
     if (!configuration || submit && !applicationAvailability(configuration)) throw new Error("Applications are closed for this club. Your saved draft is retained.")
-    if (submit && !(await tx.studentProfile.findUnique({ where: { userId: user.id } }))) {
-      throw new Error("You must complete your unified profile before applying.")
-    }
     if (submit) {
-      const club = await tx.club.findUnique({ where: { id: parsed.clubId }, select: { testRequirement: true } })
       const profile = await tx.studentProfile.findUnique({ where: { userId: user.id } })
-      if (!club || !meetsTestRequirement(club.testRequirement, profile)) throw new Error("Update your profile to meet this club's SAT/ACT requirement before submitting.")
+      if (!profile) throw new Error("You must complete your unified profile before applying.")
+      if (!meetsTestRequirement(configuration.testRequirement, profile)) throw new Error("Update your profile to meet this club's SAT/ACT requirement before submitting.")
     }
     const questions = await tx.applicationQuestion.findMany({ where: { clubId: parsed.clubId, archivedAt: null } })
     parsed.answers = normalizeApplicationAttachments(questions, parsed.answers)
@@ -129,6 +132,14 @@ export async function getStudentApplications() {
   return applications.map(app => ({ ...app, club: { ...app.club, questions: app.club.questions.filter(q => !q.archivedAt || app.status !== "DRAFTING" && app.answers.some(a => a.questionId === q.id)) } }))
 }
 
+// The student calendar shows upcoming meetings plus one semester of history.
+// Older meetings the student attended still appear through `attendances`.
+const STUDENT_CALENDAR_HISTORY_MS = 180 * 24 * 3600000
+function studentCalendarWindow() {
+  const since = new Date(Date.now() - STUDENT_CALENDAR_HISTORY_MS)
+  return { OR: [{ date: { gte: since } }, { endDate: { gte: since } }] }
+}
+
 export async function getStudentDashboardData() {
   const { user } = await requireAuth()
 
@@ -160,7 +171,7 @@ prisma.eventAttendance.findMany({
     },
   }),
 
-prisma.meeting.findMany({ where: { OR: [publicMeetingVisibility, { club: { members: { some: { userId: user.id, status: "ACTIVE" } } } }] }, select: { id: true, clubId: true, title: true, date: true, endDate: true, allDay: true, location: true, description: true, audience: true, club: { select: { name: true } } }, orderBy: { date: "asc" } }),
+prisma.meeting.findMany({ where: { AND: [{ OR: [publicMeetingVisibility, { club: { members: { some: { userId: user.id, status: "ACTIVE" } } } }] }, studentCalendarWindow()] }, select: { id: true, clubId: true, title: true, date: true, endDate: true, allDay: true, location: true, description: true, audience: true, club: { select: { name: true } } }, orderBy: { date: "asc" } }),
 prisma.$transaction(tx=>ownPanelAssignments(tx,user.id))
   ])
   return { applications, attendances, meetings, panelAssignments }
