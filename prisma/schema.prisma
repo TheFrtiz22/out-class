@@ -1110,6 +1110,33 @@ model VotingObservationReference {
   @@index([sessionId, applicationId])
 }
 
+// Club default (roundId null) or per-round override for live voting rules.
+// Unique per (clubId, COALESCE(roundId,'')) in SQL.
+model VotingRuleDefault {
+  id String @id @default(uuid())
+  clubId String
+  roundId String?
+  rules Json
+  revision Int @default(1)
+  updatedBy String
+  updatedAt DateTime @default(now())
+}
+
+// Rule and eligible electorate captured for one ballot instance; insert-only.
+model VotingBallotRule {
+  sessionId String
+  passNumber Int
+  applicationId String
+  candidate VotingPassCandidate @relation(fields: [sessionId, passNumber, applicationId], references: [sessionId, passNumber, applicationId], onDelete: Restrict)
+  version Int
+  rules Json
+  electorate String[]
+  reason String?
+  createdBy String
+  createdAt DateTime @default(now())
+  @@id([sessionId, passNumber, applicationId, version])
+}
+
 // Leader-prepared applicant highlights (editable) and their per-pass immutable copies.
 model VotingSlidePreparation {
   sessionId String
@@ -1220,6 +1247,7 @@ model VotingPassCandidate {
   overrideBy String?
   overrideAt DateTime?
   ballots VotingBallot[]
+  ballotRules VotingBallotRule[]
   slideLock VotingSlideLock?
   @@id([sessionId, passNumber, applicationId])
   @@unique([sessionId, passNumber, position])

@@ -1,4 +1,45 @@
 # Live voting room - Parts 1-3 handoff
+## Club voting rules (leader confirms / threshold decides) — November 5, 2026
+
+**Implemented on branch `feature/voting-rules`; not yet released. Requires migration `20261105170000_voting_rules` (owner approval before production).**
+
+- **Modes.** *Leader confirms* is the existing behaviour and the default. Any session without explicit `presentationOptions.rules`, including every existing session, behaves exactly as before and creates no rule rows. *Threshold decides* is opt-in per session. The legacy durable-voting `threshold`/`autoAdvance` columns and recruiting screening rules are untouched.
+- **Threshold rule** (`lib/voting-rules.ts`) has:
+  - an exact fraction (`numerator/denominator`, ≤1; "at least")
+  - a denominator: `BALLOTS_CAST` (Pass, Hold and Do not pass ballots all count; missing ballots don't) or `ELIGIBLE_VOTERS` (missing ballots stay in the total)
+  - minimum participation, as a fraction of eligible voters (always at least 1 ballot)
+  - a below-threshold outcome, Hold or Do not pass
+  - `reviewed: true`, which is required
+
+  Arithmetic is integer cross-multiplication: 2/3 of 10 counted ballots needs 7 Pass; 6 of 9 meets 2/3. Missing ballots are never Do not pass ballots. Unmet participation, zero ballots or an empty electorate give **no automatic outcome**; the leader either holds for another vote (no reason needed) or decides explicitly with a recorded reason. Nothing is auto-rejected.
+- **Configuration.**
+  - *Default voting rules* (Voting room landing, leaders with `decisions.manage`) hold a club default and an optional override for the round in context (`VotingRuleDefault`, revisioned, retry-safe, audited `voting.rules.default_saved`).
+  - Setup step 2 pre-fills from round → club → leader-confirms. Consequential choices (denominator, below-threshold outcome) start empty for a new threshold rule, and a defaulted threshold rule must be re-reviewed for each session.
+  - The editor shows a plain-language description and worked examples using the selected voter count. The review step shows the rule.
+  - Rules lock with the rest of setup once voting starts. Defaults never change existing sessions.
+- **Snapshots.** OPEN_VOTING in a threshold room inserts `VotingBallotRule` version 1 with the rule and the currently eligible electorate, before any ballot. The ballots counted are those from that electorate.
+- **Eligibility changes.** Access is still revoked immediately by the existing room checks. If a snapshotted voter has lost eligibility, CLOSE_VOTING returns `ELECTORATE_CHANGED` and the ballot stays open. The leader may recount with `resolveElectorate` and a reason: this inserts a new version (same rule, removals only), audits `voting.room.electorate_resolved`, and the removed voter's ballot no longer counts. Earlier versions are kept.
+- **Closing and confirming.** Closing remains an explicit leader action, with the existing missing-ballot confirmation. After closing, everyone sees the rule result alongside the totals. Counts are never shown while voting is open. The leader sees a single *Confirm {outcome}* action that advances through the existing DECIDE_AND_ADVANCE transition. A different outcome is refused (`RULE_DECIDED`). Pass without vote remains an explicit, reasoned leader action. The target stays informational. Close and confirm audits include the rule result.
+
+Migration (additive, forward-only): `VotingRuleDefault` (one per club and one per round via a unique `(clubId, COALESCE(roundId,''))`; same-club rounds only; revisioned; delete denied) and `VotingBallotRule` (insert-only; version 1 only while the ballot is open and before any ballot; later versions keep the rule, only remove voters, need a reason; nothing after close). RLS is enabled and browser roles have no access. Only the bounded runtime role has SELECT/INSERT/UPDATE (defaults) and SELECT/INSERT (snapshots), with explicit policies.
+
+Evidence (local, synthetic, mocked Auth/database):
+- `voting-rules.test.cjs`: fraction boundaries, both denominators, Hold and missing ballots, participation, zero/no electorate, legacy fallback, previews.
+- `voting-rules-room.test.cjs`, through the real room actions:
+  - unconfigured sessions unchanged
+  - snapshot per ballot and per Hold pass, preserved history
+  - rule decides and the leader can't override it
+  - no-result paths
+  - revoked voter: immediate denial, paused close, reasoned recount with the ballot excluded
+  - concurrent closure applies once
+  - rules locked after start
+  - an unreviewed rule is refused
+- `voting-rule-defaults.test.cjs`: defaults save, retry, conflict, review requirement, round scope, permissions.
+- `voting-rules-migration.test.cjs`: PGlite guards, immutability, RLS and grants.
+- `voting-rules-browser.test.cjs`: setup refuses unchosen and unreviewed rules, shows the preview, saves the exact rule; the leader sees the rule result and a single Confirm Pass; Axe clean on the editor.
+- Shared voting harnesses gained rule-table stubs and the fixture registers the new actions; no assertions changed. Existing voting and observation suites pass (three long browser tests timed out under parallel load and passed when rerun individually).
+
+Limitations: Demo mode keeps leader-confirmed voting only (no defaults editor). Anonymous rounds follow the same rule logic. A threshold ballot opened before this release has no snapshot and is handled as leader-confirmed.
 ## Slide preparation — November 5, 2026
 
 **Implemented on branch `feature/voting-slide-preparation`; not yet released.** Release requires required CI, owner approval of the production migration, then protected merge and Vercel deployment.
