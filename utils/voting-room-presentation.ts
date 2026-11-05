@@ -56,7 +56,7 @@ export async function votingInterviewEvidence(tx:AppTransactionClient,clubId:str
       thoughts.push({id:record.id,roundId:round.id,roundName:round.name,interviewer:author?`${author.firstName} ${author.lastName}`:"Interviewer",text:content.data.finalInterviewThoughts});
     }
   }
-  return {score:votingScoreEvidence(allowed,reviews),thoughts,authorized:!!ids.length};
+  return {score:votingScoreEvidence(allowed,reviews),thoughts,authorized:!!ids.length,roundIds:ids};
 }
 export async function votingInterviewSummary(tx:AppTransactionClient,clubId:string,applicationId:string,userId:string){
   return (await votingInterviewEvidence(tx,clubId,applicationId,userId,{score:true,thoughts:false})).score;
