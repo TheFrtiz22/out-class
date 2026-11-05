@@ -18,8 +18,8 @@ If any of that is missing, say exactly what is missing at the top of your report
 ## Check, in this order
 
 ### Critical: Server Actions and route handlers
-- Every new or changed `"use server"` export starts from `requireAuth()` (`@/utils/auth`) and then a capability check (`requireClubPermission`, `requireClubMembership`, `requirePlatformAdmin`, or `authorizeClubTransaction` in `@/lib/club-transaction-authorization`). A client-supplied `clubId`, `userId` or `schoolId` is used only after that check.
-- Input is parsed with a zod schema before use. Treat each Server Action as a public endpoint.
+- Every new or changed `"use server"` export authenticates and authorizes before it touches a client-supplied `clubId`, `userId` or `schoolId`: either `requireAuth()` (`@/utils/auth`) followed by a capability check, or a helper that does both (`requireClubPermission` and `requireClubMembership` in `@/utils/auth`, `requirePlatformAdmin` in `@/utils/platform-admin`, `authorizeClubTransaction` in `@/lib/club-transaction-authorization`).
+- Treat each Server Action as a public endpoint: validate input before use. New or substantially changed actions use a zod schema, as most of `actions/` does; some older files validate by hand, and that is not a finding unless the change weakens it.
 - Club writes go through `clubWriteTransaction` (`@/utils/club-write-transaction`) and `assertClubOperational` where the surrounding code does; do not accept a new write path that skips suspension or revision checks.
 - `/api/internal/*` cron routes still verify `CRON_SECRET` before doing work.
 

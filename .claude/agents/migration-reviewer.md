@@ -18,13 +18,13 @@ If the rehearsal output is missing for a change that adds a migration, that is a
 ## OutClass conventions (do not flag these as defects)
 - Prisma migrations in `prisma/migrations/` are the canonical ledger. Supabase CLI migrations are not.
 - Tables are quoted PascalCase (`"Application"`, `"User"`) and IDs are `String @id @default(uuid())`. Do not propose renaming or re-keying existing tables.
-- Many tables have RLS enabled with no policies. That is deny-all to browser roles by design: the app reaches data through server-side Prisma only.
+- Deny-all to browser roles is by design, in two established forms: RLS enabled with no policies (many tables), and explicit `AS RESTRICTIVE … TO PUBLIC USING (false)` policies (for example `EditorDraft`, `VotingRoomCommand`, `SchoolRequest`, `SavedCampusEvent`, the communications tables and `_prisma_migrations`). The app reaches data through server-side Prisma only.
 - Grants to `outclass_production_app`, and narrowly scoped policies `TO authenticated` such as the realtime inbox receive policy, are established patterns.
 
 ## Check, in this order
 
 ### Critical: security
-1. Every new or replaced function sets `search_path`. `SECURITY DEFINER` functions use `SET search_path = ''` (with schema-qualified names) or `pg_catalog, public`, matching existing migrations.
+1. Every new or replaced function sets `search_path`. A `SECURITY DEFINER` function uses `SET search_path = ''` with schema-qualified names, as the one existing definer function does (`20261104230000_inbox_realtime_signal`); trigger functions may use `pg_catalog, public`. Many older functions set no `search_path` (the Supabase advisor flags 51); do not copy that pattern, and note it if the diff edits one.
 2. Every GRANT, REVOKE and `CREATE POLICY … TO` is listed with role and reason. A new grant to `anon`, `authenticated` or `PUBLIC`, or a new `SECURITY DEFINER` function reachable through `/rest/v1/rpc`, needs an explicit reason and an `outclass-authz-matrix` test.
 3. RLS stays enabled on every existing table; new tables enable RLS in the same migration.
 4. Raw SQL in application code (`$queryRaw`, `$executeRaw`) uses tagged-template parameters, never string concatenation or `$queryRawUnsafe` with user input.

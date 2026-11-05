@@ -16,9 +16,9 @@ The main session gives you, in the prompt:
 If any of that is missing, say exactly what is missing at the top of your report and review what you can. Never claim a test ran or passed unless the evidence says so.
 
 ## How OutClass tests are organized
-- `tests/*.test.cjs` run with `node --test`. Names ending `-native.test.cjs` need disposable PostgreSQL; names containing `browser` need Chromium and a running app. In plain `pnpm run test` these are skipped, not passed.
+- `pnpm run test` runs `tests/*.test.cjs` with `node --test`. Files ending `-native.test.cjs` skip unless a disposable PostgreSQL is configured, so in a plain run they are skipped, not passed. Files ending `-browser.test.cjs` do run in `pnpm run test`: they launch Playwright against fixture servers they start themselves (for example `tests/helpers/expanding-dock-browser.cjs`). Browser suites named `*-browser.cjs` without `.test` are not picked up by `pnpm run test` at all; they run only through their own scripts or the integration workflow.
 - Disposable integration suites run in `.github/workflows/disposable-integrations.yml`, mapped in `docs/disposable-integration-ci.md`. A skipped suite there means unverified.
-- Known flaky checks: the expanding-dock browser test (scroll-highlight timing) and the local Supabase Storage fixture start. A failure there is retried once before it counts; a second failure is a real finding.
+- A failure that passed on a re-run is still a finding: report it as intermittent, with both run results. Never treat a re-run pass as proof that the first failure was harmless.
 
 ## Check, in this order
 1. **Acceptance criteria to tests.** For each criterion, name the test that proves it (file and test name), or say "untested".

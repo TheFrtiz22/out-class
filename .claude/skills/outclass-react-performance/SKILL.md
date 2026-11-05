@@ -22,7 +22,7 @@ Signed-in reads are fast today (p50 0.23–0.31 s after the Nov 4 region move, `
 - Authenticate Server Actions like route handlers (`requireAuth` first). The session lookup underneath it (`getSessionUser` in `@/utils/auth`) is cached per request with `React.cache`; reuse it rather than querying the user again in the same request.
 - Use `React.cache` for per-request deduplication, following `utils/current-user.ts` and `utils/auth.ts`. Never use module-level mutable state for per-user data.
 - Send Client Components only the fields they render. Large Prisma rows in props cost serialization time and can leak private data.
-- Use `after()` only for work whose failure is recorded somewhere; never for email sends, which belong to the outbox.
+- Use `after()` only for work whose failure is recorded somewhere. For email, `after()` may only kick delivery of rows already committed to the outbox, as `utils/invitation-background.ts` does; never send directly from it.
 
 ### 3. Client bundle
 - Import icons through `@/components/icons`, not the whole icon library.
