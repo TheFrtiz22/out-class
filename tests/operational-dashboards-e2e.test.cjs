@@ -103,6 +103,28 @@ test('operational dashboards authorize summaries and persist inline work with re
  await page.goto(recruitUrl);await page.getByRole('heading',{name:'Offers awaiting response',exact:true}).waitFor();await page.screenshot({path:path.join(out,'offer-follow-up.png'),fullPage:true});await page.locator(`[data-applicant-id="${offered.id}"]`).click();await page.getByRole('button',{name:'Rescind pending offer',exact:true}).waitFor();await page.screenshot({path:path.join(out,'offer-preview.png'),fullPage:true});await page.getByRole('button',{name:'Rescind pending offer',exact:true}).click();await page.getByText('Pending offer rescinded.',{exact:true}).waitFor();assert.equal((await db.clubInvitation.findUnique({where:{applicationId:offered.id}})).status,'REVOKED');await page.keyboard.press('Escape');await expect(page.locator(`[data-applicant-id="${offered.id}"]`)).toHaveCount(0)
  for(let i=0;i<5;i++)await overview(owner)
  await owner.action('actions/organization-members.ts','removeOrganizationMember',[{clubId:club.id,memberId:members.reviewer.id}]);await assert.rejects(overview(reviewer))
+ {// Live inbox: Supabase Realtime signals the owner's tab; no server stream, no poll.
+  const {context:liveContext,page:live}=await session(member);const streams=[],reloads=[]
+  live.on('request',r=>{const u=r.url();if(u.includes('/api/communications/stream'))streams.push(u);if(u.includes('kind=notifications'))reloads.push(Date.now())})
+  const joined=live.waitForResponse(r=>r.url().includes('kind=notifications'))
+  await live.goto(clubUrl);await live.getByRole('heading',{name:'Your work',exact:true}).waitFor();await joined;await live.waitForLoadState('networkidle')
+  await new Promise(r=>setTimeout(r,1500));const before=reloads.length,sent=Date.now()
+  const signalled=live.waitForRequest(r=>r.url().includes('kind=notifications'),{timeout:10000})
+  await db.userNotification.create({data:{userId:member.user.id,eventKey:`live-${suffix}`,type:'PLATFORM',title:'Live inbox check',body:'Delivered by a Realtime signal.',href:'/'}})
+  await signalled;assert.ok(Date.now()-sent<10000&&reloads.length>before,'the inbox reloads after a Realtime signal, well before the 30 s fallback poll')
+  assert.deepEqual(streams,[],'Realtime replaces the server stream when available')
+  // Real Realtime authorization, as the member: another user's inbox is refused and
+  // browsers cannot publish spoofed signals, even on their own topic.
+  const {createClient:rtClient}=require('@supabase/supabase-js');const token=(await member.client.auth.getSession()).data.session.access_token
+  const rt=rtClient(config.status.API_URL,config.status.PUBLISHABLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});await rt.realtime.setAuth(token);t.after(async()=>{await rt.removeAllChannels();rt.realtime.disconnect()})
+  const join=topic=>new Promise(resolve=>{const channel=rt.channel(topic,{config:{private:true,broadcast:{ack:true}}});channel.subscribe(status=>{if(['SUBSCRIBED','CHANNEL_ERROR','TIMED_OUT'].includes(status))resolve({channel,status})})})
+  const own=await join(`inbox:${member.user.id}`);assert.equal(own.status,'SUBSCRIBED')
+  const otherJoin=await join(`inbox:${owner.user.id}`);await rt.removeChannel(otherJoin.channel)
+  assert.equal(otherJoin.status,'CHANNEL_ERROR','another user\'s inbox topic is refused')
+  const spoofReloads=reloads.length;const sendResult=await own.channel.send({type:'broadcast',event:'inbox',payload:{}})
+  await new Promise(r=>setTimeout(r,2500));assert.notEqual(sendResult,'ok','a browser-sent inbox signal is not accepted');assert.equal(reloads.length,spoofReloads,'a spoofed signal reaches no tab')
+  await rt.removeAllChannels()
+  await liveContext.close()}
  assert.deepEqual(errors,[])
  fs.writeFileSync(path.join(out,'verification.json'),JSON.stringify({recruiting:['owner','anonymous reviewer','identified assigned reviewer','outsider denied','revoked membership denied','empty second club'],club:['general member','owner task reviewer','inline submission','inline approval','recipient-only announcement','meeting preview'],widths:[1440,1280,1024,768,390],readSamples,databaseConfirmed:true,concurrency:['task submission','evaluation finalization','decision publication'],slowRefresh:true,failureRecovery:true,keyboardRoundSelection:true,motionPreferences:['reduce','no-preference'],asOf:new Date().toISOString()},null,2))
 })

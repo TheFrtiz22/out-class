@@ -38,3 +38,26 @@ race the initial inbox load; that duplicate is intentional.
 A hidden tab previously kept a stream function open with two snapshot queries every
 2 s (~1 query/s per tab) plus ~2.7 authenticated refetches per minute; it now costs
 nothing until it is visible again.
+
+## Supabase Realtime inbox signal (follow-up)
+
+The communications stream still held a function open per visible tab, querying the
+database every 2 s. Visible tabs now join a private Supabase Realtime channel instead:
+
+- Migration `20261104230000_inbox_realtime_signal` adds statement-level triggers on
+  `UserNotification` that call `realtime.send('{}', 'inbox', 'inbox:<userId>', private)`
+  once per affected user per statement. The payload is empty; the browser reloads through
+  the existing authorized inbox endpoint. Signalling failures never roll back the write.
+- Policies on `realtime.messages`: an `authenticated` user may receive only on
+  `inbox:<auth.uid()>`; a restrictive policy forbids any browser role from sending on
+  `inbox:*` topics. No application table is opened to browser roles.
+- `lib/inbox-realtime.ts` must call `supabase.realtime.setAuth()` before joining; without it
+  the join carries only the publishable key and Realtime refuses the private topic.
+- If the join fails (migration not applied, Realtime unavailable), the tab falls back to the
+  server stream for the rest of the page, so the client can ship before the migration.
+
+Verified against the local Supabase stack (`--dashboards` e2e): own topic joins, a new
+notification reloads the inbox within seconds with no stream request, another user's
+topic is refused, and a client-sent `inbox` broadcast is not acknowledged and reaches no
+tab. `tests/inbox-realtime-signal-native.test.cjs` (security suite) covers trigger fan-out,
+idempotency, the RLS precondition, and policy behavior in plain PostgreSQL with stand-ins.
