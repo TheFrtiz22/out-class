@@ -15,6 +15,8 @@ import { z } from "zod";
 import { votingSelectedHighlight,votingSelectedEvidence } from "@/utils/voting-room-presentation";
 import {selectedVotingDisplay} from "@/lib/voting-slide-fields";
 import {lockVotingObservations,votingObservations} from '@/utils/additional-observations';
+import {currentEligibleVoterIds,latestBallotRule,ballotRuleResult,sessionRules} from '@/utils/voting-rules';
+import {describeVotingRules,ruleResultSummary} from '@/lib/voting-rules';
 
 class RoomConflict extends Error { constructor(public code:string,message:string){super(message);} }
 async function domainResult<T>(work:()=>Promise<T>) { try { return {ok:true as const,result:await work()}; } catch(e) { if(e instanceof RoomConflict)return {ok:false as const,code:e.code,message:e.message}; throw e; } }
@@ -76,7 +78,10 @@ export async function getLiveVotingRoom(input:unknown) {
     const eligible=members.filter(v=>hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")&&(round.anonymousReview||hasPermission(v,"applicants.identify")));
     const current=s.passes.find(p=>p.number===s.currentPass)?.candidates.find(c=>c.applicationId===s.activeApplicationId);
     const options=roomPresentationSchema.safeParse(s.presentationOptions);
-    return {snapshot:{...snapshot,accessVersion:roomFingerprint({permissions:m.permissions,offices:m.interviewOffices,anonymous:round.anonymousReview}),fields:options.success?options.data.fields:null,joinedSelf:!!s.participants.find(p=>p.memberId===m.id)?.joinedAt,
+    // Rule wording for everyone; its counts only after the leader closes this ballot (totals are hidden while open).
+    const rules=sessionRules(s.presentationOptions);
+    const ruled=rules.mode==="THRESHOLD"&&current&&["CLOSED","CONFIRMED"].includes(current.ballotState)?ballotRuleResult(await latestBallotRule(tx,{sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId}),current.ballots):null;
+    return {snapshot:{...snapshot,rule:{mode:rules.mode,description:describeVotingRules(rules)},ruleResult:ruled?{...ruled.result,summary:ruleResultSummary(ruled.result,ruled.rule)}:null,accessVersion:roomFingerprint({permissions:m.permissions,offices:m.interviewOffices,anonymous:round.anonymousReview}),fields:options.success?options.data.fields:null,joinedSelf:!!s.participants.find(p=>p.memberId===m.id)?.joinedAt,
       participation:{voted:current?.ballots.filter(b=>eligible.some(m=>m.id===b.memberId)).length??0,eligible:eligible.length},
       joinedParticipants:snapshot.permissions.leader?eligible.map(v=>({id:v.id,label:v.user.studentProfile?`${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}`:"Club member",joined:!!s.participants.find(p=>p.memberId===v.id)?.joinedAt})):[]},access:accessFingerprint(m)};
   },votingReadLimits);
@@ -147,7 +152,7 @@ export async function commandLiveVotingRoom(input:unknown) {
     if(advancing&&(d.applicationId!==s.activeApplicationId||d.passNumber!==s.currentPass))throw retryConflict();
     let decision:z.infer<typeof roomCommandResultSchema>["decision"];
     const patch:Prisma.VotingSessionUpdateInput={revision:{increment:1}};
-    let overridden=false,previousDecision:string|null=null;
+    let overridden=false,previousDecision:string|null=null,ruleAudit:Record<string,unknown>|null=null;
     const updateEntry=async(data:Prisma.VotingPassCandidateUpdateInput,entry=current,number=s.currentPass)=>{
       if(!entry)throw retryConflict();
       return tx.votingPassCandidate.update({where:{sessionId_passNumber_applicationId:{sessionId:s.id,passNumber:number,applicationId:entry.applicationId}},data});
@@ -170,13 +175,38 @@ export async function commandLiveVotingRoom(input:unknown) {
         await tx.votingPass.create({data:{sessionId:s.id,number:s.currentPass+1,candidates:{create:ids.map((applicationId,position)=>({applicationId,position}))}}});
         Object.assign(patch,{currentPass:s.currentPass+1,activeApplicationId:ids[0],state:"OPEN",endedAt:null,startedAt:s.startedAt??new Date(),joinOpenedAt:s.joinOpenedAt??new Date()});break;
       }
-      case "OPEN_VOTING":
+      case "OPEN_VOTING": {
         if(s.state!=="OPEN"||current?.ballotState!=="PENDING")throw retryConflict();
-        await updateEntry({ballotState:"OPEN",openedAt:new Date()});break;
-      case "CLOSE_VOTING":
+        await updateEntry({ballotState:"OPEN",openedAt:new Date()});
+        // Threshold rooms capture the rule and current eligible electorate for this ballot instance.
+        const rules=sessionRules(s.presentationOptions);
+        if(rules.mode==="THRESHOLD"){
+          const electorate=await currentEligibleVoterIds(tx,s.clubId,s.participants.map(p=>p.memberId),round.anonymousReview);
+          await tx.votingBallotRule.create({data:{sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId,version:1,rules,electorate,createdBy:user.id}});
+          ruleAudit={mode:rules.mode,electorate:electorate.length};
+        }
+        break;
+      }
+      case "CLOSE_VOTING": {
         if(s.state!=="OPEN"||current?.ballotState!=="OPEN")throw retryConflict();
+        const key={sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId},snapshot=await latestBallotRule(tx,key);
+        if(snapshot?.rules.mode==="THRESHOLD"){
+          // Eligibility changes pause automatic counting until the leader resolves them explicitly.
+          const eligible=await currentEligibleVoterIds(tx,s.clubId,s.participants.map(p=>p.memberId),round.anonymousReview);
+          const removed=snapshot.electorate.filter(id=>!eligible.includes(id));
+          if(removed.length){
+            if(!d.resolveElectorate||!d.reason)throw new RoomConflict("ELECTORATE_CHANGED",`${removed.length} voter${removed.length===1?"":"s"} lost eligibility after voting opened. Confirm recounting without ${removed.length===1?"them":"them"} and give a reason, or keep voting open.`);
+            const electorate=snapshot.electorate.filter(id=>eligible.includes(id));
+            await tx.votingBallotRule.create({data:{...key,version:snapshot.version+1,rules:snapshot.rules,electorate,reason:d.reason,createdBy:user.id}});
+            await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:"voting.room.electorate_resolved",reason:d.reason,details:{applicationId:current.applicationId,passNumber:s.currentPass,removed:removed.length,electorate:electorate.length,version:snapshot.version+1}}});
+            snapshot.electorate=electorate;
+          }
+          const evaluated=ballotRuleResult(snapshot,current.ballots);
+          ruleAudit={mode:"THRESHOLD",outcome:evaluated?.result.outcome??null,noResult:evaluated?.result.noResult??null,passVotes:evaluated?.result.passVotes,cast:evaluated?.result.cast,eligible:evaluated?.result.eligible,requiredPass:evaluated?.result.requiredPass};
+        }
         if(current.ballots.length<s.participants.length&&!d.confirmed)throw new RoomConflict("EARLY_CLOSE_CONFIRMATION",`${s.participants.length-current.ballots.length} missing ballots. Confirm early closure; missing votes are not Reject votes.`);
         await updateEntry({ballotState:"CLOSED",closedAt:new Date()});break;
+      }
       case "PASS_WITHOUT_VOTE_AND_ADVANCE":
       case "ACCEPT_WITHOUT_VOTE":
         if(s.state!=="OPEN"||current?.ballotState!=="PENDING"||!d.confirmed||!d.reason)throw new RoomConflict("CONFIRMATION_REQUIRED","Confirm accepting without a vote and provide a reason.");
@@ -184,8 +214,19 @@ export async function commandLiveVotingRoom(input:unknown) {
       case "DECIDE_AND_ADVANCE":
       case "CONFIRM": {
         if(s.state!=="OPEN"||current?.ballotState!=="CLOSED"||!d.choice)throw retryConflict();
-        overridden=recommendedOutcome(current,s.participants.length)!==storedChoice[d.choice];
-        if(overridden&&!d.reason)throw new RoomConflict("REASON_REQUIRED","Provide a reason to confirm an outcome different from the completed ballot result.");
+        const ruled=ballotRuleResult(await latestBallotRule(tx,{sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId}),current.ballots);
+        if(ruled){
+          // Threshold rooms: the configured rule decides. With no automatic result,
+          // Hold (vote again) needs no reason; any other outcome is an explicit, reasoned leader decision.
+          const decided=ruled.result.outcome;
+          if(decided&&storedChoice[decided]!==storedChoice[d.choice])throw new RoomConflict("RULE_DECIDED",`The configured voting rule produced ${decided==="ACCEPT"?"Pass":decided==="HOLD"?"Hold":"Do not pass"}. Confirm that outcome.`);
+          overridden=!decided&&d.choice!=="HOLD";
+          ruleAudit={mode:"THRESHOLD",outcome:decided,noResult:ruled.result.noResult};
+          if(overridden&&!d.reason)throw new RoomConflict("REASON_REQUIRED","No automatic result was reached. Give a reason to decide without one, or Hold for another vote.");
+        }else{
+          overridden=recommendedOutcome(current,s.participants.length)!==storedChoice[d.choice];
+          if(overridden&&!d.reason)throw new RoomConflict("REASON_REQUIRED","Provide a reason to confirm an outcome different from the completed ballot result.");
+        }
         await updateEntry({ballotState:"CONFIRMED",confirmedDecision:storedChoice[d.choice],confirmedBy:user.id,confirmedAt:new Date()});break;
       }
       case "UNDO_DECISION": {
@@ -239,7 +280,7 @@ export async function commandLiveVotingRoom(input:unknown) {
     await tx.votingSession.update({where:{id:s.id},data:patch});
     const result={revision:s.revision+1,...(decision?{decision}:{}),...(d.action==="UNDO_DECISION"?{undone:true}:{})};
     await tx.votingRoomCommand.create({data:{...key,actorId:user.id,fingerprint,result}});
-    await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:`voting.room.${d.action.toLowerCase()}`,reason:d.reason,details:{applicationId:d.applicationId??current?.applicationId??null,passNumber:d.passNumber??s.currentPass,decision:["ACCEPT_WITHOUT_VOTE","PASS_WITHOUT_VOTE_AND_ADVANCE"].includes(d.action)?"ACCEPT":d.choice??null,overridden,previousDecision,...(d.action==="CLOSE_VOTING"?{missingBallots:s.participants.length-(current?.ballots.length??0),earlyClosureConfirmed:!!d.confirmed}:{}),...(d.action==="END"?{held:roomOutcomes(s).filter(o=>o.outcome==="HOLD").length,unreviewed:roomOutcomes(s).filter(o=>o.outcome==="UNREVIEWED").length}:{} )}}});
+    await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:`voting.room.${d.action.toLowerCase()}`,reason:d.reason,details:{applicationId:d.applicationId??current?.applicationId??null,passNumber:d.passNumber??s.currentPass,decision:["ACCEPT_WITHOUT_VOTE","PASS_WITHOUT_VOTE_AND_ADVANCE"].includes(d.action)?"ACCEPT":d.choice??null,overridden,previousDecision,...(d.action==="CLOSE_VOTING"?{missingBallots:s.participants.length-(current?.ballots.length??0),earlyClosureConfirmed:!!d.confirmed}:{}),...(ruleAudit?{rule:ruleAudit}:{}),...(d.action==="END"?{held:roomOutcomes(s).filter(o=>o.outcome==="HOLD").length,unreviewed:roomOutcomes(s).filter(o=>o.outcome==="UNREVIEWED").length}:{} )}}});
     return result;
   },votingWriteLimits));
 }

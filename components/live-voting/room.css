@@ -33,3 +33,5 @@
 @media(max-width:600px){.vr-page button{min-height:44px}.vr-session-options{width:min(30rem,calc(100vw - 32px))}.vr-header .vr-actions{margin-left:auto}.vr-votes button{padding-inline:8px;font-size:.9rem}.vr-votes button svg{width:16px}.vr-stats{gap:8px;font-size:.85rem}}
 @media(prefers-reduced-motion:no-preference){.vr-session-trigger svg{transition:transform .12s ease}}
 @media(prefers-reduced-motion:reduce){.vr-session-trigger svg{transition:none!important}.vr-session-options{animation:none!important}}
+/* Voting rule fractions stay compact: "2 / 3" on one line. */
+.vr-fraction{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.vr-form .vr-fraction input.vr-fraction-input,.vr-fraction input.vr-fraction-input{width:4.5rem;min-width:0;flex:0 0 auto;text-align:center;min-height:40px;border:1px solid var(--border);border-radius:6px;background:var(--card);padding:6px}
