@@ -1,5 +1,6 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),{createHash}=require('node:crypto');
 const {load,uuid}=require('./helpers/voting-harness.cjs');
+const ok=r=>assert.equal(r.ok,true,JSON.stringify(r));
 const lib=load('lib/voting-slide-preparation.ts');
 const hash=t=>createHash('sha256').update(t,'utf8').digest('hex');
 const clubId=uuid(1),sessionId=uuid(2),appId=uuid(3),roundId=uuid(4),cycleId=uuid(5),leaderId=uuid(6),voterId=uuid(7);
@@ -37,7 +38,7 @@ test('gathering cites submitted/shared sources with attribution, excludes sensit
   observations:[{id:'obs1',revision:2,body:'Helped set up the fair without being asked.',interactionContext:'Club fair',author:'Sam Member',roundId,roundName:'Round 2'}]};
  const util=load('utils/voting-slide-preparation.ts',{'@/utils/voting-room-presentation':interviewMock(state),'@/utils/additional-observations':observationMock(state)});
  const profile={anonymous:false,sections:[{field:'major',items:['Economics']},{field:'gender',items:['PRIVATE']},{field:'pros',items:['LEGACY']},{field:'answers',items:['Why us? Because of the mentoring.','']}]};
- const tx={applicantObservation:{findMany:async()=>state.observations.filter(o=>!o.deletedAt).map(o=>({id:o.id}))}};
+ const tx={pipelineRound:{findFirst:async()=>({applicantDisplay:{}})},applicantObservation:{findMany:async()=>state.observations.filter(o=>!o.deletedAt).map(o=>({id:o.id}))}};
  const sources=await util.gatherSlideSources(tx,{clubId,applicationId:appId,roundId},leaderId,profile);
  assert.deepEqual(sources.map(s=>s.id),['profile:major:0','profile:answers:0','score:'+roundId,'thought:rec1','observation:obs1','resume:ann1']);
  assert.ok(!sources.some(s=>/PRIVATE|LEGACY/.test(s.text)));
@@ -59,7 +60,7 @@ test('locks copy the saved preparation for each pass; later edits change the wor
  const profile=src('PROFILE','profile:major:0','Economics');
  const one=lib.buildSlideHighlights([{id:uuid(40),mode:'QUOTE',text:'Economics',source:{type:'PROFILE',id:profile.id,version:profile.version}}],[profile],'Lee');
  let prep={sessionId,applicationId:appId,highlights:one,revision:1};const locks=[];
- const tx={votingSlidePreparation:{findMany:async()=>[prep],findUnique:async()=>prep},votingSlideLock:{createMany:async({data})=>{locks.push(...data);return{count:data.length}},findUnique:async({where})=>locks.find(l=>l.passNumber===where.sessionId_passNumber_applicationId.passNumber)??null}};
+ const tx={pipelineRound:{findFirst:async()=>({applicantDisplay:{}})},votingSlidePreparation:{findMany:async()=>[prep],findUnique:async()=>prep},votingSlideLock:{createMany:async({data})=>{locks.push(...data);return{count:data.length}},findUnique:async({where})=>locks.find(l=>l.passNumber===where.sessionId_passNumber_applicationId.passNumber)??null}};
  await util.lockPreparedSlides(tx,sessionId,1,[appId,uuid(41)]);
  assert.equal(locks.length,1);assert.equal(locks[0].preparationRevision,1);
  const two=lib.buildSlideHighlights([{id:uuid(42),mode:'SUMMARY',text:'Changed after pass one.',source:{type:'PROFILE',id:profile.id,version:profile.version}}],[profile],'Lee');
@@ -74,21 +75,22 @@ test('locks copy the saved preparation for each pass; later edits change the wor
 });
 
 function actionHarness({leader=true,finalized=false,anonymous=false}={}){
+ let actor=leaderId,display={};
  const state={interviewUsers:[leaderId],observationUsers:[leaderId],thoughts:[{id:'rec1',roundId,roundName:'Round 2',interviewer:'Avery Interviewer',text:'Submitted final thoughts.'}],resume:[],observations:[]};
  let row=null,receipts=[],audit=[],writes=0;const s={id:sessionId,clubId,roundId,cycleId,mode:'LIVE',revision:9,currentPass:0,finalizedAt:finalized?new Date():null,leaderMemberIds:[uuid(50)],presentationOptions:{},candidates:[{applicationId:appId,position:0}],passes:[]};
  const member={id:leader?uuid(50):uuid(51),clubId,status:'ACTIVE',permissions:['applications.review','applicants.identify','decisions.manage','decisions.start'],interviewOffices:[]};
  const tx={votingRoomCommand:{findUnique:async({where})=>receipts.find(r=>r.requestId===where.sessionId_requestId.requestId)??null,create:async({data})=>receipts.push(data)},
   votingSlidePreparation:{findUnique:async()=>row,findMany:async()=>row?[row]:[],create:async({data})=>{writes++;row={...data,revision:1,updatedAt:new Date()}},update:async({data})=>{writes++;row={...row,...data}}},
-  auditLog:{create:async({data})=>audit.push(data)},user:{findUnique:async()=>({studentProfile:{firstName:'Lee',lastName:'Leader'}})},application:{findMany:async()=>[{id:appId,student:{studentProfile:{firstName:'Jordan',lastName:'Avery'}}}]},applicantObservation:{findMany:async()=>[]}};
+  pipelineRound:{findFirst:async()=>({applicantDisplay:display})},auditLog:{create:async({data})=>audit.push(data)},user:{findUnique:async()=>({studentProfile:{firstName:'Lee',lastName:'Leader'}})},application:{findMany:async()=>[{id:appId,student:{studentProfile:{firstName:'Jordan',lastName:'Avery'}}}]},applicantObservation:{findMany:async()=>[]}};
  const projection=load('lib/voting-room-projection.ts');
  const actions=load('actions/voting-slide-preparation.ts',{
-  '@/utils/prisma':{prisma:{$transaction:async fn=>fn(tx)}},'@/utils/auth':{requireClubPermission:async()=>({user:{id:leaderId}})},
+  '@/utils/prisma':{prisma:{$transaction:async fn=>fn(tx)}},'@/utils/auth':{requireClubPermission:async()=>({user:{id:actor}})},
   '@/lib/club-transaction-authorization':{authorizeClubTransaction:async()=>member},'@/utils/club-write-transaction':{clubWriteTransaction:async fn=>fn(tx),votingWriteLimits:{}},
   '@/lib/voting-transaction-limits':{votingReadLimits:{}},'@/utils/voting-room':{loadVotingRoom:async()=>({s,round:{id:roundId,name:'Round 2',anonymousReview:anonymous},cycle:{}}),requireRoomLeader:projection.requireRoomLeader,roomFingerprint:v=>JSON.stringify(v)},
-  '@/actions/applicant-intelligence':{getApplicantDisplay:async()=>({anonymous,sections:[{field:'major',items:['Economics']}]})},
+  '@/actions/applicant-intelligence':{getApplicantDisplay:async()=>({anonymous,sections:[{field:'major',items:['Economics']},{field:'answers',items:['Why us? The mentoring.']}]})},
   '@/utils/voting-room-presentation':interviewMock(state),'@/utils/additional-observations':observationMock(state),
  });
- return {actions,state,s,get row(){return row},receipts,audit,get writes(){return writes}};
+ return {actions,state,s,as:id=>{actor=id},setDisplay:v=>{display=v},get row(){return row},receipts,audit,get writes(){return writes}};
 }
 
 test('saving is leader-only, retry-safe, conflict-aware, audited without text, and never changes the voting room revision',async()=>{
@@ -114,4 +116,29 @@ test('non-leaders, anonymous rounds and finalized sessions cannot read or change
  const anon=await actionHarness({anonymous:true}).actions.getVotingSlidePreparation({clubId,sessionId});assert.equal(anon.available,false);
  await assert.rejects(actionHarness({anonymous:true}).actions.getVotingSlidePreparationApplicant({clubId,sessionId,applicationId:appId}),/identified/);
  await assert.rejects(actionHarness({finalized:true}).actions.saveVotingSlidePreparation({clubId,sessionId,applicationId:appId,requestId:uuid(71),revision:0,highlights:[]}),/finalized/);
+});
+
+test('a co-leader who cannot view a source never receives its highlight text, and saving preserves it unchanged',async()=>{
+ const h=actionHarness(),coLeader=uuid(52),view=await h.actions.getVotingSlidePreparationApplicant({clubId,sessionId,applicationId:appId});
+ const thought=view.sources.find(s=>s.type==='INTERVIEW_THOUGHT'),major=view.sources.find(s=>s.id==='profile:major:0');
+ ok(await h.actions.saveVotingSlidePreparation({clubId,sessionId,applicationId:appId,requestId:uuid(90),revision:0,highlights:[{id:uuid(91),mode:'QUOTE',text:'final thoughts',source:{type:thought.type,id:thought.id,version:thought.version}}]}));
+ // Co-leader B leads the session but has no interview-evidence access.
+ h.as(coLeader);const seen=await h.actions.getVotingSlidePreparationApplicant({clubId,sessionId,applicationId:appId});
+ assert.equal(seen.highlights.length,0);assert.equal(seen.hiddenCount,1);assert.doesNotMatch(JSON.stringify(seen),/Submitted final thoughts|final thoughts/);
+ const conflict=await h.actions.saveVotingSlidePreparation({clubId,sessionId,applicationId:appId,requestId:uuid(92),revision:0,highlights:[]});
+ assert.equal(conflict.code,'CONFLICT');assert.doesNotMatch(JSON.stringify(conflict),/final thoughts/);
+ const saved=await h.actions.saveVotingSlidePreparation({clubId,sessionId,applicationId:appId,requestId:uuid(93),revision:1,highlights:[{id:uuid(94),mode:'QUOTE',text:'Economics',source:{type:'PROFILE',id:major.id,version:major.version}}]});
+ ok(saved);assert.doesNotMatch(JSON.stringify(saved),/final thoughts/);
+ assert.deepEqual(h.row.highlights.map(x=>x.id),[uuid(94),uuid(91)],'hidden highlight kept unchanged');assert.equal(h.row.highlights[1].text,'final thoughts');
+})
+test('profile highlights follow the round applicant display configuration',async()=>{
+ const h=actionHarness();let view=await h.actions.getVotingSlidePreparationApplicant({clubId,sessionId,applicationId:appId});
+ assert.ok(view.sources.some(s=>s.id==='profile:answers:0'));
+ h.setDisplay({version:1,fields:['name','major']});view=await h.actions.getVotingSlidePreparationApplicant({clubId,sessionId,applicationId:appId});
+ assert.deepEqual(view.sources.filter(s=>s.type==='PROFILE').map(s=>s.id),['profile:major:0']);
+ const util=load('utils/voting-slide-preparation.ts',{'@/utils/voting-room-presentation':interviewMock(h.state),'@/utils/additional-observations':observationMock(h.state)});
+ const answer=src('PROFILE','profile:answers:0','Why us? The mentoring.'),majorSrc=src('PROFILE','profile:major:0','Economics');
+ const stored=lib.buildSlideHighlights([answer,majorSrc].map((x,i)=>({id:uuid(95+i),mode:'QUOTE',text:x.text,source:{type:x.type,id:x.id,version:x.version}})),[answer,majorSrc],'Lee');
+ const tx={pipelineRound:{findFirst:async()=>({applicantDisplay:{version:1,fields:['name','major']}})}};
+ assert.deepEqual((await util.viewerHighlightFilter(tx,{clubId,applicationId:appId,roundId},voterId,stored)).map(x=>x.source.id),['profile:major:0']);
 });

@@ -103,7 +103,7 @@ function ApplicantPreparation({clubId,sessionId,applicationId,name,onSaved}:{clu
 
   if(loadError)return <section className="vr-prep-main"><p role="alert">{loadError}</p><Button variant="outline" onClick={()=>setReload(v=>v+1)}>Retry</Button></section>;
   if(!data)return <section className="vr-prep-main"><LoadingState label="Gathering sources…" layout="rows" rows={3}/></section>;
-  const full=items.length>=maxSlideHighlights,editable=data.editable;
+  const hidden=data.hiddenCount??0,full=items.length+hidden>=maxSlideHighlights,editable=data.editable;
   const add=(source:SlideSource,mode:"QUOTE"|"SUMMARY",text:string)=>{if(full)return;change([...items,{id:crypto.randomUUID(),mode,text,source}]);if(announce.current)announce.current.textContent=`${mode==="QUOTE"?"Excerpt":"Summary"} added. ${items.length+1} of ${maxSlideHighlights} highlights.`;};
   const move=(i:number,by:number)=>{const next=[...items];[next[i],next[i+by]]=[next[i+by],next[i]];change(next);};
   const showPreview=async()=>{setPreviewState("loading");try{setPreview(await getLiveVotingPresentation({clubId,sessionId,applicationId,preparation:true}));setPreviewState("");}catch{setPreviewState("error");}};
@@ -112,7 +112,8 @@ function ApplicantPreparation({clubId,sessionId,applicationId,name,onSaved}:{clu
     <div className="flex flex-wrap items-center justify-between gap-2"><h2 id="prep-applicant" className="text-lg font-semibold">{name}</h2><SaveStatus save={save} dirty={dirty} onRetry={()=>void persist(items,data.revision)} onReload={()=>{writeBackup(key,null);request.current=null;setSave({state:"idle"});setReload(v=>v+1);}}/></div>
     <p ref={announce} className="sr-only" aria-live="polite"/>
     <section aria-labelledby="prep-selected" className="space-y-2">
-      <h3 id="prep-selected" className="font-medium">Selected highlights · {items.length} of {maxSlideHighlights}</h3>
+      <h3 id="prep-selected" className="font-medium">Selected highlights · {items.length+hidden} of {maxSlideHighlights}</h3>
+      {hidden>0&&<p className="text-sm text-muted-foreground">{hidden} saved highlight{hidden===1?" uses a source":"s use sources"} you can’t view. {hidden===1?"It is":"They are"} kept and count toward the limit.</p>}
       {data.gap&&<p className="vr-prep-missing text-sm"><TriangleAlert aria-hidden="true" size={14}/> {data.gap}. Voting can still go ahead.</p>}
       {!items.length?<p className="text-sm text-muted-foreground">No highlights selected. Choose excerpts or write a summary from the sources below.</p>:
       <ol className="space-y-2">{items.map((item,i)=>{const status=data.highlights.find(h=>h.id===item.id&&h.source.version===item.source.version);
@@ -121,7 +122,6 @@ function ApplicantPreparation({clubId,sessionId,applicationId,name,onSaved}:{clu
           {item.mode==="QUOTE"?<p className="whitespace-pre-wrap break-words"><q>{item.text}</q></p>:
             <><label className="sr-only" htmlFor={`summary-${item.id}`}>Leader summary</label><textarea id={`summary-${item.id}`} className="vr-prep-textarea" maxLength={maxSummaryLength} rows={2} value={item.text} readOnly={!editable} onChange={e=>change(items.map(x=>x.id===item.id?{...x,text:e.target.value}:x))}/><p className="text-xs text-muted-foreground">{item.text.length}/{maxSummaryLength}</p></>}
           {status?.status==="UPDATED"&&status.currentSource&&<SourceUpdate item={item} current={status.currentSource} editable={editable} onUse={source=>change(items.map(x=>x.id===item.id?{...x,source}:x))}/>}
-          {status?.status==="UNAVAILABLE"&&<p className="vr-prep-missing text-sm"><TriangleAlert aria-hidden="true" size={14}/> This source is no longer available to you. Remove this highlight or choose another source.</p>}
           {editable&&<div className="flex flex-wrap gap-1">
             <Button type="button" size="sm" variant="ghost" disabled={i===0} onClick={()=>move(i,-1)} aria-label={`Move highlight ${i+1} up`}><ArrowUp aria-hidden="true" size={16}/></Button>
             <Button type="button" size="sm" variant="ghost" disabled={i===items.length-1} onClick={()=>move(i,1)} aria-label={`Move highlight ${i+1} down`}><ArrowDown aria-hidden="true" size={16}/></Button>

@@ -51,12 +51,16 @@ export async function getVotingSlidePreparation(input:unknown){
   },votingReadLimits);
 }
 
+/** Highlights whose source this leader cannot currently view are withheld
+ * entirely (no text, no source snapshot); only their count is returned, and a
+ * save by this leader preserves them unchanged. */
 function applicantView(sources:SlideSource[],row:{highlights:unknown;revision:number}|null){
-  const highlights=storedHighlights(row?.highlights).map(h=>{
+  const stored=storedHighlights(row?.highlights),hiddenCount=stored.filter(h=>slideHighlightStatus(h,sources)==="UNAVAILABLE").length;
+  const highlights=stored.flatMap(h=>{
     const status=slideHighlightStatus(h,sources),current=sources.find(x=>x.type===h.source.type&&x.id===h.source.id);
-    return {...h,status,currentSource:status==="UPDATED"?current!:null};
+    return status==="UNAVAILABLE"?[]:[{...h,status,currentSource:status==="UPDATED"?current!:null}];
   });
-  return {sources,highlights,revision:row?.revision??0,gap:preparationGap(highlights.length,sources.length),updates:highlights.filter(h=>h.status!=="CURRENT").length};
+  return {sources,highlights,hiddenCount,revision:row?.revision??0,gap:preparationGap(highlights.length+hiddenCount,sources.length+hiddenCount),updates:highlights.filter(h=>h.status!=="CURRENT").length};
 }
 
 export async function getVotingSlidePreparationApplicant(input:unknown){
@@ -92,8 +96,13 @@ export async function saveVotingSlidePreparation(input:unknown){
     const sources=await gatherSlideSources(tx,{clubId:d.clubId,applicationId:d.applicationId,roundId:s.roundId},user.id,display);
     const profile=await tx.user.findUnique({where:{id:user.id},select:{studentProfile:{select:{firstName:true,lastName:true}}}});
     const leader=profile?.studentProfile?`${profile.studentProfile.firstName} ${profile.studentProfile.lastName}`:"Session leader";
+    const previous=storedHighlights(row?.highlights),hidden=previous.filter(h=>slideHighlightStatus(h,sources)==="UNAVAILABLE");
     let highlights;
-    try{highlights=buildSlideHighlights(d.highlights,sources,leader,storedHighlights(row?.highlights));}
+    try{
+      if(d.highlights.some(h=>hidden.some(x=>x.id===h.id)))throw Error("Reload before saving: a highlight's source is no longer available to you.");
+      highlights=[...buildSlideHighlights(d.highlights,sources,leader,previous),...hidden];
+      if(highlights.length>3)throw Error(`Choose up to 3 highlights. ${hidden.length} saved highlight${hidden.length===1?" uses a source":"s use sources"} you can't view and ${hidden.length===1?"is":"are"} kept.`);
+    }
     catch(e){return {ok:false as const,code:"INVALID",message:e instanceof Error?e.message:"Review the selected highlights.",...await current()};}
     if(row)await tx.votingSlidePreparation.update({where:{sessionId_applicationId:{sessionId:s.id,applicationId:d.applicationId}},data:{highlights,revision:row.revision+1,updatedBy:user.id,updatedAt:new Date()}});
     else await tx.votingSlidePreparation.create({data:{sessionId:s.id,applicationId:d.applicationId,highlights,updatedBy:user.id}});
