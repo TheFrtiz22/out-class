@@ -23,7 +23,7 @@ export const createRoomSchema = roomScope.extend({
   presentationOptions:roomPresentationSchema.optional(), notifyVoters:z.boolean().optional(),
 });
 export const roomCommandSchema = roomScope.extend({ requestId: z.string().uuid(), revision: z.number().int().nonnegative(),
-  action: z.enum(["START", "OPEN_VOTING", "CLOSE_VOTING", "CONFIRM", "ACCEPT_WITHOUT_VOTE", "ADVANCE", "NEXT_PASS", "END", "FINALIZE", "CORRECT", "DECIDE_AND_ADVANCE", "PASS_WITHOUT_VOTE_AND_ADVANCE", "UNDO_DECISION"]),
+  action: z.enum(["START", "OPEN_VOTING", "CLOSE_VOTING", "CONFIRM", "ACCEPT_WITHOUT_VOTE", "ADVANCE", "NEXT_PASS", "END", "FINALIZE", "CORRECT", "DECIDE_AND_ADVANCE", "PASS_WITHOUT_VOTE_AND_ADVANCE", "DECIDE_WITHOUT_VOTE_AND_ADVANCE", "UNDO_DECISION"]),
   undoRequestId: z.string().uuid().optional(),
   confirmed: z.boolean().optional(),
   applicationId: z.string().uuid().optional(), passNumber: z.number().int().positive().optional(),

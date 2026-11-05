@@ -25,12 +25,14 @@ export function projectVotingRoom(s: LiveRoom, m: Member, anonymous: boolean) {
     finalizedAt:s.finalizedAt, displayConfig:s.displayConfig, permissions:{...permissions,
       canEnd:permissions.leader&&hasPermission(m,"decisions.finish"),
       canFinalize:permissions.leader&&hasPermission(m,"decisions.manage")&&hasPermission(m,"decisions.publish")&&hasPermission(m,"applicants.identify"),
-      canCorrect:permissions.leader&&hasPermission(m,"decisions.manage")},
+      canCorrect:permissions.leader&&hasPermission(m,"decisions.manage"),
+      canDecideWithoutVote:permissions.leader&&hasPermission(m,"decisions.manage")},
     outcomes, queue:outcomes.filter(o=>o.outcome==="HOLD"||o.outcome==="UNREVIEWED"), accepted:outcomes.filter(o=>o.outcome==="ACCEPT").length,
     history:s.passes.map(p=>({number:p.number,status:p.state,candidates:p.candidates.map(c=>{
       const own=c.ballots.find(b=>b.memberId===m.id),closed=c.ballotState==="CLOSED"||c.ballotState==="CONFIRMED";
       return {applicationId:c.applicationId,position:c.position,ballotState:c.ballotState,outcome:publicChoice(c.confirmedDecision),
-        withoutVote:c.withoutVote,ownBallot:own?{choice:publicChoice(own.decision),revision:own.revision}:null,
+        // A leader decision made without (or despite) a vote; ballot totals stay separate.
+        withoutVote:c.withoutVote||(!!c.override&&c.override===c.confirmedDecision),ownBallot:own?{choice:publicChoice(own.decision),revision:own.revision}:null,
         ...(closed?{totals:roomTally(c)}:{})};
     })})),
   };
