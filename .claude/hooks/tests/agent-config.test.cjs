@@ -82,13 +82,33 @@ test('CI runs the hook and config tests in the required validate job', () => {
   assert.match(job, /pnpm run test:agent-hooks/);
 });
 
-test('reviewer subagents have no shell, write or MCP tools', () => {
-  for (const file of ['.claude/agents/authz-reviewer.md', '.claude/agents/release-verifier.md']) {
+test('every subagent has Read, Grep and Glob only: no shell, write or MCP tools', () => {
+  const dir = path.join(ROOT, '.claude/agents');
+  const files = fs.readdirSync(dir).filter((n) => n.endsWith('.md'));
+  for (const expected of ['authz-reviewer', 'release-verifier', 'migration-reviewer', 'nextjs-reviewer', 'failure-path-reviewer', 'test-gap-reviewer']) {
+    assert.ok(files.includes(`${expected}.md`), `${expected} exists`);
+  }
+  for (const name of files) {
+    const file = `.claude/agents/${name}`;
     const fm = frontmatter(file);
+    assert.equal(fm.name, name.replace(/\.md$/, ''), `${file} name matches file`);
     const tools = fm.tools.split(',').map((t) => t.trim()).sort();
     assert.deepEqual(tools, ['Glob', 'Grep', 'Read'], `${file} tools`);
     assert.equal(fm.hooks, undefined, `${file} should not rely on frontmatter hooks`);
     assert.equal(fm.mcpServers, undefined, `${file} must not add MCP servers`);
+  }
+});
+
+test('files adapted from Everything Claude Code keep MIT attribution and are recorded in the decision log', () => {
+  const adapted = [
+    '.claude/agents/migration-reviewer.md', '.claude/agents/nextjs-reviewer.md',
+    '.claude/agents/failure-path-reviewer.md', '.claude/agents/test-gap-reviewer.md',
+    '.claude/skills/outclass-reuse-first/SKILL.md', '.claude/skills/outclass-react-performance/SKILL.md',
+  ];
+  for (const f of adapted) assert.match(read(f), /Everything Claude Code.*MIT License, Copyright \(c\) 2026 Affaan Mustafa/, `${f} attribution`);
+  assert.match(read('docs/agent-ops/decision-log.md'), /affaan-m\/ECC/);
+  for (const name of fs.readdirSync(path.join(ROOT, '.claude/agents'))) {
+    assert.ok(read('docs/agent-ops/README.md').includes('`' + name.replace(/\.md$/, '') + '`'), `${name} listed in agent-ops README`);
   }
 });
 
