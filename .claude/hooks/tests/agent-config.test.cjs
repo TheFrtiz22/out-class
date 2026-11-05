@@ -48,11 +48,38 @@ test('permission rules use the documented space-wildcard syntax, not prefix colo
   }
 });
 
-test('production-changing MCP tools always ask', () => {
+test('production-changing MCP tools always ask, under both local and claude.ai connector names', () => {
+  // claude.ai connectors appear in Claude Code as mcp__claude_ai_<Server>__<tool>
+  // (code.claude.com/docs/en/permissions). Locally configured servers use their own name.
   const ask = settings.permissions.ask;
-  for (const t of ['mcp__vercel__create_deployment', 'mcp__vercel__request_promote', 'mcp__vercel__request_rollback', 'mcp__supabase__apply_migration', 'mcp__supabase__execute_sql']) {
-    assert.ok(ask.includes(t), `${t} in ask`);
+  const core = {
+    Vercel: ['create_deployment', 'request_promote', 'request_rollback', 'create_project_env', 'edit_project_env'],
+    Supabase: ['apply_migration', 'execute_sql', 'deploy_edge_function'],
+    Resend: ['send-email', 'send-batch-emails', 'send-broadcast'],
+  };
+  for (const [server, names] of Object.entries(core)) {
+    for (const n of names) {
+      for (const pre of [`mcp__${server.toLowerCase()}__`, `mcp__claude_ai_${server}__`]) {
+        assert.ok(ask.includes(pre + n), `${pre + n} in ask`);
+      }
+    }
   }
+  // Every local-name rule has its connector twin, and vice versa.
+  const mcp = ask.filter((r) => r.startsWith('mcp__'));
+  for (const r of mcp) {
+    const m = r.match(/^mcp__(claude_ai_)?([A-Za-z]+)__(.+)$/);
+    assert.ok(m, `unexpected MCP rule shape: ${r}`);
+    const server = m[2].toLowerCase();
+    const cased = server[0].toUpperCase() + server.slice(1);
+    const twin = m[1] ? `mcp__${server}__${m[3]}` : `mcp__claude_ai_${cased}__${m[3]}`;
+    assert.ok(ask.includes(twin), `${r} has twin ${twin}`);
+  }
+});
+
+test('CI runs the hook and config tests in the required validate job', () => {
+  const wf = read('.github/workflows/deploy.yml');
+  const job = wf.slice(wf.indexOf('  validate:'), wf.indexOf('  accessibility:'));
+  assert.match(job, /pnpm run test:agent-hooks/);
 });
 
 test('reviewer subagents have no shell, write or MCP tools', () => {
