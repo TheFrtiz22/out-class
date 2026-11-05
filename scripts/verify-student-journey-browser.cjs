@@ -55,7 +55,7 @@ for(const fixture of fixtures){
  await page.getByRole('button',{name:'Save draft',exact:true}).click();await page.getByText('Your draft is saved.',{exact:true}).waitFor();await shot('draft');
  await page.reload({waitUntil:'domcontentloaded'});await page.locator(`[data-application-id]`).filter({hasText:'Continue draft'}).first().click();assert.match(await page.getByLabel('Why are you interested in this society?',{exact:true}).inputValue(),/practical questions/);
  await page.getByRole('button',{name:'Review & submit',exact:true}).click();await page.getByRole('dialog').getByRole('button',{name:'Submit application',exact:true}).click();await page.getByText('Your application was submitted successfully.',{exact:true}).waitFor();await shot('submitted');
- const app=await db.application.findUnique({where:{studentId_clubId:{studentId:identity.id,clubId:fixture.clubId}},include:{answers:true}});assert.equal(app.status,'SUBMITTED');assert.equal(app.answers.length,2);
+ const app=await db.application.findFirst({where:{studentId:identity.id,clubId:fixture.clubId,status:{not:'REJECTED'}},include:{answers:true}});assert.equal(app.status,'SUBMITTED');assert.equal(app.answers.length,2);
  await page.getByRole('button',{name:'View status',exact:true}).click();await page.getByRole('heading',{name:fixture.name,exact:true}).waitFor();await shot('status');
  // Fixture setup simulates a club issuing an invitation; booking itself uses actual UI/server/auth/database paths.
  await db.application.update({where:{id:app.id},data:{status:'INTERVIEWING',roundId:fixture.interviewRound}});await page.getByRole('button',{name:'Refresh status',exact:true}).click();await page.getByRole('heading',{name:'Your interview',exact:true}).waitFor();

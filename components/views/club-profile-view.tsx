@@ -104,7 +104,9 @@ export function ClubProfileView({
     } : {}),
   })
   const draft = !!application && /draft/i.test(application.status)
-  const applyLabel = busy ? "Opening…" : application ? draft ? "Continue draft" : "View status" : !recruitment.available && real ? "Applications unavailable" : real && !user ? "Sign in to apply" : "Start application"
+  // A rejected student may start a new application in the club's next cycle.
+  const reapply = real && actualApplication?.status === "REJECTED" && recruitment.available
+  const applyLabel = busy ? "Opening…" : reapply ? "Apply again" : application ? draft ? "Continue draft" : "View status" : !recruitment.available && real ? "Applications unavailable" : real && !user ? "Sign in to apply" : "Start application"
   const applyDisabled = preview || busy || (real && !application && !recruitment.available)
   async function apply() {
     if (preview) return
@@ -115,8 +117,12 @@ export function ClubProfileView({
     setError("")
     setBusy(true)
     try {
-      if (!application) {
+      if (!application || reapply) {
         const result = real ? await startClubApplication(club.id) : null
+        if (result && result.applicationId === null) {
+          setError(result.unavailable)
+          return
+        }
         applyToClub({
           id: club.id,
           name,
@@ -128,7 +134,7 @@ export function ClubProfileView({
         })
         if (real) await refreshUser()
       }
-      if (real && actualApplication && !localApplication)
+      if (real && actualApplication && !localApplication && !reapply)
         applyToClub({
           id: club.id,
           name,
@@ -147,7 +153,7 @@ export function ClubProfileView({
                   : "Submitted",
         })
       focusApplication(club.id)
-      onNavigate(application && !draft ? "status" : "tracker")
+      onNavigate(application && !draft && !reapply ? "status" : "tracker")
     } catch {
       setError("We couldn’t open your application. Please try again.")
     } finally {

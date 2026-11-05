@@ -2,6 +2,7 @@
 import { ownPanelAssignments } from "@/utils/official-panel-schedule"
 
 import { assertClubOperational } from "@/lib/club-suspension";
+import { activeRecruitmentCycle, applicationRecency, currentApplication, reapplicationUnavailable } from "@/lib/recruitment-cycle";
 import { publicMeetingVisibility } from "@/lib/campus-events";
 
 import { applicationAvailability } from "@/lib/club-settings"
@@ -41,17 +42,23 @@ async function persistApplication(input: z.infer<typeof applicationInputSchema>,
       orderBy: { order: "asc" },
     })
     if (!firstRound) throw new Error("This club has not set up their application pipeline yet.")
-    const existing = await tx.application.findUnique({
-      where: { studentId_clubId: { studentId: user.id, clubId: parsed.clubId } },
-    })
+    const existing = await currentApplication(tx, user.id, parsed.clubId)
+    // Submissions join the club's single active recruitment cycle; a new
+    // application after a rejection is only allowed in a different cycle.
+    const activeCycle = submit || !existing ? await activeRecruitmentCycle(tx, parsed.clubId) : null
+    if (!existing) {
+      const unavailable = await reapplicationUnavailable(tx, user.id, parsed.clubId, activeCycle)
+      if (unavailable) throw new Error(unavailable)
+    }
     if (existing && parsed.expectedAnswers !== undefined) {
       const current = await tx.applicationAnswer.findMany({ where: { applicationId: existing.id }, select: { questionId: true, response: true } })
       const key = applicationAnswersKey(current)
       if (key !== parsed.expectedAnswers && key !== applicationAnswersKey(parsed.answers))
         throw Error("This application changed in another tab. Your responses are retained. Reopen it to compare before saving.")
     }
+    const cycle = submit && !existing?.recruitmentCycleId && activeCycle ? { recruitmentCycleId: activeCycle.id } : {}
     const transition = submit
-      ? { status: "SUBMITTED" as const, roundId: firstRound.id, submittedAt: new Date() }
+      ? { status: "SUBMITTED" as const, roundId: firstRound.id, submittedAt: new Date(), ...cycle }
       : { status: "DRAFTING" as const }
     if (existing) {
       // The status predicate also protects against a save racing with submission.
@@ -127,7 +134,7 @@ export async function getStudentApplications() {
         orderBy: { slot: { startTime: "asc" } },
       },
     },
-    orderBy: [{ submittedAt: "desc" }, { id: "asc" }],
+    orderBy: applicationRecency,
   })
   return applications.map(app => ({ ...app, club: { ...app.club, questions: app.club.questions.filter(q => !q.archivedAt || app.status !== "DRAFTING" && app.answers.some(a => a.questionId === q.id)) } }))
 }
@@ -159,7 +166,7 @@ prisma.application.findMany({
         include: { slot: true },
       },
     },
-    orderBy: { submittedAt: "desc" },
+    orderBy: applicationRecency,
   }),
 
 prisma.eventAttendance.findMany({

@@ -14,7 +14,10 @@ the club row for roughly 0.6–1 s. `clubWriteTransaction` sets
 `node scripts/run-contention-benchmark.cjs` (disposable Docker PostgreSQL;
 real locks, constraints and transactions; a Prisma extension adds the round
 trip to every statement while locks are held). N students save a draft for the
-same club at once through the real `saveApplicationDraft`.
+same club at once through the real `saveApplicationDraft`. Set
+`OUTCLASS_CONTENTION_BASELINE_REF=<ref>` to also measure an earlier version
+(it must compile against the current schema; the table below compared
+`origin/main` before the re-application migration).
 
 | Students | Round trip | `main` (club `FOR UPDATE`) | This change (club `FOR SHARE` + student row lock) |
 |---|---|---|---|

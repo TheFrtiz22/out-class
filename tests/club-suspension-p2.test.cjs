@@ -33,7 +33,7 @@ test('direct application start rejects suspension under the existing transaction
   const queries = [];
   const tx = {
     $queryRaw: async strings => { assert.equal(inTransaction, true); const sql = strings.join(''); queries.push(sql); return sql.includes('"suspendedAt"') && suspended ? [{ id: clubId }] : []; },
-    application: { findUnique: async () => existing, upsert: async ({ create }) => { created.push(create); return { id: 'draft' }; } },
+    application: { findFirst: async () => existing, create: async ({ data }) => { created.push(data); return { id: 'draft' }; } },
     club: { findUnique: async () => ({ applicationOpen: true, applicationDeadline: null }) },
     pipelineRound: { findFirst: async () => ({ id: 'round' }) },
   };
