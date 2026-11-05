@@ -290,7 +290,8 @@ export async function commandLiveVotingRoom(input:unknown) {
         // Correct only the latest outcome; earlier passes remain historical evidence.
         if([...s.passes].reverse().find(p=>p.candidates.some(c=>c.applicationId===d.applicationId))?.number!==d.passNumber)throw retryConflict();
         previousDecision=entry.confirmedDecision;
-        await updateEntry({confirmedDecision:storedChoice[d.choice],confirmedBy:user.id,confirmedAt:new Date()},entry,d.passNumber);break;
+        // A correction supersedes any earlier leader override; the audit keeps the previous decision.
+        await updateEntry({confirmedDecision:storedChoice[d.choice],confirmedBy:user.id,confirmedAt:new Date(),override:null,overrideBy:null,overrideAt:null},entry,d.passNumber);break;
       }
     }
     if(advancing){

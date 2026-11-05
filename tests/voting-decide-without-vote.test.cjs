@@ -61,6 +61,21 @@ test('corrections, Undo, last applicant and exceeding the target',async()=>{
  const s=h.state().sessions[0];assert.equal(s.state,'PAUSED','last applicant completes the pass');assert.equal(s.passes[0].state,'COMPLETED');
  const view=await h.read();assert.equal(view.accepted,3,'target 1 is guidance only');
  ok(await h.command('CORRECT',{applicationId:apps[2],passNumber:1,choice:'HOLD',reason:'Reconsider with the full board'}));
- const corr=h.state().audit.at(-1);assert.equal(corr.action,'voting.room.correct');assert.equal(corr.details.previousDecision,'PASS');assert.equal(entryOf(h,apps[2]).confirmedDecision,'HOLD');
+ const corr=h.state().audit.at(-1);assert.equal(corr.action,'voting.room.correct');assert.equal(corr.details.previousDecision,'PASS');assert.equal(entryOf(h,apps[2]).confirmedDecision,'HOLD');assert.equal(entryOf(h,apps[2]).override,null,'correction supersedes the earlier override');
  assert.deepEqual(h.state().notifications,[],'no applicant messages');assert.ok(h.state().apps.every(a=>a.status==='IN_REVIEW'),'session outcome only; no recruitment change');
+});
+
+test('Demo mirrors the command and requires the same explicit decision capability',async()=>{
+ const h=require('./helpers/demo-harness.cjs').harness(),{demoStore}=h.load('lib/demo/store.ts');demoStore.start();demoStore.mutate(s=>s.perspective={role:'leader',clubId:s.clubs[0].id});
+ const state=demoStore.get(),clubId=state.clubs[0].id,roundId=state.clubs[0].rounds.find(r=>r.name==='Interview').id,leader=state.memberships.find(m=>m.clubId===clubId&&m.isOwner),api=h.load('lib/voting-room-api.ts');
+ const setup=await api.getLiveVotingSetup({clubId,cycleId:clubId,roundId}),scope={clubId,sessionId:crypto.randomUUID()},ids=setup.applicants.slice(0,2).map(a=>a.id);
+ await api.createLiveVotingRoom({...scope,cycleId:clubId,roundId,applicationIds:ids,participantIds:[leader.id],leaderMemberIds:[leader.id]});
+ const cmd=async(action,extra={})=>api.commandLiveVotingRoom({...scope,action,requestId:crypto.randomUUID(),revision:(await api.getLiveVotingRoom(scope)).revision,confirmed:true,reason:'Synthetic decision',...extra});
+ await cmd('START');const r=await cmd('DECIDE_WITHOUT_VOTE_AND_ADVANCE',{applicationId:ids[0],passNumber:1,choice:'REJECT'});assert.equal(r.ok,true);assert.equal(r.result.decision.withoutVote,true);
+ const view=await api.getLiveVotingRoom(scope);assert.equal(view.currentApplicantId,ids[1]);assert.equal(view.history[0].candidates[0].outcome,'REJECT');
+ // Without decisions.manage the leader cannot use it, even though the session leader can still open voting.
+ demoStore.mutate(s=>{const m=s.memberships.find(x=>x.id===leader.id);m.isOwner=false;m.permissions=['applications.review','applicants.identify','decisions.start','decisions.vote','decisions.view','decisions.finish'];});
+ const opened=await cmd('OPEN_VOTING');assert.equal(opened.ok,true,'still a session leader with decisions.start: '+JSON.stringify(opened));
+ await assert.rejects(cmd('DECIDE_WITHOUT_VOTE_AND_ADVANCE',{applicationId:ids[1],passNumber:1,choice:'ACCEPT'}),/leadership permission/);
+ assert.equal(h.calls(),0,'Demo never calls live actions');demoStore.stop();
 });
