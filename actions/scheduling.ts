@@ -70,7 +70,7 @@ export async function bookInterviewSlot(data: z.infer<typeof bookSlotSchema>) {
         await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${application.clubId} FOR SHARE`;
         await assertClubOperational(tx, application.clubId);
         await lockSchedulingPeople(tx, { exclusive: [user.id] });
-        await tx.$queryRaw`SELECT id FROM "InterviewSlot" WHERE id=${parsed.slotId} FOR UPDATE`;
+        await tx.$queryRaw`SELECT id FROM "InterviewSlot" WHERE id=${parsed.slotId} AND "clubId"=${application.clubId} FOR UPDATE`;
         const slot = await tx.interviewSlot.findUnique({
           where: { id: parsed.slotId }, include: { bookings: true },
         });

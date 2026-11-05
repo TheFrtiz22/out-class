@@ -132,6 +132,8 @@ export async function reserveInterview(raw: { applicationId: string; slotId: str
   const booking = await atomic(async tx => {
     const initial = await tx.application.findFirst({ where: { id: input.applicationId, studentId: user.id } });
     if (!initial) throw new Error("Application unavailable.");
+    // Refuse before taking any lock on other people or sessions; re-checked under lock below.
+    if (initial.status !== "INTERVIEWING") throw new Error("An interview invitation is required to book a time.")
     // Club-wide scheduling changes (panels, rooms, booking policy, membership) lock the
     // club row exclusively; a reservation only needs them excluded, so reservations in
     // one club no longer wait for each other here.
@@ -147,7 +149,7 @@ export async function reserveInterview(raw: { applicationId: string; slotId: str
     const application = await tx.application.findFirst({ where: { id: input.applicationId, studentId: user.id } })
     if (!application || application.status !== "INTERVIEWING") throw new Error("An interview invitation is required to book a time.")
     // Capacity is read only after the session row is locked (concurrent reservations).
-    await tx.$queryRaw`SELECT id FROM "InterviewSlot" WHERE id=${input.slotId} FOR UPDATE`
+    await tx.$queryRaw`SELECT id FROM "InterviewSlot" WHERE id=${input.slotId} AND "clubId"=${application.clubId} FOR UPDATE`
     const slot = await tx.interviewSlot.findUnique({ where: { id: input.slotId }, include: { room: true, _count: { select: { bookings: true } } } })
     if (!slot?.room || slot.clubId !== application.clubId || slot.room.roundId !== application.roundId) throw new Error("Choose a slot for your invited club and round.")
     const existing = await tx.interviewBooking.findUnique({ where: { applicationId_roundId: { applicationId: application.id, roundId: application.roundId } }, include: { slot: true } })
