@@ -23,7 +23,7 @@ for(const width of [1440,1024,768,390]) test(`application writing: ${width}px, f
     assert.ok(box.y+box.height<=900,'First full response field fits in the viewport')
     if(width===1440)assert.ok(box.width>850,'Desktop writing area uses available width')
     assert.ok(await page.locator('.oc-product-header').isVisible())
-    assert.ok(await page.getByRole('navigation',{name:'Workspaces',exact:true}).count())
+    assert.ok(await page.getByRole('navigation',{name:width<760?'Sections':'Workspaces',exact:true}).count(),'phones use the bottom bar; wider screens show the workspace pill')
     assert.equal(await page.locator('.oc-writing-profile').getAttribute('open'),null)
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false)
     assert.equal(await page.locator('.oc-writing-actions').evaluate(el=>getComputedStyle(el).position),'static')
