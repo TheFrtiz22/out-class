@@ -41,8 +41,8 @@ function provider({ hasSession = true, isImpersonating = false, demo = { isDemoE
     "@/lib/workspace-read-diagnostics": { recordWorkspaceRead() {} },
     "@/utils/supabase/client": { createClient: () => ({ auth: { onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }) } }) },
     "@/lib/permissions": { hasWorkspace: member => member.isOwner === true },
-    "@/contexts/demo-context": { useDemoMode: () => demo },
-    "@/lib/demo/store": { demoUser: () => demoIdentity },
+    // The demo provider computes the sample identity; auth no longer imports the demo store.
+    "@/contexts/demo-context": { useDemoMode: () => ({ ...demo, demoIdentity: demo.isDemoEnabled && demo.state ? demoIdentity : null }) },
   }, {
     fetch: (...args) => new Promise((resolve, reject) => requests.push({ args, resolve, reject })),
     console: { error: (...args) => errors.push(args) },
@@ -158,4 +158,15 @@ test("route loader uses the branded mark with a stable image box and accessible 
   assert.equal(OutClassLoadingScreen({ variant: "navy" }).props["data-variant"], "navy")
   const Loading = load("app/loading.tsx", { "@/components/outclass-loading-screen": { OutClassLoadingScreen } }).default
   assert.equal(Loading().type, OutClassLoadingScreen)
+})
+
+test("root providers keep demo data and workspace adapters out of every page's bundle", () => {
+  const source = file => fs.readFileSync(file, "utf8")
+  const staticImport = (text, module) => new RegExp(`^import(?!\\s+type\\b)[^;\\n]*from\\s+["']${module}["']`, "m").test(text)
+  for (const file of ["contexts/auth-context.tsx", "contexts/demo-context.tsx", "contexts/demo-mode.ts", "contexts/corkboard-context.tsx"]) {
+    assert.equal(staticImport(source(file), "@/lib/demo/store"), false, `${file} must not statically import the demo store`)
+    assert.equal(staticImport(source(file), "@/lib/workspace-api"), false, `${file} must not statically import the workspace adapters`)
+  }
+  assert.match(source("contexts/demo-context.tsx"), /import\("@\/lib\/demo\/store"\)/, "demo data loads on demand")
+  assert.match(source("contexts/corkboard-context.tsx"), /import\("@\/lib\/workspace-api"\)/, "corkboard adapters load on demand")
 })
