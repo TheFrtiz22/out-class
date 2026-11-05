@@ -87,3 +87,11 @@ raw error), so the test detects that regression.
 Known residual: manual panel grants lock the acting owner's User row before the sorted
 person lock; a cross-pattern with a simultaneous booking can deadlock, which PostgreSQL
 detects within ~1 s and aborts one side (reported as a retryable error).
+The same pattern applies to two owners in different clubs assigning each other to panels at
+the same moment; `setInterviewPanelAssignment` surfaces that 40P01 as a raw error rather than
+the friendly retry message.
+
+Authorization review (2026-11-05, read-only `authz-reviewer`, base bd3e12d3): no high or
+medium findings. Two low findings fixed before merge: an applicant without an interview
+invitation is refused before any panelist lock, and the session row lock is scoped to the
+applicant's club (`AND "clubId" = …`).
