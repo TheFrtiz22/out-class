@@ -48,20 +48,67 @@ test('permission rules use the documented space-wildcard syntax, not prefix colo
   }
 });
 
-test('production-changing MCP tools always ask', () => {
+test('production-changing MCP tools always ask, under both local and claude.ai connector names', () => {
+  // claude.ai connectors appear in Claude Code as mcp__claude_ai_<Server>__<tool>
+  // (code.claude.com/docs/en/permissions). Locally configured servers use their own name.
   const ask = settings.permissions.ask;
-  for (const t of ['mcp__vercel__create_deployment', 'mcp__vercel__request_promote', 'mcp__vercel__request_rollback', 'mcp__supabase__apply_migration', 'mcp__supabase__execute_sql']) {
-    assert.ok(ask.includes(t), `${t} in ask`);
+  const core = {
+    Vercel: ['create_deployment', 'request_promote', 'request_rollback', 'create_project_env', 'edit_project_env'],
+    Supabase: ['apply_migration', 'execute_sql', 'deploy_edge_function'],
+    Resend: ['send-email', 'send-batch-emails', 'send-broadcast'],
+  };
+  for (const [server, names] of Object.entries(core)) {
+    for (const n of names) {
+      for (const pre of [`mcp__${server.toLowerCase()}__`, `mcp__claude_ai_${server}__`]) {
+        assert.ok(ask.includes(pre + n), `${pre + n} in ask`);
+      }
+    }
+  }
+  // Every local-name rule has its connector twin, and vice versa.
+  const mcp = ask.filter((r) => r.startsWith('mcp__'));
+  for (const r of mcp) {
+    const m = r.match(/^mcp__(claude_ai_)?([A-Za-z]+)__(.+)$/);
+    assert.ok(m, `unexpected MCP rule shape: ${r}`);
+    const server = m[2].toLowerCase();
+    const cased = server[0].toUpperCase() + server.slice(1);
+    const twin = m[1] ? `mcp__${server}__${m[3]}` : `mcp__claude_ai_${cased}__${m[3]}`;
+    assert.ok(ask.includes(twin), `${r} has twin ${twin}`);
   }
 });
 
-test('reviewer subagents have no shell, write or MCP tools', () => {
-  for (const file of ['.claude/agents/authz-reviewer.md', '.claude/agents/release-verifier.md']) {
+test('CI runs the hook and config tests in the required validate job', () => {
+  const wf = read('.github/workflows/deploy.yml');
+  const job = wf.slice(wf.indexOf('  validate:'), wf.indexOf('  accessibility:'));
+  assert.match(job, /pnpm run test:agent-hooks/);
+});
+
+test('every subagent has Read, Grep and Glob only: no shell, write or MCP tools', () => {
+  const dir = path.join(ROOT, '.claude/agents');
+  const files = fs.readdirSync(dir).filter((n) => n.endsWith('.md'));
+  for (const expected of ['authz-reviewer', 'release-verifier', 'migration-reviewer', 'nextjs-reviewer', 'failure-path-reviewer', 'test-gap-reviewer']) {
+    assert.ok(files.includes(`${expected}.md`), `${expected} exists`);
+  }
+  for (const name of files) {
+    const file = `.claude/agents/${name}`;
     const fm = frontmatter(file);
+    assert.equal(fm.name, name.replace(/\.md$/, ''), `${file} name matches file`);
     const tools = fm.tools.split(',').map((t) => t.trim()).sort();
     assert.deepEqual(tools, ['Glob', 'Grep', 'Read'], `${file} tools`);
     assert.equal(fm.hooks, undefined, `${file} should not rely on frontmatter hooks`);
     assert.equal(fm.mcpServers, undefined, `${file} must not add MCP servers`);
+  }
+});
+
+test('files adapted from Everything Claude Code keep MIT attribution and are recorded in the decision log', () => {
+  const adapted = [
+    '.claude/agents/migration-reviewer.md', '.claude/agents/nextjs-reviewer.md',
+    '.claude/agents/failure-path-reviewer.md', '.claude/agents/test-gap-reviewer.md',
+    '.claude/skills/outclass-reuse-first/SKILL.md', '.claude/skills/outclass-react-performance/SKILL.md',
+  ];
+  for (const f of adapted) assert.match(read(f), /Everything Claude Code.*MIT License, Copyright \(c\) 2026 Affaan Mustafa/, `${f} attribution`);
+  assert.match(read('docs/agent-ops/decision-log.md'), /affaan-m\/ECC/);
+  for (const name of fs.readdirSync(path.join(ROOT, '.claude/agents'))) {
+    assert.ok(read('docs/agent-ops/README.md').includes('`' + name.replace(/\.md$/, '') + '`'), `${name} listed in agent-ops README`);
   }
 });
 
