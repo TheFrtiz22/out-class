@@ -53,7 +53,7 @@ export async function confirmResumeImport(input: unknown) {
       if (current.experiences.length + additions.length > 50) throw Error("EXPERIENCE_LIMIT")
       return tx.studentProfile.update({ where: { userId: user.id }, data: { ...patch, ...(resumeReference ? { resumeUrl: resumeReference } : {}), ...(additions.length ? { experiences: { create: additions } } : {}) }, include: { experiences: true } })
     }, { isolationLevel: "Serializable" })
-    revalidatePath("/")
+    revalidatePath("/", "layout")
     return { ok: true as const, profile }
   } catch (error) {
     const reason = error instanceof Error ? error.message : ""

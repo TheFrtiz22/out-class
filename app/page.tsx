@@ -78,21 +78,22 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
       const focus = { applicantId: typeof params.applicantId === "string" ? params.applicantId : null, roundId: typeof params.roundId === "string" ? params.roundId : null }
       redirect(club ? leaderWorkspaceHref(requestedView, club.clubId, focus) : STUDENT_HOME)
     }
-    // Signed-in visitors skip the marketing page (after the disabled check, before any data read).
-    // Leader and demo entry URLs keep their own handling; old student workspace URLs were
-    // already redirected to their paths by middleware.
-    if (!["workspace", "view", "demoClub", "error"].some(key => params[key] !== undefined)) redirect(next !== "/" ? next : STUDENT_HOME)
-    try {
-      initialData = await getStudentDashboardData()
-    } catch (e) {
-      console.error(e)
-    }
     // Check if the user has completed onboarding (has a StudentProfile)
     const profile = await prisma.studentProfile.findUnique({
       where: { userId: user.id },
       select: { id: true },
     })
     hasProfile = !!profile
+    // Signed-in visitors skip the marketing page (after the disabled check, before any dashboard
+    // read). Without a profile, `/?next=…` is the onboarding hand-off (requireCompletedStudentProfile):
+    // stay here so onboarding runs, then continue to `next`; redirecting would loop. Leader and
+    // demo entry URLs keep their own handling; old student URLs were already redirected.
+    if (!["workspace", "view", "demoClub", "error"].some(key => params[key] !== undefined) && (hasProfile || next === "/")) redirect(next !== "/" ? next : STUDENT_HOME)
+    try {
+      initialData = await getStudentDashboardData()
+    } catch (e) {
+      console.error(e)
+    }
   }
 
   const launchClubs = await getCachedLaunchClubs()

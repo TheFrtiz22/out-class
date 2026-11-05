@@ -76,7 +76,7 @@ function managed(e: EventRecord): ManagedCampusEvent {
 }
 function refresh() {
   revalidatePath("/corkboard");
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   revalidatePath("/platform/events");
   revalidateTag("club-directory");
 }

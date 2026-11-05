@@ -87,3 +87,21 @@ test('worker and real-time endpoints reject unauthenticated requests before acce
   const digest=email.buildNotificationEmail({...input,digest:true,items:[...input.items,{type:'DECISION',title:'ACCEPTED',club:{name:'Example Club'},href}]});
   assert.equal(digest.subject,'Your daily OutClass updates');assert.match(digest.text,/View Decision:/);assert.match(digest.html,/View Decision/);assert.match(digest.html,/This is an automated OutClass notification/);assert.doesNotMatch(digest.html,/ACCEPTED|Read and reply/);
  });
+
+test('notification emails link to the student inbox path, not the old homepage query URL', () => {
+  const base = { from: 'outclass@virginia.edu', to: 'student@virginia.edu', siteUrl: 'https://www.outclass.test', digest: false }
+  const club = { name: 'Example Club' }
+  const uuid = n => `00000000-0000-4000-8000-00000000000${n}`
+  const variants = {
+    update: email.buildNotificationEmail({ ...base, items: [{ type: 'MESSAGE', title: 'Hello', club }] }),
+    announcement: email.buildNotificationEmail({ ...base, items: [{ type: 'ANNOUNCEMENT', title: 'News', club }] }),
+    digest: email.buildNotificationEmail({ ...base, digest: true, items: [{ type: 'TASK', title: 'Due soon', club }, { type: 'MESSAGE', title: 'Hi', club }] }),
+    panel: email.buildNotificationEmail({ ...base, items: [{ type: 'INTERVIEW', title: 'Panel updated', club, panelSchedule: { notificationId: uuid(1), signature: 'a'.repeat(64), href: `/settings/interviews?clubId=${uuid(2)}&roundId=${uuid(3)}`, details: ['Monday 10:00'] } }] }),
+  }
+  for (const [name, payload] of Object.entries(variants)) {
+    const body = payload.text + payload.html
+    assert.ok(body.includes('https://www.outclass.test/inbox?tab=preferences'), `${name}: preferences link`)
+    assert.ok(!body.includes('workspace=student') && !body.includes('view=inbox'), `${name}: no old URL`)
+    if (name !== 'panel') assert.ok(payload.text.includes('Read your updates: https://www.outclass.test/inbox\n'), `${name}: inbox link`)
+  }
+})

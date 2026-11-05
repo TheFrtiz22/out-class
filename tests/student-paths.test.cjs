@@ -169,7 +169,7 @@ function pageMocks(opts = {}) {
     "@/lib/demo/access": { DEMO_COOKIE: "demo", canAccessDemo: () => !!opts.demoAllowed },
     "@/lib/launch-clubs": { getLaunchClubs: async () => [] },
     "@/actions/applications": { getStudentDashboardData: async () => ({}) },
-    "@/utils/prisma": { prisma: { user: { findUnique: async () => ({ disabledAt: opts.disabled ? new Date() : null, memberships: opts.memberships ?? [] }) }, studentProfile: { findUnique: async () => ({ id: "p" }) } } },
+    "@/utils/prisma": { prisma: { user: { findUnique: async () => ({ disabledAt: opts.disabled ? new Date() : null, memberships: opts.memberships ?? [] }) }, studentProfile: { findUnique: async () => opts.noProfile ? null : { id: "p" } } } },
     "@/lib/permissions": load("lib/permissions.ts"),
     "@/components/home-entry": { HomeEntry: "HomeEntry" },
     "@/lib/auth": load("lib/auth.ts"), "@/lib/navigation": nav,
@@ -184,6 +184,14 @@ test("authz: signed-in visitors to / go to /home or a same-origin ?next; demo, l
   await deniedTo(home({ session: confirmed }, { next: "/settings/profile" }), "/settings/profile")
   for (const next of ["//evil.example", "https://evil.example", "/\\evil"]) await deniedTo(home({ session: confirmed }, { next }), "/home")
   await deniedTo(home({ cookies: { "platform-view": "1" }, platformUser: confirmed }), "/home")
+  // Onboarding hand-off: requireCompletedStudentProfile sends profile-less users to /?next=<page>.
+  // They must stay on / for onboarding (redirecting to next would loop); without next they go Home.
+  const handoff = nodes => !nodes || typeof nodes !== "object" ? [] : [nodes, ...[nodes.props?.children].flat(Infinity).flatMap(handoff)]
+  for (const next of ["/invitations/abc", "/settings/organizations"]) {
+    const entry = handoff(await home({ session: confirmed, noProfile: true }, { next })).find(node => node.type === "HomeEntry")
+    assert.ok(entry, next); assert.equal(entry.props.hasProfile, false); assert.equal(entry.props.initialSession.id, "student-a")
+  }
+  await deniedTo(home({ session: confirmed, noProfile: true }), "/home")
   // A disabled account gets the notice, not a redirect to its requested destination.
   for (const params of [{}, { next: "/settings/profile" }]) assert.equal((await home({ session: confirmed, disabled: true }, params)).type, "main")
   const nodes = node => !node || typeof node !== "object" ? [] : [node, ...[node.props?.children].flat(Infinity).flatMap(nodes)]
@@ -242,6 +250,15 @@ test("old URLs: middleware 307s on real hosts; loopback IPs fall through to the 
   // Next would rewrite these hosts to localhost (losing cookies), so the page redirects instead.
   for (const origin of ["http://127.0.0.1:3109", "http://[::1]:3109"]) assert.equal((await middleware(request(origin, "?workspace=student"))).status, 200, origin)
   assert.equal((await middleware(request("https://www.outclass.example", "?audience=student"))).status, 200)
+  // Only GET/HEAD redirect: a POST (server action) to / with old params reaches the normal path.
+  const post = request("https://www.outclass.example", "?workspace=student&view=inbox"); post.method = "POST"
+  assert.equal((await middleware(post)).status, 200)
+  // Every new path is kept out of search; /corkboard predates the move and stays public.
+  const at = path => { const url = new URL(`https://www.outclass.example${path}`); return { method: "GET", url: url.toString(), nextUrl: url, headers: new Headers({ host: url.host }), cookies: { get: () => undefined, has: () => false, getAll: () => [] } } }
+  for (const route of nav.STUDENT_ROUTES) {
+    const robots = (await middleware(at(route.path))).headers.get("x-robots-tag")
+    assert.equal(robots, route.path === "/corkboard" ? null : "noindex, nofollow", route.path)
+  }
 
   const page = params => load("app/page.tsx", pageMocks({})).default({ searchParams: Promise.resolve(params) })
   await deniedTo(page({ workspace: "student", view: "tracker", applicationClubId: "fund" }), "/applications?applicationClubId=fund")

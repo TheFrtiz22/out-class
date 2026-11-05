@@ -87,7 +87,7 @@ export async function saveMeeting(input: unknown) {
         clubId: data.clubId,
       },
     });
-    revalidatePath("/");
+    revalidatePath("/", "layout");
     revalidatePath("/meetings");
     revalidatePath("/corkboard");
     revalidateTag("club-directory");
@@ -218,7 +218,7 @@ export async function checkInMeeting(
     const attendance = await tx.eventAttendance.create({
       data: { eventId: meetingId, studentId: user.id },
     });
-    revalidatePath("/");
+    revalidatePath("/", "layout");
     return {
       status: "checked-in",
       checkedInAt: attendance.checkedInAt.toISOString(),

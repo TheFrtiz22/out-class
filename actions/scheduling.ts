@@ -100,7 +100,7 @@ export async function bookInterviewSlot(data: z.infer<typeof bookSlotSchema>) {
     }
   }
 
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   revalidatePath(`/club-manager`);
 
   return { success: true, booking };

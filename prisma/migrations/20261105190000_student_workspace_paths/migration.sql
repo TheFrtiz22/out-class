@@ -5,11 +5,13 @@
 -- Bodies are copied verbatim from the latest definitions
 -- (outclass_application_notification: 20261028180000_live_voting_without_ballot,
 --  outclass_booking_notification: 20261014230000_interview_self_booking)
--- with only the href literal changed. CREATE OR REPLACE keeps owner, grants
--- and the triggers that call them.
+-- with only the href literal changed, plus SET search_path = pg_catalog, public
+-- (the repo pattern for trigger functions) so a caller's search_path cannot
+-- change which tables they resolve. CREATE OR REPLACE keeps owner, grants and
+-- the triggers that call them.
 
 BEGIN;
-CREATE OR REPLACE FUNCTION outclass_application_notification() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
+CREATE OR REPLACE FUNCTION outclass_application_notification() RETURNS trigger LANGUAGE plpgsql SET search_path = pg_catalog, public AS $$ BEGIN
  IF TG_OP='UPDATE' AND EXISTS (
   SELECT 1 FROM "VotingSession" s JOIN "VotingCandidate" c ON c."sessionId"=s.id
   WHERE s.id=current_setting('outclass.voting_finalization',true) AND s.mode='LIVE' AND s.state='COMPLETED' AND s."finalizedAt" IS NULL
@@ -26,7 +28,7 @@ CREATE OR REPLACE FUNCTION outclass_application_notification() RETURNS trigger L
  RETURN NEW;
 END $$;
 
-CREATE OR REPLACE FUNCTION outclass_booking_notification() RETURNS trigger LANGUAGE plpgsql AS $$ DECLARE app "Application"; BEGIN
+CREATE OR REPLACE FUNCTION outclass_booking_notification() RETURNS trigger LANGUAGE plpgsql SET search_path = pg_catalog, public AS $$ DECLARE app "Application"; BEGIN
   SELECT * INTO app FROM "Application" WHERE id=COALESCE(NEW."applicationId",OLD."applicationId");
   IF app.id IS NULL THEN RETURN COALESCE(NEW,OLD); END IF;
   PERFORM outclass_notify(app."studentId",app."clubId",'booking:'||COALESCE(NEW.id,OLD.id)||':'||TG_OP||':'||gen_random_uuid()::text,'INTERVIEW',

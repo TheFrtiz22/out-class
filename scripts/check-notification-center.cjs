@@ -108,7 +108,7 @@ async function check() {
     await panel.getByRole('link', { name: /New application received/ }).click()
     await page.waitForURL('**tool=applicants&applicantId=fixture-app')
     await panel.waitFor({ state: 'hidden' })
-    await open(); await panel.getByRole('button', { name: 'Expand notifications', exact: true }).click(); await page.waitForURL('**view=inbox')
+    await open(); await panel.getByRole('button', { name: 'Expand notifications', exact: true }).click(); await page.waitForURL('**/inbox')
     await open(); await panel.getByRole('button', { name: 'View all notifications', exact: true }).click(); await panel.waitFor({ state: 'hidden' })
     console.log('PASS exact record destination and explicit Expand/View all inbox navigation')
     for (const width of [1600, 1440, 1024, 900, 768, 640, 540, 390, 320]) {
