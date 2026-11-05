@@ -303,6 +303,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
     )
   const statusFilters: StatusFilter[] = ["All", "Needs attention", "Upcoming interviews", "In progress", "Decisions"]
   const submitted = applications.filter(item => item.status !== "DRAFTING")
+  const drafts = applications.length - submitted.length
   const visible = statusView ? submitted.filter(item => applicationMatchesStatusFilter(item, filter as StatusFilter, now)).sort((a, b) => compareApplicationStatus(a, b, now) || a.club.name.localeCompare(b.club.name))
     : applications.filter(item => filter === "All" || (filter === "Drafts" ? item.status === "DRAFTING" : item.status !== "DRAFTING")).sort((a, b) => Number(b.status === "DRAFTING") - Number(a.status === "DRAFTING") || a.club.name.localeCompare(b.club.name))
   function open(item: StudentApplication) { lastOpened.current = item.id; setActiveId(item.id); setNotice("") }
@@ -310,7 +311,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
     <div ref={content} className="oc-applications mx-auto max-w-5xl space-y-5" data-application-scope={scope}>
       <PageHeader density="expressive" title={statusView ? "Status" : "Applications"} description={statusView ? "Where things stand, and what to do next." : "Work on your drafts, check requirements, and review submitted responses."} action={<Button variant="ghost" size="sm" onClick={() => setRetry(value => value + 1)}><RefreshCw className="size-3.5" />Refresh</Button>} />
       {applications.length > 0 && !statusView && <MetricStrip label="Application management" items={[
-        { label: "drafts", value: applications.filter(item => item.status === "DRAFTING").length },
+        { label: drafts === 1 ? "draft" : "drafts", value: drafts },
         { label: "submitted", value: submitted.length },
       ]} />}
       {!applications.length || statusView && !submitted.length ? (
