@@ -50,3 +50,13 @@ export async function clubWriteTransaction<T>(
     });
   }, limits);
 }
+
+/** True for lock waits, transaction timeouts and serialization conflicts: the
+ * command did not run and the caller may simply try again. */
+export function isWriteContention(error: unknown) {
+  const e = error as { code?: unknown; meta?: { code?: unknown }; message?: unknown } | null;
+  if (!e || typeof e !== "object") return false;
+  if (e.code === "P2028" || e.code === "P2034") return true;
+  if (e.meta?.code === "55P03" || e.meta?.code === "40001" || e.meta?.code === "40P01") return true;
+  return typeof e.message === "string" && /lock timeout|could not obtain lock|could not serialize access/i.test(e.message);
+}

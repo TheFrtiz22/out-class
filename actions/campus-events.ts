@@ -1,6 +1,7 @@
 "use server";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { prisma, type AppTransactionClient } from "@/utils/prisma";
+import { clubWriteTransaction, isWriteContention } from "@/utils/club-write-transaction";
 import { requireAuth, requireClubPermission } from "@/utils/auth";
 import { requirePlatformAdmin } from "@/utils/platform-admin";
 import { hasPermission } from "@/lib/permissions";
@@ -79,6 +80,11 @@ function refresh() {
   revalidatePath("/platform/events");
   revalidateTag("club-directory");
 }
+/** Expected refusals that a student can act on. Production redacts thrown
+ * server-action messages, so RSVP returns these as values. */
+class EventUnavailable extends Error { constructor() { super("Event unavailable."); } }
+class RsvpRefused extends Error {}
+export type RsvpResult = { ok: true; going: boolean; count: number } | { ok: false; error: string };
 async function locked(
   tx: AppTransactionClient,
   eventId: string,
@@ -91,7 +97,7 @@ async function locked(
     select: eventSelect,
   });
   if (!e?.publication || (clubId && e.clubId !== clubId))
-    throw Error("Event unavailable.");
+    throw new EventUnavailable();
   if (revision !== undefined && e.revision !== revision)
     throw Error("Event changed. Reload before continuing.");
   return e;
@@ -477,14 +483,18 @@ export async function getCampusEventRsvp(eventId: string) {
   });
   return { going: !!r };
 }
-export async function setCampusEventRsvp(input: unknown) {
+export async function setCampusEventRsvp(input: unknown): Promise<RsvpResult> {
   const d = z
       .object({ eventId: z.string().uuid(), going: z.boolean() })
       .strict()
       .parse(input),
     { user } = await requireAuth();
-  const result = await prisma.$transaction(async (tx) => {
-    const scope = await tx.meeting.findUniqueOrThrow({ where: { id: d.eventId }, select: { clubId: true } });
+  // Every RSVP for one event waits on its row lock (capacity is exact). A short
+  // lock timeout turns a pile-up into a prompt "try again" instead of a 5 s hang.
+  let result: { going: boolean; count: number };
+  try { result = await clubWriteTransaction(async (tx) => {
+    const scope = await tx.meeting.findUnique({ where: { id: d.eventId }, select: { clubId: true } });
+    if (!scope) throw new EventUnavailable();
     await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${scope.clubId} FOR SHARE`;
     const e = await locked(tx, d.eventId),
       existing = await tx.eventRsvp.findUnique({
@@ -503,14 +513,14 @@ export async function setCampusEventRsvp(input: unknown) {
         e.date <= now ||
         (p.rsvpDeadline && p.rsvpDeadline <= now)
       )
-        throw Error("RSVP is closed or this event is no longer published.");
+        throw new RsvpRefused("RSVP is closed or this event is no longer published.");
       if (p.capacity !== null && e._count.rsvps >= p.capacity)
-        throw Error("This event is full.");
+        throw new RsvpRefused("This event is full.");
       await tx.eventRsvp.create({
         data: { eventId: d.eventId, userId: user.id },
       });
     } else if (!eventIsPublished(e))
-      throw Error(
+      throw new RsvpRefused(
         "This event is no longer published. You can still cancel your RSVP.",
       );
     const count = await tx.eventRsvp.count({ where: { eventId: d.eventId } });
@@ -524,9 +534,14 @@ export async function setCampusEventRsvp(input: unknown) {
         },
       });
     return { going: d.going, count };
-  });
+  }); } catch (error) {
+    if (error instanceof RsvpRefused) return { ok: false, error: error.message };
+    if (error instanceof EventUnavailable) return { ok: false, error: "This event is no longer available." };
+    if (isWriteContention(error)) return { ok: false, error: "Many people are responding right now. Please try again." };
+    throw error;
+  }
   refresh();
-  return result;
+  return { ok: true, ...result };
 }
 /** RSVP intent only; check-in attendance is a separate canonical record. */
 export async function getCampusEventRsvpDashboard(clubId: string, eventId: string) {

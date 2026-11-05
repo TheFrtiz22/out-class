@@ -75,6 +75,31 @@ test('native Prisma: account-scoped idempotent saves, shared filtered pagination
     assert.equal(rsvp.going, true); assert.equal(rsvp.count, 1);
     assert.equal((await h.api.getPublicCampusEvent(event.id)).rsvpCount, 1);
     assert.equal((await h.api.setCampusEventRsvp({ eventId: event.id, going: false })).count, 0);
+    // Expected refusals come back as values: production redacts thrown server-action messages.
+    // Changing RSVP settings returns a publication to DRAFT (database moderation guard); re-approve it.
+    const setCapacity = async capacity => {
+      const { revision } = await h.prisma.meeting.findUnique({ where: { id: event.id }, select: { revision: true } });
+      await h.prisma.eventPublication.update({ where: { eventId: event.id }, data: { capacity } });
+      await h.prisma.eventPublication.update({ where: { eventId: event.id }, data: { status: 'PENDING', submittedAt: new Date() } });
+      await h.prisma.eventPublication.update({ where: { eventId: event.id }, data: { status: 'PUBLISHED', approvedRevision: revision, reviewedBy: h.users[1], reviewedAt: new Date(), publishedAt: new Date() } });
+    };
+    const original = await h.prisma.eventPublication.findUnique({ where: { eventId: event.id }, select: { capacity: true } });
+    await setCapacity(1);
+    const firstSeat = await h.api.setCampusEventRsvp({ eventId: event.id, going: true });
+    assert.equal(firstSeat.ok, true, JSON.stringify(firstSeat));
+    h.as(h.users[1]);
+    assert.deepEqual(await h.api.setCampusEventRsvp({ eventId: event.id, going: true }), { ok: false, error: 'This event is full.' });
+    assert.deepEqual(await h.api.setCampusEventRsvp({ eventId: '00000000-0000-4000-8000-0000000000ff', going: true }), { ok: false, error: 'This event is no longer available.' });
+    h.as(h.users[0]);
+    assert.equal((await h.api.setCampusEventRsvp({ eventId: event.id, going: false })).count, 0);
+    // Two students race for the last seat: exactly one wins, the other is told it is full.
+    const raced = await Promise.all(h.users.map(async user => { h.as(user); return h.api.setCampusEventRsvp({ eventId: event.id, going: true }); }));
+    assert.equal(raced.filter(r => r.ok).length, 1, JSON.stringify(raced));
+    assert.deepEqual(raced.find(r => !r.ok), { ok: false, error: 'This event is full.' });
+    assert.equal(await h.prisma.eventRsvp.count({ where: { eventId: event.id } }), 1);
+    for (const user of h.users) { h.as(user); await h.api.setCampusEventRsvp({ eventId: event.id, going: false }); }
+    h.as(h.users[0]);
+    await setCapacity(original.capacity);
     await h.prisma.eventPublication.update({ where: { eventId: event.id }, data: { status: 'CANCELLED' } });
     assert.equal(await h.api.getPublicCampusEvent(event.id), null);
     assert.equal((await h.api.getPublicCorkboard({ savedOnly: true })).total, 0);

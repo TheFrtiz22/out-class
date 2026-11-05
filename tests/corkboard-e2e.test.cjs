@@ -341,9 +341,11 @@ test(
       action(student, "setCampusEventRsvp", { eventId: id, going: true }),
       action(outsider, "setCampusEventRsvp", { eventId: id, going: true }),
     ]);
-    assert.equal(contenders.filter((r) => r.status === "fulfilled").length, 1);
+    assert.ok(contenders.every((r) => r.status === "fulfilled"), "capacity refusals are returned, not thrown");
+    assert.equal(contenders.filter((r) => r.value.ok).length, 1);
+    assert.deepEqual(contenders.find((r) => !r.value.ok).value, { ok: false, error: "This event is full." });
     assert.equal(await db.eventRsvp.count({ where: { eventId: id } }), 1);
-    const winner = contenders[0].status === "fulfilled" ? student : outsider,
+    const winner = contenders[0].value.ok ? student : outsider,
       loser = winner === student ? outsider : student;
     const winnerId = winner.user.id;
     await Promise.all([
@@ -459,8 +461,9 @@ test(
       revision: draft.revision,
       approved: true,
     });
-    await assert.rejects(
-      action(student, "setCampusEventRsvp", { eventId: id, going: true }),
+    assert.equal(
+      (await action(student, "setCampusEventRsvp", { eventId: id, going: true })).ok,
+      false,
     );
     await command("CANCEL");
     await invisible();
