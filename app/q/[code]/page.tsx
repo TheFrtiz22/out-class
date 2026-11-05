@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { resolveShortLink } from "@/actions/short-links";
+import { resolveShortLink } from "@/lib/short-link-store";
+import { prisma } from "@/utils/prisma";
 import { BRAND_NAVY, BRAND_IVORY, OC_MONOGRAM_PATHS } from "@/lib/qr/constants";
 
 interface PageProps {
@@ -9,7 +10,7 @@ interface PageProps {
 
 export default async function ShortLinkRedirectPage({ params }: PageProps) {
   const { code } = await params;
-  const result = await resolveShortLink(code);
+  const result = await resolveShortLink(prisma, code);
 
   if (result.status === "valid" && result.target) {
     redirect(result.target);
