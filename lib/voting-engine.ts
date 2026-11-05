@@ -28,7 +28,7 @@ function summaryCounts(outcomes: { applicationId: string; passNumber: number; ou
 /** Ballot privacy for anything sent to a browser: each viewer receives only
  * their own ballot plus a ballot count. Other members' choices, and outcomes
  * computed from ballots in a pass that is still open, never leave the server
- * (a leader's attributed override and an explicit automatic-rule decision remain visible). Server-side decisions use
+ * (a leader's attributed override remains visible). Server-side decisions use
  * the unprojected session. */
 type LegacyBallotSession = { targetSize: number; passes: { number: number; state: string; candidates: { applicationId: string; override: string | null; ballots: { memberId: string }[] }[] }[] }
 type LegacyPass<S extends LegacyBallotSession> = S["passes"][number]
@@ -36,8 +36,9 @@ export type ProjectedLegacySession<S extends LegacyBallotSession> = Omit<S, "pas
 export function projectLegacyVoting<S extends LegacyBallotSession>(s: S, memberId: string, summary: ReturnType<typeof summarizeVoting>): { session: ProjectedLegacySession<S>; summary: ReturnType<typeof summarizeVoting> } {
   const masked = summary.outcomes.map(o => {
     const pass = s.passes.find(p => p.number === o.passNumber), entry = pass?.candidates.find(c => c.applicationId === o.applicationId)
-    // An automatic rule decision or a leader override is a decision, not a running tally.
-    return pass?.state === "OPEN" && !entry?.override && !o.automatic ? { ...o, outcome: "UNRESOLVED" as Outcome, automatic: false } : o
+    // A leader override is an attributed decision. An automatic-rule result is not shown
+    // until the pass completes: a unanimous Pass would reveal every voter's choice.
+    return pass?.state === "OPEN" && !entry?.override ? { ...o, outcome: "UNRESOLVED" as Outcome, automatic: false } : o
   })
   const session = { ...s, passes: s.passes.map(p => ({ ...p, candidates: p.candidates.map(c => ({ ...c, ballots: c.ballots.filter(b => b.memberId === memberId), ballotCount: c.ballots.length })) })) } as ProjectedLegacySession<S>
   return { session, summary: summaryCounts(masked, summary.target) }

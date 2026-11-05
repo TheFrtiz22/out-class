@@ -63,3 +63,26 @@ test('platform audit views hide choices from historical legacy ballot rows witho
  assert.deepEqual(redactBallotAudit(old).details,{applicationId:'a',pass:1});assert.equal(old.details.decision,'PASS','source row unchanged');
  const override={action:'voting.override',details:{decision:'HOLD'}};assert.equal(redactBallotAudit(override),override,'leader overrides stay attributed with their decision');
 });
+
+test('review follow-ups: automatic-rule results stay hidden mid-pass, legacy note wording, auto-advance actor redacted, Demo joined member sees only own ballot',async()=>{
+ const h=legacy.harness();await h.api.createVotingSession({clubId:legacy.clubId,roundId:legacy.roundId,applicationIds:legacy.ids,participantIds:[legacy.memberId,legacy.otherId],targetSize:1,autoAdvance:'UNANIMOUS'});
+ await h.command('START_PASS',{applicationIds:[legacy.ids[0]]});await h.vote(legacy.ids[0],'PASS');h.as(legacy.otherId);await h.vote(legacy.ids[0],'PASS');h.as(legacy.memberId);
+ let view=await h.read();assert.equal(view.summary.outcomes[0].outcome,'UNRESOLVED');assert.equal(view.summary.outcomes[0].automatic,false);
+ await h.command('COMPLETE_PASS');view=await h.read();assert.equal(view.summary.outcomes[0].outcome,'PASS','revealed once the pass is completed');
+ const {redactBallotAudit}=room.load('lib/ballot-audit-privacy.ts');
+ const auto=h.state().audit.find(a=>a.action==='voting.candidate.auto-advanced');assert.ok(auto);assert.equal(redactBallotAudit(auto).actorId,null);assert.equal(auto.actorId!=null,true,'stored row unchanged');
+ const React=require('react'),{renderToStaticMarkup}=require('react-dom/server');const ts=require('typescript'),src=require('node:fs').readFileSync('components/live-voting/ballot-privacy-note.tsx','utf8'),mod={exports:{}};new Function('require','module','exports',ts.transpileModule(src,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText)(require,mod,mod.exports);const {BallotPrivacyNote}=mod.exports;
+ const legacyText=renderToStaticMarkup(React.createElement(BallotPrivacyNote,{legacy:true})),liveText=renderToStaticMarkup(React.createElement(BallotPrivacyNote,{}));
+ assert.match(legacyText,/can.t be changed once submitted/);assert.doesNotMatch(legacyText,/change it while voting is open/);assert.match(liveText,/change it while voting is open/);
+ for(const t of [legacyText,liveText]){assert.match(t,/Your choice is hidden from club members and leaders\./);assert.match(t,/support session/);assert.match(t,/small group/);}
+ // Demo: a joined member (not the leader perspective) receives only their own ballot.
+ const d=require('./helpers/demo-harness.cjs').harness(),{demoStore}=d.load('lib/demo/store.ts'),demo=d.load('lib/demo/voting.ts');demoStore.start();
+ const clubId=demoStore.get().clubs[0].id;demoStore.mutate(s=>{s.perspective={role:'leader',clubId}});const id=await demo.seedVotingDemo(clubId),session=demoStore.get().votingSessions.find(s=>s.id===id);
+ const leaderId=session.participants[0].memberId,other=demoStore.get().memberships.find(m=>m.clubId===clubId&&m.id!==leaderId).id;
+ const cand=session.passes[0].candidates[0];session.participants.push({sessionId:id,memberId:other,joinedAt:new Date()});
+ cand.ballots.push({id:crypto.randomUUID(),sessionId:id,passNumber:session.passes[0].number,applicationId:cand.applicationId,memberId:other,decision:'HOLD',revision:0,updatedAt:null,createdAt:new Date()});
+ assert.ok(session.passes.some(p=>p.candidates.some(c=>c.ballots.some(b=>b.memberId===leaderId))),'fixture holds leader ballots');
+ const joined=await demo.getJoinedVotingWorkspace(id,other),mine=joined.session.passes.flatMap(p=>p.candidates.flatMap(c=>c.ballots));
+ assert.ok(mine.length===1&&mine[0].memberId===other&&mine[0].decision==='HOLD','joined member sees exactly their own ballot');assert.equal(joined.memberId,other);
+ assert.equal(joined.session.passes[0].candidates[0].ballotCount,cand.ballots.length);
+});
