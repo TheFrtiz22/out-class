@@ -1,7 +1,7 @@
 import {createHash} from "node:crypto";
 import type {AppTransactionClient} from "@/utils/prisma";
 import type {ApplicantDisplay} from "@/lib/applicant-display";
-import {fieldLabels} from "@/lib/applicant-display";
+import {fieldLabels,readDisplayConfig,defaultDisplayConfig} from "@/lib/applicant-display";
 import {formatAverage} from "@/lib/interview-review-summary";
 import {votingInterviewEvidence,votingHighlightChoices} from "@/utils/voting-room-presentation";
 import {authorizeObservation,listObservations} from "@/utils/additional-observations";
@@ -14,15 +14,23 @@ export const preparationProfileConfig={version:1 as const,fields:[...preparation
 export function sourceVersion(text:string){return createHash("sha256").update(text,"utf8").digest("hex");}
 function source(s:Omit<SlideSource,"version">):SlideSource{return {...s,version:sourceVersion(s.text)};}
 
+/** Profile fields a slide may cite: the preparation set limited to the round's
+ * own applicant display configuration (defaults include every listed field). */
+export async function roundProfileFields(tx:AppTransactionClient,clubId:string,roundId:string):Promise<string[]>{
+  const round=await tx.pipelineRound.findFirst({where:{id:roundId,clubId},select:{applicantDisplay:true}});
+  let fields:readonly string[]=defaultDisplayConfig.fields;
+  try{fields=readDisplayConfig(round?.applicantDisplay??{}).fields;}catch{fields=defaultDisplayConfig.fields;}
+  return preparationProfileFields.filter(f=>fields.includes(f));
+}
 function denied(e:unknown){return e instanceof Error&&/unavailable|required|denied/i.test(e.message);}
 
 /** Gather everything the current leader may cite for one applicant. Only
  * submitted evaluations, submitted final thoughts, shared observations and saved
  * résumé highlights; private interview drafts are never read. */
 export async function gatherSlideSources(tx:AppTransactionClient,scope:{clubId:string;applicationId:string;roundId:string},userId:string,profile:ApplicantDisplay|null):Promise<SlideSource[]>{
-  const sources:SlideSource[]=[];
+  const sources:SlideSource[]=[],allowedProfile=profile&&!profile.anonymous?await roundProfileFields(tx,scope.clubId,scope.roundId):[];
   if(profile&&!profile.anonymous)for(const section of profile.sections){
-    if(!(preparationProfileFields as readonly string[]).includes(section.field))continue;
+    if(!allowedProfile.includes(section.field))continue;
     section.items.forEach((text,i)=>{if(text.trim()&&!/^(not provided|n\/a|none)$/i.test(text.trim()))sources.push(source({type:"PROFILE",id:`profile:${section.field}:${i}`,revision:null,label:fieldLabels[section.field],author:null,roundId:null,roundName:null,text}));});
   }
   const evidence=await votingInterviewEvidence(tx,scope.clubId,scope.applicationId,userId,{score:true,thoughts:true,currentRoundId:scope.roundId});
@@ -41,6 +49,7 @@ export async function gatherSlideSources(tx:AppTransactionClient,scope:{clubId:s
  * copies: a summary inherits its source's restriction. */
 export async function viewerHighlightFilter(tx:AppTransactionClient,scope:{clubId:string;applicationId:string;roundId:string},userId:string,highlights:StoredSlideHighlight[]){
   const types=new Set(highlights.map(h=>h.source.type));
+  const profileFields=types.has("PROFILE")?await roundProfileFields(tx,scope.clubId,scope.roundId):[];
   let interview:{roundIds:string[];thoughtIds:Set<string>}|null=null,observationIds:Set<string>|null=null,resumeIds:Set<string>|null=null;
   if(types.has("INTERVIEW_SCORE")||types.has("INTERVIEW_THOUGHT")){
     const e=await votingInterviewEvidence(tx,scope.clubId,scope.applicationId,userId,{score:false,thoughts:types.has("INTERVIEW_THOUGHT"),currentRoundId:scope.roundId});
@@ -56,7 +65,8 @@ export async function viewerHighlightFilter(tx:AppTransactionClient,scope:{clubI
   if(types.has("RESUME"))resumeIds=new Set((await votingHighlightChoices(tx,scope.clubId,scope.applicationId,userId)).map(h=>`resume:${h.id}`));
   return highlights.filter(h=>{
     switch(h.source.type){
-      case "PROFILE":return true; // Caller has already authorized identified applicant display.
+      // Caller has already authorized identified applicant display; the field must also be one the round displays.
+      case "PROFILE":return profileFields.includes(h.source.id.split(":")[1]??"");
       case "INTERVIEW_SCORE":return !!h.source.roundId&&!!interview?.roundIds.includes(h.source.roundId);
       case "INTERVIEW_THOUGHT":return !!interview?.thoughtIds.has(h.source.id)&&!!h.source.roundId&&interview.roundIds.includes(h.source.roundId);
       case "OBSERVATION":return !!observationIds?.has(h.source.id);
