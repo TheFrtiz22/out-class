@@ -20,7 +20,8 @@ Read, list or search, create, edit, delete, download or Storage read, export, ba
 2. For each resource × operation × actor, state the expected result: allow or deny, plus what a denial must not leak (existence, counts, names, timing).
 3. Find the existing test in `tests/` that proves each cell. Add a missing cell as a test that runs on disposable Postgres (`scripts/run-disposable-postgres.cjs`) before changing code.
 4. Check that the server derives scope from the validated session, never from a client-supplied club, school or user ID alone. Hidden UI controls are not authorization.
-5. Run the targeted tests and `pnpm run test:migrations`.
+5. Run the targeted tests and `pnpm run test:migrations` yourself. Record the exact commands and counts.
+6. For a second opinion, write the diff and the test output to files and invoke `authz-reviewer` with their paths. It can only read files; it cannot run tests or confirm anything you did not give it.
 
 ## Output
 A matrix appended to `docs/agent-ops/authz-matrix.md`: rows = actor, columns = operation, cells = allow, deny or untested, each with a test file reference. The count of `untested` cells is the release metric. It must reach 0 for P0 resources before pilot.
