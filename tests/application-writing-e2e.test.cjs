@@ -86,4 +86,16 @@ test('application writing and branding through real sessions, server actions, Po
   assert.equal(await page.locator('textarea').count(),0)
   await assert.rejects(student.action('actions/applications.ts','saveApplicationDraft',[{clubId:club.id,answers:[{questionId:question.id,response:'Attempted overwrite'}]}]))
   assert.equal((await db.applicationAnswer.findFirst({where:{applicationId:draft.applicationId}})).response,'Saved while intake is closed.')
+  // Explore lists summaries; profile-only content (sections) loads when a club is opened.
+  const sectionTitle='Explore profile section '+suffix
+  await db.club.update({where:{id:second.id},data:{marketing:{sections:[{title:sectionTitle,kind:'about',visible:true,body:'Loaded with the full club profile.'}]}}})
+  const explore=(await session(student)).page
+  const listing=await explore.request.get(config.appUrl+'/api/workspace?kind=directory&args=%5B%5D')
+  assert.equal(listing.status(),200)
+  const listed=await listing.text()
+  assert.ok(listed.includes(second.id),'the club is listed in Explore')
+  assert.ok(!listed.includes(sectionTitle),'profile sections are not sent with the directory list')
+  await explore.goto(config.appUrl+'/?workspace=student&view=explore')
+  await explore.getByRole('button',{name:'Second Writing Club',exact:true}).first().click()
+  await expect(explore.getByRole('heading',{name:sectionTitle})).toBeVisible({timeout:15000})
 })

@@ -58,3 +58,13 @@ export function profileStatistics(profile: { acceptanceRate?: number | null; aum
     ...m.metrics.filter(s => s.label && s.value).map(s => ({ ...s, detail: "Club-reported", source: "" })),
   ]
 }
+
+/** The marketing fields Explore's list, cards, logos and filters read
+ * (banner position, logo background, compact statistics and member outcomes).
+ * The full profile (sections, FAQs, links, gallery) loads when a club is opened. */
+export const DIRECTORY_MARKETING_KEYS = ["bannerPosition", "logoOnBrand", "logoBackground", "placements", "showAcceptance", "acceptanceApproximate", "acceptanceNote", "acceptanceSource", "showAum", "showMembers", "memberCount", "metrics"] as const
+export function directoryMarketing(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null
+  const source = value as Record<string, unknown>
+  return Object.fromEntries(DIRECTORY_MARKETING_KEYS.filter(key => key in source).map(key => [key, source[key]]))
+}

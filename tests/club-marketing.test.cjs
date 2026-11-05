@@ -43,11 +43,15 @@ test('publishing checks club permission and atomically saves every profile field
   assert.equal(audit.actorId, 'editor')
   assert.equal(audit.action, 'club.settings.update')
 })
-test('Discover receives saved marketing while hidden statistics are omitted', async () => {
+test('Discover receives the saved marketing its list uses while hidden statistics are omitted', async () => {
   const persisted = { ...draft(), id: clubId, pipelineRounds: [], questions: [], events: [], acceptanceRate: 8, aumValue: 100000, marketing: { ...draft().marketing, showAcceptance: false, showAum: false } }
   const actions = load('actions/club-directory.ts', { '@/utils/prisma': { prisma: { meeting: {findMany: async()=>[]}, club: { findMany: async q => { assert.equal(q.select.marketing, true); assert.equal(q.select.members, undefined); return [persisted] } } } } })
   const result = await actions.getClubDirectory()
-  assert.deepEqual(result.clubs[0].marketing, persisted.marketing)
+  // The list carries exactly the saved fields cards, logos and filters read;
+  // profile-only content loads with the full club when it is opened.
+  const { DIRECTORY_MARKETING_KEYS } = load('lib/club-marketing.ts')
+  assert.deepEqual(result.clubs[0].marketing, Object.fromEntries(DIRECTORY_MARKETING_KEYS.filter(key => key in persisted.marketing).map(key => [key, persisted.marketing[key]])))
+  for (const key of ['sections', 'faqs', 'links', 'gallery', 'outcomesNote']) assert.equal(key in result.clubs[0].marketing, false, key)
   assert.equal(result.clubs[0].acceptanceRate, null)
   assert.equal(result.clubs[0].aumValue, null)
 })
