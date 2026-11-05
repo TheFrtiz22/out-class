@@ -66,6 +66,11 @@ export function adminRailSections(): RailSection[] {
   return ["Home", "Platform", "Operations", "System"].map(group => ({ id: `admin-${group.toLowerCase()}`, label: group === "Home" ? undefined : group, name: group, items: adminNavigation.filter(item => item.group === group) }))
 }
 
+/** The /preview sample shell navigates in place: items become buttons handled by the shell's onSelect. */
+export function inPlaceSections(sections: RailSection[]): RailSection[] {
+  return sections.map(section => ({ ...section, items: section.items.map(({ href: _href, ...item }) => item) }))
+}
+
 export function railItems(sections: RailSection[]): ProductNavItem[] {
   return sections.flatMap(section => section.items)
 }
@@ -104,6 +109,11 @@ const personalPathItems: Record<string, string> = {
  */
 export function activeNavItem(pathname: string, params: URLSearchParams = new URLSearchParams(), options: { member?: boolean } = {}): string | null {
   if (personalPathItems[pathname]) return personalPathItems[pathname]
+  // Detail pages highlight their parent section; the header bell owns Notifications.
+  if (pathname === "/inbox") return null
+  if (pathname.startsWith("/meetings/")) return "meetings"
+  if (pathname.startsWith("/applications/")) return "applications"
+  if (/^\/club\/[^/]+$/.test(pathname)) return "explore"
   if (pathname.startsWith("/settings") || pathname.startsWith("/club-claims") || pathname.startsWith("/invitations") || pathname.startsWith("/club-access/")) return "settings"
   if (/^\/club\/[^/]+\/workspace$/.test(pathname)) {
     const section = params.get("section") || "overview", tool = params.get("tool")

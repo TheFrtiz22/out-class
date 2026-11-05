@@ -86,7 +86,6 @@ button.oc-header-club:hover { color: var(--primary); background: rgb(20 45 69 / 
   .oc-product-workspaces { display: none; }
   .oc-product-header-row { min-height: 48px; }
 }
-@media (min-width: 760px) { .oc-account-workspaces { display: none; } }
 @media (max-width: 639px) {
   .oc-product-header { padding: 4px 12px 10px; }
   .oc-product-utilities { gap: 6px; }

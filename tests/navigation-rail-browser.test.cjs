@@ -68,6 +68,13 @@ test('browser: labelled rail without overlay, tooltips when compact, URL-driven 
   await page.keyboard.press('Enter');await expect(flyout().getByRole('link').first()).toBeFocused();await page.keyboard.press('ArrowLeft');await expect(applicants).toBeFocused();await expect(flyout()).toHaveCount(0)
   await applicants.focus();await page.keyboard.press('ArrowRight');await page.keyboard.press('End');await page.keyboard.press('Tab');await expect(flyout()).toHaveCount(0);await expect(rail.getByRole('link',{name:'Interviews',exact:true})).toBeFocused()
 
+  // Choosing a destination by keyboard lands focus in the page, not back on the rail.
+  await page.goto(route(),{waitUntil:'networkidle'});await applicants.focus();await page.keyboard.press('ArrowRight');await flyout().waitFor()
+  await page.keyboard.press('ArrowDown');await page.keyboard.press('Enter');await page.waitForURL('**tool=rejected');await expect(flyout()).toHaveCount(0);await expect(page.locator('main')).toBeFocused()
+  // Crossing 1280px never remounts or unfocuses a rail item.
+  const interviews=rail.getByRole('link',{name:'Interviews',exact:true});await interviews.focus();await interviews.evaluate(el=>{el.dataset.mountProbe='kept'})
+  await page.setViewportSize({width:1100,height:900});await expect.poll(width).toBe(80);await expect(interviews).toBeFocused();assert.equal(await interviews.getAttribute('data-mount-probe'),'kept')
+  await page.setViewportSize({width:1440,height:900});await expect.poll(width).toBe(236);await expect(interviews).toBeFocused();await expect(page.getByRole('tooltip')).toHaveCount(0)
   // Permissions come from the same registry.
   await page.goto(route('owner'),{waitUntil:'networkidle'});await applicants.click();await flyout().waitFor()
   assert.deepEqual(await flyout().getByRole('link').allTextContents(),['All Applicants','Rejected Applicants'],'owner does not imply sensitive interview offices');await page.keyboard.press('Escape')
@@ -105,6 +112,8 @@ test('browser: labelled rail without overlay, tooltips when compact, URL-driven 
   await rail.getByRole('link',{name:'Club home',exact:true}).focus();await expect(page.getByRole('tooltip',{name:'Club home'})).toBeVisible()
   await applicants.focus();await page.keyboard.press('ArrowRight');await flyout().waitFor();await expect(flyout().getByRole('link').first()).toBeFocused()
   assert.equal(await flyout().evaluate(el=>{const r=el.getBoundingClientRect();return r.left>=80&&r.right<=innerWidth}),true);await page.keyboard.press('Escape')
+  // Audit the page at rest: focus on the content, no tooltip or menu open.
+  await page.locator('main').focus();await expect(page.getByRole('tooltip')).toHaveCount(0)
   let axe=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','best-practice']).analyze()
   assert.deepEqual(axe.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)})),[])
   await capture('rail-compact')

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useId, useRef, useState, useSyncExternalStore, type KeyboardEvent, type ReactElement, type ReactNode } from "react"
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type KeyboardEvent, type ReactElement } from "react"
 import { CheckCircle2, ChevronRight, Users2 } from "@/components/icons"
 import { DockBrand } from "./dock-brand"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -23,10 +23,13 @@ function useLabelledRail() {
   return useSyncExternalStore(subscribe, () => window.matchMedia(RAIL_LABEL_QUERY).matches, () => true)
 }
 
-/** Shows an item's name beside an icon-only rail. Each item keeps its own accessible name. */
+/**
+ * Shows an item's name beside an icon-only rail. The tree is the same at every width,
+ * so crossing 1280px never remounts (or unfocuses) a rail item; it only stops opening.
+ */
 function RailTip({ label, enabled, children }: { label: string; enabled: boolean; children: ReactElement }) {
-  if (!enabled) return children
-  return <Tooltip><TooltipTrigger asChild>{children}</TooltipTrigger><TooltipContent side="right" sideOffset={14} className="oc-rail-tooltip">{label}</TooltipContent></Tooltip>
+  const [open, setOpen] = useState(false)
+  return <Tooltip open={enabled && open} onOpenChange={setOpen}><TooltipTrigger asChild>{children}</TooltipTrigger><TooltipContent side="right" sideOffset={14} className="oc-rail-tooltip">{label}</TooltipContent></Tooltip>
 }
 
 /** Desktop rail. Routes, permission filtering and leave guards stay in ProductShell and lib/navigation. */
@@ -96,11 +99,12 @@ function RailGroup({ group, items, active, tooltip, renderItem }: { group: Group
     onKeyDown={event => { if (["ArrowRight", "ArrowDown", "ArrowUp"].includes(event.key)) { event.preventDefault(); keyboardOpen.current = true; if (open) focusDestination(event.key === "ArrowUp"); else setOpen(true) } }}>
     <span className="oc-dock-icon"><Icon weight={selected ? "fill" : "regular"} size={22} aria-hidden="true" /></span><span className="oc-dock-item-label">{label}</span><ChevronRight className="oc-dock-chevron" size={16} aria-hidden="true" />
   </button>
-  const triggerNode: ReactNode = <PopoverTrigger asChild>{button}</PopoverTrigger>
+  // The tooltip stays closed while the menu is open, so the two never overlap.
   return <Popover open={open} onOpenChange={setOpen}>
-    {tooltip ? <Tooltip><TooltipTrigger asChild>{triggerNode}</TooltipTrigger><TooltipContent side="right" sideOffset={14} className="oc-rail-tooltip">{label}</TooltipContent></Tooltip> : triggerNode}
+    <RailTip label={label} enabled={tooltip && !open}><PopoverTrigger asChild>{button}</PopoverTrigger></RailTip>
     <PopoverContent ref={content} id={id} className="oc-dock-flyout" side="right" align="start" sideOffset={20} collisionPadding={12} aria-label={`${label} navigation`}
       onOpenAutoFocus={event => { event.preventDefault(); if (keyboardOpen.current) focusDestination(); keyboardOpen.current = false }}
+      onCloseAutoFocus={event => event.preventDefault()}
       onEscapeKeyDown={event => { event.preventDefault(); setOpen(false); trigger.current?.focus() }} onKeyDown={contentKeys}>
       <p className="oc-dock-flyout-heading">{label}</p><nav aria-label={`${label} destinations`}>{items.map(item => renderItem(item, "flyout"))}</nav>
     </PopoverContent>

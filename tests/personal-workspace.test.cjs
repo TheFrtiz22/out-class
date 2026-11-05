@@ -14,7 +14,7 @@ function load(file,mocks={}) {
 }
 function hooks() {
  const slots=[],effects=[],cleanups=new Map();let cursor=0;
- const react={createContext:()=>({Provider:'Provider'}),useContext:()=>null,
+ const react={createContext:()=>({Provider:'Provider'}),useContext:()=>null,useSyncExternalStore:(_s,_g,server)=>server(),
  useState(initial){const i=cursor++;if(!(i in slots))slots[i]=typeof initial==='function'?initial():initial;return[slots[i],next=>slots[i]=typeof next==='function'?next(slots[i]):next]},
  useRef(initial){const i=cursor++;return slots[i]??={current:initial}},
  useEffect(fn,deps){const i=cursor++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;effects.push([i,fn])}},
@@ -163,6 +163,16 @@ test('a member club shell keeps personal sections as real paths beside the club 
  assert.deepEqual(navigation,[]);assert.deepEqual(context,[]);
 });
 
+test('the /preview sample shell navigates in place and never links to live student routes',()=>{
+ const h=hooks(),moves=[];
+ const mocks={'@/lib/workspace-api':{getTaskNotifications:async()=>[]},react:h.react,'next/link':{default:'Link'},'next/navigation':{useRouter:()=>({}),useSearchParams:()=>new URLSearchParams(),usePathname:()=>'/preview'},'@/contexts/auth-context':{useAuth:()=>({user:null})},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/contexts/organization-invitations-context':{useOrganizationInvitations:()=>({invitations:[]})},'@/lib/application-state':{useApplicationState:()=>({notifications:[],focusApplication(){}})}};
+ const {DashboardLayout}=load('components/dashboard-layout.tsx',mocks),{ProductShell}=load('components/shell/product-shell.tsx',mocks);
+ const boundary=h.render(()=>DashboardLayout({view:'explore',personalSection:'explore',appMode:'student',onNavigate:(view,section)=>moves.push([view,section])}));
+ const layout=h.render(()=>boundary.props.children.type(boundary.props.children.props));
+ const shell=h.render(()=>ProductShell(layout.props)),links=sheetLinks(shell);
+ assert.ok(links.length>0);assert.ok(links.every(node=>node.type==='button'&&!node.props.href),'every preview destination is an in-place button');
+ links.find(node=>node.props['data-tour']==='nav-applications').props.onClick();assert.deepEqual(moves,[['tracker','applications']]);
+});
 test('Calendar is one rail destination in every personal section and keeps its title and active state',()=>{
  const h=hooks(),navigation=[];
  const mocks={'@/lib/workspace-api':{getTaskNotifications:async()=>[]},react:h.react,'next/link':{default:'Link'},'next/navigation':{useRouter:()=>({}),useSearchParams:()=>new URLSearchParams()},'@/contexts/auth-context':{useAuth:()=>({user:null})},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/contexts/organization-invitations-context':{useOrganizationInvitations:()=>({invitations:[]})},'@/lib/application-state':{useApplicationState:()=>({notifications:[],focusApplication(){}})}};

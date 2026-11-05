@@ -28,4 +28,15 @@ test('rail and phone bar read one registry: one name per destination, Notificati
  assert.equal(links.find(node=>label(node)==='Explore').props['aria-current'],'page');
  assert.equal(nodes(tree).find(node=>node.type==='button').props['aria-label'],'More sections');
 });
+test('the active rail item follows the URL, including detail pages, and stays empty where no rail item applies',()=>{
+ const {activeNavItem,inPlaceSections,personalRailSections,railItems}=require('./helpers/navigation-module.cjs'),q=v=>new URLSearchParams(v);
+ const cases=[['/home','student-dashboard'],['/explore','explore'],['/explore/categories','explore'],['/corkboard','corkboard'],['/saved-clubs','corkboard'],['/applications','applications'],['/applications/status','status'],['/applications/app-1/decision','applications'],['/clubs','clubs'],['/clubs/meetings','meetings'],['/meetings','meetings'],['/meetings/m-1','meetings'],['/clubs/tasks','tasks'],['/calendar','calendar'],['/settings/interviews','calendar'],['/profile','student-profile'],['/settings/notifications','settings'],['/inbox',null],['/club/abc','explore'],['/platform','overview'],['/platform/audit','audit']];
+ for(const [path,id] of cases)assert.equal(activeNavItem(path),id,path);
+ assert.equal(activeNavItem('/preview'),null,'preview falls back to the shell state');
+ const ws=(search,member)=>activeNavItem('/club/c/workspace',q(search),{member});
+ assert.equal(ws('section=recruitment&tool=overview'),'overview');assert.equal(ws('section=recruitment&tool=rules'),'overview');assert.equal(ws('section=recruitment'),'applicants');
+ assert.equal(ws('section=recruitment&tool=rejected'),'rejected');assert.equal(ws('section=overview'),'club-home');assert.equal(ws(''),'club-home');
+ assert.equal(ws('section=tasks'),'tasks');assert.equal(ws('section=tasks',true),'club-tasks');assert.equal(ws('section=announcements&mode=recruiting'),'announcements');
+ assert.ok(railItems(inPlaceSections(personalRailSections())).every(item=>!item.href),'the /preview shell keeps navigation in place');
+});
 test('student tutorials keep their eight-step indices/version contract while replacing the existing Corkboard placeholder',()=>{const {tutorialSteps,tutorialInput}=load('lib/tutorials.ts');assert.equal(tutorialSteps.student.length,8);assert.equal(tutorialSteps.student[1].view,'explore');assert.equal(tutorialSteps.student[6].view,'corkboard');assert.equal(tutorialSteps.student[6].anchor,'nav-corkboard');assert.equal(tutorialInput.parse({experience:'student',action:'progress',step:6}).step,6);assert.doesNotMatch(JSON.stringify(tutorialSteps.student),/when available|view":"discover"|Categories/)});

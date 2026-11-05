@@ -17,7 +17,7 @@ import { MobileNavigation } from "@/components/shell/mobile-navigation"
 import { TutorialWalkthrough } from "@/components/tutorial-walkthrough"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { useEffect, useRef, useState, type ReactNode, type CSSProperties } from "react"
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode, type CSSProperties } from "react"
 import { Bell, Menu, UserRound, LogOut, Home, Users2, Compass, Bookmark, CalendarDays, FileText, ListChecks, CheckCircle2, Settings, Megaphone, Shield, SlidersHorizontal, Video, RefreshCw } from "@/components/icons"
 import { toast } from "sonner"
 import { OutClassLogo } from "@/components/outclass-logo"
@@ -49,6 +49,17 @@ const navigationIcons: Record<string, typeof Home> = { rejected: Users2, resumes
  * item is derived from the URL there too, with `active` only as a fallback for pages
  * that no URL describes (the signed-out local preview).
  */
+/** Phones hide the pill; the account menu then lists workspaces. Rendered only there, so menu keys and typeahead never reach hidden items. */
+const PHONE_QUERY = "(max-width: 759px)"
+function subscribePhone(callback: () => void) {
+  const media = window.matchMedia(PHONE_QUERY)
+  media.addEventListener("change", callback)
+  return () => media.removeEventListener("change", callback)
+}
+function usePhoneLayout() {
+  return useSyncExternalStore(subscribePhone, () => window.matchMedia(PHONE_QUERY).matches, () => false)
+}
+
 export function ProductShell({ children, mode, sections, active, title, clubId = "", clubName, manager = false, workspaceKind, onSelect, onNavigate, onReviewTool, onModeSelect }: {
   workspaceKind?: "admin";
   onReviewTool?: (id: string) => void;
@@ -79,7 +90,7 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
     // Access loss is mandatory reconciliation, not a voluntary leave-page action.
     if (platform || manager) router.replace(fallbackHref)
   }, [access.pending, allowed, platform, manager, fallbackHref, router])
-  const workspaceChoices = useWorkspaceOptions(access, clubId)
+  const workspaceChoices = useWorkspaceOptions(access, clubId), phone = usePhoneLayout()
   const searchItems = !allowed ? [] : platform ? [] : manager ? adminNav.filter(item => {
     if (item.id === "leader-dashboard") return hasPermission(member, "applications.review") || hasPermission(member, "applicants.identify")
     if (item.id === "interview-workspace") return hasPermission(member, "applications.review")
@@ -179,7 +190,7 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
             setTaskLoad({ loading: true, failed: false }); setDurableLoad({ loading: true, failed: false })
             window.dispatchEvent(new Event("outclass:tasks-changed")); window.dispatchEvent(new Event("outclass:communications-changed"))
           }} onNavigate={onNavigate} />
-          <DropdownMenu><DropdownMenuTrigger asChild><IconButton data-tour="profile" className="oc-floating-circle oc-floating-profile" aria-label={`Account menu for ${name}, ${accountInitials(user)}`}><AccountAvatar user={user} /></IconButton></DropdownMenuTrigger><DropdownMenuContent align="end" sideOffset={10} collisionPadding={16} className="oc-floating-account-menu w-64"><p className="truncate px-2 py-2 text-sm font-medium">{name}</p>{user && !isImpersonating && <DemoMenuItems />}{workspaceChoices.length > 1 && <div className="oc-account-workspaces" role="group" aria-label="Workspaces"><DropdownMenuSeparator /><p className="px-2 pb-1 pt-2 text-[length:var(--oc-size-11)] text-muted-foreground">Workspace</p>{workspaceChoices.map(option => <DropdownMenuItem key={option.id} aria-current={option.id === workspace ? "page" : undefined} aria-label={workspaceOptionName(option)} onSelect={() => { if (option.id !== workspace && canLeaveWorkspace()) router.push(option.href) }}><span className="min-w-0 flex-1 truncate">{option.label}</span>{option.id === workspace && <CheckCircle2 weight="fill" aria-hidden="true" />}</DropdownMenuItem>)}{otherClubs.map(club => <DropdownMenuItem key={club.clubId} aria-label={`${club.club.name} club workspace`} onSelect={() => { if (canLeaveWorkspace()) router.push(clubWorkspaceHref(club.clubId)) }}><span className="min-w-0 flex-1 truncate">{club.club.name}</span></DropdownMenuItem>)}</div>}<DropdownMenuSeparator /><DropdownMenuItem onSelect={() => navigate("student-profile")}><AccountAvatar user={user} className="size-5" />Your profile</DropdownMenuItem>{user && !demo.isDemoEnabled && <DropdownMenuItem onSelect={() => { if (canLeaveWorkspace()) router.push("/settings") }}><Settings />Settings</DropdownMenuItem>}{user && !demo.isDemoEnabled && !isImpersonating && <DropdownMenuItem disabled={signingOut} onSelect={async () => { if (!canLeaveWorkspace()) return; setSigningOut(true); try { const response = await fetch("/api/auth/logout", { method: "POST" }); if (!response.ok) throw Error("Could not sign out."); const { createClient } = await import("@/utils/supabase/client"); const { error } = await createClient().auth.signOut(); if (error) throw error; window.location.assign("/") } catch { toast.error("Could not sign out. Try again."); setSigningOut(false) } }}><LogOut />Sign out</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>
+          <DropdownMenu><DropdownMenuTrigger asChild><IconButton data-tour="profile" className="oc-floating-circle oc-floating-profile" aria-label={`Account menu for ${name}, ${accountInitials(user)}`}><AccountAvatar user={user} /></IconButton></DropdownMenuTrigger><DropdownMenuContent align="end" sideOffset={10} collisionPadding={16} className="oc-floating-account-menu w-64"><p className="truncate px-2 py-2 text-sm font-medium">{name}</p>{user && !isImpersonating && <DemoMenuItems />}{phone && workspaceChoices.length > 1 && <div className="oc-account-workspaces" role="group" aria-label="Workspaces"><DropdownMenuSeparator /><p className="px-2 pb-1 pt-2 text-[length:var(--oc-size-11)] text-muted-foreground">Workspace</p>{workspaceChoices.map(option => <DropdownMenuItem key={option.id} aria-current={option.id === workspace ? "page" : undefined} aria-label={workspaceOptionName(option)} onSelect={() => { if (option.id !== workspace && canLeaveWorkspace()) router.push(option.href) }}><span className="min-w-0 flex-1 truncate">{option.label}</span>{option.id === workspace && <CheckCircle2 weight="fill" aria-hidden="true" />}</DropdownMenuItem>)}{otherClubs.map(club => <DropdownMenuItem key={club.clubId} aria-label={`${club.club.name} club workspace`} onSelect={() => { if (canLeaveWorkspace()) router.push(clubWorkspaceHref(club.clubId)) }}><span className="min-w-0 flex-1 truncate">{club.club.name}</span></DropdownMenuItem>)}</div>}<DropdownMenuSeparator /><DropdownMenuItem onSelect={() => navigate("student-profile")}><AccountAvatar user={user} className="size-5" />Your profile</DropdownMenuItem>{user && !demo.isDemoEnabled && <DropdownMenuItem onSelect={() => { if (canLeaveWorkspace()) router.push("/settings") }}><Settings />Settings</DropdownMenuItem>}{user && !demo.isDemoEnabled && !isImpersonating && <DropdownMenuItem disabled={signingOut} onSelect={async () => { if (!canLeaveWorkspace()) return; setSigningOut(true); try { const response = await fetch("/api/auth/logout", { method: "POST" }); if (!response.ok) throw Error("Could not sign out."); const { createClient } = await import("@/utils/supabase/client"); const { error } = await createClient().auth.signOut(); if (error) throw error; window.location.assign("/") } catch { toast.error("Could not sign out. Try again."); setSigningOut(false) } }}><LogOut />Sign out</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>
         </div>
       </div>
     </header>
