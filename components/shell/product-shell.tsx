@@ -11,6 +11,7 @@ import "./floating-header.css"
 import "./floating-dock.css"
 import { NotificationCenter } from "@/components/shell/notification-center"
 import { startCommunicationsLive } from "@/lib/communications-live"
+import { inboxRealtime } from "@/lib/inbox-realtime"
 import { FloatingModeNavigation, FloatingSearchTrigger } from "@/components/shell/floating-header-controls"
 import { MobileNavigation } from "@/components/shell/mobile-navigation"
 import { TutorialWalkthrough } from "@/components/tutorial-walkthrough"
@@ -107,7 +108,7 @@ export function ProductShell({ children, mode, modes, items, active, title, club
       finally { running = false; if (again && active) { again = false; void refresh() } }
     }
     void refresh()
-    const stop = startCommunicationsLive({ streamAllowed: !isImpersonating, changed: () => { void refresh(); window.dispatchEvent(new Event("outclass:communications-refresh")) } })
+    const stop = startCommunicationsLive({ streamAllowed: !isImpersonating, openRealtime: inboxRealtime(userId), changed: () => { void refresh(); window.dispatchEvent(new Event("outclass:communications-refresh")) } })
     return () => { active = false; stop() }
   }, [userId, demo.isDemoEnabled, isImpersonating, syncDurableNotifications])
   const unread = notifications.filter(n => !n.durableId && !n.read).length + (demo.isDemoEnabled ? 0 : durableUnread)

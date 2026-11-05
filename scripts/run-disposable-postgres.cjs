@@ -15,6 +15,7 @@ const suites = {
       "tests/interview-native-concurrency.test.cjs",
       "tests/interview-collaboration-native.test.cjs",
       "tests/voting-room-native.test.cjs",
+      "tests/inbox-realtime-signal-native.test.cjs",
     ],
   },
   events: {
