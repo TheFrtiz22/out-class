@@ -1,0 +1,97 @@
+# Interview self-booking contention (2026-11-05)
+
+`node scripts/run-contention-benchmark.cjs` (`tests/interview-booking-contention-native.test.cjs`).
+Each club's round is made bookable through the real leader workflow (generate → review →
+publish panel schedule, publish booking for the cycle); the test confirms every slot is
+offered to students, then all invited students call `reserveInterview` at once for distinct
+slots. Disposable native PostgreSQL as `outclass_production_app`; each statement pays the
+simulated round trip (2 ms ≈ production). Measurements only; no product code changed.
+
+## Results (main `5a8ba829`; every booking stored once, no slot over capacity)
+
+| RTT | Students | Clubs | p50 | p95 | max |
+|---|---|---|---|---|---|
+| 0 ms | 20 | 1 | 571 ms | 1046 ms | 1046 ms |
+| 0 ms | 20 | 3 | 491 ms | 895 ms | 895 ms |
+| 0 ms | 60 | 1 | 1800 ms | 3197 ms | 3301 ms |
+| 0 ms | 60 | 3 | 1130 ms | 2091 ms | 2170 ms |
+| 2 ms | 20 | 1 | 1652 ms | 3085 ms | 3085 ms |
+| 2 ms | 20 | 3 | 1606 ms | 2920 ms | 2920 ms |
+| 2 ms | 60 | 1 | 4885 ms | 9650 ms | 9988 ms |
+| 2 ms | 60 | 3 | 4728 ms | 8891 ms | 9219 ms |
+
+Independently reproduced (two separate runs agree within ~5%).
+
+## What limits it
+
+1. **One booking at a time, platform-wide.** `reserveInterview` first takes
+   `panelPublicationLock` (`pg_advisory_xact_lock(197918, 3)`), shared by every booking and
+   panel publication in every club. Spreading 60 students over 3 clubs barely helps
+   (9.2 s vs 10.0 s). With that lock removed in a throwaway copy, 60 students over 3 clubs
+   finished in 3.4 s instead of 9.2 s; a single club was unchanged because the club row
+   (`lockOperationalClub`, FOR UPDATE) already serializes it.
+2. **Each booking is expensive while holding the locks:** ~41 statements, including
+   `interviewBookingCoverage` rebuilding the club's planning scene, ~155 ms per booking at
+   2 ms RTT.
+3. **No lock or statement timeout** (`atomic`: 60 s transaction, 15 s connection wait).
+   Larger bursts queue rather than fail fast, holding pooled connections while waiting.
+   No failures were observed at these sizes.
+
+Within one club, serialization is required for correctness: whether a slot is still fully
+staffed depends on other bookings that share interviewers. Cross-club, the global lock
+protects people who appear in more than one club (e.g. a student who is also a panelist
+elsewhere). Changing either is a scheduling design decision; see the options recorded in
+the owner report.
+
+## Change (branch `backend/booking-throughput`)
+
+The platform-wide advisory lock is replaced by per-person locks
+(`lockSchedulingPeople` in `utils/panel-publication.ts`):
+
+- **Reservations** (`reserveInterview`, legacy `bookInterviewSlot`): club row `FOR SHARE`,
+  then in one sorted-id order the student's User row `FOR UPDATE` and the target session's
+  official panelists `FOR SHARE`, then the session row `FOR UPDATE`; capacity is read only
+  after that lock. Reservations in the same club no longer wait for each other unless they
+  are for the same session or the same student.
+- **Club-wide changes** (panel publication, room panel approval, reopening a room, manual
+  panel grants) keep their exclusive club lock and lock, exclusively and in the same order,
+  the people whose official commitments they add. Panel publication already did this.
+- Draft-only operations (availability overrides) and booking publication keep only their
+  exclusive club lock: publication re-validates with people locked, and booking publication
+  checks panels that were conflict-checked across clubs when published.
+- Removing commitments (cancel, close a room, replace a panel member) only frees time, so it
+  needs no person lock.
+- `atomic()` (interview rooms) now sets an 8 s lock timeout, 20 s transaction timeout and 10 s
+  connection wait (was 60 s / 15 s, no lock timeout); contention is reported as "Many people
+  are scheduling right now… Please try again."
+
+## Results after the change (same benchmark)
+
+| RTT | Students | Clubs | max before | max after |
+|---|---|---|---|---|
+| 0 ms | 20 | 1 | 1046 ms | 263 ms |
+| 0 ms | 20 | 3 | 895 ms | 142 ms |
+| 0 ms | 60 | 1 | 3301 ms | 1218 ms |
+| 0 ms | 60 | 3 | 2170 ms | 719 ms |
+| 2 ms | 20 | 1 | 3085 ms | 257 ms |
+| 2 ms | 20 | 3 | 2920 ms | 446 ms |
+| 2 ms | 60 | 1 | 9988 ms | 1364 ms |
+| 2 ms | 60 | 3 | 9219 ms | 620 ms |
+
+Every booking stored exactly once and no session over capacity. New race tests in the same
+file: two students racing for the last seat (exactly one booked) and one student booking
+overlapping interviews in two clubs at once (exactly one booked). Removing the session lock
+makes the first fail (the database capacity trigger then rejects the second booking with a
+raw error), so the test detects that regression.
+
+Known residual: manual panel grants lock the acting owner's User row before the sorted
+person lock; a cross-pattern with a simultaneous booking can deadlock, which PostgreSQL
+detects within ~1 s and aborts one side (reported as a retryable error).
+The same pattern applies to two owners in different clubs assigning each other to panels at
+the same moment; `setInterviewPanelAssignment` surfaces that 40P01 as a raw error rather than
+the friendly retry message.
+
+Authorization review (2026-11-05, read-only `authz-reviewer`, base bd3e12d3): no high or
+medium findings. Two low findings fixed before merge: an applicant without an interview
+invitation is refused before any panelist lock, and the session row lock is scoped to the
+applicant's club (`AND "clubId" = …`).
