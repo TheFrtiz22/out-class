@@ -4,7 +4,7 @@ import { requireAuth } from "@/utils/auth"
 import { prisma } from "@/utils/prisma"
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization"
 import { interviewCapabilities } from "@/lib/interview-access"
-import { panelPublicationLock, draftApprovalReset } from "@/utils/panel-publication"
+import { draftApprovalReset } from "@/utils/panel-publication"
 import { loadPanelPlanningScene } from "@/utils/panel-planning"
 import { availabilityOverrideConditions, canProposeMember, panelScopeSchema, panelDocumentSchema, validatePanelDocument, panelDraftScene } from "@/lib/panel-proposals"
 
@@ -12,7 +12,7 @@ export async function assignPanelAvailabilityOverride(raw: unknown) {
   const input = panelScopeSchema.extend({ proposalId: z.string().uuid(), revision: z.number().int().positive(), slotId: z.string().uuid(), memberId: z.string().uuid(), requestId: z.string().uuid(), replaceMemberId: z.string().uuid().optional(), reason: z.string().trim().max(1000).optional() }).strict().parse(raw)
   const { user } = await requireAuth({ verifyEmail: true })
   return prisma.$transaction(async tx => {
-    await panelPublicationLock(tx)
+    // Drafts only: publication re-validates with the panel members locked.
     const actor = await authorizeClubTransaction(tx, input.clubId, user.id, ["interviews.manage"])
     if (!interviewCapabilities(actor).overrideAvailability) throw new Error("Only the club's currently authorized president can override availability.")
     const proposal = await tx.interviewPanelProposal.findFirst({ where: { id: input.proposalId, clubId: input.clubId, roundId: input.roundId } })
@@ -51,7 +51,6 @@ export async function revokePanelAvailabilityOverride(raw: unknown) {
   const input = z.object({ clubId: z.string().uuid(), overrideId: z.string().uuid() }).strict().parse(raw)
   const { user } = await requireAuth({ verifyEmail: true })
   return prisma.$transaction(async tx => {
-    await panelPublicationLock(tx)
     const actor = await authorizeClubTransaction(tx, input.clubId, user.id, ["interviews.manage"])
     if (!interviewCapabilities(actor).overrideAvailability) throw new Error("Only the club's currently authorized president can remove availability overrides.")
     const row = await tx.interviewAvailabilityOverride.findFirst({ where: { id: input.overrideId, clubId: input.clubId } })

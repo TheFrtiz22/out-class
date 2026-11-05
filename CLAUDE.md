@@ -31,6 +31,16 @@ OutClass is a multi-school campus club operating system, beginning at UVA. It se
 7. Measure regression risks across small and large clubs, cold/warm navigation, mobile, keyboard/accessibility, real error states and degraded integrations. Do not claim a speedup or completeness based only on code review or synthetic runs.
 8. At completion, report changed files, the feature preservation matrix delta, tests/skip counts, performance evidence, PR URL, remaining blockers, and what requires owner approval. Keep dated handoff status updated if scope materially changes.
 
+## Agent guardrails (what is enforced, and what is only a tripwire)
+- `.claude/settings.json` permission rules ask before pushes, merges, installs, `vercel`, `supabase`, `prisma`, `psql`, `curl` and production-changing MCP tools, and deny file-tool reads of `.env*` secrets (`.env.example` is allowed).
+- `.claude/hooks/guard-bash.cjs` is a best-effort **tripwire**, not a security boundary: it denies or escalates the usual forms of push-to-main, force-push, production deploys, migrations and secret printing, but cannot see commands run inside scripts, aliases or runtime-expanded variables (`docs/agent-ops/README.md` lists the gaps). A block or prompt means: stop and ask the owner in chat. Never rephrase a command, or edit the guard, to get past it.
+- The real boundaries are outside Claude: GitHub branch protection on `main`, read-only or absent production credentials on dev machines, the `read_only=true` Supabase MCP server, and owner approval.
+- Skills: `outclass-session-start` (every session), `outclass-journey-verify` (before calling a journey done), `outclass-authz-matrix` (any identity/data/Storage/cron change), `outclass-release-check` (before PR and after merge).
+- Subagents `authz-reviewer` and `release-verifier` have Read, Grep and Glob only: no shell, no MCP. **You** run the tests and read-only MCP queries, write the diff and results to files or the prompt, and pass them in; they judge the evidence and report. You decide.
+- Records live in `docs/agent-ops/`: append a task-ledger row per task with acceptance criteria, evidence and wall time; append gate results to `validation-report.md`. Keep this file under ~8 KB; put changing plans in the ledger, not here.
+- Branches: create with `git switch --no-track -c <area>/<slug> origin/main`. Never set an upstream of `origin/main` (Nov 4 auto-push incident).
+- Efficiency: one task, one branch, one acceptance check. Use a cheaper model for search and summaries, the strongest model for auth, migrations and concurrency. After two failed attempts at the same plan, stop and report the diagnosis instead of retrying. Do not add plugins, MCP servers or third-party skills without an entry in `docs/agent-ops/decision-log.md` and owner approval.
+
 ## Immediate mission
 Follow the launch-oriented read-only inventory and phased execution checklist in `docs/CLAUDE_CODE_HANDOFF_2026-11-04.md`. First establish verified current state and real remaining release blockers; then resolve the highest-impact issues in sequence without architectural rewrites or unsafe production actions.
 

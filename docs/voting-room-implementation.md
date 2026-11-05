@@ -40,6 +40,18 @@ Evidence (local, synthetic, mocked Auth/database):
 - Shared voting harnesses gained rule-table stubs and the fixture registers the new actions; no assertions changed. Existing voting and observation suites pass (three long browser tests timed out under parallel load and passed when rerun individually).
 
 Limitations: Demo mode keeps leader-confirmed voting only (no defaults editor). Anonymous rounds follow the same rule logic. A threshold ballot opened before this release has no snapshot and is handled as leader-confirmed.
+## Voting in every recruitment round — November 5, 2026
+
+**Implemented on branch `feature/voting-every-round`; not yet released. No migration.**
+
+Audit result: live voting already had no interview-only assumption in setup, joining, ballots, results or finalization. Setup lists every active round in the selected cycle. Eligibility uses submitted statuses (SUBMITTED, IN_REVIEW, INTERVIEWING, WAITLISTED), and the stable cycle, round and application IDs are stored on the session and candidates. Interview scores and final thoughts come only from authorized interview rounds. When there are none (application review before interviews), those fields are omitted, never shown as zero. Later rounds show earlier finalized interview evidence labelled by round name. Hold passes create new ballot instances within the same session and round, never a recruitment round. Finalization already offered **Advance to {later round}** (stage move; not admission; status kept except INTERVIEWING→IN_REVIEW when leaving interview rounds) or **Final club admission**, using the existing recruitment transition rules, guard fingerprint, receipt idempotency and deferred notifications. Threshold mode and privacy rules are unchanged.
+
+Changes:
+- **Stale applicants are listed, not hidden behind a generic failure.** The finalization preview now returns `stale` entries with a plain reason: moved to another round, moved to another recruitment cycle, status changed (e.g. SUBMITTED → WITHDRAWN), or no longer available. Those applicants are excluded from `changes`, the confirm button is disabled, and `finalizeLiveVotingRoom` refuses with the same per-applicant list. Nothing is changed for anyone. Previously the preview threw, which reached leaders in production only as a generic error.
+- **Admission from an intermediate round is explicit.** The preview reports `laterRounds` and `roundType`; choosing Final club admission while later active rounds exist shows “{round} is not the last recruitment round. Final admission skips N later rounds…”. It remains allowed, because clubs may end early.
+- Test harness: `voting-room-harness` now supports multiple rounds (`h.rounds`, `pipelineRound.count`); existing assertions are unchanged.
+
+Evidence: `tests/voting-every-round.test.cjs` (4) covers application-review voting before interviews; two repeated Hold passes without new rounds; preview of advance vs admission; advance into the interview round keeping SUBMITTED (not admission); Hold preserved; retry-safe finalization with one move per applicant; no notifications; a later interview-round session leaving the earlier session byte-identical; cross-round selection refused; stale round, status and cycle listed individually with nothing finalized; early-round slides omitting interview evidence. Existing voting suites pass locally (117 of 119 in a parallel run). One transition browser test timed out under load and passed on its own, and one is a native skip.
 
 ## Additional observations release verified — November 4, 2026
 

@@ -112,7 +112,9 @@ export async function getLiveVotingPresentation(input:unknown) {
 export async function castLiveVotingBallot(input:unknown) {
   const d=roomBallotSchema.parse(input),{user}=await requireClubPermission(d.clubId,["applications.review","decisions.vote"]);
   return domainResult(()=>clubWriteTransaction(async tx=>{
-    const m=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review","decisions.vote"]);
+    // Ballots in one session still serialize on the session row (loadVotingRoom write
+    // lock); the shared club lock lets voters' authorization run concurrently.
+    const m=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review","decisions.vote"],{sharedClubLock:true});
     const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId,true);
     if(!roomAuthority(s,m,round.anonymousReview).voter)throw Error("Eligible session voter required.");
     const fingerprint=roomFingerprint(d),key={sessionId:s.id,requestId:d.requestId};
