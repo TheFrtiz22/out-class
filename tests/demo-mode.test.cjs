@@ -440,7 +440,7 @@ test("persisted voting demo uses the same boundary, holds and two-pass history s
   await assert.rejects(api.getVotingWorkspace(clubId),/leader/);
   demoStore.mutate(s=>{s.perspective={role:'leader',clubId}});
   const id=await api.seedVotingDemo(clubId), view=await api.getVotingWorkspace(clubId,id);
-  assert.equal(view.session.passes.length,2);assert.equal(view.summary.passed,1);assert.ok(view.summary.held>=1);assert.ok(view.summary.notPassed>=1);assert.equal(view.summary.target,2);assert.ok(view.session.passes[0].candidates.every(c=>c.ballots.length===1));
+  assert.equal(view.session.passes.length,2);assert.equal(view.summary.passed,1);assert.equal(view.summary.held,0,'held applicants being re-voted in the open pass show as unresolved, not as a running tally');assert.ok(view.summary.unresolved>=1);assert.ok(view.summary.notPassed>=1);assert.ok(view.session.passes.every(p=>p.candidates.every(c=>c.ballots.every(b=>b.memberId===view.memberId))),'only ballots belonging to the viewer are sent');assert.equal(view.summary.target,2);assert.ok(view.session.passes[0].candidates.every(c=>c.ballots.length===1));
   const ballot=JSON.stringify(view.session.passes);demoStore.start();assert.equal(JSON.stringify((await api.getVotingWorkspace(clubId,id)).session.passes),ballot);assert.equal(h.calls(),0);
   demoStore.reset();demoStore.mutate(s=>{s.perspective={role:'leader',clubId}});assert.equal((await api.getVotingWorkspace(clubId)).sessions.length,2);assert.equal((await api.getVotingWorkspace(clubId)).session.currentPass,2);
 });

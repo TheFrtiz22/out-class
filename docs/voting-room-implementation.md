@@ -1,4 +1,21 @@
 # Live voting room - Parts 1-3 handoff
+## Ballot privacy (anonymous to participants) — November 5, 2026
+
+**Implemented on branch `feature/voting-ballot-privacy`; no migration; not yet released.**
+
+What is true now, and what is not:
+- **Club members and leaders, including session leaders, cannot see who voted Pass, Hold or Do not pass.** Every browser-facing response returns only the caller's own ballot.
+  - Live rooms: the existing `projectVotingRoom` returns `ownBallot`, `ballotsReceived` while open, and `totals` only once a ballot instance is CLOSED or CONFIRMED. The rule `ruleResult` is also returned only after closing.
+  - Legacy board sessions: `getVotingWorkspace` previously returned every ballot with member IDs and choices to every viewer. It now returns `projectLegacyVoting` output: own ballot plus `ballotCount`. Outcomes of a pass that is still open are hidden (`UNRESOLVED`) unless a leader recorded an attributed override. Automatic-rule results (unanimous/threshold) are also hidden until the pass completes, because a unanimous Pass would reveal every voter's choice. Legacy ballots remain immutable once submitted (unchanged behaviour), and the legacy note says so.
+  - Demo uses the same projection.
+- **Not anonymous to OutClass operators.** Ballots are stored with the voter's membership ID (`VotingBallot.memberId`) so the server can enforce one ballot per voter and allow changes while voting is open. Anyone with direct database access (platform operators, the bounded server role) can link ballots to voters, and a platform administrator in an audited support session that views the app as a voter sees that voter's own ballot. Live-room command receipts store a hash of each request, including the choice. Historical legacy audit rows (`voting.ballot.submitted`, written before this change) contain the choice. They are retained unchanged (no destructive anonymization without separate approval); platform-admin audit views now omit that field, and new rows no longer record it. Platform views also hide the actor of `voting.candidate.auto-advanced`, the voter whose ballot completed a rule, because it implies a Pass.
+- **Inference:** totals after closing can reveal individual choices in small groups (for example a group of two). The UI says so.
+- **Unchanged:** leader confirmations, overrides, corrections and Pass-without-vote stay attributed and audited. Observations, interview thoughts and comments stay attributed. One ballot per voter, changes while open, and server authorization are unchanged.
+- **UI:** the member ballot (live and legacy) shows "Your choice is hidden from club members and leaders." with a "Who can see ballots" disclosure stating the points above.
+- **Paths checked:** room projection and polling (no Supabase realtime publication includes voting tables), the finalization summary, setup, the legacy workspace, join and command actions, decision schedules (counts only, server-side), dashboard summary (session state only), audit readers (platform admins only), and exports (none for ballots).
+
+Evidence: `tests/voting-ballot-privacy.test.cjs`. It walks each payload for any member ID paired with a choice, for leader, voter, non-participant member, outsider and revoked voter (live), and leader, voter and outsider (legacy), including the finalization summary, ballot audits and command receipts. Authorization-review follow-ups are covered: a unanimous auto-advance stays hidden mid-pass, the legacy note wording is correct, the auto-advance actor is redacted, and a Demo joined member sees only their own ballot. The legacy test fails against the previous `actions/voting.ts`. `durable-voting` and `demo-mode` assertions that expected open-pass tallies now assert they're hidden while open and shown after the pass completes.
+
 ## Club voting rules (leader confirms / threshold decides) — November 5, 2026
 
 **Implemented on branch `feature/voting-rules`; not yet released. Requires migration `20261105170000_voting_rules` (owner approval before production).**
