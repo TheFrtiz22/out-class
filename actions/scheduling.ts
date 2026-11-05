@@ -1,6 +1,6 @@
 "use server";
 
-import { panelPublicationLock } from "@/utils/panel-publication";
+import { lockSchedulingPeople } from "@/utils/panel-publication";
 import { assertOfficialPanelConflicts } from "@/utils/official-panel-conflicts";
 import { Prisma } from "@prisma/client";
 import { assertClubOperational } from "@/lib/club-suspension";
@@ -56,18 +56,21 @@ export async function bookInterviewSlot(data: z.infer<typeof bookSlotSchema>) {
   const { user } = await requireAuth();
   const parsed = bookSlotSchema.parse(data);
 
-  // Serializable isolation prevents concurrent requests from overbooking a slot.
+  // Row locks (club, student, session) prevent concurrent requests from overbooking a slot.
   let booking;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       booking = await prisma.$transaction(async (tx) => {
-        await panelPublicationLock(tx);
-        await tx.$queryRaw`SELECT id FROM "User" WHERE id=${user.id} FOR UPDATE`;
         const application = await tx.application.findUnique({ where: { id: parsed.applicationId } });
         if (!application || application.studentId !== user.id) {
           throw new Error("Unauthorized to book for this application.");
         }
+        // Same order as room reservations: club (shared), the student, then the session row,
+        // so capacity is read after concurrent reservations of this slot commit.
+        await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${application.clubId} FOR SHARE`;
         await assertClubOperational(tx, application.clubId);
+        await lockSchedulingPeople(tx, { exclusive: [user.id] });
+        await tx.$queryRaw`SELECT id FROM "InterviewSlot" WHERE id=${parsed.slotId} FOR UPDATE`;
         const slot = await tx.interviewSlot.findUnique({
           where: { id: parsed.slotId }, include: { bookings: true },
         });

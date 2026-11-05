@@ -42,3 +42,48 @@ staffed depends on other bookings that share interviewers. Cross-club, the globa
 protects people who appear in more than one club (e.g. a student who is also a panelist
 elsewhere). Changing either is a scheduling design decision; see the options recorded in
 the owner report.
+
+## Change (branch `backend/booking-throughput`)
+
+The platform-wide advisory lock is replaced by per-person locks
+(`lockSchedulingPeople` in `utils/panel-publication.ts`):
+
+- **Reservations** (`reserveInterview`, legacy `bookInterviewSlot`): club row `FOR SHARE`,
+  then in one sorted-id order the student's User row `FOR UPDATE` and the target session's
+  official panelists `FOR SHARE`, then the session row `FOR UPDATE`; capacity is read only
+  after that lock. Reservations in the same club no longer wait for each other unless they
+  are for the same session or the same student.
+- **Club-wide changes** (panel publication, room panel approval, reopening a room, manual
+  panel grants) keep their exclusive club lock and lock, exclusively and in the same order,
+  the people whose official commitments they add. Panel publication already did this.
+- Draft-only operations (availability overrides) and booking publication keep only their
+  exclusive club lock: publication re-validates with people locked, and booking publication
+  checks panels that were conflict-checked across clubs when published.
+- Removing commitments (cancel, close a room, replace a panel member) only frees time, so it
+  needs no person lock.
+- `atomic()` (interview rooms) now sets an 8 s lock timeout, 20 s transaction timeout and 10 s
+  connection wait (was 60 s / 15 s, no lock timeout); contention is reported as "Many people
+  are scheduling right now… Please try again."
+
+## Results after the change (same benchmark)
+
+| RTT | Students | Clubs | max before | max after |
+|---|---|---|---|---|
+| 0 ms | 20 | 1 | 1046 ms | 263 ms |
+| 0 ms | 20 | 3 | 895 ms | 142 ms |
+| 0 ms | 60 | 1 | 3301 ms | 1218 ms |
+| 0 ms | 60 | 3 | 2170 ms | 719 ms |
+| 2 ms | 20 | 1 | 3085 ms | 257 ms |
+| 2 ms | 20 | 3 | 2920 ms | 446 ms |
+| 2 ms | 60 | 1 | 9988 ms | 1364 ms |
+| 2 ms | 60 | 3 | 9219 ms | 620 ms |
+
+Every booking stored exactly once and no session over capacity. New race tests in the same
+file: two students racing for the last seat (exactly one booked) and one student booking
+overlapping interviews in two clubs at once (exactly one booked). Removing the session lock
+makes the first fail (the database capacity trigger then rejects the second booking with a
+raw error), so the test detects that regression.
+
+Known residual: manual panel grants lock the acting owner's User row before the sorted
+person lock; a cross-pattern with a simultaneous booking can deadlock, which PostgreSQL
+detects within ~1 s and aborts one side (reported as a retryable error).

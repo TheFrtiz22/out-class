@@ -3,7 +3,6 @@ import { z } from "zod"
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/auth"
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization"
-import { panelPublicationLock } from "@/utils/panel-publication"
 import { interviewBookingCoverage } from "@/utils/interview-booking"
 import { notifyBookingPublished } from "@/utils/applicant-booking-notifications"
 import { revalidatePath } from "next/cache"
@@ -23,7 +22,7 @@ export async function setInterviewBookingPublication(raw: unknown) {
   const input = z.object({ clubId: z.string().uuid(), roundId: z.string().uuid(), revision: z.number().int().nonnegative(), action: z.enum(["PUBLISH", "PAUSE", "POLICY"]), cycleId: z.string().uuid().nullable(), allowCancellation: z.boolean(), allowRescheduling: z.boolean() }).strict().parse(raw)
   const { user } = await requireAuth()
   const result = await prisma.$transaction(async tx => {
-    await panelPublicationLock(tx)
+    // Club-exclusive. Panels it checks were conflict-checked across clubs when published.
     await authorizeClubTransaction(tx, input.clubId, user.id, ["interviews.manage"])
     const round = await tx.pipelineRound.findFirst({ where: { id: input.roundId, clubId: input.clubId, archivedAt: null, type: { in: ["INTERVIEW", "GROUP_INTERVIEW"] } } })
     if (!round || round.anonymousReview) throw new Error("Choose an active identified interview round.")

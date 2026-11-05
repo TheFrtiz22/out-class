@@ -42,7 +42,7 @@ test('invalid dates, past windows, DST gaps/ambiguity and unsafe virtual links a
  assert.equal(core.roomInputSchema.safeParse({...input(),timezone:'Not/AZone'}).success,false)
 })
 function apiHarness() {
- const room={...input(),id:id(3),isOpen:true}
+ const room={...input(),id:id(3),isOpen:true,panelMemberIds:[],approvedPanelMemberIds:[]}
  const slot={id:id(4),clubId:id(1),roomId:room.id,room,startTime:new Date('2099-09-07T14:00Z'),endTime:new Date('2099-09-07T14:20Z'),capacity:1,_count:{bookings:0}}
  const app={id:id(5),studentId:id(6),clubId:id(1),roundId:id(2),status:'INTERVIEWING',recruitmentCycleId:null}
  const state={room,slot,app,existing:null,others:[],created:[],deleted:[],audit:[],permission:true,retries:0,attempts:0,failCreate:false}

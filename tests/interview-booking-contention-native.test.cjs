@@ -82,6 +82,12 @@ test('interview self-booking bursts under simulated latency', { skip: !databaseU
   };
   const load = loader(mocks);
   ({ hasPermission } = load('lib/permissions.ts'));
+  // Opt-in: OUTCLASS_BOOKING_PROFILE=1 attributes reservation time and statements to its helpers.
+  const profile = {};
+  if (process.env.OUTCLASS_BOOKING_PROFILE) for (const [file, names] of [['utils/interview-booking.ts', ['interviewBookingCoverage']], ['utils/official-panel-conflicts.ts', ['assertOfficialPanelConflicts']], ['utils/interview-scheduling-access.ts', ['syncBookingPanel']], ['utils/panel-publication.ts', ['lockSchedulingPeople']], ['utils/panel-planning.ts', ['loadPanelPlanningScene']], ['utils/interviewer-pool.ts', ['loadInterviewerPool']], ['lib/panel-proposals.ts', ['validatePanelDocument']]]) {
+    const mod = load(file);
+    for (const name of names) { const real = mod[name]; if (name === 'validatePanelDocument') { mod[name] = (...args) => { const t0 = performance.now(); try { return real(...args); } finally { const p = profile[name] ??= { calls: 0, ms: 0, statements: 0 }; p.calls++; p.ms += performance.now() - t0; } }; continue; } mod[name] = async (...args) => { const t0 = performance.now(), s0 = statements; try { return await real(...args); } finally { const p = profile[name] ??= { calls: 0, ms: 0, statements: 0 }; p.calls++; p.ms += performance.now() - t0; p.statements += statements - s0; } }; }
+  }
   const rooms = load('actions/interview-rooms.ts'), proposals = load('actions/panel-proposals.ts');
   const publication = load('actions/panel-publication.ts'), booking = load('actions/interview-booking-publication.ts');
   const as = (user, fn) => request.run(user, fn);
@@ -163,11 +169,43 @@ test('interview self-booking bursts under simulated latency', { skip: !databaseU
     const setupStart = performance.now(), clubs = [];
     for (let c = 0; c < clubCount; c++) clubs.push(await bookableClub(Math.floor(students / clubCount) + (c < students % clubCount ? 1 : 0)));
     const setupMs = Math.round(performance.now() - setupStart);
+    for (const k of Object.keys(profile)) delete profile[k];
     rttMs = rtt; const result = await burst(clubs); rttMs = 0;
+    if (process.env.OUTCLASS_BOOKING_PROFILE) t.diagnostic(`profile rtt=${rtt}ms students=${students} clubs=${clubCount}: ` + Object.entries(profile).map(([k, p]) => `${k} ${Math.round(p.ms / p.calls)}ms/${Math.round(p.statements / p.calls)} stmts per call`).join('; '));
     report.push({ rttMs: rtt, students, clubs: clubCount, setupMs, ...result });
     t.diagnostic(`rtt=${rtt}ms students=${students} clubs=${clubCount}: ${result.succeeded}/${result.attempted} booked (stored ${result.stored}, over-capacity slots ${result.overCapacity}, ~${result.statementsPerCall} statements/call), p50=${result.p50}ms p95=${result.p95}ms max=${result.max}ms${result.errors.length ? ` failedMax=${result.failedMaxMs}ms errors=` + JSON.stringify(result.errors) : ''}`);
   }
   if (process.env.OUTCLASS_BOOKING_REPORT) fs.writeFileSync(process.env.OUTCLASS_BOOKING_REPORT, JSON.stringify(report, null, 2));
   // Every confirmed reservation is stored exactly once and no session exceeds capacity.
   for (const row of report) { assert.equal(row.stored, row.succeeded, JSON.stringify(row)); assert.equal(row.overCapacity, 0, JSON.stringify(row)); }
+
+  // Correctness under real concurrency, with latency so the transactions overlap.
+  const attempt = (student, slotId) => as(student.user, async () => {
+    try { await rooms.reserveInterview({ applicationId: student.app.id, slotId }); return { ok: true }; }
+    catch (error) { return { ok: false, error: String(error?.message || error) }; }
+  });
+
+  await t.test('two students racing for the last seat of one session: exactly one is booked', async () => {
+    rttMs = 0; const club = await bookableClub(2); const slotId = club.students[0].slotId;
+    const capacity = (await operator.interviewSlot.findUnique({ where: { id: slotId } })).capacity;
+    assert.equal(capacity, 1, 'fixture sessions hold one applicant');
+    rttMs = 2; const results = await Promise.all(club.students.map(s => attempt(s, slotId))); rttMs = 0;
+    assert.equal(results.filter(r => r.ok).length, 1, JSON.stringify(results));
+    assert.match(results.find(r => !r.ok).error, /just booked|no longer available|fully staffed|changed while saving/i);
+    assert.equal(await operator.interviewBooking.count({ where: { slotId } }), 1);
+  });
+
+  await t.test('one student booking overlapping interviews in two clubs at once: exactly one is booked', async () => {
+    rttMs = 0; const [a, b] = [await bookableClub(1), await bookableClub(1)];
+    const student = a.students[0];
+    // The same student is also invited by club B; both clubs' first sessions start at the same time.
+    const bRound = await operator.application.findUnique({ where: { id: b.students[0].app.id }, select: { roundId: true, recruitmentCycleId: true, clubId: true } });
+    const second = { user: student.user, app: await operator.application.create({ data: { clubId: bRound.clubId, studentId: student.user.id, roundId: bRound.roundId, recruitmentCycleId: bRound.recruitmentCycleId, status: 'INTERVIEWING', submittedAt: new Date() } }) };
+    const [slotA, slotB] = await Promise.all([a.students[0].slotId, b.students[0].slotId].map(id => operator.interviewSlot.findUnique({ where: { id } })));
+    assert.equal(+slotA.startTime, +slotB.startTime, 'fixture sessions overlap');
+    rttMs = 2; const results = await Promise.all([attempt(student, slotA.id), attempt(second, slotB.id)]); rttMs = 0;
+    assert.equal(results.filter(r => r.ok).length, 1, JSON.stringify(results));
+    assert.match(results.find(r => !r.ok).error, /already have an interview at that time|changed while saving/i);
+    assert.equal(await operator.interviewBooking.count({ where: { application: { studentId: student.user.id } } }), 1);
+  });
 });

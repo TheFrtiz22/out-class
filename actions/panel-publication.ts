@@ -7,7 +7,7 @@ import { authorizeClubTransaction } from "@/lib/club-transaction-authorization"
 import { interviewCapabilities } from "@/lib/interview-access"
 import { panelScopeSchema, panelDocumentSchema, panelScheduleChanges, mergePanelPublication, publishedPanelDocumentSchema, type PanelApprovalReview, type PanelDocument } from "@/lib/panel-proposals"
 import { loadPanelPlanningScene } from "@/utils/panel-planning"
-import { activePanelPublication, assertCurrentPanelDocument, assertPanelBookingSafety, publicationDocument, panelPublicationLock, PanelPublicationError, draftApprovalReset } from "@/utils/panel-publication"
+import { activePanelPublication, assertCurrentPanelDocument, assertPanelBookingSafety, publicationDocument, lockSchedulingPeople, PanelPublicationError, draftApprovalReset } from "@/utils/panel-publication"
 import { syncBookingPanel,type BookingPanelBatch } from "@/utils/interview-scheduling-access"
 import { panelScheduleNotificationPrefix } from "@/utils/official-panel-schedule"
 const draftScope=panelScopeSchema.extend({proposalId:z.string().uuid(),revision:z.number().int().positive()}).strict()
@@ -17,7 +17,6 @@ async function operation<T>(clubId:string,owner:boolean,publishing:boolean,work:
   const {user}=await requireAuth({verifyEmail:owner})
   for(let attempt=0;;attempt++)try{
    const value=await prisma.$transaction(async tx=>{
-    if(publishing)await panelPublicationLock(tx)
     const member=await authorizeClubTransaction(tx,clubId,user.id,["interviews.manage"])
     if(owner&&!interviewCapabilities(member).manageGrants)throw new PanelPublicationError("Only a current club owner can approve panel access and publish schedules.")
     if(!publishing)await tx.$queryRaw`SELECT set_config('outclass.panel_proposal_mode','unpublished',true)`
@@ -88,9 +87,10 @@ export async function publishPanelSchedule(raw:unknown){
   if(prior){if(prior.clubId!==input.clubId||prior.roundId!==input.roundId||prior.publishedBy!==actorId||prior.sourceProposalId!==input.proposalId||prior.sourceProposalRevision!==input.revision)throw new PanelPublicationError("This approval belongs to a different publication.");return{publicationId:prior.id,version:prior.version,idempotent:true}}
   const {row,document,active}=await draftFor(tx,input)
   if(row.status!=="READY_FOR_APPROVAL"||row.approvalToken!==input.approvalToken||row.readyBy!==actorId)throw new PanelPublicationError("Review this draft and explicitly confirm publication as the approving owner.")
-  // Cross-club publications serialize globally; identity locks also hold account disable and applicant booking mutations.
+  // Cross-club consistency is per person: lock every new panel member (also holds account
+  // disable and their own applicant bookings) before reading commitments across clubs.
   const candidateMembers=await tx.clubMember.findMany({where:{id:{in:document.assignments.map(a=>a.memberId)},clubId:input.clubId}})
-  for(const userId of [...new Set(candidateMembers.map(m=>m.userId))].sort())await tx.$queryRaw`SELECT id FROM "User" WHERE id=${userId} FOR UPDATE`
+  await lockSchedulingPeople(tx,{exclusive:candidateMembers.map(m=>m.userId)})
   const live=await loadPanelPlanningScene(tx,input,document.window),validation=assertCurrentPanelDocument(document,live.scene)
   if(row.sourceFingerprint!==live.fingerprint)throw new PanelPublicationError("This approval is stale. Revalidate and review the draft again; the current schedule is unchanged.")
   const bookings=await assertPanelBookingSafety(tx,input,document),understaffed=validation.filled<validation.required
