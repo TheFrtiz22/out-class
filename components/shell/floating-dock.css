@@ -1,4 +1,5 @@
-/* Keep one compact reservation. The wider surface and Radix flyouts overlay content. */
+/* The rail reserves its own width: icons only from 1024px, icon + label from 1280px.
+   Nothing overlays the page; only the Applicants/Decisions menus open beside it. */
 @media (min-width: 1024px) {
   [data-product-shell] { --oc-shell-rail-width: 108px; }
   [data-product-shell] > div > aside.oc-expanding-dock {
@@ -8,9 +9,7 @@
     height: calc(100dvh - var(--support-banner-height, 0px) - 32px);
     overflow: visible;
     z-index: 30;
-    transition: width var(--oc-glass-move) var(--oc-floating-ease);
   }
-  [data-product-shell] > div > aside.oc-expanding-dock[data-dock-expanded="true"] { width: 272px; }
   .oc-dock-rail {
     position: relative;
     isolation: isolate;
@@ -37,9 +36,6 @@
   .oc-dock-brand-art .oc-dock-letter-c { fill: #f26522; transform: translate(-153px,20px); transition: transform var(--oc-glass-move) var(--oc-floating-ease); }
   .oc-dock-letter-out, .oc-dock-letter-class { opacity: 0; transform: translateX(-12px); transition: opacity 120ms ease, transform 260ms var(--oc-floating-ease); }
   .oc-dock-brand-art .oc-dock-letter-class { fill: #f26522; }
-  [data-dock-expanded="true"] .oc-dock-brand-art { transform: translateX(0); }
-  [data-dock-expanded="true"] .oc-dock-letter-c { transform: translate(0,0); }
-  [data-dock-expanded="true"] :is(.oc-dock-letter-out,.oc-dock-letter-class) { opacity: 1; transform: translateX(0); transition-delay: 80ms; }
   .oc-dock-navigation { min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
   .oc-dock-navigation::-webkit-scrollbar { display: none; }
   .oc-dock-navigation-content { position: relative; isolation: isolate; padding-block: 2px; }
@@ -63,21 +59,25 @@
   .oc-dock-preview { margin-inline: auto 10px; }
   .oc-dock-chevron { margin-left: auto; margin-right: 14px; flex-shrink: 0; transition: transform 220ms var(--oc-floating-ease); }
   .oc-dock-group-trigger[aria-expanded="true"] .oc-dock-chevron { transform: translateX(3px); color: var(--oc-rail-text); }
-  .oc-dock-hover-highlight { position: absolute; z-index: -1; inset: 0 0 auto; height: 48px; opacity: 0; border: 1px solid rgb(219 237 255 / 14%); border-radius: 13px; background: linear-gradient(135deg, rgb(212 232 252 / 14%), rgb(154 191 225 / 5%)); box-shadow: inset 0 1px 0 rgb(232 243 255 / 12%), 0 2px 5px rgb(4 16 30 / 10%); pointer-events: none; transform: translateY(var(--dock-hover-y, 0px)); transition: transform var(--oc-glass-move) var(--oc-floating-ease), height 240ms var(--oc-floating-ease), opacity var(--oc-glass-quick) ease; }
-  .oc-dock-section-heading, .oc-dock-rail .oc-dock-item-label, .oc-dock-preview, .oc-dock-chevron {
-    opacity: 0; transform: translateX(-7px); transition: opacity 160ms ease, transform 260ms var(--oc-floating-ease);
-  }
-  [data-dock-expanded="true"] :is(.oc-dock-section-heading,.oc-dock-item-label,.oc-dock-preview,.oc-dock-chevron) { opacity: 1; transform: translateX(0); transition-delay: 65ms; }
-  /* Opacity preserves names for assistive technology; clipping keeps the compact surface clean. */
+  .oc-dock-rail nav :is(a,button):hover { background: rgb(212 232 252 / 9%); }
   .oc-expanding-dock :is(a,button):focus-visible { outline: 2px solid var(--brand-orange); outline-offset: -2px; }
-  @media (hover: hover) and (pointer: fine) {
-    .oc-dock-rail [data-magnify="current"] .oc-dock-icon { transform: scale(1.17); }
-    .oc-dock-rail [data-magnify="neighbor"] .oc-dock-icon { transform: scale(1.065); }
-    .oc-dock-rail [data-magnify="outer"] .oc-dock-icon { transform: scale(1.02); }
-  }
-  @supports (transition-timing-function: linear(0, 1)) {
-    [data-product-shell] > div > aside.oc-expanding-dock, .oc-dock-hover-highlight, .oc-dock-icon { transition-timing-function: var(--oc-floating-spring); }
-  }
+}
+/* Icon-only rail: labels stay in the accessibility tree (clipped, not hidden) and show as tooltips. */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .oc-dock-rail :is(.oc-dock-item-label,.oc-dock-section-heading) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .oc-dock-rail :is(.oc-dock-preview,.oc-dock-chevron) { display: none; }
+}
+/* Labelled rail: the full wordmark and section headings, always visible. */
+@media (min-width: 1280px) {
+  [data-product-shell] { --oc-shell-rail-width: 264px; }
+  [data-product-shell] > div > aside.oc-expanding-dock { width: 236px; }
+  .oc-dock-brand-art { transform: translateX(0); }
+  .oc-dock-letter-c { transform: translate(0,0); }
+  .oc-dock-brand-art :is(.oc-dock-letter-out,.oc-dock-letter-class) { opacity: 1; transform: translateX(0); }
+  .oc-dock-brand-art .oc-dock-letter-c { transform: translate(0,0); }
+  .oc-dock-brand-art { width: 200px; height: 47px; flex-basis: 200px; }
+  .oc-dock-brand-art svg { width: 200px; height: 47px; }
+  .oc-dock-section-heading { padding-left: 19px; }
 }
 /* Portaled above the header, below dialogs. No dependency on a scroll container or shell ancestry. */
 .oc-dock-flyout {
@@ -99,11 +99,9 @@
 @keyframes oc-dock-flyout-in { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; transform: translateX(0); } }
 @media (prefers-reduced-motion: reduce) {
   [data-product-shell] > div > aside.oc-expanding-dock, .oc-expanding-dock *, .oc-dock-flyout, .oc-dock-flyout * { transition: none !important; animation: none !important; }
-  .oc-dock-icon { transform: none !important; }
 }
 @media (forced-colors: active) {
   .oc-dock-rail, .oc-dock-flyout { border: 1px solid CanvasText; }
-  .oc-dock-hover-highlight { background: transparent; border: 1px solid Highlight; forced-color-adjust: none; }
   .oc-dock-rail nav :is([aria-current="page"],[data-active="true"])::before, .oc-dock-flyout nav [aria-current="page"]::before { background: Highlight; forced-color-adjust: none; }
   .oc-expanding-dock :is(a,button):focus-visible, .oc-dock-flyout nav :is(a,button):focus-visible { outline-color: Highlight; }
 }

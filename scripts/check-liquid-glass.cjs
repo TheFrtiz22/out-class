@@ -98,7 +98,7 @@ async function audit() {
       await capture(page, `internal-${width}`)
       if (width === 1440 || width === 390) await accessibility(page, `internal-${width}`, '[data-product-shell]')
       if (width < 1024) {
-        await page.getByRole('button', { name: 'More navigation and workspaces', exact: true }).click()
+        await page.getByRole('button', { name: 'More sections', exact: true }).click()
         await page.waitForTimeout(500)
         await capture(page, `internal-${width}-drawer`)
         await page.keyboard.press('Escape')

@@ -1,8 +1,13 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),ts=require('typescript');
 const nodes=n=>!n||typeof n!=='object'?[]:Array.isArray(n)?n.flatMap(nodes):[n,...nodes(n.props?.children)];
+// The phone sheet renders its links through WorkspaceNavigation's renderItem (stubbed here).
+const sheetLinks=shell=>nodes(shell).filter(n=>n.type==='WorkspaceNavigation').flatMap(n=>n.props.items.map(n.props.renderItem));
 const text=n=>typeof n==='string'||typeof n==='number'?String(n):Array.isArray(n)?n.map(text).join(''):n?.props?text(n.props.children):'';
 function load(file,mocks={}) {
  mocks={ '@/components/shell/use-workspace-access':{useWorkspaceAccess:()=>({clubs:[],personal:true,admin:false,pending:false})}, '@/lib/autosave-navigation':{flushEditors:async()=>{}}, '@/actions/communications':{}, ...mocks };
+ // The shell reads its active item from the URL; tests that omit routing hooks render at '/'.
+ if(mocks['next/navigation'])mocks['next/navigation']={usePathname:()=>'/',useSearchParams:()=>new URLSearchParams(),...mocks['next/navigation']};
+ mocks={'@/components/shell/workspace-selector':{WorkspaceSelector:'WorkspaceSelector',useWorkspaceOptions:()=>[]},...mocks};
  const mod={exports:{}},code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;
  new Function('require','module','exports','window','document','setInterval','clearInterval',code)(name=>mocks[name]||(name.endsWith('.css')?{}:name.startsWith('@/components/')?new Proxy({},{get:(_,key)=>String(key)}):name.startsWith('@/')?load(path.resolve(name.slice(2)+'.ts'),mocks):require(name)),mod,mod.exports,mocks.window,{querySelector:()=>null},()=>1,()=>{});
  return mod.exports;
@@ -110,18 +115,19 @@ test('personal shell keeps page headings in content once, with universal and con
   assert.equal(nodes(layout).filter(node=>node.type==='PageHeader').length,own?0:1,view);
   const shell=h.render(()=>ProductShell(layout.props));
   assert.equal(nodes(shell).some(node=>node.props?.className==='oc-header-context'),false,view);
-  assert.deepEqual(nodes(shell).find(node=>node.props?.['aria-label']==='Product modes').props.children.map(node=>text(node)),['Explore','Apply','My Clubs']);
-  assert.ok(nodes(shell).some(node=>node.props?.['aria-label']==='Universal navigation'));
-  assert.ok(nodes(shell).some(node=>node.props?.['aria-label']==='Account navigation'));
+  // Sections live in the rail and phone sheet only; the pill is a workspace switcher.
+  assert.equal(nodes(shell).some(node=>node.props?.['aria-label']==='Product modes'),false,view);
+  assert.deepEqual(nodes(shell).filter(node=>node.type==='nav').map(node=>node.props['aria-label']),['Home','Explore','Applications','Clubs','Account'],view);
+  assert.equal(nodes(shell).some(node=>node.props?.['data-tour']==='nav-inbox'),false,'Notifications live in the header bell');
  }
- const manager=h.render(()=>ProductShell({mode:'recruiting',manager:true,clubName:'Club name',active:'overview',title:'Overview',modes:[],items:[],onSelect(){},onNavigate(){}}));
- assert.equal(nodes(manager).some(node=>node.props?.className==='oc-header-context'),false);assert.equal(nodes(manager).some(node=>node.props?.['aria-label']==='Universal navigation'),false);
+ const manager=h.render(()=>ProductShell({mode:'recruiting',manager:true,clubName:'Club name',active:'overview',title:'Overview',sections:[],onSelect(){},onNavigate(){}}));
+ assert.equal(nodes(manager).some(node=>node.props?.className==='oc-header-context'),false);assert.equal(nodes(manager).some(node=>node.props?.['aria-label']==='Home'),false);
 });
 
 test('signed-in account menu mounts the existing Demo entry; anonymous and support sessions cannot use it',()=>{
  const auth={user:{id:'presenter',email:'presenter@virginia.edu',memberships:[]},isImpersonating:false},h=hooks();
  const {ProductShell}=load('components/shell/product-shell.tsx',{'@/lib/workspace-api':{},react:h.react,'next/navigation':{useRouter:()=>({})},'@/contexts/auth-context':{useAuth:()=>auth},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/contexts/organization-invitations-context':{useOrganizationInvitations:()=>({invitations:[]})},'@/lib/application-state':{useApplicationState:()=>({notifications:[]})}});
- const entry=()=>nodes(h.render(()=>ProductShell({mode:'explore',active:'explore',title:'Explore',modes:[],items:[],onSelect(){},onNavigate(){}}))).filter(n=>n.type==='DemoMenuItems');
+ const entry=()=>nodes(h.render(()=>ProductShell({mode:'explore',active:'explore',title:'Explore',sections:[],onSelect(){},onNavigate(){}}))).filter(n=>n.type==='DemoMenuItems');
  assert.equal(entry().length,1);auth.isImpersonating=true;assert.equal(entry().length,0);auth.isImpersonating=false;auth.user=null;assert.equal(entry().length,0);
 });
 
@@ -145,15 +151,19 @@ test('authoritative booking synchronization replaces cancelled/rescheduled booki
  value.syncApplicationBookings([]);value=render();assert.equal(value.events.some(event=>event.id.startsWith('booking-')),false);assert.ok(value.events.some(event=>event.id==='meeting-meeting'));
 });
 
-test('universal destinations work from a member club shell whose context links use hrefs',()=>{
+test('a member club shell keeps personal sections as real paths beside the club pages',()=>{
  const h=hooks(),navigation=[],context=[];
  const {ProductShell}=load('components/shell/product-shell.tsx',{'@/lib/workspace-api':{getTaskNotifications:async()=>[]},react:h.react,'next/link':{default:'Link'},'next/navigation':{useRouter:()=>({})},'@/contexts/auth-context':{useAuth:()=>({user:null})},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/contexts/organization-invitations-context':{useOrganizationInvitations:()=>({invitations:[]})},'@/lib/application-state':{useApplicationState:()=>({notifications:[]})}});
- const shell=h.render(()=>ProductShell({mode:'clubs',clubId:'member-club',title:'Overview',modes:[],items:[],active:'overview',onSelect:id=>context.push(id),onNavigate:view=>navigation.push(view)}));
- for(const id of ['student-dashboard','calendar','inbox','student-profile']) nodes(shell).find(node=>node.props?.['data-tour']==='nav-'+id).props.onClick();
- assert.deepEqual(navigation,['student-dashboard','calendar','inbox','student-profile']);assert.deepEqual(context,[]);
+ const {memberRailSections}=require('./helpers/navigation-module.cjs');
+ const shell=h.render(()=>ProductShell({mode:'clubs',clubId:'member-club',title:'Overview',sections:memberRailSections('member-club','Member club'),active:'club-home',onSelect:id=>context.push(id),onNavigate:view=>navigation.push(view)}));
+ const links=sheetLinks(shell),href=id=>links.find(node=>node.props?.['data-tour']==='nav-'+id)?.props.href;
+ assert.deepEqual(['student-dashboard','calendar','student-profile'].map(href),['/home','/calendar','/profile']);
+ assert.equal(href('club-home'),'/club/member-club/workspace?section=overview');assert.equal(href('inbox'),undefined);
+ assert.equal(links.find(node=>node.props?.['data-tour']==='nav-club-home').props['aria-current'],'page');
+ assert.deepEqual(navigation,[]);assert.deepEqual(context,[]);
 });
 
-test('Calendar is shared account navigation in every personal mode and keeps its title and active state',()=>{
+test('Calendar is one rail destination in every personal section and keeps its title and active state',()=>{
  const h=hooks(),navigation=[];
  const mocks={'@/lib/workspace-api':{getTaskNotifications:async()=>[]},react:h.react,'next/link':{default:'Link'},'next/navigation':{useRouter:()=>({}),useSearchParams:()=>new URLSearchParams()},'@/contexts/auth-context':{useAuth:()=>({user:null})},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/contexts/organization-invitations-context':{useOrganizationInvitations:()=>({invitations:[]})},'@/lib/application-state':{useApplicationState:()=>({notifications:[],focusApplication(){}})}};
  const {DashboardLayout}=load('components/dashboard-layout.tsx',mocks),{ProductShell}=load('components/shell/product-shell.tsx',mocks);
@@ -162,13 +172,9 @@ test('Calendar is shared account navigation in every personal mode and keeps its
   const boundary=h.render(()=>DashboardLayout({view:'calendar',personalSection:section,appMode:'student',onNavigate:view=>navigation.push(view)}));
   const layout=h.render(()=>boundary.props.children.type(boundary.props.children.props));
   assert.equal(layout.props.mode,mode);assert.equal(layout.props.title,'Calendar');assert.equal(layout.props.active,'calendar');
-  assert.equal(layout.props.items.some(item=>item.id==='calendar'),false);
   const shell=h.render(()=>ProductShell(layout.props));
-  const account=nodes(shell).find(node=>node.props?.['aria-label']==='Account navigation');
-  const buttons=nodes(account).filter(node=>node.props?.['data-tour']);
-  assert.deepEqual(buttons.map(button=>text(button)),['Calendar','Notifications','Profile']);
-  assert.equal(buttons[0].props['aria-current'],'page');buttons[0].props.onClick();
+  const calendar=sheetLinks(shell).filter(node=>node.props?.['data-tour']==='nav-calendar');
+  assert.equal(calendar.length,1);assert.equal(calendar[0].props.href,'/calendar');assert.equal(calendar[0].props['aria-current'],'page');
   const mobile=nodes(shell).find(node=>node.type==='MobileNavigation');assert.equal(mobile.props.items.some(item=>item.id==='calendar'),false);
  }
- assert.deepEqual(navigation,['calendar','calendar','calendar']);
 });
