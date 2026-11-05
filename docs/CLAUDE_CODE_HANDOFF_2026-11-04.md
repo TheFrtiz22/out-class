@@ -13,6 +13,33 @@
 - Root `CLAUDE.md` is introduced in this handoff PR. `AGENTS.md` already exists and imposes the authoritative Phosphor icon convention. Existing `.claude/skills/` contains Prisma-related skills.
 - No user-local Claude installation, authenticated Claude account, Git CLI identity, OAuth connection, dev environment, or runtime tests could be verified from this remote inspection.
 
+## 1a. Status update — 2026-11-04 evening (Claude Code)
+
+Sections 1 and 4 describe the morning snapshot. Current verified state (main `7957952c`; production DB checked read-only after the last migration):
+
+**Production database.** All 67 repository migrations are applied, none unfinished; `prisma migrate status` reports up to date. Applied today with owner approval: `20261101160000` (ledger RLS hardening), `20261104210000` (re-application after rejection), `20261104230000` (live inbox Realtime signal). `public._prisma_migrations` now has RLS enabled with RESTRICTIVE deny-all policies for `anon` and `authenticated`, and neither role holds SELECT/INSERT/UPDATE/DELETE on it. Every `public` table has RLS enabled.
+
+**Runtime.** Vercel functions moved from `iad1` to `pdx1` (`vercel.json`), next to the `us-west-2` database: signed-in reads p50 1.2–2.5 s → 0.23–0.31 s (`docs/performance/region-co-location-20261104.md`).
+
+**Merged to main (each validated in full; browser suites where the area is covered):**
+
+| Merge | Change |
+|---|---|
+| `1bbef02a` | Short links require a session and are limited to shareable targets; meeting check-in links are issued and closed server-side |
+| `abc7f161` | Attachment downloads denied for reviewers of suspended clubs |
+| `688a4cd8` | Invitation cron: a suspended club no longer stalls invitation email for every club; bounded, oldest-first, stops when the provider pauses |
+| `5b6ac3a3` | Notification worker: one bad user/payload no longer blocks the batch; suspended clubs skipped |
+| `ea317357` | Application autosaves no longer serialize club-wide (38/50 → 0/50 failures at 70 ms RTT, `docs/performance/club-write-contention.md`) |
+| `d099cfb8` | Functions pinned to `pdx1` |
+| `1a34adc6` | Rejected students may re-apply in a later active cycle; submissions auto-join the single active cycle |
+| `30967a74`, `c669117d`, `b6137027` | Root JS 426 → 200 kB gzip: demo store, workspace API and Supabase client load on demand; per-icon modules |
+| `94cd7376` | Explore directory list payload 117 → 46 kB (38 clubs); full profile loads on open |
+| `8504bf5f`, `7957952c` | Idle/hidden tabs stop refetching the inbox; live inbox over private Supabase Realtime signals with SSE fallback (`docs/performance/dashboard-requests-20261104.md`) |
+
+**Incident.** WIP commit `9a7bbf2b` was auto-pushed to main by the VS Code Git extension (branch tracked `origin/main`) and deployed briefly; reverted by `829467d7` (tree identical to `969eadc4`). Working branches are now created with `--no-track`; setting VS Code `git.confirmSync` to `true` is recommended.
+
+**Still open.** Voting ballots and interview booking serialize per club (mitigated by co-location); RSVP uses Prisma's default 5 s transaction timeout; no "previously applied" indicator for re-applicants in the leader pipeline; Privacy/Terms pages, self-service account deletion and data export need owner/legal content. The P0/P1 inventory in section 5 has not been re-run end to end since this morning.
+
 ## 2. Product vision and constraints
 
 OutClass is one platform into which schools can be onboarded rapidly (target: within 48 hours), **not** separate copies of the codebase per school. UVA is the initial launch; support school-specific identity, branding, directory, membership and subdomain routing while keeping strong tenant isolation.
@@ -50,6 +77,8 @@ OutClass is one platform into which schools can be onboarded rapidly (target: wi
 - Multi-user scheduling, evaluations, voting, decisions and attendance require real transaction/race tests.
 
 ## 4. Production security and migration checkpoint
+
+> **Superseded 2026-11-04 evening (see 1a):** the production ledger hardening was applied with owner approval (`20261101160000`). Verified read-only afterwards: RLS enabled, RESTRICTIVE deny policies for `anon`/`authenticated`, no browser-role privileges. The paragraph below is the morning snapshot.
 
 The current Supabase table summary flagged `public._prisma_migrations` because **RLS is disabled**. A separate read-only permission check found `anon` lacks SELECT/INSERT and `authenticated` lacks UPDATE, consistent with `docs/staging-security-rls-20261101.md`, which records production browser-role privileges as revoked. Therefore **do not characterize this as a proven current anonymous CRUD exposure**. It remains a hardening/advisor-compliance issue.
 
