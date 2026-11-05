@@ -1,4 +1,5 @@
 "use server";
+import { directoryMarketing } from "@/lib/club-marketing";
 import { assertClubOperational } from "@/lib/club-suspension";
 import { publicMeetingVisibility } from "@/lib/campus-events";
 
@@ -135,13 +136,13 @@ export async function getClubDirectory(): Promise<{
       if (group) group.push(event);
       else eventsByClub.set(event.clubId, [event]);
     }
+    // The list carries only the marketing fields cards and filters use; opening
+    // a club loads its full profile through getPublicClub.
     return {
-      clubs: clubs.map((club) =>
-        present({
-          ...club,
-          events: eventsByClub.get(club.id) ?? [],
-        }),
-      ),
+      clubs: clubs.map((club) => {
+        const listed = present({ ...club, events: eventsByClub.get(club.id) ?? [] });
+        return { ...listed, marketing: directoryMarketing(listed.marketing) };
+      }),
     };
   } catch {
     return {

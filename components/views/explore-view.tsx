@@ -14,7 +14,7 @@ import { DiscoveryCard } from "@/components/clubs/discovery-card"
 import { DirectoryLogo } from "@/components/clubs/directory-logo"
 import { discoverClubs } from "@/lib/data"
 import { searchPublicClubIds } from "@/actions/typesense-search"
-import { getClubDirectory } from "@/lib/workspace-api"
+import { getClubDirectory, getPublicClub } from "@/lib/workspace-api"
 import { filterDirectory, emptyDirectoryFilters, directoryFiltersFromParams, directoryFilterParams, type DirectoryClub } from "@/lib/club-directory"
 import { ClubProfileView } from "@/components/views/club-profile-view"
 import type { ViewId } from "@/lib/views"
@@ -54,6 +54,16 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
   const [now, setNow] = useState(Date.now())
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 60000); return () => clearInterval(timer) }, [])
   const [selected, setSelected] = useState<DirectoryClub | null>(() => demoStore.active() ? demoDirectory().find(c => [c.id, c.slug].includes(new URLSearchParams(window.location.search).get("demoClub") || "")) || null : null)
+  // The directory list carries summary data; the full profile loads on open.
+  const [profile, setProfile] = useState<{ id: string; club: DirectoryClub | null } | null>(null)
+  useEffect(() => {
+    if (!selected || demoStore.active()) return
+    let current = true
+    getPublicClub(selected.id)
+      .then(result => { if (current) setProfile({ id: selected.id, club: result.club }) })
+      .catch(() => { if (current) setProfile({ id: selected.id, club: null }) })
+    return () => { current = false }
+  }, [selected])
   const lastClub = useRef<string | null>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
   const { isDemoEnabled } = useDemoMode()
@@ -138,10 +148,14 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
     const entry = `${section}-${club.id}`
     return <DiscoveryCard key={club.id} club={club} now={now} entry={entry} onOpen={() => open(club, entry)} action={<CorkboardButton club={club} onNavigate={onNavigate} />} />
   }
-  if (selected)
-    return (
-      <ClubProfileView club={selected} onBack={() => setSelected(null)} onNavigate={onNavigate} />
-    )
+  if (selected) {
+    // Demo data is already complete. If the full profile cannot load, show the
+    // listed summary rather than nothing.
+    const loaded = demoStore.active() ? selected : profile?.id === selected.id ? profile.club ?? selected : null
+    return loaded
+      ? <ClubProfileView club={loaded} onBack={() => setSelected(null)} onNavigate={onNavigate} />
+      : <LoadingState label="Loading club profile…" layout="workspace" rows={3} />
+  }
   return (
     <div className="oc-discovery" data-explore-section={section} ref={resultsRef}>
       <div className="oc-explore-heading">
