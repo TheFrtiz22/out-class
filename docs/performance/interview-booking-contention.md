@@ -88,8 +88,10 @@ Known residual: manual panel grants lock the acting owner's User row before the 
 person lock; a cross-pattern with a simultaneous booking can deadlock, which PostgreSQL
 detects within ~1 s and aborts one side (reported as a retryable error).
 The same pattern applies to two owners in different clubs assigning each other to panels at
-the same moment; `setInterviewPanelAssignment` surfaces that 40P01 as a raw error rather than
-the friendly retry message.
+the same moment. Since 2026-11-05 `setInterviewPanelAssignment` re-runs a transaction that
+PostgreSQL chose as the deadlock victim (`retryOnDeadlock`, at most 3 attempts; lock timeouts are
+not retried), so both owners succeed. `tests/interview-native-concurrency.test.cjs` reproduces the
+cycle on real PostgreSQL and fails with 40P01 without the retry.
 
 Authorization review (2026-11-05, read-only `authz-reviewer`, base bd3e12d3): no high or
 medium findings. Two low findings fixed before merge: an applicant without an interview

@@ -60,3 +60,18 @@ export function isWriteContention(error: unknown) {
   if (e.meta?.code === "55P03" || e.meta?.code === "40001" || e.meta?.code === "40P01") return true;
   return typeof e.message === "string" && /lock timeout|could not obtain lock|could not serialize access/i.test(e.message);
 }
+
+/** PostgreSQL aborted this transaction to break a lock cycle; it was rolled back in full. */
+export function isDeadlock(error: unknown) {
+  const e = error as { code?: unknown; meta?: { code?: unknown }; message?: unknown } | null;
+  if (!e || typeof e !== "object") return false;
+  return e.code === "P2034" || e.meta?.code === "40P01" || (typeof e.message === "string" && /deadlock detected/i.test(e.message));
+}
+
+/** Re-runs a whole transaction that lost a deadlock. Lock timeouts are not retried. */
+export async function retryOnDeadlock<T>(run: () => Promise<T>, attempts = 3): Promise<T> {
+  for (let attempt = 1; ; attempt++) {
+    try { return await run(); }
+    catch (error) { if (attempt >= attempts || !isDeadlock(error)) throw error; }
+  }
+}

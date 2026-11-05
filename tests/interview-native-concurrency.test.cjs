@@ -119,3 +119,29 @@ test('native PostgreSQL interview transactions: independent drafts, simultaneous
  assert.equal((await prisma.interviewResumeDocument.findUnique({where:{id:document.id}})).contentHash,document.contentHash);
  const audit=await prisma.auditLog.findMany({where:{clubId:club.id}});assert.doesNotMatch(JSON.stringify(audit),/Comment one|Edit A|Only interviewer/);
 });
+
+test('native PostgreSQL: two owners granting each other panel access across clubs both succeed',{skip:!databaseUrl,timeout:120000},async t=>{
+ const url=new URL(databaseUrl);assert.ok(['127.0.0.1','localhost'].includes(url.hostname)&&url.pathname==='/outclass_security_test','Requires disposable local outclass_security_test');
+ const {PrismaClient}=require('@prisma/client');
+ const prisma=new PrismaClient({datasourceUrl:databaseUrl});t.after(()=>prisma.$disconnect());
+ // Statement latency makes both grants hold their own owner row before reaching the other's.
+ const slow=prisma.$extends({query:{async $allOperations({args,query}){const r=await query(args);await new Promise(res=>setTimeout(res,40));return r}}});
+ const [ownerX,ownerY,applicantX,applicantY]=await Promise.all(Array.from({length:4},()=>prisma.user.create({data:{email:`native-${randomUUID()}@virginia.edu`}})));
+ const perms=['applications.review','applicants.identify','members.manage','leaders.manage'];
+ async function clubFor(owner,peer,applicant){
+  const club=await prisma.club.create({data:{name:'Synthetic Cross Grant',slug:randomUUID(),tagline:'',description:'',color:'#fff',category:'Other'}});
+  const ownerMember=await prisma.clubMember.create({data:{clubId:club.id,userId:owner.id,isOwner:true,permissions:perms}});
+  const peerMember=await prisma.clubMember.create({data:{clubId:club.id,userId:peer.id,permissions:['applications.review','applicants.identify']}});
+  const round=await prisma.pipelineRound.create({data:{clubId:club.id,name:'Interview',order:0}});
+  const app=await prisma.application.create({data:{clubId:club.id,studentId:applicant.id,roundId:round.id,status:'INTERVIEWING'}});
+  await actions(prisma,owner.id).members.setMemberInterviewOffices({clubId:club.id,memberId:ownerMember.id,offices:['PRESIDENT']});
+  return {scope:{clubId:club.id,applicationId:app.id,roundId:round.id},peerMember};
+ }
+ const x=await clubFor(ownerX,ownerY,applicantX),y=await clubFor(ownerY,ownerX,applicantY);
+ const results=await Promise.allSettled([
+  actions(slow,ownerX.id).members.setInterviewPanelAssignment({...x.scope,memberId:x.peerMember.id,assigned:true}),
+  actions(slow,ownerY.id).members.setInterviewPanelAssignment({...y.scope,memberId:y.peerMember.id,assigned:true}),
+ ]);
+ assert.deepEqual(results.map(r=>r.status),['fulfilled','fulfilled'],JSON.stringify(results.map(r=>r.reason?.message)));
+ for(const side of [x,y])assert.equal(await prisma.interviewPanelAssignment.count({where:{applicationId:side.scope.applicationId,memberId:side.peerMember.id,revokedAt:null}}),1);
+});

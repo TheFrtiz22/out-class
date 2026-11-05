@@ -4,6 +4,7 @@ import { revokeClubInvitations } from "@/utils/revoke-club-invitations";
 import { memberAcademicProfile } from "@/lib/recruitment-profile";
 
 import { lockSchedulingPeople } from "@/utils/panel-publication";
+import { retryOnDeadlock } from "@/utils/club-write-transaction";
 import { assertOfficialPanelConflicts } from "@/utils/official-panel-conflicts";
 import { lockOperationalClub } from "@/lib/club-suspension";
 import { interviewCapabilities, interviewOfficesSchema, interviewScopeSchema } from "@/lib/interview-access";
@@ -94,7 +95,8 @@ export async function setMemberInterviewOffices(input: unknown) {
 export async function setInterviewPanelAssignment(input: unknown) {
   const data = interviewScopeSchema.extend({ memberId: id, assigned: z.boolean() }).strict().parse(input);
   const { user } = await requireAuth({ verifyEmail: true });
-  return prisma.$transaction(async tx => {
+  // Two owners granting each other across clubs can form a lock cycle; the loser is retried whole.
+  return retryOnDeadlock(() => prisma.$transaction(async tx => {
     const actor = await actorFor(tx, data.clubId, user.id);
     // Assignment conveys private evidence access; ordinary schedulers cannot self-grant.
     if (!interviewCapabilities(actor).manageGrants) throw new Error("Only an active owner can grant panel access.");
@@ -118,7 +120,7 @@ export async function setInterviewPanelAssignment(input: unknown) {
     }
     await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, targetId: target.id, action: "interview.panel.change", details: { ...key, assigned: data.assigned } } });
     return { ...key, assigned: data.assigned };
-  });
+  }));
 }
 async function actorFor(tx: AppTransactionClient, clubId: string, userId: string, lock = true) {
   if (lock) {
