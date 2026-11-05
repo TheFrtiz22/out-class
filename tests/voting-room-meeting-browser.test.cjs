@@ -5,7 +5,7 @@ test('rendered complete meeting through tied decision, early end, correction, re
  const ready=()=>leader.waitForFunction(()=>{const controls=document.querySelector('.vr-leader fieldset');return controls&&!controls.disabled&&!!document.querySelector('.vr-slide-ready')});
  const click=async name=>{await ready();const button=leader.getByRole('button',{name,exact:true});if(name==='End voting'&&!await button.isVisible())await leader.getByText('More actions',{exact:true}).click();await button.click()};
  const confirmClick=async name=>{leader.once('dialog',d=>d.accept());await click(name)};
- const accept=async()=>{await ready();await leader.getByText('More actions',{exact:true}).click();await leader.getByRole('textbox',{name:'Reason for passing without vote'}).fill('Synthetic discussion resolved concerns');await confirmClick('Pass without vote')};
+ const accept=async()=>{await ready();await leader.getByText('More actions',{exact:true}).click();await leader.getByRole('textbox',{name:'Reason for deciding without a vote'}).fill('Synthetic discussion resolved concerns');await confirmClick('Pass without vote')};
  try{
   await f.h.create();await leader.goto(`${base}&view=leader&actor=leader`);await click('Start session');await click('Open voting');
   await member.goto(`${base}&view=member&actor=member`);await member.getByRole('button',{name:'Join session',exact:true}).click();await member.getByRole('button',{name:'Do not pass',exact:true}).click();await member.getByText('Saved: do not pass',{exact:true}).waitFor();

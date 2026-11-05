@@ -1,4 +1,26 @@
 # Live voting room - Parts 1-3 handoff
+## Pass / Do not pass without a vote — November 5, 2026
+
+**Implemented on branch `feature/decide-without-vote`; no migration; not yet released.**
+
+- **Command.** New `DECIDE_WITHOUT_VOTE_AND_ADVANCE`: choice `ACCEPT` or `REJECT`, a required reason and `confirmed: true`, bound to the active applicant and pass number. Requires current session leadership plus the explicit `decisions.manage` capability; voters and other E-board members are not granted it. The older Pass-only `PASS_WITHOUT_VOTE_AND_ADVANCE` stays for compatibility, but the UI no longer uses it.
+- **Atomic.** In one club-locked transaction:
+  - a *pending* instance is opened and closed with no ballots
+  - an *open* instance is closed, keeping every ballot already cast
+  - the instance is then confirmed with the leader's outcome, recorded in the existing `override`/`overrideBy`/`overrideAt` fields
+
+  No ballots are created, and `withoutVote` keeps its original meaning (Pass from pending with no ballots). The existing SQL transition guard accepts this sequence unchanged (pending→open→closed→confirmed). A late ballot finds the instance closed and returns `VOTING_CLOSED`. Advancing, end of pass and receipts reuse the existing decide-and-advance path, so the approved slide transition runs after the saved acknowledgement. There is no target cap.
+- **Separate from ballots.** The room projection marks the instance `withoutVote` (leader decision) while `totals` still show the ballots actually cast.
+- **Audit:** `voting.room.decide_without_vote_and_advance` records actor, time (`createdAt`), reason, session (`targetId`), applicationId, passNumber, decision, `previousState`, `ballotsCast` (a count, never choices), `withoutVote` and `overridden`.
+- **Undo** clears the override fields. An instance this action opened returns to CLOSED with zero ballots, and the leader decides again with a reason. The audited **Correct an outcome** workflow returns an applicant to Hold before finalization. Finalized sessions stay read only.
+- **Scope:** changes the voting-session outcome only. Recruitment finalization and applicant notifications stay separate.
+- **UI.** The leader's *More actions* menu has one **Decide without a vote** section, replacing the Pass-only entry: a reason field, *Pass without vote* and *Do not pass without vote*. It appears only for leaders with decision rights while the applicant is pending or voting is open. The confirmation names the applicant (or the permitted anonymous label), states what happens to ballots already cast, and says it is not a final recruitment decision and sends no messages. Demo mirrors the command.
+
+Evidence:
+- `tests/voting-decide-without-vote.test.cjs` (5): unauthorized voter, outsider and leader without `decisions.manage`; reason, confirmation and Hold refusal; audited no-ballot override; open-vote override keeping the cast ballot and refusing a late ballot; duplicate clicks replaying one receipt; a second leader tab getting `STALE_STATE`; an injected failed save rolling everything back; Undo; last applicant completing the pass; three passes above target 1; Correct to Hold; no notifications or recruitment changes.
+- `tests/voting-decide-without-vote-sql.test.cjs`: real migrations on PGlite accept the exact transaction, preserve the cast ballot, refuse the late ballot and create no synthetic ballots.
+- Existing browser tests updated only for the renamed reason field.
+
 ## Club voting rules (leader confirms / threshold decides) — November 5, 2026
 
 **Implemented on branch `feature/voting-rules`; not yet released. Requires migration `20261105170000_voting_rules` (owner approval before production).**
