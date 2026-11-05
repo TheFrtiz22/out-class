@@ -531,6 +531,7 @@ export function RsvpControls({
     setError("");
     try {
       const r = await setCampusEventRsvp({ eventId: event.id, going: next });
+      if (!r.ok) { setError(r.error); return; }
       setGoing(r.going);
       onChanged(r.count);
       window.dispatchEvent(new Event("outclass-event-rsvp"));
@@ -648,7 +649,8 @@ function MyEventRsvps({ onCancelled }: { onCancelled: (id: string) => void }) {
     setError("");
     setNotice("");
     try {
-      await setCampusEventRsvp({ eventId: id, going: false });
+      const r = await setCampusEventRsvp({ eventId: id, going: false });
+      if (!r.ok) { setError(r.error); return; }
       ++readVersion.current;
       setLoading(false);
       setError("");

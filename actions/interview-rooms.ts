@@ -1,8 +1,9 @@
 "use server"
 
-import { panelPublicationLock } from "@/utils/panel-publication"
+import { lockSchedulingPeople } from "@/utils/panel-publication"
+import { isWriteContention } from "@/utils/club-write-transaction"
 import { assertOfficialPanelConflicts } from "@/utils/official-panel-conflicts"
-import { lockOperationalClub } from "@/lib/club-suspension";
+import { lockOperationalClub, assertClubOperational } from "@/lib/club-suspension";
 import type { AppTransactionClient } from "@/utils/prisma";
 import { Prisma } from "@prisma/client"
 import { z } from "zod"
@@ -28,11 +29,18 @@ function presentRoom(room: StoredRoom, applicant = false): InterviewRoom {
 }
 async function atomic<T>(fn: (tx: AppTransactionClient) => Promise<T>, freshReads=false): Promise<T> {
   for (let attempt = 0; ; attempt++) {
-    try { return await prisma.$transaction(fn, { isolationLevel: freshReads?Prisma.TransactionIsolationLevel.ReadCommitted:Prisma.TransactionIsolationLevel.Serializable, timeout: 60000, maxWait: 15000 }) }
+    try {
+      return await prisma.$transaction(async tx => {
+        // Fail fast under a burst instead of holding a pooled connection for a minute.
+        await tx.$queryRaw`SELECT set_config('lock_timeout', '8000', true)`
+        return fn(tx)
+      }, { isolationLevel: freshReads?Prisma.TransactionIsolationLevel.ReadCommitted:Prisma.TransactionIsolationLevel.Serializable, timeout: 20000, maxWait: 10000 })
+    }
     catch (error) {
       const code = error && typeof error === "object" && "code" in error ? error.code : ""
       if (code === "P2034" && attempt < 2) continue
       if (code === "P2034" || code === "P2002") throw new Error("The schedule changed while saving. Refresh and try again.")
+      if (isWriteContention(error)) throw new Error("Many people are scheduling right now. Your current reservation is unchanged. Please try again.")
       throw error
     }
   }
@@ -80,13 +88,14 @@ export async function setInterviewRoomOpen(raw: { roomId: string; open: boolean 
   if (!room) throw new Error("Room not found.")
   const { user } = await requireClubPermission(room.clubId, ["interviews.manage"])
   await atomic(async tx => {
-    await panelPublicationLock(tx)
     await authorizeClubTransaction(tx,room.clubId,user.id,["interviews.manage"])
     if (input.open) {
       const round = await tx.pipelineRound.findFirst({ where: { id: room.roundId, clubId: room.clubId, archivedAt: null } })
       if (!round) throw new Error("Archived rounds cannot reopen interview rooms.")
       const slots = await tx.interviewSlot.findMany({ where: { roomId: room.id, startTime: { gt: new Date() } } })
       const members=await tx.clubMember.findMany({where:{id:{in:[...new Set(slots.flatMap(s=>s.panelScheduleVersionId?s.publishedPanelMemberIds:room.approvedPanelMemberIds))]},clubId:room.clubId},select:{id:true,userId:true}})
+      // Reopening adds these panelists' official commitments across clubs.
+      await lockSchedulingPeople(tx,{exclusive:members.map(m=>m.userId)})
       await assertOfficialPanelConflicts(tx,members.map(m=>m.userId),slots.map(s=>({id:s.id,startTime:s.startTime.toISOString(),endTime:s.endTime.toISOString(),buffer:room.buffer,userIds:members.filter(m=>(s.panelScheduleVersionId?s.publishedPanelMemberIds:room.approvedPanelMemberIds).includes(m.id)).map(m=>m.userId)})))
       const others = await tx.interviewSlot.findMany({ where: { clubId: room.clubId, AND: [{ OR: [{ roomId: null }, { roomId: { not: room.id } }] }, { OR: [{ roomId: null }, { room: { isOpen: true } }, { bookings: { some: {} } }] }] }, include: { room: true } })
       if (slots.some(s => others.some(o => (o.location.trim().toLowerCase() === room.location.trim().toLowerCase() || o.room?.name.toLowerCase() === room.name.toLowerCase() || o.room?.panelMemberIds.some(id => room.panelMemberIds.includes(id))) && overlaps(s, o, Math.max(room.buffer, o.room?.buffer ?? 0))))) throw new Error("Another room now overlaps this schedule. Create a new time window instead.")
@@ -121,14 +130,26 @@ export async function reserveInterview(raw: { applicationId: string; slotId: str
   const input = z.object({ applicationId: uuid, slotId: uuid }).parse(raw)
   const { user } = await requireAuth()
   const booking = await atomic(async tx => {
-    await panelPublicationLock(tx)
     const initial = await tx.application.findFirst({ where: { id: input.applicationId, studentId: user.id } });
     if (!initial) throw new Error("Application unavailable.");
-    await lockOperationalClub(tx, initial.clubId);
-    await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${user.id} FOR UPDATE`
+    // Refuse before taking any lock on other people or sessions; re-checked under lock below.
+    if (initial.status !== "INTERVIEWING") throw new Error("An interview invitation is required to book a time.")
+    // Club-wide scheduling changes (panels, rooms, booking policy, membership) lock the
+    // club row exclusively; a reservation only needs them excluded, so reservations in
+    // one club no longer wait for each other here.
+    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${initial.clubId} FOR SHARE`
+    await assertClubOperational(tx, initial.clubId)
+    // Bookability depends on the student's own commitments (changed here) and the target
+    // session's official panel (read). The panel cannot change while the club row is held.
+    const target = await tx.interviewSlot.findUnique({ where: { id: input.slotId }, include: { room: true } })
+    const panelIds = target?.room && target.clubId === initial.clubId ? (target.panelScheduleVersionId ? target.publishedPanelMemberIds : target.room.approvedPanelMemberIds.filter(id => target.room!.panelMemberIds.includes(id))) : []
+    const panelUsers = panelIds.length ? (await tx.clubMember.findMany({ where: { id: { in: panelIds }, clubId: initial.clubId }, select: { userId: true } })).map(m => m.userId) : []
+    await lockSchedulingPeople(tx, { exclusive: [user.id], shared: panelUsers })
     await tx.$queryRaw`SELECT id FROM "Application" WHERE id = ${input.applicationId} FOR UPDATE`;
     const application = await tx.application.findFirst({ where: { id: input.applicationId, studentId: user.id } })
     if (!application || application.status !== "INTERVIEWING") throw new Error("An interview invitation is required to book a time.")
+    // Capacity is read only after the session row is locked (concurrent reservations).
+    await tx.$queryRaw`SELECT id FROM "InterviewSlot" WHERE id=${input.slotId} AND "clubId"=${application.clubId} FOR UPDATE`
     const slot = await tx.interviewSlot.findUnique({ where: { id: input.slotId }, include: { room: true, _count: { select: { bookings: true } } } })
     if (!slot?.room || slot.clubId !== application.clubId || slot.room.roundId !== application.roundId) throw new Error("Choose a slot for your invited club and round.")
     const existing = await tx.interviewBooking.findUnique({ where: { applicationId_roundId: { applicationId: application.id, roundId: application.roundId } }, include: { slot: true } })
@@ -138,7 +159,6 @@ export async function reserveInterview(raw: { applicationId: string; slotId: str
     const round = await tx.pipelineRound.findUniqueOrThrow({ where: { id: application.roundId }, include: { bookingCycle: true } })
     if (!isPublishedBookingSlot(round.bookingSlots, slot, slot.room) || !round.bookingPublishedAt || round.bookingPaused || round.archivedAt || round.anonymousReview || !["INTERVIEW", "GROUP_INTERVIEW"].includes(round.type) || round.bookingCycleId !== application.recruitmentCycleId || round.bookingCycle?.archivedAt) throw new Error("Booking is not currently published for your invited round and recruitment cycle.")
     if (existing && !round.bookingAllowRescheduling) throw new Error("This club does not allow self-service rescheduling. Your original reservation is retained; contact the club.")
-    await tx.$queryRaw`SELECT id FROM "InterviewSlot" WHERE id=${slot.id} FOR UPDATE`
     const coverage = await interviewBookingCoverage(tx, application.clubId, round.id, application)
     if (!coverage.some(s => s.slotId === slot.id && s.bookable)) throw new Error("This time can no longer provide an approved, fully staffed interview. Your current reservation is retained. Choose another time or contact the club.")
     await assertOfficialPanelConflicts(tx,[user.id],[{id:slot.id,startTime:slot.startTime.toISOString(),endTime:slot.endTime.toISOString(),buffer:slot.room.buffer}])

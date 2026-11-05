@@ -70,7 +70,7 @@ test('RSVP history distinguishes loading from empty and does not show a false ze
 test('a stale RSVP refresh cannot resurrect a successfully cancelled RSVP', async () => {
   const stale = deferred(); let reads = 0
   const row = { eventId: 'event', title: 'Event', available: true }
-  const h = rsvpHarness({ getMyCampusEventRsvps: () => ++reads === 1 ? Promise.resolve([row]) : stale.promise, setCampusEventRsvp: async () => ({ going: false, count: 0 }) })
+  const h = rsvpHarness({ getMyCampusEventRsvps: () => ++reads === 1 ? Promise.resolve([row]) : stale.promise, setCampusEventRsvp: async () => ({ ok: true, going: false, count: 0 }) })
   h.render(); await h.flush(); h.refresh(); await button(h.render(), 'Cancel RSVP').props.onClick(); await h.flush()
   stale.resolve([row]); await h.flush()
   assert.equal(button(h.render(), 'Cancel RSVP'), undefined); assert.match(text(h.render()), /RSVP was cancelled/)
