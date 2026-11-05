@@ -1,7 +1,8 @@
-// Dedicated disposable PostgreSQL for the club-write contention benchmark and
-// application re-application tests.
+// Dedicated disposable PostgreSQL for the club-write, live-vote ballot and interview
+// self-booking contention benchmarks and application re-application tests.
 // Never inherits a configured database target. Run: node scripts/run-contention-benchmark.cjs
 // Optional: OUTCLASS_CONTENTION_STUDENTS=20 OUTCLASS_CONTENTION_RTT_MS=0,70 OUTCLASS_CONTENTION_REPORT=out.json
+// Interview booking: OUTCLASS_BOOKING_STUDENTS=20,60 OUTCLASS_BOOKING_CLUBS=1,3 OUTCLASS_BOOKING_RTT_MS=0,2 OUTCLASS_BOOKING_REPORT=out.json
 // OUTCLASS_CONTENTION_BASELINE_REF=<git ref> also measures that ref's applications.ts.
 const { spawnSync } = require('node:child_process');
 const name = 'outclass-club-write-contention';
@@ -35,7 +36,7 @@ try {
   run('docker', ['exec', '-i', name, 'psql', '-U', 'fixture_superuser', '-d', 'outclass_contention_test', '-v', 'ON_ERROR_STOP=1'], {
     input: `DO $$ DECLARE t text; BEGIN FOR t IN SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename<>'_prisma_migrations' LOOP EXECUTE format('ALTER TABLE public.%I OWNER TO outclass_production_app',t); END LOOP; END $$; REVOKE CREATE ON SCHEMA public FROM PUBLIC;`,
   });
-  run(process.execPath, ['--test', '--test-concurrency=1', 'tests/club-write-contention-native.test.cjs', 'tests/application-reapplication-native.test.cjs', 'tests/voting-ballot-contention-native.test.cjs'], { env });
+  run(process.execPath, ['--test', '--test-concurrency=1', 'tests/club-write-contention-native.test.cjs', 'tests/application-reapplication-native.test.cjs', 'tests/voting-ballot-contention-native.test.cjs', 'tests/interview-booking-contention-native.test.cjs'], { env });
 } finally {
   spawnSync('docker', ['rm', '-f', name], { stdio: 'ignore' });
 }
