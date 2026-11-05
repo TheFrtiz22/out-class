@@ -12,6 +12,10 @@ test("outclass/no-raw-colors flags neutral ramps and hex colors, not tokens or f
       `<button aria-controls="#bad" />`,
       `const style = { color: "var(--foreground)" }`,
       `<div className="grayscale text-gray" />`,
+      `document.querySelector("#add")`,
+      `element.closest("#fade")`,
+      "document.querySelectorAll(`#feed ${tag}`)",
+      `document.getElementById("#bad")`,
     ],
     invalid: [
       { code: `<div className="bg-neutral-100 text-sm" />`, errors: [{ messageId: "ramp" }] },
@@ -20,6 +24,10 @@ test("outclass/no-raw-colors flags neutral ramps and hex colors, not tokens or f
       { code: `const style = { color: "#fff", background: "#14243A" }`, errors: [{ messageId: "hex" }, { messageId: "hex" }] },
       { code: `<div className="bg-[#f6f5f1]" />`, errors: [{ messageId: "hex" }] },
       { code: `<svg><path fill="#e8793e80" /></svg>`, errors: [{ messageId: "hex" }] },
+      // Only selector arguments are exempt, not other calls.
+      { code: `setColor("#ffffff")`, errors: [{ messageId: "hex" }] },
+      // Known limitation: digit-only runs read as hex ("Rank #100"); use an eslint-disable comment there.
+      { code: `const label = "Rank #100"`, errors: [{ messageId: "hex" }] },
     ],
   })
 })

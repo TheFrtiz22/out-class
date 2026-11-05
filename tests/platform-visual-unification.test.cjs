@@ -50,3 +50,45 @@ test("OutClass has exactly one palette: tokens.css :root, with no scoped overrid
   const markup = execFileSync("git", ["ls-files", "app", "components"], { encoding: "utf8" }).split("\n").filter(file => file.endsWith(".tsx"))
   for (const file of markup) assert.doesNotMatch(read(file), /data-workspace-detail|data-outclass-design/, file)
 })
+
+test("rules that used the removed attributes still have a hook in the markup", () => {
+  const css = file => read(file)
+  // Interview room: same specificity as the old attribute selector, and its main still carries the class.
+  assert.match(css("components/views/interview/interview-mode.css"), /^\.oc-interview-room\.oc-interview-room \.oc-focused-interview \{/m)
+  assert.doesNotMatch(css("components/views/interview/interview-mode.css"), /^\.oc-interview-room \.oc-/m)
+  assert.match(css("styles/product-workflows.css"), /^\.oc-interview-room \.oc-focused-interview > header \{/m)
+  assert.match(read("components/views/interview-workspace-view.tsx"), /<main className="oc-interview-room\b/)
+  assert.match(read("components/interview-kit-session.tsx"), /className="oc-focused-interview\b/)
+  // Mobile inputs/touch targets and checkbox hit areas: every main, the voting pad's role="main", and the projector stage.
+  const scope = ':is(main, [role="main"], .oc-voting-stage'
+  assert.ok(css("components/shell/responsive-workspace.css").includes(`${scope}) button`))
+  assert.ok(css("styles/interface-primitives.css").includes(`${scope}, .oc-workspace-drawer) button[data-slot="checkbox"]`))
+  assert.match(read("components/live-voting/member-voting-pad.tsx"), /role=\{embedded \? "group" : "main"\}/)
+  assert.match(read("components/live-voting/proctor-presentation-view.tsx"), /className="oc-voting-stage\b/)
+  // The embedded pad renders only inside the projector stage, which the scope covers.
+  assert.match(read("components/live-voting/proctor-presentation-view.tsx"), /<MemberVotingPad [^>]*embedded/)
+  // Dialog titles and status badges apply on every page now that there is one palette.
+  assert.match(primitives, /^:root :is\(\[data-slot="dialog-title"\], \[data-slot="sheet-title"\]\) \{/m)
+  for (const status of ["ACCEPTED", "REJECTED", "WAITLISTED", "IN_REVIEW", "INTERVIEWING"]) {
+    assert.match(primitives, new RegExp(`^:root \\[data-slot="badge"\\]\\[data-status-code="${status}"\\] \\{ --badge-accent: var\\(--`, "m"), status)
+  }
+  assert.doesNotMatch(read("styles/product-components.css") + read("styles/tokens.css"), /:root:has\(/)
+})
+
+test("focus and selection outlines on light public surfaces use --ring (WCAG 1.4.11 ≥ 3:1)", () => {
+  for (const [file, selector] of [
+    ["components/auth/login.css", ".oc-login :is(button, a):focus-visible"],
+    ["components/landing/journey.css", ".oc-landing .oc-perspective-switcher button:focus-visible"],
+    ["components/landing/public-navigation.css", ".oc-landing .oc-public-nav .oc-perspective-switcher button:focus-visible"],
+    ["styles/product-workflows.css", '.oc-voting-pad button[aria-pressed="true"]'],
+    ["styles/product-workflows.css", '[data-product-shell] .ir-calendar button[aria-pressed="true"]'],
+  ]) {
+    const rule = read(file).split("\n").find(line => line.startsWith(selector))
+    assert.ok(rule, `${file}: ${selector}`)
+    assert.match(rule, /outline[a-z-]*: [^;]*var\(--ring\)/, selector)
+    assert.doesNotMatch(rule, /outline[a-z-]*: [^;]*var\(--brand-orange\)/, selector)
+  }
+  // Inherited mid-word wrapping stays on product surfaces, not every <main>.
+  const wrap = read("components/shell/responsive-workspace.css").split("\n").find(line => line.includes("overflow-wrap: anywhere") && line.includes("min-width: 0"))
+  assert.ok(wrap.startsWith(":is([data-product-shell] main, .oc-interview-room, .oc-voting-pad, .oc-voting-stage, .oc-standalone-workspace)"), wrap)
+})

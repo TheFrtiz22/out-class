@@ -6,7 +6,7 @@
   color: var(--foreground);
   font-family: var(--oc-font-sans);
 }
-.oc-login :is(button, a):focus-visible { outline: 2px solid var(--brand-orange); outline-offset: 5px; }
+.oc-login :is(button, a):focus-visible { outline: 2px solid var(--ring); outline-offset: 5px; }
 .oc-login button { cursor: pointer; }
 .oc-login button:disabled { cursor: default; opacity: .5; }
 .oc-login-brand {

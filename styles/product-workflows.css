@@ -20,7 +20,7 @@
 [data-product-shell] .ir-room-slots .is-full { background: var(--muted); }
 [data-product-shell] .ir-booking { border: 0; box-shadow: var(--oc-shadow-surface); border-radius: var(--oc-radius-lg); }
 [data-product-shell] .ir-booking-intro { background: var(--oc-surface-blue); }
-[data-product-shell] .ir-calendar button[aria-pressed="true"], [data-product-shell] .ir-times button[aria-pressed="true"] { background: var(--primary); color: var(--primary-foreground); outline: 2px solid var(--brand-orange); outline-offset: 2px; }
+[data-product-shell] .ir-calendar button[aria-pressed="true"], [data-product-shell] .ir-times button[aria-pressed="true"] { background: var(--primary); color: var(--primary-foreground); outline: 2px solid var(--ring); outline-offset: 2px; }
 [data-product-shell] .ir-empty { border: 0; background: var(--oc-surface-blue); }
 [data-product-shell] .oc-scheduling-location { border: 1px solid var(--oc-content-edge); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); border-radius: var(--oc-content-radius); }
 .oc-interview-room .oc-focused-interview { --oc-focus-header-height: 4rem; background: var(--background); color: var(--foreground); }
@@ -47,7 +47,7 @@
 .oc-voting-stage .oc-voting-candidate > div:first-child [data-slot="avatar"] { background: var(--oc-surface-blue); border: 0; }
 .oc-voting-stage progress, .oc-voting-stage [data-slot="progress"] { transition: width var(--oc-duration-ui) var(--oc-ease-out); }
 .oc-voting-pad { background: var(--background); font-family: var(--oc-font-sans); }
-.oc-voting-pad button[aria-pressed="true"] { outline: 3px solid var(--brand-orange); outline-offset: 3px; }
+.oc-voting-pad button[aria-pressed="true"] { outline: 3px solid var(--ring); outline-offset: 3px; }
 @media (max-width: 639px) {
   .oc-interview-room .oc-focused-interview > header { padding: 1rem; }
   .oc-interview-room .oc-focused-interview .oc-active-question, .oc-voting-stage .oc-voting-candidate { padding: 1.25rem; }
