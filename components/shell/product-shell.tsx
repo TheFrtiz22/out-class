@@ -10,6 +10,7 @@ import "./authenticated-product.css"
 import "./floating-header.css"
 import "./floating-dock.css"
 import { NotificationCenter } from "@/components/shell/notification-center"
+import { startCommunicationsLive } from "@/lib/communications-live"
 import { FloatingModeNavigation, FloatingSearchTrigger } from "@/components/shell/floating-header-controls"
 import { MobileNavigation } from "@/components/shell/mobile-navigation"
 import { TutorialWalkthrough } from "@/components/tutorial-walkthrough"
@@ -89,7 +90,8 @@ export function ProductShell({ children, mode, modes, items, active, title, club
       finally { running = false; if (again && active) { again = false; void refresh() } }
     }
     refresh()
-    const timer=setInterval(refresh,60000)
+    // Hidden tabs skip the poll; focus refreshes as soon as the student returns.
+    const timer=setInterval(()=>{ if (document.visibilityState !== "hidden") void refresh() },60000)
     window.addEventListener("focus",refresh);window.addEventListener("outclass:tasks-changed",refresh)
     return()=>{active=false;clearInterval(timer);window.removeEventListener("focus",refresh);window.removeEventListener("outclass:tasks-changed",refresh)}
   }, [userId, demo.isDemoEnabled, syncTaskNotifications])
@@ -105,13 +107,8 @@ export function ProductShell({ children, mode, modes, items, active, title, club
       finally { running = false; if (again && active) { again = false; void refresh() } }
     }
     void refresh()
-    const stream = !isImpersonating ? new EventSource("/api/communications/stream") : null
-    const changed = () => { void refresh(); window.dispatchEvent(new Event("outclass:communications-refresh")) }
-    stream?.addEventListener("communications", changed)
-    stream?.addEventListener("unavailable", () => { stream.close() })
-    const timer = setInterval(changed, 30000)
-    window.addEventListener("focus", changed); window.addEventListener("outclass:communications-changed", changed)
-    return () => { active = false; clearInterval(timer); stream?.close(); window.removeEventListener("focus", changed); window.removeEventListener("outclass:communications-changed", changed) }
+    const stop = startCommunicationsLive({ streamAllowed: !isImpersonating, changed: () => { void refresh(); window.dispatchEvent(new Event("outclass:communications-refresh")) } })
+    return () => { active = false; stop() }
   }, [userId, demo.isDemoEnabled, isImpersonating, syncDurableNotifications])
   const unread = notifications.filter(n => !n.durableId && !n.read).length + (demo.isDemoEnabled ? 0 : durableUnread)
   const { invitations } = useOrganizationInvitations()

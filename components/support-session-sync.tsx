@@ -37,9 +37,11 @@ export function SupportSessionSync({ marker, sessionId }: { marker: boolean; ses
       } catch { /* The server still rejects stale/expired context on every protected action. */ }
       finally { checking = false; }
     };
+    // The mount check covers a normal load; pageshow matters for back/forward-cache restores.
+    const restored = (event: PageTransitionEvent) => event.persisted ? check() : undefined;
     window.addEventListener("storage", storage);
     window.addEventListener("focus", check);
-    window.addEventListener("pageshow", check);
+    window.addEventListener("pageshow", restored);
     document.addEventListener("visibilitychange", check);
     const interval = window.setInterval(check, 30000);
     void check();
@@ -49,7 +51,7 @@ export function SupportSessionSync({ marker, sessionId }: { marker: boolean; ses
       window.clearInterval(interval);
       window.removeEventListener("storage", storage);
       window.removeEventListener("focus", check);
-      window.removeEventListener("pageshow", check);
+      window.removeEventListener("pageshow", restored);
       document.removeEventListener("visibilitychange", check);
     };
   }, [marker, sessionId]);

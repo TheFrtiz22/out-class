@@ -42,9 +42,11 @@ export function CorkboardProvider({ children }: { children: ReactNode }) {
     setState({ identity, items: [], loading: !!identity, error: "" })
     if (identity) void refresh()
     const onFocus = () => { if (document.visibilityState !== "hidden") void refresh() }
+    // A normal load already fetched above; only a back/forward-cache restore is stale.
+    const onRestore = (event: PageTransitionEvent) => { if (event.persisted) onFocus() }
     window.addEventListener("focus", onFocus)
-    window.addEventListener("pageshow", onFocus)
-    return () => { requests.current++; window.removeEventListener("focus", onFocus); window.removeEventListener("pageshow", onFocus) }
+    window.addEventListener("pageshow", onRestore)
+    return () => { requests.current++; window.removeEventListener("focus", onFocus); window.removeEventListener("pageshow", onRestore) }
   }, [identity, refresh])
   useEffect(() => { if (demo.isDemoEnabled) void refresh() }, [demo.state, demo.isDemoEnabled, refresh])
   async function saveClub(club: DirectoryClub, saved: boolean) {
