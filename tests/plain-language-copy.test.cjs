@@ -25,6 +25,10 @@ const retired = [
   'Open managed workspace',
   'Virtual Corkboard',
   'Check out events on Grounds',
+  'Publication unavailable',
+  'decisions published in-app',
+  'Preferences and delivery configuration apply separately',
+  'notified in-app. Email',
 ]
 
 test('retired internal wording does not appear in application code', () => {
