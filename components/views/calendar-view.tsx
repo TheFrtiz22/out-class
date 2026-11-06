@@ -56,6 +56,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
   const [filter, setFilter] = useState("all")
   const [query, setQuery] = useState("")
   const [hiddenClubs, setHiddenClubs] = useState<Set<string>>(new Set())
+  const clearCalendarFilters = () => { setQuery(""); setFilter("all"); setHiddenClubs(new Set()) }
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [booking, setBooking] = useState(false)
   const [bookingDate, setBookingDate] = useState("")
@@ -315,22 +316,10 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                   </h3>
                   <p className="max-w-md text-sm leading-7 text-muted-foreground">
                     {query || filter !== "all" || hiddenClubs.size
-                      ? "Try a different search or show all your club calendars."
-                      : "No upcoming events are on your calendar. Scheduled interviews and club events will appear here."}
+                      ? "Your search, type filter or hidden club calendars leave nothing to show."
+                      : "You have no interviews or RSVP’d events coming up."}
                   </p>
-                  {(query || filter !== "all" || hiddenClubs.size > 0) && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setQuery("")
-                        setFilter("all")
-                        setHiddenClubs(new Set())
-                      }}
-                    >
-                      Clear filters
-                    </Button>
-                  )}
+                  <CalendarEmptyAction filtered={!!(query || filter !== "all" || hiddenClubs.size)} onClear={clearCalendarFilters} onNavigate={onNavigate} />
                 </div>
               )}
             </div>
@@ -445,9 +434,10 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                             ))}
                           </div>
                         ) : (
-                          <p className="text-sm text-muted-foreground">
-                            No events match your filters for this day.
-                          </p>
+                          <div className="space-y-2 text-sm text-muted-foreground">
+                            <p>{query || filter !== "all" || hiddenClubs.size ? "No events on this day match your filters." : "Nothing is scheduled on this day."}</p>
+                            <CalendarEmptyAction filtered={!!(query || filter !== "all" || hiddenClubs.size)} onClear={clearCalendarFilters} onNavigate={onNavigate} />
+                          </div>
                         )}
                       </section>
                     )
@@ -505,7 +495,10 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                   </button>
                 ))}
                 {!upcoming.length && (
-                  <p className="text-sm text-muted-foreground">No upcoming events match your filters.</p>
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <p>{query || filter !== "all" || hiddenClubs.size ? "No upcoming events match your filters." : "Nothing upcoming on your calendar."}</p>
+                    <CalendarEmptyAction filtered={!!(query || filter !== "all" || hiddenClubs.size)} onClear={clearCalendarFilters} onNavigate={onNavigate} />
+                  </div>
                 )}
               </div>
             </section>
@@ -696,4 +689,11 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
       </Dialog>
     </div>
   )
+}
+
+/** One next step for an empty calendar: clear what hides events, or go find some. */
+function CalendarEmptyAction({ filtered, onClear, onNavigate }: { filtered: boolean; onClear: () => void; onNavigate?: (view: ViewId) => void }) {
+  return filtered
+    ? <Button variant="outline" size="sm" onClick={onClear}>Clear filters</Button>
+    : onNavigate ? <Button variant="outline" size="sm" onClick={() => onNavigate("corkboard")}>Browse campus events</Button> : null
 }

@@ -39,13 +39,13 @@ export function VotingSlidePreparation({clubId,sessionId}:{clubId:string;session
   const choose=(id:string)=>{setSelected(id);const url=new URL(window.location.href);url.searchParams.set("applicant",id);window.history.replaceState(null,"",url);};
   const onSaved=useCallback((applicationId:string,count:number)=>setOverview(o=>o&&o.available?{...o,applicants:o.applicants.map(a=>a.applicationId===applicationId?{...a,highlightCount:count}:a)}:o),[]);
 
-  if(demo.isDemoEnabled)return <main className="vr-page"><VotingBackLink clubId={clubId}/><h1 className="text-xl font-semibold">Prepare slides</h1><p>Slide preparation isn’t available in Demo mode. Turn Demo off to prepare a real session.</p></main>;
-  if(error)return <main className="vr-page"><VotingBackLink clubId={clubId}/><p role="alert">{error}</p><Button variant="outline" onClick={()=>setRetry(v=>v+1)}>Retry</Button></main>;
-  if(!overview)return <main className="vr-page"><LoadingState label="Loading slide preparation…" layout="rows" rows={4}/></main>;
-  if(!overview.available)return <main className="vr-page"><VotingBackLink clubId={clubId}/><h1 className="text-xl font-semibold">Prepare slides · {overview.name}</h1><p>{overview.reason}</p></main>;
+  if(demo.isDemoEnabled)return <div className="vr-page"><VotingBackLink clubId={clubId}/><h1 className="text-xl font-semibold">Prepare slides</h1><p>Slide preparation isn’t available in Demo mode. Turn Demo off to prepare a real session.</p></div>;
+  if(error)return <div className="vr-page"><VotingBackLink clubId={clubId}/><p role="alert">{error}</p><Button variant="outline" onClick={()=>setRetry(v=>v+1)}>Retry</Button></div>;
+  if(!overview)return <div className="vr-page"><LoadingState label="Loading slide preparation…" layout="rows" rows={4}/></div>;
+  if(!overview.available)return <div className="vr-page"><VotingBackLink clubId={clubId}/><h1 className="text-xl font-semibold">Prepare slides · {overview.name}</h1><p>{overview.reason}</p></div>;
   const missing=overview.applicants.filter(a=>a.highlightCount===0).length;
   const list=missingOnly?overview.applicants.filter(a=>a.highlightCount===0):overview.applicants;
-  return <main className="vr-page vr-prep">
+  return <div className="vr-page vr-prep">
     <header className="vr-prep-header">
       <VotingBackLink clubId={clubId} cycleId={overview.cycleId??undefined} roundId={overview.roundId}/>
       <h1 className="text-xl font-semibold">Prepare slides · {overview.name}</h1>
@@ -64,7 +64,7 @@ export function VotingSlidePreparation({clubId,sessionId}:{clubId:string;session
       </nav>
       {selected&&<ApplicantPreparation key={selected} clubId={clubId} sessionId={sessionId} applicationId={selected} name={overview.applicants.find(a=>a.applicationId===selected)?.name??"Applicant"} onSaved={onSaved}/>}
     </div>
-  </main>;
+  </div>;
 }
 
 function ApplicantPreparation({clubId,sessionId,applicationId,name,onSaved}:{clubId:string;sessionId:string;applicationId:string;name:string;onSaved:(id:string,count:number)=>void}){

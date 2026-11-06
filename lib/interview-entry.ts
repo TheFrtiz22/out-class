@@ -11,13 +11,28 @@ export type InterviewRoomEntry = {
 export function interviewEntryHref(entry: Pick<InterviewRoomEntry, "clubId" | "applicationId" | "roundId" | "slotId" | "bookingId" | "roomId"> & { reviewId?: string }, origin?: string) {
   const base = `/club/${encodeURIComponent(entry.clubId)}/workspace`;
   const parsed = origin ? new URL(origin, "https://out-class.net") : null;
-  const query = parsed?.pathname === base ? new URLSearchParams(parsed.search) : new URLSearchParams("section=recruitment&tool=interviews&interviewTab=rooms");
-  query.set("section", "recruitment"); query.set("tool", "interviews"); query.set("interview", "1"); query.delete("reviewId");
+  const query = parsed?.pathname === base || parsed?.pathname === clubInterviewHref(entry.clubId) ? new URLSearchParams(parsed.search) : new URLSearchParams("section=recruitment&tool=interviews&interviewTab=rooms");
+  query.set("section", "recruitment"); query.set("tool", "interviews"); query.delete("interview"); query.delete("reviewId");
   for (const [key, value] of Object.entries({ applicationId: entry.applicationId, roundId: entry.roundId, slotId: entry.slotId, bookingId: entry.bookingId, roomId: entry.roomId })) {
     if (value) query.set(key, value); else query.delete(key);
   }
   if (entry.reviewId) { query.set("reviewId", entry.reviewId); return applicantInterviewHref(entry.clubId, "reviews", query.toString(), entry.applicationId || undefined); }
-  return `${base}?${query}`;
+  return clubInterviewHref(entry.clubId, query.toString());
+}
+/**
+ * The interview room's own route. It keeps the list's filters (interviewTab, dates, round)
+ * so Exit returns to the same list; section/tool/interview belong to the workspace URL.
+ */
+export function clubInterviewHref(clubId: string, search = "") {
+  const query = new URLSearchParams(search);
+  for (const key of ["section", "tool", "interview"]) query.delete(key);
+  const rest = query.toString();
+  return `/club/${encodeURIComponent(clubId)}/interview${rest ? `?${rest}` : ""}`;
+}
+/** Old room URLs (`/club/x/workspace?section=recruitment&tool=interviews&interview=1…`) move to the route. */
+export function legacyInterviewRoomHref(clubId: string, search: string) {
+  const query = new URLSearchParams(search);
+  return query.get("section") === "recruitment" && query.get("tool") === "interviews" && query.get("interview") === "1" ? clubInterviewHref(clubId, search) : null;
 }
 export function interviewListHref(clubId: string, search: string) {
   const query = new URLSearchParams(search);

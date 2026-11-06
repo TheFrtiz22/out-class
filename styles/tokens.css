@@ -165,3 +165,44 @@
   --oc-shell-header-height: 4rem;
   --oc-shell-mobile-height: 4.75rem;
 }
+
+/* Projector theme: only the live-voting presentation sets data-theme="present" (its page wrapper; the
+   focus frame bar follows it with :has, so the bar shown over the slide is dark too).
+   Same semantic names, dark values, so every component keeps reading tokens. */
+[data-theme="present"], .oc-focus-frame:has(.oc-present-surface) .oc-focus-bar {
+  color-scheme: dark;
+  --background: #0f1c2b;
+  --foreground: #f6f5f1;
+  --card: #162638;
+  --card-foreground: var(--foreground);
+  --popover: #162638;
+  --popover-foreground: var(--foreground);
+  --primary: #f6f5f1;
+  --primary-foreground: #142d45;
+  --secondary: #22364b;
+  --secondary-foreground: #e3e8ec;
+  --muted: #1d3045;
+  --muted-foreground: #b0c1cc;
+  --accent: #22364b;
+  --accent-foreground: #f6f5f1;
+  --brand-subtle: #3a2618;
+  --brand-ink: #f3a274;
+  --destructive: #e07a86;
+  --destructive-foreground: #0f1c2b;
+  --error-subtle: #3a1e24;
+  --success: #7fc6a0;
+  --success-subtle: #173327;
+  --warning: #e8c36f;
+  --warning-subtle: #352a14;
+  --info: #8ab8e0;
+  --info-subtle: #172b40;
+  --interview: #bba7d6;
+  --interview-subtle: #2a2338;
+  --border: #2c4257;
+  --input: #5d7286;
+  --ring: #f3a274;
+  --oc-content-surface: #162638;
+  --oc-content-soft: #1d3045;
+  --oc-content-soft-blue: #1b2f44;
+  --oc-content-edge: #2c4257;
+}

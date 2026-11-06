@@ -4,3 +4,5 @@
 @keyframes oc-interview-day-open { from { height: 0; } to { height: var(--radix-collapsible-content-height); } }
 @keyframes oc-interview-day-close { from { height: var(--radix-collapsible-content-height); } to { height: 0; } }
 @media (prefers-reduced-motion: reduce) { .oc-interview-day-content { animation: none !important; } }
+.oc-interview-day-span { display: inline-block; margin-right: .75rem; font-variant-numeric: tabular-nums; }
+@media (max-width: 479px) { .oc-interview-day-span { display: block; margin: 0 0 .125rem; } }

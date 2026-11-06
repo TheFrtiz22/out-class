@@ -1,4 +1,5 @@
 "use client";
+import { PageHeader } from "@/components/product/page-header";
 import { LoadingState } from "@/components/ui/loading-state"
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
@@ -54,8 +55,8 @@ export function MeetingCheckIn() {
     };
   }, [user?.id, id]);
   return (
-    <main className="mx-auto max-w-lg space-y-5 px-5 py-12">
-      <h1 className="oc-page-title ">Meeting check-in</h1>
+    <div className="space-y-5">
+      <PageHeader title="Meeting check-in" />
       {demo.isDemoEnabled && (
         <p className="text-sm text-muted-foreground">
           Demo check-in is local to this browser. It does not record real
@@ -128,6 +129,6 @@ export function MeetingCheckIn() {
       >
         Meeting agenda and resources
       </a>
-    </main>
+    </div>
   );
 }

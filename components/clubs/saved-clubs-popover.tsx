@@ -33,7 +33,7 @@ export function SavedClubsPopover({ onNavigate }: { onNavigate?: (view: ViewId) 
               focus?.focus()
               void saveClub(club, false).catch(() => {})
             }}><X className="size-4" /></Button>
-          </li>)}</ul> : !error && <div className="space-y-2 p-4 text-sm"><p className="font-medium">No saved clubs yet.</p><p className="leading-relaxed text-muted-foreground">Save a club from Explore or its profile, and it will appear here.</p></div>}
+          </li>)}</ul> : !error && <div className="space-y-2 p-4 text-sm"><p className="font-medium">No saved clubs yet.</p><p className="leading-relaxed text-muted-foreground">You haven’t saved a club. Save one from Explore or its profile to keep it here.</p><Link className="inline-flex min-h-11 items-center underline underline-offset-4" href="/explore">Browse clubs</Link></div>}
         </>}
       </div>
     </PopoverContent>

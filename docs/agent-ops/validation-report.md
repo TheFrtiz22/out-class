@@ -28,3 +28,17 @@ deploy <pending> | runtime errors <pending> | advisor delta <n/a, no migration> 
 - test:agent-hooks 31/31; test 1680 total, 1621 pass, 0 fail, 58 skipped (env-gated, same as main; one interview browser failure was the worktree missing gitignored public/pdfjs, passes after `npm run pdf:assets`); test:migrations 69 applied, RLS 84 tables; lint 0 errors / 412 warnings (389 baselined + 23 existing); typecheck ok; build ok 65/65; integration coverage check ok.
 - Reviewers: nextjs-reviewer and test-gap-reviewer, no high findings. Owner decisions: touch targets stay global on mobile, overflow-wrap scoped to product surfaces; outlines on light public/product surfaces use --ring (measured 2.66:1 -> 4.52:1 on #f6f5f1; shell outlines on the navy rail keep --brand-orange at 4.85:1).
 - Not verified: authenticated screens in a real browser; mobile screenshots of /login and public club pages after the scope change.
+
+## 2026-11-05 post-merge: #131 (9ae50a6c) and #132 (4d531bdf)
+- #131: deploy dpl_Axu6uvd6sKotAp3AgmkXemxPP5YK READY from 9ae50a6c; runtime errors 1h: none; no migration. Verdict OK. Rollback target dpl_F77gSz2qJxyBuApJWLDGqPhQbPME.
+- #132: deploy dpl_HTURG3Eak7C5SCkJqi5C8QXbk1QD READY from 4d531bdf; migration 20261105190000 applied with owner approval (only pending migration) and verified read-only (ledger row, /applications in both functions, search_path pinned, invoker, owner postgres, ACL postgres/service_role/outclass_production_app, both triggers attached and enabled); advisors 0/52/43 (search_path warnings 51 → 49); runtime errors: no new class (one existing "Additional observations unavailable"); cron scheduled-communications 29 runs in 30 min, no error-level logs; live: old URLs 307 to paths on www and uva, /applications noindex, / landing 200. Verdict OK. Rollback target dpl_Axu6uvd6sKotAp3AgmkXemxPP5YK; a code rollback leaves notification hrefs as /applications, which pre-#132 code does not serve (would 404), so roll forward instead.
+
+## 2026-11-06 UI-FOCUS ui/focus-frame
+- `test:agent-hooks` 31/31; `validate` (inert env): test 1715 total, 1655 pass, 0 fail, 60 skipped (env-gated, including tests/focus-frame-e2e.test.cjs); test:migrations 70 applied, RLS on 84 tables; lint 0 errors, 401 warnings (all raw-color ratchet); typecheck ok; build ok (76 pages).
+- New real-browser fixture test `focus-frame-browser`: Exit target from the account-scoped stored page, /home fallback, foreign/focus/external entries ignored, registration merge and cleanup, onExit, projector dark surface, click-through over the hidden bar, keyboard/hover reveal.
+- Disposable E2E (`test:onboarding:e2e`) run 1 on e607d3c4: 45/47; failing = new signed-out subtest (getCurrentUser sends signed-out visitors to /). Fixed (session check first) and verified on an inert dev server (NEXT_REDIRECT to `/login?next=%2Fclub%2F…%2Finterview%3F…`). Reruns not completed: the reserved stack was in use by another local session. Pending: one green disposable run (CI runs it via run-onboarding-e2e).
+- Screenshots (inert env, signed-out states) before/after for 16 routes at 1440 and 390 in the session scratchpad; every focus route shows the frame, one main, no horizontal overflow.
+
+## 2026-11-06 UI-STATUS ui/status-pill-empty-states
+- `validate` (inert env): 1730 tests, 1670 pass, 0 fail, 60 skipped (env-gated); test:migrations 71 applied, RLS 85 tables; lint 0 errors / 400 warnings; typecheck ok; build ok.
+- #136 post-merge: production deployment dpl_3L9HhqvyQCLZGhVV65S1MuUG74ay READY on 00840eea; get_runtime_errors 2h: none.

@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
+import { FocusFrame } from "@/components/shell/focus-frame"
 import type { Applicant } from "@/lib/data"
 
 type Decision = "advance" | "waitlist" | "reject"
@@ -74,20 +75,10 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
   }, [candidate, autoLoadNext, total])
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-white text-foreground">
-      {/* Top header bar */}
-      <header className="relative flex h-14 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4 sm:px-6">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onClose}
-          className="gap-1.5 text-sm font-medium text-foreground hover:bg-slate-100 hover:text-foreground"
-        >
-          <ArrowLeft className="size-4" />
-          Back to CRM
-        </Button>
-
-        <p className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm font-semibold text-foreground">
+    <FocusFrame overlay task="Speed review" width="full" onExit={onClose}>
+      {/* Queue position and shortcuts; the frame bar carries Exit. */}
+      <div className="flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border bg-card px-4 sm:px-6">
+        <p className="text-sm font-semibold text-foreground">
           {total === 0
             ? "No candidates in queue"
             : `Reviewing Candidate ${Math.min(index + 1, total)} of ${total}`}
@@ -103,7 +94,7 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
             </span>
           ))}
         </div>
-      </header>
+      </div>
 
       {/* Split-screen workspace */}
       {candidate ? (
@@ -272,6 +263,6 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
           </div>
         </div>
       )}
-    </div>
+    </FocusFrame>
   )
 }
