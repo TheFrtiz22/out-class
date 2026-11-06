@@ -7,12 +7,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { NativeSelect } from "@/components/ui/native-select"
+import { TurnstileWidget, turnstileRequired } from "@/components/security/turnstile-widget"
 import { schoolRequestSchema, schoolRequestRoles, schoolRequestRoleLabels } from "@/lib/school-requests"
 
 export function SchoolRequestForm() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
   const [confirmation, setConfirmation] = useState("")
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null), [turnstileReset, setTurnstileReset] = useState(0)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [submitted, setSubmitted] = useState<{ university: string; email: string } | null>(null)
   const form = useRef<HTMLFormElement>(null)
@@ -41,10 +43,12 @@ export function SchoolRequestForm() {
       return
     }
     setFieldErrors({})
+    if (turnstileRequired && !turnstileToken) { setError("Complete the security check, then submit."); return }
     setBusy(true)
     setError("")
     try {
-      const response = await fetch("/api/school-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input.data) })
+      const response = await fetch("/api/school-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...input.data, ...(turnstileToken ? { turnstileToken } : {}) }) })
+      setTurnstileReset(value => value + 1)
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || "Your request could not be saved.")
       setSubmitted({ university: input.data.university, email: input.data.email })
@@ -66,6 +70,7 @@ export function SchoolRequestForm() {
       <div hidden aria-hidden="true"><label>Website<Input name="website" tabIndex={-1} autoComplete="off" maxLength={200} /></label></div>
     </fieldset>
     <p id="request-contact-note" className="text-sm leading-6 text-muted-foreground">Your contact details will be shared with OutClass administrators to review your request and follow up. A request does not approve your university or create an account.</p>
+    <TurnstileWidget action="school-request" onToken={setTurnstileToken} resetKey={turnstileReset} />
     {error && <div ref={errorSummary} tabIndex={-1} role="alert" className="oc-request-error"><p>{error}</p><span>Your details are still here. You can try again.</span></div>}
     <Button className="oc-request-submit" type="submit" disabled={busy} loading={busy}>Submit school request <ArrowRight size={16} aria-hidden="true" /></Button>
     <p className="oc-public-note" role="status">{busy ? "Saving your school request…" : "No account needed. Just an interest in what’s next."}</p>

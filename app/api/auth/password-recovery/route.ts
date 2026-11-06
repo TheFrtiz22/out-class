@@ -8,6 +8,7 @@ import {
 } from "@/lib/password-recovery";
 import { DEMO_COOKIE } from "@/lib/demo/access";
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
+import { turnstileMessage, turnstileRemoteIp, verifyTurnstile } from "@/lib/turnstile";
 
 const reply = (body: object, status = 200) =>
   NextResponse.json(body, {
@@ -69,6 +70,13 @@ export async function POST(request: NextRequest) {
     },
   });
   if (input.action === "request" && email.success) {
+    // Only requests send email; reset links already prove mailbox control.
+    const check = await verifyTurnstile(input.turnstileToken, {
+      action: "password-recovery",
+      remoteIp: turnstileRemoteIp(request.headers.get("x-forwarded-for")),
+    });
+    if (!check.ok)
+      return reply({ error: turnstileMessage(check.reason) }, check.reason === "unavailable" ? 503 : 400);
     try {
       const { error } = await client.auth.resetPasswordForEmail(email.data, {
         redirectTo: `${request.nextUrl.origin}/reset-password`,

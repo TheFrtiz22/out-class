@@ -39,6 +39,7 @@ import {
 import { OutClassLogo } from "@/components/outclass-logo"
 import { createClient } from "@/utils/supabase/client"
 import { registerStudent } from "@/actions/onboarding"
+import { TurnstileWidget, turnstileRequired } from "@/components/security/turnstile-widget"
 import { upsertStudentProfile } from "@/actions/profile"
 import { uploadProfileFile } from "@/actions/storage"
 import {
@@ -216,6 +217,7 @@ export function StudentOnboardingWizard({
   const [step, setStep] = useState(1)
   const [globalError, setGlobalError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null), [turnstileReset, setTurnstileReset] = useState(0)
   const [codeSent, setCodeSent] = useState(false)
   const [accountCreated, setAccountCreated] = useState(!!initialUser?.email_confirmed_at)
   const [resendSeconds, setResendSeconds] = useState(0)
@@ -249,9 +251,10 @@ export function StudentOnboardingWizard({
     setGlobalError("")
     wizardData.current.accountBasics = { firstName: data.firstName, lastName: data.lastName, email: data.email }
     if (accountCreated) { setStep(3); return }
+    if (turnstileRequired && !turnstileToken) { setGlobalError("Complete the security check, then continue."); return }
     setLoading(true)
     try {
-      const result = await registerStudent(step1Form.getValues())
+      const result = await registerStudent(step1Form.getValues(), turnstileToken)
       if (result.error) { setGlobalError(result.error); return }
       setCodeSent(true)
       setResendSeconds(60)
@@ -261,7 +264,7 @@ export function StudentOnboardingWizard({
       setStep(2)
     } catch {
       setGlobalError("Unable to create your account. Please try again.")
-    } finally { setLoading(false) }
+    } finally { setLoading(false); setTurnstileReset(value => value + 1) /* tokens are single use */ }
   }
 
   // ── Step 2: OTP Verification ──────────────────────────────────────────────
@@ -519,6 +522,7 @@ export function StudentOnboardingWizard({
                   <p className="text-xs text-muted-foreground">At least 8 characters. Use this password to sign in again.</p>
                   {step1Form.formState.errors.password && <p className="text-xs text-red-600">{step1Form.formState.errors.password.message}</p>}
                 </div>}
+                {!accountCreated && <TurnstileWidget action="signup" onToken={setTurnstileToken} resetKey={turnstileReset} />}
                 <Button
                   type="submit"
                   loading={loading}

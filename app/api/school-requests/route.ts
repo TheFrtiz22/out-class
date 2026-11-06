@@ -4,6 +4,7 @@ import { sameOriginRequest } from "@/lib/request-origin"
 import { schoolRequestSchema, schoolRequestConfirmation } from "@/lib/school-requests"
 import { DEMO_COOKIE } from "@/lib/demo/access"
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
+import { turnstileMessage, turnstileRemoteIp, verifyTurnstile } from "@/lib/turnstile"
 
 const reply = (body: object, status = 200) => NextResponse.json(body, {
   status, headers: { "Cache-Control": "no-store" },
@@ -29,11 +30,20 @@ export async function POST(request: NextRequest) {
     }
     raw += decoder.decode()
   } catch { return reply({ error: "Invalid request." }, 400) }
-  let input
-  try { input = schoolRequestSchema.safeParse(JSON.parse(raw)) }
+  let input, turnstileToken: unknown
+  try {
+    const body = JSON.parse(raw)
+    if (!body || typeof body !== "object" || Array.isArray(body)) return reply({ error: "Invalid request." }, 400)
+    // The token is checked separately and never persisted; the schema stays strict.
+    const { turnstileToken: token, ...fields } = body
+    turnstileToken = token
+    input = schoolRequestSchema.safeParse(fields)
+  }
   catch { return reply({ error: "Invalid request." }, 400) }
   if (!input.success) return reply({ error: input.error.issues[0]?.message || "Check your request details." }, 400)
   if (input.data.website) return reply({ message: schoolRequestConfirmation })
+  const check = await verifyTurnstile(turnstileToken, { action: "school-request", remoteIp: turnstileRemoteIp(request.headers.get("x-forwarded-for")) })
+  if (!check.ok) return reply({ error: turnstileMessage(check.reason) }, check.reason === "unavailable" ? 503 : 400)
   try {
     const saved = await prisma.$transaction(async tx => {
       // A database lock keeps limits effective across concurrent app instances.
