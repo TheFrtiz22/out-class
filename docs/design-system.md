@@ -41,7 +41,7 @@ Public marketing and authentication use Caslon throughout. Authenticated product
 | Icon action | `IconButton`: required `aria-label`, defaults to `type="button"`. |
 | Form fields | `Input`, `Textarea`, Radix `Select`, native `NativeSelect`; associate visible labels and error descriptions. |
 | Search | `Search`: required accessible name, normal input props, no filtering state ownership. |
-| Label/status | `Badge` semantic variants; `StatusBadge` supports existing labels and Prisma status strings without changing stored values. |
+| Label/status | `Badge` semantic variants for general labels. Application states use `StatusPill` (`components/ui/status-pill.tsx`): one filled pill per state (Draft, Submitted, In review, Interview, Accepted, Not selected, Waitlisted) from semantic tokens; it accepts stored codes and legacy labels without changing stored values. |
 | Identity | `Avatar`, `AvatarImage`, `AvatarFallback`; provide an accessible name or adjacent identity. |
 | Grouping | Plain sections and `Divider` first; `Surface` defaults to no box. Use `Card` for a meaningful boundary. |
 | Dialog | Existing `Dialog*` exports: modal semantics, focus trap/return and Escape remain Radix-owned. Always include title and description, or explicitly omit aria-describedby when appropriate. |
