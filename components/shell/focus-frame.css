@@ -30,7 +30,6 @@
 .oc-focus-reveal { display: none; }
 .oc-focus-frame:has(.oc-present-surface) { color-scheme: dark; }
 .oc-focus-frame:has(.oc-present-surface) .oc-focus-content { max-width: none; padding: 0; display: flex; flex-direction: column; }
-.oc-present-surface { display: flex; min-height: 100dvh; flex: 1; flex-direction: column; background: var(--background); color: var(--foreground); }
 .oc-focus-frame:has(.oc-present-surface) .oc-focus-reveal { display: block; position: fixed; inset: 0 0 auto; z-index: calc(var(--oc-z-sticky) + 1); height: .5rem; }
 .oc-focus-frame:has(.oc-present-surface) .oc-focus-bar { position: fixed; inset: 0 0 auto; z-index: calc(var(--oc-z-sticky) + 2); opacity: 0; pointer-events: none; }
 .oc-focus-frame:has(.oc-present-surface) :is(.oc-focus-reveal:hover + .oc-focus-bar, .oc-focus-bar:hover, .oc-focus-bar:focus-within) { opacity: 1; pointer-events: auto; }

@@ -1,3 +1,5 @@
+/* The projector surface: dark tokens from [data-theme="present"]; the focus frame follows it. */
+.oc-present-surface{display:flex;min-height:100dvh;flex:1;flex-direction:column;background:var(--background);color:var(--foreground)}
 .vr-page{color:var(--foreground)}.oc-present-surface .vr-page{padding:var(--oc-space-content)}
 .vr-photo-empty{display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--muted);color:var(--muted-foreground);font-size:.8rem;text-align:center}.vr-field .vr-field-meta{font-size:.85rem;color:var(--muted-foreground);margin-top:6px}.vr-field .vr-link{font-size:.85rem;display:inline-flex;align-items:center;margin-top:4px}
 .vr-page h1{font-size:1.45rem;font-weight:500}.vr-page h2{font-size:1.25rem;font-weight:500}.vr-page h3{font-size:.9rem;font-weight:500}.vr-header,.vr-stats{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px}

@@ -22,7 +22,7 @@ if(present)return <FocusFrame><div data-theme="present" className="oc-present-su
 return <FocusFrame>{step>=1&&<Screen task="Interview · Round 2" club={{name:'Synthetic Club',color:'#123456'}}/>}{step>=2&&<Screen task={undefined} club={undefined} onExit={step>=3?()=>{window.exits++}:undefined}/>}</FocusFrame>}
 createRoot(document.getElementById('root')).render(<App/>)`
   const js = bundle(entry, mocks)
-  const css = fs.readFileSync('styles/tokens.css', 'utf8') + fs.readFileSync('components/shell/focus-frame.css', 'utf8')
+  const css = fs.readFileSync('styles/tokens.css', 'utf8') + fs.readFileSync('components/shell/focus-frame.css', 'utf8') + fs.readFileSync('components/live-voting/room.css', 'utf8')
     // Tailwind preflight and sr-only, as in the app.
     + 'body{margin:0}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}.sr-only:focus{position:fixed;width:auto;height:auto;clip:auto}'
   const server = http.createServer((req, res) => {
