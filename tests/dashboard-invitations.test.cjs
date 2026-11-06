@@ -118,7 +118,7 @@ test('Settings memberships handle loading, empty, and failed authenticated data'
   let retries=0;const auth={user:null,loading:true,refreshUser:async()=>retries++};const h=harness({},'components/organization-memberships.tsx',{},auth);
   assert.ok(nodes(h.render()).some(node=>node.props?.role==='status'));auth.loading=false;
   assert.ok(nodes(h.render()).some(node=>node.props?.role==='alert'));nodes(h.render()).find(node=>node.props?.children==='Retry organizations').props.onClick();assert.equal(retries,1);
-  auth.user={memberships:[]};assert.ok(JSON.stringify(h.render()).includes('haven’t joined'));
+  auth.user={memberships:[]};assert.ok(JSON.stringify(h.render()).includes('aren’t a member of any organization'));assert.ok(JSON.stringify(h.render()).includes('Explore clubs'));
 });
 
 test('zero requests render literally nothing before and after discovery, including failed discovery',async()=>{

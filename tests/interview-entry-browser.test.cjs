@@ -1,5 +1,5 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
-const {chromium}=require('playwright'),{fixture}=require('./helpers/interview-entry-browser.cjs');
+const {chromium}=require('playwright'),{pickDate,pickedDate}=require('./helpers/date-picker-browser.cjs'),{fixture}=require('./helpers/interview-entry-browser.cjs');
 test('browser: first-tab scheduled entry opens exact candidate, keeps IDs across reload and returns to filtered list; mobile tabs never wrap',async()=>{
  const f=await fixture();let browser;
  try{
@@ -8,10 +8,10 @@ test('browser: first-tab scheduled entry opens exact candidate, keeps IDs across
   assert.equal(await page.getByRole('tab').first().textContent(),'Interview rooms');await page.getByRole('link',{name:/Open interview|Resume interview|Open review/}).first().waitFor();
   assert.equal(await page.getByRole('button',{name:'Enter interview mode',exact:true}).count(),0);
   for(const header of await page.getByRole('button',{name:/2026.*slots/}).all())if(await header.getAttribute('aria-expanded')==='false')await header.click();const links=await page.getByRole('link',{name:/Open interview|Resume interview|Open review/}).evaluateAll(nodes=>nodes.map(n=>n.getAttribute('href')));assert.ok(links.length>=2);const first=new URL(links[0],f.base),second=new URL(links[1],f.base);assert.notEqual(first.searchParams.get('roundId'),second.searchParams.get('roundId'));assert.notEqual(first.searchParams.get('bookingId'),second.searchParams.get('bookingId'));
-  await page.getByLabel('Filter assigned interview date',{exact:true}).fill('2026-10-20');
+  await pickDate(page,'Filter assigned interview date','2026-10-20');
   await page.getByRole('link',{name:/Open interview|Resume interview|Open review/}).first().click();await page.getByRole('heading',{name:'Interview '+first.searchParams.get('applicationId'),exact:true}).waitFor();await page.getByTestId('phase').filter({hasText:/Active interview|Read only/}).waitFor();
   for(const key of ['applicationId','roundId','slotId','bookingId','roomId'])assert.equal(new URL(page.url()).searchParams.get(key),first.searchParams.get(key));
-  await page.reload();await page.getByRole('heading',{name:'Interview '+first.searchParams.get('applicationId'),exact:true}).waitFor();await page.getByRole('button',{name:'Interviews',exact:true}).click();await page.getByRole('heading',{name:'Your interview rooms',exact:true}).waitFor();assert.equal(await page.getByLabel('Filter assigned interview date',{exact:true}).inputValue(),'2026-10-20');await page.getByLabel('Filter assigned interview date',{exact:true}).fill('');
+  await page.reload();await page.getByRole('heading',{name:'Interview '+first.searchParams.get('applicationId'),exact:true}).waitFor();await page.getByRole('button',{name:'Interviews',exact:true}).click();await page.getByRole('heading',{name:'Your interview rooms',exact:true}).waitFor();assert.equal(await pickedDate(page,'Filter assigned interview date'),'Tuesday, October 20, 2026');await pickDate(page,'Filter assigned interview date','');
   await page.getByLabel('Filter interview rooms by round',{exact:true}).selectOption('');await page.getByRole('link',{name:/Open interview|Resume interview|Open review/}).nth(1).click();await page.getByRole('heading',{name:'Interview '+second.searchParams.get('applicationId'),exact:true}).waitFor();
   // A stale URL fails closed without opening any recovered candidate.
   const stale=new URL(first);stale.searchParams.set('bookingId','00000000-0000-4000-8000-000000999999');await page.goto(stale.href);await page.getByRole('alert').filter({hasText:/couldn’t open/}).waitFor();assert.equal(await page.getByRole('region',{name:'Exact room fixture'}).count(),0);await page.getByRole('button',{name:'Back to interviews',exact:true}).click();
