@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { applicationStatusLabels, applicationNextStep } from "@/lib/student-applications"
 import { applicationStatusProgress, currentApplicationInterview, applicationNeedsAttention, isApplicationDecision } from "@/lib/application-presentation"
 import type { StudentApplication } from "./application-form"
+import { DEFAULT_CLUB_COLOR } from "@/lib/club-colors"
 
 export const applicantDate = (value: Date | string) => `${schedulingDateTime(value)} · ${SCHEDULING_TIMEZONE_LABEL}`
 export function ApplicationStatusProgress({ application }: { application: StudentApplication }) {
@@ -21,7 +22,7 @@ export function ApplicationStatusCard({ application: app, now, onOpen }: { appli
   const decision = isApplicationDecision(app.status)
   return <article className="oc-status-card" data-status={app.status} data-attention={attention}>
     <div className="oc-status-card-heading">
-      <ClubLogo clubId={app.clubId} logoUrl={app.club.logoUrl} marketing={app.club.marketing} color={app.club.color || "#142d45"} text={app.club.name.split(/\s+/).map(word => word[0]).slice(0, 2).join("")} />
+      <ClubLogo clubId={app.clubId} logoUrl={app.club.logoUrl} marketing={app.club.marketing} color={app.club.color || DEFAULT_CLUB_COLOR} text={app.club.name.split(/\s+/).map(word => word[0]).slice(0, 2).join("")} />
       <div><h2>{app.club.name}</h2><p>{decision ? attention ? "Membership offer ready" : "Decision received" : attention ? "Review interview options" : app.round?.name || applicationStatusLabels[app.status]}</p></div>
       <StatusPill status={app.status} />
     </div>

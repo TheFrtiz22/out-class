@@ -62,7 +62,7 @@ export function OrganizationOwnershipRequests({ enabled, onProfileDefaults, incl
   }
 
   if (!invitations.length && !loading && !failed) return null;
-  return <section aria-label="Pending organization invitations" className="mb-6 min-w-0 max-w-5xl space-y-4">
+  return <section aria-label="Pending organization invitations" className="mb-6 min-w-0 max-w-[var(--oc-content-width)] space-y-4">
     <header className="flex flex-wrap items-center justify-between gap-2">
       <div><h2 className="oc-section-heading">Pending Invitations</h2><p className="mt-1 text-sm text-muted-foreground">All pending requests, including those you set aside.</p></div>
       {!loading && <Button size="sm" className="min-h-11" variant="ghost" onClick={refresh}>Refresh requests</Button>}

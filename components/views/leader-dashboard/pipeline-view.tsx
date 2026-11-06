@@ -61,13 +61,13 @@ export function PipelineView({ columns, applicants, getScore, onMove, onViewProf
               }}
               onDrop={() => handleDrop(column.id)}
               className={cn(
-                "flex w-14 shrink-0 flex-col items-center gap-2 rounded-xl border border-dashed border-neutral-200 bg-white py-4 text-gray-400 transition-colors hover:bg-neutral-50",
+                "flex w-14 shrink-0 flex-col items-center gap-2 rounded-xl border border-dashed border-border bg-white py-4 text-muted-foreground transition-colors hover:bg-muted",
                 dragOverColumn === column.id && "border-foreground bg-muted text-muted-foreground",
               )}
               aria-label="Expand Rejected column"
             >
               <ChevronLeft className="size-3.5" />
-              <span className="oc-status-label bg-gray-200 px-1.5 py-0.5 text-[length:var(--oc-size-10)] font-semibold text-gray-500">
+              <span className="oc-status-label bg-secondary px-1.5 py-0.5 text-[length:var(--oc-size-10)] font-semibold text-muted-foreground">
                 {items.length}
               </span>
               <span className="text-[length:var(--oc-size-10)] font-medium tracking-wide" style={{ writingMode: "vertical-rl" }}>
@@ -89,27 +89,27 @@ export function PipelineView({ columns, applicants, getScore, onMove, onViewProf
             onDrop={() => handleDrop(column.id)}
             className={cn(
               "flex min-w-64 flex-1 flex-col rounded-xl border bg-white transition-colors",
-              isRejected ? "border-neutral-200 opacity-80" : "border-neutral-200",
+              isRejected ? "border-border opacity-80" : "border-border",
               dragOverColumn === column.id && "border-foreground bg-muted",
             )}
           >
             <div className="flex items-center justify-between gap-2 px-3 pt-3">
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <p className={cn("truncate text-sm font-semibold", isRejected ? "text-gray-500" : "text-foreground")}>
+                  <p className={cn("truncate text-sm font-semibold", isRejected ? "text-muted-foreground" : "text-foreground")}>
                     {column.title}
                   </p>
                   <span
                     className={cn(
                       "shrink-0 oc-status-label px-1.5 py-0.5 text-[length:var(--oc-size-10)] font-semibold",
-                      isRejected ? "bg-gray-200 text-gray-500" : "bg-foreground/10 text-foreground",
+                      isRejected ? "bg-secondary text-muted-foreground" : "bg-foreground/10 text-foreground",
                     )}
                   >
                     {items.length}
                   </span>
                 </div>
                 {column.subtitle && (
-                  <p className={cn("truncate text-[length:var(--oc-size-11)]", isRejected ? "text-gray-400" : "text-muted-foreground")}>
+                  <p className={cn("truncate text-[length:var(--oc-size-11)]", isRejected ? "text-muted-foreground opacity-60" : "text-muted-foreground")}>
                     {column.subtitle}
                   </p>
                 )}
@@ -118,7 +118,7 @@ export function PipelineView({ columns, applicants, getScore, onMove, onViewProf
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="size-6 shrink-0 text-gray-400 hover:text-gray-600"
+                  className="size-6 shrink-0 text-muted-foreground hover:text-muted-foreground"
                   onClick={() => setRejectedExpanded(false)}
                   aria-label="Collapse Rejected column"
                 >
@@ -139,12 +139,12 @@ export function PipelineView({ columns, applicants, getScore, onMove, onViewProf
                     onDragStart={(event) => { event.dataTransfer.setData("text/plain", a.id); event.dataTransfer.effectAllowed = "move"; setDraggedId(a.id) }}
                     onDragEnd={() => setDraggedId(null)}
                     className={cn(
-                      "group relative cursor-grab rounded-xl border border-neutral-200 bg-white p-2.5 shadow-none transition-colors hover:shadow-none active:cursor-grabbing",
+                      "group relative cursor-grab rounded-xl border border-border bg-white p-2.5 shadow-none transition-colors hover:shadow-none active:cursor-grabbing",
                       draggedId === a.id && "opacity-40",
                       isRejected && "grayscale",
                     )}
                   >
-                    <button type="button" aria-label={`Drag ${a.name}`} className="mb-1 flex touch-none items-center gap-1 rounded px-1 py-0.5 text-[length:var(--oc-size-10)] text-neutral-400 hover:bg-neutral-50"
+                    <button type="button" aria-label={`Drag ${a.name}`} className="mb-1 flex touch-none items-center gap-1 rounded px-1 py-0.5 text-[length:var(--oc-size-10)] text-muted-foreground hover:bg-muted"
                       onClick={event => event.stopPropagation()}
                       onPointerDown={event => { event.preventDefault(); event.stopPropagation(); event.currentTarget.setPointerCapture(event.pointerId); setDraggedId(a.id) }}
                       onPointerMove={event => { if (!event.currentTarget.hasPointerCapture(event.pointerId)) return; const target = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>("[data-stage-column]"); setDragOverColumn(target?.dataset.stageColumn ?? null) }}
@@ -162,24 +162,24 @@ export function PipelineView({ columns, applicants, getScore, onMove, onViewProf
                         <AvatarFallback
                           className={cn(
                             "text-[length:var(--oc-size-10)] font-medium",
-                            isRejected ? "bg-gray-100 text-gray-400" : "bg-foreground/10 text-foreground",
+                            isRejected ? "bg-muted text-muted-foreground" : "bg-foreground/10 text-foreground",
                           )}
                         >
                           {a.initials}
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1">
-                        <button type="button" onClick={() => onViewProfile(a.id)} className={cn("block max-w-full truncate text-left text-xs font-semibold hover:underline", isRejected ? "text-gray-500" : "text-foreground")}>
+                        <button type="button" onClick={() => onViewProfile(a.id)} className={cn("block max-w-full truncate text-left text-xs font-semibold hover:underline", isRejected ? "text-muted-foreground" : "text-foreground")}>
                           {a.name}
                         </button>
-                        <p className={cn("truncate text-[length:var(--oc-size-11)]", isRejected ? "text-gray-400" : "text-muted-foreground")}>
+                        <p className={cn("truncate text-[length:var(--oc-size-11)]", isRejected ? "text-muted-foreground opacity-60" : "text-muted-foreground")}>
                           {a.major}
                         </p>
                         {score > 0 && (
                           <span
                             className={cn(
                               "mt-1.5 inline-flex items-center oc-status-label px-1.5 py-0.5 text-[length:var(--oc-size-10)] font-semibold",
-                              isRejected ? "bg-gray-100 text-gray-400" : "bg-secondary text-muted-foreground",
+                              isRejected ? "bg-muted text-muted-foreground" : "bg-secondary text-muted-foreground",
                             )}
                           >
                             {score.toFixed(1)}/5.0
@@ -188,7 +188,7 @@ export function PipelineView({ columns, applicants, getScore, onMove, onViewProf
                       </div>
                     </div>
 
-                    <NativeSelect aria-label={`Recruitment stage for ${a.name}`} value={a.status} onClick={event => event.stopPropagation()} onChange={event => onMove(a.id, event.target.value)} className="mt-3 w-full rounded-md border border-neutral-200 bg-white p-1.5 text-xs">
+                    <NativeSelect aria-label={`Recruitment stage for ${a.name}`} value={a.status} onClick={event => event.stopPropagation()} onChange={event => onMove(a.id, event.target.value)} className="mt-3 w-full rounded-md border border-border bg-white p-1.5 text-xs">
                       {columns.map(stage => <option key={stage.id} value={stage.id}>{stage.title}</option>)}
                     </NativeSelect>
                     <DropdownMenu>
@@ -196,13 +196,13 @@ export function PipelineView({ columns, applicants, getScore, onMove, onViewProf
                         <button
                           type="button"
                           onClick={(e) => e.stopPropagation()}
-                          className="absolute right-1.5 top-1.5 flex size-5 items-center justify-center rounded text-gray-400 opacity-0 transition-opacity hover:bg-neutral-50 hover:text-gray-600 group-hover:opacity-100 focus-visible:opacity-100"
+                          className="absolute right-1.5 top-1.5 flex size-5 items-center justify-center rounded text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-muted-foreground group-hover:opacity-100 focus-visible:opacity-100"
                           aria-label={`Actions for ${a.name}`}
                         >
                           <MoreHorizontal className="size-3.5" />
                         </button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-40 rounded-xl border-neutral-200 bg-white shadow-none" onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenuContent align="end" className="w-40 rounded-xl border-border bg-white shadow-none" onClick={(e) => e.stopPropagation()}>
                         <DropdownMenuItem onClick={() => onSendEmail(a.name)}>
                           <Mail className="size-3.5" /> Send Email
                         </DropdownMenuItem>

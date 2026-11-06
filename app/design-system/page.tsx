@@ -1,7 +1,7 @@
 'use client'
 
 import { DesignPatterns } from "@/components/product/design-patterns"
-import { PageHeader } from "@/components/product/page-header"
+import { PageHeader } from "@/components/ui/page-header"
 import { useState } from "react"
 import { ArrowRight, Bell, FileText, Plus } from "@/components/icons"
 import { toast } from "sonner"
@@ -14,7 +14,7 @@ import { Search } from "@/components/ui/search"
 import { Badge } from "@/components/ui/badge"
 import { StatusPill } from "@/components/ui/status-pill"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Surface } from "@/components/ui/surface"
+import { Panel } from "@/components/ui/panel"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { SectionHeading } from "@/components/ui/section-heading"
 import { EmptyState } from "@/components/ui/empty-state"
@@ -32,7 +32,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip
 export default function DesignSystemPage() {
   const [progress, setProgress] = useState(40)
   const [loadingLayout, setLoadingLayout] = useState<LoadingLayout>("applicants")
-  return <main className="mx-auto max-w-5xl space-y-section px-page py-section">
+  return <main className="mx-auto max-w-[var(--oc-content-width)] space-y-section px-page py-section">
     <PageHeader eyebrow="OutClass · Campus OS" title="Built for your next chapter." description="Warm, expressive moments. Precise everyday tools. A shared language for students and club leaders." />
     <DesignPatterns />
     <Divider />
@@ -60,7 +60,7 @@ export default function DesignSystemPage() {
     <Divider />
     <section aria-labelledby="structure" className="space-y-6">
       <SectionHeading headingId="structure" title="Room to focus" editorial description="Start with whitespace and a divider. Add a container only when grouping helps." />
-      <Tabs defaultValue="overview"><TabsList variant="underline" aria-label="Example sections"><TabsTrigger value="overview">Overview</TabsTrigger><TabsTrigger value="details">Details</TabsTrigger></TabsList><TabsContent value="overview" className="pt-4"><Surface><div className="flex items-center gap-3"><Avatar aria-label="Sample student"><AvatarFallback>ST</AvatarFallback></Avatar><div><p className="text-sm font-medium">Student profile</p><p className="text-sm text-muted-foreground">A simple row, without another card.</p></div></div></Surface></TabsContent><TabsContent value="details" className="pt-4"><Surface tone="subtle">Supporting information lives here.</Surface></TabsContent></Tabs>
+      <Tabs defaultValue="overview"><TabsList variant="underline" aria-label="Example sections"><TabsTrigger value="overview">Overview</TabsTrigger><TabsTrigger value="details">Details</TabsTrigger></TabsList><TabsContent value="overview" className="pt-4"><Panel><div className="flex items-center gap-3"><Avatar aria-label="Sample student"><AvatarFallback>ST</AvatarFallback></Avatar><div><p className="text-sm font-medium">Student profile</p><p className="text-sm text-muted-foreground">A simple row, without another card.</p></div></div></Panel></TabsContent><TabsContent value="details" className="pt-4"><Panel tone="subtle">Supporting information lives here.</Panel></TabsContent></Tabs>
       <Card><CardHeader><CardTitle>One meaningful container</CardTitle><CardDescription>Use when content needs a distinct boundary.</CardDescription></CardHeader><CardContent className="space-y-3"><Progress value={progress} aria-label="Example profile completion" /><Button variant="outline" size="sm" onClick={() => setProgress(value => value >= 100 ? 0 : value + 20)}>Update progress</Button></CardContent></Card>
       <EmptyState icon={<FileText />} title="Nothing here yet" description="A useful next step is more helpful than an empty dashboard." action={<Button variant="outline" onClick={() => toast("Example action")}>Discover clubs</Button>} />
       <EmptyState density="compact" align="start" tone="outlined" title="No matching applications" description="Try another search or status filter." />

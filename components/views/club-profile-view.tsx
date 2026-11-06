@@ -68,7 +68,7 @@ export function ClubProfileView({
     value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4,
   )
   const contrast =
-    0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2] > 0.179 ? "#000" : "#fff"
+    0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2] > 0.179 ? "var(--foreground)" : "var(--primary-foreground)"
   const about = customized ? profile.about : club.description || club.pitch
   const actualApplication = user?.applications.find((app) => app.clubId === club.id)
   const localApplication = trackedApps.find((app) => app.clubId === club.id)

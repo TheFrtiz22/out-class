@@ -1,4 +1,4 @@
-import { PageHeader } from "@/components/product/page-header"
+import { PageHeader } from "@/components/ui/page-header"
 import { VotingSlidePreparation } from "@/components/live-voting/slide-preparation";
 import { z } from "zod";
 export default async function Page({params,searchParams}:{params:Promise<{sessionId:string}>;searchParams:Promise<{clubId?:string}>}){

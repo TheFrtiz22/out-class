@@ -9,14 +9,15 @@ import { onboardingFocus } from "@/lib/onboarding-presentation";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Panel } from "@/components/ui/panel";
 
 export function PlatformOrganizationOnboarding({ onCreated }: { onCreated: () => void }) {
   const [open, setOpen] = useState(false), [busy, setBusy] = useState(false);
   return <>
-    <section className="oc-content-panel flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+    <Panel as="section" className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
       <div className="min-w-0"><h2 className="oc-section-heading ">Onboard an organization</h2><p className="mt-1 text-sm text-muted-foreground">Create its listing and designate the initial president as owner.</p></div>
       <Button className="h-auto min-h-11 whitespace-normal text-center sm:max-w-72" type="button" onClick={() => setOpen(true)}>Create organization &amp; invite president</Button>
-    </section>
+    </Panel>
     <Dialog open={open} onOpenChange={next => { if (!busy) setOpen(next); }}>
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-xl" onEscapeKeyDown={event => { if (busy) event.preventDefault(); }} onPointerDownOutside={event => { if (busy) event.preventDefault(); }}>
         <DialogHeader><DialogTitle>Create organization &amp; invite president</DialogTitle><DialogDescription>The president receives owner access after accepting with their verified university identity.</DialogDescription></DialogHeader>
