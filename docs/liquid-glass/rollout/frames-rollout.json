@@ -1,0 +1,42 @@
+{
+  "explore": [
+    {
+      "frames": 150,
+      "medianMs": 16.7,
+      "p95Ms": 16.8,
+      "over34Ms": 0
+    },
+    {
+      "frames": 150,
+      "medianMs": 16.7,
+      "p95Ms": 16.8,
+      "over34Ms": 0
+    },
+    {
+      "frames": 150,
+      "medianMs": 16.7,
+      "p95Ms": 16.8,
+      "over34Ms": 0
+    }
+  ],
+  "table": [
+    {
+      "frames": 150,
+      "medianMs": 16.7,
+      "p95Ms": 16.7,
+      "over34Ms": 0
+    },
+    {
+      "frames": 150,
+      "medianMs": 16.7,
+      "p95Ms": 16.7,
+      "over34Ms": 0
+    },
+    {
+      "frames": 150,
+      "medianMs": 16.7,
+      "p95Ms": 16.8,
+      "over34Ms": 0
+    }
+  ]
+}
