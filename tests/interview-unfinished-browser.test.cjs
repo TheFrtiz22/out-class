@@ -19,7 +19,7 @@ test('browser: unfinished interviews stay discoverable after their date; timing 
   assert.ok(await section.getByText(/Scheduled time has ended/).first().count());
   const link=section.getByRole('link',{name:/Enter interview|Resume interview/}).first();await link.waitFor();
   assert.equal(await section.getByRole('link',{name:'View review'}).count(),0,'submitted reviews are not listed as unfinished');
-  await link.click();await page.waitForURL(/interview=1/);const q=new URL(page.url()).searchParams;
+  await link.click();await page.waitForURL(/\/interview\?/,{waitUntil:'commit'});const q=new URL(page.url()).searchParams;
   assert.ok(q.get('applicationId')&&q.get('roundId'),'opens the exact candidate after the scheduled date');
   assert.deepEqual(errors,[]);
  }finally{await browser?.close();f.server.closeAllConnections?.();await new Promise(r=>f.server.close(r));}
