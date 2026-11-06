@@ -1,5 +1,7 @@
 import { createHash, randomBytes } from "node:crypto"
 import { OUTLOOK_BUSY_MESSAGE, weekWindow, type BusyInterval } from "@/lib/outlook-busy"
+import { localParts } from "@/lib/availability"
+import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
 
 /**
  * One-time, read-only Outlook busy-time lookup for the availability editor.
@@ -16,12 +18,24 @@ const MAX_PAGES = 5
 /** Free and working-elsewhere time does not block interviews. */
 const BLOCKING = new Set(["busy", "tentative", "oof", "unknown"])
 
+/**
+ * The tenant is required: it limits sign-in to the university's own Microsoft
+ * accounts, so another school's or employer's calendar cannot be imported.
+ */
 export function outlookConfig(env: Env = process.env) {
-  const clientId = env.MICROSOFT_CALENDAR_CLIENT_ID, clientSecret = env.MICROSOFT_CALENDAR_CLIENT_SECRET
-  if (env.NEXT_PUBLIC_OUTLOOK_CALENDAR_ENABLED !== "true" || !clientId || !clientSecret) return null
-  const tenant = env.MICROSOFT_CALENDAR_TENANT || "organizations"
-  if (!/^[A-Za-z0-9.-]{1,100}$/.test(tenant)) return null
+  const clientId = env.MICROSOFT_CALENDAR_CLIENT_ID, clientSecret = env.MICROSOFT_CALENDAR_CLIENT_SECRET, tenant = env.MICROSOFT_CALENDAR_TENANT
+  if (env.NEXT_PUBLIC_OUTLOOK_CALENDAR_ENABLED !== "true" || !clientId || !clientSecret || !tenant) return null
+  if (!/^[A-Za-z0-9.-]{1,100}$/.test(tenant) || ["common", "organizations", "consumers"].includes(tenant.toLowerCase())) return null
   return { clientId, clientSecret, tenant }
+}
+
+/**
+ * Microsoft only accepts registered redirect URIs. Production uses the canonical
+ * site; other environments use their own origin (register them separately).
+ */
+export function redirectOrigin(requestOrigin: string, env: Env = process.env) {
+  if (env.VERCEL_ENV !== "production") return requestOrigin
+  try { return new URL(env.OUTCLASS_SITE_URL || "").origin === requestOrigin ? requestOrigin : null } catch { return null }
 }
 
 const base64url = (bytes: Buffer) => bytes.toString("base64url")
@@ -59,16 +73,44 @@ function utc(value: unknown) {
   return +new Date(/[zZ]|[+-]\d{2}:\d{2}$/.test(value) ? value : `${value}Z`)
 }
 
-export function busyFromEvents(events: unknown[]): BusyInterval[] {
+/** The instant a calendar date begins in the scheduling zone (EST or EDT). */
+export function zonedMidnight(date: string, zone = SCHEDULING_TIMEZONE) {
+  for (const hour of [4, 5, 3, 6]) {
+    const instant = +new Date(`${date}T0${hour}:00:00Z`)
+    const parts = localParts(instant, zone)
+    if (parts.date === date && parts.minute === 0) return instant
+  }
+  return NaN
+}
+
+/**
+ * All-day events are calendar dates, not instants: Graph reports them as UTC
+ * midnights, which would land on the previous evening in Eastern time.
+ */
+export function busyFromEvents(events: unknown[], zone = SCHEDULING_TIMEZONE): BusyInterval[] {
   const result: BusyInterval[] = []
   for (const event of events) {
     if (!event || typeof event !== "object") continue
-    const { isCancelled, showAs, start, end } = event as { isCancelled?: unknown; showAs?: unknown; start?: { dateTime?: unknown }; end?: { dateTime?: unknown } }
+    const { isCancelled, isAllDay, showAs, start, end } = event as { isCancelled?: unknown; isAllDay?: unknown; showAs?: unknown; start?: { dateTime?: unknown }; end?: { dateTime?: unknown } }
     if (isCancelled === true || !BLOCKING.has(String(showAs ?? "busy"))) continue
-    const from = utc(start?.dateTime), to = utc(end?.dateTime)
+    const date = (value: unknown) => typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value) ? value.slice(0, 10) : ""
+    const from = isAllDay === true ? zonedMidnight(date(start?.dateTime), zone) : utc(start?.dateTime)
+    const to = isAllDay === true ? zonedMidnight(date(end?.dateTime), zone) : utc(end?.dateTime)
     if (Number.isFinite(from) && Number.isFinite(to) && to > from) result.push([from, to])
   }
   return result
+}
+
+/** Clip to the lookup window and merge overlaps, so a busy calendar stays a small message. */
+export function compactBusy(busy: BusyInterval[], window: { start: Date; end: Date }): BusyInterval[] {
+  const clipped = busy.map(([a, b]) => [Math.max(a, +window.start), Math.min(b, +window.end)] as BusyInterval).filter(([a, b]) => b > a).sort((x, y) => x[0] - y[0])
+  const merged: BusyInterval[] = []
+  for (const [a, b] of clipped) {
+    const last = merged.at(-1)
+    if (last && a <= last[1]) last[1] = Math.max(last[1], b)
+    else merged.push([a, b])
+  }
+  return merged
 }
 
 export async function lookupBusy({ config, code, verifier, redirectUri, week, fetcher = fetch }: {
@@ -86,7 +128,7 @@ export async function lookupBusy({ config, code, verifier, redirectUri, week, fe
   const { start, end } = weekWindow(week)
   let next: string | null = `https://graph.microsoft.com/v1.0/me/calendarView?${new URLSearchParams({
     startDateTime: start.toISOString(), endDateTime: end.toISOString(),
-    $select: "start,end,showAs,isCancelled", $top: "200",
+    $select: "start,end,showAs,isCancelled,isAllDay", $top: "200",
   })}`
   const events: unknown[] = []
   for (let page = 0; next && page < MAX_PAGES; page++) {
@@ -100,7 +142,11 @@ export async function lookupBusy({ config, code, verifier, redirectUri, week, fe
     if (Array.isArray(body.value)) events.push(...body.value)
     next = typeof body["@odata.nextLink"] === "string" ? body["@odata.nextLink"] : null
   }
-  return busyFromEvents(events)
+  // Never report "no conflicts" from a partial calendar.
+  if (next) throw new Error("too many events")
+  const busy = compactBusy(busyFromEvents(events), { start, end })
+  if (busy.length > 500) throw new Error("too many events")
+  return busy
 }
 
 /**

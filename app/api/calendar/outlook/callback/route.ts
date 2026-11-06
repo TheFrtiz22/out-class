@@ -2,8 +2,8 @@ import { cookies } from "next/headers"
 import { NextResponse, type NextRequest } from "next/server"
 import { DEMO_COOKIE } from "@/lib/demo/access"
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
-import { OUTLOOK_COOKIE, OUTLOOK_COOKIE_PATH, lookupBusy, outlookConfig, parsePending, popupResult } from "@/lib/outlook-calendar"
-import { requireAuth } from "@/utils/auth"
+import { OUTLOOK_COOKIE, OUTLOOK_COOKIE_PATH, lookupBusy, outlookConfig, parsePending, popupResult, redirectOrigin } from "@/lib/outlook-calendar"
+import { getSessionUser, requireAuth } from "@/utils/auth"
 
 export const dynamic = "force-dynamic"
 
@@ -31,15 +31,19 @@ export async function GET(request: NextRequest) {
   if (providerError) {
     // AADSTS65001/90094: the university tenant requires an administrator to approve the app.
     const description = params.get("error_description") || ""
-    return fail(/AADSTS(65001|90094|90095)/.test(description) ? "consent" : providerError === "access_denied" ? "declined" : "unavailable")
+    return fail(/AADSTS(65001|65004|90094|90095)/.test(description) || providerError === "consent_required" ? "consent" : providerError === "access_denied" ? "declined" : "unavailable")
   }
   const code = params.get("code")
   if (!code || code.length > 4000) return fail("expired")
+  const redirectBase = redirectOrigin(origin)
+  if (!redirectBase) return fail("unavailable")
   // The browser that started the lookup must still be the same OutClass account.
+  const session = await getSessionUser()
+  if (session.error || !session.data.user) return fail("signin", 401)
   const { user } = await requireAuth()
   if (user.id !== pending.userId) return fail("expired", 403)
   try {
-    const busy = await lookupBusy({ config, code, verifier: pending.verifier, redirectUri: new URL(`${OUTLOOK_COOKIE_PATH}/callback`, origin).toString(), week: pending.week })
+    const busy = await lookupBusy({ config, code, verifier: pending.verifier, redirectUri: new URL(`${OUTLOOK_COOKIE_PATH}/callback`, redirectBase).toString(), week: pending.week })
     return page({ nonce: pending.nonce, week: pending.week, busy })
   } catch {
     console.warn("Outlook busy-time lookup unavailable")

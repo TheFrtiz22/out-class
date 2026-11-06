@@ -24,6 +24,12 @@ test('busy intervals mark only overlapping quarter hours inside 8 AM–9 PM East
   const cells = busy.busyCellsForWeek('2026-11-02', ZONE, [[at('2026-11-02T14:00Z'), at('2026-11-02T14:30Z')], [at('2026-11-03T04:00Z'), at('2026-11-03T05:00Z')]])
   const marked = cells.flatMap((day, d) => day.flatMap((on, slot) => on ? [`${d}:${slot}`] : []))
   assert.deepEqual(marked, ['0:36', '0:37'], '9:00–9:30 AM Monday only; 11 PM–midnight is outside the editor window')
+  // Sunday Nov 1 (fall-back day) inside the Oct 26 week: 9:00 AM EST = 14:00Z.
+  const fallBack = busy.busyCellsForWeek('2026-10-26', ZONE, [[at('2026-11-01T14:00Z'), at('2026-11-01T14:15Z')]])
+  assert.deepEqual(fallBack.flatMap((day, d) => day.flatMap((on, slot) => on ? [`${d}:${slot}`] : [])), ['6:36'])
+  // Spring forward, Sunday Mar 14 2027: 9:00 AM EDT = 13:00Z.
+  const spring = busy.busyCellsForWeek('2027-03-08', ZONE, [[at('2027-03-14T13:00Z'), at('2027-03-14T13:15Z')]])
+  assert.deepEqual(spring.flatMap((day, d) => day.flatMap((on, slot) => on ? [`${d}:${slot}`] : [])), ['6:36'])
   // Before the change, 9:00 AM EDT = 13:00Z.
   const summer = busy.busyCellsForWeek('2026-10-26', ZONE, [[at('2026-10-26T13:00Z'), at('2026-10-26T13:01Z')]])
   assert.equal(summer[0][36], true); assert.equal(summer[0][37], false, 'a partial overlap marks only the quarter hours it touches')
@@ -56,12 +62,36 @@ test('Graph events: busy, tentative and away block; free, working elsewhere and 
   assert.deepEqual(result[0], [at('2026-11-02T14:00Z'), at('2026-11-02T15:00Z')], 'zone-less Graph times are UTC')
 })
 
-test('only a configured, explicitly enabled deployment offers the lookup', () => {
-  const full = { NEXT_PUBLIC_OUTLOOK_CALENDAR_ENABLED: 'true', MICROSOFT_CALENDAR_CLIENT_ID: 'id', MICROSOFT_CALENDAR_CLIENT_SECRET: 's' }
-  assert.deepEqual(outlook.outlookConfig(full), { clientId: 'id', clientSecret: 's', tenant: 'organizations' })
+test('all-day events cover their own Eastern dates, not the previous evening', () => {
+  const allDay = { showAs: 'oof', isAllDay: true, start: { dateTime: '2026-11-04T00:00:00.0000000' }, end: { dateTime: '2026-11-05T00:00:00.0000000' } }
+  const [interval] = outlook.busyFromEvents([allDay])
+  assert.deepEqual(interval, [at('2026-11-04T05:00Z'), at('2026-11-05T05:00Z')])
+  const cells = busy.busyCellsForWeek('2026-11-02', ZONE, [interval])
+  assert.equal(cells[1].some(Boolean), false, 'Tuesday evening stays available')
+  assert.equal(cells[2].filter(Boolean).length, 52, 'all of Wednesday 8 AM–9 PM')
+  assert.equal(outlook.zonedMidnight('2026-07-01'), at('2026-07-01T04:00Z'), 'EDT midnight')
+  assert.equal(outlook.zonedMidnight('2027-03-14'), at('2027-03-14T05:00Z'), 'spring-forward day starts in EST')
+})
+
+test('busy intervals are clipped to the lookup window and merged', () => {
+  const window = { start: new Date(1000), end: new Date(10000) }
+  assert.deepEqual(outlook.compactBusy([[0, 2000], [1500, 3000], [5000, 6000], [9000, 20000], [20000, 30000]], window), [[1000, 3000], [5000, 6000], [9000, 10000]])
+})
+
+test('only a configured, explicitly enabled deployment with a specific tenant offers the lookup', () => {
+  const full = { NEXT_PUBLIC_OUTLOOK_CALENDAR_ENABLED: 'true', MICROSOFT_CALENDAR_CLIENT_ID: 'id', MICROSOFT_CALENDAR_CLIENT_SECRET: 's', MICROSOFT_CALENDAR_TENANT: '7b3480c7-3707-4873-8b77-e216733a65ac' }
+  assert.deepEqual(outlook.outlookConfig(full), { clientId: 'id', clientSecret: 's', tenant: full.MICROSOFT_CALENDAR_TENANT })
   assert.equal(outlook.outlookConfig({ ...full, NEXT_PUBLIC_OUTLOOK_CALENDAR_ENABLED: 'false' }), null)
   assert.equal(outlook.outlookConfig({ ...full, MICROSOFT_CALENDAR_CLIENT_SECRET: '' }), null)
-  assert.equal(outlook.outlookConfig({ ...full, MICROSOFT_CALENDAR_TENANT: 'evil/../x' }), null)
+  for (const tenant of ['', 'organizations', 'common', 'Consumers', 'evil/../x']) assert.equal(outlook.outlookConfig({ ...full, MICROSOFT_CALENDAR_TENANT: tenant }), null, tenant)
+})
+
+test('production redirects only from the canonical site; other environments use their own origin', () => {
+  const prod = { VERCEL_ENV: 'production', OUTCLASS_SITE_URL: 'https://www.out-class.net' }
+  assert.equal(outlook.redirectOrigin('https://www.out-class.net', prod), 'https://www.out-class.net')
+  assert.equal(outlook.redirectOrigin('https://out-class.net', prod), null)
+  assert.equal(outlook.redirectOrigin('https://www.out-class.net', { VERCEL_ENV: 'production' }), null)
+  assert.equal(outlook.redirectOrigin('http://localhost:3000', {}), 'http://localhost:3000')
 })
 
 test('authorization asks for read-only calendar access with PKCE and no refresh token', () => {
@@ -98,12 +128,14 @@ test('lookup exchanges the code once, reads one window, follows Graph pages only
   const first = new URL(calls[1].url)
   assert.equal(first.searchParams.get('startDateTime'), '2026-11-01T00:00:00.000Z')
   assert.equal(first.searchParams.get('endDateTime'), '2026-11-10T00:00:00.000Z')
-  assert.equal(first.searchParams.get('$select'), 'start,end,showAs,isCancelled', 'no subjects, bodies, locations or attendees are requested')
+  assert.equal(first.searchParams.get('$select'), 'start,end,showAs,isCancelled,isAllDay', 'no subjects, bodies, locations or attendees are requested')
   assert.equal(calls[1].init.headers.Authorization, 'Bearer secret-access-token')
   assert.doesNotMatch(JSON.stringify(result), /secret-access-token/)
   const hostile = async (url) => url.includes('/token') ? { ok: true, json: async () => ({ access_token: 't' }) } : { ok: true, json: async () => ({ value: [], '@odata.nextLink': 'https://attacker.example/steal' }) }
   await assert.rejects(outlook.lookupBusy({ config, code: 'c', verifier: 'v', redirectUri: 'https://x/cb', week: '2026-11-02', fetcher: hostile }), /page/)
   await assert.rejects(outlook.lookupBusy({ config, code: 'c', verifier: 'v', redirectUri: 'https://x/cb', week: '2026-11-02', fetcher: async () => ({ ok: false, json: async () => ({}) }) }), /token/)
+  const endless = async (url) => url.includes('/token') ? { ok: true, json: async () => ({ access_token: 't' }) } : { ok: true, json: async () => ({ value: [], '@odata.nextLink': 'https://graph.microsoft.com/v1.0/me/calendarView?$skip=1' }) }
+  await assert.rejects(outlook.lookupBusy({ config, code: 'c', verifier: 'v', redirectUri: 'https://x/cb', week: '2026-11-02', fetcher: endless }), /too many events/, 'a truncated calendar is an error, never "no conflicts"')
 })
 
 test('the popup posts only to the same origin and escapes its payload', () => {
@@ -118,8 +150,10 @@ test('routes: signed-in, not impersonating or in demo; state, account and single
   const start = read('app/api/calendar/outlook/start/route.ts'), callback = read('app/api/calendar/outlook/callback/route.ts')
   for (const source of [start, callback]) {
     assert.match(source, /PLATFORM_VIEW_COOKIE/); assert.match(source, /DEMO_COOKIE/); assert.match(source, /requireAuth\(\)/)
-    assert.match(source, /outlookConfig\(\)/)
+    assert.match(source, /outlookConfig\(\)/); assert.match(source, /redirectOrigin\(origin\)/)
+    assert.ok(source.indexOf('getSessionUser()') < source.indexOf('requireAuth()'), 'signed-out popups get a message, not a redirect')
   }
+  assert.doesNotMatch(start, /NextResponse\.json/, 'start reports every outcome to the editor through the popup page')
   assert.match(start, /httpOnly: true/); assert.match(start, /path: OUTLOOK_COOKIE_PATH, maxAge: 600/)
   assert.match(callback, /params\.get\("state"\) !== pending\.state/)
   assert.match(callback, /user\.id !== pending\.userId/)
@@ -127,7 +161,18 @@ test('routes: signed-in, not impersonating or in demo; state, account and single
   assert.ok(callback.indexOf('maxAge: 0') < callback.indexOf('const config = outlookConfig()'), 'every response clears the pending lookup')
   assert.doesNotMatch(callback, /prisma|access_token|console\.(log|error)\([^)]*(token|busy)/, 'nothing is stored or logged')
   const editor = read('components/availability/my-availability.tsx'), widget = read('components/availability/outlook-busy-import.tsx')
-  assert.match(editor, /mode === "week" && OUTLOOK_BUSY_ENABLED && <OutlookBusyImport week=\{week\} days=\{days\} disabled=\{confirming\} onApply=\{editDays\} \/>/)
+  assert.match(editor, /mode === "week" && OUTLOOK_BUSY_ENABLED && <OutlookBusyImport week=\{week\} days=\{days\} disabled=\{confirming\} onApply=\{editDays\} afterApply=\{scope \?/)
   assert.match(widget, /event\.origin !== window\.location\.origin \|\| event\.source !== pending\.popup/)
   assert.match(widget, /data\.nonce !== pending\.nonce \|\| data\.week !== pending\.week/)
+  assert.match(widget, /setStatus\(errors\.closed\)/, 'closing the popup says nothing changed')
+  assert.match(widget, /request\.current\?\.popup\?\.close\(\)/, 'a stale popup is closed when the week changes')
+  for (const key of ['consent', 'declined', 'expired', 'unavailable', 'signin', 'closed']) assert.match(widget, new RegExp(`\\b${key}: "`), key)
+})
+
+test('the pending-lookup cookie survives Next cookie encoding unchanged', () => {
+  const { ResponseCookies, RequestCookies } = require('next/dist/compiled/@edge-runtime/cookies')
+  const headers = new Headers(), value = JSON.stringify({ state: 'a_b-c', verifier: 'v', week: '2026-11-02', nonce: 'n'.repeat(16), userId: 'u', expires: 2000 })
+  new ResponseCookies(headers).set(outlook.OUTLOOK_COOKIE, value, { httpOnly: true, path: outlook.OUTLOOK_COOKIE_PATH })
+  const read = new RequestCookies(new Headers({ cookie: headers.get('set-cookie').split(';')[0] }))
+  assert.deepEqual(outlook.parsePending(read.get(outlook.OUTLOOK_COOKIE).value, 1000), JSON.parse(value))
 })

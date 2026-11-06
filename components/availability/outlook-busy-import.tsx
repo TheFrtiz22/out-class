@@ -10,6 +10,8 @@ const errors: Record<string, string> = {
   consent: "Your university needs to approve OutClass for Outlook access before calendars can be checked.",
   declined: "Outlook access wasn’t granted. Nothing changed.",
   expired: "The Outlook check expired. Try again.",
+  signin: "Your OutClass sign-in expired. Reload the page, sign in, and try again.",
+  closed: "Outlook check cancelled. Nothing changed.",
   unavailable: "Outlook couldn’t be checked right now. Nothing changed.",
 }
 
@@ -18,15 +20,17 @@ const errors: Record<string, string> = {
  * them unavailable. Nothing changes until the person confirms, and the change
  * goes through the editor's normal save queue and revision checks.
  */
-export function OutlookBusyImport({ week, days, disabled, onApply }: {
+export function OutlookBusyImport({ week, days, disabled, onApply, afterApply = "" }: {
   week: string; days: boolean[][]; disabled?: boolean; onApply: (next: boolean[][], changedDays: number[]) => void
+  /** Extra guidance after applying, e.g. that a submitted round needs submitting again. */
+  afterApply?: string
 }) {
   const [checking, setChecking] = useState(false), [status, setStatus] = useState("")
   const [busy, setBusy] = useState<boolean[][] | null>(null)
   const request = useRef<{ nonce: string; week: string; popup: Window | null } | null>(null)
 
-  // A result belongs to the week it was requested for.
-  useEffect(() => { setBusy(null); setStatus(""); setChecking(false); request.current = null }, [week])
+  // A result belongs to the week it was requested for; a stale popup is closed.
+  useEffect(() => () => { request.current?.popup?.close(); request.current = null; setBusy(null); setStatus(""); setChecking(false) }, [week])
 
   useEffect(() => {
     function receive(event: MessageEvent) {
@@ -46,7 +50,13 @@ export function OutlookBusyImport({ week, days, disabled, onApply }: {
   useEffect(() => {
     if (!checking) return
     // Closing the popup without finishing ends the check quietly.
-    const timer = window.setInterval(() => { if (request.current?.popup?.closed) { request.current = null; setChecking(false) } }, 800)
+    // The popup closes itself right after posting; allow one more tick for that message to land.
+    let closedTicks = 0
+    const timer = window.setInterval(() => {
+      if (!request.current?.popup?.closed) { closedTicks = 0; return }
+      if (++closedTicks < 2) return
+      request.current = null; setChecking(false); setStatus(errors.closed)
+    }, 800)
     return () => window.clearInterval(timer)
   }, [checking])
 
@@ -66,7 +76,7 @@ export function OutlookBusyImport({ week, days, disabled, onApply }: {
       {preview.removed === 0
         ? <><span>Outlook shows no conflicts with your availability this week.</span><Button variant="ghost" size="sm" className="min-h-11" onClick={() => setBusy(null)}>Done</Button></>
         : <><span>Outlook shows you busy during {preview.removed === 1 ? "1 available quarter hour" : `${preview.removed} available quarter hours`} this week.</span>
-          <Button size="sm" className="min-h-11" disabled={disabled} onClick={() => { onApply(preview.next, preview.changedDays); setBusy(null); setStatus("Outlook busy times marked unavailable.") }}>Mark unavailable</Button>
+          <Button size="sm" className="min-h-11" disabled={disabled} onClick={() => { onApply(preview.next, preview.changedDays); setBusy(null); setStatus(`Outlook busy times marked unavailable.${afterApply ? ` ${afterApply}` : ""}`) }}>Mark unavailable</Button>
           <Button variant="ghost" size="sm" className="min-h-11" onClick={() => setBusy(null)}>Keep as is</Button></>}
     </div>}
     {status && <p role="status" className="text-sm text-muted-foreground">{status}</p>}
