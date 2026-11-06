@@ -43,7 +43,7 @@ test("OutClass has exactly one palette: tokens.css :root, with no scoped overrid
   assert.ok(!fs.existsSync("styles/product-tokens.css"), "product-tokens.css was merged into tokens.css")
   assert.doesNotMatch(read("app/globals.css"), /product-tokens/)
   // The palette is :root. The only other block is the projector's dark variant, which redefines colors only.
-  const [palette, ...themes] = tokens.split(/^\[data-theme="present"\] \{$/m)
+  const [palette, ...themes] = tokens.split(/^\[data-theme="present"\], \.oc-focus-frame:has\(\.oc-present-surface\) \.oc-focus-bar \{$/m)
   assert.equal(themes.length, 1, "one projector theme block")
   assert.doesNotMatch(themes[0], /--oc-(rail|surface|shell|content-width|reading-width|font|text|space)/, "the projector theme changes colors, not geometry or type")
   for (const token of ["--background:", "--primary:", "--ring:", "--oc-rail:", "--oc-surface-blue:", "--oc-shell-rail-width:"]) {
@@ -69,7 +69,7 @@ test("rules that used the removed attributes still have a hook in the markup", (
   const scope = ':is(main, [role="main"], .oc-voting-stage'
   assert.ok(css("components/shell/responsive-workspace.css").includes(`${scope}) button`))
   assert.ok(css("styles/interface-primitives.css").includes(`${scope}, .oc-workspace-drawer) button[data-slot="checkbox"]`))
-  assert.match(read("components/live-voting/member-voting-pad.tsx"), /role=\{embedded \? "group" : "main"\}/)
+  assert.match(read("components/live-voting/member-voting-pad.tsx"), /role="group" aria-label="Member voting"/) // the focus frame owns main
   assert.match(read("components/live-voting/proctor-presentation-view.tsx"), /className="oc-voting-stage\b/)
   // The embedded pad renders only inside the projector stage, which the scope covers.
   assert.match(read("components/live-voting/proctor-presentation-view.tsx"), /<MemberVotingPad [^>]*embedded/)

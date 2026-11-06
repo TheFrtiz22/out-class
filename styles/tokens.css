@@ -166,9 +166,10 @@
   --oc-shell-mobile-height: 4.75rem;
 }
 
-/* Projector theme: only the live-voting presentation sets data-theme="present" (on its focus frame).
+/* Projector theme: only the live-voting presentation sets data-theme="present" (its page wrapper; the
+   focus frame bar follows it with :has, so the bar shown over the slide is dark too).
    Same semantic names, dark values, so every component keeps reading tokens. */
-[data-theme="present"] {
+[data-theme="present"], .oc-focus-frame:has(.oc-present-surface) .oc-focus-bar {
   color-scheme: dark;
   --background: #0f1c2b;
   --foreground: #f6f5f1;

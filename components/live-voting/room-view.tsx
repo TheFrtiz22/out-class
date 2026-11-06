@@ -1,5 +1,7 @@
 "use client";
 import {Popover,PopoverTrigger,PopoverContent} from "@/components/ui/popover";
+import { useFocusFrame } from "@/components/shell/focus-frame-context";
+import { votingRoomFocus } from "@/lib/focus-routes";
 import { VotingBackLink } from "./room-back-link";
 import { LoadingState } from "@/components/ui/loading-state"
 import Link from "next/link";
@@ -24,6 +26,7 @@ type View="leader"|"present"|"member";
 type Ballot=z.infer<typeof roomBallotSchema>;
 export function LiveVotingEntry({clubId,sessionId,view,demoScoped}:{clubId:string;sessionId:string;view:View;demoScoped:boolean}){
  const auth=useAuth(),demo=useDemoMode(),[member,setMember]=useState("");
+ useFocusFrame(votingRoomFocus(view));
  if(auth.loading||!demo.ready)return <div className="vr-page"><LoadingState label="Checking sign-in…" layout="inline" /></div>;
  if(demoScoped!==demo.isDemoEnabled)return <div className="vr-page"><h1>Voting link unavailable in this workspace</h1><p>Use the matching Live or Demo link. This page will not switch environments.</p><Link href="/">Return to OutClass</Link></div>;
  if(!auth.user)return <div className="vr-page"><h1>Join live voting</h1><p>Sign in to check eligibility.</p><Link className="vr-link" href={`/login?next=${encodeURIComponent(liveRoomPath(clubId,sessionId,view,demoScoped))}`}>Sign in and return to this session</Link></div>;

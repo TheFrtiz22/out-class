@@ -42,7 +42,7 @@ export function ProctorPresentationView({
     tied: "Tied · no decision",
   }[tally.result]
   return (
-    <FocusFrame task="Voting preview" width="full" onExit={() => (ended ? onClose() : setConfirmEnd(true))}>
+    <FocusFrame overlay task="Voting preview" width="full" onExit={() => (ended ? onClose() : setConfirmEnd(true))}>
     <section className="oc-voting-stage flex flex-1 flex-col" aria-label="Live voting presentation">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 px-5 py-4 lg:px-10">
         <div className="flex items-center gap-3">

@@ -36,8 +36,8 @@ test('an old in-workspace room URL holds on loading and moves to the interview r
  assert.equal(entry.legacyInterviewRoomHref('club','section=recruitment&tool=applicants&interview=1'),null);
  assert.equal(entry.clubInterviewHref('a/b'),'/club/a%2Fb/interview');
 });
-function room(search,{permission=true,selected=true,loading=false}={}) {
- const pushes=[],member={id:'panel',clubId:'club',status:'ACTIVE',accessRole:'MEMBER',permissions:permission?['applications.review']:[],club:{name:'Synthetic',color:'#123456'}},frames=[];
+function room(search,{permission=true,selected=true,loading=false,suspendedAt=null}={}) {
+ const pushes=[],member={id:'panel',clubId:'club',status:'ACTIVE',accessRole:'MEMBER',permissions:permission?['applications.review']:[],club:{name:'Synthetic',color:'#123456',suspendedAt}},frames=[];
  const mocks={
   react:{useEffect:()=>{}},
   'next/navigation':{useRouter:()=>({push:href=>pushes.push(href)}),useSearchParams:()=>new URLSearchParams(search)},
@@ -71,4 +71,8 @@ test('URL restoration still waits for current membership and selected club permi
  for(const options of [{selected:false},{loading:true}])assert.equal(room('applicationId=a&roundId=r',options).tree.type,'WorkspaceLoading');
  const denied=room('applicationId=a&roundId=r',{permission:false});
  assert.equal(denied.nodes.some(node=>node.type==='Dynamic'),false);assert.ok(denied.nodes.some(node=>node.props?.title==='Interview room unavailable'));
+});
+test('a club suspended after the page loaded shows the notice and never mounts the room',()=>{
+ const suspended=room('applicationId=a&roundId=r',{suspendedAt:'2026-11-06T00:00:00Z'});
+ assert.equal(suspended.nodes.some(node=>node.type==='Dynamic'),false);assert.ok(suspended.nodes.some(node=>node.props?.title==='This club is suspended'));
 });

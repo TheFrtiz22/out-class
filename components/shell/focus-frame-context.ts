@@ -1,6 +1,6 @@
 "use client"
-import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef } from "react"
-import { LAST_PRODUCT_ROUTE_KEY, safeExitHref, type FocusTheme, type FocusWidth } from "@/lib/focus-routes"
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from "react"
+import { LAST_PRODUCT_ROUTE_KEY, safeExitHref, type FocusWidth } from "@/lib/focus-routes"
 
 /* Hook and context only: shared screens import this without pulling in the frame's UI. */
 export type FocusDetails = {
@@ -12,7 +12,6 @@ export type FocusDetails = {
   /** Runs instead of navigating, e.g. to confirm unsaved work. */
   onExit?: () => void
   width?: FocusWidth
-  theme?: FocusTheme
 }
 
 type FrameContext = { set: (owner: symbol, details: FocusDetails | null) => void }
@@ -22,28 +21,41 @@ const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : us
 /**
  * Lets a screen inside a focus frame name its task and club, or take over Exit.
  * A no-op outside a frame, so shared components can call it unconditionally.
+ * Registrations merge in the order they first mounted; two layers should not set the same field.
  */
 export function useFocusFrame(details: FocusDetails) {
   const context = useContext(FocusFrameContext)
-  const owner = useRef(Symbol("focus-details")).current
-  const latest = useRef(details); latest.current = details
+  const [owner] = useState(() => Symbol("focus-details"))
+  const latest = useRef(details)
+  useIsomorphicLayoutEffect(() => { latest.current = details })
   const exit = useCallback(() => latest.current.onExit?.(), [])
-  const { task, club, exitHref, width, theme } = details, hasExit = !!details.onExit
+  const { task, club, exitHref, width } = details, hasExit = !!details.onExit
   useIsomorphicLayoutEffect(() => {
-    context?.set(owner, { task, club: club ? { name: club.name, color: club.color } : club, exitHref, width, theme, onExit: hasExit ? exit : undefined })
-  }, [context, owner, task, club?.name, club?.color, exitHref, width, theme, hasExit, exit])
+    context?.set(owner, { task, club: club ? { name: club.name, color: club.color } : club, exitHref, width, onExit: hasExit ? exit : undefined })
+  }, [context, owner, task, club?.name, club?.color, exitHref, width, hasExit, exit])
   useEffect(() => () => context?.set(owner, null), [context, owner])
 }
 
-export function storedProductRoute() {
-  try { return safeExitHref(window.sessionStorage.getItem(LAST_PRODUCT_ROUTE_KEY)) } catch { return null }
+/**
+ * The last product page in this tab, only for the same account and mode (live or demo), so
+ * Exit never offers one person's page, with its club or applicant ids, to the next sign-in.
+ */
+export function storedProductRoute(account: string) {
+  try {
+    const stored = JSON.parse(window.sessionStorage.getItem(LAST_PRODUCT_ROUTE_KEY) || "null") as { href?: string; account?: string } | null
+    return stored?.account === account ? safeExitHref(stored.href) : null
+  } catch { return null }
 }
 
 /** Records the current product page so a focus screen's Exit can return to it. */
-export function rememberProductRoute() {
+export function rememberProductRoute(account: string) {
   try {
     const href = safeExitHref(window.location.pathname + window.location.search)
-    if (href) window.sessionStorage.setItem(LAST_PRODUCT_ROUTE_KEY, href)
+    if (href) window.sessionStorage.setItem(LAST_PRODUCT_ROUTE_KEY, JSON.stringify({ href, account }))
   } catch { /* Exit falls back to /home without storage. */ }
 }
 
+/** Identifies whose page was stored: the signed-in (or viewed) account and live/demo mode. */
+export function productRouteAccount(userId: string | null | undefined, demo: boolean) {
+  return `${demo ? "demo" : "live"}:${userId ?? "anonymous"}`
+}

@@ -51,11 +51,13 @@ test("focus frame: unchanged URLs, Exit to the referring page, interview room ro
 
   await t.test("the projector route uses the dark present theme; other voting views do not", async () => {
     await page.goto(`${config.appUrl}/voting/rooms/${randomUUID()}?clubId=${club}&view=present`); await frame().waitFor()
-    await page.waitForFunction(() => document.querySelector("[data-focus-frame]")?.getAttribute("data-theme") === "present")
-    const background = await page.evaluate(() => getComputedStyle(document.querySelector("[data-focus-frame]")).backgroundColor)
+    // Server-rendered marker: dark from the first paint, before hydration.
+    const response = await page.request.get(`${config.appUrl}/voting/rooms/${randomUUID()}?clubId=${club}&view=present`)
+    assert.match(await response.text(), /data-theme="present" class="oc-present-surface"/)
+    const background = await page.evaluate(() => getComputedStyle(document.querySelector(".oc-present-surface")).backgroundColor)
     assert.equal(background, "rgb(15, 28, 43)")
     await page.goto(`${config.appUrl}/vote`); await frame().waitFor()
-    assert.equal(await frame().getAttribute("data-theme"), null)
+    assert.equal(await page.locator("[data-theme]").count(), 0)
   })
 
   await t.test("signed out, the interview route asks for sign-in and returns to the same room", async () => {

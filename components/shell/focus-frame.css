@@ -24,8 +24,14 @@
 .oc-focus-content .oc-loading-screen { min-block-size: 50dvh; background: none; }
 /* Full-bleed task screens (interview room, speed review, projector) fill the height below the bar. */
 .oc-focus-frame[data-width="full"] .oc-focus-content { display: flex; flex-direction: column; }
-/* Projector: the slide keeps the whole screen (a 1280×720 slide has no spare rows). The bar overlays
-   the top edge and appears on pointer hover or keyboard focus, so Exit stays one Tab away. */
-.oc-focus-frame[data-theme="present"] .oc-focus-bar { position: fixed; inset: 0 0 auto; opacity: 0; }
-.oc-focus-frame[data-theme="present"] .oc-focus-bar:is(:hover, :focus-within) { opacity: 1; }
-@media (prefers-reduced-motion: no-preference) { .oc-focus-frame[data-theme="present"] .oc-focus-bar { transition: opacity var(--oc-duration-ui) var(--oc-ease-ui); } }
+/* Projector: the page renders [data-theme="present"] (server-side); the frame follows it here, so the first
+   paint is already dark and full width. The slide keeps the whole screen (a 1280×720 slide has no spare rows):
+   the hidden bar takes no clicks, a thin strip at the top edge or keyboard focus reveals it, and Exit stays one Tab away. */
+.oc-focus-reveal { display: none; }
+.oc-focus-frame:has(.oc-present-surface) { color-scheme: dark; }
+.oc-focus-frame:has(.oc-present-surface) .oc-focus-content { max-width: none; padding: 0; display: flex; flex-direction: column; }
+.oc-present-surface { display: flex; min-height: 100dvh; flex: 1; flex-direction: column; background: var(--background); color: var(--foreground); }
+.oc-focus-frame:has(.oc-present-surface) .oc-focus-reveal { display: block; position: fixed; inset: 0 0 auto; z-index: calc(var(--oc-z-sticky) + 1); height: .5rem; }
+.oc-focus-frame:has(.oc-present-surface) .oc-focus-bar { position: fixed; inset: 0 0 auto; z-index: calc(var(--oc-z-sticky) + 2); opacity: 0; pointer-events: none; }
+.oc-focus-frame:has(.oc-present-surface) :is(.oc-focus-reveal:hover + .oc-focus-bar, .oc-focus-bar:hover, .oc-focus-bar:focus-within) { opacity: 1; pointer-events: auto; }
+@media (prefers-reduced-motion: no-preference) { .oc-focus-frame:has(.oc-present-surface) .oc-focus-bar { transition: opacity var(--oc-duration-ui) var(--oc-ease-ui); } }

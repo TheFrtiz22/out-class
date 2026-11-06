@@ -23,9 +23,11 @@ export function ClubInterviewRoom({ clubId }: { clubId: string }) {
   const back = interviewListHref(clubId, params.toString())
   // Legacy recruitment components share a selected club; select this one before mounting them.
   const needsSelection = !!membership && hasWorkspace(membership) && (activeClubId !== clubId || (demo.isDemoEnabled && demo.state?.perspective.role !== "leader"))
-  useEffect(() => { if (needsSelection) selectClub(clubId) }, [clubId, needsSelection])
+  useEffect(() => { if (needsSelection) selectClub(clubId) }, [clubId, needsSelection, selectClub])
   useFocusFrame({ exitHref: back, club: membership ? { name: membership.club.name, color: membership.club.color } : null })
   if (!demo.ready || loading || needsSelection) return <WorkspaceLoading label="Preparing interview workspace…" layout="interview" rows={3} />
+  // The server page also refuses a suspended club; this covers suspension seen after load.
+  if (!demo.isDemoEnabled && membership?.club.suspendedAt) return <div className="space-y-4 p-[var(--oc-space-page)]"><PageHeader title="This club is suspended" description="Club operations are unavailable until an administrator restores it. Your membership and existing records are preserved." /><Link className="underline" href="/home">Return to Personal workspace</Link></div>
   if (!membership || !hasPermission(membership, "applications.review")) return <div className="space-y-4 p-[var(--oc-space-page)]"><PageHeader title="Interview room unavailable" description={user ? "You need a current club role with interview access to open this room." : "Sign in with your club account to open this interview room."} /><Link className="underline" href={membership ? back : "/home"}>{membership ? "Back to interviews" : "Return to OutClass"}</Link></div>
   return <ApplicationStateProvider initialData={{ applications: [], attendances: [] }} persistLocalState={false}>
     <RecruitmentFocus />
