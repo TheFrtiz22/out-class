@@ -2,14 +2,14 @@
 import { useEffect, type ReactNode } from "react"
 import { PageHeader } from "@/components/ui/page-header"
 import { ProductShell } from "@/components/shell/product-shell"
-import { personalMode, personalItems, personalModes, personalDestination, type PersonalSection } from "@/lib/product-navigation"
+import { personalMode, personalItems, personalDestination, type PersonalSection } from "@/lib/product-navigation"
 import { adminNav, viewTitles, type AppMode, type ViewId } from "@/lib/views"
 import { useAuth } from "@/contexts/auth-context"
-import { useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useApplicationState } from "@/lib/application-state"
 import { hasWorkspace } from "@/lib/permissions"
 import { AuthSessionBoundary } from "@/components/auth-session-boundary"
-import { isLeaderWorkspaceView, leaderWorkspaceHref } from "@/lib/navigation"
+import { inPlaceSections, isLeaderWorkspaceView, leaderWorkspaceHref, personalRailSections } from "@/lib/navigation"
 import { OutClassLoadingScreen } from "@/components/outclass-loading-screen"
 export interface DashboardLayoutProps {
   children: ReactNode; view: ViewId; appMode: AppMode; onNavigate: (view: ViewId, section?: PersonalSection) => void;
@@ -22,6 +22,8 @@ export function DashboardLayout(props: DashboardLayoutProps) {
 function DashboardContent({ children, view, appMode, onNavigate, personalSection = "explore", onPersonalSection }: DashboardLayoutProps) {
   const { user, activeClubId } = useAuth()
   const router = useRouter()
+  // The sample-data preview must never link out to the live student routes.
+  const preview = usePathname()?.startsWith("/preview") ?? false
   const { leaderFocus, focusApplication } = useApplicationState()
   const applicationClubId = useSearchParams().get("applicationClubId")
   useEffect(() => { if (applicationClubId) focusApplication(applicationClubId) }, [applicationClubId, focusApplication])
@@ -41,10 +43,10 @@ function DashboardContent({ children, view, appMode, onNavigate, personalSection
     if (destination.section) onPersonalSection?.(destination.section)
   }
   if (leaderView && managed) return <OutClassLoadingScreen />
-  if (!user && appMode === "admin") return <ProductShell mode="preview" modes={[{ id: "preview", label: "Local workspace preview" }]} items={adminNav.map(i => ({ id: i.id, label: i.title, preview: true }))} active={view} title={viewTitles[view].title} onSelect={id => { if (id !== "preview") onNavigate(id as ViewId) }} onNavigate={onNavigate}><p className="mb-6 text-sm text-muted-foreground">Local preview · sample data only. These controls do not publish changes.</p><PageHeader title={viewTitles[view].title} />{children}</ProductShell>
+  if (!user && appMode === "admin") return <ProductShell mode="preview" sections={[{ id: "preview", label: "Local workspace preview", items: adminNav.map(i => ({ id: i.id, label: i.title, preview: true })) }]} active={view} title={viewTitles[view].title} onSelect={id => { if (id !== "preview") onNavigate(id as ViewId) }} onNavigate={onNavigate}><p className="mb-6 text-sm text-muted-foreground">Local preview · sample data only. These controls do not publish changes.</p><PageHeader title={viewTitles[view].title} />{children}</ProductShell>
   const universalView = ["student-dashboard", "calendar", "student-profile", "inbox"].includes(view)
   const title = universalView ? viewTitles[view].title : view === "my-clubs" && section === "clubs" ? "My Clubs" : items.find(i => i.id === section)?.label || viewTitles[view].title
-  return <ProductShell mode={mode} modes={personalModes} items={items} active={universalView ? view : section} title={title} onSelect={select} onNavigate={onNavigate}>
+  return <ProductShell mode={mode} sections={preview ? inPlaceSections(personalRailSections()) : personalRailSections()} active={universalView ? view : section} title={title} onSelect={select} onNavigate={onNavigate}>
     {view !== "student-dashboard" && view !== "explore" && view !== "tracker" && view !== "status" && view !== "corkboard" && <PageHeader title={["student-profile", "inbox"].includes(view) ? viewTitles[view].title : title} description={view === "inbox" ? "Your club updates and tasks, together in one place." : undefined} className={view === "inbox" ? "oc-notifications-header" : undefined} />}
     {(["interview-scheduler", "club-management-portal", "screening-dashboard", "broadcast-messages"].includes(view) || appMode === "admin") && <p className="mb-6 border-l-2 pl-4 text-sm text-muted-foreground">Existing workspace tools · preview controls do not publish changes or send messages.</p>}
     {children}

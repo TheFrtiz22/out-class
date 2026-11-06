@@ -157,7 +157,7 @@ async function check() {
     await header.locator('[data-tour="profile"]').click()
     assert.equal(await menu.evaluate(el => { const r = el.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight }), true)
     await page.keyboard.press('Escape')
-    await page.getByRole('button', { name: 'More navigation and workspaces', exact: true }).click()
+    await page.getByRole('button', { name: 'More sections', exact: true }).click()
     const drawer = page.getByRole('dialog', { name: 'Workspace navigation', exact: true })
     await drawer.waitFor()
     await page.setViewportSize({ width: 1280, height: 900 })

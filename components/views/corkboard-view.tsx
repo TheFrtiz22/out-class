@@ -7,8 +7,8 @@ export function CorkboardView({ onNavigate }: { onNavigate?: (view: ViewId) => v
   return (
     <div className="oc-corkboard-events">
       <PageHeader
-        title="Virtual Corkboard"
-        description="Check out events on Grounds."
+        title="Corkboard"
+        description="Events on Grounds this week"
       />
       <PublicEventBoard toolbarAction={<SavedClubsPopover onNavigate={onNavigate} />} />
     </div>

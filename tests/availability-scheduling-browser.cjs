@@ -78,7 +78,7 @@ async function verify(config, root) {
     // Mobile request deep-link and explicit decline in a different club leave the first response intact.
     const other = config.clubs[1]; await ownerActor.action('actions/availability.ts', 'requestRoundAvailability', [{ clubId: other.id, roundId: other.roundId, memberIds: [other.memberId] }])
     const mobile = await context('interviewer', true); await mobile.page.goto(config.appUrl + '/home'); await dismiss(mobile.page)
-    await mobile.page.getByRole('button', { name: 'More navigation and workspaces' }).tap(); await mobile.page.getByRole('navigation', { name: 'Availability navigation' }).getByRole('link', { name: 'My Availability' }).waitFor()
+    await mobile.page.getByRole('button', { name: 'More sections' }).tap(); await mobile.page.getByRole('navigation', { name: 'Availability navigation' }).getByRole('link', { name: 'My Availability' }).waitFor()
     await mobile.page.getByRole('button', { name: 'Close', exact: true }).tap(); await mobile.page.getByRole('region', { name: 'Availability requests' }).getByRole('link', { name: 'Respond to request' }).tap()
     await mobile.page.getByRole('button', { name: 'Decline participation', exact: true }).tap(); await mobile.page.getByText('Declined participation.', { exact: false }).waitFor()
     assert.equal(await mobile.page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false); await mobile.page.screenshot({ path: path.join(root, 'availability-response-mobile.png'), fullPage: false })

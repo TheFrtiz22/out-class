@@ -181,7 +181,7 @@ test('settings and authenticated navigation across roles, saves, history and res
       await selector.selectOption('/settings/notifications');
       await studentPage.getByRole('heading', { name: 'Notifications', exact: true }).waitFor();
       await noOverflow(studentPage);
-      await studentPage.getByRole('button', { name: 'More navigation and workspaces', exact: true }).click();
+      await studentPage.getByRole('button', { name: 'More sections', exact: true }).click();
       const drawer = studentPage.getByRole('dialog', { name: 'Workspace navigation', exact: true });
       await drawer.waitFor();
       assert.ok(await drawer.getByRole('link', { name: 'Settings', exact: true }).isVisible());

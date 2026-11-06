@@ -50,7 +50,9 @@ test('first leader entry shows a neutral loader and selects Recruiting overview 
   const screen = shell(h.render());
   assert.equal(screen.props.mode, 'recruiting');
   assert.equal(screen.props.active, 'overview');
-  assert.equal(screen.props.modes.find(mode => mode.id === 'club').href, '/club/club/workspace?section=overview');
+  // Recruiting and Club are rail sections; Club home opens the explicit overview.
+  assert.deepEqual(screen.props.sections.map(section => section.id), ['recruiting', 'club']);
+  assert.equal(screen.props.sections.find(section => section.id === 'club').items.find(item => item.id === 'club-home').href, '/club/club/workspace?section=overview');
 });
 
 test('only explicit mode choices persist and general entries restore either saved workspace', () => {
@@ -87,7 +89,7 @@ test('permission-limited leaders fall back to Club even with a saved Recruiting 
   assert.equal(h.render().type, 'WorkspaceLoading'); h.flush();
   const screen = shell(h.render());
   assert.equal(screen.props.mode, 'club');
-  assert.deepEqual(screen.props.modes.map(mode => mode.id), ['club']);
+  assert.deepEqual(screen.props.sections.map(section => section.id), ['club']);
   const member = harness({ permissions: [] });
   assert.equal(shell(member.render()).props.mode, 'clubs'); member.flush();
   assert.deepEqual(member.changes, []);

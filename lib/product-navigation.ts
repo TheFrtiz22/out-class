@@ -5,19 +5,9 @@ import { decisionsHref } from "@/lib/voting-navigation"
 import { applicantInterviewHref } from "@/lib/applicant-interview-navigation"
 export type PersonalSection = "explore" | "categories" | "corkboard" | "calendar" | "applications" | "status" | "clubs" | "meetings" | "tasks"
 export type PersonalMode = "explore" | "apply" | "clubs"
-export type ProductNavItem = { id: string; label: string; href?: string; quiet?: boolean; preview?: boolean; navGroup?: "applicants" | "decisions" }
-export const personalModes: ProductNavItem[] = [
-  { id: "explore", label: "Explore" }, { id: "apply", label: "Apply" }, { id: "clubs", label: "My Clubs" },
-]
-export const personalUniversalItems: ProductNavItem[] = [
-  { id: "student-dashboard", label: "Home" },
-  { id: "calendar", label: "Calendar" },
-  { id: "inbox", label: "Notifications" },
-  { id: "student-profile", label: "Profile" },
-  { id: "settings", label: "Settings", href: "/settings" },
-]
+export type ProductNavItem = { id: string; label: string; href?: string; quiet?: boolean; preview?: boolean; navGroup?: "applicants" | "decisions"; mode?: "recruiting" | "club" }
 const personalNavigation: Record<PersonalMode, ProductNavItem[]> = {
-  explore: [{ id: "explore", label: "Discover" }, { id: "corkboard", label: "Corkboard" }],
+  explore: [{ id: "explore", label: "Explore" }, { id: "corkboard", label: "Corkboard" }],
   apply: [{ id: "applications", label: "Applications" }, { id: "status", label: "Status" }],
   clubs: [{ id: "clubs", label: "Clubs" }, { id: "meetings", label: "Meetings" }, { id: "tasks", label: "Tasks" }],
 }
