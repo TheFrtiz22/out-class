@@ -66,7 +66,7 @@ export async function respondToRecruitmentOffer(tx: AppTransactionClient, applic
   }
   if (response === "DECLINE" && offer.status === "DECLINED") return { clubId: app.clubId, status: "DECLINED" as const };
   if (app.status !== "ACCEPTED" || offer.status !== "PENDING" || offer.expiresAt <= new Date() || offer.revokedAt || offer.acceptedAt || offer.declinedAt || offer.expiredAt)
-    throw Error("This offer is no longer available.");
+    throw Error("This offer is unavailable or has expired.");
   if (response === "DECLINE") {
     await tx.clubInvitation.update({ where: { id: offer.id }, data: { status: "DECLINED", declinedAt: new Date() } });
     await event(tx, userId, app.clubId, offer.id, "offer.declined", app.id);

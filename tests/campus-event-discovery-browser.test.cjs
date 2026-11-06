@@ -64,7 +64,7 @@ test('Events: desktop/tablet/mobile views share filters, saves, RSVP, details an
     await page.locator('.oc-event-filter > summary').click();
     await page.getByLabel('Saved events', { exact: true }).check();
     await page.locator('.oc-event-filter > summary').click();
-    assert.equal(await page.locator('.oc-event-filter-count').innerText(), '1');
+    assert.equal(await page.locator('.oc-event-filter-count [aria-hidden="true"]').innerText(), '1'); assert.equal(await page.locator('.oc-event-filter-count .sr-only').textContent(), ', 1 active');
     await page.getByText('1 approved event · Times shown in Eastern Time', { exact: true }).waitFor();
     await page.getByRole('button', { name: 'List View', exact: true }).click();
     assert.equal(await page.locator('.oc-smart-event-card').count(), 1);
