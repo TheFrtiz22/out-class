@@ -18,7 +18,7 @@ The replacement uses system sans-serif for compact tools and local variable Casl
 - `ProductShell`: one consistent desktop rail, stable student destinations, guarded workspace switching, search, notifications and account controls. Club modes retain permission-filtered destinations.
 - `MobileNavigation`: persistent, thumb-friendly primary destinations with a full navigation/workspace sheet. Discovery highlights and applicant lanes use horizontal snap browsing on phones.
 
-Use plain sections for headings and lists. Add a Surface only when grouping has meaning: plain, subtle, outlined, elevated, or brand. Existing Card APIs still work with the product elevation system. StatusBadge shares semantic outcome colors. EmptyState pairs concise next steps with the ribbon.
+Use plain sections for headings and lists. Add a Surface only when grouping has meaning: plain, subtle, outlined, elevated, or brand. Existing Card APIs still work with the product elevation system. StatusPill shows application states with semantic outcome colors. EmptyState pairs concise next steps with the ribbon.
 
 ## Experience coverage
 

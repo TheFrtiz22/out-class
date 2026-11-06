@@ -1,11 +1,9 @@
 /* One journey pattern across Applications, Interviews and Decisions. */
 .oc-applications { container-type: inline-size; }
 .oc-application-list { display: grid; gap: 1rem; list-style: none; padding: 0; }
-.oc-application-row { position: relative; display: grid; grid-template-columns: minmax(0,1fr) 14rem; gap: 1rem 1.25rem; padding: var(--oc-content-padding); border: 1px solid var(--oc-content-edge); border-left: 3px solid transparent; border-radius: var(--oc-content-radius); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); transition: border-color var(--oc-content-motion), box-shadow var(--oc-content-motion); }
+.oc-application-row { position: relative; display: grid; grid-template-columns: minmax(0,1fr) 14rem; gap: 1rem 1.25rem; padding: var(--oc-content-padding); border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); transition: border-color var(--oc-content-motion), box-shadow var(--oc-content-motion); }
 .oc-application-row:hover { box-shadow: var(--oc-content-shadow-hover); }
 .oc-application-row:focus-within { outline: 2px solid var(--ring); outline-offset: 4px; }
-.oc-application-row[data-status="DRAFTING"] { border-left-color: var(--brand-orange); }
-.oc-application-row[data-status="ACCEPTED"] { border-left-color: var(--success); background: color-mix(in srgb,var(--success-subtle) 60%,var(--card)); }
 .oc-application-identity { display: flex; align-items: center; gap: 1rem; min-width: 0; }
 .oc-application-identity > :first-child { flex: 0 0 3rem; width: 3rem; height: 3rem; border-radius: var(--oc-radius-md); }
 .oc-application-identity > div:not(:first-child) { flex: 1; min-width: 0; }
@@ -47,10 +45,9 @@
 .oc-application-management-row h2, .oc-status-card h2 { font-size: var(--oc-text-card); font-weight: var(--oc-weight-semibold); overflow-wrap: anywhere; }
 .oc-application-management-row p { margin-top: .3rem; font-size: var(--oc-text-caption); color: var(--muted-foreground); }
 .oc-management-state { display: inline-flex; align-items: center; gap: .4rem; font-size: var(--oc-text-caption); color: var(--muted-foreground); }
+/* Status is shown by StatusPill; the left rule only flags cards that need the student's action. */
 .oc-status-card { padding: var(--oc-content-padding); border: 1px solid var(--oc-content-edge); border-left: 3px solid transparent; border-radius: var(--oc-content-radius); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); }
 .oc-status-card[data-attention="true"] { border-left-color: var(--brand-orange); }
-.oc-status-card[data-status="ACCEPTED"], .oc-status-detail-update[data-status="ACCEPTED"] { border-left-color: var(--success); background: var(--oc-surface-sage); }
-.oc-status-card[data-status="WAITLISTED"] { border-left-color: var(--warning); }
 .oc-status-card-heading { display: flex; align-items: center; gap: .875rem; }
 .oc-status-card-heading > div { min-width: 0; flex: 1; }
 .oc-status-card-heading p { margin-top: .25rem; color: var(--muted-foreground); font-size: var(--oc-text-caption); }

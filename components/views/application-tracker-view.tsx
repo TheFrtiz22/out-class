@@ -21,7 +21,7 @@ import "@/components/applications/application-tracker.css"
 import type { ViewId } from "@/lib/views"
 import type { TrackerStatus } from "@/lib/data"
 import { Button } from "@/components/ui/button"
-import { StatusBadge } from "@/components/status-badge"
+import { StatusPill } from "@/components/ui/status-pill"
 import { recruitmentDate } from "@/lib/recruitment-presentation"
 import { LoadingState } from "@/components/ui/loading-state"
 import { ClubLogo } from "@/components/club-logo"
@@ -219,7 +219,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
             </p>
             <h1 tabIndex={-1} className="oc-page-title break-words outline-none">{app.club.name}</h1>
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-              <StatusBadge status={app.status} />
+              <StatusPill status={app.status} />
               <p className="text-xs text-muted-foreground">
                 {app.submittedAt
                   ? `Submitted ${date(app.submittedAt)}`
@@ -323,7 +323,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
           <ul className={statusView ? "oc-status-list" : "oc-application-management-list"}>
             {visible.map(item => <li key={item.id}>{statusView ? <ApplicationStatusCard application={item} now={now} onOpen={() => open(item)} /> : <ApplicationManagementCard application={item} deadline={demoDeadline(item.clubId)} sample={demo.isDemoEnabled} onOpen={() => open(item)} />}</li>)}
           </ul>
-          {!visible.length && <p role="status" className="py-6 text-sm text-muted-foreground">No applications match this filter.</p>}
+          {!visible.length && <EmptyState role="status" density="compact" tone="outlined" title={`No applications in “${filter}”.`} description={statusView ? "None of your submitted applications are in this group right now." : filter === "Drafts" ? "You have no drafts in progress; every application has been submitted." : "You haven’t submitted an application yet; your drafts are under Drafts."} action={<Button variant="outline" onClick={() => setFilter("All")}>Show all applications</Button>} />}
         </>
       )}
     </div>
