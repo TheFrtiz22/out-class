@@ -22,6 +22,7 @@ import { Bell, Menu, UserRound, LogOut, Home, Users2, Compass, Bookmark, Calenda
 import { toast } from "sonner"
 import { OutClassLogo } from "@/components/outclass-logo"
 import { WorkspaceSelector, useWorkspaceOptions } from "@/components/shell/workspace-selector"
+import { productRouteAccount, rememberProductRoute } from "@/components/shell/focus-frame-context"
 import { useWorkspaceAccess } from "@/components/shell/use-workspace-access"
 import { clubWorkspaceHref } from "@/lib/club-workspace"
 import { ClubWorkspaceSwitcher } from "@/components/club-workspace-switcher"
@@ -91,6 +92,8 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
     if (platform || manager) router.replace(fallbackHref)
   }, [access.pending, allowed, platform, manager, fallbackHref, router])
   const workspaceChoices = useWorkspaceOptions(access, clubId), phone = usePhoneLayout()
+  // A focus screen's Exit returns to the last product page (same tab only).
+  useEffect(() => { if (mode !== "preview") rememberProductRoute(productRouteAccount(user?.id, demo.isDemoEnabled)) })
   const searchItems = !allowed ? [] : platform ? [] : manager ? adminNav.filter(item => {
     if (item.id === "leader-dashboard") return hasPermission(member, "applications.review") || hasPermission(member, "applicants.identify")
     if (item.id === "interview-workspace") return hasPermission(member, "applications.review")

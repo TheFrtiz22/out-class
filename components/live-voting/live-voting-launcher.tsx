@@ -38,6 +38,6 @@ export function LiveVotingLauncher({ applicants }: { applicants: VotingApplicant
         <DialogFooter><Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" className="bg-black text-white hover:bg-neutral-800">Open waiting room</Button></DialogFooter>
       </form>
     </DialogContent></Dialog>
-    <Dialog open={!!session} onOpenChange={() => {}}><DialogContent showCloseButton={false} aria-describedby={undefined} className="inset-0 h-svh w-screen max-w-none translate-x-0 translate-y-0 rounded-none border-0 p-0 shadow-none sm:max-w-none" onEscapeKeyDown={event => event.preventDefault()}><DialogTitle className="oc-modal-title sr-only">Local voting preview</DialogTitle>{session && <ProctorPresentationView initialSession={session} onClose={() => setSession(null)} />}</DialogContent></Dialog>
+    <Dialog open={!!session} onOpenChange={() => {}}><DialogContent showCloseButton={false} aria-describedby={undefined} className="inset-0 h-svh w-screen max-w-none translate-x-0 translate-y-0 overflow-y-auto rounded-none border-0 p-0 shadow-none sm:max-w-none" onEscapeKeyDown={event => event.preventDefault()}><DialogTitle className="oc-modal-title sr-only">Local voting preview</DialogTitle>{session && <ProctorPresentationView initialSession={session} onClose={() => setSession(null)} />}</DialogContent></Dialog>
   </>
 }

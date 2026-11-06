@@ -1,4 +1,4 @@
-import { interviewEntryHref } from "@/lib/interview-entry";
+import { clubInterviewHref, interviewEntryHref } from "@/lib/interview-entry";
 import { schedulingDateTime, SCHEDULING_TIMEZONE_LABEL } from "@/lib/scheduling-config"
 import type { AppTransactionClient } from "@/utils/prisma";
 import type { InterviewPanelAssignment } from "@prisma/client";
@@ -9,7 +9,7 @@ export async function notifyInterviewAssignment(tx: AppTransactionClient, grant:
   const member = await tx.clubMember.findUniqueOrThrow({ where: { id: grant.memberId } });
   const eventKey = `${assignmentNotificationPrefix}${grant.id}:${kind}:${grant.bookingId || grant.grantedAt.toISOString()}`;
   // Stored/email content is deliberately generic. Names and times are projected under current access on inbox reads.
-  await tx.userNotification.createMany({ data: [{ userId: member.userId, clubId: member.clubId, eventKey, type: "INTERVIEW", title: kind === "assigned" ? "Interview assignment" : "Interview assignment changed", body: kind === "assigned" ? "You have an interview assignment. Open the interview room to review its current details." : "An interview assignment was cancelled or changed. Check your current interview list.", href: `/club/${member.clubId}/workspace?section=recruitment&tool=interviews&interview=1&applicationId=${grant.applicationId}&roundId=${grant.roundId}` }], skipDuplicates: true });
+  await tx.userNotification.createMany({ data: [{ userId: member.userId, clubId: member.clubId, eventKey, type: "INTERVIEW", title: kind === "assigned" ? "Interview assignment" : "Interview assignment changed", body: kind === "assigned" ? "You have an interview assignment. Open the interview room to review its current details." : "An interview assignment was cancelled or changed. Check your current interview list.", href: clubInterviewHref(member.clubId, `interviewTab=rooms&applicationId=${grant.applicationId}&roundId=${grant.roundId}`) }], skipDuplicates: true });
 }
 export async function currentAssignmentNotification(tx: AppTransactionClient, notification: { eventKey: string | null; href: string; clubId: string | null }, userId: string) {
   if (!notification.eventKey?.startsWith(assignmentNotificationPrefix) || !notification.clubId) return null;

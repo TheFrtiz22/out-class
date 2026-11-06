@@ -8,7 +8,6 @@ import { adminRailSections } from "@/lib/navigation";
 import { adminNavigation } from "@/lib/admin-navigation";
 export function AdminShell({ children }: { children: ReactNode }) {
   const path = usePathname(), router = useRouter();
-  if (path === "/platform/login") return children;
   const active = path.split("/")[2] || "overview";
   return <ApplicationStateProvider initialData={{ applications: [], events: [], memberships: [] }} persistLocalState={false}><ProductShell workspaceKind="admin" manager mode="platform" sections={adminRailSections()} active={active} title={adminNavigation.find(i => i.id === active)?.label || "Admin"} onSelect={id => router.push(adminNavigation.find(i => i.id === id)?.href || "/platform")} onNavigate={view => router.push(view === "student-profile" ? "/profile" : view === "inbox" ? "/inbox" : "/home")}>
     <div className="flex justify-end pb-3 text-sm"><Link href="/platform/login" className="text-muted-foreground underline underline-offset-4">Verify for sensitive actions</Link></div>
