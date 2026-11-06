@@ -131,7 +131,28 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
   }, [applications, pending, focusApplicationClubId, applicationId, clearApplicationFocus, scope])
   const app = applications.find((item) => item.id === activeId)
   // No Refresh button: reload quietly (keeping the current view) when the person returns or after a change elsewhere.
-  const revalidate = useCallback(() => getStudentApplications().then(apps => { setApplications(apps); sync(apps) }).catch(() => {}), [sync])
+  // Conditions are re-checked when the response lands (refs), not only when the read starts:
+  // a save in flight drops it, and an open draft always keeps its own object and revision.
+  const latest = useRef({ applications, activeId, working }); latest.current = { applications, activeId, working }
+  const revalidateTicket = useRef(0)
+  const [syncNote, setSyncNote] = useState("")
+  const revalidate = useCallback(async (explicit = false) => {
+    const ticket = ++revalidateTicket.current
+    try {
+      const apps = await getStudentApplications()
+      const now = latest.current
+      if (ticket !== revalidateTicket.current || now.working) return
+      const draft = now.applications.find(item => item.id === now.activeId && item.status === "DRAFTING")
+      const next = draft ? apps.map(item => item.id === draft.id ? draft : item) : apps
+      setApplications(next)
+      sync(next)
+      setSyncNote("")
+    } catch {
+      if (ticket !== revalidateTicket.current) return
+      setSyncNote("Couldn’t update your applications. Showing what was last loaded.")
+      if (explicit) setNotice("Couldn’t refresh just now. Please try again in a moment.")
+    }
+  }, [sync])
   useRevalidate(revalidate, { enabled: !!user && !pending && !error && !working && app?.status !== "DRAFTING", scopes: ["applications"] })
   function leave(action: () => void) {
     if (working) return
@@ -190,7 +211,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
   function bookingChanged() {
     void getStudentApplications().then(apps => { setApplications(apps); sync(apps) }).catch(() => setNotice("Interview saved. Your application will update shortly."))
   }
-  if (app && statusView) return <div ref={content} className="oc-application-detail oc-page-reading space-y-5 pb-6"><ApplicationStatusDetail application={app} notice={notice} onBack={() => { setActiveId(null); setNotice("") }} onResponses={() => openRelated("tracker")} onCalendar={() => onNavigate?.("calendar")} onRefresh={() => void revalidate()} onBookingChanged={bookingChanged} onMyClubs={() => onNavigate?.("my-clubs")} /></div>
+  if (app && statusView) return <div ref={content} className="oc-application-detail oc-page-reading space-y-5 pb-6"><ApplicationStatusDetail application={app} notice={notice} onBack={() => { setActiveId(null); setNotice("") }} onResponses={() => openRelated("tracker")} onCalendar={() => onNavigate?.("calendar")} onRefresh={() => void revalidate(true)} onBookingChanged={bookingChanged} onMyClubs={() => onNavigate?.("my-clubs")} /></div>
   if (app)
     return (
       <div ref={content} className={`oc-application-detail mx-auto pb-8 ${app.status === "DRAFTING" ? "oc-writing-workspace" : "oc-page-reading space-y-7"}`}>
@@ -315,6 +336,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
           <SegmentedControl animated={!statusView} label={statusView ? "Filter application status" : "Filter applications"} value={filter} onChange={setFilter} options={statusView ? statusFilters.map(value => ({ value, label: `${value} (${submitted.filter(item => applicationMatchesStatusFilter(item, value, now)).length})` })) : ["All", "Drafts", "Submitted"].map(label => ({ label, value: label }))} />
           {statusView && <p className="text-xs text-muted-foreground">Current rounds are recorded by each club. Later rounds are shown as context, not confirmed invitations.</p>}
           <p role="status" className="sr-only">{visible.length} {visible.length === 1 ? "application" : "applications"} shown</p>
+          {syncNote && <p role="status" className="text-xs text-muted-foreground">{syncNote}</p>}
           <ul className={statusView ? "oc-status-list" : "oc-application-management-list"}>
             {visible.map(item => <li key={item.id}>{statusView ? <ApplicationStatusCard application={item} now={now} onOpen={() => open(item)} /> : <ApplicationManagementCard application={item} deadline={demoDeadline(item.clubId)} sample={demo.isDemoEnabled} onOpen={() => open(item)} />}</li>)}
           </ul>

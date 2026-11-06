@@ -24,7 +24,9 @@
 .oc-workspace-drawer { background: var(--card); color: var(--foreground); }
 .oc-workspace-drawer [data-slot="sheet-title"] { font-family: var(--oc-font-display); }
 .oc-pipeline-filters { position: relative; }
-.oc-pipeline-filters > summary { cursor: pointer; min-height: var(--oc-control-height); padding: .7rem 1rem; border: 1px solid var(--border); border-radius: var(--oc-radius-md); font-size: var(--oc-text-small); }
+.oc-pipeline-filters > summary { display: inline-flex; align-items: center; gap: .5rem; list-style: none; cursor: pointer; min-height: var(--oc-control-height); padding: .7rem 1rem; border: 1px solid var(--border); border-radius: var(--oc-radius-md); font-size: var(--oc-text-small); }
+.oc-pipeline-filters > summary::-webkit-details-marker { display: none; }
+.oc-pipeline-filter-count { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding-inline: 6px; border-radius: 999px; background: var(--primary); color: var(--primary-foreground); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .oc-pipeline-filter-fields { display: flex; flex-wrap: wrap; gap: .75rem; padding: 1.25rem; border: 1px solid var(--border); border-radius: var(--oc-radius-lg); background: var(--card); }
 .oc-pipeline-filter-fields > details { width: 100%; }
 @media (min-width: 640px) { .oc-pipeline-filter-fields { position: absolute; z-index: 10; top: calc(100% + .5rem); left: 0; width: min(28rem, 65vw); box-shadow: var(--oc-shadow-popover); } }

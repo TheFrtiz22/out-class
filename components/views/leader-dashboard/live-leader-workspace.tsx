@@ -31,8 +31,9 @@ import Link from "next/link"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
 
 import { WorkspaceLoading } from "@/components/workspace-loading"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { ArrowRight, ChevronLeft, ChevronRight, Search } from "@/components/icons"
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
+import { ArrowRight, ChevronDown, ChevronLeft, ChevronRight, Search } from "@/components/icons"
+import { useDismissableDetails } from "@/hooks/use-dismissable-details"
 import { createPortal } from "react-dom"
 import { useRevalidate } from "@/hooks/use-revalidate"
 import { BoardDecisionMode } from "@/components/live-voting/board-decision-mode"
@@ -184,6 +185,9 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   const [boardMove, setBoardMove] = useState<{ id: string; lane: ApplicantLane } | null>(null)
   const [boardError, setBoardError] = useState("")
   const mutating = useRef(false)
+  // Bumped whenever a write starts, so a background read that began earlier never lands after it.
+  const mutationEpoch = useRef(0), revalidateTicket = useRef(0)
+  const [revalidateFailures, setRevalidateFailures] = useState(0)
   const detail = usePipelineApplicant(membership.clubId, previewId || null, revision)
   const readQuery = useMemo<PipelinePageQuery>(() => ({
     query, mode: rejectedOnly ? "rejected" : decisionsOnly ? "decisions" : "applicants", decisionGroup,
@@ -211,17 +215,28 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   const data = previewId ? detail.pipeline : listData
   const loading = previewId ? !detail.pipeline && !detail.error : listLoading
   // Page actions join the workspace page header when it provides a slot; otherwise they render inline.
+  // Re-resolved after every commit (state changes only when the element does), so a remounted
+  // header never leaves the portal on a detached node. A layout effect places it before paint.
   const [actionSlot, setActionSlot] = useState<HTMLElement | null | undefined>(undefined)
-  useEffect(() => { setActionSlot(typeof document === "undefined" ? null : document.getElementById(PAGE_HEADER_ACTIONS_ID)) }, [])
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally every commit; setState bails out when the slot is unchanged
+  useLayoutEffect(() => {
+    const slot = typeof document === "undefined" ? null : document.getElementById(PAGE_HEADER_ACTIONS_ID)
+    setActionSlot(slot)
+  })
   // Keep the list current without a Refresh button: re-read the current page in place (rows stay
   // visible) on return to the tab and after applicant/decision changes elsewhere. Paused while an
   // applicant is open or a write is running so a background read never replaces a review in progress.
   const revalidate = useCallback(async () => {
     if (mutating.current || !isCurrent()) return
+    const epoch = mutationEpoch.current, ticket = ++revalidateTicket.current
+    const landed = () => !mutating.current && epoch === mutationEpoch.current && ticket === revalidateTicket.current && isCurrent()
     try {
       const refreshed = await getClubPipelinePage(membership.clubId, pageQuery)
-      if (!mutating.current) setData(refreshed)
-    } catch { /* keep the current rows; the next return or change retries */ }
+      if (landed() && setData(refreshed)) setRevalidateFailures(0)
+    } catch {
+      // Keep the current rows; repeated failures surface a quiet Try again below.
+      if (landed()) setRevalidateFailures(count => count + 1)
+    }
   }, [membership.clubId, pageQuery, isCurrent, setData])
   useRevalidate(revalidate, { scopes: ["applicants", "decisions"], events: ["outclass:decision-schedules"], enabled: !previewId && !activeId && !writing && ready })
   const publish = useRef(onData)
@@ -230,8 +245,11 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   const roundsForReview = useRef(data?.rounds)
   roundsForReview.current = data?.rounds
   const heading = useRef<HTMLHeadingElement>(null)
+  const filterMenu = useDismissableDetails()
+  // Everything inside the Filters menu, so its summary can show how many apply.
+  const menuFilters = [round, status, review, gender, major, year, gpa, sat, act, rating].filter(Boolean).length
   const search = useRef<HTMLInputElement>(null)
-  useEffect(() => { setError("") }, [authority, revision, pageQuery])
+  useEffect(() => { setError(""); setRevalidateFailures(0) }, [authority, revision, pageQuery])
   const selectionRequestKey = JSON.stringify([selectionKey, revision])
   const latestSelectionRequest = useRef(selectionRequestKey); latestSelectionRequest.current = selectionRequestKey
   const loadSelection = useCallback(async (snapshot = listData) => {
@@ -336,7 +354,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     if (adjacent) { open(adjacent); return }
     const next = direction === 1 ? pageInfo?.next : pageInfo?.previous
     if (!next) return
-    mutating.current = true; setBusy(true)
+    mutating.current = true; mutationEpoch.current++; setBusy(true)
     try {
       if (canEvaluate && (draftSave.dirty || draftSave.saving)) await draftSave.flush()
       if (!isCurrent()) return
@@ -367,7 +385,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       setMessage("Enter a score from 1 to 10 before saving your evaluation.")
       return
     }
-    mutating.current = true
+    mutating.current = true; mutationEpoch.current++
     setBusy(true)
     setMessage("")
     try {
@@ -451,14 +469,14 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   async function confirmBoardMove(status: "IN_REVIEW" | "INTERVIEWING" | "WAITLISTED" | "ACCEPTED" | "REJECTED") {
     const app = applicants.find(candidate => candidate.id === boardMove?.id)
     if (!app || !boardMove || !canMove(app, boardMove.lane) || mutating.current) return
-    mutating.current = true; setBusy(true); setBoardError("")
+    mutating.current = true; mutationEpoch.current++; setBusy(true); setBoardError("")
     try { await writeStatus(app, status); setBoardMove(null) }
     catch { setBoardError("This move could not be saved. Check your current access, then try again.") }
     finally { mutating.current = false; setBusy(false) }
   }
   async function quickDecision(status: "ACCEPTED" | "REJECTED") {
     if (!active || !canDecide || !pendingCandidate(active) || mutating.current || !quickQueue) return
-    mutating.current = true; setBusy(true); setMessage("")
+    mutating.current = true; mutationEpoch.current++; setBusy(true); setMessage("")
     try {
       if (canEvaluate && (draftSave.dirty || draftSave.saving)) await draftSave.flush()
       const refreshed = await writeStatus(active, status)
@@ -476,7 +494,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   async function startQuickReview() {
     if (!canDecide || busy || mutating.current) return
     const owner = authority, key = requestKey
-    mutating.current = true; setBusy(true); setMessage("")
+    mutating.current = true; mutationEpoch.current++; setBusy(true); setMessage("")
     try {
       const queue = (await loadSelection()).filter(app => app.canQuickReview)
       if (!isCurrent() || latestAuthority.current !== owner || latestRequest.current !== key) return
@@ -488,7 +506,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   async function skipQuickReview() {
     if (!active || !quickQueue || busy || mutating.current) return
     const owner = authority, key = requestKey
-    mutating.current = true; setBusy(true)
+    mutating.current = true; mutationEpoch.current++; setBusy(true)
     try {
       if (canEvaluate && (draftSave.dirty || draftSave.saving)) await draftSave.flush()
       const remaining = quickQueue.filter(id => id !== active.id)
@@ -508,6 +526,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       setDescending(["score", "gpa", "sat", "act", "year"].includes(key))
     }
   }
+  const votingBarShown = !!votingChoice && votingSelection.length > 0 && !activeId
   if (loading) return <WorkspaceLoading label="Preparing your applicant pipeline…" layout="applicants" rows={5} />
   if (!data || error || readError)
     return (
@@ -520,16 +539,16 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     )
   return (
     <div ref={workspaceElement} className="oc-live-pipeline oc-workspace-stack" data-unsaved={draftSave.dirty} data-saving={busy}>
-      <div hidden={!!preview}>
+      <div hidden={!!preview} className={votingBarShown ? "oc-voting-bar-clearance" : undefined}>
       {!active && message && <p role="status" className="text-sm">{message}</p>}
       {decisionsOnly && <>
         <div role="group" aria-label="Decision groups" className="flex flex-wrap gap-1 border-b pb-3">{decisionGroups.map(group => <Button key={group.id} variant={decisionGroup === group.id ? "secondary" : "ghost"} aria-pressed={decisionGroup === group.id} onClick={() => setDecisionGroup(group.id)}>{group.label}<span className="ml-2 text-xs font-normal text-muted-foreground">{listData?.facets.decisions[group.id] ?? 0}</span></Button>)}</div>
         <p className="text-sm text-muted-foreground">{decisionGroup === "pending" ? "Submitted, in-review, and interviewing applications without a recorded decision. Round and status remain separate." : "Recorded application outcomes, visible to the applicant."} Acceptance does not automatically create club membership.</p>
       </>}
-{!decisionsOnly && !rejectedOnly && !preview && actionSlot !== undefined && (() => {
+{!rejectedOnly && !preview && actionSlot !== undefined && (() => {
         const actions = <div role="group" aria-label="Recruitment review" className="flex flex-wrap items-center justify-end gap-2">
-          {canDecide && <Button variant="outline" disabled={busy || !listData?.facets.quickReview} onClick={() => void startQuickReview()}>Quick review</Button>}
-          {hasPermission(membership, "applications.review") && (["decisions.view", "decisions.manage", "decisions.vote"] as const).some(permission => hasPermission(membership, permission)) && <BoardDecisionMode
+          {!decisionsOnly && canDecide && <Button variant="outline" disabled={busy || !listData?.facets.quickReview} onClick={() => void startQuickReview()}>Quick review</Button>}
+          {!decisionsOnly && hasPermission(membership, "applications.review") && (["decisions.view", "decisions.manage", "decisions.vote"] as const).some(permission => hasPermission(membership, permission)) && <BoardDecisionMode
             applicants={filtered}
             selectionQuery={readQuery}
             rounds={data.rounds}
@@ -567,7 +586,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
             className="pl-9"
           />
         </div>
-        <details className="oc-pipeline-filters"><summary>Filters</summary><div className="oc-pipeline-filter-fields">
+        <details ref={filterMenu} className="oc-pipeline-filters group"><summary><ChevronDown aria-hidden="true" className="size-4 shrink-0 -rotate-90 transition-transform duration-150 group-open:rotate-0 motion-reduce:transition-none" />Filters{menuFilters > 0 && <span className="oc-pipeline-filter-count"><span aria-hidden="true">{menuFilters}</span><span className="sr-only">, {menuFilters} active</span></span>}</summary><div className="oc-pipeline-filter-fields">
         {/* Column headers sort the wide list; views without headers (cards, Kanban, Decisions) sort here. */}
         <div className={`flex w-full flex-wrap items-center gap-2 ${!decisionsOnly && view === "list" ? "xl:hidden" : ""}`}>
           <select aria-label="Sort applicants" className={selectStyle} value={sort} onChange={event => sortBy(event.target.value as ApplicantSort)}>{sortOptions.map(option => <option key={option.key} value={option.key}>{option.label}</option>)}</select>
@@ -706,12 +725,8 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
             Clear filters
           </Button>
         )}
+        {revalidateFailures >= 2 && <p role="status" className="flex w-full flex-wrap items-center gap-2 text-xs text-muted-foreground">Couldn’t update applicants. Showing the last loaded list.<Button variant="ghost" size="sm" disabled={busy} onClick={() => void revalidate()}>Try again</Button></p>}
       </div>
-      {votingChoice && votingSelection.length > 0 && !activeId && <div role="region" aria-label="Voting selection" className="fixed inset-x-4 bottom-[var(--oc-toast-offset,1.5rem)] z-40 mx-auto flex w-fit max-w-[calc(100vw-2rem)] flex-wrap items-center justify-center gap-2 rounded-lg border bg-card p-2 pl-4 shadow-lg">
-        <span className="text-sm" role="status">{votingSelection.length} selected for voting</span>
-        <Button size="sm" disabled={busy} onClick={startSelectedVoting}>Start voting with selected applicants</Button>
-        <Button size="sm" variant="ghost" onClick={() => setVotingSelection([])}>Clear selection</Button>
-      </div>}
       {view === "kanban" && <p className="text-xs leading-6 text-muted-foreground">Drag a candidate to another column or use Move to. Review the change before it is saved. Interview moves require an interview round.</p>}
       {rejectedOnly&&<p>Rejected applications are retained here with their reviews and decision history. Reconsideration returns an application to review; it does not change the student’s account or membership.</p>}
       {invalidFilter ? <p role="alert">Enter filters within the displayed numeric ranges.</p> : updating ? <p role="status" aria-live="polite">Updating applicants…</p> : !filtered.length ? <p role="status" className="border-y py-10 text-sm text-muted-foreground">{baseTotal ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No rejected applications. Published rejections appear here with their history preserved." : "Submitted applications will appear here. Student drafts stay private."}</p> : decisionsOnly ? <LiveDecisionList applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban votingSelection={votingChoice} canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} laneCounts={listData?.facets.lanes} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList votingSelection={votingChoice} sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
@@ -720,6 +735,11 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         <p role="status" className="text-sm">Page {displayed.page + 1} of {displayed.count} · Showing {displayed.start + 1}–{displayed.start + displayed.items.length} of {total}</p>
         <Button variant="outline" aria-label="Next applicant page" disabled={busy || !pageInfo?.next} onClick={() => changePage(pageInfo?.next ?? null)}>Next page</Button>
       </nav>}
+      {votingBarShown && <div role="region" aria-label="Voting selection" className="oc-voting-bar fixed inset-x-4 bottom-[var(--oc-toast-offset,1.5rem)] z-40 mx-auto flex w-fit max-w-[calc(100vw-2rem)] flex-wrap items-center justify-center gap-2 rounded-lg border bg-card p-2 pl-4 shadow-lg">
+        <span className="text-sm" role="status">{votingSelection.length} selected for voting</span>
+        <Button size="sm" disabled={busy} onClick={startSelectedVoting}>Start voting with selected applicants</Button>
+        <Button size="sm" variant="ghost" onClick={() => setVotingSelection([])}>Clear selection</Button>
+      </div>}
       </div>
       {preview && !active && !data.applications.length && <p role="alert">This applicant is no longer available. <Button onClick={preview.onClose}>Close preview</Button></p>}
       <Sheet

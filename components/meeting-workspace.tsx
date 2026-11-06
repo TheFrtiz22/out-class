@@ -13,7 +13,7 @@ import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/
 import { flushEditors } from "@/lib/autosave-navigation";
 import { meetingIsUpcoming, meetingDate } from "@/lib/meeting-presentation";
 import { CalendarDays, MapPin, ArrowRight, Plus } from "@/components/icons";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRevalidate } from "@/hooks/use-revalidate";
 import { useDemoMode } from "@/contexts/demo-context";
 import { useAuth } from "@/contexts/auth-context";
@@ -43,7 +43,7 @@ export function MeetingList({ clubId, embedded = false, initialAudience = "ALL",
     [error, setError] = useState(""),
     [period, setPeriod] = useState<"upcoming" | "past">("upcoming"),
     [audience, setAudience] = useState(initialAudience),
-    [refresh, setRefresh] = useState(0), [activeId, setActiveId] = useState<string | null>(null), [notice, setNotice] = useState("");
+    [refresh, setRefresh] = useState(0), [activeId, setActiveId] = useState<string | null>(null), [notice, setNotice] = useState(""), [pollingId, setPollingId] = useState<string | null>(null);
   useEffect(() => {
     let current = true;
     setLoading(true);
@@ -83,7 +83,7 @@ export function MeetingList({ clubId, embedded = false, initialAudience = "ALL",
     {!loading && !error && !visible.length && <EmptyState density="compact" align="start" title={`No ${period} meetings for this audience`} description={period === "upcoming" ? "Check Past for earlier agendas and recaps." : "Shared meeting history will appear here."} />}
     <ul className="grid gap-3">{visible.map(meeting => <li key={meeting.id} className="min-w-0">
       <button type="button" onClick={() => setActiveId(meeting.id)} className="oc-content-panel group flex w-full text-left gap-4 hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:p-6"><CalendarDays aria-hidden="true" className="mt-1 size-5 shrink-0 text-primary" /><div className="min-w-0 flex-1"><p className="text-xs text-muted-foreground">{!clubId && `${meeting.club.name} · `}{meeting.audience === "MEMBERS" ? "Members" : "Recruitment / Interest"}</p><h3 className="oc-card-heading mt-2 break-words">{meeting.title}</h3><p className="mt-3 text-sm">{meetingDate(meeting.date)}{meeting.endDate && ` — ${meetingDate(meeting.endDate)}`}</p><p className="mt-2 flex items-start gap-2 break-words text-sm text-muted-foreground"><MapPin aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />{meeting.location}</p><p className="mt-4 text-xs text-muted-foreground">{meeting.recap?.trim() ? "Recap available · " : ""}Open agenda, resources & attendance</p></div><ArrowRight aria-hidden="true" className="mt-1 size-4 shrink-0" /></button>
-      {!personalOnly && hasPermission(user?.memberships.find(m => m.clubId === meeting.clubId), "meetings.attendance") && <MeetingAttendanceState key={`${meeting.id}:${refresh}`} meeting={meeting} />}
+      {!personalOnly && hasPermission(user?.memberships.find(m => m.clubId === meeting.clubId), "meetings.attendance") && <MeetingAttendanceState key={`${meeting.id}:${refresh}`} meeting={meeting} polling={pollingId === meeting.id} onOpen={setPollingId} />}
     </li>)}</ul>
     <Sheet open={!!activeId} onOpenChange={open => { if (!open && !document.querySelector('[data-saving="true"]')) void flushEditors().then(() => setActiveId(null)).catch(() => {}) }}><SheetContent className="oc-workspace-drawer w-full overflow-y-auto sm:max-w-3xl"><SheetTitle className="sr-only">Meeting details</SheetTitle><SheetDescription className="sr-only">Agenda, resources, and attendance.</SheetDescription>{activeId && <MeetingDetail id={activeId} onUpdated={() => { setRefresh(value => value + 1); setNotice("Meeting updated.") }} />}</SheetContent></Sheet>
   </section>;
@@ -94,19 +94,32 @@ export function MeetingCreateAction({ clubId, onSaved }: { clubId: string; onSav
 }
 
 /** Fetch the existing permission-checked roster only on request; list browsing does not fan out roster queries.
- * Once opened, the count follows a live meeting (every 20s while this tab is visible) and reloads when the person returns. */
-function MeetingAttendanceState({ meeting }: { meeting: Meeting }) {
-  const [count, setCount] = useState<number | null>(null), [busy, setBusy] = useState(false), [error, setError] = useState(false), [opened, setOpened] = useState(false);
-  const load = useCallback(async () => { setOpened(true); setBusy(true); try { const rows = await meetingAttendance(meeting.clubId, meeting.id); setCount(rows.length); setError(false) } catch { setCount(null); setError(true) } finally { setBusy(false) } }, [meeting.clubId, meeting.id]);
+ * Once opened, the count reloads when the person returns; only the most recently opened row follows a live
+ * meeting (every 20s while this tab is visible). A failed update keeps the last good count and polling continues. */
+function MeetingAttendanceState({ meeting, polling, onOpen }: { meeting: Meeting; polling: boolean; onOpen: (id: string) => void }) {
+  const [count, setCount] = useState<number | null>(null), [busy, setBusy] = useState(false), [failed, setFailed] = useState(false), [opened, setOpened] = useState(false);
+  const inFlight = useRef(false), sequence = useRef(0);
+  useEffect(() => () => { sequence.current++ }, []);
+  const load = useCallback(async () => {
+    // Ticks never overlap, and a response from an older request never overwrites a newer one.
+    if (inFlight.current) return;
+    inFlight.current = true;
+    const request = ++sequence.current;
+    setOpened(true); setBusy(true);
+    try { const rows = await meetingAttendance(meeting.clubId, meeting.id); if (request === sequence.current) { setCount(rows.length); setFailed(false) } }
+    catch { if (request === sequence.current) setFailed(true) }
+    finally { inFlight.current = false; if (request === sequence.current) setBusy(false) }
+  }, [meeting.clubId, meeting.id]);
   const start = +new Date(meeting.date), end = meeting.endDate ? +new Date(meeting.endDate) : start + 2 * 3_600_000;
   const live = (now = Date.now()) => now >= start - 15 * 60_000 && now <= end;
   useEffect(() => {
-    if (!opened || error) return;
+    if (!opened || !polling) return;
     const timer = setInterval(() => { const now = Date.now(); if (document.visibilityState === "visible" && now >= start - 15 * 60_000 && now <= end) void load() }, 20_000);
     return () => clearInterval(timer);
-  }, [opened, error, load, start, end]);
-  useRevalidate(load, { enabled: opened && !busy, scopes: ["meetings"] });
-  return <div className="mt-2 flex flex-wrap items-center gap-3 px-1 text-xs text-muted-foreground"><span role="status">{error ? "Attendance unavailable." : count === null ? opened ? "Loading attendance…" : "Attendance not loaded" : `${count} recorded check-in${count === 1 ? "" : "s"}${live() ? " · updating live" : ""}`}</span>{(!opened || error) && <Button size="sm" variant="ghost" disabled={busy} onClick={() => void load()}>{busy ? "Loading…" : error ? "Try again" : "Check attendance"}</Button>}</div>;
+  }, [opened, polling, load, start, end]);
+  useRevalidate(load, { enabled: opened, scopes: ["meetings"] });
+  const check = () => { onOpen(meeting.id); void load() };
+  return <div className="mt-2 flex flex-wrap items-center gap-3 px-1 text-xs text-muted-foreground"><span role="status">{count === null ? failed ? "Attendance unavailable." : opened ? "Loading attendance…" : "Attendance not loaded" : `${count} recorded check-in${count === 1 ? "" : "s"}${failed ? " · Couldn’t update" : polling && live() ? " · updating live" : ""}`}</span>{(!opened || failed && count === null) && <Button size="sm" variant="ghost" disabled={busy} onClick={check}>{busy ? "Loading…" : failed ? "Try again" : "Check attendance"}</Button>}</div>;
 }
 
 function MeetingEditor({

@@ -6,6 +6,8 @@
 .oc-page-header h1:first-child { margin-top: 0; }
 .oc-page-description { margin-top: var(--oc-density-header-gap); max-width: 46rem; color: var(--muted-foreground); font-size: var(--oc-text-body); line-height: var(--oc-leading-body); }
 .oc-page-header-action { position: relative; z-index: 1; }
+/* A portal slot (e.g. #workspace-page-actions) takes no room until a view fills it. */
+.oc-page-header-action:has(> [data-page-header-slot]:only-child:empty) { display: none; }
 .oc-metric-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: .75rem; margin-block: 0 var(--oc-density-gap); padding: 0; border: 0; }
 .oc-metric-strip > div { position: relative; min-width: 0; min-height: 4.25rem; display: grid; grid-template-columns: auto 1fr; gap: .25rem .5rem; align-content: center; align-items: baseline; padding: .85rem 1rem; background: var(--oc-content-surface); border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); box-shadow: var(--oc-content-shadow); }
 .oc-metric-strip > div:first-child { padding-left: 1rem; border-left: 1px solid var(--oc-content-edge); }

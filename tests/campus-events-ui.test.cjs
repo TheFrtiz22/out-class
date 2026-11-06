@@ -93,8 +93,10 @@ test("board uses original flyer in accessible modal, keyboard button activation 
       "@/contexts/auth-context": { useAuth: () => ({ user: null }) },
       "@/lib/workspace-api": {},
       "./use-saved-campus-events": { useSavedCampusEvents: () => ({ ids: new Set(), pending: new Set(), ready: false, error: "" }) },
+      "@/hooks/use-dismissable-details": { useDismissableDetails: () => filterMenu },
     },
   );
+  function filterMenu() {}
   const render = () => {
     cursor = 0;
     refCursor = 0;
@@ -105,6 +107,8 @@ test("board uses original flyer in accessible modal, keyboard button activation 
   slots[3] = 1;
   slots[5] = false;
   let tree = render();
+  const filterDetails = all(tree).find((n) => n.type === "details" && n.props.className === "oc-event-filter");
+  assert.equal(filterDetails.props.ref, filterMenu, "Corkboard Filter closes on Escape and outside press");
   const trigger = all(tree).find(
     (n) =>
       n.type === "button" && n.props.className === "oc-pinned-flyer",

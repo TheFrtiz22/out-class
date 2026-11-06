@@ -55,3 +55,28 @@ test('personal empty states distinguish no assignments from filtered or complete
  button(tree,'Clear filters').props.onClick();tree=h.render();assert.match(text(tree),/You're all caught up\./)
  const saved=harness(false,true);saved.workspace.tasks=saved.workspace.tasks.filter(task=>task.id==='submitted');saved.render();await flush();tree=saved.render();assert.match(text(tree),/You're all caught up\./);button(tree,'View all tasks').props.onClick();assert.match(text(saved.render()),/Submitted paper/)
 })
+
+function reloadHarness(){
+ const slots=[],effects=[];let index=0,reload=null;const reads=[]
+ const workspace=status=>({clubId:'club',memberId:'member',manage:true,members:[],tasks:[{id:'task',revision:3,title:`Research (${status})`,description:'',kind:'TASK',status:'OPEN',dueAt:null,assignments:[{id:'a',memberId:'member',revision:2,viewedAt:new Date(),submittedAt:null,reviewedAt:null,member:{user:{email:'m@example.test',studentProfile:null}}}]}]})
+ const react={useState(v){const i=index++;if(!(i in slots))slots[i]=v;return[slots[i],value=>slots[i]=typeof value==='function'?value(slots[i]):value]},useRef(v){const i=index++;return slots[i]??={current:v}},useEffect(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;effects.push(fn)}}}
+ const read=()=>new Promise((resolve,reject)=>reads.push({resolve:status=>resolve(workspace(status)),reject}))
+ const C=compile('components/club-tasks.tsx',{react,'next/navigation':{useSearchParams:()=>new URLSearchParams()},'@/contexts/auth-context':{useAuth:()=>({user:{memberships:[]},loading:false})},'@/contexts/demo-context':{useDemoMode:()=>({ready:true,isDemoEnabled:false})},'@/hooks/use-revalidate':{useRevalidate(fn){reload=fn}},'@/lib/workspace-api':{getTaskWorkspace:read,viewTask:async()=>{}}}).ClubTasks
+ return{reads,reload:()=>reload(),render(){index=0;const tree=C({clubId:'club',embedded:true,personalOnly:true,initialScope:'mine'});while(effects.length)effects.shift()();return tree}}
+}
+test('a failed background task reload keeps the list with a quiet note; only a failed first load blanks',async()=>{
+ const h=reloadHarness();h.render();h.reads[0].resolve('first');await flush();let tree=h.render();assert.match(text(tree),/Research \(first\)/)
+ h.reload();h.render();h.reads[1].reject(Error('offline'));await flush();tree=h.render()
+ assert.match(text(tree),/Research \(first\)/,'current tasks stay visible');assert.match(text(tree),/Couldn’t update tasks/);assert.equal(nodes(tree).some(n=>n.props?.role==='alert'),false,'not a blocking error')
+ button(tree,'Try again').props.onClick();h.render();h.reads[2].resolve('second');await flush();tree=h.render();assert.match(text(tree),/Research \(second\)/);assert.doesNotMatch(text(tree),/Couldn’t update tasks/)
+ const blank=reloadHarness();blank.render();blank.reads[0].reject(Error('Could not load tasks.'));await flush();tree=blank.render();assert.ok(nodes(tree).some(n=>n.props?.role==='alert'));assert.doesNotMatch(text(tree),/Research/)
+})
+test('a background task reload that started before a write never overwrites the write\'s own fresh read',async()=>{
+ const h=reloadHarness();h.render();h.reads[0].resolve('first');await flush();let tree=h.render()
+ nodes(tree).find(n=>n.type==='button'&&text(n).includes('Research')).props.onClick({currentTarget:{}});tree=h.render()
+ const run=nodes(tree).find(n=>n.type?.name==='TaskDetail').props.run
+ h.reload();h.render()
+ const saving=run(async()=>{});await flush();h.reads[2].resolve('saved');await saving;await flush()
+ h.reads[1].resolve('older');await flush();tree=h.render()
+ assert.match(text(tree),/Research \(saved\)/);assert.doesNotMatch(text(tree),/older/)
+})

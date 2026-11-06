@@ -5,6 +5,7 @@ import { z } from "zod";
 import { useSearchParams } from "next/navigation";
 import { LoadingState } from "@/components/ui/loading-state";
 import { Search, SlidersHorizontal, Check, ChevronDown } from "@/components/icons";
+import { useDismissableDetails } from "@/hooks/use-dismissable-details";
 import { useAuth } from "@/contexts/auth-context";
 import {
   getPublicCorkboard,
@@ -51,6 +52,7 @@ const initialFilters: EventFilters = {
 export function PublicEventBoard() {
   const { user } = useAuth(),
     identity = user?.id || "";
+  const filterMenu = useDismissableDetails();
   const [filters, setFilters] = useState(initialFilters),
     [events, setEvents] = useState<CampusEvent[]>([]),
     [clubs, setClubs] = useState<{ id: string; name: string }[]>([]),
@@ -189,7 +191,7 @@ export function PublicEventBoard() {
             onChange={(e) => filter({ query: e.target.value })}
           />
         </label>
-        <details className="oc-event-filter">
+        <details ref={filterMenu} className="oc-event-filter">
           <summary>
             <SlidersHorizontal size={16} aria-hidden="true" />
             Filter

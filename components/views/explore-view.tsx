@@ -4,7 +4,7 @@ import { useSearchParams } from "next/navigation"
 import { SavedClubsPopover } from "@/components/clubs/saved-clubs-popover"
 import { PageHeader } from "@/components/product/page-header"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { ArrowRight, Search, SlidersHorizontal, X, Compass, BookOpen, BriefcaseBusiness, Globe2, Heart, Mountain, Lightbulb, ChartNoAxesCombined, MessageSquare, Users } from "@/components/icons"
+import { ArrowRight, ChevronDown, Search, SlidersHorizontal, X, Compass, BookOpen, BriefcaseBusiness, Globe2, Heart, Mountain, Lightbulb, ChartNoAxesCombined, MessageSquare, Users } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { LoadingState } from "@/components/ui/loading-state"
@@ -312,7 +312,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
               <ul className="oc-explore-grid">{featured.map(club => card(club, "featured"))}</ul>
             </section>
           )}
-          {!active.length && available.length > 0 && <details className="oc-explore-available"><summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold">Applications open · {available.length} clubs</summary>
+          {!active.length && available.length > 0 && <details className="oc-explore-available group"><summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 py-3 text-sm font-semibold [&::-webkit-details-marker]:hidden"><ChevronDown aria-hidden="true" className="size-4 shrink-0 -rotate-90 transition-transform duration-150 group-open:rotate-0 motion-reduce:transition-none" />Applications open · {available.length} clubs</summary>
             <p>An A–Z selection of clubs accepting applications. Check their profiles for requirements.</p>
             <ul>{available.slice(0, 6).map(club => <li key={club.id}><button data-directory-entry={`available-${club.id}`} onClick={() => open(club, `available-${club.id}`)}><DirectoryLogo club={club} /><span><strong>{club.name}</strong><small>Applications open</small></span><ArrowRight size={18} aria-hidden="true" /></button></li>)}</ul>
           </details>}

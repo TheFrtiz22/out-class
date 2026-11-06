@@ -24,13 +24,13 @@ const flush = () => new Promise(resolve => setImmediate(resolve))
 function harness(permissions = ['applications.review','applicants.identify','decisions.manage','recruitment.manage'], decisionsOnly = false, rejectedOnly = false) {
   const slots = [], effects = [], calls = [], lookups = [], setups = new Map(), cleanups = new Map()
   let changed = false, index = 0, pipeline = { rounds: [{id:'round',name:'Review',order:0}], applications:[{id:'candidate',canEvaluate:true,studentId:'student',roundId:'round',status:'IN_REVIEW',student:{email:'sample@demo.invalid',studentProfile:null},evaluations:[],answers:[],bookings:[]}] }
-  const react = {useState(initial){const i=index++;if(!(i in slots))slots[i]=initial;return [slots[i],value=>{const next=typeof value==='function'?value(slots[i]):value;changed ||= !Object.is(next,slots[i]);slots[i]=next}]},useRef(initial){const i=index++;return slots[i]??=( {current:initial})},useMemo(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i].deps[j]))slots[i]={deps,value:fn()};return slots[i].value},useCallback(fn,deps){return react.useMemo(()=>fn,deps)},useEffect(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;setups.set(i,fn);effects.push([i,fn])}}}
+  const react = {useState(initial){const i=index++;if(!(i in slots))slots[i]=initial;return [slots[i],value=>{const next=typeof value==='function'?value(slots[i]):value;changed ||= !Object.is(next,slots[i]);slots[i]=next}]},useRef(initial){const i=index++;return slots[i]??=( {current:initial})},useMemo(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i].deps[j]))slots[i]={deps,value:fn()};return slots[i].value},useCallback(fn,deps){return react.useMemo(()=>fn,deps)},useEffect(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;setups.set(i,fn);effects.push([i,fn])}},useLayoutEffect(fn){const i=index++;setups.set(i,fn);effects.push([i,fn])}}
   const api = {getClubPipelineList:async()=>{calls.push(['load']);return structuredClone(pipeline)},setApplicationStatus:async input=>{calls.push(['status',input]);const target=pipeline.applications.find(app=>app.id===input.applicationId);if(input.expectedStatus!==target.status)throw Error('stale');target.status=input.status;if(input.status==='ACCEPTED')target.recruitmentOffer={status:'PENDING',expiresAt:new Date(Date.now()+86400000)};return {success:true}},moveApplicantRound:async input=>{calls.push(['round',input]);if(input.expectedRoundId!==pipeline.applications[0].roundId)throw Error('stale');pipeline.applications[0].roundId=input.newRoundId;pipeline.applications[0].studentId='anonymous-candidate';pipeline.applications[0].student={email:'',studentProfile:{firstName:'Applicant',lastName:'CANDIDATE',experiences:[]}};return {success:true}},submitEvaluation:async input=>{calls.push(['review',input]);const evaluation={id:'evaluation',interviewerId:'member',round:'Review',score:input.score,notes:input.notes};pipeline.applications[0].evaluations=[evaluation];pipeline.applications[0].canEvaluate=false;return {evaluation}}}
   let currentEpoch={};const auth={user:{id:'reviewer'},readAuthority:currentEpoch,isReadAuthorityCurrent:value=>value===currentEpoch};
   api.getClubPipelinePage=async(club,q={})=>{const data=await api.getClubPipelineList();const page=compile('lib/pipeline-page.ts').pagePipeline(data,q,'member','reviewer','fixture');return {...page,coverage:{complete:page.page.baseTotal===page.applications.length,mode:q.mode??'applicants'}}};
   api.getClubPipelineSelection=async(club,q={})=>compile('lib/pipeline-page.ts').completePipelineSelection(await api.getClubPipelineList(),q,'member','reviewer');
-  let detailKey='',detail=null,revalidation=null;
-  const C = compile('components/views/leader-dashboard/live-leader-workspace.tsx', {react,'next/navigation':{useRouter:()=>({push:url=>calls.push(['navigate',url])})},'@/hooks/use-revalidate':{useRevalidate:(reload,options)=>{revalidation={reload,options}},announceDataChanged(){}},'@/contexts/auth-context':{useAuth:()=>auth},'@/hooks/use-pipeline-applicant':{usePipelineApplicant(club,id,revision){const key=`${club}:${id}:${revision}`;if(key!==detailKey){detailKey=key;detail=id?structuredClone(pipeline.applications.find(app=>app.id===id)):null}return{application:detail,error:false,retry(){}}}},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false,ready:true})},'@/lib/reviewer-evaluation':{findReviewerEvaluation(...args){const result=compile('lib/reviewer-evaluation.ts').findReviewerEvaluation(...args);lookups.push({round:args[2],result});return result}},'@/lib/workspace-api':api,'@/lib/application-state':{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus(){}})}}, '\nexports.TestWorkspace = ClubWorkspace;').TestWorkspace
+  let detailKey='',detail=null,revalidation=null;const filterMenu=()=>{};
+  const C = compile('components/views/leader-dashboard/live-leader-workspace.tsx', {react,'next/navigation':{useRouter:()=>({push:url=>calls.push(['navigate',url])})},'@/hooks/use-revalidate':{useRevalidate:(reload,options)=>{revalidation={reload,options}},announceDataChanged(){}},'@/hooks/use-dismissable-details':{useDismissableDetails:()=>filterMenu},'@/contexts/auth-context':{useAuth:()=>auth},'@/hooks/use-pipeline-applicant':{usePipelineApplicant(club,id,revision){const key=`${club}:${id}:${revision}`;if(key!==detailKey){detailKey=key;detail=id?structuredClone(pipeline.applications.find(app=>app.id===id)):null}return{application:detail,error:false,retry(){}}}},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false,ready:true})},'@/lib/reviewer-evaluation':{findReviewerEvaluation(...args){const result=compile('lib/reviewer-evaluation.ts').findReviewerEvaluation(...args);lookups.push({round:args[2],result});return result}},'@/lib/workspace-api':api,'@/lib/application-state':{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus(){}})}}, '\nexports.TestWorkspace = ClubWorkspace;').TestWorkspace
   const membership = {id:'member',clubId:'club',permissions,club:{name:'Test club'}}
   return {calls,api,lookups,revalidation:()=>revalidation,notifyEpoch(){currentEpoch={}},commitEpoch(){auth.readAuthority=currentEpoch},setViewer(id){auth.user={id};membership.id=id;membership.userId=id},replayEffects(){for(const cleanup of cleanups.values())cleanup?.();cleanups.clear();for(const [slot,setup]of setups)cleanups.set(slot,setup())},addCandidate(app){pipeline.applications.push({...structuredClone(pipeline.applications[0]),...app})},setCanEvaluate(value){pipeline.applications[0].canEvaluate=value},addRound(round){pipeline.rounds.push(round)},setEvaluations(evaluations){pipeline.applications[0].evaluations=evaluations},renameRound(name){pipeline.rounds[0].name=name},setServerRound(roundId){pipeline.applications[0].roundId=roundId},setServerStatus(status){pipeline.applications[0].status=status},render(){for(let step=0;step<20;step++){changed=false;index=0;const tree=C({membership,decisionsOnly,rejectedOnly});while(effects.length){const [slot,setup]=effects.shift();cleanups.get(slot)?.();cleanups.set(slot,setup())}if(!changed)return tree}throw Error('Component failed to settle')}}
 }
@@ -163,7 +163,7 @@ test('rejected applicants leave active queues and remain in the deliberate retai
  const rejected=harness(undefined,false,true);rejected.setServerStatus('REJECTED');rejected.render();await flush();const rejectedTree=rejected.render();assert.equal(view(rejectedTree).props.applicants.length,1);assert.equal(view(rejectedTree).props.applicants[0].status,'REJECTED');assert.match(text(rejectedTree),/retained here/);
 });
 
-test('recruitment review actions sit in one header row before the toolbar, without a card or Refresh, and are absent from Decisions', async () => {
+test('recruitment review actions sit in one header row before the toolbar, without a card or Refresh; Decisions keeps only Review applicants', async () => {
  const h=harness();h.render();await flush();const tree=h.render(),all=nodes(tree);
  const actions=all.find(n=>n.props?.['aria-label']==='Recruitment review');
  assert.equal(actions.type,'div');assert.equal(actions.props.role,'group');assert.match(actions.props.className,/justify-end/);
@@ -171,7 +171,9 @@ test('recruitment review actions sit in one header row before the toolbar, witho
  assert.doesNotMatch(text(tree),/Review together or work through candidates/);assert.equal(all.some(n=>n.type==='section'&&n.props?.['aria-label']==='Recruitment review'),false);
  assert.equal(button(tree,'Refresh'),undefined);
  assert.ok(all.indexOf(actions)<all.findIndex(n=>n.props?.['aria-label']==='Applicant view'));
- const decisions=harness(undefined,true);decisions.render();await flush();assert.equal(nodes(decisions.render()).find(n=>n.props?.['aria-label']==='Recruitment review'),undefined);
+ const decisions=harness(undefined,true);decisions.render();await flush();const decisionActions=nodes(decisions.render()).find(n=>n.props?.['aria-label']==='Recruitment review');
+ assert.ok(decisionActions,'the Decisions tool keeps its header action');assert.equal(text(decisionActions),'Review applicants');assert.match(nodes(decisionActions).find(n=>typeof n.props?.href==='string').props.href,/tool=applicants/);
+ assert.equal(nodes(decisionActions).some(n=>n.type==='BoardDecisionMode'||text(n)==='Quick review'),false,'pipeline-only tools stay on Applicants');
 });
 test('quick review saves expected-status decisions and advances only after success', async () => {
  const h=harness();h.addCandidate({id:'second',studentId:'student-two',student:{email:'second@demo.invalid',studentProfile:null}});h.render();await flush();let tree=h.render();
@@ -239,4 +241,45 @@ test('authorized selected-applicant shortcut retains stable IDs and navigates wi
   assert.deepEqual(JSON.parse(stored.values().next().value),{userId:'reviewer',clubId:'club',demo:false,applicationIds:['candidate']});assert.ok(h.calls.every(c=>['load','navigate'].includes(c[0])));
   const denied=harness(['applications.review']);denied.render();await flush();const deniedTree=denied.render();assert.equal(view(deniedTree).props.votingSelection,undefined);assert.equal(button(deniedTree,'Start voting with selected applicants'),undefined);
  }finally{if(previousStorage===undefined)delete global.sessionStorage;else global.sessionStorage=previousStorage;if(previousDocument===undefined)delete global.document;else global.document=previousDocument;}
+});
+
+test('a background read that started before a write never lands after it, and repeated failures keep rows with a quiet Try again',async()=>{
+ const h=harness();h.render();await flush();let tree=h.render();
+ const original=h.api.getClubPipelinePage;let release;
+ h.setServerStatus('WAITLISTED');h.api.getClubPipelinePage=async(club,q)=>{const page=await original(club,q);await new Promise(resolve=>release=resolve);return page};
+ const pending=h.revalidation().reload();await flush();
+ h.api.getClubPipelinePage=original;h.setServerStatus('IN_REVIEW');
+ await button(tree,'Quick review').props.onClick();release();await pending;await flush();tree=h.render();
+ assert.equal(view(tree).props.applicants[0].status,'IN_REVIEW','the stale pre-write page is dropped');
+ const older=harness();older.render();await flush();tree=older.render();const base=older.api.getClubPipelinePage;let first;
+ older.setServerStatus('WAITLISTED');older.api.getClubPipelinePage=async(club,q)=>{const page=await base(club,q);await new Promise(resolve=>first=resolve);return page};
+ const slow=older.revalidation().reload();await flush();older.api.getClubPipelinePage=base;older.setServerStatus('INTERVIEWING');await older.revalidation().reload();first();await slow;await flush();tree=older.render();
+ assert.equal(view(tree).props.applicants[0].status,'INTERVIEWING','an older read never overwrites a newer one');
+ older.api.getClubPipelinePage=async()=>{throw Error('offline')};
+ await older.revalidation().reload();tree=older.render();assert.doesNotMatch(text(tree),/Couldn’t update applicants/,'one transient failure stays quiet');assert.ok(view(tree));
+ await older.revalidation().reload();tree=older.render();assert.match(text(tree),/Couldn’t update applicants/);assert.ok(view(tree),'rows stay visible');
+ older.api.getClubPipelinePage=base;button(tree,'Try again').props.onClick();await flush();await flush();tree=older.render();assert.doesNotMatch(text(tree),/Couldn’t update applicants/);
+});
+test('header actions re-resolve a remounted page-header slot instead of portaling into a detached node',async()=>{
+ const first={id:'slot-a',nodeType:1,isConnected:true},second={id:'slot-b',nodeType:1,isConnected:true};let slot=first;
+ globalThis.document={getElementById:id=>id==='workspace-page-actions'?slot:null};
+ try{
+  const h=harness();h.render();await flush();let tree=h.render();
+  const portal=t=>nodes(t).find(n=>n.containerInfo);
+  assert.equal(portal(tree).containerInfo,first);
+  first.isConnected=false;slot=second;tree=h.render();assert.equal(portal(tree).containerInfo,second);
+ }finally{delete globalThis.document}
+});
+test('Filters shows its active count, and the voting bar follows the list and pager with clearance below them',async()=>{
+ const h=harness(['applications.review','applicants.identify','decisions.manage','decisions.start']);h.render();await flush();let tree=h.render();
+ const summary=t=>nodes(nodes(t).find(n=>n.type==='details'&&n.props.className?.includes('oc-pipeline-filters'))).find(n=>n.type==='summary');
+ assert.equal(text(summary(tree)),'Filters');assert.ok(nodes(summary(tree)).some(n=>n.type==='ChevronDown'),'Phosphor chevron, not a text triangle');
+ nodes(tree).find(n=>n.props?.['aria-label']==='Filter round').props.onChange({target:{value:'round'}});tree=h.render();
+ const count=nodes(summary(tree)).find(n=>n.props?.className==='oc-pipeline-filter-count');assert.ok(nodes(count).some(n=>n.props?.['aria-hidden']==='true'&&n.props.children===1));assert.deepEqual(nodes(count).find(n=>n.props?.className==='sr-only').props.children,[', ',1,' active']);
+ assert.equal(typeof nodes(tree).find(n=>n.type==='details'&&n.props.className?.includes('oc-pipeline-filters')).props.ref,'function','Escape and outside press close the menu');
+ nodes(tree).find(n=>n.props?.['aria-label']==='Filter round').props.onChange({target:{value:''}});tree=h.render();
+ view(tree).props.votingSelection.toggle('candidate');tree=h.render();const all=nodes(tree);
+ const bar=all.find(n=>n.props?.['aria-label']==='Voting selection');assert.ok(all.indexOf(bar)>all.indexOf(view(tree)),'keyboard order reaches Start voting after the rows');
+ assert.match(bar.props.className,/oc-voting-bar/);assert.ok(all.find(n=>n.props?.className==='oc-voting-bar-clearance'&&nodes(n).includes(bar)),'list and pager keep clear of the bar');
+ const css=fs.readFileSync('components/product/operational-dashboard.css','utf8');assert.match(css,/body:has\(\.oc-voting-bar\) \[data-sonner-toaster\]/,'toasts rise above the bar');
 });

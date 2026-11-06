@@ -196,3 +196,20 @@ test('Calendar is one rail destination in every personal section and keeps its t
   const mobile=nodes(shell).find(node=>node.type==='MobileNavigation');assert.equal(mobile.props.items.some(item=>item.id==='calendar'),false);
  }
 });
+test('a background reload that lands after a draft opens keeps the open draft object and still updates the rest',async()=>{
+ const draft=app('Draft','DRAFTING',{revision:1,answers:[{questionId:'q',response:'Local words'}]});
+ const h=trackerHarness([draft,app('Other')],'all');h.render();await h.flush();let tree=h.render();
+ h.setRecords([{...draft,revision:2,answers:[{questionId:'q',response:'Server words'}]},app('Other','ACCEPTED')]);
+ const landing=h.revalidation.fn();management(tree).find(node=>node.props.application.id==='Draft').props.onOpen();tree=h.render();
+ const before=nodes(tree).find(node=>node.type==='ApplicationForm').props.application;
+ await landing;await h.flush();tree=h.render();const form=nodes(tree).find(node=>node.type==='ApplicationForm');
+ assert.equal(form.props.application,before,'the open draft keeps its object');assert.equal(form.props.application.revision,1);assert.equal(form.props.application.answers[0].response,'Local words');
+ const synced=h.calls.filter(call=>call[0]==='applications').at(-1)[1];assert.equal(synced.find(item=>item.id==='Other').status,'Accepted','other applications still update');
+});
+test('background and explicit application refresh failures are surfaced quietly without losing the list',async()=>{
+ const h=trackerHarness([app('Invite','INTERVIEWING')]);h.render();await h.flush();let tree=h.render();
+ h.fail();await h.revalidation.fn();tree=h.render();assert.equal(cards(tree).length,1,'current applications stay visible');
+ assert.ok(nodes(tree).some(node=>node.props?.role==='status'&&/Couldn’t update your applications/.test(text(node))));
+ cards(tree)[0].props.onOpen();tree=h.render();await nodes(tree).find(node=>node.type==='ApplicationStatusDetail').props.onRefresh();await h.flush();
+ assert.match(nodes(h.render()).find(node=>node.type==='ApplicationStatusDetail').props.notice,/Couldn’t refresh/);
+});
