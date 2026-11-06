@@ -74,7 +74,7 @@ Translucency (and `--oc-surface-glass-filter` / `--oc-surface-glass-navy-filter`
 | Primitive | Variant | Notes |
 | --- | --- | --- |
 | `Card`, `Panel` | `variant="glass" \| "glass-raised" \| "glass-navy"` | Glass is the material without blur. Raised and navy put blur on an isolated `::before` layer, never on text. Radius from `--oc-glass-card-radius` (default 18 / 22 / 26px). Navy uses cream text, `--oc-rail-muted` secondary text and orange focus rings. |
-| `Tabs` | `TabsList variant="segmented"` | The workspace pill's 54px track and sliding navy indicator (positioned with `:has()` from the active trigger, `--oc-floating-spring`). Without `:has()` the active trigger fills itself. Up to five segments. |
+| `Tabs` | `TabsList variant="segmented"` | The workspace pill's 54px track. Two or three tabs share the width with a sliding navy indicator (positioned with `:has()` from the active trigger, `--oc-floating-spring`); four or more scroll horizontally inside the track and the active tab fills itself, so labels never truncate or widen the page. Without `:has()` the active trigger fills itself. |
 | `Button`, `IconButton` | `variant="glass"`, `variant="glass-primary"` | Glass matches `.oc-floating-circle` (hover `#fff7ec`, stronger edge, lift shadow); glass-primary is the navy pill of the selected workspace segment. Navy focus ring on light glass, orange on navy. |
 | `Skeleton`, `LoadingState` | `variant="glass"` | Light material without blur; skeleton blocks use `--oc-surface-glass-track`. |
 

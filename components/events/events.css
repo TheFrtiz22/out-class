@@ -269,8 +269,8 @@
 .oc-physical-board[data-empty="true"] {
   min-height: 0;
   padding: 0;
-  border-color: var(--oc-content-edge);
-  background: var(--oc-content-surface);
+  border-color: var(--border);
+  background: var(--card);
   box-shadow: none;
 }
 .oc-events-empty {

@@ -1,7 +1,9 @@
 /** Before/after screenshots and axe for the glass rollout, on pages that render without a session:
  * the primitives gallery (/design-system, including its fictional product patterns) and public pages.
  * Local server only. Usage: OUTCLASS_GLASS_BASE_URL=http://127.0.0.1:3311 OUTCLASS_GLASS_PHASE=before|after
- *   [OUTCLASS_GLASS_MODES=1] node scripts/check-glass-rollout.cjs
+ *   [OUTCLASS_GLASS_MODES=1] [OUTCLASS_GLASS_FRAMES=1] node scripts/check-glass-rollout.cjs
+ * OUTCLASS_GLASS_FRAMES=1 only measures scroll frame times over the Explore cards and the applicant-table
+ * placeholder on /design-system (the signed-in pages need a session this audit does not create).
  */
 const fs = require('node:fs/promises'), path = require('node:path'), assert = require('node:assert/strict')
 const { chromium, webkit } = require('playwright')
@@ -14,6 +16,28 @@ const out = path.resolve('test-results/glass-rollout', `${phase}-${engine === ch
 const patterns = ['Explore', 'Club profile', 'Applications', 'Club overview', 'Recruitment', 'Scheduling']
 const pages = [['home', '/'], ['login', '/login'], ['signup', '/signup'], ['forgot-password', '/forgot-password'], ['uva', '/uva'], ['request-school', '/request-school'], ['explore', '/explore']]
 
+async function scrollFrames(page, selector) {
+  return page.evaluate(async selector => {
+    const target = document.querySelector(selector), top = target.getBoundingClientRect().top + scrollY - 120
+    const samples = []; let previous = performance.now(); const start = previous
+    await new Promise(resolve => { function tick(now) { samples.push(now - previous); previous = now; scrollTo(0, top + Math.round((Math.sin((now - start) / 450) + 1) * 300)); if (now - start < 2500) requestAnimationFrame(tick); else resolve() } requestAnimationFrame(tick) })
+    samples.shift(); samples.sort((a, b) => a - b)
+    return { frames: samples.length, medianMs: +samples[Math.floor(samples.length / 2)].toFixed(2), p95Ms: +samples[Math.floor(samples.length * .95)].toFixed(2), over34Ms: samples.filter(v => v > 34).length }
+  }, selector)
+}
+async function frames() {
+  const fsSync = require('node:fs')
+  const browser = await engine.launch({ headless: true, ...(engine === chromium && !fsSync.existsSync(chromium.executablePath()) && fsSync.existsSync('/opt/pw-browsers/chromium') ? { executablePath: '/opt/pw-browsers/chromium' } : {}) })
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } }), result = { explore: [], table: [] }
+  for (let run = 0; run < 3; run++) {
+    await page.goto(`${base}/design-system`, { waitUntil: 'networkidle' }); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(500)
+    result.explore.push(await scrollFrames(page, '.oc-pattern-content'))
+    result.table.push(await scrollFrames(page, '.oc-loading-applicant-table, .oc-loading-applicants'))
+  }
+  await browser.close()
+  await fs.mkdir(out, { recursive: true }); await fs.writeFile(path.join(out, 'frames.json'), JSON.stringify(result, null, 2) + '\n')
+  console.log(JSON.stringify(result))
+}
 async function main() {
   await fs.mkdir(out, { recursive: true })
   const fsSync = require('node:fs')
@@ -56,4 +80,4 @@ async function main() {
   await fs.writeFile(path.join(out, 'report.json'), JSON.stringify(report, null, 2) + '\n')
   console.log(JSON.stringify({ out, screenshots: report.screenshots.length, violations: report.accessibility.filter(a => a.violations.length).map(a => [a.name, a.violations.map(v => v.id)]), errors: report.errors.length }, null, 1))
 }
-main().catch(error => { console.error(error); process.exitCode = 1 })
+;(process.env.OUTCLASS_GLASS_FRAMES === '1' ? frames() : main()).catch(error => { console.error(error); process.exitCode = 1 })
