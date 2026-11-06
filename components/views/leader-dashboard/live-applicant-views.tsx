@@ -20,7 +20,7 @@ type Props = { votingSelection?: {ids:string[];toggle:(id:string)=>void}; applic
 export function ApplicantInterview({ app }: { app: Awaited<ReturnType<typeof import("@/lib/workspace-api").getClubPipeline>>["applications"][number] }) {
   if (app.studentId.startsWith("anonymous-")) return <span>Withheld for anonymous review</span>
   const selected = relevantInterview(app.bookings)
-  if (!selected) return <span>No booking recorded</span>
+  if (!selected) return <span>No interview scheduled</span>
   return <span>{selected.past ? "Last: " : "Next: "}{schedulingDateTime(selected.booking.slot.startTime)}</span>
 }
 function ApplicantIdentity({ label, anonymous }: { label: string; anonymous: boolean }) {

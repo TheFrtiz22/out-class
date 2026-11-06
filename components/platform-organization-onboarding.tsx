@@ -40,7 +40,7 @@ export function OrganizationOnboardingForm({ onCreated, onClose, onBusy }: { onC
     getOrganizationOnboardingSchools().then(options => {
       if (!current) return;
       setSchools(options); setSchoolId(options[0]?.identifierTypeId || "");
-      if (!options.length) setLoadError("No schools are configured for president invitations.");
+      if (!options.length) setLoadError("No schools are ready for president invitations yet.");
     }).catch(() => { if (current) setLoadError("Could not load schools. Verify administrator access and retry."); })
       .finally(() => { if (current) setLoading(false); });
     return () => { current = false; };

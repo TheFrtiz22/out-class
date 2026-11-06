@@ -157,7 +157,7 @@ export async function reserveInterview(raw: { applicationId: string; slotId: str
     if (existing && +existing.slot.startTime <= Date.now()) throw new Error("This interview has already started. Contact the club to change it.")
     if (!slot.room.isOpen || +slot.startTime <= Date.now()) throw new Error("This slot is no longer available.")
     const round = await tx.pipelineRound.findUniqueOrThrow({ where: { id: application.roundId }, include: { bookingCycle: true } })
-    if (!isPublishedBookingSlot(round.bookingSlots, slot, slot.room) || !round.bookingPublishedAt || round.bookingPaused || round.archivedAt || round.anonymousReview || !["INTERVIEW", "GROUP_INTERVIEW"].includes(round.type) || round.bookingCycleId !== application.recruitmentCycleId || round.bookingCycle?.archivedAt) throw new Error("Booking is not currently published for your invited round and recruitment cycle.")
+    if (!isPublishedBookingSlot(round.bookingSlots, slot, slot.room) || !round.bookingPublishedAt || round.bookingPaused || round.archivedAt || round.anonymousReview || !["INTERVIEW", "GROUP_INTERVIEW"].includes(round.type) || round.bookingCycleId !== application.recruitmentCycleId || round.bookingCycle?.archivedAt) throw new Error("Interview times aren’t open for your round right now.")
     if (existing && !round.bookingAllowRescheduling) throw new Error("This club does not allow self-service rescheduling. Your original reservation is retained; contact the club.")
     const coverage = await interviewBookingCoverage(tx, application.clubId, round.id, application)
     if (!coverage.some(s => s.slotId === slot.id && s.bookable)) throw new Error("This time can no longer provide an approved, fully staffed interview. Your current reservation is retained. Choose another time or contact the club.")
@@ -165,7 +165,7 @@ export async function reserveInterview(raw: { applicationId: string; slotId: str
     if (slot._count.bookings >= slot.capacity) throw new Error("That time was just booked. Choose another slot.")
     const others = await tx.interviewBooking.findMany({ where: { application: { studentId: user.id }, ...(existing ? { id: { not: existing.id } } : {}), slot: { endTime: { gt: new Date() } } }, include: { slot: true } })
     if (others.some(b => overlaps(slot, b.slot))) throw new Error("You already have an interview at that time.")
-    if (others.some(b => b.applicationId === application.id && b.roundId === null)) throw new Error("You already have a legacy booking with this club. Contact the club before booking another time.")
+    if (others.some(b => b.applicationId === application.id && b.roundId === null)) throw new Error("You already have an interview with this club. Contact the club before booking another time.")
     if (existing) {
       await notifyInterviewBookingChange(tx, existing)
       await tx.interviewBooking.delete({ where: { id: existing.id } })
@@ -183,12 +183,12 @@ export async function cancelRoomBooking(bookingId: string) {
   const { user } = await requireAuth()
   await atomic(async tx => {
     const initial = await tx.interviewBooking.findFirst({ where: { id: bookingId, application: { studentId: user.id } }, include: { slot: true } });
-    if (!initial) throw new Error("Booking not found.");
+    if (!initial) throw new Error("We couldn’t find that interview.");
     await lockOperationalClub(tx, initial.slot.clubId);
     await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${user.id} FOR UPDATE`
     await tx.$queryRaw`SELECT id FROM "Application" WHERE id = ${initial.applicationId} FOR UPDATE`;
     const booking = await tx.interviewBooking.findFirst({ where: { id: bookingId, application: { studentId: user.id } }, include: { slot: true } })
-    if (!booking) throw new Error("Booking not found.")
+    if (!booking) throw new Error("We couldn’t find that interview.")
     if (+booking.slot.startTime <= Date.now()) throw new Error("This interview has already started. Contact the club to change it.")
     const policy = booking.roundId ? await tx.pipelineRound.findUnique({ where: { id: booking.roundId } }) : null
     if (policy && !policy.bookingAllowCancellation) throw new Error("This club does not allow self-service cancellation. Contact the club; your reservation is retained.")

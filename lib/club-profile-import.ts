@@ -55,6 +55,6 @@ export async function runClubProfileImport(plan: ImportPlan, images: File[], sch
     profile.bannerUrl = uploaded.get(row.imageAssignments.bannerUrl?.[0] || '') || null
     profile.marketing.gallery = (row.imageAssignments['marketing.gallery'] || []).map((path, index) => ({ url: uploaded.get(path)!, caption: row.profile.marketing.gallery[index]?.caption || `${row.profile.name} · official club photography` }))
     const result = await operations.save({ id: saved.id, version: saved.version, slug: row.slug, schoolId, isDiscoverable: true, applicationOpen: current?.applicationOpen ?? false, applicationDeadline: current?.applicationDeadline ?? null, profile, reason })
-    if (!result.id) throw Error(result.error || 'Publication failed. Review again before retrying.')
+    if (!result.id) throw Error(result.error || 'Couldn’t publish the profile. Review it and try again.')
   }
 }

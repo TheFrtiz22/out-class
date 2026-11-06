@@ -442,7 +442,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                         </Button>
                       </>
                     )}
-                    {caps.canManageMembers && <ActionWorkflow title="Interview eligibility" description="Update the selected members for this club or a specific round." trigger="Interview eligibility"><InterviewerEligibilityControls clubId={clubId} selectedIds={selectedMembers.map(m => m.id)} individual onSaved={() => reload()} /></ActionWorkflow>}
+                    {caps.canManageMembers && <ActionWorkflow title="Interviewers" description="Update the selected members for this club or a specific round." trigger="Interviewers"><InterviewerEligibilityControls clubId={clubId} selectedIds={selectedMembers.map(m => m.id)} individual onSaved={() => reload()} /></ActionWorkflow>}
                     {caps.canManageMembers && (
                       <Button
                         size="sm"
@@ -907,7 +907,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 </div>}
               </ActionWorkflow>
               {caps.canManageMembers && <ActionWorkflow title="Import CSV" description="Upload, validate, and confirm a roster. Emails are sent only when explicitly requested." trigger="Import CSV" presentation="sheet"><RosterCsvImporter clubId={clubId} onImported={reload} /></ActionWorkflow>}
-              {caps.canManageMembers && <ActionWorkflow title="Member settings" description="Configure club-wide interviewer eligibility. Edit individual roles and access from the member directory." trigger="Settings" presentation="sheet"><InterviewerEligibilityControls key={`${clubId}:${attempt}`} clubId={clubId} selectedIds={[]} onSaved={() => reload()} /></ActionWorkflow>}
+              {caps.canManageMembers && <ActionWorkflow title="Member settings" description="Choose which roles can interview for the whole club. Change one person from the member list." trigger="Settings" presentation="sheet"><InterviewerEligibilityControls key={`${clubId}:${attempt}`} clubId={clubId} selectedIds={[]} onSaved={() => reload()} /></ActionWorkflow>}
             </div>
             {!invitesOpen && directory}
           </>

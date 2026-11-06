@@ -264,7 +264,7 @@ function InterviewSession({
       const fresh = await getInterviewWorkspace(membership.clubId)
       if (epoch !== navigation.current) return false
       const next = fresh.applications.find(app => app.id === destination.scope.applicationId && app.roundId === roundId && app.assignedRoundIds.includes(roundId) && !app.completedRoundIds.includes(roundId))
-      if (!next || !fresh.rounds.some(r => r.id === roundId && !r.archived)) throw Error("Destination no longer eligible.")
+      if (!next || !fresh.rounds.some(r => r.id === roundId && !r.archived)) throw Error("That round is no longer available.")
       const scope = destination.scope
       // Both actions enforce current access. Keep the submitted candidate visible
       // until the destination's own draft, snapshot and identity are all ready.
@@ -294,7 +294,7 @@ function InterviewSession({
   if (loadError || !data)
     return (
       <div role="alert" className="space-y-4 py-12">
-        <p>We couldn’t open this interview. The booking or your access may have changed.</p><Button variant="ghost" onClick={onExit}>Back to interviews</Button>
+        <p>We couldn’t open this interview. It may have changed, or you may no longer have access.</p><Button variant="ghost" onClick={onExit}>Back to interviews</Button>
         <Button variant="outline" onClick={() => setRetry((value) => value + 1)}>
           Try again
         </Button>

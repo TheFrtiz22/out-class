@@ -47,7 +47,7 @@ export async function finalizeLiveVotingRoom(input:unknown){
   await tx.$queryRaw`SELECT set_config('outclass.voting_finalization','',true)`;
   const finalRows=await tx.application.findMany({where:{clubId:d.clubId,id:{in:plan.changes.filter(c=>c.outcome==="ACCEPT"||c.outcome==="REJECT").map(c=>c.applicationId)}}});
   await tx.auditLog.create({data:{clubId:d.clubId,actorId:user.id,targetId:s.id,action:"voting.room.finalized",details:{mapping:d.mapping,changes:plan.changes.map(({label:_label,...change})=>change),finalGuards:finalRows.map(a=>({applicationId:a.id,guard:decisionPublicationGuard(a)})),notifications:"DEFERRED"}}});await tx.votingRoomCommand.create({data:{...key,actorId:user.id,fingerprint,result}});return result;
- },votingWriteLimits)};}catch(e){if(e instanceof Error&&/^(Session changed|Applicant or pipeline|Application changed since|Choose an active)/.test(e.message))return {ok:false as const,message:e.message};throw e;}
+ },votingWriteLimits)};}catch(e){if(e instanceof Error&&/^(Session changed|Applicant or pipeline|Application changed since|An application changed since voting started|Choose an active)/.test(e.message))return {ok:false as const,message:e.message};throw e;}
 }
 /** Separately confirmed delivery uses the existing decision/notification outbox;
  * finalization never calls this action. Exact current decisions are rechecked. */

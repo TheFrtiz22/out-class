@@ -399,7 +399,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
     setResponses((previous) => ({ ...previous, [id]: "confirmed" }))
     setTrackedApps((previous) => previous.map((app) => app.clubId === "vvf" ? { ...app, status: "1st Round Interview", nextDeadline: `${block.date} at ${slot.time}` } : app))
     const body = `Your interview is booked for ${block.date} at ${slot.time}, ${block.locationName}.`
-    setNotifications((previous) => [{ id: "booking-vvf", eventId: id, clubId: "vvf", type: "Interview Invite", urgent: false, club: "Virginia Venture Fund", color: "#051B3D", logoText: "VVF", senderName: "Recruitment Team", senderTitle: "Interview booking", title: "Interview booking confirmed", preview: body, body: [body], timestamp: "Just now", fullDate: new Date().toLocaleString(), createdAt: new Date().toISOString(), read: false }, ...previous.filter((item) => item.id !== "booking-vvf")])
+    setNotifications((previous) => [{ id: "booking-vvf", eventId: id, clubId: "vvf", type: "Interview Invite", urgent: false, club: "Virginia Venture Fund", color: "#051B3D", logoText: "VVF", senderName: "Recruitment Team", senderTitle: "Interview", title: "Interview confirmed", preview: body, body: [body], timestamp: "Just now", fullDate: new Date().toLocaleString(), createdAt: new Date().toISOString(), read: false }, ...previous.filter((item) => item.id !== "booking-vvf")])
     return null
   }, [scheduleBlocks, setNotifications])
 
@@ -410,7 +410,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
     }) })))
     setEvents((previous) => previous.filter((event) => event.id !== "interview-vvf-current"))
     setTrackedApps((previous) => previous.map((app) => app.clubId === "vvf" ? { ...app, nextDeadline: "Choose a new interview time" } : app))
-    setNotifications((previous) => previous.map((item) => item.id === "booking-vvf" ? { ...item, eventId: undefined, title: "Interview booking cancelled", preview: "Your interview slot was released. Choose a new time from Calendar.", body: ["Your interview slot was released. Choose a new time from Calendar."], read: false, createdAt: new Date().toISOString(), fullDate: new Date().toLocaleString() } : item))
+    setNotifications((previous) => previous.map((item) => item.id === "booking-vvf" ? { ...item, eventId: undefined, title: "Interview cancelled", preview: "Your interview slot was released. Choose a new time from Calendar.", body: ["Your interview slot was released. Choose a new time from Calendar."], read: false, createdAt: new Date().toISOString(), fullDate: new Date().toLocaleString() } : item))
   }, [setNotifications])
 
   const notifyEventChange = useCallback((event: ManagedEvent, cancelled = false) => {

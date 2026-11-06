@@ -12,7 +12,7 @@ export async function publishAvailabilityRequest(tx:AppTransactionClient,input:{
     const club = await tx.club.findUniqueOrThrow({ where: { id: input.clubId }, select: { name: true } })
     const pool = await loadInterviewerPool(tx, input.clubId, input.roundId, input.memberIds)
     const targets = pool.members.filter(m => input.memberIds.includes(m.id))
-    if (new Set(input.memberIds).size !== input.memberIds.length || targets.length !== input.memberIds.length || targets.some(m => !m.eligible || m.disabledAt)) throw new Error("Select eligible active interviewers from this club and round.")
+    if (new Set(input.memberIds).size !== input.memberIds.length || targets.length !== input.memberIds.length || targets.some(m => !m.eligible || m.disabledAt)) throw new Error("Choose interviewers from this club and round.")
     let sent = 0
     const now = new Date()
     for (const member of targets) {

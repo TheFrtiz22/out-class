@@ -108,8 +108,8 @@ export const viewTitles: Record<ViewId, { title: string; subtitle: string }> = {
     subtitle: "Preview saved recruiting thresholds and mark applicants for review.",
   },
   "interview-scheduler": {
-    title: "Interview Scheduler & Booking Manager",
-    subtitle: "Build the master slot schedule and preview the student booking flow.",
+    title: "Interview scheduling",
+    subtitle: "Set interview times and preview what applicants see.",
   },
   "interview-workspace": {
     title: "Live In-Interview Workspace",

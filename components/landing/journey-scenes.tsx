@@ -51,7 +51,7 @@ function ApplyScene() {
 }
 function InterviewScene() {
   const done = useDemoState() > 0
-  return <Focus eyebrow="JIS · PANEL INTERVIEW" title={done ? "Interview confirmed." : "A time that works for you."} badge={done ? "Confirmed" : "Selected"} target="confirm-booking" action={done ? "Interview confirmed" : "Confirm interview"} result="Your booking is saved with your application." done={done}>
+  return <Focus eyebrow="JIS · PANEL INTERVIEW" title={done ? "Interview confirmed." : "A time that works for you."} badge={done ? "Confirmed" : "Selected"} target="confirm-booking" action={done ? "Interview confirmed" : "Confirm interview"} result="Your interview is saved with your application." done={done}>
     <div className="oc-demo-booking"><CalendarDays size={28} /><div><strong>Thursday, October 22</strong><p>{sample.time} · Eastern Time</p></div></div>
     <Facts items={[["Location", <span className="oc-demo-inline" key="room"><MapPin size={18} />{example.room}</span>], ["Duration", "20 minutes"]]} />
   </Focus>
@@ -97,7 +97,7 @@ function ReviewScene() {
 }
 function LeaderInterviewScene() {
   const done = useDemoState() > 0
-  return <Focus eyebrow="JIS · INTERVIEW PANELS" title={done ? "A proposal to review." : "A plan for every panel."} badge={done ? "Draft" : "Ready"} target="auto-fill" action={done ? "Panel proposal created" : "Auto-Fill Panels"} result="Draft ready. Owner review before publication." done={done}>
+  return <Focus eyebrow="JIS · INTERVIEW PANELS" title={done ? "A proposal to review." : "A plan for every panel."} badge={done ? "Draft" : "Ready"} target="auto-fill" action={done ? "Panel proposal created" : "Auto-Fill Panels"} result="Draft ready. The owner reviews it before it goes out." done={done}>
     <div className="oc-demo-schedule-context"><span><MapPin size={18} />Room 204</span><span><Users size={18} />2 interviewers per session</span></div>
     <div className="oc-demo-panel-table"><div><span>Thursday, Oct 22</span><span>Panel assignment</span></div>{["6:00 PM", sample.time].map(time => <div key={time}><strong>{time}</strong><span data-demo-entering={done}>{done ? "Alex J. · Sam K." : "Ready to auto-fill"}</span></div>)}</div>
     <p className="oc-demo-schedule-status">{done ? "4 of 4 staffed · 0 hard conflicts · Unpublished" : "Alex J. & Sam K. · Available 6–8 PM"}</p>
