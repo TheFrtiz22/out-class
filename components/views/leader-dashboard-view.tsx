@@ -611,7 +611,7 @@ function LocalLeaderDashboardView() {
 
               <Tabs defaultValue="application" className="flex flex-1 flex-col gap-0 overflow-hidden">
                 <div className="border-b px-4">
-                  <TabsList className="h-auto bg-transparent p-0">
+                  <TabsList variant="subtle" className="h-auto bg-transparent p-0">
                     <TabsTrigger
                       value="application"
                       className="rounded-none border-b-2 border-transparent px-3 py-2.5 text-xs data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none"

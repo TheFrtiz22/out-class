@@ -108,26 +108,34 @@ test('overview action: member counts only with member-directory access, scoped t
   assert.deepEqual((await api.getClubWorkspaceOverview(clubId)).members, { active: 3, pendingInvitations: 3 })
 })
 
-test('glass variants: opt-in data attributes; defaults render exactly as before', () => {
+test('glass defaults: Card, Panel, Skeleton and Tabs default to glass; variant="default" keeps the solid surface', () => {
   const { Card } = load('components/ui/card.tsx'), { Panel } = load('components/ui/panel.tsx'), { Skeleton } = load('components/ui/skeleton.tsx'), { LoadingState } = load('components/ui/loading-state.tsx'), { Button } = load('components/ui/button.tsx')
   const html = element => renderToStaticMarkup(element)
-  assert.doesNotMatch(html(React.createElement(Card, null, 'x')), /data-variant/)
+  assert.match(html(React.createElement(Card, null, 'x')), /data-slot="card" data-variant="glass"/)
   assert.doesNotMatch(html(React.createElement(Card, { variant: 'default' }, 'x')), /data-variant/)
   for (const variant of ['glass', 'glass-raised', 'glass-navy']) {
     assert.match(html(React.createElement(Card, { variant }, 'x')), new RegExp(`data-slot="card" data-variant="${variant}"`))
     assert.match(html(React.createElement(Panel, { variant, as: 'section' }, 'x')), new RegExp(`<section data-slot="panel" data-tone="card" data-variant="${variant}"`))
   }
+  // Panel's card tone is glass through the content tokens, so its markup is unchanged.
   assert.equal(html(React.createElement(Panel, null, 'x')), '<div data-slot="panel" data-tone="card" class="oc-content-panel">x</div>')
-  assert.equal(html(React.createElement(Skeleton)), '<div data-slot="skeleton" aria-hidden="true" class="oc-skeleton rounded-md"></div>')
-  assert.match(html(React.createElement(Skeleton, { variant: 'glass' })), /data-variant="glass"/)
+  assert.equal(html(React.createElement(Panel, { tone: 'subtle' }, 'x')), '<div data-slot="panel" data-tone="subtle" class="oc-content-panel">x</div>')
+  assert.equal(html(React.createElement(Skeleton)), '<div data-slot="skeleton" aria-hidden="true" data-variant="glass" class="oc-skeleton rounded-md"></div>')
+  assert.doesNotMatch(html(React.createElement(Skeleton, { variant: 'default' })), /data-variant/)
   assert.match(html(React.createElement(LoadingState, { variant: 'glass', layout: 'rows', rows: 1 })), /data-layout="rows" data-variant="glass"/)
-  assert.doesNotMatch(html(React.createElement(LoadingState, { layout: 'rows', rows: 1 })), /data-variant/)
+  assert.doesNotMatch(html(React.createElement(LoadingState, { layout: 'rows', rows: 1 })), /data-layout="rows" data-variant/)
   assert.match(html(React.createElement(Button, { variant: 'glass' }, 'Post')), /data-variant="glass"/)
   assert.match(html(React.createElement(Button, { variant: 'glass-primary' }, 'New')), /data-variant="glass-primary"/)
   assert.match(html(React.createElement(Button, null, 'Save')), /data-variant="default"/)
   const tabs = fs.readFileSync('components/ui/tabs.tsx', 'utf8')
   assert.match(tabs, /variant\?: 'subtle' \| 'underline' \| 'segmented'/)
-  assert.match(tabs, /variant = 'subtle'/, 'Tabs default unchanged')
+  assert.match(tabs, /variant = 'segmented'/)
+  // Overlays share the frosted navigation material; tables, the projector and fields keep solid surfaces.
+  assert.match(fs.readFileSync('styles/product-components.css', 'utf8'), /\[data-slot="alert-dialog-content"\]\):not\([^)]*\) \{ background: var\(--oc-glass-frosted-material\)/)
+  assert.match(fs.readFileSync('styles/workspace-composition.css', 'utf8'), /\.oc-data-surface \{[^}]*background: var\(--oc-content-solid\)/)
+  const tokens = fs.readFileSync('styles/tokens.css', 'utf8')
+  assert.match(tokens, /--oc-content-surface: var\(--oc-surface-glass\);/)
+  assert.match(tokens.slice(tokens.indexOf('[data-theme="present"]')), /--oc-content-surface: #162638;[\s\S]*--oc-content-shadow: var\(--oc-content-shadow-solid\);/)
 })
 
 test('glass tokens: solid default, backdrop-filter enhancement, reduced-transparency and forced-colors overrides', () => {
@@ -142,6 +150,6 @@ test('glass tokens: solid default, backdrop-filter enhancement, reduced-transpar
   assert.match(blocks.reduced, /--oc-surface-glass-filter: none;/)
   // Text never passes through a filter: blur in the primitives sits on ::before layers or bare tracks.
   const primitives = fs.readFileSync('styles/interface-primitives.css', 'utf8')
-  for (const rule of primitives.split('}').filter(rule => /backdrop-filter:\s*var/.test(rule))) assert.match(rule, /::before|tabs-list/, rule.trim().slice(0, 120))
+  for (const rule of primitives.split('}').filter(rule => /backdrop-filter:\s*var/.test(rule))) assert.match(rule, /::before|tabs-list|sonner-toast/, rule.trim().slice(0, 120))
   assert.doesNotMatch(fs.readFileSync('components/club-home/club-home.css', 'utf8'), /backdrop-filter:\s*(?!none)/)
 })

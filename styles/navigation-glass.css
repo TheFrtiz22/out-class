@@ -28,11 +28,11 @@
    material; ambient = one decorative page backdrop. Solid by default, translucent only where
    backdrop-filter is supported, solid again for reduced transparency or higher contrast. */
 :root, [data-product-shell] {
-  --oc-surface-glass: var(--oc-content-surface);
-  --oc-surface-glass-edge: var(--oc-content-edge);
-  --oc-surface-glass-depth: var(--oc-content-shadow);
+  --oc-surface-glass: var(--oc-content-solid);
+  --oc-surface-glass-edge: var(--oc-content-edge-solid);
+  --oc-surface-glass-depth: var(--oc-content-shadow-solid);
   --oc-surface-glass-raised: var(--oc-glass-light-solid);
-  --oc-surface-glass-raised-depth: var(--oc-content-shadow);
+  --oc-surface-glass-raised-depth: var(--oc-content-shadow-solid);
   --oc-surface-glass-navy: var(--oc-glass-navy-solid);
   --oc-surface-glass-filter: none;
   --oc-surface-glass-navy-filter: none;
@@ -115,7 +115,7 @@
     --oc-glass-menu-depth: 0 0 0 1px #526675;
   }
   :root, [data-product-shell] {
-    --oc-surface-glass: var(--oc-content-surface);
+    --oc-surface-glass: var(--oc-content-solid);
     --oc-surface-glass-edge: #526675;
     --oc-surface-glass-depth: none;
     --oc-surface-glass-raised: var(--oc-glass-light-solid);

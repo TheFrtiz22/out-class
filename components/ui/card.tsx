@@ -2,8 +2,8 @@ import * as React from 'react'
 
 import { cn } from '@/lib/utils'
 
-/** `variant` adds a glass surface (docs/design-system.md, "Glass surfaces"); the default is unchanged. */
-function Card({ className, variant, ...props }: React.ComponentProps<'div'> & { variant?: 'default' | 'glass' | 'glass-raised' | 'glass-navy' }) {
+/** Glass by default (docs/design-system.md, "Glass surfaces"); `variant="default"` keeps the solid card. */
+function Card({ className, variant = 'glass', ...props }: React.ComponentProps<'div'> & { variant?: 'default' | 'glass' | 'glass-raised' | 'glass-navy' }) {
   return (
     <div
       data-slot="card"

@@ -56,9 +56,11 @@ Public marketing and authentication use Caslon throughout. Authenticated product
 | Progress | `Progress`: numeric value/max or indeterminate null; supply aria-label/aria-labelledby. Values are bounded and passed to Radix for accessible reporting. |
 | Heading | `SectionHeading`: explicit h1/h2/h3, optional eyebrow, description, action, and editorial style. |
 
-### Glass surfaces (opt-in variants)
+### Glass surfaces
 
-One glass language, from the navigation's own tokens. Tokens live in `styles/navigation-glass.css` beside the navigation optics; the variant rules live in `styles/interface-primitives.css`. Defaults of every primitive are unchanged; pages opt in with a variant.
+One glass language, from the navigation's own tokens. Tokens live in `styles/navigation-glass.css` beside the navigation optics; the variant rules live in `styles/interface-primitives.css`.
+
+**Defaults (Phase 2 rollout).** `--oc-content-surface`, `--oc-content-edge` and `--oc-content-shadow` resolve to `--oc-surface-glass*`, so every surface built on the content tokens (`.oc-content-panel`, `.oc-toolbar`, `.oc-form-section`, `.oc-detail-panel`, product cards) is glass without blur. The solid values stay as `--oc-content-solid`, `--oc-content-edge-solid` and `--oc-content-shadow-solid`: data tables (`.oc-data-surface` rows and cells), form fields (`--card`/`--input`), the projector theme and every fallback use them. `Card` defaults to `variant="glass"` (`variant="default"` is the solid card); `Skeleton` defaults to the glass track; `TabsList` defaults to `segmented` (`subtle` and `underline` remain); dialogs, sheets, popovers, menus and selects use the frosted navigation material with the light filter (the only content surfaces allowed to blur, also on phones); tooltips use navy frosted glass; default toasts use the frosted material; outlined and subtle `EmptyState` tones use the glass surface and track. `SegmentedControl` (an `aria-pressed` filter group) keeps its API and shares the segmented tabs' glass track and navy selection: use segmented `Tabs` for tab panels and `SegmentedControl` for filters.
 
 | Token | Use | Solid default | Reduced transparency / higher contrast | Forced colors |
 | --- | --- | --- | --- | --- |
@@ -76,7 +78,7 @@ Translucency (and `--oc-surface-glass-filter` / `--oc-surface-glass-navy-filter`
 | `Button`, `IconButton` | `variant="glass"`, `variant="glass-primary"` | Glass matches `.oc-floating-circle` (hover `#fff7ec`, stronger edge, lift shadow); glass-primary is the navy pill of the selected workspace segment. Navy focus ring on light glass, orange on navy. |
 | `Skeleton`, `LoadingState` | `variant="glass"` | Light material without blur; skeleton blocks use `--oc-surface-glass-track`. |
 
-Rules: text never passes through a filter; blurred surfaces are never nested; at most six blurred surfaces on screen on desktop (the shell uses five: rail, workspace pill, search, notifications, account; the header band behind them is frosted without blur so blur is never stacked), so page content keeps `--oc-surface-glass-filter: none` in its scope, as Club home does, unless it is the one surface allowed to blur. `components/product/segmented-control.tsx` (an `aria-pressed` filter group) predates the segmented tabs and is unchanged; use segmented `Tabs` for tab panels.
+Rules: text never passes through a filter; blurred surfaces are never nested; at most six blurred surfaces on screen on desktop (the shell uses five: rail, workspace pill, search, notifications, account; the header band behind them is frosted without blur so blur is never stacked), so page content keeps `--oc-surface-glass-filter: none` in its scope, as Club home does, unless it is the one surface allowed to blur. 
 
 ## Motion and stacking
 

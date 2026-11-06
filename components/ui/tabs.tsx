@@ -20,7 +20,7 @@ function Tabs({
 
 function TabsList({
   className,
-  variant = 'subtle',
+  variant = 'segmented',
   ...props
 }: React.ComponentProps<typeof TabsPrimitive.List> & { variant?: 'subtle' | 'underline' | 'segmented' }) {
   return (
