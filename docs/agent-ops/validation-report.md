@@ -38,3 +38,7 @@ deploy <pending> | runtime errors <pending> | advisor delta <n/a, no migration> 
 - New real-browser fixture test `focus-frame-browser`: Exit target from the account-scoped stored page, /home fallback, foreign/focus/external entries ignored, registration merge and cleanup, onExit, projector dark surface, click-through over the hidden bar, keyboard/hover reveal.
 - Disposable E2E (`test:onboarding:e2e`) run 1 on e607d3c4: 45/47; failing = new signed-out subtest (getCurrentUser sends signed-out visitors to /). Fixed (session check first) and verified on an inert dev server (NEXT_REDIRECT to `/login?next=%2Fclub%2F…%2Finterview%3F…`). Reruns not completed: the reserved stack was in use by another local session. Pending: one green disposable run (CI runs it via run-onboarding-e2e).
 - Screenshots (inert env, signed-out states) before/after for 16 routes at 1440 and 390 in the session scratchpad; every focus route shows the frame, one main, no horizontal overflow.
+
+## 2026-11-06 OPS-SENTRY ops/sentry
+- a24dac4: test 1728: 1668 pass, 0 fail, 60 skipped (= main's 60). test:migrations 71, RLS 85. typecheck ok. lint 0 errors / 401 warnings. build ok, 76 pages.
+- Bundle check without a DSN: shared first-load JS 107 kB vs 105 kB on a branch without Sentry; cause: scrub module statically imported by instrumentation-client. Fixed in 2b437ea (SDK and filter load only inside the DSN branch). SDK code exists only in lazily loaded chunks.
