@@ -38,3 +38,8 @@ deploy <pending> | runtime errors <pending> | advisor delta <n/a, no migration> 
 - New real-browser fixture test `focus-frame-browser`: Exit target from the account-scoped stored page, /home fallback, foreign/focus/external entries ignored, registration merge and cleanup, onExit, projector dark surface, click-through over the hidden bar, keyboard/hover reveal.
 - Disposable E2E (`test:onboarding:e2e`) run 1 on e607d3c4: 45/47; failing = new signed-out subtest (getCurrentUser sends signed-out visitors to /). Fixed (session check first) and verified on an inert dev server (NEXT_REDIRECT to `/login?next=%2Fclub%2F…%2Finterview%3F…`). Reruns not completed: the reserved stack was in use by another local session. Pending: one green disposable run (CI runs it via run-onboarding-e2e).
 - Screenshots (inert env, signed-out states) before/after for 16 routes at 1440 and 390 in the session scratchpad; every focus route shows the frame, one main, no horizontal overflow.
+
+## 2026-11-06 SEC-TURNSTILE security/turnstile (8a25f81)
+- test 1733: 1673 pass, 0 fail, 60 skipped (env-gated; same 60 as main 00840ee, which ran 1662/0/60). Browser suites ran against a local Chromium 1243 aliased for Playwright 1.64.
+- test:migrations: 71 applied on fresh and legacy, RLS on 85 tables. typecheck ok. lint 0 errors / 401 warnings (unchanged). build ok, 76 pages; /login 209 kB, /signup 281 kB first load.
+- Not run: disposable E2E stack, real Cloudflare or Supabase captcha enforcement.
