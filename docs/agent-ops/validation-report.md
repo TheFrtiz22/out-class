@@ -6,6 +6,11 @@ Appended by `outclass-release-check`. Newest first.
 2026-11-05 backend/booking-throughput (merge on bd3e12d3) app gates: test 1588/0/58 migrations 67 ok (80 tables RLS) lint ok types ok build ok | integration skips 58 (env-gated e2e/native suites; security suite run separately 11/11, booking+ballot contention 14/0) | agent-hook tests 29/0 | authz-reviewer: no high/medium, LOW-1/LOW-2 fixed before merge
 deploy <pending> | runtime errors <pending> | advisor delta <n/a, no migration> | rollback target: production deploy of bd3e12d3 | verdict <pending>
 
+## 2026-11-06 POLISH-3 layout/page-structure (base main 4d531bdf + #133 + #134)
+- `npm run validate` (inert env) on e421ff00: 1721 tests, 1661 pass, 1 fail, 59 skipped; lint 0 errors; typecheck ok; build ok. The failure (release-database) compares migrations to the generated Prisma client, which another session regenerated in the shared node_modules with a VotingHandRaise model not present in this repo; the same test passed on this branch before that (1651/0/59 run).
+- Disposable stack (fresh volume) on e421ff00: onboarding/paths/account/settings 54/54; selected navigation 16/16. Voting bar check at 390/1440: hidden until selection, pager and last row not covered.
+- Combined main + #133 + #134: validate 1705/1646/0/59; stack 54/54 + 16/16 on a fresh volume (an earlier #418 hydration failure on /club-access came from stale data in the old disposable volume).
+
 ## 2026-11-05 NAV-B nav/workspace-switcher (base 16e8bcc1, stacked on NAV-A)
 - `npm run validate` (inert env): test 1688 total, 1629 pass, 0 fail, 59 skipped (same env-gated set as NAV-A); test:migrations ok; lint 0 errors / 22 existing warnings; typecheck ok; build ok (76 pages).
 - Disposable stack (real prod build + Supabase Auth + Postgres, built from 54b5bac8): onboarding/student-paths/account/settings 54/54; selected navigation phases 1/2/10/12 16/16 (phase 2 re-run after renaming its club overview selector to `nav-club-home`).
