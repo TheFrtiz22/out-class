@@ -56,3 +56,7 @@ deploy <pending> | runtime errors <pending> | advisor delta <n/a, no migration> 
 ## 2026-11-06 UI-STATUS ui/status-pill-empty-states
 - `validate` (inert env): 1730 tests, 1670 pass, 0 fail, 60 skipped (env-gated); test:migrations 71 applied, RLS 85 tables; lint 0 errors / 400 warnings; typecheck ok; build ok.
 - #136 post-merge: production deployment dpl_3L9HhqvyQCLZGhVV65S1MuUG74ay READY on 00840eea; get_runtime_errors 2h: none.
+
+## 2026-11-06 LAYOUT page-structure, merged with #145 and plain-language copy
+- `validate` (inert env) on 238d36ba: 1755 tests, 1695 pass, 0 fail, 60 skipped (env-gated); lint 0 errors / 23 warnings; typecheck ok; build ok.
+- CI "Local Auth, settings and navigation" failed phase2 "selected tabs" (pipeline). Reproduced locally only under load: 4 of 8 concurrent runs failed on this branch AND on #133's head e4340685 (pre-existing). Cause: the browser Auth client fences read authority after first paint (`signed_in`), so a tab selected before then legitimately reads twice / remounts the rail flyout. Test `open()` now waits for network idle; 12 of 12 concurrent runs pass; full phase2 file 7/7 on a fresh disposable stack.
