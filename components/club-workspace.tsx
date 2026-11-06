@@ -10,7 +10,7 @@ import { RecruitingOverview } from "@/components/recruiting-overview";
 import { ManagerOverview } from "@/components/manager-overview";
 import { RouteWorkspaceShell } from "@/components/shell/route-workspace-shell";
 import { ProductShell } from "@/components/shell/product-shell";
-import { managerNavigation, personalModes, personalDestination } from "@/lib/product-navigation";
+import { managerNavigation } from "@/lib/product-navigation";
 const ScreeningDashboardView = dynamic(() => import("@/components/views/screening-dashboard-view").then(m => m.ScreeningDashboardView), { loading: () => <WorkspaceLoading label="Loading recruiting rules…" layout="form" rows={3} /> });
 const ClubAnnouncements = dynamic(() => import("@/components/club-announcements").then(m => m.ClubAnnouncements), { loading: () => <WorkspaceLoading label="Loading announcements…" layout="feed" rows={3} /> });
 import type { ViewId } from "@/lib/views";
@@ -52,7 +52,7 @@ import { DashboardLoading } from "@/components/product/dashboard-presentation";
 import { WorkspaceLoading } from "@/components/workspace-loading";
 import { SelectedClubWorkspace } from "@/components/selected-club-workspace";
 import { clubWorkspaceEntryHref, clubWorkspacePreferenceKey, readClubWorkspacePreference, saveClubWorkspacePreference } from "@/lib/club-workspace-preference";
-import { studentPath } from "@/lib/navigation"
+import { leaderRailSections, memberRailSections, studentPath } from "@/lib/navigation"
 type Overview = Awaited<ReturnType<typeof getClubWorkspaceOverview>>;
 export function ClubWorkspace({
   clubId,
@@ -192,9 +192,9 @@ export function ClubWorkspace({
     <RecruitmentFocus />
     {interviewMode && membership && !loading && !needsSelection && hasPermission(membership, "applications.review") ? <InterviewWorkspaceView key={`${clubId}:${params.get("applicationId") || ""}:${params.get("roundId") || ""}:${params.get("bookingId") || ""}`} scoped onExit={() => setInterviewMode(false)} /> :
       <ProductShell manager={manager} clubId={clubId} clubName={current?.club.name || membership?.club.name} mode={manager ? mode : "clubs"}
-        modes={manager ? [...(recruitmentTools(membership!).length ? [{ id: "recruiting", label: "Recruiting", href: `${clubWorkspaceHref(clubId, "recruitment")}&tool=overview` }] : []), { id: "club", label: "Club", href: clubWorkspaceHref(clubId, "overview") }] : personalModes.map(item => { const destination = personalDestination(item.id); const params = new URLSearchParams({ workspace: "student", view: destination.view }); if (destination.section) params.set("section", destination.section); return { ...item, href: `/?${params}` } })}
-        onModeSelect={id => { if (manager && (id === "recruiting" || id === "club")) saveClubWorkspacePreference(preferenceKey, id) }}
-        onReviewTool={id => { reviewTrigger.current = document.activeElement as HTMLElement; setReviewTool(id) }} items={nav} active={active} title={nav.find(n => n.id === active)?.label || "Club workspace"} onSelect={() => {}} onNavigate={navigate}>
+        sections={manager ? leaderRailSections(membership!, clubId, params.toString()) : memberRailSections(clubId, current?.club.name || membership?.club.name)}
+        onModeSelect={id => { if (manager) saveClubWorkspacePreference(preferenceKey, id) }}
+        onReviewTool={id => { reviewTrigger.current = document.activeElement as HTMLElement; setReviewTool(id) }} active={active} title={nav.find(n => n.id === active)?.label || "Club workspace"} onSelect={() => {}} onNavigate={navigate}>
         {loading || needsSelection ? <p role="status">Opening club workspace…</p> : !membership ? <div className="space-y-4"><h1 className="oc-page-title ">Club workspace unavailable</h1><p>Sign in with a current club membership to access this workspace.</p><Link href="/" className="underline">Return to OutClass</Link></div> : <>
           {!manager && <Link className="mb-5 inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4" href="/clubs">← All my clubs</Link>}
           {active === "overview" && allowed

@@ -6,6 +6,15 @@ Appended by `outclass-release-check`. Newest first.
 2026-11-05 backend/booking-throughput (merge on bd3e12d3) app gates: test 1588/0/58 migrations 67 ok (80 tables RLS) lint ok types ok build ok | integration skips 58 (env-gated e2e/native suites; security suite run separately 11/11, booking+ballot contention 14/0) | agent-hook tests 29/0 | authz-reviewer: no high/medium, LOW-1/LOW-2 fixed before merge
 deploy <pending> | runtime errors <pending> | advisor delta <n/a, no migration> | rollback target: production deploy of bd3e12d3 | verdict <pending>
 
+## 2026-11-05 NAV-B nav/workspace-switcher (base 16e8bcc1, stacked on NAV-A)
+- `npm run validate` (inert env): test 1688 total, 1629 pass, 0 fail, 59 skipped (same env-gated set as NAV-A); test:migrations ok; lint 0 errors / 22 existing warnings; typecheck ok; build ok (76 pages).
+- Disposable stack (real prod build + Supabase Auth + Postgres, built from 54b5bac8): onboarding/student-paths/account/settings 54/54; selected navigation phases 1/2/10/12 16/16 (phase 2 re-run after renaming its club overview selector to `nav-club-home`).
+- Browser fixture: new navigation-rail-browser (labels ≥1280, tooltips 1024–1279, no overlay, URL-driven active state, group menus by click/keyboard, guards, permissions, phones, axe wcag2a/aa/21aa/best-practice at 1100/1440/390, forced colors, contrast-more, blur fallback); workspace-selector-browser rewritten for the pill; club-workspace-entry-browser keeps entry-preference and no-flash checks via rail sections.
+- Not verified: real-device Safari/iOS, signed-out /preview in a real browser (unit-tested only), production.
+
+## 2026-11-05 COPY-1 copy/plain-language (base 69cc83b0)
+- test 1684 total, 1625 pass, 1 fail, 58 skipped; the failure (interview-enter-browser résumé text) passes after `npm run pdf:assets` in the fresh worktree, so 1626/0/58. test:migrations 69 applied, 84 tables RLS; lint 0 errors / 22 warnings; typecheck ok; build ok.
+
 ## 2026-11-05 NAV-A routes/student-paths (base 2427d3b8)
 - `npm run validate` (inert env): test 1687 total, 1628 pass, 0 fail, 59 skipped (58 existing env-gated + new `student-paths-e2e`, which runs only on the disposable stack); test:migrations all 70 applied, RLS on 84 tables, trigger hrefs asserted; lint 0 errors / 22 existing warnings; typecheck ok; build ok (76 pages). `test:agent-hooks` 31/31.
 - Disposable stack (real Next prod build + Supabase Auth + Postgres): `test:onboarding:e2e` 42/42 incl. `student-paths-e2e` (old URLs signed in, back/forward without reload, direct reload); `test:application-writing:e2e` 1/1 (opens an old URL while signed in).

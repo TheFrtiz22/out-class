@@ -53,8 +53,8 @@ test("student workspace paths: old URLs redirect, back/forward and reload stay o
     await page.evaluate(() => { window.__sameDocument = true })
     const visible = selector => page.locator(selector).filter({ visible: true }).first()
     const go = async (selector, path) => { await visible(selector).click(); await page.waitForURL(url => url.pathname === path); assert.equal(await page.evaluate(() => window.__sameDocument), true, `${path} must not reload the page`) }
-    await go('[data-tour="mode-apply"]', "/applications")
-    await go('[data-tour="mode-clubs"]', "/clubs")
+    await go('[data-tour="nav-applications"]', "/applications")
+    await go('[data-tour="nav-clubs"]', "/clubs")
     await go('[data-tour="nav-meetings"]', "/clubs/meetings")
     const active = async id => assert.equal(await visible(`[data-tour="nav-${id}"]`).getAttribute("aria-current"), "page", id)
     await active("meetings")

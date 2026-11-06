@@ -12,9 +12,9 @@ async function startFixture({ baseline = false, baselineRef = 'aca0c8e6520a880b6
 import React from 'react'; import {createRoot} from 'react-dom/client';
 import {ApplicationTrackerView} from '@/components/views/application-tracker-view';
 import {ProductShell} from '@/components/shell/product-shell';
-import {personalItems,personalModes} from '@/lib/product-navigation';
+import {personalRailSections} from '@/lib/navigation';
 const navigate=()=>{};
-createRoot(document.getElementById('root')).render(<ProductShell mode="apply" modes={personalModes} items={personalItems('apply')} active="applications" title="Applications" onSelect={navigate} onNavigate={navigate}><ApplicationTrackerView onNavigate={view=>{window.profileOpened=view}}/></ProductShell>);`
+createRoot(document.getElementById('root')).render(<ProductShell mode="apply" sections={personalRailSections()} active="applications" title="Applications" onSelect={navigate} onNavigate={navigate}><ApplicationTrackerView onNavigate={view=>{window.profileOpened=view}}/></ProductShell>);`
   const baselineFiles = ['components/views/application-tracker-view.tsx','components/applications/application-form.tsx','components/applications/question-field.tsx','components/club-logo.tsx']
   const baselineMocks = baseline ? Object.fromEntries(baselineFiles.map(file => [ '@/'+file.replace(/\.tsx$/, ''), require('typescript').transpileModule(require('node:child_process').execFileSync('git',['show',baselineRef+':'+file],{encoding:'utf8'}), {compilerOptions:{module:require('typescript').ModuleKind.CommonJS,jsx:require('typescript').JsxEmit.ReactJSX,esModuleInterop:true,target:require('typescript').ScriptTarget.ES2022}}).outputText ])) : {}
   const script = bundle(entry, {
