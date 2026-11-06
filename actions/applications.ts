@@ -88,7 +88,7 @@ async function persistApplication(input: z.infer<typeof applicationInputSchema>,
     })
     return application.id
   })
-  revalidatePath("/")
+  revalidatePath("/", "layout")
   revalidatePath(`/club/${parsed.clubId}`)
   return { success: true, applicationId }
 }

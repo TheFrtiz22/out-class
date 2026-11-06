@@ -11,5 +11,5 @@ export default async function Page() {
     if (!(error instanceof AdminAccessError)) return <AdminRecovery supportCode={supportCode} />;
   }
   if (!session) return <section className="p-8">This support session is unavailable. Use Exit impersonation above to return to your administrator account.</section>;
-  redirect(session.clubId ? `/club/${encodeURIComponent(session.clubId)}/workspace` : "/?workspace=student");
+  redirect(session.clubId ? `/club/${encodeURIComponent(session.clubId)}/workspace` : "/home");
 }

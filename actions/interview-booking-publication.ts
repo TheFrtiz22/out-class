@@ -46,6 +46,6 @@ export async function setInterviewBookingPublication(raw: unknown) {
     return { revision: saved.bookingRevision }
   }, { isolationLevel: "ReadCommitted", timeout: 60000 })
   revalidatePath(`/club/${input.clubId}/workspace`)
-  revalidatePath("/")
+  revalidatePath("/", "layout")
   return result
 }

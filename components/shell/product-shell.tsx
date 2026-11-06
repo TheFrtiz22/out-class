@@ -64,7 +64,7 @@ export function ProductShell({ children, mode, modes, items, active, title, club
   const platform = workspaceKind === "admin"
   const workspace = platform ? "admin" : manager ? "leader" : "personal"
   const allowed = platform ? access.admin : manager ? access.clubs.some(member => member.clubId === clubId) : true
-  const fallbackHref = manager && !platform && access.clubs[0] ? clubWorkspaceHref(access.clubs[0].clubId) : "/?workspace=student"
+  const fallbackHref = manager && !platform && access.clubs[0] ? clubWorkspaceHref(access.clubs[0].clubId) : "/home"
   useEffect(() => {
     if (access.pending || allowed) return
     // Access loss is mandatory reconciliation, not a voluntary leave-page action.

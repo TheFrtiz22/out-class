@@ -11,6 +11,7 @@ import { hasWorkspace } from "@/lib/permissions"
 import { managerNavigation, personalDestination, personalItems, personalModes } from "@/lib/product-navigation"
 import { personalSettingsSections } from "@/lib/settings-navigation"
 import type { ViewId } from "@/lib/views"
+import { studentPath } from "@/lib/navigation"
 
 const initialData = { applications: [], attendances: [] }
 
@@ -32,13 +33,11 @@ function RouteWorkspaceContent({ children }: { children: ReactNode }) {
   const title = member ? "Workspace access" : settings ? settingSection?.label ?? "Settings" : schedule ? "My Interview Schedule" : meetings ? "Meetings" : organizations ? "Organizations" : pathname === "/saved-clubs" ? "Saved clubs" : pathname === "/corkboard" ? "Corkboard" : pathname.endsWith("/workspace") ? "Club workspace" : "Club profile"
   const active = member ? "settings" : settings || organizations ? "settings" : schedule ? "calendar" : meetings ? "meetings" : pathname === "/corkboard" || pathname === "/saved-clubs" ? "corkboard" : "explore"
   function navigate(view: ViewId) {
-    router.push(view === "landing" ? "/" : `/?workspace=student&view=${view}`)
+    router.push(view === "landing" ? "/" : studentPath(view))
   }
   const personalHref = (id: string) => {
     const destination = personalDestination(id)
-    const query = new URLSearchParams({ workspace: "student", view: destination.view })
-    if (destination.section) query.set("section", destination.section)
-    return `/?${query}`
+    return studentPath(destination.view, destination.section)
   }
   const clubRoot = member ? `/club/${encodeURIComponent(member.clubId)}/workspace` : ""
   return <ProductShell manager={!!member} clubId={member?.clubId} clubName={member?.club.name} mode={member ? "club" : mode}

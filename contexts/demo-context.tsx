@@ -3,6 +3,7 @@ import { useEffect, useState, type ReactNode } from "react"
 import { DemoContext, useDemoMode } from "@/contexts/demo-mode"
 export { useDemoMode }
 import { resolveStudentView } from "@/lib/student-navigation"
+import { studentRouteForPath } from "@/lib/navigation"
 // The demo store and seed data load only when Demo Mode is enabled, so they are
 // not part of every page's root bundle. Presenter-only.
 type DemoStoreModule = typeof import("@/lib/demo/store")
@@ -125,7 +126,7 @@ export function DemoDataProvider({
         if (clubId !== s.clubs[0].id) throw new Error("Demo management is limited to MII.")
         s.perspective = { role, clubId }
       })
-      const requestedStudentView = role === "student" && url.searchParams.get("workspace") === "student" && resolveStudentView(url.searchParams.get("view"))
+      const requestedStudentView = role === "student" && (!!studentRouteForPath(url.pathname) || url.searchParams.get("workspace") === "student" && resolveStudentView(url.searchParams.get("view")))
       const requestedClubView = role === "leader" && url.pathname === `/club/${encodeURIComponent(clubId)}/workspace`
       if (!requestedStudentView && !requestedClubView) {
         url.searchParams.delete("workspace")
@@ -146,8 +147,9 @@ export function DemoDataProvider({
       const url = new URL(window.location.href)
       // A full navigation resets route-local state and Next's cached search parameters,
       // including resets initiated inside a club workspace.
-      url.pathname = url.pathname === "/preview" ? "/preview" : "/"
-      url.search = new URLSearchParams({ workspace: "student", view: "student-dashboard" }).toString()
+      const preview = url.pathname === "/preview"
+      url.pathname = preview ? "/preview" : "/home"
+      url.search = preview ? new URLSearchParams({ workspace: "student", view: "student-dashboard" }).toString() : ""
       url.hash = ""
       window.location.assign(url.toString())
     } catch {

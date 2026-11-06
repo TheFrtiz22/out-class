@@ -6,6 +6,17 @@ Appended by `outclass-release-check`. Newest first.
 2026-11-05 backend/booking-throughput (merge on bd3e12d3) app gates: test 1588/0/58 migrations 67 ok (80 tables RLS) lint ok types ok build ok | integration skips 58 (env-gated e2e/native suites; security suite run separately 11/11, booking+ballot contention 14/0) | agent-hook tests 29/0 | authz-reviewer: no high/medium, LOW-1/LOW-2 fixed before merge
 deploy <pending> | runtime errors <pending> | advisor delta <n/a, no migration> | rollback target: production deploy of bd3e12d3 | verdict <pending>
 
+## 2026-11-05 NAV-A routes/student-paths (base 2427d3b8)
+- `npm run validate` (inert env): test 1687 total, 1628 pass, 0 fail, 59 skipped (58 existing env-gated + new `student-paths-e2e`, which runs only on the disposable stack); test:migrations all 70 applied, RLS on 84 tables, trigger hrefs asserted; lint 0 errors / 22 existing warnings; typecheck ok; build ok (76 pages). `test:agent-hooks` 31/31.
+- Disposable stack (real Next prod build + Supabase Auth + Postgres): `test:onboarding:e2e` 42/42 incl. `student-paths-e2e` (old URLs signed in, back/forward without reload, direct reload); `test:application-writing:e2e` 1/1 (opens an old URL while signed in).
+- Signed-out real-browser check (dev): 8 old URLs 307 to paths; 11 paths end at /login?next=<path> with noindex; /, /?workspace=leader, /corkboard unchanged.
+- Found by E2E, fixed: Next rewrites 127.0.0.1 to localhost in middleware redirects (cookie loss on loopback); middleware now 307s on real hosts and loopback IPs use the page-level redirect.
+- Open: a 403 from /api/workspace for a student without clubs on /home and /applications; same components as main, not yet confirmed against main.
+
+## 2026-11-05 NAV-A pre-PR release check (routes/student-paths b5429b4b = 16e8bcc1 + merge of origin/main 69cc83b0 + review fixes)
+- test:agent-hooks 31/31; test 1699 total, 1640 pass, 0 fail, 59 skipped (58 env-gated as on main + student-paths-e2e, which runs on the disposable stack and in CI via run-onboarding-e2e --club-integration); test:migrations 70 applied, RLS 84 tables, trigger assertions incl. pinned search_path and a real status change storing /applications; lint 0 errors / 22 existing warnings; typecheck ok; build ok (76 pages); integration coverage check ok.
+- Disposable stack on 16e8bcc1 (before review fixes): test:onboarding:e2e 42/42 incl. student-paths-e2e; test:application-writing:e2e 1/1. Re-run on b5429b4b pending: another session held the reserved E2E ports/stacks.
+- Reviews: authz (no high; fixed), migration (no high; search_path pinned; per-trigger + runtime checks added), test-gap (no weakened tests; email, middleware POST/noindex, trigger runtime gaps closed), nextjs (H1 onboarding redirect loop fixed with test; M2 revalidation broadened; M3 AppShell remount after server-action refresh on a pushed path left for the single shell mount on nav/workspace-switcher).
 ## 2026-11-05 DS-1 design/single-palette
 - `npm run validate` (inert env): test 1660 total, 1602 pass, 58 skipped, 0 fail; test:migrations pass; lint FAIL: 389 errors, all `outclass/no-raw-colors` (intended, report-only), 23 pre-existing warnings; chain stopped.
 - Run separately: typecheck pass; `next build` FAIL at its lint step (same 389); `next build --no-lint` pass (diagnostic only).

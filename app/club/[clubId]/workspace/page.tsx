@@ -32,7 +32,7 @@ export default async function Page({
   }
   const user = demoEnabled ? null : await getCurrentUser();
   const membership = user?.memberships.find(member => member.clubId === clubId);
-  if (membership?.club.suspendedAt) return <AuthenticatedPageLayout><div className="max-w-2xl space-y-4"><h1 className="font-serif text-3xl">This club is suspended</h1><p>{membership.club.name} operations are unavailable until an administrator restores the club. Your membership and existing records are preserved.</p><Link className="underline" href="/?workspace=student">Return to Personal workspace</Link></div></AuthenticatedPageLayout>;
+  if (membership?.club.suspendedAt) return <AuthenticatedPageLayout><div className="max-w-2xl space-y-4"><h1 className="font-serif text-3xl">This club is suspended</h1><p>{membership.club.name} operations are unavailable until an administrator restores the club. Your membership and existing records are preserved.</p><Link className="underline" href="/home">Return to Personal workspace</Link></div></AuthenticatedPageLayout>;
   return (
     <AuthSessionBoundary>
       <ClubWorkspace

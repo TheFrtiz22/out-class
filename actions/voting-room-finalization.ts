@@ -67,7 +67,7 @@ export async function sendLiveVotingNotifications(input:unknown){
    const final=["ACCEPTED","REJECTED"].includes(a.status),eventKey=final?`decision:${a.id}:${a.decisionVersion}`:`voting-round:${s.id}:${a.id}`;
    if(await tx.userNotification.findUnique({where:{userId_eventKey:{userId:a.studentId,eventKey}}}))continue;
    if(final)await publishDecisionCommunication(tx,a.id,user.id);
-   else await tx.$queryRaw`SELECT outclass_notify(${a.studentId},${d.clubId},${eventKey},'APPLICATION','Application update','Your application has advanced. Open OutClass for your current round.','/?workspace=student&view=tracker')`;
+   else await tx.$queryRaw`SELECT outclass_notify(${a.studentId},${d.clubId},${eventKey},'APPLICATION','Application update','Your application has advanced. Open OutClass for your current round.','/applications')`;
    sent++;
   }
   const result={sent};await tx.auditLog.create({data:{clubId:d.clubId,actorId:user.id,targetId:s.id,action:"voting.room.notifications.requested",details:{count:sent}}});await tx.votingRoomCommand.create({data:{...key,actorId:user.id,fingerprint,result}});return result;
