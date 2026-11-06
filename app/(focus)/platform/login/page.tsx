@@ -6,6 +6,8 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
+import { TurnstileWidget } from "@/components/security/turnstile-widget"
+import { turnstileRequired, TURNSTILE_PENDING } from "@/lib/turnstile"
 export default function PlatformLogin() {
   const [password, setPassword] = useState(""),
     [code, setCode] = useState(""),
@@ -13,6 +15,7 @@ export default function PlatformLogin() {
     [qr, setQr] = useState(""),
     [message, setMessage] = useState(""),
     [busy, setBusy] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null), [turnstileReset, setTurnstileReset] = useState(0)
   const { user, loading, isImpersonating } = useAuth()
   const demo = useDemoMode()
   async function run(fn: () => Promise<void>) {
@@ -49,10 +52,12 @@ export default function PlatformLogin() {
         className="space-y-4"
         onSubmit={(e) => {
           e.preventDefault()
+          if (!factor && turnstileRequired && !turnstileToken) { setMessage(TURNSTILE_PENDING); return }
           void run(async () => {
+            if (!factor) setTurnstileReset(value => value + 1)
             const response = await fetch("/api/platform/elevation", {
               method: "POST", headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(factor ? { action: "verify", code } : { action: "password", password }),
+              body: JSON.stringify(factor ? { action: "verify", code } : { action: "password", password, ...(turnstileToken ? { turnstileToken } : {}) }),
             })
             const result = await response.json()
             if (!response.ok) throw Error(result.error || "Could not authenticate.")
@@ -92,6 +97,7 @@ export default function PlatformLogin() {
             </label>
           </>
         )}
+        {!factor && <TurnstileWidget action="admin" onToken={setTurnstileToken} resetKey={turnstileReset} />}
         <Button disabled={busy}>{factor ? "Verify and enter" : "Continue securely"}</Button>
       </form>
       {!factor && <Link href="/forgot-password" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">Forgot password?</Link>}

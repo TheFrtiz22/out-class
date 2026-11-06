@@ -1,23 +1,23 @@
 "use client"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { TurnstileWidget, turnstileRequired } from "@/components/security/turnstile-widget"
+import { TurnstileWidget } from "@/components/security/turnstile-widget"
+import { turnstileRequired, TURNSTILE_PENDING } from "@/lib/turnstile"
 
 export function AccountSettings({ email, passwordAccount, impersonating }: { email: string; passwordAccount: boolean; impersonating: boolean }) {
   const [busy, setBusy] = useState(false), [message, setMessage] = useState(""), [error, setError] = useState("")
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null), [turnstileReset, setTurnstileReset] = useState(0)
   async function requestPasswordReset() {
     setMessage(""); setError("")
-    if (turnstileRequired && !turnstileToken) { setError("Complete the security check, then send the email."); return }
+    if (turnstileRequired && !turnstileToken) { setError(TURNSTILE_PENDING); return }
     setBusy(true)
     try {
       const response = await fetch("/api/auth/password-recovery", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "request", email, turnstileToken }) })
-      setTurnstileReset(value => value + 1)
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || "Could not request a password reset.")
       setMessage(result.message || "Check your university email for password reset instructions.")
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not request a password reset.") }
-    finally { setBusy(false) }
+    finally { setBusy(false); setTurnstileReset(value => value + 1) }
   }
   return <div className="max-w-2xl divide-y rounded-lg border bg-card px-5">
     <section className="py-5"><h2 className="oc-section-heading">Sign-in information</h2><dl className="mt-4 space-y-4 text-sm"><div><dt className="text-muted-foreground">University email</dt><dd className="mt-1 break-all font-medium">{email}</dd></div><div><dt className="text-muted-foreground">University</dt><dd className="mt-1">University of Virginia</dd></div><div><dt className="text-muted-foreground">Sign-in method</dt><dd className="mt-1">{passwordAccount ? "Email and password" : "University sign-in"}</dd></div></dl></section>

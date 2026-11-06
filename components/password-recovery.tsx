@@ -8,7 +8,8 @@ import { OutClassLogo } from "@/components/outclass-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { TurnstileWidget, turnstileRequired } from "@/components/security/turnstile-widget";
+import { TurnstileWidget } from "@/components/security/turnstile-widget";
+import { turnstileRequired, TURNSTILE_PENDING } from "@/lib/turnstile";
 import {
   newPassword,
   recoveryEmail,
@@ -70,7 +71,7 @@ export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
       return;
     }
     if (mode === "request" && turnstileRequired && !turnstileToken) {
-      setError("Complete the security check, then send the link.");
+      setError(TURNSTILE_PENDING);
       return;
     }
     setBusy(true);
@@ -86,7 +87,6 @@ export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
         ),
       });
       const data = await response.json();
-      if (mode === "request") setTurnstileReset((value) => value + 1);
       if (!response.ok) {
         setError(data.error || "Unable to continue. Please try again.");
         if (data.needsNewLink) setInvalid(true);
@@ -103,6 +103,7 @@ export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
       );
     } finally {
       setBusy(false);
+      if (mode === "request") setTurnstileReset((value) => value + 1);
     }
   }
 

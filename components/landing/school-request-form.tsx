@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { NativeSelect } from "@/components/ui/native-select"
-import { TurnstileWidget, turnstileRequired } from "@/components/security/turnstile-widget"
+import { TurnstileWidget } from "@/components/security/turnstile-widget"
+import { turnstileRequired, TURNSTILE_PENDING } from "@/lib/turnstile"
 import { schoolRequestSchema, schoolRequestRoles, schoolRequestRoleLabels } from "@/lib/school-requests"
 
 export function SchoolRequestForm() {
@@ -43,18 +44,17 @@ export function SchoolRequestForm() {
       return
     }
     setFieldErrors({})
-    if (turnstileRequired && !turnstileToken) { setError("Complete the security check, then submit."); return }
+    if (turnstileRequired && !turnstileToken) { setError(TURNSTILE_PENDING); return }
     setBusy(true)
     setError("")
     try {
       const response = await fetch("/api/school-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...input.data, ...(turnstileToken ? { turnstileToken } : {}) }) })
-      setTurnstileReset(value => value + 1)
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || "Your request could not be saved.")
       setSubmitted({ university: input.data.university, email: input.data.email })
       setConfirmation(data.message)
     } catch (e) { setError(e instanceof Error ? e.message : "Unable to submit. Please try again.") }
-    finally { setBusy(false) }
+    finally { setBusy(false); setTurnstileReset(value => value + 1) }
   }
   if (confirmation) return <div ref={success} tabIndex={-1} className="oc-request-success" aria-labelledby="request-success-title">
     <span className="oc-request-success-mark"><Check size={24} aria-hidden="true" /></span><p className="oc-public-kicker">A new campus conversation</p><h2 id="request-success-title">Your school is<br />on our radar.</h2><p className="oc-request-success-school">{submitted?.university}</p><p role="status">{confirmation}</p><p className="oc-public-note">Contact email: <span className="break-all">{submitted?.email}</span></p><div className="oc-public-actions"><Button variant="outline" asChild><Link href="/about" prefetch={false}>Explore the OutClass story <ArrowRight size={16} aria-hidden="true" /></Link></Button></div>

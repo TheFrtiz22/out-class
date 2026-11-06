@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { TURNSTILE_SITE_KEY, type TurnstileAction } from "@/lib/turnstile"
 
 type TurnstileApi = {
@@ -19,26 +19,26 @@ function loadTurnstile() {
     const script = document.createElement("script")
     script.src = SCRIPT_URL
     script.async = true
-    script.onload = () => window.turnstile ? resolve(window.turnstile) : reject(new Error("Turnstile unavailable"))
-    script.onerror = () => { loading = null; script.remove(); reject(new Error("Turnstile unavailable")) }
+    const fail = () => { loading = null; script.remove(); reject(new Error("Turnstile unavailable")) }
+    script.onload = () => window.turnstile ? resolve(window.turnstile) : fail()
+    script.onerror = fail
     document.head.appendChild(script)
   })
   return loading
 }
 
-/** True when forms must wait for a token before submitting. */
-export const turnstileRequired = Boolean(TURNSTILE_SITE_KEY)
-
 /**
  * Invisible unless Cloudflare needs the visitor to interact. Tokens are single
  * use: change `resetKey` after every submission so the next one gets a fresh token.
+ * If the check cannot load (blocked script, network), it says so and offers a retry.
  */
 export function TurnstileWidget({ action, onToken, resetKey = 0, className }: {
   action: TurnstileAction; onToken: (token: string | null) => void; resetKey?: number; className?: string
 }) {
   const container = useRef<HTMLDivElement>(null), widget = useRef<string | null>(null)
   const callback = useRef(onToken)
-  callback.current = onToken
+  const [failed, setFailed] = useState(false), [attempt, setAttempt] = useState(0)
+  useLayoutEffect(() => { callback.current = onToken })
 
   useEffect(() => {
     if (!TURNSTILE_SITE_KEY || !container.current) return
@@ -47,17 +47,19 @@ export function TurnstileWidget({ action, onToken, resetKey = 0, className }: {
       if (cancelled || !container.current) return
       widget.current = api.render(container.current, {
         sitekey: TURNSTILE_SITE_KEY, action, appearance: "interaction-only", size: "flexible", theme: "auto",
-        callback: (token: string) => callback.current(token),
+        callback: (token: string) => { setFailed(false); callback.current(token) },
         "expired-callback": () => callback.current(null),
-        "error-callback": () => { callback.current(null) },
+        "error-callback": () => { callback.current(null); setFailed(true) },
       })
-    }).catch(() => callback.current(null))
+    }).catch(() => { if (!cancelled) { callback.current(null); setFailed(true) } })
     return () => {
       cancelled = true
+      // A token from an unmounted widget may already be spent; never reuse it.
+      callback.current(null)
       if (widget.current) window.turnstile?.remove(widget.current)
       widget.current = null
     }
-  }, [action])
+  }, [action, attempt])
 
   useEffect(() => {
     if (!resetKey || !widget.current) return
@@ -66,5 +68,11 @@ export function TurnstileWidget({ action, onToken, resetKey = 0, className }: {
   }, [resetKey])
 
   if (!TURNSTILE_SITE_KEY) return null
-  return <div ref={container} className={className} />
+  return <div className={className}>
+    <div ref={container} />
+    {failed && <p role="alert" className="text-sm text-destructive">
+      The security check couldn’t load. Check your connection or allow challenges.cloudflare.com, then{" "}
+      <button type="button" className="underline underline-offset-4" onClick={() => { setFailed(false); setAttempt(value => value + 1) }}>try again</button>.
+    </p>}
+  </div>
 }
