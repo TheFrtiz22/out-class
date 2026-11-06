@@ -30,3 +30,19 @@ Second opinion (`authz-reviewer`): no high findings. M1 (branch base predated #1
 Update (same day): E2E against a production build showed Next rewrites a 127.0.0.1/[::1] host to `localhost` in middleware redirects, which dropped host-scoped session cookies (local/CI only; real hostnames unaffected). Middleware now 307s on every other host; loopback-IP requests fall through to `legacyStudentRedirect()` in `app/page.tsx`, whose page redirect keeps the browser's host. Destination is still path-only from `STUDENT_ROUTES`, so no open redirect. Tests: `student-paths` (middleware real host vs loopback; page fallback), `student-paths-e2e` (signed-in, real stack), `application-writing-e2e` (old URL while signed in).
 
 Update (pre-PR review): nextjs-reviewer H1 — profile-less students sent to `/?next=<page>` by `requireCompletedStudentProfile` were redirected straight back (loop). `/` now redirects signed-in visitors only when they have a profile or no `next`; otherwise onboarding runs on `/` and continues to `next` as before. Test: `student-paths` (onboarding hand-off; mutation-checked). Migration reviewer: both trigger functions now `SET search_path = pg_catalog, public`; `test:migrations` asserts it, checks each trigger on its own table, and fires the application trigger to read the stored `/applications` href.
+
+## 2026-11-06 · AUTH-FOCUS · Interview room route and focus frame (branch `ui/focus-frame`)
+
+Resource: the interview room, moved from `/club/[clubId]/workspace?section=recruitment&tool=interviews&interview=1` to `/club/[clubId]/interview` (`app/(focus)/club/[clubId]/interview/page.tsx` → `components/interviews/club-interview-room.tsx` → the unchanged `InterviewWorkspaceView`). Candidate data still comes only from the existing server actions (`getInterviewWorkspace`, `resolveInterviewRoomEntry`, `openInterviewSession`, …), which keep their own checks. The other focus routes only moved into the `(focus)` route group; URLs, pages and their auth are unchanged.
+
+| Actor | Open `/club/x/interview` | Old `?interview=1` URL | Test |
+|---|---|---|---|
+| Logged-out visitor | deny → `/login?next=/club/x/interview?…` (same room after sign-in) | → new route, then the same sign-in | `focus-frame-e2e` (signed out…), `focus-frame.test` (route rules) |
+| Demo (allowed) | fictional demo data, as in the workspace | → new route | `demo-interview-navigation-browser` |
+| Student without membership | "Interview room unavailable"; no candidate read | → new route; same | `focus-frame-e2e` (old URL…), `club-interview-recovery` |
+| Member without `applications.review` | same as above | same | `club-interview-recovery` (denied) |
+| Member of a suspended club | suspended notice; no room | same | `focus-frame.test` (route rules: suspendedAt) |
+| Reviewer of club x | room for club x after club selection; Exit and the room's Back return to the filtered list | → new route keeping `interviewTab`, `date`, `roundId`, `applicationId`, `bookingId`, `slotId`, `roomId` | `club-interview-recovery`, `interview-entry`, `interview-entry-browser`, `interview-room-layout` |
+| Reviewer of club y opening club x | treated as no membership in x (membership is looked up by the URL's clubId): unavailable notice, no candidate read | same | `focus-frame-e2e` (old URL…: random club id) |
+
+Exit targets: `safeExitHref` accepts only same-site, non-focus paths (no `//`, backslash, scheme or focus route); the stored last product page is re-validated on read (`focus-frame.test`).

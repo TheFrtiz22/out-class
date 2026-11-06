@@ -35,8 +35,8 @@ export function MemberVotingPad({
     !session.memberIds.includes(memberId) &&
     session.memberIds.length >= session.memberCount
   return (
-    <div role={embedded ? "group" : "main"} aria-label="Member voting"
-      className={`oc-voting-pad ${embedded ? "" : "min-h-svh px-5 py-8"} flex items-center justify-center bg-background font-sans text-foreground`}
+    <div role="group" aria-label="Member voting"
+      className={`oc-voting-pad ${embedded ? "" : "py-6"} flex items-center justify-center bg-background font-sans text-foreground`}
     >
       <div className="oc-content-panel w-full max-w-md space-y-7 border-neutral-200 shadow-none">
         <p className="sr-only" role="status" aria-atomic="true">{session?.status === "live" && applicant ? `Applicant ${session.activeIndex + 1} of ${session.applicants.length}: ${applicant.name}. ${choice ? "Vote recorded. Waiting for the next applicant." : "Voting is open."}` : ""}</p>

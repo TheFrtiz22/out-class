@@ -9,6 +9,7 @@ import { ClubWorkspace } from "@/components/club-workspace";
 import { AuthSessionBoundary } from "@/components/auth-session-boundary";
 import { redirect } from "next/navigation";
 import { legacyApplicantInterviewHref } from "@/lib/applicant-interview-navigation";
+import { legacyInterviewRoomHref } from "@/lib/interview-entry";
 export const maxDuration = 60;
 export default async function Page({
   params,
@@ -22,7 +23,7 @@ export default async function Page({
   const section = first(query.section), taskView = first(query.taskView), tool = first(query.tool);
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) for (const item of Array.isArray(value) ? value : value === undefined ? [] : [value]) search.append(key, item);
-  const moved = legacyApplicantInterviewHref(clubId, search.toString());
+  const moved = legacyApplicantInterviewHref(clubId, search.toString()) ?? legacyInterviewRoomHref(clubId, search.toString());
   if (moved) redirect(moved);
   const jar = await cookies();
   let demoEnabled = false;

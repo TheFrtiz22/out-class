@@ -64,10 +64,10 @@ export function VotingRoomSetup({clubId,demoScoped,initialCycleId="",initialRoun
   }catch(e){setError(e instanceof Error?e.message:'Session could not be confirmed. Retry uses the same request and preserves your setup.');}finally{if(!navigating.current){lock.current=false;setBusy(false);}}
  }
 
- if(auth.loading||!demo.ready)return <main className="vr-page"><LoadingState label="Checking your session…" layout="inline" /></main>;
- if(!auth.user)return <main className="vr-page"><h1>Prepare live voting</h1><Link href={`/login?next=${encodeURIComponent(votingSetupHref(clubId,new URLSearchParams({draft:draftId,...(editSession?{session:editSession}:{}),...(initialCycleId?{cycleId:initialCycleId}:{}),...(initialRoundId?{roundId:initialRoundId}:{}),...(demoScoped?{demo:"1"}:{})}).toString(),selectionKey||undefined))}`}>Sign in and return</Link></main>;
- if(demoScoped!==demo.isDemoEnabled)return <main className="vr-page"><h1>Voting workspace unavailable</h1><p>Use a link for your current Live or Demo workspace.</p></main>;
- return <main className="vr-page"><div className="vr-form"><header className="vr-header"><h1 ref={heading} tabIndex={-1}>Set up voting</h1><VotingBackLink clubId={clubId} cycleId={cycle} roundId={round}/></header>
+ if(auth.loading||!demo.ready)return <div className="vr-page"><LoadingState label="Checking your session…" layout="inline" /></div>;
+ if(!auth.user)return <div className="vr-page"><h1>Prepare live voting</h1><Link href={`/login?next=${encodeURIComponent(votingSetupHref(clubId,new URLSearchParams({draft:draftId,...(editSession?{session:editSession}:{}),...(initialCycleId?{cycleId:initialCycleId}:{}),...(initialRoundId?{roundId:initialRoundId}:{}),...(demoScoped?{demo:"1"}:{})}).toString(),selectionKey||undefined))}`}>Sign in and return</Link></div>;
+ if(demoScoped!==demo.isDemoEnabled)return <div className="vr-page"><h1>Voting workspace unavailable</h1><p>Use a link for your current Live or Demo workspace.</p></div>;
+ return <div className="vr-page"><div className="vr-form"><header className="vr-header"><h1 ref={heading} tabIndex={-1}>Set up voting</h1><VotingBackLink clubId={clubId} cycleId={cycle} roundId={round}/></header>
  <ol className="vr-stats" aria-label="Setup progress">{['Session details','Applicants and voters','Presentation and review'].map((text,i)=><li key={text} aria-current={step===i+1?'step':undefined}>{i+1}. {text}</li>)}</ol>
  {error&&<div role="alert" className="vr-error">{error} {pending.current&&<Link className="vr-link" href={liveRoomPath(clubId,sessionId,'leader',demoScoped)}>Open session details to review saved setup</Link>} <Button variant="outline" disabled={busy} onClick={()=>pending.current?void prepare():setRetry(v=>v+1)}>Retry</Button></div>}
  {draft.error&&<div role="alert">{draft.error} <Button variant="outline" onClick={draft.retry}>Retry draft</Button></div>}
@@ -110,5 +110,5 @@ export function VotingRoomSetup({clubId,demoScoped,initialCycleId="",initialRoun
  <div className="vr-actions mt-5"><Button variant="outline" disabled={busy||!draft.ready} onClick={()=>void saveDraft()}>Save draft</Button>{step>1&&<Button variant="ghost" disabled={busy||!!pending.current} onClick={()=>move(step-1)}>Back</Button>}{step<3?<Button disabled={busy||!!pending.current} onClick={()=>{try{validate(step);move(step+1)}catch(e){setError(e instanceof Error?e.message:'Check this step.')}}}>Continue</Button>:<Button disabled={busy||!draft.ready} onClick={()=>void prepare()}>{busy?'Saving…':pending.current?'Retry session':details.timing==='NOW'?'Start session':planRevision!==null?'Save session changes':'Schedule session'}</Button>}</div>
  <p role="status" className="text-sm text-muted-foreground">{savedDraft?'Draft saved':draft.state==='saving'?'Saving draft…':draft.dirty?'Unsaved changes':'All changes saved'}</p>
  </>}
- </div></main>;
+ </div></div>;
 }

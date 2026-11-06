@@ -47,4 +47,3 @@
 
 .oc-workspace-stack[hidden], .oc-content-panel[hidden], .oc-form-section[hidden] { display: none; }
 
-.oc-standalone-workspace { min-width: 0; width: 100%; max-width: var(--oc-content-width); margin-inline: auto; padding: clamp(1.25rem, 3vw, 2.5rem) var(--oc-space-page); }
