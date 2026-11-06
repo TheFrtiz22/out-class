@@ -120,7 +120,7 @@ export async function uploadEventFlyer(input: FormData) {
   }
   await import("@/utils/event-flyer-cleanup").then(m => m.cleanupEventFlyers()).catch(() => {});
   revalidatePath("/corkboard");
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   revalidateTag("club-directory");
   return result;
 }

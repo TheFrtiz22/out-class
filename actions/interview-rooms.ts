@@ -175,7 +175,7 @@ export async function reserveInterview(raw: { applicationId: string; slotId: str
     await tx.auditLog.create({ data: { actorId: user.id, clubId: application.clubId, targetId: result.id, action: existing ? "interview.booking.reschedule" : "interview.booking.create" } })
     return { id: result.id }
   },true)
-  revalidatePath("/")
+  revalidatePath("/", "layout")
   return booking
 }
 export async function cancelRoomBooking(bookingId: string) {
@@ -197,7 +197,7 @@ export async function cancelRoomBooking(bookingId: string) {
     if (booking.roundId) await syncBookingPanel(tx, booking.applicationId, booking.roundId, user.id);
     await tx.auditLog.create({ data: { actorId: user.id, clubId: booking.slot.clubId, targetId: bookingId, action: "interview.booking.cancel" } })
   })
-  revalidatePath("/")
+  revalidatePath("/", "layout")
 }
 export async function getBookingApplication(clubId: string, roundId: string) {
   if (!uuid.safeParse(clubId).success || !uuid.safeParse(roundId).success) return { status: "unavailable" as const }

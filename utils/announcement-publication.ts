@@ -23,6 +23,6 @@ export async function publishAnnouncementTransaction(tx: AppTransactionClient, d
  const eligible=await tx.$queryRaw<{id:string}[]>`SELECT id FROM "User" WHERE id=ANY(${userIds}::text[]) AND "disabledAt" IS NULL ORDER BY id FOR SHARE`;
  if(!eligible.length) throw Error("No one in this audience can receive this.");
  const announcement=await tx.clubAnnouncement.create({data:{id:randomUUID(),clubId:data.clubId,authorId:data.senderId,title:data.title,body:data.body,audience:data.audience,requestKey:data.requestKey,...(data.audienceSpec?{audienceSpec:data.audienceSpec}:{})}});
- await tx.userNotification.createMany({data:eligible.map(({id:userId})=>({id:randomUUID(),userId,clubId:data.clubId,announcementId:announcement.id,eventKey:"announcement:"+announcement.id,type:"ANNOUNCEMENT",title:data.title,body:data.body,href:"/?workspace=student&view=inbox"}))});
+ await tx.userNotification.createMany({data:eligible.map(({id:userId})=>({id:randomUUID(),userId,clubId:data.clubId,announcementId:announcement.id,eventKey:"announcement:"+announcement.id,type:"ANNOUNCEMENT",title:data.title,body:data.body,href:"/inbox"}))});
  return {id:announcement.id,recipientCount:eligible.length};
 }

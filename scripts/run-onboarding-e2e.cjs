@@ -106,7 +106,7 @@ async function ready(url,headers={}){
  // --club-integration runs all tests gated by the reserved onboarding project,
  // including settings/navigation and real built PDF import (which needs the
  // ui-fixture.json written by onboarding). Keep files serialized.
- const onboardingTests=['tests/onboarding-e2e.test.cjs','tests/account-data-e2e.test.cjs','tests/session-revocation-e2e.test.cjs','tests/signup-privacy-e2e.test.cjs','tests/student-claim-e2e.test.cjs'];
+ const onboardingTests=['tests/onboarding-e2e.test.cjs','tests/student-paths-e2e.test.cjs','tests/account-data-e2e.test.cjs','tests/session-revocation-e2e.test.cjs','tests/signup-privacy-e2e.test.cjs','tests/student-claim-e2e.test.cjs'];
  const testFiles=dashboards?['tests/operational-dashboards-e2e.test.cjs']:process.argv.includes('--application-writing')?['tests/application-writing-e2e.test.cjs']:
    process.argv.includes('--a11y')?['tests/accessibility/authenticated.test.cjs']:
    process.argv.includes('--club-integration')?[...onboardingTests,'tests/settings-navigation-e2e.test.cjs','tests/resume-import-runtime.test.cjs']:

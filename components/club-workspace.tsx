@@ -52,6 +52,7 @@ import { DashboardLoading } from "@/components/product/dashboard-presentation";
 import { WorkspaceLoading } from "@/components/workspace-loading";
 import { SelectedClubWorkspace } from "@/components/selected-club-workspace";
 import { clubWorkspaceEntryHref, clubWorkspacePreferenceKey, readClubWorkspacePreference, saveClubWorkspacePreference } from "@/lib/club-workspace-preference";
+import { studentPath } from "@/lib/navigation"
 type Overview = Awaited<ReturnType<typeof getClubWorkspaceOverview>>;
 export function ClubWorkspace({
   clubId,
@@ -185,7 +186,7 @@ export function ClubWorkspace({
       const href = view === "club-manager" ? clubWorkspaceHref(clubId, "settings") : view === "broadcast-messages" ? `/club/${clubId}/workspace?section=announcements${mode === "recruiting" ? "&mode=recruiting" : ""}` : `${clubWorkspaceHref(clubId, "recruitment")}&tool=${view === "interview-scheduler" ? "interviews" : "applicants"}`;
       if (!navigateWithinClub(href)) router.push(href); return;
     }
-    router.push(view === "landing" ? "/" : `/?workspace=student&view=${view}${view === "calendar" ? "&section=clubs" : ""}`);
+    router.push(view === "landing" ? "/" : studentPath(view, view === "calendar" ? "clubs" : null));
   }
   return <ApplicationStateProvider initialData={{ applications: [], attendances: [] }} persistLocalState={false}>
     <RecruitmentFocus />
@@ -195,7 +196,7 @@ export function ClubWorkspace({
         onModeSelect={id => { if (manager && (id === "recruiting" || id === "club")) saveClubWorkspacePreference(preferenceKey, id) }}
         onReviewTool={id => { reviewTrigger.current = document.activeElement as HTMLElement; setReviewTool(id) }} items={nav} active={active} title={nav.find(n => n.id === active)?.label || "Club workspace"} onSelect={() => {}} onNavigate={navigate}>
         {loading || needsSelection ? <p role="status">Opening club workspace…</p> : !membership ? <div className="space-y-4"><h1 className="oc-page-title ">Club workspace unavailable</h1><p>Sign in with a current club membership to access this workspace.</p><Link href="/" className="underline">Return to OutClass</Link></div> : <>
-          {!manager && <Link className="mb-5 inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4" href="/?workspace=student&view=my-clubs">← All my clubs</Link>}
+          {!manager && <Link className="mb-5 inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4" href="/clubs">← All my clubs</Link>}
           {active === "overview" && allowed
             ? <WelcomeHeader density={section === "overview" ? "expressive" : "compact"} eyebrow={membership.club.name} firstName={user?.profile?.firstName} context={{ mode: "club", clubId, membership, data: error ? null : current }} />
             : <PageHeader density={section === "overview" ? "expressive" : "compact"} eyebrow={membership.club.name} title={nav.find(n => n.id === active)?.label || "Workspace"} />}

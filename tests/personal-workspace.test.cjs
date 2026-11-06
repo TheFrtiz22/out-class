@@ -95,7 +95,7 @@ test('old applicant URLs retain focus and unrelated parameters, while manager ro
 test('legacy applicant path redirects preserve repeated parameters and leave the booking route intact',async()=>{
  for(const file of ['app/interviews/page.tsx','app/decisions/page.tsx']){
   const C=load(file,{'next/navigation':{redirect:value=>{throw Error(value)}}}).default;
-  await assert.rejects(C({searchParams:Promise.resolve({applicationId:'application',tag:['a','b']})}),error=>{const params=new URL(error.message,'http://outclass.test').searchParams;assert.equal(params.get('view'),'status');assert.equal(params.get('applicationId'),'application');assert.deepEqual(params.getAll('tag'),['a','b']);return true});
+  await assert.rejects(C({searchParams:Promise.resolve({applicationId:'application',tag:['a','b']})}),error=>{const url=new URL(error.message,'http://outclass.test'),params=url.searchParams;assert.equal(url.pathname,'/applications/status');assert.equal(params.get('view'),null);assert.equal(params.get('applicationId'),'application');assert.deepEqual(params.getAll('tag'),['a','b']);return true});
  }
  const bookingPage=load('app/interviews/book/page.tsx').default();assert.equal(bookingPage.props.children.type,'AuthSessionBoundary');assert.equal(bookingPage.props.children.props.children.type,'BookingLinkPage');
 });

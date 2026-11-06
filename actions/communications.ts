@@ -63,7 +63,7 @@ export async function getDurableNotifications(cursor?: string) {
     return Promise.all(rows.slice(0, 50).map(async row => {
     if (row.eventKey.startsWith(applicantBookingNotificationPrefix)) {
       const context = await currentApplicantBookingNotification(tx, row, user.id);
-      return { ...row, ...(context ?? { title: "Interview update", body: "Open your current application to review its interview details.", href: "/?workspace=student&view=tracker" }) };
+      return { ...row, ...(context ?? { title: "Interview update", body: "Open your current application to review its interview details.", href: "/applications" }) };
     }
     if (row.eventKey.startsWith(availabilityRequestPrefix)) { const context = await currentAvailabilityRequest(tx, row, user.id); return { ...row, ...(context ?? { title: "Availability response recorded or request closed", body: "View your current round responses in My Availability.", href: "/settings/availability" }) } }
     if(row.eventKey?.startsWith(panelScheduleNotificationPrefix)){const context=await currentPanelScheduleNotification(tx,row,user.id);return {...row,...(context?{title:context.title,body:context.body,href:context.href}:{title:"Interview panel schedule changed",body:"Your assignment is no longer available. Check your current official interview schedule.",href:"/settings/interviews"})}}

@@ -29,7 +29,7 @@ function invalidate(clubId: string) {
   revalidateTag("club-directory");
   revalidatePath(`/club/${clubId}`);
   revalidatePath(`/club/${clubId}/workspace`);
-  revalidatePath("/");
+  revalidatePath("/", "layout");
 }
 export async function getApplicationSettings(clubId: string) {
   z.string().uuid().parse(clubId);

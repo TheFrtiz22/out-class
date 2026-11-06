@@ -12,7 +12,7 @@ export function safeReturnPath(raw: string | null | undefined): string {
 /** Successful sign-in opens the workspace unless a specific return route was requested. */
 export function signInReturnPath(raw: string | null | undefined): string {
   const path = safeReturnPath(raw)
-  return path === "/" ? "/?workspace=student" : path
+  return path === "/" ? "/home" : path
 }
 
 /** Resolve the current account's workspace on the server after normal sign-in. */

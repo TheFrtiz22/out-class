@@ -417,7 +417,7 @@ export function StudentOnboardingWizard({
 
   // ── Render ────────────────────────────────────────────────────────────────
 
-  if (isImpersonating && !initialUser) return <p className="p-4">Account registration is unavailable during impersonation. <Link className="underline" href="/?workspace=student">Open the user’s workspace</Link> to review their existing profile.</p>
+  if (isImpersonating && !initialUser) return <p className="p-4">Account registration is unavailable during impersonation. <Link className="underline" href="/home">Open the user’s workspace</Link> to review their existing profile.</p>
 
   return (
     <div className={embedded ? "font-sans" : "flex min-h-svh items-center justify-center bg-background px-4 py-10 font-sans"}>

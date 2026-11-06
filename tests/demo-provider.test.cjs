@@ -26,7 +26,7 @@ function provider({ storageFails = false, role = 'student' } = {}) {
   const changes = [], store = { subscribe: fn => { listeners.add(fn); return () => listeners.delete(fn) }, stop() { active = false }, active: () => active, get: () => demoState, start() { if (storageFails) throw Error('Storage unavailable'); active = true; listeners.forEach(fn => fn()) }, mutate(fn) { fn(demoState); changes.push(structuredClone(demoState)); listeners.forEach(fn => fn()) }, reset() { changes.push('reset') } }
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync('contexts/demo-context.tsx', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText
-  const mocks = { react, '@/contexts/demo-mode': { DemoContext: react.createContext(null), useDemoMode() {} }, '@/components/outclass-loading-screen': { OutClassLoadingScreen: 'OutClassLoadingScreen' }, '@/lib/demo/store': { demoStore: store, demoUser: () => ({ id: 'demo-student' }) }, '@/lib/student-navigation': { resolveStudentView: value => ['corkboard','tracker','explore'].includes(value) ? value : null } }
+  const mocks = { react, '@/contexts/demo-mode': { DemoContext: react.createContext(null), useDemoMode() {} }, '@/components/outclass-loading-screen': { OutClassLoadingScreen: 'OutClassLoadingScreen' }, '@/lib/demo/store': { demoStore: store, demoUser: () => ({ id: 'demo-student' }) }, '@/lib/student-navigation': { resolveStudentView: value => ['corkboard','tracker','explore'].includes(value) ? value : null }, '@/lib/navigation': require('./helpers/navigation-module.cjs') }
   const fetch = (...args) => new Promise((resolve, reject) => requests.push({ args, resolve, reject }))
   const window = { addEventListener() {}, removeEventListener() {}, location: { href: 'http://localhost/preview?workspace=student&view=corkboard&section=decisions&demoClub=mii', reload() {}, assign(url) { window.location.href = String(url) } }, history: { replaceState(_state, _title, url) { window.location.href = String(url) } } }
   new Function('require', 'module', 'exports', 'fetch', 'window', 'localStorage', code)(name => mocks[name] || require(name), mod, mod.exports, fetch, window, {removeItem(){}})
@@ -129,9 +129,9 @@ test('reset from a club route returns to canonical student Home instead of re-en
  h.window.location.href = 'http://localhost/club/mii/workspace?section=recruitment&tool=decisions'
  h.render(props).props.value.resetDemo()
  const url = new URL(h.window.location.href)
- assert.equal(url.pathname, '/')
- assert.equal(url.searchParams.get('view'), 'student-dashboard')
- assert.equal(url.searchParams.get('workspace'), 'student')
+ assert.equal(url.pathname, '/home')
+ assert.equal(url.searchParams.get('view'), null)
+ assert.equal(url.searchParams.get('workspace'), null)
  assert.equal(url.searchParams.has('tool'), false)
 })
 

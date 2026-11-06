@@ -11,6 +11,7 @@ import "@/components/views/landing.css"
 import type { DirectoryClub } from "@/lib/club-directory"
 import type { ViewId } from "@/lib/views"
 import { getStudentDashboardData } from "@/lib/workspace-api"
+import { studentPath } from "@/lib/navigation"
 const emptyPrivateDashboard = { applications: [], attendances: [], meetings: [] }
 export function PublicClubPage({
   club,
@@ -41,7 +42,7 @@ export function PublicClubPage({
       window.location.href = `${next === "auth" ? "/login" : "/signup"}?next=${encodeURIComponent(returnTo)}`
       return
     }
-    if (embedded || ["explore", "corkboard", "student-profile"].includes(next)) { window.location.href = `/?workspace=student&view=${next}`; return }
+    if (embedded || ["explore", "corkboard", "student-profile"].includes(next)) { window.location.href = studentPath(next); return }
     setView(next)
   }
   const Content = embedded ? "div" : "main"
@@ -68,7 +69,7 @@ export function PublicClubPage({
             club={club}
             backLabel={embedded ? "Discover clubs" : "Back to OutClass"}
             onBack={() => {
-              window.location.href = embedded ? "/?workspace=student&view=explore" : "/"
+              window.location.href = embedded ? "/explore" : "/"
             }}
             onNavigate={navigate}
           />

@@ -190,7 +190,7 @@ export async function moveApplicantRound(
       : updated;
   });
 
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   revalidatePath(`/club-manager`);
 
   return { success: true, application };
@@ -251,7 +251,7 @@ export async function setApplicationStatus(
       : updated;
   });
 
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   revalidatePath(`/club-manager`);
 
   return { success: true, application };
@@ -319,7 +319,7 @@ export async function setRoundAnonymousReview(
         details: { enabled },
       },
     });
-    revalidatePath("/");
+    revalidatePath("/", "layout");
     return { success: true };
   });
 }
@@ -345,7 +345,7 @@ export async function setClubTestRequirement(
         details: { requirement: value },
       },
     });
-    revalidatePath("/");
+    revalidatePath("/", "layout");
     return { success: true };
   });
 }
@@ -405,7 +405,7 @@ export async function saveAnonymousReviewContent(
         details: { cleared: !text },
       },
     });
-    revalidatePath("/");
+    revalidatePath("/", "layout");
     return { success: true };
   });
 }

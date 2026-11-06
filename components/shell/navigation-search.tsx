@@ -25,6 +25,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { useApplicationState } from "@/lib/application-state"
 import { searchWorkspace, type WorkspaceSearchResult } from "@/lib/workspace-api"
 import type { NavItem, ViewId } from "@/lib/views"
+import { studentPath } from "@/lib/navigation"
 
 const groups = {
   club: "Clubs",
@@ -118,7 +119,7 @@ export function NavigationSearch({
       return
     }
     if (item.kind === "application" && clubId) {
-      window.location.assign(`/?workspace=student&view=tracker&applicationClubId=${encodeURIComponent(item.clubId)}`)
+      window.location.assign(studentPath("tracker", "applications", { applicationClubId: item.clubId }))
       return
     }
     if (item.kind === "application") {

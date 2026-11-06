@@ -144,6 +144,31 @@ const assert = require("node:assert/strict")
   await assert.rejects(db.exec(`UPDATE "TaskAssignment" SET "reviewedAt"=NOW() WHERE id='former-work'`), /check constraint/)
   await db.exec(`UPDATE "TaskAssignment" SET "revisionRequestedAt"=NULL, "reviewedAt"=NOW() WHERE id='former-work'`)
   console.log("Task workflow migration preserves existing responses, validates revision requests, and persists group labels.")
+  // Notification triggers link to real student paths; old hrefs are redirected by middleware.
+  for (const fn of ['outclass_application_notification', 'outclass_booking_notification']) {
+    const source = (await db.query(`SELECT prosrc, prosecdef, proconfig, proacl::text AS acl FROM pg_proc WHERE proname=$1`, [fn])).rows
+    assert.equal(source.length, 1, fn)
+    assert.ok(source[0].prosrc.includes("'/applications'"), `${fn} links to /applications`)
+    assert.ok(!source[0].prosrc.includes('workspace=student'), `${fn} no longer emits the homepage workspace URL`)
+    // Invoker security as before; search_path pinned (repo pattern for trigger functions); no PUBLIC execute.
+    assert.equal(source[0].prosecdef, false, fn)
+    assert.deepEqual(source[0].proconfig, ['search_path=pg_catalog, public'], fn)
+    assert.ok(source[0].acl && !/(^|[{,])=X/.test(source[0].acl), `${fn} is not executable by PUBLIC`)
+  }
+  // Each function is still attached to its own table.
+  const attached = (await db.query(`SELECT t.tgname, c.relname, p.proname FROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid JOIN pg_proc p ON p.oid=t.tgfoid WHERE p.proname IN ('outclass_application_notification','outclass_booking_notification') AND NOT t.tgisinternal ORDER BY p.proname`)).rows
+  assert.deepEqual(attached.map(row => [row.proname, row.relname, row.tgname]), [['outclass_application_notification', 'Application', 'application_notification'], ['outclass_booking_notification', 'InterviewBooking', 'booking_notification']])
+  // The booking trigger keeps its round-specific booking link and only the round-less branch changed.
+  const booking = (await db.query(`SELECT prosrc FROM pg_proc WHERE proname='outclass_booking_notification'`)).rows[0].prosrc
+  assert.match(booking, /IS NULL THEN '\/applications' ELSE '\/interviews\/book\?clubId='/)
+  // Fire the application trigger for real and read the stored href.
+  const before = (await db.query(`SELECT status, "submittedAt" FROM "Application" WHERE id='app'`)).rows[0]
+  await db.exec(`UPDATE "Application" SET status='INTERVIEWING', "submittedAt"=COALESCE("submittedAt", NOW()) WHERE id='app'`)
+  const emitted = (await db.query(`SELECT href, type FROM "UserNotification" WHERE "eventKey" LIKE 'application:app:%' ORDER BY "createdAt" DESC LIMIT 1`)).rows
+  assert.equal(emitted.length, 1, 'the status change produced a notification')
+  assert.equal(emitted[0].href, '/applications')
+  await db.query(`UPDATE "Application" SET status=$1, "submittedAt"=$2 WHERE id='app'`, [before.status, before.submittedAt])
+  console.log("Notification triggers emit /applications, keep pinned search_path and stay attached; a real status change stores /applications.")
   // Every application table must be private, including tables added after the original capability migration.
   const tables = (await db.query(`SELECT c.relname, c.relrowsecurity FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relkind='r'`)).rows
   for (const table of tables) {

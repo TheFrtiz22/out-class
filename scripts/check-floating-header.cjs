@@ -107,7 +107,7 @@ async function check() {
     const currentURL = page.url()
     await bell.click(); await page.getByRole('dialog', { name: 'Notifications', exact: true }).waitFor()
     assert.equal(page.url(), currentURL)
-    await page.getByRole('button', { name: 'Expand notifications', exact: true }).click(); await page.waitForURL('**view=inbox')
+    await page.getByRole('button', { name: 'Expand notifications', exact: true }).click(); await page.waitForURL('**/inbox')
     await page.evaluate(() => window.dispatchEvent(new CustomEvent('fixture:counts', { detail: { unread: 0, invitations: 0 } })))
     await page.waitForFunction(() => document.querySelector('[data-tour="notifications"]').getAttribute('aria-label') === 'Notifications')
     assert.equal(await bell.locator('.oc-floating-unread').count(), 0)
