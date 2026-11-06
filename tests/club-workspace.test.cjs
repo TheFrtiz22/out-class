@@ -108,6 +108,8 @@ function setup(permissions = [], isOwner = false) {
     },
     interviewBooking: { count: async (args) => { queries.interviews = args; return 2; } },
     votingSession: { findMany: async (args) => { queries.voting = args; return [{ id: "session", state: "OPEN" }]; } },
+    clubMember: { count: async (args) => { queries.members = args; return 4; } },
+    clubInvitation: { count: async (args) => { queries.invitations = args; return 1; } },
     pipelineRound: {
       findMany: async (args) => {
         queries.rounds = args;
@@ -177,6 +179,10 @@ test("review-only overview restricts recruitment counts to anonymous rounds and 
   assert.equal(owner.queries.review.where.task.clubId, clubId);
   assert.equal(owner.queries.interviews.where.slot.clubId, clubId);
   assert.equal(owner.queries.voting.where.clubId, clubId);
+  assert.equal(h.queries.members, undefined);
+  assert.equal(h.queries.invitations, undefined);
+  assert.equal(owner.queries.members.where.clubId, clubId);
+  assert.equal(owner.queries.invitations.where.clubId, clubId);
   await owner.api.getWorkspaceRounds(clubId);
   assert.deepEqual(owner.queries.rounds.select, {
     id: true,

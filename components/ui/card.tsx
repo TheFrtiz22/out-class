@@ -2,10 +2,12 @@ import * as React from 'react'
 
 import { cn } from '@/lib/utils'
 
-function Card({ className, ...props }: React.ComponentProps<'div'>) {
+/** `variant` adds a glass surface (docs/design-system.md, "Glass surfaces"); the default is unchanged. */
+function Card({ className, variant, ...props }: React.ComponentProps<'div'> & { variant?: 'default' | 'glass' | 'glass-raised' | 'glass-navy' }) {
   return (
     <div
       data-slot="card"
+      data-variant={variant && variant !== 'default' ? variant : undefined}
       className={cn(
         'flex min-w-0 flex-col gap-5 rounded-[var(--oc-content-radius)] border border-[var(--oc-content-edge)] bg-card py-[var(--oc-content-padding)] text-card-foreground shadow-[var(--oc-content-shadow)]',
         className,

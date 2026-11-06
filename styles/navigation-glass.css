@@ -17,8 +17,28 @@
   --oc-glass-light-depth: inset 0 1px 0 rgb(255 255 255 / 95%), inset 1px 0 0 rgb(255 255 255 / 40%), inset 0 -1px 0 rgb(20 45 69 / 12%), 0 3px 6px rgb(12 29 47 / 5%), 0 12px 28px -12px rgb(12 29 47 / 24%);
   --oc-glass-navy-depth: inset 0 1px 0 rgb(222 237 255 / 24%), inset 1px 0 0 rgb(196 220 246 / 10%), inset 0 -1px 0 rgb(4 15 29 / 44%), 0 3px 6px rgb(8 22 37 / 12%), 0 16px 32px -14px rgb(8 22 37 / 32%);
   --oc-glass-menu-depth: inset 0 1px 0 rgb(255 255 255 / 95%), 0 0 0 1px rgb(20 45 69 / 8%), 0 8px 12px -8px rgb(8 22 37 / 14%), 0 20px 48px -16px rgb(8 22 37 / 26%);
+  /* Cream text and hover fill used by the nav on navy glass and light glass controls. */
+  --oc-glass-cream: #fff7ec;
+  --oc-glass-hover-edge: rgb(20 45 69 / 22%);
+  --oc-glass-lift: 0 6px 18px rgb(20 45 69 / 8%);
 }
 
+/* Content surfaces: the same optics as navigation, for page cards and controls.
+   glass = light card WITHOUT blur; glass-raised = light, blur allowed; glass-navy = the rail's
+   material; ambient = one decorative page backdrop. Solid by default, translucent only where
+   backdrop-filter is supported, solid again for reduced transparency or higher contrast. */
+:root, [data-product-shell] {
+  --oc-surface-glass: var(--oc-content-surface);
+  --oc-surface-glass-edge: var(--oc-content-edge);
+  --oc-surface-glass-depth: var(--oc-content-shadow);
+  --oc-surface-glass-raised: var(--oc-glass-light-solid);
+  --oc-surface-glass-raised-depth: var(--oc-content-shadow);
+  --oc-surface-glass-navy: var(--oc-glass-navy-solid);
+  --oc-surface-glass-filter: none;
+  --oc-surface-glass-navy-filter: none;
+  --oc-surface-glass-track: rgb(20 45 69 / 8%);
+  --oc-surface-ambient: none;
+}
 @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   :root {
     --oc-glass-light-material: radial-gradient(ellipse at 12% 0%, rgb(255 255 255 / 65%), transparent 55%), linear-gradient(174deg, rgb(255 255 255 / 26%), transparent 48%, rgb(152 176 201 / 10%)), rgb(255 251 245 / 78%);
@@ -28,6 +48,24 @@
     --oc-glass-light-filter: blur(18px) saturate(135%);
     --oc-glass-navy-filter: blur(16px) saturate(125%);
   }
+
+  /* Redeclared on the shell so the club accent set there resolves inside the gradient. */
+  :root, [data-product-shell] {
+    --oc-surface-glass: linear-gradient(172deg, rgb(255 255 255 / 72%), rgb(255 255 255 / 0%) 46%), rgb(255 253 248 / 90%);
+    --oc-surface-glass-edge: rgb(20 45 69 / 10%);
+    --oc-surface-glass-depth: inset 0 1px 0 rgb(255 255 255 / 90%), 0 1px 2px rgb(12 29 47 / 4%), 0 14px 30px -20px rgb(12 29 47 / 24%);
+    --oc-surface-glass-raised: var(--oc-glass-light-material);
+    --oc-surface-glass-raised-depth: var(--oc-glass-light-depth);
+    --oc-surface-glass-navy: var(--oc-glass-navy-material);
+    --oc-surface-glass-filter: var(--oc-glass-light-filter);
+    --oc-surface-glass-navy-filter: var(--oc-glass-navy-filter);
+    --oc-surface-ambient: radial-gradient(56% 90% at 6% 0%, color-mix(in srgb, var(--primary) 8%, transparent), transparent 72%), radial-gradient(46% 80% at 96% 6%, color-mix(in srgb, var(--oc-club-accent, var(--brand-orange)) 8%, transparent), transparent 70%);
+  }
+}
+
+/* Phones: only the header, sheets and dialogs blur. Content surfaces keep their material. */
+@media (max-width: 759px) {
+  :root, [data-product-shell] { --oc-surface-glass-filter: none; --oc-surface-glass-navy-filter: none; }
 }
 
 /* Portaled controls use the same tokens without depending on shell ancestry.
@@ -76,6 +114,18 @@
     --oc-glass-navy-depth: none;
     --oc-glass-menu-depth: 0 0 0 1px #526675;
   }
+  :root, [data-product-shell] {
+    --oc-surface-glass: var(--oc-content-surface);
+    --oc-surface-glass-edge: #526675;
+    --oc-surface-glass-depth: none;
+    --oc-surface-glass-raised: var(--oc-glass-light-solid);
+    --oc-surface-glass-raised-depth: none;
+    --oc-surface-glass-navy: var(--oc-glass-navy-solid);
+    --oc-surface-glass-filter: none;
+    --oc-surface-glass-navy-filter: none;
+    --oc-surface-glass-track: var(--border);
+    --oc-surface-ambient: none;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   :is(.oc-header-club-menu, .oc-floating-account-menu, .oc-notification-item-menu, .oc-navigation-search) { animation: none !important; transition: none !important; }
@@ -92,5 +142,17 @@
     --oc-glass-navy-filter: none;
     --oc-glass-light-edge: CanvasText;
     --oc-glass-navy-edge: CanvasText;
+  }
+  :root, [data-product-shell] {
+    --oc-surface-glass: Canvas;
+    --oc-surface-glass-edge: CanvasText;
+    --oc-surface-glass-depth: none;
+    --oc-surface-glass-raised: Canvas;
+    --oc-surface-glass-raised-depth: none;
+    --oc-surface-glass-navy: Canvas;
+    --oc-surface-glass-filter: none;
+    --oc-surface-glass-navy-filter: none;
+    --oc-surface-glass-track: Canvas;
+    --oc-surface-ambient: none;
   }
 }

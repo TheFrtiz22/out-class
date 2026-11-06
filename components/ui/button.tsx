@@ -22,6 +22,10 @@ const buttonVariants = cva(
           'hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50',
         accent: 'border border-transparent bg-brand-subtle text-brand-ink hover:bg-brand-subtle/70',
         link: 'text-primary underline-offset-4 hover:underline',
+        /** Light glass, as the header's floating controls (styles/interface-primitives.css). */
+        glass: 'focus-visible:ring-0',
+        /** Navy glass pill, as the selected workspace segment. */
+        'glass-primary': 'focus-visible:ring-0',
       },
       size: {
         default: 'h-10 px-4 py-2 has-[>svg]:px-3 has-[>.oc-button-content>svg]:px-3',

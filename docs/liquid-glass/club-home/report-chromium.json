@@ -1,0 +1,177 @@
+{
+  "phase": "final",
+  "browser": "chromium",
+  "screenshots": [
+    "small-1440",
+    "small-1100",
+    "small-1024",
+    "small-820",
+    "small-390",
+    "small-1440-scrolled",
+    "large-1440",
+    "large-1100",
+    "large-1024",
+    "large-820",
+    "large-390",
+    "large-1440-scrolled",
+    "large-reviewer-1440",
+    "large-member-1440",
+    "clear-member-1440",
+    "large-1440-reduced-motion",
+    "large-390-reduced-motion",
+    "large-1440-higher-contrast",
+    "large-390-higher-contrast",
+    "large-1440-forced-colors",
+    "large-390-forced-colors",
+    "large-1440-reduced-transparency",
+    "large-390-reduced-transparency"
+  ],
+  "accessibility": [
+    {
+      "name": "small-1440",
+      "violations": []
+    },
+    {
+      "name": "small-390",
+      "violations": []
+    },
+    {
+      "name": "large-1440",
+      "violations": []
+    },
+    {
+      "name": "large-390",
+      "violations": []
+    },
+    {
+      "name": "large-reviewer-1440",
+      "violations": []
+    },
+    {
+      "name": "large-member-1440",
+      "violations": []
+    },
+    {
+      "name": "clear-member-1440",
+      "violations": []
+    },
+    {
+      "name": "large-reduced-motion",
+      "violations": []
+    },
+    {
+      "name": "large-higher-contrast",
+      "violations": []
+    },
+    {
+      "name": "large-forced-colors",
+      "violations": []
+    },
+    {
+      "name": "large-reduced-transparency",
+      "violations": []
+    }
+  ],
+  "blur": {
+    "small-1440": [
+      "header.oc-product-header::before",
+      "div.oc-evolving-bar",
+      "button.oc-button.oc-global-search.oc-floating-search::before",
+      "button.oc-button.oc-floating-circle",
+      "button.oc-button.oc-floating-circle.oc-floating-profile",
+      "div.oc-context-sidebar.oc-dock-rail"
+    ],
+    "small-1100": [
+      "header.oc-product-header::before",
+      "div.oc-evolving-bar",
+      "button.oc-button.oc-global-search.oc-floating-search::before",
+      "button.oc-button.oc-floating-circle",
+      "button.oc-button.oc-floating-circle.oc-floating-profile",
+      "div.oc-context-sidebar.oc-dock-rail"
+    ],
+    "small-1024": [
+      "header.oc-product-header::before",
+      "div.oc-evolving-bar",
+      "button.oc-button.oc-global-search.oc-floating-search::before",
+      "button.oc-button.oc-floating-circle",
+      "button.oc-button.oc-floating-circle.oc-floating-profile",
+      "div.oc-context-sidebar.oc-dock-rail"
+    ],
+    "small-820": [
+      "header.oc-product-header::before",
+      "div.oc-evolving-bar",
+      "button.oc-button.oc-global-search.oc-floating-search::before",
+      "button.oc-button.oc-floating-circle",
+      "button.oc-button.oc-floating-circle.oc-floating-profile",
+      "nav.oc-mobile-navigation"
+    ],
+    "small-390": [
+      "header.oc-product-header::before",
+      "button.oc-button.oc-global-search.oc-floating-search::before",
+      "button.oc-button.oc-floating-circle",
+      "button.oc-button.oc-floating-circle.oc-floating-profile",
+      "nav.oc-mobile-navigation"
+    ],
+    "large-1440": [
+      "header.oc-product-header::before",
+      "div.oc-evolving-bar",
+      "button.oc-button.oc-global-search.oc-floating-search::before",
+      "button.oc-button.oc-floating-circle",
+      "button.oc-button.oc-floating-circle.oc-floating-profile",
+      "div.oc-context-sidebar.oc-dock-rail"
+    ],
+    "large-1100": [
+      "header.oc-product-header::before",
+      "div.oc-evolving-bar",
+      "button.oc-button.oc-global-search.oc-floating-search::before",
+      "button.oc-button.oc-floating-circle",
+      "button.oc-button.oc-floating-circle.oc-floating-profile",
+      "div.oc-context-sidebar.oc-dock-rail"
+    ],
+    "large-1024": [
+      "header.oc-product-header::before",
+      "div.oc-evolving-bar",
+      "button.oc-button.oc-global-search.oc-floating-search::before",
+      "button.oc-button.oc-floating-circle",
+      "button.oc-button.oc-floating-circle.oc-floating-profile",
+      "div.oc-context-sidebar.oc-dock-rail"
+    ],
+    "large-820": [
+      "header.oc-product-header::before",
+      "div.oc-evolving-bar",
+      "button.oc-button.oc-global-search.oc-floating-search::before",
+      "button.oc-button.oc-floating-circle",
+      "button.oc-button.oc-floating-circle.oc-floating-profile",
+      "nav.oc-mobile-navigation"
+    ],
+    "large-390": [
+      "header.oc-product-header::before",
+      "button.oc-button.oc-global-search.oc-floating-search::before",
+      "button.oc-button.oc-floating-circle",
+      "button.oc-button.oc-floating-circle.oc-floating-profile",
+      "nav.oc-mobile-navigation"
+    ]
+  },
+  "performance": {
+    "glass": {
+      "frames": 122,
+      "medianMs": 16.7,
+      "p95Ms": 33.3,
+      "over34Ms": 0,
+      "navigationShifts": 0,
+      "backdropFilter": "none",
+      "heapBytes": 106215987
+    },
+    "solid": {
+      "frames": 133,
+      "medianMs": 16.7,
+      "p95Ms": 16.7,
+      "over34Ms": 0,
+      "navigationShifts": 0,
+      "backdropFilter": "none",
+      "heapBytes": 110804645
+    }
+  },
+  "errors": [],
+  "reducedTransparencyBlur": []
+}

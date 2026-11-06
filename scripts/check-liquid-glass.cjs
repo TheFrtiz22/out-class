@@ -1,6 +1,8 @@
 /** Screenshot, accessibility and frame-time audit of the real public UI and
  * the existing isolated ProductShell fixture. Never signs in or writes data.
  * Start `node scripts/check-floating-header.cjs --serve` for the shell URL.
+ * OUTCLASS_GLASS_SCOPE=dashboard audits Club home instead: it builds and serves the isolated
+ * fixture itself (tests/fixtures/club-home) for a small and a large club, in every display mode.
  */
 const fs = require('node:fs/promises')
 const path = require('node:path')
@@ -165,4 +167,74 @@ async function audit() {
     }
   } finally { await browser.close() }
 }
-audit().catch(error => { console.error(error); process.exitCode = 1 })
+async function auditDashboard() {
+  const { startClubHome, blurredSurfaces } = require('../tests/helpers/club-home-fixture.cjs')
+  const browserName = engine === chromium ? 'chromium' : 'webkit'
+  const dir = path.join(output, `dashboard-${browserName}`)
+  await fs.mkdir(dir, { recursive: true })
+  const fixture = await startClubHome()
+  const browser = await engine.launch({ headless: true, ...(engine === chromium && !require('node:fs').existsSync(chromium.executablePath()) ? (require('node:fs').existsSync('/opt/pw-browsers/chromium') ? { executablePath: '/opt/pw-browsers/chromium' } : { channel: 'chrome' }) : {}) })
+  const report = { phase, browser: browserName, screenshots: [], accessibility: [], blur: {}, performance: {}, errors: [] }
+  try {
+    const context = await browser.newContext()
+    const page = await context.newPage()
+    page.on('pageerror', error => report.errors.push(error.message))
+    const open = async (query, width, height = 900) => {
+      await page.setViewportSize({ width, height })
+      await page.goto(fixture.url(query), { waitUntil: 'networkidle' })
+      await page.locator('.oc-club-home').waitFor()
+      await page.evaluate(() => document.fonts.ready)
+      await page.waitForTimeout(900)
+    }
+    const shot = async name => { await page.screenshot({ path: path.join(dir, `${name}.png`) }); report.screenshots.push(name) }
+    const axe = async name => {
+      const results = await new AxeBuilder({ page }).include('#workspace-content').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()
+      report.accessibility.push({ name, violations: results.violations.map(v => ({ id: v.id, impact: v.impact, nodes: v.nodes.map(n => n.target) })) })
+    }
+    for (const club of ['small', 'large']) {
+      for (const width of [1440, 1100, 1024, 820, 390]) {
+        await open(`fixture=${club}&role=owner`, width, width === 390 ? 844 : 900)
+        await shot(`${club}-${width}`)
+        report.blur[`${club}-${width}`] = (await page.evaluate(blurredSurfaces)).map(b => b.name)
+        if (width === 1440 || width === 390) await axe(`${club}-${width}`)
+      }
+      await open(`fixture=${club}&role=owner`, 1440)
+      await page.evaluate(() => scrollTo(0, 120)); await page.waitForTimeout(300)
+      await shot(`${club}-1440-scrolled`)
+    }
+    for (const role of ['reviewer', 'member']) { await open(`fixture=large&role=${role}`, 1440); await shot(`large-${role}-1440`); await axe(`large-${role}-1440`) }
+    await open('fixture=clear&role=member', 1440); await shot('clear-member-1440'); await axe('clear-member-1440')
+    // Display modes. Reduced transparency has no Playwright option; Chromium takes it through CDP.
+    const modes = [['reduced-motion', { reducedMotion: 'reduce' }], ['higher-contrast', { contrast: 'more' }], ['forced-colors', { forcedColors: 'active' }]]
+    for (const [name, media] of modes) {
+      await page.emulateMedia(media)
+      for (const width of [1440, 390]) { await open('fixture=large&role=owner', width, width === 390 ? 844 : 900); await shot(`large-${width}-${name}`); if (width === 1440) await axe(`large-${name}`) }
+      await page.emulateMedia({ reducedMotion: null, contrast: null, forcedColors: null })
+    }
+    if (engine === chromium) {
+      const cdp = await context.newCDPSession(page)
+      await cdp.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-transparency', value: 'reduce' }] })
+      for (const width of [1440, 390]) { await open('fixture=large&role=owner', width, width === 390 ? 844 : 900); await shot(`large-${width}-reduced-transparency`) }
+      report.reducedTransparencyBlur = (await page.evaluate(blurredSurfaces)).map(b => b.name)
+      await axe('large-reduced-transparency')
+      await cdp.send('Emulation.setEmulatedMedia', { features: [] })
+    }
+    // Scroll frame times with the glass, then with the solid fallback (higher contrast turns every glass token solid).
+    await open('fixture=large&role=owner', 1440)
+    report.performance.glass = await frames(page, '.oc-product-header')
+    await page.emulateMedia({ contrast: 'more' })
+    await open('fixture=large&role=owner', 1440)
+    report.performance.solid = await frames(page, '.oc-product-header')
+    await page.emulateMedia({ contrast: null })
+    await fs.writeFile(path.join(dir, 'report.json'), JSON.stringify(report, null, 2) + '\n')
+    const violations = report.accessibility.filter(v => v.violations.length)
+    console.log(JSON.stringify({ dir, screenshots: report.screenshots.length, blur: Object.fromEntries(Object.entries(report.blur).map(([k, v]) => [k, v.length])), performance: report.performance, violations, errors: report.errors }, null, 2))
+    if (phase === 'final') {
+      assert.deepEqual(report.errors, [], 'No browser exceptions')
+      assert.deepEqual(violations, [], 'Club home passes automated WCAG checks in every mode')
+      for (const [name, list] of Object.entries(report.blur)) assert.ok(list.length <= 6, `${name}: at most six blurred surfaces`)
+      assert.deepEqual(report.reducedTransparencyBlur ?? [], [], 'No blur with reduced transparency')
+    }
+  } finally { await browser.close(); await fixture.close() }
+}
+;(process.env.OUTCLASS_GLASS_SCOPE === 'dashboard' ? auditDashboard() : audit()).catch(error => { console.error(error); process.exitCode = 1 })

@@ -56,6 +56,28 @@ Public marketing and authentication use Caslon throughout. Authenticated product
 | Progress | `Progress`: numeric value/max or indeterminate null; supply aria-label/aria-labelledby. Values are bounded and passed to Radix for accessible reporting. |
 | Heading | `SectionHeading`: explicit h1/h2/h3, optional eyebrow, description, action, and editorial style. |
 
+### Glass surfaces (opt-in variants)
+
+One glass language, from the navigation's own tokens. Tokens live in `styles/navigation-glass.css` beside the navigation optics; the variant rules live in `styles/interface-primitives.css`. Defaults of every primitive are unchanged; pages opt in with a variant.
+
+| Token | Use | Solid default | Reduced transparency / higher contrast | Forced colors |
+| --- | --- | --- | --- | --- |
+| `--oc-surface-glass` | Light card, no blur | `--oc-content-surface` | solid surface, `#526675` edge, no depth | `Canvas` + `CanvasText` |
+| `--oc-surface-glass-raised` | Light, blur allowed | `--oc-glass-light-solid` | solid, no filter | `Canvas` |
+| `--oc-surface-glass-navy` | The rail's material | `--oc-glass-navy-solid` | solid, no filter | `Canvas` |
+| `--oc-surface-ambient` | One decorative page backdrop | `none` | `none` | `none` |
+
+Translucency (and `--oc-surface-glass-filter` / `--oc-surface-glass-navy-filter`) is only enabled inside `@supports (backdrop-filter)`; both filters are `none` below 760px so phones blur only the header, sheets and dialogs. The tokens are declared on `:root` and `[data-product-shell]` so `--oc-club-accent` resolves in the ambient gradient.
+
+| Primitive | Variant | Notes |
+| --- | --- | --- |
+| `Card`, `Panel` | `variant="glass" \| "glass-raised" \| "glass-navy"` | Glass is the material without blur. Raised and navy put blur on an isolated `::before` layer, never on text. Radius from `--oc-glass-card-radius` (default 18 / 22 / 26px). Navy uses cream text, `--oc-rail-muted` secondary text and orange focus rings. |
+| `Tabs` | `TabsList variant="segmented"` | The workspace pill's 54px track and sliding navy indicator (positioned with `:has()` from the active trigger, `--oc-floating-spring`). Without `:has()` the active trigger fills itself. Up to five segments. |
+| `Button`, `IconButton` | `variant="glass"`, `variant="glass-primary"` | Glass matches `.oc-floating-circle` (hover `#fff7ec`, stronger edge, lift shadow); glass-primary is the navy pill of the selected workspace segment. Navy focus ring on light glass, orange on navy. |
+| `Skeleton`, `LoadingState` | `variant="glass"` | Light material without blur; skeleton blocks use `--oc-surface-glass-track`. |
+
+Rules: text never passes through a filter; blurred surfaces are never nested; at most six blurred surfaces on screen on desktop (the shell already uses six: rail, header band, workspace pill, search, notifications, account), so page content sets `--oc-surface-glass-filter: none` in its scope, as Club home does. `components/product/segmented-control.tsx` (an `aria-pressed` filter group) predates the segmented tabs and is unchanged; use segmented `Tabs` for tab panels.
+
 ## Motion and stacking
 
 No additional animation dependency. CSS plus existing `tw-animate-css`/Radix

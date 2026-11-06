@@ -1,7 +1,7 @@
 "use client"
 import type { ComponentProps } from "react"
 import { PageHeader } from "@/components/ui/page-header"
-import { welcomeGreeting, welcomeSubtitle, type WelcomeContext } from "@/lib/welcome"
+import { welcomeDeadline, welcomeGreeting, welcomeSubtitle, type WelcomeContext } from "@/lib/welcome"
 import { useWelcomeClock } from "@/hooks/use-welcome-clock"
 import "./welcome-header.css"
 
@@ -19,7 +19,8 @@ export function LocalWelcomeHeader(props: Omit<WelcomeHeaderProps, "now">) {
 export function WelcomeHeader({ firstName, now, context, className = "", ...props }: WelcomeHeaderProps) {
   const title = welcomeGreeting(now, firstName)
   const subtitle = welcomeSubtitle(context, now)
+  const deadline = welcomeDeadline(context, now)
   return <PageHeader {...props} className={`oc-welcome-header ${className}`}
     title={<span key={title} className="oc-welcome-text">{title}</span>}
-    description={<span key={subtitle} className="oc-welcome-text">{subtitle}</span>} />
+    description={<span key={subtitle} className="oc-welcome-text">{subtitle}{deadline && <span className="oc-welcome-deadline"> {deadline}</span>}</span>} />
 }

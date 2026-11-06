@@ -10,6 +10,17 @@
   --oc-floating-spring: linear(0 0%, .1498 7.14%, .4134 14.29%, .6474 21.43%, .8127 28.57%, .9138 35.71%, .9685 42.86%, .9943 50%, 1.0041 57.14%, 1.0063 64.29%, 1.0054 71.43%, 1.0037 78.57%, 1.0023 85.71%, 1.0012 92.86%, 1 100%);
 }
 .oc-product-header { position: sticky; top: var(--support-banner-height, 0px); z-index: 40; min-height: var(--oc-shell-header-height); margin-left: var(--oc-shell-rail-width); padding: 4px 24px 12px; background: transparent; border: 0; pointer-events: none; }
+/* Glass band behind the floating controls so page headings never show through the sticky header.
+   It starts after the rail (the header's own margin) and fades out at the bottom. Solid by default. */
+.oc-product-header { isolation: isolate; }
+.oc-product-header::before { content: ""; position: absolute; z-index: -1; inset: 0; pointer-events: none; background: var(--background); -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent); }
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .oc-product-header::before { background: var(--oc-glass-light-material); -webkit-backdrop-filter: var(--oc-glass-light-filter); backdrop-filter: var(--oc-glass-light-filter); }
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .oc-product-header::before { background: var(--background); -webkit-backdrop-filter: none; backdrop-filter: none; -webkit-mask-image: none; mask-image: none; box-shadow: 0 1px 0 var(--border); }
+}
+@media (forced-colors: active) { .oc-product-header::before { background: Canvas; -webkit-mask-image: none; mask-image: none; border-bottom: 1px solid CanvasText; } }
 .oc-product-header-row { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 48px; padding: 0; }
 .oc-product-header-row > * { pointer-events: auto; }
 .oc-product-utilities { display: flex; align-items: center; flex-shrink: 0; gap: 12px; margin-left: auto; }

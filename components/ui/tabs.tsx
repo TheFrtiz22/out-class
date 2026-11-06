@@ -22,14 +22,14 @@ function TabsList({
   className,
   variant = 'subtle',
   ...props
-}: React.ComponentProps<typeof TabsPrimitive.List> & { variant?: 'subtle' | 'underline' }) {
+}: React.ComponentProps<typeof TabsPrimitive.List> & { variant?: 'subtle' | 'underline' | 'segmented' }) {
   return (
     <TabsPrimitive.List
       data-slot="tabs-list"
       data-variant={variant}
       className={cn(
         'group/tabs text-muted-foreground inline-flex min-h-10 w-fit max-w-full items-center justify-start overflow-x-auto',
-        variant === 'underline' ? 'gap-4 rounded-none border-b border-border bg-transparent p-0' : 'gap-1 rounded-full bg-muted p-[3px]',
+        variant === 'underline' ? 'gap-4 rounded-none border-b border-border bg-transparent p-0' : variant === 'segmented' ? 'w-full' : 'gap-1 rounded-full bg-muted p-[3px]',
         className,
       )}
       {...props}

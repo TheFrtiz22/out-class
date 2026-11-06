@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import { requireClubMembership, requireClubPermission } from "@/utils/auth";
 import { hasPermission } from "@/lib/permissions";
+import { organizationCapabilities } from "@/lib/organization-authorization";
 export async function getClubWorkspaceOverview(clubId: string) {
   z.string().uuid().parse(clubId);
   const { membership } = await requireClubMembership(clubId);
@@ -11,7 +12,9 @@ export async function getClubWorkspaceOverview(clubId: string) {
     hasPermission(membership, "applicants.identify") ||
     hasPermission(membership, "applications.review");
   const now = new Date();
-  const [club, meeting, work, awaitingReview, recruitment, upcomingInterviews, votingSessions, operations] = await Promise.all([
+  // Same gate as the member directory (getOrganizationMemberManagement): counts only, no identities.
+  const directory = organizationCapabilities(membership);
+  const [club, meeting, work, awaitingReview, recruitment, upcomingInterviews, votingSessions, operations, members] = await Promise.all([
     prisma.club.findUniqueOrThrow({
       where: { id: clubId },
       select: { id: true, name: true, tagline: true },
@@ -71,6 +74,12 @@ export async function getClubWorkspaceOverview(clubId: string) {
       ? prisma.votingSession.findMany({ where: { clubId, state: { in: ["OPEN", "ACTIVE"] } }, select: { id: true, state: true }, take: 10, orderBy: { createdAt: "desc" } })
       : Promise.resolve(null),
     dashboardSummary(clubId, membership),
+    directory.canManageMembers || directory.canChangeRoles
+      ? Promise.all([
+          prisma.clubMember.count({ where: { clubId, status: "ACTIVE", user: { disabledAt: null } } }),
+          prisma.clubInvitation.count({ where: { clubId, applicationId: null, status: "PENDING", expiresAt: { gt: now }, revokedAt: null, acceptedAt: null, declinedAt: null } }),
+        ]).then(([active, pendingInvitations]) => ({ active, pendingInvitations }))
+      : Promise.resolve(null),
   ]);
   const current = await requireClubMembership(clubId);
   if (JSON.stringify(current.membership) !== JSON.stringify(membership)) throw new Error("Workspace access changed. Refresh and try again.");
@@ -89,6 +98,7 @@ export async function getClubWorkspaceOverview(clubId: string) {
     awaitingReview,
     upcomingInterviews,
     votingSessions,
+    members,
     recruitment:
       recruitment?.map((row) => ({
         status: row.status,
