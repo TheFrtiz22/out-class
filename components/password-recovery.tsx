@@ -15,6 +15,7 @@ import {
   recoveryEmail,
   recoveryConfirmation,
 } from "@/lib/password-recovery";
+import { PageHeader } from "@/components/ui/page-header";
 
 export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
   const [email, setEmail] = useState("");
@@ -118,18 +119,13 @@ export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
             className="mb-6 size-7 text-muted-foreground"
             aria-hidden="true"
           />
-          <h1
-            id="recovery-title"
-            className="oc-page-title "
-          >
-            {done
+          <PageHeader title={done
               ? mode === "request"
                 ? "Check your inbox."
                 : "Password updated."
               : mode === "request"
                 ? "Forgot your password?"
-                : "Choose a new password."}
-          </h1>
+                : "Choose a new password."} titleId="recovery-title" />
           <p
             className="mt-4 text-sm leading-6 text-muted-foreground"
             role={done ? "status" : undefined}

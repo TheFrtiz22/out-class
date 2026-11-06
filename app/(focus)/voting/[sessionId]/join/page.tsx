@@ -1,4 +1,4 @@
-import { PageHeader } from "@/components/product/page-header"
+import { PageHeader } from "@/components/ui/page-header"
 import Link from "next/link"
 import { z } from "zod"
 import { VotingSessionJoin } from "@/components/live-voting/session-join"

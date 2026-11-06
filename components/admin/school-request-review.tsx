@@ -8,13 +8,14 @@ import { schoolRequestStatuses, schoolRequestRoleLabels, type schoolRequestRoles
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { NativeSelect } from "@/components/ui/native-select"
+import { Panel } from "@/components/ui/panel"
 
 function RequestReview({ row, onReviewed }: { row: SchoolRequest; onReviewed: () => void }) {
   const [status, setStatus] = useState(row.status)
   const [note, setNote] = useState(row.reviewNote || "")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
-  return <article className="oc-content-panel space-y-4">
+  return <Panel as="article" className="space-y-4">
     <div><p className="text-sm text-muted-foreground">{row.status.replaceAll("_", " ")} · {new Date(row.createdAt).toLocaleDateString()}</p><h2 className="text-xl font-semibold">{row.university}</h2></div>
     <p>{row.fullName} · {schoolRequestRoleLabels[row.role as (typeof schoolRequestRoles)[number]]}<br /><a className="break-all underline" href={`mailto:${row.email}`}>{row.email}</a>{row.organization && <><br />{row.organization}</>}</p>
     {row.message && <p className="whitespace-pre-wrap break-words text-sm">{row.message}</p>}
@@ -32,7 +33,7 @@ function RequestReview({ row, onReviewed }: { row: SchoolRequest; onReviewed: ()
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
       <Button disabled={busy || note.trim().length < 10} type="submit">{busy ? "Saving…" : "Save review"}</Button>
     </form>
-  </article>
+  </Panel>
 }
 
 export function SchoolRequestReview() {

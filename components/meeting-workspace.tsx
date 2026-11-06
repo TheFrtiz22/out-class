@@ -30,6 +30,7 @@ import { OutClassQRCode } from "@/components/qr/outclass-qr-code";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { PageHeader } from "@/components/ui/page-header";
 type Meeting = Awaited<ReturnType<typeof getMeeting>>;
 const localDate = (date: Date) => {
   const copy = new Date(date);
@@ -66,7 +67,7 @@ export function MeetingList({ clubId, embedded = false, initialAudience = "ALL",
   const { user } = useAuth(),
     member = user?.memberships.find((m) => m.clubId === clubId);
   const visible = meetings.filter(m => (audience === "ALL" || m.audience === audience) && meetingIsUpcoming(m) === (period === "upcoming")).sort((a, b) => (period === "upcoming" ? 1 : -1) * (+new Date(a.date) - +new Date(b.date)));
-  return <section className="oc-workspace-stack max-w-5xl">
+  return <section className="oc-workspace-stack max-w-[var(--oc-content-width)]">
     {!embedded && <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="oc-section-heading ">Club meetings</h2><Link className="text-sm underline" href="/meetings">All available meetings</Link></div>}
     <div className="flex flex-wrap items-start justify-between gap-4"><p className="max-w-xl text-sm leading-7 text-muted-foreground">Agendas, resources, and attendance for your club.</p>
       {!personalOnly && clubId && hasPermission(member, "meetings.manage") && <MeetingCreateAction clubId={clubId} onSaved={() => { setPeriod("upcoming"); setAudience("ALL"); setNotice("Meeting created."); setRefresh(v => v + 1) }} />}
@@ -79,12 +80,12 @@ export function MeetingList({ clubId, embedded = false, initialAudience = "ALL",
 
     {loading && <LoadingState label="Loading meetings…" layout="schedule" rows={3} />}
     {error && <div role="alert" className="oc-feedback"><p>{error}</p><Button variant="outline" onClick={() => setRefresh(v => v + 1)}>Retry</Button></div>}
-    {!loading && !error && !visible.length && <EmptyState density="compact" align="start" title={`No ${period} meetings for this audience`} description={period === "upcoming" ? "Check Past for earlier agendas and recaps." : "Shared meeting history will appear here."} />}
+    {!loading && !error && !visible.length && <EmptyState density="compact" align="start" title={`No ${period} meetings for this audience`} description={period === "upcoming" ? "Nothing is scheduled for this audience yet." : "No meetings for this audience have happened yet."} action={<Button variant="outline" size="sm" onClick={() => setPeriod(period === "upcoming" ? "past" : "upcoming")}>{period === "upcoming" ? "See past meetings" : "See upcoming meetings"}</Button>} />}
     <ul className="grid gap-3">{visible.map(meeting => <li key={meeting.id} className="min-w-0">
       <button type="button" onClick={() => setActiveId(meeting.id)} className="oc-content-panel group flex w-full text-left gap-4 hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:p-6"><CalendarDays aria-hidden="true" className="mt-1 size-5 shrink-0 text-primary" /><div className="min-w-0 flex-1"><p className="text-xs text-muted-foreground">{!clubId && `${meeting.club.name} · `}{meeting.audience === "MEMBERS" ? "Members" : "Recruitment / Interest"}</p><h3 className="oc-card-heading mt-2 break-words">{meeting.title}</h3><p className="mt-3 text-sm">{meetingDate(meeting.date)}{meeting.endDate && ` — ${meetingDate(meeting.endDate)}`}</p><p className="mt-2 flex items-start gap-2 break-words text-sm text-muted-foreground"><MapPin aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />{meeting.location}</p><p className="mt-4 text-xs text-muted-foreground">{meeting.recap?.trim() ? "Recap available · " : ""}Open agenda, resources & attendance</p></div><ArrowRight aria-hidden="true" className="mt-1 size-4 shrink-0" /></button>
       {!personalOnly && hasPermission(user?.memberships.find(m => m.clubId === meeting.clubId), "meetings.attendance") && <MeetingAttendanceState key={`${meeting.id}:${refresh}`} meeting={meeting} />}
     </li>)}</ul>
-    <Sheet open={!!activeId} onOpenChange={open => { if (!open && !document.querySelector('[data-saving="true"]')) void flushEditors().then(() => setActiveId(null)).catch(() => {}) }}><SheetContent className="oc-workspace-drawer w-full overflow-y-auto sm:max-w-3xl"><SheetTitle className="sr-only">Meeting details</SheetTitle><SheetDescription className="sr-only">Agenda, resources, and attendance.</SheetDescription>{activeId && <MeetingDetail id={activeId} onUpdated={() => { setRefresh(value => value + 1); setNotice("Meeting updated.") }} />}</SheetContent></Sheet>
+    <Sheet open={!!activeId} onOpenChange={open => { if (!open && !document.querySelector('[data-saving="true"]')) void flushEditors().then(() => setActiveId(null)).catch(() => {}) }}><SheetContent className="oc-workspace-drawer w-full overflow-y-auto sm:max-w-[var(--oc-reading-width)]"><SheetTitle className="sr-only">Meeting details</SheetTitle><SheetDescription className="sr-only">Agenda, resources, and attendance.</SheetDescription>{activeId && <MeetingDetail id={activeId} onUpdated={() => { setRefresh(value => value + 1); setNotice("Meeting updated.") }} />}</SheetContent></Sheet>
   </section>;
 }
 export function MeetingCreateAction({ clubId, onSaved }: { clubId: string; onSaved?: () => void }) {
@@ -352,7 +353,7 @@ export function MeetingDetail({ id, onUpdated }: { id: string; onUpdated?: () =>
   const member = user?.memberships.find((m) => m.clubId === meeting.clubId),
     resources = resourceSchema.array().safeParse(meeting.resources);
   return (
-    <article className="mx-auto max-w-5xl space-y-8">
+    <article className="mx-auto max-w-[var(--oc-content-width)] space-y-8">
       <header className="space-y-4 border-b pb-7">
         <p className="text-sm text-muted-foreground">
           {meeting.club.name} ·{" "}
@@ -360,7 +361,7 @@ export function MeetingDetail({ id, onUpdated }: { id: string; onUpdated?: () =>
             ? "Member meeting"
             : "Recruitment / Interest"}
         </p>
-        <h1 className="oc-page-title break-words">{meeting.title}</h1>
+        <PageHeader title={meeting.title} />
         <p>
           {meetingDate(meeting.date)}
           {meeting.endDate &&
@@ -512,9 +513,9 @@ function MeetingAttendance({ meeting }: { meeting: Meeting }) {
             filename={`check-in-${meeting.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
             ariaLabel={`Check in to ${meeting.title}`}
           />
-          <p role="status" className="text-sm text-neutral-600">
+          <p role="status" className="text-sm text-muted-foreground">
             Current code expires in{" "}
-            <span className="font-semibold text-neutral-900">
+            <span className="font-semibold text-foreground">
               {Math.max(
                 0,
                 Math.ceil((new Date(code.expiresAt).getTime() - now) / 1000),

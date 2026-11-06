@@ -4,12 +4,14 @@ import { RecruitmentOffer } from "./recruitment-offer"
 import { ArrowLeft, ArrowRight, CalendarDays, RefreshCw } from "@/components/icons"
 import { ApplicantBooking } from "@/components/interviews/applicant-booking"
 import { ClubLogo } from "@/components/club-logo"
-import { StatusBadge } from "@/components/status-badge"
+import { StatusPill } from "@/components/ui/status-pill"
 import { Button } from "@/components/ui/button"
 import { applicationStatusLabels, applicationNextStep } from "@/lib/student-applications"
 import { isApplicationDecision } from "@/lib/application-presentation"
 import { ApplicationStatusProgress, applicantDate } from "./application-status-card"
 import type { StudentApplication } from "./application-form"
+import { DEFAULT_CLUB_COLOR } from "@/lib/club-colors"
+import { PageHeader } from "@/components/ui/page-header"
 
 export function ApplicationStatusDetail({ application: app, notice, onBack, onResponses, onCalendar, onRefresh, onBookingChanged, onMyClubs }: {
   application: StudentApplication; notice: string; onBack: () => void; onResponses: () => void; onCalendar: () => void; onRefresh: () => void; onBookingChanged: () => void; onMyClubs: () => void;
@@ -19,13 +21,13 @@ export function ApplicationStatusDetail({ application: app, notice, onBack, onRe
   return <>
     <Button variant="ghost" size="sm" className="-ml-3" onClick={onBack}><ArrowLeft size={16} />Status</Button>
     <header className="flex items-start gap-4">
-      <ClubLogo clubId={app.clubId} logoUrl={app.club.logoUrl} marketing={app.club.marketing} text={app.club.name.slice(0, 2)} color={app.club.color || "#142d45"} />
-      <div className="min-w-0"><p className="oc-eyebrow">{decision ? "Decision received" : "Application progress"}</p><h1 tabIndex={-1} className="oc-page-title break-words outline-none">{app.club.name}</h1>
+      <ClubLogo clubId={app.clubId} logoUrl={app.club.logoUrl} marketing={app.club.marketing} text={app.club.name.slice(0, 2)} color={app.club.color || DEFAULT_CLUB_COLOR} />
+      <div className="min-w-0"><p className="oc-eyebrow">{decision ? "Decision received" : "Application progress"}</p><PageHeader title={app.club.name} focusable />
         {app.submittedAt && <p className="mt-2 text-xs text-muted-foreground">Submitted {applicantDate(app.submittedAt)}</p>}</div>
     </header>
     <p role="status" className={notice ? "text-sm text-muted-foreground" : "sr-only"}>{notice}</p>
     <section className="oc-status-detail-update" data-status={app.status} aria-label="Current application status">
-      <div className="flex flex-wrap items-center gap-3"><h2 className="oc-section-heading">{applicationStatusLabels[app.status]}</h2><StatusBadge status={app.status} /></div>
+      <div className="flex flex-wrap items-center gap-3"><h2 className="oc-section-heading">{applicationStatusLabels[app.status]}</h2><StatusPill status={app.status} /></div>
       {!decision && app.round?.name && <p className="mt-2 text-sm text-muted-foreground">Current club round · {app.round.name}</p>}
       <p className="mt-3 text-sm leading-6 text-muted-foreground">{applicationNextStep(app.status)}</p>
       {!!app.decisionLetters?.length && <Button asChild className="mt-4"><Link href={`/applications/${encodeURIComponent(app.id)}/decision`}>View Decision</Link></Button>}

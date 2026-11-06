@@ -30,7 +30,7 @@ test('browser: workspace entry, explicit choices, club changes and history stay 
     '@/utils/supabase/client': 'exports.createClient=()=>({});',
     '@/components/interview-management-tabs': `const React=require('react');exports.InterviewManagementTabs=({clubId,initialRoundId})=>{const [draft,setDraft]=React.useState('');return React.createElement('input',{'aria-label':'Scheduling state probe','data-club':clubId,'data-round':initialRoundId,value:draft,onChange:e=>setDraft(e.target.value)})};`,
     '@/components/workspace-loading': `const React=require('react');exports.WorkspaceLoading=({label})=>React.createElement('p',{role:'status'},label);`,
-    '@/components/product/page-header': `const React=require('react');exports.PageHeader=({title})=>React.createElement('h1',null,title);`,
+    '@/components/ui/page-header': `const React=require('react');exports.PageHeader=({title})=>React.createElement('h1',null,title);`,
     '@/components/shell/floating-header-controls': `const React=require('react');exports.FloatingModeNavigation=({children})=>React.createElement('nav',{'aria-label':'Product modes'},children);exports.FloatingSearchTrigger=()=>null;`,
   });
   const entry = `import React,{useSyncExternalStore}from'react';import{createRoot}from'react-dom/client';import{ClubWorkspace}from'@/components/club-workspace';

@@ -61,6 +61,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
+import { Panel } from "@/components/ui/panel"
 
 type Pipeline = Awaited<ReturnType<typeof getClubPipelinePage>>
 type Candidate = Pipeline["applications"][number]
@@ -160,6 +161,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   const [sat, setSat] = useState("")
   const [act, setAct] = useState("")
   const [rating, setRating] = useState("")
+  const clearApplicantFilters = () => { setQuery(""); setRound(""); setStatus(""); setReview(""); setMajor(""); setYear(""); setGpa(""); setSat(""); setAct(""); setRating("") }
   const [compact, setCompact] = useState(true)
   const [view, setView] = useState<"list" | "kanban">("list")
   const [gender, setGender] = useState("")
@@ -508,7 +510,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         <p className="text-sm text-muted-foreground">{decisionGroup === "pending" ? "Submitted, in-review, and interviewing applications without a recorded decision. Round and status remain separate." : "Recorded application outcomes, visible to the applicant."} Acceptance does not automatically create club membership.</p>
       </>}
 {!decisionsOnly && !rejectedOnly && <>
-      <section aria-label="Recruitment review" className="oc-content-panel flex flex-wrap items-center justify-between gap-4">
+      <Panel as="section" aria-label="Recruitment review" className="flex flex-wrap items-center justify-between gap-4">
         <div><h2 className="oc-card-heading">Recruitment review</h2><p className="mt-1 text-xs text-muted-foreground">Review together or work through candidates one at a time.</p></div>
         <div className="flex flex-wrap gap-2">
           {canDecide && <Button variant="outline" disabled={busy || !listData?.facets.quickReview} onClick={() => void startQuickReview()}>Quick review</Button>}
@@ -536,7 +538,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
 
           <Button variant="outline" asChild><Link href={`/club/${membership.clubId}/workspace?section=recruitment&tool=${decisionsOnly ? "applicants" : "decisions"}`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>{decisionsOnly ? "Review applicants" : "Review decisions"}</Link></Button>
         </div>
-      </section>
+      </Panel>
       </>}
       <div className="oc-toolbar">
         {!decisionsOnly && <div role="group" aria-label="Applicant view" className="flex rounded-md border bg-card p-1">{(["list", "kanban"] as const).map(mode => <Button key={mode} size="sm" variant={view === mode ? "secondary" : "ghost"} aria-pressed={view === mode} onClick={() => setView(mode)}>{mode === "list" ? "List" : "Kanban"}</Button>)}</div>}
@@ -675,16 +677,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => {
-              setQuery("")
-              setRound("")
-              setStatus("")
-              setReview("")
-              setMajor("")
-              setYear("")
-              setGpa("")
-              setSat(""); setAct(""); setRating("")
-            }}
+            onClick={clearApplicantFilters}
           >
             Clear filters
           </Button>
@@ -694,7 +687,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       <div className="flex flex-wrap items-center gap-3"><label className="text-sm">Sort applicants <select aria-label="Sort applicants" className={selectStyle} value={sort} onChange={event => sortBy(event.target.value as ApplicantSort)}><option value="name">Name / anonymous ID</option><option value="year">Class year</option><option value="status">Status</option><option value="gpa">GPA</option><option value="sat">SAT</option><option value="act">ACT</option><option value="round">Round</option><option value="score">Rating</option></select></label><Button variant="ghost" size="sm" onClick={() => setDescending(value => !value)}>{descending ? "Descending ↓" : "Ascending ↑"}</Button></div>
       {view === "kanban" && <p className="text-xs leading-6 text-muted-foreground">Drag a candidate to another column or use Move to. Review the change before it is saved. Interview moves require an interview round.</p>}
       {rejectedOnly&&<p>Rejected applications are retained here with their reviews and decision history. Reconsideration returns an application to review; it does not change the student’s account or membership.</p>}
-      {invalidFilter ? <p role="alert">Enter filters within the displayed numeric ranges.</p> : updating ? <p role="status" aria-live="polite">Updating applicants…</p> : !filtered.length ? <p role="status" className="border-y py-10 text-sm text-muted-foreground">{baseTotal ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No rejected applications. Published rejections appear here with their history preserved." : "Submitted applications will appear here. Student drafts stay private."}</p> : decisionsOnly ? <LiveDecisionList applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban votingSelection={votingChoice} canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} laneCounts={listData?.facets.lanes} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList votingSelection={votingChoice} sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
+      {invalidFilter ? <p role="alert">Enter filters within the displayed numeric ranges.</p> : updating ? <p role="status" aria-live="polite">Updating applicants…</p> : !filtered.length ? <div role="status" className="space-y-3 border-y py-10 text-sm text-muted-foreground"><p>{baseTotal ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No applications have been rejected. Published rejections appear here with their history preserved." : decisionsOnly ? "No applications are waiting for a decision." : "No one has submitted an application yet. Student drafts stay private until they submit."}</p>{baseTotal ? <Button variant="outline" size="sm" onClick={clearApplicantFilters}>Clear filters</Button> : <Button variant="outline" size="sm" asChild><Link href={rejectedOnly || decisionsOnly ? `/club/${encodeURIComponent(membership.clubId)}/workspace?section=recruitment&tool=applicants` : `/club/${encodeURIComponent(membership.clubId)}/workspace?section=settings&setting=application`}>{rejectedOnly || decisionsOnly ? "View all applicants" : "Review your application form"}</Link></Button>}</div> : decisionsOnly ? <LiveDecisionList applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban votingSelection={votingChoice} canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} laneCounts={listData?.facets.lanes} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList votingSelection={votingChoice} sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
       {displayed.count > 1 && <nav aria-label="Applicant pages" className="flex flex-wrap items-center justify-between gap-3">
         <Button variant="outline" aria-label="Previous applicant page" disabled={busy || !pageInfo?.previous} onClick={() => changePage(pageInfo?.previous ?? null)}>Previous page</Button>
         <p role="status" className="text-sm">Page {displayed.page + 1} of {displayed.count} · Showing {displayed.start + 1}–{displayed.start + displayed.items.length} of {total}</p>

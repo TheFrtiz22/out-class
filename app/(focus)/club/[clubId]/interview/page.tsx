@@ -6,7 +6,7 @@ import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
 import { getSessionUser } from "@/utils/auth";
 import { getCurrentUser } from "@/utils/current-user";
 import { AuthSessionBoundary } from "@/components/auth-session-boundary";
-import { PageHeader } from "@/components/product/page-header";
+import { PageHeader } from "@/components/ui/page-header";
 import { ClubInterviewRoom } from "@/components/interviews/club-interview-room";
 import { clubInterviewHref } from "@/lib/interview-entry";
 export const maxDuration = 60;

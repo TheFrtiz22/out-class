@@ -41,15 +41,17 @@ Public marketing and authentication use Caslon throughout. Authenticated product
 | Icon action | `IconButton`: required `aria-label`, defaults to `type="button"`. |
 | Form fields | `Input`, `Textarea`, Radix `Select`, native `NativeSelect`; associate visible labels and error descriptions. |
 | Search | `Search`: required accessible name, normal input props, no filtering state ownership. |
-| Label/status | `Badge` semantic variants; `StatusBadge` supports existing labels and Prisma status strings without changing stored values. |
+| Label/status | `Badge` semantic variants for general labels. Application states use `StatusPill` (`components/ui/status-pill.tsx`): one filled pill per state (Draft, Submitted, In review, Interview, Accepted, Not selected, Waitlisted) from semantic tokens; it accepts stored codes and legacy labels without changing stored values. |
 | Identity | `Avatar`, `AvatarImage`, `AvatarFallback`; provide an accessible name or adjacent identity. |
-| Grouping | Plain sections and `Divider` first; `Surface` defaults to no box. Use `Card` for a meaningful boundary. |
+| Grouping | Plain sections and `Divider` first. `Panel` (`components/ui/panel.tsx`) is the one content container (`.oc-content-panel`, `tone="subtle"` for a muted fill); semantic elements such as `form`, `li` and `fieldset` may carry the same class. |
 | Dialog | Existing `Dialog*` exports: modal semantics, focus trap/return and Escape remain Radix-owned. Always include title and description, or explicitly omit aria-describedby when appropriate. |
 | Dropdown | Existing `DropdownMenu*` exports preserve keyboard behavior. |
 | Tabs | Existing Radix exports; `TabsList variant="underline"` avoids another rounded container. Default remains compatible. |
 | Tooltip | Existing exports, 350ms delay; never use a tooltip as the only accessible name. |
 | Toast | Existing Sonner `toast` API; semantic tones centralized in the root `Toaster`. Inline feedback remains necessary for field errors. |
 | Loading | `LoadingState` reserves rows/cards or gives inline Phosphor feedback; one accessible status. `Skeleton` remains decorative. |
+| Page title | `PageHeader` (`components/ui/page-header.tsx`) renders every page's `<h1>`; `tests/primitives.test.cjs` lists the few display/document headings that are not pages. Page widths use only `--oc-content-width` or `--oc-reading-width`. |
+| Data table | `DataTable` (`components/ui/data-table.tsx`): the `.oc-data-surface` card around the shared `Table`, with a required caption. |
 | Empty state | `EmptyState`: title, description, optional icon/action; compact/roomy density, start/center alignment, plain/subtle/outlined tone; no default card. |
 | Progress | `Progress`: numeric value/max or indeterminate null; supply aria-label/aria-labelledby. Values are bounded and passed to Radix for accessible reporting. |
 | Heading | `SectionHeading`: explicit h1/h2/h3, optional eyebrow, description, action, and editorial style. |

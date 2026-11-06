@@ -79,7 +79,7 @@ function routes(f) {
     announcements:{href:base+'?section=announcements',selector:'section[aria-label="Announcements"]',text:'Audit Announcement',tour:'nav-announcements'},
     recruiting:{href:base+'?section=recruitment&tool=overview',selector:'.oc-recruiting-overview',text:'Submitted',clubLabel:'Navigation Audit Club 1',tour:'nav-overview'},
     applicants:{href:base+'?section=recruitment&tool=applicants',selector:'.oc-live-pipeline',text:'Audit Student 000',tour:'nav-applicants'},
-    interviews:{href:base+'?section=recruitment&tool=interviews',selector:'section[aria-label="Interview rooms"]',text:'No assigned interviews.',tour:'nav-interviews'},
+    interviews:{href:base+'?section=recruitment&tool=interviews',selector:'section[aria-label="Interview rooms"]',text:'You aren’t assigned to any interview rooms yet. Club leaders add you to a panel when they schedule interviews.',tour:'nav-interviews'},
     decisions:{href:base+'?section=recruitment&tool=decisions',selector:'.oc-live-pipeline',text:'Audit Student 000',tour:'nav-decisions'},
     settings:{href:base+'?section=settings',selector:'.oc-settings-workspace',text:'Organization settings',tour:'nav-settings'},
     club2:{href:'/club/'+f.clubIds[1]+'/workspace?section=recruitment&tool=overview',selector:'.oc-recruiting-overview',text:'Submitted',clubLabel:'Navigation Audit Club 2'},

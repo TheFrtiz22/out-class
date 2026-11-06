@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { EmailLoginForm, type EmailLoginFormProps } from "./email-login-form"
 import { MICROSOFT_AUTH_ENABLED } from "@/lib/auth-features"
+import Image from "next/image"
 
 /** The existing Microsoft mark, without an icon package or provider changes. */
 function MicrosoftIcon() {
-  return <svg viewBox="0 0 21 21" className="size-5" aria-hidden="true"><rect x="1" y="1" width="9" height="9" fill="#f25022" /><rect x="1" y="11" width="9" height="9" fill="#00a4ef" /><rect x="11" y="1" width="9" height="9" fill="#7fba00" /><rect x="11" y="11" width="9" height="9" fill="#ffb900" /></svg>
+  return <Image src="/brand/third-party/microsoft.svg" alt="" aria-hidden="true" width={20} height={20} className="size-5" />
 }
 
 type LoginAuthPanelProps = EmailLoginFormProps & {

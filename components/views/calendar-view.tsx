@@ -56,6 +56,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
   const [filter, setFilter] = useState("all")
   const [query, setQuery] = useState("")
   const [hiddenClubs, setHiddenClubs] = useState<Set<string>>(new Set())
+  const clearCalendarFilters = () => { setQuery(""); setFilter("all"); setHiddenClubs(new Set()) }
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [booking, setBooking] = useState(false)
   const [bookingDate, setBookingDate] = useState("")
@@ -315,22 +316,10 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                   </h3>
                   <p className="max-w-md text-sm leading-7 text-muted-foreground">
                     {query || filter !== "all" || hiddenClubs.size
-                      ? "Try a different search or show all your club calendars."
-                      : "No upcoming events are on your calendar. Scheduled interviews and club events will appear here."}
+                      ? "Your search, type filter or hidden club calendars leave nothing to show."
+                      : "You have no interviews or RSVP’d events coming up."}
                   </p>
-                  {(query || filter !== "all" || hiddenClubs.size > 0) && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setQuery("")
-                        setFilter("all")
-                        setHiddenClubs(new Set())
-                      }}
-                    >
-                      Clear filters
-                    </Button>
-                  )}
+                  <CalendarEmptyAction filtered={!!(query || filter !== "all" || hiddenClubs.size)} onClear={clearCalendarFilters} onNavigate={onNavigate} />
                 </div>
               )}
             </div>
@@ -353,7 +342,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                         <div
                           key={key}
                           className={cn(
-                            "min-h-32 space-y-1 border-b border-r border-neutral-100 p-2",
+                            "min-h-32 space-y-1 border-b border-r border-border p-2",
                             day.getMonth() !== cursor.getMonth() &&
                               "bg-muted text-muted-foreground",
                           )}
@@ -366,7 +355,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                               setView("day")
                             }}
                             className={cn(
-                              "mb-1 flex size-7 items-center justify-center rounded-full text-xs hover:ring-1 hover:ring-neutral-300",
+                              "mb-1 flex size-7 items-center justify-center rounded-full text-xs hover:ring-1 hover:ring-border",
                               key === today && "bg-primary text-white",
                             )}
                           >
@@ -379,7 +368,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                               onClick={() => open(event)}
                               title={`${(event.allDay ? "All day" : minuteLabel(timeMinutes(event.time)))} · ${event.title}`}
                               className={cn(
-                                "block w-full rounded p-1.5 text-left text-[length:var(--oc-size-11)] leading-snug hover:ring-1 hover:ring-neutral-300",
+                                "block w-full rounded p-1.5 text-left text-[length:var(--oc-size-11)] leading-snug hover:ring-1 hover:ring-border",
                                 eventStyle[event.type],
                                 event.response === "declined" && "opacity-50",
                               )}
@@ -428,7 +417,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                                 type="button"
                                 onClick={() => open(event)}
                                 className={cn(
-                                  "flex w-full flex-wrap items-center gap-3 rounded-lg p-3 text-left text-sm hover:ring-1 hover:ring-neutral-300",
+                                  "flex w-full flex-wrap items-center gap-3 rounded-lg p-3 text-left text-sm hover:ring-1 hover:ring-border",
                                   eventStyle[event.type],
                                 )}
                               >
@@ -445,9 +434,10 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                             ))}
                           </div>
                         ) : (
-                          <p className="text-sm text-muted-foreground">
-                            No events match your filters for this day.
-                          </p>
+                          <div className="space-y-2 text-sm text-muted-foreground">
+                            <p>{query || filter !== "all" || hiddenClubs.size ? "No events on this day match your filters." : "Nothing is scheduled on this day."}</p>
+                            <CalendarEmptyAction filtered={!!(query || filter !== "all" || hiddenClubs.size)} onClear={clearCalendarFilters} onNavigate={onNavigate} />
+                          </div>
                         )}
                       </section>
                     )
@@ -505,7 +495,10 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                   </button>
                 ))}
                 {!upcoming.length && (
-                  <p className="text-sm text-muted-foreground">No upcoming events match your filters.</p>
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <p>{query || filter !== "all" || hiddenClubs.size ? "No upcoming events match your filters." : "Nothing upcoming on your calendar."}</p>
+                    <CalendarEmptyAction filtered={!!(query || filter !== "all" || hiddenClubs.size)} onClear={clearCalendarFilters} onNavigate={onNavigate} />
+                  </div>
                 )}
               </div>
             </section>
@@ -541,7 +534,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
               {application && (
                 <p className="text-xs text-muted-foreground">Application status: {application.status}</p>
               )}
-              <p className="text-sm leading-6 text-neutral-600">
+              <p className="text-sm leading-6 text-muted-foreground">
                 {selected.description ??
                   (selected.readOnly
                     ? "Review your scheduled event details below."
@@ -696,4 +689,11 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
       </Dialog>
     </div>
   )
+}
+
+/** One next step for an empty calendar: clear what hides events, or go find some. */
+function CalendarEmptyAction({ filtered, onClear, onNavigate }: { filtered: boolean; onClear: () => void; onNavigate?: (view: ViewId) => void }) {
+  return filtered
+    ? <Button variant="outline" size="sm" onClick={onClear}>Clear filters</Button>
+    : onNavigate ? <Button variant="outline" size="sm" onClick={() => onNavigate("corkboard")}>Browse campus events</Button> : null
 }

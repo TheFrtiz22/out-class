@@ -10,6 +10,7 @@ import type { Metadata } from "next"
 import { getPublicClubSeo, isIndexableClub } from "@/lib/public-club-seo"
 import { publicPageMetadata, privateRobots } from "@/lib/seo"
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
+import { PageHeader } from "@/components/ui/page-header"
 
 export async function generateMetadata({ params }: { params: Promise<{ clubId: string }> }): Promise<Metadata> {
   const { clubId } = await params
@@ -37,7 +38,7 @@ export default async function ClubPage({ params }: { params: Promise<{ clubId: s
     if (result.error)
       return (
         <AuthenticatedPageLayout optional><div className="mx-auto max-w-xl p-8">
-          <h1 className="oc-page-title ">Club profile unavailable</h1>
+          <PageHeader title="Club profile unavailable" />
           <p className="my-4">{result.error}</p>
           <a className="underline" href={`/club/${encodeURIComponent(clubId)}`}>
             Try again

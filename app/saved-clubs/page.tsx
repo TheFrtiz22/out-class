@@ -6,7 +6,7 @@ import { studentPath } from "@/lib/navigation"
 export default function Page() {
   const router = useRouter();
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-[var(--oc-content-width)]">
       <Link
         href="/corkboard"
         className="mb-6 inline-flex min-h-11 items-center text-sm underline"

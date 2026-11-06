@@ -2,7 +2,7 @@
 import { NativeSelect } from "@/components/ui/native-select"
 import { useSearchParams } from "next/navigation"
 import { SavedClubsPopover } from "@/components/clubs/saved-clubs-popover"
-import { PageHeader } from "@/components/product/page-header"
+import { PageHeader } from "@/components/ui/page-header"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { ArrowRight, Search, SlidersHorizontal, X, Compass, BookOpen, BriefcaseBusiness, Globe2, Heart, Mountain, Lightbulb, ChartNoAxesCombined, MessageSquare, Users } from "@/components/icons"
 import { Button } from "@/components/ui/button"
@@ -315,7 +315,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
             {filtered.length ? (
               <ul className="oc-explore-grid">{filtered.map(club => card(club, "results"))}</ul>
             ) : (
-              <EmptyState density="compact" tone="subtle" icon={<Compass />} title={clubs.length ? "No clubs match this search." : "No clubs available yet."} description={clubs.length ? "Try a broader keyword or remove a filter." : "Club profiles will appear here as organizations are added."} action={active.length > 0 ? <Button variant="outline" onClick={() => updateFilters(emptyDirectoryFilters)}>Clear search and filters</Button> : undefined} />
+              <EmptyState density="compact" tone="subtle" icon={<Compass />} title={clubs.length ? "No clubs match this search." : "No clubs available yet."} description={clubs.length ? "No club fits the current keyword or filters." : "No club profiles are published at your school yet."} action={active.length > 0 ? <Button variant="outline" onClick={() => updateFilters(emptyDirectoryFilters)}>Clear search and filters</Button> : <Button variant="outline" onClick={() => onNavigate("corkboard")}>See campus events</Button>} />
             )}
           </section>
         </>

@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog"
 import { VotingLobby } from "./voting-lobby"
 import { MemberVotingPad } from "./member-voting-pad"
+import { PageHeader } from "@/components/ui/page-header"
 
 export function ProctorPresentationView({
   initialSession,
@@ -44,12 +45,12 @@ export function ProctorPresentationView({
   return (
     <FocusFrame overlay task="Voting preview" width="full" onExit={() => (ended ? onClose() : setConfirmEnd(true))}>
     <section className="oc-voting-stage flex flex-1 flex-col" aria-label="Live voting presentation">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 px-5 py-4 lg:px-10">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4 lg:px-10">
         <div className="flex items-center gap-3">
           <Monitor className="size-5" />
           <div>
-            <h1 className="oc-page-title ">Voting preview</h1>
-            <p className="text-xs text-neutral-500">
+            <PageHeader title="Voting preview" />
+            <p className="text-xs text-muted-foreground">
               {ended
                 ? "Session complete"
                 : session.status === "lobby"
@@ -101,7 +102,7 @@ export function ProctorPresentationView({
         </div>
       </header>
       {notice && (
-        <p role="status" className="px-5 pt-3 text-sm text-neutral-500 lg:px-10">
+        <p role="status" className="px-5 pt-3 text-sm text-muted-foreground lg:px-10">
           {notice}
         </p>
       )}
@@ -124,10 +125,10 @@ export function ProctorPresentationView({
           >
             <div className="space-y-5">
               <div className="flex items-center justify-between gap-3 text-sm">
-                <span className="text-neutral-500">
+                <span className="text-muted-foreground">
                   Applicant {session.activeIndex + 1} / {session.applicants.length}
                 </span>
-                <span className="oc-status-label border border-neutral-200 px-3 py-1 text-xs">
+                <span className="oc-status-label border border-border px-3 py-1 text-xs">
                   {ended ? "Final session results" : stateLabel}
                 </span>
               </div>
@@ -136,46 +137,46 @@ export function ProctorPresentationView({
                 className="oc-voting-candidate space-y-7 border-y border-border py-7 md:py-9"
               >
                 <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-                  <Avatar className="size-24 shrink-0 rounded-2xl border border-neutral-200 md:size-28">
+                  <Avatar className="size-24 shrink-0 rounded-2xl border border-border md:size-28">
                     <AvatarImage
                       src={applicant.headshotUrl}
                       alt={`${applicant.name} headshot`}
                       className="object-cover"
                     />
-                    <AvatarFallback className="rounded-2xl bg-neutral-50 text-4xl">
+                    <AvatarFallback className="rounded-2xl bg-muted text-4xl">
                       {applicant.initials}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="mb-2 text-xs font-medium uppercase tracking-widest text-neutral-500">
+                    <p className="mb-2 text-xs font-medium uppercase tracking-widest text-muted-foreground">
                       Applicant profile
                     </p>
                     <h2 className="oc-section-heading ">
                       {applicant.name}
                     </h2>
-                    <p className="mt-3 text-neutral-500">
+                    <p className="mt-3 text-muted-foreground">
                       {applicant.year} · {applicant.major}
                     </p>
                   </div>
                 </div>
-                <dl className="grid grid-cols-2 gap-5 border-y border-neutral-200 py-6">
+                <dl className="grid grid-cols-2 gap-5 border-y border-border py-6">
                   <div>
-                    <dt className="text-sm text-neutral-500">GPA</dt>
+                    <dt className="text-sm text-muted-foreground">GPA</dt>
                     <dd className="mt-2 text-xl font-semibold tracking-tight tabular-nums">
                       {applicant.gpa || "—"}
-                      <span className="ml-2 text-sm font-normal text-neutral-500">/ 4.0</span>
+                      <span className="ml-2 text-sm font-normal text-muted-foreground">/ 4.0</span>
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-sm text-neutral-500">SAT score</dt>
+                    <dt className="text-sm text-muted-foreground">SAT score</dt>
                     <dd className="mt-2 text-xl font-semibold tracking-tight tabular-nums">
                       {applicant.satScore || "—"}
-                      <span className="ml-2 text-sm font-normal text-neutral-500">/ 1600</span>
+                      <span className="ml-2 text-sm font-normal text-muted-foreground">/ 1600</span>
                     </dd>
                   </div>
                 </dl>
                 <section className="border-b border-border pb-5">
-                  <h3 className="oc-card-heading uppercase tracking-widest text-neutral-500">
+                  <h3 className="oc-card-heading uppercase tracking-widest text-muted-foreground">
                     Resume highlight
                   </h3>
                   <p className="mt-3 text-base leading-7">
@@ -185,7 +186,7 @@ export function ProctorPresentationView({
                 <section>
                   <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                     <h3 className="oc-card-heading ">Interview performance</h3>
-                    <p className="text-sm text-neutral-500">
+                    <p className="text-sm text-muted-foreground">
                       Cumulative score{" "}
                       <strong className="ml-2 text-lg font-semibold text-black tabular-nums">
                         {applicant.cumulativeScore
@@ -201,10 +202,10 @@ export function ProctorPresentationView({
                           key={`${round.round}-${index}`}
                           className="border-l-2 border-border pl-4"
                         >
-                          <dt className="text-sm text-neutral-500">{round.round}</dt>
+                          <dt className="text-sm text-muted-foreground">{round.round}</dt>
                           <dd className="mt-2 text-2xl font-semibold tabular-nums">
                             {round.score.toFixed(1)}{" "}
-                            <span className="text-sm font-normal text-neutral-500">
+                            <span className="text-sm font-normal text-muted-foreground">
                               / {round.maxScore}
                             </span>
                           </dd>
@@ -212,7 +213,7 @@ export function ProctorPresentationView({
                       ))}
                     </dl>
                   ) : (
-                    <p className="text-sm text-neutral-500">
+                    <p className="text-sm text-muted-foreground">
                       Individual round grades haven’t been recorded for this applicant.
                     </p>
                   )}
@@ -234,7 +235,7 @@ export function ProctorPresentationView({
                     <span className="text-emerald-700">{tally.pass} Pass</span> ·{" "}
                     <span className="text-rose-700">{tally.noPass} No Pass</span>
                   </p>
-                  <p className="mt-1 text-xs text-neutral-500">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     {tally.majority} votes required for a majority. Ties remain unresolved.
                   </p>
                 </div>
@@ -248,7 +249,7 @@ export function ProctorPresentationView({
                   <ArrowRight className="size-4" />
                 </Button>
               </div>
-              <p className="text-xs leading-5 text-neutral-500">
+              <p className="text-xs leading-5 text-muted-foreground">
                 Simulation only. The proctor tab must stay open. Returning to an applicant preserves
                 votes; a member cannot vote twice. Results do not change CRM application stages.
               </p>
@@ -259,16 +260,16 @@ export function ProctorPresentationView({
               </aside>
             )}
           </div>
-          <footer className="sticky bottom-0 z-10 mt-auto space-y-3 border-t border-neutral-200 bg-white px-5 py-5 lg:px-10">
+          <footer className="sticky bottom-0 z-10 mt-auto space-y-3 border-t border-border bg-white px-5 py-5 lg:px-10">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-lg font-semibold tracking-tight tabular-nums">
                 {progress.passed} Passed{" "}
-                <span className="font-normal text-neutral-500">
+                <span className="font-normal text-muted-foreground">
                   / {progress.remaining} Remaining in Pool
                 </span>
               </p>
               <p
-                className={`text-sm ${progress.range === "above" ? "text-amber-800" : progress.range === "within" ? "text-emerald-800" : "text-neutral-500"}`}
+                className={`text-sm ${progress.range === "above" ? "text-amber-800" : progress.range === "within" ? "text-emerald-800" : "text-muted-foreground"}`}
               >
                 Target {session.quota.min}–{session.quota.max} ·{" "}
                 {progress.range === "above"
@@ -285,19 +286,19 @@ export function ProctorPresentationView({
               aria-valuemax={session.quota.max}
               aria-valuenow={Math.min(progress.passed, session.quota.max)}
               aria-valuetext={`${progress.passed} passed; target ${session.quota.min} to ${session.quota.max}`}
-              className="relative h-1.5 overflow-hidden rounded-full bg-neutral-100"
+              className="relative h-1.5 overflow-hidden rounded-full bg-muted"
             >
               <div
-                className={`h-full rounded-full transition-[width] duration-300 ${progress.range === "above" ? "bg-amber-600" : progress.range === "within" ? "bg-emerald-700" : "bg-neutral-900"}`}
+                className={`h-full rounded-full transition-[width] duration-300 ${progress.range === "above" ? "bg-amber-600" : progress.range === "within" ? "bg-emerald-700" : "bg-primary"}`}
                 style={{ width: `${progress.percent}%` }}
               />
               <span
                 aria-hidden="true"
-                className="absolute inset-y-0 w-px bg-neutral-400"
+                className="absolute inset-y-0 w-px bg-muted-foreground"
                 style={{ left: `calc(${(session.quota.min / session.quota.max) * 100}% - 1px)` }}
               />
             </div>
-            <p className="text-xs text-neutral-500">
+            <p className="text-xs text-muted-foreground">
               {progress.noPass} No Pass · Remaining includes applicants with no majority and ties.
               Quota is guidance, not an automatic cutoff.
             </p>
@@ -305,7 +306,7 @@ export function ProctorPresentationView({
         </>
       )}
       <Dialog open={confirmEnd} onOpenChange={setConfirmEnd}>
-        <DialogContent className="border-neutral-200 bg-white font-sans shadow-none">
+        <DialogContent className="border-border bg-white font-sans shadow-none">
           <DialogHeader>
             <DialogTitle>End this voting session?</DialogTitle>
             <DialogDescription>
