@@ -498,6 +498,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 </span>
               </div>
             )}
+            {/* Stacked cards on phones (onboardingTable), so this table keeps its own markup instead of DataTable. */}
             <div className="oc-data-surface">
               <table className={onboardingTable.table}>
                 <caption className="sr-only">

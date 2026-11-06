@@ -2,9 +2,10 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { resolveShortLink } from "@/lib/short-link-store";
 import { prisma } from "@/utils/prisma";
-import { PageHeader } from "@/components/product/page-header";
+import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Panel } from "@/components/ui/panel";
 
 interface PageProps {
   params: Promise<{ code: string }>;
@@ -37,7 +38,7 @@ export default async function ShortLinkRedirectPage({ params }: PageProps) {
         : "The QR code you scanned is not recognized or has been removed.");
 
   return (
-    <section className="oc-content-panel space-y-6 text-center">
+    <Panel as="section" className="space-y-6 text-center">
       <Badge variant={isExpired ? "warning" : isRevoked ? "destructive" : "secondary"}>
         {isExpired ? "Expired Code" : isRevoked ? "Closed" : "Unavailable"}
       </Badge>
@@ -46,6 +47,6 @@ export default async function ShortLinkRedirectPage({ params }: PageProps) {
         <Button asChild><Link href="/meetings">View Club Meetings</Link></Button>
         <Button asChild variant="outline"><Link href="/">Return to OutClass</Link></Button>
       </div>
-    </section>
+    </Panel>
   );
 }

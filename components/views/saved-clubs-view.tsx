@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Bookmark, ArrowRight, RefreshCw } from "@/components/icons";
 import { useCorkboard } from "@/contexts/corkboard-context";
-import { PageHeader } from "@/components/product/page-header";
+import { PageHeader } from "@/components/ui/page-header";
 import { DiscoveryCard } from "@/components/clubs/discovery-card";
 import { CorkboardButton } from "@/components/clubs/corkboard-button";
 import { ClubProfileView } from "@/components/views/club-profile-view";

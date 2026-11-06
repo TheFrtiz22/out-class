@@ -6,6 +6,8 @@ import { MobileJoinScreen } from "./mobile-join-screen"
 import { Clock3, Check, X, CheckCircle2, Radio } from "@/components/icons"
 import { useMemberSession } from "@/lib/use-live-voting"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { PageHeader } from "@/components/ui/page-header"
+import { Panel } from "@/components/ui/panel"
 
 export function MemberVotingPad({
   sessionId,
@@ -38,22 +40,22 @@ export function MemberVotingPad({
     <div role="group" aria-label="Member voting"
       className={`oc-voting-pad ${embedded ? "" : "py-6"} flex items-center justify-center bg-background font-sans text-foreground`}
     >
-      <div className="oc-content-panel w-full max-w-md space-y-7 border-neutral-200 shadow-none">
+      <Panel className="w-full max-w-md space-y-7 border-border shadow-none">
         <p className="sr-only" role="status" aria-atomic="true">{session?.status === "live" && applicant ? `Applicant ${session.activeIndex + 1} of ${session.applicants.length}: ${applicant.name}. ${choice ? "Vote recorded. Waiting for the next applicant." : "Voting is open."}` : ""}</p>
         <header className="flex items-center justify-between gap-3">
           <span className="text-sm font-semibold">
-            OutClass <span className="font-normal text-neutral-500">/ Voting preview</span>
+            OutClass <span className="font-normal text-muted-foreground">/ Voting preview</span>
           </span>
-          <span className="flex items-center gap-1.5 text-xs text-neutral-500">
+          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Radio className="size-3.5" />
             {connected ? "Connected" : "Connecting"}
           </span>
         </header>
         {!session || !applicant ? (
           <div role="status" className="space-y-3 py-12 text-center">
-            <Clock3 aria-hidden="true" className="mx-auto size-7 text-neutral-400" />
-            <h1 className="oc-page-title ">Waiting for the proctor</h1>
-            <p className="text-sm leading-6 text-neutral-500">
+            <Clock3 aria-hidden="true" className="mx-auto size-7 text-muted-foreground" />
+            <PageHeader title="Waiting for the proctor" />
+            <p className="text-sm leading-6 text-muted-foreground">
               Keep the presentation open in another tab of this browser. If this session has
               expired, ask the proctor for a new link.
             </p>
@@ -61,8 +63,8 @@ export function MemberVotingPad({
         ) : session.status === "ended" ? (
           <div role="status" className="space-y-4 py-12 text-center">
             <CheckCircle2 className="mx-auto size-10" />
-            <h1 className="oc-page-title ">Session complete</h1>
-            <p className="text-sm text-neutral-500">Thanks for contributing to deliberations.</p>
+            <PageHeader title="Session complete" />
+            <p className="text-sm text-muted-foreground">Thanks for contributing to deliberations.</p>
           </div>
         ) : !participant ? (
           <MobileJoinScreen onJoin={join} pending={joining} error={error} />
@@ -74,22 +76,22 @@ export function MemberVotingPad({
               key={applicant.id}
               className="oc-voting-candidate space-y-4 text-center"
             >
-              <p className="text-xs uppercase tracking-widest text-neutral-500">
+              <p className="text-xs uppercase tracking-widest text-muted-foreground">
                 Applicant {session.activeIndex + 1} of {session.applicants.length}
               </p>
-              <Avatar className="mx-auto size-20 border border-neutral-200">
+              <Avatar className="mx-auto size-20 border border-border">
                 <AvatarImage
                   src={applicant.headshotUrl}
                   alt={`${applicant.name} headshot`}
                   className="object-cover"
                 />
-                <AvatarFallback className="bg-neutral-50 text-2xl">
+                <AvatarFallback className="bg-muted text-2xl">
                   {applicant.initials}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h1 className="oc-page-title ">{applicant.name}</h1>
-                <p className="mt-2 text-sm text-neutral-500">
+                <PageHeader title={applicant.name} />
+                <p className="mt-2 text-sm text-muted-foreground">
                   {applicant.year} · {applicant.major}
                 </p>
               </div>
@@ -97,7 +99,7 @@ export function MemberVotingPad({
             {!connected && (
               <p
                 role="status"
-                className="rounded-lg border border-neutral-200 p-4 text-sm text-neutral-600"
+                className="rounded-lg border border-border p-4 text-sm text-muted-foreground"
               >
                 Connection paused. Keep the proctor’s tab open; voting will resume when it
                 reconnects.
@@ -106,13 +108,13 @@ export function MemberVotingPad({
             {choice ? (
               <div
                 role="status"
-                className="space-y-3 rounded-lg border border-neutral-200 bg-neutral-50 p-6 text-center"
+                className="space-y-3 rounded-lg border border-border bg-muted p-6 text-center"
               >
                 <CheckCircle2 className="mx-auto size-7" />
                 <p className="font-medium">
                   {choice === "pass" ? "Pass" : "No Pass"} vote recorded
                 </p>
-                <p className="flex items-center justify-center gap-2 text-sm text-neutral-500">
+                <p className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                   <Clock3 aria-hidden="true" className="size-4" />
                   Waiting for next applicant...
                 </p>
@@ -120,14 +122,14 @@ export function MemberVotingPad({
             ) : full ? (
               <p
                 role="status"
-                className="rounded-lg border border-neutral-200 p-5 text-sm text-neutral-600"
+                className="rounded-lg border border-border p-5 text-sm text-muted-foreground"
               >
                 All voting member places are filled. Ask the proctor to start a new session with a
                 larger member count.
               </p>
             ) : (
               <div className="space-y-3">
-                <p className="text-center text-sm text-neutral-500">
+                <p className="text-center text-sm text-muted-foreground">
                   Should this applicant advance?
                 </p>
                 <button
@@ -149,11 +151,11 @@ export function MemberVotingPad({
                   No Pass
                 </button>
                 {pending && (
-                  <p role="status" className="text-center text-sm text-neutral-500">
+                  <p role="status" className="text-center text-sm text-muted-foreground">
                     Confirming your vote…
                   </p>
                 )}
-                <p className="text-center text-xs text-neutral-500">
+                <p className="text-center text-xs text-muted-foreground">
                   One vote per applicant. Votes cannot be changed.
                 </p>
               </div>
@@ -165,11 +167,11 @@ export function MemberVotingPad({
             )}
           </>
         )}
-        <footer className="border-t border-neutral-200 pt-4 text-xs leading-5 text-neutral-500">
+        <footer className="border-t border-border pt-4 text-xs leading-5 text-muted-foreground">
           Simulated session · syncs tabs in this browser. Personal-device voting requires a server
           connection.
         </footer>
-      </div>
+      </Panel>
     </div>
   )
 }

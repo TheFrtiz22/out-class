@@ -21,6 +21,7 @@ import { notificationGroups, notificationPriority } from "@/lib/student-agenda"
 import { toast } from "sonner"
 import { OrganizationOwnershipRequests } from "@/components/organization-ownership-requests"
 import { useOrganizationInvitations } from "@/contexts/organization-invitations-context"
+import { Panel } from "@/components/ui/panel"
 
 const filters = ["All", "Announcements", "Interviews", "Urgent"] as const
 
@@ -114,12 +115,12 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
   }
 
   const tabs = <nav aria-label="Communications center" className="flex gap-1 overflow-x-auto border-b pb-3">{[["notifications", "Updates"], ["preferences", "Email preferences"]].map(([id, label]) => <Button key={id} variant={tab === id ? "secondary" : "ghost"} aria-current={tab === id ? "page" : undefined} onClick={() => { if (canLeaveWorkspace()) setTab(id) }}>{label}</Button>)}</nav>
-  if (tab !== "notifications") return <div className="mx-auto max-w-6xl space-y-6">{tabs}{demo.isDemoEnabled ? <p className="text-sm text-muted-foreground">Email preferences are available in your live account.</p> : <CommunicationsPreferences />}</div>
+  if (tab !== "notifications") return <div className="mx-auto max-w-[var(--oc-content-width)] space-y-6">{tabs}{demo.isDemoEnabled ? <p className="text-sm text-muted-foreground">Email preferences are available in your live account.</p> : <CommunicationsPreferences />}</div>
   return (
-    <div className="oc-inbox-workspace mx-auto max-w-6xl space-y-6 text-foreground">
+    <div className="oc-inbox-workspace mx-auto max-w-[var(--oc-content-width)] space-y-6 text-foreground">
       {tabs}
       {invitations.length > 0 && <OrganizationOwnershipRequests enabled includeDismissed />}
-      <div className="oc-content-panel space-y-4">
+      <Panel className="space-y-4">
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative min-w-0 basis-52 flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -188,7 +189,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
             </Button>
           )}
         </div>
-      </div>
+      </Panel>
       <div
         className={cn(
           "grid items-start gap-8",
@@ -289,7 +290,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                           setSelectedId(item.id)
                           markNotificationRead(item.id)
                         }}
-                        className="min-w-0 flex-1 space-y-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+                        className="min-w-0 flex-1 space-y-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         <div className="flex items-center gap-2">
                           <ClubLogo
@@ -374,7 +375,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
         >
           {!selected ? (
             <div className="flex min-h-96 flex-col items-center justify-center gap-3 p-8 text-center text-muted-foreground">
-              <Bell className="size-8 text-neutral-300" />
+              <Bell className="size-8 text-muted-foreground" />
               <p className="text-sm">Choose a notification to read the full update.</p>
             </div>
           ) : (

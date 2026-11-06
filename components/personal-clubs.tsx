@@ -14,6 +14,7 @@ import { ClubLogo } from "@/components/club-logo"
 import { Button } from "@/components/ui/button"
 import { LoadingState } from "@/components/ui/loading-state"
 import { memberDate, type MemberOverviewData } from "@/components/member-overview"
+import { DEFAULT_CLUB_COLOR } from "@/lib/club-colors"
 
 export function PersonalClubs({ section }: { section: PersonalSection }) {
   const { user, loading } = useAuth()
@@ -43,7 +44,7 @@ function MembershipRow({ member }: { member: ExtendedMembership }) {
   // Prefer the earlier dated item, then undated personal work. No inferred activity.
   const taskFirst = task && (!meeting || (task.dueAt && +new Date(task.dueAt) <= +new Date(meeting.date)))
   return <li className="oc-membership-card"><article>
-    <div className="flex items-start gap-4"><ClubLogo clubId={clubId} logoUrl={member.club.logoUrl} marketing={member.club.marketing} text={member.club.name.slice(0, 2)} color={member.club.color || "#142d4e"} size="lg" /><div className="min-w-0 flex-1"><h2 className="oc-section-heading break-words">{member.club.name}</h2><p className="mt-2 text-xs text-muted-foreground">{member.title || "Member"}{hasWorkspace(member) ? " · Workspace manager" : ""}</p></div></div>
+    <div className="flex items-start gap-4"><ClubLogo clubId={clubId} logoUrl={member.club.logoUrl} marketing={member.club.marketing} text={member.club.name.slice(0, 2)} color={member.club.color || DEFAULT_CLUB_COLOR} size="lg" /><div className="min-w-0 flex-1"><h2 className="oc-section-heading break-words">{member.club.name}</h2><p className="mt-2 text-xs text-muted-foreground">{member.title || "Member"}{hasWorkspace(member) ? " · Workspace manager" : ""}</p></div></div>
     <div className="mt-5 border-t pt-4 text-sm leading-7">
       {failed ? <div role="status" className="flex flex-wrap items-center gap-2"><p className="text-muted-foreground">Couldn’t load the next item.</p><Button variant="ghost" size="sm" onClick={() => setRetry(n => n + 1)}>Retry</Button></div> : !data ? <LoadingState label="Loading club activity…" layout="inline" /> : taskFirst && task ? <><p className="text-xs text-muted-foreground">Your next task{task.dueAt ? ` · ${+new Date(task.dueAt) < Date.now() ? "Overdue" : "Due"} ${memberDate(task.dueAt)}` : " · No due date"}</p><p className="mt-1 break-words font-medium">{task.title}</p></> : meeting ? <><p className="text-xs text-muted-foreground">Next meeting · {memberDate(meeting.date)}</p><p className="mt-1 break-words font-medium">{meeting.title}</p></> : <p className="text-muted-foreground">No upcoming meeting or outstanding personal work.</p>}
     </div>
