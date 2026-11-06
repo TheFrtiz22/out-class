@@ -63,7 +63,7 @@ export function ClubAnnouncements({ clubId, initialItems }: { clubId: string; in
    requestKey.current ||= crypto.randomUUID();
    if(sendMode==="SCHEDULE") {
     await saveCommunicationSchedule({id:editing?.id??requestKey.current,clubId,revision:editing?.revision??null,title,body,audience:audience==="CUSTOM"?audienceSpec:{include:[{source:audience}]},...timing});
-    setSuccess("Scheduled. Recipients and permissions will be checked at publication; optional email follows delivery preferences.");
+    setSuccess("Scheduled. Recipients and permissions are checked when it sends. Email follows each person’s settings.");
     setScheduleRefresh(v=>v+1);
    } else {
    const result = await publishClubAnnouncement({ clubId, title, body, audience, ...(audience==="CUSTOM"?{audienceSpec}:{}), requestKey: requestKey.current });
@@ -80,7 +80,7 @@ export function ClubAnnouncements({ clubId, initialItems }: { clubId: string; in
  return <div className="oc-workspace-stack max-w-5xl" data-saving={busy} data-unsaved={draftSave.dirty}>
   <div className="flex flex-wrap items-center justify-between gap-4"><div><p className="mt-2 text-sm text-muted-foreground">Publish to your club’s current members or submitted applicants.</p></div><Button onClick={()=>{setCompose(true);setEditing(null);setSendMode("NOW");setPreview(null);setError("");setSuccess("");void getRecipientGroups(clubId).then(setCatalog).catch(e=>setError(e instanceof Error?e.message:"Audiences unavailable."));}}><Plus className="size-4" /> Create announcement</Button></div>
   <div className="flex flex-wrap gap-2">
-    <ActionWorkflow title="Scheduled announcements" description="Review, edit, or cancel announcements scheduled for later publication." trigger="Scheduled announcements" presentation="sheet">  <ScheduledCommunications clubId={clubId} refresh={scheduleRefresh} onEdit={row=>{setEditing(row);setTitle(row.title);setBody(row.body);setAudience("CUSTOM");setAudienceSpec(recipientAudienceSchema.parse(row.audience));setTiming({localTime:row.localTime,timeZone:row.timeZone,occurrence:row.occurrence as "EARLIER"|"LATER",recipientMode:row.recipientMode as "FIXED"|"SEND_TIME"});setSendMode("SCHEDULE");setPreview(null);setError("");setCompose(true);void getRecipientGroups(clubId).then(setCatalog).catch(()=>setError("Audience catalog unavailable."));}}/></ActionWorkflow>
+    <ActionWorkflow title="Scheduled announcements" description="Review, edit or cancel announcements scheduled for later." trigger="Scheduled announcements" presentation="sheet">  <ScheduledCommunications clubId={clubId} refresh={scheduleRefresh} onEdit={row=>{setEditing(row);setTitle(row.title);setBody(row.body);setAudience("CUSTOM");setAudienceSpec(recipientAudienceSchema.parse(row.audience));setTiming({localTime:row.localTime,timeZone:row.timeZone,occurrence:row.occurrence as "EARLIER"|"LATER",recipientMode:row.recipientMode as "FIXED"|"SEND_TIME"});setSendMode("SCHEDULE");setPreview(null);setError("");setCompose(true);void getRecipientGroups(clubId).then(setCatalog).catch(()=>setError("Audience catalog unavailable."));}}/></ActionWorkflow>
     <ActionWorkflow title="Audience groups" description="Manage reusable recipient groups for announcements." trigger="Manage audiences" presentation="sheet"><RecipientGroups clubId={clubId} /></ActionWorkflow>
   </div>
   {error && <p role="alert" className="oc-feedback">{error}</p>}
@@ -104,9 +104,9 @@ export function ClubAnnouncements({ clubId, initialItems }: { clubId: string; in
    </form></SheetContent>
   </Sheet>
   <AlertDialog open={confirmPublish} onOpenChange={open=>{if(!busy)setConfirmPublish(open);}}>
-   <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>{sendMode==="SCHEDULE"?"Save this scheduled send?":"Publish this announcement?"}</AlertDialogTitle><AlertDialogDescription>{sendMode==="SCHEDULE"?"No inbox content is published yet. Sender authority and recipient eligibility will be rechecked when due.":"The currently resolved audience will receive an in-app update and optional email according to their preferences."}</AlertDialogDescription></AlertDialogHeader>
+   <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>{sendMode==="SCHEDULE"?"Save this scheduled send?":"Publish this announcement?"}</AlertDialogTitle><AlertDialogDescription>{sendMode==="SCHEDULE"?"Nothing sent to the inbox yet. Permissions and recipients are checked again when it sends.":"The currently resolved audience will receive an in-app update and optional email according to their preferences."}</AlertDialogDescription></AlertDialogHeader>
     <section className="max-h-60 space-y-3 overflow-y-auto rounded-lg bg-muted/40 p-4"><h3 className="font-medium">{title}</h3><p className="whitespace-pre-wrap break-words text-sm">{body}</p><AudiencePreview preview={preview} /></section>
-    {sendMode==="SCHEDULE"&&<p className="break-words text-sm">{timing.localTime.replace("T"," ")} · {timing.timeZone} · {timing.occurrence.toLowerCase()} occurrence · {timing.recipientMode==="FIXED"?"Freeze current selection":"Evaluate audience at publication"}</p>}
+    {sendMode==="SCHEDULE"&&<p className="break-words text-sm">{timing.localTime.replace("T"," ")} · {timing.timeZone} · {timing.occurrence.toLowerCase()} occurrence · {timing.recipientMode==="FIXED"?"Freeze current selection":"Choose the audience when it sends"}</p>}
     {error && <p role="alert" className="oc-feedback">{error}</p>}
     <AlertDialogFooter><AlertDialogCancel disabled={busy || !draftSave.ready || draftSave.recovery != null}>Keep editing</AlertDialogCancel><Button disabled={busy || !draftSave.ready || draftSave.recovery != null} onClick={()=>void publish()}>{busy?"Publishing…":sendMode==="SCHEDULE"?"Confirm schedule":"Publish announcement"}</Button></AlertDialogFooter>
    </AlertDialogContent>

@@ -38,7 +38,7 @@ export function resolveInterviewRoomEntry(input: { clubId: string; applicationId
   const s = demoStore.get(), booking = s.roomBookings.find(b => b.applicationId === app.id && b.roundId === input.roundId);
   if (booking || input.bookingId || input.slotId || input.roomId) {
     const match = getAssignedInterviewRooms(input.clubId).find(r => r.applicationId === app.id && r.roundId === input.roundId && r.canOpen && !r.reviewId && (!input.bookingId || r.bookingId === input.bookingId) && (!input.slotId || r.slotId === input.slotId) && (!input.roomId || r.roomId === input.roomId));
-    if (!match) throw Error("This booking changed or was cancelled. Return to Interview rooms.");
+    if (!match) throw Error("This interview changed or was cancelled. Go back to Interview rooms.");
   }
   return { applicationId: app.id, roundId: input.roundId };
 }

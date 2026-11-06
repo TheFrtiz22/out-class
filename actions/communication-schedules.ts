@@ -15,7 +15,7 @@ export async function saveCommunicationSchedule(input: unknown) {
  const scheduledAt=resolveScheduleTime(data.localTime,data.timeZone,data.occurrence);
  const {user}=await requireClubPermission(data.clubId,["meetings.manage"]);
  // A temporary support session must not mint authority that outlives that session.
- if(await supportContext()) throw Error("Exit support impersonation before scheduling a future publication.");
+ if(await supportContext()) throw Error("Leave support mode before scheduling.");
  return clubWriteTransaction(async tx=>{
   await authorizeClubTransaction(tx,data.clubId,user.id,["meetings.manage"]);
   const previous=await tx.scheduledCommunication.findFirst({where:{id:data.id,clubId:data.clubId,kind:"ANNOUNCEMENT"}});
@@ -28,7 +28,7 @@ export async function saveCommunicationSchedule(input: unknown) {
   if(!previous && data.revision!==null) throw Error("Scheduled send unavailable.");
   if(!previous && await tx.scheduledCommunication.count({where:{clubId:data.clubId,status:{in:["SCHEDULED","PROCESSING","FAILED"]}}})>=100) throw Error("This club has 100 queued sends. Cancel unused sends first.");
   const snapshot=await captureRecipientAudience(tx,data.clubId,user.id,data.audience);
-  if(!snapshot.userIds.length) throw Error("No eligible recipients for this audience.");
+  if(!snapshot.userIds.length) throw Error("No one in this audience can receive this.");
   const json=snapshot as unknown as Prisma.InputJsonValue;
   const saved=previous?await tx.scheduledCommunication.update({where:{id:previous.id},data:{...values,snapshot:json,revision:{increment:1},status:"SCHEDULED",failureCode:null}}):await tx.scheduledCommunication.create({data:{...values,id:data.id,clubId:data.clubId,senderId:user.id,actorId:user.id,requestKey:data.id,snapshot:json}});
   await tx.auditLog.create({data:{actorId:user.id,clubId:data.clubId,targetId:saved.id,action:"communication.schedule.save",details:{revision:saved.revision,recipientMode:data.recipientMode,scheduledAt:scheduledAt.toISOString(),count:snapshot.userIds.length}}});

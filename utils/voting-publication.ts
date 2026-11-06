@@ -18,7 +18,7 @@ export async function publishReviewedVotingCandidates(tx:AppTransactionClient,s:
           if(!o||!c||o.outcome==="UNRESOLVED") throw Error("Only resolved session candidates can publish.")
           const status=o.outcome==="PASS"?"ACCEPTED":o.outcome==="HOLD"?"WAITLISTED":"REJECTED"
           const current = await tx.application.findFirst({where:{id,clubId:s.clubId,roundId:s.roundId,status:c.expectedStatus}})
-          if(!current) throw Error("Application changed since the session snapshot. Publication cancelled.")
+          if(!current) throw Error("An application changed since voting started. Nothing was sent.")
           await publishRecruitmentDecision(tx,{applicationId:id,clubId:s.clubId,roundId:s.roundId,expectedStatus:c.expectedStatus,status},actorId,settings,names?.[id])
           await tx.votingCandidate.update({where:{sessionId_applicationId:{sessionId:s.id,applicationId:id}},data:{publishedStatus:status}})
           await tx.auditLog.create({data:{actorId:actorId,clubId:s.clubId,targetId:id,action:"voting.decision.published",details:{sessionId:s.id,pass:o.passNumber,outcome:o.outcome,previousStatus:c.expectedStatus,status}}})

@@ -75,17 +75,17 @@ export async function bookInterviewSlot(data: z.infer<typeof bookSlotSchema>) {
           where: { id: parsed.slotId }, include: { bookings: true },
         });
         if (!slot || slot.clubId !== application.clubId) throw new Error("Slot not available for this application.");
-        if (slot.roomId) throw new Error("Use the interview booking page to reserve this room.");
+        if (slot.roomId) throw new Error("Use the booking page to pick a time in this room.");
         const existing = slot.bookings.find(item => item.applicationId === application.id);
         if (existing) return existing;
-        if (application.status !== "INTERVIEWING") throw new Error("An interview invitation is required before booking.");
+        if (application.status !== "INTERVIEWING") throw new Error("You need an interview invitation before you can book.");
         if (slot.startTime <= new Date()) throw new Error("This interview slot has already started.");
         if (slot.bookings.length >= slot.capacity) throw new Error("This interview slot is already full.");
         const otherBookings = await tx.interviewBooking.findMany({
           where: { application: { studentId: user.id }, slot: { endTime: { gt: new Date() } } }, include: { slot: true },
         });
         if (otherBookings.some(b => b.applicationId === application.id || b.slot.startTime < slot.endTime && b.slot.endTime > slot.startTime)) {
-          throw new Error("You already have an interview booking for this application or time.");
+          throw new Error("You already have an interview for this application or time.");
         }
         await assertOfficialPanelConflicts(tx,[user.id],[{id:slot.id,startTime:slot.startTime.toISOString(),endTime:slot.endTime.toISOString(),buffer:0}]);
         return tx.interviewBooking.create({ data: parsed });
@@ -94,7 +94,7 @@ export async function bookInterviewSlot(data: z.infer<typeof bookSlotSchema>) {
     } catch (error) {
       if (error && typeof error === "object" && "code" in error && error.code === "P2034") {
         if (attempt < 2) continue;
-        throw new Error("This slot changed while booking. Please refresh and try again.");
+        throw new Error("That time changed. Refresh and try again.");
       }
       throw error;
     }

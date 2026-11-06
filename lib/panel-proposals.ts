@@ -51,7 +51,7 @@ export const panelStatusLabels: Record<PanelStatus, string> = {
 }
 export const panelIssueMessages: Record<string, string> = {
   MEMBER_REMOVED: "This interviewer is no longer a member of this club.",
-  INELIGIBLE: "This member is not eligible for this round.",
+  INELIGIBLE: "This member isn’t an interviewer for this round.",
   UNCONFIRMED: "Participation has not been confirmed for this round.",
   NO_INTERVIEW_ACCESS: "Identified interview access permissions are not enabled for this member.",
   UNKNOWN_AVAILABILITY: "Availability is unknown for part of this interview or its buffer.",
@@ -156,7 +156,7 @@ export function validatePanelDocument(document: PanelDocument, scene: PanelScene
     if (unfilled) {
       const qualified = scene.members.filter(m => memberBlockReasons(m, session).length === 0)
       if (!session.active) reasons.push("Session unavailable.")
-      if (!qualified.length) reasons.push("No eligible, confirmed interviewer covers the full interval and buffer without an official conflict.")
+      if (!qualified.length) reasons.push("No confirmed interviewer is free for the whole time without a conflict.")
       else if (qualified.length < session.required) reasons.push(`${qualified.length} qualifying interviewer${qualified.length === 1 ? "" : "s"} for ${session.required} required positions.`)
       else reasons.push("Available interviewers are needed elsewhere in this window, exceed a duty limit, or occupy fixed positions.")
       if (proposed.some(a => a.locked && issues.some(i => i.slotId === a.slotId && i.memberId === a.memberId))) reasons.push("Fix or unlock conflicting locked positions.")

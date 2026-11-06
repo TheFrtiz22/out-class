@@ -7,7 +7,7 @@ test('creation is scoped, retry safe, and validates current leaders/voters; ID a
  const h=harness();await h.create();await h.create();assert.equal(h.state().sessions.length,1);assert.equal(h.state().audit.length,1);
  await assert.rejects(h.create({targetSize:2}),/already used/);h.as(uuid(7));await assert.rejects(h.read(),/access denied/);h.as(voterId);await assert.rejects(h.create(),/Denied/);await assert.rejects(h.command('START'),/Denied/);
  for(const change of [{cycleId:uuid(99)},{roundId:uuid(99)},{clubId:uuid(99)},{participantIds:[uuid(99)]},{leaderMemberIds:[voterId]}])await assert.rejects(harness().create(change));
- const wrong=harness();wrong.state().apps[0].recruitmentCycleId=uuid(99);await assert.rejects(wrong.create(),/eligible/);
+ const wrong=harness();wrong.state().apps[0].recruitmentCycleId=uuid(99);await assert.rejects(wrong.create(),/Select applicants from this cycle and round/);
  const disabled=harness();disabled.members[1].user.disabledAt=new Date();await assert.rejects(disabled.create(),/permissions/);
 });
 test('room discovery exposes only authorized club/cycle/round metadata, including anonymous restrictions',async()=>{

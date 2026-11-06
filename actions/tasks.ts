@@ -71,7 +71,7 @@ async function storage() {
   }).storage;
   const { data, error } = await storage.getBucket("task-submissions");
   if (error || !data || data.public)
-    throw new Error("Private task storage is not configured.");
+    throw new Error("File uploads for tasks are unavailable right now.");
   await auditSupportAction("platform.impersonation.task-storage", "task-submissions");
   return storage.from("task-submissions");
 }
