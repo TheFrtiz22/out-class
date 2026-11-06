@@ -70,7 +70,7 @@ button.oc-command-row:hover { background: var(--muted); }
 .oc-record-action { display: inline-flex; align-items: center; gap: .2rem; color: var(--brand-ink); }
 .oc-command-recruiting .oc-command-columns > aside { padding: 0 1.5rem; border-radius: var(--oc-editorial-radius); background: var(--oc-surface-warm); }
 .oc-command-recruiting aside .oc-command-section:last-child { border-bottom: 0; }
-.oc-booking-priority { padding: 1.25rem 1.5rem; margin-bottom: 1rem; border: 1px solid var(--border); border-radius: var(--oc-editorial-radius); background: var(--card); box-shadow: var(--oc-editorial-shadow); }
+.oc-booking-priority { padding: 1.25rem 1.5rem; margin-bottom: 1rem; border: 1px solid var(--oc-content-edge); border-radius: var(--oc-editorial-radius); background: var(--oc-content-surface); box-shadow: var(--oc-editorial-shadow); }
 .oc-command-section[data-attention=true] > header h2::before { content: ''; width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: var(--brand-orange); }
 .oc-command-coverage { color: var(--muted-foreground); font-size: .75rem; }
 .oc-command-coverage strong { margin-right: .35rem; color: var(--foreground); font-size: 1.125rem; font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -125,7 +125,7 @@ button.oc-command-row:hover { background: var(--muted); }
 .oc-dashboard-detail > [role=status]:not(:empty), .oc-applicant-drawer p[role=status]:not(:empty) { padding: .65rem .85rem; border: 1px solid var(--border); border-radius: var(--oc-radius-sm); background: var(--oc-surface-blue); }
 .oc-dashboard-detail > [data-confirmed=true] { color: var(--success); background: var(--success-subtle); border-color: color-mix(in srgb, var(--success) 25%, var(--border)); }
 .oc-preparation-context { display: grid; gap: .25rem; padding: 1rem; background: var(--oc-surface-blue); border-left: 3px solid var(--primary); }
-.oc-panel-validation { padding: 1rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--oc-radius-md); }
+.oc-panel-validation { padding: 1rem; background: var(--oc-content-surface); border: 1px solid var(--oc-content-edge); border-radius: var(--oc-radius-md); box-shadow: var(--oc-content-shadow) }
 .oc-panel-validation[data-ready=false] { border-left: 3px solid var(--brand-ink); }
 .oc-dashboard-drawer .oc-review-heading, .oc-dashboard-drawer .oc-review-submission, .oc-dashboard-drawer .oc-task-resources { border-radius: var(--oc-radius-md); box-shadow: none; }
 .oc-dashboard-drawer .oc-announcement-detail > p:first-child { color: var(--muted-foreground); font-size: .8125rem; }
@@ -179,7 +179,7 @@ button.oc-command-row:hover { background: var(--muted); }
 
 .oc-command-club .oc-club-grid > :is(.oc-personal-work, .oc-officer-work, .oc-club-activity, .oc-team-pulse) { grid-column: 1; }
 .oc-command-club .oc-club-grid > .oc-club-calendar { grid-column: 2; grid-row: 1 / span 4; }
-.oc-dashboard-error { padding: 1.25rem; border: 1px solid var(--border); border-left: 3px solid var(--destructive); border-radius: var(--oc-radius-md); background: var(--card); }
+.oc-dashboard-error { padding: 1.25rem; border: 1px solid var(--oc-content-edge); border-left: 3px solid var(--destructive); border-radius: var(--oc-radius-md); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow) }
 .oc-dashboard-error > p { margin-bottom: .75rem; }
 @media (max-width: 800px) {
   .oc-command-club .oc-club-grid > :is(.oc-personal-work, .oc-officer-work, .oc-club-activity, .oc-team-pulse, .oc-club-calendar, .oc-command-footnote) { grid-column: 1; grid-row: auto; }

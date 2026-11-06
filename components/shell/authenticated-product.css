@@ -24,7 +24,7 @@
 .oc-workspace-drawer [data-slot="sheet-title"] { font-family: var(--oc-font-display); }
 .oc-pipeline-filters { position: relative; }
 .oc-pipeline-filters > summary { cursor: pointer; min-height: var(--oc-control-height); padding: .7rem 1rem; border: 1px solid var(--border); border-radius: var(--oc-radius-md); font-size: var(--oc-text-small); }
-.oc-pipeline-filter-fields { display: flex; flex-wrap: wrap; gap: .75rem; padding: 1.25rem; border: 1px solid var(--border); border-radius: var(--oc-radius-lg); background: var(--card); }
+.oc-pipeline-filter-fields { display: flex; flex-wrap: wrap; gap: .75rem; padding: 1.25rem; border: 1px solid var(--oc-content-edge); border-radius: var(--oc-radius-lg); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow) }
 .oc-pipeline-filter-fields > details { width: 100%; }
 @media (min-width: 640px) { .oc-pipeline-filter-fields { position: absolute; z-index: 10; top: calc(100% + .5rem); left: 0; width: min(28rem, 65vw); box-shadow: var(--oc-shadow-popover); } }
 @media (max-width: 1023px) {
