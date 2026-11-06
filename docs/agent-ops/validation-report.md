@@ -42,3 +42,8 @@ deploy <pending> | runtime errors <pending> | advisor delta <n/a, no migration> 
 ## 2026-11-06 UI-STATUS ui/status-pill-empty-states
 - `validate` (inert env): 1730 tests, 1670 pass, 0 fail, 60 skipped (env-gated); test:migrations 71 applied, RLS 85 tables; lint 0 errors / 400 warnings; typecheck ok; build ok.
 - #136 post-merge: production deployment dpl_3L9HhqvyQCLZGhVV65S1MuUG74ay READY on 00840eea; get_runtime_errors 2h: none.
+
+## 2026-11-06 SEC-TURNSTILE security/turnstile (8a25f81)
+- test 1733: 1673 pass, 0 fail, 60 skipped (env-gated; same 60 as main 00840ee, which ran 1662/0/60). Browser suites ran against a local Chromium 1243 aliased for Playwright 1.64.
+- test:migrations: 71 applied on fresh and legacy, RLS on 85 tables. typecheck ok. lint 0 errors / 401 warnings (unchanged). build ok, 76 pages; /login 209 kB, /signup 281 kB first load.
+- Not run: disposable E2E stack, real Cloudflare or Supabase captcha enforcement.

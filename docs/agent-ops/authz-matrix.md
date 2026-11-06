@@ -46,3 +46,15 @@ Resource: the interview room, moved from `/club/[clubId]/workspace?section=recru
 | Reviewer of club y opening club x | treated as no membership in x (membership is looked up by the URL's clubId): unavailable notice, no candidate read | same | `focus-frame-e2e` (old URL…: random club id) |
 
 Exit targets: `safeExitHref` accepts only same-site, non-focus paths (no `//`, backslash, scheme or focus route); the stored last product page is re-validated on read (`focus-frame.test`).
+
+## 2026-11-06 · AUTH-TURNSTILE · Bot checks on signed-out writes (branch `security/turnstile`)
+
+Resource: Supabase Auth email-sending and password operations, and school-request rows. No new data access; this adds a precondition. Enforcement: Supabase Auth Bot and Abuse Protection (owner setting) for Auth; `verifyTurnstile` for `/api/school-requests`.
+
+| Actor | Signup / resend / code request / password sign-in / recovery email / Admin password | School request | Test |
+|---|---|---|---|
+| Visitor with a fresh token for any action | allow (token passed as `captchaToken`) | allow only if the token's action is `school-request` | `turnstile.test` (signup passes token; action mismatch rejected) |
+| Visitor or script without a token, with a spent token, or calling Supabase Auth directly | deny by Supabase once enforcement is on; message "security check expired" | deny before storage | `turnstile.test` (captcha_failed mapping; missing/reused/mismatched) |
+| Any caller when keys are unset | unchanged | unchanged | `turnstile.test` (unconfigured skip; params unchanged) |
+| Signed-in account settings reset | same as recovery (token required) | n/a | `turnstile.test` (widget present) |
+| Admin view or Demo | unchanged existing denials | unchanged | existing tests |

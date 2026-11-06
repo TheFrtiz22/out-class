@@ -8,6 +8,8 @@ import { OutClassLogo } from "@/components/outclass-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TurnstileWidget } from "@/components/security/turnstile-widget";
+import { turnstileRequired, TURNSTILE_PENDING } from "@/lib/turnstile";
 import {
   newPassword,
   recoveryEmail,
@@ -26,6 +28,8 @@ export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
   const [done, setDone] = useState(false);
   const [invalid, setInvalid] = useState(false);
   const [error, setError] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileReset, setTurnstileReset] = useState(0);
   const initialized = useRef(false);
 
   useEffect(() => {
@@ -67,6 +71,10 @@ export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
       setError("Use matching passwords of 8–128 characters.");
       return;
     }
+    if (mode === "request" && turnstileRequired && !turnstileToken) {
+      setError(TURNSTILE_PENDING);
+      return;
+    }
     setBusy(true);
     try {
       const response = await fetch("/api/auth/password-recovery", {
@@ -74,7 +82,7 @@ export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
           mode === "request"
-            ? { action: mode, email }
+            ? { action: mode, email, turnstileToken }
             : { action: mode, tokenHash, password, confirmation,
                 ...(authenticatorCode ? { authenticatorCode } : {}) },
         ),
@@ -96,6 +104,7 @@ export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
       );
     } finally {
       setBusy(false);
+      if (mode === "request") setTurnstileReset((value) => value + 1);
     }
   }
 
@@ -216,6 +225,13 @@ export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
                     </p>
                   </div>
                 </>
+              )}
+              {mode === "request" && (
+                <TurnstileWidget
+                  action="password-recovery"
+                  onToken={setTurnstileToken}
+                  resetKey={turnstileReset}
+                />
               )}
               {error && (
                 <p role="alert" className="text-sm text-destructive">
