@@ -72,7 +72,7 @@ async function verify(config, root) {
     await panel.getByRole('button', { name: /^Lock / }).first().click(); await panel.getByText('Change validated.', { exact: false }).waitFor()
     const locked = await panel.getByRole('button', { name: /^Unlock / }).first().getAttribute('aria-label')
     await workflow(admin.page).getByRole('button', { name: 'Availability', exact: true }).click(); await workflow(admin.page).getByRole('button', { name: 'Review & Publish', exact: true }).click()
-    await panel.getByRole('button', { name: locked, exact: true }).waitFor(); assert.equal(await panel.getAttribute('data-unsaved'), 'true'); assert.equal(await admin.page.getByRole('button', { name: 'Filter interview date', exact: true }).getAttribute('data-value'), filterDate)
+    await panel.getByRole('button', { name: locked, exact: true }).waitFor(); assert.equal(await panel.getAttribute('data-unsaved'), 'true'); assert.equal(await admin.page.getByRole('button', { name:/^Filter interview date,/ }).getAttribute('data-value'), filterDate)
     await admin.page.goBack(); await workflow(admin.page).getByRole('button', { name: 'Availability', exact: true }).waitFor(); await admin.page.goForward(); await panel.getByRole('button', { name: locked, exact: true }).waitFor()
     await panel.getByRole('button', { name: 'Save Draft', exact: true }).click(); await panel.getByText('Draft saved.', { exact: true }).waitFor(); await panel.getByRole('button', { name: 'Discard Draft', exact: true }).click(); await panel.getByText('Draft discarded.', { exact: true }).waitFor()
     // Mobile request deep-link and explicit decline in a different club leave the first response intact.

@@ -136,7 +136,7 @@ export function DatePicker({ value, onChange, min, max, disabled, id, name, plac
   return <Popover open={open} onOpenChange={openChange}>
     {name && <input type="hidden" name={name} value={selected} />}
     <PopoverTrigger asChild>
-      <Button type="button" variant="outline" id={id} disabled={disabled} data-slot="date-picker" data-value={selected} aria-label={aria["aria-label"]} aria-labelledby={aria["aria-labelledby"]} aria-describedby={[valueId, aria["aria-describedby"]].filter(Boolean).join(" ")}
+      <Button type="button" variant="outline" id={id} disabled={disabled} data-slot="date-picker" data-value={selected} aria-label={aria["aria-label"] ? `${aria["aria-label"]}, ${selected ? formatDayKey(selected) : placeholder}` : undefined} aria-labelledby={aria["aria-labelledby"]} aria-describedby={[aria["aria-label"] ? "" : valueId, aria["aria-describedby"]].filter(Boolean).join(" ") || undefined}
         className={cn("h-10 w-full min-w-[10.5rem] justify-between gap-2 bg-card px-3 font-normal md:text-sm", !selected && "text-muted-foreground", className)}>
         <span id={valueId}>{selected ? formatDayKey(selected) : placeholder}</span>
         <CalendarDays aria-hidden="true" className="text-muted-foreground" />

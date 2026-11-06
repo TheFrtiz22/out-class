@@ -1,7 +1,8 @@
 // Choose a "YYYY-MM-DD" day in components/ui/date-picker through its real popover,
 // using the calendar keyboard (Shift+Page keys by year, Page keys by month, arrows by day).
 async function pickDate(page, label, day) {
-  await page.getByRole('button', { name: label, exact: true }).click()
+  // The trigger's name is "<label>, <shown value>" so it always contains its visible text.
+  await page.getByRole('button', { name: new RegExp('^' + label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ',') }).click()
   await page.getByRole('grid').waitFor()
   const focused = () => page.evaluate(() => document.activeElement?.getAttribute('data-day'))
   const months = key => Number(key.slice(0, 4)) * 12 + Number(key.slice(5, 7))

@@ -28,7 +28,7 @@ test('date picker grid, bounds and labels ignore the host time zone',()=>{
 
 test('date picker trigger keeps the native value contract and accessible name',()=>{
   const html=renderToStaticMarkup(React.createElement(picker.DatePicker,{value:'2026-11-06',onChange(){},'aria-label':'Panel window from',name:'from',today:'2026-11-06'}))
-  assert.match(html,/aria-label="Panel window from"/);assert.match(html,/data-value="2026-11-06"/);assert.match(html,/Nov 6, 2026/);assert.match(html,/type="hidden" name="from" value="2026-11-06"/);assert.match(html,/aria-haspopup="dialog"/)
+  assert.match(html,/aria-label="Panel window from, Nov 6, 2026"/);assert.match(html,/data-value="2026-11-06"/);assert.match(html,/Nov 6, 2026/);assert.match(html,/type="hidden" name="from" value="2026-11-06"/);assert.match(html,/aria-haspopup="dialog"/)
   const empty=renderToStaticMarkup(React.createElement(picker.DatePicker,{value:'',onChange(){},'aria-label':'Filter',placeholder:'All dates',disabled:true}))
   assert.match(empty,/All dates/);assert.match(empty,/data-value=""/);assert.match(empty,/disabled=""/)
 })
