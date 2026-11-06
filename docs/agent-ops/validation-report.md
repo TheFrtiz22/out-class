@@ -42,3 +42,5 @@ deploy <pending> | runtime errors <pending> | advisor delta <n/a, no migration> 
 ## 2026-11-06 OPS-SENTRY ops/sentry
 - a24dac4: test 1728: 1668 pass, 0 fail, 60 skipped (= main's 60). test:migrations 71, RLS 85. typecheck ok. lint 0 errors / 401 warnings. build ok, 76 pages.
 - Bundle check without a DSN: shared first-load JS 107 kB vs 105 kB on a branch without Sentry; cause: scrub module statically imported by instrumentation-client. Fixed in 2b437ea (SDK and filter load only inside the DSN branch). SDK code exists only in lazily loaded chunks.
+- 2b437ea rebuild without a DSN: shared first-load JS 105 kB (= main 00840ee); /home 186 kB, /login 209 kB vs 208 kB on main. tests/sentry-scrub 6/6, typecheck ok after the change.
+- First-load deltas vs main on the other branches (no keys set): security/turnstile /login +1 kB, /signup +1 kB, /platform/login +1 kB, /request-school +1 kB; scheduling/outlook-busy /settings/availability +2 kB.
