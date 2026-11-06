@@ -9,7 +9,6 @@ import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
-import { ClubCustomizationProvider } from "@/lib/club-customization"
 import { RouteContent } from "@/components/route-content"
 import { SITE_URL, SITE_TITLE, SITE_DESCRIPTION, LEGAL_ORGANIZATION_NAME, privateRobots } from "@/lib/seo"
 
@@ -97,9 +96,9 @@ export default async function RootLayout({
         <DemoDataProvider template={template} allowed={demoAllowed} enabled={demoEnabled} clearStaleSession={!demoAllowed && cookieStore.has(DEMO_COOKIE)}>
           <AuthProvider initialUser={initialUser} isImpersonating={cookieStore.has(PLATFORM_VIEW_COOKIE)} hasSession={!!initialUser || cookieStore.has(PLATFORM_VIEW_COOKIE)}>
             <OrganizationInvitationsProvider>
-            <CorkboardProvider><ClubCustomizationProvider>
+            <CorkboardProvider>
               <RouteContent style={cookieStore.has(PLATFORM_VIEW_COOKIE) ? { paddingTop: "var(--support-banner-height, 120px)" } : undefined}>{children}</RouteContent>
-            </ClubCustomizationProvider></CorkboardProvider>
+            </CorkboardProvider>
             </OrganizationInvitationsProvider>
           </AuthProvider>
           <Toaster />
