@@ -1160,6 +1160,25 @@ model VotingSlideLock {
   @@id([sessionId, passNumber, applicationId])
 }
 
+// "Something to add" discussion requests: one per participant per applicant per pass.
+// Never a ballot, outcome or observation.
+model VotingHandRaise {
+  sessionId String
+  passNumber Int
+  applicationId String
+  memberId String
+  candidate VotingPassCandidate @relation(fields: [sessionId, passNumber, applicationId], references: [sessionId, passNumber, applicationId], onDelete: Restrict)
+  participant VotingParticipant @relation(fields: [sessionId, memberId], references: [sessionId, memberId], onDelete: Restrict)
+  raisedAt DateTime @default(now())
+  withdrawnAt DateTime?
+  acknowledgedAt DateTime?
+  acknowledgedBy String?
+  clearedAt DateTime?
+  clearedBy String?
+  updatedAt DateTime @default(now())
+  @@id([sessionId, passNumber, applicationId, memberId])
+}
+
 // Durable decisions are separate from published application statuses.
 model VotingSession {
   observationReferences VotingObservationReference[]
@@ -1204,6 +1223,7 @@ model VotingParticipant {
   member ClubMember @relation(fields: [memberId], references: [id], onDelete: Restrict)
   joinedAt DateTime?
   ballots VotingBallot[]
+  handRaises VotingHandRaise[]
   @@id([sessionId, memberId])
 }
 model VotingCandidate {
@@ -1248,6 +1268,7 @@ model VotingPassCandidate {
   overrideAt DateTime?
   ballots VotingBallot[]
   ballotRules VotingBallotRule[]
+  handRaises VotingHandRaise[]
   slideLock VotingSlideLock?
   @@id([sessionId, passNumber, applicationId])
   @@unique([sessionId, passNumber, position])
