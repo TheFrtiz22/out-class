@@ -342,7 +342,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                         <div
                           key={key}
                           className={cn(
-                            "min-h-32 space-y-1 border-b border-r border-neutral-100 p-2",
+                            "min-h-32 space-y-1 border-b border-r border-border p-2",
                             day.getMonth() !== cursor.getMonth() &&
                               "bg-muted text-muted-foreground",
                           )}
@@ -355,7 +355,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                               setView("day")
                             }}
                             className={cn(
-                              "mb-1 flex size-7 items-center justify-center rounded-full text-xs hover:ring-1 hover:ring-neutral-300",
+                              "mb-1 flex size-7 items-center justify-center rounded-full text-xs hover:ring-1 hover:ring-border",
                               key === today && "bg-primary text-white",
                             )}
                           >
@@ -368,7 +368,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                               onClick={() => open(event)}
                               title={`${(event.allDay ? "All day" : minuteLabel(timeMinutes(event.time)))} · ${event.title}`}
                               className={cn(
-                                "block w-full rounded p-1.5 text-left text-[length:var(--oc-size-11)] leading-snug hover:ring-1 hover:ring-neutral-300",
+                                "block w-full rounded p-1.5 text-left text-[length:var(--oc-size-11)] leading-snug hover:ring-1 hover:ring-border",
                                 eventStyle[event.type],
                                 event.response === "declined" && "opacity-50",
                               )}
@@ -417,7 +417,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                                 type="button"
                                 onClick={() => open(event)}
                                 className={cn(
-                                  "flex w-full flex-wrap items-center gap-3 rounded-lg p-3 text-left text-sm hover:ring-1 hover:ring-neutral-300",
+                                  "flex w-full flex-wrap items-center gap-3 rounded-lg p-3 text-left text-sm hover:ring-1 hover:ring-border",
                                   eventStyle[event.type],
                                 )}
                               >
@@ -534,7 +534,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
               {application && (
                 <p className="text-xs text-muted-foreground">Application status: {application.status}</p>
               )}
-              <p className="text-sm leading-6 text-neutral-600">
+              <p className="text-sm leading-6 text-muted-foreground">
                 {selected.description ??
                   (selected.readOnly
                     ? "Review your scheduled event details below."

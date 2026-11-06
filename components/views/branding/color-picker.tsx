@@ -4,6 +4,7 @@ import { Check } from "@/components/icons"
 import { Input } from "@/components/ui/input"
 import { brandColorPresets } from "@/lib/data"
 import { cn } from "@/lib/utils"
+import { DEFAULT_CLUB_COLOR } from "@/lib/club-colors"
 
 type ColorPickerProps = {
   value: string
@@ -49,7 +50,7 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
         <Input
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="#232D4B"
+          placeholder={DEFAULT_CLUB_COLOR}
           className="h-8 max-w-[140px] tabular-nums text-xs uppercase"
           aria-label="Custom hex code"
         />

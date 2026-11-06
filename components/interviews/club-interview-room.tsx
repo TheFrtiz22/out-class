@@ -10,7 +10,7 @@ import { interviewListHref } from "@/lib/interview-entry"
 import { ApplicationStateProvider } from "@/lib/application-state"
 import { RecruitmentFocus } from "@/components/recruitment-focus"
 import { WorkspaceLoading } from "@/components/workspace-loading"
-import { PageHeader } from "@/components/product/page-header"
+import { PageHeader } from "@/components/ui/page-header"
 import { useFocusFrame } from "@/components/shell/focus-frame-context"
 
 const InterviewWorkspaceView = dynamic(() => import("@/components/views/interview-workspace-view").then(m => m.InterviewWorkspaceView), { loading: () => <WorkspaceLoading label="Preparing interview workspace…" layout="interview" rows={3} /> })

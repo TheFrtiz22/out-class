@@ -61,6 +61,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
+import { Panel } from "@/components/ui/panel"
 
 type Pipeline = Awaited<ReturnType<typeof getClubPipelinePage>>
 type Candidate = Pipeline["applications"][number]
@@ -509,7 +510,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         <p className="text-sm text-muted-foreground">{decisionGroup === "pending" ? "Submitted, in-review, and interviewing applications without a recorded decision. Round and status remain separate." : "Recorded application outcomes, visible to the applicant."} Acceptance does not automatically create club membership.</p>
       </>}
 {!decisionsOnly && !rejectedOnly && <>
-      <section aria-label="Recruitment review" className="oc-content-panel flex flex-wrap items-center justify-between gap-4">
+      <Panel as="section" aria-label="Recruitment review" className="flex flex-wrap items-center justify-between gap-4">
         <div><h2 className="oc-card-heading">Recruitment review</h2><p className="mt-1 text-xs text-muted-foreground">Review together or work through candidates one at a time.</p></div>
         <div className="flex flex-wrap gap-2">
           {canDecide && <Button variant="outline" disabled={busy || !listData?.facets.quickReview} onClick={() => void startQuickReview()}>Quick review</Button>}
@@ -537,7 +538,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
 
           <Button variant="outline" asChild><Link href={`/club/${membership.clubId}/workspace?section=recruitment&tool=${decisionsOnly ? "applicants" : "decisions"}`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>{decisionsOnly ? "Review applicants" : "Review decisions"}</Link></Button>
         </div>
-      </section>
+      </Panel>
       </>}
       <div className="oc-toolbar">
         {!decisionsOnly && <div role="group" aria-label="Applicant view" className="flex rounded-md border bg-card p-1">{(["list", "kanban"] as const).map(mode => <Button key={mode} size="sm" variant={view === mode ? "secondary" : "ghost"} aria-pressed={view === mode} onClick={() => setView(mode)}>{mode === "list" ? "List" : "Kanban"}</Button>)}</div>}

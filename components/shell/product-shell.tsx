@@ -184,7 +184,7 @@ export function ProductShell({ children, mode, modes, items, active, title, club
         </div>
       </div>
     </header>
-    <div className="lg:grid lg:grid-cols-[224px_minmax(0,1fr)]"><ExpandingDock sections={dockSections} active={active} contextKey={contextKey} renderItem={(item, surface) => navLink(item, false, surface === "rail")} onHome={() => navigate("student-dashboard")} onDismiss={() => main.current?.focus({ preventScroll: true })} /><main data-tour="workspace" id="workspace-content" ref={main} tabIndex={-1} aria-label={title} className="oc-workspace-content mx-auto w-full min-w-0 max-w-[1440px] outline-none">
+    <div className="lg:grid lg:grid-cols-[224px_minmax(0,1fr)]"><ExpandingDock sections={dockSections} active={active} contextKey={contextKey} renderItem={(item, surface) => navLink(item, false, surface === "rail")} onHome={() => navigate("student-dashboard")} onDismiss={() => main.current?.focus({ preventScroll: true })} /><main data-tour="workspace" id="workspace-content" ref={main} tabIndex={-1} aria-label={title} className="oc-workspace-content mx-auto w-full min-w-0 max-w-[var(--oc-content-width)] outline-none">
       {!allowed ? <LoadingState label="Checking workspace access…" layout="inline" rows={3} /> : <>{demo.isDemoEnabled && <p className="oc-demo-note mb-6 text-xs text-muted-foreground">Fictional demo data · changes stay in this browser; no messages are sent.</p>}{children}</>}
     </main></div>
     <MobileNavigation items={allowed ? items : []} active={active} manager={manager || mode === "preview"} onSelect={select} onLink={event => { if (!canLeaveWorkspace()) event.preventDefault() }} onMore={() => { mobileOrigin.current = document.activeElement as HTMLElement; setMobile(true) }} />

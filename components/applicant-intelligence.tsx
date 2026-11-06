@@ -7,6 +7,7 @@ import { getApplicantDisplay, saveApplicantObservation, deleteApplicantObservati
 import { applicantFields, fieldLabels, type ApplicantDisplay, type ApplicantDisplayConfig } from "@/lib/applicant-display";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Panel } from "@/components/ui/panel";
 
 export function ApplicantDisplayPanel({ clubId, applicationId, refreshKey = "", mode = "review", sessionId, previewConfig, layout = "detail", onFitChange }: { clubId: string; applicationId: string; refreshKey?: string; mode?: "review" | "interview" | "voting"; sessionId?: string; previewConfig?: ApplicantDisplayConfig; layout?: "detail" | "slide"; onFitChange?: (fits: boolean|null)=>void }) {
   const [data, setData] = useState<ApplicantDisplay | null>(null), [error, setError] = useState(""), [revision, setRevision] = useState(0);
@@ -98,9 +99,9 @@ export function ApplicantSlide({data}:{data:ApplicantDisplay}){
         {data.anonymous&&<p className="text-sm text-muted-foreground">Anonymous candidate · identity and documents withheld</p>}
       </div>
       <div className="oc-voting-facts">
-        {data.sections.filter(s=>s.field!=="name").map(s=><section key={s.field} className="oc-content-panel min-w-0"><h3 className="text-sm text-muted-foreground">{s.label}</h3>{s.items.length?<>{s.items.map((item,i)=><p key={i} className="mt-2 whitespace-pre-wrap break-words text-xl">{item}</p>)}{s.withheld&&<p className="mt-2 text-sm text-muted-foreground">Additional feedback is withheld.</p>}</>:<p className="mt-2 text-lg text-muted-foreground">{s.withheld ? "Withheld by feedback access policy." : "Not provided"}</p>}</section>)}
-        {data.links.map(link=><section key={link.field} className="oc-content-panel"><h3 className="text-sm text-muted-foreground">{link.label}</h3><a href={link.href} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex min-h-11 items-center text-xl underline">Open {link.label}</a></section>)}
-        {data.visible.filter(f=>["resume","linkedin"].includes(f)&&!data.links.some(l=>l.field===f)).map(f=><section key={f} className="oc-content-panel"><h3 className="text-sm text-muted-foreground">{fieldLabels[f]}</h3><p className="mt-2 text-lg text-muted-foreground">Not provided</p></section>)}
+        {data.sections.filter(s=>s.field!=="name").map(s=><Panel as="section" key={s.field} className="min-w-0"><h3 className="text-sm text-muted-foreground">{s.label}</h3>{s.items.length?<>{s.items.map((item,i)=><p key={i} className="mt-2 whitespace-pre-wrap break-words text-xl">{item}</p>)}{s.withheld&&<p className="mt-2 text-sm text-muted-foreground">Additional feedback is withheld.</p>}</>:<p className="mt-2 text-lg text-muted-foreground">{s.withheld ? "Withheld by feedback access policy." : "Not provided"}</p>}</Panel>)}
+        {data.links.map(link=><Panel as="section" key={link.field}><h3 className="text-sm text-muted-foreground">{link.label}</h3><a href={link.href} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex min-h-11 items-center text-xl underline">Open {link.label}</a></Panel>)}
+        {data.visible.filter(f=>["resume","linkedin"].includes(f)&&!data.links.some(l=>l.field===f)).map(f=><Panel as="section" key={f}><h3 className="text-sm text-muted-foreground">{fieldLabels[f]}</h3><p className="mt-2 text-lg text-muted-foreground">Not provided</p></Panel>)}
       </div>
   </>
 }

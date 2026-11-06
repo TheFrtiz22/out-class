@@ -7,6 +7,7 @@ import "@/components/views/landing.css"
 import "./public-foundations.css"
 import "./public-information.css"
 import "./public-footer.css"
+import { PageHeader } from "@/components/ui/page-header"
 
 /** Public information stays server-rendered, using the landing page's brand and controls. */
 export function PublicInformationPage({ eyebrow, title, introduction, children, heroAside, heroActions, className = "" }: {
@@ -27,7 +28,7 @@ export function PublicInformationPage({ eyebrow, title, introduction, children, 
         <section className="oc-information-hero" aria-labelledby="information-title" data-split={!!heroAside}>
           <div className="oc-information-hero-copy">
             <p className="oc-public-kicker">{eyebrow}</p>
-            <h1 id="information-title">{title}</h1>
+            <PageHeader title={title} titleId="information-title" />
             <p className="oc-information-introduction">{introduction}</p>
             {heroActions}
           </div>

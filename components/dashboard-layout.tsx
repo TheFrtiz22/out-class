@@ -1,6 +1,6 @@
 "use client"
 import { useEffect, type ReactNode } from "react"
-import { PageHeader } from "@/components/product/page-header"
+import { PageHeader } from "@/components/ui/page-header"
 import { ProductShell } from "@/components/shell/product-shell"
 import { personalMode, personalItems, personalModes, personalDestination, type PersonalSection } from "@/lib/product-navigation"
 import { adminNav, viewTitles, type AppMode, type ViewId } from "@/lib/views"

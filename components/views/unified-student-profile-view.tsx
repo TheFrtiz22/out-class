@@ -20,6 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { ResumeImportDialog } from "@/components/resume-import-dialog"
 import { EditStudentProfileDialog } from "@/components/edit-student-profile-dialog"
+import { Panel } from "@/components/ui/panel"
 
 export type ProfileMembership = StudentMembership
 
@@ -59,7 +60,7 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
   }, [user?.id, loading, retry])
   if (loading || pending)
     return (
-      <div role="status" aria-busy="true" className="max-w-4xl space-y-8">
+      <div role="status" aria-busy="true" className="max-w-[var(--oc-content-width)] space-y-8">
         <Skeleton className="h-28 w-full" />
         <Skeleton className="h-52 w-full" />
         <span className="sr-only">Loading profile</span>
@@ -114,7 +115,7 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
   }
   function section(title: string, key: ProfileSection, children: ReactNode, description?: string) {
     return (
-      <section aria-label={title} className="oc-content-panel">
+      <Panel as="section" aria-label={title}>
         <div className="mb-5 flex items-center justify-between gap-4">
           <h3 className="oc-card-heading ">{title}</h3>
           {edit(key)}
@@ -125,11 +126,11 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
           </p>
         )}
         {children}
-      </section>
+      </Panel>
     )
   }
   return (
-    <article className={`oc-student-profile mx-auto max-w-5xl text-foreground${settings ? " oc-settings-profile" : ""}`}>
+    <article className={`oc-student-profile mx-auto max-w-[var(--oc-content-width)] text-foreground${settings ? " oc-settings-profile" : ""}`}>
       <p role="status" className="sr-only">
         {saved ? "Profile changes saved." : ""}
       </p>
@@ -218,7 +219,7 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
             </div>,
           )}
         </div>
-        <aside className="oc-content-panel">
+        <Panel as="aside">
           <h3 className="oc-card-heading ">Profile details</h3>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
             {completed} of {checklist.length} profile details added. These are suggestions, not
@@ -254,7 +255,7 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
             ))}
           </ul>
           <div className="mt-4">{edit("experience")}</div>
-        </aside>
+        </Panel>
       </div>
     </article>
   )

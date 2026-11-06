@@ -14,7 +14,7 @@ function loader(mocks) {
     }).outputText;
     new Function('require', 'module', 'exports', code)(name => {
       if (name in mocks) return mocks[name];
-      if (name.startsWith('@/')) return load(name.slice(2) + '.ts');
+      if (name.startsWith('@/')) return load(fs.existsSync(name.slice(2) + '.ts') ? name.slice(2) + '.ts' : name.slice(2) + '.tsx');
       if (name === './prisma') return mocks['@/utils/prisma'];
       if (name === './supabase/server') return mocks['@/utils/supabase/server'];
       return require(name);

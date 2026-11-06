@@ -1,5 +1,5 @@
 "use client";
-import { PageHeader } from "@/components/product/page-header";
+import { PageHeader } from "@/components/ui/page-header";
 import { LoadingState } from "@/components/ui/loading-state"
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
