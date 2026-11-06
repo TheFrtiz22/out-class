@@ -46,3 +46,16 @@ Resource: the interview room, moved from `/club/[clubId]/workspace?section=recru
 | Reviewer of club y opening club x | treated as no membership in x (membership is looked up by the URL's clubId): unavailable notice, no candidate read | same | `focus-frame-e2e` (old URL…: random club id) |
 
 Exit targets: `safeExitHref` accepts only same-site, non-focus paths (no `//`, backslash, scheme or focus route); the stored last product page is re-validated on read (`focus-frame.test`).
+
+## 2026-11-06 · AUTH-OUTLOOK · Outlook busy-time lookup (branch `scheduling/outlook-busy`)
+
+Resource: the requester's own Microsoft calendar (start, end, showAs, isCancelled, isAllDay for one week) and their own availability editor. No OutClass data is read or written by the routes; edits go through the existing availability actions.
+
+| Actor | GET /api/calendar/outlook/start | GET /api/calendar/outlook/callback | Test |
+|---|---|---|---|
+| Signed-in account | allow; cookie binds state, PKCE verifier, week, nonce, account ID for 10 min | allow only with matching state and the same account; cookie cleared on every response | `outlook-busy.test` (routes) |
+| Signed out | popup message "sign-in expired", no redirect | same | `outlook-busy.test` (session before requireAuth) |
+| Admin view or Demo | deny (popup message) | deny | `outlook-busy.test` (routes) |
+| Attacker page / other origin | cannot receive results: postMessage targets the site origin; editor accepts only its own popup, nonce and week | attacker code cannot be injected: state and PKCE verifier are in the victim's httpOnly cookie | `outlook-busy.test` (popup escaping, widget checks) |
+| Account in another Microsoft tenant | refused by Microsoft: single required tenant | n/a | `outlook-busy.test` (config refuses common/organizations) |
+| Unconfigured deployment | 404 popup message; button hidden | 404 | `outlook-busy.test` (config) |
