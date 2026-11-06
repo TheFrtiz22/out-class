@@ -527,6 +527,18 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     }
   }
   const votingBarShown = !!votingChoice && votingSelection.length > 0 && !activeId
+  // The list clears the floating bar by its measured height (it wraps on phones), so no row is ever covered.
+  const votingBar = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const bar = votingBar.current
+    if (!votingBarShown || !bar) return
+    const root = document.documentElement
+    const measure = () => root.style.setProperty("--oc-voting-bar-height", `${Math.ceil(bar.getBoundingClientRect().height)}px`)
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(bar)
+    return () => { observer.disconnect(); root.style.removeProperty("--oc-voting-bar-height") }
+  }, [votingBarShown])
   if (loading) return <WorkspaceLoading label="Preparing your applicant pipeline…" layout="applicants" rows={5} />
   if (!data || error || readError)
     return (
@@ -735,7 +747,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         <p role="status" className="text-sm">Page {displayed.page + 1} of {displayed.count} · Showing {displayed.start + 1}–{displayed.start + displayed.items.length} of {total}</p>
         <Button variant="outline" aria-label="Next applicant page" disabled={busy || !pageInfo?.next} onClick={() => changePage(pageInfo?.next ?? null)}>Next page</Button>
       </nav>}
-      {votingBarShown && <div role="region" aria-label="Voting selection" className="oc-voting-bar fixed inset-x-4 bottom-[var(--oc-toast-offset,1.5rem)] z-40 mx-auto flex w-fit max-w-[calc(100vw-2rem)] flex-wrap items-center justify-center gap-2 rounded-lg border bg-card p-2 pl-4 shadow-lg">
+      {votingBarShown && <div ref={votingBar} role="region" aria-label="Voting selection" className="oc-voting-bar fixed inset-x-4 bottom-[var(--oc-toast-offset,1.5rem)] z-40 mx-auto flex w-fit max-w-[calc(100vw-2rem)] flex-wrap items-center justify-center gap-2 rounded-lg border bg-card p-2 pl-4 shadow-lg">
         <span className="text-sm" role="status">{votingSelection.length} selected for voting</span>
         <Button size="sm" disabled={busy} onClick={startSelectedVoting}>Start voting with selected applicants</Button>
         <Button size="sm" variant="ghost" onClick={() => setVotingSelection([])}>Clear selection</Button>
