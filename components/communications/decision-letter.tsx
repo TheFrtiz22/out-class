@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import type { LetterContent } from '@/lib/decision-letters';
 import './decision-letter.css';
+import { useFocusFrame } from '@/components/shell/focus-frame-context';
 export function LetterPaper({content,preview=false,logoSource,marketing}:{content:LetterContent;preview?:boolean;logoSource?:string;marketing?:unknown}) {
  return <article className="decision-paper" aria-label={preview?'Sample decision letter preview':'Formal decision letter'} style={{borderTopColor:content.accent}}>
   {preview&&<p className="decision-preview">PREVIEW · SAMPLE STUDENT · NOT A PUBLISHED DECISION</p>}
@@ -26,6 +27,8 @@ export function DecisionLetterView({applicationId}:{applicationId:string}) {
  const recipientId=user?.id;
  const requestVersion=useRef(0);
  const letterId=useSearchParams().get('letterId')??undefined;
+ const letter=data?.letter?.content;
+ useFocusFrame({exitHref:'/applications/status',club:letter?{name:letter.clubName,color:letter.accent}:null});
  const load=useCallback(async()=>{
   const version=++requestVersion.current;
   try{
@@ -52,11 +55,11 @@ export function DecisionLetterView({applicationId}:{applicationId:string}) {
   }catch{setError('Your response could not be saved. Refresh and try again.');}
   finally{setBusy(false);}
  }
- if(loading)return <main className="decision-layout"><LoadingState label="Opening your decision letter…" layout="document" rows={4} /></main>;
- if(!data)return <main className="decision-layout"><h1>Decision letter unavailable</h1><p role="alert">{error||'A formal letter is unavailable for this historical decision.'}</p><Link href="/applications/status">Return to Status</Link></main>;
+ if(loading)return <div className="decision-layout"><LoadingState label="Opening your decision letter…" layout="document" rows={4} /></div>;
+ if(!data)return <div className="decision-layout"><h1>Decision letter unavailable</h1><p role="alert">{error||'A formal letter is unavailable for this historical decision.'}</p><Link href="/applications/status">Return to Status</Link></div>;
  const active=data.isCurrent&&data.currentStatus==='ACCEPTED'&&(!data.letter||data.letter.decision==='ACCEPTED')&&!data.suspended&&data.offer?.status==='PENDING'&&new Date(data.offer.expiresAt)>new Date();
  const offer=data.offer;
- return <main className="decision-layout"><nav className="decision-controls"><Link href="/applications/status">← Application Status</Link><Button variant="outline" disabled={!data.letter} onClick={()=>window.print()}>Print letter</Button></nav>
+ return <div className="decision-layout"><nav className="decision-controls" aria-label="Letter actions"><Button variant="outline" disabled={!data.letter} onClick={()=>window.print()}>Print letter</Button></nav>
   {data.letter ? <LetterPaper marketing={data.marketing} content={data.letter.content} logoSource={data.letter.content.logoReference?`/api/decision-letter-assets?applicationId=${encodeURIComponent(applicationId)}&letterId=${encodeURIComponent(data.letter.id)}`:undefined}/> : <article className="decision-paper"><h1>Your decision</h1><p>Your application is {data.currentStatus.toLowerCase()}. A formal letter was not issued for this decision.</p></article>}
   {((!data.letter||data.letter.decision==='ACCEPTED')||!data.isCurrent||data.suspended||offer?.status==='ACCEPTED'||error)&&<section className="decision-controls decision-response" aria-label="Decision next steps">
    {!data.isCurrent&&<p>This is a historical letter. Your current decision is {data.currentStatus.toLowerCase()}. Offer controls reflect your current record.</p>}
@@ -64,5 +67,5 @@ export function DecisionLetterView({applicationId}:{applicationId:string}) {
    {(!data.letter||data.letter.decision==='ACCEPTED')&&(active?<><h2>Your invitation</h2><p>Please respond by {new Date(offer!.expiresAt).toLocaleDateString()}.</p><div className="flex flex-wrap gap-3"><Button disabled={busy} onClick={()=>void respond('ACCEPT')}>Accept Offer</Button><Button disabled={busy} variant="outline" onClick={()=>void respond('DECLINE')}>Decline Offer</Button></div></>:<p>{offer?.status==='ACCEPTED'?'Your offer was accepted. Your membership is recorded. Current access is managed by the club.':offer?.status==='DECLINED'?'You declined this offer. Your letter remains available.':offer?.status==='REVOKED'?'This offer is no longer active. Contact the club with questions.':offer&&(offer.status==='EXPIRED'||new Date(offer.expiresAt)<=new Date())?'This offer has expired.':'There is no active offer associated with this decision.'}</p>)}
    {offer?.status==='ACCEPTED'&&<Link href="/clubs">Open My Clubs →</Link>}
    {error&&<p role="alert">{error}</p>}
-  </section>}</main>;
+  </section>}</div>;
 }

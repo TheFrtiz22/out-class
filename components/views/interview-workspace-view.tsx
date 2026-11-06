@@ -2,6 +2,7 @@
 import { InterviewApplicantPanel } from "@/components/interview-applicant-panel"
 import "@/components/shell/responsive-workspace.css"
 import { PageHeader } from "@/components/product/page-header"
+import { useFocusFrame } from "@/components/shell/focus-frame-context"
 import { InterviewKitSession } from "@/components/interview-kit-session"
 import { hasPermission } from "@/lib/permissions"
 
@@ -42,18 +43,10 @@ export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: ()
     if (!locked || window.confirm("Leave interview mode? Unsaved evaluation changes will be lost."))
       onExit?.()
   }
+  // The focus frame's Exit goes through the same unsaved-work check.
+  useFocusFrame({ onExit: onExit ? exit : undefined, club: membership ? { name: membership.club.name, color: membership.club.color } : null })
   return (
-    <main className="oc-interview-room min-h-dvh bg-background text-foreground">
-      {!membership && <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border bg-card px-5 py-4 sm:px-8">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" disabled={saving} onClick={exit}>
-            <ArrowLeft className="size-4" />
-            Back to interviews
-          </Button>
-          <span className="hidden h-5 border-l border-border sm:block" />
-          <p className="text-sm font-semibold">Interview mode</p>
-        </div>
-      </header>}
+    <div className="oc-interview-room">
       <DemoInterviewGuide />
       <div className="oc-interview-container mx-auto max-w-[1800px]">
         {loading ? (
@@ -74,7 +67,7 @@ export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: ()
           <InterviewSession key={`${membership.clubId}-${membership.id}-${user?.id}`} membership={membership} onLock={handleLock} onExit={exit} clubSelector={!scoped && <select aria-label="Interview club" disabled={locked} className={selectStyle} value={membership.clubId} onChange={event => setClubId(event.target.value)}>{memberships.map(item => <option key={item.clubId} value={item.clubId}>{item.club.name}</option>)}</select>} />
         )}
       </div>
-    </main>
+    </div>
   )
 }
 
@@ -127,6 +120,7 @@ function InterviewSession({
     return () => { current = false }
   }, [arrival, activeId, arrivalRetry, rememberApplicant])
   const round = data?.rounds.find((item) => item.id === roundId)
+  useFocusFrame({ task: round ? `Interview · ${round.name}` : undefined })
   const queue = interviewQueue(data?.applications || [], roundId)
   const active = queue.find((app) => app.id === activeId)
   const [kitDirty, setKitDirty] = useState(false)
@@ -377,7 +371,7 @@ function InterviewSession({
         <div key={active.id} ref={candidateRoom} className="oc-interview-candidate">
           {round && <InterviewKitSession key={`${active.id}-${round.id}`} clubId={membership.clubId} applicationId={active.id} roundId={round.id} initialSession={prepared?.applicationId === active.id ? prepared.session : undefined} advancing={advancing} formRef={form} onState={handleKitState} onNextApplicant={nextApplicant} onReturnToList={returnToList}
 
-toolbar={() => <><span className="oc-room-brand">OutClass</span><Button type="button" variant="ghost" disabled={busy} onClick={returnToList}><ArrowLeft className="size-4" />Interviews</Button><p className="oc-room-context"><span>{membership.club.name}</span><span aria-hidden="true"> / </span><span>{round.name}</span></p></>}
+toolbar={() => <><Button type="button" variant="ghost" disabled={busy} onClick={returnToList}><ArrowLeft className="size-4" />Interviews</Button></>}
 context={<InterviewApplicantPanel clubId={membership.clubId} applicationId={active.id} roundId={round.id} initialPanel={prepared?.applicationId === active.id ? prepared.panel : undefined} />}
             onComplete={() => {
               setData(previous => previous ? { ...previous, applications: previous.applications.map(app => app.id === active.id ? { ...app, completedRoundIds: [...new Set([...app.completedRoundIds, round.id])] } : app) } : previous)

@@ -42,8 +42,12 @@ test("OutClass has exactly one palette: tokens.css :root, with no scoped overrid
   const { execFileSync } = require("node:child_process")
   assert.ok(!fs.existsSync("styles/product-tokens.css"), "product-tokens.css was merged into tokens.css")
   assert.doesNotMatch(read("app/globals.css"), /product-tokens/)
+  // The palette is :root. The only other block is the projector's dark variant, which redefines colors only.
+  const [palette, ...themes] = tokens.split(/^\[data-theme="present"\] \{$/m)
+  assert.equal(themes.length, 1, "one projector theme block")
+  assert.doesNotMatch(themes[0], /--oc-(rail|surface|shell|content-width|reading-width|font|text|space)/, "the projector theme changes colors, not geometry or type")
   for (const token of ["--background:", "--primary:", "--ring:", "--oc-rail:", "--oc-surface-blue:", "--oc-shell-rail-width:"]) {
-    assert.equal(tokens.split(token).length - 1, 1, `${token} is declared once`)
+    assert.equal(palette.split(token).length - 1, 1, `${token} is declared once in :root`)
   }
   const css = execFileSync("git", ["ls-files", "*.css"], { encoding: "utf8" }).split("\n").filter(Boolean)
   for (const file of css) assert.doesNotMatch(read(file), /data-workspace-detail|data-outclass-design/, file)
@@ -57,7 +61,9 @@ test("rules that used the removed attributes still have a hook in the markup", (
   assert.match(css("components/views/interview/interview-mode.css"), /^\.oc-interview-room\.oc-interview-room \.oc-focused-interview \{/m)
   assert.doesNotMatch(css("components/views/interview/interview-mode.css"), /^\.oc-interview-room \.oc-/m)
   assert.match(css("styles/product-workflows.css"), /^\.oc-interview-room \.oc-focused-interview > header \{/m)
-  assert.match(read("components/views/interview-workspace-view.tsx"), /<main className="oc-interview-room\b/)
+  // The focus frame owns <main>; the interview room is its content.
+  assert.match(read("components/views/interview-workspace-view.tsx"), /<div className="oc-interview-room\b/)
+  assert.match(read("components/shell/focus-frame.tsx"), /<main id="focus-content"/)
   assert.match(read("components/interview-kit-session.tsx"), /className="oc-focused-interview\b/)
   // Mobile inputs/touch targets and checkbox hit areas: every main, the voting pad's role="main", and the projector stage.
   const scope = ':is(main, [role="main"], .oc-voting-stage'
@@ -90,5 +96,5 @@ test("focus and selection outlines on light public surfaces use --ring (WCAG 1.4
   }
   // Inherited mid-word wrapping stays on product surfaces, not every <main>.
   const wrap = read("components/shell/responsive-workspace.css").split("\n").find(line => line.includes("overflow-wrap: anywhere") && line.includes("min-width: 0"))
-  assert.ok(wrap.startsWith(":is([data-product-shell] main, .oc-interview-room, .oc-voting-pad, .oc-voting-stage, .oc-standalone-workspace)"), wrap)
+  assert.ok(wrap.startsWith(":is([data-product-shell] main, .oc-interview-room, .oc-voting-pad, .oc-voting-stage)"), wrap)
 })

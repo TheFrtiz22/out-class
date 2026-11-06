@@ -22,6 +22,7 @@ import { Bell, Menu, UserRound, LogOut, Home, Users2, Compass, Bookmark, Calenda
 import { toast } from "sonner"
 import { OutClassLogo } from "@/components/outclass-logo"
 import { WorkspaceSelector } from "@/components/shell/workspace-selector"
+import { rememberProductRoute } from "@/components/shell/focus-frame-context"
 import { useWorkspaceAccess } from "@/components/shell/use-workspace-access"
 import { clubWorkspaceHref } from "@/lib/club-workspace"
 import { ClubWorkspaceSwitcher } from "@/components/club-workspace-switcher"
@@ -70,6 +71,8 @@ export function ProductShell({ children, mode, modes, items, active, title, club
     // Access loss is mandatory reconciliation, not a voluntary leave-page action.
     if (platform || manager) router.replace(fallbackHref)
   }, [access.pending, allowed, platform, manager, fallbackHref, router])
+  // A focus screen's Exit returns to the last product page (same tab only).
+  useEffect(() => { if (mode !== "preview") rememberProductRoute() })
   const personal = !platform && !manager && mode !== "preview"
   const searchItems = !allowed ? [] : platform ? [] : manager ? adminNav.filter(item => {
     if (item.id === "leader-dashboard") return hasPermission(member, "applications.review") || hasPermission(member, "applicants.identify")

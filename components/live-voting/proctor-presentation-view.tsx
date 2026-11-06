@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight, Copy, ExternalLink, Monitor, Smartphone, X } fro
 import { type VotingSession, applicantTally, votingProgress } from "@/lib/live-voting"
 import { useProctorSession } from "@/lib/use-live-voting"
 import { Button } from "@/components/ui/button"
+import { FocusFrame } from "@/components/shell/focus-frame"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   Dialog,
@@ -41,10 +42,8 @@ export function ProctorPresentationView({
     tied: "Tied · no decision",
   }[tally.result]
   return (
-    <section
-      className="oc-voting-stage fixed inset-0 z-40 flex flex-col overflow-y-auto bg-background font-sans text-foreground"
-      aria-label="Live voting presentation"
-    >
+    <FocusFrame task="Voting preview" width="full" onExit={() => (ended ? onClose() : setConfirmEnd(true))}>
+    <section className="oc-voting-stage flex flex-1 flex-col" aria-label="Live voting presentation">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 px-5 py-4 lg:px-10">
         <div className="flex items-center gap-3">
           <Monitor className="size-5" />
@@ -331,5 +330,6 @@ export function ProctorPresentationView({
         </DialogContent>
       </Dialog>
     </section>
+    </FocusFrame>
   )
 }
