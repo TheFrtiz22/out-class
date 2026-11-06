@@ -87,6 +87,9 @@ test('browser: labelled rail without overlay, tooltips when compact, URL-driven 
   await page.goto(`${fixture.base}/home?role=student`,{waitUntil:'networkidle'})
   assert.deepEqual(await rail.getByRole('link').evaluateAll(links=>links.map(link=>link.getAttribute('aria-label'))),['Home','Explore','Corkboard','Applications','Status','My Clubs','Meetings','Tasks','Calendar','Profile','Settings'])
   await expect(rail.getByRole('link',{name:'Home',exact:true})).toHaveAttribute('aria-current','page')
+  // Visible text (the avatar's initials included) must be part of each control's name.
+  const names=await new AxeBuilder({page}).withRules(['label-content-name-mismatch']).analyze()
+  assert.deepEqual(names.violations.map(v=>v.nodes.map(n=>n.target)),[])
   await rail.getByRole('link',{name:'Explore',exact:true}).click();await page.waitForURL('**/explore')
   await expect(rail.getByRole('link',{name:'Explore',exact:true})).toHaveAttribute('aria-current','page');await expect(rail.getByRole('link',{name:'Home',exact:true})).not.toHaveAttribute('aria-current','page')
   await page.goto(`${fixture.base}/explore/categories?role=student`,{waitUntil:'networkidle'});await expect(rail.getByRole('link',{name:'Explore',exact:true})).toHaveAttribute('aria-current','page')
