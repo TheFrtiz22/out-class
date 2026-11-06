@@ -235,3 +235,7 @@
   [data-slot="tooltip-content"], .oc-segmented-control { border: 1px solid CanvasText; }
   .oc-segmented-control [aria-pressed="true"], .oc-segmented-control .oc-segmented-indicator { background: Highlight; color: HighlightText; forced-color-adjust: none; }
 }
+
+/* Container surfaces written as utility classes (lists, cards, settings groups) use the content tokens, which
+   are glass. Fields, tables and the projector keep their solid backgrounds. */
+@layer components { .oc-glass-surface { background: var(--oc-content-surface); border-color: var(--oc-content-edge); box-shadow: var(--oc-content-shadow); } }

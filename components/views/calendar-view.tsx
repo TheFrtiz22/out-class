@@ -482,7 +482,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                     type="button"
                     key={event.id}
                     onClick={() => open(event)}
-                    className="w-full rounded-[var(--oc-content-radius-small)] border border-border bg-card p-3 text-left hover:bg-muted"
+                    className="w-full rounded-[var(--oc-content-radius-small)] border border-border oc-glass-surface p-3 text-left hover:bg-muted"
                   >
                     <p className="text-xs text-muted-foreground">
                       {dateFromKey(event.date).toLocaleDateString("en-US", {
