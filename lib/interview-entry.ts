@@ -28,13 +28,47 @@ export function interviewListHref(clubId: string, search: string) {
   if (!query.has("interviewTab")) query.set("interviewTab", "rooms");
   return `/club/${encodeURIComponent(clubId)}/workspace?${query}`;
 }
+/** Scheduled times are context only; entry is never denied by the clock. Server
+ * access (membership, assignment, applicant, cycle, round, booking) decides. */
 export function interviewEntryStatus(row: InterviewRoomEntry, now = Date.now()) {
   if (row.cancelled) return "Cancelled";
-  if (row.completed) return "Completed";
+  if (row.completed) return "Review submitted";
   if (!row.bookingId) return "Awaiting booking";
-  if (row.started || +new Date(row.startTime) <= now && +new Date(row.endTime) >= now) return "In progress";
-  if (+new Date(row.endTime) < now) return "Not started";
+  if (row.started) return "In progress";
+  if (+new Date(row.startTime) <= now && +new Date(row.endTime) >= now) return "Scheduled now";
+  if (+new Date(row.endTime) < now) return "Scheduled time has ended";
   return "Upcoming";
+}
+/** The one entry action per interviewer: their own review state decides it, never the clock. */
+export function interviewEntryAction(row: Pick<InterviewRoomEntry, "completed" | "started">) {
+  return row.completed ? "View review" : row.started ? "Resume interview" : "Enter interview";
+}
+function relative(ms: number) {
+  const minutes = Math.round(ms / 60000);
+  if (minutes < 1) return "less than a minute";
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? "" : "s"}`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"}`;
+  const days = Math.round(hours / 24);
+  return `${days} day${days === 1 ? "" : "s"}`;
+}
+/** Concise timing context, e.g. "Scheduled for 3:00–3:20 PM EST · Starts in 10 minutes". */
+export function interviewTimingContext(row: Pick<InterviewRoomEntry, "startTime" | "endTime" | "timezone" | "completed" | "cancelled">, now = Date.now()) {
+  const start = new Date(row.startTime), end = new Date(row.endTime);
+  const parts = (d: Date) => new Intl.DateTimeFormat("en-US", { timeZone: row.timezone, hour: "numeric", minute: "2-digit", timeZoneName: "short" }).formatToParts(d);
+  const pick = (p: Intl.DateTimeFormatPart[], type: string) => p.find(x => x.type === type)?.value ?? "";
+  const a = parts(start), b = parts(end), clock = (p: Intl.DateTimeFormatPart[]) => `${pick(p, "hour")}:${pick(p, "minute")}`;
+  // "3:00–3:20 PM EST", or "11:30 AM–12:10 PM EST" when the period changes.
+  const scheduled = `Scheduled for ${clock(a)}${pick(a, "dayPeriod") === pick(b, "dayPeriod") ? "" : ` ${pick(a, "dayPeriod")}`}–${clock(b)} ${pick(b, "dayPeriod")} ${pick(b, "timeZoneName")}`;
+  if (row.cancelled || row.completed) return scheduled;
+  if (+start > now) return `${scheduled} · Starts in ${relative(+start - now)}`;
+  if (+end >= now) return `${scheduled} · Scheduled now`;
+  return `${scheduled} · Scheduled time has ended`;
+}
+/** Unfinished interviews whose scheduled time has passed, so they stay discoverable without an old notification. */
+export function unfinishedInterviewEntries(rows: InterviewRoomEntry[], now = Date.now()) {
+  return rows.filter(r => r.canOpen && !!r.applicationId && !r.completed && !r.cancelled && !!r.bookingId && +new Date(r.endTime) < now)
+    .sort((a, b) => +new Date(a.startTime) - +new Date(b.startTime) || a.id.localeCompare(b.id));
 }
 export function sortInterviewEntries(rows: InterviewRoomEntry[], now = Date.now()) {
   const past = (r: InterviewRoomEntry) => r.completed || r.cancelled || !r.started && +new Date(r.endTime) < now;
