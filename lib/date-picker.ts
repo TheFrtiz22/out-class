@@ -4,7 +4,7 @@
  */
 import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
 
-export const isIsoDay = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`))
+export const isIsoDay = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`)) && new Date(`${value}T00:00:00Z`).toISOString().startsWith(value)
 const toDate = (day: string) => new Date(`${day}T00:00:00Z`)
 const toDay = (date: Date) => date.toISOString().slice(0, 10)
 

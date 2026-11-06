@@ -31,7 +31,7 @@ export function DatePicker({ value, onChange, label, placeholder = "Any date", m
         <CalendarDays aria-hidden="true" />{selected ? formatDay(selected) : placeholder}
       </button>
     </PopoverTrigger>
-    <PopoverContent align="start" className="oc-date-picker w-auto p-3" onOpenAutoFocus={event => event.preventDefault()}>
+    <PopoverContent align="start" className="oc-date-picker w-auto p-3" onOpenAutoFocus={event => { event.preventDefault(); event.currentTarget instanceof HTMLElement && event.currentTarget.querySelector<HTMLButtonElement>(`[data-day="${selected || today}"]`)?.focus() }}>
       <div className="oc-date-picker-header">
         <button type="button" aria-label="Previous month" onClick={() => setFocusDay(addMonths(focusDay, -1))}><ChevronLeft aria-hidden="true" /></button>
         <h2 id={headingId} aria-live="polite">{formatDay(`${monthOf(focusDay)}-01`, { month: "long", year: "numeric" })}</h2>

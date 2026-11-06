@@ -669,7 +669,7 @@ function MyEventRsvps({ onCancelled }: { onCancelled: (id: string) => void }) {
       )}
       {loading && <LoadingState label="Loading your RSVPs…" layout="inline" />}
       {notice && <p role="status" className="my-3 text-sm">{notice}</p>}
-      {!loading && !error && !rows.length && <p className="my-3 text-sm text-muted-foreground">No RSVPs yet. Open a campus event to RSVP.</p>}
+      {!loading && !error && !rows.length && <div className="my-3 space-y-2 text-sm text-muted-foreground"><p>You haven’t RSVP’d to an event. Events you RSVP to also appear on your calendar.</p><Link className="inline-flex min-h-11 items-center underline underline-offset-4" href="/calendar">Open your calendar</Link></div>}
       <ul className="space-y-3">
         {rows.map((r) => (
           <li
