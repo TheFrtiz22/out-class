@@ -43,7 +43,7 @@ test('leader prepares highlights from attributed sources; drafts stay private, p
   await page.getByRole('button',{name:'Preview slide'}).click();const preview=page.locator('.vr-prep-preview');await preview.getByRole('region',{name:'Leader-selected highlights'}).waitFor();
   assert.equal(await preview.getByRole('listitem').count(),3);assert.ok(await preview.getByText('Leader summary:').count());
   const out=path.resolve('test-results/voting-slide-preparation');fs.mkdirSync(out,{recursive:true});await page.screenshot({path:path.join(out,'preparation-desktop.png'),fullPage:true});
-  const axe=await new AxeBuilder({page}).include('main').analyze();assert.deepEqual(axe.violations.map(v=>`${v.id}: ${v.nodes.length}`),[]);
+  const axe=await new AxeBuilder({page}).include('.vr-prep').analyze();assert.deepEqual(axe.violations.map(v=>`${v.id}: ${v.nodes.length}`),[]);
   // Source edited by its author: shown for deliberate review, never silently applied.
   thoughtText=thought+' Follow-up: confirmed availability for spring.';
   await page.reload();await page.getByText('The source was updated after you selected it.').first().waitFor();

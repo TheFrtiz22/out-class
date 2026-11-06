@@ -15,6 +15,7 @@ import { z } from "zod";
 import { votingSelectedHighlight,votingSelectedEvidence } from "@/utils/voting-room-presentation";
 import {selectedVotingDisplay} from "@/lib/voting-slide-fields";
 import {lockVotingObservations,votingObservations} from '@/utils/additional-observations';
+import {votingDiscussion} from '@/utils/voting-discussion';
 import {currentEligibleVoterIds,latestBallotRule,ballotRuleResult,sessionRules} from '@/utils/voting-rules';
 import {describeVotingRules,ruleResultSummary} from '@/lib/voting-rules';
 import {lockPreparedSlides,presentedSlideHighlights} from '@/utils/voting-slide-preparation';
@@ -82,7 +83,8 @@ export async function getLiveVotingRoom(input:unknown) {
     // Rule wording for everyone; its counts only after the leader closes this ballot (totals are hidden while open).
     const rules=sessionRules(s.presentationOptions);
     const ruled=rules.mode==="THRESHOLD"&&current&&["CLOSED","CONFIRMED"].includes(current.ballotState)?ballotRuleResult(await latestBallotRule(tx,{sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId}),current.ballots):null;
-    return {snapshot:{...snapshot,rule:{mode:rules.mode,description:describeVotingRules(rules)},ruleResult:ruled?{...ruled.result,summary:ruleResultSummary(ruled.result,ruled.rule)}:null,accessVersion:roomFingerprint({permissions:m.permissions,offices:m.interviewOffices,anonymous:round.anonymousReview}),fields:options.success?options.data.fields:null,joinedSelf:!!s.participants.find(p=>p.memberId===m.id)?.joinedAt,
+    const discussion=current&&s.state==="OPEN"&&(snapshot.permissions.leader||snapshot.permissions.voter)?await votingDiscussion(tx,{clubId:d.clubId,sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId,roundId:s.roundId,anonymous:round.anonymousReview},{memberId:m.id,userId:user.id,leader:snapshot.permissions.leader},eligible.map(v=>({id:v.id,label:v.user.studentProfile?`${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}`:"Club member"}))):null;
+    return {snapshot:{...snapshot,discussion,rule:{mode:rules.mode,description:describeVotingRules(rules)},ruleResult:ruled?{...ruled.result,summary:ruleResultSummary(ruled.result,ruled.rule)}:null,accessVersion:roomFingerprint({permissions:m.permissions,offices:m.interviewOffices,anonymous:round.anonymousReview}),fields:options.success?options.data.fields:null,joinedSelf:!!s.participants.find(p=>p.memberId===m.id)?.joinedAt,
       participation:{voted:current?.ballots.filter(b=>eligible.some(m=>m.id===b.memberId)).length??0,eligible:eligible.length},
       joinedParticipants:snapshot.permissions.leader?eligible.map(v=>({id:v.id,label:v.user.studentProfile?`${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}`:"Club member",joined:!!s.participants.find(p=>p.memberId===v.id)?.joinedAt})):[]},access:accessFingerprint(m)};
   },votingReadLimits);
@@ -300,6 +302,9 @@ export async function commandLiveVotingRoom(input:unknown) {
       if(!next){await tx.votingPass.update({where:{sessionId_number:{sessionId:s.id,number:s.currentPass}},data:{state:"COMPLETED",completedAt:new Date()}});patch.state="PAUSED";}
       decision={requestId:d.requestId,applicationId:current!.applicationId,passNumber:s.currentPass,choice:d.action==="PASS_WITHOUT_VOTE_AND_ADVANCE"?"ACCEPT":d.choice!,nextApplicationId:next?.applicationId??null,withoutVote:["PASS_WITHOUT_VOTE_AND_ADVANCE","DECIDE_WITHOUT_VOTE_AND_ADVANCE"].includes(d.action)};
     }
+    // Discussion requests belong to the applicant being discussed; they clear when the room moves on.
+    if(current&&(("activeApplicationId"in patch&&patch.activeApplicationId!==current.applicationId)||d.action==="END"))
+      await tx.votingHandRaise.updateMany({where:{sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId,clearedAt:null,withdrawnAt:null},data:{clearedAt:new Date(),clearedBy:user.id,updatedAt:new Date()}});
     await tx.votingSession.update({where:{id:s.id},data:patch});
     const result={revision:s.revision+1,...(decision?{decision}:{}),...(d.action==="UNDO_DECISION"?{undone:true}:{})};
     await tx.votingRoomCommand.create({data:{...key,actorId:user.id,fingerprint,result}});
