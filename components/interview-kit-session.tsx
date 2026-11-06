@@ -23,7 +23,8 @@ import { Input } from "@/components/ui/input";
 import { CheckCircle2 } from "@/components/icons";
 import { useInterviewWorkspace } from "@/hooks/use-interview-workspace";
 import type { KitQuestion } from "@/lib/interview-kits";
-import { simulateDemoInterviewSelection, simulateDemoInterviewAdvance } from "@/lib/demo/interview-collaboration";
+// Demo-only simulation helpers load on demand so live interview sessions do not ship the demo store.
+const demoCollaboration = () => import("@/lib/demo/interview-collaboration");
 import { InterviewTimer } from "@/components/interview-timer";
 import { EarlierRounds, RoundScore } from "@/components/interview-review-references";
 export function InterviewKitSession({
@@ -524,7 +525,7 @@ export function InterviewKitSession({
     <div className="oc-room-collaboration" aria-label="Room participants">
       <span>{collaboration.view ? `${collaboration.view.participants.map(p => p.name).join(" · ")} · In this room` : "Connecting to panel…"}</span>
       {collaboration.error && <span role="status">{collaboration.error} <Button type="button" variant="ghost" onClick={() => void collaboration.refresh()}>Retry connection</Button></span>}
-      {collaboration.view?.simulated && <details><summary>Demo collaboration simulation</summary><p>Alex is simulated. This does not demonstrate real multi-user behavior.</p><Button type="button" variant="ghost" onClick={() => { simulateDemoInterviewSelection({ clubId, applicationId, roundId }); void collaboration.refresh(); }}>Simulate question selection</Button><Button type="button" variant="ghost" onClick={() => { try { simulateDemoInterviewAdvance({ clubId, applicationId, roundId }); void collaboration.refresh(); } catch { setCollaborationMessage("No eligible sample candidate remains."); } }}>Simulate next-candidate invitation</Button></details>}
+      {collaboration.view?.simulated && <details><summary>Demo collaboration simulation</summary><p>Alex is simulated. This does not demonstrate real multi-user behavior.</p><Button type="button" variant="ghost" onClick={async () => { (await demoCollaboration()).simulateDemoInterviewSelection({ clubId, applicationId, roundId }); void collaboration.refresh(); }}>Simulate question selection</Button><Button type="button" variant="ghost" onClick={async () => { const simulation = await demoCollaboration(); try { simulation.simulateDemoInterviewAdvance({ clubId, applicationId, roundId }); void collaboration.refresh(); } catch { setCollaborationMessage("No eligible sample candidate remains."); } }}>Simulate next-candidate invitation</Button></details>}
     </div>
     <div className="oc-interview-columns grid items-start">
       {context}

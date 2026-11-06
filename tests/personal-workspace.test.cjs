@@ -136,7 +136,7 @@ test('Demo menu respects allowed access and existing saving/unsaved guards when 
 });
 
 test('authoritative booking synchronization replaces cancelled/rescheduled bookings while preserving other calendar events',()=>{
- const h=hooks(),mocks={'@/lib/workspace-api':{getTaskNotifications:async()=>[]},react:h.react,'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/lib/demo/store':{}};
+ const h=hooks(),mocks={'@/lib/workspace-api':{getTaskNotifications:async()=>[]},react:h.react,'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/lib/demo/store':{},'@/lib/demo/loader':{isDemoActive:()=>false,loadedDemoStore:()=>{throw Error('demo not loaded')}}};
  const {ApplicationStateProvider}=load('lib/application-state.tsx',mocks);
  const initialData={applications:[app('Invite','INTERVIEWING',{bookings:[booking('old')]})],meetings:[{id:'meeting',clubId:'club',date:new Date(),title:'Members meeting',location:'Hall',audience:'MEMBERS',club:{name:'Club'}}]};
  const render=()=>h.render(()=>ApplicationStateProvider({children:null,initialData,persistLocalState:false})).props.value;

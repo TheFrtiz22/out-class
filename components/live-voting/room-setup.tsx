@@ -11,7 +11,10 @@ import { readVotingSelection,selectionScopes,votingSetupHref } from "@/lib/votin
 import { getLiveVotingSetup,getVotingHighlightOptions,createLiveVotingRoom,resolveLiveVotingSelection,getVotingSessionSetup,updateVotingSessionSetup,getLiveVotingRoom,commandLiveVotingRoom } from "@/lib/voting-room-api";
 import { createRoomSchema,liveRoomPath,roomDisplayConfig,type LiveRoomField } from "@/lib/voting-room";
 import { fieldLabels } from "@/lib/applicant-display";
-import {getSetupDraft,saveSetupDraft} from "@/lib/demo/voting-setup-drafts";
+// Demo draft persistence loads only when a Demo Mode draft is read or written.
+const demoDrafts=()=>import("@/lib/demo/voting-setup-drafts");
+const getSetupDraft=async(input:unknown)=>(await demoDrafts()).getSetupDraft(input);
+const saveSetupDraft=async(input:unknown)=>(await demoDrafts()).saveSetupDraft(input);
 import {useEditorDraft} from "@/hooks/use-editor-draft";
 import {setupDraftSchema,resolveVotingMeeting} from "@/lib/voting-session-setup";
 import {SetupPresentationPreview} from "./setup-presentation-preview";
