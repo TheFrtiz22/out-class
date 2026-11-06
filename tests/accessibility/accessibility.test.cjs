@@ -84,7 +84,7 @@ test('booking: reserve, reschedule, cancel, selected date/time and focus after a
 test('events: corkboard/list, filter, empty state and dialog focus restoration',async()=>{
   const f=await pageFor(`${fixture.url}/?case=events`);const p=f.page;try{
     const flyer=p.getByRole('button',{name:/^View event: .*Community night/});await flyer.click();await p.getByRole('dialog',{name:'Community night'}).waitFor();await scan(p,'event-detail');await p.keyboard.press('Escape');await isFocused(flyer);
-    await p.getByRole('button',{name:'List View',exact:true}).click();await scan(p,'events-list');await p.getByRole('textbox',{name:'Search events'}).fill('no match');await p.getByRole('heading',{name:'No search results.'}).waitFor();await scan(p,'events-empty');
+    await p.getByRole('button',{name:'List View',exact:true}).click();await scan(p,'events-list');await p.getByRole('textbox',{name:'Search events'}).fill('no match');await p.getByRole('heading',{name:'No events match “no match”.'}).waitFor();await scan(p,'events-empty');
   }finally{await f.close();}
 });
 test('leader: event creation, labelled date controls and equivalent flyer information',async()=>{

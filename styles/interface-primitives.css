@@ -53,3 +53,36 @@
 [data-slot="button"][data-loading="true"] > .oc-button-content { opacity: 0; }
 [data-slot="button"][data-loading="true"] { opacity: 1; }
 [data-slot="button"] > .oc-button-loading { position: absolute; inset: 0; margin: auto; }
+
+/* StatusPill: one application-state pill, colored from semantic tokens only. */
+.oc-status-pill { --pill-bg: var(--muted); --pill-fg: var(--muted-foreground); display: inline-flex; flex-shrink: 0; align-items: center; gap: .375rem; width: fit-content; padding: .1875rem .625rem; border-radius: 999px; background: var(--pill-bg); color: var(--pill-fg); font-size: var(--oc-text-caption); font-weight: var(--oc-weight-semibold); line-height: 1.35; white-space: nowrap; }
+.oc-status-pill::before { content: ""; width: .375rem; height: .375rem; border-radius: 999px; background: currentColor; }
+.oc-status-pill[data-status="DRAFTING"] { --pill-bg: transparent; box-shadow: inset 0 0 0 1px var(--border); }
+.oc-status-pill[data-status="SUBMITTED"] { --pill-bg: var(--secondary); --pill-fg: var(--secondary-foreground); }
+.oc-status-pill[data-status="IN_REVIEW"] { --pill-bg: var(--info-subtle); --pill-fg: var(--info); }
+.oc-status-pill[data-status="INTERVIEWING"] { --pill-bg: var(--interview-subtle); --pill-fg: var(--interview); }
+.oc-status-pill[data-status="ACCEPTED"] { --pill-bg: var(--success-subtle); --pill-fg: var(--success); }
+.oc-status-pill[data-status="REJECTED"] { --pill-bg: var(--error-subtle); --pill-fg: var(--destructive); }
+.oc-status-pill[data-status="WAITLISTED"] { --pill-bg: var(--warning-subtle); --pill-fg: var(--warning); }
+@media (forced-colors: active) { .oc-status-pill { border: 1px solid CanvasText; } }
+
+/* DatePicker: field-like trigger and a month grid, tokens only. */
+.oc-date-picker-trigger { display: inline-flex; min-height: var(--oc-control-height); align-items: center; gap: .5rem; padding: 0 .75rem; border: 1px solid var(--input); border-radius: var(--oc-radius-md); background: var(--card); color: var(--foreground); font-size: var(--oc-text-small); white-space: nowrap; }
+.oc-date-picker-trigger[data-empty="true"] { color: var(--muted-foreground); }
+.oc-date-picker-trigger svg { width: 1rem; height: 1rem; color: var(--muted-foreground); }
+.oc-date-picker-trigger:focus-visible, .oc-date-picker button:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.oc-date-picker-header { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: .5rem; }
+.oc-date-picker-header h2 { font-size: var(--oc-text-small); font-weight: var(--oc-weight-semibold); }
+.oc-date-picker-header button { display: inline-flex; width: 2.25rem; height: 2.25rem; align-items: center; justify-content: center; border-radius: var(--oc-radius-md); }
+.oc-date-picker-header button:hover, .oc-date-picker-grid button:hover, .oc-date-picker-footer button:hover { background: var(--accent); }
+.oc-date-picker-header svg { width: 1rem; height: 1rem; }
+.oc-date-picker-grid { border-collapse: collapse; }
+.oc-date-picker-grid th { width: 2.5rem; padding-bottom: .25rem; color: var(--muted-foreground); font-size: var(--oc-text-caption); font-weight: var(--oc-weight-medium); }
+.oc-date-picker-grid td { padding: 1px; text-align: center; }
+.oc-date-picker-grid button { position: relative; width: 2.5rem; height: 2.5rem; border-radius: var(--oc-radius-md); font-size: var(--oc-text-small); font-variant-numeric: tabular-nums; }
+.oc-date-picker-grid button[data-outside="true"] { color: var(--muted-foreground); }
+.oc-date-picker-grid button[aria-current="date"] { box-shadow: inset 0 0 0 1px var(--border); font-weight: var(--oc-weight-semibold); }
+.oc-date-picker-grid td[aria-selected="true"] button { background: var(--primary); color: var(--primary-foreground); }
+.oc-date-picker-grid button[data-marked="true"]::after { content: ""; position: absolute; bottom: .3rem; left: 50%; width: .25rem; height: .25rem; border-radius: 999px; background: currentColor; transform: translateX(-50%); }
+.oc-date-picker-footer { display: flex; justify-content: space-between; gap: .5rem; margin-top: .5rem; padding-top: .5rem; border-top: 1px solid var(--border); }
+.oc-date-picker-footer button { min-height: 2.25rem; padding: 0 .625rem; border-radius: var(--oc-radius-md); color: var(--primary); font-size: var(--oc-text-small); font-weight: var(--oc-weight-medium); }

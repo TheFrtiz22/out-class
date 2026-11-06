@@ -326,7 +326,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
             {filtered.length ? (
               <ul className="oc-explore-grid">{filtered.map(club => card(club, "results"))}</ul>
             ) : (
-              <EmptyState density="compact" tone="subtle" icon={<Compass />} title={clubs.length ? "No clubs match this search." : "No clubs available yet."} description={clubs.length ? "Try a broader keyword or remove a filter." : "Club profiles will appear here as organizations are added."} action={active.length > 0 ? <Button variant="outline" onClick={() => updateFilters(emptyDirectoryFilters)}>Clear search and filters</Button> : undefined} />
+              <EmptyState density="compact" tone="subtle" icon={<Compass />} title={clubs.length ? "No clubs match this search." : "No clubs available yet."} description={clubs.length ? "No club fits the current keyword or filters." : "No club profiles are published at your school yet."} action={active.length > 0 ? <Button variant="outline" onClick={() => updateFilters(emptyDirectoryFilters)}>Clear search and filters</Button> : <Button variant="outline" onClick={() => onNavigate("corkboard")}>See campus events</Button>} />
             )}
           </section>
         </>

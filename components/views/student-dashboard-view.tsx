@@ -16,7 +16,7 @@ import { FeaturedAction } from "@/components/product/featured-action"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ClubLogo } from "@/components/club-logo"
-import { StatusBadge } from "@/components/status-badge"
+import { StatusPill } from "@/components/ui/status-pill"
 import { useApplicationState } from "@/lib/application-state"
 import { useAuth } from "@/contexts/auth-context"
 import { eventStart } from "@/lib/calendar"
@@ -99,7 +99,7 @@ function ApplicationRow({ app, onOpen }: { app: HomeApplication; onOpen: () => v
                       : "Check your application for details"}
           </span>
         </span>
-        <StatusBadge status={app.status} />
+        <StatusPill status={app.status} />
         <ChevronRight size={16} className="oc-home-row-arrow" aria-hidden="true" />
       </button>
     </li>
@@ -291,9 +291,12 @@ export function StudentDashboardView({
               <h3>{unavailable ? "Applications are unavailable" : "No applications yet"}</h3>
               <p>
                 {unavailable
-                  ? "Reload the page to try again."
-                  : "When you start an application, your progress and updates will appear here."}
+                  ? "We couldn’t load your applications just now."
+                  : "You haven’t started an application. Find a club to apply to and your progress will show here."}
               </p>
+              {unavailable
+                ? <Button variant="ghost" className="mt-3" onClick={() => window.location.reload()}>Try again</Button>
+                : <Button variant="ghost" className="mt-3" onClick={() => onNavigate("explore")}>Explore clubs<ArrowRight size={14} aria-hidden="true" /></Button>}
             </div>
           )}
           {applications.length > 4 && (
@@ -320,14 +323,12 @@ export function StudentDashboardView({
               <h3>{agendaUnavailable ? "Your agenda is unavailable" : "Nothing scheduled yet"}</h3>
               <p>
                 {agendaUnavailable
-                  ? "Reload the page to check your scheduled events."
-                  : "Your scheduled interviews and club events will appear here."}
+                  ? "We couldn’t load your scheduled events just now."
+                  : "You have no interviews or RSVP’d events coming up. Find an event to attend."}
               </p>
-              {agendaUnavailable && (
-                <Button variant="ghost" className="mt-3" onClick={() => window.location.reload()}>
-                  Try again
-                </Button>
-              )}
+              {agendaUnavailable
+                ? <Button variant="ghost" className="mt-3" onClick={() => window.location.reload()}>Try again</Button>
+                : <Button variant="ghost" className="mt-3" onClick={() => onNavigate("corkboard")}>Browse events<ArrowRight size={14} aria-hidden="true" /></Button>}
             </div>
           )}
         </section>
@@ -339,7 +340,7 @@ export function StudentDashboardView({
               action="Open inbox"
               onClick={() => onNavigate("inbox")}
             />
-            {updates.length === 0 && <div className="oc-home-empty"><Bell size={23} aria-hidden="true" /><h3>You’re all caught up</h3><p>Application updates and club announcements will appear here.</p></div>}
+            {updates.length === 0 && <div className="oc-home-empty"><Bell size={23} aria-hidden="true" /><h3>You’re all caught up</h3><p>There are no new application updates or announcements from clubs you belong to.</p><Button variant="ghost" className="mt-3" onClick={() => onNavigate("explore")}>Find clubs to follow<ArrowRight size={14} aria-hidden="true" /></Button></div>}
             <ul className="oc-home-list">
               {updates.map((update) => (
                 <li key={update.id}>

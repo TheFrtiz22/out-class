@@ -4,7 +4,7 @@ const fs = require('node:fs'), ts = require('typescript')
 const nodes = n => !n || typeof n !== 'object' ? [] : Array.isArray(n) ? n.flatMap(nodes) : [n, ...nodes(n.props?.children)]
 const text = n => typeof n === 'string' ? n : Array.isArray(n) ? n.map(text).join('') : n?.props ? text(n.props.children) : ''
 function load(file, mocks, globals = {}) {
-  mocks = { './use-saved-campus-events': { useSavedCampusEvents: () => ({ ids: new Set(), pending: new Set(), ready: false, error: '' }) }, '@/hooks/use-dismissable-details': { useDismissableDetails: () => () => {} }, ...mocks }
+  mocks = { '@/lib/event-board-empty': require('./helpers/component-module.cjs').loadComponent('lib/event-board-empty.ts'), './use-saved-campus-events': { useSavedCampusEvents: () => ({ ids: new Set(), pending: new Set(), ready: false, error: '' }) }, '@/hooks/use-dismissable-details': { useDismissableDetails: () => () => {} }, ...mocks }
   const mod = { exports: {} }
   let code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } }).outputText
   if (file.endsWith('public-event-board.tsx')) code += '\nexports.MyEventRsvps = MyEventRsvps;'
@@ -79,7 +79,7 @@ test('RSVP history distinguishes loading from empty and does not show a false ze
   const pending = deferred(), h = rsvpHarness({ getMyCampusEventRsvps: () => pending.promise })
   assert.ok(nodes(h.render()).some(n => n.type === 'LoadingState'))
   assert.doesNotMatch(text(h.render()), /Your RSVPs \(0\)/)
-  await h.flush(); pending.resolve([]); await h.flush(); assert.match(text(h.render()), /No RSVPs yet/)
+  await h.flush(); pending.resolve([]); await h.flush(); assert.match(text(h.render()), /You haven’t RSVP’d to an event/)
 })
 test('a stale RSVP refresh cannot resurrect a successfully cancelled RSVP', async () => {
   const stale = deferred(); let reads = 0
