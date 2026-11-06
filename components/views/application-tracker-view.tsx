@@ -11,7 +11,8 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { applicationAttachmentUrl } from "@/lib/student-applications"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { ArrowLeft, ArrowRight, RefreshCw, FilePenLine } from "@/components/icons"
+import { ArrowLeft, ArrowRight, FilePenLine } from "@/components/icons"
+import { useRevalidate } from "@/hooks/use-revalidate"
 import { getStudentApplications } from "@/lib/workspace-api"
 import { useDemoMode } from "@/contexts/demo-context"
 import { useAuth } from "@/contexts/auth-context"
@@ -130,6 +131,30 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
     clearApplicationFocus()
   }, [applications, pending, focusApplicationClubId, applicationId, clearApplicationFocus, scope])
   const app = applications.find((item) => item.id === activeId)
+  // No Refresh button: reload quietly (keeping the current view) when the person returns or after a change elsewhere.
+  // Conditions are re-checked when the response lands (refs), not only when the read starts:
+  // a save in flight drops it, and an open draft always keeps its own object and revision.
+  const latest = useRef({ applications, activeId, working }); latest.current = { applications, activeId, working }
+  const revalidateTicket = useRef(0)
+  const [syncNote, setSyncNote] = useState("")
+  const revalidate = useCallback(async (explicit = false) => {
+    const ticket = ++revalidateTicket.current
+    try {
+      const apps = await getStudentApplications()
+      const now = latest.current
+      if (ticket !== revalidateTicket.current || now.working) return
+      const draft = now.applications.find(item => item.id === now.activeId && item.status === "DRAFTING")
+      const next = draft ? apps.map(item => item.id === draft.id ? draft : item) : apps
+      setApplications(next)
+      sync(next)
+      setSyncNote("")
+    } catch {
+      if (ticket !== revalidateTicket.current) return
+      setSyncNote("Couldn’t update your applications. Showing what was last loaded.")
+      if (explicit) setNotice("Couldn’t refresh just now. Please try again in a moment.")
+    }
+  }, [sync])
+  useRevalidate(revalidate, { enabled: !!user && !pending && !error && !working && app?.status !== "DRAFTING", scopes: ["applications"] })
   function leave(action: () => void) {
     if (working) return
     void flushEditors().then(() => { setDirty(false); action() }).catch(() => {})
@@ -185,9 +210,9 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
     leave(() => onNavigate?.(view))
   }
   function bookingChanged() {
-    void getStudentApplications().then(apps => { setApplications(apps); sync(apps) }).catch(() => setNotice("Interview saved. Refresh to update your application."))
+    void getStudentApplications().then(apps => { setApplications(apps); sync(apps) }).catch(() => setNotice("Interview saved. Your application will update shortly."))
   }
-  if (app && statusView) return <div ref={content} className="oc-application-detail mx-auto max-w-[var(--oc-reading-width)] space-y-5 pb-6"><ApplicationStatusDetail application={app} notice={notice} onBack={() => { setActiveId(null); setNotice("") }} onResponses={() => openRelated("tracker")} onCalendar={() => onNavigate?.("calendar")} onRefresh={() => setRetry(value => value + 1)} onBookingChanged={bookingChanged} onMyClubs={() => onNavigate?.("my-clubs")} /></div>
+  if (app && statusView) return <div ref={content} className="oc-application-detail mx-auto max-w-[var(--oc-reading-width)] space-y-5 pb-6"><ApplicationStatusDetail application={app} notice={notice} onBack={() => { setActiveId(null); setNotice("") }} onResponses={() => openRelated("tracker")} onCalendar={() => onNavigate?.("calendar")} onRefresh={() => void revalidate(true)} onBookingChanged={bookingChanged} onMyClubs={() => onNavigate?.("my-clubs")} /></div>
   if (app)
     return (
       <div ref={content} className={`oc-application-detail mx-auto pb-8 ${app.status === "DRAFTING" ? "oc-writing-workspace" : "max-w-[var(--oc-reading-width)] space-y-7"}`}>
@@ -283,16 +308,6 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
               )}
             </section>
             <div className="flex flex-wrap gap-3 border-t border-border pt-6">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setActiveId(null)
-                  setRetry((value) => value + 1)
-                }}
-              >
-                <RefreshCw className="size-4" />
-                Refresh application
-              </Button>
               <Button variant="ghost" onClick={() => onNavigate?.("explore")}>
                 Explore clubs
                 <ArrowRight className="size-4" />
@@ -310,7 +325,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
   function open(item: StudentApplication) { lastOpened.current = item.id; setActiveId(item.id); setNotice("") }
   return (
     <div ref={content} className="oc-applications mx-auto max-w-[var(--oc-content-width)] space-y-5" data-application-scope={scope}>
-      <PageHeader density="expressive" title={statusView ? "Status" : "Applications"} description={statusView ? "Where things stand, and what to do next." : "Work on your drafts, check requirements, and review submitted responses."} action={<Button variant="ghost" size="sm" onClick={() => setRetry(value => value + 1)}><RefreshCw className="size-3.5" />Refresh</Button>} />
+      <PageHeader density="expressive" title={statusView ? "Status" : "Applications"} description={statusView ? "Where things stand, and what to do next." : "Work on your drafts, check requirements, and review submitted responses."} />
       {applications.length > 0 && !statusView && <MetricStrip label="Application management" items={[
         { label: drafts === 1 ? "draft" : "drafts", value: drafts },
         { label: "submitted", value: submitted.length },
@@ -322,6 +337,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
           <SegmentedControl animated={!statusView} label={statusView ? "Filter application status" : "Filter applications"} value={filter} onChange={setFilter} options={statusView ? statusFilters.map(value => ({ value, label: `${value} (${submitted.filter(item => applicationMatchesStatusFilter(item, value, now)).length})` })) : ["All", "Drafts", "Submitted"].map(label => ({ label, value: label }))} />
           {statusView && <p className="text-xs text-muted-foreground">Current rounds are recorded by each club. Later rounds are shown as context, not confirmed invitations.</p>}
           <p role="status" className="sr-only">{visible.length} {visible.length === 1 ? "application" : "applications"} shown</p>
+          {syncNote && <p role="status" className="text-xs text-muted-foreground">{syncNote}</p>}
           <ul className={statusView ? "oc-status-list" : "oc-application-management-list"}>
             {visible.map(item => <li key={item.id}>{statusView ? <ApplicationStatusCard application={item} now={now} onOpen={() => open(item)} /> : <ApplicationManagementCard application={item} deadline={demoDeadline(item.clubId)} sample={demo.isDemoEnabled} onOpen={() => open(item)} />}</li>)}
           </ul>

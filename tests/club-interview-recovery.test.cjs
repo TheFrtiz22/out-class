@@ -10,6 +10,7 @@ function render(search,{permission=true,selected=true,loading=false}={}) {
   'next/dynamic':{default:()=> 'Dynamic'},
   '@/contexts/auth-context':{useAuth:()=>({user:{id:'one',memberships:[member]},loading,activeClubId:selected?'club':'elsewhere',selectClub(){}})},
   '@/contexts/demo-context':{useDemoMode:()=>({ready:true,isDemoEnabled:false})},
+  '@/hooks/use-revalidate':{useRevalidate(){}},
   '@/lib/permissions':{hasWorkspace:()=>true,hasPermission:(m,p)=>m.permissions.includes(p)},
   '@/lib/club-workspace':{clubWorkspaceHref:id=>`/club/${id}/workspace`,recruitmentTools:()=>[{id:'interviews'}]},
   '@/lib/club-workspace-preference':{clubWorkspacePreferenceKey:()=> 'test-preference'},

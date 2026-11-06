@@ -15,6 +15,11 @@ import "@/components/product/operational-dashboard.css"
 const Review = dynamic(() => import("@/components/views/leader-dashboard/live-leader-workspace").then(m => m.ApplicantReviewPreview), { loading: () => <LoadingState layout="form" rows={3} label="Loading authorized review…" /> })
 const Preparation = dynamic(() => import("@/components/interviews/dashboard-preparation").then(m => m.DashboardPreparation), { loading: () => <LoadingState label="Checking interview panel…" layout="rows" rows={2} /> })
 type Overview = Awaited<ReturnType<typeof getClubWorkspaceOverview>>
+/** Intake is closed when applications are switched off or the deadline has passed as of the overview read. */
+export function applicationsClosed(op: Overview["operations"]) {
+  const deadline = op.intake?.applicationDeadline
+  return !op.intake?.applicationOpen || !!deadline && +new Date(deadline) <= +new Date(op.asOf)
+}
 export function RecruitingOverview({ data, refreshing = false, onChanged = () => {} }: { data: Overview; refreshing?: boolean; onChanged?: () => void }) {
   const { club, membership, operations: op } = data
   const [round, setRound] = useState(""), [applicant, setApplicant] = useState<string | null>(null), [booking, setBooking] = useState<Overview["operations"]["bookings"][number] | null>(null)
@@ -29,7 +34,7 @@ export function RecruitingOverview({ data, refreshing = false, onChanged = () =>
   }, [club.id, round, queueKey])
   const queue = round ? filteredQueue?.key === queueKey ? filteredQueue.rows : [] : op.queue, pending = op.rounds.reduce((n, r) => n + r.pending, 0), eligible = op.rounds.reduce((n, r) => n + r.eligible, 0)
   const base = `/club/${encodeURIComponent(club.id)}/workspace?section=recruitment`
-  const now = +new Date(op.asOf), deadline = op.intake?.applicationDeadline, closed = !op.intake?.applicationOpen || !!deadline && +new Date(deadline) <= now
+  const now = +new Date(op.asOf), deadline = op.intake?.applicationDeadline
   const outcomes = data.recruitment?.filter(r => ["ACCEPTED", "REJECTED", "WAITLISTED"].includes(r.status)) ?? []
   const hasOutcomes = outcomes.some(r => r.count > 0)
   const milestones = [
@@ -37,13 +42,12 @@ export function RecruitingOverview({ data, refreshing = false, onChanged = () =>
     ...op.scheduled.map(s => ({ id: s.id, title: s.kind === "DECISION" ? "Decisions scheduled to send" : "Communication scheduled", at: s.scheduledAt })),
   ].sort((a, b) => +new Date(a.at) - +new Date(b.at))
   return <div className="oc-command-center oc-command-recruiting" aria-busy={refreshing}>
-    <div className="oc-recruiting-status">
+    {(op.cycles.length > 0 || !op.intake || deadline) && <div className="oc-recruiting-status">
       <div className="oc-command-context-meta">
         {op.cycles.length > 0 && <span>{op.cycles.map(c => c.name).join(" · ")}</span>}
-        {op.intake ? <><span className="oc-command-status" data-state={closed ? "closed" : "open"}>Applications {closed ? "closed" : "open"}</span>{deadline && <span>Deadline {memberDate(deadline)}</span>}</> : <span>Applicant summaries are unavailable with your access</span>}
+        {op.intake ? deadline && <span>Deadline {memberDate(deadline)}</span> : <span>Applicant summaries are unavailable with your access</span>}
       </div>
-      <Button className="oc-command-refresh" variant="outline" disabled={refreshing} loading={refreshing} onClick={onChanged}>Refresh overview</Button>
-    </div>
+    </div>}
     {!hasPermission(membership, "applicants.identify") && hasPermission(membership, "applications.review") && <p className="oc-command-footnote">Anonymous rounds only. Identity, files and unapproved free text remain withheld.</p>}
     {op.rounds.length > 0 ? <section className="oc-command-section oc-pipeline-section" aria-labelledby="dashboard-pipeline"><header><h2 id="dashboard-pipeline">Current pipeline</h2></header><div className="oc-command-pipeline" role="group" aria-label="Filter review queue by round"><button aria-pressed={!round} onClick={() => setRound("")}><span className="oc-pipeline-step">Overview</span><span className="oc-pipeline-label">All rounds</span><strong>{op.rounds.reduce((n, r) => n + r.count, 0)}<small>applicants</small></strong><span className="oc-pipeline-pending">{pending} {pending === 1 ? "review" : "reviews"} remaining for you</span></button>{op.rounds.map((r, i) => <button key={r.id} aria-pressed={round === r.id} onClick={() => setRound(round === r.id ? "" : r.id)}><span className="oc-pipeline-step">{String(i + 1).padStart(2, "0")}<ArrowRight size={13} aria-hidden="true" /></span><span className="oc-pipeline-label">{r.name}</span><strong>{r.count}<small>{r.count === 1 ? "applicant" : "applicants"}</small></strong><span className="oc-pipeline-pending" data-pending={r.pending > 0 || r.needsBooking > 0}>{r.needsBooking > 0 && hasPermission(membership, "interviews.manage") ? `${r.needsBooking} ${r.needsBooking === 1 ? "needs an interview time" : "need interview times"} · ` : ""}{r.pending ? `${r.pending} ${r.pending === 1 ? "review" : "reviews"} for you` : "No reviews waiting for you"}</span></button>)}</div></section> : <p className="oc-command-empty">{hasPermission(membership, "recruitment.manage") ? <>No recruiting rounds yet. <Link className="underline" href={`${base}&tool=interviews`}>Set up recruitment <ArrowRight aria-hidden="true" size={14} /></Link></> : "No rounds are available with your current review access."}</p>}
     <div className="oc-command-columns"><div>

@@ -8,10 +8,10 @@ export default function Page() {
   return (
     <div className="mx-auto max-w-[var(--oc-content-width)]">
       <Link
-        href="/corkboard"
+        href="/explore"
         className="mb-6 inline-flex min-h-11 items-center text-sm underline"
       >
-        Campus Corkboard
+        Explore clubs
       </Link>
       <SavedClubsView
         onNavigate={(view) => router.push(studentPath(view))}

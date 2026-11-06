@@ -97,7 +97,7 @@ export function VotingBoard({ clubId, applicants: fallbackApplicants, selectionQ
   </section>
   return <div data-voting-saving={busy} className="oc-voting-console mx-auto min-w-0 w-full max-w-[var(--oc-content-width)] break-words space-y-5 py-5 [&_select]:max-w-full">
     <p className="text-xs text-muted-foreground">{demo.isDemoEnabled ? "Saved in this isolated demo browser" : "Saved on the server"} · refreshes every 5 seconds · votes never change application statuses until publication.</p>
-    {error&&<p role="alert" className="text-destructive">{error}<Button variant="ghost" onClick={()=>void refresh()}>Refresh</Button></p>}
+    {error&&<p role="alert" className="text-destructive">{error}<Button variant="ghost" onClick={()=>void refresh()}>Try again</Button></p>}
     {!data&&!error&&<LoadingState label="Loading voting workspace…" layout="voting" rows={3} />}
     {data&&<>
       {!!data.sessions.length&&<label className="oc-voting-session-picker block">Session history <select className="rounded border bg-background p-2" value={sessionId??data.session?.id??""} onChange={e=>{setData(null);setSessionId(e.target.value);setIndex(0);setViewPass(0);setSelected([]);setPublishReview(false)}}>{data.sessions.map(v=><option key={v.id} value={v.id}>{new Date(v.createdAt).toLocaleString()} · {v.state} · Pass {v.currentPass}</option>)}</select></label>}

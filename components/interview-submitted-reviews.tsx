@@ -41,8 +41,7 @@ export function InterviewSubmittedReviews({ clubId, filters = {}, initialReviewI
   return <section className="space-y-4 p-4" aria-label="Submitted interview reviews">
     <h2 className="oc-section-heading">Submitted interview reviews</h2>
     <p className="text-sm text-muted-foreground">Read-only closing reviews, including previous rounds. The latest 100 submitted reviews are shown. Private question notes are not included.</p>
-    <Button type="button" variant="outline" onClick={() => setRetry(v => v + 1)}>Refresh reviews</Button>
-    {loading && <LoadingState label="Loading reviews…" layout="rows" rows={2} />}{error && <p role="alert">{error}</p>}
+    {loading && <LoadingState label="Loading reviews…" layout="rows" rows={2} />}{error && <p role="alert">{error} <Button type="button" variant="outline" size="sm" onClick={() => setRetry(v => v + 1)}>Try again</Button></p>}
     {!loading && !error && !rows.length && <p role="status">No submitted reviews available.</p>}
     <ul className="flex flex-wrap gap-2">{rows.map(row => <li key={row.id}><Button type="button" variant={selected?.id === row.id ? "secondary" : "outline"} className="h-auto whitespace-normal text-left" aria-pressed={selected?.id === row.id} onClick={() => { setReview(null); setSelected(row); if (window.location?.href && window.history) { const url = new URL(window.location.href); url.searchParams.set("reviewId", row.id); window.history.replaceState(null, "", url.pathname + url.search); } }}>{row.applicantName} · {row.roundName} · Open review</Button></li>)}</ul>
     {selected && <Panel as="section" aria-label="Read-only closing review" className="space-y-4">

@@ -70,7 +70,7 @@ export async function reviewPanelPublication(raw:unknown):Promise<Result<PanelAp
  return operation(input.clubId,true,false,async(tx,actorId)=>{
   const {row,document,active}=await draftFor(tx,input),live=await loadPanelPlanningScene(tx,input,document.window)
   const validation=assertCurrentPanelDocument(document,live.scene)
-  if(row.sourceFingerprint!==live.fingerprint)throw new PanelPublicationError("Availability, interviewers or rooms changed. Refresh the draft and review it again.")
+  if(row.sourceFingerprint!==live.fingerprint)throw new PanelPublicationError("Availability, interviewers or rooms changed. Reload the page and review the draft again.")
   const round=await tx.pipelineRound.findUniqueOrThrow({where:{id:input.roundId}})
   if(round.anonymousReview)throw new PanelPublicationError("This round hides applicant names, so panel access cannot be shared. Ask the club owner to review privacy settings.")
   await assertPanelBookingSafety(tx,input,document)

@@ -168,7 +168,7 @@ export const moveApplicantRound = adapt(crm.moveApplicantRound, (input) => {
   return demoStore.mutate((s) => {
     const app = s.applications.find((a) => a.id === input.applicationId)!
     if (input.expectedRoundId && app.roundId !== input.expectedRoundId)
-      throw new Error("Application changed. Refresh before moving rounds.")
+      throw new Error("Application changed. Reload the page and try again.")
     assertRecruitmentRoundMove(app.status)
     const round = s.clubs.find(c=>c.id===input.clubId)!.rounds.find(r=>r.id===input.newRoundId)!
     if(app.status === "INTERVIEWING" && !/interview/i.test(round.name)) app.status = "IN_REVIEW"
@@ -179,7 +179,7 @@ export const moveApplicantRound = adapt(crm.moveApplicantRound, (input) => {
 export const setApplicationStatus = adapt(crm.setApplicationStatus, (input) => {
   const app = scopedApplication(input.clubId, input.applicationId)
   if (input.expectedStatus && app.status !== input.expectedStatus)
-    throw new Error("This candidate changed. Refresh before deciding.")
+    throw new Error("This candidate changed. Reload the page and try again.")
   return demoStore.mutate((s) => {
     const app = s.applications.find((a) => a.id === input.applicationId)!
     demoOffers.demoDecision(s, app.id, input.status)

@@ -94,7 +94,7 @@ export async function bookInterviewSlot(data: z.infer<typeof bookSlotSchema>) {
     } catch (error) {
       if (error && typeof error === "object" && "code" in error && error.code === "P2034") {
         if (attempt < 2) continue;
-        throw new Error("That time changed. Refresh and try again.");
+        throw new Error("That time changed. Reload the page and try again.");
       }
       throw error;
     }

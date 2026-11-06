@@ -2,11 +2,11 @@
 import { ClubMeetingsWorkspace } from "@/components/events/club-meetings-workspace";
 import dynamic from "next/dynamic";
 import { PageHeader } from "@/components/ui/page-header"
-import { LocalWelcomeHeader as WelcomeHeader } from "@/components/product/welcome-header"
+import { ClubOverviewHeader } from "@/components/product/welcome-header"
 import { OrganizationSetupChecklist } from "@/components/organization-setup-checklist";
 import { organizationCapabilities } from "@/lib/organization-authorization";
 import { useRouter, useSearchParams } from "next/navigation";
-import { RecruitingOverview } from "@/components/recruiting-overview";
+import { RecruitingOverview, applicationsClosed } from "@/components/recruiting-overview";
 import { ManagerOverview } from "@/components/manager-overview";
 import { RouteWorkspaceShell } from "@/components/shell/route-workspace-shell";
 import { ProductShell } from "@/components/shell/product-shell";
@@ -15,6 +15,7 @@ const ScreeningDashboardView = dynamic(() => import("@/components/views/screenin
 const ClubAnnouncements = dynamic(() => import("@/components/club-announcements").then(m => m.ClubAnnouncements), { loading: () => <WorkspaceLoading label="Loading announcements…" layout="feed" rows={3} /> });
 import type { ViewId } from "@/lib/views";
 import { useEffect, useRef, useState } from "react";
+import { useRevalidate } from "@/hooks/use-revalidate";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { useDemoMode } from "@/contexts/demo-context";
@@ -54,6 +55,9 @@ import { clubWorkspaceEntryHref, clubWorkspacePreferenceKey, readClubWorkspacePr
 import { leaderRailSections, memberRailSections, studentPath } from "@/lib/navigation"
 import { RecruitmentFocus } from "@/components/recruitment-focus"
 type Overview = Awaited<ReturnType<typeof getClubWorkspaceOverview>>;
+const OVERVIEW_EVENTS = ["outclass:tasks-changed", "outclass:panels-changed", "outclass:interview-rounds-changed", "outclass:staffing-changed", "outclass:decision-schedules"];
+const OVERVIEW_SCOPES = ["overview", "tasks", "meetings", "recruiting"];
+
 export function ClubWorkspace({
   clubId,
 }: {
@@ -166,6 +170,8 @@ export function ClubWorkspace({
     scope,
   ]);
   const current = data?.scope === scope && data.value.club.id === clubId ? data.value : null;
+  // Overview has no Refresh button: it reloads after mutations elsewhere and when the person returns.
+  useRevalidate(() => setRetry(n => n + 1), { enabled: needsOverview && !!current, events: OVERVIEW_EVENTS, scopes: OVERVIEW_SCOPES });
   if (suspended) return <RouteWorkspaceShell><div className="max-w-[var(--oc-reading-width)] space-y-4"><PageHeader title="This club is suspended" /><p className="mt-3">Club operations are unavailable until an administrator restores it. Your membership and existing records are preserved.</p><Link href="/" className="mt-6 inline-block underline">Return to Personal</Link></div></RouteWorkspaceShell>;
   if (resolvingEntry || moved || legacyRoom) return <WorkspaceLoading label="Opening club workspace…" />;
   const mode = section === "recruitment" || section === "announcements" && params.get("mode") === "recruiting" ? "recruiting" : "club";
@@ -193,10 +199,10 @@ export function ClubWorkspace({
         {loading || needsSelection ? <p role="status">Opening club workspace…</p> : !membership ? <div className="space-y-4"><PageHeader title="Club workspace unavailable" /><p>Sign in with a current club membership to access this workspace.</p><Link href="/" className="underline">Return to OutClass</Link></div> : <>
           {!manager && <Link className="mb-5 inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4" href="/clubs">← All my clubs</Link>}
           {active === "overview" && allowed
-            ? <WelcomeHeader density={section === "overview" ? "expressive" : "compact"} eyebrow={membership.club.name} firstName={user?.profile?.firstName} context={{ mode: "club", clubId, membership, data: error ? null : current }} />
-            : <PageHeader density={section === "overview" ? "expressive" : "compact"} eyebrow={membership.club.name} title={nav.find(n => n.id === active)?.label || "Workspace"} />}
+            ? <ClubOverviewHeader density="expressive" clubName={current?.club.name || membership.club.name} status={section === "recruitment" && current?.operations?.intake ? <span className="oc-command-status" data-state={applicationsClosed(current.operations) ? "closed" : "open"}>Applications {applicationsClosed(current.operations) ? "closed" : "open"}</span> : undefined} context={{ mode: "club", clubId, membership, data: error ? null : current }} />
+            : <PageHeader density={section === "overview" ? "expressive" : "compact"} eyebrow={membership.club.name} title={nav.find(n => n.id === active)?.label || "Workspace"} action={active === "applicants" || active === "decisions" && decisionTab !== "voting" && decisionTab !== "letters" ? <div id="workspace-page-actions" data-page-header-slot className="contents" /> : undefined} />}
           {needsOverview && error ? <div role="alert" className="oc-dashboard-error"><p>{error}</p><Button variant="outline" onClick={() => setRetry(n => n + 1)}>Retry</Button></div> : needsOverview && !current ? <DashboardLoading mode={mode === "recruiting" ? "recruiting" : "club"} /> : !allowed ? <p role="alert">This section isn’t available with your current access.</p> : <section key={`${section === "settings" ? authorizationScope : scope}:${section}:${active}`} className="shell-content-enter" aria-label={nav.find(n => n.id === active)?.label}>
-            {section === "overview" && current && (manager ? <><ManagerOverview data={current} refreshing={overviewPending} onChanged={() => setRetry(n => n + 1)} />{!demo.isDemoEnabled && organizationCapabilities(current.membership).canTransferOwnership && <OrganizationSetupChecklist key={`${clubId}:${retry}`} clubId={clubId} compact />}</> : <ManagerOverview data={current} refreshing={overviewPending} onChanged={() => setRetry(n => n + 1)} />)}
+            {section === "overview" && current && (manager ? <><ManagerOverview data={current} refreshing={overviewPending} onChanged={() => setRetry(n => n + 1)} />{!demo.isDemoEnabled && organizationCapabilities(current.membership).canTransferOwnership && <OrganizationSetupChecklist key={clubId} clubId={clubId} compact />}</> : <ManagerOverview data={current} refreshing={overviewPending} onChanged={() => setRetry(n => n + 1)} />)}
             {section === "tasks" && (demo.isDemoEnabled ? <ClubTasks clubId={clubId} embedded personalOnly={!manager} initialScope={taskView === "mine" ? "mine" : manager ? "team" : "mine"} /> : <SelectedClubWorkspace kind="tasks" clubId={clubId} privacyScope={scope} personalOnly={!manager} initialScope={taskView === "mine" ? "mine" : manager ? "team" : "mine"} />)}
             {section === "meetings" && (hasPermission(membership, "meetings.manage") ? <ClubMeetingsWorkspace key={clubId} clubId={clubId} clubName={membership.club.name} canSeeAttendees={hasPermission(membership, "meetings.attendance")} legacyEvents={legacyEvents} /> : <MeetingList clubId={clubId} embedded personalOnly={!manager} initialAudience="MEMBERS" />)}
             {section === "members" && (demo.isDemoEnabled ? <ClubMembers key={clubId} clubId={clubId} /> : <SelectedClubWorkspace kind="members" clubId={clubId} privacyScope={scope} />)}

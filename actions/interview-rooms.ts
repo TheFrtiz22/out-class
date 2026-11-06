@@ -39,7 +39,7 @@ async function atomic<T>(fn: (tx: AppTransactionClient) => Promise<T>, freshRead
     catch (error) {
       const code = error && typeof error === "object" && "code" in error ? error.code : ""
       if (code === "P2034" && attempt < 2) continue
-      if (code === "P2034" || code === "P2002") throw new Error("The schedule changed while saving. Refresh and try again.")
+      if (code === "P2034" || code === "P2002") throw new Error("The schedule changed while saving. Reload the page and try again.")
       if (isWriteContention(error)) throw new Error("Many people are scheduling right now. Your current reservation is unchanged. Please try again.")
       throw error
     }
