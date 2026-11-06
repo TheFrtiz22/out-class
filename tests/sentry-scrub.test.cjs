@@ -100,7 +100,8 @@ test('no SDK is loaded or bundled unless a DSN is configured; no replay; every b
   assert.match(server, /onRequestError[\s\S]*if \(!dsn\(\)\) return[\s\S]*import\("@sentry\/nextjs"\)/)
   assert.doesNotMatch(server, /^import \* as Sentry/m, 'no static SDK import on the server entry')
   assert.doesNotMatch(client, /^import .*@sentry/m, 'no static SDK import in the client bundle')
-  assert.match(client, /if \(process\.env\.NEXT_PUBLIC_SENTRY_DSN\) \{\n  void import\("@sentry\/nextjs"\)/)
+  assert.match(client, /if \(process\.env\.NEXT_PUBLIC_SENTRY_DSN\) \{\n  void Promise\.all\(\[import\("@sentry\/nextjs"\), import\("@\/lib\/sentry-scrub"\)\]\)/)
+  assert.doesNotMatch(client, /^import /m, "the privacy filter is not in the initial bundle either")
   for (const file of ['instrumentation-client.ts', 'sentry.server.config.ts', 'sentry.edge.config.ts', 'lib/sentry-scrub.ts']) {
     assert.doesNotMatch(read(file), /replayIntegration|Replay\(|feedbackIntegration/, `${file} adds no session replay or feedback widget`)
     if (file !== 'lib/sentry-scrub.ts') assert.match(read(file), /sentryOptions\(/, `${file} uses the shared scrubbed options`)

@@ -1,10 +1,8 @@
-import { sentryOptions } from "@/lib/sentry-scrub"
-
-// NEXT_PUBLIC_ values are inlined at build time: without a DSN this branch is
-// removed and the reporting SDK adds nothing to any page. With one, the SDK
-// loads in its own chunk after the page starts.
+// Without NEXT_PUBLIC_SENTRY_DSN nothing here runs and nothing is downloaded: the
+// SDK and the privacy filter live in their own chunks, fetched only when a DSN is
+// configured, after the page starts.
 if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
-  void import("@sentry/nextjs")
-    .then(Sentry => Sentry.init(sentryOptions(process.env.NEXT_PUBLIC_SENTRY_DSN, process.env.NEXT_PUBLIC_VERCEL_ENV)))
+  void Promise.all([import("@sentry/nextjs"), import("@/lib/sentry-scrub")])
+    .then(([Sentry, { sentryOptions }]) => Sentry.init(sentryOptions(process.env.NEXT_PUBLIC_SENTRY_DSN, process.env.NEXT_PUBLIC_VERCEL_ENV)))
     .catch(() => {})
 }
