@@ -363,7 +363,7 @@ export function MeetingDetail({ id, onUpdated }: { id: string; onUpdated?: () =>
   const member = user?.memberships.find((m) => m.clubId === meeting.clubId),
     resources = resourceSchema.array().safeParse(meeting.resources);
   return (
-    <article className="oc-page-reading mx-auto space-y-8">
+    <article className="oc-page-reading space-y-8">
       <header className="space-y-4 border-b pb-7">
         <p className="text-sm text-muted-foreground">
           {meeting.club.name} ·{" "}

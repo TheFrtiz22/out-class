@@ -39,13 +39,13 @@ export async function assignOrganizationMemberGroups(input: unknown) {
     const actor = await actorFor(tx, data.clubId, user.id);
     if (!hasPermission(actor, "members.manage")) throw new Error("Member management access denied.");
     const members = await tx.clubMember.findMany({ where: { clubId: data.clubId, id: { in: data.targets.map(target => target.id) }, status: "ACTIVE", user: { disabledAt: null } } });
-    if (members.length !== data.targets.length) throw new Error("Some members are unavailable. Refresh members and try again.");
+    if (members.length !== data.targets.length) throw new Error("Some members are no longer available. Check the list and try again.");
     for (const member of members) {
       const expected = data.targets.find(target => target.id === member.id)!;
       const groups = data.operation === "ADD" ? [...new Set([...member.groups, data.group])] : member.groups.filter(group => group !== data.group);
       if (groups.length > 20) throw new Error("A member can belong to up to 20 groups.");
       const result = await tx.clubMember.updateMany({ where: { id: member.id, clubId: data.clubId, updatedAt: expected.updatedAt }, data: { groups } });
-      if (result.count !== 1) throw new Error("A member changed. Refresh members before assigning groups.");
+      if (result.count !== 1) throw new Error("A member changed. Check the list and try again.");
     }
     await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, action: "club.member.groups.bulk", targetId: data.clubId, details: { memberIds: members.map(member => member.id), group: data.group, operation: data.operation } } });
     return { updated: members.length };
@@ -62,14 +62,14 @@ export async function createOrganizationMemberGroups(input: unknown) {
     const actor = await actorFor(tx, data.clubId, user.id);
     if (!hasPermission(actor, "members.manage")) throw new Error("Member management access denied.");
     const members = await tx.clubMember.findMany({ where: { clubId: data.clubId, id: { in: data.targets.map(target => target.id) }, status: "ACTIVE", user: { disabledAt: null } } });
-    if (members.length !== data.targets.length) throw new Error("Some members are unavailable. Refresh members before creating groups.");
+    if (members.length !== data.targets.length) throw new Error("Some members are no longer available. Check the list and try again.");
     for (const member of members) {
       const expected = data.targets.find(target => target.id === member.id)!;
       const subgroup = plan.find(group => group.memberIds.includes(member.id))!;
       const groups = [...new Set([...member.groups, data.name, subgroup.name])];
       if (groups.length > 20) throw new Error("A member can belong to up to 20 groups.");
       const saved = await tx.clubMember.updateMany({ where: { id: member.id, clubId: data.clubId, updatedAt: expected.updatedAt }, data: { groups } });
-      if (saved.count !== 1) throw new Error("A member changed. Refresh members before creating groups.");
+      if (saved.count !== 1) throw new Error("A member changed. Check the list and try again.");
     }
     await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, targetId: data.clubId, action: "club.member.groups.create", details: { name: data.name, memberIds: members.map(member => member.id), groups: plan.map(group => ({ name: group.name, count: group.memberIds.length })) } } });
     return { groups: plan, members: members.length };

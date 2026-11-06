@@ -190,7 +190,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
   function bookingChanged() {
     void getStudentApplications().then(apps => { setApplications(apps); sync(apps) }).catch(() => setNotice("Interview saved. Your application will update shortly."))
   }
-  if (app && statusView) return <div ref={content} className="oc-application-detail oc-page-reading mx-auto space-y-5 pb-6"><ApplicationStatusDetail application={app} notice={notice} onBack={() => { setActiveId(null); setNotice("") }} onResponses={() => openRelated("tracker")} onCalendar={() => onNavigate?.("calendar")} onRefresh={() => void revalidate()} onBookingChanged={bookingChanged} onMyClubs={() => onNavigate?.("my-clubs")} /></div>
+  if (app && statusView) return <div ref={content} className="oc-application-detail oc-page-reading space-y-5 pb-6"><ApplicationStatusDetail application={app} notice={notice} onBack={() => { setActiveId(null); setNotice("") }} onResponses={() => openRelated("tracker")} onCalendar={() => onNavigate?.("calendar")} onRefresh={() => void revalidate()} onBookingChanged={bookingChanged} onMyClubs={() => onNavigate?.("my-clubs")} /></div>
   if (app)
     return (
       <div ref={content} className={`oc-application-detail mx-auto pb-8 ${app.status === "DRAFTING" ? "oc-writing-workspace" : "oc-page-reading space-y-7"}`}>
