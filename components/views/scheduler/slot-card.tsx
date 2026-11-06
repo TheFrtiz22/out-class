@@ -22,7 +22,7 @@ export function SlotCard({
     <div data-slot-status={isEmpty ? "available" : isFull ? "full" : "partial"}
       className={cn(
         "oc-interview-slot group relative flex min-h-[140px] flex-col justify-between rounded-lg border border-border p-4",
-        isEmpty ? "border-dashed bg-slate-50/60" : "bg-white",
+        isEmpty ? "border-dashed bg-muted/60" : "bg-white",
       )}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">

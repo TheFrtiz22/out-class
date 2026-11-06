@@ -12,6 +12,7 @@ import { MarketingProfile, MarketingSections } from "@/components/clubs/marketin
 import { LogoBackgroundPicker } from "@/components/clubs/logo-background-picker"
 import { ProfileImageInput } from "@/components/clubs/profile-image-input"
 import { clubProfileSchema, type ClubMarketing, type ClubProfileDraft } from "@/lib/club-marketing"
+import { Panel } from "@/components/ui/panel"
 
 function Field({ label, children }: { label: string; children: ReactNode }) { return <label className="block space-y-2 text-sm font-medium"><span>{label}</span>{children}</label> }
 function Lines({ label, value, onChange, max }: { label: string; value: string[]; onChange: (v: string[]) => void; max: number }) {
@@ -45,7 +46,7 @@ export function ClubProfileEditor({ initial, onSave, demo = false, onUpload, ext
   }}>
     <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Your public presence</p><h2 className="oc-section-heading mt-2">Make your club stand out.</h2><p className="mt-2 text-sm text-muted-foreground">Tell your story. Show what makes joining worthwhile.</p></div><Button type="button" variant="outline" onClick={() => setPreview(!preview)}><Eye size={16} />{preview ? "Back to editor" : "Full profile preview"}</Button></div>
     {demo && <p className="text-xs text-muted-foreground">Demo changes stay in this browser.</p>}
-    {preview ? <div className="mx-auto max-w-3xl space-y-5"><MarketingProfile assetPreview profile={draft} /><section className="rounded-xl border p-6"><h3 className="oc-card-heading ">About us</h3><p className="mt-3 whitespace-pre-line text-sm leading-7">{draft.description}</p></section><MarketingSections assetPreview profile={draft} /></div> : <>
+    {preview ? <div className="mx-auto max-w-[var(--oc-reading-width)] space-y-5"><MarketingProfile assetPreview profile={draft} /><section className="rounded-xl border p-6"><h3 className="oc-card-heading ">About us</h3><p className="mt-3 whitespace-pre-line text-sm leading-7">{draft.description}</p></section><MarketingSections assetPreview profile={draft} /></div> : <>
       <nav aria-label="Profile editor sections" className="flex flex-wrap gap-2">{sections.map(s => <Button key={s.id} type="button" size="sm" variant="outline" onClick={() => jump(s.id)}>{s.title}</Button>)}</nav>
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(300px,2fr)]">
         <fieldset disabled={busy || !!clubId && (!draftSave.ready || draftSave.recovery != null)} className="min-w-0 space-y-4">
@@ -73,6 +74,6 @@ export function ClubProfileEditor({ initial, onSave, demo = false, onUpload, ext
       </div>
     </>}
     {clubId && <AutosaveStatus save={draftSave} />}
-    <div className="oc-settings-actions oc-content-panel sticky z-10 flex flex-wrap items-center justify-between gap-3"><div className="min-w-0 text-sm" aria-live="polite">{error ? <p role="alert" className="text-destructive">{error}</p> : message || (dirty ? "Unpublished changes" : "All changes saved")}</div><div className="flex gap-2"><Button type="button" variant="outline" disabled={busy || !dirty} onClick={() => { setDraft(saved); void draftSave.clear().catch(() => {}); setError(""); setMessage("Changes discarded.") }}><RotateCcw size={15} />Discard</Button><Button type="submit" disabled={busy || !dirty} loading={busy}>{demo ? "Save demo profile" : "Publish profile"}</Button></div></div>
+    <Panel className="oc-settings-actions sticky z-10 flex flex-wrap items-center justify-between gap-3"><div className="min-w-0 text-sm" aria-live="polite">{error ? <p role="alert" className="text-destructive">{error}</p> : message || (dirty ? "Unpublished changes" : "All changes saved")}</div><div className="flex gap-2"><Button type="button" variant="outline" disabled={busy || !dirty} onClick={() => { setDraft(saved); void draftSave.clear().catch(() => {}); setError(""); setMessage("Changes discarded.") }}><RotateCcw size={15} />Discard</Button><Button type="submit" disabled={busy || !dirty} loading={busy}>{demo ? "Save demo profile" : "Publish profile"}</Button></div></Panel>
   </form>
 }

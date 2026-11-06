@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import type { LetterContent } from '@/lib/decision-letters';
 import './decision-letter.css';
 import { useFocusFrame } from '@/components/shell/focus-frame-context';
+import { PageHeader } from "@/components/ui/page-header";
 export function LetterPaper({content,preview=false,logoSource,marketing}:{content:LetterContent;preview?:boolean;logoSource?:string;marketing?:unknown}) {
  return <article className="decision-paper" aria-label={preview?'Sample decision letter preview':'Formal decision letter'} style={{borderTopColor:content.accent}}>
   {preview&&<p className="decision-preview">PREVIEW · SAMPLE STUDENT · NOT A PUBLISHED DECISION</p>}
@@ -56,7 +57,7 @@ export function DecisionLetterView({applicationId}:{applicationId:string}) {
   finally{setBusy(false);}
  }
  if(loading)return <div className="decision-layout"><LoadingState label="Opening your decision letter…" layout="document" rows={4} /></div>;
- if(!data)return <div className="decision-layout"><h1>Decision letter unavailable</h1><p role="alert">{error||'A formal letter is unavailable for this historical decision.'}</p><Link href="/applications/status">Return to Status</Link></div>;
+ if(!data)return <div className="decision-layout"><PageHeader title="Decision letter unavailable" /><p role="alert">{error||'A formal letter is unavailable for this historical decision.'}</p><Link href="/applications/status">Return to Status</Link></div>;
  const active=data.isCurrent&&data.currentStatus==='ACCEPTED'&&(!data.letter||data.letter.decision==='ACCEPTED')&&!data.suspended&&data.offer?.status==='PENDING'&&new Date(data.offer.expiresAt)>new Date();
  const offer=data.offer;
  return <div className="decision-layout"><nav className="decision-controls" aria-label="Letter actions"><Button variant="outline" disabled={!data.letter} onClick={()=>window.print()}>Print letter</Button></nav>

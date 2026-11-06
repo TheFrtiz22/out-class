@@ -1,4 +1,5 @@
 "use client";
+import { DataTable } from "@/components/ui/data-table"
 import { LoadingState } from "@/components/ui/loading-state"
 import { getOrganizationMemberManagement } from "@/lib/workspace-read";
 import { MemberGroupBuilder } from "@/components/member-group-builder";
@@ -498,11 +499,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 </span>
               </div>
             )}
-            <div className="oc-data-surface">
-              <table className={onboardingTable.table}>
-                <caption className="sr-only">
-                  Organization members and invitations
-                </caption>
+            <DataTable tableClassName={onboardingTable.table} caption="Organization members and invitations">
                 <thead className={onboardingTable.head}>
                   <tr>
                     <th className="p-3" scope="col">
@@ -727,8 +724,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                     </tr>
                   ))}
                 </tbody>
-              </table>
-            </div>
+            </DataTable>
             {!rows.length && (
               <p
                 role="status"

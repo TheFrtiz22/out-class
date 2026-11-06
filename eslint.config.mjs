@@ -2,7 +2,6 @@ import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import { FlatCompat } from "@eslint/eslintrc";
-import { readFileSync } from "node:fs";
 import outclass from "./eslint-rules/no-raw-colors.mjs";
 
 const require = createRequire(import.meta.url);
@@ -25,13 +24,6 @@ const config = [
     files: ["**/*.tsx"],
     plugins: { outclass },
     rules: { "outclass/no-raw-colors": "error" },
-  },
-  {
-    // Ratchet: files that predate the rule report their known violations as
-    // warnings until fixed. tests/eslint-no-raw-colors-baseline.test.cjs fails if
-    // any of them gains a violation; remove a file here once it is clean.
-    files: Object.keys(JSON.parse(readFileSync(new URL("./eslint-rules/no-raw-colors-baseline.json", import.meta.url), "utf8"))).map(file => file.replace(/[[\]{}()*?!+@]/g, "\\$&")),
-    rules: { "outclass/no-raw-colors": "warn" },
   },
 ];
 

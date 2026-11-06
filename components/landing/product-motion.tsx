@@ -203,5 +203,5 @@ export function ProductDemoProgress() {
 
 /** Real pointer/touch events pass through this decorative cursor. Its tip is the target anchor. */
 export function DemoCursor() {
-  return <div className="oc-demo-cursor" aria-hidden="true"><span className="oc-demo-click" /><svg className="oc-demo-cursor-pointer" width="22" height="28" viewBox="0 0 22 28" fill="none"><path d="M2 2v19l5.8-5 4.2 9 4-2-4.2-8.6 8.2-1.1L2 2Z" fill="#fffefa" stroke="#142d45" strokeWidth="1.4" strokeLinejoin="round" /></svg></div>
+  return <div className="oc-demo-cursor" aria-hidden="true"><span className="oc-demo-click" /><svg className="oc-demo-cursor-pointer" width="22" height="28" viewBox="0 0 22 28" fill="none"><path d="M2 2v19l5.8-5 4.2 9 4-2-4.2-8.6 8.2-1.1L2 2Z" className="fill-card stroke-primary" strokeWidth="1.4" strokeLinejoin="round" /></svg></div>
 }

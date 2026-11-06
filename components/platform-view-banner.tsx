@@ -24,9 +24,9 @@ export function PlatformViewBanner({
   return (
     <aside ref={banner}
       aria-label="Administrator view-as session"
-      className="pointer-events-auto fixed inset-x-0 top-0 z-[2147483000] border-b border-amber-300 bg-amber-50 px-4 py-3 text-slate-950"
+      className="pointer-events-auto fixed inset-x-0 top-0 z-[2147483000] border-b border-amber-300 bg-amber-50 px-4 py-3 text-foreground"
     >
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
+      <div className="mx-auto flex max-w-[var(--oc-content-width)] flex-wrap items-center justify-between gap-3">
         <div className="min-w-0 basis-full sm:basis-auto sm:flex-1">
           <p className="break-words text-sm font-semibold">
             Viewing as {label}

@@ -10,6 +10,7 @@ import { clubWriteTransaction } from "@/utils/club-write-transaction";
 import { verifiedSchoolIdentities, prepareVerifiedSchoolAccount } from "@/utils/school-identity";
 import { UniversityVerificationError } from "@/utils/verified-email-policy";
 import { requireCompletedStudentProfile } from "@/utils/profile-onboarding";
+import { PageHeader } from "@/components/ui/page-header";
 export default async function Invitation({
   params,
 }: {
@@ -36,7 +37,7 @@ export default async function Invitation({
     }
   })();
   if (verificationError) return <div className="max-w-xl space-y-4">
-    <h1 className="oc-page-title">{verificationError.code === "UNIVERSITY_VERIFICATION_REQUIRED" ? "Verify your university email" : "Invitation verification unavailable"}</h1>
+    <PageHeader title={verificationError.code === "UNIVERSITY_VERIFICATION_REQUIRED" ? "Verify your university email" : "Invitation verification unavailable"} />
     <p role="alert">{verificationError.message}</p><Link className="underline" href="/settings/organizations">View organizations</Link>
   </div>;
   const invitation = await prisma.clubInvitation.findFirst({
@@ -57,7 +58,7 @@ export default async function Invitation({
   if (!invitation)
     return (
       <div className="max-w-xl space-y-4">
-      <h1 className="oc-page-title break-words">Invitation unavailable</h1>
+      <PageHeader title="Invitation unavailable" />
         <p>
           This link may have expired or already been answered. Sign in with the
           invited UVA account, or ask the club manager for a new invitation.
@@ -69,7 +70,7 @@ export default async function Invitation({
     );
   return (
     <div className="max-w-xl space-y-6">
-      <h1 className="oc-page-title break-words">{(invitation.schoolIdentityId && invitation.requestedRole === "OWNER") ? "Claim" : "Join"} {invitation.club.name}</h1>
+      <PageHeader title={<>{(invitation.schoolIdentityId && invitation.requestedRole === "OWNER") ? "Claim" : "Join"} {invitation.club.name}</>} />
       <p className="text-sm leading-7 text-muted-foreground">
         Accept with the UVA account this invitation was sent to. Your personal
         profile and existing memberships stay intact.

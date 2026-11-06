@@ -1,7 +1,7 @@
 "use client"
 import { InterviewApplicantPanel } from "@/components/interview-applicant-panel"
 import "@/components/shell/responsive-workspace.css"
-import { PageHeader } from "@/components/product/page-header"
+import { PageHeader } from "@/components/ui/page-header"
 import { useFocusFrame } from "@/components/shell/focus-frame-context"
 import { InterviewKitSession } from "@/components/interview-kit-session"
 import { hasPermission } from "@/lib/permissions"
@@ -52,7 +52,7 @@ export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: ()
         {loading ? (
           <WorkspaceLoading label="Preparing the interview workspace…" layout="interview" rows={3} />
         ) : !membership ? (
-          <div className="max-w-4xl space-y-3 px-5 py-8">
+          <div className="max-w-[var(--oc-content-width)] space-y-3 px-5 py-8">
             <PageHeader title="A focused space for a better conversation." />
             <p className="text-sm leading-7 text-muted-foreground">
               {user
@@ -353,8 +353,8 @@ function InterviewSession({
       </p>
       <p className="sr-only" role="status" aria-live="polite">{candidateAnnouncement}</p>
       {!active ? (
-        <div className="max-w-4xl space-y-3 px-5 py-8">
-          <h1 ref={heading} tabIndex={-1} className="text-xl font-medium">Choose an interview</h1>
+        <div className="max-w-[var(--oc-content-width)] space-y-3 px-5 py-8">
+          <PageHeader title="Choose an interview" titleRef={heading} focusable />
           <p className="text-sm leading-7 text-muted-foreground">
             {queue.length
               ? "Choose an assigned candidate to open their interview and your private question notes."

@@ -4,7 +4,7 @@ import { ApplicationManagementCard } from "@/components/applications/application
 import { ApplicationStatusCard } from "@/components/applications/application-status-card"
 import { ApplicationStatusDetail } from "@/components/applications/application-status-detail"
 import { useSearchParams } from "next/navigation"
-import { PageHeader } from "@/components/product/page-header"
+import { PageHeader } from "@/components/ui/page-header"
 import { MetricStrip } from "@/components/product/metric-strip"
 import { SegmentedControl } from "@/components/product/segmented-control"
 import { EmptyState } from "@/components/ui/empty-state"
@@ -29,6 +29,7 @@ import {
   ApplicationForm,
   type StudentApplication,
 } from "@/components/applications/application-form"
+import { DEFAULT_CLUB_COLOR } from "@/lib/club-colors"
 
 const trackerLabels: Record<string, TrackerStatus> = {
   DRAFTING: "Drafting",
@@ -83,7 +84,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
           logoText: app.club.name.slice(0, 2),
           logoUrl: app.club.logoUrl,
           marketing: app.club.marketing,
-          color: app.club.color || "#142d4e",
+          color: app.club.color || DEFAULT_CLUB_COLOR,
           status: trackerLabels[app.status],
           questionsCompleted: app.answers.filter((answer) => answer.response.trim()).length,
           questionsTotal: app.club.questions.length,
@@ -186,10 +187,10 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
   function bookingChanged() {
     void getStudentApplications().then(apps => { setApplications(apps); sync(apps) }).catch(() => setNotice("Booking saved. Refresh status to update the application summary."))
   }
-  if (app && statusView) return <div ref={content} className="oc-application-detail mx-auto max-w-3xl space-y-5 pb-6"><ApplicationStatusDetail application={app} notice={notice} onBack={() => { setActiveId(null); setNotice("") }} onResponses={() => openRelated("tracker")} onCalendar={() => onNavigate?.("calendar")} onRefresh={() => setRetry(value => value + 1)} onBookingChanged={bookingChanged} onMyClubs={() => onNavigate?.("my-clubs")} /></div>
+  if (app && statusView) return <div ref={content} className="oc-application-detail mx-auto max-w-[var(--oc-reading-width)] space-y-5 pb-6"><ApplicationStatusDetail application={app} notice={notice} onBack={() => { setActiveId(null); setNotice("") }} onResponses={() => openRelated("tracker")} onCalendar={() => onNavigate?.("calendar")} onRefresh={() => setRetry(value => value + 1)} onBookingChanged={bookingChanged} onMyClubs={() => onNavigate?.("my-clubs")} /></div>
   if (app)
     return (
-      <div ref={content} className={`oc-application-detail mx-auto pb-8 ${app.status === "DRAFTING" ? "oc-writing-workspace" : "max-w-3xl space-y-7"}`}>
+      <div ref={content} className={`oc-application-detail mx-auto pb-8 ${app.status === "DRAFTING" ? "oc-writing-workspace" : "max-w-[var(--oc-reading-width)] space-y-7"}`}>
         <Button
           variant="ghost"
           size="sm"
@@ -209,7 +210,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
           <ClubLogo
             clubId={app.clubId}
             logoUrl={app.club.logoUrl} marketing={app.club.marketing}
-            color={app.club.color || "#142d4e"}
+            color={app.club.color || DEFAULT_CLUB_COLOR}
             text={app.club.name.slice(0, 2)}
             size="md"
           />
@@ -217,7 +218,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
             <p className="text-xs font-medium text-muted-foreground">
               Your application
             </p>
-            <h1 tabIndex={-1} className="oc-page-title break-words outline-none">{app.club.name}</h1>
+            <PageHeader title={app.club.name} focusable />
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
               <StatusPill status={app.status} />
               <p className="text-xs text-muted-foreground">
@@ -307,7 +308,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
     : applications.filter(item => filter === "All" || (filter === "Drafts" ? item.status === "DRAFTING" : item.status !== "DRAFTING")).sort((a, b) => Number(b.status === "DRAFTING") - Number(a.status === "DRAFTING") || a.club.name.localeCompare(b.club.name))
   function open(item: StudentApplication) { lastOpened.current = item.id; setActiveId(item.id); setNotice("") }
   return (
-    <div ref={content} className="oc-applications mx-auto max-w-5xl space-y-5" data-application-scope={scope}>
+    <div ref={content} className="oc-applications mx-auto max-w-[var(--oc-content-width)] space-y-5" data-application-scope={scope}>
       <PageHeader density="expressive" title={statusView ? "Status" : "Applications"} description={statusView ? "Where things stand, and what to do next." : "Work on your drafts, check requirements, and review submitted responses."} action={<Button variant="ghost" size="sm" onClick={() => setRetry(value => value + 1)}><RefreshCw className="size-3.5" />Refresh</Button>} />
       {applications.length > 0 && !statusView && <MetricStrip label="Application management" items={[
         { label: "drafts", value: applications.filter(item => item.status === "DRAFTING").length },

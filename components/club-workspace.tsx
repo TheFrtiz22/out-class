@@ -1,7 +1,7 @@
 "use client"
 import { ClubMeetingsWorkspace } from "@/components/events/club-meetings-workspace";
 import dynamic from "next/dynamic";
-import { PageHeader } from "@/components/product/page-header"
+import { PageHeader } from "@/components/ui/page-header"
 import { LocalWelcomeHeader as WelcomeHeader } from "@/components/product/welcome-header"
 import { OrganizationSetupChecklist } from "@/components/organization-setup-checklist";
 import { organizationCapabilities } from "@/lib/organization-authorization";
@@ -166,7 +166,7 @@ export function ClubWorkspace({
     scope,
   ]);
   const current = data?.scope === scope && data.value.club.id === clubId ? data.value : null;
-  if (suspended) return <RouteWorkspaceShell><div className="max-w-2xl space-y-4"><h1 className="text-2xl font-semibold">This club is suspended</h1><p className="mt-3">Club operations are unavailable until an administrator restores it. Your membership and existing records are preserved.</p><Link href="/" className="mt-6 inline-block underline">Return to Personal</Link></div></RouteWorkspaceShell>;
+  if (suspended) return <RouteWorkspaceShell><div className="max-w-[var(--oc-reading-width)] space-y-4"><PageHeader title="This club is suspended" /><p className="mt-3">Club operations are unavailable until an administrator restores it. Your membership and existing records are preserved.</p><Link href="/" className="mt-6 inline-block underline">Return to Personal</Link></div></RouteWorkspaceShell>;
   if (resolvingEntry || moved || legacyRoom) return <WorkspaceLoading label="Opening club workspace…" />;
   const mode = section === "recruitment" || section === "announcements" && params.get("mode") === "recruiting" ? "recruiting" : "club";
   const active = section === "announcements" ? "announcements" : mode === "recruiting" ? (tool === "rounds" || tool === "rules" ? "overview" : tool || "applicants") : section;
@@ -190,7 +190,7 @@ export function ClubWorkspace({
         modes={manager ? [...(recruitmentTools(membership!).length ? [{ id: "recruiting", label: "Recruiting", href: `${clubWorkspaceHref(clubId, "recruitment")}&tool=overview` }] : []), { id: "club", label: "Club", href: clubWorkspaceHref(clubId, "overview") }] : personalModes.map(item => { const destination = personalDestination(item.id); const params = new URLSearchParams({ workspace: "student", view: destination.view }); if (destination.section) params.set("section", destination.section); return { ...item, href: `/?${params}` } })}
         onModeSelect={id => { if (manager && (id === "recruiting" || id === "club")) saveClubWorkspacePreference(preferenceKey, id) }}
         onReviewTool={id => { reviewTrigger.current = document.activeElement as HTMLElement; setReviewTool(id) }} items={nav} active={active} title={nav.find(n => n.id === active)?.label || "Club workspace"} onSelect={() => {}} onNavigate={navigate}>
-        {loading || needsSelection ? <p role="status">Opening club workspace…</p> : !membership ? <div className="space-y-4"><h1 className="oc-page-title ">Club workspace unavailable</h1><p>Sign in with a current club membership to access this workspace.</p><Link href="/" className="underline">Return to OutClass</Link></div> : <>
+        {loading || needsSelection ? <p role="status">Opening club workspace…</p> : !membership ? <div className="space-y-4"><PageHeader title="Club workspace unavailable" /><p>Sign in with a current club membership to access this workspace.</p><Link href="/" className="underline">Return to OutClass</Link></div> : <>
           {!manager && <Link className="mb-5 inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4" href="/clubs">← All my clubs</Link>}
           {active === "overview" && allowed
             ? <WelcomeHeader density={section === "overview" ? "expressive" : "compact"} eyebrow={membership.club.name} firstName={user?.profile?.firstName} context={{ mode: "club", clubId, membership, data: error ? null : current }} />
@@ -305,7 +305,7 @@ function RoundSettings({ clubId, embedded = false, canIdentify = true, onChanged
     );
   if (!rounds) return <WorkspaceLoading label="Loading recruitment rounds…" layout="rows" rows={3} />;
   return (
-    <div className="max-w-3xl space-y-5">
+    <div className="max-w-[var(--oc-reading-width)] space-y-5">
       {!embedded && <ol className="divide-y">
         {rounds.map((r, i) => (
           <li className="py-3 text-sm" key={r.id}>
