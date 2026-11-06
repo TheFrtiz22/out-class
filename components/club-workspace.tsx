@@ -315,9 +315,10 @@ function RoundSettings({ clubId, embedded = false, canIdentify = true, onChanged
         ))}
       </ol>}
       {!rounds.length && (
-        <p className="text-sm text-muted-foreground">
-          No recruitment rounds are configured yet.
-        </p>
+        <div className="space-y-2 text-sm text-muted-foreground">
+          <p>Recruiting has no rounds yet, so there is nothing to review or schedule.</p>
+          <Link className="inline-flex min-h-11 items-center underline underline-offset-4" href={`/club/${encodeURIComponent(clubId)}/workspace?section=settings&setting=cycles`}>Set up recruitment rounds</Link>
+        </div>
       )}
       <RecruitmentReviewSettings
         clubId={clubId}

@@ -61,18 +61,18 @@ test('Events: desktop/tablet/mobile views share filters, saves, RSVP, details an
     await page.getByRole('button', { name: 'List View', exact: true }).click();
     assert.equal(await page.locator('.oc-smart-event-card').count(), 1);
     await page.getByRole('button', { name: 'Saved After Hours at the Art Museum', exact: true }).click();
-    await page.getByRole('heading', { name: 'No saved events here yet.', exact: true }).waitFor();
-    await page.getByRole('button', { name: 'Show all events', exact: true }).click();
+    await page.getByRole('heading', { name: 'You haven’t saved any events yet.', exact: true }).waitFor();
+    await page.getByRole('button', { name: 'Browse all events', exact: true }).click();
     await page.getByText('65 approved events · Times shown in Eastern Time', { exact: true }).waitFor();
     await page.locator('.oc-event-filter > summary').click();
     await page.getByLabel('Category').selectOption('Sports');
-    await page.getByRole('heading', { name: 'No events match your filters.', exact: true }).waitFor();
+    await page.getByRole('heading', { name: 'No events match these filters.', exact: true }).waitFor();
     await page.getByRole('button', { name: 'Reset filters', exact: true }).click();
     await page.locator('.oc-event-filter > summary').click();
     await page.getByText('65 approved events · Times shown in Eastern Time', { exact: true }).waitFor();
     await page.getByLabel('Search events', { exact: true }).fill('no matching campus event');
-    await page.getByRole('heading', { name: 'No search results.', exact: true }).waitFor();
-    await page.getByRole('button', { name: 'Show all events', exact: true }).click();
+    await page.getByRole('heading', { name: 'No events match “no matching campus event”.', exact: true }).waitFor();
+    await page.getByRole('button', { name: 'Clear filters', exact: true }).click();
     await page.getByText('65 approved events · Times shown in Eastern Time', { exact: true }).waitFor();
     const screenshots = process.env.OUTCLASS_EVENTS_SCREENSHOTS;
     for (const [name, width, height] of [['desktop', 1440, 1000], ['tablet', 820, 1180], ['mobile', 390, 844]]) {

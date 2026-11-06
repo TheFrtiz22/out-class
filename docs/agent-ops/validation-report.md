@@ -38,3 +38,7 @@ deploy <pending> | runtime errors <pending> | advisor delta <n/a, no migration> 
 - New real-browser fixture test `focus-frame-browser`: Exit target from the account-scoped stored page, /home fallback, foreign/focus/external entries ignored, registration merge and cleanup, onExit, projector dark surface, click-through over the hidden bar, keyboard/hover reveal.
 - Disposable E2E (`test:onboarding:e2e`) run 1 on e607d3c4: 45/47; failing = new signed-out subtest (getCurrentUser sends signed-out visitors to /). Fixed (session check first) and verified on an inert dev server (NEXT_REDIRECT to `/login?next=%2Fclub%2F…%2Finterview%3F…`). Reruns not completed: the reserved stack was in use by another local session. Pending: one green disposable run (CI runs it via run-onboarding-e2e).
 - Screenshots (inert env, signed-out states) before/after for 16 routes at 1440 and 390 in the session scratchpad; every focus route shows the frame, one main, no horizontal overflow.
+
+## 2026-11-06 UI-STATUS ui/status-pill-empty-states
+- `validate` (inert env): 1730 tests, 1670 pass, 0 fail, 60 skipped (env-gated); test:migrations 71 applied, RLS 85 tables; lint 0 errors / 400 warnings; typecheck ok; build ok.
+- #136 post-merge: production deployment dpl_3L9HhqvyQCLZGhVV65S1MuUG74ay READY on 00840eea; get_runtime_errors 2h: none.

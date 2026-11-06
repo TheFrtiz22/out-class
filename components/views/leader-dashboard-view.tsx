@@ -28,7 +28,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import { StatusBadge } from "@/components/status-badge"
+import { StatusPill } from "@/components/ui/status-pill"
 import { SpeedReviewMode } from "@/components/views/leader-dashboard/speed-review-mode"
 import { PipelineView } from "@/components/views/leader-dashboard/pipeline-view"
 import { type Applicant, workspaceRounds } from "@/lib/data"
@@ -582,7 +582,7 @@ function LocalLeaderDashboardView() {
                     <SheetTitle className="oc-modal-title truncate">{active.name}</SheetTitle>
                     <SheetDescription className="truncate text-xs text-muted-foreground">{active.major} · {active.year}</SheetDescription>
                   </div>
-                  <StatusBadge status={stageName(active.status)} />
+                  <StatusPill status={stageName(active.status)} />
                 </div>
               </SheetHeader>
 

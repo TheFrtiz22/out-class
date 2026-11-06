@@ -15,7 +15,7 @@ import { useApplicationState } from "@/lib/application-state"
 import { useDemoMode } from "@/contexts/demo-context"
 import { useAuth } from "@/contexts/auth-context"
 import { clubRecruitment, recruitmentDate } from "@/lib/recruitment-presentation"
-import { StatusBadge } from "@/components/status-badge"
+import { StatusPill } from "@/components/ui/status-pill"
 import { startClubApplication } from "@/lib/workspace-api"
 import { MarketingProfile, MarketingSections } from "@/components/clubs/marketing-profile"
 import { profileDraft, readMarketing } from "@/lib/club-marketing"
@@ -173,7 +173,7 @@ export function ClubProfileView({
           {configured ? "Includes changes saved on this device" : "Illustrative information"}
         </p>
       )}
-      <div className="oc-club-recruitment-summary" role="note"><span data-available={recruitment.available}>{recruitment.label}</span><p>{recruitment.deadline ? `${demo.isDemoEnabled ? "Sample deadline" : "Deadline"} · ${recruitmentDate(recruitment.deadline)}` : "Recruitment deadline not published"}</p>{application && <StatusBadge status={application.status} />}</div>
+      <div className="oc-club-recruitment-summary" role="note"><span data-available={recruitment.available}>{recruitment.label}</span><p>{recruitment.deadline ? `${demo.isDemoEnabled ? "Sample deadline" : "Deadline"} · ${recruitmentDate(recruitment.deadline)}` : "Recruitment deadline not published"}</p>{application && <StatusPill status={application.status} />}</div>
       <div ref={heading} tabIndex={-1} aria-label={name} className="outline-none">
         <MarketingProfile profile={publicProfile} action={<Button disabled={applyDisabled} onClick={() => void apply()}>{applyLabel}<ArrowRight size={15} aria-hidden="true" /></Button>} />
       </div>

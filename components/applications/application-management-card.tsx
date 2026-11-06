@@ -1,7 +1,7 @@
 "use client"
 import { ArrowRight } from "@/components/icons"
 import { Button } from "@/components/ui/button"
-import { StatusBadge } from "@/components/status-badge"
+import { StatusPill } from "@/components/ui/status-pill"
 import { Progress } from "@/components/ui/progress"
 import { applicationResponseProgress } from "@/lib/student-applications"
 import { recruitmentDeadline, recruitmentDate } from "@/lib/recruitment-presentation"
@@ -18,7 +18,7 @@ export function ApplicationManagementCard({ application: app, deadline, sample =
     <ClubLogo clubId={app.clubId} logoUrl={app.club.logoUrl} marketing={app.club.marketing} text={app.club.name.slice(0, 2)} color={app.club.color || "#142d45"} />
     <div className="min-w-0 flex-1"><h2>{app.club.name}</h2><p>{draft ? progress.total ? `${progress.completed} of ${progress.total} required responses ready` : "No required club questions" : app.submittedAt ? `Submitted ${applicantDate(app.submittedAt)}` : "Submitted application"}</p>
       {draft && <><p>{due ? `${sample ? "Sample deadline" : "Deadline"} · ${recruitmentDate(due)}` : "Deadline not published"}{closed && " · Applications closed"}</p><Progress value={progress.percent} className="oc-draft-progress" aria-label={`Required responses ready for ${app.club.name}`} /><p>{closed ? "Your draft can still be saved." : progress.ready ? "Required responses ready. Review your profile before submitting." : "Your draft is saved; nothing has been submitted."}</p></>}</div>
-    <StatusBadge status={app.status} className="oc-management-state" />
+    <StatusPill status={app.status} className="oc-management-state" />
     <Button variant={draft ? "default" : "outline"} data-application-id={app.id} onClick={onOpen}>{draft ? "Continue draft" : "View responses"}<ArrowRight size={15} aria-hidden="true" /></Button>
   </article>
 }
