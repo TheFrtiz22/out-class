@@ -80,7 +80,7 @@ test('Events: desktop/tablet/mobile views share filters, saves, RSVP, details an
     assert.equal(await page.locator('.oc-event-filter-count').count(), 0);
     await page.getByText('65 approved events · Times shown in Eastern Time', { exact: true }).waitFor();
     await page.getByLabel('Search events', { exact: true }).fill('no matching campus event');
-    await page.getByRole('heading', { name: 'No search results.', exact: true }).waitFor();
+    await page.getByRole('heading', { name: 'No events match your search.', exact: true }).waitFor();
     await page.getByRole('button', { name: 'Show all events', exact: true }).click();
     await page.getByText('65 approved events · Times shown in Eastern Time', { exact: true }).waitFor();
     const screenshots = process.env.OUTCLASS_EVENTS_SCREENSHOTS;

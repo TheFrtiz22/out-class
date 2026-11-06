@@ -361,9 +361,13 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                     ? "Try another keyword or clear your filters."
                     : "New task assignments and review updates will appear here."}
                 </p>
-                {!!items.length && (
+                {items.length ? (
                   <Button size="sm" variant="outline" onClick={resetFilters}>
                     Clear filters
+                  </Button>
+                ) : (
+                  <Button size="sm" variant="outline" onClick={() => { if (canLeaveWorkspace()) setTab("preferences") }}>
+                    Email preferences
                   </Button>
                 )}
               </div>

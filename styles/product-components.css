@@ -128,3 +128,17 @@
 [data-slot="badge"][data-variant="destructive"], [data-application-status="REJECTED"], [data-status-code="REJECTED"] { --badge-accent: var(--destructive); }
 [data-slot="badge"][data-variant="warning"], [data-application-status="WAITLISTED"], [data-status-code="WAITLISTED"] { --badge-accent: var(--warning); }
 [data-slot="badge"][data-variant="info"], [data-application-status="IN_REVIEW"], [data-status-code="IN_REVIEW"] { --badge-accent: var(--info); }
+
+/* Application status pill: one shape for every application state; the label carries meaning, tone reinforces it. */
+.oc-status-pill { --pill-ink: var(--muted-foreground); --pill-surface: var(--muted); display: inline-flex; align-items: center; gap: .375rem; width: fit-content; flex-shrink: 0; padding: .125rem .55rem; border: 1px solid color-mix(in srgb, var(--pill-ink) 22%, transparent); border-radius: 999px; background: var(--pill-surface); color: var(--pill-ink); font-size: var(--oc-text-caption, .75rem); font-weight: 500; line-height: 1.4; white-space: nowrap; }
+.oc-status-pill[data-dot="true"]::before { content: ''; width: 6px; height: 6px; flex-shrink: 0; border-radius: 50%; background: currentColor; }
+.oc-status-pill-detail { font-weight: 400; }
+.oc-status-pill[data-tone="info"] { --pill-ink: var(--info); --pill-surface: var(--info-subtle); }
+.oc-status-pill[data-tone="interview"] { --pill-ink: var(--interview); --pill-surface: var(--interview-subtle); }
+.oc-status-pill[data-tone="warning"] { --pill-ink: var(--warning); --pill-surface: var(--warning-subtle); }
+.oc-status-pill[data-tone="success"] { --pill-ink: var(--success); --pill-surface: var(--success-subtle); }
+.oc-status-pill[data-tone="danger"] { --pill-ink: var(--destructive); --pill-surface: var(--error-subtle); }
+@media (forced-colors: active) { .oc-status-pill { border-color: CanvasText; } .oc-status-pill[data-dot="true"]::before { forced-color-adjust: none; background: CanvasText; } }
+/* Score withheld until the viewer reviews: lock + text, same shape on every row. */
+.oc-review-locked { display: inline-flex; align-items: center; gap: .3rem; white-space: nowrap; color: var(--muted-foreground); font-size: var(--oc-text-caption, .75rem); }
+.oc-review-locked > svg { flex-shrink: 0; }

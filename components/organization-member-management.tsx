@@ -46,6 +46,7 @@ import {
 import { canGrantOnboardingRole } from "@/lib/club-onboarding";
 import { updateTaskMember } from "@/lib/workspace-api";
 import { ClubAccessEditor } from "@/components/club-access-editor";
+import { memberDirectoryEmptyState } from "@/lib/empty-states";
 import { RosterCsvImporter } from "@/components/roster-csv-importer";
 import { Button } from "@/components/ui/button";
 import {
@@ -190,6 +191,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
     }
   }
   const needle = query.trim().toLowerCase();
+  const directoryEmpty = memberDirectoryEmptyState({ invitations: invitesOpen, history, filtered: !!(needle || roleFilter || yearFilter || groupFilter) });
   const rows = data
     ? [
         ...data.members.map((member) => ({
@@ -726,12 +728,17 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
               </table>
             </div>
             {!rows.length && (
-              <p
+              <div
                 role="status"
-                className="rounded-xl border border-dashed bg-muted/20 p-6 text-sm text-muted-foreground"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed bg-muted/20 p-6 text-sm text-muted-foreground"
               >
-                {invitesOpen ? "No invitations match." : "No members match."}
-              </p>
+                <p>{directoryEmpty.title}</p>
+                {directoryEmpty.action && (
+                  <Button variant="outline" size="sm" onClick={() => { setQuery(""); setRoleFilter(""); setYearFilter(""); setGroupFilter(""); setPage(0); }}>
+                    Clear filters
+                  </Button>
+                )}
+              </div>
             )}
             {pages > 1 && (
               <nav

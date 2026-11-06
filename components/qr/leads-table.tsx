@@ -1,6 +1,7 @@
 "use client"
 import { useState } from "react"
 import { eventsAttended, type Attendance } from "@/lib/attendance"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 export function LeadsTable({ attendance, applicantIds, clubId }: { attendance: Attendance[]; applicantIds: Set<string>; clubId: string }) {
@@ -12,7 +13,7 @@ export function LeadsTable({ attendance, applicantIds, clubId }: { attendance: A
     <Input aria-label="Search interested leads" placeholder="Search leads…" value={search} onChange={event => setSearch(event.target.value)} className="max-w-sm shadow-none" />
     <Table><TableHeader><TableRow>{["Name", "Year", "Major", "Events Attended"].map(label => <TableHead key={label}>{label}</TableHead>)}</TableRow></TableHeader><TableBody>
       {visible.map(student => <TableRow key={student.id}><TableCell className="font-medium">{student.name}</TableCell><TableCell>{student.year}</TableCell><TableCell>{student.major}</TableCell><TableCell className="tabular-nums">{eventsAttended(attendance, clubId, student.id)}</TableCell></TableRow>)}
-      {!visible.length && <TableRow><TableCell colSpan={4} className="py-12 text-center text-neutral-500">{students.length ? "No leads match your search." : "No interested leads yet. Share an event QR code to start capturing interest."}</TableCell></TableRow>}
+      {!visible.length && <TableRow><TableCell colSpan={4} className="py-12 text-center text-neutral-500">{students.length ? <div className="flex flex-col items-center gap-3"><span>No leads match your search.</span><Button variant="outline" size="sm" onClick={() => setSearch("")}>Clear search</Button></div> : "No interested leads yet. Share an event QR code to start capturing interest."}</TableCell></TableRow>}
     </TableBody></Table>
   </section>
 }

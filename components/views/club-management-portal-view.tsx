@@ -473,7 +473,10 @@ function MemberDirectoryPanel() {
           </div>
         ))}
         {filtered.length === 0 && (
-          <p className="px-4 py-6 text-center text-sm text-gray-500">No members match your search.</p>
+          <div className="flex flex-col items-center gap-3 px-4 py-6 text-center text-sm text-gray-500">
+            <p>{query ? "No members match your search." : "No members are on the roster yet."}</p>
+            {query && <Button variant="outline" size="sm" onClick={() => setQuery("")}>Clear search</Button>}
+          </div>
         )}
       </div>
     </div>

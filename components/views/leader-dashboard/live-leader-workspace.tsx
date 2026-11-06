@@ -18,7 +18,7 @@ import { applicationAttachmentUrl } from "@/lib/student-applications"
 import { applicationDecisionGroup, decisionGroups, type DecisionGroup } from "@/lib/application-decisions"
 import { type ApplicantSort } from "@/lib/live-applicant-sorting"
 import { applicantLane } from "@/lib/applicant-board"
-import { LiveApplicantList, LiveApplicantKanban, LiveDecisionList, type ApplicantLane } from "./live-applicant-views"
+import { EmptyApplicants, LiveApplicantList, LiveApplicantKanban, LiveDecisionList, type ApplicantLane } from "./live-applicant-views"
 import { useDemoMode } from "@/contexts/demo-context"
 import { RecruitmentAttendanceSummary } from "@/components/recruitment-attendance-summary"
 import { RevealApplicant } from "@/components/reveal-applicant"
@@ -63,7 +63,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog"
-import { Badge } from "@/components/ui/badge"
+import { StatusPill } from "@/components/ui/status-pill"
 
 type Pipeline = Awaited<ReturnType<typeof getClubPipelinePage>>
 type Candidate = Pipeline["applications"][number]
@@ -275,6 +275,10 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     window.addEventListener("keydown", key)
     return () => window.removeEventListener("keydown", key)
   }, [activeId])
+  const filtersActive = !!(query || round || status || review || major || year || gpa || sat || act || rating)
+  function clearFilters() {
+    setQuery(""); setRound(""); setStatus(""); setReview(""); setMajor(""); setYear(""); setGpa(""); setSat(""); setAct(""); setRating("")
+  }
   const applicants = data?.applications || []
   const filtered = applicants
   const pageInfo = !previewId ? listData?.page : undefined
@@ -719,21 +723,8 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         <p className="text-xs text-muted-foreground" role="status">
           {total} {decisionsOnly ? "applications in this selection" : `of ${baseTotal} applicants · scores out of 10`}
         </p>
-        {(query || round || status || review || major || year || gpa || sat || act || rating) && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setQuery("")
-              setRound("")
-              setStatus("")
-              setReview("")
-              setMajor("")
-              setYear("")
-              setGpa("")
-              setSat(""); setAct(""); setRating("")
-            }}
-          >
+        {filtersActive && (
+          <Button variant="ghost" size="sm" onClick={clearFilters}>
             Clear filters
           </Button>
         )}
@@ -741,7 +732,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       </div>
       {view === "kanban" && <p className="text-xs leading-6 text-muted-foreground">Drag a candidate to another column or use Move to. Review the change before it is saved. Interview moves require an interview round.</p>}
       {rejectedOnly&&<p>Rejected applications are retained here with their reviews and decision history. Reconsideration returns an application to review; it does not change the student’s account or membership.</p>}
-      {invalidFilter ? <p role="alert">Enter filters within the displayed numeric ranges.</p> : updating ? <p role="status" aria-live="polite">Updating applicants…</p> : !filtered.length ? <p role="status" className="border-y py-10 text-sm text-muted-foreground">{baseTotal ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No rejected applications. Published rejections appear here with their history preserved." : "Submitted applications will appear here. Student drafts stay private."}</p> : decisionsOnly ? <LiveDecisionList applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban votingSelection={votingChoice} canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} laneCounts={listData?.facets.lanes} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList votingSelection={votingChoice} sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
+      {invalidFilter ? <p role="alert">Enter filters within the displayed numeric ranges.</p> : updating ? <p role="status" aria-live="polite">Updating applicants…</p> : !filtered.length ? <EmptyApplicants clubId={membership.clubId} canEditApplication={hasPermission(membership, "application.manage")} filtered={!!baseTotal} filtersActive={filtersActive} decisionsOnly={decisionsOnly} rejectedOnly={rejectedOnly} clearFilters={clearFilters} /> : decisionsOnly ? <LiveDecisionList applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban votingSelection={votingChoice} canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} laneCounts={listData?.facets.lanes} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList votingSelection={votingChoice} sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
       {displayed.count > 1 && <nav aria-label="Applicant pages" className="flex flex-wrap items-center justify-between gap-3">
         <Button variant="outline" aria-label="Previous applicant page" disabled={busy || !pageInfo?.previous} onClick={() => changePage(pageInfo?.previous ?? null)}>Previous page</Button>
         <p role="status" className="text-sm">Page {displayed.page + 1} of {displayed.count} · Showing {displayed.start + 1}–{displayed.start + displayed.items.length} of {total}</p>
@@ -810,7 +801,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                 {([...(interviewCapabilities(membership).readClosing ? [{ tool: "reviews" as const, label: "Submitted reviews" }] : []), ...(interviewCapabilities(membership).moderateResume && !active.studentId.startsWith("anonymous-") ? [{ tool: "resumes" as const, label: "Résumé moderation" }] : [])]).map(item => <Link key={item.tool} className="inline-flex min-h-10 items-center underline" href={applicantInterviewHref(membership.clubId, item.tool, (() => { const query = new URLSearchParams(typeof window === "undefined" ? "" : window.location.search); if (round) query.set("roundId", round); return query.toString(); })(), active.id)} onClick={e => { if (busy || dirty || !canLeaveWorkspace()) e.preventDefault(); }}>{item.label}</Link>)}
               </nav>}
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
-                <Badge variant="secondary">{applicationStatusLabels[active.status]}</Badge>
+                <StatusPill status={active.status} />
                 <div className="flex items-center gap-2">
                   <Button
                     variant="ghost"
@@ -912,7 +903,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
               <section className="space-y-3 border-b pb-6" aria-label="Interview information"><h3 className="oc-card-heading ">Interviews</h3>{active.studentId.startsWith("anonymous-") ? <p className="text-sm text-muted-foreground">Appointments are withheld during anonymous review.</p> : active.bookings.length ? <ul className="divide-y">{active.bookings.map(booking => <li key={booking.id} className="py-3 text-sm"><p>{schedulingDateTime(booking.slot.startTime)} – {slotTime(booking.slot.endTime, SCHEDULING_TIMEZONE)}</p><p className="mt-1 text-muted-foreground">{booking.slot.location || "Location not provided"}</p></li>)}</ul> : <p className="text-sm text-muted-foreground">No interview scheduled.</p>}</section>
 
               {hasPermission(membership, "applications.review") && <ApplicantDisplayPanel key={active.id} clubId={membership.clubId} applicationId={active.id} refreshKey={JSON.stringify(active.evaluations)} />}
-              </div><div className="oc-applicant-assessment min-w-0 space-y-6"><header className="oc-review-workspace-heading"><p className="oc-editorial-label">Review workspace</p><h3 id="dossier-evaluation" tabIndex={-1}>Read thoughtfully.<br /><em>Decide confidently.</em></h3><Badge variant="secondary">{applicationStatusLabels[active.status]}</Badge></header><section className="space-y-4 border-b border-border pb-6">
+              </div><div className="oc-applicant-assessment min-w-0 space-y-6"><header className="oc-review-workspace-heading"><p className="oc-editorial-label">Review workspace</p><h3 id="dossier-evaluation" tabIndex={-1}>Read thoughtfully.<br /><em>Decide confidently.</em></h3><StatusPill status={active.status} /></header><section className="space-y-4 border-b border-border pb-6">
                 <h3 className="oc-card-heading">Evaluations · score and overall feedback</h3>
                 {active.evaluations.map((item) => (
                   <div key={item.id} className="border-l-2 border-border pl-3">

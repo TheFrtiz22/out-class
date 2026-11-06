@@ -45,6 +45,7 @@
 .oc-notification-empty > svg { color: var(--muted-foreground); margin-bottom: 4px; }
 .oc-notification-empty p { font-size: 14px; font-weight: 500; }
 .oc-notification-empty span { font-size: 12px; color: var(--muted-foreground); }
+.oc-notification-show-all { min-height: 44px; padding: 6px 12px; font-size: 12px; font-weight: 500; color: var(--primary); text-decoration: underline; text-underline-offset: 3px; }
 .oc-notification-error { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 14px; border-bottom: 1px solid rgb(20 45 69 / 9%); background: #f5eee4; font-size: 12px; line-height: 18px; flex-shrink: 0; }
 .oc-notification-error button { flex-shrink: 0; min-height: 44px; min-width: 44px; font-weight: 600; }
 .oc-notification-detail { padding: 8px 18px 18px; }

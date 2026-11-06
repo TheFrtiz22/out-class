@@ -1,5 +1,6 @@
 import type { ClubEvent, Notification, TrackedApplication } from "@/lib/data"
 import { eventStart } from "@/lib/calendar"
+import { applicationStatusCode, isClosedStatus, isDraftStatus } from "@/lib/application-status"
 
 export type HomeApplicationSource = {
   id: string
@@ -16,22 +17,12 @@ export type HomeApplication = {
   color: string
   logoUrl?: string | null
   marketing?: unknown
+  /** Canonical code (applicationStatusCode) of the published status; presentation maps it. */
   status: string
   draft: boolean
   closed: boolean
   deadline?: ClubEvent
   responsesSaved?: number
-}
-const statusLabels: Record<string, string> = {
-  DRAFTING: "Drafting",
-  SUBMITTED: "Submitted",
-  IN_REVIEW: "In Review",
-  INTERVIEWING: "Interviewing",
-  ACCEPTED: "Accepted",
-  REJECTED: "Rejected",
-  WAITLISTED: "Waitlisted",
-  "1st Round Interview": "Interviewing",
-  "2nd Round Interview": "Interviewing",
 }
 export function homeApplications(
   real: HomeApplicationSource[] | null,
@@ -47,7 +38,7 @@ export function homeApplications(
           color: app.club.color || "#142d4e",
           logoUrl: app.club.logoUrl,
           marketing: app.club.marketing,
-          status: statusLabels[app.status] || app.status,
+          status: applicationStatusCode(app.status),
           responsesSaved: app.answers?.filter((answer) => answer.response.trim()).length,
         }))
       : local.map((app) => ({
@@ -57,16 +48,16 @@ export function homeApplications(
           color: app.color,
           logoUrl: app.logoUrl,
           marketing: app.marketing,
-          status: statusLabels[app.status] || app.status,
+          status: applicationStatusCode(app.status),
           responsesSaved: undefined,
         }))
   return rows
     .map((app) => ({
       ...app,
-      draft: app.status === "Drafting",
-      closed: ["Accepted", "Rejected"].includes(app.status),
+      draft: isDraftStatus(app.status),
+      closed: isClosedStatus(app.status),
       deadline:
-        app.status === "Drafting"
+        isDraftStatus(app.status)
           ? events
               .filter(
                 (event) =>

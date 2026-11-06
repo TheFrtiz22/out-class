@@ -15,7 +15,7 @@
 .oc-home-app-copy { min-width: 0; }
 .oc-home-app-copy strong { display: block; font-size: .9375rem; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
 .oc-home-app-copy > span { display: block; margin-top: .25rem; font-size: .8125rem; line-height: 1.5; color: var(--muted-foreground); }
-.oc-home-application [data-slot="badge"] { font-size: .6875rem; }
+.oc-home-application [data-slot="status-pill"] { font-size: .6875rem; }
 .oc-home-row-arrow { color: var(--muted-foreground); }
 .oc-home-list-note { margin-top: .75rem; color: var(--muted-foreground); font-size: .75rem; }
 .oc-home-empty, .oc-home-agenda-empty { padding: 1.25rem 0 .5rem; }
@@ -44,7 +44,7 @@
 @container (max-width: 850px) {
   .oc-home-columns { grid-template-columns: minmax(0,1.5fr) minmax(0,1fr); gap: 1.5rem; }
   .oc-home-application { grid-template-columns: 32px minmax(0,1fr) 14px; }
-  .oc-home-application [data-slot="badge"] { grid-column: 2; justify-self: start; }
+  .oc-home-application [data-slot="status-pill"] { grid-column: 2; justify-self: start; }
   .oc-home-row-arrow { grid-column: 3; grid-row: 1; }
 }
 @container (max-width: 640px) {

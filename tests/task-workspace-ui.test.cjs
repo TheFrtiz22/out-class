@@ -50,9 +50,12 @@ test('personal task totals separate due, missing and submitted work and filter o
 
 test('personal empty states distinguish no assignments from filtered or completed work',async()=>{
  const h=harness(false,true);h.workspace.tasks=[];h.render();await flush();let tree=h.render()
- assert.match(text(tree),/You're all caught up\./);assert.doesNotMatch(text(tree),/No matching work/)
- const search=nodes(tree).find(n=>n.type==='Input'&&n.props['aria-label']==='Search tasks');search.props.onChange({target:{value:'research'}});tree=h.render();assert.match(text(tree),/No tasks match your filters\./)
- button(tree,'Clear filters').props.onClick();tree=h.render();assert.match(text(tree),/You're all caught up\./)
+ assert.match(text(tree),/No tasks assigned yet\./);assert.doesNotMatch(text(tree),/No matching work/)
+ const search=nodes(tree).find(n=>n.type==='Input'&&n.props['aria-label']==='Search tasks');search.props.onChange({target:{value:'research'}});tree=h.render();assert.match(text(tree),/No tasks assigned yet\./)
+ assert.equal(button(tree,'Clear filters'),undefined,'clearing a search cannot reveal tasks that do not exist')
+ const searched=harness(false,true);searched.workspace.tasks=searched.workspace.tasks.filter(task=>task.id==='submitted');searched.render();await flush();tree=searched.render()
+ nodes(tree).find(n=>n.type==='Input'&&n.props['aria-label']==='Search tasks').props.onChange({target:{value:'nothing like this'}});tree=searched.render();assert.match(text(tree),/No tasks match your filters\./)
+ button(tree,'Clear filters').props.onClick();tree=searched.render();assert.match(text(tree),/You're all caught up\./)
  const saved=harness(false,true);saved.workspace.tasks=saved.workspace.tasks.filter(task=>task.id==='submitted');saved.render();await flush();tree=saved.render();assert.match(text(tree),/You're all caught up\./);button(tree,'View all tasks').props.onClick();assert.match(text(saved.render()),/Submitted paper/)
 })
 

@@ -14,7 +14,7 @@
 .oc-application-identity button::after { content: ""; position: absolute; inset: 0; border-radius: var(--oc-content-radius); }
 .oc-application-identity button:focus-visible { outline: none; }
 .oc-application-round { font-size: var(--oc-text-caption); color: var(--muted-foreground); margin-top: .35rem; overflow-wrap: anywhere; }
-.oc-application-status { margin-left: auto; flex-shrink: 0; padding: .3rem .6rem; border: 0; border-radius: var(--oc-radius-sm); font-size: var(--oc-size-11); }
+.oc-application-status { margin-left: auto; flex-shrink: 0; }
 .oc-application-progress { grid-column: 1; width: 100%; max-width: 34rem; }
 .oc-application-row .oc-recruitment-timeline, .oc-application-row .oc-recruitment-timeline ol { margin: 0; }
 .oc-application-row .oc-recruitment-timeline strong { font-size: var(--oc-size-11); }
@@ -46,7 +46,7 @@
 .oc-application-management-row { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; padding: var(--oc-content-padding); background: var(--oc-content-surface); border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); box-shadow: var(--oc-content-shadow); }
 .oc-application-management-row h2, .oc-status-card h2 { font-size: var(--oc-text-card); font-weight: var(--oc-weight-semibold); overflow-wrap: anywhere; }
 .oc-application-management-row p { margin-top: .3rem; font-size: var(--oc-text-caption); color: var(--muted-foreground); }
-.oc-management-state { display: inline-flex; align-items: center; gap: .4rem; font-size: var(--oc-text-caption); color: var(--muted-foreground); }
+.oc-management-state { flex-shrink: 0; }
 .oc-status-card { padding: var(--oc-content-padding); border: 1px solid var(--oc-content-edge); border-left: 3px solid transparent; border-radius: var(--oc-content-radius); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); }
 .oc-status-card[data-attention="true"] { border-left-color: var(--brand-orange); }
 .oc-status-card[data-status="ACCEPTED"], .oc-status-detail-update[data-status="ACCEPTED"] { border-left-color: var(--success); background: var(--oc-surface-sage); }

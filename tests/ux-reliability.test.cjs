@@ -8,7 +8,7 @@ function load(file, mocks, globals = {}) {
   const mod = { exports: {} }
   let code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } }).outputText
   if (file.endsWith('public-event-board.tsx')) code += '\nexports.MyEventRsvps = MyEventRsvps;'
-  new Function('require', 'module', 'exports', ...Object.keys(globals), code)(name => name in mocks ? mocks[name] : name.startsWith('@/') || name.startsWith('./') || name.endsWith('.css') ? new Proxy({}, { get: (_, key) => key }) : require(name), mod, mod.exports, ...Object.values(globals))
+  new Function('require', 'module', 'exports', ...Object.keys(globals), code)(name => name in mocks ? mocks[name] : name === '@/lib/empty-states' ? load('lib/empty-states.ts', {}) : name.startsWith('@/') || name.startsWith('./') || name.endsWith('.css') ? new Proxy({}, { get: (_, key) => key }) : require(name), mod, mod.exports, ...Object.values(globals))
   return mod.exports
 }
 function hooks() {

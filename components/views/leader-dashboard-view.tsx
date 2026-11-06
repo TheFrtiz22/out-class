@@ -28,7 +28,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import { StatusBadge } from "@/components/status-badge"
+import { StatusPill } from "@/components/ui/status-pill"
 import { SpeedReviewMode } from "@/components/views/leader-dashboard/speed-review-mode"
 import { PipelineView } from "@/components/views/leader-dashboard/pipeline-view"
 import { type Applicant, workspaceRounds } from "@/lib/data"
@@ -272,6 +272,11 @@ function LocalLeaderDashboardView() {
   const applicantIds = new Set(applicants.map(applicant => applicant.email.toLowerCase()))
   if (isApplied("vvf")) applicantIds.add(currentStudent.email)
 
+  function clearFilters() {
+    update(p => ({ ...p, crm: { ...p.crm, filters: emptyFilters } }))
+    setMinSat("")
+    setMinGpa("")
+  }
   const activeFilterCount = (query ? 1 : 0) + (stage !== "All Stages" ? 1 : 0) + majors.size + years.size + (appliedMinSat !== null ? 1 : 0) + (appliedMinGpa !== null ? 1 : 0)
 
   return (
@@ -394,11 +399,7 @@ function LocalLeaderDashboardView() {
             variant="ghost"
             size="sm"
             className="h-8 text-xs text-muted-foreground"
-            onClick={() => {
-              update(p => ({ ...p, crm: { ...p.crm, filters: emptyFilters } }))
-              setMinSat("")
-              setMinGpa("")
-            }}
+            onClick={clearFilters}
           >
             Clear filters
           </Button>
@@ -506,7 +507,7 @@ function LocalLeaderDashboardView() {
                 {filtered.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={Math.max(1, crmColumns.filter(column => visible(column.id)).length)} className="py-10 text-center text-sm text-muted-foreground">
-                      No applicants match these filters.
+                      {activeFilterCount > 0 ? <span className="flex flex-col items-center gap-3"><span>No applicants match these filters.</span><Button variant="outline" size="sm" onClick={clearFilters}>Clear filters</Button></span> : "No applicants yet. Applications appear here once students submit them."}
                     </TableCell>
                   </TableRow>
                 )}
@@ -582,7 +583,7 @@ function LocalLeaderDashboardView() {
                     <SheetTitle className="oc-modal-title truncate">{active.name}</SheetTitle>
                     <SheetDescription className="truncate text-xs text-muted-foreground">{active.major} · {active.year}</SheetDescription>
                   </div>
-                  <StatusBadge status={stageName(active.status)} />
+                  <StatusPill status={stageName(active.status)} />
                 </div>
               </SheetHeader>
 

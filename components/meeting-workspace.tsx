@@ -1,4 +1,5 @@
 "use client";
+import { meetingListEmptyState } from "@/lib/empty-states";
 import { MeetingGroupInvitation } from "@/components/meeting-group-invitation"
 import { useEditorDraft } from "@/hooks/use-editor-draft"
 import { AutosaveStatus } from "@/components/ui/autosave-status"
@@ -67,6 +68,7 @@ export function MeetingList({ clubId, embedded = false, initialAudience = "ALL",
   const { user } = useAuth(),
     member = user?.memberships.find((m) => m.clubId === clubId);
   const visible = meetings.filter(m => (audience === "ALL" || m.audience === audience) && meetingIsUpcoming(m) === (period === "upcoming")).sort((a, b) => (period === "upcoming" ? 1 : -1) * (+new Date(a.date) - +new Date(b.date)));
+  const empty = meetingListEmptyState({ period, audience, inPeriod: meetings.filter(m => meetingIsUpcoming(m) === (period === "upcoming")).length, otherPeriod: meetings.filter(m => meetingIsUpcoming(m) !== (period === "upcoming")).length });
   return <section className="oc-workspace-stack">
     {!embedded && <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="oc-section-heading ">Club meetings</h2><Link className="text-sm underline" href="/meetings">All available meetings</Link></div>}
     <div className="flex flex-wrap items-start justify-between gap-4"><p className="max-w-xl text-sm leading-7 text-muted-foreground">Agendas, resources, and attendance for your club.</p>
@@ -80,7 +82,7 @@ export function MeetingList({ clubId, embedded = false, initialAudience = "ALL",
 
     {loading && <LoadingState label="Loading meetings…" layout="schedule" rows={3} />}
     {error && <div role="alert" className="oc-feedback"><p>{error}</p><Button variant="outline" onClick={() => setRefresh(v => v + 1)}>Retry</Button></div>}
-    {!loading && !error && !visible.length && <EmptyState density="compact" align="start" title={`No ${period} meetings for this audience`} description={period === "upcoming" ? "Check Past for earlier agendas and recaps." : "Shared meeting history will appear here."} />}
+    {!loading && !error && !visible.length && <EmptyState density="compact" align="start" title={empty.title} description={empty.description} action={empty.action === "all-audiences" ? <Button variant="outline" onClick={() => setAudience("ALL")}>Show all audiences</Button> : empty.action === "other-period" ? <Button variant="outline" onClick={() => setPeriod(period === "upcoming" ? "past" : "upcoming")}>{period === "upcoming" ? "View past meetings" : "View upcoming meetings"}</Button> : undefined} />}
     <ul className="grid gap-3">{visible.map(meeting => <li key={meeting.id} className="min-w-0">
       <button type="button" onClick={() => setActiveId(meeting.id)} className="oc-content-panel group flex w-full text-left gap-4 hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:p-6"><CalendarDays aria-hidden="true" className="mt-1 size-5 shrink-0 text-primary" /><div className="min-w-0 flex-1"><p className="text-xs text-muted-foreground">{!clubId && `${meeting.club.name} · `}{meeting.audience === "MEMBERS" ? "Members" : "Recruitment / Interest"}</p><h3 className="oc-card-heading mt-2 break-words">{meeting.title}</h3><p className="mt-3 text-sm">{meetingDate(meeting.date)}{meeting.endDate && ` — ${meetingDate(meeting.endDate)}`}</p><p className="mt-2 flex items-start gap-2 break-words text-sm text-muted-foreground"><MapPin aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />{meeting.location}</p><p className="mt-4 text-xs text-muted-foreground">{meeting.recap?.trim() ? "Recap available · " : ""}Open agenda, resources & attendance</p></div><ArrowRight aria-hidden="true" className="mt-1 size-4 shrink-0" /></button>
       {!personalOnly && hasPermission(user?.memberships.find(m => m.clubId === meeting.clubId), "meetings.attendance") && <MeetingAttendanceState key={`${meeting.id}:${refresh}`} meeting={meeting} polling={pollingId === meeting.id} onOpen={setPollingId} />}

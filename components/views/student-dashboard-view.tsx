@@ -16,7 +16,7 @@ import { FeaturedAction } from "@/components/product/featured-action"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ClubLogo } from "@/components/club-logo"
-import { StatusBadge } from "@/components/status-badge"
+import { StatusPill } from "@/components/ui/status-pill"
 import { useApplicationState } from "@/lib/application-state"
 import { useAuth } from "@/contexts/auth-context"
 import { eventStart } from "@/lib/calendar"
@@ -88,18 +88,18 @@ function ApplicationRow({ app, onOpen }: { app: HomeApplication; onOpen: () => v
                 : app.responsesSaved !== undefined
                   ? `${app.responsesSaved} ${app.responsesSaved === 1 ? "response" : "responses"} saved`
                   : "Pick up where you left off"
-              : app.status === "Interviewing"
+              : app.status === "INTERVIEWING"
                 ? "Book your interview / view appointment"
-                : app.status === "Accepted"
+                : app.status === "ACCEPTED"
                   ? "Your decision is ready"
-                  : app.status === "Rejected"
+                  : app.status === "REJECTED"
                     ? "View your decision"
-                    : app.status === "Submitted"
+                    : app.status === "SUBMITTED"
                       ? "Application submitted"
                       : "Check your application for details"}
           </span>
         </span>
-        <StatusBadge status={app.status} />
+        <StatusPill status={app.status} />
         <ChevronRight size={16} className="oc-home-row-arrow" aria-hidden="true" />
       </button>
     </li>
@@ -291,9 +291,13 @@ export function StudentDashboardView({
               <h3>{unavailable ? "Applications are unavailable" : "No applications yet"}</h3>
               <p>
                 {unavailable
-                  ? "Reload the page to try again."
-                  : "When you start an application, your progress and updates will appear here."}
+                  ? "Your account’s applications didn’t load on Home."
+                  : "You haven’t started an application. Drafts and decisions will appear here."}
               </p>
+              <Button variant="ghost" className="mt-3" onClick={() => onNavigate(unavailable ? "tracker" : "explore")}>
+                {unavailable ? "Open Applications" : "Explore clubs"}
+                <ArrowRight size={14} aria-hidden="true" />
+              </Button>
             </div>
           )}
           {applications.length > 4 && (
@@ -320,14 +324,13 @@ export function StudentDashboardView({
               <h3>{agendaUnavailable ? "Your agenda is unavailable" : "Nothing scheduled yet"}</h3>
               <p>
                 {agendaUnavailable
-                  ? "Reload the page to check your scheduled events."
-                  : "Your scheduled interviews and club events will appear here."}
+                  ? "Your scheduled events didn’t load on Home."
+                  : "You have no upcoming interviews or club events."}
               </p>
-              {agendaUnavailable && (
-                <Button variant="ghost" className="mt-3" onClick={() => window.location.reload()}>
-                  Try again
-                </Button>
-              )}
+              <Button variant="ghost" className="mt-3" onClick={() => onNavigate(agendaUnavailable ? "calendar" : "explore")}>
+                {agendaUnavailable ? "Open calendar" : "Explore clubs"}
+                <ArrowRight size={14} aria-hidden="true" />
+              </Button>
             </div>
           )}
         </section>
@@ -339,7 +342,7 @@ export function StudentDashboardView({
               action="Open inbox"
               onClick={() => onNavigate("inbox")}
             />
-            {updates.length === 0 && <div className="oc-home-empty"><Bell size={23} aria-hidden="true" /><h3>You’re all caught up</h3><p>Application updates and club announcements will appear here.</p></div>}
+            {updates.length === 0 && <div className="oc-home-empty"><Bell size={23} aria-hidden="true" /><h3>You’re all caught up</h3><p>No new application updates or club announcements.</p><Button variant="ghost" className="mt-3" onClick={() => onNavigate("inbox")}>Open inbox<ArrowRight size={14} aria-hidden="true" /></Button></div>}
             <ul className="oc-home-list">
               {updates.map((update) => (
                 <li key={update.id}>

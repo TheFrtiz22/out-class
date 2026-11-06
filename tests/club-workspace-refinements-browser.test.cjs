@@ -97,7 +97,8 @@ test('browser: sortable lists, wide applicant profile, drag/drop, quick decision
   await observations.getByRole('button',{name:'Cancel',exact:true}).click()
   await page.waitForFunction(()=>document.activeElement?.textContent==='Add observation')
   const status=page.locator('[data-application-status]').first()
-  assert.deepEqual(await status.evaluate(element=>({background:getComputedStyle(element).backgroundColor,radius:getComputedStyle(element).borderRadius})),{background:'rgba(0, 0, 0, 0)',radius:'0px'})
+  // One application-status pill: text label always present, semantic tone, pill radius, no left rule.
+  assert.deepEqual(await status.evaluate(element=>({text:element.textContent,slot:element.dataset.slot,tone:element.dataset.tone,background:getComputedStyle(element).backgroundColor,radius:getComputedStyle(element).borderRadius,rule:getComputedStyle(element).borderLeftWidth})),{text:'In review',slot:'status-pill',tone:'info',background:'rgb(237, 243, 250)',radius:'999px',rule:'1px'})
   await resumeResponse
   await page.getByRole('dialog').evaluate(element=>Promise.all(element.getAnimations().map(animation=>animation.finished.catch(()=>{}))))
   assert.ok((await page.getByRole('dialog').boundingBox()).x<1440*.1)

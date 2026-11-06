@@ -1,4 +1,5 @@
 "use client"
+import { directoryEmptyState } from "@/lib/empty-states"
 import { NativeSelect } from "@/components/ui/native-select"
 import { useSearchParams } from "next/navigation"
 import { SavedClubsPopover } from "@/components/clubs/saved-clubs-popover"
@@ -132,6 +133,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
     ([key, value]) =>
       key !== "sort" && value !== emptyDirectoryFilters[key as keyof typeof filters],
   )
+  const emptyDirectory = directoryEmptyState(clubs.length, active.length)
   // Only the fields inside the Refine search panel; the row's own selects show their value.
   const refined = [filters.time !== emptyDirectoryFilters.time, filters.acceptance !== emptyDirectoryFilters.acceptance].filter(Boolean).length
   const recruitmentCounts = useMemo(() => {
@@ -326,7 +328,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
             {filtered.length ? (
               <ul className="oc-explore-grid">{filtered.map(club => card(club, "results"))}</ul>
             ) : (
-              <EmptyState density="compact" tone="subtle" icon={<Compass />} title={clubs.length ? "No clubs match this search." : "No clubs available yet."} description={clubs.length ? "Try a broader keyword or remove a filter." : "Club profiles will appear here as organizations are added."} action={active.length > 0 ? <Button variant="outline" onClick={() => updateFilters(emptyDirectoryFilters)}>Clear search and filters</Button> : undefined} />
+              <EmptyState density="compact" tone="subtle" icon={<Compass />} title={emptyDirectory.title} description={emptyDirectory.description} action={emptyDirectory.action ? <Button variant="outline" onClick={() => updateFilters(emptyDirectoryFilters)}>Clear search and filters</Button> : undefined} />
             )}
           </section>
         </>

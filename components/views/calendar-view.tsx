@@ -89,6 +89,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
         .sort((a, b) => eventStart(a).getTime() - eventStart(b).getTime()),
     [events, filter, query, hiddenClubs],
   )
+  const filtered = !!query || filter !== "all" || hiddenClubs.size > 0
   const cursor = dateFromKey(date)
   useEffect(() => setCalendarYear(Number(date.slice(0, 4))), [date, setCalendarYear])
   const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1)
@@ -309,16 +310,16 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                 <div className="space-y-3 border-y border-border py-12">
                   <CalendarDays className="size-6 text-muted-foreground" />
                   <h3 className="oc-card-heading ">
-                    {query || filter !== "all" || hiddenClubs.size
+                    {filtered
                       ? "No events match these filters"
                       : "A little breathing room"}
                   </h3>
                   <p className="max-w-md text-sm leading-7 text-muted-foreground">
-                    {query || filter !== "all" || hiddenClubs.size
+                    {filtered
                       ? "Try a different search or show all your club calendars."
                       : "No upcoming events are on your calendar. Scheduled interviews and club events will appear here."}
                   </p>
-                  {(query || filter !== "all" || hiddenClubs.size > 0) && (
+                  {filtered && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -329,6 +330,11 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                       }}
                     >
                       Clear filters
+                    </Button>
+                  )}
+                  {!filtered && onNavigate && (
+                    <Button variant="outline" size="sm" onClick={() => onNavigate("corkboard")}>
+                      Browse campus events
                     </Button>
                   )}
                 </div>
@@ -446,7 +452,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                           </div>
                         ) : (
                           <p className="text-sm text-muted-foreground">
-                            No events match your filters for this day.
+                            {filtered ? "No events match your filters on this day." : "Nothing scheduled on this day."}
                           </p>
                         )}
                       </section>
@@ -505,7 +511,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                   </button>
                 ))}
                 {!upcoming.length && (
-                  <p className="text-sm text-muted-foreground">No upcoming events match your filters.</p>
+                  <p className="text-sm text-muted-foreground">{filtered ? "No upcoming events match your filters." : "Nothing upcoming on your calendar."}</p>
                 )}
               </div>
             </section>

@@ -36,6 +36,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { eventBoardEmptyState } from "@/lib/empty-states";
 import "./events.css";
 const initialFilters: EventFilters = {
   query: "",
@@ -151,7 +152,7 @@ export function PublicEventBoard() {
   }
   // Everything inside the Filter menu, so its button can show how many apply.
   const menuFilters = [filters.category, filters.clubId, filters.date, filters.location, filters.required, !!identity && filters.savedOnly].filter(Boolean).length;
-  const narrowed = menuFilters > 0 || !!filters.query || filters.period !== "All";
+  const empty = eventBoardEmptyState(filters, !!identity);
   function updateEvent(eventId: string, count: number) {
     setEvents((rows) =>
       rows.map((e) => (e.id === eventId ? { ...e, rsvpCount: count } : e)),
@@ -308,19 +309,9 @@ export function PublicEventBoard() {
           <div key={view} role="region" className={view === "corkboard" ? "oc-physical-board oc-event-view" : "oc-event-list oc-event-view"} data-empty={!events.length || undefined} aria-busy={loading} aria-label={view === "corkboard" ? "Corkboard events" : "Event list"}>
             {!loading && !events.length ? (
               <div className="oc-events-empty">
-                <h2>{filters.savedOnly ? "No saved events here yet." : filters.query ? "No search results." : filters.category || filters.clubId || filters.date || filters.location || filters.required || filters.period !== "All" ? "No events match your filters." : "No upcoming events yet."}</h2>
-                <p>
-                  {filters.query ||
-                  filters.category ||
-                  filters.clubId ||
-                  filters.date ||
-                  filters.location ||
-                  filters.required ||
-                  filters.period !== "All"
-                    ? "Try another date or clear your filters."
-                    : filters.savedOnly ? "Save an event to find it here. Your saved events follow you between views." : "Approved campus events will appear here. Come back soon."}
-                </p>
-                {narrowed && (
+                <h2>{empty.title}</h2>
+                <p>{empty.description}</p>
+                {empty.action && (
                   <Button
                     variant="outline"
                     onClick={() => setFilters(initialFilters)}
