@@ -6,6 +6,11 @@ Appended by `outclass-release-check`. Newest first.
 2026-11-05 backend/booking-throughput (merge on bd3e12d3) app gates: test 1588/0/58 migrations 67 ok (80 tables RLS) lint ok types ok build ok | integration skips 58 (env-gated e2e/native suites; security suite run separately 11/11, booking+ballot contention 14/0) | agent-hook tests 29/0 | authz-reviewer: no high/medium, LOW-1/LOW-2 fixed before merge
 deploy <pending> | runtime errors <pending> | advisor delta <n/a, no migration> | rollback target: production deploy of bd3e12d3 | verdict <pending>
 
+## 2026-11-06 POLISH-4 ui/status-empty-states (05383408, on #137)
+- `npm run validate` (inert env): 1756 tests, 1696 pass, 0 fail, 60 skipped; 71 migrations, RLS on 85 tables; lint 0 errors; typecheck ok; build ok.
+- Disposable stack on a fresh volume: onboarding/paths/account/settings 59/59; selected navigation 16/16. A prior run on an accumulated volume showed false #418/403 failures.
+- Not verified: the date picker's month-boundary focus in a real browser (no fixture with min/max), screen readers.
+
 ## 2026-11-06 POLISH-3 layout/page-structure (base main 4d531bdf + #133 + #134)
 - `npm run validate` (inert env) on e421ff00: 1721 tests, 1661 pass, 1 fail, 59 skipped; lint 0 errors; typecheck ok; build ok. The failure (release-database) compares migrations to the generated Prisma client, which another session regenerated in the shared node_modules with a VotingHandRaise model not present in this repo; the same test passed on this branch before that (1651/0/59 run).
 - Disposable stack (fresh volume) on e421ff00: onboarding/paths/account/settings 54/54; selected navigation 16/16. Voting bar check at 390/1440: hidden until selection, pager and last row not covered.
