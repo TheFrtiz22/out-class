@@ -36,7 +36,7 @@
 }
 
 /* Inherited wrapping stays on product surfaces; public pages keep normal word breaks. */
-:is([data-product-shell] main, .oc-interview-room, .oc-voting-pad, .oc-voting-stage, .oc-standalone-workspace) { min-width: 0; overflow-wrap: anywhere; }
+:is([data-product-shell] main, .oc-interview-room, .oc-voting-pad, .oc-voting-stage) { min-width: 0; overflow-wrap: anywhere; }
 
 .oc-context-sidebar nav [data-navigation-toggle][data-active="true"] { color: var(--oc-rail-text); font-weight: 600; }
 .oc-workspace-nav-children { overflow: hidden; }

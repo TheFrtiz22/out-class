@@ -18,6 +18,7 @@ import { WorkspaceLoading } from "@/components/workspace-loading"
 import { LandingPageView } from "@/components/views/landing-page-view"
 import { resolveStudentView, sectionForStudentView, canonicalStudentParams } from "@/lib/student-navigation"
 import { STUDENT_HOME, studentPath, studentRouteForPath } from "@/lib/navigation"
+import { FocusFrame } from "@/components/shell/focus-frame"
 
 const renderDestinationLoading = () => <OutClassLoadingScreen />
 
@@ -199,7 +200,7 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
 
   return (
     <ApplicationStateProvider initialData={initialData ?? (initialSession ? { applications: [], attendances: [] } : null)} persistLocalState={!demo.isDemoEnabled && !initialSession && initialData == null}>
-      {view === "interview-workspace" ? <AuthSessionBoundary><InterviewWorkspaceView onExit={() => navigate("leader-dashboard")} /></AuthSessionBoundary> : <DashboardLayout view={view} appMode={appMode} onNavigate={navigate} onModeChange={switchMode} personalSection={personalSection} onPersonalSection={setPersonalSection}>
+      {view === "interview-workspace" ? <FocusFrame task="Interview" width="full"><AuthSessionBoundary><InterviewWorkspaceView onExit={() => navigate("leader-dashboard")} /></AuthSessionBoundary></FocusFrame> : <DashboardLayout view={view} appMode={appMode} onNavigate={navigate} onModeChange={switchMode} personalSection={personalSection} onPersonalSection={setPersonalSection}>
             {view === "student-dashboard" && <><OrganizationOwnershipRequests enabled={!!initialSession && !demo.isDemoEnabled} /><StudentDashboardView onNavigate={navigate} initialData={initialData} authenticated={!!initialSession} /></>}
             {view === "student-profile" && <UnifiedStudentProfileView />}
             {view === "inbox" && <InboxView onNavigate={navigate} />}

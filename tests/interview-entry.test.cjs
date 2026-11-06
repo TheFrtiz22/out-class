@@ -13,7 +13,10 @@ test('exact destinations retain slot, booking, club and round; Back preserves or
  for(const [k,v]of Object.entries(entry))if(k!=='clubId')assert.equal(q.get(k),v);
  assert.equal(q.get('date'),'2026-10-20');assert.equal(q.get('interviewTab'),'schedule');
  const back=new URL(api.interviewListHref(id(1),q.toString()),'https://out-class.net');assert.equal(back.searchParams.has('interview'),false);assert.equal(back.searchParams.get('date'),'2026-10-20');assert.equal(back.searchParams.has('applicationId'),false);
- assert.ok(api.interviewEntryHref(entry,'https://outside.test/other?injected=1').startsWith(`/club/${id(1)}/workspace?`));assert.ok(!api.interviewEntryHref(entry,'https://outside.test/other?injected=1').includes('injected'));
+ assert.ok(href.startsWith(`/club/${id(1)}/interview?`),href);assert.equal(q.has('section'),false);assert.equal(q.has('interview'),false);
+ assert.ok(api.interviewEntryHref(entry,'https://outside.test/other?injected=1').startsWith(`/club/${id(1)}/interview?`));
+ // Advancing inside the room keeps the same list filters.
+ assert.equal(new URL(api.interviewEntryHref(entry,'https://out-class.net'+href),'https://out-class.net').searchParams.get('date'),'2026-10-20');assert.ok(!api.interviewEntryHref(entry,'https://outside.test/other?injected=1').includes('injected'));
 });
 test('server exact entry denies revoked, cross-club/round, cancelled and replaced bookings; supported manual assignments remain available',async()=>{
  const h=harness(),api=h.load('actions/interview-entry.ts');assert.deepEqual(await api.resolveInterviewRoomEntry(h.scope),{applicationId:h.scope.applicationId,roundId:h.scope.roundId});

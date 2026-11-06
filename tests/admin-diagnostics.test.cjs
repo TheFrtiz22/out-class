@@ -161,7 +161,7 @@ test('signed-out Admin login uses the canonical login route and preserves its Ad
     '@/components/ui/button': { Button: () => null },
     '@/components/ui/input': { Input: () => null },
   });
-  const Page = h.load('app/platform/login/page.tsx').default;
+  const Page = h.load('app/(focus)/platform/login/page.tsx').default;
   const html = require('react-dom/server').renderToStaticMarkup(require('react').createElement(Page));
   assert.match(html, /href="\/login\?next=%2Fplatform"/);
   assert.ok(!html.includes('view=auth'));
