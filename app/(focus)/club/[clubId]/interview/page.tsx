@@ -33,8 +33,12 @@ export default async function Page({
     const { data: { user }, error } = await getSessionUser();
     demoEnabled = canAccessDemo(error ? undefined : user?.email);
   }
+  if (!demoEnabled && !jar.has(PLATFORM_VIEW_COOKIE)) {
+    // Signed out: sign in and come back to this room (getCurrentUser alone would send the visitor to /).
+    const { data: { user: login }, error } = await getSessionUser();
+    if (error || !login) redirect(`/login?next=${encodeURIComponent(clubInterviewHref(clubId, search.toString()))}`);
+  }
   const user = demoEnabled ? null : await getCurrentUser();
-  if (!demoEnabled && !user) redirect(`/login?next=${encodeURIComponent(clubInterviewHref(clubId, search.toString()))}`);
   const membership = user?.memberships.find(member => member.clubId === clubId);
   if (membership?.club.suspendedAt) return <div className="space-y-4"><PageHeader title="This club is suspended" description={`${membership.club.name} operations are unavailable until an administrator restores the club. Your membership and existing records are preserved.`} /><Link className="underline" href="/home">Return to Personal workspace</Link></div>;
   return <AuthSessionBoundary><ClubInterviewRoom clubId={clubId} /></AuthSessionBoundary>;

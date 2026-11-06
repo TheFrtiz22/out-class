@@ -77,7 +77,7 @@ test("the interview room has its own route; old in-workspace room URLs and every
   const workspace = fs.readFileSync("app/club/[clubId]/workspace/page.tsx", "utf8")
   assert.match(workspace, /legacyInterviewRoomHref\(clubId, search\.toString\(\)\)/)
   const room = fs.readFileSync("app/(focus)/club/[clubId]/interview/page.tsx", "utf8")
-  for (const rule of [/canAccessDemo/, /getCurrentUser\(\)/, /suspendedAt/, /redirect\(`\/login\?next=/, /<AuthSessionBoundary><ClubInterviewRoom/]) assert.match(room, rule)
+  for (const rule of [/canAccessDemo/, /getCurrentUser\(\)/, /suspendedAt/, /redirect\(`\/login\?next=/, /getSessionUser\(\)[\s\S]*getCurrentUser\(\)/, /<AuthSessionBoundary><ClubInterviewRoom/]) assert.match(room, rule)
   assert.match(fs.readFileSync("components/interviews/club-interview-room.tsx", "utf8"), /hasPermission\(membership, "applications\.review"\)/)
   const producers = require("node:child_process").spawnSync("git", ["grep", "-l", "interview=1", "--", "app", "components", "lib", "utils", "actions", ":!lib/interview-entry.ts"], { encoding: "utf8" }).stdout.trim()
   assert.equal(producers, "", "only the legacy reader in lib/interview-entry.ts still mentions ?interview=1")
