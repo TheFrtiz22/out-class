@@ -16,7 +16,7 @@ export async function publishRecruitmentDecision(tx: AppTransactionClient, input
   await lockOperationalClub(tx, input.clubId);
   const app = await tx.application.findFirst({ where: { id: input.applicationId, clubId: input.clubId }, include: { round: true } });
   if (!app || input.roundId && input.roundId !== app.roundId || input.expectedStatus && input.expectedStatus !== app.status && input.status !== app.status)
-    throw Error("Application changed. Refresh before deciding.");
+    throw Error("Application changed. Reload the page and try again.");
   assertRecruitmentTransition(app.status, input.status, app.round.type);
   if (app.status !== input.status) await tx.application.update({ where: { id: app.id }, data: { status: input.status, ...( ["ACCEPTED","WAITLISTED","REJECTED"].includes(input.status) ? { decisionVersion: { increment: 1 } } : {} ) } });
   const existing = await tx.clubInvitation.findUnique({ where: { applicationId: app.id } });

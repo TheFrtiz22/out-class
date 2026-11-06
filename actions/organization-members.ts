@@ -232,7 +232,7 @@ export async function bulkOrganizationMembers(input: unknown) {
   return prisma.$transaction(async tx => {
     const actor = await actorFor(tx, data.clubId, user.id);
     const targets = await tx.clubMember.findMany({ where: { clubId: data.clubId, id: { in: data.targets.map(t => t.id) } }, include: { user: { select: { disabledAt: true, email: true } } } });
-    if (targets.length !== data.targets.length || targets.some(t => t.status !== "ACTIVE" || t.user.disabledAt || +t.updatedAt !== +data.targets.find(x => x.id === t.id)!.updatedAt)) throw new Error("Selected memberships changed. Refresh before trying again.");
+    if (targets.length !== data.targets.length || targets.some(t => t.status !== "ACTIVE" || t.user.disabledAt || +t.updatedAt !== +data.targets.find(x => x.id === t.id)!.updatedAt)) throw new Error("Selected memberships changed. Reload the page and try again.");
     if (data.action === "ROLE" && (!data.role || targets.some(t => !canChangeOrganizationRole(actor, t, data.role!)))) throw new Error("You cannot grant this role to the complete selection.");
     if (data.action === "REMOVE" && targets.some(t => !canRemoveOrganizationMember(actor, t))) throw new Error("You cannot remove the complete selection.");
     if (data.action === "PERMISSIONS" && (!data.permissions || !hasPermission(actor, "leaders.manage") || targets.some(t => t.isOwner || !canControlOrganizationAccess(actor, t)) || data.permissions.some(p => !hasPermission(actor, p)))) throw new Error("These permissions exceed your authority, or the selection contains an owner.");

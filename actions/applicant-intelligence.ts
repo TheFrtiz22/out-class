@@ -42,7 +42,7 @@ export async function getApplicantDisplay(input: z.infer<typeof scope>) {
         ({app,member:reviewer}=await authorized(tx,data,member.id));
         const {s,round}=await loadVotingRoom(tx,data.clubId,voting.id);
         const role=roomAuthority(s,member,round.anonymousReview);
-        if(app.roundId!==s.roundId||app.recruitmentCycleId!==s.cycleId||(!role.leader&&s.activeApplicationId!==app.id))throw Error("Voting presentation changed. Refresh the room.");
+        if(app.roundId!==s.roundId||app.recruitmentCycleId!==s.cycleId||(!role.leader&&s.activeApplicationId!==app.id))throw Error("Voting presentation changed. Reload the page to continue.");
       }
       config=readVotingDisplay(voting.displayConfig);
     }
