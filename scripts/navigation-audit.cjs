@@ -33,7 +33,18 @@ function validateActiveOutput(explicitOutput) {
   assert.ok(!fs.existsSync(path.join(explicitOutput,'browser-samples.json')),'Existing benchmark evidence must not be overwritten');
 }
 async function seed(config) {
-  if(fs.existsSync(fixtureFile)) return JSON.parse(fs.readFileSync(fixtureFile));
+  if(fs.existsSync(fixtureFile)) {
+    // Reuse a fixture only while its owner and clubs exist in this stack's database: a
+    // restarted stack has a fresh database, and stale credentials fail every sign-in.
+    const existing=JSON.parse(fs.readFileSync(fixtureFile));
+    const check=new PrismaClient({datasourceUrl:config.status.DB_URL});
+    try {
+      const clubIds=Array.isArray(existing.clubIds)?existing.clubIds:[];
+      if(existing.userId&&clubIds.length&&await check.user.count({where:{id:existing.userId}})===1&&await check.club.count({where:{id:{in:clubIds}}})===clubIds.length) return existing;
+    } finally { await check.$disconnect(); }
+    // Keep the stale file for inspection rather than deleting it.
+    fs.renameSync(fixtureFile,`${fixtureFile}.stale-${Date.now()}`);
+  }
   const actor = new Actor(config), tag='navaudit'+randomUUID().replaceAll('-','').slice(0,10);
   const email=tag+'@virginia.edu', password='Local-audit-only!'+randomUUID();
   const signup=await actor.client.auth.signUp({email,password});
