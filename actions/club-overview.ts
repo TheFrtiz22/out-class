@@ -77,7 +77,7 @@ export async function getClubWorkspaceOverview(clubId: string) {
     directory.canManageMembers || directory.canChangeRoles
       ? Promise.all([
           prisma.clubMember.count({ where: { clubId, status: "ACTIVE", user: { disabledAt: null } } }),
-          prisma.clubInvitation.count({ where: { clubId, applicationId: null, status: "PENDING", expiresAt: { gt: now }, revokedAt: null, acceptedAt: null, declinedAt: null } }),
+          prisma.clubInvitation.count({ where: { clubId, applicationId: null, requestedRole: "MEMBER", purpose: { in: ["MEMBERSHIP", "ACCESS_GRANT"] }, status: "PENDING", expiresAt: { gt: now }, revokedAt: null, acceptedAt: null, declinedAt: null } }),
         ]).then(([active, pendingInvitations]) => ({ active, pendingInvitations }))
       : Promise.resolve(null),
   ]);

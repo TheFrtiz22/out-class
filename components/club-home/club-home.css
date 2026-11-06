@@ -1,7 +1,7 @@
 /* Club home. Surfaces come only from the glass variants (styles/interface-primitives.css) and the
-   tokens in styles/navigation-glass.css. Blur budget: the rail, header band, workspace pill, search,
-   notifications and account controls already use six blurred surfaces on desktop, so nothing on this
-   page blurs; the raised and navy cards keep their material without a backdrop filter. */
+   tokens in styles/navigation-glass.css. Blur budget: the rail, workspace pill, search, notifications and
+   account controls use five blurred surfaces on desktop (the header band is frosted, not blurred), so
+   nothing on this page blurs; the raised and navy cards keep their material without a backdrop filter. */
 
 /* Hero: one decorative ambient layer behind the greeting and the "Needs you" row. Later content is
    positioned so it paints above the layer in document order. */

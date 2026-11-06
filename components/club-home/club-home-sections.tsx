@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { memberDate } from "@/components/member-overview"
 import { hasPermission } from "@/lib/permissions"
+import { interviewEntryHref } from "@/lib/interview-entry"
 import { interviewPerson, isOverdue, pipeline, thisWeek, type Overview, type RailHrefs } from "@/components/club-home/club-home-model"
 
 type Booking = Overview["operations"]["bookings"][number]
@@ -44,7 +45,7 @@ export function PipelineCard({ data, hrefs, index }: { data: Overview; hrefs: Ra
   </Panel>
 }
 
-export function InterviewsCard({ data, hrefs, index, onOpen }: { data: Overview; hrefs: RailHrefs; index: number; onOpen: (booking: Booking, next: boolean) => void }) {
+export function InterviewsCard({ data, hrefs, index, onOpen }: { data: Overview; hrefs: RailHrefs; index: number; onOpen: (booking: Booking) => void }) {
   const op = data.operations
   const unscheduled = hasPermission(data.membership, "interviews.manage") && hrefs.interviews ? op.rounds.filter(r => r.needsBooking > 0) : []
   if (!op.bookings.length && !unscheduled.length) return null
@@ -55,7 +56,9 @@ export function InterviewsCard({ data, hrefs, index, onOpen }: { data: Overview;
         <time className="oc-interview-time" dateTime={new Date(booking.slot.startTime).toISOString()}>{time(booking.slot.startTime)}<small>{new Date(booking.slot.startTime).toLocaleDateString([], { weekday: "short" })}</small></time>
         <span className="oc-club-home-avatar" aria-hidden="true">{person.initials || <UserRound size={16} />}</span>
         <span className="oc-club-home-row-copy"><strong>{person.label}</strong><small>{[booking.round?.name, booking.slot.location].filter(Boolean).join(" · ")}</small></span>
-        <Button size="sm" variant={i === 0 ? "glass-primary" : "glass"} data-tone={i === 0 ? "interview" : undefined} onClick={() => onOpen(booking, i === 0)} aria-label={`${i === 0 ? "Open room" : "Prep"}: ${person.label}, ${memberDate(booking.slot.startTime)}`}>{i === 0 ? "Open room" : "Prep"}</Button>
+        {i === 0 && booking.slot.roomId && booking.roundId
+          ? <Button size="sm" variant="glass-primary" data-tone="interview" asChild><Link href={interviewEntryHref({ clubId: data.club.id, applicationId: booking.applicationId, roundId: booking.roundId, slotId: booking.slot.id, bookingId: booking.id, roomId: booking.slot.roomId })} aria-label={`Open room: ${person.label}, ${memberDate(booking.slot.startTime)}`}>Open room</Link></Button>
+          : <Button size="sm" variant="glass" onClick={() => onOpen(booking)} aria-label={`Prep: ${person.label}, ${memberDate(booking.slot.startTime)}`}>Prep</Button>}
       </li> })}
       {unscheduled.map(round => <li key={round.id} className="oc-interview-row" data-unscheduled="true">
         <span className="oc-interview-time">Not set</span>

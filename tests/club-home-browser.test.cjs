@@ -51,7 +51,10 @@ test('browser: Club home dashboard, permissions, header glass, blur budget and a
   }
   const links = await page.locator('.oc-club-home-hero a, .oc-club-home a').evaluateAll(links => links.map(a => a.getAttribute('href')))
   assert.ok(links.length >= 8)
-  for (const href of links) assert.ok(rail.some(r => href === r || href.startsWith(`${r}&`)), `${href} is a rail destination`)
+  // The one exception is "Open room", which enters the existing interview room route (authorized there).
+  const room = links.filter(href => href.startsWith('/club/fixture-mii/interview?'))
+  assert.equal(room.length, 1); assert.match(room[0], /roomId=.+/); assert.match(room[0], /bookingId=.+/)
+  for (const href of links.filter(href => !room.includes(href))) assert.ok(rail.some(r => href === r || href.startsWith(`${r}&`)), `${href} is a rail destination`)
   assert.equal(await page.locator('aside nav [aria-current="page"]').textContent(), 'Club home')
   console.log('PASS dashboard links resolve to rail destinations; Club home stays selected')
 
@@ -59,7 +62,8 @@ test('browser: Club home dashboard, permissions, header glass, blur budget and a
   const blurred = await page.evaluate(blurredSurfaces)
   assert.ok(blurred.length <= 6, JSON.stringify(blurred))
   assert.equal(blurred.filter(b => b.name.includes('club-home') || b.name.includes('needs')).length, 0)
-  assert.ok(blurred.some(b => b.name.startsWith('header.oc-product-header::before')), 'header band is glass')
+  assert.ok(!blurred.some(b => b.name.startsWith('header.oc-product-header::before')), 'the header band is frosted, not blurred')
+  assert.notEqual(await page.locator('.oc-product-header').evaluate(el => getComputedStyle(el, '::before').backgroundImage), 'none', 'the header band has the frosted material')
   const card = await page.locator('.oc-club-home-pipeline').evaluate(el => [getComputedStyle(el).backdropFilter, getComputedStyle(el, '::before').backdropFilter])
   assert.ok(card.every(value => !value || value === 'none'))
   console.log('PASS blur budget', blurred.length, 'surfaces')
@@ -83,8 +87,9 @@ test('browser: Club home dashboard, permissions, header glass, blur budget and a
   // Drawers stay in place; Refresh refreshes.
   await page.locator('.oc-needs-card[data-needs="overdue"] .oc-needs-action').click()
   await page.getByRole('dialog').waitFor(); await page.keyboard.press('Escape'); await page.getByRole('dialog').waitFor({ state: 'hidden' })
-  await page.getByRole('button', { name: 'Open room: Jordan Avery', exact: false }).click()
-  await page.getByRole('dialog', { name: 'Open interview room' }).waitFor(); await page.keyboard.press('Escape')
+  assert.equal(await page.getByRole('link', { name: /^Open room: Jordan Avery/ }).count(), 1)
+  await page.getByRole('button', { name: /^Prep: Priya Natarajan/ }).click()
+  await page.getByRole('dialog', { name: 'Prepare for interview' }).waitFor(); await page.keyboard.press('Escape')
   await page.getByRole('button', { name: 'Refresh club home', exact: true }).click()
   assert.equal(await page.locator('[data-refreshes]').getAttribute('data-refreshes'), '1')
   console.log('PASS existing drawers and refresh')

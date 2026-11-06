@@ -76,7 +76,7 @@ Translucency (and `--oc-surface-glass-filter` / `--oc-surface-glass-navy-filter`
 | `Button`, `IconButton` | `variant="glass"`, `variant="glass-primary"` | Glass matches `.oc-floating-circle` (hover `#fff7ec`, stronger edge, lift shadow); glass-primary is the navy pill of the selected workspace segment. Navy focus ring on light glass, orange on navy. |
 | `Skeleton`, `LoadingState` | `variant="glass"` | Light material without blur; skeleton blocks use `--oc-surface-glass-track`. |
 
-Rules: text never passes through a filter; blurred surfaces are never nested; at most six blurred surfaces on screen on desktop (the shell already uses six: rail, header band, workspace pill, search, notifications, account), so page content sets `--oc-surface-glass-filter: none` in its scope, as Club home does. `components/product/segmented-control.tsx` (an `aria-pressed` filter group) predates the segmented tabs and is unchanged; use segmented `Tabs` for tab panels.
+Rules: text never passes through a filter; blurred surfaces are never nested; at most six blurred surfaces on screen on desktop (the shell uses five: rail, workspace pill, search, notifications, account; the header band behind them is frosted without blur so blur is never stacked), so page content keeps `--oc-surface-glass-filter: none` in its scope, as Club home does, unless it is the one surface allowed to blur. `components/product/segmented-control.tsx` (an `aria-pressed` filter group) predates the segmented tabs and is unchanged; use segmented `Tabs` for tab panels.
 
 ## Motion and stacking
 
