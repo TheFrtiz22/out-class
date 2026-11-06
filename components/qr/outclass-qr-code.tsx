@@ -164,7 +164,7 @@ export function OutClassQRCode({
   // Variant: Default (rich interactive card with downloads, copying, and presenter mode)
   return (
     <section
-      className={`rounded-2xl border border-border bg-white p-6 font-sans text-foreground shadow-none dark:bg-white ${className}`}
+      className={`rounded-2xl border border-border bg-white p-6 font-sans text-foreground shadow-none ${className}`}
     >
       <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
         <div className="shrink-0">{qrElement}</div>

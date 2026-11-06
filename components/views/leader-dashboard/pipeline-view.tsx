@@ -109,7 +109,7 @@ export function PipelineView({ columns, applicants, getScore, onMove, onViewProf
                   </span>
                 </div>
                 {column.subtitle && (
-                  <p className={cn("truncate text-[length:var(--oc-size-11)]", isRejected ? "text-muted-foreground" : "text-muted-foreground")}>
+                  <p className={cn("truncate text-[length:var(--oc-size-11)]", isRejected ? "text-muted-foreground opacity-60" : "text-muted-foreground")}>
                     {column.subtitle}
                   </p>
                 )}
@@ -172,7 +172,7 @@ export function PipelineView({ columns, applicants, getScore, onMove, onViewProf
                         <button type="button" onClick={() => onViewProfile(a.id)} className={cn("block max-w-full truncate text-left text-xs font-semibold hover:underline", isRejected ? "text-muted-foreground" : "text-foreground")}>
                           {a.name}
                         </button>
-                        <p className={cn("truncate text-[length:var(--oc-size-11)]", isRejected ? "text-muted-foreground" : "text-muted-foreground")}>
+                        <p className={cn("truncate text-[length:var(--oc-size-11)]", isRejected ? "text-muted-foreground opacity-60" : "text-muted-foreground")}>
                           {a.major}
                         </p>
                         {score > 0 && (
