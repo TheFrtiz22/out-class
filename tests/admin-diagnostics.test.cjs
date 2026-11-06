@@ -55,7 +55,7 @@ test('provider classification requires explicit Supabase denial semantics', () =
 });
 
 test('overview actually renders recovery instead of login when its loader throws', async () => {
-  const h = harness({ '@/actions/admin-workspace': { getAdminOverview: async () => { throw Error('private database details'); } }, '@/components/ui/page-header': { PageHeader: () => null } });
+  const h = harness({ '@/actions/admin-workspace': { getAdminOverview: async () => { throw Error('private database details'); } }, '@/components/ui/page-header': { PageHeader: ({ title }) => require('react').createElement('h1', null, title) } });
   const Page = h.load('app/platform/page.tsx').default;
   const html = require('react-dom/server').renderToStaticMarkup(await Page());
   assert.match(html, /ADMIN_DATA_LOAD_FAILED:/);
@@ -65,7 +65,7 @@ test('overview actually renders recovery instead of login when its loader throws
 });
 test('overview actually renders protected metrics on loader success', async () => {
   const metrics = { students: 2, clubs: 1, eventApprovals: 0, clubApprovals: 0, reports: 0, upcomingEvents: 0, supportItems: 0 };
-  const h = harness({ '@/actions/admin-workspace': { getAdminOverview: async () => metrics }, '@/components/ui/page-header': { PageHeader: () => null } });
+  const h = harness({ '@/actions/admin-workspace': { getAdminOverview: async () => metrics }, '@/components/ui/page-header': { PageHeader: ({ title }) => require('react').createElement('h1', null, title) } });
   const html = require('react-dom/server').renderToStaticMarkup(await h.load('app/platform/page.tsx').default());
   assert.match(html, /Needs Attention/);
   assert.ok(!html.includes('temporarily unavailable'));
@@ -99,7 +99,7 @@ for (const faults of [{ logger: true }, { uuid: true }, { logger: true, uuid: tr
   test(`diagnostic faults ${JSON.stringify(faults)} preserve recovery, denial and API classification`, async () => {
     const h = harness({
       '@/actions/admin-workspace': { getAdminOverview: async () => { throw Error('private loader failure'); } },
-      '@/components/ui/page-header': { PageHeader: () => null },
+      '@/components/ui/page-header': { PageHeader: ({ title }) => require('react').createElement('h1', null, title) },
       '@/utils/platform-admin': { requirePlatformAdminEligibility: async () => { throw Error('private provider failure'); } },
     }, faults);
     const Page = h.load('app/platform/page.tsx').default;
@@ -132,7 +132,7 @@ test('new school-request Admin route preserves denials and recovers from operati
   let failure;
   const h = harness({
     '@/utils/platform-admin': { requirePlatformAdmin: async () => { if (failure) throw failure; return { id: 'admin' }; } },
-    '@/components/ui/page-header': { PageHeader: () => null },
+    '@/components/ui/page-header': { PageHeader: ({ title }) => require('react').createElement('h1', null, title) },
     '@/components/admin/school-request-review': { SchoolRequestReview: () => require('react').createElement('p', null, 'Protected school request review') },
   });
   const Page = h.load('app/platform/school-requests/page.tsx').default;
@@ -157,7 +157,7 @@ test('signed-out Admin login uses the canonical login route and preserves its Ad
   const h = harness({
     '@/contexts/auth-context': { useAuth: () => ({ user: null, loading: false, isImpersonating: false }) },
     '@/contexts/demo-context': { useDemoMode: () => ({ isDemoEnabled: false }) },
-    '@/components/ui/page-header': { PageHeader: () => null },
+    '@/components/ui/page-header': { PageHeader: ({ title }) => require('react').createElement('h1', null, title) },
     '@/components/ui/button': { Button: () => null },
     '@/components/ui/input': { Input: () => null },
   });
