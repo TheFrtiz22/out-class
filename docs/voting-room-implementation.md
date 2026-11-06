@@ -1,4 +1,27 @@
 # Live voting room - Parts 1-3 handoff
+## Discussion: "Something to add" — November 6, 2026
+
+**Implemented on branch `feature/voting-hand-raise`; requires migration `20261106120000_voting_hand_raise` (owner approval before production); not yet released.**
+
+How it is used:
+- **Members** (eligible session voters) see a **Something to add** button under the applicant on their phone. Pressing it raises a hand for the applicant currently being discussed and shows "Hand raised. The leader can see your request." Once the leader acknowledges it, the status reads "The leader has seen your request." **Withdraw** lowers the hand. **Save an observation instead** opens the separate Additional observations feature with its own sharing and attribution rules (not offered in anonymous rounds).
+- **Leaders** see a **Something to add · N** list beside their controls: each member's name and time, with **Acknowledge** and **Clear**. The conversation itself happens in person; there is no queue, microphone or automatic speaking turn.
+- Session leaders and voters see who interviewed the applicant, by round ("Interviewed by Riley Interviewer (First interview)"). This uses the same per-viewer gate as interview evidence on slides (`votingInterviewEvidence`): only identified interview rounds the viewer is authorized for, only completed records with a submitted evaluation, never anonymous records. No notes, drafts or scores are shown. Nothing is shown in anonymous rounds, and nothing is computed for observers or the presentation. Only leaders learn whether an interviewer is on the session roster. An interviewer who isn't an eligible participant gets no access. (Authorization review follow-up: the first draft listed all completed records for every viewer.)
+- The audience presentation shows none of this.
+
+Guarantees:
+- A request never casts a ballot, reveals a vote, saves an observation, pauses or advances voting, changes an outcome, or changes the room revision.
+- Requests are keyed to one participant, applicant and pass (`VotingHandRaise`), so duplicate clicks converge on one row. Re-raising after a withdrawal or clear starts unacknowledged.
+- When the room moves to another applicant (decide-and-advance, advance, without-vote decisions, Undo, End), that applicant's open requests are cleared in the same transaction. A reconnect therefore restores only current requests, and Undo does not revive old ones. A request for an applicant no longer being discussed returns `APPLICANT_CHANGED`.
+- Members see only their own request. Leaders see requests only from currently eligible voters, so a revoked member's request disappears at once, and the actions re-check membership and session roles on every call; leaders cannot acknowledge or clear a revoked member's request.
+
+Migration (additive, forward-only): one table, `VotingHandRaise`, with foreign keys to the pass candidate and to the session participant. The guard allows raising only for the session's active applicant, keeps identity immutable and denies deletes. RLS is enabled and browser roles are denied; only the bounded runtime role gets SELECT/INSERT/UPDATE, with explicit policies.
+
+Evidence:
+- `tests/voting-discussion.test.cjs` (5): multiple members, leader/member visibility, acknowledge/clear/withdraw/re-raise, no ballot, outcome or revision change, duplicate clicks, reconnect, clearing on advance with no revival after Undo, stale-applicant refusal, non-participant/voter/revoked denial, interviewer list and non-participant interviewer, anonymous rounds.
+- `tests/voting-hand-raise-migration.test.cjs`: PGlite guard, immutability, retention, RLS and grants.
+- `tests/voting-discussion-browser.test.cjs`: phone (390px) keyboard raise, leader keyboard acknowledge, reload restoring the status, withdraw, Axe clean on both panels, presentation without discussion controls.
+
 ## Pass / Do not pass without a vote — November 5, 2026
 
 **Implemented on branch `feature/decide-without-vote`; no migration; not yet released.**
