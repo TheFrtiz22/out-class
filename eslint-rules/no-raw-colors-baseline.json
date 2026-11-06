@@ -32,7 +32,7 @@
   "components/views/club-management-portal-view.tsx": 59,
   "components/views/club-manager/broadcast-messages-view.tsx": 37,
   "components/views/club-profile-view.tsx": 2,
-  "components/views/inbox-view.tsx": 3,
+  "components/views/inbox-view.tsx": 2,
   "components/views/leader-dashboard-view.tsx": 22,
   "components/views/leader-dashboard/pipeline-view.tsx": 27,
   "components/views/leader-dashboard/speed-review-mode.tsx": 25,

@@ -352,20 +352,18 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
             ))}
             {!filtered.length && (
               <div className="space-y-3 p-10 text-center">
-                <Bell className="mx-auto size-7 text-neutral-300" />
+                <Bell className="mx-auto size-7 text-muted-foreground" />
                 <p className="text-sm font-medium">
-                  {items.length ? "No matching notifications" : "No notifications here yet"}
+                  {items.length ? "No matching notifications" : "No notifications yet"}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {items.length
-                    ? "Try another keyword or clear your filters."
-                    : "New task assignments and review updates will appear here."}
+                    ? "Your keyword or filters hide every notification."
+                    : "Nothing has been sent to you yet. Choose which updates you want by email."}
                 </p>
-                {!!items.length && (
-                  <Button size="sm" variant="outline" onClick={resetFilters}>
-                    Clear filters
-                  </Button>
-                )}
+                {items.length
+                  ? <Button size="sm" variant="outline" onClick={resetFilters}>Clear filters</Button>
+                  : <Button size="sm" variant="outline" onClick={() => setTab("preferences")}>Email preferences</Button>}
               </div>
             )}
           </div>

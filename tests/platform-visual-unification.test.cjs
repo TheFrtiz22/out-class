@@ -75,9 +75,8 @@ test("rules that used the removed attributes still have a hook in the markup", (
   assert.match(read("components/live-voting/proctor-presentation-view.tsx"), /<MemberVotingPad [^>]*embedded/)
   // Dialog titles and status badges apply on every page now that there is one palette.
   assert.match(primitives, /^:root :is\(\[data-slot="dialog-title"\], \[data-slot="sheet-title"\]\) \{/m)
-  for (const status of ["ACCEPTED", "REJECTED", "WAITLISTED", "IN_REVIEW", "INTERVIEWING"]) {
-    assert.match(primitives, new RegExp(`^:root \\[data-slot="badge"\\]\\[data-status-code="${status}"\\] \\{ --badge-accent: var\\(--`, "m"), status)
-  }
+  // Application states use StatusPill (styles/interface-primitives.css), on every page.
+  for (const status of ["DRAFTING", "SUBMITTED", "IN_REVIEW", "INTERVIEWING", "ACCEPTED", "REJECTED", "WAITLISTED"]) assert.match(read("styles/interface-primitives.css"), new RegExp(`^\\.oc-status-pill\\[data-status="${status}"\\] \\{`, "m"), status)
   assert.doesNotMatch(read("styles/product-components.css") + read("styles/tokens.css"), /:root:has\(/)
 })
 

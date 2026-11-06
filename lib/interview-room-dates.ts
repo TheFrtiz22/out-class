@@ -8,7 +8,14 @@ export function groupInterviewDates(rows: InterviewRoomEntry[]) {
     if (!groups.has(day)) groups.set(day, { day, timezone: row.timezone, label: new Intl.DateTimeFormat("en-US", { timeZone: row.timezone, weekday: "long", month: "long", day: "numeric", year: "numeric" }).format(at), entries: [] });
     groups.get(day)!.entries.push(row);
   }
-  return [...groups.values()].sort((a, b) => a.day.localeCompare(b.day));
+  return [...groups.values()].sort((a, b) => a.day.localeCompare(b.day)).map(group => ({ ...group, span: interviewDaySpan(group.entries, group.timezone) }));
+}
+/** "9:00 AM" for one slot; "First 9:00 AM · last 4:30 PM EST" for a day (start times, in the room's zone). */
+export function interviewDaySpan(entries: Pick<InterviewRoomEntry, "startTime">[], timezone: string) {
+  if (!entries.length) return "";
+  const time = (value: string, zone = false) => new Intl.DateTimeFormat("en-US", { timeZone: timezone, hour: "numeric", minute: "2-digit", ...(zone ? { timeZoneName: "short" } : {}) }).format(new Date(value));
+  const first = entries[0].startTime, last = entries[entries.length - 1].startTime;
+  return first === last ? time(first, true) : `First ${time(first)} · last ${time(last, true)}`;
 }
 export function defaultInterviewDate(groups: ReturnType<typeof groupInterviewDates>, now = new Date()) {
   return groups.find(g => g.day === dayKey(now, g.timezone))?.day || groups.find(g => g.day > dayKey(now, g.timezone))?.day;

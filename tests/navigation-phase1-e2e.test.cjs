@@ -27,11 +27,11 @@ test('Phase 1 GET reads preserve live authority, no-store, Demo isolation and co
    page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(record&&r.url().includes('/api/workspace?')){const kind=new URL(r.url()).searchParams.get('kind');if(['assignedRooms','interviewWorkspace','interviewRounds'].includes(kind)){reads.push({r,kind,start:Date.now(),end:null});active++;max=Math.max(max,active)}}});
    const finish=r=>{const item=reads.find(x=>x.r===r);if(item&&!item.end){item.end=Date.now();active--}};page.on('requestfinished',finish);page.on('requestfailed',finish);
    await page.goto(config.appUrl+'/club/'+clubId+'/workspace?section=recruitment&tool=applicants');await page.locator('.oc-live-pipeline').getByText('Audit Student 000',{exact:false}).first().waitFor();
-   record=true;await page.locator('[data-tour="nav-interviews"]').filter({visible:true}).first().click();await page.getByText('No assigned interviews.',{exact:true}).waitFor();
+   record=true;await page.locator('[data-tour="nav-interviews"]').filter({visible:true}).first().click();await page.getByText('You aren’t assigned to any interview rooms yet. Club leaders add you to a panel when they schedule interviews.',{exact:true}).waitFor();
    assert.equal(reads.length,3);assert.equal(max,3);assert.ok(Math.max(...reads.map(r=>r.start))<Math.min(...reads.map(r=>r.end??Infinity)));assert.equal(await page.getByRole('heading',{name:'Interview scheduling',exact:true}).count(),0);
    record=false;
    for(let i=0;i<5;i++){let applicants=page.locator('[data-tour="nav-applicants"]').filter({visible:true}).first();if(!await applicants.count()){await page.getByRole('button',{name:'Applicants',exact:true}).filter({visible:true}).first().focus();await page.keyboard.press('ArrowRight');applicants=page.locator('[data-tour="nav-applicants"]').filter({visible:true}).first()}await applicants.focus();await page.keyboard.press('Enter');await page.locator('[data-tour="nav-interviews"]').filter({visible:true}).first().focus();await page.keyboard.press('Enter')}
-   await page.getByText('No assigned interviews.',{exact:true}).waitFor();assert.deepEqual(errors,[]);await context.close();
+   await page.getByText('You aren’t assigned to any interview rooms yet. Club leaders add you to a panel when they schedule interviews.',{exact:true}).waitFor();assert.deepEqual(errors,[]);await context.close();
   }finally{await browser.close()}
  });
  await t.test('GET preserves anonymous-round assignment projection and cross-club membership boundaries',async()=>{
