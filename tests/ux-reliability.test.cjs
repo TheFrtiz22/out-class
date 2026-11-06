@@ -61,11 +61,11 @@ function rsvpHarness(api) {
   const C = load('components/events/public-event-board.tsx', { react: h.react, '@/lib/workspace-api': api }, { window: { addEventListener: (name, fn) => listeners[name] = fn, removeEventListener() {} } }).MyEventRsvps
   return { render: () => h.render(() => C({ onCancelled() {} })), flush: h.flush, refresh: () => listeners['outclass-event-rsvp']() }
 }
-test('the empty Corkboard only offers Show all events when something is narrowing the list', async () => {
+test('the empty, unfiltered Corkboard never offers to show what it already shows', async () => {
   const h = boardHarness({}, '')
   h.render(); await h.flush(); const tree = h.render()
-  assert.match(text(tree), /No upcoming events yet/)
-  assert.equal(button(tree, 'Show all events'), undefined)
+  assert.match(text(tree), /No upcoming campus events yet/)
+  assert.equal(button(tree, 'Show all events'), undefined); assert.equal(button(tree, 'Browse all events'), undefined); assert.equal(button(tree, 'Clear filters'), undefined)
   assert.equal(nodes(tree).some(n => n.props?.className === 'oc-event-filter-count'), false)
   assert.equal(nodes(tree).some(n => n.type === 'SavedClubsPopover' || text(n) === 'Saved Clubs'), false)
 })
