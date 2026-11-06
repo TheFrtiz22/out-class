@@ -86,7 +86,8 @@ export function EmptyApplicants({ clubId, canEditApplication, filtered, filtersA
   const [reason, action] = filtered && filtersActive
     ? [decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.", <Button key="clear" variant="outline" size="sm" onClick={clearFilters}>Clear filters</Button>]
     : filtered
-      ? ["No applications in this decision group.", link(`${workspace}?section=recruitment&tool=applicants`, "Review applicants")]
+      // Only a decision group can send people elsewhere; in the main list a link would reload the same view.
+      ? decisionsOnly ? ["No applications in this decision group.", link(`${workspace}?section=recruitment&tool=applicants`, "Review applicants")] : ["No applicants in this view yet.", null]
       : rejectedOnly
         ? ["No rejected applications. Published rejections appear here with their history preserved.", link(`${workspace}?section=recruitment&tool=applicants`, "Review applicants")]
         : canEditApplication

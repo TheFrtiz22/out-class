@@ -38,6 +38,9 @@ test('collapsed day rows summarize first and last slot in Eastern display',()=>{
   assert.equal(daySlotSummary([at('2026-10-20T20:30:00Z'),at('2026-10-20T13:00:00Z'),at('2026-10-20T15:00:00Z')]),'3 slots · 9:00 AM–4:30 PM')
   assert.equal(daySlotSummary([at('2026-10-20T13:00:00Z')]),'1 slot · 9:00 AM')
   assert.equal(daySlotSummary([]),'No slots')
+  // With end times the range reads as the span of interviewing: first start to last end.
+  assert.equal(daySlotSummary([{startTime:'2026-10-20T13:00:00Z',endTime:'2026-10-20T13:30:00Z'},{startTime:'2026-10-20T20:30:00Z',endTime:'2026-10-20T21:00:00Z'}]),'2 slots · 9:00 AM–5:00 PM')
+  assert.equal(daySlotSummary([{startTime:'2026-10-20T13:00:00Z',endTime:'2026-10-20T13:30:00Z'}]),'1 slot · 9:00 AM–9:30 AM')
   assert.equal(daySlotSummary([at('2026-12-01T14:00:00Z'),at('2026-12-01T14:00:00Z')]),'2 slots · 9:00 AM','EST in winter; identical starts collapse to one time')
   assert.equal(daySlotSummary([at('2026-10-20T13:00:00Z')],'America/New_York'),'1 slot · 9:00 AM')
 })

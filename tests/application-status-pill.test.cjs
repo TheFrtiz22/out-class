@@ -116,7 +116,10 @@ test('empty applicant views explain why and offer a different next action', () =
   assert.equal(empty.nodes.find(node => node.type === 'Link').props.href, '/club/club/workspace?section=settings&setting=application')
   assert.equal(action({ canEditApplication: false }).nodes.find(node => node.type === 'Link').props.href, '/club/club/workspace?section=overview')
   assert.match(action({ rejectedOnly: true }).nodes.find(node => node.type === 'Link').props.href, /tool=applicants$/)
-  for (const props of [{}, { canEditApplication: false }, { rejectedOnly: true }, { filtered: true }, { filtered: true, filtersActive: true }]) {
+  // In the main list a 'Review applicants' link would reload the same view, so there is no action.
+  assert.equal(action({ filtered: true }).nodes.filter(node => node.type === 'Link' || (node.type === 'Button' && !node.props.asChild)).length, 0)
+  assert.match(action({ filtered: true, decisionsOnly: true }).nodes.find(node => node.type === 'Link').props.href, /tool=applicants$/)
+  for (const props of [{}, { canEditApplication: false }, { rejectedOnly: true }, { filtered: true, decisionsOnly: true }, { filtered: true, filtersActive: true }]) {
     const result = action(props)
     assert.equal(result.tree.props.role, 'status')
     assert.equal(result.nodes.filter(node => node.type === 'Button' || node.type === 'Link').filter(node => node.type !== 'Button' || !node.props.asChild).length, 1, JSON.stringify(props))

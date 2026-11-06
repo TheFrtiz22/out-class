@@ -144,9 +144,9 @@ export function DatePicker({ value, onChange, min, max, disabled, id, name, plac
     </PopoverTrigger>
     <PopoverContent align="start" className="w-auto max-w-[calc(100vw-2rem)] p-3" onOpenAutoFocus={event => { event.preventDefault(); moveFocus.current = true; grid.current?.querySelector<HTMLElement>(`[data-day="${focused}"]`)?.focus() }} aria-label={`Choose ${aria["aria-label"] ? aria["aria-label"].toLowerCase() : "date"}`}>
       <div className="mb-2 flex items-center justify-between gap-2">
-        <Button type="button" variant="ghost" size="icon-sm" aria-label="Previous month" disabled={isDayKeyDisabled(prevMonthEnd, min)} onClick={() => shiftMonth(-1)}><ChevronLeft aria-hidden="true" /></Button>
+        <Button type="button" variant="ghost" size="icon-sm" aria-label="Previous month" aria-disabled={isDayKeyDisabled(prevMonthEnd, min) || undefined} onClick={() => { if (!(isDayKeyDisabled(prevMonthEnd, min))) shiftMonth(-1) }}><ChevronLeft aria-hidden="true" /></Button>
         <div id={headingId} aria-live="polite" className="text-sm font-medium">{monthLabel}</div>
-        <Button type="button" variant="ghost" size="icon-sm" aria-label="Next month" disabled={isDayKeyDisabled(nextMonthStart, undefined, max)} onClick={() => shiftMonth(1)}><ChevronRight aria-hidden="true" /></Button>
+        <Button type="button" variant="ghost" size="icon-sm" aria-label="Next month" aria-disabled={isDayKeyDisabled(nextMonthStart, undefined, max) || undefined} onClick={() => { if (!(isDayKeyDisabled(nextMonthStart, undefined, max))) shiftMonth(1) }}><ChevronRight aria-hidden="true" /></Button>
       </div>
       <table ref={grid} role="grid" aria-labelledby={headingId} className="border-collapse" onKeyDown={onGridKeyDown}>
         <thead><tr>{WEEKDAYS.map(day => <th key={day} scope="col" abbr={day} className="size-10 text-xs font-normal text-muted-foreground">{day.slice(0, 2)}</th>)}</tr></thead>

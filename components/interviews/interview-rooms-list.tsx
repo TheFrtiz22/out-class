@@ -20,7 +20,7 @@ export function InterviewRoomsList({ clubId }: { clubId: string }) {
   const demo = useDemoMode();
   const assignedRooms = useAssignedInterviewRooms(clubId);
   const [rows, setRows] = useState<InterviewRoomEntry[]>([]), [error, setError] = useState(""), [loading, setLoading] = useState(true), [retry, setRetry] = useState(0), [secondary, setSecondary] = useState(false);
-  const [date, setDate] = useState(() => typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("interviewDate") || "");
+  const [date, setDate] = useState(() => typeof window === "undefined" ? "" : /^\d{4}-\d{2}-\d{2}$/.test(new URLSearchParams(window.location.search).get("interviewDate") || "") ? new URLSearchParams(window.location.search).get("interviewDate")! : "");
   const [expanded, setExpanded] = useState<string[] | null>(() => typeof window === "undefined" ? null : readExpandedInterviewDates(window.location.search));
   const [rounds, setRounds] = useState<{id:string;name:string}[]>([]), [roundId, setRoundId] = useState(() => typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("roundId") || "");
   const groups = groupInterviewDates(rows.filter(row => !roundId || row.roundId === roundId)), defaultDay = date || defaultInterviewDate(groups);

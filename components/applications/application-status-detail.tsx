@@ -1,4 +1,5 @@
 "use client"
+import { applicationDisplay } from "@/lib/application-status"
 import Link from "next/link"
 import { RecruitmentOffer } from "./recruitment-offer"
 import { ArrowLeft, ArrowRight, CalendarDays } from "@/components/icons"
@@ -6,7 +7,7 @@ import { ApplicantBooking } from "@/components/interviews/applicant-booking"
 import { ClubLogo } from "@/components/club-logo"
 import { StatusPill } from "@/components/ui/status-pill"
 import { Button } from "@/components/ui/button"
-import { applicationStatusLabels, applicationNextStep } from "@/lib/student-applications"
+import { applicationNextStep } from "@/lib/student-applications"
 import { isApplicationDecision } from "@/lib/application-presentation"
 import { ApplicationStatusProgress, applicantDate } from "./application-status-card"
 import type { StudentApplication } from "./application-form"
@@ -25,7 +26,7 @@ export function ApplicationStatusDetail({ application: app, notice, onBack, onRe
     </header>
     <p role="status" className={notice ? "text-sm text-muted-foreground" : "sr-only"}>{notice}</p>
     <section className="oc-status-detail-update" data-status={app.status} aria-label="Current application status">
-      <div className="flex flex-wrap items-center gap-3"><h2 className="oc-section-heading">{applicationStatusLabels[app.status]}</h2><StatusPill status={app.status} /></div>
+      <div className="flex flex-wrap items-center gap-3"><h2 className="oc-section-heading">{applicationDisplay(app.status).state}</h2><StatusPill status={app.status} /></div>
       {!decision && app.round?.name && <p className="mt-2 text-sm text-muted-foreground">Current club round · {app.round.name}</p>}
       <p className="mt-3 text-sm leading-6 text-muted-foreground">{applicationNextStep(app.status)}</p>
       {!!app.decisionLetters?.length && <Button asChild className="mt-4"><Link href={`/applications/${encodeURIComponent(app.id)}/decision`}>View Decision</Link></Button>}
