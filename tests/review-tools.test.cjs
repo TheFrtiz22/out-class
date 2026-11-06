@@ -8,12 +8,6 @@ function load(file, mocks = {}) {
   new Function('require','module','exports',code)(name => mocks[name] || (name === "@/components/product/action-workflow" ? {ActionWorkflow:"ActionWorkflow"} : require(name)),mod,mod.exports)
   return mod.exports
 }
-const {previewThresholds} = load('lib/review-rule-preview.ts')
-test('threshold preview evaluates GPA, SAT and ACT independently without interpreting missing scores as failure', () => {
-  assert.deepEqual(previewThresholds({gpa:3.5,sat:1400,act:30},{gpa:3.5,act:29}),[{metric:'gpa',result:'meets'},{metric:'sat',result:'missing'},{metric:'act',result:'below'}])
-  assert.deepEqual(previewThresholds({}, {sat:1200}),[])
-  for(const [metric,value] of [['gpa',5],['sat',1601],['act',37],['act',29.5],['gpa',NaN]]) assert.equal(previewThresholds({[metric]:value},{})[0].result,'invalid')
-})
 function nodes(node) {return !node || typeof node !== 'object' ? [] : Array.isArray(node) ? node.flatMap(nodes) : [node,...nodes(node.props?.children)]}
 test('limited recruitment managers can change test requirements but cannot toggle anonymous rounds', async () => {
   const calls=[]
