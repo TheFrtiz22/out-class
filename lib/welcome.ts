@@ -35,7 +35,7 @@ export function welcomeGreeting(now: Date | null, firstName?: string | null) {
 
 /** One deterministic choice: priority, earliest instant, then stable record ID. */
 export function welcomeSubtitle(context: WelcomeContext, now: Date | null) {
-  const fallback = context.mode === "personal" ? "Explore what's new in OutClass." : "Here's what's happening in your club."
+  const fallback = context.mode === "personal" ? "Explore what's new in OutClass." : "Nothing due this week."
   if (!now || !Number.isFinite(+now)) return fallback
   const candidates: Candidate[] = []
   const add = (id: string, priority: number, at: number, message: string) => candidates.push({ id, priority, at, message })

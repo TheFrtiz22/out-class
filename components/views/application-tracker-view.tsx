@@ -11,7 +11,8 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { applicationAttachmentUrl } from "@/lib/student-applications"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { ArrowLeft, ArrowRight, RefreshCw, FilePenLine } from "@/components/icons"
+import { ArrowLeft, ArrowRight, FilePenLine } from "@/components/icons"
+import { useRevalidate } from "@/hooks/use-revalidate"
 import { getStudentApplications } from "@/lib/workspace-api"
 import { useDemoMode } from "@/contexts/demo-context"
 import { useAuth } from "@/contexts/auth-context"
@@ -129,6 +130,9 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
     clearApplicationFocus()
   }, [applications, pending, focusApplicationClubId, applicationId, clearApplicationFocus, scope])
   const app = applications.find((item) => item.id === activeId)
+  // No Refresh button: reload quietly (keeping the current view) when the person returns or after a change elsewhere.
+  const revalidate = useCallback(() => getStudentApplications().then(apps => { setApplications(apps); sync(apps) }).catch(() => {}), [sync])
+  useRevalidate(revalidate, { enabled: !!user && !pending && !error && !working && app?.status !== "DRAFTING", scopes: ["applications"] })
   function leave(action: () => void) {
     if (working) return
     void flushEditors().then(() => { setDirty(false); action() }).catch(() => {})
@@ -184,12 +188,12 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
     leave(() => onNavigate?.(view))
   }
   function bookingChanged() {
-    void getStudentApplications().then(apps => { setApplications(apps); sync(apps) }).catch(() => setNotice("Interview saved. Refresh to update your application."))
+    void getStudentApplications().then(apps => { setApplications(apps); sync(apps) }).catch(() => setNotice("Interview saved. Your application will update shortly."))
   }
-  if (app && statusView) return <div ref={content} className="oc-application-detail mx-auto max-w-3xl space-y-5 pb-6"><ApplicationStatusDetail application={app} notice={notice} onBack={() => { setActiveId(null); setNotice("") }} onResponses={() => openRelated("tracker")} onCalendar={() => onNavigate?.("calendar")} onRefresh={() => setRetry(value => value + 1)} onBookingChanged={bookingChanged} onMyClubs={() => onNavigate?.("my-clubs")} /></div>
+  if (app && statusView) return <div ref={content} className="oc-application-detail oc-page-reading mx-auto space-y-5 pb-6"><ApplicationStatusDetail application={app} notice={notice} onBack={() => { setActiveId(null); setNotice("") }} onResponses={() => openRelated("tracker")} onCalendar={() => onNavigate?.("calendar")} onRefresh={() => void revalidate()} onBookingChanged={bookingChanged} onMyClubs={() => onNavigate?.("my-clubs")} /></div>
   if (app)
     return (
-      <div ref={content} className={`oc-application-detail mx-auto pb-8 ${app.status === "DRAFTING" ? "oc-writing-workspace" : "max-w-3xl space-y-7"}`}>
+      <div ref={content} className={`oc-application-detail mx-auto pb-8 ${app.status === "DRAFTING" ? "oc-writing-workspace" : "oc-page-reading space-y-7"}`}>
         <Button
           variant="ghost"
           size="sm"
@@ -282,16 +286,6 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
               )}
             </section>
             <div className="flex flex-wrap gap-3 border-t border-border pt-6">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setActiveId(null)
-                  setRetry((value) => value + 1)
-                }}
-              >
-                <RefreshCw className="size-4" />
-                Refresh application
-              </Button>
               <Button variant="ghost" onClick={() => onNavigate?.("explore")}>
                 Explore clubs
                 <ArrowRight className="size-4" />
@@ -308,8 +302,8 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
     : applications.filter(item => filter === "All" || (filter === "Drafts" ? item.status === "DRAFTING" : item.status !== "DRAFTING")).sort((a, b) => Number(b.status === "DRAFTING") - Number(a.status === "DRAFTING") || a.club.name.localeCompare(b.club.name))
   function open(item: StudentApplication) { lastOpened.current = item.id; setActiveId(item.id); setNotice("") }
   return (
-    <div ref={content} className="oc-applications mx-auto max-w-5xl space-y-5" data-application-scope={scope}>
-      <PageHeader density="expressive" title={statusView ? "Status" : "Applications"} description={statusView ? "Where things stand, and what to do next." : "Work on your drafts, check requirements, and review submitted responses."} action={<Button variant="ghost" size="sm" onClick={() => setRetry(value => value + 1)}><RefreshCw className="size-3.5" />Refresh</Button>} />
+    <div ref={content} className="oc-applications mx-auto space-y-5" data-application-scope={scope}>
+      <PageHeader density="expressive" title={statusView ? "Status" : "Applications"} description={statusView ? "Where things stand, and what to do next." : "Work on your drafts, check requirements, and review submitted responses."} />
       {applications.length > 0 && !statusView && <MetricStrip label="Application management" items={[
         { label: drafts === 1 ? "draft" : "drafts", value: drafts },
         { label: "submitted", value: submitted.length },

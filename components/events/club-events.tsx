@@ -3,6 +3,7 @@ import { useEditorDraft } from "@/hooks/use-editor-draft";
 import { AutosaveStatus } from "@/components/ui/autosave-status";
 
 import { useEffect, useRef, useState } from "react";
+import { useRevalidate } from "@/hooks/use-revalidate";
 import { listClubCampusEvents, saveCampusEvent, commandCampusEvent, uploadEventFlyer, getCampusEventRsvpDashboard } from "@/lib/workspace-api";
 import { eventDay, nyDate, eventSchedule, eventDurations, eventScheduleLabel, eventCategories, flyerTemplates, newYorkInput, newYorkInstant, eventDateLabel, managedEventStatus, eventRsvpSummary, type CampusEvent, type ManagedCampusEvent } from "@/lib/campus-events";
 import { EventScheduleFields } from "./event-schedule-fields";
@@ -25,10 +26,10 @@ export function ClubEvents({ clubId, clubName, canSeeAttendees }: { clubId: stri
   const removed = useRef(false);
   useEffect(() => {
     let active = true; setLoading(true); setError("");
-    listClubCampusEvents(clubId).then(r => { if (active) setRows(r) }).catch(() => { if (active) { setRows([]); setError("Could not load events. Refresh to try again.") } }).finally(() => { if (active) setLoading(false) });
+    listClubCampusEvents(clubId).then(r => { if (active) setRows(r) }).catch(() => { if (active) { setRows([]); setError("Could not load events.") } }).finally(() => { if (active) setLoading(false) });
     return () => { active = false };
   }, [clubId, retry]);
-  useEffect(() => { const refresh = () => setRetry(n => n + 1); window.addEventListener("focus", refresh); return () => window.removeEventListener("focus", refresh) }, []);
+  useRevalidate(() => setRetry(n => n + 1), { scopes: ["events"], enabled: !busy && editing === undefined });
   async function command(event: ManagedCampusEvent, value: "SUBMIT" | "WITHDRAW") {
     if (inFlight.current) return; inFlight.current = true; setBusy(true); setError("");
     try {
@@ -37,7 +38,7 @@ export function ClubEvents({ clubId, clubName, canSeeAttendees }: { clubId: stri
       removed.current = value === "WITHDRAW";
       if (value === "SUBMIT") setTab("Pending Approval");
       setConfirm(null); setRetry(n => n + 1);
-    } catch { setError("Event could not be updated. Refresh and try again; it may have changed.") }
+    } catch { setError("Event could not be updated. It may have changed; the list now shows the latest version."); setRetry(n => n + 1) }
     finally { inFlight.current = false; setBusy(false) }
   }
   const event = rows.find(e => e.id === selected);
@@ -54,8 +55,7 @@ export function ClubEvents({ clubId, clubName, canSeeAttendees }: { clubId: stri
   return <section aria-label="Corkboard Events" className="min-w-0 space-y-5">
     <header className="flex flex-wrap items-start justify-between gap-4"><div><h2 ref={overviewHeading} tabIndex={-1} className="oc-section-heading">Corkboard Events</h2><p className="mt-2 text-sm text-muted-foreground">Public events, approval, and RSVP intent. Check-in attendance stays in Member Meetings.</p></div><Button onClick={() => { setSelected(null); setEditing(null) }}>+ Create Corkboard Event</Button></header>
     {notice && <p role="status" className="rounded-lg border p-3 text-sm">{notice}</p>}
-    {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-    <Button variant="outline" size="sm" disabled={loading || busy} onClick={() => setRetry(n => n + 1)}>Refresh events</Button>
+    {error && <p role="alert" className="text-sm text-destructive">{error}{!rows.length && !loading && <> <Button variant="outline" size="sm" disabled={busy} onClick={() => setRetry(n => n + 1)}>Try again</Button></>}</p>}
     {event ? <div className="oc-event-management-detail">
       <div><Button variant="ghost" onClick={() => setSelected(null)}>← All Corkboard events</Button><EventFlyer event={event} /></div>
       <div className="min-w-0 space-y-4"><h2 ref={detailHeading} tabIndex={-1} className="oc-section-heading break-words">{event.title}</h2><span className="oc-event-status">{managedEventStatus(event)}</span><p>{eventScheduleLabel(event)}</p><p className="break-words">{event.location}</p><p className="whitespace-pre-wrap break-words text-sm leading-7">{event.description}</p>
@@ -67,7 +67,7 @@ export function ClubEvents({ clubId, clubName, canSeeAttendees }: { clubId: stri
       </div>
     </div> : <>
       <div className="oc-event-management-tabs" role="group" aria-label="Event filter">{tabs.map(t => <button key={t} type="button" aria-pressed={tab === t} onClick={() => setTab(t)}>{t}{t === "Pending Approval" ? ` (${rows.filter(e => e.status === "PENDING").length})` : ""}</button>)}</div>
-      {loading ? <LoadingState label="Loading club events…" layout="cards" rows={3} /> : !rows.length ? <div className="rounded-lg border p-8"><h3>No Corkboard events yet.</h3><p className="mt-2 text-sm text-muted-foreground">Create a draft, preview it, then submit it for OutClass approval.</p><Button className="mt-4" onClick={() => setEditing(null)}>Create Corkboard Event</Button></div> : !visible.length ? <p className="rounded-lg border p-8 text-sm">No events in {tab.toLowerCase()}.</p> : <ul className="oc-managed-events">{visible.map(e => <li className="oc-managed-event" key={e.id}>
+      {loading && !rows.length ? <LoadingState label="Loading club events…" layout="cards" rows={3} /> : !rows.length ? <div className="rounded-lg border p-8"><h3>No Corkboard events yet.</h3><p className="mt-2 text-sm text-muted-foreground">Create a draft, preview it, then submit it for OutClass approval.</p><Button className="mt-4" onClick={() => setEditing(null)}>Create Corkboard Event</Button></div> : !visible.length ? <p className="rounded-lg border p-8 text-sm">No events in {tab.toLowerCase()}.</p> : <ul className="oc-managed-events">{visible.map(e => <li className="oc-managed-event" key={e.id}>
         <div aria-hidden="true"><EventFlyer event={e} /></div><div className="min-w-0"><h3 className="break-words font-semibold">{e.title}</h3><p className="mt-2 text-sm">{eventScheduleLabel(e)}</p><p className="break-words text-sm text-muted-foreground">{e.location}</p><span className="oc-event-status">{managedEventStatus(e)} · {+new Date(e.endDate) <= Date.now() ? "Past" : "Upcoming"}</span><p className="mt-2 text-sm">{eventRsvpSummary(e.rsvpCount, e.capacity)}</p>{e.status === "PENDING" && <p className="mt-2 text-xs">Waiting for OutClass approval.</p>}{e.rejectionReason && <p className="mt-2 break-words text-sm">Review feedback: {e.rejectionReason}</p>}</div>{actions(e)}
       </li>)}</ul>}
     </>}
@@ -76,9 +76,9 @@ export function ClubEvents({ clubId, clubName, canSeeAttendees }: { clubId: stri
 }
 function RsvpDashboard({ event }: { event: ManagedCampusEvent }) {
   const [data, setData] = useState<Awaited<ReturnType<typeof getCampusEventRsvpDashboard>> | null>(null), [error, setError] = useState(""), [loading, setLoading] = useState(false), [open, setOpen] = useState(false), [revision, setRevision] = useState(0);
-  useEffect(() => { if (!open) return; let active = true; setLoading(true); setError(""); getCampusEventRsvpDashboard(event.clubId, event.id).then(value => { if (active) setData(value) }).catch(() => { if (active) { setData(null); setError("RSVPs could not be loaded. Refresh to try again.") } }).finally(() => { if (active) setLoading(false) }); return () => { active = false } }, [open, event.clubId, event.id, revision]);
-  useEffect(() => { const refresh = () => setRevision(n => n + 1); window.addEventListener("focus", refresh); return () => window.removeEventListener("focus", refresh) }, []);
-  return <section className="min-w-0 space-y-3 rounded-lg border p-4" aria-label="Event RSVPs"><h3 className="font-semibold">RSVPs</h3><p role="status">{eventRsvpSummary(data?.count ?? event.rsvpCount, data ? data.capacity : event.capacity)}</p><p className="text-xs text-muted-foreground">RSVP intent is separate from recorded check-in attendance. Refreshes when you return to this window.</p><Button variant="outline" disabled={loading} onClick={() => { setOpen(true); setRevision(n => n + 1) }}>{loading ? "Loading RSVPs…" : open ? "Refresh RSVPs" : "View RSVPs"}</Button>{error && <p role="alert">{error}</p>}{open && data && (!data.attendees.length ? <p>No RSVPs yet.</p> : <ul className="divide-y">{data.attendees.map((a, i) => <li key={i} className="min-w-0 break-words py-3"><p className="font-medium">{a.name}</p><p className="text-sm">{a.email || "Identity withheld during anonymous review"}</p><p className="text-xs text-muted-foreground">RSVP · {eventDateLabel(a.createdAt)}</p></li>)}</ul>)}</section>;
+  useEffect(() => { if (!open) return; let active = true; setLoading(true); setError(""); getCampusEventRsvpDashboard(event.clubId, event.id).then(value => { if (active) setData(value) }).catch(() => { if (active) { setData(null); setError("RSVPs could not be loaded.") } }).finally(() => { if (active) setLoading(false) }); return () => { active = false } }, [open, event.clubId, event.id, revision]);
+  useRevalidate(() => setRevision(n => n + 1), { enabled: open, scopes: ["events"] });
+  return <section className="min-w-0 space-y-3 rounded-lg border p-4" aria-label="Event RSVPs"><h3 className="font-semibold">RSVPs</h3><p role="status">{eventRsvpSummary(data?.count ?? event.rsvpCount, data ? data.capacity : event.capacity)}</p><p className="text-xs text-muted-foreground">RSVP intent is separate from recorded check-in attendance.</p>{!open ? <Button variant="outline" onClick={() => setOpen(true)}>View RSVPs</Button> : loading && !data && <LoadingState label="Loading RSVPs…" layout="rows" rows={2} />}{error && <p role="alert">{error} <Button variant="outline" size="sm" disabled={loading} onClick={() => setRevision(n => n + 1)}>Try again</Button></p>}{open && data && (!data.attendees.length ? <p>No RSVPs yet.</p> : <ul className="divide-y">{data.attendees.map((a, i) => <li key={i} className="min-w-0 break-words py-3"><p className="font-medium">{a.name}</p><p className="text-sm">{a.email || "Identity withheld during anonymous review"}</p><p className="text-xs text-muted-foreground">RSVP · {eventDateLabel(a.createdAt)}</p></li>)}</ul>)}</section>;
 }
 function EventEditor({
   clubId,

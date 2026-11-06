@@ -57,7 +57,7 @@ export function StudentBookingPreview({ blocks: scheduleLocations, date }: { blo
   }
 
   return (
-    <Card className="mx-auto max-w-2xl">
+    <Card className="oc-page-reading">
       <CardHeader className="text-center">
         <CardTitle className="oc-card-heading ">
           You&apos;ve been invited to Round 1 with Virginia Venture Fund!

@@ -1,7 +1,7 @@
 "use client"
 import Link from "next/link"
 import { RecruitmentOffer } from "./recruitment-offer"
-import { ArrowLeft, ArrowRight, CalendarDays, RefreshCw } from "@/components/icons"
+import { ArrowLeft, ArrowRight, CalendarDays } from "@/components/icons"
 import { ApplicantBooking } from "@/components/interviews/applicant-booking"
 import { ClubLogo } from "@/components/club-logo"
 import { StatusBadge } from "@/components/status-badge"
@@ -39,7 +39,6 @@ export function ApplicationStatusDetail({ application: app, notice, onBack, onRe
     <div className="flex flex-wrap gap-2 border-t pt-4">
       <Button variant="outline" onClick={onResponses}>View submitted responses<ArrowRight size={15} /></Button>
       <Button variant="ghost" onClick={onCalendar}><CalendarDays size={15} />Open calendar</Button>
-      <Button variant="ghost" onClick={onRefresh}><RefreshCw size={15} />Refresh status</Button>
     </div>
   </>
 }

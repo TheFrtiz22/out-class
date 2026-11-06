@@ -1,10 +1,10 @@
 "use client";
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { z } from "zod";
 import { useSearchParams } from "next/navigation";
 import { LoadingState } from "@/components/ui/loading-state";
-import { Search, SlidersHorizontal, Check } from "@/components/icons";
+import { Search, SlidersHorizontal, Check, ChevronDown } from "@/components/icons";
 import { useAuth } from "@/contexts/auth-context";
 import {
   getPublicCorkboard,
@@ -48,7 +48,7 @@ const initialFilters: EventFilters = {
   sort: "soonest",
   page: 0,
 };
-export function PublicEventBoard({ toolbarAction }: { toolbarAction?: ReactNode } = {}) {
+export function PublicEventBoard() {
   const { user } = useAuth(),
     identity = user?.id || "";
   const [filters, setFilters] = useState(initialFilters),
@@ -147,6 +147,9 @@ export function PublicEventBoard({ toolbarAction }: { toolbarAction?: ReactNode 
   function filter(p: EventFilters) {
     setFilters((f) => ({ ...f, ...p, page: 0 }));
   }
+  // Everything inside the Filter menu, so its button can show how many apply.
+  const menuFilters = [filters.category, filters.clubId, filters.date, filters.location, filters.required, !!identity && filters.savedOnly].filter(Boolean).length;
+  const narrowed = menuFilters > 0 || !!filters.query || filters.period !== "All";
   function updateEvent(eventId: string, count: number) {
     setEvents((rows) =>
       rows.map((e) => (e.id === eventId ? { ...e, rsvpCount: count } : e)),
@@ -176,7 +179,6 @@ export function PublicEventBoard({ toolbarAction }: { toolbarAction?: ReactNode 
             </button>
           ))}
         </div>
-        {identity && <button type="button" className="oc-event-pill oc-event-saved-filter" aria-pressed={!!filters.savedOnly} onClick={() => filter({ savedOnly: !filters.savedOnly })}>Saved events</button>}
         <div className="oc-event-toolbar-actions">
         <label className="oc-event-search">
           <Search size={16} aria-hidden="true" />
@@ -191,8 +193,19 @@ export function PublicEventBoard({ toolbarAction }: { toolbarAction?: ReactNode 
           <summary>
             <SlidersHorizontal size={16} aria-hidden="true" />
             Filter
+            {menuFilters > 0 && <span className="oc-event-filter-count"><span aria-hidden="true">{menuFilters}</span><span className="sr-only">, {menuFilters} active</span></span>}
           </summary>
           <div className="oc-event-filter-fields">
+            {identity && (
+              <label className="oc-event-check">
+                <input
+                  type="checkbox"
+                  checked={!!filters.savedOnly}
+                  onChange={(e) => filter({ savedOnly: e.target.checked })}
+                />
+                Saved events
+              </label>
+            )}
             <label>
               Category
               <select
@@ -269,7 +282,6 @@ export function PublicEventBoard({ toolbarAction }: { toolbarAction?: ReactNode 
           </div>
         </details>
         <SegmentedControl label="Event view" value={view} onChange={changeView} animated className="oc-event-view-switch" options={[{ value: "corkboard", label: "Corkboard" }, { value: "list", label: "List View" }]} />
-        {toolbarAction}
         </div>
       </div>
       {saves.error && <div role="alert" className="oc-event-save-error"><p>{saves.error}</p>{!saves.ready && <Button variant="outline" onClick={saves.retry}>Retry saved events</Button>}</div>}
@@ -306,12 +318,14 @@ export function PublicEventBoard({ toolbarAction }: { toolbarAction?: ReactNode 
                     ? "Try another date or clear your filters."
                     : filters.savedOnly ? "Save an event to find it here. Your saved events follow you between views." : "Approved campus events will appear here. Come back soon."}
                 </p>
-                <Button
-                  variant="outline"
-                  onClick={() => setFilters(initialFilters)}
-                >
-                  Show all events
-                </Button>
+                {narrowed && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setFilters(initialFilters)}
+                  >
+                    Show all events
+                  </Button>
+                )}
               </div>
             ) : view === "list" ? (
               <ul className="oc-smart-event-list">
@@ -664,8 +678,9 @@ function MyEventRsvps({ onCancelled }: { onCancelled: (id: string) => void }) {
     }
   }
   return (
-    <details className="mt-5 rounded-lg border p-4">
-      <summary className="cursor-pointer text-sm font-medium">
+    <details className="oc-event-rsvps group mt-5 rounded-lg border p-4">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm font-medium [&::-webkit-details-marker]:hidden">
+        <ChevronDown aria-hidden="true" className="size-4 shrink-0 -rotate-90 transition-transform duration-150 group-open:rotate-0 motion-reduce:transition-none" />
         Your RSVPs{!loading && !error && ` (${rows.length})`}
       </summary>
       <p className="my-3 text-xs text-muted-foreground">

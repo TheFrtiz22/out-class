@@ -28,7 +28,7 @@ export default async function Page({
     orderBy: { createdAt: "desc" },
   });
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="oc-page-reading space-y-6">
       <Link className="underline" href="/settings/organizations">
         Organizations
       </Link>

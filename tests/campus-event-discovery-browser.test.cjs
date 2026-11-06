@@ -56,7 +56,15 @@ test('Events: desktop/tablet/mobile views share filters, saves, RSVP, details an
     assert.equal(await page.locator('.oc-pinned-flyer').count(), 5);
     await page.getByRole('button', { name: 'Previous', exact: true }).click();
     await page.waitForFunction(() => document.querySelectorAll('.oc-pinned-flyer').length === 60);
-    await page.getByRole('button', { name: 'Saved events', exact: true }).click();
+    // One toolbar: date tabs, search, Filter and the view switch. Saved events lives in the Filter menu.
+    const toolbar = page.locator('.oc-event-toolbar');
+    assert.equal(await toolbar.getByRole('button', { name: 'Saved events', exact: true }).count(), 0);
+    assert.equal(await toolbar.getByRole('button', { name: 'Saved Clubs', exact: true }).count(), 0);
+    assert.equal(await toolbar.getByRole('button', { name: 'Corkboard', exact: true }).evaluate(el => el.getClientRects().length), 1, 'the view label stays on one line');
+    await page.locator('.oc-event-filter > summary').click();
+    await page.getByLabel('Saved events', { exact: true }).check();
+    await page.locator('.oc-event-filter > summary').click();
+    assert.equal(await page.locator('.oc-event-filter-count').innerText(), '1');
     await page.getByText('1 approved event · Times shown in Eastern Time', { exact: true }).waitFor();
     await page.getByRole('button', { name: 'List View', exact: true }).click();
     assert.equal(await page.locator('.oc-smart-event-card').count(), 1);
@@ -69,6 +77,7 @@ test('Events: desktop/tablet/mobile views share filters, saves, RSVP, details an
     await page.getByRole('heading', { name: 'No events match your filters.', exact: true }).waitFor();
     await page.getByRole('button', { name: 'Reset filters', exact: true }).click();
     await page.locator('.oc-event-filter > summary').click();
+    assert.equal(await page.locator('.oc-event-filter-count').count(), 0);
     await page.getByText('65 approved events · Times shown in Eastern Time', { exact: true }).waitFor();
     await page.getByLabel('Search events', { exact: true }).fill('no matching campus event');
     await page.getByRole('heading', { name: 'No search results.', exact: true }).waitFor();

@@ -61,6 +61,20 @@ function rsvpHarness(api) {
   const C = load('components/events/public-event-board.tsx', { react: h.react, '@/lib/workspace-api': api }, { window: { addEventListener: (name, fn) => listeners[name] = fn, removeEventListener() {} } }).MyEventRsvps
   return { render: () => h.render(() => C({ onCancelled() {} })), flush: h.flush, refresh: () => listeners['outclass-event-rsvp']() }
 }
+test('the empty Corkboard only offers Show all events when something is narrowing the list', async () => {
+  const h = boardHarness({}, '')
+  h.render(); await h.flush(); const tree = h.render()
+  assert.match(text(tree), /No upcoming events yet/)
+  assert.equal(button(tree, 'Show all events'), undefined)
+  assert.equal(nodes(tree).some(n => n.props?.className === 'oc-event-filter-count'), false)
+  assert.equal(nodes(tree).some(n => n.type === 'SavedClubsPopover' || text(n) === 'Saved Clubs'), false)
+})
+test('Your RSVPs uses the shared Phosphor disclosure chevron, not a text triangle', () => {
+  const h = rsvpHarness({ getMyCampusEventRsvps: () => new Promise(() => {}) })
+  const summary = nodes(h.render()).find(n => n.type === 'summary')
+  assert.ok(nodes(summary).some(n => n.type === 'ChevronDown' && n.props['aria-hidden'] === 'true'))
+  assert.match(summary.props.className, /list-none/)
+})
 test('RSVP history distinguishes loading from empty and does not show a false zero', async () => {
   const pending = deferred(), h = rsvpHarness({ getMyCampusEventRsvps: () => pending.promise })
   assert.ok(nodes(h.render()).some(n => n.type === 'LoadingState'))

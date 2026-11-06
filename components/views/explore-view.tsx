@@ -24,6 +24,13 @@ import { clubRecruitment } from "@/lib/recruitment-presentation"
 import "@/components/clubs/club-discovery.css"
 import "@/components/clubs/explore-directory.css"
 
+const recruitmentOptions = [
+  { value: "all", label: "All clubs" },
+  { value: "open", label: "Applications open" },
+  { value: "closed", label: "Not currently open" },
+  { value: "closing", label: "Closing in 7 days" },
+] as const
+
 function categoryIcon(category: string) {
   const value = category.toLowerCase()
   if (/academic|education/.test(value)) return BookOpen
@@ -125,6 +132,8 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
     ([key, value]) =>
       key !== "sort" && value !== emptyDirectoryFilters[key as keyof typeof filters],
   )
+  // Only the fields inside the Refine search panel; the row's own selects show their value.
+  const refined = [filters.time !== emptyDirectoryFilters.time, filters.acceptance !== emptyDirectoryFilters.acceptance].filter(Boolean).length
   const recruitmentCounts = useMemo(() => {
     const matches = filterDirectory(clubs, { ...filters, recruitment: "all" }, now)
     return { all: matches.length, open: matches.filter(club => clubRecruitment(club, now).available).length, closed: matches.filter(club => !clubRecruitment(club, now).available).length, closing: matches.filter(club => clubRecruitment(club, now).closingSoon).length }
@@ -140,9 +149,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
     lastClub.current = entry
     setSelected(club)
   }
-  const highlights = clubs.some(club => club.recommended)
-    ? clubs.filter(club => club.recommended).slice(0, 3)
-    : filterDirectory(clubs, emptyDirectoryFilters).slice(0, 3)
+  const featured = clubs.filter(club => club.recommended).slice(0, 3)
   const available = filterDirectory(clubs, emptyDirectoryFilters).filter(club => clubRecruitment(club, now).available)
   function card(club: DirectoryClub, section: string) {
     const entry = `${section}-${club.id}`
@@ -202,17 +209,13 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
           )})}
         </section>
       )}
-      <div className="oc-directory-recruitment" role="group" aria-label="Recruitment availability">{[{ value: "all", label: "All clubs" }, { value: "open", label: "Applications open" }, { value: "closed", label: "Not currently open" }, { value: "closing", label: "Closing soon" }].map(option => <button type="button" key={option.value} aria-pressed={filters.recruitment === option.value} onClick={() => change("recruitment", option.value)}>{option.label}<span>{recruitmentCounts[option.value as keyof typeof recruitmentCounts]}</span></button>)}</div>
-      <p className="my-3 text-xs leading-5 text-muted-foreground">Availability reflects applications on OutClass. Check each club’s website for external recruitment.</p>
       <div className="oc-directory-tools oc-toolbar">
         <details>
-
           <summary>
             <SlidersHorizontal size={15} />
-            Refine search{active.length > 0 && <span>({active.length})</span>}
+            Refine search{refined > 0 && <span>({refined})</span>}
           </summary>
           <div className="oc-directory-filters">
-            <label>Recruitment<NativeSelect value={filters.recruitment} onChange={event => change("recruitment", event.target.value)}><option value="all">All recruitment</option><option value="open">Applications open</option><option value="closed">Not currently open</option><option value="closing">Closing in 7 days</option></NativeSelect></label>
             <label>
               Time commitment
               <NativeSelect value={filters.time} onChange={(event) => change("time", event.target.value)}>
@@ -243,6 +246,12 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
           </div>
         </details>
         <label className="oc-directory-sort">
+          Availability
+          <NativeSelect aria-describedby="directory-availability-note" value={filters.recruitment} onChange={event => change("recruitment", event.target.value)}>
+            {recruitmentOptions.map(option => <option key={option.value} value={option.value}>{option.label} ({recruitmentCounts[option.value]})</option>)}
+          </NativeSelect>
+        </label>
+        <label className="oc-directory-sort">
           Sort
           <NativeSelect value={filters.sort} onChange={(event) => change("sort", event.target.value)}>
             <option value="name">Name A–Z</option>
@@ -251,6 +260,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
           </NativeSelect>
         </label>
       </div>
+      <p id="directory-availability-note" className="oc-explore-directory-note">Availability reflects applications on OutClass. Check each club’s website for external recruitment.</p>
       {active.length > 0 && (
         <div className="oc-directory-active">
           <span>Filters applied</span>
@@ -294,11 +304,12 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
       ) : (
         <>
           {clubs.some(club => club.source === "preview") && <p className="oc-explore-sample" role="note">Demo directory · fictional profiles for testing only. No real applications are submitted.</p>}
-          {!active.length && filters.sort === "name" && highlights.length > 0 && (
+          {/* Only clubs the directory actually highlights; an alphabetical slice would repeat "All clubs" below. */}
+          {!active.length && filters.sort === "name" && featured.length > 0 && (
             <section className="oc-explore-section" aria-labelledby="curated-title">
               <div className="oc-explore-section-heading"><div><h2 id="curated-title">Featured clubs</h2></div>
-              <p>{clubs.some(club => club.recommended) ? "Clubs highlighted in the directory." : "Clubs from the directory, listed alphabetically."}</p></div>
-              <ul className="oc-explore-grid">{highlights.map(club => card(club, "featured"))}</ul>
+              <p>Clubs highlighted in the directory.</p></div>
+              <ul className="oc-explore-grid">{featured.map(club => card(club, "featured"))}</ul>
             </section>
           )}
           {!active.length && available.length > 0 && <details className="oc-explore-available"><summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold">Applications open · {available.length} clubs</summary>

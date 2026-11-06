@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Copy, Plus } from "@/components/icons";
 import { useEffect, useRef, useState } from "react";
+import { useRevalidate } from "@/hooks/use-revalidate";
 import { useAuth } from "@/contexts/auth-context";
 import {
   changeOrganizationMemberRole,
@@ -137,6 +138,8 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty, busy]);
+  // No Refresh button: actions reload the directory; returning to the tab reloads it when nothing is in progress.
+  useRevalidate(() => setAttempt((value) => value + 1), { enabled: !!data && !busy && !dirty && !selection.length, scopes: ["members"] });
   const caps = organizationCapabilities(data?.actor);
   const active = data?.members.find((member) => member.id === selectedId);
   async function reload(refreshIdentity = false) {
@@ -173,7 +176,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
       } catch {
         setData(null);
         setError(
-          "The change was saved, but the directory could not be refreshed. Reload members to check your current access.",
+          "The change was saved, but the directory could not be refreshed. Try again to check your current access.",
         );
       }
       return true;
@@ -359,13 +362,6 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 Show invitation history
               </label>
 </>}
-              <Button
-                variant="ghost"
-                disabled={busy}
-                onClick={() => setAttempt((value) => value + 1)}
-              >
-                Refresh members
-              </Button>
             </div>
             {!invitesOpen && caps.canManageMembers && <div className="flex flex-wrap items-center gap-3"><MemberGroupBuilder clubId={clubId} members={data.members} onSaved={reload} /><select aria-label="Filter members by group" className="min-h-11 rounded-md border bg-card px-3 text-sm" value={groupFilter} onChange={event => { setGroupFilter(event.target.value); setPage(0); setSelection([]); }}><option value="">All groups</option>{[...new Set(data.members.flatMap(member => member.groups))].sort().map(group => <option key={group}>{group}</option>)}</select></div>}
             {selection.length > 0 && (
@@ -764,7 +760,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
 </div>;
   return (
     <div
-      className="oc-member-directory min-w-0 max-w-5xl space-y-6"
+      className="oc-member-directory min-w-0 space-y-6"
       data-saving={busy}
       data-unsaved={dirty}
       aria-busy={busy}
@@ -785,7 +781,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
             disabled={busy}
             onClick={() => setAttempt((value) => value + 1)}
           >
-            Reload members
+            Try again
           </Button>
         </div>
       )}

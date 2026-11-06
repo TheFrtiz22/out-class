@@ -13,7 +13,8 @@ import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/
 import { flushEditors } from "@/lib/autosave-navigation";
 import { meetingIsUpcoming, meetingDate } from "@/lib/meeting-presentation";
 import { CalendarDays, MapPin, ArrowRight, Plus } from "@/components/icons";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useRevalidate } from "@/hooks/use-revalidate";
 import { useDemoMode } from "@/contexts/demo-context";
 import { useAuth } from "@/contexts/auth-context";
 import { hasPermission } from "@/lib/permissions";
@@ -66,7 +67,7 @@ export function MeetingList({ clubId, embedded = false, initialAudience = "ALL",
   const { user } = useAuth(),
     member = user?.memberships.find((m) => m.clubId === clubId);
   const visible = meetings.filter(m => (audience === "ALL" || m.audience === audience) && meetingIsUpcoming(m) === (period === "upcoming")).sort((a, b) => (period === "upcoming" ? 1 : -1) * (+new Date(a.date) - +new Date(b.date)));
-  return <section className="oc-workspace-stack max-w-5xl">
+  return <section className="oc-workspace-stack">
     {!embedded && <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="oc-section-heading ">Club meetings</h2><Link className="text-sm underline" href="/meetings">All available meetings</Link></div>}
     <div className="flex flex-wrap items-start justify-between gap-4"><p className="max-w-xl text-sm leading-7 text-muted-foreground">Agendas, resources, and attendance for your club.</p>
       {!personalOnly && clubId && hasPermission(member, "meetings.manage") && <MeetingCreateAction clubId={clubId} onSaved={() => { setPeriod("upcoming"); setAudience("ALL"); setNotice("Meeting created."); setRefresh(v => v + 1) }} />}
@@ -92,10 +93,20 @@ export function MeetingCreateAction({ clubId, onSaved }: { clubId: string; onSav
   return <div className="space-y-2"><ActionWorkflow showCloseAction={false} title="New meeting" description="Choose a time, place, and audience. Add an agenda or resources when you’re ready." trigger={<><Plus size={16} />New meeting</>} variant="default">{done => <MeetingEditor clubId={clubId} onCancel={done} onSaved={() => { done(); setNotice("Meeting created."); onSaved?.() }} />}</ActionWorkflow>{!onSaved && notice && <p role="status" className="text-xs">{notice}</p>}</div>;
 }
 
-/** Fetch the existing permission-checked roster only on request; list browsing does not fan out roster queries. */
+/** Fetch the existing permission-checked roster only on request; list browsing does not fan out roster queries.
+ * Once opened, the count follows a live meeting (every 20s while this tab is visible) and reloads when the person returns. */
 function MeetingAttendanceState({ meeting }: { meeting: Meeting }) {
-  const [count, setCount] = useState<number | null>(null), [busy, setBusy] = useState(false), [error, setError] = useState(false);
-  return <div className="mt-2 flex flex-wrap items-center gap-3 px-1 text-xs text-muted-foreground"><span role="status">{error ? "Attendance unavailable." : count === null ? "Attendance not loaded" : `${count} recorded check-in${count === 1 ? "" : "s"}`}</span><Button size="sm" variant="ghost" disabled={busy} onClick={async () => { setBusy(true); setError(false); try { const rows = await meetingAttendance(meeting.clubId, meeting.id); setCount(rows.length) } catch { setCount(null); setError(true) } finally { setBusy(false) } }}>{busy ? "Loading…" : count === null ? "Check attendance" : "Refresh attendance"}</Button></div>;
+  const [count, setCount] = useState<number | null>(null), [busy, setBusy] = useState(false), [error, setError] = useState(false), [opened, setOpened] = useState(false);
+  const load = useCallback(async () => { setOpened(true); setBusy(true); try { const rows = await meetingAttendance(meeting.clubId, meeting.id); setCount(rows.length); setError(false) } catch { setCount(null); setError(true) } finally { setBusy(false) } }, [meeting.clubId, meeting.id]);
+  const start = +new Date(meeting.date), end = meeting.endDate ? +new Date(meeting.endDate) : start + 2 * 3_600_000;
+  const live = (now = Date.now()) => now >= start - 15 * 60_000 && now <= end;
+  useEffect(() => {
+    if (!opened || error) return;
+    const timer = setInterval(() => { const now = Date.now(); if (document.visibilityState === "visible" && now >= start - 15 * 60_000 && now <= end) void load() }, 20_000);
+    return () => clearInterval(timer);
+  }, [opened, error, load, start, end]);
+  useRevalidate(load, { enabled: opened && !busy, scopes: ["meetings"] });
+  return <div className="mt-2 flex flex-wrap items-center gap-3 px-1 text-xs text-muted-foreground"><span role="status">{error ? "Attendance unavailable." : count === null ? opened ? "Loading attendance…" : "Attendance not loaded" : `${count} recorded check-in${count === 1 ? "" : "s"}${live() ? " · updating live" : ""}`}</span>{(!opened || error) && <Button size="sm" variant="ghost" disabled={busy} onClick={() => void load()}>{busy ? "Loading…" : error ? "Try again" : "Check attendance"}</Button>}</div>;
 }
 
 function MeetingEditor({
@@ -352,7 +363,7 @@ export function MeetingDetail({ id, onUpdated }: { id: string; onUpdated?: () =>
   const member = user?.memberships.find((m) => m.clubId === meeting.clubId),
     resources = resourceSchema.array().safeParse(meeting.resources);
   return (
-    <article className="mx-auto max-w-5xl space-y-8">
+    <article className="oc-page-reading mx-auto space-y-8">
       <header className="space-y-4 border-b pb-7">
         <p className="text-sm text-muted-foreground">
           {meeting.club.name} ·{" "}

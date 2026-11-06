@@ -191,7 +191,7 @@ test("leader local Meetings switch keeps member tools and isolates unavailable D
 test("leader removal requires confirmation and returns keyboard focus to its origin", async () => {
   const slots=[], refs=[];let cursor=0,refCursor=0;const calls=[];
   const react={useState(initial){const i=cursor++;if(!(i in slots))slots[i]=initial;return[slots[i],v=>slots[i]=typeof v==='function'?v(slots[i]):v]},useRef(initial){return refs[refCursor++]??={current:initial}},useEffect(){}};
-  const {ClubEvents}=load('components/events/club-events.tsx',{react,'@/lib/workspace-api':{commandCampusEvent:async input=>calls.push(input)}});
+  const {ClubEvents}=load('components/events/club-events.tsx',{react,'@/hooks/use-revalidate':{useRevalidate(){}},'@/lib/workspace-api':{commandCampusEvent:async input=>calls.push(input)}});
   const render=()=>{cursor=0;refCursor=0;return ClubEvents({clubId:'club',clubName:'Club',canSeeAttendees:true})};
   render();slots[0]=[{id:'event',clubId:'club',title:'Public night',date:'2099-10-16T23:00:00Z',endDate:'2099-10-17T01:00:00Z',location:'Hall',status:'PUBLISHED',revision:2,rsvpCount:1,capacity:2}];slots[1]=false;
   let tree=render();let focused=false;const origin={isConnected:true,focus(){focused=true}};

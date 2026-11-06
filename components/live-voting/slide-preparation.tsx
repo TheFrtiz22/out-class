@@ -130,7 +130,7 @@ function ApplicantPreparation({clubId,sessionId,applicationId,name,onSaved}:{clu
         </li>;})}</ol>}
     </section>
     <section aria-labelledby="prep-preview" className="space-y-2">
-      <div className="flex flex-wrap items-center gap-2"><h3 id="prep-preview" className="font-medium">Slide preview</h3><Button type="button" size="sm" variant="outline" disabled={dirty||save.state==="saving"} onClick={()=>void showPreview()}><Eye aria-hidden="true" size={16}/> {preview?"Refresh preview":"Preview slide"}</Button>{dirty&&<span className="text-xs text-muted-foreground">Preview uses saved highlights.</span>}</div>
+      <div className="flex flex-wrap items-center gap-2"><h3 id="prep-preview" className="font-medium">Slide preview</h3><Button type="button" size="sm" variant="outline" disabled={dirty||save.state==="saving"} onClick={()=>void showPreview()}><Eye aria-hidden="true" size={16}/> {preview?"Update preview":"Preview slide"}</Button>{dirty&&<span className="text-xs text-muted-foreground">Preview uses saved highlights.</span>}</div>
       {previewState==="loading"&&<LoadingState label="Loading preview…" layout="rows" rows={2}/>}
       {previewState==="error"&&<p role="alert" className="text-sm">The preview could not be loaded. Retry after saving.</p>}
       {preview&&previewState===""&&<div className="vr-prep-preview"><ApplicantSlide data={preview}/></div>}

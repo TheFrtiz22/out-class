@@ -46,7 +46,7 @@ test('persisted draft is displayed even when a read takes longer than several po
  assert.match(text(tree),/Session display setup/);
  h.revoke();h.poll();h.complete();await flush();tree=h.render();
  assert.match(text(tree),/Access revoked/);assert.equal(nodes(tree).some(n=>n.type==='ApplicantDisplayPanel'),false);
- button(tree,'Refresh').props.onClick();h.complete();await flush();assert.match(text(h.render()),/Access revoked/);
+ button(tree,'Try again').props.onClick();h.complete();await flush();assert.match(text(h.render()),/Access revoked/);
 });
 
 test('account changes conceal an existing voting snapshot immediately and discard a late old-account response',async()=>{

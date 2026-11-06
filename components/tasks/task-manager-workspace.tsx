@@ -4,7 +4,7 @@ import { flushEditors } from "@/lib/autosave-navigation"
 import { NativeSelect } from "@/components/ui/native-select"
 import { compareAcademicYears } from "@/lib/recruitment-profile"
 import { useEffect, useRef, useState } from "react"
-import { ArrowLeft, ArrowRight, Plus, Copy, Users, CalendarClock, RefreshCw, Search, ArrowUpRight } from "@/components/icons"
+import { ArrowLeft, ArrowRight, Plus, Copy, Users, CalendarClock, Search, ArrowUpRight } from "@/components/icons"
 import { taskAudienceSchema, taskInputSchema, taskState } from "@/lib/tasks"
 import { taskCounts, taskManagerSummary, taskReviewQueue, taskDate, taskAudienceLabel, taskMemberName, memberTaskCounts, type TaskWorkspace, type ClubTask, type ReviewEntry, type TaskRun } from "@/lib/task-presentation"
 import { bulkUpdateTasks, bulkApproveTaskSubmissions, addTaskRecipients, reviewTask, updateTaskMember } from "@/lib/workspace-api"
@@ -17,7 +17,7 @@ import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/
 import { hasPermission } from "@/lib/permissions"
 import { useAuth } from "@/contexts/auth-context"
 const views=[{id:"active",label:"Active"},{id:"review",label:"Needs Review"},{id:"overdue",label:"Overdue"},{id:"projects",label:"Projects"},{id:"members",label:"Members"},{id:"completed",label:"Completed"}]
-export function TaskManagerWorkspace({workspace,run,busy,error,onRefresh,onPersonal,onDirty}:{workspace:TaskWorkspace;run:TaskRun;busy:boolean;error:string;onRefresh:()=>void;onPersonal:()=>void;onDirty:(dirty:boolean)=>void}) {
+export function TaskManagerWorkspace({workspace,run,busy,error,onPersonal,onDirty}:{workspace:TaskWorkspace;run:TaskRun;busy:boolean;error:string;onPersonal:()=>void;onDirty:(dirty:boolean)=>void}) {
   const {user}=useAuth(),membership=user?.memberships.find(member=>member.clubId===workspace.clubId)
   const [notice,setNotice]=useState("");
   const [view,setView]=useState("active"),[dueWeekOnly,setDueWeekOnly]=useState(false),[query,setQuery]=useState(""),[detailId,setDetail]=useState<string|null>(null),[builder,setBuilder]=useState<{source?:ClubTask;editing?:boolean;kind?:"TASK"|"PROJECT";projectId?:string}|null>(null),[dirty,setDirty]=useState(false),[review,setReview]=useState<{entries:ReviewEntry[];startId?:string}|null>(null),[selected,setSelected]=useState<string[]>([]),[reviewSelected,setReviewSelected]=useState<string[]>([]),[bulk,setBulk]=useState<"DUE"|"CLOSE"|"APPROVE"|null>(null),[bulkDue,setBulkDue]=useState(""),[memberId,setMember]=useState<string|null>(null),[taskFilter,setTaskFilter]=useState(""),[projectFilter,setProjectFilter]=useState(""),[yearFilter,setYearFilter]=useState(""),[groupFilter,setGroupFilter]=useState("")
@@ -45,7 +45,7 @@ export function TaskManagerWorkspace({workspace,run,busy,error,onRefresh,onPerso
   </li>}
   return <div className="oc-task-manager space-y-4" data-unsaved={dirty} data-saving={busy}>
     <div className="oc-manager-task-metrics" aria-label="Club task totals">{[{key:"needsReview",label:"Needs review",view:"review"},{key:"overdue",label:"Overdue",view:"overdue"},{key:"dueThisWeek",label:"Due this week",view:"active"},{key:"completed",label:"Completed",view:"completed"}].filter(metric=>summary[metric.key as keyof typeof summary]>0).map(metric=><button type="button" key={metric.key} onClick={()=>{changeView(metric.view);if(metric.key==="dueThisWeek")setDueWeekOnly(true)}}><strong>{summary[metric.key as keyof typeof summary]}</strong><span>{metric.label}</span></button>)}</div>
-    <div className="oc-task-manager-toolbar"><div role="group" aria-label="Task workspace" className="oc-task-scope"><Button type="button" variant="ghost" onClick={onPersonal} disabled={busy}>My Tasks</Button><Button type="button" variant="secondary" aria-pressed>Manage</Button></div><div className="flex gap-2"><Button type="button" variant="ghost" onClick={onRefresh} disabled={busy} aria-label="Refresh tasks"><RefreshCw size={16}/></Button><Button type="button" variant="outline" onClick={event=>openBuilder({kind:"PROJECT"},event)}>New project</Button><Button type="button" onClick={event=>openBuilder({},event)}><Plus size={16}/>Create task</Button></div></div>
+    <div className="oc-task-manager-toolbar"><div role="group" aria-label="Task workspace" className="oc-task-scope"><Button type="button" variant="ghost" onClick={onPersonal} disabled={busy}>My Tasks</Button><Button type="button" variant="secondary" aria-pressed>Manage</Button></div><div className="flex gap-2"><Button type="button" variant="outline" onClick={event=>openBuilder({kind:"PROJECT"},event)}>New project</Button><Button type="button" onClick={event=>openBuilder({},event)}><Plus size={16}/>Create task</Button></div></div>
     <nav className="oc-task-view-tabs" aria-label="Manage tasks">{views.map(item=><button type="button" key={item.id} aria-current={view===item.id?"page":undefined} onClick={()=>changeView(item.id)}>{item.label}{item.id==="review"&&summary.needsReview>0&&<span>{summary.needsReview}</span>}</button>)}</nav>
     {notice && <p role="status" className="text-sm">{notice}</p>}
     {error && <p role="alert" className="oc-task-error">{error}</p>}
