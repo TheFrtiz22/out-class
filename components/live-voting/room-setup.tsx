@@ -19,6 +19,7 @@ import {AdditionalObservations} from '@/components/additional-observations';
 import {VotingRuleEditor,draftFromRules,leaderDraft,readRuleDraft,rulesFromDraft,type RuleDraft} from "./voting-rule-editor";
 import {describeVotingRules} from "@/lib/voting-rules";
 import "./room.css";
+import { PageHeader } from "@/components/ui/page-header";
 type Setup=Awaited<ReturnType<typeof getLiveVotingSetup>>;
 const label=(f:LiveRoomField)=>f==="resumeHighlight"?"Leader-selected résumé excerpt":f==="interviewScore"?"Cumulative interview score":f==="additionalObservations"?"Additional observations":f==="finalInterviewThoughts"?"Submitted final interview thoughts":fieldLabels[f];
 export function VotingRoomSetup({clubId,demoScoped,initialCycleId="",initialRoundId="",selectionKey="",draftId="main",editSession=""}:{clubId:string;demoScoped:boolean;initialCycleId?:string;initialRoundId?:string;selectionKey?:string;draftId?:string;editSession?:string}){
@@ -65,9 +66,9 @@ export function VotingRoomSetup({clubId,demoScoped,initialCycleId="",initialRoun
  }
 
  if(auth.loading||!demo.ready)return <div className="vr-page"><LoadingState label="Checking your session…" layout="inline" /></div>;
- if(!auth.user)return <div className="vr-page"><h1>Prepare live voting</h1><Link href={`/login?next=${encodeURIComponent(votingSetupHref(clubId,new URLSearchParams({draft:draftId,...(editSession?{session:editSession}:{}),...(initialCycleId?{cycleId:initialCycleId}:{}),...(initialRoundId?{roundId:initialRoundId}:{}),...(demoScoped?{demo:"1"}:{})}).toString(),selectionKey||undefined))}`}>Sign in and return</Link></div>;
- if(demoScoped!==demo.isDemoEnabled)return <div className="vr-page"><h1>Voting workspace unavailable</h1><p>Use a link for your current Live or Demo workspace.</p></div>;
- return <div className="vr-page"><div className="vr-form"><header className="vr-header"><h1 ref={heading} tabIndex={-1}>Set up voting</h1><VotingBackLink clubId={clubId} cycleId={cycle} roundId={round}/></header>
+ if(!auth.user)return <div className="vr-page"><PageHeader title="Prepare live voting" /><Link href={`/login?next=${encodeURIComponent(votingSetupHref(clubId,new URLSearchParams({draft:draftId,...(editSession?{session:editSession}:{}),...(initialCycleId?{cycleId:initialCycleId}:{}),...(initialRoundId?{roundId:initialRoundId}:{}),...(demoScoped?{demo:"1"}:{})}).toString(),selectionKey||undefined))}`}>Sign in and return</Link></div>;
+ if(demoScoped!==demo.isDemoEnabled)return <div className="vr-page"><PageHeader title="Voting workspace unavailable" /><p>Use a link for your current Live or Demo workspace.</p></div>;
+ return <div className="vr-page"><div className="vr-form"><header className="vr-header"><PageHeader title="Set up voting" titleRef={heading} focusable /><VotingBackLink clubId={clubId} cycleId={cycle} roundId={round}/></header>
  <ol className="vr-stats" aria-label="Setup progress">{['Session details','Applicants and voters','Presentation and review'].map((text,i)=><li key={text} aria-current={step===i+1?'step':undefined}>{i+1}. {text}</li>)}</ol>
  {error&&<div role="alert" className="vr-error">{error} {pending.current&&<Link className="vr-link" href={liveRoomPath(clubId,sessionId,'leader',demoScoped)}>Open session details to review saved setup</Link>} <Button variant="outline" disabled={busy} onClick={()=>pending.current?void prepare():setRetry(v=>v+1)}>Retry</Button></div>}
  {draft.error&&<div role="alert">{draft.error} <Button variant="outline" onClick={draft.retry}>Retry draft</Button></div>}

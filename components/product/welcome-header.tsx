@@ -1,6 +1,6 @@
 "use client"
 import type { ComponentProps } from "react"
-import { PageHeader } from "@/components/product/page-header"
+import { PageHeader } from "@/components/ui/page-header"
 import { welcomeGreeting, welcomeSubtitle, type WelcomeContext } from "@/lib/welcome"
 import { useWelcomeClock } from "@/hooks/use-welcome-clock"
 import "./welcome-header.css"

@@ -57,7 +57,7 @@ export function StudentBookingPreview({ blocks: scheduleLocations, date }: { blo
   }
 
   return (
-    <Card className="oc-page-reading">
+    <Card className="mx-auto max-w-[var(--oc-reading-width)]">
       <CardHeader className="text-center">
         <CardTitle className="oc-card-heading ">
           You&apos;ve been invited to Round 1 with Virginia Venture Fund!
@@ -95,7 +95,7 @@ export function StudentBookingPreview({ blocks: scheduleLocations, date }: { blo
                   className={cn(
                     "rounded-md border px-3 py-2 text-sm font-medium tabular-nums transition-colors",
                     isFull && "cursor-not-allowed border-dashed text-muted-foreground/50 line-through",
-                    !isFull && !isSelected && "hover:border-neutral-400 hover:bg-muted",
+                    !isFull && !isSelected && "hover:border-input hover:bg-muted",
                     isSelected && "border-foreground bg-status-booked text-status-booked-foreground",
                   )}
                 >

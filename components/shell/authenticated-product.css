@@ -18,7 +18,6 @@
 .oc-context-sidebar nav [aria-current="page"]::after { content: ""; width: .35rem; height: .35rem; margin-left: auto; border-radius: 50%; background: var(--brand-orange); }
 .oc-context-sidebar nav [data-tour="nav-decisions"] { margin-top: .5rem; }
 .oc-workspace-content { padding: 1.5rem var(--oc-space-page) 2.5rem; }
-.oc-page-reading { max-width: var(--oc-reading-width); }
 .oc-demo-note { display: inline-flex; border-radius: var(--oc-radius-sm); padding: .5rem .75rem; background: var(--oc-surface-warm); color: var(--muted-foreground); }
 .oc-mobile-navigation { display: none; }
 .oc-workspace-drawer { background: var(--card); color: var(--foreground); }

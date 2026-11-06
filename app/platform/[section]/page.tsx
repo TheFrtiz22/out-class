@@ -3,7 +3,7 @@ import { AdminRecovery } from "@/components/admin/admin-recovery";
 import { notFound } from "next/navigation";
 import { requirePlatformAdmin } from "@/utils/platform-admin";
 import { adminNavigation } from "@/lib/admin-navigation";
-import { PageHeader } from "@/components/product/page-header";
+import { PageHeader } from "@/components/ui/page-header";
 import { AdminCorkboard } from "@/components/admin/admin-corkboard";
 import { AdminDirectory } from "@/components/admin/admin-directory";
 import { AdminOnboarding } from "@/components/admin/admin-onboarding";

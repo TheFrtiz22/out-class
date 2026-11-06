@@ -2,7 +2,7 @@
 import { NativeSelect } from "@/components/ui/native-select"
 import { useSearchParams } from "next/navigation"
 import { SavedClubsPopover } from "@/components/clubs/saved-clubs-popover"
-import { PageHeader } from "@/components/product/page-header"
+import { PageHeader } from "@/components/ui/page-header"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { ArrowRight, ChevronDown, Search, SlidersHorizontal, X, Compass, BookOpen, BriefcaseBusiness, Globe2, Heart, Mountain, Lightbulb, ChartNoAxesCombined, MessageSquare, Users } from "@/components/icons"
 import { Button } from "@/components/ui/button"

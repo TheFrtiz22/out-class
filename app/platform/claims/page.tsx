@@ -1,7 +1,7 @@
 import { adminPageLoad } from "@/utils/admin-page";
 import { AdminRecovery } from "@/components/admin/admin-recovery";
 import Link from "next/link";
-import { PageHeader } from "@/components/product/page-header";
+import { PageHeader } from "@/components/ui/page-header";
 import { requirePlatformAdmin } from "@/utils/platform-admin";
 import { listClubClaims } from "@/actions/club-claims";
 import { ClaimReview } from "@/components/claim-review";
@@ -11,7 +11,7 @@ export default async function Page() {
   const claims = await adminPageLoad("/platform/claims", () => listClubClaims("PENDING"), "ADMIN_DATA_LOAD_FAILED");
   if (claims.supportCode) return <AdminRecovery supportCode={claims.supportCode} />;
   return (
-    <section className="space-y-6 px-5 py-10">
+    <section className="mx-auto max-w-[var(--oc-content-width)] space-y-6 px-5 py-10">
       <Link className="underline" href="/platform">
         Platform administration
       </Link>

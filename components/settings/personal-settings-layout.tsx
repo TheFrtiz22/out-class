@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { availableSettings } from "@/lib/club-settings"
 import { personalSettingsSections } from "@/lib/settings-navigation"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
-import { PageHeader } from "@/components/product/page-header"
+import { PageHeader } from "@/components/ui/page-header"
 import "@/components/clubs/club-settings.css"
 
 export function PersonalSettingsLayout({ children }: { children: ReactNode }) {

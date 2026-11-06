@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/utils/prisma";
 import { ClaimForm } from "@/components/claim-form";
+import { PageHeader } from "@/components/ui/page-header";
 export default async function Page({
   params,
 }: {
@@ -28,11 +29,11 @@ export default async function Page({
     orderBy: { createdAt: "desc" },
   });
   return (
-    <div className="oc-page-reading space-y-6">
+    <div className="max-w-[var(--oc-reading-width)] space-y-6">
       <Link className="underline" href="/settings/organizations">
         Organizations
       </Link>
-      <h1 className="oc-page-title ">Claim {club.name}</h1>
+      <PageHeader title={<>Claim {club.name}</>} />
       <p>
         Keep your student identity. Once an OutClass administrator approves your
         request, this club’s workspace will become available to you.

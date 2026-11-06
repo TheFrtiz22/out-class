@@ -1,7 +1,7 @@
 "use client"
 import { ClubMeetingsWorkspace } from "@/components/events/club-meetings-workspace";
 import dynamic from "next/dynamic";
-import { PageHeader } from "@/components/product/page-header"
+import { PageHeader } from "@/components/ui/page-header"
 import { ClubOverviewHeader } from "@/components/product/welcome-header"
 import { OrganizationSetupChecklist } from "@/components/organization-setup-checklist";
 import { organizationCapabilities } from "@/lib/organization-authorization";
@@ -172,7 +172,7 @@ export function ClubWorkspace({
   const current = data?.scope === scope && data.value.club.id === clubId ? data.value : null;
   // Overview has no Refresh button: it reloads after mutations elsewhere and when the person returns.
   useRevalidate(() => setRetry(n => n + 1), { enabled: needsOverview && !!current, events: OVERVIEW_EVENTS, scopes: OVERVIEW_SCOPES });
-  if (suspended) return <RouteWorkspaceShell><div className="oc-page-reading space-y-4"><h1 className="text-2xl font-semibold">This club is suspended</h1><p className="mt-3">Club operations are unavailable until an administrator restores it. Your membership and existing records are preserved.</p><Link href="/" className="mt-6 inline-block underline">Return to Personal</Link></div></RouteWorkspaceShell>;
+  if (suspended) return <RouteWorkspaceShell><div className="max-w-[var(--oc-reading-width)] space-y-4"><PageHeader title="This club is suspended" /><p className="mt-3">Club operations are unavailable until an administrator restores it. Your membership and existing records are preserved.</p><Link href="/" className="mt-6 inline-block underline">Return to Personal</Link></div></RouteWorkspaceShell>;
   if (resolvingEntry || moved || legacyRoom) return <WorkspaceLoading label="Opening club workspace…" />;
   const mode = section === "recruitment" || section === "announcements" && params.get("mode") === "recruiting" ? "recruiting" : "club";
   const active = section === "announcements" ? "announcements" : mode === "recruiting" ? (tool === "rounds" || tool === "rules" ? "overview" : tool || "applicants") : section;
@@ -196,7 +196,7 @@ export function ClubWorkspace({
         sections={manager ? leaderRailSections(membership!, clubId, params.toString()) : memberRailSections(clubId, current?.club.name || membership?.club.name)}
         onModeSelect={id => { if (manager) saveClubWorkspacePreference(preferenceKey, id) }}
         onReviewTool={id => { reviewTrigger.current = document.activeElement as HTMLElement; setReviewTool(id) }} active={active} title={nav.find(n => n.id === active)?.label || "Club workspace"} onSelect={() => {}} onNavigate={navigate}>
-        {loading || needsSelection ? <p role="status">Opening club workspace…</p> : !membership ? <div className="space-y-4"><h1 className="oc-page-title ">Club workspace unavailable</h1><p>Sign in with a current club membership to access this workspace.</p><Link href="/" className="underline">Return to OutClass</Link></div> : <>
+        {loading || needsSelection ? <p role="status">Opening club workspace…</p> : !membership ? <div className="space-y-4"><PageHeader title="Club workspace unavailable" /><p>Sign in with a current club membership to access this workspace.</p><Link href="/" className="underline">Return to OutClass</Link></div> : <>
           {!manager && <Link className="mb-5 inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4" href="/clubs">← All my clubs</Link>}
           {active === "overview" && allowed
             ? <ClubOverviewHeader density="expressive" clubName={current?.club.name || membership.club.name} status={section === "recruitment" && current?.operations?.intake ? <span className="oc-command-status" data-state={applicationsClosed(current.operations) ? "closed" : "open"}>Applications {applicationsClosed(current.operations) ? "closed" : "open"}</span> : undefined} context={{ mode: "club", clubId, membership, data: error ? null : current }} />
@@ -311,7 +311,7 @@ function RoundSettings({ clubId, embedded = false, canIdentify = true, onChanged
     );
   if (!rounds) return <WorkspaceLoading label="Loading recruitment rounds…" layout="rows" rows={3} />;
   return (
-    <div className="space-y-5">
+    <div className="max-w-[var(--oc-reading-width)] space-y-5">
       {!embedded && <ol className="divide-y">
         {rounds.map((r, i) => (
           <li className="py-3 text-sm" key={r.id}>

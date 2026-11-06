@@ -10,6 +10,7 @@ import { AuthSessionBoundary } from "@/components/auth-session-boundary";
 import { redirect } from "next/navigation";
 import { legacyApplicantInterviewHref } from "@/lib/applicant-interview-navigation";
 import { legacyInterviewRoomHref } from "@/lib/interview-entry";
+import { PageHeader } from "@/components/ui/page-header";
 export const maxDuration = 60;
 export default async function Page({
   params,
@@ -33,7 +34,7 @@ export default async function Page({
   }
   const user = demoEnabled ? null : await getCurrentUser();
   const membership = user?.memberships.find(member => member.clubId === clubId);
-  if (membership?.club.suspendedAt) return <AuthenticatedPageLayout><div className="oc-page-reading space-y-4"><h1 className="font-serif text-3xl">This club is suspended</h1><p>{membership.club.name} operations are unavailable until an administrator restores the club. Your membership and existing records are preserved.</p><Link className="underline" href="/home">Return to Personal workspace</Link></div></AuthenticatedPageLayout>;
+  if (membership?.club.suspendedAt) return <AuthenticatedPageLayout><div className="max-w-[var(--oc-reading-width)] space-y-4"><PageHeader title="This club is suspended" /><p>{membership.club.name} operations are unavailable until an administrator restores the club. Your membership and existing records are preserved.</p><Link className="underline" href="/home">Return to Personal workspace</Link></div></AuthenticatedPageLayout>;
   return (
     <AuthSessionBoundary>
       <ClubWorkspace

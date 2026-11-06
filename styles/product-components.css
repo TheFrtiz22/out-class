@@ -1,8 +1,12 @@
 .oc-page-header { position: relative; isolation: isolate; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem 1.25rem; margin-bottom: var(--oc-density-gap); padding-block: 0; }
 .oc-page-header-copy { min-width: 0; max-width: 46rem; }
 .oc-eyebrow { font-size: var(--oc-text-caption); font-weight: var(--oc-weight-semibold); letter-spacing: normal; color: var(--muted-foreground); }
-.oc-page-header h1, [data-product-shell] .oc-page-title { font-family: var(--oc-font-display); font-size: var(--oc-text-title); font-weight: var(--oc-weight-title); line-height: var(--oc-leading-heading); letter-spacing: var(--oc-tracking-heading); text-wrap: balance; }
-.oc-page-header h1 { margin-top: var(--oc-density-header-gap); }
+.oc-page-header h1 { font-family: var(--oc-font-display); font-size: var(--oc-text-title); font-weight: var(--oc-weight-title); line-height: var(--oc-leading-heading); letter-spacing: var(--oc-tracking-heading); text-wrap: balance; }
+.oc-page-header h1 { margin-top: var(--oc-density-header-gap); overflow-wrap: anywhere; }
+/* A title inside a centered stack stays centered; inside a header row it takes no extra margin. */
+.text-center .oc-page-header { justify-content: center; text-align: center; }
+.text-center .oc-page-header-copy { margin-inline: auto; }
+:is(header, .vr-header) .oc-page-header { margin-bottom: 0; }
 .oc-page-header h1:first-child { margin-top: 0; }
 .oc-page-description { margin-top: var(--oc-density-header-gap); max-width: 46rem; color: var(--muted-foreground); font-size: var(--oc-text-body); line-height: var(--oc-leading-body); }
 .oc-page-header-action { position: relative; z-index: 1; }

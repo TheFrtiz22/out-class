@@ -1,4 +1,4 @@
-import { PageHeader } from "@/components/product/page-header"
+import { PageHeader } from "@/components/ui/page-header"
 import { VotingRoomSetup } from "@/components/live-voting/room-setup";
 import { z } from "zod";
 import {redirect} from 'next/navigation';

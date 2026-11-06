@@ -1,5 +1,5 @@
 "use client";
-import { PageHeader } from "@/components/product/page-header";
+import { PageHeader } from "@/components/ui/page-header";
 import { PublicEventBoard } from "@/components/events/public-event-board";
 import type { ViewId } from "@/lib/views";
 // Saved Clubs lives on Explore's header; the Corkboard toolbar is events only.

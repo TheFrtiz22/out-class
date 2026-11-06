@@ -5,6 +5,7 @@ import { getSubmittedInterviewReview, getSubmittedInterviewReviews } from "@/lib
 import { RoundScore } from "@/components/interview-review-references";
 import { Button } from "@/components/ui/button";
 import type { ApplicantInterviewFilters } from "@/lib/applicant-interview-navigation";
+import { Panel } from "@/components/ui/panel";
 type Row = Awaited<ReturnType<typeof getSubmittedInterviewReviews>>[number];
 type Review = Awaited<ReturnType<typeof getSubmittedInterviewReview>>;
 export function InterviewSubmittedReviews({ clubId, filters = {}, initialReviewId }: { clubId: string; filters?: ApplicantInterviewFilters; initialReviewId?: string }) {
@@ -43,10 +44,10 @@ export function InterviewSubmittedReviews({ clubId, filters = {}, initialReviewI
     {loading && <LoadingState label="Loading reviews…" layout="rows" rows={2} />}{error && <p role="alert">{error} <Button type="button" variant="outline" size="sm" onClick={() => setRetry(v => v + 1)}>Try again</Button></p>}
     {!loading && !error && !rows.length && <p role="status">No submitted reviews available.</p>}
     <ul className="flex flex-wrap gap-2">{rows.map(row => <li key={row.id}><Button type="button" variant={selected?.id === row.id ? "secondary" : "outline"} className="h-auto whitespace-normal text-left" aria-pressed={selected?.id === row.id} onClick={() => { setReview(null); setSelected(row); if (window.location?.href && window.history) { const url = new URL(window.location.href); url.searchParams.set("reviewId", row.id); window.history.replaceState(null, "", url.pathname + url.search); } }}>{row.applicantName} · {row.roundName} · Open review</Button></li>)}</ul>
-    {selected && <section aria-label="Read-only closing review" className="oc-content-panel space-y-4">
+    {selected && <Panel as="section" aria-label="Read-only closing review" className="space-y-4">
       {review && <RoundScore key={selected.id} scope={{ clubId, applicationId: selected.applicationId, roundId: selected.roundId }} />}
       <h3 className="font-medium">{selected.applicantName} · {selected.roundName}</h3>
       {!review ? <LoadingState label="Loading closing review…" layout="rows" rows={2} /> : <><p className="text-xs text-muted-foreground">{review.submittedAt ? `Submitted ${new Date(review.submittedAt).toLocaleString()} · ` : ""}Read only</p>{review.textUnavailable && <p role="status">Closing text is unavailable under anonymous review rules. Potentially identifying text is withheld.</p>}<dl className="space-y-4"><div><dt className="font-medium">Final interview thoughts</dt><dd className="whitespace-pre-wrap break-words">{review.textUnavailable ? "Withheld for anonymity." : review.finalInterviewThoughts || "None recorded."}</dd></div><div><dt className="font-medium">Questions the applicant asked · Historical</dt><dd className="whitespace-pre-wrap break-words">{review.textUnavailable ? "Withheld for anonymity." : review.applicantQuestions || "None recorded."}</dd></div><div><dt className="font-medium">Additional notes</dt><dd className="whitespace-pre-wrap break-words">{review.textUnavailable ? "Withheld for anonymity." : review.additionalNotes || "None recorded."}</dd></div><div><dt className="font-medium">Overall score</dt><dd>{review.score === null ? "Not scored" : `${review.score} / 10`}</dd></div></dl></>}
-    </section>}
+    </Panel>}
   </section>;
 }

@@ -6,7 +6,7 @@ export default async function Page({
 }) {
   const { clubId } = await searchParams;
   return (
-    <div className="space-y-6">
+    <div className="max-w-[var(--oc-content-width)] space-y-6">
       <MeetingList clubId={clubId} />
     </div>
   );

@@ -10,6 +10,8 @@ import { applicationStatusLabels, applicationNextStep } from "@/lib/student-appl
 import { isApplicationDecision } from "@/lib/application-presentation"
 import { ApplicationStatusProgress, applicantDate } from "./application-status-card"
 import type { StudentApplication } from "./application-form"
+import { DEFAULT_CLUB_COLOR } from "@/lib/club-colors"
+import { PageHeader } from "@/components/ui/page-header"
 
 export function ApplicationStatusDetail({ application: app, notice, onBack, onResponses, onCalendar, onRefresh, onBookingChanged, onMyClubs }: {
   application: StudentApplication; notice: string; onBack: () => void; onResponses: () => void; onCalendar: () => void; onRefresh: () => void; onBookingChanged: () => void; onMyClubs: () => void;
@@ -19,8 +21,8 @@ export function ApplicationStatusDetail({ application: app, notice, onBack, onRe
   return <>
     <Button variant="ghost" size="sm" className="-ml-3" onClick={onBack}><ArrowLeft size={16} />Status</Button>
     <header className="flex items-start gap-4">
-      <ClubLogo clubId={app.clubId} logoUrl={app.club.logoUrl} marketing={app.club.marketing} text={app.club.name.slice(0, 2)} color={app.club.color || "#142d45"} />
-      <div className="min-w-0"><p className="oc-eyebrow">{decision ? "Decision received" : "Application progress"}</p><h1 tabIndex={-1} className="oc-page-title break-words outline-none">{app.club.name}</h1>
+      <ClubLogo clubId={app.clubId} logoUrl={app.club.logoUrl} marketing={app.club.marketing} text={app.club.name.slice(0, 2)} color={app.club.color || DEFAULT_CLUB_COLOR} />
+      <div className="min-w-0"><p className="oc-eyebrow">{decision ? "Decision received" : "Application progress"}</p><PageHeader title={app.club.name} focusable />
         {app.submittedAt && <p className="mt-2 text-xs text-muted-foreground">Submitted {applicantDate(app.submittedAt)}</p>}</div>
     </header>
     <p role="status" className={notice ? "text-sm text-muted-foreground" : "sr-only"}>{notice}</p>

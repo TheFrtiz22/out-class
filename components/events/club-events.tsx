@@ -235,7 +235,7 @@ function EventEditor({
       <p className="mb-5 text-sm text-muted-foreground">
         Your private draft saves automatically. Submit when ready for approval.
       </p>
-      {event?.status === "PUBLISHED" && <p role="note" className="mb-5 rounded-lg border border-orange-300 bg-orange-50 p-4 text-sm text-slate-900">Changing these event details or the flyer will remove the event from the public Corkboard until the changes are approved.</p>}
+      {event?.status === "PUBLISHED" && <p role="note" className="mb-5 rounded-lg border border-orange-300 bg-orange-50 p-4 text-sm text-foreground">Changing these event details or the flyer will remove the event from the public Corkboard until the changes are approved.</p>}
       <AutosaveStatus save={draftSave} />
       <form data-autosave-editor="true" onBlur={draftSave.onBlur} data-unsaved={draftSave.dirty}
         className="oc-event-editor"

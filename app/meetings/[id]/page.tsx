@@ -7,7 +7,7 @@ export default async function Page({
 }) {
   const { id } = await params;
   return (
-    <div className="oc-page-reading space-y-6">
+    <div className="max-w-[var(--oc-content-width)] space-y-6">
       <Link className="text-sm underline" href="/meetings">
         All meetings
       </Link>
