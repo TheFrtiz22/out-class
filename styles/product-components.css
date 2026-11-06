@@ -138,6 +138,8 @@
 .oc-status-pill[data-tone="warning"] { --pill-ink: var(--warning); --pill-surface: var(--warning-subtle); }
 .oc-status-pill[data-tone="success"] { --pill-ink: var(--success); --pill-surface: var(--success-subtle); }
 .oc-status-pill[data-tone="danger"] { --pill-ink: var(--destructive); --pill-surface: var(--error-subtle); }
+/* Navy panels (e.g. the applicant assessment) override only --muted-foreground; keep the neutral pill on a matching pair. */
+.oc-applicant-assessment .oc-status-pill[data-tone="neutral"] { --pill-ink: var(--oc-rail-text); --pill-surface: var(--oc-rail-selected); }
 @media (forced-colors: active) { .oc-status-pill { border-color: CanvasText; } .oc-status-pill[data-dot="true"]::before { forced-color-adjust: none; background: CanvasText; } }
 /* Score withheld until the viewer reviews: lock + text, same shape on every row. */
 .oc-review-locked { display: inline-flex; align-items: center; gap: .3rem; white-space: nowrap; color: var(--muted-foreground); font-size: var(--oc-text-caption, .75rem); }
