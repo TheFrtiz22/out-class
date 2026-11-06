@@ -6,7 +6,7 @@ const {createClient}=require('@supabase/supabase-js');
 const {PrismaClient}=require('@prisma/client');
 const {totp,confirmationMessage,readConfig}=require('../tests/helpers/onboarding-e2e.cjs');
 const dashboards=process.argv.includes('--dashboards'),writing=process.argv.includes('--application-writing')||dashboards,appPort=dashboards?3115:writing?3109:3107;
-const projectId=dashboards?'outclass-dashboards-e2e':writing?'outclass-application-writing-e2e':'outclass-onboarding-e2e',portPrefix=dashboards?(process.env.OUTCLASS_DASHBOARD_E2E_PORT_PREFIX||'593'):writing?'573':'553';
+const projectId=dashboards?'outclass-dashboards-e2e':writing?'outclass-application-writing-e2e':'outclass-onboarding-e2e',portPrefix=dashboards?(process.env.OUTCLASS_DASHBOARD_E2E_PORT_PREFIX||'593'):writing?'573':(process.env.OUTCLASS_ONBOARDING_E2E_PORT_PREFIX||'553');
 const releaseRepair=process.argv.includes('--pipeline-release-repair');
 const selectedNavigation=process.argv.includes('--selected-navigation')||releaseRepair;
 if(selectedNavigation&&(writing||!process.argv.includes('--club-integration')))throw Error('--selected-navigation requires --club-integration on the onboarding fixture.');
