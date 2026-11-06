@@ -65,11 +65,6 @@
   [data-product-shell] .oc-club-identity { padding: 1.25rem; flex-direction: column; }
   [data-product-shell] .oc-club-banner { height: 6rem; }
 }
-:root [data-slot="badge"][data-status-code="ACCEPTED"] { --badge-accent: var(--success); }
-:root [data-slot="badge"][data-status-code="REJECTED"] { --badge-accent: var(--destructive); }
-:root [data-slot="badge"][data-status-code="WAITLISTED"] { --badge-accent: var(--warning); }
-:root [data-slot="badge"][data-status-code="IN_REVIEW"] { --badge-accent: var(--info); }
-:root [data-slot="badge"][data-status-code="INTERVIEWING"] { --badge-accent: var(--interview); }
 [data-product-shell] .oc-marketing-profile { border: 0; border-radius: var(--oc-radius-lg); box-shadow: none; background: transparent; }
 [data-product-shell] .oc-marketing-cover { border-radius: var(--oc-radius-lg); height: 7rem; }
 [data-product-shell] .oc-marketing-profile h1 { font-family: var(--oc-font-display); font-size: var(--oc-text-title); font-weight: 500; letter-spacing: var(--oc-tracking-heading); }
@@ -122,7 +117,7 @@
 
 /* Quiet status annotations: neutral text and a small semantic rule, without colored capsules. */
 [data-slot="badge"], .oc-status-label { display: inline-flex; align-items: center; gap: .375rem; border: 0; border-inline-start: 2px solid var(--badge-accent, var(--border)); border-radius: 0; background: transparent; color: inherit; padding: .125rem .5rem; font-size: var(--oc-text-caption); font-weight: 500; line-height: 1.4; }
-[data-slot="badge"][data-variant="success"], [data-application-status="ACCEPTED"], [data-status-code="ACCEPTED"] { --badge-accent: var(--success); }
-[data-slot="badge"][data-variant="destructive"], [data-application-status="REJECTED"], [data-status-code="REJECTED"] { --badge-accent: var(--destructive); }
-[data-slot="badge"][data-variant="warning"], [data-application-status="WAITLISTED"], [data-status-code="WAITLISTED"] { --badge-accent: var(--warning); }
-[data-slot="badge"][data-variant="info"], [data-application-status="IN_REVIEW"], [data-status-code="IN_REVIEW"] { --badge-accent: var(--info); }
+[data-slot="badge"][data-variant="success"] { --badge-accent: var(--success); }
+[data-slot="badge"][data-variant="destructive"] { --badge-accent: var(--destructive); }
+[data-slot="badge"][data-variant="warning"] { --badge-accent: var(--warning); }
+[data-slot="badge"][data-variant="info"] { --badge-accent: var(--info); }

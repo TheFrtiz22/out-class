@@ -1,7 +1,7 @@
 "use client"
 import { ArrowRight, CalendarDays, Clock3, FileCheck2, FilePenLine } from "@/components/icons"
 import { ClubLogo } from "@/components/club-logo"
-import { StatusBadge } from "@/components/status-badge"
+import { StatusPill } from "@/components/ui/status-pill"
 import { RecruitmentTimeline } from "@/components/clubs/recruitment-timeline"
 
 /** Presentation only: fetching, scope, drafts and navigation stay with the workflow. */
@@ -16,7 +16,7 @@ export function ApplicationJourneyCard({ id, club, status, round, nextStep, show
       <div className="min-w-0"><h2><button type="button" data-application-id={id} onClick={onOpen}>{club.name}<span className="sr-only"> · {draft ? "Continue draft" : "View application"}</span></button></h2>
         <p className="oc-application-round">{draft ? "Draft · not yet applied" : round ? `Club round: ${round}` : "Club round not provided"}</p>
       </div>
-      <StatusBadge status={status} className="oc-application-status" />
+      <StatusPill status={status} className="oc-application-status" />
     </div>
     <div className="oc-application-progress"><RecruitmentTimeline status={status} compact /></div>
     <div className="oc-application-next" data-has-icon={showIcon}>{showIcon && <Icon className="oc-application-next-icon" size={20} aria-hidden="true" />}<p>{nextStep}</p><span aria-hidden="true">{draft ? "Continue draft" : "View details"}<ArrowRight size={15} /></span></div>

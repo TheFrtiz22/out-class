@@ -36,6 +36,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import "./events.css";
+import { eventBoardEmpty } from "@/lib/event-board-empty";
 const initialFilters: EventFilters = {
   query: "",
   period: "All",
@@ -293,26 +294,13 @@ export function PublicEventBoard({ toolbarAction }: { toolbarAction?: ReactNode 
         >
           <div key={view} role="region" className={view === "corkboard" ? "oc-physical-board oc-event-view" : "oc-event-list oc-event-view"} data-empty={!events.length || undefined} aria-busy={loading} aria-label={view === "corkboard" ? "Corkboard events" : "Event list"}>
             {!loading && !events.length ? (
-              <div className="oc-events-empty">
-                <h2>{filters.savedOnly ? "No saved events here yet." : filters.query ? "No search results." : filters.category || filters.clubId || filters.date || filters.location || filters.required || filters.period !== "All" ? "No events match your filters." : "No upcoming events yet."}</h2>
-                <p>
-                  {filters.query ||
-                  filters.category ||
-                  filters.clubId ||
-                  filters.date ||
-                  filters.location ||
-                  filters.required ||
-                  filters.period !== "All"
-                    ? "Try another date or clear your filters."
-                    : filters.savedOnly ? "Save an event to find it here. Your saved events follow you between views." : "Approved campus events will appear here. Come back soon."}
-                </p>
-                <Button
-                  variant="outline"
-                  onClick={() => setFilters(initialFilters)}
-                >
-                  Show all events
-                </Button>
-              </div>
+              (() => { const empty = eventBoardEmpty(filters); return <div className="oc-events-empty">
+                <h2>{empty.title}</h2>
+                <p>{empty.description}</p>
+                {empty.action.kind === "explore-clubs"
+                  ? <Button variant="outline" asChild><Link href="/explore">{empty.action.label}</Link></Button>
+                  : <Button variant="outline" onClick={() => setFilters(empty.action.kind === "clear-filters" ? { ...initialFilters, savedOnly: filters.savedOnly, sort: filters.sort } : { ...filters, savedOnly: false, page: 0 })}>{empty.action.label}</Button>}
+              </div> })()
             ) : view === "list" ? (
               <ul className="oc-smart-event-list">
                 {events.map(event => <li key={event.id}><SmartEventCard event={event} save={{ identity, saved: saves.ids.has(event.id), ready: saves.ready, pending: saves.pending.has(event.id), onSave: () => void saveEvent(event.id) }} onOpen={(event, trigger) => { origin.current = trigger; setSelected(event); setOpen(true); }} /></li>)}

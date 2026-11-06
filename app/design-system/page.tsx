@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Search } from "@/components/ui/search"
 import { Badge } from "@/components/ui/badge"
-import { StatusBadge } from "@/components/status-badge"
+import { StatusPill } from "@/components/ui/status-pill"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Surface } from "@/components/ui/surface"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
@@ -42,7 +42,7 @@ export default function DesignSystemPage() {
         ["Canvas", "bg-background"], ["Surface", "bg-card"], ["Primary", "bg-primary"], ["Signature", "bg-brand-orange"],
       ].map(([label, color]) => <div key={label}><div aria-hidden="true" className={`mb-2 h-16 rounded-md border border-border ${color}`} /><p className="text-sm">{label}</p></div>)}</div>
       <div className="flex flex-wrap gap-2"><Badge>Neutral</Badge><Badge variant="accent">UVA community</Badge><Badge variant="success">Success</Badge><Badge variant="warning">Warning</Badge><Badge variant="destructive">Error</Badge><Badge variant="info">Information</Badge></div>
-      <div className="flex flex-wrap gap-2">{["DRAFTING", "SUBMITTED", "IN_REVIEW", "INTERVIEWING", "ACCEPTED", "REJECTED", "WAITLISTED"].map(status => <StatusBadge key={status} status={status} />)}</div>
+      <div className="flex flex-wrap gap-2">{["DRAFTING", "SUBMITTED", "IN_REVIEW", "INTERVIEWING", "ACCEPTED", "REJECTED", "WAITLISTED"].map(status => <StatusPill key={status} status={status} />)}</div>
     </section>
     <Divider />
     <section aria-labelledby="controls" className="space-y-6">
