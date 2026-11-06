@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/command"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
-import { demoStore } from "@/lib/demo/store"
+import { isDemoActive } from "@/lib/demo/loader"
 import { useAuth } from "@/contexts/auth-context"
 import { useApplicationState } from "@/lib/application-state"
 import { searchWorkspace, type WorkspaceSearchResult } from "@/lib/workspace-api"
@@ -110,7 +110,7 @@ export function NavigationSearch({
   function choose(item: WorkspaceSearchResult) {
     if (item.kind === "club") {
       if (!prepare()) return
-      window.location.assign(demoStore.active() ? `/preview?demoClub=${encodeURIComponent(item.clubId)}` : `/club/${encodeURIComponent(item.clubId)}`)
+      window.location.assign(isDemoActive() ? `/preview?demoClub=${encodeURIComponent(item.clubId)}` : `/club/${encodeURIComponent(item.clubId)}`)
       return
     }
     if (!prepare()) return

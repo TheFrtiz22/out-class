@@ -1,7 +1,7 @@
 "use client"
 import { useEffect, useState } from "react"
 import { useDemoMode } from "@/contexts/demo-context"
-import { demoStore } from "@/lib/demo/store"
+import { isDemoActive, loadedDemoStore } from "@/lib/demo/loader"
 import { Bell, Check } from "@/components/icons"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
@@ -38,7 +38,7 @@ export function SubscribeButton({
     }
   }, [key, clubId, demo.state, demo.isDemoEnabled])
   function toggle() {
-    if (demoStore.active()) { demoStore.mutate(s => { s.subscriptions = subscribed ? s.subscriptions.filter(id => id !== clubId) : [...s.subscriptions, clubId] }); return }
+    if (isDemoActive()) { loadedDemoStore().demoStore.mutate(s => { s.subscriptions = subscribed ? s.subscriptions.filter(id => id !== clubId) : [...s.subscriptions, clubId] }); return }
     try {
       const saved = JSON.parse(localStorage.getItem(key) || "[]")
       const ids = new Set<string>(Array.isArray(saved) ? saved : [])

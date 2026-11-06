@@ -1,7 +1,7 @@
 "use client"
 
 import { useDemoMode } from "@/contexts/demo-context"
-import { demoStore, demoDashboard, demoNotifications, demoDeadlines } from "@/lib/demo/store"
+import { isDemoActive, loadedDemoStore } from "@/lib/demo/loader"
 import { createContext, useCallback, useContext, useMemo, useState, useEffect, useRef, type Dispatch, type SetStateAction, type ReactNode } from "react"
 import {
   managedEvents as seedManagedEvents, currentStudent, clubs, studentMemberships,
@@ -92,7 +92,7 @@ const STORAGE_KEY = "outclass-platform-v2"
 
 export function ApplicationStateProvider({ children, initialData, persistLocalState = initialData == null }: { children: ReactNode, initialData?: any, persistLocalState?: boolean }) {
   const demo = useDemoMode()
-  if (demo.isDemoEnabled) { initialData = demoDashboard(); persistLocalState = false }
+  if (demo.isDemoEnabled) { initialData = loadedDemoStore().demoDashboard(); persistLocalState = false }
   // Map Prisma database models back to the UI's TrackedApplication structure
   const serverApps = initialData?.applications?.map((app: any) => ({
     id: app.id,
@@ -175,6 +175,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
   }, [hydrated, persistLocalState, activeStorageKey, trackedApps, notifications, baseEvents, managedEvents, scheduleBlocks, responses])
   useEffect(() => {
     if (!demo.isDemoEnabled || !demo.state) return
+    const { demoDashboard, demoNotifications, demoDeadlines, demoStore } = loadedDemoStore()
     setTrackedApps(serverApps)
     setEvents([...studentCalendarEvents(demoDashboard()).map(event => event.type === "Other" && !event.id.startsWith("meeting-") ? { ...event, type: event.title.includes("coffee chat") ? "Coffee Chat" as const : "Interest Meeting" as const } : event), ...demoDeadlines()])
     const taskUpdates: Notification[] = demoNotifications()
@@ -259,7 +260,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
   )
 
   const setNotificationsRead = useCallback(async (ids: string[], read: boolean) => {
-    if (demoStore.active()) { demoStore.mutate(s => { s.readNotifications = [...s.readNotifications.filter(id => !ids.includes(id)), ...(read ? ids : [])] }); return true }
+    if (isDemoActive()) { loadedDemoStore().demoStore.mutate(s => { s.readNotifications = [...s.readNotifications.filter(id => !ids.includes(id)), ...(read ? ids : [])] }); return true }
     const targets = new Set(ids)
     const original = notificationSnapshot.current.filter(item => targets.has(item.id))
     const durable = original.filter(item => item.durableId && item.read !== read)
@@ -296,7 +297,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
   const markNotificationRead = useCallback((id: string) => setNotificationsRead([id], true), [setNotificationsRead])
 
   const deleteNotifications = useCallback(async (ids: string[]) => {
-    if (demoStore.active()) { demoStore.mutate(s => { s.deletedNotifications.push(...ids) }); return true }
+    if (isDemoActive()) { loadedDemoStore().demoStore.mutate(s => { s.deletedNotifications.push(...ids) }); return true }
     const targets = new Set(ids), original = notificationSnapshot.current.filter(item => targets.has(item.id))
     const durable = original.filter(item => item.durableId), token = Symbol("notification-archive")
     durable.forEach(item => pendingNotifications.current.set(item.id, { token, archived: true }))
@@ -319,7 +320,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
   }, [setNotifications])
 
   const restoreNotifications = useCallback(async (items: Notification[]) => {
-    if (demoStore.active()) { demoStore.mutate(s => { s.deletedNotifications = s.deletedNotifications.filter(id => !items.some(n => n.id === id)) }); return true }
+    if (isDemoActive()) { loadedDemoStore().demoStore.mutate(s => { s.deletedNotifications = s.deletedNotifications.filter(id => !items.some(n => n.id === id)) }); return true }
     items.forEach(item => dismissedTaskNotifications.current.delete(item.id))
     const added = items.filter(item => !notificationSnapshot.current.some(existing => existing.id === item.id))
     setNotifications(previous => [...previous, ...added])
@@ -344,7 +345,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
       try {
         // Read further owned pages only for an explicit bulk action, when unread
         // records exist beyond the loaded feed. No new endpoint or subscription.
-        if (!demoStore.active() && durableUnread > notificationSnapshot.current.filter(item => item.durableId && !item.read).length) {
+        if (!isDemoActive() && durableUnread > notificationSnapshot.current.filter(item => item.durableId && !item.read).length) {
           let cursor = durableCursor
           const seen = new Set<string>()
           while (cursor) {
@@ -368,7 +369,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
   }, [durableCursor, durableUnread, setNotificationsRead, syncDurableNotifications])
 
   const respondToEvent = useCallback((id: string, response: "going" | "confirmed" | "declined") => {
-    if (demoStore.active()) { demoStore.mutate(s => { s.responses[id] = response }); return }
+    if (isDemoActive()) { loadedDemoStore().demoStore.mutate(s => { s.responses[id] = response }); return }
     if (events.find(event => event.id === id)?.readOnly) return
     setResponses((previous) => ({ ...previous, [id]: response }))
     const event = events.find((item) => item.id === id)
