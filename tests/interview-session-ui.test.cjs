@@ -90,10 +90,10 @@ test('assigned interviewer browses current bank without editing; session wording
  const h=harness();h.render();await flush();let t=h.render();button(t,'Question bank').props.onClick();h.render();await flush();t=h.render();assert.deepEqual(h.calls,[['library']]);assert.equal(button(t,'Save kit'),undefined)
  button(t,'Use question').props.onClick();await flush();t=h.render();assert.match(text(t),/Club answer key/);assert.doesNotMatch(text(t),/Off-script<|Off-script$/);button(t,'Save & close').props.onClick();await flush();t=h.render();assert.equal(h.record.questions[0].prompt,'Snapshot question');assert.equal(h.record.draft.additionalQuestions[0].id,'q2');assert.deepEqual(h.record.draft.completedQuestionIds,['q2'])
 })
-test('plus button adds an original question to this interview only: saved before it opens, blank and double submits blocked, failures keep text with retry',async()=>{
+test('plus button adds an original question to this interview (shared with the room, never the master kit): saved before it opens, blank and double submits blocked, failures keep text with retry',async()=>{
  const plus=t=>nodes(t).find(n=>n.type==='Button'&&n.props?.['aria-label']==='Add original question');const field=t=>nodes(t).find(n=>n.props?.id==='new-interview-question');
  const saves=h=>h.calls.filter(c=>c[0]==='save'&&c[1].draft.additionalQuestions?.length).length;
- const h=harness();h.render();await flush();let t=h.render();
+ const shared=[];const h=harness(undefined,{select:async id=>{shared.push(id);return{revision:1,question:{id,prompt:'Follow-up',guidance:''}}}});h.render();await flush();let t=h.render();
  assert.ok(plus(t));assert.equal(field(t),undefined);assert.equal(button(t,'+ Off-script question'),undefined,'the old entry point is replaced');
  plus(t).props.onClick();t=h.render();assert.ok(field(t));assert.equal(plus(t).props['aria-expanded'],true);
  await button(t,'Add question').props.onClick();t=h.render();assert.match(text(t),/Enter a question before adding it/);assert.equal(saves(h),0);
@@ -101,11 +101,11 @@ test('plus button adds an original question to this interview only: saved before
  const add=button(t,'Add question').props.onClick;const first=add(),second=add();await Promise.all([first,second]);await flush();t=h.render();
  assert.equal(saves(h),1,'repeated clicks send one save');assert.equal(h.record.draft.additionalQuestions.length,0);
  assert.equal(field(t).props.value,'Follow-up','the typed question survives a failed save');assert.match(text(t),/Couldn.t save your question/);assert.doesNotMatch(text(t),/Original question added/);
- assert.equal(nodes(t).find(n=>n.props?.['aria-label']==='Active question'),undefined,'nothing opens before the save succeeds');
+ assert.equal(nodes(t).find(n=>n.props?.['aria-label']==='Active question'),undefined,'nothing opens before the save succeeds');assert.deepEqual(shared,[],'nothing is shared before the save succeeds');
  const attemptId=h.calls.filter(c=>c[0]==='save').at(-1)[1].draft.additionalQuestions[0].id;
  h.fail(false);await button(t,'Retry').props.onClick();await flush();t=h.render();
  const saved=h.record.draft.additionalQuestions;assert.equal(saved.length,1);assert.equal(saved[0].question,'Follow-up');assert.equal(saved[0].id,attemptId,'retry reuses the same question id');assert.equal(saved[0].bankQuestion,undefined,'no answer key is invented');
- assert.equal(field(t),undefined);assert.ok(nodes(t).find(n=>n.props?.['aria-label']==='Active question'),'the new question opens for private notes');assert.match(text(t),/Original question added/);
+ assert.equal(field(t),undefined);assert.ok(nodes(t).find(n=>n.props?.['aria-label']==='Active question'),'the new question opens for private notes');assert.match(text(t),/Original question added/);assert.deepEqual(shared,[saved[0].id],'the saved original question is shared with the room');
  assert.deepEqual(h.calls.filter(c=>c[0]==='library'),[],'the master kit is not read or changed');
  button(t,'Save & close').props.onClick();await flush();assert.equal(h.record.draft.completedQuestionIds[0],saved[0].id);
  const c=harness();c.render();await flush();t=c.render();plus(t).props.onClick();t=c.render();field(t).props.onChange({target:{value:'Never mind'}});t=c.render();button(t,'Cancel').props.onClick();t=c.render();

@@ -233,7 +233,7 @@ export function InterviewKitSession({
     if (!record || record.completedAt || draftRef.current.postInterview) return;
     if (!record.questions.some(q => q.id === question.id) && !draftRef.current.additionalQuestions.some(q => q.id === question.id)) {
       if (draftRef.current.additionalQuestions.length >= 30) { setCollaborationMessage("Your session has reached its question limit. Your private notes are safe."); return; }
-      setDraft(d => ({ ...d, additionalQuestions: [...d.additionalQuestions, { id: question.id, question: question.prompt, bankQuestion: { guidance: question.guidance }, notes: "" }] }));
+      setDraft(d => d.additionalQuestions.some(q => q.id === question.id) ? d : ({ ...d, additionalQuestions: [...d.additionalQuestions, { id: question.id, question: question.prompt, bankQuestion: { guidance: question.guidance }, notes: "" }] }));
     }
     personalQuestion.current = false;
     suppressQuestionFocus.current = !focus;
@@ -497,8 +497,9 @@ export function InterviewKitSession({
     if (ok) {
       pendingOriginalId.current = null;
       setNewQuestion(""); setOffScriptOpen(false); setLibraryOpen(false); setError("");
-      personalQuestion.current = true; setSharedQuestion(null); setActiveQuestion(id);
-      setAnnouncement("Original question added. Your private notes are ready.");
+      // Saved first, then shared like a bank question: the room follows it; notes stay private.
+      selectBankQuestion({ id, prompt, guidance: "" });
+      setAnnouncement("Original question added and shared with the room. Your private notes are ready.");
     } else {
       // Keep the typed question and offer an explicit retry; the general save banner is not the recovery path here.
       setError("");
@@ -578,7 +579,7 @@ export function InterviewKitSession({
           {!libraryLoading && !libraryQuestions.length && <p className="text-sm text-muted-foreground">No matching questions in this bank.</p>}
         </Panel>}
         <div ref={completionSource} className="oc-question-completion-source">
-        {!active && <section className="oc-question-agenda" aria-label="Available questions"><h3>Available questions · {available.length}</h3><ul>{available.map(q => <li key={q.id}><button ref={el => { if (el) questionNodes.current.set(q.id, el); else questionNodes.current.delete(q.id); }} type="button" disabled={ending || closingQuestion} onClick={() => { if (!q.extra || ("bank" in q && q.bank)) void selectBankQuestion(q); else { personalQuestion.current = true; setActiveQuestion(q.id); } }} className="oc-question-row"><span>{q.prompt}</span>{q.extra && !("bank" in q && q.bank) && <span className="oc-question-kind">Off-script</span>}</button></li>)}</ul>{!available.length && <p className="text-sm text-muted-foreground">Browse the bank or reopen a completed question.</p>}</section>}
+        {!active && <section className="oc-question-agenda" aria-label="Available questions"><h3>Available questions · {available.length}</h3><ul>{available.map(q => <li key={q.id}><button ref={el => { if (el) questionNodes.current.set(q.id, el); else questionNodes.current.delete(q.id); }} type="button" disabled={ending || closingQuestion} onClick={() => void selectBankQuestion(q)} className="oc-question-row"><span>{q.prompt}</span>{q.extra && !("bank" in q && q.bank) && <span className="oc-question-kind">Off-script</span>}</button></li>)}</ul>{!available.length && <p className="text-sm text-muted-foreground">Browse the bank or reopen a completed question.</p>}</section>}
         {active ? <section ref={el => { if (el) questionNodes.current.set(active.id, el); else questionNodes.current.delete(active.id); }} className="oc-active-question space-y-4" aria-label="Active question">
           <Button type="button" variant="ghost" onClick={() => { setActiveQuestion(""); setLibraryOpen(false); bankControl.current?.focus(); }}>Back to question bank</Button>
           <h3 ref={activeHeading} tabIndex={-1} className="break-words">{active.prompt}</h3>
