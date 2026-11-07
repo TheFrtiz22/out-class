@@ -122,7 +122,7 @@ export function MeetingCheckIn() {
       )}
       {error && <p role="alert">{error}</p>}
       <a
-        className="block text-sm underline"
+        className="inline-flex min-h-11 items-center text-sm underline"
         href={id ? `/meetings/${id}` : "/meetings"}
       >
         Meeting agenda and resources

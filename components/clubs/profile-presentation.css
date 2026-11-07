@@ -29,7 +29,7 @@
 .oc-club-prose { margin-top:8px; white-space:pre-line; overflow-wrap:anywhere; font-size:16px; line-height:1.7; color:var(--muted-foreground); }
 .oc-club-section > .oc-club-prose:first-of-type { margin-top:0; }
 .oc-club-card { min-width:0; padding:20px; border-radius:16px; border:1px solid var(--oc-content-edge, var(--border)); background:var(--oc-content-surface, var(--card)); }
-.oc-club-card h4, .oc-club-feature-list h4 { font-size:16px; font-weight:600; overflow-wrap:anywhere; }
+.oc-club-card :is(h3, h4), .oc-club-feature-list h4 { font-size:16px; font-weight:600; overflow-wrap:anywhere; }
 .oc-club-card p, .oc-club-feature-list p { margin-top:8px; white-space:pre-line; font-size:15px; line-height:1.7; color:var(--muted-foreground); overflow-wrap:anywhere; }
 .oc-club-feature-list { list-style:none; display:grid; gap:20px; margin-top:12px; }
 .oc-tap-link, .oc-club-links a { display:inline-flex; align-items:center; gap:8px; min-height:44px; font-size:15px; text-decoration:underline; text-underline-offset:4px; }

@@ -85,3 +85,13 @@ deploy <pending> | runtime errors <pending> | advisor delta <n/a, no migration> 
 ## 2026-11-07 RELEASE 41be2908 (#151, includes #150)
 - Production deployment dpl_DuYz6ZHnQXrefMU9pfbYGhUawzRk READY on 41be2908, aliased to out-class.net, www and uva.out-class.net.
 - get_runtime_errors (7h): two groups, both pre-dating the merge (ZodError `prompt` baseline class, last on the previous deployment; "Additional observations are unavailable" authorization denial, first seen 2026-11-05). No new error classes. Advisors 0/52/43 matched baseline before merge. No rollback.
+
+## 2026-11-07 PUBLIC-SITE-1 ui/public-site-cleanup (from main 8ffe7722; local commits only, not pushed)
+- `pnpm run test` (inert env; Playwright's expected Chromium build symlinked to the container's /opt/pw-browsers build, no repo change): 1820 total, 1760 pass, 0 fail, 60 skipped (env-gated). One test added afterwards (admin-clubs, getPublicClub sanitization): file 12/12.
+- `pnpm run test:migrations`: 71 migrations, RLS on 85 tables (no schema change). lint 0 errors / 23 warnings (baseline); ui-controls OK (one allowlist entry removed: profile-presentation.css css-hex). typecheck ok. build ok.
+- Signed-out audit, local production build + disposable loopback Postgres (38 clubs from docs/club-profile-design), fresh context per page: before (main) and after, 22 page variants at 1440 and 390, plus reduced motion and forced colors for /, /club/[id], /login. After: 0 axe violations; forced-colors color-contrast hits are false positives (computed black on white), present on main too. docs/public-site/.
+- Keyboard-only (scripts/public-site-keyboard.cjs): phone menu, audience toggle (+ cookie on reload), sign in, sign up: 4/4.
+- Vitals (scripts/public-site-vitals.cjs; lab, not field): docs/public-site/performance.md. All pages LCP ≤ 2.5 s, CLS ≤ 0.1 in every profile.
+- Content fix (scripts/clean-public-club-profiles.cjs): dry run and `--apply` rehearsed on the disposable database only (38/38 clubs, 297 fields, idempotent second run 0, AuditLog rows written; AuditLog stayed append-only). Not run against production.
+- Reviewers: authz-reviewer 0 high/medium; nextjs-reviewer 0 high, 2 medium documented (see report).
+- Not run: WebKit (not installed); signed-in pages in a browser (no Supabase Auth here); env-gated E2E (two updated for the sign-up heading text: onboarding-e2e, signup-privacy-e2e).

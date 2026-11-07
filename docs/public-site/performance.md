@@ -50,3 +50,28 @@ before LCP understates when content appeared; compare *First content* there.
   LCP element (the h1) is not the same text before and after.
 - All pages are within target (LCP ≤ 2.5 s, CLS ≤ 0.1) in every profile measured. These are lab numbers on
   a local server; Vercel Speed Insights after deploy is the field check.
+
+## Final (after Phase 5)
+
+Same command against the final build (`vitals-final.json`).
+
+| Page | Profile | Load | LCP before → final (ms) | First content before → final (ms) | CLS before → final | INP before → final (ms) |
+|---|---|---|---|---|---|---|
+| / | desktop | cold | 172 → 288 | 143 → 174 | 0.000 → 0.002 | 0 → 24 |
+| / | desktop | warm | 176 → 248 | 113 → 137 | 0.000 → 0.000 | 0 → 24 |
+| / | phone | cold | 424 (cover) → 1128 | not reached → 1043 | 0.000 → 0.016 | 0 → 32 |
+| / | phone | warm | 332 → 528 | 395 → 454 | 0.000 → 0.000 | 0 → 24 |
+| /uva | desktop | cold | 208 → 196 | 154 → 116 | 0.003 → 0.004 | 32 → 24 |
+| /uva | desktop | warm | 184 → 176 | 177 → 97 | 0.003 → 0.004 | 24 → 16 |
+| /uva | phone | cold | 1228 → 908 | 1175 → 867 | 0.016 → 0.016 | 72 → 88 |
+| /uva | phone | warm | 448 → 392 | 488 → 357 | 0.000 → 0.000 | 80 → 72 |
+| /club/[id] | desktop | cold | 252 → 208 | 148 → 115 | 0.000 → 0.000 | 0 → 0 |
+| /club/[id] | desktop | warm | 320 → 208 | 182 → 114 | 0.000 → 0.000 | 0 → 0 |
+| /club/[id] | phone | cold | 812 (cover) → 880 | 4328 → 831 | 0.000 → 0.000 | 72 → 64 |
+| /club/[id] | phone | warm | 1220 → 432 | 1166 → 389 | 0.000 → 0.000 | 72 → 72 |
+| /login | desktop | cold | 152 → 232 | 104 → 128 | 0.002 → 0.001 | 32 → 24 |
+| /login | desktop | warm | 120 → 196 | 83 → 100 | 0.000 → 0.000 | 32 → 24 |
+| /login | phone | cold | 1912 (cover) → 948 | 957 → 885 | 0.002 → 0.001 | 40 → 72 |
+| /login | phone | warm | 332 → 408 | 295 → 358 | 0.000 → 0.000 | 40 → 72 |
+
+Phase 5 changes that affect these: the homepage story section pins for at most 2,500px and not at all on phones; sign-in renders inside the public frame (desktop LCP element is now the Sample panel title).

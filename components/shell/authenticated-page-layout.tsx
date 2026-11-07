@@ -12,7 +12,9 @@ export async function AuthenticatedPageLayout({ children, optional = false, allo
   if (optional || allowDemo) {
     const [{ data: { user }, error }, jar] = await Promise.all([getSessionUser(), cookies()])
     // Public discovery and client-backed meetings retain their existing demo flows.
-    // Settings, invitations, claims and access editors always use live authorization.
+    // Settings always uses live authorization here. Invitations, club claims and club access are
+    // `optional` so signed-out visitors get a sign-in card; each of those PAGES calls requireAuth
+    // (or requireClubPermission) itself for any session. An `optional` route must do the same.
     if (!jar.has(PLATFORM_VIEW_COOKIE) && jar.get(DEMO_COOKIE)?.value === "1" && canAccessDemo(error || !user?.email_confirmed_at ? undefined : user.email)) {
       return <RouteWorkspaceShell>{children}</RouteWorkspaceShell>
     }

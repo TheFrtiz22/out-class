@@ -70,7 +70,13 @@ async function measure(page) {
       .filter(visible).filter(el => !el.closest('p,li:not([role]),dd') || el.matches('button,[role]'))
       .map(el => ({ el, r: el.getBoundingClientRect() })).filter(({ r }) => r.height < 44 || r.width < 24)
       .map(({ el, r }) => `${Math.round(r.width)}x${Math.round(r.height)} ${el.tagName.toLowerCase()} ${label(el)}`)
+    // Body copy: paragraphs and list items outside sample mockups and the footer's fine print.
+    const smallBody = [...document.querySelectorAll('main p, main li, main dd')].filter(visible)
+      .filter(el => !el.closest('.oc-story-frame, .oc-login-example, .oc-hero-feature-stack, [class*="eyebrow"], [class*="kicker"], [class*="caption"], small'))
+      .filter(el => el.textContent.trim().length > 40 && parseFloat(getComputedStyle(el).fontSize) < 14)
+      .map(el => `${parseFloat(getComputedStyle(el).fontSize)}px ${label(el)}`)
     return {
+      smallBody: smallBody.slice(0, 20), smallBodyCount: smallBody.length,
       overflowX: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       h1: [...document.querySelectorAll('h1')].filter(visible).map(label),
       loadingCover: !!document.querySelector('.oc-loading-screen'),
@@ -125,7 +131,7 @@ async function measure(page) {
       }
       report.push(entry)
       const w = entry.widths
-      console.log(`${name.padEnd(16)} ${server.status} ${String(server.title).slice(0, 44).padEnd(44)} h1:${server.h1.length} overflow390:${w['390']?.overflowX} small:${w['390']?.smallTextCount} taps:${w['390']?.smallTargetCount} axe:${['1440', '390'].map(k => (w[k]?.axe || []).filter(v => ['serious', 'critical'].includes(v.impact)).length).join('/')}`)
+      console.log(`${name.padEnd(16)} ${server.status} ${String(server.title).slice(0, 44).padEnd(44)} h1:${server.h1.length} overflow390:${w['390']?.overflowX} small:${w['390']?.smallTextCount} body<14:${w['390']?.smallBodyCount} taps:${w['390']?.smallTargetCount} axe:${['1440', '390'].map(k => (w[k]?.axe || []).filter(v => ['serious', 'critical'].includes(v.impact)).length).join('/')}`)
     }
   } finally {
     await browser.close()

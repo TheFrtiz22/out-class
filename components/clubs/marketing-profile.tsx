@@ -67,10 +67,13 @@ export function AboutSection({ profile, children, assetPreview = false }: Sectio
 // A club section titled like the page section it sits in ("What members do") adds no heading of its own.
 const sameHeading = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase()
 function ProfileSection({ section, assetPreview, parent }: { section: ClubMarketing["sections"][number]; assetPreview: boolean; parent: string }) {
+  const titled = !sameHeading(section.title, parent) && !(parent === "Recruitment and requirements" && sameHeading(section.title, "Recruitment"))
+  // Card headings sit one level below whatever heading is actually rendered (no h2 → h4 jump).
+  const CardHeading = titled ? "h4" : "h3"
   return <div className="oc-club-subsection">
-    {!sameHeading(section.title, parent) && !(parent === "Recruitment and requirements" && sameHeading(section.title, "Recruitment")) && <h3>{section.title}</h3>}
+    {titled && <h3>{section.title}</h3>}
     {section.body && <p className="oc-club-prose">{section.body}</p>}
-    {section.cards.length > 0 && <div className="mt-4 grid gap-4 sm:grid-cols-2">{section.cards.map((c, j) => <article key={j} className="oc-club-card">{c.image && <img src={clubAssetSource(c.image, assetPreview)} alt={c.title || "Club highlight"} loading="lazy" className="mb-4 aspect-[4/3] w-full rounded-lg object-cover" />}<h4>{c.title}</h4>{c.description && <p>{c.description}</p>}{c.url && <a href={c.url} target="_blank" rel="noopener noreferrer" className="oc-tap-link">Learn more about {c.title}<span className="sr-only"> (opens in a new tab)</span></a>}</article>)}</div>}
+    {section.cards.length > 0 && <div className="mt-4 grid gap-4 sm:grid-cols-2">{section.cards.map((c, j) => <article key={j} className="oc-club-card">{c.image && <img src={clubAssetSource(c.image, assetPreview)} alt={c.title || "Club highlight"} loading="lazy" className="mb-4 aspect-[4/3] w-full rounded-lg object-cover" />}<CardHeading>{c.title}</CardHeading>{c.description && <p>{c.description}</p>}{c.url && <a href={c.url} target="_blank" rel="noopener noreferrer" className="oc-tap-link">Learn more about {c.title}<span className="sr-only"> (opens in a new tab)</span></a>}</article>)}</div>}
   </div>
 }
 

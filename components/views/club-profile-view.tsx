@@ -47,7 +47,7 @@ export function ClubProfileView({
   const [error, setError] = useState("")
   const heading = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    if (ready && !preview) heading.current?.focus()
+    if (ready && !preview) heading.current?.focus({ preventScroll: true })
   }, [ready, preview])
   const real = club.source === "database"
   const [now, setNow] = useState(Date.now())

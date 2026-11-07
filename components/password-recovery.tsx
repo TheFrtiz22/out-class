@@ -4,7 +4,6 @@ import { LoadingState } from "@/components/ui/loading-state"
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { ArrowLeft, ShieldCheck } from "@/components/icons";
-import { OutClassLogo } from "@/components/outclass-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +12,8 @@ import {
   recoveryEmail,
   recoveryConfirmation,
 } from "@/lib/password-recovery";
-import { PageHeader } from "@/components/ui/page-header";
+import { PublicPageFrame } from "@/components/landing/public-page-frame";
+import "@/components/auth/login.css";
 
 export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
   const [email, setEmail] = useState("");
@@ -100,25 +100,22 @@ export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
   }
 
   return (
-    <main className="min-h-svh bg-background px-5 py-8 text-foreground sm:py-12">
-      <div className="mx-auto max-w-md">
-        <Link href="/" aria-label="OutClass home" className="inline-block">
-          <OutClassLogo variant="light" className="h-8 w-auto" />
-        </Link>
-        <section className="py-14 sm:py-20" aria-labelledby="recovery-title">
+    <PublicPageFrame width="narrow" className="oc-auth-page">
+      <div>
+        <section className="oc-login-auth-content oc-recovery-card" aria-labelledby="recovery-title">
           <ShieldCheck
             className="mb-6 size-7 text-muted-foreground"
             aria-hidden="true"
           />
-          <PageHeader title={done
+          <h1 id="recovery-title" className="oc-auth-title">{done
               ? mode === "request"
-                ? "Check your inbox."
-                : "Password updated."
+                ? "Check your inbox"
+                : "Password updated"
               : mode === "request"
                 ? "Forgot your password?"
-                : "Choose a new password."} titleId="recovery-title" />
+                : "Choose a new password"}</h1>
           <p
-            className="mt-4 text-sm leading-6 text-muted-foreground"
+            className="mt-4 text-base leading-7 text-muted-foreground"
             role={done ? "status" : undefined}
           >
             {done
@@ -222,7 +219,7 @@ export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
                   {error}
                 </p>
               )}
-              <Button type="submit" className="w-full" disabled={busy} loading={busy}>
+              <Button type="submit" className="oc-login-submit w-full" disabled={busy} loading={busy}>
                 {mode === "request"
                     ? "Send reset link"
                     : "Update password"}
@@ -238,6 +235,6 @@ export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
           </Link>
         </section>
       </div>
-    </main>
+    </PublicPageFrame>
   );
 }
