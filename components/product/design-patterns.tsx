@@ -34,6 +34,8 @@ const managerOverview: ComponentProps<typeof ManagerOverview>["data"] = {
   ...overview,
   meeting: { id: "reference-meeting", title: "Fall project kickoff", date: new Date("2026-10-06T21:00:00Z"), location: "Newcomb Hall", audience: "MEMBERS" },
   work: [{ id: "reference-assignment", task: { id: "reference-task", title: "Prepare the interview guide", dueAt: new Date("2026-10-05T21:00:00Z"), kind: "TASK" } }],
+  // A submission waiting for feedback shows the review card that opens the task drawer.
+  operations: { ...overview.operations, reviewWork: [{ id: "reference-submission", submittedAt: new Date("2026-09-30T18:00:00Z"), task: { id: "reference-research", title: "Sector research memo", dueAt: new Date("2026-09-29T21:00:00Z") } }] },
 }
 const options = ["Explore", "Club profile", "Applications", "Club overview", "Recruitment", "Scheduling"]
 

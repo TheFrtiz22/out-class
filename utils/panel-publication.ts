@@ -29,7 +29,7 @@ export function assertCurrentPanelDocument(document: PanelDocument, scene: Panel
     if (!current?.active || +new Date(current.endTime)<=+new Date(current.startTime) || !sameSessionTime(s,current) || current.roomRevision!==s.roomRevision || current.slotRevision!==s.slotRevision) throw new PanelPublicationError("Session times or staffing configuration changed. Regenerate unlocked positions and review again.")
   }
   const validation=validatePanelDocument(document,panelDraftScene(document,scene))
-  if(validation.issues.length)throw new PanelPublicationError(`Publication blocked: ${validation.issues[0].message} No official assignments changed.`)
+  if(validation.issues.length)throw new PanelPublicationError(`Can't save the schedule: ${validation.issues[0].message} Nothing was changed.`)
   return validation
 }
 export async function activePanelPublication(tx: AppTransactionClient, scope: {clubId:string;roundId:string}) {
@@ -48,8 +48,8 @@ export async function assertPanelBookingSafety(tx: AppTransactionClient, scope: 
   const bookings=await tx.interviewBooking.findMany({where:{slotId:{in:document.sessions.map(s=>s.id)}},include:{slot:{include:{room:true,panelScheduleVersion:true}},application:{include:{round:true,interviewAssignments:{where:{roundId:scope.roundId}}}}}})
   for(const booking of bookings){
     const app=booking.application, assigned=document.assignments.filter(a=>a.slotId===booking.slotId)
-    if(booking.roundId!==scope.roundId||app.clubId!==scope.clubId||app.roundId!==scope.roundId||app.status!=="INTERVIEWING")throw new PanelPublicationError("A booked session has an unresolved applicant or round. Resolve the booking before publishing.")
-    if(!assigned.length)throw new PanelPublicationError("A booked session cannot be left without an interviewer. Keep at least one qualified interviewer before reviewing publication.")
+    if(booking.roundId!==scope.roundId||app.clubId!==scope.clubId||app.roundId!==scope.roundId||app.status!=="INTERVIEWING")throw new PanelPublicationError("A booked session is missing its applicant or round. Fix the booking first.")
+    if(!assigned.length)throw new PanelPublicationError("A booked session needs at least one interviewer. Add one before you continue.")
     if(app.interviewAssignments.some(g=>!g.bookingManaged&&g.revokedAt&&assigned.some(a=>a.memberId===g.memberId)))throw new PanelPublicationError("A proposed interviewer has an explicit interview-access revocation for a booked applicant. Choose another interviewer or resolve access with the owner.")
   }
   return bookings

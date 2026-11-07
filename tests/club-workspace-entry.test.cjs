@@ -17,6 +17,7 @@ function harness({ search = '', permissions = ['applications.review'], owner = f
     'next/dynamic': { default: () => 'Dynamic' },
     '@/contexts/auth-context': { useAuth: () => auth },
     '@/contexts/demo-context': { useDemoMode: () => demo },
+    '@/hooks/use-revalidate': { useRevalidate() {} },
     '@/lib/workspace-api': { getClubWorkspaceOverview: async id => { reads.push(id); return { club: { id } } } },
     '@/lib/application-state': { ApplicationStateProvider: 'ApplicationStateProvider' },
   };

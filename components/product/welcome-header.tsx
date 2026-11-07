@@ -19,8 +19,24 @@ export function LocalWelcomeHeader(props: Omit<WelcomeHeaderProps, "now">) {
 export function WelcomeHeader({ firstName, now, context, className = "", ...props }: WelcomeHeaderProps) {
   const title = welcomeGreeting(now, firstName)
   const subtitle = welcomeSubtitle(context, now)
-  const deadline = welcomeDeadline(context, now)
   return <PageHeader {...props} className={`oc-welcome-header ${className}`}
     title={<span key={title} className="oc-welcome-text">{title}</span>}
-    description={<span key={subtitle} className="oc-welcome-text">{subtitle}{deadline && <span className="oc-welcome-deadline"> {deadline}</span>}</span>} />
+    description={<span key={subtitle} className="oc-welcome-text">{subtitle}</span>} />
+}
+
+type ClubOverviewHeaderProps = Omit<ComponentProps<typeof PageHeader>, "title" | "description"> & {
+  clubName: string
+  context: Extract<WelcomeContext, { mode: "club" }>
+}
+
+/** Club Overview opens with the club's name and the next thing due; greetings stay on personal Home. */
+export function ClubOverviewHeader({ clubName, context, className = "", ...props }: ClubOverviewHeaderProps) {
+  const now = useWelcomeClock()
+  // Local time is read after hydration; until then the line keeps its space without guessing.
+  const next = context.data && now ? welcomeSubtitle(context, now) : "\u00a0"
+  // While recruiting is open, the time left until the application deadline follows the next-due line.
+  const deadline = welcomeDeadline(context, now)
+  return <PageHeader {...props} className={`oc-welcome-header ${className}`}
+    title={<span className="oc-welcome-text">{clubName}</span>}
+    description={<span key={next} className="oc-welcome-text">{next}{deadline && <span className="oc-welcome-deadline"> {deadline}</span>}</span>} />
 }

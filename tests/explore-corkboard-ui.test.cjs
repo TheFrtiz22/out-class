@@ -40,3 +40,28 @@ test('the active rail item follows the URL, including detail pages, and stays em
  assert.ok(railItems(inPlaceSections(personalRailSections())).every(item=>!item.href),'the /preview shell keeps navigation in place');
 });
 test('student tutorials keep their eight-step indices/version contract while replacing the existing Corkboard placeholder',()=>{const {tutorialSteps,tutorialInput}=load('lib/tutorials.ts');assert.equal(tutorialSteps.student.length,8);assert.equal(tutorialSteps.student[1].view,'explore');assert.equal(tutorialSteps.student[6].view,'corkboard');assert.equal(tutorialSteps.student[6].anchor,'nav-corkboard');assert.equal(tutorialInput.parse({experience:'student',action:'progress',step:6}).step,6);assert.doesNotMatch(JSON.stringify(tutorialSteps.student),/when available|view":"discover"|Categories/)});
+
+test('Explore\'s Applications open disclosure uses the Phosphor chevron instead of the native text triangle', () => {
+  const source = fs.readFileSync('components/views/explore-view.tsx', 'utf8')
+  const summary = source.match(/<details className="oc-explore-available group"><summary className="([^"]+)">(<ChevronDown [^>]+\/>)Applications open/)
+  assert.ok(summary, 'summary starts with ChevronDown')
+  assert.match(summary[1], /list-none/); assert.match(summary[1], /\[&::-webkit-details-marker\]:hidden/)
+  assert.match(summary[2], /group-open:rotate-0/); assert.match(summary[2], /motion-reduce:transition-none/)
+})
+
+test('Filter menus close on Escape with focus returned to the summary, and on an outside press', () => {
+  class FakeNode {}
+  const listeners = {}, documentStub = { addEventListener: (type, fn) => listeners[type] = fn, removeEventListener: type => delete listeners[type] }
+  const mod = { exports: {} }
+  new Function('require', 'module', 'exports', 'document', 'Node', ts.transpileModule(fs.readFileSync('hooks/use-dismissable-details.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText)(() => ({ useCallback: fn => fn }), mod, mod.exports, documentStub, FakeNode)
+  let focused = false, keydown = null
+  const inside = new FakeNode(), outside = new FakeNode(), summary = { focus: () => focused = true }
+  const details = { open: true, contains: node => node === inside, addEventListener: (type, fn) => keydown = fn, removeEventListener: () => keydown = null, querySelector: selector => selector === ':scope > summary' ? summary : null }
+  const cleanup = mod.exports.useDismissableDetails()(details)
+  let stopped = false; const key = name => ({ key: name, preventDefault() {}, stopPropagation() { stopped = true } })
+  keydown(key('Tab')); assert.equal(details.open, true)
+  keydown(key('Escape')); assert.equal(details.open, false); assert.equal(focused, true); assert.equal(stopped, true, 'an enclosing drawer stays open')
+  details.open = true; listeners.pointerdown({ target: inside }); assert.equal(details.open, true, 'presses inside keep it open')
+  listeners.pointerdown({ target: outside }); assert.equal(details.open, false, 'an outside press closes it')
+  cleanup(); assert.equal(listeners.pointerdown, undefined); assert.equal(keydown, null)
+})

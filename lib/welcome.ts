@@ -35,7 +35,7 @@ export function welcomeGreeting(now: Date | null, firstName?: string | null) {
 
 /** One deterministic choice: priority, earliest instant, then stable record ID. */
 export function welcomeSubtitle(context: WelcomeContext, now: Date | null) {
-  const fallback = context.mode === "personal" ? "Explore what's new in OutClass." : "Here's what's happening in your club."
+  const fallback = context.mode === "personal" ? "Explore what's new in OutClass." : "Nothing due this week."
   if (!now || !Number.isFinite(+now)) return fallback
   const candidates: Candidate[] = []
   const add = (id: string, priority: number, at: number, message: string) => candidates.push({ id, priority, at, message })
@@ -46,7 +46,7 @@ export function welcomeSubtitle(context: WelcomeContext, now: Date | null) {
     const message = label === "task"
       ? overdue ? "You have an overdue assignment." : tomorrow(new Date(at), now) ? "You have an assignment due tomorrow." : "You have an assignment due today."
       : label === "recruiting"
-        ? overdue ? "Your recruiting deadline has passed. Review your intake settings." : "Your application deadline is approaching."
+        ? overdue ? "Your application deadline has passed. Review your application settings." : "Your application deadline is approaching."
         : overdue ? "An application deadline has passed. Check your draft." : tomorrow(new Date(at), now) ? "You have an application deadline tomorrow." : "You have an application deadline today."
     if (urgent) add(id, 1, at, message)
   }

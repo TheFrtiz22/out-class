@@ -165,7 +165,7 @@ export function resolveTaskRecipients<T extends AudienceMember>(members: readonl
       if (audience.random.count > selected.length) throw new Error(`Only ${selected.length} members match this audience. Choose a smaller sample.`);
       selected = selected.slice(0,audience.random.count);
     }
-    if (audience.random.groups && audience.random.groups > selected.length) throw new Error("Choose no more groups than eligible members.");
+    if (audience.random.groups && audience.random.groups > selected.length) throw new Error("Choose no more groups than members.");
   }
   return selected.map((member,index) => ({ member, groupLabel: audience.random?.groups ? `Group ${index % audience.random.groups + 1}` : null }));
 }

@@ -48,7 +48,7 @@ export function simulateDemoInterviewSelection(input: InterviewScope) {
 }
 export function simulateDemoInterviewAdvance(input: InterviewScope) {
   const r = room(input), next = nextInterviewApplicant(getInterviewWorkspace(input.clubId).applications, input.roundId, input.applicationId);
-  if (!next) throw Error("No eligible sample candidate remains.");
+  if (!next) throw Error("No sample candidates left.");
   demoStore.mutate(s => { const c = s.interviewFoundation.collaboration!; c.invites = c.invites.filter(i => i.source.applicationId !== r.scope.applicationId); c.invites.push({ id: crypto.randomUUID(), source: input, destination: { ...input, applicationId: next.id }, expires: Date.now() + 600000, dismissed: false }); });
 }
 export function leaveInterviewCollaboration(input: Input) { void input; }

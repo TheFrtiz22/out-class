@@ -245,3 +245,8 @@ button.oc-command-row:hover { background: var(--muted); }
 /* Operational details stay beside their refresh action, above the pipeline. */
 .oc-recruiting-status { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem 1.5rem; margin-bottom: 1.25rem; }
 .oc-recruiting-status .oc-command-context-meta { margin: 0; }
+
+/* While the floating voting bar is shown, the list and its pager keep clear of it, and toasts rise above it. */
+/* Bar height (measured) + its bottom offset + breathing room. */
+.oc-voting-bar-clearance { padding-bottom: calc(var(--oc-voting-bar-height, 5rem) + var(--oc-toast-offset, 1.5rem) + 1.5rem); }
+body:has(.oc-voting-bar) [data-sonner-toaster][data-y-position="bottom"] { --offset-bottom: calc(var(--oc-toast-offset, 24px) + var(--oc-voting-bar-height, 4.5rem) + 0.75rem) !important; --mobile-offset-bottom: calc(var(--oc-toast-offset, 24px) + var(--oc-voting-bar-height, 10.5rem) + 0.75rem) !important; }

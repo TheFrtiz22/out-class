@@ -120,17 +120,17 @@ test('role switching, different clubs/members, revoked grants and partial data s
   op.rounds = [{ pending: 99, needsBooking: 42 }]; op.tasks.awaitingReview = 10
   op.intake = { applicationOpen: true, applicationDeadline: at(1) }
   op.bookings = [{ id: 'private', slot: { startTime: at(.5) } }]
-  assert.equal(welcomeSubtitle(ctx, now), "Here's what's happening in your club.")
+  assert.equal(welcomeSubtitle(ctx, now), "Nothing due this week.")
   ctx.membership = member(['applications.review']); ctx.data.membership = member(['applications.review'])
   assert.match(welcomeSubtitle(ctx, now), /deadline/)
   op.intake = null
   assert.equal(welcomeSubtitle(ctx, now), '99 applications are ready for your review.')
   ctx.data.membership.permissions = []
-  assert.equal(welcomeSubtitle(ctx, now), "Here's what's happening in your club.")
+  assert.equal(welcomeSubtitle(ctx, now), "Nothing due this week.")
   ctx.data.membership = member(['applications.review'])
-  for (const extra of [{ clubId: 'two' }, { membership: { ...ctx.membership, id: 'someone-else' } }, { membership: { ...ctx.membership, status: 'REVOKED' } }, { data: null }]) assert.equal(welcomeSubtitle({ ...ctx, ...extra }, now), "Here's what's happening in your club.")
+  for (const extra of [{ clubId: 'two' }, { membership: { ...ctx.membership, id: 'someone-else' } }, { membership: { ...ctx.membership, status: 'REVOKED' } }, { data: null }]) assert.equal(welcomeSubtitle({ ...ctx, ...extra }, now), "Nothing due this week.")
   assert.equal(welcomeSubtitle(personal(), now), "Explore what's new in OutClass.")
-  for (const invalid of [NaN, -1, 1.2, Infinity]) { op.rounds[0].pending = invalid; assert.equal(welcomeSubtitle(ctx, now), "Here's what's happening in your club.") }
+  for (const invalid of [NaN, -1, 1.2, Infinity]) { op.rounds[0].pending = invalid; assert.equal(welcomeSubtitle(ctx, now), "Nothing due this week.") }
 })
 
 test('clock aligns ticks, responds to lifecycle/clock changes, suspends hidden work, and cleans up', () => {

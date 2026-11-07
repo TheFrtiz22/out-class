@@ -48,7 +48,7 @@ export function interviewListHref(clubId: string, search: string) {
 export function interviewEntryStatus(row: InterviewRoomEntry, now = Date.now()) {
   if (row.cancelled) return "Cancelled";
   if (row.completed) return "Review submitted";
-  if (!row.bookingId) return "Awaiting booking";
+  if (!row.bookingId) return "Needs a time";
   if (row.started) return "In progress";
   if (+new Date(row.startTime) <= now && +new Date(row.endTime) >= now) return "Scheduled now";
   if (+new Date(row.endTime) < now) return "Scheduled time has ended";

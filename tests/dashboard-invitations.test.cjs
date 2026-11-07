@@ -100,7 +100,7 @@ test('decline removes only that pending Settings request and stale refresh canno
   let resolve;const h=container({getOrganizationInvitations:()=>new Promise(done=>resolve=done)},{includeDismissed:true});
   h.render();await h.flush();resolve([invitation(),invitation('other')]);await h.flush();let tree=h.render();
   assert.equal(cards(tree)[0].props.allowDecline,true);const changed=cards(tree)[0].props.onChanged;
-  nodes(tree).find(node=>node.props?.children==='Refresh requests').props.onClick();h.render();await h.flush();
+  assert.equal(nodes(tree).some(node=>node.props?.children==='Refresh requests'),false);h.focus();h.render();await h.flush();
   await changed({id:'member',kind:'declined',clubName:'Madison Investment Fund'});resolve([invitation(),invitation('other')]);await h.flush();
   tree=h.render();assert.deepEqual(cards(tree).map(node=>node.props.invitation.id),['other']);assert.ok(JSON.stringify(tree).includes('declined the invitation'));
 });
