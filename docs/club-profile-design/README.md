@@ -5,7 +5,7 @@ The approved photo-led design is implemented in the existing Explore/Corkboard c
 ## Presentation and data
 
 - Responsive cards use 190px banners, overlapping club logos, larger names, prominent selectivity/fund/member statistics and up to six member destinations. Public profiles show every recorded destination and its context.
-- Thirteen locally bundled employer marks improve explicitly recorded placements. Unrecognized names remain readable text tiles. A mark never adds a placement claim. `employer-marks.json` records source URLs and original image hashes. Source images remain unchanged; CSS whitespace cropping is a progressive enhancement.
+- Member destinations render as a plain text list labelled "Club-reported". Third-party employer logos were removed on 2026-11-07 (ui/public-site-cleanup); no logo files or registry remain.
 - Search includes recorded employers and still combines with category/recruitment/acceptance filters.
 - Optional marketing JSON fields: `bannerPosition` (0–100% x/y), `acceptanceNote`, `acceptanceSource`, `acceptanceApproximate`, `outcomesNote`. These fields have backward-compatible defaults and require no SQL migration. Leaders can edit them through Appearance.
 - Missing rates show “Not disclosed” when acceptance display is enabled. VCG's 3% is explicitly Spring 2026. FBIF's ~3% is approximate, with no cohort specified. Eleven other researched profiles have no numeric club acceptance rate. VVF's McIntire-admission percentage is not a club admission rate.

@@ -1,0 +1,167 @@
+{
+  "base": "http://127.0.0.1:3201",
+  "runs": 3,
+  "measuredAt": "2026-11-07T21:26:28.816Z",
+  "results": [
+    {
+      "page": "/",
+      "profile": "desktop",
+      "state": "cold",
+      "lcp": 172,
+      "cls": 0,
+      "inp": 0,
+      "content": 143,
+      "lcpElement": "H1"
+    },
+    {
+      "page": "/",
+      "profile": "desktop",
+      "state": "warm",
+      "lcp": 176,
+      "cls": 0,
+      "inp": 0,
+      "content": 113,
+      "lcpElement": "H1"
+    },
+    {
+      "page": "/",
+      "profile": "phone",
+      "state": "cold",
+      "lcp": 424,
+      "cls": 0,
+      "inp": 0,
+      "content": 0,
+      "lcpElement": "IMG.oc-loading-mark"
+    },
+    {
+      "page": "/",
+      "profile": "phone",
+      "state": "warm",
+      "lcp": 332,
+      "cls": 0,
+      "inp": 0,
+      "content": 395,
+      "lcpElement": "H1"
+    },
+    {
+      "page": "/uva",
+      "profile": "desktop",
+      "state": "cold",
+      "lcp": 208,
+      "cls": 0.003,
+      "inp": 32,
+      "content": 154,
+      "lcpElement": "IMG"
+    },
+    {
+      "page": "/uva",
+      "profile": "desktop",
+      "state": "warm",
+      "lcp": 184,
+      "cls": 0.003,
+      "inp": 24,
+      "content": 177,
+      "lcpElement": "IMG"
+    },
+    {
+      "page": "/uva",
+      "profile": "phone",
+      "state": "cold",
+      "lcp": 1228,
+      "cls": 0.016,
+      "inp": 72,
+      "content": 1175,
+      "lcpElement": "IMG"
+    },
+    {
+      "page": "/uva",
+      "profile": "phone",
+      "state": "warm",
+      "lcp": 448,
+      "cls": 0,
+      "inp": 80,
+      "content": 488,
+      "lcpElement": "IMG"
+    },
+    {
+      "page": "/club/[id]",
+      "profile": "desktop",
+      "state": "cold",
+      "lcp": 252,
+      "cls": 0,
+      "inp": 0,
+      "content": 148,
+      "lcpElement": "H1.oc-hero-headline"
+    },
+    {
+      "page": "/club/[id]",
+      "profile": "desktop",
+      "state": "warm",
+      "lcp": 320,
+      "cls": 0,
+      "inp": 0,
+      "content": 182,
+      "lcpElement": "H1.oc-hero-headline"
+    },
+    {
+      "page": "/club/[id]",
+      "profile": "phone",
+      "state": "cold",
+      "lcp": 812,
+      "cls": 0,
+      "inp": 72,
+      "content": 4328,
+      "lcpElement": "IMG.oc-loading-mark"
+    },
+    {
+      "page": "/club/[id]",
+      "profile": "phone",
+      "state": "warm",
+      "lcp": 1220,
+      "cls": 0,
+      "inp": 72,
+      "content": 1166,
+      "lcpElement": "H1.oc-club-profile-title"
+    },
+    {
+      "page": "/login",
+      "profile": "desktop",
+      "state": "cold",
+      "lcp": 152,
+      "cls": 0.002,
+      "inp": 32,
+      "content": 104,
+      "lcpElement": "H1"
+    },
+    {
+      "page": "/login",
+      "profile": "desktop",
+      "state": "warm",
+      "lcp": 120,
+      "cls": 0,
+      "inp": 32,
+      "content": 83,
+      "lcpElement": "H1"
+    },
+    {
+      "page": "/login",
+      "profile": "phone",
+      "state": "cold",
+      "lcp": 1912,
+      "cls": 0.002,
+      "inp": 40,
+      "content": 957,
+      "lcpElement": "IMG.oc-loading-mark"
+    },
+    {
+      "page": "/login",
+      "profile": "phone",
+      "state": "warm",
+      "lcp": 332,
+      "cls": 0,
+      "inp": 40,
+      "content": 295,
+      "lcpElement": "H1"
+    }
+  ]
+}
