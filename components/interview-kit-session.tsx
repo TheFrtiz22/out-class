@@ -263,7 +263,7 @@ export function InterviewKitSession({
     if (activeQuestionRef.current === local.id) { activeNotes.current?.focus(); finishQuestionTiming(); }
     selectionIntent.current = { question: local, sequence: ++selectionSequence.current };
     setSelecting(true); setShareFailed(null); setCollaborationMessage("");
-    if (dirty && !savingRef.current) void persist();
+    if (!savingRef.current && JSON.stringify(draftRef.current) !== savedRef.current) void persist();
     if (selectionFlight.current) return;
     const flight = (async () => {
       while (selectionIntent.current && mounted.current && !sessionRef.current?.completedAt && !draftRef.current.postInterview) {
@@ -282,7 +282,7 @@ export function InterviewKitSession({
   }
   async function acceptPendingQuestion() {
     if (!pendingQuestion || composing.current) return;
-    if (dirty && !savingRef.current) void persist();
+    if (!savingRef.current && JSON.stringify(draftRef.current) !== savedRef.current) void persist();
     openSharedQuestion(pendingQuestion.question, true);
     setCollaborationMessage(pendingQuestion.by === "You" ? "" : `${pendingQuestion.by} selected this question.`);
   }
@@ -365,7 +365,8 @@ export function InterviewKitSession({
           setSession(sessionRef.current);
           savedRef.current = JSON.stringify(snapshot);
           setSaved(savedRef.current);
-          if (patch) setDraft(current => ({ ...current, ...patch }));
+          // Apply the saved patch to the live ref now: a follow-up save in this same tick must not send the pre-patch draft.
+          if (patch) { draftRef.current = { ...draftRef.current, ...patch }; setDraft(current => ({ ...current, ...patch })); }
           if (complete && result.evaluation) { setActiveQuestion(""); setDraft(result.session.draft); onComplete(result.evaluation, next); }
         }
         return true;
