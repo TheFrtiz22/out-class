@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { clubPermissions, permissionTemplates, permissionLabels, hasPermission, type ClubPermission } from "@/lib/permissions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { NativeSelect } from "@/components/ui/native-select"
 export function ClubAccessEditor({
   clubId,
   initial,
@@ -68,8 +69,8 @@ export function ClubAccessEditor({
       <fieldset disabled={busy || higherAuthority || !hasPermission(actor, "leaders.manage")} className="space-y-4">
         {!selectedMemberId && !inviteOnly && <label className="block">
           Person
-          <select
-            className="mt-2 block w-full rounded border p-3"
+          <NativeSelect
+            className="mt-2 block w-full"
             value={memberId}
             onChange={(e) => {
               const member = data.members.find((m) => m.id === e.target.value)
@@ -85,7 +86,7 @@ export function ClubAccessEditor({
                 {m.isOwner ? " · Owner" : ""}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </label>}
         {!memberId && (
           <label className="block">
@@ -95,8 +96,8 @@ export function ClubAccessEditor({
         )}
         <label className="block">
           Start with a template
-          <select
-            className="mt-2 block min-h-11 w-full max-w-full rounded border p-2"
+          <NativeSelect
+            className="mt-2 block min-h-11 w-full max-w-full"
             defaultValue=""
             onChange={(e) => {
               if (e.target.value)
@@ -109,7 +110,7 @@ export function ClubAccessEditor({
             {Object.keys(permissionTemplates).map((key) => (
               <option key={key}>{key}</option>
             ))}
-          </select>
+          </NativeSelect>
         </label>
         <div className="grid gap-3 sm:grid-cols-2">
           {clubPermissions.map((p) => (

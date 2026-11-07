@@ -34,7 +34,7 @@ test('decorative rendering is silent, unfocusable and references both exact asse
  }
 })
 test('page headers preserve titles and actions without decorative artwork',()=>{
- const {PageHeader}=load('components/product/page-header.tsx')
+ const {PageHeader}=load('components/ui/page-header.tsx')
  const html=renderToStaticMarkup(React.createElement(PageHeader,{title:'Applications',eyebrow:'Research Club',description:'Deadline: Friday',action:React.createElement('button',null,'New application'),ribbon:true,illustration:'rotunda'}))
  assert.doesNotMatch(html,/oc-campus|data-illustrated/)
  assert.match(html,/<h1>Applications<\/h1>/);assert.match(html,/Research Club/);assert.match(html,/Deadline: Friday/);assert.match(html,/<button>New application<\/button>/)
@@ -104,7 +104,8 @@ function renderSettingsWorkspace(member, requested, section = 'settings') {
    if(name==='@/components/club-settings-workspace') return component('components/club-settings-workspace.tsx')
    if(name==='@/components/product/welcome-header') return component('components/product/welcome-header.tsx')
    if(name==='@/lib/welcome') return load('lib/welcome.ts')
-   if(name==='@/components/product/page-header') return component('components/product/page-header.tsx')
+   if(name==='@/components/ui/page-header') return component('components/ui/page-header.tsx')
+   if(name==='@/components/product/dashboard/dashboard') return component('components/product/dashboard/dashboard.tsx')
    if(name==='./campus-illustration') return component('components/product/campus-illustration.tsx')
    if(['@/lib/club-settings','@/lib/product-navigation','@/lib/permissions','@/lib/interview-access','@/lib/club-workspace','@/lib/workspace-navigation'].includes(name)) return load(name.replace('@/','')+'.ts')
    return new Proxy({}, {get:()=>()=>null})
@@ -129,9 +130,9 @@ for(const [name,member,requested,effective,illustration] of settingsCases) test(
  else assert.doesNotMatch(html,/oc-campus-illustration|data-illustrated/)
 })
 
-test('club Overview keeps its club name and neutral welcome without repetitive public profile shortcuts or artwork',()=>{
+test('club Overview opens with the club name, not a greeting, without repetitive public profile shortcuts or artwork',()=>{
  const html=renderSettingsWorkspace({isOwner:true},null,'overview');
- assert.match(html,/<h1[^>]*>.*Welcome to OutClass\..*<\/h1>/);assert.match(html,/Fixture Club/);
+ assert.match(html,/<h1[^>]*>.*Fixture Club.*<\/h1>/);assert.doesNotMatch(html,/Good (morning|afternoon|evening)|Welcome to OutClass|Still up/);
  assert.doesNotMatch(html,/Public club profile|href="\/club\/visual-fixture-club"/);
  assert.doesNotMatch(html,/oc-campus-illustration|data-illustrated|oc-campus-ribbon/);
 })

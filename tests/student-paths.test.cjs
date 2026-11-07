@@ -11,7 +11,7 @@ function load(file, mocks = {}) {
   new Function("require", "module", "exports", code)(name => mocks[name] || (name.startsWith("@/") ? load(path.join(name.slice(2)), mocks) : require(name)), mod, mod.exports)
   return mod.exports
 }
-const nav = load("lib/navigation.ts")
+const nav = load("lib/student-routes.ts")
 const redirect = query => nav.legacyStudentRedirect(new URLSearchParams(query))
 
 test("every old student workspace URL maps to its real path", () => {
@@ -76,7 +76,7 @@ test("application code links to student paths, not the old homepage workspace UR
   const { execFileSync } = require("node:child_process")
   const files = execFileSync("git", ["ls-files", "app", "components", "lib", "actions", "utils", "contexts", "middleware.ts"], { encoding: "utf8" }).split("\n").filter(file => /\.tsx?$/.test(file))
   // Comments that describe the redirect, and the /preview demo, which keeps its query form.
-  const allowed = new Set(["lib/navigation.ts", "lib/notification-presentation.ts", "middleware.ts", "components/student-workspace-page.tsx", "components/app-shell.tsx"])
+  const allowed = new Set(["lib/student-routes.ts", "lib/notification-presentation.ts", "middleware.ts", "components/student-workspace-page.tsx", "components/app-shell.tsx"])
   const offenders = files.filter(file => !allowed.has(file) && /workspace=student|[?&]view=(student-|explore|tracker|status|inbox|calendar|my-clubs|corkboard|categories)/.test(fs.readFileSync(file, "utf8")))
   assert.deepEqual(offenders, [])
   const shell = fs.readFileSync("components/app-shell.tsx", "utf8")
@@ -101,7 +101,7 @@ function entryHarness({ session = null, authError = null, cookies = {}, account 
     } },
     "@/components/home-entry": { HomeEntry: "HomeEntry" },
     "@/lib/auth": load("lib/auth.ts"),
-    "@/lib/navigation": nav,
+    "@/lib/navigation": nav, "@/lib/student-routes": nav,
   }
   const { StudentWorkspacePage } = load("components/student-workspace-page.tsx", mocks)
   return { calls, render: (path, params = {}) => StudentWorkspacePage({ path, searchParams: Promise.resolve(params) }) }
@@ -172,7 +172,7 @@ function pageMocks(opts = {}) {
     "@/utils/prisma": { prisma: { user: { findUnique: async () => ({ disabledAt: opts.disabled ? new Date() : null, memberships: opts.memberships ?? [] }) }, studentProfile: { findUnique: async () => opts.noProfile ? null : { id: "p" } } } },
     "@/lib/permissions": load("lib/permissions.ts"),
     "@/components/home-entry": { HomeEntry: "HomeEntry" },
-    "@/lib/auth": load("lib/auth.ts"), "@/lib/navigation": nav,
+    "@/lib/auth": load("lib/auth.ts"), "@/lib/navigation": nav, "@/lib/student-routes": nav,
     "@/lib/seo": { SITE_TITLE: "", SITE_DESCRIPTION: "", publicPageMetadata: () => ({}), privateRobots: {}, privateHomepageParams: [], websiteStructuredData: {} },
     "@/lib/landing-audience": { initialLandingAudience: () => "student", landingAudienceBootScript: "", LANDING_AUDIENCE_PREFERENCE: "aud" },
   }
@@ -236,7 +236,7 @@ test("old URLs: middleware 307s on real hosts; loopback IPs fall through to the 
     "@/utils/supabase/middleware": { createClient: async () => FakeResponse.next() },
     "@/lib/platform-view-as": { PLATFORM_VIEW_COOKIE: "platform-view" },
     "@/lib/demo/access": { DEMO_COOKIE: "demo" },
-    "@/lib/navigation": nav,
+    "@/lib/navigation": nav, "@/lib/student-routes": nav,
   })
   const request = (origin, query) => {
     const url = new URL(`${origin}/${query}`)

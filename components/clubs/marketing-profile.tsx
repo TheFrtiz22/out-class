@@ -14,8 +14,8 @@ export function MarketingProfile({ profile, action, compact = false, assetPrevie
   const Heading = compact ? "h2" : "h1"
   const stats = profileStatistics(profile)
   const socials = [{ label: "Website", url: m.website, icon: Globe }, { label: "LinkedIn", url: m.linkedin, icon: Linkedin }, { label: "Instagram", url: m.instagram, icon: Instagram }, { label: "Email", url: m.email ? `mailto:${m.email}` : "", icon: Mail }].filter(s => s.url)
-  return <div className="oc-marketing-profile overflow-hidden rounded-2xl border bg-card shadow-sm">
-    <div className={`oc-marketing-cover ${compact ? "h-32" : "h-44 sm:h-56"}`} style={{ background: `linear-gradient(120deg, ${profile.color}, #8b93a5)` }}>{profile.bannerUrl && <img src={clubAssetSource(profile.bannerUrl, assetPreview)} alt="" className="size-full object-cover" style={{ objectPosition: `${m.bannerPosition.x}% ${m.bannerPosition.y}%` }} />}</div>
+  return <div className="oc-marketing-profile overflow-hidden rounded-2xl border oc-glass-surface">
+    <div className={`oc-marketing-cover ${compact ? "h-32" : "h-44 sm:h-56"}`} style={{ background: `linear-gradient(120deg, ${profile.color}, var(--input))` }}>{profile.bannerUrl && <img src={clubAssetSource(profile.bannerUrl, assetPreview)} alt="" className="size-full object-cover" style={{ objectPosition: `${m.bannerPosition.x}% ${m.bannerPosition.y}%` }} />}</div>
     <div className={compact ? "px-5 pb-5" : "px-6 pb-6 sm:px-8"}>
       <ClubLogo logoUrl={profile.logoUrl} marketing={profile.marketing} assetPreview={assetPreview} text={profile.name.split(/\s+/).map(w => w[0]).slice(0, 3).join("")} color={profile.color} size="xl" alt={`${profile.name} logo`} className="-mt-10 mb-4 relative z-10 border-4 border-card !rounded-2xl" />
       <Heading className="oc-club-profile-title font-serif text-2xl font-semibold tracking-tight sm:text-4xl">{profile.name || "Your club name"}</Heading>

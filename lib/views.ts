@@ -31,7 +31,7 @@ export const adminClubName = "Virginia Venture Fund"
 /** Standard student navigation, shown when appMode === "student". */
 export const studentNav: NavItem[] = [
   { id: "student-dashboard", title: "Home", icon: Home },
-  { id: "explore", title: "Discover", icon: Compass },
+  { id: "explore", title: "Explore", icon: Compass },
   { id: "corkboard", title: "Corkboard", icon: Bookmark },
   { id: "tracker", title: "Applications", icon: ClipboardList },
   { id: "status", title: "Status", icon: ClipboardList },
@@ -69,7 +69,7 @@ export const navSections: { label: string; items: NavItem[] }[] = [
     ],
   },
   {
-    label: "Club Leader",
+    label: "Club workspace",
     items: [
       { id: "leader-dashboard", title: "Applicant CRM", icon: Table2 },
       { id: "screening-dashboard", title: "Screening & Auto-Filter", icon: ShieldAlert },
@@ -108,8 +108,8 @@ export const viewTitles: Record<ViewId, { title: string; subtitle: string }> = {
     subtitle: "Preview saved recruiting thresholds and mark applicants for review.",
   },
   "interview-scheduler": {
-    title: "Interview Scheduler & Booking Manager",
-    subtitle: "Build the master slot schedule and preview the student booking flow.",
+    title: "Interview scheduling",
+    subtitle: "Set interview times and preview what applicants see.",
   },
   "interview-workspace": {
     title: "Live In-Interview Workspace",

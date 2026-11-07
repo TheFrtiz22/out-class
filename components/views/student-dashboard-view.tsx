@@ -1,25 +1,21 @@
 "use client"
+import type { ReactNode } from "react"
 import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
 import { AvailabilityDashboardRequests } from "@/components/availability/dashboard-requests"
 
 import { useWelcomeClock } from "@/hooks/use-welcome-clock"
-import {
-  ArrowRight,
-  CalendarDays,
-  ChevronRight,
-  FileText,
-  Bell,
-  MapPin,
-} from "@/components/icons"
+import { Bell, ChevronRight } from "@/components/icons"
 import { WelcomeHeader } from "@/components/product/welcome-header"
-import { FeaturedAction } from "@/components/product/featured-action"
+import { Dashboard, DashboardCard, DashboardFoot, DashboardHero, DashboardMore, DashboardQuiet, DateChipList, GlassRow, GlassRowList, NeedsAction, NeedsYouRow, PipelineBars, type DateChipItem, type NeedsItem } from "@/components/product/dashboard/dashboard"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ClubLogo } from "@/components/club-logo"
 import { StatusPill } from "@/components/ui/status-pill"
 import { useApplicationState } from "@/lib/application-state"
 import { useAuth } from "@/contexts/auth-context"
 import { eventStart } from "@/lib/calendar"
+import { clubWorkspaceHref } from "@/lib/club-workspace"
 import {
   homeApplications,
   nextHomeAction,
@@ -32,8 +28,8 @@ import type { ClubEvent } from "@/lib/data"
 import type { ViewId } from "@/lib/views"
 import "./student-home.css"
 
-function when(event: ClubEvent) {
-  return eventStart(event).toLocaleString("en-US", {
+function when(event: ClubEvent | Date) {
+  return (event instanceof Date ? event : eventStart(event)).toLocaleString("en-US", {
     timeZone: SCHEDULING_TIMEZONE, hour12: true,
     weekday: "short",
     month: "short",
@@ -42,103 +38,33 @@ function when(event: ClubEvent) {
     minute: "2-digit",
   })
 }
-function SectionTitle({
-  id,
-  title,
-  action,
-  onClick,
-  icon: _Icon,
-}: {
-  icon: typeof CalendarDays
-  id: string
-  title: string
-  action: string
-  onClick: () => void
-}) {
-  return (
-    <div className="oc-home-section-title">
-      <h2 id={id}>{title}</h2>
-      <Button variant="ghost" size="sm" onClick={onClick}>
-        {action}
-        <ArrowRight size={14} aria-hidden="true" />
-      </Button>
-    </div>
-  )
+function applicationNote(app: HomeApplication) {
+  return app.draft
+    ? app.deadline
+      ? `Deadline · ${when(app.deadline)}`
+      : app.responsesSaved !== undefined
+        ? `${app.responsesSaved} ${app.responsesSaved === 1 ? "response" : "responses"} saved`
+        : "Pick up where you left off"
+    : app.status === "Interviewing"
+      ? "Book your interview / view appointment"
+      : app.status === "Accepted"
+        ? "Your decision is ready"
+        : app.status === "Rejected"
+          ? "View your decision"
+          : app.status === "Submitted"
+            ? "Application submitted"
+            : "Check your application for details"
 }
-function ApplicationRow({ app, onOpen }: { app: HomeApplication; onOpen: () => void }) {
-  return (
-    <li>
-      <button
-        type="button"
-        className="oc-home-application"
-        onClick={onOpen}
-      >
-        <ClubLogo
-          clubId={app.clubId}
-          logoUrl={app.logoUrl} marketing={app.marketing}
-          text={app.name.slice(0, 2)}
-          color={app.color}
-        />
-        <span className="oc-home-app-copy">
-          <strong>{app.name}</strong>
-          <span>
-            {app.draft
-              ? app.deadline
-                ? `Deadline · ${when(app.deadline)}`
-                : app.responsesSaved !== undefined
-                  ? `${app.responsesSaved} ${app.responsesSaved === 1 ? "response" : "responses"} saved`
-                  : "Pick up where you left off"
-              : app.status === "Interviewing"
-                ? "Book your interview / view appointment"
-                : app.status === "Accepted"
-                  ? "Your decision is ready"
-                  : app.status === "Rejected"
-                    ? "View your decision"
-                    : app.status === "Submitted"
-                      ? "Application submitted"
-                      : "Check your application for details"}
-          </span>
-        </span>
-        <StatusPill status={app.status} />
-        <ChevronRight size={16} className="oc-home-row-arrow" aria-hidden="true" />
-      </button>
-    </li>
-  )
-}
-function AgendaRow({ event, onOpen }: { event: ClubEvent; onOpen: () => void }) {
-  const date = eventStart(event)
-  return (
-    <li>
-      <button
-        type="button"
-        className="oc-home-agenda-row"
-        onClick={onOpen}
-      >
-        <span className="oc-home-date" aria-hidden="true">
-          <span>{date.toLocaleDateString("en-US", { timeZone: SCHEDULING_TIMEZONE, month: "short" })}</span>
-          <strong>{Number(event.date.slice(-2))}</strong>
-        </span>
-        <span className="oc-home-agenda-copy">
-          <span className="oc-home-event-type">
-            {event.type === "Interview"
-              ? "Interview"
-              : event.type === "Coffee Chat"
-                ? "Coffee chat"
-                : "Club event"}{" "}
-            · {date.toLocaleTimeString("en-US", { timeZone: SCHEDULING_TIMEZONE, hour: "numeric", minute: "2-digit", hour12: true })}
-          </span>
-          <strong>{event.title}</strong>
-          {event.location && (
-            <span>
-              <MapPin size={12} aria-hidden="true" />
-              {event.location}
-            </span>
-          )}
-        </span>
-        <ChevronRight size={15} aria-hidden="true" />
-      </button>
-    </li>
-  )
+const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
+/** My applications as stages: drafts, in review, interviews, decisions. Bars are decorative. */
+function applicationStages(apps: HomeApplication[]) {
+  const count = (statuses: string[]) => apps.filter(app => statuses.includes(app.status)).length
+  return [
+    { id: "draft", label: "Drafts", count: count(["Drafting"]), tone: "warning" },
+    { id: "review", label: "In review", count: count(["Submitted", "In Review"]), tone: "info" },
+    { id: "interview", label: "Interviews", count: count(["Interviewing"]), tone: "interview" },
+    { id: "decision", label: "Decisions", count: count(["Accepted", "Rejected", "Waitlisted"]) },
+  ]
 }
 
 export function StudentDashboardView({
@@ -198,184 +124,83 @@ export function StudentDashboardView({
     eyebrow={now?.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }) ?? "Your OutClass"}
     context={{ mode: "personal", applications: loading || !hydrated ? null : realApps ?? null, events: accountEvents, notifications: personalTaskActivities?.userId === user?.id ? personalTaskActivities?.items : [], memberClubIds: user?.memberships.filter(m => m.status === "ACTIVE").map(m => m.clubId) ?? [] }}
   />
+  const hero = <DashboardHero className="oc-home-hero">{welcome}</DashboardHero>
 
   if (loading || !hydrated || !now)
     return (
       <div className="oc-student-home">
-        {welcome}
-        <div role="status" aria-busy="true" aria-label="Loading your recruiting season">
-          <Skeleton className="mt-4 h-10 w-full" />
-          <Skeleton className="mt-4 h-28 w-full" />
-          <Skeleton className="mt-4 h-64 w-full" />
+        {hero}
+        <div role="status" aria-busy="true" aria-label="Loading your recruiting season" className="oc-home-loading">
+          <Skeleton className="h-36 w-full rounded-[var(--oc-content-radius)]" />
+          <Skeleton className="h-64 w-full rounded-[var(--oc-content-radius)]" />
           <span className="sr-only">Loading your recruiting season…</span>
         </div>
       </div>
     )
 
-  const nextTitle =
-    next.kind === "application"
-      ? "Pick up where you left off."
-      : next.kind === "event"
-        ? next.event.title
-        : next.kind === "notification"
-          ? next.notification.title
-          : applications.length
-          ? "Explore more clubs."
-          : "Find a club to apply to."
-  const nextCopy =
-    next.kind === "application"
-      ? next.application.deadline
-        ? `${next.application.name} · Application deadline: ${when(next.application.deadline)}.`
-        : `${next.application.name} · Your draft is ready. Continue when you are.`
-      : next.kind === "event"
-        ? `${when(next.event)}${next.event.location ? ` · ${next.event.location}` : ""}`
-        : next.kind === "notification"
-          ? next.notification.body
-          : applications.length
-          ? "Your applications are together below. Explore other clubs that interest you."
-          : "Explore clubs, learn what they do, and start an application when you’re ready."
-  const nextLabel =
-    next.kind === "application"
-      ? "Continue draft"
-      : next.kind === "event"
-        ? "View event details"
-        : next.kind === "notification" ? "Read update" : "Explore clubs"
+  // Needs you: only from records this page already reads. The next step (nextHomeAction) leads.
+  const memberClubIds = user?.memberships.filter(m => m.status === "ACTIVE").map(m => m.clubId) ?? []
+  const taskItems = personalTaskActivities?.userId === user?.id ? personalTaskActivities?.items ?? [] : []
+  const overdueTasks = [...new Map(taskItems.flatMap(item => item.clubId && memberClubIds.includes(item.clubId) && item.taskActivity?.needsSubmission && item.taskActivity.dueAt && +new Date(item.taskActivity.dueAt) < now.getTime() ? [[item.taskActivity.assignmentId, item.clubId] as const] : [])).values()]
+  const upcomingDeadlines = applications.filter(app => app.draft && app.deadline && eventStart(app.deadline) >= now).sort((a, b) => eventStart(a.deadline!).getTime() - eventStart(b.deadline!).getTime())
+  const drafts = applications.filter(app => app.draft && !upcomingDeadlines.includes(app))
+  const interviewing = applications.filter(app => app.status === "Interviewing")
+  const urgentUpdate = updates.find(update => update.urgent && !update.read)
+  const readUpdate = (id: string) => { focusNotification(id); onNavigate("inbox") }
+  const needs: (NeedsItem & { order: number })[] = []
+  if (upcomingDeadlines[0]) { const app = upcomingDeadlines[0]; needs.push({ order: next.kind === "application" && next.application.id === app.id ? 0 : 1, id: "deadline", title: upcomingDeadlines.length === 1 ? `${app.name} application due` : `${plural(upcomingDeadlines.length, "application")} due`, detail: `Application deadline: ${when(app.deadline!)}`, action: <NeedsAction onClick={() => openApplication(app)}>Continue draft</NeedsAction> }) }
+  if (overdueTasks.length) needs.push({ order: 2, id: "tasks", title: `${plural(overdueTasks.length, "club assignment")} overdue`, detail: "Submit your work or ask your club for more time.", action: <NeedsAction href={`${clubWorkspaceHref(overdueTasks[0]!, "tasks")}&taskView=mine`}>Open assignments</NeedsAction> })
+  if (interviewing.length) needs.push({ order: 3, id: "interviews", title: interviewing.length === 1 ? `Interview with ${interviewing[0]!.name}` : `${plural(interviewing.length, "interview invitation")}`, detail: "Book your interview or view your appointment.", action: <NeedsAction onClick={() => openApplication(interviewing[0]!)}>View interview</NeedsAction> })
+  if (urgentUpdate) needs.push({ order: next.kind === "notification" ? 0 : 4, id: "update", title: urgentUpdate.title, detail: urgentUpdate.preview, action: <NeedsAction onClick={() => readUpdate(urgentUpdate.id)}>Read update</NeedsAction> })
+  if (drafts.length) needs.push({ order: next.kind === "application" && drafts.includes(next.application) ? 0 : 5, id: "drafts", title: drafts.length === 1 ? `Finish your ${drafts[0]!.name} application` : `${plural(drafts.length, "draft")} in progress`, detail: drafts[0]!.responsesSaved !== undefined ? `${plural(drafts[0]!.responsesSaved, "response")} saved` : "Pick up where you left off.", action: <NeedsAction onClick={() => openApplication(drafts[0]!)}>Continue draft</NeedsAction> })
+  if (next.kind === "event" && eventStart(next.event).getTime() <= now.getTime() + 48 * 3600000) needs.push({ order: 0, id: "event", title: next.event.title, detail: `${when(next.event)}${next.event.location ? ` · ${next.event.location}` : ""}`, action: <NeedsAction onClick={() => openEvent(next.event)}>View event details</NeedsAction> })
+  const needsItems = needs.sort((a, b) => a.order - b.order).slice(0, 4)
+
+  const coming: DateChipItem[] = [
+    ...agenda.slice(0, 4).map(event => ({ id: event.id, at: eventStart(event), kind: event.type === "Interview" ? "interview" : undefined, title: event.title,
+      detail: [event.type === "Interview" ? "Interview" : event.type === "Coffee Chat" ? "Coffee chat" : "Club event", event.location].filter(Boolean).join(" · "), onClick: () => openEvent(event) })),
+    ...upcomingDeadlines.slice(0, 2).map(app => ({ id: `deadline-${app.id}`, at: eventStart(app.deadline!), kind: "deadline", title: `${app.name} application due`, detail: "Deadline", onClick: () => openApplication(app) })),
+  ].sort((a, b) => +a.at - +b.at).slice(0, 5)
+  const empty = (title: string, copy: string, action: ReactNode) => <div className="oc-dashboard-state"><DashboardQuiet><strong>{title}.</strong> {copy}</DashboardQuiet>{action}</div>
+  const stages = applicationStages(applications)
 
   return (
     <div className="oc-student-home">
-      {welcome}
-      <AvailabilityDashboardRequests />
-      <div className="oc-home-columns">
-      {unavailable ? (
-        <section className="oc-home-next" role="status">
-          <div>
-            <h2>We couldn’t load your applications.</h2>
-            <p>Try again to see the latest information for your account.</p>
+      {hero}
+      <Dashboard className="oc-home-dashboard">
+        <AvailabilityDashboardRequests />
+        {unavailable
+          ? <Card variant="glass" className="oc-needs-clear oc-home-next" role="status"><div className="oc-dashboard-state"><p><strong>We couldn’t load your applications.</strong> Try again to see the latest information for your account.</p><Button onClick={() => window.location.reload()}>Try again</Button></div></Card>
+          : <NeedsYouRow headingId="home-next-title" className="oc-home-next" items={needsItems}
+            clear={<><strong>You’re clear for now.</strong> {applications.length ? "Your applications are together below. Explore other clubs that interest you." : "Explore clubs, learn what they do, and start an application when you’re ready."} <DashboardMore onClick={() => onNavigate("explore")}>Explore clubs</DashboardMore></>} />}
+        <div className="oc-dashboard-grid">
+          <div className="oc-dashboard-main">
+            <DashboardCard id="home-applications-title" title="Your applications" index={needsItems.length + 1} className="oc-home-applications" more={{ onClick: () => onNavigate("tracker"), label: "View all" }}>
+              {applications.length ? <>
+                <PipelineBars stages={stages} compactStages={stages} />
+                <GlassRowList>{applications.slice(0, 4).map(app => <li key={app.id}><GlassRow onClick={() => openApplication(app)} className="oc-home-application" title={app.name} detail={applicationNote(app)}
+                  lead={<ClubLogo clubId={app.clubId} logoUrl={app.logoUrl} marketing={app.marketing} text={app.name.slice(0, 2)} color={app.color} />}
+                  trailing={<span className="oc-dashboard-row-end"><StatusPill status={app.status} /><ChevronRight size={16} aria-hidden="true" /></span>} /></li>)}</GlassRowList>
+                {applications.length > 4 && <DashboardFoot>Showing 4 of {applications.length} applications</DashboardFoot>}
+              </> : empty("No applications yet", "You haven’t started an application. Find a club to apply to and your progress will show here.", <DashboardMore onClick={() => onNavigate("explore")}>Explore clubs</DashboardMore>)}
+            </DashboardCard>
+            <DashboardCard id="home-updates-title" title="Updates for you" index={needsItems.length + 3} className="oc-home-updates" more={{ onClick: () => onNavigate("inbox"), label: "Open inbox" }}>
+              {updates.length ? <GlassRowList>{updates.map(update => <li key={update.id}><GlassRow className="oc-home-update" onClick={() => readUpdate(update.id)} title={update.title} note={update.preview}
+                lead={<span className="oc-home-update-indicator" data-unread={!update.read} aria-label={update.read ? "Read" : "Unread"}><Bell size={16} aria-hidden="true" /></span>}
+                detail={`${update.club}${update.createdAt && Number.isFinite(Date.parse(update.createdAt)) ? ` · ${new Date(update.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : ""}`} /></li>)}</GlassRowList>
+                : empty("You’re all caught up", "There are no new application updates or announcements from clubs you belong to.", <DashboardMore onClick={() => onNavigate("explore")}>Find clubs to follow</DashboardMore>)}
+            </DashboardCard>
           </div>
-          <Button onClick={() => window.location.reload()}>Try again</Button>
-        </section>
-      ) : (
-        <>
-          <FeaturedAction id="home-next-title" className="oc-home-next"
-            eyebrow={next.kind === "application" ? "Your next step / Application in progress" : next.kind === "event" ? "Your next step / Coming up" : next.kind === "notification" ? "Your next step / Important update" : "Your next step / Discover"}
-            title={nextTitle} description={nextCopy}
-            meta={next.kind === "application" && next.application.responsesSaved !== undefined
-              ? `${next.application.responsesSaved} ${next.application.responsesSaved === 1 ? "response" : "responses"} saved · ${applications.filter(app => app.draft).length} ${applications.filter(app => app.draft).length === 1 ? "draft" : "drafts"} in progress`
-              : next.kind === "event" ? next.event.club : undefined}
-            action={<Button onClick={() => {
-              if (next.kind === "application") openApplication(next.application)
-              else if (next.kind === "event") openEvent(next.event)
-              else if (next.kind === "notification") { focusNotification(next.notification.id); onNavigate("inbox") }
-              else onNavigate("explore")
-            }}>{nextLabel}<ArrowRight size={18} aria-hidden="true" /></Button>}
-          />
-        </>
-      )}
-        <section className="oc-home-applications" aria-labelledby="home-applications-title">
-          <SectionTitle
-            id="home-applications-title"
-            icon={FileText}
-            title="Your applications"
-            action="View all"
-            onClick={() => onNavigate("tracker")}
-          />
-          {applications.length ? (
-            <ul className="oc-home-list">
-              {applications.slice(0, 4).map((app) => (
-                <ApplicationRow key={app.id} app={app} onOpen={() => openApplication(app)} />
-              ))}
-            </ul>
-          ) : (
-            <div className="oc-home-empty">
-              <FileText size={23} aria-hidden="true" />
-              <h3>{unavailable ? "Applications are unavailable" : "No applications yet"}</h3>
-              <p>
-                {unavailable
-                  ? "We couldn’t load your applications just now."
-                  : "You haven’t started an application. Find a club to apply to and your progress will show here."}
-              </p>
-              {unavailable
-                ? <Button variant="ghost" className="mt-3" onClick={() => window.location.reload()}>Try again</Button>
-                : <Button variant="ghost" className="mt-3" onClick={() => onNavigate("explore")}>Explore clubs<ArrowRight size={14} aria-hidden="true" /></Button>}
-            </div>
-          )}
-          {applications.length > 4 && (
-            <p className="oc-home-list-note">Showing 4 of {applications.length} applications</p>
-          )}
-        </section>
-        <section className="oc-home-agenda" aria-labelledby="home-agenda-title">
-          <SectionTitle
-            id="home-agenda-title"
-            icon={CalendarDays}
-            title="Coming up"
-            action="Calendar"
-            onClick={() => onNavigate("calendar")}
-          />
-          {agenda.length ? (
-            <ul className="oc-home-list">
-              {agenda.slice(0, 3).map((event) => (
-                <AgendaRow key={event.id} event={event} onOpen={() => openEvent(event)} />
-              ))}
-            </ul>
-          ) : (
-            <div className="oc-home-agenda-empty">
-              <CalendarDays size={22} aria-hidden="true" />
-              <h3>{agendaUnavailable ? "Your agenda is unavailable" : "Nothing scheduled yet"}</h3>
-              <p>
-                {agendaUnavailable
-                  ? "We couldn’t load your scheduled events just now."
-                  : "You have no interviews or RSVP’d events coming up. Find an event to attend."}
-              </p>
-              {agendaUnavailable
-                ? <Button variant="ghost" className="mt-3" onClick={() => window.location.reload()}>Try again</Button>
-                : <Button variant="ghost" className="mt-3" onClick={() => onNavigate("corkboard")}>Browse events<ArrowRight size={14} aria-hidden="true" /></Button>}
-            </div>
-          )}
-        </section>
-          <section className="oc-home-updates" aria-labelledby="home-updates-title">
-            <SectionTitle
-              id="home-updates-title"
-              icon={Bell}
-              title="Updates for you"
-              action="Open inbox"
-              onClick={() => onNavigate("inbox")}
-            />
-            {updates.length === 0 && <div className="oc-home-empty"><Bell size={23} aria-hidden="true" /><h3>You’re all caught up</h3><p>There are no new application updates or announcements from clubs you belong to.</p><Button variant="ghost" className="mt-3" onClick={() => onNavigate("explore")}>Find clubs to follow<ArrowRight size={14} aria-hidden="true" /></Button></div>}
-            <ul className="oc-home-list">
-              {updates.map((update) => (
-                <li key={update.id}>
-                  <button
-                    className="oc-home-update"
-                    onClick={() => {
-                      focusNotification(update.id)
-                      onNavigate("inbox")
-                    }}
-                  >
-                    <span
-                      className="oc-home-update-indicator"
-                      data-unread={!update.read}
-                      aria-label={update.read ? "Read" : "Unread"}
-                    >
-                      <Bell size={16} aria-hidden="true" />
-                    </span>
-                    <span>
-                      <strong>{update.title}</strong>
-                      <span>{update.preview}</span>
-                      <small>
-                        {update.club}
-                        {update.createdAt && Number.isFinite(Date.parse(update.createdAt))
-                          ? ` · ${new Date(update.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
-                          : ""}
-                      </small>
-                    </span>
-                    <ChevronRight size={15} aria-hidden="true" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-      </div>
+          <div className="oc-dashboard-side">
+            <DashboardCard id="home-agenda-title" title="Coming up" index={needsItems.length + 2} className="oc-home-agenda" more={{ onClick: () => onNavigate("calendar"), label: "Calendar" }}>
+              <DateChipList items={coming} when={when} timeZone={SCHEDULING_TIMEZONE}
+                empty={agendaUnavailable
+                  ? empty("Your agenda is unavailable", "We couldn’t load your scheduled events just now.", <Button variant="outline" onClick={() => window.location.reload()}>Try again</Button>)
+                  : empty("Nothing scheduled yet", "You have no interviews or RSVP’d events coming up. Find an event to attend.", <DashboardMore onClick={() => onNavigate("corkboard")}>Browse events</DashboardMore>)} />
+            </DashboardCard>
+          </div>
+        </div>
+      </Dashboard>
     </div>
   )
 }

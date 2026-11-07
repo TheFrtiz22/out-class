@@ -2,7 +2,7 @@ import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
 import { DEMO_COOKIE } from '@/lib/demo/access'
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/utils/supabase/middleware'
-import { legacyStudentRedirect, STUDENT_ROUTES } from "@/lib/navigation"
+import { legacyStudentRedirect, STUDENT_ROUTES } from "@/lib/student-routes"
 
 export async function middleware(request: NextRequest) {
   // Protect both the presenter route and its sample assets before static-file shortcuts.

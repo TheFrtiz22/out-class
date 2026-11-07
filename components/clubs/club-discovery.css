@@ -35,30 +35,6 @@
   outline: 2px solid var(--ring);
   outline-offset: 3px;
 }
-.oc-directory-categories {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 24px 0;
-}
-.oc-directory-categories button {
-  min-height: 40px;
-  padding: 8px 12px;
-  font-size: var(--oc-size-12);
-  color: var(--muted-foreground);
-  border: 1px solid transparent;
-  border-radius: 5px;
-}
-.oc-directory-categories button[aria-pressed="true"] {
-  background: var(--card);
-  color: var(--foreground);
-  border-color: var(--border);
-}
-.oc-directory-categories span {
-  margin-left: 9px;
-  font-size: var(--oc-size-10);
-  color: var(--muted-foreground);
-}
 .oc-directory-tools {
   display: flex;
   justify-content: space-between;
@@ -116,16 +92,6 @@
 .oc-directory-active > span {
   color: var(--muted-foreground);
   margin-right: 6px;
-}
-.oc-directory-active button {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  min-height: 36px;
-  padding: 7px 10px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 5px;
 }
 .oc-directory-results-heading {
   display: flex;
@@ -212,10 +178,11 @@
   grid-template-columns: 0.8fr 1.2fr;
   gap: 36px;
   padding: 28px;
-  background: var(--card);
-  border: 1px solid var(--border);
+  background: var(--oc-content-surface);
+  border: 1px solid var(--oc-content-edge);
   border-radius: 7px;
   margin-bottom: 20px;
+  box-shadow: var(--oc-content-shadow)
 }
 .oc-directory-curated h2 {
   font-weight: var(--oc-weight-semibold); font-size: var(--oc-text-section); line-height: var(--oc-leading-heading); font-family: var(--oc-font-sans);
@@ -399,10 +366,11 @@
 }
 .oc-club-recruitment {
   align-self: start;
-  background: var(--card);
+  background: var(--oc-content-surface);
   padding: 25px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--oc-content-edge);
   border-radius: 7px;
+  box-shadow: var(--oc-content-shadow)
 }
 .oc-club-recruitment > h2 {
   margin-top: 12px;

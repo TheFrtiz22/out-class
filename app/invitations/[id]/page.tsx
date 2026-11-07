@@ -10,6 +10,7 @@ import { clubWriteTransaction } from "@/utils/club-write-transaction";
 import { verifiedSchoolIdentities, prepareVerifiedSchoolAccount } from "@/utils/school-identity";
 import { UniversityVerificationError } from "@/utils/verified-email-policy";
 import { requireCompletedStudentProfile } from "@/utils/profile-onboarding";
+import { PageHeader } from "@/components/ui/page-header";
 export default async function Invitation({
   params,
 }: {
@@ -36,7 +37,7 @@ export default async function Invitation({
     }
   })();
   if (verificationError) return <div className="max-w-xl space-y-4">
-    <h1 className="oc-page-title">{verificationError.code === "UNIVERSITY_VERIFICATION_REQUIRED" ? "Verify your university email" : "Invitation verification unavailable"}</h1>
+    <PageHeader title={verificationError.code === "UNIVERSITY_VERIFICATION_REQUIRED" ? "Verify your university email" : "Invitation verification unavailable"} />
     <p role="alert">{verificationError.message}</p><Link className="underline" href="/settings/organizations">View organizations</Link>
   </div>;
   const invitation = await prisma.clubInvitation.findFirst({
@@ -57,7 +58,7 @@ export default async function Invitation({
   if (!invitation)
     return (
       <div className="max-w-xl space-y-4">
-      <h1 className="oc-page-title break-words">Invitation unavailable</h1>
+      <PageHeader title="Invitation unavailable" />
         <p>
           This link may have expired or already been answered. Sign in with the
           invited UVA account, or ask the club manager for a new invitation.
@@ -69,12 +70,12 @@ export default async function Invitation({
     );
   return (
     <div className="max-w-xl space-y-6">
-      <h1 className="oc-page-title break-words">{(invitation.schoolIdentityId && invitation.requestedRole === "OWNER") ? "Claim" : "Join"} {invitation.club.name}</h1>
+      <PageHeader title={<>{(invitation.schoolIdentityId && invitation.requestedRole === "OWNER") ? "Claim" : "Join"} {invitation.club.name}</>} />
       <p className="text-sm leading-7 text-muted-foreground">
         Accept with the UVA account this invitation was sent to. Your personal
         profile and existing memberships stay intact.
       </p>
-      <div className="rounded-xl border bg-card p-4 sm:p-5"><h2 className="oc-section-heading ">Your organization access</h2><ul className="mt-3 flex flex-wrap gap-2">{(invitation.permissions.length ? invitation.permissions : ["membership"]).map(permission => <li key={permission} className="rounded-md bg-muted px-2.5 py-1.5 text-xs leading-5">{permissionLabels[permission as ClubPermission] || "Club membership"}</li>)}</ul></div>
+      <div className="rounded-xl border oc-glass-surface p-4 sm:p-5"><h2 className="oc-section-heading ">Your organization access</h2><ul className="mt-3 flex flex-wrap gap-2">{(invitation.permissions.length ? invitation.permissions : ["membership"]).map(permission => <li key={permission} className="rounded-md bg-muted px-2.5 py-1.5 text-xs leading-5">{permissionLabels[permission as ClubPermission] || "Club membership"}</li>)}</ul></div>
       {(invitation.schoolIdentityId && invitation.requestedRole === "OWNER") && <p className="text-sm leading-7">You’ve been designated as an administrator. Claiming gives you owner access to manage members, roles, applications, recruiting, interviews, and organization settings.</p>}
       <InvitationResponse id={id} owner={!!invitation.schoolIdentityId && invitation.requestedRole === "OWNER"} />
     </div>

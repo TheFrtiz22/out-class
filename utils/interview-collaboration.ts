@@ -77,7 +77,7 @@ export async function memberName(tx: AppTransactionClient, memberId: string) {
 
 export async function eligibleDestination(tx: AppTransactionClient, scope: InterviewScope, userId: string, applicationLock: "share" | "update" = "update") {
   const actor = await collaborationAccess(tx, scope, userId, applicationLock);
-  if (actor.app.roundId !== scope.roundId || actor.round.archivedAt) throw Error("Destination is no longer eligible.");
+  if (actor.app.roundId !== scope.roundId || actor.round.archivedAt) throw Error("That round is no longer available.");
   const record = await tx.interviewRecord.findUnique({ where: { applicationId_interviewerId_roundId: { applicationId: scope.applicationId, roundId: scope.roundId, interviewerId: actor.member.id } } });
   if (record?.completedAt) throw Error("You have already completed that interview.");
   return actor;

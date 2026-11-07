@@ -46,3 +46,19 @@ Resource: the interview room, moved from `/club/[clubId]/workspace?section=recru
 | Reviewer of club y opening club x | treated as no membership in x (membership is looked up by the URL's clubId): unavailable notice, no candidate read | same | `focus-frame-e2e` (old URL…: random club id) |
 
 Exit targets: `safeExitHref` accepts only same-site, non-focus paths (no `//`, backslash, scheme or focus route); the stored last product page is re-validated on read (`focus-frame.test`).
+
+## 2026-11-06 · UI-GLASS-1 · Club home member counts (branch `ui/club-home-glass`)
+
+Change: `getClubWorkspaceOverview` (`actions/club-overview.ts`) adds `members: { active, pendingInvitations } | null` — two **counts** (`clubMember.count` for ACTIVE, non-disabled members; `clubInvitation.count` for PENDING, unexpired, unrevoked member invitations: `requestedRole: MEMBER`, purpose MEMBERSHIP or ACCESS_GRANT, `applicationId: null`; owner designations, leader-role grants and offers are not counted, per owner decision). No identities, emails or invitation rows are returned. Gate: `organizationCapabilities(membership)` `canManageMembers || canChangeRoles`, the same gate as `getOrganizationMemberManagement` (the member directory, which already returns every member and invitation in full). Membership comes from `requireClubMembership(clubId)` (validated session), re-checked after the reads as before. Demo mode returns counts computed from the read-only demo store (`lib/workspace-api.ts`).
+
+| Actor | Overview read | `members` counts | Test |
+|---|---|---|---|
+| Logged-out / expired session | deny (`requireClubMembership` throws) | not queried | **inherited**: `club-workspace.test` (revoked membership rejects) |
+| Owner of club X | allow | counts for club X only (`where.clubId`) | `club-home.test` (overview action…), `club-workspace.test` (review-only… owner) |
+| Leader with `members.manage` or `leaders.manage` | allow | counts | `club-home.test` (leaders.manage) |
+| Member without member-directory access (plain, reviewer, meetings/tasks manager) | allow (existing subset) | `null`, and neither count is queried | `club-home.test`, `club-workspace.test` (reviewer: `queries.members` undefined) |
+| Leader of club Y requesting club X | deny (no membership in X) | not queried | **inherited**: `club-workspace.test` (`id !== clubId` → Denied) |
+| Membership revoked between reads | throws "Workspace access changed" (existing post-read recheck) | discarded | **untested for the overview** (pre-existing code; the same recheck is tested for the review queue in `operational-dashboards.test`) |
+| Demo | demo store counts only; no server read, no writes | demo counts | `club-home-browser.test` fixture is isolated; demo adapter typed against the action |
+
+Untested cells: 0 for the new counts; 1 pre-existing recheck cell untested; 2 inherited rows marked. `pnpm run test:migrations`: 71 migrations, 85 RLS tables (unchanged; no schema change). Not run against disposable Postgres: the change adds two club-scoped counts behind an existing gate, proven with recorded query shapes.

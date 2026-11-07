@@ -170,7 +170,7 @@ export async function moveApplicantRound(
       data: { roundId: parsed.newRoundId, ...(current.status === "INTERVIEWING" && !isInterviewRecruitmentRound(round.type) ? { status: "IN_REVIEW" as const } : {}) },
     });
     if (result.count !== 1)
-      throw new Error("Application changed or is not available for this club. Refresh before moving rounds.");
+      throw new Error("Application changed or is not available for this club. Reload the page and try again.");
     const updated = await tx.application.findFirst({
       where: { id: parsed.applicationId, clubId: parsed.clubId },
       include: { round: true },

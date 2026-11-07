@@ -7,7 +7,7 @@
 .oc-kit-heading h2 { font-size: var(--oc-text-section); font-weight: var(--oc-weight-semibold); color: var(--primary); margin-bottom: 8px; }
 .oc-kit-heading p { max-width: 730px; line-height: var(--oc-leading-body); }
 .oc-kit-sections { display: grid; gap: 10px; }
-.oc-kit-round { min-width: 0; border: 1px solid var(--border); border-radius: var(--oc-radius-md); background: var(--card); overflow: hidden; }
+.oc-kit-round { min-width: 0; border: 1px solid var(--oc-content-edge); border-radius: var(--oc-radius-md); background: var(--oc-content-surface); overflow: hidden; box-shadow: var(--oc-content-shadow) }
 .oc-kit-round-trigger { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; width: 100%; min-height: 48px; padding: 12px 16px; text-align: left; color: var(--primary); }
 .oc-kit-round-trigger:hover { background: var(--muted); }
 .oc-kit-round-name { flex: 1; min-width: 100px; overflow-wrap: anywhere; font-weight: 500; }

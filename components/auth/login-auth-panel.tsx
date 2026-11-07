@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { EmailLoginForm, type EmailLoginFormProps } from "./email-login-form"
 import { MICROSOFT_AUTH_ENABLED } from "@/lib/auth-features"
+import Image from "next/image"
 
 /** The existing Microsoft mark, without an icon package or provider changes. */
 function MicrosoftIcon() {
-  return <svg viewBox="0 0 21 21" className="size-5" aria-hidden="true"><rect x="1" y="1" width="9" height="9" fill="#f25022" /><rect x="1" y="11" width="9" height="9" fill="#00a4ef" /><rect x="11" y="1" width="9" height="9" fill="#7fba00" /><rect x="11" y="11" width="9" height="9" fill="#ffb900" /></svg>
+  return <Image src="/brand/third-party/microsoft.svg" alt="" aria-hidden="true" width={20} height={20} className="size-5" />
 }
 
 type LoginAuthPanelProps = EmailLoginFormProps & {
@@ -30,7 +31,7 @@ export function LoginAuthPanel(props: LoginAuthPanelProps) {
   const emailToggle = useRef<HTMLButtonElement>(null)
   return (
     <main className="oc-login-auth" aria-labelledby="login-auth-title">
-      <nav className="oc-login-nav" aria-label="Return navigation"><button type="button" onClick={onBack} className="oc-login-back"><ArrowLeft size={15} />Back to home</button></nav>
+      <nav className="oc-login-nav" aria-label="Return navigation"><Button type="button" variant="ghost" size="sm" onClick={onBack} className="min-h-11 text-xs text-muted-foreground"><ArrowLeft size={15} />Back to home</Button></nav>
       <div className="oc-login-auth-content">
         <h2 id="login-auth-title">{step === "email" ? "Welcome back." : "Check your inbox."}</h2>
         <p className="oc-login-auth-description">{step === "email" ? "Sign in to OutClass." : <>Enter the six-digit code for <strong>{email}</strong>.</>}</p>
@@ -38,7 +39,7 @@ export function LoginAuthPanel(props: LoginAuthPanelProps) {
           <>
             {MICROSOFT_AUTH_ENABLED && <>
               <Button type="button" disabled={microsoftLoading || loading} onClick={onMicrosoftLogin} loading={microsoftLoading} className="oc-login-uva"><MicrosoftIcon />Continue with UVA</Button>
-              <button ref={emailToggle} type="button" disabled={loading || microsoftLoading} onClick={onToggleEmail} aria-expanded={emailExpanded} aria-controls="login-email-fields" className="oc-login-email-toggle">{emailExpanded ? "Hide email sign-in" : "Use email instead"}<ChevronDown size={14} /></button>
+              <Button ref={emailToggle} type="button" variant="ghost" disabled={loading || microsoftLoading} onClick={onToggleEmail} aria-expanded={emailExpanded} aria-controls="login-email-fields" className="oc-login-email-toggle">{emailExpanded ? "Hide email sign-in" : "Use email instead"}<ChevronDown size={14} /></Button>
               <div id="login-email-fields" className="oc-login-email-reveal" data-expanded={emailExpanded} aria-hidden={!emailExpanded} inert={!emailExpanded}>
                 <div role="presentation" className="oc-login-email-inner" onKeyDown={event => { if (event.key === "Escape" && !loading && !microsoftLoading) { onToggleEmail(); emailToggle.current?.focus() } }}><EmailLoginForm {...props} /></div>
               </div>
@@ -54,11 +55,11 @@ export function LoginAuthPanel(props: LoginAuthPanelProps) {
               <Input key="code" id="verification-code" autoFocus inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required disabled={loading} value={code} onChange={event => onCodeChange(event.target.value)} aria-invalid={!!error} aria-describedby={error ? "auth-error" : undefined} placeholder="000000" className="oc-login-code-input" />
             </div>
             <Button type="submit" disabled={loading || code.length !== 6} loading={loading} className="oc-login-submit">Verify and log in<ArrowRight className="size-4" /></Button>
-            <div className="oc-login-verify-actions"><button type="button" onClick={onRequestCode} disabled={loading || resendSeconds > 0} className="oc-login-text-link">{resendSeconds > 0 ? `Resend in ${resendSeconds}s` : "Resend code"}</button><button type="button" disabled={loading} onClick={onDifferentEmail} className="oc-login-text-link">Use a different email</button></div>
+            <div className="oc-login-verify-actions"><Button type="button" variant="link" className="h-auto min-h-11 px-0 text-xs" onClick={onRequestCode} disabled={loading || resendSeconds > 0}>{resendSeconds > 0 ? `Resend in ${resendSeconds}s` : "Resend code"}</Button><Button type="button" variant="link" className="h-auto min-h-11 px-0 text-xs" disabled={loading} onClick={onDifferentEmail}>Use a different email</Button></div>
           </form>
         )}
         {error && <p id="auth-error" role="alert" className="oc-login-error">{error}</p>}
-        {onCreateAccount && <p className="oc-login-create">New to OutClass? <button type="button" onClick={onCreateAccount} className="oc-login-text-link">Create an account <ArrowRight size={14} /></button></p>}
+        {onCreateAccount && <p className="oc-login-create">New to OutClass? <Button type="button" variant="link" onClick={onCreateAccount} className="h-auto min-h-11 gap-1.5 px-0 text-xs font-bold">Create an account <ArrowRight size={14} /></Button></p>}
       </div>
       <footer className="oc-login-footer"><p>For University of Virginia students and club leaders.</p></footer>
     </main>

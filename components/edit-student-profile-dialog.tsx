@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { scholarPrograms, scholarLabels, toggleScholar } from "@/lib/scholar-status";
+import { NativeSelect } from "@/components/ui/native-select"
 
 const titles = {
   identity: "Name & photo",
@@ -223,11 +224,11 @@ export function EditStudentProfileDialog({
                     />
                   </div>
                   {field("highSchool", "High school (optional)")}
-                  <div className="grid gap-4 sm:grid-cols-2">{([["gender", "Gender", genderValues], ["pronouns", "Pronouns", pronounValues]] as const).map(([key, label, values]) => <div className="space-y-2" key={key}><Label htmlFor={`profile-${key}`}>{label}</Label><select id={`profile-${key}`} className="w-full rounded-md border bg-background p-2" value={draft[key] ?? ""} onChange={e => setDraft({ ...draft, [key]: e.target.value || null })}><option value="">Not provided</option>{values.map(v => <option key={v}>{v}</option>)}</select></div>)}</div>
+                  <div className="grid gap-4 sm:grid-cols-2">{([["gender", "Gender", genderValues], ["pronouns", "Pronouns", pronounValues]] as const).map(([key, label, values]) => <div className="space-y-2" key={key}><Label htmlFor={`profile-${key}`}>{label}</Label><NativeSelect id={`profile-${key}`} className="w-full" value={draft[key] ?? ""} onChange={e => setDraft({ ...draft, [key]: e.target.value || null })}><option value="">Not provided</option>{values.map(v => <option key={v}>{v}</option>)}</NativeSelect></div>)}</div>
                   <p className="text-xs text-muted-foreground">Gender is shared with recruitment reviewers only when explicitly enabled for the round. Pronouns and high school stay on your personal profile.</p>
                   <label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" checked={draft.transferStudent} onChange={e => setDraft({ ...draft, transferStudent: e.target.checked })} />Transfer student</label>
                   <fieldset className="space-y-3"><legend className="text-sm font-medium">Are you a scholar?</legend>
-                    <select aria-label="Are you a scholar?" className="rounded-md border bg-background p-2" value={scholarYes ? "yes" : draft.scholarStatus ? "no" : ""} onChange={e => { setScholarYes(e.target.value === "yes"); setDraft({ ...draft, scholarStatus: e.target.value === "no" ? { selections: ["NOT_APPLICABLE"], other: "" } : null }) }}><option value="">Not provided</option><option value="yes">Yes</option><option value="no">No</option></select>
+                    <NativeSelect aria-label="Are you a scholar?"  value={scholarYes ? "yes" : draft.scholarStatus ? "no" : ""} onChange={e => { setScholarYes(e.target.value === "yes"); setDraft({ ...draft, scholarStatus: e.target.value === "no" ? { selections: ["NOT_APPLICABLE"], other: "" } : null }) }}><option value="">Not provided</option><option value="yes">Yes</option><option value="no">No</option></NativeSelect>
                     {scholarYes && <div className="grid gap-3 sm:grid-cols-2">{([...scholarPrograms, "OTHER"] as const).map(selection => <label key={selection} className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" checked={!!(draft.scholarStatus as { selections?: string[] } | null)?.selections?.includes(selection)} onChange={e => setDraft({ ...draft, scholarStatus: toggleScholar(draft.scholarStatus, selection, e.target.checked) })} />{scholarLabels[selection]}</label>)}</div>}
                     {scholarYes && scholarship?.selections.includes("OTHER") && <label className="block space-y-2 text-sm">Scholarship name<Input aria-label="Other scholarship name" maxLength={200} value={scholarship.other || ""} onChange={e => setDraft({ ...draft, scholarStatus: { ...scholarship!, other: e.target.value } })} /></label>}
                   </fieldset>

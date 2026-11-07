@@ -22,6 +22,7 @@ import {
 } from "@/components/icons"
 
 import { Button } from "@/components/ui/button"
+import { IconButton } from "@/components/ui/icon-button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -53,6 +54,7 @@ import {
   type ExperienceAssetsData,
   type WizardData,
 } from "@/lib/onboarding-schemas"
+import { Panel } from "@/components/ui/panel"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -82,7 +84,7 @@ function StepProgress({ current }: { current: number }) {
           <div key={step.label} className="flex-1">
             <div
               className={`h-1.5 rounded-full transition-colors duration-300 ${
-                i + 1 <= current ? "bg-primary" : "bg-neutral-200"
+                i + 1 <= current ? "bg-primary" : "bg-secondary"
               }`}
             />
           </div>
@@ -142,7 +144,7 @@ function ResumeDropZone({
 
   if (file) {
     return (
-      <div className="flex items-center gap-3 rounded-md border border-neutral-200 bg-neutral-50 p-3">
+      <div className="flex items-center gap-3 rounded-md border border-border bg-muted p-3">
         <FileText className="size-5 shrink-0 text-primary" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-foreground">
@@ -152,14 +154,13 @@ function ResumeDropZone({
             {(file.size / 1024).toFixed(0)} KB
           </p>
         </div>
-        <button
-          type="button"
+        <IconButton
+          size="icon-lg"
           onClick={onRemove}
           aria-label="Remove résumé"
-          className="rounded-md p-1 text-muted-foreground hover:bg-neutral-100 hover:text-neutral-700"
         >
           <X className="size-4" />
-        </button>
+        </IconButton>
       </div>
     )
   }
@@ -180,13 +181,13 @@ function ResumeDropZone({
       className={`flex cursor-pointer flex-col items-center gap-2 rounded-md border-2 border-dashed p-8 text-center transition-colors ${
         dragOver
           ? "border-primary bg-primary/5"
-          : "border-neutral-200 bg-neutral-50 hover:border-neutral-300"
+          : "border-border bg-muted hover:border-border"
       }`}
     >
       <Upload
         className={`size-8 ${dragOver ? "text-primary" : "text-muted-foreground"}`}
       />
-      <p className="text-sm font-medium text-neutral-700">
+      <p className="text-sm font-medium text-foreground">
         Drag & drop your resume here
       </p>
       <p className="text-xs text-muted-foreground">PDF only, up to 10 MB</p>
@@ -431,7 +432,7 @@ export function StudentOnboardingWizard({
         <InvitationProfileSuggestions enabled={accountCreated && !isImpersonating} onDefaults={applyInvitationDefaults} />
 
         {/* Card */}
-        <div className="oc-content-panel">
+        <Panel>
           <StepProgress current={step} />
 
           {/* Global error */}
@@ -464,7 +465,7 @@ export function StudentOnboardingWizard({
                       id="firstName"
                       autoComplete="given-name"
                       placeholder="Jordan"
-                      className="h-11 rounded-md border-neutral-200"
+                      className="h-11 rounded-md border-border"
                       {...step1Form.register("firstName")}
                     />
                     {step1Form.formState.errors.firstName && (
@@ -479,7 +480,7 @@ export function StudentOnboardingWizard({
                       id="lastName"
                       autoComplete="family-name"
                       placeholder="Avery"
-                      className="h-11 rounded-md border-neutral-200"
+                      className="h-11 rounded-md border-border"
                       {...step1Form.register("lastName")}
                     />
                     {step1Form.formState.errors.lastName && (
@@ -500,7 +501,7 @@ export function StudentOnboardingWizard({
                     autoCapitalize="none"
                     spellCheck={false}
                     placeholder="computingid@virginia.edu"
-                    className="h-11 rounded-md border-neutral-200"
+                    className="h-11 rounded-md border-border"
                     {...step1Form.register("email")}
                   />
                   <p className="text-xs text-muted-foreground">
@@ -592,16 +593,20 @@ export function StudentOnboardingWizard({
 
                 {notice && <p role="status" className="text-center text-sm">{notice}</p>}
                 <div className="flex justify-between text-xs">
-                  <button
+                  <Button
                     type="button"
+                    variant="link"
+                    size="sm"
                     onClick={resendCode}
                     disabled={loading || resendSeconds > 0}
-                    className="font-medium text-neutral-600 hover:text-foreground"
+                    className="min-h-11 px-0 text-xs"
                   >
                     {resendSeconds > 0 ? `Resend in ${resendSeconds}s` : "Didn’t receive it? Resend code"}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    variant="link"
+                    size="sm"
                     disabled={loading}
                     onClick={() => {
                       setStep(1)
@@ -610,10 +615,10 @@ export function StudentOnboardingWizard({
                       step2Form.reset()
                       setGlobalError("")
                     }}
-                    className="font-medium text-neutral-600 hover:text-foreground"
+                    className="min-h-11 px-0 text-xs"
                   >
                     Use a different email
-                  </button>
+                  </Button>
                 </div>
               </form>}
             </>
@@ -647,7 +652,7 @@ export function StudentOnboardingWizard({
                         })
                       }
                     >
-                      <SelectTrigger id="onboarding-grad-year" className="h-11 w-full rounded-md border-neutral-200 shadow-none">
+                      <SelectTrigger id="onboarding-grad-year" className="h-11 w-full rounded-md border-border shadow-none">
                         <SelectValue placeholder="Year" />
                       </SelectTrigger>
                       <SelectContent>
@@ -670,7 +675,7 @@ export function StudentOnboardingWizard({
                     <Input
                       id="major"
                       placeholder="e.g. Computer Science"
-                      className="h-11 rounded-md border-neutral-200"
+                      className="h-11 rounded-md border-border"
                       {...step3Form.register("major")}
                     />
                     {step3Form.formState.errors.major && (
@@ -694,7 +699,7 @@ export function StudentOnboardingWizard({
                       type="text"
                       inputMode="decimal"
                       placeholder="3.85"
-                      className="h-11 rounded-md border-neutral-200"
+                      className="h-11 rounded-md border-border"
                       {...step3Form.register("gpa")}
                     />
                     {step3Form.formState.errors.gpa && (
@@ -719,7 +724,7 @@ export function StudentOnboardingWizard({
                       type="text"
                       inputMode="numeric"
                       placeholder="1520"
-                      className="h-11 rounded-md border-neutral-200"
+                      className="h-11 rounded-md border-border"
                       {...step3Form.register("satScore")}
                     />
                     {step3Form.formState.errors.satScore && (
@@ -781,7 +786,7 @@ export function StudentOnboardingWizard({
                     id="linkedinUrl"
                     type="text" inputMode="url"
                     placeholder="https://linkedin.com/in/your-profile"
-                    className="h-11 rounded-md border-neutral-200"
+                    className="h-11 rounded-md border-border"
                     {...step4Form.register("linkedinUrl")}
                   />
                   {step4Form.formState.errors.linkedinUrl && (
@@ -811,7 +816,7 @@ export function StudentOnboardingWizard({
                     onClick={onSkipStep4}
                     disabled={loading}
                     variant="secondary"
-                    className="h-11 flex-1 rounded-md border border-neutral-300 bg-white font-medium text-foreground shadow-none hover:bg-neutral-50"
+                    className="h-11 flex-1 rounded-md border border-border bg-white font-medium text-foreground shadow-none hover:bg-muted"
                   >
                     Skip for now
                   </Button>
@@ -827,10 +832,10 @@ export function StudentOnboardingWizard({
               </form>
             </>
           )}
-        </div>
+        </Panel>
 
         {step === 4 && <Button variant="ghost" disabled={loading} onClick={() => setStep(3)} className="mt-3"><ArrowLeft className="size-4" />Back to academics</Button>}
-        {onSignIn && <p className="mt-5 text-center text-sm text-neutral-600">Already have an account? <button type="button" disabled={loading} onClick={onSignIn} className="font-semibold text-primary underline">Sign in</button></p>}
+        {onSignIn && <p className="mt-5 text-center text-sm text-muted-foreground">Already have an account? <Button type="button" variant="link" disabled={loading} onClick={onSignIn} className="min-h-11 px-1 font-semibold">Sign in</Button></p>}
         {/* Footer */}
         <p className="mt-5 text-center text-xs text-muted-foreground">
           For University of Virginia students and club leaders.

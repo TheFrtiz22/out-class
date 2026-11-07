@@ -35,7 +35,7 @@ async function fixture() {
   function App(){const[value,setValue]=useState({include:[{source:'MEMBERS',gradYears:[],accessRoles:[],cohorts:[],labels:[]}],exclude:[]});const tab=new URLSearchParams(location.search).get('tab');return <div data-product-shell className="p-6"><main id="workspace-content">{tab==='members'?<OrganizationMemberManagement clubId="club"/>:tab==='overview'?<><ManagerOverview data={${JSON.stringify(overview)}} showRecaps={false}/><OrganizationSetupChecklist clubId="club" compact/></>:tab==='audiences'?<><AudienceEditor catalog={catalog} value={value} onChange={setValue}/><output aria-label="Selected audience">{JSON.stringify(value)}</output><MeetingGroupInvitation meeting={{id:'meeting',clubId:'club',title:'Group meeting',date:'2026-10-25T12:00:00Z',location:'Room 1'}}/></>:<LiveLeaderWorkspace scoped/>}</main></div>};createRoot(document.getElementById('root')).render(<App/>);`
   const js = bundle(entry, mocks); const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'outclass-workspace-ui-'))
   cp.execFileSync(process.execPath, [path.join(__dirname, 'helpers/interview-browser-css.cjs'), path.join(tmp, 'style.css')])
-  const css = fs.readFileSync(path.join(tmp, 'style.css'), 'utf8') + ['components/product/operational-dashboard.css','components/clubs/manager-overview.css','components/shell/authenticated-product.css','components/shell/responsive-workspace.css'].map(file=>fs.readFileSync(file,'utf8')).join('\n') + '@font-face{font-family:SourceSans;src:url(/source-sans.woff2);font-weight:200 900}@font-face{font-family:Caslon;src:url(/caslon.woff2);font-weight:400 700}:root{--font-source-sans-3:SourceSans;--font-libre-caslon-text:Caslon}body{font-family:SourceSans,sans-serif}'
+  const css = fs.readFileSync(path.join(tmp, 'style.css'), 'utf8') + ['components/product/operational-dashboard.css','components/club-home/club-home.css','styles/navigation-glass.css','components/product/dashboard/dashboard.css','components/shell/authenticated-product.css','components/shell/responsive-workspace.css'].map(file=>fs.readFileSync(file,'utf8')).join('\n') + '@font-face{font-family:SourceSans;src:url(/source-sans.woff2);font-weight:200 900}@font-face{font-family:Caslon;src:url(/caslon.woff2);font-weight:400 700}:root{--font-source-sans-3:SourceSans;--font-libre-caslon-text:Caslon}body{font-family:SourceSans,sans-serif}'
   const server = http.createServer(async (req, res) => {
     try {
       if(req.url==='/source-sans.woff2'||req.url==='/caslon.woff2'){res.setHeader('content-type','font/woff2');res.end(fs.readFileSync(req.url==='/source-sans.woff2'?'app/fonts/source-sans-3/source-sans-3-upright.woff2':'app/fonts/libre-caslon-text/libre-caslon-text-variable.woff2'));return}
@@ -75,6 +75,13 @@ test('browser: sortable lists, wide applicant profile, drag/drop, quick decision
   await page.goto(f.base)
   await page.getByRole('button',{name:'Sort by SAT',exact:true}).click()
   assert.match(await page.locator('tbody tr').first().innerText(),/Beta Example/)
+  assert.equal(await page.getByRole('columnheader',{name:/^Sort by SAT,/}).getAttribute('aria-sort'),'descending')
+  assert.equal(await page.getByRole('columnheader',{name:/^Sort by Applicant$/}).getAttribute('aria-sort'),'none')
+  for(const label of ['Applicant','Year','Round','GPA','SAT','ACT','Rating','Status / decision'])assert.equal(await page.getByRole('button',{name:new RegExp(`^Sort by ${label.replace('/','\\/')}`)}).count(),1,`${label} header sorts`)
+  assert.equal(await page.getByRole('button',{name:'Refresh',exact:true}).count(),0)
+  assert.equal(await page.getByRole('combobox',{name:'Sort applicants'}).isVisible(),false,'wide list sorts from column headers')
+  const narrow=await browser.newPage({viewport:{width:390,height:844}});await narrow.goto(f.base);await narrow.getByRole('button',{name:'Quick review',exact:true}).waitFor()
+  assert.ok(await narrow.evaluate(()=>document.documentElement.scrollWidth<=390),'applicants page does not overflow at 390px');await narrow.close()
   const resumeResponse=page.waitForResponse(response=>response.url().includes('/api/recruiting-resumes?')&&response.status()===200)
   await page.locator('tbody tr').first().locator('td').nth(2).click()
   await page.getByRole('dialog').waitFor()
@@ -173,13 +180,14 @@ test('browser: sortable lists, wide applicant profile, drag/drop, quick decision
   assert.deepEqual(f.state().writes.at(-1).audienceSpec.include[0].labels,['Girls'])
   await page.goto(f.base+'/?tab=overview')
   await page.getByRole('button',{name:'Dismiss setup introduction',exact:true}).waitFor()
-  await page.getByRole('heading',{name:'Your work',exact:true}).waitFor()
-  await page.getByRole('heading',{name:'Meet this week',exact:true}).waitFor()
-  assert.equal(await page.locator('.oc-command-section').count(),2)
-  assert.equal(await page.getByText('No outstanding assignments. New work will appear here.',{exact:true}).count(),1)
+  await page.getByRole('heading',{name:'Needs you',exact:true}).waitFor()
+  await page.getByRole('heading',{name:'This week',exact:true}).waitFor()
+  assert.equal(await page.locator('.oc-club-home-card').count(),3)
+  assert.equal(await page.getByText('You’re clear for now.',{exact:true}).count(),1)
+  assert.equal(await page.getByText('No assignments right now.',{exact:true}).count(),1)
   await page.screenshot({path:'/tmp/outclass-workspace-overview-desktop.png',fullPage:true})
   await page.getByRole('button',{name:'Dismiss setup introduction',exact:true}).click()
-  await page.reload();await page.getByRole('heading',{name:'Your work',exact:true}).waitFor()
+  await page.reload();await page.getByRole('heading',{name:'Needs you',exact:true}).waitFor()
   assert.equal(await page.getByRole('button',{name:'Dismiss setup introduction',exact:true}).count(),0)
   await page.setViewportSize({width:390,height:844})
   await page.screenshot({path:'/tmp/outclass-workspace-overview-mobile.png',fullPage:true})

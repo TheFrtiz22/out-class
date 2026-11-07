@@ -15,15 +15,53 @@ test('optimistic Corkboard removal is immediate, blocks stale focus reads, and p
 test('failed removal restores only the affected item; account changes immediately conceal prior private saves',async()=>{const h=providerHarness();h.render();await flush();const pending=h.render().saveClub(club,false);assert.equal(h.render().items.length,0);h.fail();await assert.rejects(pending,/restored/);assert.equal(h.render().items.length,1);assert.match(h.render().error,/restored/);h.logout();const loggedOut=h.render();assert.equal(loggedOut.items.length,0);assert.equal(loggedOut.authenticated,false)});
 test('saving is immediate, produces one shared saved state, and repeated clicks while pending cannot duplicate requests',async()=>{const h=providerHarness();h.render();await flush();let pending=h.render().saveClub(club,false);h.finish();await pending;await flush();const data=h.render();pending=data.saveClub(club,true);assert.equal(h.render().items.length,1);await h.render().saveClub(club,true);h.finish();await pending;await flush();assert.equal(h.render().items.length,1)});
 test('Corkboard has loading, sign-in, empty, populated and retry states, reusing the existing card/profile',()=>{let state={items:[],loading:true,authenticated:true,error:'',refresh:async()=>{}};const mocks={'@/contexts/corkboard-context':{useCorkboard:()=>state},react:{useState:()=>[null,()=>{}]}};const {SavedClubsView}=load('components/views/saved-clubs-view.tsx',mocks),actions=[];const render=()=>SavedClubsView({onNavigate:v=>actions.push(v)});assert.ok(nodes(render()).some(n=>n.type==='LoadingState'&&n.props.label==='Loading Saved clubs…'));state.loading=false;assert.match(nodes(render()).find(n=>n.type==='EmptyState').props.title,/No saved clubs yet\./);nodes(render()).find(n=>n.type==='EmptyState').props.action.props.onClick();assert.deepEqual(actions,['explore']);state.authenticated=false;assert.match(label(render()),/Sign in to save/);state.authenticated=true;state.items=[{club,savedAt:'2026-10-03'}];assert.ok(nodes(render()).some(n=>n.type==='DiscoveryCard'&&n.props.club.id===club.id));state.items=[];state.error='Unavailable';assert.match(label(render()),/Retry Saved clubs/)});
-test('desktop and mobile share contextual modes with Corkboard in Explore',()=>{
- const {personalItems,personalModes}=load('lib/product-navigation.ts');
- assert.deepEqual(personalModes.map(item=>item.label),['Explore','Apply','My Clubs']);
- assert.deepEqual(personalItems('explore').map(item=>item.label),['Discover','Corkboard']);
- assert.deepEqual(personalItems('apply').map(item=>item.label),['Applications','Status']);
- assert.deepEqual(personalItems('clubs').map(item=>item.label),['Clubs','Meetings','Tasks']);
- const selections=[],{MobileNavigation}=load('components/shell/mobile-navigation.tsx',{'next/link':{default:'Link'}});
- const tree=MobileNavigation({items:personalItems('explore'),active:'corkboard',manager:false,onSelect:id=>selections.push(id),onLink(){},onMore(){}});
- const buttons=nodes(tree).filter(node=>node.type==='button');assert.deepEqual(buttons.map(label),['Home','Discover','Corkboard','More']);
- buttons.find(node=>label(node)==='Corkboard').props.onClick();assert.deepEqual(selections,['corkboard']);assert.equal(buttons.find(node=>label(node)==='Corkboard').props['aria-current'],'page');
+test('rail and phone bar read one registry: one name per destination, Notifications only in the header',()=>{
+ const nav=require('./helpers/navigation-module.cjs'),sections=nav.personalRailSections(),items=nav.railItems(sections);
+ assert.deepEqual(items.map(item=>item.label),['Home','Explore','Corkboard','Applications','Status','My Clubs','Meetings','Tasks','Calendar','Profile','Settings']);
+ assert.equal(items.some(item=>item.id==='inbox'||item.label==='Discover'),false);
+ assert.ok(items.every(item=>item.href?.startsWith('/')),'every rail item is a real path');
+ assert.ok(sections.every(section=>section.label||section.name),'every rail group has an accessible name');
+ const bar=nav.bottomBarItems(sections,'personal');assert.deepEqual(bar.map(item=>item.label),['Home','Explore','Applications','My Clubs']);
+ const {MobileNavigation}=load('components/shell/mobile-navigation.tsx',{'next/link':{default:'Link'}});
+ const tree=MobileNavigation({items:bar,groups:items,active:nav.activeNavItem('/explore/categories'),onSelect(){},onLink(){},onMore(){}});
+ const links=nodes(tree).filter(node=>node.type==='Link');assert.deepEqual(links.map(label),['Home','Explore','Applications','My Clubs']);
+ assert.equal(links.find(node=>label(node)==='Explore').props['aria-current'],'page');
+ assert.equal(nodes(tree).find(node=>node.type==='button').props['aria-label'],'More sections');
+});
+test('the active rail item follows the URL, including detail pages, and stays empty where no rail item applies',()=>{
+ const {activeNavItem,inPlaceSections,personalRailSections,railItems}=require('./helpers/navigation-module.cjs'),q=v=>new URLSearchParams(v);
+ const cases=[['/home','student-dashboard'],['/explore','explore'],['/explore/categories','explore'],['/corkboard','corkboard'],['/saved-clubs','corkboard'],['/applications','applications'],['/applications/status','status'],['/applications/app-1/decision','applications'],['/clubs','clubs'],['/clubs/meetings','meetings'],['/meetings','meetings'],['/meetings/m-1','meetings'],['/clubs/tasks','tasks'],['/calendar','calendar'],['/settings/interviews','calendar'],['/profile','student-profile'],['/settings/notifications','settings'],['/inbox',null],['/club/abc','explore'],['/platform','overview'],['/platform/audit','audit']];
+ for(const [path,id] of cases)assert.equal(activeNavItem(path),id,path);
+ assert.equal(activeNavItem('/preview'),null,'preview falls back to the shell state');
+ const ws=(search,member)=>activeNavItem('/club/c/workspace',q(search),{member});
+ assert.equal(ws('section=recruitment&tool=overview'),'overview');assert.equal(ws('section=recruitment&tool=rules'),'overview');assert.equal(ws('section=recruitment'),'applicants');
+ assert.equal(ws('section=recruitment&tool=rejected'),'rejected');assert.equal(ws('section=overview'),'club-home');assert.equal(ws(''),'club-home');
+ assert.equal(ws('section=tasks'),'tasks');assert.equal(ws('section=tasks',true),'club-tasks');assert.equal(ws('section=announcements&mode=recruiting'),'announcements');
+ assert.ok(railItems(inPlaceSections(personalRailSections())).every(item=>!item.href),'the /preview shell keeps navigation in place');
 });
 test('student tutorials keep their eight-step indices/version contract while replacing the existing Corkboard placeholder',()=>{const {tutorialSteps,tutorialInput}=load('lib/tutorials.ts');assert.equal(tutorialSteps.student.length,8);assert.equal(tutorialSteps.student[1].view,'explore');assert.equal(tutorialSteps.student[6].view,'corkboard');assert.equal(tutorialSteps.student[6].anchor,'nav-corkboard');assert.equal(tutorialInput.parse({experience:'student',action:'progress',step:6}).step,6);assert.doesNotMatch(JSON.stringify(tutorialSteps.student),/when available|view":"discover"|Categories/)});
+
+test('Explore\'s Applications open disclosure uses the Phosphor chevron instead of the native text triangle', () => {
+  const source = fs.readFileSync('components/views/explore-view.tsx', 'utf8')
+  const summary = source.match(/<details className="oc-explore-available group"><summary className="([^"]+)">(<ChevronDown [^>]+\/>)Applications open/)
+  assert.ok(summary, 'summary starts with ChevronDown')
+  assert.match(summary[1], /list-none/); assert.match(summary[1], /\[&::-webkit-details-marker\]:hidden/)
+  assert.match(summary[2], /group-open:rotate-0/); assert.match(summary[2], /motion-reduce:transition-none/)
+})
+
+test('Filter menus close on Escape with focus returned to the summary, and on an outside press', () => {
+  class FakeNode {}
+  const listeners = {}, documentStub = { addEventListener: (type, fn) => listeners[type] = fn, removeEventListener: type => delete listeners[type] }
+  const mod = { exports: {} }
+  new Function('require', 'module', 'exports', 'document', 'Node', ts.transpileModule(fs.readFileSync('hooks/use-dismissable-details.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText)(() => ({ useCallback: fn => fn }), mod, mod.exports, documentStub, FakeNode)
+  let focused = false, keydown = null
+  const inside = new FakeNode(), outside = new FakeNode(), summary = { focus: () => focused = true }
+  const details = { open: true, contains: node => node === inside, addEventListener: (type, fn) => keydown = fn, removeEventListener: () => keydown = null, querySelector: selector => selector === ':scope > summary' ? summary : null }
+  const cleanup = mod.exports.useDismissableDetails()(details)
+  let stopped = false; const key = name => ({ key: name, preventDefault() {}, stopPropagation() { stopped = true } })
+  keydown(key('Tab')); assert.equal(details.open, true)
+  keydown(key('Escape')); assert.equal(details.open, false); assert.equal(focused, true); assert.equal(stopped, true, 'an enclosing drawer stays open')
+  details.open = true; listeners.pointerdown({ target: inside }); assert.equal(details.open, true, 'presses inside keep it open')
+  listeners.pointerdown({ target: outside }); assert.equal(details.open, false, 'an outside press closes it')
+  cleanup(); assert.equal(listeners.pointerdown, undefined); assert.equal(keydown, null)
+})

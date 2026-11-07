@@ -64,7 +64,7 @@ export async function getMyRoundAvailability(raw: unknown) {
     const round = await roundFor(tx, scope.clubId, scope.roundId)
     const club = await tx.club.findUniqueOrThrow({ where: { id: scope.clubId }, select: { name: true, interviewerRoles: true } })
     const participation = await tx.interviewRoundParticipation.findUnique({ where: { memberId_roundId: { memberId: member.id, roundId: round.id } } })
-    if (!interviewerEligible(member, club.interviewerRoles, participation?.eligibilityOverride)) throw new Error("You are not eligible for this interview round.")
+    if (!interviewerEligible(member, club.interviewerRoles, participation?.eligibilityOverride)) throw new Error("You aren’t an interviewer for this round.")
     const global = document(await tx.userAvailability.findUnique({ where: { userId: user.id } }), user.id)
     const firstSlot = await tx.interviewSlot.findFirst({ where: { clubId: scope.clubId, room: { roundId: round.id }, startTime: { gt: new Date() } }, orderBy: { startTime: "asc" }, select: { startTime: true } })
     return { preferredWeek: firstSlot ? monday(localParts(firstSlot.startTime, SCHEDULING_TIMEZONE).date) : undefined, document: { accountId: user.id, schedule: participation?.availability ? parseSchedule(participation.availability) : global.schedule, revision: participation?.revision ?? 0 }, global: global.schedule, confirmed: !!participation?.confirmedAt, declined: !!participation?.declinedAt, name: `${club.name} · ${round.name}` }
@@ -79,7 +79,7 @@ export async function saveMyRoundAvailability(raw: unknown) {
     const club = await tx.club.findUniqueOrThrow({ where: { id: input.clubId }, select: { interviewerRoles: true } })
     const key = { memberId: member.id, roundId: round.id }
     const old = await tx.interviewRoundParticipation.findUnique({ where: { memberId_roundId: key } })
-    if (!interviewerEligible(member, club.interviewerRoles, old?.eligibilityOverride)) throw new Error("You are not eligible for this interview round.")
+    if (!interviewerEligible(member, club.interviewerRoles, old?.eligibilityOverride)) throw new Error("You aren’t an interviewer for this round.")
     if ((old?.revision ?? 0) !== input.revision) throw new Error(changed)
     const global = document(await tx.userAvailability.findUnique({ where: { userId: user.id } }), user.id).schedule
     const importingGlobal = JSON.stringify(input.schedule) === JSON.stringify(global)
@@ -106,12 +106,12 @@ export async function getInterviewerEligibility(clubId: string) {
 /** One atomic bulk operation. Scheduling eligibility never changes permissions. */
 export async function setInterviewerEligibility(raw: unknown) {
   const input = z.object({ clubId: id, revision: z.number().int().nonnegative(), roles: z.array(z.enum(organizationRoles)).max(5).optional(), roundId: id.optional(), targets: z.array(z.object({ memberId: id, eligible: z.boolean().nullable() }).strict()).max(1000).default([]) }).strict().parse(raw)
-  if (new Set(input.targets.map(t => t.memberId)).size !== input.targets.length || (input.roundId && input.roles)) throw new Error("Choose unique members and one eligibility scope.")
+  if (new Set(input.targets.map(t => t.memberId)).size !== input.targets.length || (input.roundId && input.roles)) throw new Error("Choose each member once, and one place it applies.")
   const { user } = await requireAuth()
   return prisma.$transaction(async tx => {
     await authorizeClubTransaction(tx, input.clubId, user.id, ["members.manage"])
     const club = await tx.club.findUniqueOrThrow({ where: { id: input.clubId } })
-    if (club.interviewerEligibilityRevision !== input.revision) throw new Error("Eligibility changed. Reload members before saving.")
+    if (club.interviewerEligibilityRevision !== input.revision) throw new Error("This changed elsewhere. Reload before saving.")
     if (input.roundId) await roundFor(tx, input.clubId, input.roundId)
     const targets = await tx.clubMember.findMany({ where: { id: { in: input.targets.map(t => t.memberId) }, clubId: input.clubId, status: "ACTIVE", user: { disabledAt: null } } })
     if (targets.length !== input.targets.length) throw new Error("Select active members of this club.")
@@ -200,7 +200,7 @@ export async function declineRoundParticipation(raw: unknown) {
     const club = await tx.club.findUniqueOrThrow({ where: { id: input.clubId }, select: { interviewerRoles: true } })
     const key = { memberId: member.id, roundId: input.roundId }
     const old = await tx.interviewRoundParticipation.findUnique({ where: { memberId_roundId: key } })
-    if (!interviewerEligible(member, club.interviewerRoles, old?.eligibilityOverride)) throw new Error("You are not eligible for this interview round.")
+    if (!interviewerEligible(member, club.interviewerRoles, old?.eligibilityOverride)) throw new Error("You aren’t an interviewer for this round.")
     if ((old?.revision ?? 0) !== input.revision) throw new Error(changed)
     const saved = await tx.interviewRoundParticipation.upsert({ where: { memberId_roundId: key }, create: { ...key, clubId: input.clubId, declinedAt: new Date() }, update: { declinedAt: new Date(), confirmedAt: null, revision: { increment: 1 } } })
     await tx.auditLog.create({ data: { actorId: user.id, clubId: input.clubId, targetId: saved.id, action: "interview.participation.decline" } })

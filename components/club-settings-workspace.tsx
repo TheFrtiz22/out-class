@@ -18,6 +18,7 @@ import { saveClubPreferences } from "@/actions/club-settings";
 import { ClubProfileSettings } from "@/components/club-profile-settings";
 
 import "@/components/clubs/club-settings.css";
+import { NativeSelect } from "@/components/ui/native-select"
 const ApplicationBuilder = dynamic(() =>
   import("@/components/views/club-manager/application-builder-view").then(
     (m) => m.ApplicationBuilderView,
@@ -101,9 +102,9 @@ export function ClubSettingsWorkspace({
     <div className="oc-settings-workspace">
       <aside className="oc-settings-menu">
       <label className="oc-settings-mobile-selector text-sm" htmlFor="organization-settings-section">Organization settings
-        <select id="organization-settings-section" aria-label="Organization settings" className="oc-settings-select" value={active ?? ""} onChange={event => selectSetting(event.target.value)}>
+        <NativeSelect id="organization-settings-section" aria-label="Organization settings" className="oc-settings-select" value={active ?? ""} onChange={event => selectSetting(event.target.value)}>
           {sections.map(section => <option key={section.id} value={section.id}>{section.label}</option>)}
-        </select>
+        </NativeSelect>
       </label>
       <nav
         className="oc-settings-navigation oc-settings-desktop-navigation"
@@ -184,7 +185,7 @@ export function ClubSettingsWorkspace({
             <p className="text-sm text-muted-foreground">
               Configure evaluation kits and interview access for your recruitment rounds. Manage rooms, panels, and upcoming bookings in Interview Scheduling.
             </p>
-            {hasPermission(member, "members.manage") && <ActionWorkflow title="Interviewer eligibility" description="Configure eligible membership roles. Individual and round overrides remain in Members." trigger="Interviewer eligibility" presentation="sheet"><InterviewerEligibilityControls clubId={clubId} selectedIds={[]} /></ActionWorkflow>}
+            {hasPermission(member, "members.manage") && <ActionWorkflow title="Interviewers" description="Choose which roles can interview. Individual and per-round changes are in Members." trigger="Interviewers" presentation="sheet"><InterviewerEligibilityControls clubId={clubId} selectedIds={[]} /></ActionWorkflow>}
             <Interviews
               key={`${pipelineRevision}:${params.get("interviewTab") || "kits"}:${params.get("roundId") || ""}`}
               clubId={clubId}

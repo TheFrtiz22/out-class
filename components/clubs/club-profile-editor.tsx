@@ -12,6 +12,8 @@ import { MarketingProfile, MarketingSections } from "@/components/clubs/marketin
 import { LogoBackgroundPicker } from "@/components/clubs/logo-background-picker"
 import { ProfileImageInput } from "@/components/clubs/profile-image-input"
 import { clubProfileSchema, type ClubMarketing, type ClubProfileDraft } from "@/lib/club-marketing"
+import { Panel } from "@/components/ui/panel"
+import { NativeSelect } from "@/components/ui/native-select"
 
 function Field({ label, children }: { label: string; children: ReactNode }) { return <label className="block space-y-2 text-sm font-medium"><span>{label}</span>{children}</label> }
 function Lines({ label, value, onChange, max }: { label: string; value: string[]; onChange: (v: string[]) => void; max: number }) {
@@ -45,7 +47,7 @@ export function ClubProfileEditor({ initial, onSave, demo = false, onUpload, ext
   }}>
     <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Your public presence</p><h2 className="oc-section-heading mt-2">Make your club stand out.</h2><p className="mt-2 text-sm text-muted-foreground">Tell your story. Show what makes joining worthwhile.</p></div><Button type="button" variant="outline" onClick={() => setPreview(!preview)}><Eye size={16} />{preview ? "Back to editor" : "Full profile preview"}</Button></div>
     {demo && <p className="text-xs text-muted-foreground">Demo changes stay in this browser.</p>}
-    {preview ? <div className="mx-auto max-w-3xl space-y-5"><MarketingProfile assetPreview profile={draft} /><section className="rounded-xl border p-6"><h3 className="oc-card-heading ">About us</h3><p className="mt-3 whitespace-pre-line text-sm leading-7">{draft.description}</p></section><MarketingSections assetPreview profile={draft} /></div> : <>
+    {preview ? <div className="max-w-[var(--oc-reading-width)] space-y-5"><MarketingProfile assetPreview profile={draft} /><section className="rounded-xl border p-6"><h3 className="oc-card-heading ">About us</h3><p className="mt-3 whitespace-pre-line text-sm leading-7">{draft.description}</p></section><MarketingSections assetPreview profile={draft} /></div> : <>
       <nav aria-label="Profile editor sections" className="flex flex-wrap gap-2">{sections.map(s => <Button key={s.id} type="button" size="sm" variant="outline" onClick={() => jump(s.id)}>{s.title}</Button>)}</nav>
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(300px,2fr)]">
         <fieldset disabled={busy || !!clubId && (!draftSave.ready || draftSave.recovery != null)} className="min-w-0 space-y-4">
@@ -58,7 +60,7 @@ export function ClubProfileEditor({ initial, onSave, demo = false, onUpload, ext
               <h3 className="font-semibold">Public content sections</h3><p className="text-sm text-muted-foreground">Order, hide, and edit programs, people, impact and recruitment copy. Application availability is managed separately.</p>
               {m.sections.map((block, i) => <div key={i} className="min-w-0 space-y-3 rounded-lg border p-4">
                 <Field label={`Section ${i + 1} title`}><Input value={block.title} maxLength={100} onChange={e => marketing("sections", m.sections.map((s,j) => i===j ? {...s,title:e.target.value} : s))} /></Field>
-                <Field label={`Section ${i + 1} type`}><select className="oc-native-select" value={block.kind} onChange={e => marketing("sections", m.sections.map((s,j) => i===j ? {...s,kind:e.target.value as typeof block.kind} : s))}>{["about","programs","people","impact","recruitment"].map(k=><option key={k}>{k}</option>)}</select></Field>
+                <Field label={`Section ${i + 1} type`}><NativeSelect className="oc-native-select" value={block.kind} onChange={e => marketing("sections", m.sections.map((s,j) => i===j ? {...s,kind:e.target.value as typeof block.kind} : s))}>{["about","programs","people","impact","recruitment"].map(k=><option key={k}>{k}</option>)}</NativeSelect></Field>
                 <Field label={`Section ${i + 1} text`}><Textarea value={block.body} maxLength={5000} onChange={e => marketing("sections", m.sections.map((s,j) => i===j ? {...s,body:e.target.value} : s))} /></Field>
                 <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={block.visible} onChange={e=>marketing("sections",m.sections.map((s,j)=>i===j?{...s,visible:e.target.checked}:s))}/>Show section</label>
                 <Records onUpload={onUpload} title={`Section ${i + 1} card`} value={block.cards} onChange={cards=>marketing("sections",m.sections.map((s,j)=>i===j?{...s,cards}:s))} empty={{title:"",description:"",url:"",image:""}} max={12}/>
@@ -73,6 +75,6 @@ export function ClubProfileEditor({ initial, onSave, demo = false, onUpload, ext
       </div>
     </>}
     {clubId && <AutosaveStatus save={draftSave} />}
-    <div className="oc-settings-actions oc-content-panel sticky z-10 flex flex-wrap items-center justify-between gap-3"><div className="min-w-0 text-sm" aria-live="polite">{error ? <p role="alert" className="text-destructive">{error}</p> : message || (dirty ? "Unpublished changes" : "All changes saved")}</div><div className="flex gap-2"><Button type="button" variant="outline" disabled={busy || !dirty} onClick={() => { setDraft(saved); void draftSave.clear().catch(() => {}); setError(""); setMessage("Changes discarded.") }}><RotateCcw size={15} />Discard</Button><Button type="submit" disabled={busy || !dirty} loading={busy}>{demo ? "Save demo profile" : "Publish profile"}</Button></div></div>
+    <Panel className="oc-settings-actions sticky z-10 flex flex-wrap items-center justify-between gap-3"><div className="min-w-0 text-sm" aria-live="polite">{error ? <p role="alert" className="text-destructive">{error}</p> : message || (dirty ? "Unpublished changes" : "All changes saved")}</div><div className="flex gap-2"><Button type="button" variant="outline" disabled={busy || !dirty} onClick={() => { setDraft(saved); void draftSave.clear().catch(() => {}); setError(""); setMessage("Changes discarded.") }}><RotateCcw size={15} />Discard</Button><Button type="submit" disabled={busy || !dirty} loading={busy}>{demo ? "Save demo profile" : "Publish profile"}</Button></div></Panel>
   </form>
 }

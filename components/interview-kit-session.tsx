@@ -26,6 +26,7 @@ import type { KitQuestion } from "@/lib/interview-kits";
 import { simulateDemoInterviewSelection, simulateDemoInterviewAdvance } from "@/lib/demo/interview-collaboration";
 import { InterviewTimer } from "@/components/interview-timer";
 import { EarlierRounds, RoundScore } from "@/components/interview-review-references";
+import { Panel } from "@/components/ui/panel";
 export function InterviewKitSession({
   clubId,
   applicationId,
@@ -524,7 +525,7 @@ export function InterviewKitSession({
     <div className="oc-room-collaboration" aria-label="Room participants">
       <span>{collaboration.view ? `${collaboration.view.participants.map(p => p.name).join(" · ")} · In this room` : "Connecting to panel…"}</span>
       {collaboration.error && <span role="status">{collaboration.error} <Button type="button" variant="ghost" onClick={() => void collaboration.refresh()}>Retry connection</Button></span>}
-      {collaboration.view?.simulated && <details><summary>Demo collaboration simulation</summary><p>Alex is simulated. This does not demonstrate real multi-user behavior.</p><Button type="button" variant="ghost" onClick={() => { simulateDemoInterviewSelection({ clubId, applicationId, roundId }); void collaboration.refresh(); }}>Simulate question selection</Button><Button type="button" variant="ghost" onClick={() => { try { simulateDemoInterviewAdvance({ clubId, applicationId, roundId }); void collaboration.refresh(); } catch { setCollaborationMessage("No eligible sample candidate remains."); } }}>Simulate next-candidate invitation</Button></details>}
+      {collaboration.view?.simulated && <details><summary>Demo collaboration simulation</summary><p>Alex is simulated. This does not demonstrate real multi-user behavior.</p><Button type="button" variant="ghost" onClick={() => { simulateDemoInterviewSelection({ clubId, applicationId, roundId }); void collaboration.refresh(); }}>Simulate question selection</Button><Button type="button" variant="ghost" onClick={() => { try { simulateDemoInterviewAdvance({ clubId, applicationId, roundId }); void collaboration.refresh(); } catch { setCollaborationMessage("No sample candidates left."); } }}>Simulate next-candidate invitation</Button></details>}
     </div>
     <div className="oc-interview-columns grid items-start">
       {context}
@@ -534,12 +535,12 @@ export function InterviewKitSession({
         {selecting && <p role="status" className="text-xs text-muted-foreground">Sharing question… You can keep typing.</p>}
         {shareFailed && <Button type="button" variant="ghost" disabled={!!session.completedAt || closing} onClick={() => selectBankQuestion(shareFailed)}>Retry sharing question</Button>}
         {pendingQuestion && !closing && !session.completedAt && <div className="oc-shared-question-pending" role="status"><span>{pendingQuestion.by} selected a question. Your private work stays here.</span><Button type="button" variant="outline" disabled={saving || completing || closingQuestion || ending} onClick={() => void acceptPendingQuestion()}>Open question</Button></div>}
-        {error && <div role="alert" className="space-y-2 text-sm text-destructive">{error} Your text remains here.<div className="flex flex-wrap gap-2"><Button type="button" variant="outline" disabled={saving || !!session.completedAt} onClick={() => void persist(failedFinish)}>{failedFinish ? "Retry end post-interview" : "Retry save"}</Button><Button type="button" variant="ghost" disabled={saving} onClick={() => void refreshRevision()}>Refresh revision, keep my text</Button></div></div>}
+        {error && <div role="alert" className="space-y-2 text-sm text-destructive">{error} Your text remains here.<div className="flex flex-wrap gap-2"><Button type="button" variant="outline" disabled={saving || !!session.completedAt} onClick={() => void persist(failedFinish)}>{failedFinish ? "Retry end post-interview" : "Retry save"}</Button><Button type="button" variant="ghost" disabled={saving} onClick={() => void refreshRevision()}>Load latest version, keep my text</Button></div></div>}
         {(!closing && !session.completedAt) || (session.completedAt && activeQuestion) ? <>
         {session.completedAt && <Button type="button" variant="ghost" onClick={() => setActiveQuestion("")}>Back to submitted review</Button>}
         <div className="oc-question-heading"><h2 tabIndex={-1} data-candidate-focus>Interview questions</h2><Button ref={bankControl} type="button" variant="ghost" disabled={closingQuestion || ending} aria-expanded={libraryOpen} aria-controls="interview-bank" onClick={() => setLibraryOpen(v => !v)}>Question bank</Button></div>
         <a href="#interview-completed" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4 lg:hidden">Your completed questions · {completed.length}</a>
-        {libraryOpen && <section id="interview-bank" aria-label="Round question bank" className="oc-content-panel space-y-3">
+        {libraryOpen && <Panel as="section" id="interview-bank" aria-label="Round question bank" className="space-y-3">
           {session.instructions && <p className="whitespace-pre-wrap text-xs text-muted-foreground">{session.instructions}</p>}
           <h3 className="text-sm font-medium">Round question bank</h3><p className="text-xs text-muted-foreground">Browse the current kit. Existing interview questions keep their original wording.</p>
           <Input aria-label="Search question bank" placeholder="Search questions…" value={search} onChange={e => setSearch(e.target.value)} />
@@ -547,7 +548,7 @@ export function InterviewKitSession({
           {libraryError && <p role="alert">{libraryError} <Button type="button" variant="ghost" onClick={() => setLibraryRetry(v => v + 1)}>Retry bank</Button></p>}
           <ul className="space-y-3">{libraryQuestions.map(q => { const existing = questions.find(item => item.id === q.id); return <li key={q.id} className="space-y-2 border-t pt-3"><p className="break-words text-sm font-medium">{q.prompt}</p>{key(q.guidance)}<Button type="button" size="sm" variant="outline" disabled={disabled || (!existing && draft.additionalQuestions.length >= 30)} onClick={() => void selectBankQuestion(q)}>{existing ? "Open shared question" : "Use question"}</Button></li>; })}</ul>
           {!libraryLoading && !libraryQuestions.length && <p className="text-sm text-muted-foreground">No matching questions in this bank.</p>}
-        </section>}
+        </Panel>}
         <div ref={completionSource} className="oc-question-completion-source">
         {!active && <section className="oc-question-agenda" aria-label="Available questions"><h3>Available questions · {available.length}</h3><ul>{available.map(q => <li key={q.id}><button ref={el => { if (el) questionNodes.current.set(q.id, el); else questionNodes.current.delete(q.id); }} type="button" disabled={ending || closingQuestion} onClick={() => { if (!q.extra || ("bank" in q && q.bank)) void selectBankQuestion(q); else { personalQuestion.current = true; setActiveQuestion(q.id); } }} className="oc-question-row"><span>{q.prompt}</span>{q.extra && !("bank" in q && q.bank) && <span className="oc-question-kind">Off-script</span>}</button></li>)}</ul>{!available.length && <p className="text-sm text-muted-foreground">Browse the bank or reopen a completed question.</p>}</section>}
         {active ? <section ref={el => { if (el) questionNodes.current.set(active.id, el); else questionNodes.current.delete(active.id); }} className="oc-active-question space-y-4" aria-label="Active question">

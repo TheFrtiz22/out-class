@@ -35,7 +35,7 @@ export function welcomeGreeting(now: Date | null, firstName?: string | null) {
 
 /** One deterministic choice: priority, earliest instant, then stable record ID. */
 export function welcomeSubtitle(context: WelcomeContext, now: Date | null) {
-  const fallback = context.mode === "personal" ? "Explore what's new in OutClass." : "Here's what's happening in your club."
+  const fallback = context.mode === "personal" ? "Explore what's new in OutClass." : "Nothing due this week."
   if (!now || !Number.isFinite(+now)) return fallback
   const candidates: Candidate[] = []
   const add = (id: string, priority: number, at: number, message: string) => candidates.push({ id, priority, at, message })
@@ -46,7 +46,7 @@ export function welcomeSubtitle(context: WelcomeContext, now: Date | null) {
     const message = label === "task"
       ? overdue ? "You have an overdue assignment." : tomorrow(new Date(at), now) ? "You have an assignment due tomorrow." : "You have an assignment due today."
       : label === "recruiting"
-        ? overdue ? "Your recruiting deadline has passed. Review your intake settings." : "Your application deadline is approaching."
+        ? overdue ? "Your application deadline has passed. Review your application settings." : "Your application deadline is approaching."
         : overdue ? "An application deadline has passed. Check your draft." : tomorrow(new Date(at), now) ? "You have an application deadline tomorrow." : "You have an application deadline today."
     if (urgent) add(id, 1, at, message)
   }
@@ -104,4 +104,19 @@ export function welcomeSubtitle(context: WelcomeContext, now: Date | null) {
     }
   }
   return candidates.sort((a, b) => a.priority - b.priority || (a.at === b.at ? 0 : a.at < b.at ? -1 : 1) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))[0]?.message ?? fallback
+}
+
+/** Club mode only: the time left until the application deadline while recruiting is open.
+ * Same access fences as welcomeSubtitle; device-local time after hydration. */
+export function welcomeDeadline(context: WelcomeContext, now: Date | null) {
+  if (context.mode !== "club" || !now || !Number.isFinite(+now)) return null
+  const { data, membership, clubId } = context
+  if (!isActiveMembership(membership) || !data || data.club.id !== clubId || data.membership.id !== membership.id || !isActiveMembership(data.membership)) return null
+  const permitted = (permission: Parameters<typeof hasPermission>[1]) => hasPermission(membership, permission) && hasPermission(data.membership, permission)
+  const intake = data.operations.intake
+  if (!(permitted("applications.review") || permitted("applicants.identify")) || !intake?.applicationOpen || !intake.applicationDeadline) return null
+  const left = instant(intake.applicationDeadline) - +now
+  if (!(left > 0)) return null
+  const hours = Math.floor(left / HOUR), days = Math.floor(left / DAY)
+  return `Applications close in ${days >= 2 ? `${days} days` : hours >= 2 ? `${hours} hours` : hours === 1 ? "1 hour" : "less than an hour"}.`
 }

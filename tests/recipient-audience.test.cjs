@@ -15,5 +15,5 @@ test('live group management and audience actions remain outside Demo, with disco
  assert.match(ui,/if\(demo.isDemoEnabled\)return <p>/);
  assert.match(announcements,/if \(demo.isDemoEnabled\) return/);
  assert.match(announcements,/<RecipientGroups clubId=/);assert.match(announcements,/Preview recipients and count/);
- assert.match(ui,/Rejected Applicants/);assert.match(ui,/channel eligibility/);
+ assert.match(ui,/Rejected Applicants/);assert.match(ui,/Email settings are applied when sending/);
 });

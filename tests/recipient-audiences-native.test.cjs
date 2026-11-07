@@ -119,7 +119,7 @@ test('recipient audiences on bounded native PostgreSQL',{skip:!url,timeout:12000
   const data={clubId:club.id,title:'Synthetic audience',body:'No external delivery',audience:'CUSTOM',audienceSpec:spec,requestKey:randomUUID()};
   const [x,y]=await Promise.all([communications.publishClubAnnouncement(data),communications.publishClubAnnouncement(data)]);assert.equal(x.id,y.id);assert.equal(x.recipientCount,1);
   assert.equal(await db.userNotification.count({where:{announcementId:x.id}}),1);assert.equal(await db.notificationEmailOutbox.count({where:{notification:{announcementId:x.id}}}),1);
-  await assert.rejects(communications.publishClubAnnouncement({...data,audienceSpec:{include:[{source:'REJECTED'}]}}),/already used/);
+  await assert.rejects(communications.publishClubAnnouncement({...data,audienceSpec:{include:[{source:'REJECTED'}]}}),/already sent/);
   await db.clubMember.update({where:{id:membership.id},data:{status:'LEFT'}});assert.equal((await communications.publishClubAnnouncement(data)).recipientCount,1);await db.clubMember.update({where:{id:membership.id},data:{status:'ACTIVE'}});
  });
  await t.test('failed atomic group audit rolls back edits and recipient assignment',async()=>{
