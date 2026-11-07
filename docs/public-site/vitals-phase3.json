@@ -1,0 +1,167 @@
+{
+  "base": "http://127.0.0.1:3204",
+  "runs": 3,
+  "measuredAt": "2026-11-07T22:50:31.869Z",
+  "results": [
+    {
+      "page": "/",
+      "profile": "desktop",
+      "state": "cold",
+      "lcp": 296,
+      "cls": 0.002,
+      "inp": 24,
+      "content": 183,
+      "lcpElement": "H1.oc-hero-headline"
+    },
+    {
+      "page": "/",
+      "profile": "desktop",
+      "state": "warm",
+      "lcp": 252,
+      "cls": 0,
+      "inp": 24,
+      "content": 127,
+      "lcpElement": "H1.oc-hero-headline"
+    },
+    {
+      "page": "/",
+      "profile": "phone",
+      "state": "cold",
+      "lcp": 1008,
+      "cls": 0.016,
+      "inp": 32,
+      "content": 937,
+      "lcpElement": "H1.oc-hero-headline"
+    },
+    {
+      "page": "/",
+      "profile": "phone",
+      "state": "warm",
+      "lcp": 544,
+      "cls": 0,
+      "inp": 32,
+      "content": 448,
+      "lcpElement": "H1.oc-hero-headline"
+    },
+    {
+      "page": "/uva",
+      "profile": "desktop",
+      "state": "cold",
+      "lcp": 228,
+      "cls": 0.004,
+      "inp": 16,
+      "content": 150,
+      "lcpElement": "IMG"
+    },
+    {
+      "page": "/uva",
+      "profile": "desktop",
+      "state": "warm",
+      "lcp": 176,
+      "cls": 0,
+      "inp": 24,
+      "content": 99,
+      "lcpElement": "IMG"
+    },
+    {
+      "page": "/uva",
+      "profile": "phone",
+      "state": "cold",
+      "lcp": 952,
+      "cls": 0.128,
+      "inp": 72,
+      "content": 913,
+      "lcpElement": "IMG"
+    },
+    {
+      "page": "/uva",
+      "profile": "phone",
+      "state": "warm",
+      "lcp": 400,
+      "cls": 0,
+      "inp": 72,
+      "content": 362,
+      "lcpElement": "IMG"
+    },
+    {
+      "page": "/club/[id]",
+      "profile": "desktop",
+      "state": "cold",
+      "lcp": 208,
+      "cls": 0,
+      "inp": 0,
+      "content": 120,
+      "lcpElement": "H1"
+    },
+    {
+      "page": "/club/[id]",
+      "profile": "desktop",
+      "state": "warm",
+      "lcp": 188,
+      "cls": 0,
+      "inp": 0,
+      "content": 102,
+      "lcpElement": "H1"
+    },
+    {
+      "page": "/club/[id]",
+      "profile": "phone",
+      "state": "cold",
+      "lcp": 876,
+      "cls": 0,
+      "inp": 56,
+      "content": 829,
+      "lcpElement": "H1.oc-club-profile-title"
+    },
+    {
+      "page": "/club/[id]",
+      "profile": "phone",
+      "state": "warm",
+      "lcp": 456,
+      "cls": 0,
+      "inp": 72,
+      "content": 405,
+      "lcpElement": "H1.oc-club-profile-title"
+    },
+    {
+      "page": "/login",
+      "profile": "desktop",
+      "state": "cold",
+      "lcp": 172,
+      "cls": 0.002,
+      "inp": 32,
+      "content": 120,
+      "lcpElement": "H1"
+    },
+    {
+      "page": "/login",
+      "profile": "desktop",
+      "state": "warm",
+      "lcp": 132,
+      "cls": 0.002,
+      "inp": 32,
+      "content": 89,
+      "lcpElement": "H1"
+    },
+    {
+      "page": "/login",
+      "profile": "phone",
+      "state": "cold",
+      "lcp": 1172,
+      "cls": 0.002,
+      "inp": 40,
+      "content": 1140,
+      "lcpElement": "H1"
+    },
+    {
+      "page": "/login",
+      "profile": "phone",
+      "state": "warm",
+      "lcp": 356,
+      "cls": 0,
+      "inp": 48,
+      "content": 327,
+      "lcpElement": "H1"
+    }
+  ]
+}

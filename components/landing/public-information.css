@@ -247,3 +247,9 @@
 .oc-public-frame-main[data-width="reading"] { width: min(52rem, calc(100% - var(--oc-public-gutter, 20px) * 2)); }
 .oc-public-frame-main[data-width="narrow"] { width: min(34rem, calc(100% - var(--oc-public-gutter, 20px) * 2)); }
 @media (max-width: 767px) { .oc-public-frame-main { padding-top: 104px; } }
+
+/* Phone hero actions stack at full width, so a late web-font swap cannot re-wrap them (CLS). */
+@media (max-width: 599px) {
+  .oc-information-hero .oc-public-actions { flex-direction: column; align-items: stretch; }
+  .oc-information-hero .oc-public-actions > a { width: 100%; justify-content: center; }
+}
