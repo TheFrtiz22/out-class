@@ -15,8 +15,9 @@ import { SegmentedControl } from "@/components/ui/segmented-control"
 type Member = Awaited<ReturnType<typeof getOrganizationMemberManagement>>["members"][number]
 const memberName = (member: Member) => member.user.studentProfile ? `${member.user.studentProfile.firstName} ${member.user.studentProfile.lastName}` : member.user.email
 const emptyCriteria: MemberGroupCriteria = { everyone: false, years: [], roles: [], groups: [], recent: false, people: [], match: "ANY" }
-export function MemberGroupBuilder({ clubId, members, onSaved }: { clubId: string; members: Member[]; onSaved: () => Promise<void> }) {
-  return <ActionWorkflow title="Create group(s)" description="Name your group, choose who belongs, then optionally divide it into smaller groups." trigger="Create group(s)" presentation="sheet" showCloseAction={false}>
+/** Opened from Members → "Add members ▾" → Create groups (controlled), or with its own trigger when `open` is omitted. */
+export function MemberGroupBuilder({ clubId, members, onSaved, open, onOpenChange }: { clubId: string; members: Member[]; onSaved: () => Promise<void>; open?: boolean; onOpenChange?: (open: boolean) => void }) {
+  return <ActionWorkflow title="Create group(s)" description="Name your group, choose who belongs, then optionally divide it into smaller groups." trigger={open === undefined ? "Create group(s)" : undefined} open={open} onOpenChange={onOpenChange} presentation="sheet" showCloseAction={false}>
     {done => <GroupWizard clubId={clubId} members={members} onSaved={onSaved} done={done} />}
   </ActionWorkflow>
 }

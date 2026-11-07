@@ -47,13 +47,13 @@ test('browser: labelled rail without overlay, tooltips when compact, URL-driven 
   // Destinations respect pending saves and unsaved changes.
   await page.evaluate(()=>{const guard=document.createElement('div');guard.id='guard';guard.dataset.saving='true';document.body.append(guard)})
   const beforeGuard=page.url()
-  await flyout().getByRole('link',{name:'Rejected Applicants',exact:true}).click();assert.equal(page.url(),beforeGuard)
+  await flyout().getByRole('link',{name:'Résumé moderation',exact:true}).click();assert.equal(page.url(),beforeGuard)
   await page.evaluate(()=>{const guard=document.getElementById('guard');delete guard.dataset.saving;guard.dataset.unsaved='true'})
-  page.once('dialog',dialog=>dialog.dismiss());await flyout().getByRole('link',{name:'Rejected Applicants',exact:true}).click();assert.equal(page.url(),beforeGuard)
-  page.once('dialog',dialog=>dialog.accept());await flyout().getByRole('link',{name:'Rejected Applicants',exact:true}).click();await page.waitForURL('**tool=rejected')
+  page.once('dialog',dialog=>dialog.dismiss());await flyout().getByRole('link',{name:'Résumé moderation',exact:true}).click();assert.equal(page.url(),beforeGuard)
+  page.once('dialog',dialog=>dialog.accept());await flyout().getByRole('link',{name:'Résumé moderation',exact:true}).click();await page.waitForURL('**tool=resumes*')
   await expect(page.locator('main')).toBeFocused();await page.evaluate(()=>document.getElementById('guard').remove());await expect(flyout()).toHaveCount(0)
-  await page.goBack();await page.waitForURL('**role=president');await page.goForward();await page.waitForURL('**tool=rejected')
-  await applicants.click();await expect(flyout().getByRole('link',{name:'Rejected Applicants',exact:true})).toHaveAttribute('aria-current','page');await page.keyboard.press('Escape')
+  await page.goBack();await page.waitForURL('**role=president');await page.goForward();await page.waitForURL('**tool=resumes*')
+  await applicants.click();await expect(flyout().getByRole('link',{name:'Résumé moderation',exact:true})).toHaveAttribute('aria-current','page');await page.keyboard.press('Escape')
   await rail.getByRole('link',{name:'Club home',exact:true}).click();await page.waitForURL('**section=overview*')
   await expect(rail.getByRole('link',{name:'Club home',exact:true})).toHaveAttribute('aria-current','page');await expect(applicants).not.toHaveAttribute('data-active','true')
 
@@ -61,7 +61,7 @@ test('browser: labelled rail without overlay, tooltips when compact, URL-driven 
   await page.goto(route(),{waitUntil:'networkidle'})
   await applicants.focus();await page.keyboard.press('ArrowRight');await flyout().waitFor()
   await expect(flyout().getByRole('link',{name:'All Applicants',exact:true})).toBeFocused()
-  await page.keyboard.press('ArrowDown');await expect(flyout().getByRole('link',{name:'Rejected Applicants',exact:true})).toBeFocused()
+  await page.keyboard.press('ArrowDown');await expect(flyout().getByRole('link',{name:'Résumé moderation',exact:true})).toBeFocused()
   await page.keyboard.press('End');await expect(flyout().getByRole('link',{name:'Submitted reviews',exact:true})).toBeFocused()
   await page.keyboard.press('Home');await expect(flyout().getByRole('link',{name:'All Applicants',exact:true})).toBeFocused()
   await page.keyboard.press('Escape');await expect(flyout()).toHaveCount(0);await expect(applicants).toBeFocused()
@@ -70,22 +70,22 @@ test('browser: labelled rail without overlay, tooltips when compact, URL-driven 
 
   // Choosing a destination by keyboard lands focus in the page, not back on the rail.
   await page.goto(route(),{waitUntil:'networkidle'});await applicants.focus();await page.keyboard.press('ArrowRight');await flyout().waitFor()
-  await page.keyboard.press('ArrowDown');await page.keyboard.press('Enter');await page.waitForURL('**tool=rejected');await expect(flyout()).toHaveCount(0);await expect(page.locator('main')).toBeFocused()
+  await page.keyboard.press('ArrowDown');await page.keyboard.press('Enter');await page.waitForURL('**tool=resumes*');await expect(flyout()).toHaveCount(0);await expect(page.locator('main')).toBeFocused()
   // Crossing 1280px never remounts or unfocuses a rail item.
   const interviews=rail.getByRole('link',{name:'Interviews',exact:true});await interviews.focus();await interviews.evaluate(el=>{el.dataset.mountProbe='kept'})
   await page.setViewportSize({width:1100,height:900});await expect.poll(width).toBe(80);await expect(interviews).toBeFocused();assert.equal(await interviews.getAttribute('data-mount-probe'),'kept')
   await page.setViewportSize({width:1440,height:900});await expect.poll(width).toBe(236);await expect(interviews).toBeFocused();await expect(page.getByRole('tooltip')).toHaveCount(0)
   // Permissions come from the same registry.
   await page.goto(route('owner'),{waitUntil:'networkidle'});await applicants.click();await flyout().waitFor()
-  assert.deepEqual(await flyout().getByRole('link').allTextContents(),['All Applicants','Rejected Applicants'],'owner does not imply sensitive interview offices');await page.keyboard.press('Escape')
+  assert.deepEqual(await flyout().getByRole('link').allTextContents(),['All Applicants'],'owner does not imply sensitive interview offices');await page.keyboard.press('Escape')
   await page.goto(route('reviewer'),{waitUntil:'networkidle'});await applicants.click();await flyout().waitFor()
-  assert.deepEqual(await flyout().getByRole('link').allTextContents(),['All Applicants','Rejected Applicants']);await page.keyboard.press('Escape')
+  assert.deepEqual(await flyout().getByRole('link').allTextContents(),['All Applicants']);await page.keyboard.press('Escape')
   await page.goto(route('settings','overview'),{waitUntil:'networkidle'});assert.equal(await applicants.count(),0);assert.equal(await decisions.count(),0)
   assert.equal(await rail.getByRole('navigation',{name:'Recruiting',exact:true}).count(),0,'no Recruiting section without recruiting tools')
 
   // Personal rail: every section, one name each, active item from the path.
   await page.goto(`${fixture.base}/home?role=student`,{waitUntil:'networkidle'})
-  assert.deepEqual(await rail.getByRole('link').evaluateAll(links=>links.map(link=>link.getAttribute('aria-label'))),['Home','Explore','Corkboard','Applications','Status','My Clubs','Meetings','Tasks','Calendar','Profile','Settings'])
+  assert.deepEqual(await rail.getByRole('link').evaluateAll(links=>links.map(link=>link.getAttribute('aria-label'))),['Home','Explore','Events','Applications','My Clubs','Calendar','Profile'])
   await expect(rail.getByRole('link',{name:'Home',exact:true})).toHaveAttribute('aria-current','page')
   // Visible text (the avatar's initials included) must be part of each control's name.
   const names=await new AxeBuilder({page}).withRules(['label-content-name-mismatch']).analyze()
@@ -93,7 +93,7 @@ test('browser: labelled rail without overlay, tooltips when compact, URL-driven 
   await rail.getByRole('link',{name:'Explore',exact:true}).click();await page.waitForURL('**/explore')
   await expect(rail.getByRole('link',{name:'Explore',exact:true})).toHaveAttribute('aria-current','page');await expect(rail.getByRole('link',{name:'Home',exact:true})).not.toHaveAttribute('aria-current','page')
   await page.goto(`${fixture.base}/explore/categories?role=student`,{waitUntil:'networkidle'});await expect(rail.getByRole('link',{name:'Explore',exact:true})).toHaveAttribute('aria-current','page')
-  await page.goto(`${fixture.base}/applications/status?role=student`,{waitUntil:'networkidle'});await expect(rail.getByRole('link',{name:'Status',exact:true})).toHaveAttribute('aria-current','page')
+  await page.goto(`${fixture.base}/applications?role=student`,{waitUntil:'networkidle'});await expect(rail.getByRole('link',{name:'Applications',exact:true})).toHaveAttribute('aria-current','page')
 
   // Admin sections.
   await page.route('**/api/platform/eligibility',route=>route.fulfill({json:{eligible:true}}));await page.goto(`${fixture.base}/platform/audit?role=platform`,{waitUntil:'networkidle'})
@@ -136,7 +136,7 @@ test('browser: labelled rail without overlay, tooltips when compact, URL-driven 
   // Phones and 200% zoom: the bottom bar is the only section nav; More opens every section, with no workspace pill.
   for(const size of [720,390,320]){
    await page.setViewportSize({width:size,height:844});await expect(rail).toBeHidden()
-   const bar=page.getByRole('navigation',{name:'Sections',exact:true});await expect(bar.getByRole('link')).toHaveText(['Overview','Applicants','Interviews','Decisions'])
+   const bar=page.getByRole('navigation',{name:'Sections',exact:true});await expect(bar.getByRole('link')).toHaveText(['Club home','Recruiting','Meetings','Members'])
    await bar.getByRole('button',{name:'More sections'}).click()
    const drawer=page.getByRole('dialog',{name:'Workspace navigation',exact:true});await drawer.waitFor()
    assert.equal(await drawer.getByRole('navigation',{name:'Workspaces'}).count(),0)

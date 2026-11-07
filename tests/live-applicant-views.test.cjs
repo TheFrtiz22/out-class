@@ -99,10 +99,11 @@ test('decision groups use persisted status, exclude drafts, and keep waitlists o
 })
 const decisionAction = (tree,label) => nodes(tree).find(n=>n.type==='Button' && text(n)===label && n.props['aria-pressed'] === undefined)
 const decisionList = tree => nodes(tree).find(n=>n.type==='LiveDecisionList')
-const decisionGroupButton = (tree,label) => segment(tree,'Decision groups',t=>t.startsWith(label))
+const decisionGroupButton = (tree,label) => segment(tree,'Decision',t=>t.startsWith(label))
 test('Decisions reuses expected-status mutations and moves saved outcomes between groups', async () => {
   const h=harness(undefined,true);h.render();await flush();let tree=h.render()
   assert.equal(button(tree,'Kanban'),undefined)
+  decisionGroupButton(tree,'Pending').props.onClick();tree=h.render();await flush();tree=h.render()
   decisionList(tree).props.open(decisionList(tree).props.applicants[0]);tree=h.render()
   decisionAction(tree,'Accepted').props.onClick();tree=h.render();button(tree,'Send now').props.onClick();await flush();tree=h.render();await flush();tree=h.render()
   assert.equal(h.calls.find(c=>c[0]==='status')[1].expectedStatus,'IN_REVIEW')
@@ -161,21 +162,20 @@ test('moving from the drawer locates the target-round review by stable ID despit
 });
 
 test('rejected applicants leave active queues and remain in the deliberate retained-history tab',async()=>{
- const active=harness();active.setServerStatus('REJECTED');active.render();await flush();const activeTree=active.render();assert.equal(view(activeTree),undefined);
- const rejected=harness(undefined,false,true);rejected.setServerStatus('REJECTED');rejected.render();await flush();const rejectedTree=rejected.render();assert.equal(view(rejectedTree).props.applicants.length,1);assert.equal(view(rejectedTree).props.applicants[0].status,'REJECTED');assert.match(text(rejectedTree),/retained here/);
+ const active=harness();active.setServerStatus('REJECTED');active.render();await flush();let activeTree=active.render();decisionGroupButton(activeTree,'Pending').props.onClick();activeTree=active.render();await flush();activeTree=active.render();assert.equal(view(activeTree),undefined);
+ const rejected=harness(undefined,false,true);rejected.setServerStatus('REJECTED');rejected.render();await flush();const rejectedTree=rejected.render();assert.equal(view(rejectedTree).props.applicants.length,1);assert.equal(view(rejectedTree).props.applicants[0].status,'REJECTED');assert.equal(text(rejectedTree).match(/keep their reviews and decision history/g).length,1,'the retention explainer shows once');
 });
 
 test('recruitment review actions sit in one header row before the toolbar, without a card or Refresh; Decisions keeps only Review applicants', async () => {
  const h=harness();h.render();await flush();const tree=h.render(),all=nodes(tree);
  const actions=all.find(n=>n.props?.['aria-label']==='Recruitment review');
  assert.equal(actions.type,'div');assert.equal(actions.props.role,'group');assert.match(actions.props.className,/justify-end/);
- assert.ok(nodes(actions).some(n=>n.type==='Button'&&text(n)==='Quick review'));assert.ok(nodes(actions).some(n=>n.type==='BoardDecisionMode'));assert.match(text(actions),/Review decisions/);
+ assert.ok(nodes(actions).some(n=>n.type==='Button'&&text(n)==='Quick review'));assert.equal(nodes(actions).some(n=>n.type==='BoardDecisionMode'),false,'the ballot opens from the Voting room');assert.doesNotMatch(text(actions),/Review decisions|Voting history/);
  assert.doesNotMatch(text(tree),/Review together or work through candidates/);assert.equal(all.some(n=>n.type==='section'&&n.props?.['aria-label']==='Recruitment review'),false);
  assert.equal(button(tree,'Refresh'),undefined);
  assert.ok(all.indexOf(actions)<all.findIndex(n=>n.type==='SegmentedControl'&&n.props.label==='Applicant view'));
  const decisions=harness(undefined,true);decisions.render();await flush();const decisionActions=nodes(decisions.render()).find(n=>n.props?.['aria-label']==='Recruitment review');
- assert.ok(decisionActions,'the Decisions tool keeps its header action');assert.equal(text(decisionActions),'Review applicants');assert.match(nodes(decisionActions).find(n=>typeof n.props?.href==='string').props.href,/tool=applicants/);
- assert.equal(nodes(decisionActions).some(n=>n.type==='BoardDecisionMode'||text(n)==='Quick review'),false,'pipeline-only tools stay on Applicants');
+ assert.doesNotMatch(text(decisionActions??''),/Review applicants|Review decisions/,'no back-and-forth links between Applicants and Decisions');
 });
 test('quick review saves expected-status decisions and advances only after success', async () => {
  const h=harness();h.addCandidate({id:'second',studentId:'student-two',student:{email:'second@demo.invalid',studentProfile:null}});h.render();await flush();let tree=h.render();
@@ -222,8 +222,8 @@ test('sorting lives in the column headers; header-less views keep an in-filter s
  const sortRow=t=>{const select=nodes(t).find(n=>n.props?.['aria-label']==='Sort applicants');return nodes(t).find(n=>[].concat(n.props?.children).includes(select))};
  assert.match(sortRow(tree).props.className,/xl:hidden/,'wide list sorts from headers');
  view(tree).props.sortBy('sat');tree=h.render();assert.equal(view(tree).props.sort,'sat');assert.equal(view(tree).props.descending,true);view(tree).props.sortBy('sat');tree=h.render();assert.equal(view(tree).props.descending,false);
- assert.doesNotMatch(text(tree),/selected for voting/);assert.equal(button(tree,'Start voting with selected applicants'),undefined);
- view(tree).props.votingSelection.toggle('candidate');tree=h.render();const bar=nodes(tree).find(n=>n.props?.['aria-label']==='Voting selection');assert.match(bar.props.className,/fixed/,'overlay bar does not shift the table');assert.match(text(bar),/selected for voting/);assert.ok(nodes(bar).some(n=>n.type==='span'&&[].concat(n.props.children)[0]===1),'shows the selection count');
+ assert.doesNotMatch(text(tree),/\d selected/);assert.equal(button(tree,'Add to voting session'),undefined);
+ view(tree).props.votingSelection.toggle('candidate');tree=h.render();const bar=nodes(tree).find(n=>n.props?.['aria-label']==='Voting selection');assert.match(bar.props.className,/fixed/,'overlay bar does not shift the table');assert.match(text(bar),/selected/);assert.ok(button(tree,'Add to voting session'));assert.ok(nodes(bar).some(n=>n.type==='span'&&[].concat(n.props.children)[0]===1),'shows the selection count');
  button(tree,'Clear selection').props.onClick();tree=h.render();assert.equal(nodes(tree).find(n=>n.props?.['aria-label']==='Voting selection'),undefined);
  button(tree,'Kanban').props.onClick();tree=h.render();assert.doesNotMatch(sortRow(tree).props.className,/xl:hidden/,'Kanban keeps the sort control at every width');
 });
@@ -238,10 +238,10 @@ test('authorized selected-applicant shortcut retains stable IDs and navigates wi
  global.sessionStorage={setItem:(key,value)=>stored.set(key,value)};global.document={querySelector:()=>null,getElementById:()=>null};
  try{
   const h=harness(['applications.review','applicants.identify','decisions.manage','decisions.start']);h.render();await flush();let tree=h.render();
-  view(tree).props.votingSelection.toggle('candidate');tree=h.render();button(tree,'Start voting with selected applicants').props.onClick();
+  view(tree).props.votingSelection.toggle('candidate');tree=h.render();button(tree,'Add to voting session').props.onClick();
   const navigation=h.calls.find(c=>c[0]==='navigate');assert.ok(navigation);const url=new URL(navigation[1],'https://fixture.test');assert.equal(url.pathname,'/voting/rooms/new');assert.equal(url.searchParams.get('clubId'),'club');assert.ok(url.searchParams.get('selection'));assert.ok(!navigation[1].includes('candidate'));
   assert.deepEqual(JSON.parse(stored.values().next().value),{userId:'reviewer',clubId:'club',demo:false,applicationIds:['candidate']});assert.ok(h.calls.every(c=>['load','navigate'].includes(c[0])));
-  const denied=harness(['applications.review']);denied.render();await flush();const deniedTree=denied.render();assert.equal(view(deniedTree).props.votingSelection,undefined);assert.equal(button(deniedTree,'Start voting with selected applicants'),undefined);
+  const denied=harness(['applications.review']);denied.render();await flush();const deniedTree=denied.render();assert.equal(view(deniedTree).props.votingSelection,undefined);assert.equal(button(deniedTree,'Add to voting session'),undefined);
  }finally{if(previousStorage===undefined)delete global.sessionStorage;else global.sessionStorage=previousStorage;if(previousDocument===undefined)delete global.document;else global.document=previousDocument;}
 });
 

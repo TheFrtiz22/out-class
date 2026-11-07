@@ -2,6 +2,8 @@ import type { getClubWorkspaceOverview } from "@/lib/workspace-api"
 import { hasPermission, type ClubAccess } from "@/lib/permissions"
 import { leaderRailSections, railItems } from "@/lib/navigation"
 import { anonymousApplicantLabel } from "@/lib/anonymous-review"
+import { TERMS } from "@/lib/copy/terms"
+import { votingStateLabel } from "@/lib/voting-navigation"
 
 /** Pure view model for Club home. Reads only the overview the server already authorized. */
 export type Overview = Awaited<ReturnType<typeof getClubWorkspaceOverview>>
@@ -30,26 +32,27 @@ export function isOverdue(due: Date | string | null | undefined, now: number) {
   return !!due && +new Date(due) < now
 }
 
-/** 2–4 cards, most urgent first. Each card needs the permission its data and destination need. */
+/** The one "Needs you" selector (Club home). 2–4 cards, most urgent first. Each card needs the permission its data and destination need.
+ * Voting cards name the real session state (Draft / Open / Paused) and link to the Voting room. */
 export function needsYou(data: Overview, hrefs: RailHrefs): NeedsCard[] {
   const { operations: op, membership: m } = data
   const now = +new Date(op.asOf)
   const cards: NeedsCard[] = []
   const live = op.votes.filter(v => v.state === "OPEN")
-  if (live.length && hrefs.decisions) cards.push({ id: "vote-live", priority: 1, title: live.length === 1 ? "Voting is live" : `${live.length} voting sessions are live`, detail: live.map(v => v.round.name).join(" · "), action: { kind: "link", href: hrefs.decisions, label: "Join voting" } })
+  if (live.length && hrefs.decisions) cards.push({ id: "vote-live", priority: 1, title: live.length === 1 ? "Voting is open" : `${live.length} voting sessions are open`, detail: live.map(v => `${v.round.name} · ${votingStateLabel(v.state)}`).join(" · "), action: { kind: "link", href: hrefs.decisions, label: TERMS.openVoting } })
   if (op.tasks.overdue > 0) {
     const first = data.work.find(w => isOverdue(w.task.dueAt, now))
-    if (first || hrefs.tasks) cards.push({ id: "overdue", priority: 2, title: `${plural(op.tasks.overdue, "assignment")} overdue`, detail: first ? first.task.title : "Open your assignments to catch up.", action: first ? { kind: "task", label: "Open assignment", taskId: first.task.id, assignmentId: first.id, title: first.task.title } : { kind: "link", href: `${hrefs.tasks}&taskView=mine`, label: "Open assignments" } })
+    if (first || hrefs.tasks) cards.push({ id: "overdue", priority: 2, title: `${plural(op.tasks.overdue, "task")} overdue`, detail: first ? first.task.title : "Open your tasks to catch up.", action: first ? { kind: "task", label: "Open task", taskId: first.task.id, assignmentId: first.id, title: first.task.title } : { kind: "link", href: `${hrefs.tasks}&taskView=mine`, label: "Open tasks" } })
   }
   const unscheduled = op.rounds.filter(r => r.needsBooking > 0)
   const needsTime = unscheduled.reduce((n, r) => n + r.needsBooking, 0)
-  if (hasPermission(m, "interviews.manage") && needsTime > 0 && hrefs.interviews) cards.push({ id: "interviews", priority: 3, title: `${plural(needsTime, "interview")} ${needsTime === 1 ? "needs" : "need"} a time`, detail: unscheduled.map(r => r.name).join(" · "), action: { kind: "link", href: hrefs.interviews, label: "Open scheduler" } })
+  if (hasPermission(m, "interviews.manage") && needsTime > 0 && hrefs.interviews) cards.push({ id: "interviews", priority: 3, title: `${plural(needsTime, "interview")} ${needsTime === 1 ? "needs" : "need"} a time`, detail: unscheduled.map(r => r.name).join(" · "), action: { kind: "link", href: `${hrefs.interviews}&interviewTab=schedule`, label: TERMS.scheduleInterviews } })
   const round = op.rounds.find(r => r.pending > 0)
   if (hasPermission(m, "applications.review") && round && hrefs.applicants) cards.push({ id: "reviews", priority: 4, title: `${plural(round.pending, "application")} to review`, detail: `${round.name} · ${round.pending} left`, progress: { done: round.eligible - round.pending, total: round.eligible }, action: { kind: "link", href: hrefs.applicants, label: "Open applicants" } })
   const submission = op.reviewWork[0]
   if (hasPermission(m, "tasks.manage") && (op.tasks.awaitingReview ?? 0) > 0 && submission) cards.push({ id: "submissions", priority: 5, title: `${plural(op.tasks.awaitingReview!, "submission")} waiting for feedback`, detail: submission.task.title, action: { kind: "task", label: "Give feedback", taskId: submission.task.id, assignmentId: submission.id, title: submission.task.title, review: true } })
   const upcoming = op.votes.filter(v => v.state === "DRAFT" || v.state === "PAUSED")
-  if (!live.length && upcoming.length && hrefs.decisions) cards.push({ id: "vote-upcoming", priority: 6, title: upcoming[0].state === "PAUSED" ? "Voting is paused" : "Voting session ready", detail: upcoming.map(v => v.round.name).join(" · "), action: { kind: "link", href: hrefs.decisions, label: "Open voting" } })
+  if (!live.length && upcoming.length && hrefs.decisions) cards.push({ id: "vote-upcoming", priority: 6, title: upcoming[0].state === "PAUSED" ? "Voting is paused" : "Voting session · Draft", detail: upcoming.map(v => `${v.round.name} · ${votingStateLabel(v.state)}`).join(" · "), action: { kind: "link", href: hrefs.decisions, label: TERMS.openVoting } })
   return cards.sort((a, b) => a.priority - b.priority).slice(0, 4)
 }
 

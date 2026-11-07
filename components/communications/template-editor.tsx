@@ -10,7 +10,8 @@ import { LetterPaper } from './decision-letter';
 import { clubAssetSource } from '@/lib/club-assets';
 import { Button } from '@/components/ui/button';
 import { NativeSelect } from "@/components/ui/native-select"
-export function DecisionTemplateEditor({clubId}:{clubId:string}){
+/** `inline` shows the editor directly (Decisions → Decision letters); Settings keeps the disclosure. */
+export function DecisionTemplateEditor({clubId,inline=false}:{clubId:string;inline?:boolean}){
  const {user}=useAuth(),expected=useRef("{}");
  const [club,setClub]=useState<Awaited<ReturnType<typeof getDecisionTemplates>>|null>(null),[templates,setTemplates]=useState<Partial<Record<LetterDecision,LetterTemplate>>>({}),[selected,setSelected]=useState<LetterDecision>('ACCEPTED'),[message,setMessage]=useState(''),[busy,setBusy]=useState(false),[preview,setPreview]=useState(false),[loadAttempt,setLoadAttempt]=useState(0);
  useEffect(()=>{let active=true;setMessage('');getDecisionTemplates(clubId).then(value=>{if(active){setClub(value);setTemplates(value.templates);expected.current=JSON.stringify(value.templates)}}).catch(()=>{if(active)setMessage('Decision letter settings could not load.')});return()=>{active=false}},[clubId,loadAttempt]);
@@ -20,7 +21,7 @@ export function DecisionTemplateEditor({clubId}:{clubId:string}){
   await saveDecisionTemplates(clubId,parsed,expected.current);
   expected.current=JSON.stringify(parsed);
  }});
- return <details data-autosave-editor="true" onBlur={autosave.onBlur} data-unsaved={autosave.dirty} data-saving={autosave.saving} className="border-y py-4"><summary className="cursor-pointer font-medium">Decision Letters</summary><div className="space-y-4 pt-5">
+ const body=<>
  <p className="text-sm text-muted-foreground">Customize future letters. Published letters keep their original wording. Preview uses a fictional student and reveals no applicant information.</p>
  {!club?message ? <div role="alert"><p>{message}</p><Button type="button" variant="outline" onClick={()=>setLoadAttempt(v=>v+1)}>Retry letter settings</Button></div> : <LoadingState label="Loading letter settings…" layout="form" rows={3} />:<>
  <label className="flex gap-3 items-start"><input type="checkbox" checked={club.sendFormalDecisionLetters} disabled={busy} onChange={async e=>{const enabled=e.target.checked;setBusy(true);try{await setFormalDecisionLetters(clubId,enabled);setClub({...club,sendFormalDecisionLetters:enabled});setMessage('Formal-letter setting saved. Historical letters are unchanged.');}catch{setMessage('Could not save the formal-letter setting.');}finally{setBusy(false)}}}/>Send formal decision letters</label>
@@ -31,5 +32,7 @@ export function DecisionTemplateEditor({clubId}:{clubId:string}){
  <div className="flex flex-wrap gap-3"><AutosaveStatus save={autosave} /><Button variant="outline" disabled={busy} onClick={()=>setPreview(!preview)}>Preview letter</Button><Button variant="ghost" disabled={busy} onClick={()=>{const next={...templates};delete next[selected];setTemplates(next)}}>Reset to Default</Button></div>
  <p role="status">{message}</p>
  {preview&&<LetterPaper preview marketing={club.marketing} content={resolveLetter(selected,templates,{firstName:'Alex',fullName:'Alex Student',clubName:club.name,date:new Date(),expiresAt:new Date(Date.now()+30*86400000),logoReference:null,accent:club.color})} logoSource={clubAssetSource(club.logoUrl,true)}/>}</>}
- </div></details>;
+</>;
+ if(inline)return <div data-autosave-editor="true" onBlur={autosave.onBlur} data-unsaved={autosave.dirty} data-saving={autosave.saving} className="space-y-4">{body}</div>;
+ return <details data-autosave-editor="true" onBlur={autosave.onBlur} data-unsaved={autosave.dirty} data-saving={autosave.saving} className="border-y py-4"><summary className="cursor-pointer font-medium">Decision Letters</summary><div className="space-y-4 pt-5">{body}</div></details>;
 }

@@ -14,18 +14,34 @@ export const STUDENT_ROUTES: readonly StudentRoute[] = [
   { path: "/home", view: "student-dashboard", section: "explore", label: "Home" },
   { path: "/explore", view: "explore", section: "explore", label: "Explore" },
   { path: "/explore/categories", view: "explore", section: "categories", label: "Categories" },
-  { path: "/corkboard", view: "corkboard", section: "corkboard", label: "Corkboard" },
+  { path: "/corkboard", view: "corkboard", section: "corkboard", label: "Events" },
   { path: "/applications", view: "tracker", section: "applications", label: "Applications" },
   { path: "/applications/status", view: "status", section: "status", label: "Status" },
   { path: "/clubs", view: "my-clubs", section: "clubs", label: "My Clubs" },
   { path: "/clubs/meetings", view: "my-clubs", section: "meetings", label: "Meetings" },
   { path: "/clubs/tasks", view: "my-clubs", section: "tasks", label: "Tasks" },
   { path: "/calendar", view: "calendar", section: "explore", label: "Calendar" },
-  { path: "/inbox", view: "inbox", section: "explore", label: "Notifications" },
+  { path: "/inbox", view: "inbox", section: "explore", label: "Inbox" },
   { path: "/profile", view: "student-profile", section: "explore", label: "Profile" },
 ]
 
 export const STUDENT_HOME = "/home"
+
+/**
+ * Paths folded into another page by the navigation cleanup. The page files redirect with
+ * `movedStudentHref`, keeping every other parameter (focus ids from email and notifications).
+ */
+export const MOVED_STUDENT_PATHS: Record<string, { path: string; set: Record<string, string> }> = {
+  "/applications/status": { path: "/applications", set: { tab: "in-review" } },
+  "/clubs/meetings": { path: "/calendar", set: { type: "meeting" } },
+}
+export function movedStudentHref(pathname: string, input: URLSearchParams | Record<string, string> = new URLSearchParams()) {
+  const moved = MOVED_STUDENT_PATHS[pathname]
+  if (!moved) return null
+  const params = new URLSearchParams(input)
+  for (const [key, value] of Object.entries(moved.set)) if (!params.has(key)) params.set(key, value)
+  return `${moved.path}?${params}`
+}
 
 /** Parameters encoded by the path itself; everything else (focus ids, tabs, demoClub) is carried over. */
 const ROUTING_PARAMS = ["workspace", "view", "section"]
@@ -44,6 +60,8 @@ export function studentPath(view: ViewId, section?: PersonalSection | null, carr
   const params = new URLSearchParams(carry)
   ROUTING_PARAMS.forEach(key => params.delete(key))
   if (route.view === "calendar" && resolved && !["explore", "corkboard"].includes(resolved.section)) params.set("section", resolved.section)
+  const moved = movedStudentHref(route.path, params)
+  if (moved) return moved
   const query = params.toString()
   return query ? `${route.path}?${query}` : route.path
 }

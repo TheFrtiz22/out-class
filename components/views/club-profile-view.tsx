@@ -30,7 +30,7 @@ export function ClubProfileView({
   onBack,
   onNavigate,
   preview = false,
-  backLabel = "Back to Discover",
+  backLabel = "Back to Explore",
 }: {
   club: DirectoryClub
   onBack: () => void

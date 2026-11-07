@@ -17,7 +17,9 @@ import { getStudentApplications } from "@/lib/workspace-api"
 import { useDemoMode } from "@/contexts/demo-context"
 import { useAuth } from "@/contexts/auth-context"
 import { useApplicationState } from "@/lib/application-state"
-import { applicationMatchesStatusFilter, compareApplicationStatus, type StatusFilter } from "@/lib/application-presentation"
+import { compareApplicationStatus } from "@/lib/application-presentation"
+import { applicationStage, applicationStages, initialApplicationStage, isApplicationStage, stageCounts } from "@/lib/application-stages"
+import { pluralize } from "@/lib/copy/terms"
 import "@/components/applications/application-tracker.css"
 import type { ViewId } from "@/lib/views"
 import type { TrackerStatus } from "@/lib/data"
@@ -66,7 +68,8 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
   const [activeId, setActiveId] = useState<string | null>(null)
   const [, setDirty] = useState(false)
   const [working, setWorking] = useState(false)
-  const [filter, setFilter] = useState("All")
+  const [filter, setFilter] = useState("")
+  const requestedTab = useSearchParams().get("tab")
   const [notice, setNotice] = useState("")
   const content = useRef<HTMLDivElement>(null)
   const lastOpened = useRef<string | null>(null)
@@ -317,31 +320,33 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
         )}
       </div>
     )
-  const statusFilters: StatusFilter[] = ["All", "Needs attention", "Upcoming interviews", "In progress", "Decisions"]
-  const submitted = applications.filter(item => item.status !== "DRAFTING")
-  const drafts = applications.length - submitted.length
-  const visible = statusView ? submitted.filter(item => applicationMatchesStatusFilter(item, filter as StatusFilter, now)).sort((a, b) => compareApplicationStatus(a, b, now) || a.club.name.localeCompare(b.club.name))
-    : applications.filter(item => filter === "All" || (filter === "Drafts" ? item.status === "DRAFTING" : item.status !== "DRAFTING")).sort((a, b) => Number(b.status === "DRAFTING") - Number(a.status === "DRAFTING") || a.club.name.localeCompare(b.club.name))
+  // One page, four stages: the same tabs and counts as the Home "Your applications" card.
+  const counts = stageCounts(applications.map(item => item.status))
+  // The old Status view (scope "status") opens on the first submitted stage with applications.
+  const stage = isApplicationStage(filter) ? filter : initialApplicationStage(requestedTab, counts, { submittedOnly: scope === "status" })
+  const choose = (next: string) => {
+    setFilter(next)
+    if (typeof window === "undefined" || !window.location?.href || !window.history) return
+    const url = new URL(window.location.href); url.searchParams.set("tab", next); window.history.replaceState(window.history.state, "", url)
+  }
+  const visible = applications.filter(item => applicationStage(item.status) === stage)
+    .sort((a, b) => stage === "drafts" ? a.club.name.localeCompare(b.club.name) : compareApplicationStatus(a, b, now) || a.club.name.localeCompare(b.club.name))
   function open(item: StudentApplication) { lastOpened.current = item.id; setActiveId(item.id); setNotice("") }
   return (
     <div ref={content} className="oc-applications max-w-[var(--oc-content-width)] space-y-5" data-application-scope={scope}>
-      <PageHeader density="expressive" title={statusView ? "Status" : "Applications"} description={statusView ? "Where things stand, and what to do next." : "Work on your drafts, check requirements, and review submitted responses."} />
-      {applications.length > 0 && !statusView && <MetricStrip label="Application management" items={[
-        { label: drafts === 1 ? "draft" : "drafts", value: drafts },
-        { label: "submitted", value: submitted.length },
-      ]} />}
-      {!applications.length || statusView && !submitted.length ? (
-        <EmptyState icon={<FilePenLine />} title={statusView ? "No submitted applications yet." : "No applications yet."} description={statusView ? "Submitted applications will appear here with their review progress, interview details, and decisions." : "Explore clubs and start an application. Manage your drafts and submissions here."} action={<Button onClick={() => onNavigate?.(statusView && applications.length ? "tracker" : "explore")}>{statusView && applications.length ? "Continue applications" : "Discover clubs"}<ArrowRight className="size-4" /></Button>} />
+      <PageHeader density="expressive" title="Applications" description="Your drafts, applications in review, interviews and decisions." />
+      {!applications.length ? (
+        <EmptyState icon={<FilePenLine />} title="No applications yet." description="Explore clubs and start an application. Your drafts and submissions appear here." action={<Button onClick={() => onNavigate?.("explore")}>Explore clubs</Button>} />
       ) : (
         <>
-          <SegmentedControl animated={!statusView} label={statusView ? "Filter application status" : "Filter applications"} value={filter} onChange={setFilter} options={statusView ? statusFilters.map(value => ({ value, label: `${value} (${submitted.filter(item => applicationMatchesStatusFilter(item, value, now)).length})` })) : ["All", "Drafts", "Submitted"].map(label => ({ label, value: label }))} />
-          {statusView && <p className="text-xs text-muted-foreground">Current rounds are recorded by each club. Later rounds are shown as context, not confirmed invitations.</p>}
-          <p role="status" className="sr-only">{visible.length} {visible.length === 1 ? "application" : "applications"} shown</p>
+          <SegmentedControl animated label="Application stage" value={stage} onChange={choose} options={applicationStages.map(item => ({ value: item.id, label: `${item.label} (${counts[item.id]})` }))} />
+          {stage !== "drafts" && <p className="text-xs text-muted-foreground">Current rounds are recorded by each club. Later rounds are shown as context, not confirmed invitations.</p>}
+          <p role="status" className="sr-only">{pluralize(visible.length, "application")} shown</p>
           {syncNote && <p role="status" className="text-xs text-muted-foreground">{syncNote}</p>}
-          <ul className={statusView ? "oc-status-list" : "oc-application-management-list"}>
-            {visible.map(item => <li key={item.id}>{statusView ? <ApplicationStatusCard application={item} now={now} onOpen={() => open(item)} /> : <ApplicationManagementCard application={item} deadline={demoDeadline(item.clubId)} sample={demo.isDemoEnabled} onOpen={() => open(item)} />}</li>)}
+          <ul className={stage === "drafts" ? "oc-application-management-list" : "oc-status-list"}>
+            {visible.map(item => <li key={item.id}>{stage === "drafts" ? <ApplicationManagementCard application={item} deadline={demoDeadline(item.clubId)} sample={demo.isDemoEnabled} onOpen={() => open(item)} /> : <ApplicationStatusCard application={item} now={now} onOpen={() => open(item)} />}</li>)}
           </ul>
-          {!visible.length && <EmptyState role="status" density="compact" tone="outlined" title={`No applications in “${filter}”.`} description={statusView ? "None of your submitted applications are in this group right now." : filter === "Drafts" ? "You have no drafts in progress; every application has been submitted." : "You haven’t submitted an application yet; your drafts are under Drafts."} action={<Button variant="outline" onClick={() => setFilter("All")}>Show all applications</Button>} />}
+          {!visible.length && <EmptyState role="status" density="compact" tone="outlined" title={`No applications in ${applicationStages.find(item => item.id === stage)!.label}.`} description={stage === "drafts" ? "You have no drafts in progress." : "None of your applications are at this stage right now."} />}
         </>
       )}
     </div>

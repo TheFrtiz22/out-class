@@ -61,14 +61,21 @@ function trackerHarness(records,scope='status',params='') {
 const cards=tree=>nodes(tree).filter(node=>node.type==='ApplicationStatusCard');
 const management=tree=>nodes(tree).filter(node=>node.type==='ApplicationManagementCard');
 
-test('Status presents every submitted application once, with counted filters and no form-management cards',async()=>{
+test('Applications and Status are one page: four stage tabs with counts, status cards for submitted stages',async()=>{
  const h=trackerHarness([app('Draft','DRAFTING'),app('Review'),app('Decision','ACCEPTED'),app('Interview','INTERVIEWING')]);h.render();await h.flush();let tree=h.render();
- assert.equal(nodes(tree).find(node=>node.type==='PageHeader').props.title,'Status');assert.deepEqual(cards(tree).map(node=>node.props.application.id),['Interview','Review','Decision']);assert.equal(management(tree).length,0);
- const filter=nodes(tree).find(node=>node.type==='SegmentedControl');assert.equal(filter.props.options.find(item=>item.value==='Needs attention').label,'Needs attention (1)');filter.props.onChange('Decisions');assert.deepEqual(cards(h.render()).map(node=>node.props.application.id),['Decision']);
+ assert.equal(nodes(tree).find(node=>node.type==='PageHeader').props.title,'Applications');assert.equal(nodes(tree).some(node=>node.type==='MetricStrip'),false,'no stat boxes repeating the tabs');
+ const stages=()=>nodes(h.render()).find(node=>node.type==='SegmentedControl'&&node.props.label==='Application stage');
+ assert.deepEqual(stages().props.options.map(item=>item.label),['Drafts (1)','In review (1)','Interviews (1)','Decisions (1)']);
+ assert.deepEqual(cards(tree).map(node=>node.props.application.id),['Review']);assert.equal(management(tree).length,0);
+ stages().props.onChange('interviews');assert.deepEqual(cards(h.render()).map(node=>node.props.application.id),['Interview']);
+ stages().props.onChange('decisions');assert.deepEqual(cards(h.render()).map(node=>node.props.application.id),['Decision']);
+ stages().props.onChange('drafts');tree=h.render();assert.equal(cards(tree).length,0);assert.deepEqual(management(tree).map(node=>node.props.application.id),['Draft']);
 });
-test('Applications keeps drafts and submitted responses together without repeating the status journey',async()=>{
- const h=trackerHarness([app('Draft','DRAFTING'),app('Decision','ACCEPTED'),app('Review')],'all');h.render();await h.flush();let tree=h.render();assert.equal(cards(tree).length,0);assert.equal(management(tree).length,3);
- nodes(tree).find(node=>node.type==='SegmentedControl').props.onChange('Submitted');assert.equal(management(h.render()).length,2);
+test('Applications opens on Drafts when there are drafts and uses the same stages as the Home card',async()=>{
+ const h=trackerHarness([app('Draft','DRAFTING'),app('Decision','ACCEPTED'),app('Review')],'all');h.render();await h.flush();let tree=h.render();assert.equal(cards(tree).length,0);assert.equal(management(tree).length,1);
+ nodes(tree).find(node=>node.type==='SegmentedControl').props.onChange('in-review');assert.equal(cards(h.render()).length,1);
+ const {stageCounts}=load('lib/application-stages.ts');assert.deepEqual(stageCounts(['Drafting','Submitted','In Review','Interviewing','Accepted','Rejected','Waitlisted']),{drafts:1,'in-review':2,interviews:1,decisions:3});
+ assert.match(require('node:fs').readFileSync('components/views/student-dashboard-view.tsx','utf8'),/stageCounts\(apps\.map/);
 });
 test('booking changes refresh the same application and synchronize calendar bookings without a page reload',async()=>{
  const h=trackerHarness([app('Invite','INTERVIEWING')]);h.render();await h.flush();cards(h.render())[0].props.onOpen();let detail=nodes(h.render()).find(node=>node.type==='ApplicationStatusDetail');
@@ -108,7 +115,7 @@ test('old applicant URLs retain focus and unrelated parameters, while manager ro
 test('legacy applicant path redirects preserve repeated parameters and leave the booking route intact',async()=>{
  for(const file of ['app/interviews/page.tsx','app/decisions/page.tsx']){
   const C=load(file,{'next/navigation':{redirect:value=>{throw Error(value)}}}).default;
-  await assert.rejects(C({searchParams:Promise.resolve({applicationId:'application',tag:['a','b']})}),error=>{const url=new URL(error.message,'http://outclass.test'),params=url.searchParams;assert.equal(url.pathname,'/applications/status');assert.equal(params.get('view'),null);assert.equal(params.get('applicationId'),'application');assert.deepEqual(params.getAll('tag'),['a','b']);return true});
+  await assert.rejects(C({searchParams:Promise.resolve({applicationId:'application',tag:['a','b']})}),error=>{const url=new URL(error.message,'http://outclass.test'),params=url.searchParams;assert.equal(url.pathname,'/applications');assert.equal(params.get('tab'),'in-review');assert.equal(params.get('view'),null);assert.equal(params.get('applicationId'),'application');assert.deepEqual(params.getAll('tag'),['a','b']);return true});
  }
  const bookingPage=load('app/(focus)/interviews/book/page.tsx').default();assert.equal(bookingPage.props.children.type,'AuthSessionBoundary');assert.equal(bookingPage.props.children.props.children.type,'BookingLinkPage');
 });

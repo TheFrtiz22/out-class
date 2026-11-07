@@ -74,5 +74,5 @@ export function LiveDecisionList({ applicants, rounds, open, name, average }: Pr
 }
 
 function VotingSelection({app,name,selection}:{app:Candidate;name:string;selection:NonNullable<Props["votingSelection"]>}){
- return <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 px-2 text-xs"><input aria-label={`Select ${name} for voting`} type="checkbox" checked={selection.ids.includes(app.id)} disabled={!["SUBMITTED","IN_REVIEW","INTERVIEWING","WAITLISTED"].includes(app.status)} onChange={()=>selection.toggle(app.id)}/><span className="xl:sr-only">Select for voting</span></label>;
+ return <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 px-2 text-xs"><input aria-label={`Select ${name} for voting`} type="checkbox" checked={selection.ids.includes(app.id)} disabled={!["SUBMITTED","IN_REVIEW","INTERVIEWING","WAITLISTED"].includes(app.status)} onChange={()=>selection.toggle(app.id)}/></label>;
 }

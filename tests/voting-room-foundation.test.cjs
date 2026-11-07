@@ -100,3 +100,11 @@ test('refresh/reconnect restores projected state; failed polling clears it, late
  h.members[0].status='LEFT';await sub.refresh();assert.equal(seen.at(-1)[0],null);assert.match(seen.at(-1)[1],/unavailable/);sub.close();
  const late=votingRoomSubscription(()=>new Promise(r=>resolve=r),(v)=>seen.push([v]),100000);late.close();const n=seen.length;resolve({private:'late'});await new Promise(r=>setImmediate(r));assert.equal(seen.length,n);assert.equal(reads,2);
 });
+test('the Voting room lists board (LEGACY) draft sessions alongside live rooms, with their mode, under the same access rules',async()=>{
+ const h=harness();await h.create();const legacy={...structuredClone(h.state().sessions[0]),id:uuid(901),mode:'LEGACY',state:'DRAFT',leaderMemberIds:[]};h.state().sessions.push(legacy);
+ h.as(leaderId);let rows=await h.api.listLiveVotingRooms({clubId});assert.deepEqual(rows.map(r=>r.id).sort(),[sessionId,uuid(901)].sort());
+ assert.equal(rows.find(r=>r.id===uuid(901)).mode,'LEGACY');assert.equal(rows.find(r=>r.id===uuid(901)).state,'DRAFT');assert.equal(rows.find(r=>r.id===sessionId).mode,'LIVE');
+ // The draft keeps the room's filters: another cycle, or no access, hides it.
+ assert.deepEqual(await h.api.listLiveVotingRooms({clubId,cycleId:uuid(99)}),[]);h.as(uuid(7));assert.deepEqual(await h.api.listLiveVotingRooms({clubId}),[]);
+ assert.doesNotMatch(fs.readFileSync('actions/voting-room.ts','utf8').match(/export async function listLiveVotingRooms[\s\S]*?findMany\(\{where:\{[^}]*/)[0],/mode:"LIVE"/);
+});

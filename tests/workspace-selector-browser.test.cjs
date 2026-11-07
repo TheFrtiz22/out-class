@@ -64,12 +64,12 @@ test('workspace pill switches workspace only: same segments everywhere, eligibil
   // Phones: the pill hides; the account menu switches workspace and the bottom bar is the only section nav.
   eligible=true;await go('platform','/club/fixture-mii/workspace?section=recruitment');await page.setViewportSize({width:390,height:844})
   await expect(header.locator('.oc-product-workspaces')).toBeHidden();await expect(dock).toBeHidden()
-  await expect(page.getByRole('navigation',{name:'Sections',exact:true}).getByRole('link')).toHaveText(['Overview','Applicants','Interviews','Decisions'])
+  await expect(page.getByRole('navigation',{name:'Sections',exact:true}).getByRole('link')).toHaveText(['Club home','Recruiting','Meetings','Members'])
   await header.getByRole('button',{name:/^Account menu for/}).click();const account=page.getByRole('menu')
   await expect(account.getByRole('menuitem',{name:'McIntire Investment Institute club workspace'})).toHaveAttribute('aria-current','page')
   await expect(account.getByRole('menuitem',{name:'Virginia Volunteers club workspace'})).toBeVisible();await expect(account.getByRole('menuitem',{name:'Admin workspace'})).toBeVisible()
   await account.getByRole('menuitem',{name:'Personal workspace'}).click();await page.waitForURL('**/home');await expect(page.getByRole('navigation',{name:'Sections',exact:true}).getByRole('link')).toHaveText(['Home','Explore','Applications','My Clubs'])
-  await page.setViewportSize({width:1600,height:1000});await header.getByRole('button',{name:/^Account menu for/}).click();await expect(page.getByRole('menu').getByRole('menuitem',{name:'Personal workspace'})).toBeHidden();await page.keyboard.press('Escape')
+  await page.setViewportSize({width:1600,height:1000});await header.getByRole('button',{name:/^Account menu for/}).click();await expect(page.getByRole('menu').getByRole('menuitem',{name:'Personal workspace'})).toBeVisible();await page.keyboard.press('Escape')
   // Workspaces stay readable and reachable at narrow widths and 200% zoom.
   for(const role of ['student','owner','platform']){
    eligible=role==='platform';await go(role,role==='student'?'/':'/club/fixture-mii/workspace?section=recruitment')

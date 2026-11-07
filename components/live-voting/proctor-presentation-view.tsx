@@ -19,6 +19,7 @@ import {
 import { VotingLobby } from "./voting-lobby"
 import { MemberVotingPad } from "./member-voting-pad"
 import { PageHeader } from "@/components/ui/page-header"
+import { pluralize } from "@/lib/copy/terms"
 
 export function ProctorPresentationView({
   initialSession,
@@ -310,7 +311,7 @@ export function ProctorPresentationView({
           <DialogHeader>
             <DialogTitle>End this voting session?</DialogTitle>
             <DialogDescription>
-              {progress.remaining} applicants remain unresolved. Members will stop receiving new
+              {pluralize(progress.remaining,"applicant")} {progress.remaining===1?"remains":"remain"} unresolved. Members will stop receiving new
               ballots. You can review the final totals before returning to the CRM; this simulation
               does not save results after you leave.
             </DialogDescription>

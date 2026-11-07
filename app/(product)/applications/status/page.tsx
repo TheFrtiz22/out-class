@@ -1,10 +1,13 @@
 import type { Metadata } from "next"
-import { StudentWorkspacePage } from "@/components/student-workspace-page"
+import { redirect } from "next/navigation"
 import { privateRobots } from "@/lib/seo"
+import { movedStudentHref } from "@/lib/student-routes"
 
-export const metadata: Metadata = { robots: privateRobots }
-export const maxDuration = 60
+export const metadata: Metadata = { title: "Applications", robots: privateRobots }
 
-export default function Page({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  return <StudentWorkspacePage path="/applications/status" searchParams={searchParams} />
+/** Folded into another page by the navigation cleanup; old links (email, notifications) keep working. */
+export default async function Page({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const params = new URLSearchParams()
+  for (const [key, value] of Object.entries(await searchParams)) for (const item of Array.isArray(value) ? value : value === undefined ? [] : [value]) params.append(key, item)
+  redirect(movedStudentHref("/applications/status", params)!)
 }

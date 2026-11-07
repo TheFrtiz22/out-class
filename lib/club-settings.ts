@@ -105,18 +105,13 @@ export function applicationAvailability(
   );
 }
 export const settingsSections = [
-  { id: "general", label: "General", permission: "club.settings" },
+  { id: "general", label: "Public profile", permission: "club.settings" },
   { id: "application", label: "Recruitment & Applications", permission: "application.manage" },
   { id: "cycles", label: "Application Cycles", permission: "recruitment.manage" },
   {
     id: "pipeline",
     label: "Recruitment Rounds",
     permission: "recruitment.manage",
-  },
-  {
-    id: "interviews",
-    label: "Interviews",
-    permission: "interviews.manage",
   },
   {
     id: "members",
@@ -130,7 +125,6 @@ export function availableSettings(member: ClubAccess) {
   return settingsSections.filter(
     (s) =>
       hasPermission(member, s.permission) ||
-      (s.id === "interviews" && (hasPermission(member, "recruitment.manage") || interviewCapabilities(member).editKit || interviewCapabilities(member).participate)) ||
       (s.id === "notifications" && (hasPermission(member, "members.manage") || hasPermission(member, "recruitment.manage"))) ||
       ((s.id === "members" || s.id === "notifications") &&
         hasPermission(member, "leaders.manage")),

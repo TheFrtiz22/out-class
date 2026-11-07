@@ -9,7 +9,7 @@ import { Dashboard, DashboardGrid, NeedsAction, NeedsYouRow } from "@/components
 import { needsYou, railHrefs, type NeedsCard } from "@/components/club-home/club-home-model"
 import { AssignmentsCard, InterviewsCard, PipelineCard, TeamPulse, UpdatesCard, WeekCard } from "@/components/club-home/club-home-sections"
 import "@/components/club-home/club-home.css"
-const Task = dynamic(() => import("@/components/tasks/dashboard-task").then(m => m.DashboardTask), { loading: () => <LoadingState variant="glass" layout="form" rows={2} label="Loading assignment…" /> })
+const Task = dynamic(() => import("@/components/tasks/dashboard-task").then(m => m.DashboardTask), { loading: () => <LoadingState variant="glass" layout="form" rows={2} label="Loading task…" /> })
 const Meeting = dynamic(() => import("@/components/events/dashboard-meeting").then(m => m.DashboardMeeting), { loading: () => <LoadingState variant="glass" layout="form" rows={3} label="Loading meeting…" /> })
 const Preparation = dynamic(() => import("@/components/interviews/dashboard-preparation").then(m => m.DashboardPreparation), { loading: () => <LoadingState variant="glass" label="Checking interview panel…" layout="rows" rows={2} /> })
 type Overview = Awaited<ReturnType<typeof getClubWorkspaceOverview>>

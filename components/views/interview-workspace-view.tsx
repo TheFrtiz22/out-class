@@ -289,7 +289,7 @@ function InterviewSession({
   if (loadError || !data)
     return (
       <div role="alert" className="space-y-4 py-12">
-        <p>We couldn’t open this interview. It may have changed, or you may no longer have access.</p><Button variant="ghost" onClick={onExit}>Back to interviews</Button>
+        <p>We couldn’t open this interview. It may have changed, or you may no longer have access. Use Exit to return to your interviews.</p>
         <Button variant="outline" onClick={() => setRetry((value) => value + 1)}>
           Try again
         </Button>
@@ -300,13 +300,12 @@ function InterviewSession({
 
       {!active && <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border px-5 py-4 sm:px-8">
         <div className="flex flex-wrap items-end gap-3">
-          {!active && <Button variant="ghost" disabled={busy} onClick={onExit}><ArrowLeft className="size-4" />Back to interviews</Button>}
           {clubSelector}
           <div className="space-y-2">
             <Label htmlFor="interview-round">Round</Label>
             <NativeSelect
               id="interview-round"
-              className={`${selectStyle} block`}
+              className={`${selectStyle} block min-w-48`}
               disabled={busy}
               value={roundId}
               onChange={(event) => {

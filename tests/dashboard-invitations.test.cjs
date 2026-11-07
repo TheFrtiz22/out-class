@@ -72,10 +72,11 @@ test('a membership refresh failure never reverses committed acceptance or invite
   await cards(h.render())[0].props.onChanged({id:'member',kind:'accepted',clubName:'Madison Investment Fund'});const tree=h.render();assert.equal(cards(tree).length,0);assert.ok(h.toasts.some(message=>message.includes('joined Madison Investment Fund')));assert.ok(h.toasts.some(message=>message.includes('Refresh the page')));await h.flush();await h.finishCollapse();assert.equal(h.render(),null);
 });
 
-test('organization Settings is protected by server authentication before rendering recovery controls',async()=>{
-  let checks=0,profiles=0;const allowed=harness({requireAuth:async options=>{assert.equal(options.verifyEmail,true);checks++;return{user:{id:'verified-user'}};},requireCompletedStudentProfile:async(id,destination)=>{assert.equal(id,'verified-user');assert.equal(destination,'/settings/organizations');profiles++;}},'app/settings/organizations/page.tsx',{});
-  const tree=await allowed.render();assert.equal(checks,1);assert.equal(profiles,1);const area=nodes(tree).find(node=>node.type==='OrganizationOwnershipRequests');assert.ok(area);assert.equal(area.props.includeDismissed,true);
-  const denied=harness({requireAuth:async()=>{throw Error('Unauthorized');}},'app/settings/organizations/page.tsx',{});await assert.rejects(denied.render(),/Unauthorized/);
+test('Settings → Organizations redirects to My Clubs, which carries the pending invitations and club requests',async()=>{
+  const fs=require('node:fs');
+  assert.match(fs.readFileSync('app/settings/organizations/page.tsx','utf8'),/redirect\(`\/clubs/);
+  const clubs=fs.readFileSync('components/personal-clubs.tsx','utf8');
+  assert.match(clubs,/<OrganizationOwnershipRequests enabled includeDismissed \/>/);assert.match(clubs,/Find or claim a club/);
 });
 
 
@@ -117,8 +118,8 @@ test('Settings memberships use each organization role and exclude inactive membe
 test('Settings memberships handle loading, empty, and failed authenticated data',async()=>{
   let retries=0;const auth={user:null,loading:true,refreshUser:async()=>retries++};const h=harness({},'components/organization-memberships.tsx',{},auth);
   assert.ok(nodes(h.render()).some(node=>node.props?.role==='status'));auth.loading=false;
-  assert.ok(nodes(h.render()).some(node=>node.props?.role==='alert'));nodes(h.render()).find(node=>node.props?.children==='Retry organizations').props.onClick();assert.equal(retries,1);
-  auth.user={memberships:[]};assert.ok(JSON.stringify(h.render()).includes('aren’t a member of any organization'));assert.ok(JSON.stringify(h.render()).includes('Explore clubs'));
+  assert.ok(nodes(h.render()).some(node=>node.props?.role==='alert'));nodes(h.render()).find(node=>node.props?.children==='Retry clubs').props.onClick();assert.equal(retries,1);
+  auth.user={memberships:[]};assert.ok(JSON.stringify(h.render()).includes('aren’t a member of any club'));assert.ok(JSON.stringify(h.render()).includes('Explore clubs'));
 });
 
 test('zero requests render literally nothing before and after discovery, including failed discovery',async()=>{

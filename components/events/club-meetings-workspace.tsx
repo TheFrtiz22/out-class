@@ -18,9 +18,10 @@ export function ClubMeetingsWorkspace({ clubId, clubName, canSeeAttendees, legac
     const href = `/club/${encodeURIComponent(clubId)}/workspace?${next}`;
     if (!navigateWithinClub(href)) router.push(href);
   }
-  return <div className="oc-workspace-stack">
-    <SegmentedControl label="Meetings workspace" value={events ? "events" : "members"} onChange={value => select(value === "events")}
+  const kind = <SegmentedControl label="Meetings workspace" value={events ? "events" : "members"} onChange={value => select(value === "events")}
       options={[{ value: "members", label: "Member Meetings" }, { value: "events", label: "Corkboard Events" }]} />
-    {events ? isDemoEnabled ? <Panel as="section"><h2 className="oc-section-heading">Corkboard Events</h2><p className="mt-3 text-sm text-muted-foreground">Corkboard event management is not available in Demo yet. Switch out of Demo to manage your club’s events.</p></Panel> : <ClubEvents clubId={clubId} clubName={clubName} canSeeAttendees={canSeeAttendees} /> : <MeetingList clubId={clubId} embedded initialAudience="ALL" />}
+  return <div className="oc-workspace-stack">
+    {events && kind}
+    {events ? isDemoEnabled ? <Panel as="section"><h2 className="oc-section-heading">Corkboard Events</h2><p className="mt-3 text-sm text-muted-foreground">Corkboard event management is not available in Demo yet. Switch out of Demo to manage your club’s events.</p></Panel> : <ClubEvents clubId={clubId} clubName={clubName} canSeeAttendees={canSeeAttendees} /> : <MeetingList clubId={clubId} embedded initialAudience="ALL" toolbarStart={kind} openCreate={params.get("new") === "1"} />}
   </div>;
 }
