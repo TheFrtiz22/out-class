@@ -1,10 +1,9 @@
 "use client"
-import type { CSSProperties } from "react"
 import Link from "next/link"
-import { ArrowRight, UserRound } from "@/components/icons"
-import { Panel } from "@/components/ui/panel"
+import { UserRound } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { DashboardCard, DashboardFoot, DashboardQuiet, DateChipList, GlassRow, GlassRowList, MetricTiles, PipelineBars, type MetricTile } from "@/components/product/dashboard/dashboard"
 import { memberDate } from "@/components/member-overview"
 import { hasPermission } from "@/lib/permissions"
 import { interviewEntryHref } from "@/lib/interview-entry"
@@ -12,123 +11,97 @@ import { interviewPerson, isOverdue, pipeline, thisWeek, type Overview, type Rai
 
 type Booking = Overview["operations"]["bookings"][number]
 const time = (value: Date | string) => new Date(value).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
-const enter = (index: number) => ({ "--i": index }) as CSSProperties
-
-function More({ href, children }: { href: string; children: string }) {
-  return <Link className="oc-club-home-more" href={href}>{children} <ArrowRight aria-hidden="true" size={14} /></Link>
-}
 
 /** Stage counts from application statuses; bars are decorative, every number is text. */
 export function PipelineCard({ data, hrefs, index }: { data: Overview; hrefs: RailHrefs; index: number }) {
   const model = pipeline(data.recruitment)
   if (!model || !model.total) return null
-  const op = data.operations, max = Math.max(1, ...model.stages.map(s => s.count))
+  const op = data.operations
   const dates = [
     ...(op.intake?.applicationDeadline ? [`${op.intake.applicationOpen && +new Date(op.intake.applicationDeadline) > +new Date(op.asOf) ? "Applications close" : "Applications closed"} ${memberDate(op.intake.applicationDeadline)}`] : []),
     ...op.scheduled.slice(0, 1).map(s => `${s.kind === "DECISION" ? "Decisions publish" : "Message scheduled"} ${memberDate(s.scheduledAt)}`),
   ]
-  const mobile = model.stages.slice(1)
-  const mobileTotal = Math.max(1, mobile.reduce((n, s) => n + s.count, 0))
-  return <Panel as="section" variant="glass" className="oc-club-home-card oc-club-home-pipeline" style={enter(index)} aria-labelledby="club-home-pipeline">
-    <header className="oc-club-home-card-head"><h2 id="club-home-pipeline">Recruiting pipeline</h2><span>All cycles</span></header>
-    <ol className="oc-pipeline-stages">{model.stages.map(stage => <li key={stage.id} data-tone={stage.tone}>
-      <span className="oc-pipeline-stage-label">{stage.label}</span>
-      <strong className="oc-club-home-number">{stage.count}</strong>
-      <span className="oc-pipeline-track" aria-hidden="true"><span style={{ "--value": `${Math.round(stage.count / max * 100)}%` } as CSSProperties} /></span>
-    </li>)}</ol>
-    <div className="oc-pipeline-compact" aria-hidden="true">
-      <span className="oc-pipeline-compact-bar">{mobile.map(stage => <span key={stage.id} data-tone={stage.tone} style={{ "--value": `${stage.count / mobileTotal * 100}%` } as CSSProperties} />)}</span>
-    </div>
-    <ul className="oc-pipeline-compact-counts">{mobile.map(stage => <li key={stage.id} data-tone={stage.tone}><strong className="oc-club-home-number">{stage.count}</strong><span>{stage.label}</span></li>)}</ul>
-    {(dates.length > 0 || model.declined > 0 || model.waitlisted > 0) && <p className="oc-club-home-foot">{[...dates, ...(model.waitlisted ? [`${model.waitlisted} waitlisted`] : []), ...(model.declined ? [`${model.declined} not accepted`] : [])].join(" · ")}</p>}
-    {hrefs.applicants && <More href={hrefs.applicants}>Open applicants</More>}
-  </Panel>
+  const facts = [...dates, ...(model.waitlisted ? [`${model.waitlisted} waitlisted`] : []), ...(model.declined ? [`${model.declined} not accepted`] : [])]
+  return <DashboardCard id="club-home-pipeline" title="Recruiting pipeline" aside="All cycles" index={index} className="oc-club-home-card oc-club-home-pipeline"
+    more={hrefs.applicants ? { href: hrefs.applicants, label: "Open applicants" } : undefined}>
+    <PipelineBars stages={model.stages} compactStages={model.stages.slice(1)} />
+    {facts.length > 0 && <DashboardFoot>{facts.join(" · ")}</DashboardFoot>}
+  </DashboardCard>
 }
 
 export function InterviewsCard({ data, hrefs, index, onOpen }: { data: Overview; hrefs: RailHrefs; index: number; onOpen: (booking: Booking) => void }) {
   const op = data.operations
   const unscheduled = hasPermission(data.membership, "interviews.manage") && hrefs.interviews ? op.rounds.filter(r => r.needsBooking > 0) : []
   if (!op.bookings.length && !unscheduled.length) return null
-  return <Panel as="section" variant="glass" className="oc-club-home-card oc-club-home-interviews" style={enter(index)} aria-labelledby="club-home-interviews">
-    <header className="oc-club-home-card-head"><h2 id="club-home-interviews">Your interviews</h2>{hrefs.interviews && <More href={hrefs.interviews}>Interviews</More>}</header>
-    <ul className="oc-club-home-rows">
+  return <DashboardCard id="club-home-interviews" title="Your interviews" index={index} className="oc-club-home-card oc-club-home-interviews"
+    more={hrefs.interviews ? { href: hrefs.interviews, label: "Interviews" } : undefined}>
+    <GlassRowList>
       {op.bookings.map((booking, i) => { const person = interviewPerson(booking, op.rounds); return <li key={booking.id} className="oc-interview-row">
         <time className="oc-interview-time" dateTime={new Date(booking.slot.startTime).toISOString()}>{time(booking.slot.startTime)}<small>{new Date(booking.slot.startTime).toLocaleDateString([], { weekday: "short" })}</small></time>
-        <span className="oc-club-home-avatar" aria-hidden="true">{person.initials || <UserRound size={16} />}</span>
-        <span className="oc-club-home-row-copy"><strong>{person.label}</strong><small>{[booking.round?.name, booking.slot.location].filter(Boolean).join(" · ")}</small></span>
+        <span className="oc-dashboard-avatar" aria-hidden="true">{person.initials || <UserRound size={16} />}</span>
+        <span className="oc-dashboard-row-copy"><strong>{person.label}</strong><small>{[booking.round?.name, booking.slot.location].filter(Boolean).join(" · ")}</small></span>
         {i === 0 && booking.slot.roomId && booking.roundId
-          ? <Button size="sm" variant="glass-primary" data-tone="interview" asChild><Link href={interviewEntryHref({ clubId: data.club.id, applicationId: booking.applicationId, roundId: booking.roundId, slotId: booking.slot.id, bookingId: booking.id, roomId: booking.slot.roomId })} aria-label={`Open room: ${person.label}, ${memberDate(booking.slot.startTime)}`}>Open room</Link></Button>
-          : <Button size="sm" variant="glass" onClick={() => onOpen(booking)} aria-label={`Prep: ${person.label}, ${memberDate(booking.slot.startTime)}`}>Prep</Button>}
+          ? <Button size="lg" className="px-3" data-tone="interview" asChild><Link href={interviewEntryHref({ clubId: data.club.id, applicationId: booking.applicationId, roundId: booking.roundId, slotId: booking.slot.id, bookingId: booking.id, roomId: booking.slot.roomId })} aria-label={`Open room: ${person.label}, ${memberDate(booking.slot.startTime)}`}>Open room</Link></Button>
+          : <Button size="lg" className="px-3" variant="outline" onClick={() => onOpen(booking)} aria-label={`Prep: ${person.label}, ${memberDate(booking.slot.startTime)}`}>Prep</Button>}
       </li> })}
       {unscheduled.map(round => <li key={round.id} className="oc-interview-row" data-unscheduled="true">
         <span className="oc-interview-time">Not set</span>
-        <span className="oc-club-home-avatar" data-unscheduled="true" aria-hidden="true" />
-        <span className="oc-club-home-row-copy"><strong>{round.needsBooking} without a time</strong><small>{round.name}</small></span>
-        <Button size="sm" variant="glass" asChild><Link href={hrefs.interviews!} aria-label={`Find a time: ${round.name}`}>Find a time</Link></Button>
+        <span className="oc-dashboard-avatar" data-unscheduled="true" aria-hidden="true" />
+        <span className="oc-dashboard-row-copy"><strong>{round.needsBooking} without a time</strong><small>{round.name}</small></span>
+        <Button size="lg" className="px-3" variant="outline" asChild><Link href={hrefs.interviews!} aria-label={`Find a time: ${round.name}`}>Find a time</Link></Button>
       </li>)}
-    </ul>
-  </Panel>
+    </GlassRowList>
+  </DashboardCard>
 }
 
 export function UpdatesCard({ data, hrefs, index, onOpen }: { data: Overview; hrefs: RailHrefs; index: number; onOpen: (id: string, title: string) => void }) {
   const updates = data.operations.announcements
   if (!updates.length) return null
-  return <Panel as="section" variant="glass" className="oc-club-home-card oc-club-home-updates" style={enter(index)} aria-labelledby="club-home-updates">
-    <header className="oc-club-home-card-head"><h2 id="club-home-updates">Club updates</h2>{hrefs.announcements && <More href={hrefs.announcements}>Announcements</More>}</header>
-    <ul className="oc-club-home-rows">{updates.map(update => <li key={update.id}><button type="button" className="oc-club-home-row" onClick={() => onOpen(update.id, update.title)}>
-      <time dateTime={new Date(update.publishedAt).toISOString()}>{new Date(update.publishedAt).toLocaleDateString([], { month: "short", day: "numeric" })}</time>
-      <span className="oc-club-home-row-copy"><strong>{update.title}</strong><small>{update.body}</small></span>
-      <ArrowRight aria-hidden="true" size={14} />
-    </button></li>)}</ul>
-  </Panel>
+  return <DashboardCard id="club-home-updates" title="Club updates" index={index} className="oc-club-home-card oc-club-home-updates"
+    more={hrefs.announcements ? { href: hrefs.announcements, label: "Announcements" } : undefined}>
+    <GlassRowList>{updates.map(update => <li key={update.id}><GlassRow onClick={() => onOpen(update.id, update.title)} title={update.title} detail={update.body}
+      lead={<time dateTime={new Date(update.publishedAt).toISOString()}>{new Date(update.publishedAt).toLocaleDateString([], { month: "short", day: "numeric" })}</time>} /></li>)}</GlassRowList>
+  </DashboardCard>
 }
 
 export function WeekCard({ data, hrefs, index, onMeeting, onBooking }: { data: Overview; hrefs: RailHrefs; index: number; onMeeting: (id: string, title: string) => void; onBooking: (booking: Booking) => void }) {
-  const items = thisWeek(data)
-  return <Panel as="section" variant="glass" className="oc-club-home-card oc-club-home-week" style={enter(index)} aria-labelledby="club-home-week">
-    <header className="oc-club-home-card-head"><h2 id="club-home-week">This week</h2>{hrefs.meetings && <More href={hrefs.meetings}>Meetings</More>}</header>
-    {items.length ? <ul className="oc-club-home-rows">{items.map(item => {
-      const chip = <span className="oc-week-chip" data-kind={item.kind} aria-hidden="true"><span>{item.at.toLocaleDateString([], { month: "short" })}</span><strong>{item.at.getDate()}</strong></span>
-      const copy = <span className="oc-club-home-row-copy"><strong>{item.title}</strong><small><time dateTime={item.at.toISOString()}>{memberDate(item.at)}</time>{item.detail ? ` · ${item.detail}` : ""}</small></span>
-      const booking = item.bookingId ? data.operations.bookings.find(b => b.id === item.bookingId) : undefined
-      return <li key={item.id}>{item.meetingId ? <button type="button" className="oc-club-home-row" onClick={() => onMeeting(item.meetingId!, item.title)}>{chip}{copy}<ArrowRight aria-hidden="true" size={14} /></button>
-        : booking ? <button type="button" className="oc-club-home-row" onClick={() => onBooking(booking)}>{chip}{copy}<ArrowRight aria-hidden="true" size={14} /></button>
-        : <div className="oc-club-home-row" data-static="true">{chip}{copy}</div>}</li>
-    })}</ul> : <p className="oc-club-home-quiet">Nothing on the calendar this week.</p>}
-  </Panel>
+  const items = thisWeek(data).map(item => {
+    const booking = item.bookingId ? data.operations.bookings.find(b => b.id === item.bookingId) : undefined
+    return { id: item.id, at: item.at, kind: item.kind, title: item.title, detail: item.detail || undefined,
+      onClick: item.meetingId ? () => onMeeting(item.meetingId!, item.title) : booking ? () => onBooking(booking) : undefined }
+  })
+  return <DashboardCard id="club-home-week" title="This week" index={index} className="oc-club-home-card oc-club-home-week"
+    more={hrefs.meetings ? { href: hrefs.meetings, label: "Meetings" } : undefined}>
+    <DateChipList items={items} empty="Nothing on the calendar this week." when={memberDate} />
+  </DashboardCard>
 }
 
 /** Club totals only; no individual rankings. */
 export function TeamPulse({ data, hrefs, index }: { data: Overview; hrefs: RailHrefs; index: number }) {
   const team = hasPermission(data.membership, "tasks.manage") ? data.operations.team : null, members = data.members ?? null
   if (!team && !members) return null
-  return <Panel as="section" variant="glass" className="oc-club-home-card oc-club-home-pulse" style={enter(index)} aria-labelledby="club-home-pulse">
-    <header className="oc-club-home-card-head"><h2 id="club-home-pulse">Team pulse</h2></header>
-    <dl className="oc-pulse-metrics">
-      {team && <><div><dt>Overdue</dt><dd className="oc-club-home-number" data-urgent={team.overdue > 0}>{team.overdue}</dd></div>
-        <div><dt>Reviewed</dt><dd className="oc-club-home-number">{team.reviewed}<small> / {team.assigned}</small></dd></div>
-        <div><dt>Submitted this week</dt><dd className="oc-club-home-number">{team.recentSubmissions}</dd></div></>}
-      {members && <><div><dt>Active members</dt><dd className="oc-club-home-number">{members.active}</dd></div>
-        <div><dt>Pending invitations</dt><dd className="oc-club-home-number">{members.pendingInvitations}</dd></div></>}
-    </dl>
-    {team && hrefs.tasks ? <More href={`${hrefs.tasks}&taskView=team`}>Team assignments</More> : hrefs.members ? <More href={hrefs.members}>Members</More> : null}
-  </Panel>
+  const tiles: MetricTile[] = [
+    ...(team ? [{ label: "Overdue", value: team.overdue, urgent: team.overdue > 0 }, { label: "Reviewed", value: team.reviewed, of: team.assigned }, { label: "Submitted this week", value: team.recentSubmissions }] : []),
+    ...(members ? [{ label: "Active members", value: members.active }, { label: "Pending invitations", value: members.pendingInvitations }] : []),
+  ]
+  return <DashboardCard id="club-home-pulse" title="Team pulse" index={index} className="oc-club-home-card oc-club-home-pulse" moreAt="foot"
+    more={team && hrefs.tasks ? { href: `${hrefs.tasks}&taskView=team`, label: "Team assignments" } : hrefs.members ? { href: hrefs.members, label: "Members" } : undefined}>
+    <MetricTiles items={tiles} />
+  </DashboardCard>
 }
 
 export function AssignmentsCard({ data, hrefs, index, onOpen }: { data: Overview; hrefs: RailHrefs; index: number; onOpen: (item: Overview["work"][number]) => void }) {
   const now = +new Date(data.operations.asOf)
   const overdue = data.work.filter(item => isOverdue(item.task.dueAt, now))
-  const list = (items: Overview["work"], empty: string) => items.length ? <ul className="oc-club-home-rows">{items.map(item => <li key={item.id}><button type="button" className="oc-club-home-row" onClick={() => onOpen(item)}>
-    <span className="oc-club-home-dot" data-urgent={isOverdue(item.task.dueAt, now)} aria-hidden="true" />
-    <span className="oc-club-home-row-copy"><strong>{item.task.title}</strong><small>{item.task.dueAt ? `${isOverdue(item.task.dueAt, now) ? "Overdue · " : "Due "}${memberDate(item.task.dueAt)}` : "No deadline"}</small></span>
-    <ArrowRight aria-hidden="true" size={14} />
-  </button></li>)}</ul> : <p className="oc-club-home-quiet">{empty}</p>
-  return <Panel as="section" variant="glass" className="oc-club-home-card oc-club-home-assignments" style={enter(index)} aria-labelledby="club-home-assignments">
-    <header className="oc-club-home-card-head"><h2 id="club-home-assignments">Your assignments</h2>{hrefs.tasks && <More href={`${hrefs.tasks}&taskView=mine`}>All work</More>}</header>
+  const list = (items: Overview["work"], empty: string) => items.length ? <GlassRowList>{items.map(item => <li key={item.id}><GlassRow onClick={() => onOpen(item)}
+    lead={<span className="oc-dashboard-dot" data-urgent={isOverdue(item.task.dueAt, now)} aria-hidden="true" />} title={item.task.title}
+    detail={item.task.dueAt ? `${isOverdue(item.task.dueAt, now) ? "Overdue · " : "Due "}${memberDate(item.task.dueAt)}` : "No deadline"} /></li>)}</GlassRowList> : <DashboardQuiet>{empty}</DashboardQuiet>
+  return <DashboardCard id="club-home-assignments" title="Your assignments" index={index} className="oc-club-home-card oc-club-home-assignments"
+    more={hrefs.tasks ? { href: `${hrefs.tasks}&taskView=mine`, label: "All work" } : undefined}>
     {data.work.length ? <Tabs defaultValue="upcoming">
       <TabsList variant="segmented" aria-label="Your assignments"><TabsTrigger value="upcoming">Upcoming</TabsTrigger><TabsTrigger value="overdue">Overdue{overdue.length ? ` · ${overdue.length}` : ""}</TabsTrigger></TabsList>
       <TabsContent value="upcoming">{list(data.work, "No upcoming assignments.")}</TabsContent>
       <TabsContent value="overdue">{list(overdue, "Nothing overdue.")}</TabsContent>
-    </Tabs> : <p className="oc-club-home-quiet">No assignments right now.</p>}
-  </Panel>
+    </Tabs> : <DashboardQuiet>No assignments right now.</DashboardQuiet>}
+  </DashboardCard>
 }

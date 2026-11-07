@@ -19,6 +19,6 @@ export function CorkboardButton({ club, onNavigate }: { club: DirectoryClub; onN
     <Button type="button" variant="outline" className="w-full" aria-label={`${authenticated ? saved ? "Remove from saved clubs" : "Save to saved clubs" : "Sign in to save"}: ${club.name}`} aria-pressed={saved} disabled={loading || pending.has(club.id)} onClick={() => authenticated ? void save() : onNavigate("auth")}>
       {saved ? <BookmarkCheck weight="fill" className="size-4" /> : <Bookmark className="size-4" />}{authenticated ? saved ? "Remove from saved clubs" : "Save to saved clubs" : "Sign in to save"}
     </Button>
-    {error && <p role="status" className="text-xs text-destructive">{error}<button className="ml-2 underline" onClick={() => void refresh()}>Retry</button></p>}
+    {error && <p role="status" className="text-xs text-destructive">{error}<Button type="button" variant="link" size="sm" className="ml-2 h-auto min-h-11 px-0" onClick={() => void refresh()}>Retry</Button></p>}
   </div>
 }

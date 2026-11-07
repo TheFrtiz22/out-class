@@ -2,8 +2,8 @@ import * as React from 'react'
 
 import { cn } from '@/lib/utils'
 
-/** Glass by default (docs/design-system.md, "Glass surfaces"); `variant="default"` keeps the solid card. */
-function Card({ className, variant = 'glass', ...props }: React.ComponentProps<'div'> & { variant?: 'default' | 'glass' | 'glass-raised' | 'glass-navy' }) {
+/** Glass by default (docs/design-system.md, "Glass surfaces"); `variant="solid"` is the opaque card for dense data. */
+function Card({ className, variant = 'glass', ...props }: React.ComponentProps<'div'> & { variant?: 'default' | 'solid' | 'glass' | 'glass-raised' | 'glass-navy' }) {
   return (
     <div
       data-slot="card"

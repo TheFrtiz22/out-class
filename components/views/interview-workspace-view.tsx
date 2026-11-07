@@ -18,6 +18,7 @@ import { DemoInterviewGuide } from "@/components/demo-workspace"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import "./interview/interview-mode.css"
+import { NativeSelect } from "@/components/ui/native-select"
 
 type Pipeline = Awaited<ReturnType<typeof getInterviewWorkspace>>
 const selectStyle =
@@ -64,7 +65,7 @@ export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: ()
             </Button>
           </div>
         ) : (
-          <InterviewSession key={`${membership.clubId}-${membership.id}-${user?.id}`} membership={membership} onLock={handleLock} onExit={exit} clubSelector={!scoped && <select aria-label="Interview club" disabled={locked} className={selectStyle} value={membership.clubId} onChange={event => setClubId(event.target.value)}>{memberships.map(item => <option key={item.clubId} value={item.clubId}>{item.club.name}</option>)}</select>} />
+          <InterviewSession key={`${membership.clubId}-${membership.id}-${user?.id}`} membership={membership} onLock={handleLock} onExit={exit} clubSelector={!scoped && <NativeSelect aria-label="Interview club" disabled={locked} className={selectStyle} value={membership.clubId} onChange={event => setClubId(event.target.value)}>{memberships.map(item => <option key={item.clubId} value={item.clubId}>{item.club.name}</option>)}</NativeSelect>} />
         )}
       </div>
     </div>
@@ -158,7 +159,7 @@ function InterviewSession({
     getInterviewWorkspace(membership.clubId)
       .then(async (result) => {
         const query = new URLSearchParams(window.location?.search || "");
-        if (query.has("applicationId") || query.has("bookingId")) await resolveInterviewRoomEntry({ clubId: membership.clubId, applicationId: query.get("applicationId") || "", roundId: query.get("roundId") || "", ...(query.get("bookingId") ? { bookingId: query.get("bookingId")! } : {}), ...(query.get("slotId") ? { slotId: query.get("slotId")! } : {}), ...(query.get("roomId") ? { roomId: query.get("roomId")! } : {}) });
+        if (query.has("applicationId") || query.has("bookingId")) { const entry = await resolveInterviewRoomEntry({ clubId: membership.clubId, applicationId: query.get("applicationId") || "", roundId: query.get("roundId") || "", ...(query.get("bookingId") ? { bookingId: query.get("bookingId")! } : {}), ...(query.get("slotId") ? { slotId: query.get("slotId")! } : {}), ...(query.get("roomId") ? { roomId: query.get("roomId")! } : {}) }); if ("unavailable" in entry) throw Error(entry.unavailable) }
         if (current) {
           setData(result)
           const recovery = recoveredApplicant()
@@ -202,7 +203,7 @@ function InterviewSession({
       const q = new URLSearchParams(window.location.search);
       if (!q.get("applicationId") || document.hidden || pending) return;
       pending = true;
-      try { await resolveInterviewRoomEntry({ clubId: membership.clubId, applicationId: q.get("applicationId")!, roundId: q.get("roundId") || "", ...(q.get("bookingId") ? { bookingId: q.get("bookingId")! } : {}), ...(q.get("slotId") ? { slotId: q.get("slotId")! } : {}), ...(q.get("roomId") ? { roomId: q.get("roomId")! } : {}) }); }
+      try { const entry = await resolveInterviewRoomEntry({ clubId: membership.clubId, applicationId: q.get("applicationId")!, roundId: q.get("roundId") || "", ...(q.get("bookingId") ? { bookingId: q.get("bookingId")! } : {}), ...(q.get("slotId") ? { slotId: q.get("slotId")! } : {}), ...(q.get("roomId") ? { roomId: q.get("roomId")! } : {}) }); if ("unavailable" in entry) throw Error(entry.unavailable); }
       catch { if (current) { setData(null); setActiveId(""); setLoadError(true); } }
       finally { pending = false; }
     };
@@ -303,7 +304,7 @@ function InterviewSession({
           {clubSelector}
           <div className="space-y-2">
             <Label htmlFor="interview-round">Round</Label>
-            <select
+            <NativeSelect
               id="interview-round"
               className={`${selectStyle} block`}
               disabled={busy}
@@ -318,11 +319,11 @@ function InterviewSession({
                   {item.name}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </div>
           <div className="space-y-2">
             <Label htmlFor="interview-candidate">Candidate</Label>
-            <select
+            <NativeSelect
               id="interview-candidate"
               className={`${selectStyle} block w-full sm:w-64`}
               disabled={busy || !queue.length}
@@ -335,7 +336,7 @@ function InterviewSession({
                   {app.name}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </div>
         </div>
         <p className="text-xs text-muted-foreground">

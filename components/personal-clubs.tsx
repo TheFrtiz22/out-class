@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button"
 import { LoadingState } from "@/components/ui/loading-state"
 import { memberDate, type MemberOverviewData } from "@/components/member-overview"
 import { DEFAULT_CLUB_COLOR } from "@/lib/club-colors"
+import { NativeSelect } from "@/components/ui/native-select"
 
 export function PersonalClubs({ section }: { section: PersonalSection }) {
   const { user, loading } = useAuth()
@@ -24,7 +25,7 @@ export function PersonalClubs({ section }: { section: PersonalSection }) {
   if (loading) return <LoadingState label="Loading your clubs…" layout="cards" rows={3} />
   if (!member) return <div className="max-w-xl space-y-3 border-t py-8"><h2 className="oc-section-heading ">You haven’t joined any clubs yet.</h2><p className="text-sm leading-7 text-muted-foreground">Your clubs will appear once you have a membership. An application decision does not automatically create one.</p><Link href="/explore" className="inline-flex min-h-11 items-center gap-2 text-sm underline underline-offset-4">Explore clubs <ArrowRight size={15} /></Link></div>
   if (section !== "meetings" && section !== "tasks") return <div className="oc-personal-clubs space-y-7"><ul className="oc-membership-grid">{memberships.map(m => <MembershipRow key={m.id} member={m} />)}</ul></div>
-  return <div className="space-y-4"><label className="block max-w-sm text-sm">Your club<select aria-label="Select your club" className="mt-2 block min-h-11 w-full rounded-md border bg-card px-3" value={member.clubId} onChange={e => { if (canLeaveWorkspace()) setSelected(e.target.value) }}>{memberships.map(m => <option key={m.id} value={m.clubId}>{m.club.name}</option>)}</select></label>
+  return <div className="space-y-4"><label className="block max-w-sm text-sm">Your club<NativeSelect aria-label="Select your club" className="mt-2 block min-h-11 w-full" value={member.clubId} onChange={e => { if (canLeaveWorkspace()) setSelected(e.target.value) }}>{memberships.map(m => <option key={m.id} value={m.clubId}>{m.club.name}</option>)}</NativeSelect></label>
     {section === "meetings" ? <MeetingList key={member.clubId} clubId={member.clubId} embedded personalOnly initialAudience="MEMBERS" /> : <ClubTasks key={member.clubId} clubId={member.clubId} embedded personalOnly />}
   </div>
 }

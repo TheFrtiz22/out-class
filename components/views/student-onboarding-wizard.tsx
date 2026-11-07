@@ -22,6 +22,7 @@ import {
 } from "@/components/icons"
 
 import { Button } from "@/components/ui/button"
+import { IconButton } from "@/components/ui/icon-button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -153,14 +154,13 @@ function ResumeDropZone({
             {(file.size / 1024).toFixed(0)} KB
           </p>
         </div>
-        <button
-          type="button"
+        <IconButton
+          size="icon-lg"
           onClick={onRemove}
           aria-label="Remove résumé"
-          className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           <X className="size-4" />
-        </button>
+        </IconButton>
       </div>
     )
   }
@@ -593,16 +593,20 @@ export function StudentOnboardingWizard({
 
                 {notice && <p role="status" className="text-center text-sm">{notice}</p>}
                 <div className="flex justify-between text-xs">
-                  <button
+                  <Button
                     type="button"
+                    variant="link"
+                    size="sm"
                     onClick={resendCode}
                     disabled={loading || resendSeconds > 0}
-                    className="font-medium text-muted-foreground hover:text-foreground"
+                    className="min-h-11 px-0 text-xs"
                   >
                     {resendSeconds > 0 ? `Resend in ${resendSeconds}s` : "Didn’t receive it? Resend code"}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    variant="link"
+                    size="sm"
                     disabled={loading}
                     onClick={() => {
                       setStep(1)
@@ -611,10 +615,10 @@ export function StudentOnboardingWizard({
                       step2Form.reset()
                       setGlobalError("")
                     }}
-                    className="font-medium text-muted-foreground hover:text-foreground"
+                    className="min-h-11 px-0 text-xs"
                   >
                     Use a different email
-                  </button>
+                  </Button>
                 </div>
               </form>}
             </>
@@ -831,7 +835,7 @@ export function StudentOnboardingWizard({
         </Panel>
 
         {step === 4 && <Button variant="ghost" disabled={loading} onClick={() => setStep(3)} className="mt-3"><ArrowLeft className="size-4" />Back to academics</Button>}
-        {onSignIn && <p className="mt-5 text-center text-sm text-muted-foreground">Already have an account? <button type="button" disabled={loading} onClick={onSignIn} className="font-semibold text-primary underline">Sign in</button></p>}
+        {onSignIn && <p className="mt-5 text-center text-sm text-muted-foreground">Already have an account? <Button type="button" variant="link" disabled={loading} onClick={onSignIn} className="min-h-11 px-1 font-semibold">Sign in</Button></p>}
         {/* Footer */}
         <p className="mt-5 text-center text-xs text-muted-foreground">
           For University of Virginia students and club leaders.

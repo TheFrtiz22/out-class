@@ -34,7 +34,9 @@ function harness(permissions = ['applications.review','applicants.identify','dec
   const membership = {id:'member',clubId:'club',permissions,club:{name:'Test club'}}
   return {calls,api,lookups,revalidation:()=>revalidation,notifyEpoch(){currentEpoch={}},commitEpoch(){auth.readAuthority=currentEpoch},setViewer(id){auth.user={id};membership.id=id;membership.userId=id},replayEffects(){for(const cleanup of cleanups.values())cleanup?.();cleanups.clear();for(const [slot,setup]of setups)cleanups.set(slot,setup())},addCandidate(app){pipeline.applications.push({...structuredClone(pipeline.applications[0]),...app})},setCanEvaluate(value){pipeline.applications[0].canEvaluate=value},addRound(round){pipeline.rounds.push(round)},setEvaluations(evaluations){pipeline.applications[0].evaluations=evaluations},renameRound(name){pipeline.rounds[0].name=name},setServerRound(roundId){pipeline.applications[0].roundId=roundId},setServerStatus(status){pipeline.applications[0].status=status},render(){for(let step=0;step<20;step++){changed=false;index=0;const tree=C({membership,decisionsOnly,rejectedOnly});while(effects.length){const [slot,setup]=effects.shift();cleanups.get(slot)?.();cleanups.set(slot,setup())}if(!changed)return tree}throw Error('Component failed to settle')}}
 }
-const button = (tree,label) => nodes(tree).find(n=>n.type==='Button'&&text(n)===label)
+// List/Kanban and the decision groups are SegmentedControl options: return an onClick that chooses the option.
+const segment = (tree,group,match) => { const control=nodes(tree).find(n=>n.type==='SegmentedControl'&&n.props.label===group); const option=control?.props.options.find(o=>match(text(o.label))); return option && {props:{onClick:()=>control.props.onChange(option.value)}} }
+const button = (tree,label) => label==='List'||label==='Kanban' ? segment(tree,'Applicant view',t=>t===label) : nodes(tree).find(n=>n.type==='Button'&&text(n)===label)
 const view = tree => nodes(tree).find(n=>['LiveApplicantList','LiveApplicantKanban'].includes(n.type))
 test('complete-selection reads reject a notified obsolete authority before dispatch',async()=>{
   const h=harness();h.render();await flush();const tree=h.render();
@@ -97,7 +99,7 @@ test('decision groups use persisted status, exclude drafts, and keep waitlists o
 })
 const decisionAction = (tree,label) => nodes(tree).find(n=>n.type==='Button' && text(n)===label && n.props['aria-pressed'] === undefined)
 const decisionList = tree => nodes(tree).find(n=>n.type==='LiveDecisionList')
-const decisionGroupButton = (tree,label) => nodes(tree).find(n=>n.type==='Button' && text(n).startsWith(label) && n.props['aria-pressed'] !== undefined)
+const decisionGroupButton = (tree,label) => segment(tree,'Decision groups',t=>t.startsWith(label))
 test('Decisions reuses expected-status mutations and moves saved outcomes between groups', async () => {
   const h=harness(undefined,true);h.render();await flush();let tree=h.render()
   assert.equal(button(tree,'Kanban'),undefined)
@@ -170,7 +172,7 @@ test('recruitment review actions sit in one header row before the toolbar, witho
  assert.ok(nodes(actions).some(n=>n.type==='Button'&&text(n)==='Quick review'));assert.ok(nodes(actions).some(n=>n.type==='BoardDecisionMode'));assert.match(text(actions),/Review decisions/);
  assert.doesNotMatch(text(tree),/Review together or work through candidates/);assert.equal(all.some(n=>n.type==='section'&&n.props?.['aria-label']==='Recruitment review'),false);
  assert.equal(button(tree,'Refresh'),undefined);
- assert.ok(all.indexOf(actions)<all.findIndex(n=>n.props?.['aria-label']==='Applicant view'));
+ assert.ok(all.indexOf(actions)<all.findIndex(n=>n.type==='SegmentedControl'&&n.props.label==='Applicant view'));
  const decisions=harness(undefined,true);decisions.render();await flush();const decisionActions=nodes(decisions.render()).find(n=>n.props?.['aria-label']==='Recruitment review');
  assert.ok(decisionActions,'the Decisions tool keeps its header action');assert.equal(text(decisionActions),'Review applicants');assert.match(nodes(decisionActions).find(n=>typeof n.props?.href==='string').props.href,/tool=applicants/);
  assert.equal(nodes(decisionActions).some(n=>n.type==='BoardDecisionMode'||text(n)==='Quick review'),false,'pipeline-only tools stay on Applicants');

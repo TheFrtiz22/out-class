@@ -1,7 +1,5 @@
 /* Dense operational views share the campus foundations without losing precision. */
 [data-product-shell] .oc-live-pipeline { padding: 0; border: 0; background: transparent; border-radius: 0; }
-[data-product-shell] .oc-live-pipeline [aria-label="Applicant view"] { border: 0; background: var(--muted); border-radius: var(--oc-radius-md); }
-[data-product-shell] .oc-live-pipeline [aria-label="Applicant view"] [aria-pressed="true"] { background: var(--primary); color: var(--primary-foreground); }
 [data-product-shell] .oc-applicant-board { gap: 1rem; align-items: start; }
 [data-product-shell] .oc-applicant-board > section { border: 0; border-radius: var(--oc-radius-lg); background: var(--oc-content-soft); padding: .875rem; min-height: 10rem; }
 [data-product-shell] .oc-applicant-board header h3 { font-size: var(--oc-text-small); }

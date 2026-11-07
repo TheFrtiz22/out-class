@@ -9,7 +9,7 @@ import { useEffect, useMemo, useState } from "react"
 import { ChevronLeft, ChevronRight, CalendarDays, Download, MapPin } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { NativeSelectField } from "@/components/ui/native-select"
+import { NativeSelect, NativeSelectField } from "@/components/ui/native-select"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
@@ -268,7 +268,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                         <button
                           type="button"
                           onClick={() => open(event)}
-                          className="flex w-full items-start gap-4 rounded-sm py-5 text-left transition-colors hover:bg-secondary/40 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:gap-7"
+                          className="flex w-full items-start gap-4 rounded-sm py-5 text-left transition-colors hover:bg-secondary/40 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary sm:gap-7"
                         >
                           <div className="w-16 shrink-0 text-sm">
                             <p className="font-medium tabular-nums">
@@ -355,7 +355,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                               setView("day")
                             }}
                             className={cn(
-                              "mb-1 flex size-7 items-center justify-center rounded-full text-xs hover:ring-1 hover:ring-border",
+                              "mb-1 flex size-7 items-center justify-center rounded-full text-xs hover:ring-1 hover:ring-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
                               key === today && "bg-primary text-white",
                             )}
                           >
@@ -368,7 +368,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                               onClick={() => open(event)}
                               title={`${(event.allDay ? "All day" : minuteLabel(timeMinutes(event.time)))} · ${event.title}`}
                               className={cn(
-                                "block w-full rounded p-1.5 text-left text-[length:var(--oc-size-11)] leading-snug hover:ring-1 hover:ring-border",
+                                "block w-full rounded p-1.5 text-left text-[length:var(--oc-size-11)] leading-snug hover:ring-1 hover:ring-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
                                 eventStyle[event.type],
                                 event.response === "declined" && "opacity-50",
                               )}
@@ -378,16 +378,18 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                             </button>
                           ))}
                           {dayEvents.length > 3 && (
-                            <button
+                            <Button
                               type="button"
+                              variant="link"
+                              size="sm"
                               onClick={() => {
                                 setDate(key)
                                 setView("day")
                               }}
-                              className="text-xs underline"
+                              className="h-auto px-0 py-0.5 text-xs"
                             >
                               +{dayEvents.length - 3} more
-                            </button>
+                            </Button>
                           )}
                         </div>
                       )
@@ -417,7 +419,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                                 type="button"
                                 onClick={() => open(event)}
                                 className={cn(
-                                  "flex w-full flex-wrap items-center gap-3 rounded-lg p-3 text-left text-sm hover:ring-1 hover:ring-border",
+                                  "flex w-full flex-wrap items-center gap-3 rounded-lg p-3 text-left text-sm hover:ring-1 hover:ring-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
                                   eventStyle[event.type],
                                 )}
                               >
@@ -482,7 +484,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                     type="button"
                     key={event.id}
                     onClick={() => open(event)}
-                    className="w-full rounded-[var(--oc-content-radius-small)] border border-border oc-glass-surface p-3 text-left hover:bg-muted"
+                    className="w-full rounded-[var(--oc-content-radius-small)] border border-border oc-glass-surface p-3 text-left hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   >
                     <p className="text-xs text-muted-foreground">
                       {dateFromKey(event.date).toLocaleDateString("en-US", {
@@ -664,16 +666,15 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
           </DialogHeader>
           {bookingDates.length ? (
             <>
-              <select
+              <NativeSelect
                 aria-label="Interview date"
-                className="rounded border p-2"
                 value={activeBookingDate}
                 onChange={(event) => setBookingDate(event.target.value)}
               >
                 {bookingDates.map((day) => (
                   <option key={day}>{day}</option>
                 ))}
-              </select>
+              </NativeSelect>
               <StudentBookingPreview
                 key={activeBookingDate}
                 blocks={scheduleBlocks.filter((block) => block.date === activeBookingDate)}

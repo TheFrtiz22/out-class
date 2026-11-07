@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import { CheckCircle2, MapPin } from "@/components/icons"
 import { Button } from "@/components/ui/button"
+import { SegmentedControl } from "@/components/ui/segmented-control"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { useApplicationState } from "@/lib/application-state"
@@ -65,20 +66,17 @@ export function StudentBookingPreview({ blocks: scheduleLocations, date }: { blo
         <CardDescription>Pick your interview time.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-6">
-        <div className="flex flex-wrap justify-center gap-2">
-          {scheduleLocations.map((location) => (
-            <Button
-              key={location.id}
-              size="sm"
-              variant={location.id === activeLocationId ? "default" : "outline"}
-              onClick={() => handleSelectLocation(location.id)}
-              className="gap-1.5"
-            >
-              <MapPin className="size-3.5" />
-              {location.locationName}
-            </Button>
-          ))}
-        </div>
+        <SegmentedControl
+          label="Interview location"
+          size="compact"
+          className="mx-auto"
+          value={activeLocationId}
+          onChange={handleSelectLocation}
+          options={scheduleLocations.map((location) => ({
+            value: location.id,
+            label: <span className="inline-flex items-center gap-1.5"><MapPin className="size-3.5" aria-hidden="true" />{location.locationName}</span>,
+          }))}
+        />
 
         <div>
           <p className="mb-2 text-center text-xs font-medium text-muted-foreground">{scheduleDate}</p>
@@ -87,20 +85,18 @@ export function StudentBookingPreview({ blocks: scheduleLocations, date }: { blo
               const isFull = slot.bookedCount >= slot.capacity && !slot.candidates.some((candidate) => candidate.email === currentStudent.email)
               const isSelected = slot.id === selectedSlotId
               return (
-                <button
+                <Button
                   key={slot.id}
                   type="button"
+                  size="sm"
+                  variant={isSelected ? "default" : "outline"}
+                  aria-pressed={isSelected}
                   disabled={isFull}
                   onClick={() => handleSelectSlot(slot.id)}
-                  className={cn(
-                    "rounded-md border px-3 py-2 text-sm font-medium tabular-nums transition-colors",
-                    isFull && "cursor-not-allowed border-dashed text-muted-foreground/50 line-through",
-                    !isFull && !isSelected && "hover:border-input hover:bg-muted",
-                    isSelected && "border-foreground bg-status-booked text-status-booked-foreground",
-                  )}
+                  className={cn("min-h-11 tabular-nums", isFull && "line-through")}
                 >
                   {slot.time}
-                </button>
+                </Button>
               )
             })}
           </div>

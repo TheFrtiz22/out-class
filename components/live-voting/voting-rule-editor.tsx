@@ -1,5 +1,6 @@
 "use client";
 import {useId} from "react";
+import {SegmentedControl} from "@/components/ui/segmented-control";
 import {describeVotingRules,votingRuleExamples,votingRulesSchema,type VotingRules} from "@/lib/voting-rules";
 
 /** Editable form of a rule. Consequential threshold choices start empty so a
@@ -39,7 +40,7 @@ export function VotingRuleEditor({value,onChange,eligibleCount,disabled=false}:{
       <div><p className="text-sm font-medium" id={`${id}-t`}>Pass votes needed: at least</p>
         <div className="vr-fraction" role="group" aria-labelledby={`${id}-t`}>
           <input aria-label="Threshold numerator" className="vr-fraction-input" inputMode="numeric" value={value.numerator} onChange={e=>set({numerator:e.target.value})}/> / <input aria-label="Threshold denominator" className="vr-fraction-input" inputMode="numeric" value={value.denominator} onChange={e=>set({denominator:e.target.value})}/>
-          {presets.map(([a,b])=><button key={`${a}/${b}`} type="button" className="vr-link text-sm" aria-pressed={value.numerator===String(a)&&value.denominator===String(b)} onClick={()=>set({numerator:String(a),denominator:String(b)})}>{a}/{b}</button>)}
+          <SegmentedControl label="Threshold presets" size="compact" value={`${value.numerator}/${value.denominator}`} onChange={preset=>{const [numerator,denominator]=preset.split("/");set({numerator,denominator});}} options={presets.map(([a,b])=>({value:`${a}/${b}`,label:`${a}/${b}`}))}/>
         </div></div>
       <div role="radiogroup" aria-label="Count Pass votes against" className="space-y-1"><p className="text-sm font-medium">Count Pass votes against</p>
         <label className="flex items-start gap-2"><input type="radio" name={`${id}-base`} checked={value.base==="BALLOTS_CAST"} onChange={()=>set({base:"BALLOTS_CAST"})}/><span>Ballots cast — Pass, Hold and Do not pass ballots all count; members who don’t vote are left out.</span></label>

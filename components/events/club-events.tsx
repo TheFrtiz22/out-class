@@ -11,8 +11,10 @@ import { EventFlyer } from "./event-flyer";
 import { Button } from "@/components/ui/button";
 import { LoadingState } from "@/components/ui/loading-state";
 import { Input } from "@/components/ui/input";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import "./events.css";
+import { NativeSelect } from "@/components/ui/native-select"
 const tabs = ["Upcoming", "Past", "Pending Approval", "Rejected", "Drafts", "Closed"];
 export function ClubEvents({ clubId, clubName, canSeeAttendees }: { clubId: string; clubName: string; canSeeAttendees: boolean }) {
   const [rows, setRows] = useState<ManagedCampusEvent[]>([]), [loading, setLoading] = useState(true), [error, setError] = useState(""),
@@ -66,7 +68,7 @@ export function ClubEvents({ clubId, clubName, canSeeAttendees }: { clubId: stri
         {canSeeAttendees ? <RsvpDashboard key={event.id} event={event} /> : <p className="text-sm">{eventRsvpSummary(event.rsvpCount, event.capacity)}. Attendee access requires attendance-management permission.</p>}
       </div>
     </div> : <>
-      <div className="oc-event-management-tabs" role="group" aria-label="Event filter">{tabs.map(t => <button key={t} type="button" aria-pressed={tab === t} onClick={() => setTab(t)}>{t}{t === "Pending Approval" ? ` (${rows.filter(e => e.status === "PENDING").length})` : ""}</button>)}</div>
+      <SegmentedControl label="Event filter" className="oc-event-management-tabs" value={tab} onChange={setTab} options={tabs.map(t => ({ value: t, label: `${t}${t === "Pending Approval" ? ` (${rows.filter(e => e.status === "PENDING").length})` : ""}` }))} />
       {loading && !rows.length ? <LoadingState label="Loading club events…" layout="cards" rows={3} /> : !rows.length ? <div className="rounded-lg border p-8"><h3>No Corkboard events yet.</h3><p className="mt-2 text-sm text-muted-foreground">Create a draft, preview it, then submit it for OutClass approval.</p><Button className="mt-4" onClick={() => setEditing(null)}>Create Corkboard Event</Button></div> : !visible.length ? <div className="space-y-3 rounded-lg border p-8 text-sm"><p>None of your club’s events are {tab === "Upcoming" ? "upcoming" : `in ${tab.toLowerCase()}`}.</p><Button variant="outline" size="sm" onClick={() => setEditing(null)}>Create Corkboard Event</Button></div> : <ul className="oc-managed-events">{visible.map(e => <li className="oc-managed-event" key={e.id}>
         <div aria-hidden="true"><EventFlyer event={e} /></div><div className="min-w-0"><h3 className="break-words font-semibold">{e.title}</h3><p className="mt-2 text-sm">{eventScheduleLabel(e)}</p><p className="break-words text-sm text-muted-foreground">{e.location}</p><span className="oc-event-status">{managedEventStatus(e)} · {+new Date(e.endDate) <= Date.now() ? "Past" : "Upcoming"}</span><p className="mt-2 text-sm">{eventRsvpSummary(e.rsvpCount, e.capacity)}</p>{e.status === "PENDING" && <p className="mt-2 text-xs">Waiting for OutClass approval.</p>}{e.rejectionReason && <p className="mt-2 break-words text-sm">Review feedback: {e.rejectionReason}</p>}</div>{actions(e)}
       </li>)}</ul>}
@@ -278,14 +280,14 @@ function EventEditor({
           <div className="oc-event-editor-pair">
             <label>
               Category
-              <select
+              <NativeSelect
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
               >
                 {eventCategories.map((c) => (
                   <option key={c}>{c}</option>
                 ))}
-              </select>
+              </NativeSelect>
             </label>
             <label>
               Contact information
@@ -338,7 +340,7 @@ function EventEditor({
           </div>
           <label>
             Flyer treatment
-            <select
+            <NativeSelect
               value={useTemplate ? template : "upload"}
               onChange={(e) => {
                 setUseTemplate(e.target.value !== "upload");
@@ -353,7 +355,7 @@ function EventEditor({
               {saved?.flyerUrl && (
                 <option value="upload">Uploaded flyer</option>
               )}
-            </select>
+            </NativeSelect>
           </label>
           {!useTemplate && saved?.flyerUrl && <Button type="button" variant="outline" disabled={busy} onClick={() => { setUseTemplate(true); setNotice("Flyer removed from this preview. Save the draft to apply."); }}>Remove uploaded flyer</Button>}
           <label className="rounded-xl border-2 border-dashed p-5" onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); const file = e.dataTransfer.files[0]; if (file && !busy && draftSave.ready && !draftSave.recovery) void upload(file); }}>

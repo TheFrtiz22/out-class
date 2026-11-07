@@ -1,6 +1,8 @@
 /* Independent floating surfaces, scoped to the authenticated shell. */
 [data-product-shell] {
-  --oc-shell-header-height: 5rem;
+  --oc-shell-header-height: 4rem;
+  /* One gutter for the header row and the page, so content starts at the workspace pill's left edge. */
+  --oc-shell-gutter: 24px;
   --oc-floating-surface: var(--oc-glass-light-material);
   --oc-floating-border: var(--oc-glass-light-edge);
   --oc-floating-shadow: var(--oc-glass-light-depth);
@@ -9,7 +11,7 @@
      The maximum overshoot is below .7%, with no runtime animation loop. */
   --oc-floating-spring: linear(0 0%, .1498 7.14%, .4134 14.29%, .6474 21.43%, .8127 28.57%, .9138 35.71%, .9685 42.86%, .9943 50%, 1.0041 57.14%, 1.0063 64.29%, 1.0054 71.43%, 1.0037 78.57%, 1.0023 85.71%, 1.0012 92.86%, 1 100%);
 }
-.oc-product-header { position: sticky; top: var(--support-banner-height, 0px); z-index: 40; min-height: var(--oc-shell-header-height); margin-left: var(--oc-shell-rail-width); padding: 4px 24px 12px; background: transparent; border: 0; pointer-events: none; }
+.oc-product-header { position: sticky; top: var(--support-banner-height, 0px); z-index: 40; min-height: var(--oc-shell-header-height); margin-left: var(--oc-shell-rail-width); padding: 8px var(--oc-shell-gutter); background: transparent; border: 0; pointer-events: none; }
 /* Frosted band behind the floating controls so page headings never show through the sticky header.
    It starts after the rail (the header's own margin) and fades out at the bottom. No backdrop filter:
    the controls on it already blur, and blurred surfaces are never stacked. Solid by default. */
@@ -61,7 +63,7 @@
 .oc-evolving-bar { overflow: hidden; height: 54px; padding: 4px; border: 1px solid var(--oc-floating-border, var(--oc-glass-light-edge)); border-radius: 999px; background: var(--oc-glass-light-material); box-shadow: var(--oc-glass-light-depth); -webkit-backdrop-filter: var(--oc-glass-light-filter); backdrop-filter: var(--oc-glass-light-filter); }
 .oc-evolving-segments { --workspace-base: calc((100% - (var(--workspace-count) - 1) * 4px) / (var(--workspace-count) + var(--workspace-ratio) - 1)); position: relative; isolation: isolate; display: grid; grid-template-columns: var(--workspace-columns); align-items: stretch; gap: 4px; height: 44px; transition: grid-template-columns 420ms var(--oc-floating-ease); }
 .oc-workspace-segment { display: flex; align-items: stretch; min-width: 0; color: var(--primary); }
-.oc-evolving-indicator { position: absolute; z-index: -1; inset: 0 auto 0 0; width: calc(var(--workspace-base) * var(--workspace-ratio)); border: 1px solid rgb(212 231 248 / 18%); border-radius: 999px; background: linear-gradient(155deg, rgb(140 180 214 / 18%), transparent 60%), var(--primary); box-shadow: inset 0 1px 0 rgb(222 239 255 / 20%), 0 2px 4px rgb(8 22 37 / 12%); transform: translateX(calc(var(--workspace-index) * (100% / var(--workspace-ratio) + 4px))); transition: transform 420ms var(--oc-floating-ease), width 420ms var(--oc-floating-ease), opacity var(--oc-glass-quick) ease; }
+.oc-evolving-indicator { position: absolute; z-index: -1; inset: 0 auto 0 0; width: calc(var(--workspace-base) * var(--workspace-ratio)); border: 1px solid var(--oc-glass-pill-navy-edge); border-radius: 999px; background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); transform: translateX(calc(var(--workspace-index) * (100% / var(--workspace-ratio) + 4px))); transition: transform 420ms var(--oc-floating-ease), width 420ms var(--oc-floating-ease), opacity var(--oc-glass-quick) ease; }
 .oc-evolving-segments[data-has-active="false"] .oc-evolving-indicator { opacity: 0; }
 
 .oc-evolving-toggle .oc-evolving-segments .oc-workspace-option { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; min-height: 44px; padding: 2px 4px; border-radius: 999px; color: var(--primary); background: transparent; font-size: 13px; font-weight: 500; line-height: 18px; text-decoration: none; text-align: center; }
@@ -79,14 +81,14 @@ button.oc-header-club:hover { color: var(--primary); background: rgb(20 45 69 / 
 .oc-header-club-menu [role="menuitem"] > :first-child { width: 28px; height: 28px; flex-shrink: 0; }
 .oc-evolving-guest { border-radius: 999px; background: var(--primary); }
 @supports (transition-timing-function: linear(0,1)) { .oc-evolving-segments, .oc-evolving-indicator { transition-timing-function: var(--oc-floating-spring); } }
-@media (min-width: 1600px) { .oc-product-header { padding-inline: 28px; } }
+@media (min-width: 1600px) { [data-product-shell] { --oc-shell-gutter: 28px; } }
 @media (max-width: 1399px) {
   .oc-product-header .oc-floating-search { justify-content: center; width: 48px; min-width: 48px; padding: 0; }
   .oc-floating-search-label, .oc-floating-search kbd { display: none; }
   .oc-floating-search:focus-visible::before, .oc-floating-search[aria-expanded="true"]::before { transform: none; }
 }
 @media (min-width: 1024px) and (max-width: 1199px) { .oc-product-header-row { grid-template-columns: minmax(0,1fr); } .oc-product-utilities { justify-self: end; margin-top: 0; } }
-@media (max-width: 1023px) { .oc-product-header { margin-left: 0; padding-inline: 20px; } .oc-product-header .oc-floating-drawer { display: none; } }
+@media (max-width: 1023px) { [data-product-shell] { --oc-shell-gutter: 20px; } .oc-product-header { margin-left: 0; } .oc-product-header .oc-floating-drawer { display: none; } }
 @media (max-width: 759px) {
   .oc-product-header-row { grid-template-columns: minmax(0,1fr); gap: 4px; }
   .oc-product-workspaces, .oc-evolving-toggle { width: 100%; }
@@ -99,7 +101,7 @@ button.oc-header-club:hover { color: var(--primary); background: rgb(20 45 69 / 
   .oc-product-header-row { min-height: 48px; }
 }
 @media (max-width: 639px) {
-  .oc-product-header { padding: 4px 12px 10px; }
+  .oc-product-header { padding: 10px 12px; }
   .oc-product-utilities { gap: 6px; }
   .oc-product-header .oc-floating-circle, .oc-product-header .oc-floating-search { width: 44px; height: 44px; min-width: 44px; min-height: 44px; flex-basis: 44px; }
 }
