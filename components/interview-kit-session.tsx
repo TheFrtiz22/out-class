@@ -20,7 +20,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { composerEnter } from "@/lib/composer-enter";
 import { Input } from "@/components/ui/input";
-import { CheckCircle2 } from "@/components/icons";
+import { CheckCircle2, Plus } from "@/components/icons";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useInterviewWorkspace } from "@/hooks/use-interview-workspace";
 import type { KitQuestion } from "@/lib/interview-kits";
 import { simulateDemoInterviewSelection, simulateDemoInterviewAdvance } from "@/lib/demo/interview-collaboration";
@@ -99,6 +100,12 @@ export function InterviewKitSession({
   const [closingQuestion, setClosingQuestion] = useState(false);
   const closingQuestionRef = useRef(false);
   const addingOffScript = useRef(false);
+  // An original question is saved before it opens; one id per entry makes retries idempotent.
+  const pendingOriginalId = useRef<string | null>(null);
+  const originalControl = useRef<HTMLButtonElement>(null);
+  const originalField = useRef<HTMLTextAreaElement>(null);
+  const [addingOriginal, setAddingOriginal] = useState(false);
+  const [originalError, setOriginalError] = useState("");
   const questionFocusAfterSave = useRef<"bank" | "notes" | null>(null);
   useLayoutEffect(() => {
     if (closingQuestion || !questionFocusAfterSave.current) return;
@@ -432,7 +439,7 @@ export function InterviewKitSession({
   function key(guidance: string) { return guidance ? <details className="oc-answer-key"><summary>Club answer key</summary><p className="oc-question-guidance">{guidance}</p></details> : null; }
   async function endInterview() {
     if (endingRef.current || sessionRef.current?.completedAt || closing) return;
-    if (newQuestion.trim()) { setError("Add or clear your off-script question before ending the interview."); return; }
+    if (newQuestion.trim()) { setError("Add or cancel your original question before ending the interview."); return; }
     endingRef.current = true; setEnding(true);
     const moving: Flight[] = typeof window !== "undefined" && window.matchMedia("(min-width: 1024px) and (prefers-reduced-motion: no-preference)").matches ? used.filter(q => !completedIds.includes(q.id)).flatMap(q => {
       const source = questionNodes.current.get(q.id);
@@ -457,14 +464,6 @@ export function InterviewKitSession({
     setDraft(current => ({ ...current, score: event.key === "Home" ? 1 : event.key === "End" ? 10 : Math.max(1, Math.min(10, Math.round((current.score ?? 1) * 2) / 2 + steps[event.key])) }));
   }
   const libraryQuestions = (library.length ? library : session.questions).filter(q => `${q.prompt} ${q.guidance}`.toLowerCase().includes(search.toLowerCase()));
-  function addQuestion(prompt: string, bankId?: string, guidance?: string) {
-    if (disabled || draft.additionalQuestions.length >= 30 || !prompt.trim()) return;
-    const id = bankId || crypto.randomUUID();
-    personalQuestion.current = true; setSharedQuestion(null);
-    if (questions.some(q => q.id === id)) { setActiveQuestion(id); return; }
-    setDraft(d => ({ ...d, additionalQuestions: [...d.additionalQuestions, { id, question: prompt.trim(), notes: "", ...(bankId ? { bankQuestion: { guidance: guidance || "" } } : {}) }] }));
-    setActiveQuestion(id);
-  }
   async function closeQuestion() {
     if (!active || disabled || closingQuestionRef.current) return;
     closingQuestionRef.current = true;
@@ -482,12 +481,35 @@ export function InterviewKitSession({
     }
     closingQuestionRef.current = false;
   }
-  function submitOffScript() {
+  async function submitOffScript() {
     if (addingOffScript.current || disabled || ending) return;
-    if (!newQuestion.trim()) { setError("Enter an off-script question before adding it."); return; }
-    if (draft.additionalQuestions.length >= 30) { setError("Your session has reached its question limit."); return; }
-    addingOffScript.current = true;
-    addQuestion(newQuestion); setNewQuestion(""); setOffScriptOpen(false); setLibraryOpen(false); setError("");
+    const prompt = newQuestion.trim();
+    if (!prompt) { setOriginalError("Enter a question before adding it."); return; }
+    if (draftRef.current.additionalQuestions.length >= 30) { setOriginalError("Your session has reached its question limit."); return; }
+    addingOffScript.current = true; setAddingOriginal(true); setOriginalError("");
+    const id = pendingOriginalId.current ??= crypto.randomUUID();
+    // Current interview only: the draft's additional questions, never the club's master kit. No answer key.
+    const additionalQuestions = [...draftRef.current.additionalQuestions.filter(q => q.id !== id), { id, question: prompt, notes: "" }];
+    const ok = await persist(false, false, { additionalQuestions });
+    addingOffScript.current = false;
+    if (!mounted.current) return;
+    setAddingOriginal(false);
+    if (ok) {
+      pendingOriginalId.current = null;
+      setNewQuestion(""); setOffScriptOpen(false); setLibraryOpen(false); setError("");
+      personalQuestion.current = true; setSharedQuestion(null); setActiveQuestion(id);
+      setAnnouncement("Original question added. Your private notes are ready.");
+    } else {
+      // Keep the typed question and offer an explicit retry; the general save banner is not the recovery path here.
+      setError("");
+      setOriginalError("Couldn’t save your question. Your text is still here.");
+      setTimeout(() => originalField.current?.focus(), 0);
+    }
+  }
+  function cancelOriginal() {
+    if (addingOffScript.current) return;
+    setNewQuestion(""); setOffScriptOpen(false); setOriginalError(""); pendingOriginalId.current = null;
+    originalControl.current?.focus();
   }
   async function refreshRevision() {
     if (savingRef.current) return;
@@ -538,7 +560,13 @@ export function InterviewKitSession({
         {error && <div role="alert" className="space-y-2 text-sm text-destructive">{error} Your text remains here.<div className="flex flex-wrap gap-2"><Button type="button" variant="outline" disabled={saving || !!session.completedAt} onClick={() => void persist(failedFinish)}>{failedFinish ? "Retry end post-interview" : "Retry save"}</Button><Button type="button" variant="ghost" disabled={saving} onClick={() => void refreshRevision()}>Load latest version, keep my text</Button></div></div>}
         {(!closing && !session.completedAt) || (session.completedAt && activeQuestion) ? <>
         {session.completedAt && <Button type="button" variant="ghost" onClick={() => setActiveQuestion("")}>Back to submitted review</Button>}
-        <div className="oc-question-heading"><h2 tabIndex={-1} data-candidate-focus>Interview questions</h2><Button ref={bankControl} type="button" variant="ghost" disabled={closingQuestion || ending} aria-expanded={libraryOpen} aria-controls="interview-bank" onClick={() => setLibraryOpen(v => !v)}>Question bank</Button></div>
+        <div className="oc-question-heading"><h2 tabIndex={-1} data-candidate-focus>Interview questions</h2><div className="oc-question-heading-actions"><Button ref={bankControl} type="button" variant="ghost" disabled={closingQuestion || ending} aria-expanded={libraryOpen} aria-controls="interview-bank" onClick={() => setLibraryOpen(v => !v)}>Question bank</Button>{!session.completedAt && <Tooltip><TooltipTrigger asChild><Button ref={originalControl} type="button" variant="ghost" size="icon" className="oc-add-original" aria-label="Add original question" aria-expanded={offScriptOpen} aria-controls="interview-original-question" disabled={disabled || ending || addingOriginal} onClick={() => { if (offScriptOpen) cancelOriginal(); else { setOriginalError(""); setOffScriptOpen(true); } }}><Plus aria-hidden="true" /></Button></TooltipTrigger><TooltipContent>Add original question</TooltipContent></Tooltip>}</div></div>
+        {offScriptOpen && !session.completedAt && <fieldset id="interview-original-question" disabled={completing || closingQuestion || ending || addingOriginal} className="oc-original-question space-y-2"><label htmlFor="new-interview-question" className="text-sm font-medium">Original question</label>
+          {/* eslint-disable-next-line jsx-a11y/no-autofocus -- The interviewer explicitly opened the question field; focus enters its labelled field. */}
+          <Textarea ref={originalField} id="new-interview-question" autoFocus rows={2} maxLength={3000} aria-describedby="original-question-keyboard" aria-invalid={!!originalError} value={newQuestion} onChange={e => { setNewQuestion(e.target.value); if (originalError) setOriginalError(""); }} onKeyDown={e => { if (e.key === "Escape") { e.preventDefault(); cancelOriginal(); return; } composerEnter(e, () => void submitOffScript()); }} />
+          {originalError && <p role="alert" className="text-sm text-destructive">{originalError}</p>}
+          <div className="flex flex-wrap items-center gap-2"><Button type="button" variant="outline" size="sm" disabled={!newQuestion.trim() || addingOriginal || draft.additionalQuestions.length >= 30} onClick={() => void submitOffScript()}>{addingOriginal ? "Adding…" : originalError && newQuestion.trim() ? "Retry" : "Add question"}</Button><Button type="button" variant="ghost" size="sm" disabled={addingOriginal} onClick={cancelOriginal}>Cancel</Button></div>
+          <p id="original-question-keyboard" className="text-xs text-muted-foreground">Enter to add · Shift+Enter for a new line · Esc to cancel</p></fieldset>}
         <a href="#interview-completed" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4 lg:hidden">Your completed questions · {completed.length}</a>
         {libraryOpen && <Panel as="section" id="interview-bank" aria-label="Round question bank" className="space-y-3">
           {session.instructions && <p className="whitespace-pre-wrap text-xs text-muted-foreground">{session.instructions}</p>}
@@ -562,8 +590,6 @@ export function InterviewKitSession({
           {!session.completedAt && <Button type="button" disabled={ending || closingQuestion || completing} onClick={() => void closeQuestion()}>{closingQuestion ? "Saving question…" : "Save & close"}</Button>}
         </section> : null}
         </div>
-              {/* eslint-disable-next-line jsx-a11y/no-autofocus -- The user explicitly opened the off-script editor; focus enters its labelled field. */}
-        {!session.completedAt && <div className="oc-off-script"><Button type="button" variant="ghost" aria-expanded={offScriptOpen} aria-controls="interview-off-script" onClick={() => { addingOffScript.current = false; setOffScriptOpen(v => !v); }}>+ Off-script question</Button>{offScriptOpen && <fieldset id="interview-off-script" disabled={completing || closingQuestion || ending} className="space-y-3"><label htmlFor="new-interview-question">Off-script question</label><Textarea id="new-interview-question" autoFocus rows={2} maxLength={3000} aria-describedby="off-script-keyboard" value={newQuestion} onChange={e => setNewQuestion(e.target.value)} onKeyDown={e => composerEnter(e, submitOffScript)} /><Button type="button" variant="outline" disabled={!newQuestion.trim() || draft.additionalQuestions.length >= 30} onClick={submitOffScript}>Add question</Button><p id="off-script-keyboard" className="text-xs text-muted-foreground">Enter to add question · Shift+Enter for a new line</p></fieldset>}</div>}
         </> : <section aria-label={session.completedAt ? "Submitted review" : "Post-interview"} className="oc-post-interview space-y-5" style={flights.length ? { opacity: 0 } : undefined}>
           <h2 ref={closingHeading} tabIndex={-1} data-candidate-focus>{session.completedAt ? "Interview complete" : "Post-interview"}</h2><p className="text-sm text-muted-foreground">{session.completedAt ? "Your review was submitted and is read only. Other interviewers finish independently." : "Take time to discuss before choosing your own score."}</p>
           {session.completedAt && <RoundScore scope={{ clubId, applicationId, roundId }} />}
