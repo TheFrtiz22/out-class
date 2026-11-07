@@ -64,6 +64,7 @@ export async function getAssignedInterviewRooms(clubId: string): Promise<Intervi
 
 /** Exact URL validation on every entry/refresh. A stale booking must never fall back to another candidate. */
 class InterviewEntryUnavailable extends Error {}
+const INTERVIEW_ENTRY_ACCESS_DENIED = "This interview isn’t available with your current access.";
 
 export async function resolveInterviewRoomEntry(input: { clubId: string; applicationId: string; roundId: string; bookingId?: string; slotId?: string; roomId?: string }): Promise<{ applicationId: string; roundId: string } | { unavailable: string }> {
   const data = z.object({ clubId: z.string().uuid(), applicationId: z.string().uuid(), roundId: z.string().uuid(), bookingId: z.string().uuid().optional(), slotId: z.string().uuid().optional(), roomId: z.string().uuid().optional() }).parse(input);
@@ -82,7 +83,9 @@ export async function resolveInterviewRoomEntry(input: { clubId: string; applica
     }, interviewTransactionOptions);
   } catch (error) {
     // Expected access/availability outcomes are a result, not a server failure (no 500 or runtime error log).
-    if (error instanceof InterviewEntryUnavailable || isInterviewAccessDenial(error)) return { unavailable: (error as Error).message };
+    // Access denials share one message so a non-panel member cannot probe which applications exist.
+    if (isInterviewAccessDenial(error)) return { unavailable: INTERVIEW_ENTRY_ACCESS_DENIED };
+    if (error instanceof InterviewEntryUnavailable) return { unavailable: error.message };
     throw error;
   }
 }

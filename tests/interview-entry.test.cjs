@@ -21,9 +21,11 @@ test('exact destinations retain slot, booking, club and round; Back preserves or
 test('server exact entry returns unavailable (no thrown 500) for revoked, cross-club/round, cancelled and replaced bookings; supported manual assignments remain available',async()=>{
  const h=harness(),api=h.load('actions/interview-entry.ts');assert.deepEqual(await api.resolveInterviewRoomEntry(h.scope),{applicationId:h.scope.applicationId,roundId:h.scope.roundId});
  assert.match((await api.resolveInterviewRoomEntry({...h.scope,bookingId:id(4),slotId:id(5)})).unavailable,/changed|cancelled/);
- assert.match((await api.resolveInterviewRoomEntry({...h.scope,clubId:id(8)})).unavailable,/access|unavailable/);
- assert.match((await api.resolveInterviewRoomEntry({...h.scope,roundId:id(8)})).unavailable,/unavailable/);
- h.assignments[0].revokedAt=new Date();assert.match((await api.resolveInterviewRoomEntry(h.scope)).unavailable,/assignment|permission/);h.assignments[0].revokedAt=null;
+ assert.match((await api.resolveInterviewRoomEntry({...h.scope,clubId:id(8)})).unavailable,/isn’t available with your current access/);
+ assert.match((await api.resolveInterviewRoomEntry({...h.scope,roundId:id(8)})).unavailable,/isn’t available with your current access/);
+ h.assignments[0].revokedAt=new Date();const denied=(await api.resolveInterviewRoomEntry(h.scope)).unavailable;assert.match(denied,/isn’t available with your current access/);
+ // A non-panel member cannot tell a real application from a random ID.
+ assert.equal((await api.resolveInterviewRoomEntry({...h.scope,applicationId:id(9)})).unavailable,denied);h.assignments[0].revokedAt=null;
  const room={id:id(6),clubId:h.scope.clubId,roundId:h.scope.roundId,isOpen:true,panelApprovedBy:h.members[0].userId,panelMemberIds:[h.members[0].id],approvedPanelMemberIds:[h.members[0].id]};
  const booking={id:id(4),applicationId:h.scope.applicationId,roundId:h.scope.roundId,slotId:id(5),slot:{id:id(5),roomId:room.id,room,panelScheduleVersionId:null}};
  h.tx.interviewBooking.findUnique=async()=>booking;h.tx.clubMember.findFirst=async({where})=>h.members.find(m=>m.userId===where.userId&&m.clubId===where.clubId&&m.isOwner&&m.status==='ACTIVE');
@@ -104,4 +106,11 @@ test('server entry is identical for a slot far in the past: open after a later d
  room.isOpen=false;rows=await api.getAssignedInterviewRooms(h.scope.clubId);assert.equal(rows[0].cancelled,true);assert.equal(rows[0].canOpen,false);room.isOpen=true;
  h.assignments[0].revokedAt=new Date();assert.deepEqual(await api.getAssignedInterviewRooms(h.scope.clubId),[]);h.assignments[0].revokedAt=null;
  h.round.archivedAt=new Date();rows=await api.getAssignedInterviewRooms(h.scope.clubId);assert.equal(rows[0].canOpen,false,'closed/archived rounds keep their lifecycle restriction');h.round.archivedAt=null;
+});
+test('every authorizeInterview denial message is recognised as an expected access denial',()=>{
+ const {isInterviewAccessDenial}=require('./helpers/interview-harness.cjs').harness().load('utils/interview-access.ts');
+ const src=require('node:fs').readFileSync('utils/interview-access.ts','utf8');const start=src.indexOf('export async function authorizeInterview'),end=src.indexOf('export async function authorizeQuestionBank');
+ const messages=[...src.slice(src.indexOf('export async function interviewActor'),end).matchAll(/throw new Error\("([^"]+)"\)/g)].map(m=>m[1]);
+ assert.ok(messages.length>=3&&start>0);for(const m of messages)assert.ok(isInterviewAccessDenial(new Error(m)),m);
+ assert.equal(isInterviewAccessDenial(new Error('Database offline')),false);
 });
