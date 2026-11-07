@@ -15,7 +15,7 @@ const feedbackInput = z.object({ clubId: z.string().uuid(), applicationId: z.str
  * returns `unavailable` with no identifying data rather than throwing. */
 export async function getInterviewFeedback(input: z.infer<typeof feedbackInput>): Promise<InterviewFeedbackResult> {
   const data = feedbackInput.parse(input);
-  const { user } = await requireAuth();
+  const { user } = await requireAuth({ verifyEmail: true });
   try {
     return await prisma.$transaction(async tx => {
       const { caps } = await interviewActor(tx, data.clubId, user.id);

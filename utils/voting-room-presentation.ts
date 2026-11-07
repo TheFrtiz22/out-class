@@ -34,13 +34,14 @@ export async function votingSelectedHighlight(tx:AppTransactionClient,scope:{clu
  * evaluation) that pass authorizeInterview "closingReview", excluding anonymous
  * access, where a current panelist (or a viewer without closing-review rights)
  * must submit their own review first. Ordered by round order. */
-export async function authorizedInterviewRounds(tx:AppTransactionClient,clubId:string,applicationId:string,userId:string,currentRoundId?:string){
+export async function authorizedInterviewRounds(tx:AppTransactionClient,clubId:string,applicationId:string,userId:string,currentRoundId?:string,viewer?:{readClosing:boolean}){
   const submitted={stableEvaluations:{some:{applicationId,submittedAt:{not:null}}}};
   const rounds=await tx.pipelineRound.findMany({where:{clubId,type:{in:["INTERVIEW","GROUP_INTERVIEW"]},anonymousReview:false,...(currentRoundId?{OR:[{id:currentRoundId},submitted]}:submitted)},select:{id:true,name:true},orderBy:[{order:"asc"},{id:"asc"}]});
   const allowed:typeof rounds=[];
   for(const round of rounds){
     try {
       const access=await authorizeInterview(tx,{clubId,applicationId,roundId:round.id},userId,"closingReview","share");
+      if(viewer)viewer.readClosing=!!access.caps?.readClosing;
       if(access.anonymous)continue;
       const own=await tx.evaluation.findUnique({where:{applicationId_interviewerId_roundId:{applicationId,interviewerId:access.member.id,roundId:round.id}},select:{submittedAt:true}});
       const assignment=await tx.interviewPanelAssignment.findUnique({where:{applicationId_roundId_memberId:{applicationId,roundId:round.id,memberId:access.member.id}}});
@@ -53,8 +54,8 @@ export async function authorizedInterviewRounds(tx:AppTransactionClient,clubId:s
 const authorName=(p:{firstName:string;lastName:string}|null|undefined)=>p?`${p.firstName} ${p.lastName}`:"Interviewer";
 /** Same finalized-review gate and canonical aggregation as the interview score path.
  * `feedback` additionally builds the round-scoped Interview feedback section from the same rows. */
-export async function votingInterviewEvidence(tx:AppTransactionClient,clubId:string,applicationId:string,userId:string,selected:{score:boolean;thoughts:boolean;currentRoundId?:string;feedback?:boolean}) {
-  const allowed=await authorizedInterviewRounds(tx,clubId,applicationId,userId,selected.currentRoundId);
+export async function votingInterviewEvidence(tx:AppTransactionClient,clubId:string,applicationId:string,userId:string,selected:{score:boolean;thoughts:boolean;currentRoundId?:string;feedback?:boolean;leaderScoresOnly?:boolean}) {
+  const viewer={readClosing:false},allowed=await authorizedInterviewRounds(tx,clubId,applicationId,userId,selected.currentRoundId,viewer);
   const ids=allowed.map(r=>r.id),feedback=!!selected.feedback&&selected.thoughts;
   const reviews=(selected.score||feedback)&&ids.length?await tx.evaluation.findMany({where:{applicationId,roundId:{in:ids},submittedAt:{not:null},interviewer:{clubId},interviewRecords:{none:{anonymousReview:true}}},select:{id:true,interviewerId:true,roundId:true,score:true,submittedAt:true,interviewer:{select:{user:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}}},orderBy:[{submittedAt:"desc"},{id:"desc"}]}):[];
   const thoughts:VotingInterviewThought[]=[],summaries:{roundId:string;interviewerId:string;text:string}[]=[];
@@ -74,8 +75,10 @@ export async function votingInterviewEvidence(tx:AppTransactionClient,clubId:str
     const round=feedbackRound(allowed,selected.currentRoundId,reviews);
     // Pending is a count of current, interview-capable assignees only; never names or scores.
     const assigned=round?await tx.interviewPanelAssignment.findMany({where:{applicationId,roundId:round.id,revokedAt:null,member:{clubId,status:"ACTIVE",user:{disabledAt:null}}},include:{member:true}}):[];
+    // Anyone who submitted (including anonymously recorded reviews) is not pending, matching getInterviewRoundScore.
+    const submittedIds=new Set(round?(await tx.evaluation.findMany({where:{applicationId,roundId:round.id,submittedAt:{not:null}},select:{interviewerId:true}})).map(e=>e.interviewerId):[]);
     interviewFeedback=buildInterviewFeedback({allowed,requestedRoundId:selected.currentRoundId,reviews:reviews.map(r=>({...r,interviewer:authorName(r.interviewer?.user?.studentProfile)})),summaries,
-      pendingMemberIds:assigned.filter(a=>interviewCapabilities(a.member).participate).map(a=>a.memberId),includeScores:selected.score});
+      pendingMemberIds:assigned.filter(a=>interviewCapabilities(a.member).participate&&!submittedIds.has(a.memberId)).map(a=>a.memberId),includeScores:selected.score&&(!selected.leaderScoresOnly||viewer.readClosing)});
   }
   return {score:votingScoreEvidence(allowed,reviews),thoughts,feedback:interviewFeedback,authorized:!!ids.length,roundIds:ids};
 }
@@ -84,7 +87,9 @@ export async function votingInterviewSummary(tx:AppTransactionClient,clubId:stri
 }
 /** Omit deselected/unauthorized evidence entirely, including from details DTOs. */
 export async function votingSelectedEvidence(tx:AppTransactionClient,clubId:string,applicationId:string,userId:string,fields:readonly LiveRoomField[],anonymous:boolean,currentRoundId?:string){
-  const selected={score:fields.includes("interviewScore"),thoughts:fields.includes("finalInterviewThoughts"),currentRoundId,feedback:true};
+  // Individual peer scores in the feedback section need the leader's selection AND the viewer's
+  // explicit leadership review access; others keep the existing aggregate-only score.
+  const selected={score:fields.includes("interviewScore"),thoughts:fields.includes("finalInterviewThoughts"),currentRoundId,feedback:true,leaderScoresOnly:true};
   if(anonymous||!selected.score&&!selected.thoughts)return {};
   const evidence=await votingInterviewEvidence(tx,clubId,applicationId,userId,selected),feedback=evidence.feedback;
   // When the round-scoped Interview feedback section is present, the thoughts field

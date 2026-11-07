@@ -103,3 +103,13 @@ test('leader dialog: a submitted panelist sees finalized summaries but not peer 
   h.as(stranger);assert.deepEqual(await read(),{status:'unavailable'});
  }finally{await h.db.close();}
 });
+test('Voting slide: a submitted non-leader panelist sees summaries and the aggregate, never individual peer scores',async()=>{
+ const {h,ids,review_}=await fixture();try{
+  await review_(ids.panelMember,ids.round,9,'Panel summary');await review_(ids.peerMember,ids.round,6.5,'Peer summary');
+  const presentation=h.load('utils/voting-room-presentation.ts');
+  const as=user=>h.prisma.$transaction(tx=>presentation.votingSelectedEvidence(tx,ids.club,ids.app,user,['interviewScore','finalInterviewThoughts'],false,ids.round));
+  const panel=await as(ids.panel);assert.equal(panel.interviewFeedback.scoresIncluded,false);assert.ok(panel.interviewFeedback.entries.every(e=>e.score===null));assert.ok(panel.interviewFeedback.entries.some(e=>e.summary==='Peer summary'));
+  assert.equal(panel.interviewScore.submitted,2,'the existing aggregate stays available');
+  const leader=await as(ids.owner);assert.equal(leader.interviewFeedback.scoresIncluded,true);assert.deepEqual(leader.interviewFeedback.entries.map(e=>e.score).sort(),[6.5,9]);
+ }finally{await h.db.close();}
+});
