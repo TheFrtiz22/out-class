@@ -6,31 +6,28 @@ import { cn } from '@/lib/utils'
 import { LoadingIndicator } from '@/components/ui/loading-indicator'
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md oc-button transition-[color,background-color,border-color,box-shadow,opacity] motion-micro disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap oc-button disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 aria-invalid:border-destructive",
   {
     variants: {
       variant: {
-        default:
-          'border border-primary bg-primary text-primary-foreground shadow-none hover:bg-primary/90',
-        destructive:
-          'bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60',
-        outline:
-          'border bg-background shadow-none hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50',
-        secondary:
-          'border border-border bg-secondary text-secondary-foreground shadow-none hover:bg-accent',
-        ghost:
-          'hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50',
-        accent: 'border border-transparent bg-brand-subtle text-brand-ink hover:bg-brand-subtle/70',
-        link: 'text-primary underline-offset-4 hover:underline',
-        /** Light glass, as the header's floating controls (styles/interface-primitives.css). */
-        glass: 'focus-visible:ring-0',
-        /** Navy glass pill, as the selected workspace segment. */
-        'glass-primary': 'focus-visible:ring-0',
+        /** Visuals for every variant live in styles/interface-primitives.css (@layer components), so the
+         * glass pill is the default and call-site utilities still override it. */
+        default: '',
+        destructive: '',
+        outline: '',
+        secondary: '',
+        ghost: '',
+        accent: '',
+        link: '',
+        /** Light glass pill; same as outline. */
+        glass: '',
+        /** Navy glass pill; same as default. */
+        'glass-primary': '',
       },
       size: {
         default: 'h-10 px-4 py-2 has-[>svg]:px-3 has-[>.oc-button-content>svg]:px-3',
-        sm: 'h-9 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5 has-[>.oc-button-content>svg]:px-2.5',
-        lg: 'h-11 rounded-md px-6 has-[>svg]:px-4 has-[>.oc-button-content>svg]:px-4',
+        sm: 'h-9 gap-1.5 px-3 has-[>svg]:px-2.5 has-[>.oc-button-content>svg]:px-2.5',
+        lg: 'h-11 px-6 has-[>svg]:px-4 has-[>.oc-button-content>svg]:px-4',
         icon: 'size-10',
         'icon-sm': 'size-9',
         'icon-lg': 'size-11',
