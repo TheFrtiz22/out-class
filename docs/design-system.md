@@ -87,6 +87,24 @@ Translucency (and `--oc-surface-glass-filter` / `--oc-surface-glass-navy-filter`
 
 Rules: text never passes through a filter; blurred surfaces are never nested; at most six blurred surfaces on screen on desktop (the shell uses five: rail, workspace pill, search, notifications, account; the header band behind them is frosted without blur so blur is never stacked), so page content keeps `--oc-surface-glass-filter: none` in its scope, as Club home does, unless it is the one surface allowed to blur. 
 
+### Dashboards
+
+Every dashboard is built from the club home pieces in `components/product/dashboard/dashboard.tsx` (styles: `dashboard.css`, imported once from `app/globals.css`). Club home is the reference; Personal Home, Recruiting Overview, member club home and admin Overview use the same pieces.
+
+| Piece | Use |
+| --- | --- |
+| `DashboardHero` | Ambient glow behind the page title. `glow="neutral"` is the admin's navy-only glow. Hidden under reduced transparency, higher contrast and forced colors. |
+| `NeedsYouRow`, `NeedsAction` | One navy priority card, then up to three light glass cards; the whole card is the action's hit area. The quiet "You're clear for now" strip when empty. |
+| `Dashboard`, `DashboardGrid` | Container-query root (filters off, so nothing blurs) and the main/side grid; phones become one column and dashboards order cards with `order`. |
+| `DashboardCard` | Glass `Panel` with a head (title, aside, "more →" link) and optional foot. `label` keeps an existing region name. |
+| `MetricTiles` | Big serif numbers in a `<dl>`; values are text. |
+| `PipelineBars` | Stage counts with decorative bars; `compactStages` shows one segmented bar on phones. |
+| `DateChipList`, `DateChip` | Month/day chips (navy, interview or deadline tints). `timeZone` keeps the chip on the row's zone. |
+| `GlassRowList`, `GlassRow` | Whole-row buttons or links with the glass hover; static rows can carry a separate `action`. |
+| `DashboardLoading` | The same layout in glass skeletons. |
+
+New tokens for these pieces (`--oc-glass-track-inset`, `--oc-glass-fill-highlight`, `--oc-glass-navy-track`, `--oc-glass-navy-highlight`, `--oc-glass-dot-halo`, `--oc-glass-pill-sheen*`, `--oc-glass-chip-radius`, `--oc-glass-row-radius`, `--oc-surface-ambient-neutral`) live in `styles/navigation-glass.css` with solid, reduced-transparency/higher-contrast and forced-colors values. Applicant tables, speed review, the resume viewer and the interview room stay solid.
+
 ## Motion and stacking
 
 No additional animation dependency. CSS plus existing `tw-animate-css`/Radix

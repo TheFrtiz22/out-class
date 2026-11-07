@@ -5,6 +5,8 @@ import { getMyAvailability } from "@/lib/availability-workspace-read"
 import { availabilityHref, responseLabels, type AvailabilityRound } from "@/lib/availability"
 import { useDemoMode } from "@/contexts/demo-context"
 import { useAuth } from "@/contexts/auth-context"
+import { Button } from "@/components/ui/button"
+import { DashboardCard, GlassRow, GlassRowList } from "@/components/product/dashboard/dashboard"
 
 /** Compact, account-bound dashboard actions; no availability documents rendered here. */
 export function AvailabilityDashboardRequests() {
@@ -18,5 +20,9 @@ export function AvailabilityDashboardRequests() {
     return () => { active = false; window.removeEventListener("focus", load); window.removeEventListener("outclass:availability-changed", load) }
   }, [user?.id, demo.isDemoEnabled, attempt, user])
   if (!rounds.length && !error) return null
-  return <section aria-label="Availability requests" className="mb-4 rounded-xl border px-4 py-3"><h2 className="text-sm font-semibold">Interview availability</h2>{error ? <p role="alert" className="text-sm">Could not refresh your requests. <button className="min-h-11 underline" onClick={() => setAttempt(v => v + 1)}>Retry</button></p> : <ul className="divide-y">{rounds.map(round => <li key={round.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm"><span>{round.clubName} · {round.name}<span className="ml-2 text-xs text-muted-foreground">{responseLabels[round.response]}</span></span><Link className="inline-flex min-h-11 items-center font-medium underline underline-offset-4" href={availabilityHref(round.clubId, round.id)}>{round.response === "AWAITING" ? "Respond to request" : "View response"}</Link></li>)}</ul>}</section>
+  return <DashboardCard id="home-availability" title="Interview availability" label="Availability requests" className="oc-home-availability">
+    {error ? <div role="alert" className="oc-dashboard-state"><p className="text-sm">Could not refresh your requests.</p><Button variant="outline" onClick={() => setAttempt(v => v + 1)}>Retry</Button></div>
+      : <GlassRowList>{rounds.map(round => <li key={round.id}><GlassRow title={`${round.clubName} · ${round.name}`} detail={responseLabels[round.response]}
+        action={<Button variant={round.response === "AWAITING" ? "default" : "outline"} asChild><Link href={availabilityHref(round.clubId, round.id)}>{round.response === "AWAITING" ? "Respond to request" : "View response"}</Link></Button>} /></li>)}</GlassRowList>}
+  </DashboardCard>
 }

@@ -154,6 +154,9 @@
     [data-slot="button"][data-variant="accent"]:not(:disabled):hover { box-shadow: var(--oc-glass-lift); }
     [data-slot="button"][data-variant="link"]:not(:disabled):hover { text-decoration: underline; }
   }
+  /* Tones: an interview action keeps the pill and swaps the navy for the interview colour. */
+  [data-slot="button"][data-tone="interview"]:is([data-variant="default"], [data-variant="glass-primary"]) { border-color: var(--oc-glass-pill-sheen-edge); background: var(--oc-glass-pill-sheen), var(--interview); }
+  @media (hover: hover) and (pointer: fine) { [data-slot="button"][data-tone="interview"]:is([data-variant="default"], [data-variant="glass-primary"]):not(:disabled):hover { background: var(--oc-glass-pill-sheen), var(--interview); } }
   /* The projector theme inverts --primary: its primary keeps the inverted fill and light pills use its
      secondary surface, so text never lands light on light. */
   :is([data-theme="present"], .oc-focus-frame:has(.oc-present-surface) .oc-focus-bar) [data-slot="button"]:is([data-variant="default"], [data-variant="glass-primary"]) { border-color: transparent; background: var(--primary); color: var(--primary-foreground); box-shadow: none; }

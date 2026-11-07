@@ -21,14 +21,15 @@ test("authenticated surfaces share a restrained material vocabulary distinct fro
   assert.doesNotMatch(tokens, /backdrop-filter\s*:/, "scrolling content tokens must not add glass blur")
 })
 
-test("editorial overview compositions use shared tokens without imposing identical cards", () => {
-  const editorial = read("styles/editorial.css")
-  assert.match(home, /gap: 2rem var\(--oc-editorial-gap\)/)
-  assert.match(home, /\.oc-home-agenda \{[^\n]+var\(--oc-surface-blue\)/)
-  assert.match(editorial, /\.oc-featured-action \{[\s\S]*?background: var\(--oc-rail\)/)
-  assert.match(operations, /\.oc-pipeline-section \{[^\n]+var\(--oc-editorial-radius\)/)
-  assert.match(operations, /\.oc-command-club \.oc-command-context \{[^\n]+border-bottom: 1px solid var\(--command-line\)/)
-  assert.doesNotMatch(home + editorial, /backdrop-filter\s*:/, "editorial content must not compete with optical navigation")
+test("every dashboard is built from the shared club home pieces, in glass, without blurring content", () => {
+  const editorial = read("styles/editorial.css"), dashboard = read("components/product/dashboard/dashboard.css")
+  for (const file of ["components/manager-overview.tsx", "components/recruiting-overview.tsx", "components/views/student-dashboard-view.tsx", "app/platform/page.tsx", "components/club-home/club-home-sections.tsx"]) assert.match(read(file), /from "@\/components\/product\/dashboard\/dashboard"/, file)
+  assert.match(read("app/globals.css"), /@import "\.\.\/components\/product\/dashboard\/dashboard\.css";/)
+  assert.match(dashboard, /\.oc-dashboard-ambient \{[\s\S]*?var\(--oc-surface-ambient\)/)
+  assert.doesNotMatch(dashboard + home + operations, /#[0-9a-f]{3,8}\b/i, "dashboard CSS uses tokens, not hex colors")
+  for (const gone of ["components/clubs/manager-overview.css", "components/clubs/recruiting-overview.css", "components/product/recruitment-command-center.css", "components/product/featured-action.tsx"]) assert.ok(!fs.existsSync(gone), gone)
+  assert.doesNotMatch(operations, /\.oc-command-/, "the flat command-center rules are gone")
+  assert.doesNotMatch(home + editorial + dashboard + operations, /backdrop-filter\s*:/, "dashboard content must not compete with optical navigation")
 })
 
 test("application drafts, statuses and writing questions inherit the same calm surfaces", () => {

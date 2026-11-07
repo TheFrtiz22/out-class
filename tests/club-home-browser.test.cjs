@@ -142,7 +142,7 @@ test('browser: Club home dashboard, permissions, header glass, blur budget and a
   console.log('PASS reduced motion and forced colors')
 
   // Permission subsets: no empty sections.
-  const sections = () => page.locator('.oc-club-home-card').evaluateAll(cards => cards.map(c => [c.querySelector('h2').textContent, c.querySelectorAll('li').length + c.querySelectorAll('.oc-club-home-quiet').length]))
+  const sections = () => page.locator('.oc-club-home-card').evaluateAll(cards => cards.map(c => [c.querySelector('h2').textContent, c.querySelectorAll('li').length + c.querySelectorAll('.oc-dashboard-quiet').length]))
   await page.goto(fixture.url('fixture=large&role=reviewer'), { waitUntil: 'networkidle' }); await settle(page)
   assert.deepEqual(await page.locator('.oc-needs-card').evaluateAll(cards => cards.map(card => card.dataset.needs)), ['overdue', 'reviews'])
   assert.equal(await page.getByRole('link', { name: 'New meeting' }).count(), 0)

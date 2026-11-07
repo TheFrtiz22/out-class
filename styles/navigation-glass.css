@@ -36,6 +36,16 @@
   /* Sheen and highlight over semantic tints (Badge, StatusPill, chips). */
   --oc-glass-tint-sheen: linear-gradient(172deg, rgb(255 255 255 / 55%), transparent 62%);
   --oc-glass-tint-highlight: inset 0 1px 0 rgb(255 255 255 / 60%);
+  /* Dashboard pieces (components/product/dashboard): bar tracks and fills, navy chips, priority dot. */
+  --oc-glass-track-inset: inset 0 1px 1px rgb(20 45 69 / 8%);
+  --oc-glass-fill-highlight: inset 0 1px 0 rgb(255 255 255 / 28%);
+  --oc-glass-navy-track: rgb(255 255 255 / 14%);
+  --oc-glass-navy-highlight: inset 0 1px 0 rgb(222 237 255 / 20%);
+  --oc-glass-dot-halo: 0 0 0 3px color-mix(in srgb, var(--brand-orange) 28%, transparent);
+  --oc-glass-pill-sheen: linear-gradient(155deg, rgb(255 255 255 / 16%), transparent 60%);
+  --oc-glass-pill-sheen-edge: rgb(255 255 255 / 16%);
+  --oc-glass-chip-radius: .75rem;
+  --oc-glass-row-radius: .875rem;
 }
 
 /* Content surfaces: the same optics as navigation, for page cards and controls.
@@ -53,6 +63,7 @@
   --oc-surface-glass-navy-filter: none;
   --oc-surface-glass-track: rgb(20 45 69 / 8%);
   --oc-surface-ambient: none;
+  --oc-surface-ambient-neutral: none;
 }
 @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   :root {
@@ -75,6 +86,7 @@
     --oc-surface-glass-filter: var(--oc-glass-light-filter);
     --oc-surface-glass-navy-filter: var(--oc-glass-navy-filter);
     --oc-surface-ambient: radial-gradient(56% 90% at 6% 0%, color-mix(in srgb, var(--primary) 8%, transparent), transparent 72%), radial-gradient(46% 80% at 96% 6%, color-mix(in srgb, var(--oc-club-accent, var(--brand-orange)) 8%, transparent), transparent 70%);
+    --oc-surface-ambient-neutral: radial-gradient(56% 90% at 6% 0%, color-mix(in srgb, var(--primary) 9%, transparent), transparent 72%), radial-gradient(46% 80% at 96% 6%, color-mix(in srgb, var(--primary) 5%, transparent), transparent 70%);
   }
 }
 
@@ -137,6 +149,13 @@
     --oc-glass-field-depth: none;
     --oc-glass-tint-sheen: none;
     --oc-glass-tint-highlight: none;
+    --oc-glass-track-inset: none;
+    --oc-glass-fill-highlight: none;
+    --oc-glass-navy-track: var(--oc-rail-muted);
+    --oc-glass-navy-highlight: none;
+    --oc-glass-dot-halo: none;
+    --oc-glass-pill-sheen: none;
+    --oc-glass-pill-sheen-edge: #91a8bc;
   }
   :root, [data-product-shell] {
     --oc-surface-glass: var(--oc-content-solid);
@@ -149,6 +168,7 @@
     --oc-surface-glass-navy-filter: none;
     --oc-surface-glass-track: var(--border);
     --oc-surface-ambient: none;
+    --oc-surface-ambient-neutral: none;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -175,6 +195,13 @@
     --oc-glass-field-depth: none;
     --oc-glass-tint-sheen: none;
     --oc-glass-tint-highlight: none;
+    --oc-glass-track-inset: none;
+    --oc-glass-fill-highlight: none;
+    --oc-glass-navy-track: Canvas;
+    --oc-glass-navy-highlight: none;
+    --oc-glass-dot-halo: none;
+    --oc-glass-pill-sheen: none;
+    --oc-glass-pill-sheen-edge: CanvasText;
   }
   :root, [data-product-shell] {
     --oc-surface-glass: Canvas;
@@ -187,5 +214,6 @@
     --oc-surface-glass-navy-filter: none;
     --oc-surface-glass-track: Canvas;
     --oc-surface-ambient: none;
+    --oc-surface-ambient-neutral: none;
   }
 }
