@@ -115,6 +115,7 @@ test('browser: Club home dashboard, permissions, header glass, blur budget and a
     await h1.evaluate(el => { el.style.visibility = '' })
     return { covered, clip, value: await headingEdges(shown, hidden) }
   }
+  await page.evaluate(() => scrollTo(0, 0)); await page.waitForTimeout(300)
   const visible = await edges()
   await page.evaluate(() => scrollTo(0, 120)); await page.waitForTimeout(300)
   const underHeader = await edges()
