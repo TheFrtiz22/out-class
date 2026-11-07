@@ -42,8 +42,8 @@ export function OrganizationInvitationCard({ invitation, onChanged, allowDecline
       }
     } catch {
       setError(kind === "accepted"
-        ? "Could not accept this invitation. It may have expired or your access may have changed. Refresh requests or try again."
-        : "Could not update this request. Refresh requests or try again.");
+        ? "Could not accept this invitation. It may have expired or your access may have changed. Try again."
+        : "Could not update this request. Try again.");
     } finally { working.current = false; setBusy(null); }
   }
   return <li className={compact ? "rounded-lg border border-brand-orange/20 oc-glass-surface px-4 py-3" : "rounded-xl border oc-glass-surface p-4 sm:p-5"} aria-busy={!!busy}>

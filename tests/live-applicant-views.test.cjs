@@ -24,15 +24,15 @@ const flush = () => new Promise(resolve => setImmediate(resolve))
 function harness(permissions = ['applications.review','applicants.identify','decisions.manage','recruitment.manage'], decisionsOnly = false, rejectedOnly = false) {
   const slots = [], effects = [], calls = [], lookups = [], setups = new Map(), cleanups = new Map()
   let changed = false, index = 0, pipeline = { rounds: [{id:'round',name:'Review',order:0}], applications:[{id:'candidate',canEvaluate:true,studentId:'student',roundId:'round',status:'IN_REVIEW',student:{email:'sample@demo.invalid',studentProfile:null},evaluations:[],answers:[],bookings:[]}] }
-  const react = {useState(initial){const i=index++;if(!(i in slots))slots[i]=initial;return [slots[i],value=>{const next=typeof value==='function'?value(slots[i]):value;changed ||= !Object.is(next,slots[i]);slots[i]=next}]},useRef(initial){const i=index++;return slots[i]??=( {current:initial})},useMemo(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i].deps[j]))slots[i]={deps,value:fn()};return slots[i].value},useCallback(fn,deps){return react.useMemo(()=>fn,deps)},useEffect(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;setups.set(i,fn);effects.push([i,fn])}}}
+  const react = {useState(initial){const i=index++;if(!(i in slots))slots[i]=initial;return [slots[i],value=>{const next=typeof value==='function'?value(slots[i]):value;changed ||= !Object.is(next,slots[i]);slots[i]=next}]},useRef(initial){const i=index++;return slots[i]??=( {current:initial})},useMemo(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i].deps[j]))slots[i]={deps,value:fn()};return slots[i].value},useCallback(fn,deps){return react.useMemo(()=>fn,deps)},useEffect(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;setups.set(i,fn);effects.push([i,fn])}},useLayoutEffect(fn){const i=index++;setups.set(i,fn);effects.push([i,fn])}}
   const api = {getClubPipelineList:async()=>{calls.push(['load']);return structuredClone(pipeline)},setApplicationStatus:async input=>{calls.push(['status',input]);const target=pipeline.applications.find(app=>app.id===input.applicationId);if(input.expectedStatus!==target.status)throw Error('stale');target.status=input.status;if(input.status==='ACCEPTED')target.recruitmentOffer={status:'PENDING',expiresAt:new Date(Date.now()+86400000)};return {success:true}},moveApplicantRound:async input=>{calls.push(['round',input]);if(input.expectedRoundId!==pipeline.applications[0].roundId)throw Error('stale');pipeline.applications[0].roundId=input.newRoundId;pipeline.applications[0].studentId='anonymous-candidate';pipeline.applications[0].student={email:'',studentProfile:{firstName:'Applicant',lastName:'CANDIDATE',experiences:[]}};return {success:true}},submitEvaluation:async input=>{calls.push(['review',input]);const evaluation={id:'evaluation',interviewerId:'member',round:'Review',score:input.score,notes:input.notes};pipeline.applications[0].evaluations=[evaluation];pipeline.applications[0].canEvaluate=false;return {evaluation}}}
   let currentEpoch={};const auth={user:{id:'reviewer'},readAuthority:currentEpoch,isReadAuthorityCurrent:value=>value===currentEpoch};
   api.getClubPipelinePage=async(club,q={})=>{const data=await api.getClubPipelineList();const page=compile('lib/pipeline-page.ts').pagePipeline(data,q,'member','reviewer','fixture');return {...page,coverage:{complete:page.page.baseTotal===page.applications.length,mode:q.mode??'applicants'}}};
   api.getClubPipelineSelection=async(club,q={})=>compile('lib/pipeline-page.ts').completePipelineSelection(await api.getClubPipelineList(),q,'member','reviewer');
-  let detailKey='',detail=null;
-  const C = compile('components/views/leader-dashboard/live-leader-workspace.tsx', {react,'next/navigation':{useRouter:()=>({push:url=>calls.push(['navigate',url])})},'@/contexts/auth-context':{useAuth:()=>auth},'@/hooks/use-pipeline-applicant':{usePipelineApplicant(club,id,revision){const key=`${club}:${id}:${revision}`;if(key!==detailKey){detailKey=key;detail=id?structuredClone(pipeline.applications.find(app=>app.id===id)):null}return{application:detail,error:false,retry(){}}}},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false,ready:true})},'@/lib/reviewer-evaluation':{findReviewerEvaluation(...args){const result=compile('lib/reviewer-evaluation.ts').findReviewerEvaluation(...args);lookups.push({round:args[2],result});return result}},'@/lib/workspace-api':api,'@/lib/application-state':{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus(){}})}}, '\nexports.TestWorkspace = ClubWorkspace;').TestWorkspace
+  let detailKey='',detail=null,revalidation=null;const filterMenu=()=>{};
+  const C = compile('components/views/leader-dashboard/live-leader-workspace.tsx', {react,'next/navigation':{useRouter:()=>({push:url=>calls.push(['navigate',url])})},'@/hooks/use-revalidate':{useRevalidate:(reload,options)=>{revalidation={reload,options}},announceDataChanged(){}},'@/hooks/use-dismissable-details':{useDismissableDetails:()=>filterMenu},'@/contexts/auth-context':{useAuth:()=>auth},'@/hooks/use-pipeline-applicant':{usePipelineApplicant(club,id,revision){const key=`${club}:${id}:${revision}`;if(key!==detailKey){detailKey=key;detail=id?structuredClone(pipeline.applications.find(app=>app.id===id)):null}return{application:detail,error:false,retry(){}}}},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false,ready:true})},'@/lib/reviewer-evaluation':{findReviewerEvaluation(...args){const result=compile('lib/reviewer-evaluation.ts').findReviewerEvaluation(...args);lookups.push({round:args[2],result});return result}},'@/lib/workspace-api':api,'@/lib/application-state':{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus(){}})}}, '\nexports.TestWorkspace = ClubWorkspace;').TestWorkspace
   const membership = {id:'member',clubId:'club',permissions,club:{name:'Test club'}}
-  return {calls,api,lookups,notifyEpoch(){currentEpoch={}},commitEpoch(){auth.readAuthority=currentEpoch},setViewer(id){auth.user={id};membership.id=id;membership.userId=id},replayEffects(){for(const cleanup of cleanups.values())cleanup?.();cleanups.clear();for(const [slot,setup]of setups)cleanups.set(slot,setup())},addCandidate(app){pipeline.applications.push({...structuredClone(pipeline.applications[0]),...app})},setCanEvaluate(value){pipeline.applications[0].canEvaluate=value},addRound(round){pipeline.rounds.push(round)},setEvaluations(evaluations){pipeline.applications[0].evaluations=evaluations},renameRound(name){pipeline.rounds[0].name=name},setServerRound(roundId){pipeline.applications[0].roundId=roundId},setServerStatus(status){pipeline.applications[0].status=status},render(){for(let step=0;step<20;step++){changed=false;index=0;const tree=C({membership,decisionsOnly,rejectedOnly});while(effects.length){const [slot,setup]=effects.shift();cleanups.get(slot)?.();cleanups.set(slot,setup())}if(!changed)return tree}throw Error('Component failed to settle')}}
+  return {calls,api,lookups,revalidation:()=>revalidation,notifyEpoch(){currentEpoch={}},commitEpoch(){auth.readAuthority=currentEpoch},setViewer(id){auth.user={id};membership.id=id;membership.userId=id},replayEffects(){for(const cleanup of cleanups.values())cleanup?.();cleanups.clear();for(const [slot,setup]of setups)cleanups.set(slot,setup())},addCandidate(app){pipeline.applications.push({...structuredClone(pipeline.applications[0]),...app})},setCanEvaluate(value){pipeline.applications[0].canEvaluate=value},addRound(round){pipeline.rounds.push(round)},setEvaluations(evaluations){pipeline.applications[0].evaluations=evaluations},renameRound(name){pipeline.rounds[0].name=name},setServerRound(roundId){pipeline.applications[0].roundId=roundId},setServerStatus(status){pipeline.applications[0].status=status},render(){for(let step=0;step<20;step++){changed=false;index=0;const tree=C({membership,decisionsOnly,rejectedOnly});while(effects.length){const [slot,setup]=effects.shift();cleanups.get(slot)?.();cleanups.set(slot,setup())}if(!changed)return tree}throw Error('Component failed to settle')}}
 }
 const button = (tree,label) => nodes(tree).find(n=>n.type==='Button'&&text(n)===label)
 const view = tree => nodes(tree).find(n=>['LiveApplicantList','LiveApplicantKanban'].includes(n.type))
@@ -163,10 +163,17 @@ test('rejected applicants leave active queues and remain in the deliberate retai
  const rejected=harness(undefined,false,true);rejected.setServerStatus('REJECTED');rejected.render();await flush();const rejectedTree=rejected.render();assert.equal(view(rejectedTree).props.applicants.length,1);assert.equal(view(rejectedTree).props.applicants[0].status,'REJECTED');assert.match(text(rejectedTree),/retained here/);
 });
 
-test('recruitment review comes before filter toggles and is absent from Decisions', async () => {
+test('recruitment review actions sit in one header row before the toolbar, without a card or Refresh; Decisions keeps only Review applicants', async () => {
  const h=harness();h.render();await flush();const tree=h.render(),all=nodes(tree);
- assert.ok(all.findIndex(n=>n.props?.['aria-label']==='Recruitment review')<all.findIndex(n=>n.props?.['aria-label']==='Applicant view'));
- const decisions=harness(undefined,true);decisions.render();await flush();assert.equal(nodes(decisions.render()).find(n=>n.props?.['aria-label']==='Recruitment review'),undefined);
+ const actions=all.find(n=>n.props?.['aria-label']==='Recruitment review');
+ assert.equal(actions.type,'div');assert.equal(actions.props.role,'group');assert.match(actions.props.className,/justify-end/);
+ assert.ok(nodes(actions).some(n=>n.type==='Button'&&text(n)==='Quick review'));assert.ok(nodes(actions).some(n=>n.type==='BoardDecisionMode'));assert.match(text(actions),/Review decisions/);
+ assert.doesNotMatch(text(tree),/Review together or work through candidates/);assert.equal(all.some(n=>n.type==='section'&&n.props?.['aria-label']==='Recruitment review'),false);
+ assert.equal(button(tree,'Refresh'),undefined);
+ assert.ok(all.indexOf(actions)<all.findIndex(n=>n.props?.['aria-label']==='Applicant view'));
+ const decisions=harness(undefined,true);decisions.render();await flush();const decisionActions=nodes(decisions.render()).find(n=>n.props?.['aria-label']==='Recruitment review');
+ assert.ok(decisionActions,'the Decisions tool keeps its header action');assert.equal(text(decisionActions),'Review applicants');assert.match(nodes(decisionActions).find(n=>typeof n.props?.href==='string').props.href,/tool=applicants/);
+ assert.equal(nodes(decisionActions).some(n=>n.type==='BoardDecisionMode'||text(n)==='Quick review'),false,'pipeline-only tools stay on Applicants');
 });
 test('quick review saves expected-status decisions and advances only after success', async () => {
  const h=harness();h.addCandidate({id:'second',studentId:'student-two',student:{email:'second@demo.invalid',studentProfile:null}});h.render();await flush();let tree=h.render();
@@ -193,7 +200,31 @@ test('decision status stays unchanged until the server acknowledges publication'
  release();await flush();tree=h.render();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED')
 })
 
-test('page reader remains usable after React development effect cleanup and setup replay',async()=>{const h=harness();h.render();await flush();let tree=h.render();assert.ok(view(tree));h.replayEffects();button(tree,'Refresh').props.onClick();h.render();await flush();tree=h.render();assert.ok(view(tree),'effect setup must create a usable reader after disposal');assert.equal(h.calls.filter(c=>c[0]==='load').length,2,'explicit refresh still performs fresh authorization after effect replay')});
+test('page reader remains usable after React development effect cleanup and setup replay',async()=>{const h=harness();h.render();await flush();let tree=h.render();assert.ok(view(tree));h.replayEffects();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render();nodes(tree).find(n=>n.props?.id==='review-score').props.onChange({target:{value:'8'}});tree=h.render();nodes(tree).find(n=>n.type==='form').props.onSubmit({preventDefault(){}});await flush();h.render();await flush();tree=h.render();assert.ok(view(tree),'effect setup must create a usable reader after disposal');assert.equal(h.calls.filter(c=>c[0]==='load').length,2,'a post-mutation reload still performs fresh authorization after effect replay')});
+
+test('the list stays current without a Refresh button: revalidation re-reads in place and pauses while an applicant is open',async()=>{
+ const h=harness();h.render();await flush();let tree=h.render();
+ assert.equal(button(tree,'Refresh'),undefined);
+ const {options}=h.revalidation();assert.deepEqual(options.scopes,['applicants','decisions']);assert.ok(options.events.includes('outclass:decision-schedules'));assert.equal(options.enabled,true);
+ h.setServerStatus('INTERVIEWING');const pending=h.revalidation().reload();tree=h.render();assert.ok(view(tree),'rows stay visible while revalidating');await pending;await flush();tree=h.render();
+ assert.equal(view(tree).props.applicants[0].status,'INTERVIEWING');assert.equal(h.calls.filter(c=>c[0]==='load').length,2);
+ view(tree).props.open(view(tree).props.applicants[0]);tree=h.render();assert.equal(h.revalidation().options.enabled,false,'no background reload replaces an open review');
+});
+
+test('sorting lives in the column headers; header-less views keep an in-filter sort; the voting bar appears only with a selection',async()=>{
+ const source=fs.readFileSync('components/views/leader-dashboard/live-applicant-views.tsx','utf8');
+ for(const key of ['name','year','round','gpa','sat','act','score','status'])assert.match(source,new RegExp(`key: "${key}"`),`column header sorts by ${key}`);
+ assert.match(source,/aria-sort=\{sort === column.key \? descending \? "descending" : "ascending" : "none"\}/);
+ const h=harness(['applications.review','applicants.identify','decisions.manage','decisions.start']);h.render();await flush();let tree=h.render();
+ const sortSelect=nodes(tree).find(n=>n.props?.['aria-label']==='Sort applicants');assert.ok(nodes(tree).find(n=>n.type==='details'&&nodes(n).includes(sortSelect)),'fallback sort sits inside Filters');
+ const sortRow=t=>{const select=nodes(t).find(n=>n.props?.['aria-label']==='Sort applicants');return nodes(t).find(n=>[].concat(n.props?.children).includes(select))};
+ assert.match(sortRow(tree).props.className,/xl:hidden/,'wide list sorts from headers');
+ view(tree).props.sortBy('sat');tree=h.render();assert.equal(view(tree).props.sort,'sat');assert.equal(view(tree).props.descending,true);view(tree).props.sortBy('sat');tree=h.render();assert.equal(view(tree).props.descending,false);
+ assert.doesNotMatch(text(tree),/selected for voting/);assert.equal(button(tree,'Start voting with selected applicants'),undefined);
+ view(tree).props.votingSelection.toggle('candidate');tree=h.render();const bar=nodes(tree).find(n=>n.props?.['aria-label']==='Voting selection');assert.match(bar.props.className,/fixed/,'overlay bar does not shift the table');assert.match(text(bar),/selected for voting/);assert.ok(nodes(bar).some(n=>n.type==='span'&&[].concat(n.props.children)[0]===1),'shows the selection count');
+ button(tree,'Clear selection').props.onClick();tree=h.render();assert.equal(nodes(tree).find(n=>n.props?.['aria-label']==='Voting selection'),undefined);
+ button(tree,'Kanban').props.onClick();tree=h.render();assert.doesNotMatch(sortRow(tree).props.className,/xl:hidden/,'Kanban keeps the sort control at every width');
+});
 
 test('a different membership identity resets the page cursor before fresh summaries render',async()=>{
  const h=harness(),id=n=>`123e4567-e89b-12d3-a456-${String(n).padStart(12,'0')}`;for(let i=0;i<201;i++)h.addCandidate({id:id(i)});h.render();await flush();let tree=h.render();nodes(tree).find(n=>n.props?.['aria-label']==='Next applicant page').props.onClick();h.render();await flush();tree=h.render();assert.equal(nodes(tree).find(n=>n.type==='p'&&Array.isArray(n.props?.children)&&n.props.children[0]==='Page ').props.children[1],2);h.setViewer(id(999));h.render();await flush();assert.doesNotThrow(()=>{tree=h.render()});assert.equal(nodes(tree).find(n=>n.type==='p'&&Array.isArray(n.props?.children)&&n.props.children[0]==='Page ').props.children[1],1);assert.equal(h.calls.filter(c=>c[0]==='load').length,3);
@@ -202,7 +233,7 @@ test('a different membership identity resets the page cursor before fresh summar
 
 test('authorized selected-applicant shortcut retains stable IDs and navigates without a mutation',async()=>{
  const previousStorage=global.sessionStorage,previousDocument=global.document,stored=new Map();
- global.sessionStorage={setItem:(key,value)=>stored.set(key,value)};global.document={querySelector:()=>null};
+ global.sessionStorage={setItem:(key,value)=>stored.set(key,value)};global.document={querySelector:()=>null,getElementById:()=>null};
  try{
   const h=harness(['applications.review','applicants.identify','decisions.manage','decisions.start']);h.render();await flush();let tree=h.render();
   view(tree).props.votingSelection.toggle('candidate');tree=h.render();button(tree,'Start voting with selected applicants').props.onClick();
@@ -210,4 +241,45 @@ test('authorized selected-applicant shortcut retains stable IDs and navigates wi
   assert.deepEqual(JSON.parse(stored.values().next().value),{userId:'reviewer',clubId:'club',demo:false,applicationIds:['candidate']});assert.ok(h.calls.every(c=>['load','navigate'].includes(c[0])));
   const denied=harness(['applications.review']);denied.render();await flush();const deniedTree=denied.render();assert.equal(view(deniedTree).props.votingSelection,undefined);assert.equal(button(deniedTree,'Start voting with selected applicants'),undefined);
  }finally{if(previousStorage===undefined)delete global.sessionStorage;else global.sessionStorage=previousStorage;if(previousDocument===undefined)delete global.document;else global.document=previousDocument;}
+});
+
+test('a background read that started before a write never lands after it, and repeated failures keep rows with a quiet Try again',async()=>{
+ const h=harness();h.render();await flush();let tree=h.render();
+ const original=h.api.getClubPipelinePage;let release;
+ h.setServerStatus('WAITLISTED');h.api.getClubPipelinePage=async(club,q)=>{const page=await original(club,q);await new Promise(resolve=>release=resolve);return page};
+ const pending=h.revalidation().reload();await flush();
+ h.api.getClubPipelinePage=original;h.setServerStatus('IN_REVIEW');
+ await button(tree,'Quick review').props.onClick();release();await pending;await flush();tree=h.render();
+ assert.equal(view(tree).props.applicants[0].status,'IN_REVIEW','the stale pre-write page is dropped');
+ const older=harness();older.render();await flush();tree=older.render();const base=older.api.getClubPipelinePage;let first;
+ older.setServerStatus('WAITLISTED');older.api.getClubPipelinePage=async(club,q)=>{const page=await base(club,q);await new Promise(resolve=>first=resolve);return page};
+ const slow=older.revalidation().reload();await flush();older.api.getClubPipelinePage=base;older.setServerStatus('INTERVIEWING');await older.revalidation().reload();first();await slow;await flush();tree=older.render();
+ assert.equal(view(tree).props.applicants[0].status,'INTERVIEWING','an older read never overwrites a newer one');
+ older.api.getClubPipelinePage=async()=>{throw Error('offline')};
+ await older.revalidation().reload();tree=older.render();assert.doesNotMatch(text(tree),/Couldn’t update applicants/,'one transient failure stays quiet');assert.ok(view(tree));
+ await older.revalidation().reload();tree=older.render();assert.match(text(tree),/Couldn’t update applicants/);assert.ok(view(tree),'rows stay visible');
+ older.api.getClubPipelinePage=base;button(tree,'Try again').props.onClick();await flush();await flush();tree=older.render();assert.doesNotMatch(text(tree),/Couldn’t update applicants/);
+});
+test('header actions re-resolve a remounted page-header slot instead of portaling into a detached node',async()=>{
+ const first={id:'slot-a',nodeType:1,isConnected:true},second={id:'slot-b',nodeType:1,isConnected:true};let slot=first;
+ globalThis.document={getElementById:id=>id==='workspace-page-actions'?slot:null};
+ try{
+  const h=harness();h.render();await flush();let tree=h.render();
+  const portal=t=>nodes(t).find(n=>n.containerInfo);
+  assert.equal(portal(tree).containerInfo,first);
+  first.isConnected=false;slot=second;tree=h.render();assert.equal(portal(tree).containerInfo,second);
+ }finally{delete globalThis.document}
+});
+test('Filters shows its active count, and the voting bar follows the list and pager with clearance below them',async()=>{
+ const h=harness(['applications.review','applicants.identify','decisions.manage','decisions.start']);h.render();await flush();let tree=h.render();
+ const summary=t=>nodes(nodes(t).find(n=>n.type==='details'&&n.props.className?.includes('oc-pipeline-filters'))).find(n=>n.type==='summary');
+ assert.equal(text(summary(tree)),'Filters');assert.ok(nodes(summary(tree)).some(n=>n.type==='ChevronDown'),'Phosphor chevron, not a text triangle');
+ nodes(tree).find(n=>n.props?.['aria-label']==='Filter round').props.onChange({target:{value:'round'}});tree=h.render();
+ const count=nodes(summary(tree)).find(n=>n.props?.className==='oc-pipeline-filter-count');assert.ok(nodes(count).some(n=>n.props?.['aria-hidden']==='true'&&n.props.children===1));assert.deepEqual(nodes(count).find(n=>n.props?.className==='sr-only').props.children,[', ',1,' active']);
+ assert.equal(typeof nodes(tree).find(n=>n.type==='details'&&n.props.className?.includes('oc-pipeline-filters')).props.ref,'function','Escape and outside press close the menu');
+ nodes(tree).find(n=>n.props?.['aria-label']==='Filter round').props.onChange({target:{value:''}});tree=h.render();
+ view(tree).props.votingSelection.toggle('candidate');tree=h.render();const all=nodes(tree);
+ const bar=all.find(n=>n.props?.['aria-label']==='Voting selection');assert.ok(all.indexOf(bar)>all.indexOf(view(tree)),'keyboard order reaches Start voting after the rows');
+ assert.match(bar.props.className,/oc-voting-bar/);assert.ok(all.find(n=>n.props?.className==='oc-voting-bar-clearance'&&nodes(n).includes(bar)),'list and pager keep clear of the bar');
+ const css=fs.readFileSync('components/product/operational-dashboard.css','utf8');assert.match(css,/body:has\(\.oc-voting-bar\) \[data-sonner-toaster\]/,'toasts rise above the bar');
 });

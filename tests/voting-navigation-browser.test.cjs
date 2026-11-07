@@ -12,7 +12,7 @@ test('leader landing, selected setup, dedicated room, return/resume and member e
   assert.equal(f.h.state().sessions.length,0);
   await leader.evaluate(({clubId,ids})=>sessionStorage.setItem('outclass:voting-selection:selection-fixture',JSON.stringify({userId:window.initial.user.id,clubId,demo:false,applicationIds:ids})),{clubId:f.clubId,ids:[apps[1]]});
   await leader.goto(f.url+'/voting/rooms/new?actor=leader&selection=selection-fixture');
-  await leader.getByRole('button',{name:'Continue',exact:true}).waitFor();await leader.getByRole('radio',{name:'Schedule for later',exact:true}).check();await leader.getByRole('textbox',{name:'Date and start time'}).fill(new Date(Date.now()+2*86400000).toISOString().slice(0,16));await leader.getByRole('button',{name:'Continue',exact:true}).click();await leader.getByRole('button',{name:'Select all eligible voters',exact:true}).click();
+  await leader.getByRole('button',{name:'Continue',exact:true}).waitFor();await leader.getByRole('radio',{name:'Schedule for later',exact:true}).check();await leader.getByRole('textbox',{name:'Date and start time'}).fill(new Date(Date.now()+2*86400000).toISOString().slice(0,16));await leader.getByRole('button',{name:'Continue',exact:true}).click();await leader.getByRole('button',{name:'Select all voters',exact:true}).click();
   const applicants=leader.getByRole('group',{name:/Applicants/});
   assert.equal(await applicants.getByRole('checkbox').nth(0).isChecked(),false);assert.equal(await applicants.getByRole('checkbox').nth(1).isChecked(),true);assert.equal(await applicants.getByRole('checkbox').nth(2).isChecked(),false);
   assert.equal(f.h.state().sessions.length,0);

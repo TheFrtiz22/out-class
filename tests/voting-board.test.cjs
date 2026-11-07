@@ -46,7 +46,7 @@ test('persisted draft is displayed even when a read takes longer than several po
  assert.match(text(tree),/Session display setup/);
  h.revoke();h.poll();h.complete();await flush();tree=h.render();
  assert.match(text(tree),/Access revoked/);assert.equal(nodes(tree).some(n=>n.type==='ApplicantDisplayPanel'),false);
- button(tree,'Refresh').props.onClick();h.complete();await flush();assert.match(text(h.render()),/Access revoked/);
+ button(tree,'Try again').props.onClick();h.complete();await flush();assert.match(text(h.render()),/Access revoked/);
 });
 
 test('account changes conceal an existing voting snapshot immediately and discard a late old-account response',async()=>{
@@ -62,7 +62,7 @@ test('account changes conceal an existing voting snapshot immediately and discar
 test('manager history polls omit selection scans; reopening setup hides old data until a fresh selection snapshot',async()=>{
  const query={sort:'name'},h=harness({selectionQuery:query});h.render();await flush();let tree=h.render();tree=h.render();assert.deepEqual(h.readArgs[0],['club',undefined,query]);
  await h.poll();await flush();tree=h.render();assert.deepEqual(h.readArgs.at(-1),['club',undefined]);
- let setup=nodes(tree).find(n=>n.props?.title==='New voting session');assert.ok(setup);setup.props.onOpenChange(true);tree=h.render();const pendingSetup=nodes(tree).find(n=>n.props?.title==='New voting session');assert.equal(pendingSetup.props.open,true);assert.equal(nodes(pendingSetup).some(n=>n.type==='form'),false,'previous setup eligibility is concealed for the new operation');assert.ok(nodes(pendingSetup).some(n=>n.props?.label==='Loading eligible candidates…'));
+ let setup=nodes(tree).find(n=>n.props?.title==='New voting session');assert.ok(setup);setup.props.onOpenChange(true);tree=h.render();const pendingSetup=nodes(tree).find(n=>n.props?.title==='New voting session');assert.equal(pendingSetup.props.open,true);assert.equal(nodes(pendingSetup).some(n=>n.type==='form'),false,'previous setup eligibility is concealed for the new operation');assert.ok(nodes(pendingSetup).some(n=>n.props?.label==='Loading candidates…'));
  await flush();tree=h.render();tree=h.render();assert.deepEqual(h.readArgs.at(-1),['club',undefined,query]);setup=nodes(tree).find(n=>n.props?.title==='New voting session');assert.equal(setup.props.open,true);
  setup.props.onOpenChange(false);h.render();await h.poll();await flush();tree=h.render();assert.deepEqual(h.readArgs.at(-1),['club',undefined]);
  setup=nodes(tree).find(n=>n.props?.title==='New voting session');setup.props.onOpenChange(true);h.render();await flush();h.render();assert.deepEqual(h.readArgs.at(-1),['club',undefined,query]);

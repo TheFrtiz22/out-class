@@ -1,5 +1,5 @@
 "use client"
-import { ArrowRight, RefreshCw } from "@/components/icons"
+import { ArrowRight } from "@/components/icons"
 import { useState, type CSSProperties } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
@@ -7,7 +7,6 @@ import type { getClubWorkspaceOverview } from "@/lib/workspace-api"
 import { memberDate } from "@/components/member-overview"
 import { DashboardDrawer } from "@/components/product/dashboard-drawer"
 import { LoadingState } from "@/components/ui/loading-state"
-import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { needsYou, railHrefs, type NeedsCard } from "@/components/club-home/club-home-model"
 import { AssignmentsCard, InterviewsCard, PipelineCard, TeamPulse, UpdatesCard, WeekCard } from "@/components/club-home/club-home-sections"
@@ -43,7 +42,6 @@ export function ManagerOverview({ data, refreshing = false, onChanged = () => {}
     <section className="oc-club-home-needs" aria-labelledby="club-home-needs">
       <div className="oc-club-home-section-head">
         <h2 id="club-home-needs">Needs you</h2>
-        <Button type="button" size="icon" variant="glass" className="oc-club-home-refresh" aria-label="Refresh club home" disabled={refreshing} loading={refreshing} onClick={onChanged}><RefreshCw aria-hidden="true" /></Button>
       </div>
       {first ? <div className="oc-needs-grid" data-count={cards.length}>
         <Card variant="glass-navy" className="oc-needs-card" data-needs={first.id} data-urgent="true" style={{ "--i": 0 } as CSSProperties}>{body(first)}</Card>

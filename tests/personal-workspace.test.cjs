@@ -54,9 +54,9 @@ test('status sorts attention before upcoming interviews and orders interview app
 function trackerHarness(records,scope='status',params='') {
  const h=hooks(),calls=[],navigation=[];const auth={user:{id:'student'},loading:false,refreshUser:async()=>{}};
  const shared={focusApplicationClubId:null,clearApplicationFocus(){shared.focusApplicationClubId=null},focusApplication:id=>calls.push(['focus',id]),syncApplications:items=>calls.push(['applications',items]),syncApplicationBookings:items=>calls.push(['bookings',items])};
- let server=records,fail=false,query=params;
- const C=load('components/views/application-tracker-view.tsx',{react:h.react,'next/navigation':{useSearchParams:()=>new URLSearchParams(query)},'@/lib/workspace-api':{getStudentApplications:async()=>{calls.push(['read']);if(fail)throw Error('Unavailable');return structuredClone(server)}},'@/contexts/auth-context':{useAuth:()=>auth},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/lib/application-state':{useApplicationState:()=>shared},window:{confirm:()=>false}}).ApplicationTrackerView;
- return {...h,calls,auth,navigation,render:()=>h.render(()=>C({scope,onNavigate:view=>navigation.push(view)})),setRecords:records=>server=records,fail:()=>fail=true,query:value=>query=value,shared};
+ let server=records,fail=false,query=params;const revalidation={};
+ const C=load('components/views/application-tracker-view.tsx',{react:h.react,'@/hooks/use-revalidate':{useRevalidate:(fn,options)=>Object.assign(revalidation,{fn,options})},'next/navigation':{useSearchParams:()=>new URLSearchParams(query)},'@/lib/workspace-api':{getStudentApplications:async()=>{calls.push(['read']);if(fail)throw Error('Unavailable');return structuredClone(server)}},'@/contexts/auth-context':{useAuth:()=>auth},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/lib/application-state':{useApplicationState:()=>shared},window:{confirm:()=>false}}).ApplicationTrackerView;
+ return {...h,calls,auth,navigation,revalidation,render:()=>h.render(()=>C({scope,onNavigate:view=>navigation.push(view)})),setRecords:records=>server=records,fail:()=>fail=true,query:value=>query=value,shared};
 }
 const cards=tree=>nodes(tree).filter(node=>node.type==='ApplicationStatusCard');
 const management=tree=>nodes(tree).filter(node=>node.type==='ApplicationManagementCard');
@@ -75,6 +75,14 @@ test('booking changes refresh the same application and synchronize calendar book
  h.setRecords([app('Invite','INTERVIEWING',{bookings:[booking()]})]);detail.props.onBookingChanged();await h.flush();detail=nodes(h.render()).find(node=>node.type==='ApplicationStatusDetail');assert.equal(detail.props.application.bookings.length,1);assert.equal(h.calls.filter(call=>call[0]==='read').length,2);
  assert.equal(h.calls.filter(call=>call[0]==='bookings').at(-1)[1][0].bookings.length,1);
  detail.props.onResponses();await h.flush();assert.deepEqual(h.navigation,['tracker']);assert.deepEqual(h.calls.find(call=>call[0]==='focus'),['focus','club-Invite']);
+});
+test('Applications has no Refresh button and revalidates quietly, keeping the open status on screen',async()=>{
+ const h=trackerHarness([app('Invite','INTERVIEWING')]);h.render();await h.flush();let tree=h.render();
+ assert.equal(nodes(tree).some(node=>/^Refresh/.test(text(node))&&node.type==='Button'),false);
+ cards(tree)[0].props.onOpen();tree=h.render();assert.equal(nodes(tree).some(node=>node.type==='Button'&&/Refresh/.test(text(node))),false);
+ assert.equal(h.revalidation.options.enabled,true);h.setRecords([app('Invite','INTERVIEWING',{bookings:[booking()]})]);const reads=h.calls.filter(call=>call[0]==='read').length;
+ await h.revalidation.fn();tree=h.render();assert.equal(h.calls.filter(call=>call[0]==='read').length,reads+1);assert.equal(nodes(tree).some(node=>node.type==='LoadingState'),false);
+ assert.equal(nodes(tree).find(node=>node.type==='ApplicationStatusDetail').props.application.bookings.length,1);
 });
 test('application deep links focus only an owned submitted application in Status',async()=>{
  const h=trackerHarness([app('Draft','DRAFTING'),app('Owned')],'status','applicationId=Owned');h.render();await h.flush();h.render();await h.flush();assert.equal(nodes(h.render()).find(node=>node.type==='ApplicationStatusDetail').props.application.id,'Owned');
@@ -187,4 +195,21 @@ test('Calendar is one rail destination in every personal section and keeps its t
   assert.equal(calendar.length,1);assert.equal(calendar[0].props.href,'/calendar');assert.equal(calendar[0].props['aria-current'],'page');
   const mobile=nodes(shell).find(node=>node.type==='MobileNavigation');assert.equal(mobile.props.items.some(item=>item.id==='calendar'),false);
  }
+});
+test('a background reload that lands after a draft opens keeps the open draft object and still updates the rest',async()=>{
+ const draft=app('Draft','DRAFTING',{revision:1,answers:[{questionId:'q',response:'Local words'}]});
+ const h=trackerHarness([draft,app('Other')],'all');h.render();await h.flush();let tree=h.render();
+ h.setRecords([{...draft,revision:2,answers:[{questionId:'q',response:'Server words'}]},app('Other','ACCEPTED')]);
+ const landing=h.revalidation.fn();management(tree).find(node=>node.props.application.id==='Draft').props.onOpen();tree=h.render();
+ const before=nodes(tree).find(node=>node.type==='ApplicationForm').props.application;
+ await landing;await h.flush();tree=h.render();const form=nodes(tree).find(node=>node.type==='ApplicationForm');
+ assert.equal(form.props.application,before,'the open draft keeps its object');assert.equal(form.props.application.revision,1);assert.equal(form.props.application.answers[0].response,'Local words');
+ const synced=h.calls.filter(call=>call[0]==='applications').at(-1)[1];assert.equal(synced.find(item=>item.id==='Other').status,'Accepted','other applications still update');
+});
+test('background and explicit application refresh failures are surfaced quietly without losing the list',async()=>{
+ const h=trackerHarness([app('Invite','INTERVIEWING')]);h.render();await h.flush();let tree=h.render();
+ h.fail();await h.revalidation.fn();tree=h.render();assert.equal(cards(tree).length,1,'current applications stay visible');
+ assert.ok(nodes(tree).some(node=>node.props?.role==='status'&&/Couldn’t update your applications/.test(text(node))));
+ cards(tree)[0].props.onOpen();tree=h.render();await nodes(tree).find(node=>node.type==='ApplicationStatusDetail').props.onRefresh();await h.flush();
+ assert.match(nodes(h.render()).find(node=>node.type==='ApplicationStatusDetail').props.notice,/Couldn’t refresh/);
 });

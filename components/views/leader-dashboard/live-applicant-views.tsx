@@ -20,7 +20,7 @@ type Props = { votingSelection?: {ids:string[];toggle:(id:string)=>void}; applic
 export function ApplicantInterview({ app }: { app: Awaited<ReturnType<typeof import("@/lib/workspace-api").getClubPipeline>>["applications"][number] }) {
   if (app.studentId.startsWith("anonymous-")) return <span>Withheld for anonymous review</span>
   const selected = relevantInterview(app.bookings)
-  if (!selected) return <span>No booking recorded</span>
+  if (!selected) return <span>No interview scheduled</span>
   return <span>{selected.past ? "Last: " : "Next: "}{schedulingDateTime(selected.booking.slot.startTime)}</span>
 }
 function ApplicantIdentity({ label, anonymous }: { label: string; anonymous: boolean }) {
@@ -30,11 +30,12 @@ function Review({ app }: { app: Candidate; average?: Props["average"] }) {
   const summary = app.roundScore
   return <span className="oc-applicant-review" data-reviewed={!!summary?.submitted}>{summary ? <><strong>{formatAverage(summary.average)}{summary.average !== null && <span> / 10</span>}</strong><span>{summary.submitted} of {summary.required} reviews submitted{summary.provisional && " · Provisional"}</span></> : <span className="oc-applicant-review-hidden"><Lock aria-hidden="true" size={14} />Hidden until you review</span>}</span>
 }
-const columns: { key: ApplicantSort; label: string }[] = [{ key: "name", label: "Applicant" }, { key: "round", label: "Round" }, { key: "gpa", label: "GPA" }, { key: "sat", label: "SAT" }, { key: "act", label: "ACT" }, { key: "score", label: "Rating" }, { key: "status", label: "Status / decision" }]
+const columns: { key: ApplicantSort; label: string }[] = [{ key: "name", label: "Applicant" }, { key: "year", label: "Year" }, { key: "round", label: "Round" }, { key: "gpa", label: "GPA" }, { key: "sat", label: "SAT" }, { key: "act", label: "ACT" }, { key: "score", label: "Rating" }, { key: "status", label: "Status / decision" }]
 export function LiveApplicantList({ applicants, rounds, open, compact, name, sort = "name", descending = false, sortBy, votingSelection }: Props) {
   return <>
     <DataTable className="hidden xl:block" caption="Applicants"><TableHeader><TableRow>{votingSelection&&<TableHead><span className="sr-only">Select for voting</span></TableHead>}{columns.map(column => <TableHead key={column.key} scope="col" aria-sort={sort === column.key ? descending ? "descending" : "ascending" : "none"}>{sortBy ? <SortLabel label={column.label} active={sort === column.key} descending={descending} onClick={() => sortBy(column.key)} /> : column.label}</TableHead>)}</TableRow></TableHeader><TableBody>{applicants.map(app => <TableRow key={app.id} className="cursor-pointer hover:bg-secondary/40" onClick={() => open(app)}>
       <>{votingSelection&&<TableCell onClick={e=>e.stopPropagation()}><VotingSelection app={app} name={name(app)} selection={votingSelection}/></TableCell>}</><TableCell className={compact ? "py-3" : "py-5"}><button type="button" data-applicant-id={app.id} onClick={event => { event.stopPropagation(); open(app) }} className="min-h-11 rounded text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"><ApplicantIdentity label={name(app)} anonymous={app.studentId.startsWith("anonymous-")} /><span className="text-xs text-muted-foreground">{app.studentId.startsWith("anonymous-") ? "Anonymous review" : app.student.email}</span><span className="sr-only"> · Open applicant</span></button></TableCell>
+      <TableCell className="text-xs">{app.student.studentProfile?.academicYear || "—"}</TableCell>
       <TableCell className="text-xs">{rounds.find(round => round.id === app.roundId)?.name || "Not available"}</TableCell>
       <TableCell>{app.student.studentProfile?.gpa?.toFixed(2) ?? "—"}</TableCell>
       <TableCell>{app.student.studentProfile?.satScore ?? "—"}</TableCell>

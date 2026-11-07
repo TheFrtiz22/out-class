@@ -70,7 +70,7 @@ export async function resolveInterviewRoomEntry(input: { clubId: string; applica
     const actor = await authorizeInterview(tx, data, user.id, "panel", "share");
     const booking = await tx.interviewBooking.findUnique({ where: { applicationId_roundId: { applicationId: data.applicationId, roundId: data.roundId } }, include: { slot: { include: { room: true, panelScheduleVersion: true } } } });
     if (data.bookingId || data.slotId || data.roomId) {
-      if (!booking || data.bookingId && data.bookingId !== booking.id || data.slotId && data.slotId !== booking.slotId || data.roomId && data.roomId !== booking.slot.roomId) throw Error("This booking changed or was cancelled. Return to Interview rooms.");
+      if (!booking || data.bookingId && data.bookingId !== booking.id || data.slotId && data.slotId !== booking.slotId || data.roomId && data.roomId !== booking.slot.roomId) throw Error("This interview changed or was cancelled. Go back to Interview rooms.");
     }
     if (booking && !(await approvedBookingPanel(tx, data, booking))?.includes(actor.member.id)) throw Error("This room assignment is no longer available.");
     const record = await tx.interviewRecord.findUnique({ where: { applicationId_interviewerId_roundId: { applicationId: data.applicationId, roundId: data.roundId, interviewerId: actor.member.id } } });

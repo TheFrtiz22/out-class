@@ -259,7 +259,7 @@ test('revision conflict preserves the latest closing review and retry refreshes 
  scoreInput(t).props.onChange({currentTarget:{value:'9.5'}});t=h.render();nodes(t).find(n=>n.props?.id==='final-interview-thoughts').props.onChange({target:{value:'Retain the latest answer'}});t=h.render();
  h.record.revision++;button(t,'End post-interview').props.onClick();await flush();t=h.render();
  assert.equal(h.record.completedAt,null);assert.equal(nodes(t).find(n=>n.props?.id==='final-interview-thoughts').props.value,'Retain the latest answer');assert.equal(scoreInput(t).props.value,9.5);assert.equal(h.calls.filter(c=>c[0]==='complete').length,0);
- button(t,'Refresh revision, keep my text').props.onClick();await flush();t=h.render();button(t,'Retry end post-interview').props.onClick();await flush();t=h.render();
+ button(t,'Load latest version, keep my text').props.onClick();await flush();t=h.render();button(t,'Retry end post-interview').props.onClick();await flush();t=h.render();
  assert.ok(h.record.completedAt);assert.equal(h.record.draft.finalInterviewThoughts,'Retain the latest answer');assert.equal(h.record.draft.score,9.5);assert.equal(h.calls.filter(c=>c[0]==='complete').length,1);
 });
 

@@ -233,6 +233,6 @@ export function ClubInterviewKitSettings({ clubId, initialRoundId }: { clubId: s
     return (
       <p>{member && canDiscoverInterviewSetup(member) ? "No active interview rounds. Configure an Interview or Group Interview round in Recruiting Pipeline." : "No assigned interview rounds. Ask your club owner to confirm your panel assignment."}</p>
     );
-  if (initialRoundId && !rounds.some(r => r.id === initialRoundId)) return <p role="alert">The requested round is unavailable under your current access or is no longer an active interview round. Return to Interview Setup to choose an eligible round.</p>;
+  if (initialRoundId && !rounds.some(r => r.id === initialRoundId)) return <p role="alert">That round isn’t available to you or is no longer active. Go back to Interview setup and choose another.</p>;
   return <InterviewKitEditor key={`${clubId}:${initialRoundId || ""}`} clubId={clubId} rounds={rounds} initialRoundId={initialRoundId} />;
 }

@@ -707,7 +707,8 @@
 }
 
 /* Shared discovery controls; the pinned flyers retain their original layout. */
-.oc-event-view-switch.oc-segmented-control { border-radius: var(--oc-radius-sm); flex-shrink: 0; width: 184px; padding: 4px; }
+.oc-event-view-switch.oc-segmented-control { border-radius: var(--oc-radius-sm); flex-shrink: 0; width: auto; min-width: 184px; padding: 4px; }
+.oc-event-view-switch.oc-segmented-control button { white-space: nowrap; padding-inline: .875rem; }
 .oc-event-view-switch.oc-segmented-control button, .oc-event-view-switch.oc-segmented-control[data-sliding="true"] .oc-segmented-indicator { border-radius: var(--oc-radius-sm); }
 .oc-event-view-switch.oc-segmented-control button { min-height: 34px; }
 .oc-event-toolbar .oc-event-periods { gap: 4px; }
@@ -790,7 +791,7 @@
 
 @media (max-width: 359px) { .oc-flyer-grid { grid-template-columns: minmax(0, 1fr); } .oc-physical-board { padding: 1.5rem; } }
 
-/* Search, filters, view selection and saved clubs share one aligned toolbar. */
+/* One toolbar: date range, search, the Filter menu and the view switch. */
 .oc-event-toolbar-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; flex: 1 1 38rem; min-width: 0; }
 .oc-event-toolbar-actions .oc-event-search { margin-left: auto; max-width: none; min-width: min(100%, 10rem); }
 .oc-event-toolbar-actions > [data-slot="button"] { min-height: 44px; }
@@ -800,4 +801,11 @@
   .oc-event-toolbar-actions .oc-event-view-switch { width: 100%; min-width: 0; }
   .oc-event-toolbar-actions .oc-event-filter summary { justify-content: center; }
   .oc-event-toolbar-actions > [data-slot="button"] { width: 100%; }
+}
+.oc-event-filter summary { white-space: nowrap; }
+.oc-event-filter summary::-webkit-details-marker { display: none; }
+.oc-event-filter-count { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding-inline: 6px; border-radius: 999px; background: var(--primary); color: var(--primary-foreground); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
+@media (max-width: 700px) {
+  .oc-event-toolbar-actions .oc-event-view-switch { grid-column: 1 / -1; }
+  .oc-event-view-switch.oc-segmented-control button { padding-inline: .75rem; }
 }

@@ -26,7 +26,7 @@ export async function requireAdminElevation(actorId: string) {
 }
 function key() {
   const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!secret) throw Error("Admin authentication is not configured.");
+  if (!secret) throw Error("Admin sign-in is unavailable right now.");
   return createHash("sha256").update("outclass-admin-challenge-v1\0" + secret).digest();
 }
 export function encryptChallenge(value: { access_token: string; refresh_token: string }) {

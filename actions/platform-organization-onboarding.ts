@@ -41,7 +41,7 @@ export async function createOrganizationAndInvitePresident(input: unknown): Prom
     return await prisma.$transaction(async tx => {
       let config = await tx.schoolIdentifierType.findUnique({ where: { id: data.identifierTypeId }, include: { school: true } });
       if (!config || !config.school.active || config.verification !== "EMAIL_LOCAL_PART" || !config.emailDomain) {
-        throw new OnboardingConflict("This school is not configured for president invitations. Choose an available school.");
+        throw new OnboardingConflict("This school can’t receive president invitations yet. Choose another school.");
       }
       // Reload mapping/availability after the locks, so configuration changes cannot
       // race normalization or organization creation.

@@ -82,7 +82,7 @@ export async function getClubWorkspaceOverview(clubId: string) {
       : Promise.resolve(null),
   ]);
   const current = await requireClubMembership(clubId);
-  if (JSON.stringify(current.membership) !== JSON.stringify(membership)) throw new Error("Workspace access changed. Refresh and try again.");
+  if (JSON.stringify(current.membership) !== JSON.stringify(membership)) throw new Error("Workspace access changed. Reload the page and try again.");
   return {
     operations,
     club,

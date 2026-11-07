@@ -34,7 +34,9 @@ test('browser: Club home dashboard, permissions, header glass, blur budget and a
   await page.goto(fixture.url('fixture=large&role=owner'), { waitUntil: 'networkidle' }); await settle(page)
   const h1 = page.locator('h1')
   assert.equal(await h1.count(), 1)
-  assert.match(await page.locator('.oc-club-home-greeting .oc-eyebrow').textContent(), /McIntire Investment Institute · Fall 2026 recruiting/)
+  // The title is the club's name (greetings stay on personal Home); the cycle sits above it.
+  assert.equal((await h1.textContent()).trim(), 'McIntire Investment Institute')
+  assert.equal((await page.locator('.oc-club-home-greeting .oc-eyebrow').textContent()).trim(), 'Fall 2026 recruiting')
   assert.match(await page.locator('.oc-club-home-greeting .oc-page-description').textContent(), /Applications close in 2 days\./)
   assert.deepEqual(await page.locator('.oc-needs-card').evaluateAll(cards => cards.map(card => [card.dataset.needs, card.dataset.variant])), [['vote-live', 'glass-navy'], ['overdue', 'glass-raised'], ['interviews', 'glass-raised'], ['reviews', 'glass-raised']])
   for (const name of ['Post update', 'New meeting', 'Open applicants', 'Join voting', 'Open scheduler']) assert.ok(await page.getByRole('link', { name, exact: true }).first().isVisible(), name)
@@ -90,9 +92,9 @@ test('browser: Club home dashboard, permissions, header glass, blur budget and a
   assert.equal(await page.getByRole('link', { name: /^Open room: Jordan Avery/ }).count(), 1)
   await page.getByRole('button', { name: /^Prep: Priya Natarajan/ }).click()
   await page.getByRole('dialog', { name: 'Prepare for interview' }).waitFor(); await page.keyboard.press('Escape')
-  await page.getByRole('button', { name: 'Refresh club home', exact: true }).click()
-  assert.equal(await page.locator('[data-refreshes]').getAttribute('data-refreshes'), '1')
-  console.log('PASS existing drawers and refresh')
+  // No Refresh button: the workspace reloads the overview after changes and when the person returns.
+  assert.equal(await page.getByRole('button', { name: /^Refresh/ }).count(), 0)
+  console.log('PASS existing drawers; no refresh button')
 
   const axe = await new AxeBuilder({ page }).include('#workspace-content').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()
   assert.deepEqual(axe.violations.map(v => `${v.id}: ${v.nodes.map(n => n.target).join(', ')}`), [])
@@ -113,6 +115,7 @@ test('browser: Club home dashboard, permissions, header glass, blur budget and a
     await h1.evaluate(el => { el.style.visibility = '' })
     return { covered, clip, value: await headingEdges(shown, hidden) }
   }
+  await page.evaluate(() => scrollTo(0, 0)); await page.waitForTimeout(300)
   const visible = await edges()
   await page.evaluate(() => scrollTo(0, 120)); await page.waitForTimeout(300)
   const underHeader = await edges()

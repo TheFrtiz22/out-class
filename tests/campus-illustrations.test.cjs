@@ -129,9 +129,9 @@ for(const [name,member,requested,effective,illustration] of settingsCases) test(
  else assert.doesNotMatch(html,/oc-campus-illustration|data-illustrated/)
 })
 
-test('club Overview keeps its club name and neutral welcome without repetitive public profile shortcuts or artwork',()=>{
+test('club Overview opens with the club name, not a greeting, without repetitive public profile shortcuts or artwork',()=>{
  const html=renderSettingsWorkspace({isOwner:true},null,'overview');
- assert.match(html,/<h1[^>]*>.*Welcome to OutClass\..*<\/h1>/);assert.match(html,/Fixture Club/);
+ assert.match(html,/<h1[^>]*>.*Fixture Club.*<\/h1>/);assert.doesNotMatch(html,/Good (morning|afternoon|evening)|Welcome to OutClass|Still up/);
  assert.doesNotMatch(html,/Public club profile|href="\/club\/visual-fixture-club"/);
  assert.doesNotMatch(html,/oc-campus-illustration|data-illustrated|oc-campus-ribbon/);
 })

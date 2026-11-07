@@ -51,7 +51,7 @@ async function verify(config, root) {
     assert.equal(await db.userNotification.count({ where: { eventKey: { startsWith: `availability-request:${row.id}:` } } }), 1)
     // Real reminders go through the same route/outbox, bounded by server cooldown.
     await db.interviewRoundParticipation.update({ where: { id: row.id }, data: { requestedAt: new Date(Date.now() - 25 * 3600000) } })
-    await admin.page.getByRole('button', { name: 'Refresh overview' }).click(); await admin.page.getByRole('button', { name: 'Remind nonresponders' }).click(); await admin.page.getByText('1 reminder sent.', { exact: false }).waitFor()
+    await admin.page.evaluate(() => window.dispatchEvent(new Event('outclass:availability-changed'))); await admin.page.getByRole('button', { name: 'Remind nonresponders' }).click(); await admin.page.getByText('1 reminder sent.', { exact: false }).waitFor()
     const member = await context('interviewer'); await member.page.goto(config.appUrl + '/home'); await dismiss(member.page)
     await member.page.getByRole('navigation', { name: 'Availability navigation' }).getByRole('link', { name: 'My Availability' }).waitFor()
     const tasks = member.page.getByRole('region', { name: 'Availability requests' }); await tasks.getByText('Awaiting response', { exact: true }).waitFor(); await tasks.getByRole('link', { name: 'Respond to request' }).click()
@@ -61,7 +61,7 @@ async function verify(config, root) {
     assert.deepEqual((await db.userAvailability.findUniqueOrThrow({ where: { userId: config.actors.interviewer.id } })).schedule.exceptions, {})
     await member.page.getByRole('button', { name: 'Submit round availability', exact: true }).click(); await member.page.getByText('Submitted · Participation confirmed.', { exact: false }).waitFor()
     await member.page.getByRole('link', { name: 'Back to Home' }).click(); await tasks.getByText('Submitted', { exact: true }).waitFor()
-    await admin.page.bringToFront(); await admin.page.getByRole('button', { name: 'Refresh overview' }).click(); await admin.page.getByRole('row').filter({ hasText: 'Test Interviewer' }).getByText('Submitted', { exact: true }).waitFor()
+    await admin.page.bringToFront(); await admin.page.evaluate(() => window.dispatchEvent(new Event('outclass:availability-changed'))); await admin.page.getByRole('row').filter({ hasText: 'Test Interviewer' }).getByText('Submitted', { exact: true }).waitFor()
     await workflow(admin.page).getByRole('button', { name: 'Rooms', exact: true }).click(); await admin.page.getByLabel('Interviewers needed for Room A', { exact: true }).selectOption('3')
     await admin.page.getByText('Staffing requirement saved.', { exact: false }).waitFor(); await admin.page.waitForFunction(() => document.querySelector('select[aria-label="Interviewers needed for Room A"]').value === '3'); await admin.page.getByLabel('Interviewers needed for Room A', { exact: true }).selectOption('2'); await admin.page.getByText('Staffing requirement saved.', { exact: false }).waitFor()
     // Let the saved requirement's refresh settle, then generate only a private proposal.

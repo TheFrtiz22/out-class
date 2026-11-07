@@ -30,7 +30,7 @@ export async function approveInterviewRoomPanel(input: unknown) {
     await lockOperationalClub(tx, data.clubId);
     const {caps}=await interviewActor(tx,data.clubId,user.id);if(!caps.manageGrants)throw Error("Only an owner can approve panel access.");
     const room=await tx.interviewRoom.findFirst({where:{id:data.roomId,clubId:data.clubId},include:{round:true,slots:{include:{bookings:true}}}});
-    if(!room||!room.isOpen||room.round.anonymousReview||room.panelApprovalRevision!==data.revision||JSON.stringify([...room.panelMemberIds].sort())!==JSON.stringify([...new Set(data.panelMemberIds)].sort()))throw Error("Room panel changed or requires identified-round review. Refresh before approval.");
+    if(!room||!room.isOpen||room.round.anonymousReview||room.panelApprovalRevision!==data.revision||JSON.stringify([...room.panelMemberIds].sort())!==JSON.stringify([...new Set(data.panelMemberIds)].sort()))throw Error("Room panel changed or requires identified-round review. Reload the page and try again.");
     if(room.slots.some(s=>s.panelScheduleVersionId&&+s.startTime>Date.now()))throw Error("This room has published session panels. Use Edit Panels and the explicit schedule approval workflow.");
     const members=await tx.clubMember.findMany({where:{id:{in:room.panelMemberIds},clubId:data.clubId,status:"ACTIVE",user:{disabledAt:null}}});
     if(members.length!==room.panelMemberIds.length||members.some(m=>!interviewCapabilities(m).participate))throw Error("Every approved panel member must be an active identified reviewer.");

@@ -50,7 +50,7 @@ function GroupWizard({ clubId, members, onSaved, done }: { clubId: string; membe
       setSaved(true)
       try { await onSaved(); done() }
       catch { setError("Groups were created. Close this window and refresh members to see them.") }
-    } catch (error) { setError(error instanceof Error ? error.message : "Groups could not be saved. Refresh members before retrying.") }
+    } catch (error) { setError(error instanceof Error ? error.message : "Groups could not be saved. Check the member list and try again.") }
     finally { working.current = false; setBusy(false) }
   }
   return <form className="space-y-5" data-saving={busy} data-unsaved={!saved && (!!name || selected.length > 0)} onSubmit={event => { event.preventDefault(); if (step === 1 && name.trim()) setStep(2) }}>
