@@ -79,3 +79,18 @@ test("⌘K offers every rail destination once and no removed page", () => {
   assert.ok(report.search["personal-home"].includes("Inbox"))
   assert.equal(report.report.filter(row => row.findings.length).length, 0, "the last screenshot audit found nothing")
 })
+
+test("Public profile: the roster count is a suggestion and never remounts the editor (edits in progress survive)", () => {
+  const settings = fs.readFileSync("components/club-profile-settings.tsx", "utf8")
+  assert.match(settings, /<ClubProfileEditor clubId=\{clubId\} key=\{clubId\} rosterCount=\{rosterCount\}/)
+  assert.doesNotMatch(settings, /rosterCount \?\? ""\}`|withRosterCount/)
+  const editor = fs.readFileSync("components/clubs/club-profile-editor.tsx", "utf8")
+  assert.match(editor, /placeholder=\{rosterCount != null \? String\(rosterCount\) : undefined\}/)
+  assert.match(editor, /Use roster count \(\{rosterCount\}\)/)
+})
+
+test("Settings → Organizations keeps its sign-in and profile-completion gate before redirecting", () => {
+  const page = fs.readFileSync("app/settings/organizations/page.tsx", "utf8")
+  assert.ok(page.indexOf("requireCompletedStudentProfile(user.id, \"/settings/organizations\")") < page.indexOf("redirect(`/clubs"))
+  assert.match(page, /requireAuth\(\{ verifyEmail: true \}\)/)
+})

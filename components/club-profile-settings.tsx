@@ -10,14 +10,12 @@ import { useEffect, useState } from "react"
 import { readWorkspace } from "@/lib/workspace-read"
 import { clubProfileSchema, profileDraft } from "@/lib/club-marketing"
 
-function withRosterCount<T extends { marketing: { memberCount: number | null } }>(draft: T, rosterCount: number | null): T {
-  return rosterCount != null && draft.marketing.memberCount == null ? { ...draft, marketing: { ...draft.marketing, memberCount: rosterCount } } : draft
-}
 export function ClubProfileSettings({ clubId, onSaved }: { clubId: string; onSaved?: () => void }) {
   const { user, refreshUser } = useAuth(), demo = useDemoMode()
   const member = user?.memberships.find(m => m.clubId === clubId)
   const club = demo.isDemoEnabled ? demo.state?.clubs.find(c => c.id === clubId) : member?.club
-  // "Active members" starts from the real roster (active memberships) when the club has not reported a number.
+  // The roster count is a suggestion beside "Active members"; it loads after the editor and never remounts it
+  // (a remount would discard edits in progress).
   const canCount = !demo.isDemoEnabled && hasPermission(member, "members.manage")
   const [roster, setRoster] = useState<{ clubId: string; count: number | null } | null>(null)
   useEffect(() => {
@@ -29,7 +27,7 @@ export function ClubProfileSettings({ clubId, onSaved }: { clubId: string; onSav
   const rosterCount = roster?.clubId === clubId ? roster.count : null
   if (!club || !hasPermission(member, "club.settings")) return <p role="alert">Settings are not available with your current access.</p>
   return <div className="oc-club-settings space-y-10">
-    <ClubProfileEditor clubId={clubId} key={`${clubId}:${rosterCount ?? ""}`} rosterCount={rosterCount} initial={withRosterCount(profileDraft({ ...club, logoUrl: demo.isDemoEnabled && club.logoUrl?.startsWith("data:image/svg") ? null : club.logoUrl }), rosterCount)} demo={demo.isDemoEnabled} onUpload={demo.isDemoEnabled ? undefined : async file => { const data = new FormData(); data.set("clubId", clubId); data.set("admin", "false"); data.set("file", file); return (await uploadClubAsset(data)).reference; }} onSave={async (profile, expected) => {
+    <ClubProfileEditor clubId={clubId} key={clubId} rosterCount={rosterCount} initial={profileDraft({ ...club, logoUrl: demo.isDemoEnabled && club.logoUrl?.startsWith("data:image/svg") ? null : club.logoUrl })} demo={demo.isDemoEnabled} onUpload={demo.isDemoEnabled ? undefined : async file => { const data = new FormData(); data.set("clubId", clubId); data.set("admin", "false"); data.set("file", file); return (await uploadClubAsset(data)).reference; }} onSave={async (profile, expected) => {
       if (demo.isDemoEnabled) demoStore.mutate(state => {
         if (clubId !== state.clubs[0].id || state.perspective.role !== "leader") throw new Error("Demo management is limited to MII leaders.")
         Object.assign(state.clubs[0], profile)
