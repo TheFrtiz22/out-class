@@ -130,6 +130,8 @@ test('glass defaults: Card, Panel, Skeleton and Tabs default to glass; variant="
   const tabs = fs.readFileSync('components/ui/tabs.tsx', 'utf8')
   assert.match(tabs, /variant\?: 'subtle' \| 'underline' \| 'segmented'/)
   assert.match(tabs, /variant = 'segmented'/)
+  // Three or more tabs scroll inside the track at full label width instead of clipping on phones.
+  assert.match(fs.readFileSync('styles/interface-primitives.css', 'utf8'), /\[data-variant="segmented"\]:has\(> :nth-child\(3\)\) \[data-slot="tabs-trigger"\] \{ flex: 1 0 auto; min-width: max-content; \}/)
   // A single tab (e.g. members who only see the interview kit) gets a full-width indicator.
   assert.match(fs.readFileSync('styles/interface-primitives.css', 'utf8'), /\[data-variant="segmented"\]:not\(:has\(> :nth-child\(2\)\)\) \{ --segments: 1; \}/)
   // Overlays share the frosted navigation material; tables, the projector and fields keep solid surfaces.

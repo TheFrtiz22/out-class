@@ -32,7 +32,6 @@
 /* Needs you */
 .oc-club-home-section-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .75rem; }
 .oc-club-home-section-head h2 { font-size: 1.1875rem; }
-.oc-club-home-refresh[data-slot="button"] { width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0; }
 .oc-needs-grid { display: grid; gap: .875rem; grid-template-columns: minmax(0, 1fr); }
 .oc-needs-grid[data-count="2"] { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }
 .oc-needs-grid[data-count="3"] { grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr); }

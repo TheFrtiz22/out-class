@@ -210,6 +210,7 @@
   --oc-content-soft: #1d3045;
   --oc-content-soft-blue: #1b2f44;
   --oc-content-edge: #2c4257;
-  /* The live voting slide stays solid: no glass highlight on the projector. */
+  /* The live voting slide stays solid: no glass highlight on the projector; placeholders stay visible on dark. */
   --oc-content-shadow: var(--oc-content-shadow-solid);
+  --oc-surface-glass-track: var(--border);
 }

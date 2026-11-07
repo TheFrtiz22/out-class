@@ -437,7 +437,7 @@ function LocalLeaderDashboardView() {
 
       {/* CRM data table */}
       {viewMode === "table" && (
-      <Card className="overflow-hidden rounded-xl border-border bg-white py-0 shadow-none">
+      <Card variant="default" className="overflow-hidden rounded-xl border-border bg-white py-0 shadow-none">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             {crmColumns.every(column => !visible(column.id)) ? <p className="p-8 text-center text-sm text-muted-foreground">All columns are hidden. Open View Settings to show columns.</p> : <Table>
