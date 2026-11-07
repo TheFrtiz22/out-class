@@ -1,8 +1,5 @@
 /* Campus OS compositions. Optical navigation and public artwork have separate owners. */
-.oc-page-header[data-density="editorial"] {
-  align-items: flex-end; padding-block: 1rem 1.75rem; margin-bottom: 1.75rem;
-  border-bottom: 1px solid var(--oc-editorial-rule);
-}
+.oc-page-header[data-density="editorial"] { align-items: flex-end; padding-block: 0; margin-bottom: 1.25rem; }
 .oc-page-header[data-density="editorial"] h1 {
   font-size: var(--oc-editorial-display); line-height: 1.04; font-weight: 400;
   letter-spacing: -.045em; margin-top: 1rem; overflow-wrap: anywhere; text-wrap: balance;
@@ -29,7 +26,7 @@
 .oc-featured-action-control > button:hover { background: var(--card); }
 .oc-featured-action-control > button:focus-visible { outline: 2px solid var(--oc-rail-text); outline-offset: 5px; }
 @media (max-width: 700px) {
-  .oc-page-header[data-density="editorial"] { padding-top: .5rem; padding-bottom: 1.25rem; margin-bottom: 1.25rem; }
+
   .oc-page-header[data-density="editorial"] h1 { font-size: clamp(2.5rem,9vw,3.5rem); }
   .oc-featured-action { grid-template-columns: minmax(0,1fr); gap: 1.25rem; border-radius: 1.125rem; }
   .oc-featured-action h2 { font-size: clamp(1.75rem,6vw,2.25rem); }

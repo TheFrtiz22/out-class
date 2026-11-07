@@ -96,6 +96,8 @@ test('browser: Club home dashboard, permissions, header glass, blur budget and a
   assert.equal(await page.getByRole('button', { name: /^Refresh/ }).count(), 0)
   console.log('PASS existing drawers; no refresh button')
 
+  // Audit from the top: the sticky header legitimately covers content wherever the page was left scrolled.
+  await page.evaluate(() => scrollTo(0, 0)); await page.waitForTimeout(200)
   const axe = await new AxeBuilder({ page }).include('#workspace-content').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()
   assert.deepEqual(axe.violations.map(v => `${v.id}: ${v.nodes.map(n => n.target).join(', ')}`), [])
   console.log('PASS axe (WCAG 2.2 AA) on the dashboard')

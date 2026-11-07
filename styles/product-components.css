@@ -1,4 +1,4 @@
-.oc-page-header { position: relative; isolation: isolate; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem 1.25rem; margin-bottom: var(--oc-density-gap); padding-block: 0; }
+.oc-page-header { position: relative; isolation: isolate; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem 1.25rem; margin-bottom: 1.25rem; padding-block: 0; }
 .oc-page-header-copy { min-width: 0; max-width: 46rem; }
 .oc-eyebrow { font-size: var(--oc-text-caption); font-weight: var(--oc-weight-semibold); letter-spacing: normal; color: var(--muted-foreground); }
 .oc-page-header h1 { font-family: var(--oc-font-display); font-size: var(--oc-text-title); font-weight: var(--oc-weight-title); line-height: var(--oc-leading-heading); letter-spacing: var(--oc-tracking-heading); text-wrap: balance; }
@@ -35,7 +35,7 @@
 [data-product-shell] table :is(th,td) { padding-inline: 1rem; }
 [data-product-shell] table tbody tr:hover { background: var(--oc-surface-blue); }
 @media (max-width: 639px) {
-  .oc-page-header { align-items: center; margin-bottom: 1rem; }
+  .oc-page-header { align-items: center; }
   .oc-metric-strip { grid-template-columns: repeat(2,minmax(0,1fr)); gap: .625rem; }
   .oc-metric-strip > div { padding: .875rem .75rem; }
   .oc-metric-strip > div:nth-child(odd) { padding-left: .75rem; border-left: 1px solid var(--oc-content-edge); }
@@ -89,7 +89,7 @@
 @media (max-width: 639px) { .oc-pattern-reference { container-type: inline-size; padding: 0; } .oc-slot-reference { grid-template-columns: 1fr; } }
 
 /* Compact is the product default; expressive headings are an explicit opt-in. */
-.oc-page-header[data-density="expressive"] { margin-bottom: 1.5rem; padding-block: .5rem 1.5rem; border-bottom: 1px solid var(--oc-editorial-rule); }
+.oc-page-header[data-density="expressive"] { margin-bottom: 1.25rem; padding-block: 0; }
 .oc-page-header[data-density="expressive"] h1 { font-size: clamp(2.25rem,3.2vw,3rem); font-weight: 400; }
 .oc-page-header[data-density="expressive"] .oc-page-description { margin-top: 1rem; }
 .oc-section-header[data-density="compact"] { gap: .75rem; }

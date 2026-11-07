@@ -115,9 +115,9 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
   }
 
   const tabs = <nav aria-label="Communications center" className="flex gap-1 overflow-x-auto border-b pb-3">{[["notifications", "Updates"], ["preferences", "Email preferences"]].map(([id, label]) => <Button key={id} variant={tab === id ? "secondary" : "ghost"} aria-current={tab === id ? "page" : undefined} onClick={() => { if (canLeaveWorkspace()) setTab(id) }}>{label}</Button>)}</nav>
-  if (tab !== "notifications") return <div className="mx-auto max-w-[var(--oc-content-width)] space-y-6">{tabs}{demo.isDemoEnabled ? <p className="text-sm text-muted-foreground">Email preferences are available in your live account.</p> : <CommunicationsPreferences />}</div>
+  if (tab !== "notifications") return <div className="max-w-[var(--oc-content-width)] space-y-6">{tabs}{demo.isDemoEnabled ? <p className="text-sm text-muted-foreground">Email preferences are available in your live account.</p> : <CommunicationsPreferences />}</div>
   return (
-    <div className="oc-inbox-workspace mx-auto max-w-[var(--oc-content-width)] space-y-6 text-foreground">
+    <div className="oc-inbox-workspace max-w-[var(--oc-content-width)] space-y-6 text-foreground">
       {tabs}
       {invitations.length > 0 && <OrganizationOwnershipRequests enabled includeDismissed />}
       <Panel className="space-y-4">

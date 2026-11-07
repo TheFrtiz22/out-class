@@ -130,7 +130,7 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
     )
   }
   return (
-    <article className={`oc-student-profile mx-auto max-w-[var(--oc-content-width)] text-foreground${settings ? " oc-settings-profile" : ""}`}>
+    <article className={`oc-student-profile max-w-[var(--oc-content-width)] text-foreground${settings ? " oc-settings-profile" : ""}`}>
       <p role="status" className="sr-only">
         {saved ? "Profile changes saved." : ""}
       </p>

@@ -15,7 +15,7 @@
   mask-composite: intersect;
 }
 .oc-club-home-greeting { position: relative; }
-.oc-page-header.oc-club-home-greeting[data-density="expressive"] { margin-bottom: 1.75rem; padding-bottom: .5rem; border-bottom: 0; }
+
 .oc-club-home-greeting h1 { font-family: var(--oc-font-display); font-size: clamp(2rem, 1.25rem + 2vw, 2.75rem); line-height: 1.12; letter-spacing: -.02em; }
 .oc-club-home-greeting .oc-eyebrow { color: var(--muted-foreground); }
 .oc-welcome-deadline { color: var(--foreground); font-weight: var(--oc-weight-medium); }

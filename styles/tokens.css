@@ -12,7 +12,7 @@
 
   /* Content geometry is shared across public forms, product and focused modes.
      Navigation owns its separate optical materials and geometry. */
-  --oc-content-width: 80rem;
+  --oc-content-width: 96rem;
   --oc-reading-width: 48rem;
   /* Content surfaces are glass (styles/navigation-glass.css). The solid values remain for data tables,
      form fields and every fallback; --oc-surface-glass* resolve to them when glass is unavailable. */
