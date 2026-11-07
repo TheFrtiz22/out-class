@@ -64,7 +64,7 @@ test('workspace pill switches workspace only: same segments everywhere, eligibil
   // Phones: the pill hides; the account menu switches workspace and the bottom bar is the only section nav.
   eligible=true;await go('platform','/club/fixture-mii/workspace?section=recruitment');await page.setViewportSize({width:390,height:844})
   await expect(header.locator('.oc-product-workspaces')).toBeHidden();await expect(dock).toBeHidden()
-  await expect(page.getByRole('navigation',{name:'Sections',exact:true}).getByRole('link')).toHaveText(['Overview','Applicants','Interviews','Decisions'])
+  await expect(page.getByRole('navigation',{name:'Sections',exact:true}).getByRole('link')).toHaveText(['Club home','Recruiting','Meetings','Members'])
   await header.getByRole('button',{name:/^Account menu for/}).click();const account=page.getByRole('menu')
   await expect(account.getByRole('menuitem',{name:'McIntire Investment Institute club workspace'})).toHaveAttribute('aria-current','page')
   await expect(account.getByRole('menuitem',{name:'Virginia Volunteers club workspace'})).toBeVisible();await expect(account.getByRole('menuitem',{name:'Admin workspace'})).toBeVisible()

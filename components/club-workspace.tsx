@@ -14,7 +14,7 @@ import { ManagerOverview } from "@/components/manager-overview";
 import { ClubHomeActions } from "@/components/club-home/club-home-actions";
 import { RouteWorkspaceShell } from "@/components/shell/route-workspace-shell";
 import { ProductShell } from "@/components/shell/product-shell";
-import { managerNavigation } from "@/lib/product-navigation";
+import { canLeaveWorkspace, managerNavigation, mobileDestinations } from "@/lib/product-navigation";
 const ScreeningDashboardView = dynamic(() => import("@/components/views/screening-dashboard-view").then(m => m.ScreeningDashboardView), { loading: () => <WorkspaceLoading label="Loading recruiting rules…" layout="form" rows={3} /> });
 const ClubAnnouncements = dynamic(() => import("@/components/club-announcements").then(m => m.ClubAnnouncements), { loading: () => <WorkspaceLoading label="Loading announcements…" layout="feed" rows={3} /> });
 import type { ViewId } from "@/lib/views";
@@ -54,13 +54,14 @@ import { DecisionSchedules } from "@/components/decision-schedules";
 import { RecruitmentReviewSettings } from "@/components/recruitment-review-settings";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { navigateWithinClub } from "@/lib/workspace-navigation";
+import { handleClubLink, navigateWithinClub } from "@/lib/workspace-navigation";
 import { DashboardLoading } from "@/components/product/dashboard-presentation";
 import { WorkspaceLoading } from "@/components/workspace-loading";
 import { SelectedClubWorkspace } from "@/components/selected-club-workspace";
 import { clubWorkspaceEntryHref, clubWorkspacePreferenceKey, readClubWorkspacePreference, saveClubWorkspacePreference } from "@/lib/club-workspace-preference";
 import { leaderRailSections, memberRailSections, studentPath } from "@/lib/navigation"
 import { RecruitmentFocus } from "@/components/recruitment-focus"
+import { SectionTabs } from "@/components/ui/section-tabs";
 import { NativeSelect } from "@/components/ui/native-select"
 type Overview = Awaited<ReturnType<typeof getClubWorkspaceOverview>>;
 const OVERVIEW_EVENTS = ["outclass:tasks-changed", "outclass:panels-changed", "outclass:interview-rounds-changed", "outclass:staffing-changed", "outclass:decision-schedules"];
@@ -203,6 +204,10 @@ export function ClubWorkspace({
             {section === "members" && (demo.isDemoEnabled ? <ClubMembers key={clubId} clubId={clubId} /> : <SelectedClubWorkspace kind="members" clubId={clubId} privacyScope={scope} />)}
             {section === "settings" && <ClubSettingsWorkspace key={clubId} clubId={clubId} onSaved={() => { setRetry(n => n + 1); setPrivacyRevision(n => n + 1) }} />}
             {section === "announcements" && (demo.isDemoEnabled ? <ClubAnnouncements key={clubId} clubId={clubId} /> : <SelectedClubWorkspace kind="announcements" clubId={clubId} privacyScope={scope} />)}
+            {/* Phones reach recruiting through one bottom-bar item, so its pages show here as tabs. The rail covers wide screens. */}
+            {section === "recruitment" && manager && <SectionTabs label="Recruiting sections" className="mb-5 lg:hidden" current={nav.find(n => n.id === active)?.navGroup === "applicants" ? "applicants" : nav.find(n => n.id === active)?.navGroup === "decisions" ? "decisions" : active}
+              items={mobileDestinations(nav.filter(n => n.mode !== "club" && !["announcements", "settings"].includes(n.id))).map(n => ({ id: n.navGroup ?? n.id, label: n.navGroup ? n.label : n.id === "overview" ? TERMS.recruiting : n.label, href: n.href! }))}
+              onNavigate={(event, href) => { if (!canLeaveWorkspace()) { event.preventDefault(); return } handleClubLink(event, href) }} />}
             {section === "recruitment" && active === "decisions" && <DecisionsNavigation clubId={clubId} member={membership}/>}
             {section === "recruitment" && (active === "decisions" && decisionTab === "voting" ? <VotingRoomLanding clubId={clubId}/> : active === "decisions" && decisionTab === "letters" && !hasPermission(membership,"recruitment.manage")&&!hasPermission(membership,"decisions.manage") ? <p role="alert">Decision letters are unavailable with your current access.</p> : active === "decisions" && decisionTab === "letters" ? <div className="space-y-4"><div className="flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-muted-foreground">Voting does not send applicant messages. Prepare letters here, then review decisions and send them from Applicants.</p><Button asChild><Link href={`/club/${encodeURIComponent(clubId)}/workspace?section=recruitment&tool=applicants&decision=pending`}>Review decisions and send letters</Link></Button></div>{hasPermission(membership,"recruitment.manage")?<DecisionTemplateEditor clubId={clubId} inline/>:<p role="status">Letter template editing requires recruitment management access.</p>}</div> : active === "resumes" || active === "reviews" ? <ApplicantInterviewReviews clubId={clubId} tool={active} /> : active === "scheduled-decisions" ? <DecisionSchedules clubId={clubId} /> : active === "overview" && current ? <RecruitingOverview data={current} refreshing={overviewPending} onChanged={() => setRetry(n => n + 1)} /> : active === "interviews" ? <div className="space-y-3">{(hasPermission(membership, "interviews.manage") || interviewCapabilities(membership).editKit || interviewCapabilities(membership).participate || interviewCapabilities(membership).readClosing) && <RecruitmentWorkspace clubId={clubId} member={membership} onInterview={openInterviewRoom} initialTool="kits" />}</div> : <>{(demo.isDemoEnabled ? <LiveLeaderWorkspace key={privacyRevision} scoped initialDecision={decisionFilter(params.get("decision"))} /> : <SelectedClubWorkspace kind="pipeline" clubId={clubId} privacyScope={scope} decision={decisionFilter(params.get("decision"))} />)}</>)}
           </section>}

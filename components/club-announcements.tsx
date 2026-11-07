@@ -20,6 +20,7 @@ import { recipientAudienceSchema } from "@/lib/recipient-audience";
 import { saveCommunicationSchedule } from "@/actions/communication-schedules";
 import { ScheduledCommunications, ScheduleFields, initialTiming, type ScheduledItem } from "@/components/communication-schedules";
 import { NativeSelect } from "@/components/ui/native-select"
+import { useSearchParams } from "next/navigation"
 import { formatDateTime } from "@/lib/copy/terms"
 type Item = Awaited<ReturnType<typeof getClubAnnouncements>>[number];
 
@@ -34,6 +35,11 @@ export function ClubAnnouncements({ clubId, initialItems }: { clubId: string; in
  const firstRead = useRef(initialItems !== undefined);
  const [busy, setBusy] = useState(false);
  const [compose, setCompose] = useState(false);
+ const openComposer=()=>{setCompose(true);setEditing(null);setSendMode("NOW");setPreview(null);setError("");setSuccess("");void getRecipientGroups(clubId).then(setCatalog).catch(e=>setError(e instanceof Error?e.message:"Audiences unavailable."));};
+ // Club home "New announcement" links here with `compose=1` to open the composer directly.
+ const composeRequested=useSearchParams()?.get("compose")==="1";
+ const composeOpened=useRef(false);
+ useEffect(()=>{if(composeRequested&&!composeOpened.current){composeOpened.current=true;openComposer();}},[composeRequested]);// eslint-disable-line react-hooks/exhaustive-deps
  const [confirmPublish, setConfirmPublish] = useState(false);
  const publishing = useRef(false);
  const [title, setTitle] = useState("");
@@ -80,7 +86,7 @@ export function ClubAnnouncements({ clubId, initialItems }: { clubId: string; in
  }
  if (demo.isDemoEnabled) return <p className="rounded-lg border p-6 text-sm text-muted-foreground">Announcement publishing is available when signed into your live OutClass account.</p>;
  return <div className="oc-workspace-stack" data-saving={busy} data-unsaved={draftSave.dirty}>
-  <div className="flex flex-wrap items-center justify-between gap-4"><div><p className="mt-2 text-sm text-muted-foreground">Publish to your club’s current members or submitted applicants.</p></div><Button onClick={()=>{setCompose(true);setEditing(null);setSendMode("NOW");setPreview(null);setError("");setSuccess("");void getRecipientGroups(clubId).then(setCatalog).catch(e=>setError(e instanceof Error?e.message:"Audiences unavailable."));}}><Plus className="size-4" /> Create announcement</Button></div>
+  <div className="flex flex-wrap items-center justify-between gap-4"><div><p className="mt-2 text-sm text-muted-foreground">Publish to your club’s current members or submitted applicants.</p></div><Button onClick={openComposer}><Plus className="size-4" /> Create announcement</Button></div>
   <div className="flex flex-wrap gap-2">
     <ActionWorkflow title="Scheduled announcements" description="Review, edit or cancel announcements scheduled for later." trigger="Scheduled announcements" presentation="sheet">  <ScheduledCommunications clubId={clubId} refresh={scheduleRefresh} onEdit={row=>{setEditing(row);setTitle(row.title);setBody(row.body);setAudience("CUSTOM");setAudienceSpec(recipientAudienceSchema.parse(row.audience));setTiming({localTime:row.localTime,timeZone:row.timeZone,occurrence:row.occurrence as "EARLIER"|"LATER",recipientMode:row.recipientMode as "FIXED"|"SEND_TIME"});setSendMode("SCHEDULE");setPreview(null);setError("");setCompose(true);void getRecipientGroups(clubId).then(setCatalog).catch(()=>setError("Audience catalog unavailable."));}}/></ActionWorkflow>
     <ActionWorkflow title="Audience groups" description="Manage reusable recipient groups for announcements." trigger="Manage audiences" presentation="sheet"><RecipientGroups clubId={clubId} /></ActionWorkflow>

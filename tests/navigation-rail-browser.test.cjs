@@ -136,7 +136,7 @@ test('browser: labelled rail without overlay, tooltips when compact, URL-driven 
   // Phones and 200% zoom: the bottom bar is the only section nav; More opens every section, with no workspace pill.
   for(const size of [720,390,320]){
    await page.setViewportSize({width:size,height:844});await expect(rail).toBeHidden()
-   const bar=page.getByRole('navigation',{name:'Sections',exact:true});await expect(bar.getByRole('link')).toHaveText(['Overview','Applicants','Interviews','Decisions'])
+   const bar=page.getByRole('navigation',{name:'Sections',exact:true});await expect(bar.getByRole('link')).toHaveText(['Club home','Recruiting','Meetings','Members'])
    await bar.getByRole('button',{name:'More sections'}).click()
    const drawer=page.getByRole('dialog',{name:'Workspace navigation',exact:true});await drawer.waitFor()
    assert.equal(await drawer.getByRole('navigation',{name:'Workspaces'}).count(),0)

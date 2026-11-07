@@ -105,7 +105,7 @@ export function applicationAvailability(
   );
 }
 export const settingsSections = [
-  { id: "general", label: "General", permission: "club.settings" },
+  { id: "general", label: "Public profile", permission: "club.settings" },
   { id: "application", label: "Recruitment & Applications", permission: "application.manage" },
   { id: "cycles", label: "Application Cycles", permission: "recruitment.manage" },
   {

@@ -136,6 +136,21 @@ export function bottomBarItems(sections: RailSection[], kind: WorkspaceKind | "p
     const items = railItems(sections)
     return ["student-dashboard", "explore", "applications", "clubs"].map(id => items.find(item => item.id === id)).filter((item): item is ProductNavItem => !!item)
   }
+  if (kind === "leader") return leaderBottomBar(sections)
   const current = sections.find(section => section.items.some(item => item.id === active)) ?? sections[0]
   return current ? mobileDestinations(current.items).slice(0, 4) : []
+}
+
+/**
+ * Club workspace phone bar: one fixed set whatever the page — Home · Recruiting · Meetings · Members
+ * (then More). Recruiting opens the recruiting dashboard; its sub-pages show as in-page tabs.
+ * A member without a destination gets the next club page instead (Tasks, Announcements, Settings).
+ */
+function leaderBottomBar(sections: RailSection[]): ProductNavItem[] {
+  const items = railItems(sections), find = (id: string) => items.find(item => item.id === id && item.mode !== "recruiting")
+  const recruiting = sections.find(section => section.id === "recruiting")
+  const recruitingItem: ProductNavItem | undefined = recruiting && recruiting.items.length ? { id: "recruiting", label: "Recruiting", href: (recruiting.items.find(item => item.id === "overview") ?? recruiting.items[0]).href, mode: "recruiting", matches: recruiting.items.map(item => item.id) } : undefined
+  const fixed = [find("club-home"), recruitingItem, find("meetings"), find("members")].filter((item): item is ProductNavItem => !!item)
+  const fallback = ["tasks", "announcements", "settings"].map(find).filter((item): item is ProductNavItem => !!item)
+  return [...fixed, ...fallback].slice(0, 4)
 }

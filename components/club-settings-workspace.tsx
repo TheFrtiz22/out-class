@@ -13,7 +13,8 @@ import { useDemoMode } from "@/contexts/demo-context";
 import { resolveSettingsTab, settingsSections } from "@/lib/club-settings";
 import { navigateWithinClub } from "@/lib/workspace-navigation";
 import { canLeaveWorkspace } from "@/lib/product-navigation";
-import { hasPermission } from "@/lib/permissions";
+import { hasPermission, permissionLabels } from "@/lib/permissions";
+import { organizationRoleLabels, organizationRolePermissions, organizationRoles } from "@/lib/organization-authorization";
 import { saveClubPreferences } from "@/actions/club-settings";
 import { ClubProfileSettings } from "@/components/club-profile-settings";
 
@@ -33,10 +34,6 @@ const PipelineBuilder = dynamic(() =>
     "@/components/views/club-manager/interview-pipeline-builder-view"
   ).then((m) => m.InterviewPipelineBuilderView),
   { loading: () => <LoadingState label="Loading interview rounds…" layout="rows" rows={3} /> },
-);
-const Members = dynamic(() =>
-  import("@/components/club-members").then((m) => m.ClubMembers),
-  { loading: () => <LoadingState label="Loading club members…" layout="table" rows={4} /> },
 );
 const Interviews = dynamic(() =>
   import("@/components/interview-management-tabs").then(
@@ -185,7 +182,11 @@ export function ClubSettingsWorkspace({
         {visible("members") && (
           <div hidden={active !== "members"} className="space-y-5">
             <section aria-labelledby="interviewer-eligibility-heading" className="space-y-3"><h2 id="interviewer-eligibility-heading" className="oc-section-heading">Interviewer eligibility</h2><p className="text-sm text-muted-foreground">Choose which roles can interview. Kits, panels and interviewer offices are in Interviews.</p><InterviewerEligibilityControls clubId={clubId} selectedIds={[]} /></section>
-            <Members clubId={clubId} />
+            <section aria-labelledby="role-permissions-heading" className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="role-permissions-heading" className="oc-section-heading">Roles and permissions</h2><Link className="inline-flex min-h-11 items-center text-sm underline underline-offset-4" href={`/club/${encodeURIComponent(clubId)}/workspace?section=members`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Manage members</Link></div>
+              <p className="text-sm text-muted-foreground">Each member’s role sets what they can do. Change a member’s role, title or groups from Members.</p>
+              <dl className="divide-y rounded-lg border">{organizationRoles.map(role => <div key={role} className="grid gap-1 p-3 sm:grid-cols-[12rem_1fr]"><dt className="font-medium">{organizationRoleLabels[role]}</dt><dd className="text-sm text-muted-foreground">{role === "OWNER" || role === "ADMIN" ? "Every club permission" : organizationRolePermissions[role].length ? organizationRolePermissions[role].map(permission => permissionLabels[permission]).join(" · ") : "Member pages only (meetings, tasks, announcements)"}</dd></div>)}</dl>
+            </section>
           </div>
         )}
         {visible("notifications") && (

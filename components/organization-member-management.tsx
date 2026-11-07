@@ -21,7 +21,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Copy, Plus } from "@/components/icons";
+import { MoreHorizontal, Copy, Plus, ChevronDown } from "@/components/icons";
 import { useEffect, useRef, useState } from "react";
 import { useRevalidate } from "@/hooks/use-revalidate";
 import { useAuth } from "@/contexts/auth-context";
@@ -60,6 +60,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { NativeSelect } from "@/components/ui/native-select"
+import { academicYear } from "@/lib/recruitment-profile"
 import { SegmentedControl } from "@/components/ui/segmented-control"
 
 type Directory = Awaited<ReturnType<typeof getOrganizationMemberManagement>>;
@@ -88,6 +89,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
   const [dirty, setDirty] = useState(false);
   const [invitesOpen, setInvitesOpen] = useState(false), [inviteTab, setInviteTab] = useState("pending");
   const [roleFilter, setRoleFilter] = useState(""), [yearFilter, setYearFilter] = useState("");
+  const [addOpen, setAddOpen] = useState(false), [importOpen, setImportOpen] = useState(false), [groupsOpen, setGroupsOpen] = useState(false);
   const [sort, setSort] = useState("Member"), [descending, setDescending] = useState(false);
   const [groupFilter, setGroupFilter] = useState("");
   function sortBy(label: string) {
@@ -211,7 +213,8 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
           .map((invitation) => ({
             id: invitation.id,
             name: invitation.invitedName || invitation.email,
-            year: invitation.invitedYear,
+            // Invitations record a graduation year; show it as the same class-year label members have.
+            year: invitation.invitedYear && /^\d{4}$/.test(invitation.invitedYear) ? academicYear({ gradYear: Number(invitation.invitedYear) }) : invitation.invitedYear,
             role: invitation.requestedRole,
             status:
               invitation.status === "PENDING"
@@ -351,7 +354,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 }}
               />
               <label className="text-sm"><span className="sr-only">Role</span><NativeSelect aria-label="Filter members by role" className="min-h-11" value={roleFilter} onChange={e => { setRoleFilter(e.target.value); setPage(0); setSelection([]) }}><option value="">All roles</option>{organizationRoles.map(role => <option key={role} value={role}>{organizationRoleLabels[role]}</option>)}</NativeSelect></label>
-              <label className="text-sm"><span className="sr-only">Year</span><NativeSelect aria-label="Filter members by year" className="min-h-11" value={yearFilter} onChange={e => { setYearFilter(e.target.value); setPage(0); setSelection([]) }}><option value="">All years</option>{[...new Set([...data.members.map(m => m.user.studentProfile?.academicYear), ...data.invitations.map(i => i.invitedYear)].filter((year): year is string => !!year))].sort().map(year => <option key={year}>{year}</option>)}</NativeSelect></label>
+              <label className="text-sm"><span className="sr-only">Year</span><NativeSelect aria-label="Filter members by year" className="min-h-11" value={yearFilter} onChange={e => { setYearFilter(e.target.value); setPage(0); setSelection([]) }}><option value="">All years</option>{[...new Set([...data.members.map(m => m.user.studentProfile?.academicYear), ...data.invitations.map(i => i.invitedYear && /^\d{4}$/.test(i.invitedYear) ? academicYear({ gradYear: Number(i.invitedYear) }) : i.invitedYear)].filter((year): year is string => !!year))].sort(compareAcademicYears).map(year => <option key={year}>{year}</option>)}</NativeSelect></label>
               {invitesOpen && <>              <label className="inline-flex min-h-11 items-center gap-2 text-sm">
                 <input
                   type="checkbox"
@@ -365,7 +368,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
               </label>
 </>}
             </div>
-            {!invitesOpen && caps.canManageMembers && <div className="flex flex-wrap items-center gap-3"><MemberGroupBuilder clubId={clubId} members={data.members} onSaved={reload} /><NativeSelect aria-label="Filter members by group" className="min-h-11" value={groupFilter} onChange={event => { setGroupFilter(event.target.value); setPage(0); setSelection([]); }}><option value="">All groups</option>{[...new Set(data.members.flatMap(member => member.groups))].sort().map(group => <option key={group}>{group}</option>)}</NativeSelect></div>}
+            {!invitesOpen && caps.canManageMembers && <div className="flex flex-wrap items-center gap-3"><NativeSelect aria-label="Filter members by group" className="min-h-11" value={groupFilter} onChange={event => { setGroupFilter(event.target.value); setPage(0); setSelection([]); }}><option value="">All groups</option>{[...new Set(data.members.flatMap(member => member.groups))].sort().map(group => <option key={group}>{group}</option>)}</NativeSelect></div>}
             {selection.length > 0 && (
               <div
                 role="toolbar"
@@ -795,8 +798,9 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
         data && (
           <>
             <div className="flex flex-wrap gap-2" aria-label="Member actions">
-              {caps.canManageMembers && <ActionWorkflow showCloseAction={false} title="Add member" description="Add an existing OutClass account by UVA email. Use Invite members for someone who still needs to accept an invitation." trigger={<><Plus size={16} />Add member</>} variant="default">{done => <form data-saving={busy} className="space-y-4" onSubmit={event => { event.preventDefault(); const email = String(new FormData(event.currentTarget).get("email")); void run(() => addClubMember(clubId, email), "Member added.").then(saved => { if (saved) done() }) }}><label className="block space-y-2 text-sm">UVA email<Input name="email" type="email" required disabled={busy} placeholder="name@virginia.edu" /></label>{error && <p role="alert" className="text-sm text-destructive">{error}</p>}<div className="flex justify-end gap-2"><Button type="button" variant="outline" disabled={busy} onClick={done}>Cancel</Button><Button disabled={busy} loading={busy}>Add member</Button></div></form>}</ActionWorkflow>}
-              <ActionWorkflow title="Invite members" description="Create invitations, review pending access, and explicitly choose email delivery." trigger="Invite members" presentation="sheet" open={invitesOpen} onOpenChange={open => { setInvitesOpen(open); setSelection([]); setPage(0); setQuery(""); setRoleFilter(""); setYearFilter("") }}>
+              {caps.canManageMembers && <div role="group" aria-label="Add members" className="inline-flex"><Button className="rounded-r-none" onClick={() => setAddOpen(true)}><Plus size={16} aria-hidden="true" />Add member</Button><DropdownMenu><DropdownMenuTrigger asChild><Button className="rounded-l-none border-l border-primary-foreground/30 px-2" aria-label="More ways to add members"><ChevronDown size={16} aria-hidden="true" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem className="min-h-11" onSelect={() => setInvitesOpen(true)}>Invite members</DropdownMenuItem><DropdownMenuItem className="min-h-11" onSelect={() => setImportOpen(true)}>Import CSV</DropdownMenuItem><DropdownMenuItem className="min-h-11" onSelect={() => setGroupsOpen(true)}>Create groups</DropdownMenuItem></DropdownMenuContent></DropdownMenu></div>}
+              {caps.canManageMembers && <ActionWorkflow showCloseAction={false} title="Add member" description="Add an existing OutClass account by UVA email. Use Invite members for someone who still needs to accept an invitation." open={addOpen} onOpenChange={setAddOpen}>{done => <form data-saving={busy} className="space-y-4" onSubmit={event => { event.preventDefault(); const email = String(new FormData(event.currentTarget).get("email")); void run(() => addClubMember(clubId, email), "Member added.").then(saved => { if (saved) done() }) }}><label className="block space-y-2 text-sm">UVA email<Input name="email" type="email" required disabled={busy} placeholder="name@virginia.edu" /></label>{error && <p role="alert" className="text-sm text-destructive">{error}</p>}<div className="flex justify-end gap-2"><Button type="button" variant="outline" disabled={busy} onClick={done}>Cancel</Button><Button disabled={busy} loading={busy}>Add member</Button></div></form>}</ActionWorkflow>}
+              <ActionWorkflow title="Invite members" description="Create invitations, review pending access, and explicitly choose email delivery." trigger={caps.canManageMembers ? undefined : "Invite members"} presentation="sheet" open={invitesOpen} onOpenChange={open => { setInvitesOpen(open); setSelection([]); setPage(0); setQuery(""); setRoleFilter(""); setYearFilter("") }}>
                 {invitesOpen && <div data-saving={busy} className="space-y-5">
                   <SegmentedControl label="Invitation workspace" value={inviteTab} onChange={id => { if (dirty && !window.confirm("Discard unsaved invitation changes?")) return; setDirty(false); setInviteTab(id) }} options={[{ value: "pending", label: "Pending invitations" }, { value: "new", label: "New invitation" }, { value: "delivery", label: "Delivery & schedules" }]} />
                   {notice && <p role="status" className="text-sm">{notice}</p>}{error && <p role="alert" className="text-sm text-destructive">{error}</p>}
@@ -906,8 +910,8 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                   {inviteTab === "delivery" && <InvitationEmailControls clubId={clubId} onSent={reload} />}
                 </div>}
               </ActionWorkflow>
-              {caps.canManageMembers && <ActionWorkflow title="Import CSV" description="Upload, validate, and confirm a roster. Emails are sent only when explicitly requested." trigger="Import CSV" presentation="sheet"><RosterCsvImporter clubId={clubId} onImported={reload} /></ActionWorkflow>}
-              {caps.canManageMembers && <ActionWorkflow title="Member settings" description="Choose which roles can interview for the whole club. Change one person from the member list." trigger="Settings" presentation="sheet"><InterviewerEligibilityControls key={`${clubId}:${attempt}`} clubId={clubId} selectedIds={[]} onSaved={() => reload()} /></ActionWorkflow>}
+              {caps.canManageMembers && <ActionWorkflow title="Import CSV" description="Upload, validate, and confirm a roster. Emails are sent only when explicitly requested." open={importOpen} onOpenChange={setImportOpen} presentation="sheet"><RosterCsvImporter clubId={clubId} onImported={reload} /></ActionWorkflow>}
+              {caps.canManageMembers && <MemberGroupBuilder clubId={clubId} members={data.members} onSaved={reload} open={groupsOpen} onOpenChange={setGroupsOpen} />}
             </div>
             {!invitesOpen && directory}
           </>

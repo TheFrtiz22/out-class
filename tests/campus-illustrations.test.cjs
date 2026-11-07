@@ -108,7 +108,7 @@ function renderSettingsWorkspace(member, requested, section = 'settings') {
    if(name==='@/components/ui/page-header') return component('components/ui/page-header.tsx')
    if(name==='@/components/product/dashboard/dashboard') return component('components/product/dashboard/dashboard.tsx')
    if(name==='./campus-illustration') return component('components/product/campus-illustration.tsx')
-   if(['@/lib/club-settings','@/lib/product-navigation','@/lib/permissions','@/lib/interview-access','@/lib/club-workspace','@/lib/workspace-navigation'].includes(name)) return load(name.replace('@/','')+'.ts')
+   if(['@/lib/club-settings','@/lib/product-navigation','@/lib/permissions','@/lib/interview-access','@/lib/club-workspace','@/lib/workspace-navigation','@/lib/organization-authorization','@/lib/club-onboarding','@/lib/copy/terms'].includes(name)) return load(name.replace('@/','')+'.ts')
    return new Proxy({}, {get:()=>()=>null})
   },exports)
   return exports

@@ -55,7 +55,6 @@ test("empty states say why and offer one different next step", () => {
     ["components/views/explore-view.tsx", /onNavigate\("corkboard"\)\}>See campus events/],
     ["components/views/calendar-view.tsx", /function CalendarEmptyAction/],
     ["components/views/inbox-view.tsx", /setTab\("preferences"\)\}>Email preferences/],
-    ["components/meeting-workspace.tsx", /See past meetings/],
     ["components/interviews/interview-rooms-list.tsx", />Show all dates</],
     ["components/shell/notification-center.tsx", /Show all updates/],
     ["components/views/leader-dashboard/live-leader-workspace.tsx", /onClick=\{clearApplicantFilters\}>Clear filters/],
@@ -90,4 +89,8 @@ test("date picker math works on plain days, independent of the browser time zone
   assert.equal(d.moveDay("2026-11-15", "PageUp"), "2026-10-15"); assert.equal(d.moveDay("2026-11-15", "PageDown", true), "2027-11-15"); assert.equal(d.moveDay("2026-11-15", "a"), null)
   assert.equal(d.todayIn("America/New_York", new Date("2026-11-07T03:00:00Z")), "2026-11-06", "Eastern day, not UTC")
   assert.equal(d.isIsoDay("2026-02-30"), false); assert.equal(d.isIsoDay("2026-02-28"), true)
+})
+
+test("Meetings empty state does not repeat the Upcoming / Past toggle", () => {
+  assert.doesNotMatch(require("node:fs").readFileSync("components/meeting-workspace.tsx", "utf8"), /See past meetings|See upcoming meetings/)
 })
