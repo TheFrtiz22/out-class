@@ -53,6 +53,8 @@ import * as interviewResumes from "@/actions/interview-resumes"
 import * as interviewGrants from "@/actions/organization-members"
 import * as demoInterviews from "@/lib/demo/interview-foundation"
 import * as interviewKits from "@/actions/interview-kits"
+import * as interviewFeedbackApi from "@/actions/interview-feedback"
+import * as demoInterviewFeedback from "@/lib/demo/interview-feedback"
 import * as collaboration from "@/actions/interview-collaboration"
 import * as demoCollaboration from "@/lib/demo/interview-collaboration"
 
@@ -338,6 +340,7 @@ export const getAssignedInterviewRooms = adapt((...args: Parameters<typeof inter
 export const resolveInterviewRoomEntry = adapt(interviewEntry.resolveInterviewRoomEntry, demoInterviewEntry.resolveInterviewRoomEntry)
 export const getEarlierInterviewReviews = adapt(interviewKits.getEarlierInterviewReviews, demoInterviews.getEarlierInterviewReviews)
 export const getInterviewRoundScore = adapt(interviewKits.getInterviewRoundScore, demoInterviews.getInterviewRoundScore)
+export const getInterviewFeedback = adapt(interviewFeedbackApi.getInterviewFeedback, input => demoInterviewFeedback.getInterviewFeedback(input))
 export const getInterviewCollaboration = adapt(collaboration.getInterviewCollaboration, demoCollaboration.getInterviewCollaboration)
 export const selectSharedInterviewQuestion = adapt(collaboration.selectSharedInterviewQuestion, demoCollaboration.selectSharedInterviewQuestion)
 export const leaveInterviewCollaboration = adapt(collaboration.leaveInterviewCollaboration, demoCollaboration.leaveInterviewCollaboration)
