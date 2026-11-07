@@ -92,7 +92,7 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
   const editProfile = <EditStudentProfileDialog
     profile={profile!}
     sections={["identity", "education", "experience", "links"]}
-    extra={<ResumeImportDialog key={profile!.userId} profile={profile!} label="Import from résumé" onSaved={value => { setProfile(value); setSaved(true) }} />}
+    extra={sync => <ResumeImportDialog key={profile!.userId} profile={profile!} label="Import from résumé" onSaved={value => { setProfile(value); setSaved(true); sync(value) }} />}
     onSaved={(value) => { setProfile(value); setSaved(true) }}
     trigger={<Button size="sm"><Pencil className="size-3.5" aria-hidden="true" />Edit profile</Button>}
   />
