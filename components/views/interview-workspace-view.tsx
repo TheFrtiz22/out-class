@@ -158,7 +158,7 @@ function InterviewSession({
     getInterviewWorkspace(membership.clubId)
       .then(async (result) => {
         const query = new URLSearchParams(window.location?.search || "");
-        if (query.has("applicationId") || query.has("bookingId")) await resolveInterviewRoomEntry({ clubId: membership.clubId, applicationId: query.get("applicationId") || "", roundId: query.get("roundId") || "", ...(query.get("bookingId") ? { bookingId: query.get("bookingId")! } : {}), ...(query.get("slotId") ? { slotId: query.get("slotId")! } : {}), ...(query.get("roomId") ? { roomId: query.get("roomId")! } : {}) });
+        if (query.has("applicationId") || query.has("bookingId")) { const entry = await resolveInterviewRoomEntry({ clubId: membership.clubId, applicationId: query.get("applicationId") || "", roundId: query.get("roundId") || "", ...(query.get("bookingId") ? { bookingId: query.get("bookingId")! } : {}), ...(query.get("slotId") ? { slotId: query.get("slotId")! } : {}), ...(query.get("roomId") ? { roomId: query.get("roomId")! } : {}) }); if ("unavailable" in entry) throw Error(entry.unavailable) }
         if (current) {
           setData(result)
           const recovery = recoveredApplicant()
@@ -202,7 +202,7 @@ function InterviewSession({
       const q = new URLSearchParams(window.location.search);
       if (!q.get("applicationId") || document.hidden || pending) return;
       pending = true;
-      try { await resolveInterviewRoomEntry({ clubId: membership.clubId, applicationId: q.get("applicationId")!, roundId: q.get("roundId") || "", ...(q.get("bookingId") ? { bookingId: q.get("bookingId")! } : {}), ...(q.get("slotId") ? { slotId: q.get("slotId")! } : {}), ...(q.get("roomId") ? { roomId: q.get("roomId")! } : {}) }); }
+      try { const entry = await resolveInterviewRoomEntry({ clubId: membership.clubId, applicationId: q.get("applicationId")!, roundId: q.get("roundId") || "", ...(q.get("bookingId") ? { bookingId: q.get("bookingId")! } : {}), ...(q.get("slotId") ? { slotId: q.get("slotId")! } : {}), ...(q.get("roomId") ? { roomId: q.get("roomId")! } : {}) }); if ("unavailable" in entry) throw Error(entry.unavailable); }
       catch { if (current) { setData(null); setActiveId(""); setLoadError(true); } }
       finally { pending = false; }
     };

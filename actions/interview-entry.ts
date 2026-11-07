@@ -2,7 +2,7 @@
 import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
-import { interviewActor, authorizeInterview, interviewTransactionOptions } from "@/utils/interview-access";
+import { interviewActor, authorizeInterview, interviewTransactionOptions, isInterviewAccessDenial } from "@/utils/interview-access";
 import { ownPanelAssignments } from "@/utils/official-panel-schedule";
 import { approvedBookingPanel, approvedBookingPanels } from "@/utils/interview-collaboration";
 import { anonymousApplicantLabel } from "@/lib/anonymous-review";
@@ -63,18 +63,26 @@ export async function getAssignedInterviewRooms(clubId: string): Promise<Intervi
 }
 
 /** Exact URL validation on every entry/refresh. A stale booking must never fall back to another candidate. */
-export async function resolveInterviewRoomEntry(input: { clubId: string; applicationId: string; roundId: string; bookingId?: string; slotId?: string; roomId?: string }) {
+class InterviewEntryUnavailable extends Error {}
+
+export async function resolveInterviewRoomEntry(input: { clubId: string; applicationId: string; roundId: string; bookingId?: string; slotId?: string; roomId?: string }): Promise<{ applicationId: string; roundId: string } | { unavailable: string }> {
   const data = z.object({ clubId: z.string().uuid(), applicationId: z.string().uuid(), roundId: z.string().uuid(), bookingId: z.string().uuid().optional(), slotId: z.string().uuid().optional(), roomId: z.string().uuid().optional() }).parse(input);
   const { user } = await requireAuth();
-  return prisma.$transaction(async tx => {
-    const actor = await authorizeInterview(tx, data, user.id, "panel", "share");
-    const booking = await tx.interviewBooking.findUnique({ where: { applicationId_roundId: { applicationId: data.applicationId, roundId: data.roundId } }, include: { slot: { include: { room: true, panelScheduleVersion: true } } } });
-    if (data.bookingId || data.slotId || data.roomId) {
-      if (!booking || data.bookingId && data.bookingId !== booking.id || data.slotId && data.slotId !== booking.slotId || data.roomId && data.roomId !== booking.slot.roomId) throw Error("This interview changed or was cancelled. Go back to Interview rooms.");
-    }
-    if (booking && !(await approvedBookingPanel(tx, data, booking))?.includes(actor.member.id)) throw Error("This room assignment is no longer available.");
-    const record = await tx.interviewRecord.findUnique({ where: { applicationId_interviewerId_roundId: { applicationId: data.applicationId, roundId: data.roundId, interviewerId: actor.member.id } } });
-    if ((!record?.completedAt && (actor.app.roundId !== data.roundId || actor.round.archivedAt)) || record?.anonymousReview) throw Error("This interview is no longer available.");
-    return { applicationId: data.applicationId, roundId: data.roundId };
-  }, interviewTransactionOptions);
+  try {
+    return await prisma.$transaction(async tx => {
+      const actor = await authorizeInterview(tx, data, user.id, "panel", "share");
+      const booking = await tx.interviewBooking.findUnique({ where: { applicationId_roundId: { applicationId: data.applicationId, roundId: data.roundId } }, include: { slot: { include: { room: true, panelScheduleVersion: true } } } });
+      if (data.bookingId || data.slotId || data.roomId) {
+        if (!booking || data.bookingId && data.bookingId !== booking.id || data.slotId && data.slotId !== booking.slotId || data.roomId && data.roomId !== booking.slot.roomId) throw new InterviewEntryUnavailable("This interview changed or was cancelled. Go back to Interview rooms.");
+      }
+      if (booking && !(await approvedBookingPanel(tx, data, booking))?.includes(actor.member.id)) throw new InterviewEntryUnavailable("This room assignment is no longer available.");
+      const record = await tx.interviewRecord.findUnique({ where: { applicationId_interviewerId_roundId: { applicationId: data.applicationId, roundId: data.roundId, interviewerId: actor.member.id } } });
+      if ((!record?.completedAt && (actor.app.roundId !== data.roundId || actor.round.archivedAt)) || record?.anonymousReview) throw new InterviewEntryUnavailable("This interview is no longer available.");
+      return { applicationId: data.applicationId, roundId: data.roundId };
+    }, interviewTransactionOptions);
+  } catch (error) {
+    // Expected access/availability outcomes are a result, not a server failure (no 500 or runtime error log).
+    if (error instanceof InterviewEntryUnavailable || isInterviewAccessDenial(error)) return { unavailable: (error as Error).message };
+    throw error;
+  }
 }

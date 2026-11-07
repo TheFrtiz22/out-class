@@ -18,18 +18,18 @@ test('exact destinations retain slot, booking, club and round; Back preserves or
  // Advancing inside the room keeps the same list filters.
  assert.equal(new URL(api.interviewEntryHref(entry,'https://out-class.net'+href),'https://out-class.net').searchParams.get('date'),'2026-10-20');assert.ok(!api.interviewEntryHref(entry,'https://outside.test/other?injected=1').includes('injected'));
 });
-test('server exact entry denies revoked, cross-club/round, cancelled and replaced bookings; supported manual assignments remain available',async()=>{
+test('server exact entry returns unavailable (no thrown 500) for revoked, cross-club/round, cancelled and replaced bookings; supported manual assignments remain available',async()=>{
  const h=harness(),api=h.load('actions/interview-entry.ts');assert.deepEqual(await api.resolveInterviewRoomEntry(h.scope),{applicationId:h.scope.applicationId,roundId:h.scope.roundId});
- await assert.rejects(api.resolveInterviewRoomEntry({...h.scope,bookingId:id(4),slotId:id(5)}),/changed|cancelled/);
- await assert.rejects(api.resolveInterviewRoomEntry({...h.scope,clubId:id(8)}),/access|unavailable/);
- await assert.rejects(api.resolveInterviewRoomEntry({...h.scope,roundId:id(8)}),/unavailable/);
- h.assignments[0].revokedAt=new Date();await assert.rejects(api.resolveInterviewRoomEntry(h.scope),/assignment|permission/);h.assignments[0].revokedAt=null;
+ assert.match((await api.resolveInterviewRoomEntry({...h.scope,bookingId:id(4),slotId:id(5)})).unavailable,/changed|cancelled/);
+ assert.match((await api.resolveInterviewRoomEntry({...h.scope,clubId:id(8)})).unavailable,/access|unavailable/);
+ assert.match((await api.resolveInterviewRoomEntry({...h.scope,roundId:id(8)})).unavailable,/unavailable/);
+ h.assignments[0].revokedAt=new Date();assert.match((await api.resolveInterviewRoomEntry(h.scope)).unavailable,/assignment|permission/);h.assignments[0].revokedAt=null;
  const room={id:id(6),clubId:h.scope.clubId,roundId:h.scope.roundId,isOpen:true,panelApprovedBy:h.members[0].userId,panelMemberIds:[h.members[0].id],approvedPanelMemberIds:[h.members[0].id]};
  const booking={id:id(4),applicationId:h.scope.applicationId,roundId:h.scope.roundId,slotId:id(5),slot:{id:id(5),roomId:room.id,room,panelScheduleVersionId:null}};
  h.tx.interviewBooking.findUnique=async()=>booking;h.tx.clubMember.findFirst=async({where})=>h.members.find(m=>m.userId===where.userId&&m.clubId===where.clubId&&m.isOwner&&m.status==='ACTIVE');
  const request={...h.scope,bookingId:booking.id,slotId:booking.slotId,roomId:room.id};await api.resolveInterviewRoomEntry(request);
- await assert.rejects(api.resolveInterviewRoomEntry({...request,slotId:id(7)}),/changed/);room.isOpen=false;await assert.rejects(api.resolveInterviewRoomEntry(request),/assignment/);room.isOpen=true;
- room.approvedPanelMemberIds=[];await assert.rejects(api.resolveInterviewRoomEntry(request),/assignment/);
+ assert.match((await api.resolveInterviewRoomEntry({...request,slotId:id(7)})).unavailable,/changed/);room.isOpen=false;assert.match((await api.resolveInterviewRoomEntry(request)).unavailable,/assignment/);room.isOpen=true;
+ room.approvedPanelMemberIds=[];assert.match((await api.resolveInterviewRoomEntry(request)).unavailable,/assignment/);
 });
 test('assignment notification projects the identical current booking destination and never adds a time gate',async()=>{
  const h=harness(),member=h.members[0];h.tx.clubMember.findFirst=async()=>member;h.tx.interviewPanelAssignment.findFirst=async()=>h.assignments[0];
