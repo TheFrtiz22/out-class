@@ -93,3 +93,13 @@ test('Voting slide: section requires finalInterviewThoughts, scores require inte
  // A later non-interview voting round uses the latest authorized interview round with submissions.
  r=await f.voting(['finalInterviewThoughts'],f.review);assert.equal(r.interviewFeedback.roundId,f.ids.round);
 });
+test('leader dialog: a submitted panelist sees finalized summaries but not peer scores; leaders see scores; non-members get unavailable without throwing',async()=>{
+ const {h,ids,review_,read}=await fixture();try{
+  await review_(ids.panelMember,ids.round,9,'Panel summary');await review_(ids.peerMember,ids.round,6.5,'Peer summary');
+  h.as(ids.panel);const own=await read();assert.equal(own.status,'ready');assert.equal(own.feedback.scoresIncluded,false);
+  assert.ok(own.feedback.entries.every(e=>e.score===null));assert.ok(own.feedback.entries.some(e=>e.summary==='Peer summary'));assert.doesNotMatch(JSON.stringify(own),/6\.5|"score":9/);
+  h.as(ids.owner);const leader=await read();assert.equal(leader.feedback.scoresIncluded,true);assert.deepEqual(leader.feedback.entries.map(e=>e.score).sort(),[6.5,9]);
+  const stranger=randomUUID();await h.db.query(`INSERT INTO "User"(id,email) VALUES ($1,'stranger@virginia.edu')`,[stranger]);
+  h.as(stranger);assert.deepEqual(await read(),{status:'unavailable'});
+ }finally{await h.db.close();}
+});

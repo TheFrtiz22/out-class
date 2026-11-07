@@ -55,5 +55,6 @@ export function getInterviewFeedback(input: unknown): InterviewFeedbackResult {
   const a = state.applications.find(v => v.id === d.applicationId && v.clubId === d.clubId && v.status !== "DRAFTING");
   if (!club || !a || state.perspective.role !== "leader" || m.clubId !== club.id || m.status !== "ACTIVE" || !hasPermission(m, "applications.review")) return { status: "unavailable" };
   const requested = d.roundId ?? a.roundId, allowed = demoAuthorizedInterviewRounds(state, club, m, a, requested);
-  return allowed.length ? { status: "ready", feedback: demoInterviewFeedback(state, club, a, allowed, requested, true) } : { status: "unavailable" };
+  // Same rule as the real action: individual peer scores need explicit leadership review access.
+  return allowed.length ? { status: "ready", feedback: demoInterviewFeedback(state, club, a, allowed, requested, interviewCapabilities(m).readClosing) } : { status: "unavailable" };
 }
