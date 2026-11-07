@@ -128,6 +128,11 @@ test('browser: Club home dashboard, permissions, header glass, blur budget and a
   assert.equal(await page.locator('.oc-needs-card').first().evaluate(el => getComputedStyle(el).animationName), 'none')
   assert.equal(await page.locator('.oc-club-home-ambient').evaluate(el => getComputedStyle(el).display), 'none')
   assert.equal(await page.locator('[data-slot="tabs-list"][data-variant="segmented"]').evaluate(el => getComputedStyle(el).borderTopStyle), 'solid')
+  // Reduced motion removes the slide, not the position: the indicator still sits under the selected tab.
+  const reducedTabs = page.getByRole('tablist', { name: 'Your assignments' })
+  await reducedTabs.getByRole('tab', { name: /^Overdue/ }).click()
+  assert.notEqual(await reducedTabs.evaluate(el => getComputedStyle(el, '::before').transform), 'none')
+  assert.equal(await reducedTabs.evaluate(el => getComputedStyle(el, '::before').transitionDuration.split(',').every(v => parseFloat(v) === 0)), true)
   await page.emulateMedia({ reducedMotion: null, forcedColors: null })
   console.log('PASS reduced motion and forced colors')
 

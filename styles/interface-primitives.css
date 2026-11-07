@@ -206,7 +206,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  [data-slot="button"]:is([data-variant="glass"], [data-variant="glass-primary"]), [data-slot="tabs-list"][data-variant="segmented"]::before, [data-slot="tabs-list"][data-variant="segmented"] [data-slot="tabs-trigger"] { transition: none !important; transform: none !important; }
+  /* No animation, but the indicator keeps the transform that positions it on the selected tab. */
+  [data-slot="button"]:is([data-variant="glass"], [data-variant="glass-primary"]), [data-slot="tabs-list"][data-variant="segmented"]::before, [data-slot="tabs-list"][data-variant="segmented"] [data-slot="tabs-trigger"] { transition: none !important; }
+  [data-slot="button"]:is([data-variant="glass"], [data-variant="glass-primary"]) { transform: none !important; }
 }
 @media (forced-colors: active) {
   :is([data-slot="card"], [data-slot="panel"])[data-variant^="glass"], [data-slot="button"]:is([data-variant="glass"], [data-variant="glass-primary"]), [data-slot="tabs-list"][data-variant="segmented"] { border: 1px solid CanvasText; }
