@@ -73,3 +73,7 @@ deploy <pending> | runtime errors <pending> | advisor delta <n/a, no migration> 
 - `scripts/check-glass-rollout.cjs` on the local production build: before (ui/club-home-glass) and after, 37 screenshots each, 0 axe violations in both (design-system with every primitive, the six product patterns, dialog/menu/tooltip; public pages; reduced transparency via CDP, forced colors, higher contrast). One intermittent React #419 on /signup or /login in both runs: Supabase client configuration missing in this container (0 in 6 reloads).
 - Scroll frames (OUTCLASS_GLASS_FRAMES=1, 1440px, 2.5 s, 3 runs): origin/main 9f15d2ea and the rollout both 150 frames, median 16.7 ms, p95 16.7–16.8 ms, 0 frames >34 ms, over the Explore cards and the applicant-table placeholder. Headless software rendering.
 - Not run: signed-in pages in a browser (no Supabase credentials or Docker daemon here, so neither demo nor the disposable stack can start); WebKit (not installed); env-gated E2E.
+
+## 2026-11-07 RELEASE 41be2908 (#151, includes #150)
+- Production deployment dpl_DuYz6ZHnQXrefMU9pfbYGhUawzRk READY on 41be2908, aliased to out-class.net, www and uva.out-class.net.
+- get_runtime_errors (7h): two groups, both pre-dating the merge (ZodError `prompt` baseline class, last on the previous deployment; "Additional observations are unavailable" authorization denial, first seen 2026-11-05). No new error classes. Advisors 0/52/43 matched baseline before merge. No rollback.
