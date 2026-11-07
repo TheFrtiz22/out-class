@@ -75,7 +75,7 @@ export function VotingRoomSetup({clubId,demoScoped,initialCycleId="",initialRoun
  {error&&<div role="alert" className="vr-error">{error} {pending.current&&<Link className="vr-link" href={liveRoomPath(clubId,sessionId,'leader',demoScoped)}>Open session details to review saved setup</Link>} <Button variant="outline" disabled={busy} onClick={()=>pending.current?void prepare():setRetry(v=>v+1)}>Retry</Button></div>}
  {draft.error&&<div role="alert">{draft.error} <Button variant="outline" onClick={draft.retry}>Retry draft</Button></div>}
  {!!draft.recovery&&<div role="alert">A saved working copy is available. <Button onClick={draft.restoreRecovery}>Restore draft</Button><Button variant="outline" onClick={()=>void draft.discardRecovery()}>Discard working copy</Button></div>}
- {selectionKey&&<Link className="vr-link" href={`/club/${encodeURIComponent(clubId)}/workspace?section=recruitment&tool=applicants`}>Return to Applicants</Link>}
+ {selectionKey?<Link className="vr-link" href={`/club/${encodeURIComponent(clubId)}/workspace?section=recruitment&tool=applicants`}>Return to Applicants</Link>:<Link className="vr-link" href={`/club/${encodeURIComponent(clubId)}/workspace?section=recruitment&tool=decisions&decisionTab=voting`}>Back to Voting room</Link>}
  {selectionError&&<div role="alert">{selectionError} <Button variant="outline" onClick={()=>setRetry(v=>v+1)}>Retry selection</Button></div>}
  {selectionKey&&!selected&&!selectionError&&<LoadingState label="Checking selected applicants?" layout="inline"/>}
  {selected&&selected.rejected>0&&<p role="status">{selected.rejected} selected {selected.rejected===1?"applicant is":"applicants are"} no longer eligible or available. Review the valid selection before starting.</p>}

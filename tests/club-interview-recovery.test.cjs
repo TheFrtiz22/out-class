@@ -21,6 +21,9 @@ function render(search,{permission=true,selected=true,loading=false}={}) {
   '@/lib/interview-access':{interviewCapabilities:()=>({participate:true})},
   '@/lib/workspace-navigation':nav.exports,
   '@/lib/voting-navigation':require('./helpers/interview-harness.cjs').harness().load('lib/voting-navigation.ts'),
+  '@/lib/workspace-routes':require('./helpers/interview-harness.cjs').harness().load('lib/workspace-routes.ts'),
+  '@/lib/application-decisions':require('./helpers/interview-harness.cjs').harness().load('lib/application-decisions.ts'),
+  '@/lib/copy/terms':require('./helpers/interview-harness.cjs').harness().load('lib/copy/terms.ts'),
   '@/lib/interview-entry':require('./helpers/interview-harness.cjs').harness().load('lib/interview-entry.ts'),
   '@/lib/applicant-interview-navigation':require('./helpers/interview-harness.cjs').harness().load('lib/applicant-interview-navigation.ts'),
  };

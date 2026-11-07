@@ -28,12 +28,14 @@ export function managerNavigation(member: ClubAccess, clubId: string, mode: stri
   const item = (id: string, label: string, section = id, extra = {}) => ({ id, label, href: href(section, section === "recruitment" ? id : undefined), ...extra })
   if (mode === "recruiting") {
     const read = hasPermission(member, "applications.review") || hasPermission(member, "applicants.identify")
+    const canVote = hasPermission(member, "applications.review") && (["decisions.start", "decisions.vote", "decisions.view"] as const).some(p => hasPermission(member, p))
+    const canLetters = hasPermission(member, "recruitment.manage") || hasPermission(member, "decisions.manage")
     return [item("overview", "Overview", "recruitment"),
-      ...(read ? [item("applicants", "All Applicants", "recruitment", { navGroup: "applicants" as const }), item("rejected", "Rejected Applicants", "recruitment", { navGroup: "applicants" as const })] : []),
+      ...(read ? [item("applicants", "All Applicants", "recruitment", { navGroup: "applicants" as const })] : []),
       ...(interviewCapabilities(member).moderateResume ? [item("resumes", "Résumé moderation", "recruitment", { navGroup: "applicants" as const, href: applicantInterviewHref(clubId, "resumes", search) })] : []),
       ...(interviewCapabilities(member).readClosing ? [item("reviews", "Submitted reviews", "recruitment", { navGroup: "applicants" as const, href: applicantInterviewHref(clubId, "reviews", search) })] : []),
       ...(hasPermission(member, "applications.review") || hasPermission(member, "interviews.manage") || interviewCapabilities(member).editKit ? [item("interviews", "Interviews", "recruitment")] : []),
-      ...(read || hasPermission(member,"recruitment.manage") ? [item("decisions", "Decisions", "recruitment", { navGroup: "decisions" as const, href: decisionsHref(clubId,"overview",search) })] : []),
+      ...(canVote || canLetters ? [item("decisions", "Decisions", "recruitment", { navGroup: "decisions" as const, href: decisionsHref(clubId, canVote ? "voting" : "letters", search) })] : []),
       ...((hasPermission(member,"decisions.manage")||hasPermission(member,"decisions.publish"))&&hasPermission(member,"applicants.identify") ? [item("scheduled-decisions","Scheduled Decisions","recruitment", { navGroup: "decisions" as const })] : []),
       ...(hasPermission(member, "recruitment.manage") ? [item("rounds", "Anonymous Review", "recruitment", { quiet: true }), item("rules", "Auto-Reject Rules", "recruitment", { quiet: true })] : []),
       ...(hasPermission(member, "meetings.manage") ? [{ ...item("announcements", "Announcements"), href: `${href("announcements")}&mode=recruiting` }] : []),

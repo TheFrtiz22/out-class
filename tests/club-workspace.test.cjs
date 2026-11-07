@@ -195,7 +195,8 @@ test("product modes preserve scoped URLs and limit manager destinations by capab
   const { managerNavigation, personalMode } = load("lib/product-navigation.ts");
   const ids = (permissions, mode) => managerNavigation({ permissions }, clubId, mode).map(item => item.id);
   assert.deepEqual(ids(["members.manage"], "club"), ["overview", "meetings", "tasks", "members", "settings"]);
-  assert.deepEqual(ids(["applications.review"], "recruiting"), ["overview", "applicants", "rejected", "interviews", "decisions"]);
+  assert.deepEqual(ids(["applications.review"], "recruiting"), ["overview", "applicants", "interviews"]);
+  assert.deepEqual(ids(["applications.review", "decisions.vote"], "recruiting"), ["overview", "applicants", "interviews", "decisions"]);
   assert.deepEqual(ids(["interviews.manage"], "recruiting"), ["overview", "interviews", "settings"]);
   assert.deepEqual(ids(["recruitment.manage"], "recruiting"), ["overview", "decisions", "rounds", "rules", "settings"]);
   const owner = managerNavigation({ isOwner: true }, clubId, "recruiting");

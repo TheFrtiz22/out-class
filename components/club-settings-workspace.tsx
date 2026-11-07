@@ -18,6 +18,7 @@ import { saveClubPreferences } from "@/actions/club-settings";
 import { ClubProfileSettings } from "@/components/club-profile-settings";
 
 import "@/components/clubs/club-settings.css";
+import { VotingRuleDefaults } from "@/components/live-voting/voting-rule-defaults";
 import { NativeSelect } from "@/components/ui/native-select"
 const ApplicationBuilder = dynamic(() =>
   import("@/components/views/club-manager/application-builder-view").then(
@@ -168,6 +169,8 @@ export function ClubSettingsWorkspace({
             {hasPermission(member, "recruitment.manage") && <div className="mb-5 flex flex-wrap gap-4 border-b pb-4 text-sm"><Link className="underline underline-offset-4" href={`/club/${clubId}/workspace?section=settings&setting=pipeline`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Configure recruitment rounds</Link><Link className="underline underline-offset-4" href={`/club/${clubId}/workspace?section=settings&setting=cycles`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Manage application cycles</Link></div>}
             {hasPermission(member, "recruitment.manage") && <details className="mb-5 border-b pb-3"><summary className="min-h-11 cursor-pointer py-3 text-sm font-medium">Review settings</summary><div className="flex flex-wrap gap-4 py-2 text-sm"><Link className="underline underline-offset-4" href={`/club/${clubId}/workspace?section=recruitment&tool=rounds`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Anonymous review</Link><Link className="underline underline-offset-4" href={`/club/${clubId}/workspace?section=recruitment&tool=rules`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Screening rules</Link></div></details>}
             <ApplicationBuilder clubId={clubId} />
+            {/* Voting defaults are configuration, so they live here; the Voting room links to this section. */}
+            {hasPermission(member, "applications.review") && hasPermission(member, "decisions.manage") && hasPermission(member, "decisions.start") && !demo.isDemoEnabled && <section id="voting-rules" aria-label="Default voting rules" className="mt-8 border-t pt-5"><VotingRuleDefaults clubId={clubId} /></section>}
           </div>
         )}
         {visible("cycles") && <div hidden={active !== "cycles"}><Cycles clubId={clubId} /></div>}
