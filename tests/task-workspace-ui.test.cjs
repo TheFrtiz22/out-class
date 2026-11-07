@@ -29,7 +29,7 @@ test('submitted filter separates work awaiting review from outstanding assignmen
  const h=harness();h.render();await flush();let tree=h.render();nodes(tree).find(n=>['select','NativeSelect'].includes(n.type?.name??n.type)&&n.props.value==='open').props.onChange({target:{value:'submitted'}});tree=h.render();assert.match(text(tree),/Submitted paper/);assert.doesNotMatch(text(tree),/Your research/)
 })
 
-test('personal task totals separate due, missing and submitted work and filter on click',async()=>{
+test('personal task counts separate due, missing and submitted work inside the Status filter',async()=>{
  const h=harness(false,true)
  const base=h.workspace.tasks[0]
  h.workspace.tasks.push(
@@ -38,15 +38,16 @@ test('personal task totals separate due, missing and submitted work and filter o
   {...base,id:'closed',title:'Closed exercise',status:'DONE',assignments:[{...base.assignments[0],id:'closed-a'}]}
  )
  h.render();await flush();let tree=h.render()
- const total=(key)=>nodes(tree).find(n=>n.type==='button'&&n.props.className===`oc-task-total oc-task-${key}`)
- assert.equal(text(total('due')),'1Due')
- assert.equal(text(total('missing')),'1Missing')
- assert.equal(text(total('submitted')),'2Submitted')
- total('missing').props.onClick();tree=h.render()
+ // Counts live in the Status options (no separate counter boxes).
+ assert.equal(nodes(tree).some(n=>typeof n.props?.className==='string'&&n.props.className.includes('oc-task-total')),false)
+ const status=()=>nodes(tree).find(n=>n.props?.['aria-label']==='Status')
+ const labels=nodes(status()).filter(n=>n.type==='option').map(text)
+ assert.ok(labels.includes('Due (1)'));assert.ok(labels.includes('Missing (1)'));assert.ok(labels.includes('Submitted (2)'))
+ status().props.onChange({target:{value:'overdue'}});tree=h.render()
  assert.match(text(tree),/Missing exercise/);assert.doesNotMatch(text(tree),/Your research|Reviewed exercise|Closed exercise/)
- total('submitted').props.onClick();tree=h.render()
+ status().props.onChange({target:{value:'submitted'}});tree=h.render()
  assert.match(text(tree),/Submitted paper/);assert.match(text(tree),/Reviewed exercise/);assert.doesNotMatch(text(tree),/Missing exercise/)
- total('due').props.onClick();tree=h.render()
+ status().props.onChange({target:{value:'due'}});tree=h.render()
  assert.match(text(tree),/Your research/);assert.doesNotMatch(text(tree),/Submitted paper|Missing exercise/)
 })
 

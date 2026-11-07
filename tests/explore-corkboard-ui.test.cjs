@@ -17,7 +17,8 @@ test('saving is immediate, produces one shared saved state, and repeated clicks 
 test('Corkboard has loading, sign-in, empty, populated and retry states, reusing the existing card/profile',()=>{let state={items:[],loading:true,authenticated:true,error:'',refresh:async()=>{}};const mocks={'@/contexts/corkboard-context':{useCorkboard:()=>state},react:{useState:()=>[null,()=>{}]}};const {SavedClubsView}=load('components/views/saved-clubs-view.tsx',mocks),actions=[];const render=()=>SavedClubsView({onNavigate:v=>actions.push(v)});assert.ok(nodes(render()).some(n=>n.type==='LoadingState'&&n.props.label==='Loading Saved clubs…'));state.loading=false;assert.match(nodes(render()).find(n=>n.type==='EmptyState').props.title,/No saved clubs yet\./);nodes(render()).find(n=>n.type==='EmptyState').props.action.props.onClick();assert.deepEqual(actions,['explore']);state.authenticated=false;assert.match(label(render()),/Sign in to save/);state.authenticated=true;state.items=[{club,savedAt:'2026-10-03'}];assert.ok(nodes(render()).some(n=>n.type==='DiscoveryCard'&&n.props.club.id===club.id));state.items=[];state.error='Unavailable';assert.match(label(render()),/Retry Saved clubs/)});
 test('rail and phone bar read one registry: one name per destination, Notifications only in the header',()=>{
  const nav=require('./helpers/navigation-module.cjs'),sections=nav.personalRailSections(),items=nav.railItems(sections);
- assert.deepEqual(items.map(item=>item.label),['Home','Explore','Corkboard','Applications','Status','My Clubs','Meetings','Tasks','Calendar','Profile','Settings']);
+ // Seven destinations: Settings is in the account menu, Inbox behind the bell, Status an Applications tab, Meetings a Calendar filter.
+ assert.deepEqual(items.map(item=>item.label),['Home','Explore','Events','Applications','My Clubs','Calendar','Profile']);
  assert.equal(items.some(item=>item.id==='inbox'||item.label==='Discover'),false);
  assert.ok(items.every(item=>item.href?.startsWith('/')),'every rail item is a real path');
  assert.ok(sections.every(section=>section.label||section.name),'every rail group has an accessible name');
@@ -30,12 +31,12 @@ test('rail and phone bar read one registry: one name per destination, Notificati
 });
 test('the active rail item follows the URL, including detail pages, and stays empty where no rail item applies',()=>{
  const {activeNavItem,inPlaceSections,personalRailSections,railItems}=require('./helpers/navigation-module.cjs'),q=v=>new URLSearchParams(v);
- const cases=[['/home','student-dashboard'],['/explore','explore'],['/explore/categories','explore'],['/corkboard','corkboard'],['/saved-clubs','corkboard'],['/applications','applications'],['/applications/status','status'],['/applications/app-1/decision','applications'],['/clubs','clubs'],['/clubs/meetings','meetings'],['/meetings','meetings'],['/meetings/m-1','meetings'],['/clubs/tasks','tasks'],['/calendar','calendar'],['/settings/interviews','calendar'],['/profile','student-profile'],['/settings/notifications','settings'],['/inbox',null],['/club/abc','explore'],['/platform','overview'],['/platform/audit','audit']];
+ const cases=[['/home','student-dashboard'],['/explore','explore'],['/explore/categories','explore'],['/corkboard','corkboard'],['/saved-clubs','corkboard'],['/applications','applications'],['/applications/status','applications'],['/applications/app-1/decision','applications'],['/clubs','clubs'],['/clubs/meetings','calendar'],['/meetings','calendar'],['/meetings/m-1','calendar'],['/clubs/tasks','clubs'],['/calendar','calendar'],['/settings/interviews','calendar'],['/profile','student-profile'],['/settings/notifications','settings'],['/inbox',null],['/club/abc','explore'],['/platform','overview'],['/platform/audit','audit']];
  for(const [path,id] of cases)assert.equal(activeNavItem(path),id,path);
  assert.equal(activeNavItem('/preview'),null,'preview falls back to the shell state');
  const ws=(search,member)=>activeNavItem('/club/c/workspace',q(search),{member});
  assert.equal(ws('section=recruitment&tool=overview'),'overview');assert.equal(ws('section=recruitment&tool=rules'),'overview');assert.equal(ws('section=recruitment'),'applicants');
- assert.equal(ws('section=recruitment&tool=rejected'),'rejected');assert.equal(ws('section=overview'),'club-home');assert.equal(ws(''),'club-home');
+ assert.equal(ws('section=overview'),'club-home');assert.equal(ws(''),'club-home');
  assert.equal(ws('section=tasks'),'tasks');assert.equal(ws('section=tasks',true),'club-tasks');assert.equal(ws('section=announcements&mode=recruiting'),'announcements');
  assert.ok(railItems(inPlaceSections(personalRailSections())).every(item=>!item.href),'the /preview shell keeps navigation in place');
 });

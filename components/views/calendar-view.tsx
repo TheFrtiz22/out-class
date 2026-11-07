@@ -35,6 +35,9 @@ const eventStyle = {
   "Coffee Chat": "bg-secondary/60 text-foreground",
 }
 
+const MEETINGS_FILTER = "club-meetings"
+function readSearchParam(key: string) { return typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get(key) }
+
 export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => void }) {
   const {
     events,
@@ -53,7 +56,9 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
   const [view, setView] = useState<"agenda" | "month" | "week" | "day">("agenda")
   const [includePast, setIncludePast] = useState(false)
   const [includeDeclined, setIncludeDeclined] = useState(false)
+  // `?type=meeting` (old /clubs/meetings) opens Calendar filtered to club meetings.
   const [filter, setFilter] = useState("all")
+  useEffect(() => { if (readSearchParam("type") === "meeting") setFilter(MEETINGS_FILTER) }, [])
   const [query, setQuery] = useState("")
   const [hiddenClubs, setHiddenClubs] = useState<Set<string>>(new Set())
   const clearCalendarFilters = () => { setQuery(""); setFilter("all"); setHiddenClubs(new Set()) }
@@ -82,7 +87,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
         .filter(
           (event) =>
             !hiddenClubs.has(event.club) &&
-            (filter === "all" || event.type === filter) &&
+            (filter === "all" || (filter === MEETINGS_FILTER ? event.id.startsWith("meeting-") : event.type === filter)) &&
             `${event.title} ${event.club} ${event.location ?? ""}`
               .toLowerCase()
               .includes(query.trim().toLowerCase()),
@@ -163,20 +168,20 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
         <div>
           <p className="text-sm text-muted-foreground">
             Meetings, interviews, and recruiting dates, together.
-            <Link href="/meetings" className="ml-2 underline">Club agendas and recaps</Link>
           </p>
           <p className="mt-2 text-xs text-muted-foreground">
             Times shown in {SCHEDULING_TIMEZONE_LABEL}.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3"><AvailabilityButton />{bookingDates.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3"><AvailabilityButton label="Availability" variant="outline" />{bookingDates.length > 0 && (
           <Button variant="outline" onClick={() => setBooking(true)}>
             Book / change interview
           </Button>
         )}</div>
       </header>
-      <SegmentedControl label="Calendar view" value={view} onChange={setView} options={(["agenda", "month", "week", "day"] as const).map(value => ({ value, label: value[0].toUpperCase() + value.slice(1) }))} />
-      {view !== "agenda" && (
+      {/* With nothing scheduled, show the agenda empty state only; views and filters appear once there are events. */}
+      {events.length > 0 && <SegmentedControl label="Calendar view" value={view} onChange={setView} options={(["agenda", "month", "week", "day"] as const).map(value => ({ value, label: value[0].toUpperCase() + value.slice(1) }))} />}
+      {events.length > 0 && view !== "agenda" && (
         <div className="flex flex-wrap items-center gap-3">
           <Button
             variant="outline"
@@ -209,7 +214,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
           />
         </div>
       )}
-      <div className="oc-toolbar">
+      {events.length > 0 && <div className="oc-toolbar">
         <Input
           aria-label="Search calendar"
           placeholder="Search events, clubs, or locations"
@@ -224,6 +229,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
           className="max-w-full"
         >
           <option value="all">All event types</option>
+          <option value={MEETINGS_FILTER}>Club meetings</option>
           {Object.keys(eventStyle).map((type) => (
             <option key={type}>{type}</option>
           ))}
@@ -246,7 +252,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
             </label>
           </>
         )}
-      </div>
+      </div>}
       <div className="grid min-w-0 items-start gap-[var(--oc-content-gap)] xl:grid-cols-[minmax(0,1fr)_17rem]">
         <div
           className={

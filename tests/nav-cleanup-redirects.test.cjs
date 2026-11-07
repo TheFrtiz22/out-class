@@ -86,3 +86,26 @@ test("interview setup links open the Interviews tool, never Settings", () => {
     assert.equal(url.searchParams.get("interviewTab"), tab)
   }
 })
+
+test("personal workspace: folded pages redirect with their focus parameters", () => {
+  const student = load("lib/student-routes.ts")
+  assert.equal(student.movedStudentHref("/applications/status"), "/applications?tab=in-review")
+  assert.equal(student.movedStudentHref("/applications/status", new URLSearchParams("applicationId=a1&tag=x&tag=y")), "/applications?applicationId=a1&tag=x&tag=y&tab=in-review")
+  assert.equal(student.movedStudentHref("/applications/status", new URLSearchParams("tab=decisions")), "/applications?tab=decisions")
+  assert.equal(student.movedStudentHref("/clubs/meetings"), "/calendar?type=meeting")
+  assert.equal(student.movedStudentHref("/clubs/meetings", new URLSearchParams("clubId=c1")), "/calendar?clubId=c1&type=meeting")
+  assert.equal(student.movedStudentHref("/clubs/tasks"), null, "/clubs/tasks stays routable")
+  // Old homepage URLs from email and notifications land on the new homes too.
+  assert.equal(student.legacyStudentRedirect(new URLSearchParams("workspace=student&view=status&section=status&applicationId=a1")), "/applications?applicationId=a1&tab=in-review")
+  assert.equal(student.legacyStudentRedirect(new URLSearchParams("workspace=student&view=my-clubs&section=meetings")), "/calendar?type=meeting")
+  assert.equal(student.applicantStatusHref(new URLSearchParams("applicationId=a1")), "/applications?applicationId=a1&tab=in-review")
+})
+
+test("personal pages folded into others redirect on the server", () => {
+  const page = file => fs.readFileSync(file, "utf8")
+  assert.match(page("app/(product)/applications/status/page.tsx"), /redirect\(movedStudentHref\("\/applications\/status", params\)!\)/)
+  assert.match(page("app/(product)/clubs/meetings/page.tsx"), /redirect\(movedStudentHref\("\/clubs\/meetings", params\)!\)/)
+  assert.match(page("app/settings/profile/page.tsx"), /redirect\(`\/profile/)
+  assert.match(page("app/settings/organizations/page.tsx"), /redirect\(`\/clubs/)
+  assert.match(page("app/(product)/inbox/page.tsx"), /tab === "preferences"\) redirect\("\/settings\/notifications"\)/)
+})

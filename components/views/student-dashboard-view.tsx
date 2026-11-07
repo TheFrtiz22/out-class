@@ -27,6 +27,7 @@ import {
 import type { ClubEvent } from "@/lib/data"
 import type { ViewId } from "@/lib/views"
 import "./student-home.css"
+import { applicationStages as sharedStages, stageCounts } from "@/lib/application-stages"
 import { TERMS, pluralize as plural } from "@/lib/copy/terms"
 
 function when(event: ClubEvent | Date) {
@@ -58,13 +59,10 @@ function applicationNote(app: HomeApplication) {
 }
 /** My applications as stages: drafts, in review, interviews, decisions. Bars are decorative. */
 function applicationStages(apps: HomeApplication[]) {
-  const count = (statuses: string[]) => apps.filter(app => statuses.includes(app.status)).length
-  return [
-    { id: "draft", label: "Drafts", count: count(["Drafting"]), tone: "warning" },
-    { id: "review", label: "In review", count: count(["Submitted", "In Review"]), tone: "info" },
-    { id: "interview", label: "Interviews", count: count(["Interviewing"]), tone: "interview" },
-    { id: "decision", label: "Decisions", count: count(["Accepted", "Rejected", "Waitlisted"]) },
-  ]
+  // Same stages and counting as the Applications page tabs (lib/application-stages).
+  const counts = stageCounts(apps.map(app => app.status))
+  const tones: Record<string, string | undefined> = { drafts: "warning", "in-review": "info", interviews: "interview" }
+  return sharedStages.map(stage => ({ id: stage.id, label: stage.label, count: counts[stage.id], tone: tones[stage.id], href: `/applications?tab=${stage.id}` }))
 }
 
 export function StudentDashboardView({

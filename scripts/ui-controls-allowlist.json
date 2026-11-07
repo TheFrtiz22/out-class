@@ -369,12 +369,6 @@
   },
   {
    "rule": "raw-toggle",
-   "file": "components/club-tasks.tsx",
-   "max": 1,
-   "reason": "Due / Missing / Submitted count tiles (tone and zero states) act as filters; whole-tile targets."
-  },
-  {
-   "rule": "raw-toggle",
    "file": "components/interviews/booking-picker.tsx",
    "max": 2,
    "reason": "Booking date grid cells and two-line slot cards keep their grid; a segmented track would change the layout. Listed as skipped."

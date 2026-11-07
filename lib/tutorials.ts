@@ -8,10 +8,10 @@ export const tutorialSteps = {
     { title: "Explore OutClass", text: "Browse Explore by interest, search and compare clubs, and open a club’s page for its recruitment details and public events.", anchor: "nav-explore", view: "explore" },
     { title: "Your clubs", text: "My Clubs brings your memberships together. Open a club to find its meetings, tasks, and workspace tools available to you.", anchor: "nav-clubs", view: "my-clubs" },
     { title: "Applications", text: "Start from a club’s page, answer its questions, and check your profile before submitting. Track all your applications here.", anchor: "nav-applications", view: "tracker" },
-    { title: "Application status", text: "Status brings review progress, interview scheduling, and released decisions together. Open an application to review its next step.", anchor: "nav-status", view: "status" },
+    { title: "Application stages", text: "Applications sorts your work into Drafts, In review, Interviews and Decisions. Open an application to review its next step.", anchor: "nav-applications", view: "status" },
     { title: "Calendar and events", text: "Find upcoming events and interview times in Calendar. Open an event for its details and attendance options.", anchor: "nav-calendar", view: "calendar" },
-    { title: "Campus Corkboard", text: "Find approved campus event flyers on Corkboard. Filter by date or interest, open a flyer for details, and RSVP. Your saved clubs remain available through Saved clubs.", anchor: "nav-corkboard", view: "corkboard" },
-    { title: "Stay in the loop", text: "Use the bell for notifications and application updates. You can restart this walkthrough anytime using Tutorial help.", anchor: "notifications", view: "inbox" },
+    { title: "Campus events", text: "Find approved campus event flyers in Events. Filter by date or interest, open a flyer for details, and RSVP. Your saved clubs remain available through Saved clubs.", anchor: "nav-corkboard", view: "corkboard" },
+    { title: "Stay in the loop", text: "Use the bell for your Inbox: notifications and application updates. You can restart this walkthrough anytime using Tutorial help.", anchor: "notifications", view: "inbox" },
   ],
   leader: [
     { title: "Your applicant workspace", text: "Recruiting brings applications and your review tools together. Tools are shown according to your current club permissions.", anchor: "mode-recruiting", section: "recruitment", tool: "applicants" },

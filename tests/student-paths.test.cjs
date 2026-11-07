@@ -26,13 +26,13 @@ test("every old student workspace URL maps to its real path", () => {
     "workspace=student&view=corkboard": "/corkboard",
     "workspace=student&view=tracker": "/applications",
     "workspace=student&view=tracker&section=applications": "/applications",
-    "workspace=student&view=tracker&section=status": "/applications/status",
-    "workspace=student&view=status&section=status": "/applications/status",
-    "workspace=student&view=interviews": "/applications/status",
-    "workspace=student&view=decisions": "/applications/status",
+    "workspace=student&view=tracker&section=status": "/applications?tab=in-review",
+    "workspace=student&view=status&section=status": "/applications?tab=in-review",
+    "workspace=student&view=interviews": "/applications?tab=in-review",
+    "workspace=student&view=decisions": "/applications?tab=in-review",
     "workspace=student&view=my-clubs": "/clubs",
     "workspace=student&view=my-clubs&section=clubs": "/clubs",
-    "workspace=student&view=my-clubs&section=meetings": "/clubs/meetings",
+    "workspace=student&view=my-clubs&section=meetings": "/calendar?type=meeting",
     "workspace=student&view=my-clubs&section=tasks": "/clubs/tasks",
     "workspace=student&view=calendar": "/calendar",
     "workspace=student&view=calendar&section=meetings": "/calendar?section=meetings",
@@ -51,7 +51,7 @@ test("every old student workspace URL maps to its real path", () => {
 test("focus ids, tabs and repeated parameters carry over; routing parameters do not", () => {
   assert.equal(redirect("workspace=student&view=tracker&applicationClubId=fund&applicationId=a"), "/applications?applicationClubId=fund&applicationId=a")
   assert.equal(redirect("workspace=student&view=inbox&tab=preferences"), "/inbox?tab=preferences")
-  assert.equal(redirect("workspace=student&view=status&section=status&tag=a&tag=b"), "/applications/status?tag=a&tag=b")
+  assert.equal(redirect("workspace=student&view=status&section=status&tag=a&tag=b"), "/applications?tag=a&tag=b&tab=in-review")
   assert.equal(redirect("workspace=student&view=explore&demoClub=jis"), "/explore?demoClub=jis")
 })
 
@@ -65,7 +65,8 @@ test("paths round-trip to the view and section they render", () => {
   for (const route of nav.STUDENT_ROUTES) {
     const resolved = nav.studentRouteForPath(route.path)
     assert.deepEqual(resolved, { view: route.view, section: route.section }, route.path)
-    if (route.path !== "/explore/categories") assert.equal(nav.studentPath(route.view, route.section), route.path, route.path)
+    // Status and Meetings were folded into Applications and Calendar; their paths redirect.
+    if (route.path !== "/explore/categories") assert.equal(nav.studentPath(route.view, route.section), nav.movedStudentHref(route.path) ?? route.path, route.path)
   }
   assert.deepEqual(nav.studentRouteForPath("/calendar", new URLSearchParams("section=tasks")), { view: "calendar", section: "tasks" })
   assert.equal(nav.studentRouteForPath("/settings"), null)

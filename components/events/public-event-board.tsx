@@ -281,7 +281,7 @@ export function PublicEventBoard() {
             </Button>
           </div>
         </details>
-        <SegmentedControl label="Event view" value={view} onChange={changeView} animated className="oc-event-view-switch" options={[{ value: "corkboard", label: "Corkboard" }, { value: "list", label: "List View" }]} />
+        <SegmentedControl label="Event view" value={view} onChange={changeView} animated className="oc-event-view-switch" options={[{ value: "corkboard", label: "Board" }, { value: "list", label: "List" }]} />
         </div>
       </div>
       {saves.error && <div role="alert" className="oc-event-save-error"><p>{saves.error}</p>{!saves.ready && <Button variant="outline" onClick={saves.retry}>Retry saved events</Button>}</div>}

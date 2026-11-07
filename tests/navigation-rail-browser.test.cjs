@@ -85,7 +85,7 @@ test('browser: labelled rail without overlay, tooltips when compact, URL-driven 
 
   // Personal rail: every section, one name each, active item from the path.
   await page.goto(`${fixture.base}/home?role=student`,{waitUntil:'networkidle'})
-  assert.deepEqual(await rail.getByRole('link').evaluateAll(links=>links.map(link=>link.getAttribute('aria-label'))),['Home','Explore','Corkboard','Applications','Status','My Clubs','Meetings','Tasks','Calendar','Profile','Settings'])
+  assert.deepEqual(await rail.getByRole('link').evaluateAll(links=>links.map(link=>link.getAttribute('aria-label'))),['Home','Explore','Events','Applications','My Clubs','Calendar','Profile'])
   await expect(rail.getByRole('link',{name:'Home',exact:true})).toHaveAttribute('aria-current','page')
   // Visible text (the avatar's initials included) must be part of each control's name.
   const names=await new AxeBuilder({page}).withRules(['label-content-name-mismatch']).analyze()
@@ -93,7 +93,7 @@ test('browser: labelled rail without overlay, tooltips when compact, URL-driven 
   await rail.getByRole('link',{name:'Explore',exact:true}).click();await page.waitForURL('**/explore')
   await expect(rail.getByRole('link',{name:'Explore',exact:true})).toHaveAttribute('aria-current','page');await expect(rail.getByRole('link',{name:'Home',exact:true})).not.toHaveAttribute('aria-current','page')
   await page.goto(`${fixture.base}/explore/categories?role=student`,{waitUntil:'networkidle'});await expect(rail.getByRole('link',{name:'Explore',exact:true})).toHaveAttribute('aria-current','page')
-  await page.goto(`${fixture.base}/applications/status?role=student`,{waitUntil:'networkidle'});await expect(rail.getByRole('link',{name:'Status',exact:true})).toHaveAttribute('aria-current','page')
+  await page.goto(`${fixture.base}/applications?role=student`,{waitUntil:'networkidle'});await expect(rail.getByRole('link',{name:'Applications',exact:true})).toHaveAttribute('aria-current','page')
 
   // Admin sections.
   await page.route('**/api/platform/eligibility',route=>route.fulfill({json:{eligible:true}}));await page.goto(`${fixture.base}/platform/audit?role=platform`,{waitUntil:'networkidle'})

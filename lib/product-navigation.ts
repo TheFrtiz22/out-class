@@ -7,8 +7,8 @@ export type PersonalSection = "explore" | "categories" | "corkboard" | "calendar
 export type PersonalMode = "explore" | "apply" | "clubs"
 export type ProductNavItem = { id: string; label: string; href?: string; quiet?: boolean; preview?: boolean; navGroup?: "applicants" | "decisions"; mode?: "recruiting" | "club"; /** Other item ids this destination stands for (the phone bar's Recruiting). */ matches?: string[] }
 const personalNavigation: Record<PersonalMode, ProductNavItem[]> = {
-  explore: [{ id: "explore", label: "Explore" }, { id: "corkboard", label: "Corkboard" }],
-  apply: [{ id: "applications", label: "Applications" }, { id: "status", label: "Status" }],
+  explore: [{ id: "explore", label: "Explore" }, { id: "corkboard", label: "Events" }],
+  apply: [{ id: "applications", label: "Applications" }, { id: "status", label: "Applications" }],
   clubs: [{ id: "clubs", label: "Clubs" }, { id: "meetings", label: "Meetings" }, { id: "tasks", label: "Tasks" }],
 }
 export function personalItems(mode: PersonalMode): ProductNavItem[] { return personalNavigation[mode] }

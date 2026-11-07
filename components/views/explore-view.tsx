@@ -134,6 +134,8 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
       key !== "sort" && value !== emptyDirectoryFilters[key as keyof typeof filters],
   )
   // Only the fields inside the Refine search panel; the row's own selects show their value.
+  const timeOptions = ["1-3", "3-5", "5+"].filter((time) => clubs.some((club) => club.timeCommitment === time))
+  const acceptanceReported = clubs.filter((club) => club.acceptanceRate != null).length >= 3
   const refined = [filters.time !== emptyDirectoryFilters.time, filters.acceptance !== emptyDirectoryFilters.acceptance].filter(Boolean).length
   const recruitmentCounts = useMemo(() => {
     const matches = filterDirectory(clubs, { ...filters, recruitment: "all" }, now)
@@ -208,26 +210,25 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
         />
       )}
       <div className="oc-directory-tools oc-toolbar">
-        <details>
+        {/* Filters with fewer than two real options are hidden; acceptance needs at least three clubs reporting a rate. */}
+        {(timeOptions.length >= 2 || acceptanceReported) && <details>
           <summary>
             <SlidersHorizontal size={15} />
             Refine search{refined > 0 && <span>({refined})</span>}
           </summary>
           <div className="oc-directory-filters">
-            <label>
+            {timeOptions.length >= 2 && <label>
               Time commitment
               <NativeSelect value={filters.time} onChange={(event) => change("time", event.target.value)}>
                 <option value="all">Any commitment</option>
-                {["1-3", "3-5", "5+"]
-                  .filter((time) => clubs.some((club) => club.timeCommitment === time))
-                  .map((time) => (
+                {timeOptions.map((time) => (
                     <option key={time} value={time}>
                       {time} hours / week
                     </option>
                   ))}
               </NativeSelect>
-            </label>
-            <label>
+            </label>}
+            {acceptanceReported && <label>
               Club-reported acceptance
               <NativeSelect
                 value={filters.acceptance}
@@ -240,9 +241,9 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
                   </option>
                 ))}
               </NativeSelect>
-            </label>
+            </label>}
           </div>
-        </details>
+        </details>}
         <label className="oc-directory-sort">
           Availability
           <NativeSelect aria-describedby="directory-availability-note" value={filters.recruitment} onChange={event => change("recruitment", event.target.value)}>
@@ -254,7 +255,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
           <NativeSelect value={filters.sort} onChange={(event) => change("sort", event.target.value)}>
             <option value="name">Name A–Z</option>
             <option value="deadline">Next deadline</option>
-            <option value="acceptance">Reported acceptance rate</option>
+            {acceptanceReported && <option value="acceptance">Reported acceptance rate</option>}
           </NativeSelect>
         </label>
       </div>

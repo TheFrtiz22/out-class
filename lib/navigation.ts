@@ -2,6 +2,7 @@ import { managerNavigation, mobileDestinations, type ProductNavItem } from "@/li
 import type { ClubAccess } from "@/lib/permissions"
 import { adminNavigation } from "@/lib/admin-navigation"
 import { STUDENT_HOME } from "@/lib/student-routes"
+import { TERMS } from "@/lib/copy/terms"
 
 /**
  * Navigation for OutClass. Student URL routes (and the old-URL redirects that
@@ -25,11 +26,13 @@ const personal = (id: string, label: string, path: string): ProductNavItem => ({
 /** Personal workspace sections. Notifications and search live only in the header. */
 export function personalRailSections(options: { settings?: boolean } = {}): RailSection[] {
   return [
+    // Seven destinations. Settings is in the account menu, Inbox behind the bell, Status is an
+    // Applications tab, Meetings a Calendar filter, and Tasks is reached from My Clubs and Home.
     { id: "home", name: "Home", items: [personal("student-dashboard", "Home", "/home")] },
-    { id: "explore", name: "Explore", items: [personal("explore", "Explore", "/explore"), personal("corkboard", "Corkboard", "/corkboard")] },
-    { id: "apply", name: "Applications", items: [personal("applications", "Applications", "/applications"), personal("status", "Status", "/applications/status")] },
-    { id: "clubs", name: "Clubs", items: [personal("clubs", "My Clubs", "/clubs"), personal("meetings", "Meetings", "/clubs/meetings"), personal("tasks", "Tasks", "/clubs/tasks"), personal("calendar", "Calendar", "/calendar")] },
-    { id: "account", name: "Account", items: [personal("student-profile", "Profile", "/profile"), ...(options.settings === false ? [] : [personal("settings", "Settings", "/settings")])] },
+    { id: "explore", name: "Explore", items: [personal("explore", "Explore", "/explore"), personal("corkboard", TERMS.events, "/corkboard")] },
+    { id: "apply", name: "Applications", items: [personal("applications", "Applications", "/applications")] },
+    { id: "clubs", name: "Clubs", items: [personal("clubs", TERMS.myClubs, "/clubs"), personal("calendar", "Calendar", "/calendar")] },
+    { id: "account", name: "Account", items: [personal("student-profile", "Profile", "/profile")] },
   ]
 }
 
@@ -99,8 +102,8 @@ export function workspaceOptionName(option: WorkspaceOption) {
 
 const personalPathItems: Record<string, string> = {
   "/home": "student-dashboard", "/explore": "explore", "/explore/categories": "explore", "/corkboard": "corkboard", "/saved-clubs": "corkboard",
-  "/applications": "applications", "/applications/status": "status", "/clubs": "clubs", "/clubs/meetings": "meetings", "/meetings": "meetings",
-  "/clubs/tasks": "tasks", "/calendar": "calendar", "/settings/interviews": "calendar", "/profile": "student-profile",
+  "/applications": "applications", "/applications/status": "applications", "/clubs": "clubs", "/clubs/meetings": "calendar", "/meetings": "calendar",
+  "/clubs/tasks": "clubs", "/calendar": "calendar", "/settings/interviews": "calendar", "/profile": "student-profile",
 }
 
 /**
@@ -111,7 +114,7 @@ export function activeNavItem(pathname: string, params: URLSearchParams = new UR
   if (personalPathItems[pathname]) return personalPathItems[pathname]
   // Detail pages highlight their parent section; the header bell owns Notifications.
   if (pathname === "/inbox") return null
-  if (pathname.startsWith("/meetings/")) return "meetings"
+  if (pathname.startsWith("/meetings/")) return "calendar"
   if (pathname.startsWith("/applications/")) return "applications"
   if (/^\/club\/[^/]+$/.test(pathname)) return "explore"
   if (pathname.startsWith("/settings") || pathname.startsWith("/club-claims") || pathname.startsWith("/invitations") || pathname.startsWith("/club-access/")) return "settings"

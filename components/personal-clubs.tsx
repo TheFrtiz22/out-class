@@ -16,6 +16,7 @@ import { LoadingState } from "@/components/ui/loading-state"
 import { memberDate, type MemberOverviewData } from "@/components/member-overview"
 import { DEFAULT_CLUB_COLOR } from "@/lib/club-colors"
 import { membershipRoleLabel } from "@/lib/copy/terms"
+import { OrganizationOwnershipRequests } from "@/components/organization-ownership-requests"
 import { NativeSelect } from "@/components/ui/native-select"
 
 export function PersonalClubs({ section }: { section: PersonalSection }) {
@@ -25,10 +26,16 @@ export function PersonalClubs({ section }: { section: PersonalSection }) {
   const member = memberships.find(m => m.clubId === selected) || memberships[0]
   if (loading) return <LoadingState label="Loading your clubs…" layout="cards" rows={3} />
   if (!member) return <div className="max-w-xl space-y-3 border-t py-8"><h2 className="oc-section-heading ">You haven’t joined any clubs yet.</h2><p className="text-sm leading-7 text-muted-foreground">Your clubs will appear once you have a membership. An application decision does not automatically create one.</p><Link href="/explore" className="inline-flex min-h-11 items-center gap-2 text-sm underline underline-offset-4">Explore clubs <ArrowRight size={15} /></Link></div>
-  if (section !== "meetings" && section !== "tasks") return <div className="oc-personal-clubs space-y-7"><ul className="oc-membership-grid">{memberships.map(m => <MembershipRow key={m.id} member={m} />)}</ul></div>
-  return <div className="space-y-4"><label className="block max-w-sm text-sm">Your club<NativeSelect aria-label="Select your club" className="mt-2 block min-h-11 w-full" value={member.clubId} onChange={e => { if (canLeaveWorkspace()) setSelected(e.target.value) }}>{memberships.map(m => <option key={m.id} value={m.clubId}>{m.club.name}</option>)}</NativeSelect></label>
-    {section === "meetings" ? <MeetingList key={member.clubId} clubId={member.clubId} embedded personalOnly initialAudience="MEMBERS" /> : <ClubTasks key={member.clubId} clubId={member.clubId} embedded personalOnly />}
+  if (section !== "meetings" && section !== "tasks") return <div className="oc-personal-clubs space-y-7"><div className="flex flex-wrap gap-4 text-sm"><Link href="/clubs/tasks" className="inline-flex min-h-11 items-center underline underline-offset-4">Your tasks across clubs</Link></div><OrganizationOwnershipRequests enabled includeDismissed /><ul className="oc-membership-grid">{memberships.map(m => <MembershipRow key={m.id} member={m} />)}</ul><FindOrClaimClub /></div>
+  // Meetings and Tasks cover every club by default; the club filter is optional.
+  const shown = selected ? memberships.filter(m => m.clubId === selected) : memberships
+  return <div className="space-y-4"><label className="block max-w-sm text-sm">Club<NativeSelect aria-label="Filter by club" className="mt-2 block min-h-11 w-full" value={selected} onChange={e => { if (canLeaveWorkspace()) setSelected(e.target.value) }}><option value="">All clubs</option>{memberships.map(m => <option key={m.id} value={m.clubId}>{m.club.name}</option>)}</NativeSelect></label>
+    {shown.map(m => <section key={m.clubId} aria-label={m.club.name} className="space-y-2">{shown.length > 1 && <h2 className="oc-section-heading">{m.club.name}</h2>}{section === "meetings" ? <MeetingList clubId={m.clubId} embedded personalOnly initialAudience="MEMBERS" /> : <ClubTasks clubId={m.clubId} embedded personalOnly />}</section>)}
   </div>
+}
+/** Moved from Settings → Organizations (now redirected to My Clubs). */
+function FindOrClaimClub() {
+  return <section className="space-y-3 border-t pt-5" aria-label="Request club access"><h2 className="oc-section-heading">Find or claim a club</h2><p className="text-sm leading-6 text-muted-foreground">Find your club in Explore. Unclaimed profiles include a request form for club leaders; managed clubs can invite you to join.</p><Link href="/explore" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">Explore clubs</Link></section>
 }
 function MembershipRow({ member }: { member: ExtendedMembership }) {
   const [data, setData] = useState<MemberOverviewData | null>(null)

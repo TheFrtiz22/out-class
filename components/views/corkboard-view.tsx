@@ -8,8 +8,8 @@ export function CorkboardView(_props: { onNavigate?: (view: ViewId) => void }) {
   return (
     <div className="oc-corkboard-events">
       <PageHeader
-        title="Corkboard"
-        description="Events on Grounds this week"
+        title="Events"
+        description="Events on Grounds"
       />
       <PublicEventBoard />
     </div>

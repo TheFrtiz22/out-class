@@ -32,9 +32,8 @@ export const adminClubName = "Virginia Venture Fund"
 export const studentNav: NavItem[] = [
   { id: "student-dashboard", title: "Home", icon: Home },
   { id: "explore", title: "Explore", icon: Compass },
-  { id: "corkboard", title: "Corkboard", icon: Bookmark },
+  { id: "corkboard", title: "Events", icon: Bookmark },
   { id: "tracker", title: "Applications", icon: ClipboardList },
-  { id: "status", title: "Status", icon: ClipboardList },
   { id: "calendar", title: "Calendar", icon: CalendarDays },
   { id: "student-profile", title: "Profile", icon: UserRound },
 ]
@@ -90,9 +89,9 @@ export const viewTitles: Record<ViewId, { title: string; subtitle: string }> = {
   "student-profile": { title: "Profile", subtitle: "Your identity and club memberships at a glance." },
   inbox: { title: "Inbox", subtitle: "Stay on top of club updates, interviews, and deadlines." },
   explore: { title: "Explore", subtitle: "Browse clubs, interests, and campus opportunities." },
-  corkboard: { title: "Corkboard", subtitle: "Clubs and opportunities you want to revisit." },
+  corkboard: { title: "Events", subtitle: "Events on Grounds." },
   tracker: { title: "Applications", subtitle: "Manage your drafts, responses, and submissions." },
-  status: { title: "Status", subtitle: "Review progress, interviews, and decisions for your submitted applications." },
+  status: { title: "Applications", subtitle: "Your drafts, applications in review, interviews and decisions." },
   calendar: { title: "Calendar", subtitle: "Deadlines, interviews, and chats for your clubs." },
   "leader-dashboard": { title: "Applicant CRM", subtitle: "Review, score, and advance your applicants." },
   "club-manager": {

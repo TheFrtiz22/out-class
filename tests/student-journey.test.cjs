@@ -18,7 +18,7 @@ test('cached open flags cannot advertise expired recruitment; absent dates never
   }
   assert.equal(clubRecruitment(club('unknown', null), now).closingSoon, false)
   assert.equal(clubRecruitment(club('invalid', 'invalid'), now).deadline, null)
-  assert.equal(clubRecruitment({ claimed: false }, now).label, 'Unclaimed profile')
+  assert.equal(clubRecruitment({ claimed: false }, now).label, 'Unclaimed')
   assert.equal(clubRecruitment({ source: 'preview', applicationAvailable: true }, now).available, false)
 })
 test('recruitment filters combine with search and sort only open published deadlines', () => {
