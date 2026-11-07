@@ -14,15 +14,20 @@
      Navigation owns its separate optical materials and geometry. */
   --oc-content-width: 80rem;
   --oc-reading-width: 48rem;
-  --oc-content-surface: #fffefa;
+  /* Content surfaces are glass (styles/navigation-glass.css). The solid values remain for data tables,
+     form fields and every fallback; --oc-surface-glass* resolve to them when glass is unavailable. */
+  --oc-content-solid: #fffefa;
+  --oc-content-edge-solid: #e0e5e3;
+  --oc-content-shadow-solid: 0 1px 2px rgb(20 45 69 / 4%), 0 10px 24px -20px rgb(20 45 69 / 18%);
+  --oc-content-surface: var(--oc-surface-glass);
   --oc-content-soft: #f1f4f3;
   --oc-content-soft-blue: #eaf0f2;
-  --oc-content-edge: #e0e5e3;
+  --oc-content-edge: var(--oc-surface-glass-edge);
   --oc-content-radius: 1.125rem;
   --oc-content-radius-small: .875rem;
   --oc-content-padding: clamp(1rem, 1.55vw, 1.5rem);
   --oc-content-gap: clamp(1rem, 1.6vw, 1.5rem);
-  --oc-content-shadow: 0 1px 2px rgb(20 45 69 / 4%), 0 10px 24px -20px rgb(20 45 69 / 18%);
+  --oc-content-shadow: var(--oc-surface-glass-depth);
   --oc-content-shadow-hover: 0 3px 8px rgb(20 45 69 / 5%), 0 16px 30px -22px rgb(20 45 69 / 22%);
   --oc-content-motion: 180ms;
   --oc-overlay-radius: 1.5rem;
@@ -205,4 +210,6 @@
   --oc-content-soft: #1d3045;
   --oc-content-soft-blue: #1b2f44;
   --oc-content-edge: #2c4257;
+  /* The live voting slide stays solid: no glass highlight on the projector. */
+  --oc-content-shadow: var(--oc-content-shadow-solid);
 }

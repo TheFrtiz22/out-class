@@ -75,7 +75,7 @@ export default async function Invitation({
         Accept with the UVA account this invitation was sent to. Your personal
         profile and existing memberships stay intact.
       </p>
-      <div className="rounded-xl border bg-card p-4 sm:p-5"><h2 className="oc-section-heading ">Your organization access</h2><ul className="mt-3 flex flex-wrap gap-2">{(invitation.permissions.length ? invitation.permissions : ["membership"]).map(permission => <li key={permission} className="rounded-md bg-muted px-2.5 py-1.5 text-xs leading-5">{permissionLabels[permission as ClubPermission] || "Club membership"}</li>)}</ul></div>
+      <div className="rounded-xl border oc-glass-surface p-4 sm:p-5"><h2 className="oc-section-heading ">Your organization access</h2><ul className="mt-3 flex flex-wrap gap-2">{(invitation.permissions.length ? invitation.permissions : ["membership"]).map(permission => <li key={permission} className="rounded-md bg-muted px-2.5 py-1.5 text-xs leading-5">{permissionLabels[permission as ClubPermission] || "Club membership"}</li>)}</ul></div>
       {(invitation.schoolIdentityId && invitation.requestedRole === "OWNER") && <p className="text-sm leading-7">You’ve been designated as an administrator. Claiming gives you owner access to manage members, roles, applications, recruiting, interviews, and organization settings.</p>}
       <InvitationResponse id={id} owner={!!invitation.schoolIdentityId && invitation.requestedRole === "OWNER"} />
     </div>

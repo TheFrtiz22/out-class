@@ -56,6 +56,30 @@ Public marketing and authentication use Caslon throughout. Authenticated product
 | Progress | `Progress`: numeric value/max or indeterminate null; supply aria-label/aria-labelledby. Values are bounded and passed to Radix for accessible reporting. |
 | Heading | `SectionHeading`: explicit h1/h2/h3, optional eyebrow, description, action, and editorial style. |
 
+### Glass surfaces
+
+One glass language, from the navigation's own tokens. Tokens live in `styles/navigation-glass.css` beside the navigation optics; the variant rules live in `styles/interface-primitives.css`.
+
+**Defaults (Phase 2 rollout).** `--oc-content-surface`, `--oc-content-edge` and `--oc-content-shadow` resolve to `--oc-surface-glass*`, so every surface built on the content tokens (`.oc-content-panel`, `.oc-toolbar`, `.oc-form-section`, `.oc-detail-panel`, product cards) is glass without blur. The solid values stay as `--oc-content-solid`, `--oc-content-edge-solid` and `--oc-content-shadow-solid`: data tables (`.oc-data-surface` rows and cells), form fields (`--card`/`--input`), the projector theme and every fallback use them. `Card` defaults to `variant="glass"` (`variant="default"` is the solid card); `Skeleton` defaults to the glass track; `TabsList` defaults to `segmented` (`subtle` and `underline` remain); dialogs, sheets, popovers, menus and selects use the frosted navigation material with the light filter (the only content surfaces allowed to blur, also on phones); tooltips use navy frosted glass; default toasts use the frosted material; outlined and subtle `EmptyState` tones use the glass surface and track. `SegmentedControl` (an `aria-pressed` filter group) keeps its API and shares the segmented tabs' glass track and navy selection: use segmented `Tabs` for tab panels and `SegmentedControl` for filters.
+
+| Token | Use | Solid default | Reduced transparency / higher contrast | Forced colors |
+| --- | --- | --- | --- | --- |
+| `--oc-surface-glass` | Light card, no blur | `--oc-content-surface` | solid surface, `#526675` edge, no depth | `Canvas` + `CanvasText` |
+| `--oc-surface-glass-raised` | Light, blur allowed | `--oc-glass-light-solid` | solid, no filter | `Canvas` |
+| `--oc-surface-glass-navy` | The rail's material | `--oc-glass-navy-solid` | solid, no filter | `Canvas` |
+| `--oc-surface-ambient` | One decorative page backdrop | `none` | `none` | `none` |
+
+Translucency (and `--oc-surface-glass-filter` / `--oc-surface-glass-navy-filter`) is only enabled inside `@supports (backdrop-filter)`; both filters are `none` below 760px so phones blur only the header, sheets and dialogs. The tokens are declared on `:root` and `[data-product-shell]` so `--oc-club-accent` resolves in the ambient gradient.
+
+| Primitive | Variant | Notes |
+| --- | --- | --- |
+| `Card`, `Panel` | `variant="glass" \| "glass-raised" \| "glass-navy"` | Glass is the material without blur. Raised and navy put blur on an isolated `::before` layer, never on text. Radius from `--oc-glass-card-radius` (default 18 / 22 / 26px). Navy uses cream text, `--oc-rail-muted` secondary text and orange focus rings. |
+| `Tabs` | `TabsList variant="segmented"` | The workspace pill's 54px track. One or two tabs share the width with a sliding navy indicator (positioned with `:has()` from the active trigger, `--oc-floating-spring`); three or more scroll horizontally inside the track and the active tab fills itself, so labels never truncate or widen the page on phones. Without `:has()` the active trigger fills itself. |
+| `Button`, `IconButton` | `variant="glass"`, `variant="glass-primary"` | Glass matches `.oc-floating-circle` (hover `#fff7ec`, stronger edge, lift shadow); glass-primary is the navy pill of the selected workspace segment. Navy focus ring on light glass, orange on navy. |
+| `Skeleton`, `LoadingState` | `variant="glass"` | Light material without blur; skeleton blocks use `--oc-surface-glass-track`. |
+
+Rules: text never passes through a filter; blurred surfaces are never nested; at most six blurred surfaces on screen on desktop (the shell uses five: rail, workspace pill, search, notifications, account; the header band behind them is frosted without blur so blur is never stacked), so page content keeps `--oc-surface-glass-filter: none` in its scope, as Club home does, unless it is the one surface allowed to blur. 
+
 ## Motion and stacking
 
 No additional animation dependency. CSS plus existing `tw-animate-css`/Radix

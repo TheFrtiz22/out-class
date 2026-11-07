@@ -40,7 +40,7 @@
 .oc-task-drawer .oc-task-detail-title { font-size: var(--oc-text-modal); line-height: var(--oc-leading-heading); color: var(--foreground); padding-right: 1.5rem; }
 .oc-task-detail-meta { display: flex; flex-wrap: wrap; gap: .5rem 1rem; margin-top: 1rem; font-size: var(--oc-text-caption); color: var(--muted-foreground); }
 .oc-task-detail-meta > span { display: flex; align-items: center; gap: .35rem; }
-.oc-task-submission { background: var(--card); }
+.oc-task-submission { background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow) }
 .oc-task-submission-field { display: block; font-size: var(--oc-text-small); }
 .oc-task-submission-field > span:first-child { display: flex; align-items: center; gap: .4rem; margin-bottom: .5rem; font-weight: 500; }
 .oc-task-submission-field small { flex-shrink: 0; white-space: nowrap; margin-left: auto; font-size: var(--oc-text-caption); font-weight: 400; color: var(--muted-foreground); }
@@ -88,7 +88,7 @@
 .oc-review-filters label, .oc-task-field-label { display:block; font-size:var(--oc-text-small); font-weight:500; }
 .oc-task-field-label > :is(input,textarea,select) { margin-top:.4rem; }
 .oc-task-select { display:block; width:100%; min-height:2.75rem; padding:.6rem .75rem; border:1px solid var(--input); border-radius:var(--oc-radius-md); background:var(--card); color:var(--foreground); font-size:var(--oc-text-small); }
-.oc-review-queue-card, .oc-task-project { border:1px solid var(--border); border-radius:var(--oc-radius-lg); padding:1rem 1.25rem; background:var(--card); }
+.oc-review-queue-card, .oc-task-project { border: 1px solid var(--oc-content-edge); border-radius:var(--oc-radius-lg); padding:1rem 1.25rem; background:var(--oc-content-surface); box-shadow: var(--oc-content-shadow) }
 .oc-review-queue-card header { display:flex; align-items:start; justify-content:space-between; gap:1rem; margin-bottom:.75rem; }
 .oc-review-queue-card h3, .oc-task-project summary strong { font-size:var(--oc-text-card); font-weight:600; overflow-wrap:anywhere; }
 .oc-review-queue-card p { margin-top:.25rem; font-size:var(--oc-text-caption); color:var(--muted-foreground); }

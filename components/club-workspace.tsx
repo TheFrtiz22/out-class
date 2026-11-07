@@ -8,6 +8,7 @@ import { organizationCapabilities } from "@/lib/organization-authorization";
 import { useRouter, useSearchParams } from "next/navigation";
 import { RecruitingOverview, applicationsClosed } from "@/components/recruiting-overview";
 import { ManagerOverview } from "@/components/manager-overview";
+import { ClubHomeActions } from "@/components/club-home/club-home-actions";
 import { RouteWorkspaceShell } from "@/components/shell/route-workspace-shell";
 import { ProductShell } from "@/components/shell/product-shell";
 import { managerNavigation } from "@/lib/product-navigation";
@@ -198,7 +199,9 @@ export function ClubWorkspace({
         onReviewTool={id => { reviewTrigger.current = document.activeElement as HTMLElement; setReviewTool(id) }} active={active} title={nav.find(n => n.id === active)?.label || "Club workspace"} onSelect={() => {}} onNavigate={navigate}>
         {loading || needsSelection ? <p role="status">Opening club workspace…</p> : !membership ? <div className="space-y-4"><PageHeader title="Club workspace unavailable" /><p>Sign in with a current club membership to access this workspace.</p><Link href="/" className="underline">Return to OutClass</Link></div> : <>
           {!manager && <Link className="mb-5 inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4" href="/clubs">← All my clubs</Link>}
-          {active === "overview" && allowed
+          {section === "overview" && allowed
+            ? <div className="oc-club-home-hero"><div className="oc-club-home-ambient" aria-hidden="true" /><ClubOverviewHeader className="oc-club-home-greeting" density="expressive" eyebrow={error ? undefined : current?.operations?.cycles?.[0]?.name} clubName={current?.club.name || membership.club.name} context={{ mode: "club", clubId, membership, data: error ? null : current }} action={<ClubHomeActions clubId={clubId} membership={membership} />} /></div>
+            : active === "overview" && allowed
             ? <ClubOverviewHeader density="expressive" clubName={current?.club.name || membership.club.name} status={section === "recruitment" && current?.operations?.intake ? <span className="oc-command-status" data-state={applicationsClosed(current.operations) ? "closed" : "open"}>Applications {applicationsClosed(current.operations) ? "closed" : "open"}</span> : undefined} context={{ mode: "club", clubId, membership, data: error ? null : current }} />
             : <PageHeader density={section === "overview" ? "expressive" : "compact"} eyebrow={membership.club.name} title={nav.find(n => n.id === active)?.label || "Workspace"} action={active === "applicants" || active === "decisions" && decisionTab !== "voting" && decisionTab !== "letters" ? <div id="workspace-page-actions" data-page-header-slot className="contents" /> : undefined} />}
           {needsOverview && error ? <div role="alert" className="oc-dashboard-error"><p>{error}</p><Button variant="outline" onClick={() => setRetry(n => n + 1)}>Retry</Button></div> : needsOverview && !current ? <DashboardLoading mode={mode === "recruiting" ? "recruiting" : "club"} /> : !allowed ? <p role="alert">This section isn’t available with your current access.</p> : <section key={`${section === "settings" ? authorizationScope : scope}:${section}:${active}`} className="shell-content-enter" aria-label={nav.find(n => n.id === active)?.label}>

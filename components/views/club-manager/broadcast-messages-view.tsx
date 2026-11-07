@@ -100,7 +100,7 @@ export function BroadcastMessagesView() {
   return (
     <div className="flex flex-col gap-6 bg-white pb-6 text-foreground">
       {/* Composer */}
-      <Card className="bg-white shadow-none">
+      <Card variant="default" className="bg-white shadow-none">
         <CardHeader>
           <CardTitle className="oc-card-heading flex items-center gap-2 text-foreground">
             <Megaphone className="size-4 text-muted-foreground" />
@@ -268,7 +268,7 @@ export function BroadcastMessagesView() {
       </Card>
 
       {/* History */}
-      <Card className="bg-white shadow-none">
+      <Card variant="default" className="bg-white shadow-none">
         <CardHeader>
           <CardTitle className="oc-card-heading text-foreground">Broadcast preview history</CardTitle>
           <CardDescription>Example messages and previews from this session. These are not delivery records.</CardDescription>

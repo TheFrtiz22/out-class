@@ -212,10 +212,11 @@
   grid-template-columns: 0.8fr 1.2fr;
   gap: 36px;
   padding: 28px;
-  background: var(--card);
-  border: 1px solid var(--border);
+  background: var(--oc-content-surface);
+  border: 1px solid var(--oc-content-edge);
   border-radius: 7px;
   margin-bottom: 20px;
+  box-shadow: var(--oc-content-shadow)
 }
 .oc-directory-curated h2 {
   font-weight: var(--oc-weight-semibold); font-size: var(--oc-text-section); line-height: var(--oc-leading-heading); font-family: var(--oc-font-sans);
@@ -399,10 +400,11 @@
 }
 .oc-club-recruitment {
   align-self: start;
-  background: var(--card);
+  background: var(--oc-content-surface);
   padding: 25px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--oc-content-edge);
   border-radius: 7px;
+  box-shadow: var(--oc-content-shadow)
 }
 .oc-club-recruitment > h2 {
   margin-top: 12px;

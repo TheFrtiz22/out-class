@@ -13,7 +13,9 @@
 .oc-form-section > label, .oc-field { display: grid; min-width: 0; gap: .5rem; font-size: var(--oc-text-small); font-weight: 500; }
 .oc-field > :is(p,small), .oc-form-section label > :is(p,small) { font-weight: 400; color: var(--muted-foreground); }
 .oc-form-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .75rem; padding-block: 1rem; border-top: 1px solid var(--oc-content-edge); }
-.oc-data-surface { min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); }
+.oc-data-surface { min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); background: var(--oc-content-solid); box-shadow: var(--oc-content-shadow); }
+/* Rows and cells stay solid inside the glass edge so dense data never sits on a gradient. */
+[data-theme="present"] .oc-data-surface { background: var(--oc-content-surface); }
 .oc-data-surface table { width: 100%; font-size: var(--oc-text-small); font-variant-numeric: tabular-nums; text-align: left; }
 .oc-data-surface thead { background: var(--oc-content-soft); }
 .oc-data-surface th { height: 2.75rem; color: var(--muted-foreground); font-size: var(--oc-text-caption); font-weight: 600; }

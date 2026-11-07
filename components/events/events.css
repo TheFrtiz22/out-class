@@ -276,9 +276,10 @@
 .oc-events-empty {
   padding: 1.5rem;
   text-align: left;
-  background: var(--card);
+  background: var(--oc-content-surface);
   border-radius: var(--oc-radius-md);
   color: var(--foreground);
+  box-shadow: var(--oc-content-shadow)
 }
 .oc-events-empty h2 {
   font-family: var(--oc-font-display);
@@ -444,9 +445,10 @@
   gap: 20px;
   align-items: center;
   padding: 16px;
-  background: var(--card);
-  border: 1px solid var(--border);
+  background: var(--oc-content-surface);
+  border: 1px solid var(--oc-content-edge);
   border-radius: 8px;
+  box-shadow: var(--oc-content-shadow)
 }
 .oc-managed-event .oc-event-paper {
   font-size: 4px;

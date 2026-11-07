@@ -1,40 +1,74 @@
 "use client"
 import { ArrowRight } from "@/components/icons"
-import { useState } from "react"
+import { useState, type CSSProperties } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
 import type { getClubWorkspaceOverview } from "@/lib/workspace-api"
-import { dashboardDeadlineState } from "@/lib/dashboard-actions"
-import { hasPermission } from "@/lib/permissions"
-import { clubWorkspaceHref } from "@/lib/club-workspace"
 import { memberDate } from "@/components/member-overview"
-import { DashboardDate } from "@/components/product/dashboard-presentation"
 import { DashboardDrawer } from "@/components/product/dashboard-drawer"
 import { LoadingState } from "@/components/ui/loading-state"
-import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { needsYou, railHrefs, type NeedsCard } from "@/components/club-home/club-home-model"
+import { AssignmentsCard, InterviewsCard, PipelineCard, TeamPulse, UpdatesCard, WeekCard } from "@/components/club-home/club-home-sections"
 import "@/components/product/operational-dashboard.css"
-const Task = dynamic(() => import("@/components/tasks/dashboard-task").then(m => m.DashboardTask), { loading: () => <LoadingState layout="form" rows={2} label="Loading assignment…" /> })
-const Meeting = dynamic(() => import("@/components/events/dashboard-meeting").then(m => m.DashboardMeeting), { loading: () => <LoadingState layout="form" rows={3} label="Loading meeting…" /> })
+import "@/components/club-home/club-home.css"
+const Task = dynamic(() => import("@/components/tasks/dashboard-task").then(m => m.DashboardTask), { loading: () => <LoadingState variant="glass" layout="form" rows={2} label="Loading assignment…" /> })
+const Meeting = dynamic(() => import("@/components/events/dashboard-meeting").then(m => m.DashboardMeeting), { loading: () => <LoadingState variant="glass" layout="form" rows={3} label="Loading meeting…" /> })
+const Preparation = dynamic(() => import("@/components/interviews/dashboard-preparation").then(m => m.DashboardPreparation), { loading: () => <LoadingState variant="glass" label="Checking interview panel…" layout="rows" rows={2} /> })
 type Overview = Awaited<ReturnType<typeof getClubWorkspaceOverview>>
-type Preview = { kind: "task"; id: string; assignmentId?: string; title: string; review?: boolean } | { kind: "meeting" | "announcement"; id: string; title: string }
+type Booking = Overview["operations"]["bookings"][number]
+type Preview = { kind: "task"; id: string; assignmentId?: string; title: string; review?: boolean } | { kind: "meeting" | "announcement"; id: string; title: string } | { kind: "interview"; id: string; title: string }
+
+/** Club home: what needs this member now, then the club's pipeline, week and updates.
+ * Every section is gated by the overview's own permission-scoped data; links are rail destinations. */
 export function ManagerOverview({ data, refreshing = false, onChanged = () => {}, showRecaps: _showRecaps = true }: { data: Overview; refreshing?: boolean; onChanged?: () => void; showRecaps?: boolean }) {
-  const [preview, setPreview] = useState<Preview | null>(null), [filter, setFilter] = useState("all")
-  const { operations: op, work, club, membership } = data
-  const manage = hasPermission(membership, "tasks.manage")
-  const now = +new Date(op.asOf), overdue = (due: Date | string | null) => dashboardDeadlineState(due, true, now) === "urgent"
-  const filtered = work.filter(item => filter !== "overdue" || overdue(item.task.dueAt))
-  const announcement = op.announcements.find(a => a.id === preview?.id)
-  return <div className="oc-command-center oc-command-club" aria-busy={refreshing}>
-    <div className="oc-command-columns oc-club-grid">
-      <section className="oc-command-section oc-personal-work" aria-labelledby="dashboard-work"><header><h2 id="dashboard-work">Your work <span className="oc-section-count" aria-hidden="true">{work.length}</span></h2><div className="oc-work-filters" role="group" aria-label="Filter your work"><Button size="sm" variant={filter === "all" ? "secondary" : "ghost"} aria-pressed={filter === "all"} onClick={() => setFilter("all")}>Upcoming</Button><Button size="sm" variant={filter === "overdue" ? "secondary" : "ghost"} aria-pressed={filter === "overdue"} onClick={() => setFilter("overdue")}>Overdue</Button></div></header>
-        {filtered.length ? <ul className="oc-command-list">{filtered.map(({ id, task }) => <li key={id}><button className="oc-command-row oc-task-record" data-urgent={overdue(task.dueAt)} onClick={() => setPreview({ kind: "task", id: task.id, assignmentId: id, title: task.title })}><span className="oc-task-marker" aria-hidden="true" /><span className="oc-record-copy"><strong>{task.title}</strong><small>{task.kind === "PROJECT" ? "Project · view instructions" : "Your response is needed · open to submit"}</small></span><span className="oc-command-date" data-urgent={overdue(task.dueAt)}>{task.dueAt ? `${overdue(task.dueAt) ? "Overdue · " : "Due "}${memberDate(task.dueAt)}` : "No deadline"}</span></button></li>)}</ul> : <p className="oc-command-empty">{filter === "overdue" ? "No overdue assignments in this preview." : "No outstanding assignments. New work will appear here."}</p>}
-        <Link className="oc-command-link" href={`${clubWorkspaceHref(club.id, "tasks")}&taskView=mine`}>All your work & feedback <ArrowRight aria-hidden="true" size={14} /></Link>
-      </section>
-      <section className="oc-command-section oc-club-calendar" aria-labelledby="dashboard-meetings"><header><h2 id="dashboard-meetings">Meet this week</h2></header>{op.meetings.length ? <ul className="oc-command-list">{op.meetings.map(m => <li key={m.id}><button className="oc-command-row oc-calendar-record" onClick={() => setPreview({ kind: "meeting", id: m.id, title: m.title })}><DashboardDate value={m.date} /><span className="oc-calendar-copy"><time dateTime={new Date(m.date).toISOString()}>{memberDate(m.date)}</time><strong>{m.title}</strong><small>{m.location}</small>{m.agenda && <span className="oc-command-excerpt">{m.agenda}</span>}<span className="oc-calendar-action">{m.canRsvp ? "Details & RSVP" : "Agenda & resources"} <ArrowRight aria-hidden="true" size={14} /></span></span></button></li>)}</ul> : <div className="oc-command-empty"><p>No meetings are scheduled in the next seven days.</p><Link className="oc-command-link" href={clubWorkspaceHref(club.id, "meetings")}>Open meetings <ArrowRight aria-hidden="true" size={14} /></Link></div>}<Link className="oc-command-link" href={clubWorkspaceHref(club.id, "meetings")}>All meetings <ArrowRight aria-hidden="true" size={14} /></Link></section>
-      {manage && op.reviewWork.length > 0 && <section className="oc-command-section oc-officer-work" aria-labelledby="dashboard-review"><header><div><p className="oc-command-eyebrow">Officer desk</p><h2 id="dashboard-review">Submissions to review</h2></div><span>{op.tasks.awaitingReview} awaiting feedback</span></header><ul className="oc-command-list">{op.reviewWork.map(item => <li key={item.id}><button className="oc-command-row" onClick={() => setPreview({ kind: "task", id: item.task.id, assignmentId: item.id, title: item.task.title, review: true })}><span><strong>{item.task.title}</strong><small>Submitted {memberDate(item.submittedAt!)} · feedback & approval</small></span><span>Review <ArrowRight aria-hidden="true" size={14} /></span></button></li>)}</ul></section>}
-      {op.announcements.length > 0 && <section className="oc-command-section oc-club-activity" aria-labelledby="dashboard-updates"><header><h2 id="dashboard-updates">Club updates</h2></header><ul className="oc-command-list oc-activity-stream">{op.announcements.map(a => <li key={a.id}><button className="oc-command-row" onClick={() => setPreview({ kind: "announcement", id: a.id, title: a.title })}><span><small>{memberDate(a.publishedAt)}</small><strong>{a.title}</strong><span className="oc-command-excerpt">{a.body}</span></span><span>Read <ArrowRight aria-hidden="true" size={14} /></span></button></li>)}</ul></section>}
-      {manage && op.team && op.team.assigned > 0 && <section className="oc-command-section oc-team-pulse" aria-labelledby="dashboard-team"><header><h2 id="dashboard-team">Team work</h2><Link className="oc-command-link" href={`${clubWorkspaceHref(club.id, "tasks")}&taskView=team`}>Manage assignments <ArrowRight aria-hidden="true" size={14} /></Link></header><dl className="oc-team-metrics"><div><dt>Overdue assignments</dt><dd data-urgent={op.team.overdue > 0}>{op.team.overdue}</dd></div><div><dt>Assignments reviewed</dt><dd>{op.team.reviewed}<small> / {op.team.assigned}</small></dd></div><div><dt>Submissions this week</dt><dd>{op.team.recentSubmissions}</dd></div></dl></section>}
+  const [preview, setPreview] = useState<Preview | null>(null)
+  const { operations: op, club } = data
+  const hrefs = railHrefs(data.membership, club.id)
+  const cards = needsYou(data, hrefs)
+  const [first, ...rest] = cards
+  const announcement = preview?.kind === "announcement" ? op.announcements.find(a => a.id === preview.id) : undefined
+  // Drawers read the current overview by id, so a refetch never shows a stale record; a record that
+  // disappeared (cancelled booking, withdrawn update) closes its drawer instead of leaving it empty.
+  const booking = preview?.kind === "interview" ? op.bookings.find(b => b.id === preview.id) : undefined
+  const gone = preview?.kind === "announcement" && !announcement || preview?.kind === "interview" && !booking
+  const openBooking = (item: Booking) => setPreview({ kind: "interview", id: item.id, title: "Prepare for interview" })
+  const action = (card: NeedsCard) => card.action.kind === "link"
+    ? <Link className="oc-needs-action" href={card.action.href}>{card.action.label} <ArrowRight aria-hidden="true" size={14} /></Link>
+    : <button type="button" className="oc-needs-action" onClick={() => { const a = card.action; if (a.kind === "task") setPreview({ kind: "task", id: a.taskId, assignmentId: a.assignmentId, title: a.title, review: a.review }) }}>{card.action.label} <ArrowRight aria-hidden="true" size={14} /></button>
+  const body = (card: NeedsCard) => <>
+    <p className="oc-needs-title">{first === card && <span className="oc-needs-dot" aria-hidden="true" />}{card.title}</p>
+    <p className="oc-needs-detail">{card.detail}</p>
+    {card.progress && card.progress.total > 0 && <div className="oc-needs-progress"><span className="oc-needs-progress-track" aria-hidden="true"><span style={{ "--value": `${Math.round(card.progress.done / card.progress.total * 100)}%` } as CSSProperties} /></span><span>{card.progress.done} of {card.progress.total} reviewed</span></div>}
+    {action(card)}
+  </>
+  return <div className="oc-club-home" aria-busy={refreshing}>
+    <section className="oc-club-home-needs" aria-labelledby="club-home-needs">
+      <div className="oc-club-home-section-head">
+        <h2 id="club-home-needs">Needs you</h2>
+      </div>
+      {first ? <div className="oc-needs-grid" data-count={cards.length}>
+        <Card variant="glass-navy" className="oc-needs-card" data-needs={first.id} data-urgent="true" style={{ "--i": 0 } as CSSProperties}>{body(first)}</Card>
+        {rest.length > 0 && <ul className="oc-needs-rest">{rest.map((card, index) => <li key={card.id}><Card variant="glass-raised" className="oc-needs-card" data-needs={card.id} style={{ "--i": index + 1 } as CSSProperties}>{body(card)}</Card></li>)}</ul>}
+      </div> : <Card variant="glass" className="oc-needs-clear" style={{ "--i": 0 } as CSSProperties}><p><strong>You’re clear for now.</strong> New reviews, interviews and assignments will show up here.</p></Card>}
+    </section>
+    <div className="oc-club-home-grid">
+      <div className="oc-club-home-main">
+        <PipelineCard data={data} hrefs={hrefs} index={cards.length + 1} />
+        <InterviewsCard data={data} hrefs={hrefs} index={cards.length + 2} onOpen={openBooking} />
+        <UpdatesCard data={data} hrefs={hrefs} index={cards.length + 3} onOpen={(id, title) => setPreview({ kind: "announcement", id, title })} />
+      </div>
+      <div className="oc-club-home-side">
+        <WeekCard data={data} hrefs={hrefs} index={cards.length + 2} onMeeting={(id, title) => setPreview({ kind: "meeting", id, title })} onBooking={booking => openBooking(booking)} />
+        <TeamPulse data={data} hrefs={hrefs} index={cards.length + 3} />
+        <AssignmentsCard data={data} hrefs={hrefs} index={cards.length + 4} onOpen={item => setPreview({ kind: "task", id: item.task.id, assignmentId: item.id, title: item.task.title })} />
+      </div>
     </div>
-    {preview && <DashboardDrawer title={preview.title} description={preview.kind === "task" ? preview.review ? "Review the submitted work and save feedback." : "Instructions and your saved submission." : preview.kind === "meeting" ? "Meeting agenda, resources and available actions." : "Announcement delivered to you."} onClose={() => setPreview(null)}>{preview.kind === "task" ? <Task key={preview.assignmentId ?? preview.id} clubId={club.id} taskId={preview.id} assignmentId={preview.assignmentId} review={preview.review} onChanged={onChanged} onClose={() => setPreview(null)} /> : preview.kind === "meeting" ? <Meeting id={preview.id} canRsvp={op.meetings.find(m => m.id === preview.id)?.canRsvp ?? false} onUpdated={onChanged} /> : announcement && <article className="oc-announcement-detail space-y-4 py-5"><p>{memberDate(announcement.publishedAt)}</p><p className="whitespace-pre-wrap break-words leading-7">{announcement.body}</p></article>}</DashboardDrawer>}
+    {preview && !gone && <DashboardDrawer title={preview.title} description={preview.kind === "task" ? preview.review ? "Review the submitted work and save feedback." : "Instructions and your saved submission." : preview.kind === "meeting" ? "Meeting agenda, resources and available actions." : preview.kind === "interview" ? "The current panel and your authorized room entry." : "Announcement delivered to you."} onClose={() => setPreview(null)}>
+      {preview.kind === "task" ? <Task key={preview.assignmentId ?? preview.id} clubId={club.id} taskId={preview.id} assignmentId={preview.assignmentId} review={preview.review} onChanged={onChanged} onClose={() => setPreview(null)} />
+        : preview.kind === "meeting" ? <Meeting id={preview.id} canRsvp={op.meetings.find(m => m.id === preview.id)?.canRsvp ?? false} onUpdated={onChanged} />
+        : preview.kind === "interview" ? booking && <Preparation clubId={club.id} booking={booking} member={data.membership} />
+        : announcement && <article className="oc-announcement-detail space-y-4 py-5"><p>{memberDate(announcement.publishedAt)}</p><p className="whitespace-pre-wrap break-words leading-7">{announcement.body}</p></article>}
+    </DashboardDrawer>}
   </div>
 }
