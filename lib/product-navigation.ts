@@ -34,7 +34,8 @@ export function managerNavigation(member: ClubAccess, clubId: string, mode: stri
       ...(read ? [item("applicants", "All Applicants", "recruitment", { navGroup: "applicants" as const })] : []),
       ...(interviewCapabilities(member).moderateResume ? [item("resumes", "Résumé moderation", "recruitment", { navGroup: "applicants" as const, href: applicantInterviewHref(clubId, "resumes", search) })] : []),
       ...(interviewCapabilities(member).readClosing ? [item("reviews", "Submitted reviews", "recruitment", { navGroup: "applicants" as const, href: applicantInterviewHref(clubId, "reviews", search) })] : []),
-      ...(hasPermission(member, "applications.review") || hasPermission(member, "interviews.manage") || interviewCapabilities(member).editKit ? [item("interviews", "Interviews", "recruitment")] : []),
+      // Interview participants reach kits here (Settings no longer repeats the Interviews tool).
+      ...(hasPermission(member, "applications.review") || hasPermission(member, "interviews.manage") || hasPermission(member, "recruitment.manage") || interviewCapabilities(member).editKit || interviewCapabilities(member).participate ? [item("interviews", "Interviews", "recruitment")] : []),
       ...(canVote || canLetters ? [item("decisions", "Decisions", "recruitment", { navGroup: "decisions" as const, href: decisionsHref(clubId, canVote ? "voting" : "letters", search) })] : []),
       ...((hasPermission(member,"decisions.manage")||hasPermission(member,"decisions.publish"))&&hasPermission(member,"applicants.identify") ? [item("scheduled-decisions","Scheduled Decisions","recruitment", { navGroup: "decisions" as const })] : []),
       ...(hasPermission(member, "recruitment.manage") ? [item("rounds", "Anonymous Review", "recruitment", { quiet: true }), item("rules", "Auto-Reject Rules", "recruitment", { quiet: true })] : []),

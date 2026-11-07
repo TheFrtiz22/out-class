@@ -56,9 +56,10 @@ export function canonicalClubWorkspaceQuery(input: URLSearchParams): URLSearchPa
     // The board ballot opens from the Voting room, not from Applicants.
     if ((q.get("tool") ?? "applicants") === "applicants" && q.get("voting") === "1") { set("tool", "decisions"); set("decisionTab", "voting"); set("voting", null) }
   }
-  if (section === "settings" && q.get("setting") === "interviews" && ["rooms", "schedule", "availability"].includes(q.get("interviewTab") ?? "")) {
+  // Settings → Interviews re-rendered the Interviews tool; every tab now lives there (kits by default).
+  if (section === "settings" && q.get("setting") === "interviews") {
     set("section", "recruitment"); set("tool", "interviews"); set("setting", null)
-    if (q.get("interviewTab") === "availability") set("interviewTab", "schedule")
+    set("interviewTab", q.get("interviewTab") === "availability" ? "schedule" : q.get("interviewTab") || "kits")
   }
   return changed ? q : null
 }

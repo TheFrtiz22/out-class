@@ -114,11 +114,6 @@ export const settingsSections = [
     permission: "recruitment.manage",
   },
   {
-    id: "interviews",
-    label: "Interviews",
-    permission: "interviews.manage",
-  },
-  {
     id: "members",
     label: "Members & Permissions",
     permission: "members.manage",
@@ -130,7 +125,6 @@ export function availableSettings(member: ClubAccess) {
   return settingsSections.filter(
     (s) =>
       hasPermission(member, s.permission) ||
-      (s.id === "interviews" && (hasPermission(member, "recruitment.manage") || interviewCapabilities(member).editKit || interviewCapabilities(member).participate)) ||
       (s.id === "notifications" && (hasPermission(member, "members.manage") || hasPermission(member, "recruitment.manage"))) ||
       ((s.id === "members" || s.id === "notifications") &&
         hasPermission(member, "leaders.manage")),

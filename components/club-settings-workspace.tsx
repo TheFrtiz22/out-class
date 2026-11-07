@@ -182,24 +182,9 @@ export function ClubSettingsWorkspace({
             />
           </div>
         )}
-        {visible("interviews") && (
-          <div hidden={active !== "interviews"} className="space-y-5">
-            <h2 className="oc-section-heading">Interview configuration</h2>
-            <p className="text-sm text-muted-foreground">
-              Configure evaluation kits and interview access for your recruitment rounds. Manage rooms, panels, and upcoming bookings in Interview Scheduling.
-            </p>
-            {hasPermission(member, "members.manage") && <ActionWorkflow title="Interviewers" description="Choose which roles can interview. Individual and per-round changes are in Members." trigger="Interviewers" presentation="sheet"><InterviewerEligibilityControls clubId={clubId} selectedIds={[]} /></ActionWorkflow>}
-            <Interviews
-              key={`${pipelineRevision}:${params.get("interviewTab") || "kits"}:${params.get("roundId") || ""}`}
-              clubId={clubId}
-              settingsOnly
-              initialTab={params.get("interviewTab") || "kits"}
-              initialRoundId={params.get("roundId") || undefined}
-            />
-          </div>
-        )}
         {visible("members") && (
-          <div hidden={active !== "members"}>
+          <div hidden={active !== "members"} className="space-y-5">
+            <section aria-labelledby="interviewer-eligibility-heading" className="space-y-3"><h2 id="interviewer-eligibility-heading" className="oc-section-heading">Interviewer eligibility</h2><p className="text-sm text-muted-foreground">Choose which roles can interview. Kits, panels and interviewer offices are in Interviews.</p><InterviewerEligibilityControls clubId={clubId} selectedIds={[]} /></section>
             <Members clubId={clubId} />
           </div>
         )}

@@ -8,7 +8,7 @@ test('setup status reflects actual booking, pause, kit, sessions and canonical s
  assert.equal(s({...base,questions:1,coverage:[{bookable:false,reasons:['Panel approval is required.']}]}).next,'Panel approval is required.');
  assert.equal(s({...base,questions:1,coverage:[{bookable:true,reasons:[]}]}).label,'Ready to publish');
  assert.equal(s({...base,published:true}).label,'Schedule published');assert.notEqual(s({...base,published:true,paused:true}).label,'Schedule published');
- const {interviewSetupHref}=pure('lib/interview-setup.ts');for(const tab of ['kits','schedule','access','rooms']){const u=new URL(interviewSetupHref('club','stable-round',tab),'https://example.test');assert.equal(u.searchParams.get('roundId'),'stable-round');assert.equal(u.searchParams.get('section'),['schedule','rooms'].includes(tab)?'recruitment':'settings');}
+ const {interviewSetupHref}=pure('lib/interview-setup.ts');for(const tab of ['kits','schedule','access','rooms']){const u=new URL(interviewSetupHref('club','stable-round',tab),'https://example.test');assert.equal(u.searchParams.get('roundId'),'stable-round');assert.equal(u.searchParams.get('section'),'recruitment');assert.equal(u.searchParams.get('tool'),'interviews');assert.equal(u.searchParams.get('interviewTab'),tab);}
 });
 test('saved Interview round → kit → schedule → approved publication → eligible booking → exact interviewer room, no duplicate setup/live calls',async()=>{
  const h=harness(),{demoStore:store,DEMO_KEY}=h.load('lib/demo/store.ts'),seed=h.load('lib/demo/seed.ts').createDemoSeed('2099-09-07');store.start(seed);const clubId=store.get().clubs[0].id;store.mutate(s=>s.perspective={role:'leader',clubId});const api=h.load('lib/workspace-api.ts');

@@ -36,6 +36,10 @@ test("club workspace: removed tools and tabs redirect, keeping other parameters"
     "section=events": "section=meetings",
     "section=settings&setting=interviews&interviewTab=rooms": "section=recruitment&interviewTab=rooms&tool=interviews",
     "section=settings&setting=interviews&interviewTab=availability": "section=recruitment&interviewTab=schedule&tool=interviews",
+    // Settings → Interviews only repeated the Interviews tool
+    "section=settings&setting=interviews": "section=recruitment&tool=interviews&interviewTab=kits",
+    "section=settings&setting=interviews&interviewTab=kits&roundId=r1": "section=recruitment&interviewTab=kits&roundId=r1&tool=interviews",
+    "section=settings&setting=interviews&interviewTab=access": "section=recruitment&interviewTab=access&tool=interviews",
   }
   for (const [from, to] of Object.entries(cases)) assert.equal(workspace(from), at(to), from)
 })
@@ -58,5 +62,27 @@ test("no navigation or dashboard link points at a removed club workspace value",
   for (const file of files) {
     const source = fs.readFileSync(file, "utf8")
     assert.doesNotMatch(source, /tool=rejected|decisionTab=overview|voting=1|item\("rejected"/, file)
+  }
+})
+
+test("interview room links start from a clean URL and keep only interview filters", () => {
+  const entry = load("lib/interview-entry.ts")
+  const room = new URL(entry.clubInterviewHref(club, "section=settings&setting=members&applicationId=a1&roundId=r1&interviewDate=2026-10-20"), "https://x.test")
+  assert.equal(room.pathname, `/club/${club}/interview`)
+  assert.deepEqual([...room.searchParams.keys()], ["applicationId", "roundId", "interviewDate"])
+  const list = new URL(entry.interviewListHref(club, "setting=members&meetingTab=events&applicationId=a1&interviewDate=2026-10-20&interviewTab=rooms"), "https://x.test")
+  assert.equal(list.searchParams.get("setting"), null)
+  assert.equal(list.searchParams.get("meetingTab"), null)
+  assert.equal(list.searchParams.get("applicationId"), null)
+  assert.equal(list.searchParams.get("interviewDate"), "2026-10-20")
+  assert.equal(list.searchParams.get("tool"), "interviews")
+})
+
+test("interview setup links open the Interviews tool, never Settings", () => {
+  const { interviewSetupHref } = load("lib/interview-setup.ts")
+  for (const tab of ["kits", "access", "schedule", "rooms"]) {
+    const url = new URL(interviewSetupHref(club, "r1", tab), "https://x.test")
+    assert.equal(url.searchParams.get("section"), "recruitment")
+    assert.equal(url.searchParams.get("interviewTab"), tab)
   }
 })
