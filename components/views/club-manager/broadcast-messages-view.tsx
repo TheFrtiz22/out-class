@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import { Check, ChevronDown, MapPinned, Megaphone, RotateCcw, Send, Trash2 } from "@/components/icons"
 import { Button } from "@/components/ui/button"
+import { SegmentedControl } from "@/components/ui/segmented-control"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -130,12 +131,13 @@ export function BroadcastMessagesView() {
                 <PopoverContent className="w-72 bg-white p-2" align="start">
                   <div className="flex flex-col gap-1">
                     {BROADCAST_AUDIENCES.map((a) => (
-                      <button
+                      <Button
                         key={a}
                         type="button"
+                        variant="ghost"
                         aria-pressed={audiences.has(a)}
                         onClick={() => toggleAudience(a)}
-                        className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-foreground hover:bg-muted"
+                        className="h-auto min-h-11 w-full justify-start px-2 text-left font-normal"
                       >
                         <span aria-hidden="true" className="flex size-4 items-center justify-center rounded border border-input">{audiences.has(a) ? <Check className="size-3" aria-hidden="true" /> : null}</span>
                         <span className="flex-1">{a}</span>
@@ -144,7 +146,7 @@ export function BroadcastMessagesView() {
                           {a === "Active Applicants" && "In Recruitment"}
                           {a === "Accepted Members" && "Internal"}
                         </span>
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </PopoverContent>
@@ -154,24 +156,12 @@ export function BroadcastMessagesView() {
             {/* Notification Type */}
             <div className="flex flex-col gap-2">
               <p id="broadcast-type-label" className="text-sm font-medium text-foreground">Notification Type</p>
-              <div role="group" aria-labelledby="broadcast-type-label" className="flex flex-wrap gap-2">
-                {BROADCAST_TYPES.map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    aria-pressed={type === t}
-                    onClick={() => setType(t)}
-                    className={cn(
-                      "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
-                      type === t
-                        ? "border-foreground bg-primary text-white"
-                        : "border-border bg-white text-muted-foreground hover:bg-muted",
-                    )}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
+              <SegmentedControl
+                label="Notification Type"
+                value={type}
+                onChange={setType}
+                options={BROADCAST_TYPES.map((t) => ({ value: t, label: t }))}
+              />
             </div>
           </div>
 

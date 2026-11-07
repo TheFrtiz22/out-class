@@ -45,6 +45,7 @@ import { DemoRoundTarget } from "@/components/demo-workspace"
 import { safeProfileUrl, resolveRecruitingResumeUrl } from "@/lib/student-profile"
 import { applicationStatusLabels } from "@/lib/student-applications"
 import { Button } from "@/components/ui/button"
+import { SegmentedControl } from "@/components/ui/segmented-control"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -64,6 +65,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
+import { NativeSelect } from "@/components/ui/native-select"
 
 type Pipeline = Awaited<ReturnType<typeof getClubPipelinePage>>
 type Candidate = Pipeline["applications"][number]
@@ -111,7 +113,7 @@ export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, rej
           <h2 className="oc-section-heading mt-2">{club.club.name}</h2>
         </div>
         {!scoped && clubs.length > 1 && (
-          <select
+          <NativeSelect
             aria-label="Recruiting club"
             className={selectStyle}
             value={club.clubId}
@@ -122,7 +124,7 @@ export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, rej
                 {item.club.name}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         )}
       </div>}
       <ClubWorkspace key={club.clubId} membership={club} decisionsOnly={decisionsOnly} rejectedOnly={rejectedOnly} validatedInitialData={validatedInitialData} initialData={initialData?.clubId === club.clubId ? initialData.pipeline : null} onData={data => onData?.(club.clubId, data)} />
@@ -555,7 +557,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       <div hidden={!!preview} className={votingBarShown ? "oc-voting-bar-clearance" : undefined}>
       {!active && message && <p role="status" className="text-sm">{message}</p>}
       {decisionsOnly && <>
-        <div role="group" aria-label="Decision groups" className="flex flex-wrap gap-1 border-b pb-3">{decisionGroups.map(group => <Button key={group.id} variant={decisionGroup === group.id ? "secondary" : "ghost"} aria-pressed={decisionGroup === group.id} onClick={() => setDecisionGroup(group.id)}>{group.label}<span className="ml-2 text-xs font-normal text-muted-foreground">{listData?.facets.decisions[group.id] ?? 0}</span></Button>)}</div>
+        <SegmentedControl label="Decision groups" value={decisionGroup} onChange={setDecisionGroup} options={decisionGroups.map(group => ({ value: group.id, label: <>{group.label}<span className="ml-2 text-xs font-normal text-muted-foreground">{listData?.facets.decisions[group.id] ?? 0}</span></> }))} />
         <p className="text-sm text-muted-foreground">{decisionGroup === "pending" ? "Submitted, in-review, and interviewing applications without a recorded decision. Round and status remain separate." : "Recorded application outcomes, visible to the applicant."} Acceptance does not automatically create club membership.</p>
       </>}
 {!rejectedOnly && !preview && actionSlot !== undefined && (() => {
@@ -587,7 +589,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         return actionSlot ? createPortal(actions, actionSlot) : actions
       })()}
       <div className="oc-toolbar">
-        {!decisionsOnly && <div role="group" aria-label="Applicant view" className="flex rounded-md border bg-card p-1">{(["list", "kanban"] as const).map(mode => <Button key={mode} size="sm" variant={view === mode ? "secondary" : "ghost"} aria-pressed={view === mode} onClick={() => setView(mode)}>{mode === "list" ? "List" : "Kanban"}</Button>)}</div>}
+        {!decisionsOnly && <SegmentedControl label="Applicant view" value={view} onChange={setView} options={[{ value: "list", label: "List" }, { value: "kanban", label: "Kanban" }]} />}
         <div className="relative min-w-0 flex-1 basis-60">
           <Search className="absolute left-3 top-3 size-4 text-muted-foreground" />
           <Input
@@ -602,10 +604,10 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         <details ref={filterMenu} className="oc-pipeline-filters group"><summary><ChevronDown aria-hidden="true" className="size-4 shrink-0 -rotate-90 transition-transform duration-150 group-open:rotate-0 motion-reduce:transition-none" />Filters{menuFilters > 0 && <span className="oc-pipeline-filter-count"><span aria-hidden="true">{menuFilters}</span><span className="sr-only">, {menuFilters} active</span></span>}</summary><div className="oc-pipeline-filter-fields">
         {/* Column headers sort the wide list; views without headers (cards, Kanban, Decisions) sort here. */}
         <div className={`flex w-full flex-wrap items-center gap-2 ${!decisionsOnly && view === "list" ? "xl:hidden" : ""}`}>
-          <select aria-label="Sort applicants" className={selectStyle} value={sort} onChange={event => sortBy(event.target.value as ApplicantSort)}>{sortOptions.map(option => <option key={option.key} value={option.key}>{option.label}</option>)}</select>
+          <NativeSelect aria-label="Sort applicants" className={selectStyle} value={sort} onChange={event => sortBy(event.target.value as ApplicantSort)}>{sortOptions.map(option => <option key={option.key} value={option.key}>{option.label}</option>)}</NativeSelect>
           <Button size="sm" variant="ghost" onClick={() => setDescending(value => !value)}>{descending ? "Descending ↓" : "Ascending ↑"}</Button>
         </div>
-        <select
+        <NativeSelect
           aria-label="Filter round"
           className={selectStyle}
           value={round}
@@ -617,9 +619,9 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
               {item.name}
             </option>
           ))}
-        </select>
+        </NativeSelect>
         {!decisionsOnly && <>
-        <select
+        <NativeSelect
           aria-label="Filter status"
           className={selectStyle}
           value={status}
@@ -633,8 +635,8 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                 {label}
               </option>
             ))}
-        </select>
-        <select
+        </NativeSelect>
+        <NativeSelect
           aria-label="Filter review state"
           className={selectStyle}
           value={review}
@@ -643,7 +645,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
           <option value="">All review states</option>
           <option value="unreviewed">No evaluations</option>
           <option value="mine">Reviewed by me</option>
-        </select>
+        </NativeSelect>
         <Button
           size="sm"
           variant="ghost"
@@ -655,13 +657,13 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         </Button>
         </>}
       {round && data?.rounds.find(r => r.id === round)?.genderVisible && <div className="flex flex-wrap items-center gap-3 text-sm">
-        <label>Gender <select aria-label="Filter gender" className={selectStyle} value={gender} onChange={e => setGender(e.target.value)}><option value="">All</option>{genderValues.map(v => <option key={v}>{v}</option>)}</select></label>
+        <label>Gender <NativeSelect aria-label="Filter gender" className={selectStyle} value={gender} onChange={e => setGender(e.target.value)}><option value="">All</option>{genderValues.map(v => <option key={v}>{v}</option>)}</NativeSelect></label>
         <label className="flex gap-2"><input type="checkbox" checked={showGenderCounts} onChange={e => setShowGenderCounts(e.target.checked)} />Show round gender composition</label>
         {showGenderCounts && data?.genderCounts && <dl className="flex flex-wrap gap-3">{data.genderCounts.map(c => <div key={c.gender ?? "unset"}><dt className="inline">{c.gender ?? "Not provided"}: </dt><dd className="inline">{c.count}</dd></div>)}</dl>}
       </div>}
       {!decisionsOnly && <section className="w-full text-sm"><h3 className="font-medium">Academic & review filters</h3>
         <div className="mt-3 flex flex-wrap items-end gap-3">
-          <select
+          <NativeSelect
             aria-label="Filter major"
             className={selectStyle}
             value={major}
@@ -672,8 +674,8 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
               .map((value) => (
                 <option key={value}>{value}</option>
               ))}
-          </select>
-          <select
+          </NativeSelect>
+          <NativeSelect
             aria-label="Filter academic year"
             className={selectStyle}
             value={year}
@@ -684,7 +686,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
               .map((value) => (
                 <option key={value}>{value}</option>
               ))}
-          </select>
+          </NativeSelect>
           <div>
             <Label htmlFor="leader-gpa">GPA greater than</Label>
             <Input
@@ -967,7 +969,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                 <h3 className="oc-card-heading ">Recruitment actions</h3>
                 <Label htmlFor="move-round">Round</Label>
                 <div className="flex flex-wrap gap-2">
-                  <select
+                  <NativeSelect
                     id="move-round"
                     className={selectStyle}
                     disabled={busy || dirty}
@@ -979,7 +981,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                         {item.name}
                       </option>
                     ))}
-                  </select>
+                  </NativeSelect>
                   <Button
                     variant="outline"
                     disabled={busy || dirty || ["ACCEPTED", "REJECTED", "WAITLISTED"].includes(active.status) || targetRound === active.roundId || !hasPermission(membership, "recruitment.manage") || !hasPermission(membership, "applicants.identify")}

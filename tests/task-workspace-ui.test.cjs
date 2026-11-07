@@ -15,16 +15,18 @@ function harness(manage=true,personalOnly=false){
  return{calls,workspace,render(){index=0;const tree=C({clubId:'club',embedded:true,personalOnly,initialScope:"mine"});while(effects.length)effects.shift()();return tree}}
 }
 const button=(tree,label)=>nodes(tree).find(n=>n.type==='Button'&&text(n)===label)
+// The My Tasks / Manage switch is a SegmentedControl: expose its options like buttons.
+const scope=(tree,label)=>{const group=nodes(tree).find(n=>n.type==='SegmentedControl'&&n.props.label==='Task workspace'),option=group?.props.options.find(o=>o.label===label);return option&&{props:{onClick:()=>group.props.onChange(option.value)}}}
 test('task workspace keeps Team gated and opens a shared detail drawer without changing task revisions',async()=>{
- const h=harness();h.render();await flush();let tree=h.render();assert.ok(button(tree,'My Tasks'));assert.ok(button(tree,'Manage'));assert.doesNotMatch(text(tree),/Team project/)
+ const h=harness();h.render();await flush();let tree=h.render();assert.ok(scope(tree,'My Tasks'));assert.ok(scope(tree,'Manage'));assert.doesNotMatch(text(tree),/Team project/)
  const row=nodes(tree).find(n=>n.type==='button'&&text(n).includes('Your research'));row.props.onClick({currentTarget:{}});tree=h.render()
  const detail=nodes(tree).find(n=>n.type?.name==='TaskDetail');assert.equal(detail.props.task.revision,3);assert.equal(detail.props.manager,false);assert.equal(nodes(tree).find(n=>n.type==='Sheet').props.open,true);assert.deepEqual(h.calls,[['view','a']])
- nodes(tree).find(n=>n.type==='Sheet').props.onOpenChange(false);tree=h.render();button(tree,'Manage').props.onClick();tree=h.render();assert.equal(nodes(tree).find(node=>node.type==='TaskManagerWorkspace').props.workspace.tasks.length,3)
- const limited=harness(false);limited.render();await flush();assert.equal(button(limited.render(),'Manage'),undefined)
- const personal=harness(true,true);personal.render();await flush();tree=personal.render();assert.equal(button(tree,'Manage'),undefined);assert.doesNotMatch(text(tree),/Team project/)
+ nodes(tree).find(n=>n.type==='Sheet').props.onOpenChange(false);tree=h.render();scope(tree,'Manage').props.onClick();tree=h.render();assert.equal(nodes(tree).find(node=>node.type==='TaskManagerWorkspace').props.workspace.tasks.length,3)
+ const limited=harness(false);limited.render();await flush();assert.equal(scope(limited.render(),'Manage'),undefined)
+ const personal=harness(true,true);personal.render();await flush();tree=personal.render();assert.equal(scope(tree,'Manage'),undefined);assert.doesNotMatch(text(tree),/Team project/)
 })
 test('submitted filter separates work awaiting review from outstanding assignments',async()=>{
- const h=harness();h.render();await flush();let tree=h.render();nodes(tree).find(n=>n.type==='select'&&n.props.value==='open').props.onChange({target:{value:'submitted'}});tree=h.render();assert.match(text(tree),/Submitted paper/);assert.doesNotMatch(text(tree),/Your research/)
+ const h=harness();h.render();await flush();let tree=h.render();nodes(tree).find(n=>['select','NativeSelect'].includes(n.type?.name??n.type)&&n.props.value==='open').props.onChange({target:{value:'submitted'}});tree=h.render();assert.match(text(tree),/Submitted paper/);assert.doesNotMatch(text(tree),/Your research/)
 })
 
 test('personal task totals separate due, missing and submitted work and filter on click',async()=>{

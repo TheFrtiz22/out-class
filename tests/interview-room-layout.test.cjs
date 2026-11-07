@@ -26,7 +26,7 @@ test('selection controls exist only on the interview list; active and post-inter
  const h=harness();h.render();await flush();let t=h.render();t=h.render();
  assert.ok(nodes(t).find(n=>n.props?.id==='interview-round'));
  nodes(t).find(n=>n.props?.id==='interview-candidate').props.onChange({target:{value:'a'}});t=h.render();
- assert.equal(nodes(t).find(n=>n.type==='select'),undefined);assert.equal(kit(t).props.applicationId,'a');
+ assert.equal(nodes(t).find(n=>['select','NativeSelect'].includes(n.type?.name??n.type)),undefined);assert.equal(kit(t).props.applicationId,'a');
  assert.doesNotMatch(text(t),/evaluated by you|Previous candidate|Next candidate/);
  const toolbar=kit(t).props.toolbar(false);assert.equal(text(toolbar),'Interviews','the focus frame bar carries the club and round');assert.equal(h.frames.at(-1).task,'Interview · Round 1');assert.doesNotMatch(text(toolbar),/timer/i);
  assert.equal(text(kit(t).props.toolbar(true)),text(toolbar));

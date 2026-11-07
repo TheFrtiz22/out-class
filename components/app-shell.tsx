@@ -19,6 +19,7 @@ import { LandingPageView } from "@/components/views/landing-page-view"
 import { resolveStudentView, sectionForStudentView, canonicalStudentParams } from "@/lib/student-navigation"
 import { STUDENT_HOME, studentPath, studentRouteForPath } from "@/lib/navigation"
 import { FocusFrame } from "@/components/shell/focus-frame"
+import { Button } from "@/components/ui/button"
 
 const renderDestinationLoading = () => <OutClassLoadingScreen />
 
@@ -177,7 +178,7 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
     )
   }
 
-  if (view === "auth" && isImpersonating) return <main className="p-8">Your administrator login is preserved. Exit impersonation above before changing authentication. <button className="underline" onClick={() => setView("student-dashboard")}>Return to the user’s workspace</button></main>
+  if (view === "auth" && isImpersonating) return <main className="p-8">Your administrator login is preserved. Exit impersonation above before changing authentication. <Button variant="link" className="h-auto px-0" onClick={() => setView("student-dashboard")}>Return to the user’s workspace</Button></main>
 
   if (view === "auth") {
     return <AuthView onCreateAccount={() => { window.location.href = authEntryHref("/signup", window.location.search) }} onEnter={handleEnter} onBack={() => setView("landing")} initialRole={appMode === "admin" ? "leader" : "student"} initialError={authError} />

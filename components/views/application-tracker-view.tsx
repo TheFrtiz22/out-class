@@ -212,10 +212,10 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
   function bookingChanged() {
     void getStudentApplications().then(apps => { setApplications(apps); sync(apps) }).catch(() => setNotice("Interview saved. Your application will update shortly."))
   }
-  if (app && statusView) return <div ref={content} className="oc-application-detail mx-auto max-w-[var(--oc-reading-width)] space-y-5 pb-6"><ApplicationStatusDetail application={app} notice={notice} onBack={() => { setActiveId(null); setNotice("") }} onResponses={() => openRelated("tracker")} onCalendar={() => onNavigate?.("calendar")} onRefresh={() => void revalidate(true)} onBookingChanged={bookingChanged} onMyClubs={() => onNavigate?.("my-clubs")} /></div>
+  if (app && statusView) return <div ref={content} className="oc-application-detail max-w-[var(--oc-reading-width)] space-y-5 pb-6"><ApplicationStatusDetail application={app} notice={notice} onBack={() => { setActiveId(null); setNotice("") }} onResponses={() => openRelated("tracker")} onCalendar={() => onNavigate?.("calendar")} onRefresh={() => void revalidate(true)} onBookingChanged={bookingChanged} onMyClubs={() => onNavigate?.("my-clubs")} /></div>
   if (app)
     return (
-      <div ref={content} className={`oc-application-detail mx-auto pb-8 ${app.status === "DRAFTING" ? "oc-writing-workspace" : "max-w-[var(--oc-reading-width)] space-y-7"}`}>
+      <div ref={content} className={`oc-application-detail pb-8 ${app.status === "DRAFTING" ? "oc-writing-workspace" : "max-w-[var(--oc-reading-width)] space-y-7"}`}>
         <Button
           variant="ghost"
           size="sm"
@@ -324,7 +324,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
     : applications.filter(item => filter === "All" || (filter === "Drafts" ? item.status === "DRAFTING" : item.status !== "DRAFTING")).sort((a, b) => Number(b.status === "DRAFTING") - Number(a.status === "DRAFTING") || a.club.name.localeCompare(b.club.name))
   function open(item: StudentApplication) { lastOpened.current = item.id; setActiveId(item.id); setNotice("") }
   return (
-    <div ref={content} className="oc-applications mx-auto max-w-[var(--oc-content-width)] space-y-5" data-application-scope={scope}>
+    <div ref={content} className="oc-applications max-w-[var(--oc-content-width)] space-y-5" data-application-scope={scope}>
       <PageHeader density="expressive" title={statusView ? "Status" : "Applications"} description={statusView ? "Where things stand, and what to do next." : "Work on your drafts, check requirements, and review submitted responses."} />
       {applications.length > 0 && !statusView && <MetricStrip label="Application management" items={[
         { label: drafts === 1 ? "draft" : "drafts", value: drafts },

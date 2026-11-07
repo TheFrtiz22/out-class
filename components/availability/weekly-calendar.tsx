@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react"
 import { WEEK_DAYS, paintCells } from "@/lib/availability"
 import { AVAILABILITY_SLOTS, AVAILABILITY_FIRST_SLOT, AVAILABILITY_END_SLOT, minuteLabel } from "@/lib/scheduling-config"
-import { Button } from "@/components/ui/button"
+import { SegmentedControl } from "@/components/ui/segmented-control"
 import "./availability.css"
 
 type Position = { day: number; slot: number }
@@ -46,8 +46,9 @@ export function WeeklyCalendar({ days, dates, knownDays, onChange, counts, onSel
   }
   return <div className="oc-availability-calendar" data-unsaved={preview !== null}>
     {!readOnly && <p role="status" className="mb-2 min-h-4 text-xs text-muted-foreground">{preview ? "Editing selection · release to save." : "Selections save after you release."}</p>}
-    <div className="mb-3 flex flex-wrap items-center gap-2 sm:hidden" role="group" aria-label="Day to edit">
-      {WEEK_DAYS.map((day, i) => <Button key={day} variant={mobileDay === i ? "default" : "outline"} className="min-h-11 px-3" aria-pressed={mobileDay === i} onClick={() => { setMobileDay(i); setFocus({ day: i, slot: focus.slot }) }}>{day.slice(0, 3)}</Button>)}
+    <div className="mb-3 sm:hidden">
+      <SegmentedControl label="Day to edit" size="compact" value={String(mobileDay)} onChange={value => { const i = Number(value); setMobileDay(i); setFocus({ day: i, slot: focus.slot }) }}
+        options={WEEK_DAYS.map((day, i) => ({ value: String(i), label: day.slice(0, 3) }))} />
     </div>
     <div className="mb-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground"><p id={instructionsId}>{readOnly ? "Arrow keys move between times. Home and End move to the first and last time." : "Click or tap a time to add or remove it. Arrow keys move; Space or Enter toggles; Shift + arrows extends. You can also drag; Escape cancels a drag."}</p>{!readOnly && <label className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={touchEdit} onChange={e => setTouchEdit(e.target.checked)} />Enable touch dragging (turn off to scroll)</label>}</div>
     <div ref={grid} className="oc-av-scroll" role="grid" aria-label={counts ? "Interviewer availability by quarter hour" : "Weekly availability by quarter hour"} aria-describedby={instructionsId} aria-multiselectable="true" aria-readonly={readOnly && !onSelect} aria-rowcount={AVAILABILITY_SLOTS.length + 1} aria-colcount={mobile ? 2 : 8}

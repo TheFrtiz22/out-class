@@ -59,6 +59,8 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+import { NativeSelect } from "@/components/ui/native-select"
+import { SegmentedControl } from "@/components/ui/segmented-control"
 
 type Directory = Awaited<ReturnType<typeof getOrganizationMemberManagement>>;
 type Member = Directory["members"][number];
@@ -348,8 +350,8 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                   setSelection([]);
                 }}
               />
-              <label className="text-sm"><span className="sr-only">Role</span><select aria-label="Filter members by role" className="min-h-11 rounded-md border bg-card px-3" value={roleFilter} onChange={e => { setRoleFilter(e.target.value); setPage(0); setSelection([]) }}><option value="">All roles</option>{organizationRoles.map(role => <option key={role} value={role}>{organizationRoleLabels[role]}</option>)}</select></label>
-              <label className="text-sm"><span className="sr-only">Year</span><select aria-label="Filter members by year" className="min-h-11 rounded-md border bg-card px-3" value={yearFilter} onChange={e => { setYearFilter(e.target.value); setPage(0); setSelection([]) }}><option value="">All years</option>{[...new Set([...data.members.map(m => m.user.studentProfile?.academicYear), ...data.invitations.map(i => i.invitedYear)].filter((year): year is string => !!year))].sort().map(year => <option key={year}>{year}</option>)}</select></label>
+              <label className="text-sm"><span className="sr-only">Role</span><NativeSelect aria-label="Filter members by role" className="min-h-11" value={roleFilter} onChange={e => { setRoleFilter(e.target.value); setPage(0); setSelection([]) }}><option value="">All roles</option>{organizationRoles.map(role => <option key={role} value={role}>{organizationRoleLabels[role]}</option>)}</NativeSelect></label>
+              <label className="text-sm"><span className="sr-only">Year</span><NativeSelect aria-label="Filter members by year" className="min-h-11" value={yearFilter} onChange={e => { setYearFilter(e.target.value); setPage(0); setSelection([]) }}><option value="">All years</option>{[...new Set([...data.members.map(m => m.user.studentProfile?.academicYear), ...data.invitations.map(i => i.invitedYear)].filter((year): year is string => !!year))].sort().map(year => <option key={year}>{year}</option>)}</NativeSelect></label>
               {invitesOpen && <>              <label className="inline-flex min-h-11 items-center gap-2 text-sm">
                 <input
                   type="checkbox"
@@ -363,7 +365,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
               </label>
 </>}
             </div>
-            {!invitesOpen && caps.canManageMembers && <div className="flex flex-wrap items-center gap-3"><MemberGroupBuilder clubId={clubId} members={data.members} onSaved={reload} /><select aria-label="Filter members by group" className="min-h-11 rounded-md border bg-card px-3 text-sm" value={groupFilter} onChange={event => { setGroupFilter(event.target.value); setPage(0); setSelection([]); }}><option value="">All groups</option>{[...new Set(data.members.flatMap(member => member.groups))].sort().map(group => <option key={group}>{group}</option>)}</select></div>}
+            {!invitesOpen && caps.canManageMembers && <div className="flex flex-wrap items-center gap-3"><MemberGroupBuilder clubId={clubId} members={data.members} onSaved={reload} /><NativeSelect aria-label="Filter members by group" className="min-h-11" value={groupFilter} onChange={event => { setGroupFilter(event.target.value); setPage(0); setSelection([]); }}><option value="">All groups</option>{[...new Set(data.members.flatMap(member => member.groups))].sort().map(group => <option key={group}>{group}</option>)}</NativeSelect></div>}
             {selection.length > 0 && (
               <div
                 role="toolbar"
@@ -385,11 +387,11 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                   <>
                     {caps.canChangeRoles && (
                       <>
-                        <select
+                        <NativeSelect
                           aria-label="Bulk organization role"
                           value={bulkRole}
                           disabled={busy}
-                          className="min-h-11 rounded-md border bg-background px-3 text-sm"
+                          className="min-h-11"
                           onChange={(e) =>
                             setBulkRole(e.target.value as Member["accessRole"])
                           }
@@ -405,7 +407,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                                 {organizationRoleLabels[role]}
                               </option>
                             ))}
-                        </select>
+                        </NativeSelect>
                         <Button
                           size="sm"
                           variant="outline"
@@ -577,9 +579,10 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                         className={`${onboardingTable.cell} ${onboardingTable.wideCell}`}
                       >
                         {row.member ? (
-                          <button
+                          <Button
                             type="button"
-                            className="text-left font-medium hover:text-primary focus-visible:outline-2 focus-visible:outline-ring"
+                            variant="link"
+                            className="h-auto min-h-11 whitespace-normal px-0 text-left font-medium"
                             aria-label={`Member details · ${row.name}`}
                             disabled={busy}
                             onClick={(event) => {
@@ -589,7 +592,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                             }}
                           >
                             {row.name}
-                          </button>
+                          </Button>
                         ) : (
                           <span className="font-medium">{row.name}</span>
                         )}
@@ -795,7 +798,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
               {caps.canManageMembers && <ActionWorkflow showCloseAction={false} title="Add member" description="Add an existing OutClass account by UVA email. Use Invite members for someone who still needs to accept an invitation." trigger={<><Plus size={16} />Add member</>} variant="default">{done => <form data-saving={busy} className="space-y-4" onSubmit={event => { event.preventDefault(); const email = String(new FormData(event.currentTarget).get("email")); void run(() => addClubMember(clubId, email), "Member added.").then(saved => { if (saved) done() }) }}><label className="block space-y-2 text-sm">UVA email<Input name="email" type="email" required disabled={busy} placeholder="name@virginia.edu" /></label>{error && <p role="alert" className="text-sm text-destructive">{error}</p>}<div className="flex justify-end gap-2"><Button type="button" variant="outline" disabled={busy} onClick={done}>Cancel</Button><Button disabled={busy} loading={busy}>Add member</Button></div></form>}</ActionWorkflow>}
               <ActionWorkflow title="Invite members" description="Create invitations, review pending access, and explicitly choose email delivery." trigger="Invite members" presentation="sheet" open={invitesOpen} onOpenChange={open => { setInvitesOpen(open); setSelection([]); setPage(0); setQuery(""); setRoleFilter(""); setYearFilter("") }}>
                 {invitesOpen && <div data-saving={busy} className="space-y-5">
-                  <div role="group" aria-label="Invitation workspace" className="flex flex-wrap gap-1 border-b pb-3">{[["pending", "Pending invitations"], ["new", "New invitation"], ["delivery", "Delivery & schedules"]].map(([id, label]) => <Button key={id} variant={inviteTab === id ? "secondary" : "ghost"} aria-pressed={inviteTab === id} onClick={() => { if (dirty && !window.confirm("Discard unsaved invitation changes?")) return; setDirty(false); setInviteTab(id) }}>{label}</Button>)}</div>
+                  <SegmentedControl label="Invitation workspace" value={inviteTab} onChange={id => { if (dirty && !window.confirm("Discard unsaved invitation changes?")) return; setDirty(false); setInviteTab(id) }} options={[{ value: "pending", label: "Pending invitations" }, { value: "new", label: "New invitation" }, { value: "delivery", label: "Delivery & schedules" }]} />
                   {notice && <p role="status" className="text-sm">{notice}</p>}{error && <p role="alert" className="text-sm text-destructive">{error}</p>}
                   {inviteTab === "pending" && <>{directory}{scheduledInviteId && <InvitationScheduleComposer key={scheduledInviteId} clubId={clubId} invitationId={scheduledInviteId} />}</>}
                   {inviteTab === "new" && <div data-unsaved={dirty} onChangeCapture={() => setDirty(true)}>              <p className="mt-3 text-sm text-muted-foreground">
@@ -842,28 +845,28 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                     </label>
                     <label className="space-y-2 text-sm font-medium">
                       Year (optional)
-                      <select
+                      <NativeSelect
                         name="year"
-                        className="mt-1 min-h-11 w-full rounded-md border border-input bg-card px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="mt-1 min-h-11 w-full"
                       >
                         <option value="">Not provided</option>
                         {[2025, 2026, 2027, 2028, 2029, 2030].map((year) => (
                           <option key={year}>{year}</option>
                         ))}
-                      </select>
+                      </NativeSelect>
                     </label>
                     <label className="space-y-2 text-sm font-medium">
                       School identifier type
-                      <select
+                      <NativeSelect
                         name="identifierType"
-                        className="mt-1 min-h-11 w-full rounded-md border border-input bg-card px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="mt-1 min-h-11 w-full"
                       >
                         {data.identifierTypes.map((type) => (
                           <option key={type.id} value={type.id}>
                             {type.label}
                           </option>
                         ))}
-                      </select>
+                      </NativeSelect>
                     </label>
                     <label className="space-y-2 text-sm font-medium">
                       School identifier
@@ -877,10 +880,10 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                     </label>
                     <label className="space-y-2 text-sm font-medium">
                       Organization role
-                      <select
+                      <NativeSelect
                         name="role"
                         defaultValue="MEMBER"
-                        className="mt-1 min-h-11 w-full rounded-md border border-input bg-card px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="mt-1 min-h-11 w-full"
                       >
                         {organizationRoles
                           .filter((role) =>
@@ -891,7 +894,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                               {organizationRoleLabels[role]}
                             </option>
                           ))}
-                      </select>
+                      </NativeSelect>
                     </label>
                     <Button className="self-end min-h-11">
                       Create invitation
@@ -1065,13 +1068,13 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                   >
                     <label className="block text-sm">
                       Change role
-                      <select
+                      <NativeSelect
                         name="role"
                         defaultValue={
                           active.isOwner ? "OWNER" : active.accessRole
                         }
                         disabled={busy}
-                        className="mt-2 min-h-11 w-full rounded-md border border-input bg-card px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="mt-2 min-h-11 w-full"
                       >
                         {organizationRoles
                           .filter((role) =>
@@ -1082,7 +1085,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                               {organizationRoleLabels[role]}
                             </option>
                           ))}
-                      </select>
+                      </NativeSelect>
                     </label>
                     <Button
                       disabled={

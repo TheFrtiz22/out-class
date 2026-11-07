@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/dialog";
 import "./events.css";
 import { eventBoardEmpty } from "@/lib/event-board-empty";
+import { NativeSelect } from "@/components/ui/native-select"
 const initialFilters: EventFilters = {
   query: "",
   period: "All",
@@ -168,20 +169,16 @@ export function PublicEventBoard() {
       {linkedError && <div role="alert" className="mb-4 space-y-2"><p>{linkedError}</p><Button variant="outline" onClick={() => setLinkedRetry(n => n + 1)}>Retry event</Button></div>}
       {linkedMissing && <p role="status" className="mb-4 text-sm text-muted-foreground">This event is no longer available. Browse the campus events below.</p>}
       <div className="oc-event-toolbar">
-        <div className="oc-event-periods" role="group" aria-label="Event date range">
-          {["All", "Today", "This Week", "Weekend"].map((period) => (
-            <button
-              type="button"
-              key={period}
-              aria-pressed={filters.period === period}
-              onClick={() =>
-                filter({ period: period as EventFilters["period"] })
-              }
-            >
-              {period === "All" ? "All Events" : period}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          label="Event date range"
+          className="oc-event-periods"
+          value={filters.period ?? "All"}
+          onChange={(period) => filter({ period })}
+          options={(["All", "Today", "This Week", "Weekend"] as const).map((period) => ({
+            value: period,
+            label: period === "All" ? "All Events" : period,
+          }))}
+        />
         <div className="oc-event-toolbar-actions">
         <label className="oc-event-search">
           <Search size={16} aria-hidden="true" />
@@ -211,7 +208,7 @@ export function PublicEventBoard() {
             )}
             <label>
               Category
-              <select
+              <NativeSelect
                 value={filters.category}
                 onChange={(e) =>
                   filter({
@@ -223,11 +220,11 @@ export function PublicEventBoard() {
                 {eventCategories.map((c) => (
                   <option key={c}>{c}</option>
                 ))}
-              </select>
+              </NativeSelect>
             </label>
             <label>
               Club
-              <select
+              <NativeSelect
                 value={filters.clubId}
                 onChange={(e) => filter({ clubId: e.target.value })}
               >
@@ -237,7 +234,7 @@ export function PublicEventBoard() {
                     {c.name}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </label>
             <label>
               Date (Eastern Time)
@@ -256,7 +253,7 @@ export function PublicEventBoard() {
             </label>
             <label>
               Sort
-              <select
+              <NativeSelect
                 value={filters.sort}
                 onChange={(e) =>
                   filter({ sort: e.target.value as EventFilters["sort"] })
@@ -265,7 +262,7 @@ export function PublicEventBoard() {
                 <option value="soonest">Soonest first</option>
                 <option value="latest">Latest first</option>
                 <option value="name">Name A–Z</option>
-              </select>
+              </NativeSelect>
             </label>
             <label className="oc-event-check">
               <input

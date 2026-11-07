@@ -105,6 +105,7 @@ function renderSettingsWorkspace(member, requested, section = 'settings') {
    if(name==='@/components/product/welcome-header') return component('components/product/welcome-header.tsx')
    if(name==='@/lib/welcome') return load('lib/welcome.ts')
    if(name==='@/components/ui/page-header') return component('components/ui/page-header.tsx')
+   if(name==='@/components/product/dashboard/dashboard') return component('components/product/dashboard/dashboard.tsx')
    if(name==='./campus-illustration') return component('components/product/campus-illustration.tsx')
    if(['@/lib/club-settings','@/lib/product-navigation','@/lib/permissions','@/lib/interview-access','@/lib/club-workspace','@/lib/workspace-navigation'].includes(name)) return load(name.replace('@/','')+'.ts')
    return new Proxy({}, {get:()=>()=>null})

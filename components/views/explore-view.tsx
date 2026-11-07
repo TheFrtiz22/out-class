@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/ui/page-header"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { ArrowRight, ChevronDown, Search, SlidersHorizontal, X, Compass, BookOpen, BriefcaseBusiness, Globe2, Heart, Mountain, Lightbulb, ChartNoAxesCombined, MessageSquare, Users } from "@/components/icons"
 import { Button } from "@/components/ui/button"
+import { SegmentedControl } from "@/components/ui/segmented-control"
 import { Input } from "@/components/ui/input"
 import { LoadingState } from "@/components/ui/loading-state"
 import { EmptyState } from "@/components/ui/empty-state"
@@ -188,26 +189,23 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
         )}
       </div>
       {!loading && !error && categories.length > 0 && (
-        <section className="oc-directory-categories" aria-label="Browse categories">
-          <button
-            aria-pressed={filters.category === "all"}
-            onClick={() => change("category", "all")}
-          >
-            <Users size={18} weight={filters.category === "all" ? "fill" : "regular"} aria-hidden="true" />All interests <span>{clubs.length}</span>
-          </button>
-          {categories.map((category) => {
-            const CategoryIcon = categoryIcon(category)
-            return (
-            <button
-              key={category}
-              aria-pressed={filters.category.toLowerCase() === category.toLowerCase()}
-              onClick={() => change("category", filters.category.toLowerCase() === category.toLowerCase() ? "all" : category)}
-            >
-              <CategoryIcon size={18} weight={filters.category.toLowerCase() === category.toLowerCase() ? "fill" : "regular"} aria-hidden="true" />{category}
-              <span>{clubs.filter((club) => club.category === category).length}</span>
-            </button>
-          )})}
-        </section>
+        <SegmentedControl
+          label="Browse categories"
+          className="oc-directory-categories"
+          value={filters.category === "all" ? "all" : categories.find((category) => category.toLowerCase() === filters.category.toLowerCase()) ?? filters.category}
+          // Choosing the selected category again returns to all interests, as before.
+          onChange={(value) => change("category", value !== "all" && value.toLowerCase() === filters.category.toLowerCase() ? "all" : value)}
+          options={[
+            { value: "all", label: <><Users size={18} weight={filters.category === "all" ? "fill" : "regular"} aria-hidden="true" />All interests <span>{clubs.length}</span></> },
+            ...categories.map((category) => {
+              const CategoryIcon = categoryIcon(category)
+              return {
+                value: category,
+                label: <><CategoryIcon size={18} weight={filters.category.toLowerCase() === category.toLowerCase() ? "fill" : "regular"} aria-hidden="true" />{category}<span>{clubs.filter((club) => club.category === category).length}</span></>,
+              }
+            }),
+          ]}
+        />
       )}
       <div className="oc-directory-tools oc-toolbar">
         <details>
@@ -265,8 +263,12 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
         <div className="oc-directory-active">
           <span>Filters applied</span>
           {active.map(([key, value]) => (
-            <button
+            <Button
               key={key}
+              type="button"
+              variant="outline"
+              size="sm"
+              className="min-h-11"
               aria-label={`Remove ${key} filter`}
               onClick={() =>
                 change(
@@ -277,9 +279,9 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
             >
               {key === "query" ? `“${value}”` : key === "recruitment" ? value === "open" ? "Applications open" : value === "closed" ? "Not currently open" : "Closing in 7 days" : `${key}: ${value}`}
               <X size={12} />
-            </button>
+            </Button>
           ))}
-          <button onClick={() => { updateFilters(emptyDirectoryFilters) }}>Clear all</button>
+          <Button type="button" variant="link" size="sm" className="min-h-11" onClick={() => { updateFilters(emptyDirectoryFilters) }}>Clear all</Button>
         </div>
       )}
       {loading ? (

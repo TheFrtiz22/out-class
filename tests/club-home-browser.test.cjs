@@ -96,6 +96,8 @@ test('browser: Club home dashboard, permissions, header glass, blur budget and a
   assert.equal(await page.getByRole('button', { name: /^Refresh/ }).count(), 0)
   console.log('PASS existing drawers; no refresh button')
 
+  // Audit from the top: the sticky header legitimately covers content wherever the page was left scrolled.
+  await page.evaluate(() => scrollTo(0, 0)); await page.waitForTimeout(200)
   const axe = await new AxeBuilder({ page }).include('#workspace-content').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()
   assert.deepEqual(axe.violations.map(v => `${v.id}: ${v.nodes.map(n => n.target).join(', ')}`), [])
   console.log('PASS axe (WCAG 2.2 AA) on the dashboard')
@@ -140,7 +142,7 @@ test('browser: Club home dashboard, permissions, header glass, blur budget and a
   console.log('PASS reduced motion and forced colors')
 
   // Permission subsets: no empty sections.
-  const sections = () => page.locator('.oc-club-home-card').evaluateAll(cards => cards.map(c => [c.querySelector('h2').textContent, c.querySelectorAll('li').length + c.querySelectorAll('.oc-club-home-quiet').length]))
+  const sections = () => page.locator('.oc-club-home-card').evaluateAll(cards => cards.map(c => [c.querySelector('h2').textContent, c.querySelectorAll('li').length + c.querySelectorAll('.oc-dashboard-quiet').length]))
   await page.goto(fixture.url('fixture=large&role=reviewer'), { waitUntil: 'networkidle' }); await settle(page)
   assert.deepEqual(await page.locator('.oc-needs-card').evaluateAll(cards => cards.map(card => card.dataset.needs)), ['overdue', 'reviews'])
   assert.equal(await page.getByRole('link', { name: 'New meeting' }).count(), 0)

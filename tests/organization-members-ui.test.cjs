@@ -9,7 +9,7 @@ const button=(tree,text)=>{const node=nodes(tree).find(n=>(n.type==='Button'||n.
 const setupWindow=()=>{const before=global.window;global.window={confirm:()=>true,addEventListener:()=>{},removeEventListener:()=>{}};return()=>global.window=before;};
 
 test('Members defaults to a filterable directory and exposes focused add/invite/import/settings actions',async()=>{
- const restore=setupWindow();try{const h=harness({getOrganizationMemberManagement:async()=>fixture()});h.render();await h.flush();let tree=h.render();const text=JSON.stringify(tree);for(const label of ['Member','Year','Role','Status','Owner'])assert.ok(text.includes(label));for(const label of ['Add member','Invite members','Import CSV','Settings'])assert.ok(nodes(tree).some(n=>n.type==='ActionWorkflow'&&JSON.stringify(n.props.trigger).includes(label)));assert.ok(!text.includes('Michael Chen'));nodes(tree).find(n=>n.type==='ActionWorkflow'&&n.props.title==='Invite members').props.onOpenChange(true);tree=h.render();assert.ok(JSON.stringify(tree).includes('Michael Chen'));button(tree,'New invitation').props.onClick();tree=h.render();assert.ok(nodes(tree).some(node=>node.props?.name==='identifierType'));assert.ok(!JSON.stringify(tree).includes('dangerouslySetInnerHTML'));}finally{restore();}
+ const restore=setupWindow();try{const h=harness({getOrganizationMemberManagement:async()=>fixture()});h.render();await h.flush();let tree=h.render();const text=JSON.stringify(tree);for(const label of ['Member','Year','Role','Status','Owner'])assert.ok(text.includes(label));for(const label of ['Add member','Invite members','Import CSV','Settings'])assert.ok(nodes(tree).some(n=>n.type==='ActionWorkflow'&&JSON.stringify(n.props.trigger).includes(label)));assert.ok(!text.includes('Michael Chen'));nodes(tree).find(n=>n.type==='ActionWorkflow'&&n.props.title==='Invite members').props.onOpenChange(true);tree=h.render();assert.ok(JSON.stringify(tree).includes('Michael Chen'));(()=>{const tabs=nodes(tree).find(n=>n.type==='SegmentedControl'&&n.props.label==='Invitation workspace');assert.ok(tabs.props.options.some(o=>o.value==='new'&&o.label==='New invitation'));tabs.props.onChange('new')})();tree=h.render();assert.ok(nodes(tree).some(node=>node.props?.name==='identifierType'));assert.ok(!JSON.stringify(tree).includes('dangerouslySetInnerHTML'));}finally{restore();}
 });
 
 test('admin drawer cannot change owner role, remove owners or transfer ownership',async()=>{
@@ -17,7 +17,7 @@ test('admin drawer cannot change owner role, remove owners or transfer ownership
 });
 
 test('ownership transfer requires an intentional confirmation and passes only scoped trusted input',async()=>{
- const restore=setupWindow();try{const directory=fixture();let calls=0,payload;const h=harness({getOrganizationMemberManagement:async()=>directory,transferOrganizationOwnership:async data=>{calls++;payload=data;}});h.render();await h.flush();nodes(h.render()).filter(node=>node.type==='button'&&(node.props['aria-label']||'').includes('Member details'))[1].props.onClick({currentTarget:{}});global.window.confirm=()=>false;button(h.render(),'Transfer my ownership').props.onClick();assert.equal(calls,0);global.window.confirm=()=>true;const transfer=button(h.render(),'Transfer my ownership');transfer.props.onClick();transfer.props.onClick();await h.flush();assert.equal(calls,1);assert.deepEqual(payload,{clubId:'club',memberId:'student',confirm:true});}finally{restore();}
+ const restore=setupWindow();try{const directory=fixture();let calls=0,payload;const h=harness({getOrganizationMemberManagement:async()=>directory,transferOrganizationOwnership:async data=>{calls++;payload=data;}});h.render();await h.flush();nodes(h.render()).filter(node=>['button','Button'].includes(node.type)&&(node.props['aria-label']||'').includes('Member details'))[1].props.onClick({currentTarget:{}});global.window.confirm=()=>false;button(h.render(),'Transfer my ownership').props.onClick();assert.equal(calls,0);global.window.confirm=()=>true;const transfer=button(h.render(),'Transfer my ownership');transfer.props.onClick();transfer.props.onClick();await h.flush();assert.equal(calls,1);assert.deepEqual(payload,{clubId:'club',memberId:'student',confirm:true});}finally{restore();}
 });
 
 test('revocation confirms, resend is explicitly queued and duplicate queued delivery is disabled',async()=>{
@@ -39,13 +39,13 @@ test('an ordinary role label updates immediately and rolls back if the server re
   global.FormData=class{get(){return'ADMIN'}};
   const h=harness({getOrganizationMemberManagement:async()=>directory,changeOrganizationMemberRole:()=>new Promise((_resolve,no)=>reject=no)});
   h.render();await h.flush();
-  nodes(h.render()).filter(n=>n.type==='button'&&(n.props['aria-label']||'').includes('Member details'))[1].props.onClick({currentTarget:{}});
+  nodes(h.render()).filter(n=>['button','Button'].includes(n.type)&&(n.props['aria-label']||'').includes('Member details'))[1].props.onClick({currentTarget:{}});
   const drawer=nodes(h.render()).filter(n=>n.type==='Sheet').at(-1);
-  const form=nodes(drawer).find(n=>n.type==='form'&&nodes(n).some(c=>c.type==='select'&&c.props.name==='role'));
+  const form=nodes(drawer).find(n=>n.type==='form'&&nodes(n).some(c=>['select','NativeSelect'].includes(c.type?.name??c.type)&&c.props.name==='role'));
   form.props.onSubmit({preventDefault(){},currentTarget:{}});
-  assert.equal(nodes(h.render()).filter(n=>n.type==='select'&&n.props.name==='role').at(-1).props.defaultValue,'ADMIN');
+  assert.equal(nodes(h.render()).filter(n=>['select','NativeSelect'].includes(n.type?.name??n.type)&&n.props.name==='role').at(-1).props.defaultValue,'ADMIN');
   reject(Error('Grant changed'));await h.flush();
-  assert.equal(nodes(h.render()).filter(n=>n.type==='select'&&n.props.name==='role').at(-1).props.defaultValue,'MEMBER');
+  assert.equal(nodes(h.render()).filter(n=>['select','NativeSelect'].includes(n.type?.name??n.type)&&n.props.name==='role').at(-1).props.defaultValue,'MEMBER');
   assert.ok(JSON.stringify(h.render()).includes('Grant changed'));
  }finally{global.FormData=FormDataBefore;restore()}
 });
@@ -61,7 +61,7 @@ test('warm members remain usable during revalidation and are cleared on an acces
 
 test('member headings toggle alphabetical order and sort years from oldest to youngest first',async()=>{
  const restore=setupWindow();try{const directory=fixture();directory.members[0].user.studentProfile.academicYear='First Year';directory.members[1].user.studentProfile.academicYear='Fourth Year';const h=harness({getOrganizationMemberManagement:async()=>directory});h.render();await h.flush();
- const names=tree=>nodes(tree).filter(n=>n.type==='button'&&n.props['aria-label']?.startsWith('Member details')).map(n=>n.props['aria-label']);
+ const names=tree=>nodes(tree).filter(n=>['button','Button'].includes(n.type)&&n.props['aria-label']?.startsWith('Member details')).map(n=>n.props['aria-label']);
  let tree=h.render();assert.match(names(tree)[0],/owner/);nodes(tree).find(n=>n.type==='SortLabel'&&n.props.label==='Member').props.onClick();tree=h.render();assert.match(names(tree)[0],/student/);
  nodes(tree).find(n=>n.type==='SortLabel'&&n.props.label==='Year').props.onClick();tree=h.render();assert.match(names(tree)[0],/student/);nodes(tree).find(n=>n.type==='SortLabel'&&n.props.label==='Year').props.onClick();assert.match(names(h.render())[0],/owner/);
  }finally{restore()}

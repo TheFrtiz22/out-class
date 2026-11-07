@@ -8,6 +8,7 @@ import { applicantFields, fieldLabels, type ApplicantDisplay, type ApplicantDisp
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Panel } from "@/components/ui/panel";
+import { NativeSelect } from "@/components/ui/native-select"
 
 export function ApplicantDisplayPanel({ clubId, applicationId, refreshKey = "", mode = "review", sessionId, previewConfig, layout = "detail", onFitChange }: { clubId: string; applicationId: string; refreshKey?: string; mode?: "review" | "interview" | "voting"; sessionId?: string; previewConfig?: ApplicantDisplayConfig; layout?: "detail" | "slide"; onFitChange?: (fits: boolean|null)=>void }) {
   const [data, setData] = useState<ApplicantDisplay | null>(null), [error, setError] = useState(""), [revision, setRevision] = useState(0);
@@ -70,7 +71,7 @@ export function ApplicantDisplayPanel({ clubId, applicationId, refreshKey = "", 
       </>}
       {mode === "review" && !data.anonymous && !editorOpen && <div className="flex gap-2 border-t pt-2"><Button type="button" size="sm" variant="ghost" onClick={() => { setKind("PRO"); setEditorOpen(true) }}>Add pro</Button><Button type="button" size="sm" variant="ghost" onClick={() => { setKind("CON"); setEditorOpen(true) }}>Add con</Button></div>}
       {mode === "review" && !data.anonymous && editorOpen && <form className="space-y-3 border-t pt-4" onSubmit={e => { e.preventDefault(); void mutate() }}>
-        <label className="block text-sm">Observation type<select className="ml-3 rounded border p-2" value={kind} disabled={busy} onChange={e => setKind(e.target.value as "PRO" | "CON")}><option value="PRO">Pro</option><option value="CON">Con</option></select></label>
+        <label className="block text-sm">Observation type<NativeSelect className="ml-3" value={kind} disabled={busy} onChange={e => setKind(e.target.value as "PRO" | "CON")}><option value="PRO">Pro</option><option value="CON">Con</option></NativeSelect></label>
         <label className="block text-sm">{editing ? "Edit your observation" : "Add a reviewer observation"}<Textarea value={body} required maxLength={3000} disabled={busy} onChange={e => setBody(e.target.value)} /></label>
         <p className="text-xs text-muted-foreground">Separate from application answers, private interview notes, and overall evaluation feedback.</p>
         <Button disabled={busy || !body.trim()}>{editing ? "Save observation" : "Add observation"}</Button><Button type="button" variant="ghost" disabled={busy} onClick={() => { setEditing(undefined); setBody(""); setEditorOpen(false) }}>{editing ? "Cancel edit" : "Cancel"}</Button>
