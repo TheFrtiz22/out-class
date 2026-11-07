@@ -61,7 +61,7 @@ test('settings and authenticated navigation across roles, saves, history and res
   const studentPage = await session(student);
   await t.test('desktop settings keeps one shell, active navigation and state across personal sections', async () => {
     // Settings → Profile redirects to Profile; Settings keeps Account & Security, Notifications and Availability.
-    await open(studentPage, '/settings/profile'); await studentPage.waitForURL(url => url.pathname === '/profile');
+    await studentPage.goto(config.appUrl + '/settings/profile'); await studentPage.waitForURL(url => url.pathname === '/profile');
     await open(studentPage, '/settings/notifications');
     await studentPage.getByRole('heading', { name: 'Notifications', exact: true }).waitFor();
     const nav = studentPage.getByRole('navigation', { name: 'Personal settings', exact: true });
@@ -101,7 +101,8 @@ test('settings and authenticated navigation across roles, saves, history and res
   });
   await t.test('dismissed invitations remain recoverable, accept/decline refresh membership, and claims submit', async () => {
     // Settings → Organizations redirects to My Clubs, which carries pending invitations.
-    await open(studentPage, '/settings/organizations'); await studentPage.waitForURL(url => url.pathname === '/clubs');
+    // The redirect streams under the Settings loading boundary; wait for it to land before checking the page.
+    await studentPage.goto(config.appUrl + '/settings/organizations'); await studentPage.waitForURL(url => url.pathname === '/clubs'); await open(studentPage, '/clubs');
     const pending = studentPage.getByRole('region', { name: 'Pending organization invitations' });
     await pending.getByRole('button', { name: 'Accept', exact: true }).click();
     await studentPage.getByRole('link', { name: `Open member workspace · ${first.name}` }).waitFor();

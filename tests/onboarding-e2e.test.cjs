@@ -165,7 +165,7 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
   assert.equal((await call(dismissed,'club-onboarding','getOrganizationInvitations')).length,0);assert.equal((await db.clubInvitation.findUniqueOrThrow({where:{id:invitation.id}})).status,'PENDING');
   const [recovered]=await call(dismissed,'club-onboarding','getOrganizationInvitations',true);assert.equal(recovered.id,invitation.id);
   // Settings → Organizations moved to My Clubs; the old route still gates on the profile, then redirects.
-  const settings=await dismissed.request('/settings/organizations');assert.equal(settings.status,307);assert.equal(new URL(settings.headers.get('location'),config.appUrl).pathname,'/clubs');assert.equal((await dismissed.request('/clubs')).status,200);
+  const settings=await dismissed.request('/settings/organizations');assert.equal((await require('./helpers/onboarding-e2e.cjs').redirectDestination(settings,config.appUrl)).pathname,'/clubs');assert.equal((await dismissed.request('/clubs')).status,200);
   await call(dismissed,'club-onboarding','acceptIdentityClubInvitation',recovered.id);assert.equal(await db.clubMember.count({where:{clubId,userId:dismissed.user.id}}),1);
  });
  await scenario('F — incremental upload preserves all prior members and creates only additive invitations',async()=>{
