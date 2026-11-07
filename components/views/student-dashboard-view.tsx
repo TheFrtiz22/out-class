@@ -27,6 +27,7 @@ import {
 import type { ClubEvent } from "@/lib/data"
 import type { ViewId } from "@/lib/views"
 import "./student-home.css"
+import { TERMS, pluralize as plural } from "@/lib/copy/terms"
 
 function when(event: ClubEvent | Date) {
   return (event instanceof Date ? event : eventStart(event)).toLocaleString("en-US", {
@@ -55,7 +56,6 @@ function applicationNote(app: HomeApplication) {
             ? "Application submitted"
             : "Check your application for details"
 }
-const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
 /** My applications as stages: drafts, in review, interviews, decisions. Bars are decorative. */
 function applicationStages(apps: HomeApplication[]) {
   const count = (statuses: string[]) => apps.filter(app => statuses.includes(app.status)).length
@@ -149,7 +149,7 @@ export function StudentDashboardView({
   const readUpdate = (id: string) => { focusNotification(id); onNavigate("inbox") }
   const needs: (NeedsItem & { order: number })[] = []
   if (upcomingDeadlines[0]) { const app = upcomingDeadlines[0]; needs.push({ order: next.kind === "application" && next.application.id === app.id ? 0 : 1, id: "deadline", title: upcomingDeadlines.length === 1 ? `${app.name} application due` : `${plural(upcomingDeadlines.length, "application")} due`, detail: `Application deadline: ${when(app.deadline!)}`, action: <NeedsAction onClick={() => openApplication(app)}>Continue draft</NeedsAction> }) }
-  if (overdueTasks.length) needs.push({ order: 2, id: "tasks", title: `${plural(overdueTasks.length, "club assignment")} overdue`, detail: "Submit your work or ask your club for more time.", action: <NeedsAction href={`${clubWorkspaceHref(overdueTasks[0]!, "tasks")}&taskView=mine`}>Open assignments</NeedsAction> })
+  if (overdueTasks.length) needs.push({ order: 2, id: "tasks", title: `${plural(overdueTasks.length, "club task")} overdue`, detail: "Submit your work or ask your club for more time.", action: <NeedsAction href={`${clubWorkspaceHref(overdueTasks[0]!, "tasks")}&taskView=mine`}>Open tasks</NeedsAction> })
   if (interviewing.length) needs.push({ order: 3, id: "interviews", title: interviewing.length === 1 ? `Interview with ${interviewing[0]!.name}` : `${plural(interviewing.length, "interview invitation")}`, detail: "Book your interview or view your appointment.", action: <NeedsAction onClick={() => openApplication(interviewing[0]!)}>View interview</NeedsAction> })
   if (urgentUpdate) needs.push({ order: next.kind === "notification" ? 0 : 4, id: "update", title: urgentUpdate.title, detail: urgentUpdate.preview, action: <NeedsAction onClick={() => readUpdate(urgentUpdate.id)}>Read update</NeedsAction> })
   if (drafts.length) needs.push({ order: next.kind === "application" && drafts.includes(next.application) ? 0 : 5, id: "drafts", title: drafts.length === 1 ? `Finish your ${drafts[0]!.name} application` : `${plural(drafts.length, "draft")} in progress`, detail: drafts[0]!.responsesSaved !== undefined ? `${plural(drafts[0]!.responsesSaved, "response")} saved` : "Pick up where you left off.", action: <NeedsAction onClick={() => openApplication(drafts[0]!)}>Continue draft</NeedsAction> })
@@ -184,7 +184,7 @@ export function StudentDashboardView({
                 {applications.length > 4 && <DashboardFoot>Showing 4 of {applications.length} applications</DashboardFoot>}
               </> : empty("No applications yet", "You haven’t started an application. Find a club to apply to and your progress will show here.", <DashboardMore onClick={() => onNavigate("explore")}>Explore clubs</DashboardMore>)}
             </DashboardCard>
-            <DashboardCard id="home-updates-title" title="Updates for you" index={needsItems.length + 3} className="oc-home-updates" more={{ onClick: () => onNavigate("inbox"), label: "Open inbox" }}>
+            <DashboardCard id="home-updates-title" title={TERMS.inbox} index={needsItems.length + 3} className="oc-home-updates" more={{ onClick: () => onNavigate("inbox"), label: TERMS.openInbox }}>
               {updates.length ? <GlassRowList>{updates.map(update => <li key={update.id}><GlassRow className="oc-home-update" onClick={() => readUpdate(update.id)} title={update.title} note={update.preview}
                 lead={<span className="oc-home-update-indicator" data-unread={!update.read} aria-label={update.read ? "Read" : "Unread"}><Bell size={16} aria-hidden="true" /></span>}
                 detail={`${update.club}${update.createdAt && Number.isFinite(Date.parse(update.createdAt)) ? ` · ${new Date(update.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : ""}`} /></li>)}</GlassRowList>
@@ -196,7 +196,7 @@ export function StudentDashboardView({
               <DateChipList items={coming} when={when} timeZone={SCHEDULING_TIMEZONE}
                 empty={agendaUnavailable
                   ? empty("Your agenda is unavailable", "We couldn’t load your scheduled events just now.", <Button variant="outline" onClick={() => window.location.reload()}>Try again</Button>)
-                  : empty("Nothing scheduled yet", "You have no interviews or RSVP’d events coming up. Find an event to attend.", <DashboardMore onClick={() => onNavigate("corkboard")}>Browse events</DashboardMore>)} />
+                  : empty("Nothing scheduled yet", "You have no interviews or RSVP’d events coming up.", <DashboardMore onClick={() => onNavigate("corkboard")}>{TERMS.browseEvents}</DashboardMore>)} />
             </DashboardCard>
           </div>
         </div>

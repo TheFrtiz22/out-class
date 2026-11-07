@@ -50,7 +50,7 @@ test("Corkboard empty state never offers 'show all' when everything is already s
 test("empty states say why and offer one different next step", () => {
   const cases = [
     ["components/views/student-dashboard-view.tsx", /onNavigate\("explore"\)\}>Explore clubs/],
-    ["components/views/student-dashboard-view.tsx", /onNavigate\("corkboard"\)\}>Browse events/],
+    ["components/views/student-dashboard-view.tsx", /onNavigate\("corkboard"\)\}>\{TERMS\.browseEvents\}/],
     ["components/views/application-tracker-view.tsx", /onClick=\{\(\) => setFilter\("All"\)\}>Show all applications/],
     ["components/views/explore-view.tsx", /onNavigate\("corkboard"\)\}>See campus events/],
     ["components/views/calendar-view.tsx", /function CalendarEmptyAction/],

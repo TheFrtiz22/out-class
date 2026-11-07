@@ -43,7 +43,7 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, view
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: SITE_TITLE, template: "%s | OutClass" },
+  title: { default: SITE_TITLE, template: "%s · OutClass" },
   description: SITE_DESCRIPTION,
   applicationName: "OutClass",
   publisher: LEGAL_ORGANIZATION_NAME,

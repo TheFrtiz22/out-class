@@ -21,7 +21,7 @@ export const STUDENT_ROUTES: readonly StudentRoute[] = [
   { path: "/clubs/meetings", view: "my-clubs", section: "meetings", label: "Meetings" },
   { path: "/clubs/tasks", view: "my-clubs", section: "tasks", label: "Tasks" },
   { path: "/calendar", view: "calendar", section: "explore", label: "Calendar" },
-  { path: "/inbox", view: "inbox", section: "explore", label: "Notifications" },
+  { path: "/inbox", view: "inbox", section: "explore", label: "Inbox" },
   { path: "/profile", view: "student-profile", section: "explore", label: "Profile" },
 ]
 

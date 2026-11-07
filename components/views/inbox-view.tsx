@@ -23,6 +23,7 @@ import { toast } from "sonner"
 import { OrganizationOwnershipRequests } from "@/components/organization-ownership-requests"
 import { useOrganizationInvitations } from "@/contexts/organization-invitations-context"
 import { Panel } from "@/components/ui/panel"
+import { pluralize } from "@/lib/copy/terms"
 
 const filters = ["All", "Announcements", "Interviews", "Urgent"] as const
 
@@ -202,7 +203,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
               }
             />
             <span className="text-xs text-muted-foreground" role="status">
-              {checkedIds.length ? `${checkedIds.length} selected` : `${filtered.length} results`}
+              {checkedIds.length ? `${checkedIds.length} selected` : pluralize(filtered.length, "result")}
             </span>
             {checkedIds.length > 0 && (
               <div className="ml-auto flex flex-wrap gap-1">

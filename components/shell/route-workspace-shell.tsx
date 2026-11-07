@@ -29,7 +29,7 @@ function RouteWorkspaceContent({ children }: { children: ReactNode }) {
   const meetings = pathname.startsWith("/meetings")
   const organizations = pathname.startsWith("/club-claims") || pathname.startsWith("/invitations")
   const mode = meetings ? "clubs" : "explore"
-  const title = member ? "Workspace access" : settings ? settingSection?.label ?? "Settings" : schedule ? "My Interview Schedule" : meetings ? "Meetings" : organizations ? "Organizations" : pathname === "/saved-clubs" ? "Saved clubs" : pathname === "/corkboard" ? "Corkboard" : pathname.endsWith("/workspace") ? "Club workspace" : "Club profile"
+  const title = member ? "Workspace access" : settings ? settingSection?.label ?? "Settings" : schedule ? "My Interview Schedule" : meetings ? "Meetings" : organizations ? "Clubs" : pathname === "/saved-clubs" ? "Saved clubs" : pathname === "/corkboard" ? "Corkboard" : pathname.endsWith("/workspace") ? "Club workspace" : "Club profile"
   const active = member ? "settings" : settings || organizations ? "settings" : schedule ? "calendar" : meetings ? "meetings" : pathname === "/corkboard" || pathname === "/saved-clubs" ? "corkboard" : "explore"
   function navigate(view: ViewId) {
     router.push(view === "landing" ? "/" : studentPath(view))

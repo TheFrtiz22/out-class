@@ -117,8 +117,8 @@ test('Settings memberships use each organization role and exclude inactive membe
 test('Settings memberships handle loading, empty, and failed authenticated data',async()=>{
   let retries=0;const auth={user:null,loading:true,refreshUser:async()=>retries++};const h=harness({},'components/organization-memberships.tsx',{},auth);
   assert.ok(nodes(h.render()).some(node=>node.props?.role==='status'));auth.loading=false;
-  assert.ok(nodes(h.render()).some(node=>node.props?.role==='alert'));nodes(h.render()).find(node=>node.props?.children==='Retry organizations').props.onClick();assert.equal(retries,1);
-  auth.user={memberships:[]};assert.ok(JSON.stringify(h.render()).includes('aren’t a member of any organization'));assert.ok(JSON.stringify(h.render()).includes('Explore clubs'));
+  assert.ok(nodes(h.render()).some(node=>node.props?.role==='alert'));nodes(h.render()).find(node=>node.props?.children==='Retry clubs').props.onClick();assert.equal(retries,1);
+  auth.user={memberships:[]};assert.ok(JSON.stringify(h.render()).includes('aren’t a member of any club'));assert.ok(JSON.stringify(h.render()).includes('Explore clubs'));
 });
 
 test('zero requests render literally nothing before and after discovery, including failed discovery',async()=>{

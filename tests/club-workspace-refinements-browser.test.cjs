@@ -184,7 +184,7 @@ test('browser: sortable lists, wide applicant profile, drag/drop, quick decision
   await page.getByRole('heading',{name:'This week',exact:true}).waitFor()
   assert.equal(await page.locator('.oc-club-home-card').count(),3)
   assert.equal(await page.getByText('You’re clear for now.',{exact:true}).count(),1)
-  assert.equal(await page.getByText('No assignments right now.',{exact:true}).count(),1)
+  assert.equal(await page.getByText('No tasks right now.',{exact:true}).count(),1)
   await page.screenshot({path:'/tmp/outclass-workspace-overview-desktop.png',fullPage:true})
   await page.getByRole('button',{name:'Dismiss setup introduction',exact:true}).click()
   await page.reload();await page.getByRole('heading',{name:'Needs you',exact:true}).waitFor()

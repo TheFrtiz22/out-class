@@ -44,7 +44,7 @@ export function InterviewManagementTabs({ clubId, initialTab, initialRoundId, se
       }
     }
   }} activationMode="manual">
-    <TabsList aria-label="Interview management">{canEnter && !settingsOnly && <TabsTrigger value="rooms">Interview rooms</TabsTrigger>}<TabsTrigger value="kits"><ListChecks aria-hidden="true" />Interview master kit</TabsTrigger>{canSchedule && !settingsOnly && <><TabsTrigger value="schedule"><CalendarDays aria-hidden="true" />Scheduling</TabsTrigger></>}{canManageGrants && <TabsTrigger value="access">Interviewers</TabsTrigger>}</TabsList>
+    <TabsList aria-label="Interview management">{canEnter && !settingsOnly && <TabsTrigger value="rooms">Rooms</TabsTrigger>}<TabsTrigger value="kits"><ListChecks aria-hidden="true" />Interview master kit</TabsTrigger>{canSchedule && !settingsOnly && <><TabsTrigger value="schedule"><CalendarDays aria-hidden="true" />Scheduling</TabsTrigger></>}{canManageGrants && <TabsTrigger value="access">Interviewers</TabsTrigger>}</TabsList>
     {canEnter && !settingsOnly && <TabsContent value="rooms"><InterviewRoomsList clubId={clubId} /></TabsContent>}
     <TabsContent value="kits"><ClubInterviewKitSettings key={`${clubId}:${initialRoundId ?? ""}`} clubId={clubId} initialRoundId={initialRoundId} /></TabsContent>
     {canSchedule && !settingsOnly && (scheduleVisited || tab === "schedule") && <TabsContent ref={scheduler} value="schedule" forceMount hidden={tab !== "schedule"}><RoomManager clubId={clubId} active={tab === "schedule"} /></TabsContent>}

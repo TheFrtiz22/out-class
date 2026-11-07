@@ -11,7 +11,12 @@ import { redirect } from "next/navigation";
 import { legacyApplicantInterviewHref } from "@/lib/applicant-interview-navigation";
 import { legacyInterviewRoomHref } from "@/lib/interview-entry";
 import { PageHeader } from "@/components/ui/page-header";
+import type { Metadata } from "next";
+import { clubWorkspaceTitle } from "@/lib/workspace-routes";
 export const maxDuration = 60;
+export async function generateMetadata({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }): Promise<Metadata> {
+  return { title: clubWorkspaceTitle(await searchParams) };
+}
 export default async function Page({
   params,
   searchParams,

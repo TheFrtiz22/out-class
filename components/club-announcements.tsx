@@ -20,6 +20,7 @@ import { recipientAudienceSchema } from "@/lib/recipient-audience";
 import { saveCommunicationSchedule } from "@/actions/communication-schedules";
 import { ScheduledCommunications, ScheduleFields, initialTiming, type ScheduledItem } from "@/components/communication-schedules";
 import { NativeSelect } from "@/components/ui/native-select"
+import { formatDateTime } from "@/lib/copy/terms"
 type Item = Awaited<ReturnType<typeof getClubAnnouncements>>[number];
 
 export function ClubAnnouncements({ clubId, initialItems }: { clubId: string; initialItems?: Item[] }) {
@@ -86,7 +87,7 @@ export function ClubAnnouncements({ clubId, initialItems }: { clubId: string; in
   </div>
   {error && <p role="alert" className="oc-feedback">{error}</p>}
   {success && <p role="status" className="text-sm">{success}</p>}
-  {items.length ? <ul className="oc-workspace-stack">{items.map(item=><li key={item.id} className="oc-content-panel space-y-2"><div className="flex flex-wrap items-center justify-between gap-3"><h3 className="oc-announcement-title">{item.title}</h3><span className="text-xs text-muted-foreground">{item.audience === "MEMBERS" ? "Members" : item.audience==="CUSTOM"?"Custom audience":"Active applicants"} · {item._count.notifications} notified</span></div><p className="whitespace-pre-wrap break-words text-sm leading-7">{item.body}</p><time className="block text-xs text-muted-foreground">{new Date(item.publishedAt).toLocaleString()}</time></li>)}</ul> : <p className="oc-content-panel text-sm text-muted-foreground">No announcements published yet.</p>}
+  {items.length ? <ul className="oc-workspace-stack">{items.map(item=><li key={item.id} className="oc-content-panel space-y-2"><div className="flex flex-wrap items-center justify-between gap-3"><h3 className="oc-announcement-title">{item.title}</h3><span className="text-xs text-muted-foreground">{item.audience === "MEMBERS" ? "Members" : item.audience==="CUSTOM"?"Custom audience":"Active applicants"} · {item._count.notifications} notified</span></div><p className="whitespace-pre-wrap break-words text-sm leading-7">{item.body}</p><time className="block text-xs text-muted-foreground">{formatDateTime(item.publishedAt)}</time></li>)}</ul> : <p className="oc-content-panel text-sm text-muted-foreground">No announcements published yet.</p>}
   <Sheet open={compose} onOpenChange={open=>{if(busy) return;if(!open){void draftSave.flush().then(()=>setCompose(false)).catch(()=>{});return;}setCompose(open);}}>
    <SheetContent className="oc-workspace-drawer w-full overflow-y-auto sm:max-w-xl"><SheetTitle>{editing?"Edit scheduled announcement":"New announcement"}</SheetTitle><SheetDescription>Choose the audience and publish a permanent in-app update.</SheetDescription>
    <AutosaveStatus save={draftSave} />

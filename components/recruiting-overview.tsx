@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { LoadingState } from "@/components/ui/loading-state"
 import { Dashboard, DashboardCard, DashboardFoot, DashboardMore, DashboardQuiet, DateChipList, GlassRow, GlassRowList, MetricTiles, NeedsAction, NeedsYouRow, PipelineBars, type NeedsItem } from "@/components/product/dashboard/dashboard"
 import { SegmentedControl } from "@/components/ui/segmented-control"
+import { TERMS } from "@/lib/copy/terms"
 import { DashboardDrawer } from "@/components/product/dashboard-drawer"
 const Review = dynamic(() => import("@/components/views/leader-dashboard/live-leader-workspace").then(m => m.ApplicantReviewPreview), { loading: () => <LoadingState variant="glass" layout="form" rows={3} label="Loading authorized review…" /> })
 const Preparation = dynamic(() => import("@/components/interviews/dashboard-preparation").then(m => m.DashboardPreparation), { loading: () => <LoadingState variant="glass" label="Checking interview panel…" layout="rows" rows={2} /> })
@@ -45,16 +46,16 @@ export function RecruitingOverview({ data, refreshing = false, onChanged = () =>
   const toSchedule = canSchedule ? op.rounds.filter(r => r.needsBooking > 0) : []
   const scheduleHref = (roundId?: string) => `${base}&tool=interviews&interviewTab=schedule${roundId ? `&roundId=${roundId}` : ""}`
   const voteHref = (v: Overview["operations"]["votes"][number]) => !v.participants.length && !hasPermission(membership, "decisions.view") && !hasPermission(membership, "decisions.manage") ? `/voting/${v.id}/join` : `${base}&tool=applicants&voting=1&sessionId=${v.id}`
-  const voteLabel = (v: Overview["operations"]["votes"][number]) => !v.participants.length && v.joinOpenedAt && !hasPermission(membership, "decisions.manage") ? "Join session" : "Continue"
+  const voteLabel = (v: Overview["operations"]["votes"][number]) => !v.participants.length && v.joinOpenedAt && !hasPermission(membership, "decisions.manage") ? "Join session" : TERMS.openSession
   const voteDone = (v: Overview["operations"]["votes"][number]) => v.state === "COMPLETE" || v.state === "COMPLETED"
   const openReview = (id: string) => { setReviewContext(true); setApplicant(id) }
   const roundName = round ? op.rounds.find(r => r.id === round)?.name : "All rounds"
   const roundPending = round ? op.rounds.find(r => r.id === round)?.pending ?? 0 : pending
   const needs: NeedsItem[] = []
   const liveVote = op.votes.find(v => !voteDone(v))
-  if (liveVote) needs.push({ id: "vote", title: `Voting in ${liveVote.round.name}`, detail: `${liveVote.state.toLowerCase().replaceAll("_", " ")} session`, action: <NeedsAction href={voteHref(liveVote)}>{voteLabel(liveVote) === "Continue" ? "Open voting" : "Join session"}</NeedsAction> })
+  if (liveVote) needs.push({ id: "vote", title: `Voting in ${liveVote.round.name}`, detail: `${liveVote.state.toLowerCase().replaceAll("_", " ")} session`, action: <NeedsAction href={voteHref(liveVote)}>{voteLabel(liveVote) === TERMS.openSession ? TERMS.openVoting : "Join session"}</NeedsAction> })
   if (pending > 0 && op.queue[0]) needs.push({ id: "reviews", title: `${pending} ${pending === 1 ? "review" : "reviews"} waiting for you`, detail: op.rounds.filter(r => r.pending > 0).map(r => r.name).join(" · "), progress: eligible ? { done: eligible - pending, total: eligible } : undefined, action: <NeedsAction onClick={() => openReview(op.queue[0]!.id)}>Start reviewing</NeedsAction> })
-  if (toSchedule.length) { const n = toSchedule.reduce((sum, r) => sum + r.needsBooking, 0); needs.push({ id: "schedule", title: `${n} ${n === 1 ? "applicant needs" : "applicants need"} an interview time`, detail: toSchedule.map(r => r.name).join(" · "), action: <NeedsAction href={scheduleHref(toSchedule[0]!.id)}>Finish scheduling</NeedsAction> }) }
+  if (toSchedule.length) { const n = toSchedule.reduce((sum, r) => sum + r.needsBooking, 0); needs.push({ id: "schedule", title: `${n} ${n === 1 ? "applicant needs" : "applicants need"} an interview time`, detail: toSchedule.map(r => r.name).join(" · "), action: <NeedsAction href={scheduleHref(toSchedule[0]!.id)}>{TERMS.scheduleInterviews}</NeedsAction> }) }
   const doneVote = op.votes.find(voteDone)
   if (doneVote) needs.push({ id: "decisions", title: `${doneVote.round.name} voting is complete`, detail: "Send decisions when you are ready.", action: <NeedsAction href={voteHref(doneVote)}>Review decisions</NeedsAction> })
   if (op.offers.length) needs.push({ id: "offers", title: `${op.offers.length} ${op.offers.length === 1 ? "offer" : "offers"} awaiting response`, detail: `Next expires ${memberDate(op.offers[0]!.expiresAt)}`, action: <NeedsAction onClick={() => { setReviewContext(false); setApplicant(op.offers[0]!.applicationId) }}>View offer</NeedsAction> })
@@ -93,7 +94,7 @@ export function RecruitingOverview({ data, refreshing = false, onChanged = () =>
       {toSchedule.length > 0 && <DashboardCard id="dashboard-booking-followup" title="Interviews to schedule" index={needsItems.length + 3} className="oc-booking-priority">
         <GlassRowList>{toSchedule.map(r => <li key={r.id}><GlassRow title={`${r.needsBooking} ${r.needsBooking === 1 ? "applicant" : "applicants"} in ${r.name} ${r.needsBooking === 1 ? "needs" : "need"} an interview time.`}
           detail={r.bookingPaused ? "Booking is paused. Review the panel before resuming." : r.bookingPublishedAt ? "Booking is published. These active applicants do not have a reservation for this round." : "Publish the schedule to send them a booking link."}
-          action={<Button variant="outline" asChild><Link href={scheduleHref(r.id)}>Finish scheduling</Link></Button>} /></li>)}</GlassRowList>
+          action={<Button variant="outline" asChild><Link href={scheduleHref(r.id)}>{TERMS.scheduleInterviews}</Link></Button>} /></li>)}</GlassRowList>
       </DashboardCard>}
       {(op.votes.length > 0 || hasOutcomes) && <DashboardCard id="dashboard-voting" title="Voting & decisions" index={needsItems.length + 4} className="oc-decision-summary">
         {hasOutcomes && <p className="oc-command-footnote oc-dashboard-note">Recorded outcomes · {outcomes.map(r => `${r.count} ${r.status === "ACCEPTED" ? "accepted" : r.status === "WAITLISTED" ? "waitlisted" : "not accepted"}`).join(" · ")}. These application outcomes are already visible to applicants; voting remains separate until explicitly published.</p>}
@@ -107,7 +108,7 @@ export function RecruitingOverview({ data, refreshing = false, onChanged = () =>
       </DashboardCard>}
     </div><div className="oc-dashboard-side">
       <DashboardCard id="dashboard-interviews" title="Interviews this week" index={needsItems.length + 2} className="oc-interview-agenda"
-        more={canSchedule ? { href: scheduleHref(), label: "Open scheduling" } : undefined} moreAt="foot">
+        more={canSchedule ? { href: scheduleHref(), label: TERMS.scheduleInterviews } : undefined} moreAt="foot">
         <DateChipList when={memberDate} items={op.bookings.map(b => ({ id: b.id, at: new Date(b.slot.startTime), kind: "interview", title: b.candidate, detail: `${b.round?.name ?? "Interview"} · ${b.slot.location} · Check panel & prepare`, onClick: () => setBooking(b) }))}
           empty={canSchedule ? "No interviews in the next 7 days." : "Ask an interview manager to schedule interviews. Your assigned rooms are in Interviews."} />
       </DashboardCard>

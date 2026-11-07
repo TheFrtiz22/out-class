@@ -7,6 +7,7 @@ import { DashboardCard, DashboardFoot, DashboardQuiet, DateChipList, GlassRow, G
 import { memberDate } from "@/components/member-overview"
 import { hasPermission } from "@/lib/permissions"
 import { interviewEntryHref } from "@/lib/interview-entry"
+import { TERMS } from "@/lib/copy/terms"
 import { interviewPerson, isOverdue, pipeline, thisWeek, type Overview, type RailHrefs } from "@/components/club-home/club-home-model"
 
 type Booking = Overview["operations"]["bookings"][number]
@@ -57,8 +58,8 @@ export function InterviewsCard({ data, hrefs, index, onOpen }: { data: Overview;
 export function UpdatesCard({ data, hrefs, index, onOpen }: { data: Overview; hrefs: RailHrefs; index: number; onOpen: (id: string, title: string) => void }) {
   const updates = data.operations.announcements
   if (!updates.length) return null
-  return <DashboardCard id="club-home-updates" title="Club updates" index={index} className="oc-club-home-card oc-club-home-updates"
-    more={hrefs.announcements ? { href: hrefs.announcements, label: "Announcements" } : undefined}>
+  return <DashboardCard id="club-home-updates" title={TERMS.announcements} index={index} className="oc-club-home-card oc-club-home-updates"
+    more={hrefs.announcements ? { href: hrefs.announcements, label: "All announcements" } : undefined}>
     <GlassRowList>{updates.map(update => <li key={update.id}><GlassRow onClick={() => onOpen(update.id, update.title)} title={update.title} detail={update.body}
       lead={<time dateTime={new Date(update.publishedAt).toISOString()}>{new Date(update.publishedAt).toLocaleDateString([], { month: "short", day: "numeric" })}</time>} /></li>)}</GlassRowList>
   </DashboardCard>
@@ -85,7 +86,7 @@ export function TeamPulse({ data, hrefs, index }: { data: Overview; hrefs: RailH
     ...(members ? [{ label: "Active members", value: members.active }, { label: "Pending invitations", value: members.pendingInvitations }] : []),
   ]
   return <DashboardCard id="club-home-pulse" title="Team pulse" index={index} className="oc-club-home-card oc-club-home-pulse" moreAt="foot"
-    more={team && hrefs.tasks ? { href: `${hrefs.tasks}&taskView=team`, label: "Team assignments" } : hrefs.members ? { href: hrefs.members, label: "Members" } : undefined}>
+    more={team && hrefs.tasks ? { href: `${hrefs.tasks}&taskView=team`, label: TERMS.teamTasks } : hrefs.members ? { href: hrefs.members, label: "Members" } : undefined}>
     <MetricTiles items={tiles} />
   </DashboardCard>
 }
@@ -96,12 +97,12 @@ export function AssignmentsCard({ data, hrefs, index, onOpen }: { data: Overview
   const list = (items: Overview["work"], empty: string) => items.length ? <GlassRowList>{items.map(item => <li key={item.id}><GlassRow onClick={() => onOpen(item)}
     lead={<span className="oc-dashboard-dot" data-urgent={isOverdue(item.task.dueAt, now)} aria-hidden="true" />} title={item.task.title}
     detail={item.task.dueAt ? `${isOverdue(item.task.dueAt, now) ? "Overdue · " : "Due "}${memberDate(item.task.dueAt)}` : "No deadline"} /></li>)}</GlassRowList> : <DashboardQuiet>{empty}</DashboardQuiet>
-  return <DashboardCard id="club-home-assignments" title="Your assignments" index={index} className="oc-club-home-card oc-club-home-assignments"
+  return <DashboardCard id="club-home-assignments" title={TERMS.yourTasks} index={index} className="oc-club-home-card oc-club-home-assignments"
     more={hrefs.tasks ? { href: `${hrefs.tasks}&taskView=mine`, label: "All work" } : undefined}>
     {data.work.length ? <Tabs defaultValue="upcoming">
-      <TabsList variant="segmented" aria-label="Your assignments"><TabsTrigger value="upcoming">Upcoming</TabsTrigger><TabsTrigger value="overdue">Overdue{overdue.length ? ` · ${overdue.length}` : ""}</TabsTrigger></TabsList>
-      <TabsContent value="upcoming">{list(data.work, "No upcoming assignments.")}</TabsContent>
+      <TabsList variant="segmented" aria-label={TERMS.yourTasks}><TabsTrigger value="upcoming">Upcoming</TabsTrigger><TabsTrigger value="overdue">Overdue{overdue.length ? ` · ${overdue.length}` : ""}</TabsTrigger></TabsList>
+      <TabsContent value="upcoming">{list(data.work, "No upcoming tasks.")}</TabsContent>
       <TabsContent value="overdue">{list(overdue, "Nothing overdue.")}</TabsContent>
-    </Tabs> : <DashboardQuiet>No assignments right now.</DashboardQuiet>}
+    </Tabs> : <DashboardQuiet>No tasks right now.</DashboardQuiet>}
   </DashboardCard>
 }

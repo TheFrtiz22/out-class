@@ -26,6 +26,7 @@ import { useApplicationState } from "@/lib/application-state"
 import { searchWorkspace, type WorkspaceSearchResult } from "@/lib/workspace-api"
 import type { NavItem, ViewId } from "@/lib/views"
 import { studentPath } from "@/lib/navigation"
+import { pluralize } from "@/lib/copy/terms"
 
 const groups = {
   club: "Clubs",
@@ -251,7 +252,7 @@ export function NavigationSearch({
               ? "Sign in to search records"
               : pending
                 ? "Searching your workspace"
-                : `${pages.length + results.length} results`}
+                : pluralize(pages.length + results.length, "result")}
           </span>
           <span>↑ ↓ to browse · Enter to open · Esc to close</span>
         </footer>

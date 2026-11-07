@@ -1,5 +1,7 @@
 import { requireAuth } from "@/utils/auth"
 import { AccountSettings } from "@/components/settings/account-settings"
+
+export const metadata = { title: "Account & Security" }
 export default async function AccountSettingsPage() {
   const { user, supabaseUser, impersonation } = await requireAuth({ verifyEmail: true })
   const providers = supabaseUser.app_metadata?.providers

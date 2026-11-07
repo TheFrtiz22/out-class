@@ -696,5 +696,5 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
 function CalendarEmptyAction({ filtered, onClear, onNavigate }: { filtered: boolean; onClear: () => void; onNavigate?: (view: ViewId) => void }) {
   return filtered
     ? <Button variant="outline" size="sm" onClick={onClear}>Clear filters</Button>
-    : onNavigate ? <Button variant="outline" size="sm" onClick={() => onNavigate("corkboard")}>Browse campus events</Button> : null
+    : onNavigate ? <Button variant="outline" size="sm" onClick={() => onNavigate("corkboard")}>Browse events</Button> : null
 }

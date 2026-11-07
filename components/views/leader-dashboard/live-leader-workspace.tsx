@@ -66,6 +66,7 @@ import {
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { NativeSelect } from "@/components/ui/native-select"
+import { pluralize } from "@/lib/copy/terms"
 
 type Pipeline = Awaited<ReturnType<typeof getClubPipelinePage>>
 type Candidate = Pipeline["applications"][number]
@@ -720,7 +721,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       </div>
       <div className="flex min-h-9 flex-wrap items-center justify-between gap-x-3">
         <p className="text-xs text-muted-foreground" role="status">
-          {total} {decisionsOnly ? "applications in this selection" : `of ${baseTotal} applicants · scores out of 10`}
+          {decisionsOnly ? `${pluralize(total, "application")} in this selection` : `${total} of ${pluralize(baseTotal, "applicant")} · scores out of 10`}
         </p>
         {(query || round || status || review || major || year || gpa || sat || act || rating) && (
           <Button

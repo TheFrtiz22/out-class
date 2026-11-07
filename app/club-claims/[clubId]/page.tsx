@@ -30,8 +30,8 @@ export default async function Page({
   });
   return (
     <div className="max-w-[var(--oc-reading-width)] space-y-6">
-      <Link className="underline" href="/settings/organizations">
-        Organizations
+      <Link className="underline" href="/clubs">
+        My Clubs
       </Link>
       <PageHeader title={<>Claim {club.name}</>} />
       <p>
