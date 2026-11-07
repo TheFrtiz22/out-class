@@ -198,6 +198,8 @@
 
 /* Glass placeholders: the light material, no blur. */
 .oc-skeleton[data-variant="glass"] { background: var(--oc-surface-glass-track); }
+/* The projector is dark: placeholders use its border colour so they stay visible. */
+[data-theme="present"] .oc-skeleton[data-variant="glass"] { background: var(--border); }
 .oc-loading-state[data-variant="glass"]:not([data-layout="inline"]) {
   padding: var(--oc-content-padding); border: 1px solid var(--oc-surface-glass-edge); border-radius: var(--oc-content-radius);
   background: var(--oc-surface-glass); box-shadow: var(--oc-surface-glass-depth);
