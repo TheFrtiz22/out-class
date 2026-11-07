@@ -130,6 +130,8 @@ test('glass defaults: Card, Panel, Skeleton and Tabs default to glass; variant="
   const tabs = fs.readFileSync('components/ui/tabs.tsx', 'utf8')
   assert.match(tabs, /variant\?: 'subtle' \| 'underline' \| 'segmented'/)
   assert.match(tabs, /variant = 'segmented'/)
+  // A single tab (e.g. members who only see the interview kit) gets a full-width indicator.
+  assert.match(fs.readFileSync('styles/interface-primitives.css', 'utf8'), /\[data-variant="segmented"\]:not\(:has\(> :nth-child\(2\)\)\) \{ --segments: 1; \}/)
   // Overlays share the frosted navigation material; tables, the projector and fields keep solid surfaces.
   assert.match(fs.readFileSync('styles/product-components.css', 'utf8'), /\[data-slot="alert-dialog-content"\]\):not\([^)]*\) \{ background: var\(--oc-glass-frosted-material\)/)
   assert.match(fs.readFileSync('styles/workspace-composition.css', 'utf8'), /\.oc-data-surface \{[^}]*background: var\(--oc-content-solid\)/)

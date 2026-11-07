@@ -184,6 +184,7 @@
   }
   [data-slot="tabs-list"][data-variant="segmented"]:not(:has([data-state="active"]))::before { opacity: 0; }
   [data-slot="tabs-list"][data-variant="segmented"] [data-slot="tabs-trigger"][data-state="active"] { background: transparent; box-shadow: none; }
+  [data-slot="tabs-list"][data-variant="segmented"]:not(:has(> :nth-child(2))) { --segments: 1; }
   [data-slot="tabs-list"][data-variant="segmented"]:has(> :nth-child(3)) { --segments: 3; }
   /* Four or more tabs: a scrolling track where the active tab fills itself, so labels never truncate. */
   [data-slot="tabs-list"][data-variant="segmented"]:has(> :nth-child(4)) { display: flex; justify-content: flex-start; }
