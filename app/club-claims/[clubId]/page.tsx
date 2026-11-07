@@ -8,6 +8,8 @@ import { ClaimForm } from "@/components/claim-form";
 import { PageHeader } from "@/components/ui/page-header";
 import { SignInCard } from "@/components/landing/sign-in-card";
 import { clubLinkPreview } from "@/lib/public-link-preview";
+
+export const metadata = { title: "Claim a club", robots: { index: false, follow: false } }
 export default async function Page({
   params,
 }: {

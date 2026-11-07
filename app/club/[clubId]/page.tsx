@@ -17,12 +17,12 @@ import { readMarketing } from "@/lib/club-marketing"
 export async function generateMetadata({ params }: { params: Promise<{ clubId: string }> }): Promise<Metadata> {
   const { clubId } = await params
   const club = await getPublicClubSeo(clubId)
-  if (!club || !isIndexableClub(club)) return { title: club?.name ?? "Club profile", robots: privateRobots }
+  if (!club || !isIndexableClub(club)) return { title: club?.name ?? "Club not found", robots: privateRobots }
   const jar = await cookies()
   const accountPage = jar.has(PLATFORM_VIEW_COOKIE) || jar.get(DEMO_COOKIE)?.value === "1" ||
     jar.getAll().some(cookie => /^sb-.+-auth-token(?:\.\d+)?$/.test(cookie.name))
   return {
-    ...publicPageMetadata(`${club.name} · OutClass`, club.description.trim().replace(/\s+/g, " ").slice(0, 160), `/club/${encodeURIComponent(club.id)}`),
+    ...publicPageMetadata(club.name, club.description.trim().replace(/\s+/g, " ").slice(0, 160), `/club/${encodeURIComponent(club.id)}`),
     ...(accountPage ? { robots: privateRobots } : {}),
   }
 }

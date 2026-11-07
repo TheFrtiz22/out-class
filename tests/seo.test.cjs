@@ -47,7 +47,7 @@ test('public SEO fails closed during a database outage without loading sample cl
 })
 test('sitemap emits canonical public pages without query strings or fabricated timestamps', async () => {
   const { default: sitemap } = load('app/sitemap.ts', { '@/lib/seo': seo, '@/lib/public-club-seo': { getIndexableClubs: async () => [club] } })
-  assert.deepEqual(await sitemap(), ['/', '/uva', '/about', '/explore', '/club/real-club'].map(path => ({ url: `https://www.out-class.net${path}` })))
+  assert.deepEqual(await sitemap(), ['/', '/uva', '/about', '/explore', '/request-school', '/privacy', '/terms', '/club/real-club'].map(path => ({ url: `https://www.out-class.net${path}` })))
 })
 test('robots permits marketing and public clubs while excluding actual product interfaces', () => {
   const result = load('app/robots.ts', { '@/lib/seo': seo }).default()
@@ -122,7 +122,7 @@ test('public information pages render factual content, consistent entity referen
     assert.equal(webpage.about['@id'], `${seo.SITE_URL}/#organization`)
     assert.equal(graph.some(item => ['Organization', 'WebSite'].includes(item['@type'])), false)
     if (path === '/uva') {
-      assert.equal(meta.title.absolute, 'OutClass at UVA | Club Recruitment at the University of Virginia')
+      assert.equal(meta.title.absolute, 'Club recruitment at UVA · OutClass')
       const faq = graph.find(item => item['@type'] === 'FAQPage')
       assert.equal(faq.mainEntity.length, (html.match(/<details\b/g) || []).length)
       assert.equal(new Set(publicFaq.publicFaqs.map(item => item.id)).size, faq.mainEntity.length)
@@ -131,7 +131,7 @@ test('public information pages render factual content, consistent entity referen
         assert.ok(html.includes(`<p>${item.acceptedAnswer.text}</p>`))
       }
     } else {
-      assert.equal(meta.title.absolute, 'OutClass | About')
+      assert.equal(meta.title.absolute, 'About · OutClass')
       assert.match(html, /OutClass is operated by OutClassPlatforms LLC, a Virginia limited liability company/)
     }
   }
@@ -150,7 +150,8 @@ test('shared public footer connects all public pages with real HTML links', () =
   assert.ok(html.includes('class="oc-footer-letters" aria-hidden="true"'))
   assert.ok(html.includes('OutClass is operated by OutClassPlatforms LLC'))
   assert.ok(html.includes('© 2026 OutClassPlatforms LLC. All rights reserved.'))
-  assert.ok(!html.includes('href="/privacy"') && !html.includes('href="/terms"'))
+  // Privacy and Terms are real pages now (Phase 3), linked from the footer's Legal column.
+  assert.ok(html.includes('href="/privacy"') && html.includes('href="/terms"') && html.includes('href="/explore"'))
 })
 test('landing entry preserves student and leader sign-in intent without loading a workspace view first', () => {
   let role

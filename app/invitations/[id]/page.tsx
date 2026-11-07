@@ -12,6 +12,8 @@ import { requireCompletedStudentProfile } from "@/utils/profile-onboarding";
 import { PageHeader } from "@/components/ui/page-header";
 import { SignInCard } from "@/components/landing/sign-in-card";
 import { invitationPreview } from "@/lib/public-link-preview";
+
+export const metadata = { title: "Club invitation", robots: { index: false, follow: false } }
 export default async function Invitation({
   params,
 }: {

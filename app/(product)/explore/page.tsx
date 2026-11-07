@@ -14,7 +14,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   const account = jar.has(PLATFORM_VIEW_COOKIE) || jar.get(DEMO_COOKIE)?.value === "1" || jar.getAll().some(cookie => /^sb-.+-auth-token(?:\.\d+)?$/.test(cookie.name))
   // The unfiltered public list is indexable; searches and account views are not.
   const filtered = Object.keys(params).length > 0
-  return { ...publicPageMetadata("Explore clubs · OutClass", description, "/explore"), ...(account || filtered ? { robots: privateRobots } : {}) }
+  return { ...publicPageMetadata("Explore clubs", description, "/explore"), ...(account || filtered ? { robots: privateRobots } : {}) }
 }
 export const maxDuration = 60
 

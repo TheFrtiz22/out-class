@@ -7,7 +7,7 @@ import { PublicInformationPage } from "@/components/landing/public-information-p
 import { publicPageMetadata, publicPageStructuredData } from "@/lib/seo"
 
 const description = "OutClass is building infrastructure for college club recruitment, beginning at the University of Virginia. Learn who it is for and why it exists."
-export const metadata = publicPageMetadata("OutClass | About", description, "/about")
+export const metadata = publicPageMetadata("About", description, "/about")
 const structuredData = publicPageStructuredData("About OutClass", description, "/about", "AboutPage")
 
 export default function AboutPage() {

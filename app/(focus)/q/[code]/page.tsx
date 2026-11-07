@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
 
+export const metadata = { title: "Check-in link", robots: { index: false, follow: false } }
+
 interface PageProps {
   params: Promise<{ code: string }>;
 }

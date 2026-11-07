@@ -7,7 +7,7 @@ import { publicPageMetadata, publicPageStructuredData, SITE_URL } from "@/lib/se
 import { publicFaqs } from "@/lib/public-faq"
 import { PublicFaq } from "@/components/landing/public-faq"
 
-const title = "OutClass at UVA | Club Recruitment at the University of Virginia"
+const title = "Club recruitment at UVA"
 const description = "Learn how OutClass helps University of Virginia students discover organizations, apply to clubs, manage interviews, and track recruitment, with tools for club leaders to manage applicants and decisions."
 export const metadata = publicPageMetadata(title, description, "/uva")
 

@@ -6,6 +6,8 @@ import { Panel } from "@/components/ui/panel"
 import { SignInCard } from "@/components/landing/sign-in-card"
 import { clubLinkPreview } from "@/lib/public-link-preview"
 import { getSessionUser } from "@/utils/auth"
+
+export const metadata = { title: "Workspace access", robots: { index: false, follow: false } }
 export default async function AccessPage({ params }: { params: Promise<{ clubId: string }> }) {
   const { clubId } = await params
   const { data: { user } } = await getSessionUser()

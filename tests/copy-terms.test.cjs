@@ -64,7 +64,7 @@ test("every personal and settings page sets a server title; the template adds ' 
   for (const file of pages) {
     const source = fs.readFileSync(file, "utf8")
     // Explore also has a public signed-out view, so it builds full public metadata ("Explore clubs · OutClass").
-    if (file.endsWith("(product)/explore/page.tsx")) { assert.match(source, /publicPageMetadata\("Explore clubs · OutClass"/, file); continue }
+    if (file.endsWith("(product)/explore/page.tsx")) { assert.match(source, /publicPageMetadata\("Explore clubs"/, file); continue }
     assert.match(source, /metadata[^=]*=\s*\{\s*title:\s*"[^"|]+"/, file)
     assert.doesNotMatch(source, /\| OutClass/, file)
   }

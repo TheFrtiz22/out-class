@@ -3,6 +3,8 @@ import { PageHeader } from "@/components/ui/page-header"
 import { Button } from "@/components/ui/button"
 import { Panel } from "@/components/ui/panel"
 
+export const metadata = { title: "Link not found" }
+
 /** Unknown or removed short link: served with a 404 status. */
 export default function ShortLinkNotFound() {
   return (
