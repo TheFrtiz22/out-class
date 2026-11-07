@@ -1,32 +1,49 @@
 import { ArrowRight } from "@/components/icons"
 import { Button } from "@/components/ui/button"
+import { SegmentedControl } from "@/components/ui/segmented-control"
 import { HeroFeatureStack } from "./hero-feature-stack"
 import type { LandingPerspective } from "./journey-content"
 import "./hero.css"
 
-export function LandingHero({ perspective, onCreateProfile, onLeaderEnter }: {
+const copy = {
+  student: {
+    headline: "Find and apply to UVA clubs with one profile.",
+    tagline: "Discover clubs. Apply with confidence.",
+    support: "Track applications, interviews and decisions in one place.",
+    cta: "Create your profile",
+  },
+  leader: {
+    headline: "Build your next class. Bring your club together.",
+    tagline: "Your people. A clearer process.",
+    support: "Applications, interview panels, decisions and member life, in one workspace for your team.",
+    cta: "Set up your club",
+  },
+} as const
+
+export function LandingHero({ perspective, onPerspectiveChange, onCreateProfile, onLeaderEnter }: {
   perspective: LandingPerspective
+  onPerspectiveChange: (perspective: LandingPerspective) => void
   onCreateProfile: () => void
   onLeaderEnter: () => void
 }) {
+  const text = copy[perspective]
   return (
     <section id="landing-content" tabIndex={-1} className="oc-hero-editorial" aria-labelledby="outclass-hero-title">
       <div className="oc-hero-introduction" data-scroll-indicator-content="">
         <div className="oc-hero-copy">
           <p className="oc-hero-context">Made for University of Virginia</p>
-          <h1 id="outclass-hero-title" className="oc-hero-headline">
-            {perspective === "student" ? "Find and apply to participating UVA clubs with one profile." : "Build your next class. Bring your club together."}
-          </h1>
-          <p className="oc-hero-tagline">{perspective === "student" ? "One profile. Every opportunity." : "Your people. A clearer process."}</p>
+          <SegmentedControl className="oc-hero-audience-toggle" label="Show OutClass for" value={perspective} onChange={onPerspectiveChange}
+            options={[{ value: "student", label: "Students" }, { value: "leader", label: "Club Leaders" }]} />
+          <h1 id="outclass-hero-title" className="oc-hero-headline">{text.headline}</h1>
+          <p className="oc-hero-tagline">{text.tagline}</p>
           <div className="oc-hero-support">
-            <p>{perspective === "student" ? "Stay on top of applications, interviews, and decisions, all in one place." : "Applications, interview panels, decisions, and member life. One workspace for the team behind it all."}</p>
+            <p>{text.support}</p>
             <div className="oc-hero-ctas">
               <Button size="lg" onClick={perspective === "student" ? onCreateProfile : onLeaderEnter}>
-                {perspective === "student" ? "Create your profile" : "Explore club workspace"}
+                {text.cta}
                 <ArrowRight size={16} aria-hidden="true" />
               </Button>
             </div>
-            <p className="oc-hero-audience">For UVA students and the clubs they’ll call home.</p>
           </div>
         </div>
         <HeroFeatureStack key={perspective} perspective={perspective} />

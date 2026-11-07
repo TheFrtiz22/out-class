@@ -241,3 +241,9 @@
   .oc-request-field-pair { grid-template-columns: 1fr; gap: 22px; }
   .oc-request-field :is(input, textarea, select) { font-size: 16px; }
 }
+
+/* Shared public frame: header, normal page margins, footer (components/landing/public-page-frame.tsx). */
+.oc-public-frame-main { width: min(var(--oc-public-width, 72rem), calc(100% - var(--oc-public-gutter, 20px) * 2)); margin-inline: auto; padding-block: clamp(112px, 12vw, 136px) clamp(48px, 7vw, 96px); min-height: 60vh; }
+.oc-public-frame-main[data-width="reading"] { width: min(52rem, calc(100% - var(--oc-public-gutter, 20px) * 2)); }
+.oc-public-frame-main[data-width="narrow"] { width: min(34rem, calc(100% - var(--oc-public-gutter, 20px) * 2)); }
+@media (max-width: 767px) { .oc-public-frame-main { padding-top: 104px; } }

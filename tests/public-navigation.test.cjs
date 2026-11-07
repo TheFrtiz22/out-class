@@ -42,7 +42,7 @@ test('every public destination is preserved in desktop and mobile navigation', (
   const tree = nodes(headerHarness().render())
   for (const className of ['oc-public-desktop', 'oc-public-mobile']) {
     const nav = tree.find(n => n.props?.className === className)
-    assert.deepEqual(nodes(nav).filter(n => n.type === 'a').map(n => n.props.href).slice(0, 4), ['/#about', '/about', '/uva#faq', '/request-school'])
+    assert.deepEqual(nodes(nav).filter(n => n.type === 'a').map(n => n.props.href).slice(0, 5), ['/explore', '/#about', '/about', '/uva#faq', '/request-school'])
   }
   assert.ok(tree.some(n => n.type === 'a' && n.props.href === '/signup'))
   assert.ok(tree.some(n => n.type === 'a' && n.props.href === '/login'))

@@ -10,6 +10,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/` },
     { url: `${SITE_URL}/uva` },
     { url: `${SITE_URL}/about` },
+    { url: `${SITE_URL}/explore` },
     ...clubs.map(club => ({ url: `${SITE_URL}/club/${encodeURIComponent(club.id)}` })),
   ]
 }

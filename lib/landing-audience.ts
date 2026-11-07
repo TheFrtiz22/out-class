@@ -1,6 +1,7 @@
 export type LandingAudience = "student" | "leader"
 export const LANDING_AUDIENCE_PREFERENCE = "outclass-landing-audience"
-export const DEFAULT_LANDING_AUDIENCE: LandingAudience = "leader"
+// Students are the default on a first visit (owner decision 2026-11-07); the query and cookie contract is unchanged.
+export const DEFAULT_LANDING_AUDIENCE: LandingAudience = "student"
 
 export function audienceFromPreference(value: string | null | undefined): LandingAudience | null {
   return value === "students" ? "student" : value === "club-leaders" ? "leader" : null
@@ -25,4 +26,4 @@ export function setLandingAudienceGate(audience: LandingAudience) {
 
 // Before marketing can paint, a legacy fragment/storage-only preference hides
 // only mismatched markup. CSS rules do not mutate React-owned HTML or suppress warnings.
-export const landingAudienceBootScript = `(function(){var a='leader',k='outclass-landing-audience';try{var c=document.cookie.split('; ').find(function(v){return v.indexOf(k+'=')===0});var v=localStorage.getItem(k)||(c&&c.slice(k.length+1));if(v==='students')a='student';else if(v==='club-leaders')a='leader'}catch(e){}var q=new URLSearchParams(location.search).get('audience');if(q==='student'||q==='leader')a=q;var h=location.hash;if(h==='#students')a='student';else if(h==='#club-leaders'||h==='#clubs')a='leader';var s=document.getElementById('oc-landing-audience-gate');if(s&&s.sheet)s.sheet.insertRule('.oc-landing[data-landing-audience="'+(a==='student'?'leader':'student')+'"]{visibility:hidden}',0)})();`
+export const landingAudienceBootScript = `(function(){var a='student',k='outclass-landing-audience';try{var c=document.cookie.split('; ').find(function(v){return v.indexOf(k+'=')===0});var v=localStorage.getItem(k)||(c&&c.slice(k.length+1));if(v==='students')a='student';else if(v==='club-leaders')a='leader'}catch(e){}var q=new URLSearchParams(location.search).get('audience');if(q==='student'||q==='leader')a=q;var h=location.hash;if(h==='#students')a='student';else if(h==='#club-leaders'||h==='#clubs')a='leader';var s=document.getElementById('oc-landing-audience-gate');if(s&&s.sheet)s.sheet.insertRule('.oc-landing[data-landing-audience="'+(a==='student'?'leader':'student')+'"]{visibility:hidden}',0)})();`

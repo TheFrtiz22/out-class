@@ -5,12 +5,13 @@ import { prisma } from "@/utils/prisma";
 import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 import { requireAuth } from "@/utils/auth";
-import { redirect } from "next/navigation";
 import { clubWriteTransaction } from "@/utils/club-write-transaction";
 import { verifiedSchoolIdentities, prepareVerifiedSchoolAccount } from "@/utils/school-identity";
 import { UniversityVerificationError } from "@/utils/verified-email-policy";
 import { requireCompletedStudentProfile } from "@/utils/profile-onboarding";
 import { PageHeader } from "@/components/ui/page-header";
+import { SignInCard } from "@/components/landing/sign-in-card";
+import { invitationPreview } from "@/lib/public-link-preview";
 export default async function Invitation({
   params,
 }: {
@@ -21,7 +22,21 @@ export default async function Invitation({
   const {
     data: { user },
   } = await client.auth.getUser();
-  if (!user) redirect(`/?next=${encodeURIComponent(`/invitations/${id}`)}`);
+  if (!user) {
+    // Signed out: say what this is and return here after sign-in. Acceptance below still
+    // re-verifies the signed-in identity against the invitation; the link alone grants nothing.
+    const next = `/invitations/${encodeURIComponent(id)}`;
+    const preview = await invitationPreview(id);
+    return preview ? (
+      <SignInCard eyebrow="Club invitation" title={<>You’ve been invited to join {preview.clubName} as {preview.owner ? "its owner" : `${/^[AEIOU]/.test(preview.role) ? "an" : "a"} ${preview.role.toLowerCase()}`}</>} next={next}>
+        <p>Sign in with the UVA email address this invitation was sent to, or create your account with it.</p>
+      </SignInCard>
+    ) : (
+      <SignInCard invalid title="This invitation link isn’t valid" next={next}>
+        <p>It may have expired, been withdrawn or already been answered. Ask the club for a new invitation, or sign in to see invitations sent to you.</p>
+      </SignInCard>
+    );
+  }
   const account = await requireAuth({ verifyEmail: true });
   const person = account.user;
   await requireCompletedStudentProfile(person.id, `/invitations/${id}`);

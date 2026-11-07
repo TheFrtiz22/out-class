@@ -66,15 +66,15 @@ test("leaving the landing page removes both navigation listeners", () => {
 test("direct numbered chapter links retain their audience, while legacy hashes take precedence", () => {
   assert.equal(perspectiveHarness("#journey-4", "?audience=leader").selected, "leader")
   assert.equal(perspectiveHarness("#students", "?audience=leader").selected, "student")
-  assert.equal(perspectiveHarness("#journey-3", "?audience=invalid").selected, "leader")
+  assert.equal(perspectiveHarness("#journey-3", "?audience=invalid").selected, "student")
 })
 
-test("first visits default to leaders, manual choices persist, and explicit navigation wins", () => {
-  assert.equal(perspectiveHarness("").selected,"leader")
+test("first visits default to students, manual choices persist, and explicit navigation wins", () => {
+  assert.equal(perspectiveHarness("").selected,"student")
   assert.equal(perspectiveHarness("","","students").selected,"student")
   assert.equal(perspectiveHarness("","","club-leaders").selected,"leader")
-  assert.equal(perspectiveHarness("","","invalid").selected,"leader")
-  assert.equal(perspectiveHarness("","","students",true).selected,"leader")
+  assert.equal(perspectiveHarness("","","invalid").selected,"student")
+  assert.equal(perspectiveHarness("","","club-leaders",true).selected,"student")
   assert.equal(perspectiveHarness("","?audience=leader","students").selected,"leader")
   assert.equal(perspectiveHarness("#students","?audience=leader","club-leaders").selected,"student")
   const page = perspectiveHarness("")

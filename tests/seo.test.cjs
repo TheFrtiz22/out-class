@@ -47,7 +47,7 @@ test('public SEO fails closed during a database outage without loading sample cl
 })
 test('sitemap emits canonical public pages without query strings or fabricated timestamps', async () => {
   const { default: sitemap } = load('app/sitemap.ts', { '@/lib/seo': seo, '@/lib/public-club-seo': { getIndexableClubs: async () => [club] } })
-  assert.deepEqual(await sitemap(), ['/', '/uva', '/about', '/club/real-club'].map(path => ({ url: `https://www.out-class.net${path}` })))
+  assert.deepEqual(await sitemap(), ['/', '/uva', '/about', '/explore', '/club/real-club'].map(path => ({ url: `https://www.out-class.net${path}` })))
 })
 test('robots permits marketing and public clubs while excluding actual product interfaces', () => {
   const result = load('app/robots.ts', { '@/lib/seo': seo }).default()

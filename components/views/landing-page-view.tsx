@@ -24,6 +24,7 @@ import { useJourneyNavigation } from "@/hooks/use-journey-navigation"
 import "./landing.css"
 import "@/components/landing/public-footer.css"
 import type { LandingPerspective } from "@/components/landing/journey-content"
+import { DEFAULT_LANDING_AUDIENCE } from "@/lib/landing-audience"
 
 interface LandingPageViewProps {
   onNavigateToApp: (role?: "student" | "leader") => void
@@ -36,7 +37,7 @@ export function LandingPageView({
   onNavigateToApp,
   launchClubs = [],
   campusName = "University of Virginia",
-  initialAudience = "leader",
+  initialAudience = DEFAULT_LANDING_AUDIENCE,
 }: LandingPageViewProps) {
   const [info, setInfo] = useState<string | null>(null)
   const infoTrigger = useRef<HTMLButtonElement | null>(null)
@@ -56,7 +57,7 @@ export function LandingPageView({
       <PublicNavigation hero navigationRef={journeyNavigation.headerRef} journey={{ perspective, onChange: switchPerspective, merged: journeyNavigation.merged }} />
       <main>
         <LandingIntro>
-          <LandingHero perspective={perspective} onCreateProfile={createProfile} onLeaderEnter={enterLeader} />
+          <LandingHero perspective={perspective} onPerspectiveChange={switchPerspective} onCreateProfile={createProfile} onLeaderEnter={enterLeader} />
         </LandingIntro>
         <LaunchClubs clubs={launchClubs} />
         <ProductJourney perspective={perspective} onPerspectiveChange={switchPerspective} onCreateProfile={createProfile} onLeaderEnter={enterLeader} navigation={journeyNavigation} />
@@ -73,7 +74,7 @@ export function LandingPageView({
           </TextReveal>
           <p data-motion="body">{perspective === "student" ? "A little more possibility." : "Good people. A clearer process."}</p>
           <Button size="lg" className="oc-invitation-cta" aria-describedby="pricing" onClick={start}>
-            {perspective === "student" ? "Create your profile" : "Explore club workspace"}
+            {perspective === "student" ? "Create your profile" : "Set up your club"}
             <ArrowRight aria-hidden="true" size={16} />
           </Button>
           <p id="pricing" className="oc-invitation-note">

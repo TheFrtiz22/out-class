@@ -2,5 +2,6 @@ import type { ReactNode } from "react"
 import { AuthenticatedPageLayout } from "@/components/shell/authenticated-page-layout"
 
 export default function Layout({ children }: { children: ReactNode }) {
-  return <AuthenticatedPageLayout>{children}</AuthenticatedPageLayout>
+  // Signed-out visitors see the page's sign-in card in the public frame; the page keeps its own auth checks.
+  return <AuthenticatedPageLayout optional>{children}</AuthenticatedPageLayout>
 }
