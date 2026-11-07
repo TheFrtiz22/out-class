@@ -1,6 +1,6 @@
 "use client";
 import {useRef,useState} from "react";
-import Image from "next/image";
+import {ApplicantIdentity} from "@/components/applicant-identity";
 import type {getLiveVotingPresentation} from "@/actions/voting-room";
 import {fieldLabels} from "@/lib/applicant-display";
 import {anonymousApplicantLabel} from "@/lib/anonymous-review";
@@ -40,7 +40,7 @@ export function ApplicantSlide({data}:{data:VotingSlideData}){
   const prepared="preparedHighlights"in data?data.preparedHighlights??[]:[];
   fields.sort((a,b)=>{const order=(f:string)=>{const i=(liveRoomFields as readonly string[]).indexOf(f);return i<0?100:i;};return order(a.field)-order(b.field)||a.field.localeCompare(b.field);});
   return <section aria-label="Current applicant presentation" className="vr-applicant">
-    <header className="vr-person">{data.visible.includes("photo")&&(data.photo?<Image unoptimized width={76} height={76} src={data.photo} alt="Applicant headshot" className="vr-photo"/>:<div className="vr-photo vr-photo-empty" role="img" aria-label="No applicant photo">No photo</div>)}<h2 tabIndex={-1} data-applicant-heading>{name}</h2>
+    <header className="vr-person"><ApplicantIdentity size="lg" announcePhoto name={name} photo={data.visible.includes("photo")?data.photo:null} anonymous={data.anonymous} heading={<h2 tabIndex={-1} data-applicant-heading>{name}</h2>}/>
     {prepared.length>0&&<section className="vr-highlights" aria-label="Leader-selected highlights"><ul>{prepared.map(h=><li key={h.id} className="vr-highlight" data-highlight-mode={h.mode}>
       <p>{h.mode==="QUOTE"?<q>{highlightPreview(h.text)}</q>:<><span className="vr-highlight-kind">Leader summary:</span> {highlightPreview(h.text)}</>}</p>
       <p className="vr-field-meta">{highlightAttribution(h)}</p></li>)}</ul></section>}</header>
