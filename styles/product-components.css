@@ -21,7 +21,7 @@
 :root :is([data-slot="dialog-content"], [data-slot="sheet-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="select-content"], [data-slot="alert-dialog-content"]):not(.oc-dock-flyout, .oc-header-club-menu, .oc-floating-account-menu, .oc-notification-panel, .oc-notification-item-menu, .oc-navigation-search) { background: var(--oc-glass-frosted-material); border-color: var(--oc-glass-light-edge); box-shadow: var(--oc-glass-menu-depth); -webkit-backdrop-filter: var(--oc-glass-light-filter); backdrop-filter: var(--oc-glass-light-filter); }
 :root :is([data-slot="dialog-title"], [data-slot="sheet-title"]) { font-family: var(--oc-font-display); font-weight: var(--oc-weight-title); font-size: var(--oc-text-modal); }
 [data-product-shell] [data-slot="card"] { border-color: var(--oc-content-edge); border-radius: var(--oc-content-radius); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); }
-[data-product-shell] [data-slot="button"] { font-weight: var(--oc-weight-semibold); }
+[data-product-shell] [data-button] { font-weight: var(--oc-weight-semibold); }
 [data-product-shell] [data-slot="tabs-list"]:not([data-variant="underline"]) { background: var(--oc-content-soft); border-radius: 999px; border: 1px solid var(--oc-content-edge); }
 [data-product-shell] [data-slot="tabs-trigger"][data-state="active"] { box-shadow: var(--oc-shadow-surface); }
 [data-product-shell] [data-slot="empty-state"][data-tone="subtle"] { background: var(--oc-content-soft); }
@@ -105,11 +105,13 @@
 .oc-segmented-control button[data-selected] { color: var(--oc-glass-cream); background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); }
 .oc-segmented-control button:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
 .oc-segmented-control button[data-selected]:focus-visible { outline-color: var(--brand-orange); }
-.oc-segmented-control[data-sliding="true"] { display: inline-grid; grid-template-columns: repeat(var(--segment-count), minmax(max-content, 1fr)); }
-.oc-segmented-control[data-sliding="true"] button[data-selected] { background: transparent; box-shadow: none; }
-.oc-segmented-control[data-sliding="true"] .oc-segmented-indicator { position: absolute; z-index: 0; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 8px - (var(--segment-count) - 1) * var(--segment-gap)) / var(--segment-count)); border: 1px solid var(--oc-glass-pill-navy-edge); border-radius: 999px; background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); transform: translateX(calc(var(--segment-index) * (100% + var(--segment-gap)))); transition: transform 420ms var(--oc-glass-ease), opacity var(--oc-glass-quick) ease; pointer-events: none; }
-.oc-segmented-control[data-sliding="true"][data-has-active="false"] .oc-segmented-indicator { opacity: 0; }
-@supports (transition-timing-function: linear(0, 1)) { .oc-segmented-control[data-sliding="true"] .oc-segmented-indicator { transition-timing-function: var(--oc-floating-spring, var(--oc-glass-ease)), ease; } }
+/* Sliding: the indicator is placed on the selected segment from its measured offset and width, so it stays
+   aligned when long labels make segments unequal or the track scrolls. Until measured, the selected segment
+   paints its own pill. */
+.oc-segmented-control[data-sliding="true"][data-measured="true"] button[data-selected] { background: transparent; box-shadow: none; }
+.oc-segmented-control[data-sliding="true"] .oc-segmented-indicator { position: absolute; z-index: 0; top: 4px; bottom: 4px; left: 0; width: var(--indicator-width, 0px); border: 1px solid var(--oc-glass-pill-navy-edge); border-radius: 999px; background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); transform: translateX(var(--indicator-x, 0px)); transition: transform 420ms var(--oc-glass-ease), width 420ms var(--oc-glass-ease), opacity var(--oc-glass-quick) ease; pointer-events: none; }
+.oc-segmented-control[data-sliding="true"]:not([data-measured="true"]) .oc-segmented-indicator, .oc-segmented-control[data-sliding="true"][data-has-active="false"] .oc-segmented-indicator { opacity: 0; }
+@supports (transition-timing-function: linear(0, 1)) { .oc-segmented-control[data-sliding="true"] .oc-segmented-indicator { transition-timing-function: var(--oc-floating-spring, var(--oc-glass-ease)), var(--oc-floating-spring, var(--oc-glass-ease)), ease; } }
 @media (max-width: 767px) { .oc-segmented-control { width: 100%; } }
 @media (prefers-reduced-motion: reduce) { .oc-segmented-control button, .oc-segmented-control .oc-segmented-indicator { transition: none; } }
 @media (forced-colors: active) {

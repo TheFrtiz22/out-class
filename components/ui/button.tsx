@@ -67,6 +67,8 @@ function Button({
       disabled={disabled || loading}
       aria-busy={loading || props["aria-busy"]}
       data-loading={loading || undefined}
+      // A Radix trigger composed with asChild replaces data-slot; this hook is what the button styles key on.
+      data-button=""
     >
       {!asChild && loading !== undefined ? <>
         <span className="oc-button-content">{children}</span>

@@ -9,11 +9,11 @@
 .oc-native-select[data-density="compact"] { min-height: var(--oc-control-height-compact); }
 .oc-native-select:disabled { cursor: not-allowed; opacity: .5; }
 .oc-native-select[aria-invalid="true"] { border-color: var(--destructive); }
-[data-slot="button"][data-size="default"], [data-slot="button"][data-size="icon"],
+[data-button][data-size="default"], [data-button][data-size="icon"],
 [data-slot="input"], [data-slot="select-trigger"][data-size="default"] { min-height: var(--oc-control-height); }
-[data-slot="button"][data-size="sm"], [data-slot="button"][data-size="icon-sm"],
+[data-button][data-size="sm"], [data-button][data-size="icon-sm"],
 [data-slot="select-trigger"][data-size="sm"] { min-height: var(--oc-control-height-compact); }
-[data-slot="button"][data-size="lg"], [data-slot="button"][data-size="icon-lg"] { min-height: var(--oc-control-height-large); }
+[data-button][data-size="lg"], [data-button][data-size="icon-lg"] { min-height: var(--oc-control-height-large); }
 .oc-empty-state { padding-block: var(--oc-space-section); }
 .oc-empty-state[data-density="compact"] { padding-block: var(--oc-space-content); }
 .oc-empty-state[data-align="center"] { align-items: center; text-align: center; }
@@ -23,9 +23,9 @@
 .oc-empty-state[data-tone="outlined"] { border: 1px solid var(--border); background: var(--card); }
 @media (max-width: 767px) {
   [data-slot="input"], [data-slot="textarea"], [data-slot="native-select"][data-density], [data-slot="select-trigger"][data-size] { font-size: max(1rem, var(--oc-text-small)); }
-  [data-slot="button"][data-size], [data-slot="input"], [data-slot="native-select"][data-density], [data-slot="select-trigger"][data-size] { min-height: var(--oc-control-height-large); }
+  [data-button][data-size], [data-slot="input"], [data-slot="native-select"][data-density], [data-slot="select-trigger"][data-size] { min-height: var(--oc-control-height-large); }
   select:not([data-slot]) { min-height: var(--oc-control-height-large); font-size: 1rem; }
-  [data-slot="button"][data-size^="icon"] { min-width: var(--oc-control-height-large); }
+  [data-button][data-size^="icon"] { min-width: var(--oc-control-height-large); }
 }
 
 /* A fieldset sizes to its content by default; reset it so scrolling controls (SegmentedControl) scroll
@@ -51,11 +51,11 @@ fieldset { min-inline-size: 0; }
 }
 
 /* Keep both the resting label and its icons in layout; pending never resizes the action. */
-[data-slot="button"][data-loading], [data-slot="button"]:has(> .oc-button-content) { position: relative; }
+[data-button][data-loading], [data-button]:has(> .oc-button-content) { position: relative; }
 .oc-button-content { display: inline-flex; align-items: center; justify-content: center; gap: inherit; }
-[data-slot="button"][data-loading="true"] > .oc-button-content { opacity: 0; }
-[data-slot="button"][data-loading="true"] { opacity: 1; }
-[data-slot="button"] > .oc-button-loading { position: absolute; inset: 0; margin: auto; }
+[data-button][data-loading="true"] > .oc-button-content { opacity: 0; }
+[data-button][data-loading="true"] { opacity: 1; }
+[data-button] > .oc-button-loading { position: absolute; inset: 0; margin: auto; }
 
 /* StatusPill: one application-state pill, colored from semantic tokens only. */
 .oc-status-pill { --pill-bg: var(--muted); --pill-fg: var(--muted-foreground); display: inline-flex; flex-shrink: 0; align-items: center; gap: .375rem; width: fit-content; padding: .1875rem .625rem; border-radius: 999px; background: var(--oc-glass-tint-sheen), var(--pill-bg); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pill-fg) 16%, transparent), var(--oc-glass-tint-highlight); color: var(--pill-fg); font-size: var(--oc-text-caption); font-weight: var(--oc-weight-semibold); line-height: 1.35; white-space: nowrap; }
@@ -131,45 +131,45 @@ fieldset { min-inline-size: 0; }
    light pill of the header search; ghost is transparent with a glass hover; destructive is a solid pill.
    Layered so call-site utilities still win; every size keeps a 44px hit area. */
 @layer components {
-  [data-slot="button"] {
+  [data-button] {
     position: relative; isolation: isolate; border: 1px solid transparent; border-radius: 999px; outline-offset: 2px;
     transition: background-color var(--oc-glass-quick) var(--oc-glass-ease), border-color var(--oc-glass-quick) var(--oc-glass-ease), box-shadow var(--oc-glass-quick) var(--oc-glass-ease), transform var(--oc-glass-quick) var(--oc-glass-ease), opacity var(--oc-glass-quick) ease;
   }
-  [data-slot="button"]::after { content: ""; position: absolute; inset-block: min(0px, calc((100% - 2.75rem) / 2)); inset-inline: min(0px, calc((100% - 2.75rem) / 2)); }
-  [data-slot="button"]:is([data-variant="default"], [data-variant="glass-primary"]) {
+  [data-button]::after { content: ""; position: absolute; inset-block: min(0px, calc((100% - 2.75rem) / 2)); inset-inline: min(0px, calc((100% - 2.75rem) / 2)); }
+  [data-button]:is([data-variant="default"], [data-variant="glass-primary"]) {
     border-color: var(--oc-glass-pill-navy-edge); background: var(--oc-glass-pill-navy); color: var(--oc-glass-cream); box-shadow: var(--oc-glass-pill-navy-depth);
   }
-  [data-slot="button"]:is([data-variant="outline"], [data-variant="secondary"], [data-variant="glass"]) {
+  [data-button]:is([data-variant="outline"], [data-variant="secondary"], [data-variant="glass"]) {
     border-color: var(--oc-glass-light-edge); background: var(--oc-glass-light-material); color: var(--primary); box-shadow: var(--oc-glass-light-depth);
   }
-  [data-slot="button"][data-variant="ghost"] { background: transparent; color: inherit; }
-  [data-slot="button"][data-variant="destructive"] { background: var(--destructive); color: var(--destructive-foreground); box-shadow: var(--oc-glass-pill-highlight); }
-  [data-slot="button"][data-variant="accent"] { background: var(--brand-subtle); color: var(--brand-ink); }
-  [data-slot="button"][data-variant="link"] { height: auto; padding-inline: 0; color: var(--primary); text-underline-offset: 4px; }
-  [data-slot="button"]:focus-visible { outline: 2px solid var(--primary); }
-  [data-slot="button"]:is([data-variant="default"], [data-variant="glass-primary"]):focus-visible { outline: 2px solid var(--brand-orange); }
-  [data-variant="glass-navy"] [data-slot="button"]:is([data-variant="ghost"], [data-variant="link"]):focus-visible { outline: 2px solid var(--brand-orange); }
+  [data-button][data-variant="ghost"] { background: transparent; color: inherit; }
+  [data-button][data-variant="destructive"] { background: var(--destructive); color: var(--destructive-foreground); box-shadow: var(--oc-glass-pill-highlight); }
+  [data-button][data-variant="accent"] { background: var(--brand-subtle); color: var(--brand-ink); }
+  [data-button][data-variant="link"] { height: auto; padding-inline: 0; color: var(--primary); text-underline-offset: 4px; }
+  [data-button]:focus-visible { outline: 2px solid var(--primary); }
+  [data-button]:is([data-variant="default"], [data-variant="glass-primary"]):focus-visible { outline: 2px solid var(--brand-orange); }
+  [data-variant="glass-navy"] [data-button]:is([data-variant="ghost"], [data-variant="link"]):focus-visible { outline: 2px solid var(--brand-orange); }
   @media (hover: hover) and (pointer: fine) {
-    [data-slot="button"]:is([data-variant="default"], [data-variant="glass-primary"]):not(:disabled):hover { background: var(--oc-glass-pill-navy-hover); box-shadow: var(--oc-glass-pill-navy-hover-depth); transform: translateY(-1px); }
-    [data-slot="button"]:is([data-variant="outline"], [data-variant="secondary"], [data-variant="glass"]):not(:disabled):hover { border-color: var(--oc-glass-hover-edge); background: var(--oc-glass-cream); box-shadow: var(--oc-glass-lift); transform: translateY(-1px); }
-    [data-slot="button"][data-variant="ghost"]:not(:disabled):hover { background: var(--oc-glass-hover-tint); }
-    [data-variant="glass-navy"] [data-slot="button"][data-variant="ghost"]:not(:disabled):hover { background: var(--oc-glass-navy-hover-tint); }
-    [data-slot="button"][data-variant="destructive"]:not(:disabled):hover { box-shadow: var(--oc-glass-pill-highlight), var(--oc-glass-lift); transform: translateY(-1px); }
-    [data-slot="button"][data-variant="accent"]:not(:disabled):hover { box-shadow: var(--oc-glass-lift); }
-    [data-slot="button"][data-variant="link"]:not(:disabled):hover { text-decoration: underline; }
+    [data-button]:is([data-variant="default"], [data-variant="glass-primary"]):not(:disabled):hover { background: var(--oc-glass-pill-navy-hover); box-shadow: var(--oc-glass-pill-navy-hover-depth); transform: translateY(-1px); }
+    [data-button]:is([data-variant="outline"], [data-variant="secondary"], [data-variant="glass"]):not(:disabled):hover { border-color: var(--oc-glass-hover-edge); background: var(--oc-glass-cream); box-shadow: var(--oc-glass-lift); transform: translateY(-1px); }
+    [data-button][data-variant="ghost"]:not(:disabled):hover { background: var(--oc-glass-hover-tint); }
+    [data-variant="glass-navy"] [data-button][data-variant="ghost"]:not(:disabled):hover { background: var(--oc-glass-navy-hover-tint); }
+    [data-button][data-variant="destructive"]:not(:disabled):hover { box-shadow: var(--oc-glass-pill-highlight), var(--oc-glass-lift); transform: translateY(-1px); }
+    [data-button][data-variant="accent"]:not(:disabled):hover { box-shadow: var(--oc-glass-lift); }
+    [data-button][data-variant="link"]:not(:disabled):hover { text-decoration: underline; }
   }
   /* Tones: an interview action keeps the pill and swaps the navy for the interview colour. */
-  [data-slot="button"][data-tone="interview"]:is([data-variant="default"], [data-variant="glass-primary"]) { border-color: var(--oc-glass-pill-sheen-edge); background: var(--oc-glass-pill-sheen), var(--interview); }
-  @media (hover: hover) and (pointer: fine) { [data-slot="button"][data-tone="interview"]:is([data-variant="default"], [data-variant="glass-primary"]):not(:disabled):hover { background: var(--oc-glass-pill-sheen), var(--interview); } }
+  [data-button][data-tone="interview"]:is([data-variant="default"], [data-variant="glass-primary"]) { border-color: var(--oc-glass-pill-sheen-edge); background: var(--oc-glass-pill-sheen), var(--interview); }
+  @media (hover: hover) and (pointer: fine) { [data-button][data-tone="interview"]:is([data-variant="default"], [data-variant="glass-primary"]):not(:disabled):hover { background: var(--oc-glass-pill-sheen), var(--interview); } }
   /* The projector theme inverts --primary: its primary keeps the inverted fill and light pills use its
      secondary surface, so text never lands light on light. */
-  :is([data-theme="present"], .oc-focus-frame:has(.oc-present-surface) .oc-focus-bar) [data-slot="button"]:is([data-variant="default"], [data-variant="glass-primary"]) { border-color: transparent; background: var(--primary); color: var(--primary-foreground); box-shadow: none; }
-  :is([data-theme="present"], .oc-focus-frame:has(.oc-present-surface) .oc-focus-bar) [data-slot="button"]:is([data-variant="outline"], [data-variant="secondary"], [data-variant="glass"]) { border-color: var(--border); background: var(--secondary); color: var(--secondary-foreground); box-shadow: none; }
-  :is([data-theme="present"], .oc-focus-frame:has(.oc-present-surface) .oc-focus-bar) [data-slot="button"]:focus-visible { outline: 2px solid var(--primary); }
+  :is([data-theme="present"], .oc-focus-frame:has(.oc-present-surface) .oc-focus-bar) [data-button]:is([data-variant="default"], [data-variant="glass-primary"]) { border-color: transparent; background: var(--primary); color: var(--primary-foreground); box-shadow: none; }
+  :is([data-theme="present"], .oc-focus-frame:has(.oc-present-surface) .oc-focus-bar) [data-button]:is([data-variant="outline"], [data-variant="secondary"], [data-variant="glass"]) { border-color: var(--border); background: var(--secondary); color: var(--secondary-foreground); box-shadow: none; }
+  :is([data-theme="present"], .oc-focus-frame:has(.oc-present-surface) .oc-focus-bar) [data-button]:focus-visible { outline: 2px solid var(--primary); }
   @media (hover: hover) and (pointer: fine) {
-    :is([data-theme="present"], .oc-focus-frame:has(.oc-present-surface) .oc-focus-bar) [data-slot="button"]:is([data-variant="default"], [data-variant="glass-primary"]):not(:disabled):hover { background: var(--primary); box-shadow: var(--oc-glass-lift); }
-    :is([data-theme="present"], .oc-focus-frame:has(.oc-present-surface) .oc-focus-bar) [data-slot="button"]:is([data-variant="outline"], [data-variant="secondary"], [data-variant="glass"]):not(:disabled):hover { border-color: var(--input); background: var(--muted); }
-    :is([data-theme="present"], .oc-focus-frame:has(.oc-present-surface) .oc-focus-bar) [data-slot="button"][data-variant="ghost"]:not(:disabled):hover { background: var(--muted); }
+    :is([data-theme="present"], .oc-focus-frame:has(.oc-present-surface) .oc-focus-bar) [data-button]:is([data-variant="default"], [data-variant="glass-primary"]):not(:disabled):hover { background: var(--primary); box-shadow: var(--oc-glass-lift); }
+    :is([data-theme="present"], .oc-focus-frame:has(.oc-present-surface) .oc-focus-bar) [data-button]:is([data-variant="outline"], [data-variant="secondary"], [data-variant="glass"]):not(:disabled):hover { border-color: var(--input); background: var(--muted); }
+    :is([data-theme="present"], .oc-focus-frame:has(.oc-present-surface) .oc-focus-bar) [data-button][data-variant="ghost"]:not(:disabled):hover { background: var(--muted); }
   }
 }
 
@@ -230,15 +230,15 @@ fieldset { min-inline-size: 0; }
 
 @media (prefers-reduced-motion: reduce) {
   /* No animation, but the indicator keeps the transform that positions it on the selected tab. */
-  [data-slot="button"], [data-slot="tabs-list"][data-variant="segmented"]::before, [data-slot="tabs-list"][data-variant="segmented"] [data-slot="tabs-trigger"] { transition: none !important; }
-  [data-slot="button"] { transform: none !important; }
+  [data-button], [data-slot="tabs-list"][data-variant="segmented"]::before, [data-slot="tabs-list"][data-variant="segmented"] [data-slot="tabs-trigger"] { transition: none !important; }
+  [data-button] { transform: none !important; }
 }
 @media (forced-colors: active) {
-  :is([data-slot="card"], [data-slot="panel"])[data-variant^="glass"], [data-slot="button"]:not([data-variant="link"], [data-variant="ghost"]), [data-slot="tabs-list"][data-variant="segmented"] { border: 1px solid CanvasText; }
+  :is([data-slot="card"], [data-slot="panel"])[data-variant^="glass"], [data-button]:not([data-variant="link"], [data-variant="ghost"]), [data-slot="tabs-list"][data-variant="segmented"] { border: 1px solid CanvasText; }
   [data-slot="tabs-list"][data-variant="segmented"]::before { background: Highlight; forced-color-adjust: none; }
   [data-slot="tabs-list"][data-variant="segmented"] [data-slot="tabs-trigger"][data-state="active"] { background: Highlight; color: HighlightText; forced-color-adjust: none; }
-  [data-slot="button"] { background: ButtonFace; color: ButtonText; }
-  [data-slot="button"]:focus-visible { outline: 2px solid Highlight; }
+  [data-button] { background: ButtonFace; color: ButtonText; }
+  [data-button]:focus-visible { outline: 2px solid Highlight; }
 }
 .oc-loading-state[data-variant="glass"] .oc-skeleton { background: var(--oc-surface-glass-track); }
 

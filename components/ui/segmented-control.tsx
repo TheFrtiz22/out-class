@@ -1,5 +1,5 @@
 "use client"
-import { useRef, type CSSProperties, type KeyboardEvent, type ReactNode } from "react"
+import { useEffect, useLayoutEffect, useRef, type CSSProperties, type KeyboardEvent, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
 
 /** `label` may hold a count or icon; give `ariaLabel` when the visible label is not the full name. */
@@ -15,6 +15,8 @@ type Multiple<T extends string> = Common<T> & { multiple: true; value: T[]; onCh
  * move, Home/End jump, Space/Enter choose.
  * For tab panels use `Tabs` with the segmented `TabsList` instead.
  */
+const useBrowserLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect
+
 export function SegmentedControl<T extends string>(props: Single<T> | Multiple<T>) {
   const { label, options, className, animated = true, size = "default", id } = props
   const group = useRef<HTMLDivElement>(null)
@@ -24,6 +26,24 @@ export function SegmentedControl<T extends string>(props: Single<T> | Multiple<T
   // Roving focus: one tab stop, on the selected option (or the first enabled one).
   const stop = props.multiple ? enabled[0] ?? 0 : index >= 0 && !options[index]?.disabled ? index : enabled[0] ?? 0
   const sliding = !props.multiple && animated && options.length <= 4
+  // The indicator follows the selected segment's measured box, so unequal or scrolled segments stay covered.
+  useBrowserLayoutEffect(() => {
+    const el = group.current
+    if (!sliding || !el) return
+    const place = () => {
+      const selectedButton = el.querySelectorAll<HTMLButtonElement>("[data-segment]")[index]
+      if (!selectedButton) { el.removeAttribute("data-measured"); return }
+      el.style.setProperty("--indicator-x", `${selectedButton.offsetLeft}px`)
+      el.style.setProperty("--indicator-width", `${selectedButton.offsetWidth}px`)
+      el.setAttribute("data-measured", "true")
+    }
+    place()
+    if (typeof ResizeObserver === "undefined") return
+    const observer = new ResizeObserver(place)
+    observer.observe(el)
+    el.querySelectorAll("[data-segment]").forEach(button => observer.observe(button))
+    return () => observer.disconnect()
+  }, [sliding, index, options.length])
   const choose = (value: T) => {
     if (props.multiple) props.onChange(props.value.includes(value) ? props.value.filter(v => v !== value) : [...props.value, value])
     else props.onChange(value)
