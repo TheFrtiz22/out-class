@@ -30,7 +30,7 @@ export function PipelineCard({ data, hrefs, index }: { data: Overview; hrefs: Ra
   const mobile = model.stages.slice(1)
   const mobileTotal = Math.max(1, mobile.reduce((n, s) => n + s.count, 0))
   return <Panel as="section" variant="glass" className="oc-club-home-card oc-club-home-pipeline" style={enter(index)} aria-labelledby="club-home-pipeline">
-    <header className="oc-club-home-card-head"><h2 id="club-home-pipeline">Recruiting pipeline</h2>{op.cycles[0] && <span>{op.cycles[0].name}</span>}</header>
+    <header className="oc-club-home-card-head"><h2 id="club-home-pipeline">Recruiting pipeline</h2><span>All cycles</span></header>
     <ol className="oc-pipeline-stages">{model.stages.map(stage => <li key={stage.id} data-tone={stage.tone}>
       <span className="oc-pipeline-stage-label">{stage.label}</span>
       <strong className="oc-club-home-number">{stage.count}</strong>
