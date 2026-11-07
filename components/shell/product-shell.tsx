@@ -96,7 +96,8 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
   // A focus screen's Exit returns to the last product page (same tab only).
   useEffect(() => { if (mode !== "preview") rememberProductRoute(productRouteAccount(user?.id, demo.isDemoEnabled)) })
   const searchItems = !allowed ? [] : platform ? [] : manager ? adminNav.filter(item => {
-    if (item.id === "leader-dashboard") return hasPermission(member, "applications.review") || hasPermission(member, "applicants.identify")
+    // Applicants is searchable through its rail destination ("All Applicants"); one entry per place.
+    if (item.id === "leader-dashboard") return false
     if (item.id === "interview-workspace") return hasPermission(member, "applications.review")
     if (item.id === "interview-scheduler") return hasPermission(member, "interviews.manage") || hasPermission(member, "applications.review")
     if (item.id === "broadcast-messages") return hasPermission(member, "meetings.manage")
@@ -211,6 +212,6 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
       const origin = searchOrigin.current
       if (origin?.isConnected && origin !== document.body) origin.focus({ preventScroll: true })
       else document.querySelector<HTMLButtonElement>(".oc-global-search")?.focus({ preventScroll: true })
-    }} items={[...searchItems, { id: "inbox", title: TERMS.inbox, icon: Bell }, { id: "student-profile", title: "Profile", icon: UserRound }]} onNavigate={onNavigate} />
+    }} items={[...searchItems, { id: "inbox", title: TERMS.inbox, icon: Bell }, { id: "student-profile", title: "Profile", icon: UserRound }]} links={[...railItems(railSections).filter(item => item.href).map(item => ({ id: item.id, title: item.id === "overview" && item.mode === "recruiting" ? TERMS.recruiting : item.label, href: item.href! })), ...(platform ? [] : [{ id: "settings", title: "Settings", href: "/settings" }])]} onNavigate={onNavigate} />
   </div>
 }

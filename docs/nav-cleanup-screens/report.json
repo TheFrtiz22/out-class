@@ -1,0 +1,330 @@
+{
+  "generatedAt": "2026-11-07T19:48:59.130Z",
+  "widths": [
+    390,
+    1280
+  ],
+  "search": {
+    "personal-home": [
+      "Home",
+      "Explore",
+      "Events",
+      "Applications",
+      "Calendar",
+      "My Clubs",
+      "Inbox",
+      "AMProfile",
+      "Settings"
+    ],
+    "club-home": [
+      "Interviews",
+      "Interview room",
+      "Announcements",
+      "Settings",
+      "Inbox",
+      "AMProfile",
+      "Recruiting",
+      "All Applicants",
+      "Résumé moderation",
+      "Submitted reviews",
+      "Decisions",
+      "Scheduled Decisions",
+      "Anonymous Review",
+      "Auto-Reject Rules",
+      "Club home",
+      "Meetings",
+      "Tasks",
+      "Members"
+    ]
+  },
+  "report": [
+    {
+      "page": "personal-home",
+      "width": 390,
+      "url": "/home?role=student",
+      "h1": "Overview",
+      "title": "Overview · OutClass",
+      "findings": []
+    },
+    {
+      "page": "personal-explore",
+      "width": 390,
+      "url": "/explore?role=student",
+      "h1": "Overview",
+      "title": "Overview · OutClass",
+      "findings": []
+    },
+    {
+      "page": "personal-corkboard",
+      "width": 390,
+      "url": "/corkboard?role=student",
+      "h1": "Overview",
+      "title": "Overview · OutClass",
+      "findings": []
+    },
+    {
+      "page": "personal-applications",
+      "width": 390,
+      "url": "/applications?role=student",
+      "h1": "Overview",
+      "title": "Overview · OutClass",
+      "findings": []
+    },
+    {
+      "page": "personal-clubs",
+      "width": 390,
+      "url": "/clubs?role=student",
+      "h1": "Overview",
+      "title": "Overview · OutClass",
+      "findings": []
+    },
+    {
+      "page": "personal-calendar",
+      "width": 390,
+      "url": "/calendar?role=student",
+      "h1": "Overview",
+      "title": "Overview · OutClass",
+      "findings": []
+    },
+    {
+      "page": "personal-profile",
+      "width": 390,
+      "url": "/profile?role=student",
+      "h1": "Overview",
+      "title": "Overview · OutClass",
+      "findings": []
+    },
+    {
+      "page": "personal-inbox",
+      "width": 390,
+      "url": "/inbox?role=student",
+      "h1": "Overview",
+      "title": "Overview · OutClass",
+      "findings": []
+    },
+    {
+      "page": "club-home",
+      "width": 390,
+      "url": "/club/fixture-mii/workspace?section=overview&role=president",
+      "h1": "Overview",
+      "title": "Overview · OutClass",
+      "findings": []
+    },
+    {
+      "page": "club-recruiting",
+      "width": 390,
+      "url": "/club/fixture-mii/workspace?section=recruitment&tool=overview&role=president",
+      "h1": "Recruitment",
+      "title": "Recruitment · OutClass",
+      "findings": []
+    },
+    {
+      "page": "club-applicants",
+      "width": 390,
+      "url": "/club/fixture-mii/workspace?section=recruitment&tool=applicants&role=president",
+      "h1": "Recruitment",
+      "title": "Recruitment · OutClass",
+      "findings": []
+    },
+    {
+      "page": "club-interviews",
+      "width": 390,
+      "url": "/club/fixture-mii/workspace?section=recruitment&tool=interviews&role=president",
+      "h1": "Recruitment",
+      "title": "Recruitment · OutClass",
+      "findings": []
+    },
+    {
+      "page": "club-voting-room",
+      "width": 390,
+      "url": "/club/fixture-mii/workspace?section=recruitment&tool=decisions&decisionTab=voting&role=president",
+      "h1": "Recruitment",
+      "title": "Recruitment · OutClass",
+      "findings": []
+    },
+    {
+      "page": "club-meetings",
+      "width": 390,
+      "url": "/club/fixture-mii/workspace?section=meetings&role=president",
+      "h1": "Overview",
+      "title": "Overview · OutClass",
+      "findings": []
+    },
+    {
+      "page": "club-tasks",
+      "width": 390,
+      "url": "/club/fixture-mii/workspace?section=tasks&role=president",
+      "h1": "Overview",
+      "title": "Overview · OutClass",
+      "findings": []
+    },
+    {
+      "page": "club-members",
+      "width": 390,
+      "url": "/club/fixture-mii/workspace?section=members&role=president",
+      "h1": "Overview",
+      "title": "Overview · OutClass",
+      "findings": []
+    },
+    {
+      "page": "club-announcements",
+      "width": 390,
+      "url": "/club/fixture-mii/workspace?section=announcements&role=president",
+      "h1": "Overview",
+      "title": "Overview · OutClass",
+      "findings": []
+    },
+    {
+      "page": "club-settings",
+      "width": 390,
+      "url": "/club/fixture-mii/workspace?section=settings&role=president",
+      "h1": "Overview",
+      "title": "Overview · OutClass",
+      "findings": []
+    },
+    {
+      "page": "personal-home",
+      "width": 1280,
+      "url": "/home?role=student",
+      "h1": "Overview",
+      "title": "Overview · OutClass",
+      "findings": []
+    },
+    {
+      "page": "personal-explore",
+      "width": 1280,
+      "url": "/explore?role=student",
+      "h1": "Overview",
+      "title": "Overview · OutClass",
+      "findings": []
+    },
+    {
+      "page": "personal-corkboard",
+      "width": 1280,
+      "url": "/corkboard?role=student",
+      "h1": "Overview",
+      "title": "Overview · OutClass",
+      "findings": []
+    },
+    {
+      "page": "personal-applications",
+      "width": 1280,
+      "url": "/applications?role=student",
+      "h1": "Overview",
+      "title": "Overview · OutClass",
+      "findings": []
+    },
+    {
+      "page": "personal-clubs",
+      "width": 1280,
+      "url": "/clubs?role=student",
+      "h1": "Overview",
+      "title": "Overview · OutClass",
+      "findings": []
+    },
+    {
+      "page": "personal-calendar",
+      "width": 1280,
+      "url": "/calendar?role=student",
+      "h1": "Overview",
+      "title": "Overview · OutClass",
+      "findings": []
+    },
+    {
+      "page": "personal-profile",
+      "width": 1280,
+      "url": "/profile?role=student",
+      "h1": "Overview",
+      "title": "Overview · OutClass",
+      "findings": []
+    },
+    {
+      "page": "personal-inbox",
+      "width": 1280,
+      "url": "/inbox?role=student",
+      "h1": "Overview",
+      "title": "Overview · OutClass",
+      "findings": []
+    },
+    {
+      "page": "club-home",
+      "width": 1280,
+      "url": "/club/fixture-mii/workspace?section=overview&role=president",
+      "h1": "Overview",
+      "title": "Overview · OutClass",
+      "findings": []
+    },
+    {
+      "page": "club-recruiting",
+      "width": 1280,
+      "url": "/club/fixture-mii/workspace?section=recruitment&tool=overview&role=president",
+      "h1": "Recruitment",
+      "title": "Recruitment · OutClass",
+      "findings": []
+    },
+    {
+      "page": "club-applicants",
+      "width": 1280,
+      "url": "/club/fixture-mii/workspace?section=recruitment&tool=applicants&role=president",
+      "h1": "Recruitment",
+      "title": "Recruitment · OutClass",
+      "findings": []
+    },
+    {
+      "page": "club-interviews",
+      "width": 1280,
+      "url": "/club/fixture-mii/workspace?section=recruitment&tool=interviews&role=president",
+      "h1": "Recruitment",
+      "title": "Recruitment · OutClass",
+      "findings": []
+    },
+    {
+      "page": "club-voting-room",
+      "width": 1280,
+      "url": "/club/fixture-mii/workspace?section=recruitment&tool=decisions&decisionTab=voting&role=president",
+      "h1": "Recruitment",
+      "title": "Recruitment · OutClass",
+      "findings": []
+    },
+    {
+      "page": "club-meetings",
+      "width": 1280,
+      "url": "/club/fixture-mii/workspace?section=meetings&role=president",
+      "h1": "Overview",
+      "title": "Overview · OutClass",
+      "findings": []
+    },
+    {
+      "page": "club-tasks",
+      "width": 1280,
+      "url": "/club/fixture-mii/workspace?section=tasks&role=president",
+      "h1": "Overview",
+      "title": "Overview · OutClass",
+      "findings": []
+    },
+    {
+      "page": "club-members",
+      "width": 1280,
+      "url": "/club/fixture-mii/workspace?section=members&role=president",
+      "h1": "Overview",
+      "title": "Overview · OutClass",
+      "findings": []
+    },
+    {
+      "page": "club-announcements",
+      "width": 1280,
+      "url": "/club/fixture-mii/workspace?section=announcements&role=president",
+      "h1": "Overview",
+      "title": "Overview · OutClass",
+      "findings": []
+    },
+    {
+      "page": "club-settings",
+      "width": 1280,
+      "url": "/club/fixture-mii/workspace?section=settings&role=president",
+      "h1": "Overview",
+      "title": "Overview · OutClass",
+      "findings": []
+    }
+  ]
+}

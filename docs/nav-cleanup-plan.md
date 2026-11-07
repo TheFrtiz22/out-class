@@ -140,3 +140,49 @@ Rail (`lib/navigation.ts`), `STUDENT_ROUTES`, Applications (`application-tracker
 - **5h Calendar.** With no events, only the empty agenda shows; Month/Week/Day and the filters appear once there are events. "Club agendas and recaps" is now the "Club meetings" option in the type filter.
 - **5i Workspace switcher.** The account menu lists Personal / club / Admin at every width; the header pill stays as a shortcut on wider screens. ≥1024px already used the left rail instead of the bottom bar.
 - Gates: typecheck ok; lint 0 errors (23 warnings, baseline); ui-controls allowlist tightened (club-tasks no longer needs a raw-toggle entry); tests 1786, 0 fail, 60 env-gated skips.
+
+### Phase 6 — done
+- **⌘K.** "Messages" is now "Announcements" and "Interview workspace" is now "Interview room"; "Inbox" is added. Every rail destination is searchable once: `NavigationSearch` takes the shell's rail links, skips any whose title is already a view entry, and adds Settings. "Applicants" now has one entry ("All Applicants"), and Recruiting overview is listed as "Recruiting". No entry points to a removed page; `tests/nav-cleanup-structure.test.cjs` and the screenshot audit check this.
+- **Redirect tests.** `tests/nav-cleanup-redirects.test.cjs` covers every removed or renamed URL and checks that other parameters are kept: `tool=rejected`, `decisionTab=overview`, `voting=1`, `setting=interviews` (every tab), the older `tool=voting|letters|cycles` and `section=events`, `/applications/status`, `/clubs/meetings`, `/settings/profile`, `/settings/organizations`, `/inbox?tab=preferences`, `/?workspace=student&view=status|my-clubs…`, `/interviews` and `/decisions`. It also checks that interview-room links start from a clean URL.
+- **Screens.** `scripts/nav-cleanup-screens.cjs` visits all 8 personal and 10 club destinations at 390px and 1280px and writes 36 screenshots plus `report.json` to `docs/nav-cleanup-screens/`. Result: **0 findings** for duplicate destinations in any nav/toolbar/group, axe `button-name` / `link-name` / `aria-command-name` / `aria-toggle-field-name` (icon-only controls), and removed ⌘K entries.
+  - **Limit:** this container has no Docker daemon, so the disposable Supabase stack cannot run. The screens use the isolated shell fixture: the real ProductShell, rail, phone bar, header, account menu and ⌘K, with fictional identity and placeholder page bodies. Page bodies and their H1s are therefore not exercised by the screenshots. Instead, "H1 is not the club name except Club home" holds in code: the Recruiting dashboard H1 is "Recruiting", other pages use the nav label with the club name as eyebrow, and `clubWorkspaceTitle` sets the `<title>`. "The Voting room lists the existing draft session" is covered by `tests/voting-room-foundation.test.cjs` (server query returns the LEGACY DRAFT with its mode) and `tests/voting-navigation-browser.test.cjs` (room list rendering). Re-run the screenshot script against the dashboards E2E stack (`pnpm run test:dashboards:e2e`) on a machine with Docker for full-page screens.
+
+---
+
+## 4. Before / after
+
+Counts are user-facing controls on the page itself (buttons, links, tabs and filter controls in the page body), excluding the shell (rail, header, phone bar). Counts were taken from the source for the states named.
+
+| Page | Controls before | Controls after | Routes removed or redirected |
+|---|---|---|---|
+| Club home (owner) | Post update, New meeting; Needs you: Join voting / Open scheduler / Open applicants…; Club updates → Announcements; Team assignments | New announcement (opens composer), New meeting (opens form); Needs you: **Open voting** (Voting room), **Schedule interviews** (Scheduling tab), Open applicants; Announcements card → All announcements; Team tasks | — |
+| Recruiting overview | Club-name H1, own Needs you (up to 5 actions), All applicants + Browse all applicants, Finish scheduling ×(1 + rounds), Open scheduling, Continue/Join session per vote | "Recruiting" H1, no Needs you, All applicants once, one Schedule interviews, Open session per vote | — |
+| Applicants | Quick review, Voting history, Review decisions, view toggle, filters, per-card "Select for voting" | Quick review, **Decision** filter (All/Pending/Accepted/Waitlisted/Rejected), view toggle, filters; checkboxes plus an "Add to voting session" bar only with a selection; Reconsider in a rejected applicant's detail | `tool=rejected` → `tool=applicants&decision=rejected`; `voting=1` → Voting room |
+| Rejected Applicants | Separate page; retention explainer ×3 | Removed (Applicants → Rejected); explainer once | redirected |
+| Decisions | Overview / Voting room / Decision letters tabs; Review applicants; letters tab with nested "Decision Letters" disclosure + outline button | Voting room / Decision letters (SectionTabs); letters inline with one primary "Review decisions and send letters" | `decisionTab=overview` → Applicants |
+| Voting room | Lists LIVE rooms only ("No voting sessions available" with a DRAFT board session); Default voting rules inline; Start voting session; modal "New voting session" | Lists every session with Draft/Open/Paused/Closed; one Start voting session (also inside the ballot); Default voting rules link → Settings; board sessions open in place | — |
+| Scheduling | Set My Availability, Team availability, View interviews, Schedule options (modal), Schedule tools (menu), stepper ×4, Confirm interviewers, Recheck/Review slots/Review conflicts/Review changes/Schedule history | Set My Availability, one "⋯" menu (Applicant preview, Booking settings, Assignment rules, Regenerate unlocked assignments, Discard draft), stepper ×4, **Confirm assignments**; status banners keep Recheck/Review slots/conflicts and Review changes/Schedule history | — |
+| Interviewers | Save offices for {name} ×members, Save proposed panel ×rooms, Approve access ×rooms, applicant picker | One sticky Save / Discard bar, Approve access ×rooms, picker under "Manual panel access for one applicant" | — |
+| Settings → Interviews | Re-rendered Interviews tabs + Interviewers sheet | Removed; eligibility moved to Members & Permissions | `setting=interviews` (+ any `interviewTab`) → `tool=interviews&interviewTab=…` |
+| Interview room | Back to interviews ×2 + frame Exit | Frame Exit only | links drop non-interview params |
+| Club Settings | General; Members & Permissions = full Members page | Public profile; Members & Permissions = eligibility + role summary + Manage members link | — |
+| Members | Add member, Invite members, Import CSV, Settings, Create group(s) in filters | One "Add member ▾" (Invite, Import CSV, Create groups); class-year-only Year filter | — |
+| Club Tasks | New project, Create task, empty-state New task, 4 metric buttons, 6-way view row | "Create task ▾" (New project), empty-state Create task (same handler), Due this week, **Status** + **Group by** | — |
+| Club Meetings | Member Meetings/Corkboard Events, Upcoming/Past, Audience (3 rows), See past meetings | One toolbar with the three; empty state without a toggle duplicate | `new=1` opens the form |
+| Phone bar (club) | Swapped between 4 recruiting and 4 club items | Fixed: Club home · Recruiting · Meetings · Members · More | — |
+| Personal rail | 11 items | 7 items | — |
+| Applications | All/Drafts/Submitted + 2 stat boxes; separate Status page with 5 filters | Drafts / In review / Interviews / Decisions (shared with Home) | `/applications/status` → `/applications?tab=in-review` |
+| Personal Meetings | Required club picker | Calendar "Club meetings" filter | `/clubs/meetings` → `/calendar?type=meeting` |
+| Personal Tasks | Required club picker, Due/Missing/Submitted boxes, Show tasks select | All clubs by default (optional filter), Status select with counts, Group by | — |
+| Inbox | Updates / Email preferences tabs, search, read select, club select, sort, type chips | All/Unread, club filter, one Filter popover; hidden under 5 items; Email preferences link | `/inbox?tab=preferences` → `/settings/notifications` |
+| Profile | Edit ×2, Edit links & résumé, Edit structured experience, Education Edit, Import PDF into profile, Set My Availability, Preview | Edit profile (sections + Import from résumé), Preview | — |
+| Personal Settings | Profile, Account, Notifications, Organizations, Availability + club entries + section dropdown | Account & Security, Notifications, Availability; list on phones | `/settings/profile` → `/profile`; `/settings/organizations` → `/clubs` |
+| Explore | Refine (time incl. single-option, acceptance), Availability, Sort (incl. acceptance); 2 unclaimed badges | Filters only with ≥2 options; acceptance with ≥3 reporting clubs; one "Unclaimed" | — |
+| Calendar | Agenda/Month/Week/Day + type/past/declined filters when empty; Club agendas link; Set My Availability | Empty: agenda only; "Club meetings" filter; one "Availability" | — |
+| Bell popover | Expand icon + View all notifications | Open inbox | — |
+
+### Not changed (decided)
+- Inbox "Club updates" group heading: it is a priority bucket for all non-urgent notifications, not club broadcast posts.
+- Sent emails keep `/inbox?tab=preferences` and `/?next=%2Fsettings%2Forganizations`; both redirect.
+- Club Settings already had a side list on wide screens and a select on phones.
+- `/clubs/tasks` remains a page (linked from My Clubs and Home).
