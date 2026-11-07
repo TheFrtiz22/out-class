@@ -103,9 +103,10 @@ test('plus button adds an original question to this interview (shared with the r
  assert.equal(field(t).props.value,'Follow-up','the typed question survives a failed save');assert.match(text(t),/Couldn.t save your question/);assert.doesNotMatch(text(t),/Original question added/);
  assert.equal(nodes(t).find(n=>n.props?.['aria-label']==='Active question'),undefined,'nothing opens before the save succeeds');assert.deepEqual(shared,[],'nothing is shared before the save succeeds');
  const attemptId=h.calls.filter(c=>c[0]==='save').at(-1)[1].draft.additionalQuestions[0].id;
- h.fail(false);await button(t,'Retry').props.onClick();await flush();t=h.render();
+ h.fail(false);nodes(t).find(n=>n.props?.id==='additional-interview-notes').props.onChange({target:{value:'Unsaved misc note'}});t=h.render();
+ await button(t,'Retry').props.onClick();await flush();t=h.render();
  const saved=h.record.draft.additionalQuestions;assert.equal(saved.length,1);assert.equal(saved[0].question,'Follow-up');assert.equal(saved[0].id,attemptId,'retry reuses the same question id');assert.equal(saved[0].bankQuestion,undefined,'no answer key is invented');
- assert.equal(field(t),undefined);assert.ok(nodes(t).find(n=>n.props?.['aria-label']==='Active question'),'the new question opens for private notes');assert.match(text(t),/Original question added/);assert.deepEqual(shared,[saved[0].id],'the saved original question is shared with the room');
+ assert.equal(field(t),undefined);assert.ok(nodes(t).find(n=>n.props?.['aria-label']==='Active question'),'the new question opens for private notes');assert.match(text(t),/Original question added/);assert.deepEqual(shared,[saved[0].id],'the saved original question is shared with the room');h.tick();await flush();const after=h.calls.filter(c=>c[0]==='save').map(c=>c[1].draft.additionalQuestions.map(q=>q.id));const firstWith=after.findIndex(ids=>ids.includes(saved[0].id));assert.ok(firstWith>=0&&after.slice(firstWith).every(ids=>ids.includes(saved[0].id)),'no follow-up save drops the just-added question: '+JSON.stringify(after));
  assert.deepEqual(h.calls.filter(c=>c[0]==='library'),[],'the master kit is not read or changed');
  button(t,'Save & close').props.onClick();await flush();assert.equal(h.record.draft.completedQuestionIds[0],saved[0].id);
  const c=harness();c.render();await flush();t=c.render();plus(t).props.onClick();t=c.render();field(t).props.onChange({target:{value:'Never mind'}});t=c.render();button(t,'Cancel').props.onClick();t=c.render();
