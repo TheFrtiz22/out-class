@@ -13,6 +13,7 @@ import { LogoBackgroundPicker } from "@/components/clubs/logo-background-picker"
 import { ProfileImageInput } from "@/components/clubs/profile-image-input"
 import { clubProfileSchema, type ClubMarketing, type ClubProfileDraft } from "@/lib/club-marketing"
 import { Panel } from "@/components/ui/panel"
+import { NativeSelect } from "@/components/ui/native-select"
 
 function Field({ label, children }: { label: string; children: ReactNode }) { return <label className="block space-y-2 text-sm font-medium"><span>{label}</span>{children}</label> }
 function Lines({ label, value, onChange, max }: { label: string; value: string[]; onChange: (v: string[]) => void; max: number }) {
@@ -59,7 +60,7 @@ export function ClubProfileEditor({ initial, onSave, demo = false, onUpload, ext
               <h3 className="font-semibold">Public content sections</h3><p className="text-sm text-muted-foreground">Order, hide, and edit programs, people, impact and recruitment copy. Application availability is managed separately.</p>
               {m.sections.map((block, i) => <div key={i} className="min-w-0 space-y-3 rounded-lg border p-4">
                 <Field label={`Section ${i + 1} title`}><Input value={block.title} maxLength={100} onChange={e => marketing("sections", m.sections.map((s,j) => i===j ? {...s,title:e.target.value} : s))} /></Field>
-                <Field label={`Section ${i + 1} type`}><select className="oc-native-select" value={block.kind} onChange={e => marketing("sections", m.sections.map((s,j) => i===j ? {...s,kind:e.target.value as typeof block.kind} : s))}>{["about","programs","people","impact","recruitment"].map(k=><option key={k}>{k}</option>)}</select></Field>
+                <Field label={`Section ${i + 1} type`}><NativeSelect className="oc-native-select" value={block.kind} onChange={e => marketing("sections", m.sections.map((s,j) => i===j ? {...s,kind:e.target.value as typeof block.kind} : s))}>{["about","programs","people","impact","recruitment"].map(k=><option key={k}>{k}</option>)}</NativeSelect></Field>
                 <Field label={`Section ${i + 1} text`}><Textarea value={block.body} maxLength={5000} onChange={e => marketing("sections", m.sections.map((s,j) => i===j ? {...s,body:e.target.value} : s))} /></Field>
                 <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={block.visible} onChange={e=>marketing("sections",m.sections.map((s,j)=>i===j?{...s,visible:e.target.checked}:s))}/>Show section</label>
                 <Records onUpload={onUpload} title={`Section ${i + 1} card`} value={block.cards} onChange={cards=>marketing("sections",m.sections.map((s,j)=>i===j?{...s,cards}:s))} empty={{title:"",description:"",url:"",image:""}} max={12}/>

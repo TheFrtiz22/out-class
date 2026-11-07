@@ -28,6 +28,10 @@
   [data-slot="button"][data-size^="icon"] { min-width: var(--oc-control-height-large); }
 }
 
+/* A fieldset sizes to its content by default; reset it so scrolling controls (SegmentedControl) scroll
+   instead of widening forms on phones. */
+fieldset { min-inline-size: 0; }
+
 /* Keep the arrow clear of the border without replacing the native menu. */
 .oc-native-select-field { position: relative; display: inline-grid; vertical-align: middle; min-width: 0; max-width: 100%; }
 .oc-native-select-field > select { appearance: none; width: 100%; padding-inline-end: 2.5rem; }

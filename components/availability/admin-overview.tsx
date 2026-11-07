@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { WeeklyCalendar, minuteLabel } from "./weekly-calendar"
 import { SCHEDULING_TIMEZONE, SCHEDULING_TIMEZONE_LABEL } from "@/lib/scheduling-config"
+import { NativeSelect } from "@/components/ui/native-select"
 
 export function AdminAvailabilityOverview({ clubId, roundId: controlledRound, week: controlledWeek, onWeekChange, onData, onOpenSession }: {
   clubId: string; roundId?: string; week?: string; onWeekChange?: (week: string) => void
@@ -66,8 +67,8 @@ export function AdminAvailabilityOverview({ clubId, roundId: controlledRound, we
   if (demo.isDemoEnabled) return <p className="text-sm text-muted-foreground">Availability management is available in your signed-in workspace.</p>
   return <section className="oc-availability space-y-4" aria-label="Team availability" aria-busy={busy}>
     <div className="flex flex-wrap items-end gap-3">
-      {controlledRound === undefined && <label className="text-sm">Interview round<select aria-label="Interview round" className="oc-av-select mt-1 block" value={roundId} onChange={e => setRoundId(e.target.value)}><option value="">Global declarations</option>{rounds.map(round => <option key={round.id} value={round.id}>{round.name}</option>)}</select></label>}
-      <label className="text-sm">Member role<select aria-label="Member role" className="oc-av-select mt-1 block" value={role} onChange={e => { setRole(e.target.value); setChecked([]) }}><option value="">All roles</option>{organizationRoles.map(value => <option key={value} value={value}>{organizationRoleLabels[value]}</option>)}</select></label>
+      {controlledRound === undefined && <label className="text-sm">Interview round<NativeSelect aria-label="Interview round" className="oc-av-select mt-1 block" value={roundId} onChange={e => setRoundId(e.target.value)}><option value="">Global declarations</option>{rounds.map(round => <option key={round.id} value={round.id}>{round.name}</option>)}</NativeSelect></label>}
+      <label className="text-sm">Member role<NativeSelect aria-label="Member role" className="oc-av-select mt-1 block" value={role} onChange={e => { setRole(e.target.value); setChecked([]) }}><option value="">All roles</option>{organizationRoles.map(value => <option key={value} value={value}>{organizationRoleLabels[value]}</option>)}</NativeSelect></label>
       <label className="text-sm">Week of<Input aria-label="Week of" type="date" value={week} onChange={e => { if (e.target.value) { const next = monday(e.target.value); onWeekChange ? onWeekChange(next) : setWeek(next) } }} /></label><p className="text-xs text-muted-foreground">{SCHEDULING_TIMEZONE_LABEL} · 8:00 AM–9:00 PM</p>
     </div>
     {error && <p role="alert" className="text-sm text-destructive">{error} <Button variant="outline" size="sm" disabled={loading} onClick={() => setAttempt(v => v + 1)}>Try again</Button></p>}{notice && <p role="status" className="text-sm">{notice}</p>}

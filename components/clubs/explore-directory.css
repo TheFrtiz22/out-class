@@ -7,12 +7,10 @@
 .oc-discovery .oc-directory-search { min-height: 3.25rem; padding: .375rem 1rem; border: 1px solid var(--input); border-radius: var(--oc-content-radius-small); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); }
 .oc-discovery .oc-directory-search input { min-width: 0; min-height: 2.75rem; font-size: 1rem; }
 .oc-discovery .oc-directory-search > button { flex-shrink: 0; }
-.oc-discovery .oc-directory-categories { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; gap: .5rem; margin: 1rem 0 .5rem; padding-block: .25rem; }
-.oc-discovery .oc-directory-categories button { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; gap: .5rem; min-height: 2.75rem; padding: .5rem .875rem; border: 1px solid var(--oc-content-edge); border-radius: 999px; background: var(--oc-content-surface); color: var(--foreground); font-size: var(--oc-text-small); transition: background-color var(--oc-content-motion), border-color var(--oc-content-motion); }
+.oc-discovery .oc-directory-categories { margin: 1rem 0 .5rem; }
+.oc-discovery .oc-directory-categories button { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; }
 .oc-discovery .oc-directory-categories button svg { flex-shrink: 0; }
-.oc-discovery .oc-directory-categories button span { margin: 0; color: var(--muted-foreground); font-size: var(--oc-text-caption); font-variant-numeric: tabular-nums; }
-.oc-discovery .oc-directory-categories button:hover { background: var(--oc-content-soft); }
-.oc-discovery .oc-directory-categories button[aria-pressed="true"] { background: var(--brand-subtle); border-color: var(--brand-ink); color: var(--brand-ink); }
+.oc-discovery .oc-directory-categories button span { margin: 0; opacity: .72; font-size: var(--oc-text-caption); font-variant-numeric: tabular-nums; }
 .oc-directory-recruitment { display: flex; flex-wrap: wrap; gap: .5rem; margin: .75rem 0 .25rem; }
 .oc-directory-recruitment button { display: inline-flex; align-items: center; gap: .5rem; min-height: 2.75rem; padding: .5rem .875rem; border: 1px solid var(--oc-content-edge); border-radius: var(--oc-radius-md); color: var(--muted-foreground); background: var(--oc-content-surface); font-size: var(--oc-text-caption); }
 .oc-directory-recruitment button[aria-pressed="true"] { background: var(--primary); color: var(--primary-foreground); border-color: var(--primary); }
@@ -21,7 +19,6 @@
 .oc-discovery .oc-directory-tools :is(summary,select) { min-height: 2.75rem; }
 .oc-discovery .oc-directory-tools summary { font-size: var(--oc-text-small); }
 .oc-discovery .oc-directory-tools details[open] .oc-directory-filters { padding: 1rem; margin-top: .5rem; border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius-small); background: var(--oc-content-surface); }
-.oc-discovery .oc-directory-active button { min-height: 2.75rem; border-radius: 999px; }
 .oc-explore-section { margin: var(--oc-content-gap) 0; }
 .oc-explore-section-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .75rem; margin-bottom: 1rem; }
 .oc-explore-section-heading h2, .oc-explore-available h2, .oc-discovery .oc-directory-results-heading h2 { font-family: var(--oc-font-sans); font-size: var(--oc-text-section); font-weight: 600; line-height: var(--oc-leading-heading); letter-spacing: var(--oc-tracking-heading); }
@@ -77,4 +74,4 @@
  .oc-discovery .oc-directory-filters label { min-width: 0; }
  .oc-discovery .oc-directory-sort { width: 100%; justify-content: space-between; }
 }
-@media (prefers-reduced-motion: reduce) { .oc-explore-card article, .oc-discovery .oc-directory-categories button { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .oc-explore-card article { transition: none; } }

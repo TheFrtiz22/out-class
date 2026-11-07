@@ -8,6 +8,7 @@ import {
 } from "@/lib/workspace-api";
 import { testRequirements, testRequirementLabels } from "@/lib/test-scores";
 import { Button } from "@/components/ui/button";
+import { NativeSelect } from "@/components/ui/native-select"
 export function RecruitmentReviewSettings({
   clubId,
   rounds,
@@ -75,12 +76,12 @@ export function RecruitmentReviewSettings({
           <label htmlFor={`tests-${clubId}`}>
             Change test requirement for future submissions
           </label>
-          <select
+          <NativeSelect
             id={`tests-${clubId}`}
             name="requirement"
             required
             defaultValue=""
-            className="rounded border p-2"
+            
             disabled={busy}
           >
             <option value="" disabled>
@@ -91,7 +92,7 @@ export function RecruitmentReviewSettings({
                 {testRequirementLabels[r]}
               </option>
             ))}
-          </select>
+          </NativeSelect>
           <Button disabled={busy} variant="outline">
             Save requirement
           </Button>

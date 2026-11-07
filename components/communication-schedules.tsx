@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRevalidate } from "@/hooks/use-revalidate";
 import { Panel } from "@/components/ui/panel";
+import { NativeSelect } from "@/components/ui/native-select"
 export type ScheduledItem=Awaited<ReturnType<typeof getCommunicationSchedules>>[number];
 export type ScheduleTiming={localTime:string;timeZone:string;occurrence:"EARLIER"|"LATER";recipientMode:"FIXED"|"SEND_TIME"};
 export const initialTiming=():ScheduleTiming=>({localTime:"",timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone,occurrence:"EARLIER",recipientMode:"SEND_TIME"});
@@ -16,9 +17,9 @@ export function ScheduleFields({value,onChange,disabled,fixedOnly=false,fixedDes
  <p className="text-xs text-muted-foreground">Sends at or just after this time. It can be delayed a few minutes. Email is separate.</p>
  <label className="block space-y-2 text-sm">Local date and time<Input required type="datetime-local" value={value.localTime} onChange={e=>onChange({...value,localTime:e.target.value})}/></label>
  <label className="block space-y-2 text-sm">Timezone (IANA name)<Input required list="schedule-timezones" value={value.timeZone} onChange={e=>onChange({...value,timeZone:e.target.value})}/><datalist id="schedule-timezones">{["America/New_York","America/Chicago","America/Denver","America/Los_Angeles","Europe/London","Asia/Kolkata","UTC"].map(z=><option key={z} value={z}/>)}</datalist></label>
- <label className="block space-y-2 text-sm">If this hour occurs twice<select className="w-full rounded border bg-background p-3" value={value.occurrence} onChange={e=>onChange({...value,occurrence:e.target.value as ScheduleTiming["occurrence"]})}><option value="EARLIER">Earlier occurrence</option><option value="LATER">Later occurrence</option></select></label>
+ <label className="block space-y-2 text-sm">If this hour occurs twice<NativeSelect className="w-full" value={value.occurrence} onChange={e=>onChange({...value,occurrence:e.target.value as ScheduleTiming["occurrence"]})}><option value="EARLIER">Earlier occurrence</option><option value="LATER">Later occurrence</option></NativeSelect></label>
  {instant&&<p className="break-words text-xs" role="status">Resolved time: {instant}</p>}
- {!fixedOnly&&<label className="block space-y-2 text-sm">Recipient selection<select className="w-full rounded border bg-background p-3" value={value.recipientMode} onChange={e=>onChange({...value,recipientMode:e.target.value as ScheduleTiming["recipientMode"]})}><option value="SEND_TIME">Choose the audience when it sends</option><option value="FIXED">Freeze current selection</option></select></label>}
+ {!fixedOnly&&<label className="block space-y-2 text-sm">Recipient selection<NativeSelect className="w-full" value={value.recipientMode} onChange={e=>onChange({...value,recipientMode:e.target.value as ScheduleTiming["recipientMode"]})}><option value="SEND_TIME">Choose the audience when it sends</option><option value="FIXED">Freeze current selection</option></NativeSelect></label>}
  <p className="text-xs text-muted-foreground">{fixedOnly?(fixedDescription??"Decisions use the candidates you reviewed. Your permissions and each applicant’s status are checked again when it sends. Times skipped by a clock change are not allowed."):"A fixed list never adds new people. Anyone who can no longer receive it is skipped. Email settings are checked separately. Times skipped by a clock change are not allowed."}</p>
  </fieldset>;
 }

@@ -25,8 +25,9 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
               key={preset.hex}
               type="button"
               onClick={() => onChange(preset.hex)}
-              className="group flex flex-col items-center gap-1.5"
+              className="group flex min-w-11 flex-col items-center gap-1.5 rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               aria-label={`Choose ${preset.name}`}
+              aria-pressed={active}
             >
               <span
                 className={cn(

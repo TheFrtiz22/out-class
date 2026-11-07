@@ -9,6 +9,8 @@ import type { getOrganizationMemberManagement } from "@/lib/workspace-read"
 import { organizationRoleLabels } from "@/lib/organization-authorization"
 import { compareAcademicYears } from "@/lib/recruitment-profile"
 import { planMemberGroups, selectGroupMembers, type MemberGroupCriteria, type MemberGroupSplit } from "@/lib/member-groups"
+import { NativeSelect } from "@/components/ui/native-select"
+import { SegmentedControl } from "@/components/ui/segmented-control"
 
 type Member = Awaited<ReturnType<typeof getOrganizationMemberManagement>>["members"][number]
 const memberName = (member: Member) => member.user.studentProfile ? `${member.user.studentProfile.firstName} ${member.user.studentProfile.lastName}` : member.user.email
@@ -34,6 +36,7 @@ function GroupWizard({ clubId, members, onSaved, done }: { clubId: string; membe
     try { plan = planMemberGroups(selected.map(member => member.id), name.trim(), split) }
     catch (error) { planError = error instanceof Error ? error.message : "Check the group size." }
   }
+  const categories: ("everyone" | "recent" | "years" | "roles" | "groups" | "people")[] = [...(criteria.everyone ? ["everyone" as const] : []), ...(criteria.recent ? ["recent" as const] : []), ...dimensions as ("years" | "roles" | "groups" | "people")[]]
   function dimension(field: "years" | "roles" | "groups" | "people") {
     setCriteria(value => ({ ...value, everyone: false, [field]: [] }))
     setDimensions(value => value.includes(field) ? value.filter(item => item !== field) : [...value, field])
@@ -55,16 +58,18 @@ function GroupWizard({ clubId, members, onSaved, done }: { clubId: string; membe
   }
   return <form className="space-y-5" data-saving={busy} data-unsaved={!saved && (!!name || selected.length > 0)} onSubmit={event => { event.preventDefault(); if (step === 1 && name.trim()) setStep(2) }}>
     <ol aria-label="Group creation steps" className="flex gap-4 border-b pb-3 text-sm">{["Name", "Members", "Review"].map((label, index) => <li key={label} aria-current={step === index + 1 ? "step" : undefined} className={step === index + 1 ? "font-semibold text-primary" : "text-muted-foreground"}>{index + 1}. {label}</li>)}</ol>
-    <fieldset disabled={busy || saved} className="space-y-5">
+    <fieldset disabled={busy || saved} className="min-w-0 space-y-5">
       {step === 1 && <label className="block space-y-2 text-sm font-medium">Group name<Input required maxLength={64} placeholder="e.g. New members, Second years, Finance" value={name} onChange={event => setName(event.target.value)} /></label>}
       {step === 2 && <>
         <h3 className="oc-card-heading">Who belongs in {name.trim()}?</h3>
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Choose member categories">
-          <Button type="button" size="sm" variant={criteria.everyone ? "secondary" : "outline"} aria-pressed={criteria.everyone} onClick={() => { setCriteria({ ...emptyCriteria, everyone: !criteria.everyone }); setDimensions([]) }}>All members</Button>
-          <Button type="button" size="sm" variant={criteria.recent ? "secondary" : "outline"} aria-pressed={criteria.recent} onClick={() => setCriteria(value => ({ ...value, everyone: false, recent: !value.recent }))}>New members · last 30 days</Button>
-          {([["years", "By year"], ["roles", "By role"], ["groups", "Existing groups"], ["people", "Choose people"]] as const).map(([field, label]) => <Button type="button" size="sm" key={field} variant={dimensions.includes(field) ? "secondary" : "outline"} aria-pressed={dimensions.includes(field)} onClick={() => dimension(field)}>{label}</Button>)}
-        </div>
-        {dimensions.length + Number(criteria.recent) > 1 && <label className="flex flex-wrap items-center gap-3 text-sm">Combine categories<select className="min-h-11 rounded border bg-card px-3" value={criteria.match} onChange={event => setCriteria(value => ({ ...value, match: event.target.value as "ANY" | "ALL" }))}><option value="ANY">Match any selected category</option><option value="ALL">Match every selected category</option></select></label>}
+        <SegmentedControl multiple label="Choose member categories" value={categories} onChange={next => {
+          // Each chip keeps its own action: "All members" resets the other categories.
+          const clicked = next.find(item => !categories.includes(item)) ?? categories.find(item => !next.includes(item))
+          if (clicked === "everyone") { setCriteria({ ...emptyCriteria, everyone: !criteria.everyone }); setDimensions([]) }
+          else if (clicked === "recent") setCriteria(value => ({ ...value, everyone: false, recent: !value.recent }))
+          else if (clicked) dimension(clicked)
+        }} options={[{ value: "everyone", label: "All members" }, { value: "recent", label: "New members · last 30 days" }, ...([["years", "By year"], ["roles", "By role"], ["groups", "Existing groups"], ["people", "Choose people"]] as const).map(([value, label]) => ({ value, label }))]} />
+        {dimensions.length + Number(criteria.recent) > 1 && <label className="flex flex-wrap items-center gap-3 text-sm">Combine categories<NativeSelect className="min-h-11" value={criteria.match} onChange={event => setCriteria(value => ({ ...value, match: event.target.value as "ANY" | "ALL" }))}><option value="ANY">Match any selected category</option><option value="ALL">Match every selected category</option></NativeSelect></label>}
         {dimensions.includes("years") && <fieldset><legend className="mb-2 text-sm font-semibold">Class year</legend><div className="grid gap-2 sm:grid-cols-2">{years.map(year => <label key={year} className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={criteria.years.includes(year)} onChange={() => toggle("years", year)} />{year}</label>)}</div></fieldset>}
         {dimensions.includes("roles") && <fieldset><legend className="mb-2 text-sm font-semibold">Club role</legend><div className="grid gap-2 sm:grid-cols-2">{roles.map(role => <label key={role} className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={criteria.roles.includes(role)} onChange={() => toggle("roles", role)} />{organizationRoleLabels[role]}</label>)}</div></fieldset>}
         {dimensions.includes("groups") && <fieldset><legend className="mb-2 text-sm font-semibold">Existing groups</legend><div className="grid gap-2 sm:grid-cols-2">{groups.map(group => <label key={group} className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={criteria.groups.includes(group)} onChange={() => toggle("groups", group)} />{group}</label>)}{!groups.length && <p className="text-sm text-muted-foreground">No groups yet. Choose years, roles, or individual people.</p>}</div></fieldset>}
@@ -76,7 +81,7 @@ function GroupWizard({ clubId, members, onSaved, done }: { clubId: string; membe
       {step === 3 && <>
         <h3 className="oc-card-heading">{name.trim()} · {selected.length} {selected.length === 1 ? "member" : "members"}</h3>
         <label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" checked={!!split} onChange={event => setSplit(event.target.checked ? { mode: "SIZE", amount: 4, seed: crypto.randomUUID() } : null)} />Divide into random groups</label>
-        {split && <section className="space-y-3 rounded-lg border p-4"><div className="grid gap-3 sm:grid-cols-2"><label className="space-y-2 text-sm">Divide by<select aria-label="Divide by" className="block min-h-11 w-full rounded border bg-card px-3" value={split.mode} onChange={event => setSplit({ ...split, mode: event.target.value as "SIZE" | "COUNT", amount: event.target.value === "COUNT" ? Math.min(split.amount, selected.length, 100) : split.amount })}><option value="SIZE">People per group (maximum)</option><option value="COUNT">Number of groups</option></select></label><label className="space-y-2 text-sm">{split.mode === "SIZE" ? "People per group" : "Number of groups"}<Input aria-label={split.mode === "SIZE" ? "People per group" : "Number of groups"} type="number" min={1} max={split.mode === "SIZE" ? 500 : Math.min(100, selected.length)} value={split.amount} onChange={event => setSplit({ ...split, amount: Number(event.target.value) })} /></label></div><Button type="button" variant="ghost" onClick={() => setSplit({ ...split, seed: crypto.randomUUID() })}>Shuffle again</Button><p className="text-xs text-muted-foreground">Everyone stays in {name.trim()} and is assigned to one subgroup.</p></section>}
+        {split && <section className="space-y-3 rounded-lg border p-4"><div className="grid gap-3 sm:grid-cols-2"><label className="space-y-2 text-sm">Divide by<NativeSelect aria-label="Divide by" className="block min-h-11 w-full" value={split.mode} onChange={event => setSplit({ ...split, mode: event.target.value as "SIZE" | "COUNT", amount: event.target.value === "COUNT" ? Math.min(split.amount, selected.length, 100) : split.amount })}><option value="SIZE">People per group (maximum)</option><option value="COUNT">Number of groups</option></NativeSelect></label><label className="space-y-2 text-sm">{split.mode === "SIZE" ? "People per group" : "Number of groups"}<Input aria-label={split.mode === "SIZE" ? "People per group" : "Number of groups"} type="number" min={1} max={split.mode === "SIZE" ? 500 : Math.min(100, selected.length)} value={split.amount} onChange={event => setSplit({ ...split, amount: Number(event.target.value) })} /></label></div><Button type="button" variant="ghost" onClick={() => setSplit({ ...split, seed: crypto.randomUUID() })}>Shuffle again</Button><p className="text-xs text-muted-foreground">Everyone stays in {name.trim()} and is assigned to one subgroup.</p></section>}
         {planError && <p role="alert" className="text-sm text-destructive">{planError}</p>}
         <div className="max-h-72 space-y-3 overflow-y-auto">{plan.map(group => <section key={group.name} className="border-t pt-3"><h4 className="text-sm font-semibold">{group.name} · {group.memberIds.length}</h4><p className="mt-1 text-sm text-muted-foreground">{group.memberIds.map(id => memberName(members.find(member => member.id === id)!)).join(", ")}</p></section>)}</div>
       </>}

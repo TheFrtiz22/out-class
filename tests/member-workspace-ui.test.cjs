@@ -19,5 +19,5 @@ test('member drawer access editor disables higher-authority edits and capabiliti
  const labels=nodes(tree).filter(n=>n.type==='label')
  const identity=labels.find(n=>nodes(n).some(child=>child.type==='input')&&JSON.stringify(n.props.children).includes('View identified applicants'))
  assert.equal(nodes(identity).find(n=>n.type==='input').props.disabled,true)
- assert.equal(nodes(tree).filter(n=>n.type==='select').length,1)
+ assert.equal(nodes(tree).filter(n=>['select','NativeSelect'].includes(n.type?.name??n.type)).length,1)
 })

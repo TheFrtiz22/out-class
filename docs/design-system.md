@@ -105,6 +105,10 @@ Every dashboard is built from the club home pieces in `components/product/dashbo
 
 New tokens for these pieces (`--oc-glass-track-inset`, `--oc-glass-fill-highlight`, `--oc-glass-navy-track`, `--oc-glass-navy-highlight`, `--oc-glass-dot-halo`, `--oc-glass-pill-sheen*`, `--oc-glass-chip-radius`, `--oc-glass-row-radius`, `--oc-surface-ambient-neutral`) live in `styles/navigation-glass.css` with solid, reduced-transparency/higher-contrast and forced-colors values. Applicant tables, speed review, the resume viewer and the interview room stay solid.
 
+### Control guard
+
+`node scripts/check-ui-controls.cjs` runs as part of `pnpm run lint`. It fails on a native `<select>` outside `components/ui` (use `NativeSelect`/`Select`), a raw `<button>` with `aria-pressed` or a group of `aria-pressed` Buttons (use `SegmentedControl`; one standalone toggle may be a `Button`), a raw `<button>` styled as a button, link or chip (use `Button`/`IconButton`; raw buttons are for whole-surface rows, cards and cells styled by an `oc-*` class), and hex, box-shadow or border-radius literals in component CSS (dashboard CSS allows none; other page CSS may not exceed its allowlisted count). Exceptions live in `scripts/ui-controls-allowlist.json`, each with a reason; `--report` prints the counts.
+
 ## Motion and stacking
 
 No additional animation dependency. CSS plus existing `tw-animate-css`/Radix

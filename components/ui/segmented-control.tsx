@@ -1,8 +1,9 @@
 "use client"
-import { useRef, type CSSProperties, type KeyboardEvent } from "react"
+import { useRef, type CSSProperties, type KeyboardEvent, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
 
-type Option<T extends string> = { value: T; label: string; disabled?: boolean }
+/** `label` may hold a count or icon; give `ariaLabel` when the visible label is not the full name. */
+type Option<T extends string> = { value: T; label: ReactNode; ariaLabel?: string; disabled?: boolean }
 type Common<T extends string> = { label: string; options: Option<T>[]; className?: string; animated?: boolean; size?: "default" | "compact"; id?: string }
 type Single<T extends string> = Common<T> & { multiple?: false; value: T; onChange: (value: T) => void }
 type Multiple<T extends string> = Common<T> & { multiple: true; value: T[]; onChange: (value: T[]) => void }
@@ -42,7 +43,7 @@ export function SegmentedControl<T extends string>(props: Single<T> | Multiple<T
     style={sliding ? { "--segment-count": options.length, "--segment-index": Math.max(0, index) } as CSSProperties : undefined}>
     {sliding && <span className="oc-segmented-indicator" aria-hidden="true" />}
     {options.map((option, i) => <button type="button" key={option.value} data-segment="" disabled={option.disabled}
-      aria-pressed={selected(option.value)}
+      aria-pressed={selected(option.value)} aria-label={option.ariaLabel}
       data-selected={selected(option.value) || undefined} tabIndex={i === stop ? 0 : -1}
       onClick={() => choose(option.value)} onKeyDown={event => onKeyDown(event, i)}>{option.label}</button>)}
   </div>

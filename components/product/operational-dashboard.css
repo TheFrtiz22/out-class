@@ -52,7 +52,6 @@
 .oc-review-workspace-heading h3 em { color: var(--brand-subtle); }
 .oc-applicant-assessment :is(input,textarea,select) { --muted-foreground: var(--oc-field-muted); --border: var(--oc-field-rule); color: var(--foreground); background: var(--card); }
 .oc-applicant-assessment [data-slot="button"] { white-space: normal; height: auto; min-height: 40px; }
-.oc-applicant-assessment [data-slot="button"][data-variant="outline"] { background: var(--card); color: var(--foreground); }
 .oc-applicant-drawer .oc-applicant-assessment form[data-autosave-editor] { padding: 0; border: 0; background: transparent; }
 .oc-applicant-assessment form [type="submit"] { background: var(--brand-subtle); color: var(--brand-ink); }
 .oc-applicant-assessment > p[role="status"]:not(:empty) { background: var(--oc-rail-selected); }
@@ -65,7 +64,7 @@
 .oc-review-workspace-heading [data-slot="badge"] { background: var(--brand-subtle); color: var(--primary); border: 0; border-radius: 999px; padding: .5rem .9rem; }
 
 .oc-dossier-jump { width: fit-content; padding-inline: 0; color: var(--brand-ink); }
-#dossier-evaluation:focus { outline: 2px solid var(--oc-rail-text); outline-offset: 6px; border-radius: 2px; }
+#dossier-evaluation:focus { outline: 2px solid var(--oc-rail-text); outline-offset: 6px; border-radius: var(--oc-radius-sm); }
 
 /* Operational details stay beside their refresh action, above the pipeline. */
 

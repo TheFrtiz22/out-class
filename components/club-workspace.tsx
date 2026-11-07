@@ -58,6 +58,7 @@ import { SelectedClubWorkspace } from "@/components/selected-club-workspace";
 import { clubWorkspaceEntryHref, clubWorkspacePreferenceKey, readClubWorkspacePreference, saveClubWorkspacePreference } from "@/lib/club-workspace-preference";
 import { leaderRailSections, memberRailSections, studentPath } from "@/lib/navigation"
 import { RecruitmentFocus } from "@/components/recruitment-focus"
+import { NativeSelect } from "@/components/ui/native-select"
 type Overview = Awaited<ReturnType<typeof getClubWorkspaceOverview>>;
 const OVERVIEW_EVENTS = ["outclass:tasks-changed", "outclass:panels-changed", "outclass:interview-rounds-changed", "outclass:staffing-changed", "outclass:decision-schedules"];
 const OVERVIEW_SCOPES = ["overview", "tasks", "meetings", "recruiting"];
@@ -262,9 +263,9 @@ function RecruitmentWorkspace({
         </div>
         <label className="text-sm">
           Recruitment tool
-          <select
+          <NativeSelect
             aria-label="Recruitment tool"
-            className="mt-1 block min-h-11 max-w-full rounded-md border bg-background px-3"
+            className="mt-1 block min-h-11 max-w-full"
             value={active}
             onChange={(e) =>
               e.target.value === "interviews"
@@ -277,7 +278,7 @@ function RecruitmentWorkspace({
                 {t.label}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </label>
       </div>
       {active === "applicants" && <LiveLeaderWorkspace scoped />}

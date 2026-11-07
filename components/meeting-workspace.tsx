@@ -29,6 +29,7 @@ import {
 import { meetingInputSchema, resourceSchema } from "@/lib/meetings";
 import { OutClassQRCode } from "@/components/qr/outclass-qr-code";
 import { Button } from "@/components/ui/button";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/ui/page-header";
@@ -75,7 +76,7 @@ export function MeetingList({ clubId, embedded = false, initialAudience = "ALL",
     </div>
     {notice && <p role="status" className="text-sm">{notice}</p>}
     <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
-      <div role="group" aria-label="Meeting time" className="flex gap-1">{(["upcoming", "past"] as const).map(value => <Button key={value} variant={period === value ? "secondary" : "ghost"} aria-pressed={period === value} onClick={() => setPeriod(value)}>{value === "upcoming" ? "Upcoming" : "Past"}</Button>)}</div>
+      <SegmentedControl label="Meeting time" size="compact" value={period} onChange={setPeriod} options={[{ value: "upcoming", label: "Upcoming" }, { value: "past", label: "Past" }]} />
       <label className="flex items-center gap-3 text-sm">Audience<NativeSelect className="min-h-11 max-w-full rounded-md border bg-card px-3" value={audience} onChange={e => setAudience(e.target.value)}><option value="ALL">All permitted meetings</option><option value="RECRUITMENT">Recruitment / Interest</option><option value="MEMBERS">Members</option></NativeSelect></label>
     </div>
 
@@ -83,7 +84,7 @@ export function MeetingList({ clubId, embedded = false, initialAudience = "ALL",
     {error && <div role="alert" className="oc-feedback"><p>{error}</p><Button variant="outline" onClick={() => setRefresh(v => v + 1)}>Retry</Button></div>}
     {!loading && !error && !visible.length && <EmptyState density="compact" align="start" title={`No ${period} meetings for this audience`} description={period === "upcoming" ? "Nothing is scheduled for this audience yet." : "No meetings for this audience have happened yet."} action={<Button variant="outline" size="sm" onClick={() => setPeriod(period === "upcoming" ? "past" : "upcoming")}>{period === "upcoming" ? "See past meetings" : "See upcoming meetings"}</Button>} />}
     <ul className="grid gap-3">{visible.map(meeting => <li key={meeting.id} className="min-w-0">
-      <button type="button" onClick={() => setActiveId(meeting.id)} className="oc-content-panel group flex w-full text-left gap-4 hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:p-6"><CalendarDays aria-hidden="true" className="mt-1 size-5 shrink-0 text-primary" /><div className="min-w-0 flex-1"><p className="text-xs text-muted-foreground">{!clubId && `${meeting.club.name} · `}{meeting.audience === "MEMBERS" ? "Members" : "Recruitment / Interest"}</p><h3 className="oc-card-heading mt-2 break-words">{meeting.title}</h3><p className="mt-3 text-sm">{meetingDate(meeting.date)}{meeting.endDate && ` — ${meetingDate(meeting.endDate)}`}</p><p className="mt-2 flex items-start gap-2 break-words text-sm text-muted-foreground"><MapPin aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />{meeting.location}</p><p className="mt-4 text-xs text-muted-foreground">{meeting.recap?.trim() ? "Recap available · " : ""}Open agenda, resources & attendance</p></div><ArrowRight aria-hidden="true" className="mt-1 size-4 shrink-0" /></button>
+      <button type="button" onClick={() => setActiveId(meeting.id)} className="oc-content-panel group flex w-full text-left gap-4 hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary sm:p-6"><CalendarDays aria-hidden="true" className="mt-1 size-5 shrink-0 text-primary" /><div className="min-w-0 flex-1"><p className="text-xs text-muted-foreground">{!clubId && `${meeting.club.name} · `}{meeting.audience === "MEMBERS" ? "Members" : "Recruitment / Interest"}</p><h3 className="oc-card-heading mt-2 break-words">{meeting.title}</h3><p className="mt-3 text-sm">{meetingDate(meeting.date)}{meeting.endDate && ` — ${meetingDate(meeting.endDate)}`}</p><p className="mt-2 flex items-start gap-2 break-words text-sm text-muted-foreground"><MapPin aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />{meeting.location}</p><p className="mt-4 text-xs text-muted-foreground">{meeting.recap?.trim() ? "Recap available · " : ""}Open agenda, resources & attendance</p></div><ArrowRight aria-hidden="true" className="mt-1 size-4 shrink-0" /></button>
       {!personalOnly && hasPermission(user?.memberships.find(m => m.clubId === meeting.clubId), "meetings.attendance") && <MeetingAttendanceState key={`${meeting.id}:${refresh}`} meeting={meeting} polling={pollingId === meeting.id} onOpen={setPollingId} />}
     </li>)}</ul>
     <Sheet open={!!activeId} onOpenChange={open => { if (!open && !document.querySelector('[data-saving="true"]')) void flushEditors().then(() => setActiveId(null)).catch(() => {}) }}><SheetContent className="oc-workspace-drawer w-full overflow-y-auto sm:max-w-[var(--oc-reading-width)]"><SheetTitle className="sr-only">Meeting details</SheetTitle><SheetDescription className="sr-only">Agenda, resources, and attendance.</SheetDescription>{activeId && <MeetingDetail id={activeId} onUpdated={() => { setRefresh(value => value + 1); setNotice("Meeting updated.") }} />}</SheetContent></Sheet>
@@ -190,7 +191,7 @@ function MeetingEditor({
       }}
     >
       <AutosaveStatus save={draftSave} />
-      <div role="group" aria-label="Meeting editor sections" className="flex flex-wrap gap-1 border-b pb-3">{[["details", "Details"], ["content", "Description & agenda"], ["resources", "Resources"]].map(([id, label]) => <Button key={id} type="button" variant={tab === id ? "secondary" : "ghost"} aria-pressed={tab === id} onClick={() => setTab(id)}>{label}</Button>)}</div>
+      <SegmentedControl label="Meeting editor sections" size="compact" value={tab} onChange={setTab} options={[{ value: "details", label: "Details" }, { value: "content", label: "Description & agenda" }, { value: "resources", label: "Resources" }]} />
       <fieldset disabled={busy || !draftSave.ready || draftSave.recovery != null} className="space-y-4">
         <div hidden={tab !== "details"} className="space-y-4">
         <label className="block">

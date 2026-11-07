@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Panel } from "@/components/ui/panel";
+import { NativeSelect } from "@/components/ui/native-select"
 
 export function PlatformOrganizationOnboarding({ onCreated }: { onCreated: () => void }) {
   const [open, setOpen] = useState(false), [busy, setBusy] = useState(false);
@@ -86,10 +87,10 @@ export function OrganizationOnboardingForm({ onCreated, onClose, onBusy }: { onC
     {loadError && <p role="alert" className="text-sm text-destructive">{loadError} <Button type="button" variant="outline" disabled={loading} onClick={() => setLoadVersion(version => version + 1)}>Retry schools</Button></p>}
     <fieldset disabled={busy || loading || !!loadError} className="space-y-4">
       <label className="block space-y-2 text-sm font-medium">School
-        <select value={schoolId} onChange={event => setSchoolId(event.target.value)} className="mt-1 block min-h-11 w-full rounded-md border border-input bg-card px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring" required {...errorProps("identifierTypeId")}>
+        <NativeSelect value={schoolId} onChange={event => setSchoolId(event.target.value)} className="mt-1 block min-h-11 w-full rounded-md border border-input bg-card px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring" required {...errorProps("identifierTypeId")}>
           {!schools.length && <option value="">Choose a school</option>}
           {schools.map(school => <option key={school.identifierTypeId} value={school.identifierTypeId}>{school.schoolName}{schools.filter(other => other.schoolName === school.schoolName).length > 1 ? ` · ${school.identifierLabel}` : ""}</option>)}
-        </select>{errorsFor("identifierTypeId")}
+        </NativeSelect>{errorsFor("identifierTypeId")}
       </label>
       <label className="block space-y-2 text-sm font-medium">Organization name<Input className="font-normal" name="organizationName" placeholder="Madison Investment Fund" minLength={2} maxLength={150} required {...errorProps("organizationName")} />{errorsFor("organizationName")}</label>
       <label className="block space-y-2 text-sm font-medium">President name<Input className="font-normal" name="presidentName" placeholder="John Smith" autoComplete="name" minLength={2} maxLength={150} required {...errorProps("presidentName")} />{errorsFor("presidentName")}</label>

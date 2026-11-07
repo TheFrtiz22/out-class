@@ -18,6 +18,7 @@ import { DemoInterviewGuide } from "@/components/demo-workspace"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import "./interview/interview-mode.css"
+import { NativeSelect } from "@/components/ui/native-select"
 
 type Pipeline = Awaited<ReturnType<typeof getInterviewWorkspace>>
 const selectStyle =
@@ -64,7 +65,7 @@ export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: ()
             </Button>
           </div>
         ) : (
-          <InterviewSession key={`${membership.clubId}-${membership.id}-${user?.id}`} membership={membership} onLock={handleLock} onExit={exit} clubSelector={!scoped && <select aria-label="Interview club" disabled={locked} className={selectStyle} value={membership.clubId} onChange={event => setClubId(event.target.value)}>{memberships.map(item => <option key={item.clubId} value={item.clubId}>{item.club.name}</option>)}</select>} />
+          <InterviewSession key={`${membership.clubId}-${membership.id}-${user?.id}`} membership={membership} onLock={handleLock} onExit={exit} clubSelector={!scoped && <NativeSelect aria-label="Interview club" disabled={locked} className={selectStyle} value={membership.clubId} onChange={event => setClubId(event.target.value)}>{memberships.map(item => <option key={item.clubId} value={item.clubId}>{item.club.name}</option>)}</NativeSelect>} />
         )}
       </div>
     </div>
@@ -303,7 +304,7 @@ function InterviewSession({
           {clubSelector}
           <div className="space-y-2">
             <Label htmlFor="interview-round">Round</Label>
-            <select
+            <NativeSelect
               id="interview-round"
               className={`${selectStyle} block`}
               disabled={busy}
@@ -318,11 +319,11 @@ function InterviewSession({
                   {item.name}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </div>
           <div className="space-y-2">
             <Label htmlFor="interview-candidate">Candidate</Label>
-            <select
+            <NativeSelect
               id="interview-candidate"
               className={`${selectStyle} block w-full sm:w-64`}
               disabled={busy || !queue.length}
@@ -335,7 +336,7 @@ function InterviewSession({
                   {app.name}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </div>
         </div>
         <p className="text-xs text-muted-foreground">

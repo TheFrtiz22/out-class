@@ -24,6 +24,7 @@ import {BallotPrivacyNote} from "@/components/live-voting/ballot-privacy-note";
 import {DiscussionLeader,DiscussionMember} from "@/components/live-voting/discussion-panel";
 import "./room.css";
 import { PageHeader } from "@/components/ui/page-header";
+import { NativeSelect } from "@/components/ui/native-select"
 type View="leader"|"present"|"member";
 type Ballot=z.infer<typeof roomBallotSchema>;
 export function LiveVotingEntry({clubId,sessionId,view,demoScoped}:{clubId:string;sessionId:string;view:View;demoScoped:boolean}){
@@ -33,7 +34,7 @@ export function LiveVotingEntry({clubId,sessionId,view,demoScoped}:{clubId:strin
  if(demoScoped!==demo.isDemoEnabled)return <div className="vr-page"><PageHeader title="Voting link unavailable in this workspace" /><p>Use the matching Live or Demo link. This page will not switch environments.</p><Link href="/">Return to OutClass</Link></div>;
  if(!auth.user)return <div className="vr-page"><PageHeader title="Join live voting" /><p>Sign in to see if you can vote.</p><Link className="vr-link" href={`/login?next=${encodeURIComponent(liveRoomPath(clubId,sessionId,view,demoScoped))}`}>Sign in and return to this session</Link></div>;
  const demoMember=demoScoped?member||undefined:undefined,identity=`${auth.user.id}:${demoScoped}:${demoMember??"current"}`;
- return <>{demoScoped&&view==="member"&&<label className="block p-4">Isolated Demo voter <select aria-label="Demo voter" value={member} onChange={e=>setMember(e.target.value)}><option value="">Current Demo leader</option>{demo.state?.memberships.filter(m=>m.clubId===clubId).map(m=><option key={m.id} value={m.id}>{demo.state?.students.find(u=>u.id===m.userId)?.profile.firstName??"Demo member"}</option>)}</select></label>}
+ return <>{demoScoped&&view==="member"&&<label className="block p-4">Isolated Demo voter <NativeSelect aria-label="Demo voter" value={member} onChange={e=>setMember(e.target.value)}><option value="">Current Demo leader</option>{demo.state?.memberships.filter(m=>m.clubId===clubId).map(m=><option key={m.id} value={m.id}>{demo.state?.students.find(u=>u.id===m.userId)?.profile.firstName??"Demo member"}</option>)}</NativeSelect></label>}
  {view==="member"?<MemberJoin key={identity} {...{clubId,sessionId,view,demoScoped,identity,member:demoMember}}/>:<VotingRoom key={identity} {...{clubId,sessionId,view,demoScoped,identity,member:demoMember}}/>}</>;
 }
 type RoomProps={clubId:string;sessionId:string;view:View;demoScoped:boolean;identity:string;member?:string};
@@ -71,7 +72,7 @@ export function VotingRoom(props:RoomProps){
  {room.meeting&&view==="member"&&room.status==="DRAFT"&&<SessionDetails clubId={clubId} sessionId={sessionId} revision={room.revision} meeting={room.meeting} leader={false} demo={demoScoped} status={room.status} refresh={refresh}/>}
  {view==="leader"?<OutcomeCounts room={room}/>:view==="present"&&<section className="vr-stats" aria-label="Passed and target"><span>Passed {room.outcomes.filter(o=>o.outcome==="ACCEPT").length}</span><span>{room.targetSize==null?"No target":`Target ${room.targetSize} · Guidance`}</span></section>}
  {room.status==="DRAFT"&&<section aria-label="Waiting room"><h2>Ready when your leader is</h2><p>Voting has not started.</p>{view!=="member"&&qrCard}</section>}
- {view==="leader"&&room.status==="DRAFT"&&<label className="block my-4">Preview applicant<select className="rounded border p-2 ml-2" aria-label="Preview applicant" value={appId??""} onChange={e=>setPreview(e.target.value)}>{room.outcomes.map((a,i)=><option key={a.applicationId} value={a.applicationId}>Applicant {i+1}</option>)}</select></label>}
+ {view==="leader"&&room.status==="DRAFT"&&<label className="block my-4">Preview applicant<NativeSelect className="ml-2" aria-label="Preview applicant" value={appId??""} onChange={e=>setPreview(e.target.value)}>{room.outcomes.map((a,i)=><option key={a.applicationId} value={a.applicationId}>Applicant {i+1}</option>)}</NativeSelect></label>}
  <ApplicantTransition key={`${identity}:${room.accessVersion}`} applicantId={appId} passNumber={room.passNumber} onReady={setReadyApplicant} summary={room.status!=="OPEN"&&room.status!=="DRAFT"}><RoomPresentation clubId={clubId} sessionId={sessionId} applicationId={appId??""} identity={`${identity}:${room.accessVersion}`} refreshKey={0} member={member}/></ApplicantTransition>
 
  {room.status==="COMPLETED"&&<p role="status">Session ended. Unresolved applicants and saved votes are preserved. No applicant notifications were sent.</p>}

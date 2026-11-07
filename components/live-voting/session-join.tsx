@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import "./voting-mode.css"
 import { PageHeader } from "@/components/ui/page-header"
 import { Panel } from "@/components/ui/panel"
+import { NativeSelect } from "@/components/ui/native-select"
 type Workspace=Awaited<ReturnType<typeof getJoinedVotingWorkspace>>
 const messages={NOT_FOUND:"This voting session was not found.",UNAUTHORIZED:"You do not have voting access for this club. Ask leadership to check your membership and permissions.",NOT_JOINABLE:"Leadership has not opened this session for joining yet.",FINISHED:"This session is finished. You can return if leadership reopens it.",ROSTER_LOCKED:"Voting has started and you are not on the frozen participant roster. Ask leadership about the next session."}
 export function VotingSessionJoin({sessionId,demoScoped}:{sessionId:string;demoScoped:boolean}){
@@ -51,7 +52,7 @@ export function VotingSessionJoin({sessionId,demoScoped}:{sessionId:string;demoS
     {!joined&&<>
       {!info&&!error&&<LoadingState label="Checking session and membership…" layout="inline" rows={3} />}
       {info&&("clubName" in info?<Panel as="section" className="space-y-4"><h2 className="text-xl">{info.clubName}</h2>{info.status==="ALREADY_JOINED"&&<p>You have already joined. Your ballots are preserved.</p>}
-        {demoScoped&&<label className="block">Demo member <select className="ml-2 rounded border p-2" value={member} onChange={e=>setMember(e.target.value)}><option value="">Current Demo leader</option>{demo.state?.memberships.filter(m=>m.clubId===info.clubId).map(m=><option key={m.id} value={m.id}>{demo.state?.students.find(u=>u.id===m.userId)?.profile.firstName??m.id}</option>)}</select></label>}
+        {demoScoped&&<label className="block">Demo member <NativeSelect className="ml-2" value={member} onChange={e=>setMember(e.target.value)}><option value="">Current Demo leader</option>{demo.state?.memberships.filter(m=>m.clubId===info.clubId).map(m=><option key={m.id} value={m.id}>{demo.state?.students.find(u=>u.id===m.userId)?.profile.firstName??m.id}</option>)}</NativeSelect></label>}
         <Button className="min-h-11" disabled={busy} onClick={()=>void join()}>{busy?"Joining…":info.status==="ALREADY_JOINED"?"Enter voting":"Join session"}</Button></Panel>:<p role="status">{messages[info.status]}</p>)}
     </>}
     {joined&&!data&&!error&&<p role="status">Opening your persisted voting session…</p>}

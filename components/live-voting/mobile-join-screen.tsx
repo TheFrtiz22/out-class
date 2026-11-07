@@ -33,6 +33,6 @@ export function MobileJoinScreen({ onJoin, pending = false, error = "", memberNa
       {(validation || error) && <p role="alert" className="text-sm text-rose-700">{validation || error}</p>}
       <Button type="submit" disabled={pending} loading={pending} className="h-12 w-full bg-black text-white shadow-none hover:bg-black/80">Join demo session</Button>
     </form>
-    <p className="text-xs leading-5 text-muted-foreground">Demo only: email + PIN checks the sample roster; it does not verify email ownership. Try <button type="button" onClick={() => setEmail("pn4gk@virginia.edu")} className="text-black underline">pn4gk@virginia.edu (Priya)</button>. Verified sign-in and club membership must be supplied by the production auth service.</p>
+    <p className="text-xs leading-5 text-muted-foreground">Demo only: email + PIN checks the sample roster; it does not verify email ownership. Try <Button type="button" variant="link" onClick={() => setEmail("pn4gk@virginia.edu")} className="h-auto whitespace-normal p-0 align-baseline text-xs">pn4gk@virginia.edu (Priya)</Button>. Verified sign-in and club membership must be supplied by the production auth service.</p>
   </section>
 }

@@ -183,7 +183,9 @@ test("leader local Meetings switch keeps member tools and isolates unavailable D
   const props={clubId:'club',clubName:'Club',canSeeAttendees:true};
   let tree=ClubMeetingsWorkspace(props);
   assert.ok(all(tree).some(n=>n.type==='MeetingList' && n.props.initialAudience==='ALL'));
-  all(tree).find(n=>title(n)==='Corkboard Events' && n.type==='Button').props.onClick();
+  const meetingSwitch=all(tree).find(n=>n.type==='SegmentedControl' && n.props.label==='Meetings workspace');
+  assert.deepEqual(meetingSwitch.props.options.map(o=>o.label),['Member Meetings','Corkboard Events']);assert.equal(meetingSwitch.props.value,'members');
+  meetingSwitch.props.onChange('events');
   assert.match(navigated,/section=meetings&meetingTab=events/);
   params=new URLSearchParams('section=meetings&meetingTab=events');tree=ClubMeetingsWorkspace(props);
   assert.ok(all(tree).some(n=>n.type==='ClubEvents'));

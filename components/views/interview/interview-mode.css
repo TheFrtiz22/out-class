@@ -3,7 +3,6 @@
 .oc-interview-room.oc-interview-room .oc-room-header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 24px; border-bottom: 1px solid var(--border); background: var(--card); color: var(--foreground); }
 .oc-interview-room.oc-interview-room .oc-room-header button { color: var(--foreground); font-weight: 500; }
 .oc-interview-room.oc-interview-room .oc-room-header button:hover { background: var(--accent); }
-.oc-interview-room.oc-interview-room .oc-room-header [data-slot="button"].border { border-color: var(--input); background: transparent; }
 .oc-interview-room > details { margin: 0; padding: 6px 24px; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; }
 .oc-interview-room > details > summary { font-size: .75rem; color: var(--muted-foreground); }
 .oc-room-save { margin-left: auto; display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
