@@ -31,7 +31,7 @@ test('fresh page boundaries avoid duplicate reads, full quick-review selection s
   // Voting no longer opens a creation form on Applicants: sessions start from the Voting room (or the selection bar) via /voting/rooms/new,
   // which builds its own candidate snapshot. Applicants itself makes no voting read and offers no Voting history button.
   assert.equal(await page.getByRole('button',{name:'Voting history',exact:true}).count(),0);assert.equal(reads.includes('voting'),false);
-  assert.equal(reads.filter(k=>k==='pipelineSelection').length,1,'quick review reads its selection once; Applicants makes no voting selection read');assert.deepEqual(errors,[]);
+  assert.equal(reads.filter(k=>k==='pipelineSelection').length,2,'quick review reads its selection on start and again on Skip; Applicants makes no voting selection read');assert.deepEqual(errors,[]);
  }finally{await c.close();await browser.close()}
 });
 test('rapid global searches coalesce obsolete reads, retain keyboard focus and never show a late previous selection',{skip:!configFile,timeout:90000},async t=>{
