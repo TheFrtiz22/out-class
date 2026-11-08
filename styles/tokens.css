@@ -13,6 +13,12 @@
   /* Two-colour focus indicator (WCAG C40): where the ring sits on or inside a filled element, a cream halo
      separates it from the fill (ring vs halo 3.94:1; halo vs the darkest navy pill 9:1+). Owner decision 2026-11-08. */
   --focus-halo: #fffefa;
+  /* The halo as a shadow: outset fills the 2px gap inside an outset ring; inset-N fills from the edge to an
+     inset ring (N = |outline-offset| + outline width). Page CSS uses these instead of raw shadow literals. */
+  --focus-halo-outset: 0 0 0 2px var(--focus-halo);
+  --focus-halo-inset-4: inset 0 0 0 4px var(--focus-halo);
+  --focus-halo-inset-5: inset 0 0 0 5px var(--focus-halo);
+  --focus-halo-inset-6: inset 0 0 0 6px var(--focus-halo);
 
   /* Editorial composition: display scale is independent of operational controls. */
   --oc-editorial-display: clamp(2.75rem, 5.1vw, 4.5rem);

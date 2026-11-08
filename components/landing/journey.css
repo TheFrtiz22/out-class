@@ -15,7 +15,7 @@
 .oc-perspective-switcher button { min-height: 48px; padding: 10px 12px; border-radius: var(--oc-radius-sm); font-size: var(--oc-text-small); font-weight: 500; color: #fff7ec; white-space: nowrap; }
 .oc-perspective-switcher button[aria-pressed="true"] { color: var(--primary); font-weight: 600; }
 .oc-perspective-switcher[data-compact="false"] button { white-space: normal; }
-.oc-landing .oc-perspective-switcher button:focus-visible { outline-color: var(--ring); outline-offset: -4px; box-shadow: inset 0 0 0 6px var(--focus-halo) }
+.oc-landing .oc-perspective-switcher button:focus-visible { outline-color: var(--ring); outline-offset: -4px; box-shadow: var(--focus-halo-inset-6) }
 .oc-perspective-copy > p:last-child { margin-top: 20px; color: var(--muted-foreground); }
 /* A close product crop uses the app's navy, paper, borders and native controls. */
 .oc-story-frame { --card: #fffefa; --background: #f6f5f1; --foreground: var(--school-primary); --muted-foreground: #52606d; --primary: var(--school-primary); --border: #cbd2cf; --accent: #e7ebe7; --brand-orange: var(--school-accent); --brand-ink: var(--school-accent-text); --input: #8793a0; color: var(--foreground); }

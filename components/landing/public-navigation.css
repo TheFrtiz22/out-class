@@ -166,7 +166,7 @@
 .oc-public-nav .oc-perspective-switcher[data-perspective="leader"] .oc-perspective-indicator { transform: translateX(100%); }
 .oc-public-nav .oc-perspective-switcher button { min-height: 44px; padding: 8px 6px; border-radius: 999px; background: transparent; color: #fff7ec; font-size: 12px; font-weight: 500; line-height: 20px; white-space: nowrap; }
 .oc-public-nav .oc-perspective-switcher button[aria-pressed="true"] { color: var(--primary); font-weight: 600; }
-.oc-landing .oc-public-nav .oc-perspective-switcher button:focus-visible { outline: 2px solid var(--ring); outline-offset: -3px; box-shadow: inset 0 0 0 5px var(--focus-halo) }
+.oc-landing .oc-public-nav .oc-perspective-switcher button:focus-visible { outline: 2px solid var(--ring); outline-offset: -3px; box-shadow: var(--focus-halo-inset-5) }
 .oc-public-journey-mobile { display: none; }
 @media (max-width: 1099px) { .oc-public-journey-desktop { left: 164px; } }
 @media (max-width: 767px) {

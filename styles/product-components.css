@@ -103,8 +103,8 @@
 .oc-segmented-control button:disabled { cursor: not-allowed; opacity: .5; }
 @media (hover: hover) and (pointer: fine) { .oc-segmented-control button:not([data-selected]):not(:disabled):hover { background: var(--oc-glass-hover-tint); } }
 .oc-segmented-control button[data-selected] { color: var(--oc-glass-cream); background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); }
-.oc-segmented-control button:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; box-shadow: inset 0 0 0 4px var(--focus-halo) }
-.oc-segmented-control button[data-selected]:focus-visible { outline-color: var(--ring); outline-offset: 2px; box-shadow: 0 0 0 2px var(--focus-halo) }
+.oc-segmented-control button:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; box-shadow: var(--focus-halo-inset-4) }
+.oc-segmented-control button[data-selected]:focus-visible { outline-color: var(--ring); outline-offset: 2px; box-shadow: var(--focus-halo-outset) }
 /* Sliding: the indicator is placed on the selected segment from its measured offset and width, so it stays
    aligned when long labels make segments unequal or the track scrolls. Until measured, the selected segment
    paints its own pill. */

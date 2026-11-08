@@ -46,8 +46,8 @@
 .oc-needs-action { display: inline-flex; align-items: center; gap: .375rem; align-self: flex-start; min-height: 44px; margin-top: auto; padding: 0; border: 0; background: none; color: var(--primary); font-size: var(--oc-text-small); font-weight: var(--oc-weight-semibold); text-decoration: none; cursor: pointer; }
 .oc-needs-action::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
 .oc-needs-card[data-variant="glass-navy"] .oc-needs-action { color: var(--oc-glass-cream); }
-.oc-needs-action:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; border-radius: var(--oc-radius-sm); box-shadow: 0 0 0 2px var(--focus-halo) }
-.oc-needs-card[data-variant="glass-navy"] .oc-needs-action:focus-visible { outline-color: var(--ring); outline-offset: 2px; box-shadow: 0 0 0 2px var(--focus-halo) }
+.oc-needs-action:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; border-radius: var(--oc-radius-sm); box-shadow: var(--focus-halo-outset) }
+.oc-needs-card[data-variant="glass-navy"] .oc-needs-action:focus-visible { outline-color: var(--ring); outline-offset: 2px; box-shadow: var(--focus-halo-outset) }
 .oc-needs-progress { display: grid; gap: .375rem; color: var(--muted-foreground); font-size: var(--oc-text-caption); }
 .oc-needs-card[data-variant="glass-navy"] .oc-needs-progress { color: var(--oc-rail-muted); }
 .oc-needs-progress-track, .oc-pipeline-track { display: block; height: .5rem; overflow: hidden; border-radius: 999px; background: var(--oc-surface-glass-track); box-shadow: var(--oc-glass-track-inset); }
