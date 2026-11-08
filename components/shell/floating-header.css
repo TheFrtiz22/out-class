@@ -53,13 +53,15 @@
   .oc-product-header .oc-floating-circle:hover { background: #fff7ec; border-color: rgb(20 45 69 / 22%); box-shadow: 0 6px 18px rgb(20 45 69 / 8%); }
   .oc-floating-search:hover::before { border-color: rgb(20 45 69 / 22%); }
 }
-/* Fixed bar. Its selected workspace divides into modes without growing. */
-.oc-product-header-row { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 12px 24px; }
-.oc-product-workspaces { width: max-content; max-width: 100%; min-width: 0; }
+/* One row at every width: the pill column shrinks (segments compress, the club name truncates) and the
+   utilities keep their size, so the header is the same height everywhere and never wraps. */
+.oc-product-header-row { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 24px; }
+.oc-product-workspaces { width: 100%; max-width: 100%; min-width: 0; }
 .oc-product-utilities { margin-left: 0; align-self: center; }
-.oc-evolving-toggle { --workspace-selected-track: minmax(0,1.65fr); --workspace-ratio: 1.65; width: 202px; max-width: 100%; }
-.oc-evolving-toggle[data-workspace-count="2"] { width: 346px; }
-.oc-evolving-toggle[data-workspace-count="3"] { width: 518px; }
+.oc-evolving-toggle { --workspace-selected-track: minmax(0,1.65fr); --workspace-ratio: 1.65; --workspace-width: 202px; display: flex; align-items: center; gap: 8px; width: 100%; max-width: 100%; min-width: 0; }
+.oc-evolving-toggle[data-workspace-count="2"] { --workspace-width: 346px; }
+.oc-evolving-toggle[data-workspace-count="3"] { --workspace-width: 518px; }
+.oc-evolving-toggle > .oc-evolving-bar { flex: 0 1 var(--workspace-width); min-width: 0; }
 .oc-evolving-bar { overflow: hidden; height: 54px; padding: 4px; border: 1px solid var(--oc-floating-border, var(--oc-glass-light-edge)); border-radius: 999px; background: var(--oc-glass-light-material); box-shadow: var(--oc-glass-light-depth); -webkit-backdrop-filter: var(--oc-glass-light-filter); backdrop-filter: var(--oc-glass-light-filter); }
 .oc-evolving-segments { --workspace-base: calc((100% - (var(--workspace-count) - 1) * 4px) / (var(--workspace-count) + var(--workspace-ratio) - 1)); position: relative; isolation: isolate; display: grid; grid-template-columns: var(--workspace-columns); align-items: stretch; gap: 4px; height: 44px; transition: grid-template-columns 420ms var(--oc-floating-ease); }
 .oc-workspace-segment { display: flex; align-items: stretch; min-width: 0; color: var(--primary); }
@@ -71,7 +73,8 @@
 .oc-workspace-option-label { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .oc-evolving-toggle .oc-evolving-segments .oc-workspace-option::before, .oc-evolving-toggle .oc-evolving-segments .oc-workspace-option::after { display: none; }
 .oc-evolving-toggle :is(a,button):focus-visible { outline: 2px solid var(--brand-orange); outline-offset: -2px; }
-.oc-workspace-club-switch { display: flex; justify-content: center; padding-top: 2px; }
+/* A leader of several clubs picks another club beside the pill, in the same row. */
+.oc-workspace-club-switch { display: flex; flex: 0 1 auto; min-width: 0; justify-content: flex-start; }
 .oc-header-club { display: flex; align-items: center; justify-content: center; gap: 6px; width: min(100%,240px); min-width: 0; min-height: 44px; padding: 4px 8px; border-radius: 12px; color: var(--muted-foreground); font-size: 12px; font-weight: 500; text-align: center; }
 .oc-header-club > :first-child { display: none; }
 .oc-header-club-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -87,11 +90,18 @@ button.oc-header-club:hover { color: var(--primary); background: rgb(20 45 69 / 
   .oc-floating-search-label, .oc-floating-search kbd { display: none; }
   .oc-floating-search:focus-visible::before, .oc-floating-search[aria-expanded="true"]::before { transform: none; }
 }
-@media (min-width: 1024px) and (max-width: 1199px) { .oc-product-header-row { grid-template-columns: minmax(0,1fr); } .oc-product-utilities { justify-self: end; margin-top: 0; } }
+/* Narrow desktops (icon rail): tighter spacing instead of a second row. */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .oc-product-header-row { gap: 12px; }
+  .oc-product-utilities { gap: 8px; }
+  .oc-evolving-toggle .oc-evolving-segments .oc-workspace-option { padding-inline: 2px; }
+  .oc-header-club { width: auto; max-width: 160px; }
+}
 @media (max-width: 1023px) { [data-product-shell] { --oc-shell-gutter: 20px; } .oc-product-header { margin-left: 0; } .oc-product-header .oc-floating-drawer { display: none; } }
 @media (max-width: 759px) {
   .oc-product-header-row { grid-template-columns: minmax(0,1fr); gap: 4px; }
   .oc-product-workspaces, .oc-evolving-toggle { width: 100%; }
+  .oc-evolving-toggle > .oc-evolving-bar { flex-basis: 100%; }
   .oc-evolving-toggle { --workspace-selected-track: minmax(0,2.5fr); --workspace-ratio: 2.5; }
   .oc-product-utilities { justify-self: end; margin-top: 0; }
   .oc-evolving-indicator { transition: transform 420ms var(--oc-floating-ease), opacity 180ms ease; }

@@ -2,6 +2,13 @@
 // `gap` is from the header's bottom edge to the top of the first visible line of text in <main>
 // (the line box of the element that holds it), which is what a reader sees as "where the page starts".
 function measureHeaderGap() {
+  // Two rows when the visible pill and the utilities sit at different heights.
+  function headerRows(header) {
+    const pill = header.querySelector('.oc-product-workspaces'), tools = header.querySelector('.oc-product-utilities')
+    if (!pill || !tools || !pill.getClientRects().length || getComputedStyle(pill).display === 'none') return 1
+    const a = pill.getBoundingClientRect(), b = tools.getBoundingClientRect()
+    return Math.abs((a.top + a.bottom) / 2 - (b.top + b.bottom) / 2) > 12 ? 2 : 1
+  }
   const header = document.querySelector('.oc-product-header'), main = document.querySelector('main#workspace-content')
   if (!header || !main) return null
   const box = header.getBoundingClientRect()
@@ -17,7 +24,7 @@ function measureHeaderGap() {
     // The line box: the glyph box centred in the element's line height.
     const lineHeight = parseFloat(style.lineHeight) || rect.height
     const lineTop = rect.top + rect.height / 2 - lineHeight / 2
-    return { headerHeight: Math.round(box.height * 10) / 10, gap: Math.round((lineTop - box.bottom) * 10) / 10, glyphGap: Math.round((rect.top - box.bottom) * 10) / 10, text: node.textContent.trim().slice(0, 48), rows: header.querySelector('.oc-product-header-row').getClientRects().length }
+    return { headerHeight: Math.round(box.height * 10) / 10, gap: Math.round((lineTop - box.bottom) * 10) / 10, glyphGap: Math.round((rect.top - box.bottom) * 10) / 10, text: node.textContent.trim().slice(0, 48), rows: headerRows(header) }
   }
   return null
 }

@@ -43,10 +43,7 @@ export default async function Page({
   });
   return (
     <div className="max-w-[var(--oc-reading-width)] space-y-6">
-      <Link className="underline" href="/clubs">
-        My Clubs
-      </Link>
-      <PageHeader title={<>Claim {club.name}</>} />
+      <PageHeader title={<>Claim {club.name}</>} action={<Link className="underline underline-offset-4" href="/clubs">My Clubs</Link>} />
       <p>
         Keep your student identity. Once an OutClass administrator approves your
         request, this club’s workspace will become available to you.

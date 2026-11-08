@@ -9,10 +9,8 @@ export default async function EventApprovalsPage() {
   if (result.supportCode) return <AdminRecovery supportCode={result.supportCode} />;
   return (
     <section className="oc-workspace-stack">
-      <Link href="/platform" className="underline">
-        Admin workspace
-      </Link>
       <PageHeader
+        action={<Link href="/platform" className="underline underline-offset-4">Admin workspace</Link>}
         eyebrow="OutClass · Administration"
         title="Event Approvals"
         description="Review public campus events before their flyers appear on Corkboard."

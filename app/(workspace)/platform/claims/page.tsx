@@ -12,10 +12,7 @@ export default async function Page() {
   if (claims.supportCode) return <AdminRecovery supportCode={claims.supportCode} />;
   return (
     <section className="max-w-[var(--oc-content-width)] space-y-6">
-      <Link className="underline" href="/platform">
-        Platform administration
-      </Link>
-      <PageHeader eyebrow="OutClass · Administration" title="Club claims" />
+      <PageHeader eyebrow="OutClass · Administration" title="Club claims" action={<Link className="underline underline-offset-4" href="/platform">Platform administration</Link>} />
       <ClaimReview initial={claims.value!} />
     </section>
   );

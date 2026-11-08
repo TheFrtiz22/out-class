@@ -7,14 +7,9 @@ export default function Page() {
   const router = useRouter();
   return (
     <div className="max-w-[var(--oc-content-width)]">
-      <Link
-        href="/explore"
-        className="mb-6 inline-flex min-h-11 items-center text-sm underline"
-      >
-        Explore clubs
-      </Link>
       <SavedClubsView
         onNavigate={(view) => router.push(studentPath(view))}
+        headerAction={<Link href="/explore" className="text-sm underline underline-offset-4">Explore clubs</Link>}
       />
     </div>
   );

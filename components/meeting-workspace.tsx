@@ -348,7 +348,8 @@ function MeetingEditor({
     </form>
   );
 }
-export function MeetingDetail({ id, onUpdated }: { id: string; onUpdated?: () => void }) {
+/** `headerAction` is the page's own link (All meetings), placed in the title row rather than above it. */
+export function MeetingDetail({ id, onUpdated, headerAction }: { id: string; onUpdated?: () => void; headerAction?: ReactNode }) {
   const [meeting, setMeeting] = useState<Meeting | null>(null),
     [error, setError] = useState(""),
     [refresh, setRefresh] = useState(0);
@@ -390,7 +391,7 @@ export function MeetingDetail({ id, onUpdated }: { id: string; onUpdated?: () =>
             ? "Member meeting"
             : "Recruitment / Interest"}
         </p>
-        <PageHeader title={meeting.title} />
+        <PageHeader title={meeting.title} action={headerAction} />
         <p>
           {meetingDate(meeting.date)}
           {meeting.endDate &&

@@ -24,12 +24,9 @@ export default async function AccessPage({ params }: { params: Promise<{ clubId:
   }
   const data = await getClubAccess(clubId)
   return (
-    <Panel className="oc-workspace-stack max-w-[var(--oc-content-width)]">
-      <Link href={`/club/${clubId}/workspace?section=members`} className="underline">
-        Back to club members
-      </Link>
-      <PageHeader title="Workspace access" />
-      <ClubAccessEditor clubId={clubId} initial={data} />
-    </Panel>
+    <div className="oc-workspace-stack max-w-[var(--oc-content-width)]">
+      <PageHeader title="Workspace access" action={<Link href={`/club/${clubId}/workspace?section=members`} className="underline underline-offset-4">Back to club members</Link>} />
+      <Panel><ClubAccessEditor clubId={clubId} initial={data} /></Panel>
+    </div>
   )
 }

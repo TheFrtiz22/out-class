@@ -8,10 +8,7 @@ export default async function Page({
   const { id } = await params;
   return (
     <div className="max-w-[var(--oc-content-width)] space-y-6">
-      <Link className="text-sm underline" href="/meetings">
-        All meetings
-      </Link>
-      <MeetingDetail id={id} />
+      <MeetingDetail id={id} headerAction={<Link className="text-sm underline underline-offset-4" href="/meetings">All meetings</Link>} />
     </div>
   );
 }

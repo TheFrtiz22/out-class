@@ -36,5 +36,21 @@ async function shot(page, name) {
         await context.close()
       }
     }
+    if (part === 'part2') {
+      // Tightest header: a leader of two clubs (club switcher beside the pill) with Admin. Removed afterwards.
+      const second = account.fixture.clubIds[1]
+      await account.db.clubMember.upsert({ where: { userId_clubId: { userId: account.config.admin.id, clubId: second } }, update: { status: 'ACTIVE', isOwner: true, accessRole: 'OWNER' }, create: { clubId: second, userId: account.config.admin.id, isOwner: true, accessRole: 'OWNER' } })
+      try {
+        for (const width of [1024, 1180, 1280, 1920]) {
+          const context = await h.signedInContext(browser, account, { viewport: { width, height: 700 }, deviceScaleFactor: 2 })
+          const page = await context.newPage()
+          await page.goto(account.config.appUrl + `/club/${account.clubId}/workspace?section=overview`); await page.locator('main h1').first().waitFor()
+          await page.waitForTimeout(800)
+          await page.screenshot({ path: path.join(out, `header-${width}.png`), clip: { x: 0, y: 0, width, height: 260 } }); console.log('saved header', width)
+          if (width === 1024 || width === 1920) { await page.goto(account.config.appUrl + '/saved-clubs'); await page.locator('main h1').first().waitFor(); await shot(page, `saved-clubs-${width}`) }
+          await context.close()
+        }
+      } finally { await account.db.clubMember.delete({ where: { userId_clubId: { userId: account.config.admin.id, clubId: second } } }) }
+    }
   } finally { await browser.close(); await account.db.$disconnect() }
 })().catch(error => { console.error(error); process.exit(1) })
