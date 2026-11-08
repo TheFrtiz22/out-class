@@ -52,7 +52,9 @@ export async function middleware(request: NextRequest) {
   // These boundaries verify getUser themselves and can write refreshed cookies.
   // The demo/support mutation guards above still run before this optimization.
   // No identity forwarded by a client/header is trusted by downstream loaders.
+  // Native-client routes under /api/v1 authenticate a bearer token per request and use no cookies.
   const ownsAuth = request.nextUrl.pathname === "/api/workspace" || request.nextUrl.pathname === "/api/users/me" ||
+    request.nextUrl.pathname.startsWith("/api/v1/") ||
     request.method === "POST" && request.headers.has("next-action")
   const response = ownsAuth ? NextResponse.next() : await createClient(request)
   // Product views share the homepage URL. Preserve their query parameters and

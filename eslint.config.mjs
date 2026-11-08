@@ -7,7 +7,7 @@ import outclass from "./eslint-rules/no-raw-colors.mjs";
 const require = createRequire(import.meta.url);
 const compat = new FlatCompat({ baseDirectory: dirname(fileURLToPath(import.meta.url)), resolvePluginsRelativeTo: dirname(require.resolve("eslint-config-next")) });
 const config = [
-  { ignores: [".next*/**", "node_modules/**", ".pnpm-store/**", "out/**", "build/**", "public/pdfjs/**", "next-env.d.ts", ".agents/**", ".claude/**", ".codex/**", ".cursor/**", ".devin/**", ".openai/**"] },
+  { ignores: [".next*/**", "node_modules/**", "mobile/**", ".pnpm-store/**", "out/**", "build/**", "public/pdfjs/**", "next-env.d.ts", ".agents/**", ".claude/**", ".codex/**", ".cursor/**", ".devin/**", ".openai/**"] },
   ...compat.extends("next/core-web-vitals"),
   ...compat.extends("plugin:jsx-a11y/recommended"),
   {
