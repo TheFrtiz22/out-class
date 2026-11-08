@@ -6,7 +6,13 @@ Status: approved mockups, foundation work only. No public page has been redesign
 
 The approved mockups live in this folder. `Main.mockup.html` is the homepage.
 
-The mockups reference images through `/_blob/...` URLs. Each one maps to an asset already in the repo:
+`Main.mockup.html` is the design tool's export (`Main.dc.html`) of the desktop homepage. Its inline styles
+carry the reference values; replicate them with the app's tokens and components, do not copy the markup.
+The export's runtime (`support.js`, `vendor/`) and its `assets/` copies are not committed, so open it for
+values, not for a live preview.
+
+The mockups reference images through `/_blob/...` or `./assets/<hash>` URLs. Each one maps to an asset
+already in the repo:
 
 | Blob prefix | Repo asset |
 | --- | --- |
