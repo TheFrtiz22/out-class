@@ -96,7 +96,7 @@ test('interview composer Enter actions, multiline, validation, duplicate guards,
     await applicantQuestions.fill('Discussion'); await applicantQuestions.press('Enter'); await page.keyboard.type('Continues')
     assert.equal(await applicantQuestions.inputValue(), 'Discussion\nContinues')
     assert.equal(await page.getByRole('region', { name: 'Submitted review', exact: true }).count(), 0)
-    assert.equal(await page.getByRole('slider', { name: 'Overall score' }).getAttribute('aria-valuetext'), 'Not scored; interact to select a score')
+    assert.equal(await page.getByRole('slider', { name: 'Your score' }).getAttribute('aria-valuetext'), 'Not scored; interact to select a score')
     assert.deepEqual(external, []); assert.deepEqual(errors, [])
     console.log('Actual PDF selection → continuous typing → Enter, multiline, validation, save failure, focus, completion and review isolation passed.')
   } finally { await browser.close(); server.kill() }
