@@ -3,15 +3,15 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),React=req
 const {loadComponent}=require('./helpers/component-module.cjs');
 const text=html=>html.replace(/<[^>]+>/g,' ').replace(/&#x27;/g,"'").replace(/\s+/g,' ').trim();
 const long='The applicant explained their reasoning clearly and considered alternative evidence before reaching a conclusion, then described a collaboration example with real nuance.';
-const feedback={roundId:'r2',roundName:'Final interview',pending:1,scoresIncluded:true,earlierRounds:[{roundId:'r1',roundName:'First interview',submitted:2}],
- entries:[{id:'a',interviewer:'Avery Panel',summary:long,score:8.25},{id:'b',interviewer:'Blake Peer',summary:null,score:6}]};
+const feedback={roundId:'r2',roundName:'Final interview',pending:1,scoresIncluded:true,average:7.25,scored:2,earlierRounds:[{roundId:'r1',roundName:'First interview',submitted:2}],
+ entries:[{id:'a',interviewer:'Avery Panel',summary:long,score:8.5},{id:'b',interviewer:'Blake Peer',summary:null,score:6}]};
 
 test('section lists each interviewer with their own score and finalized summary, labels the round and counts pending neutrally',()=>{
  const {InterviewFeedbackSection,EarlierFeedbackRounds}=loadComponent('components/interview-feedback-section.tsx');
  const full=text(renderToStaticMarkup(React.createElement(React.Fragment,null,React.createElement(InterviewFeedbackSection,{feedback}),React.createElement(EarlierFeedbackRounds,{feedback}))));
  assert.match(full,/Interview feedback · Final interview/);
- assert.match(full,/Avery Panel · 8\.25 \/ 10/);assert.ok(full.includes(long),'full text outside compact mode');
- assert.match(full,/Blake Peer · 6 \/ 10 No written summary submitted\./);
+ assert.match(full,/Avery Panel ?8\.5 \/ 10/);assert.match(full,/Average interview score · 7\.3 \/ 10 · 2 scored evaluations/);assert.ok(full.includes(long),'full text outside compact mode');
+ assert.match(full,/Blake Peer ?6 \/ 10 ?No written summary submitted\./);
  assert.match(full,/1 review not yet submitted/);assert.doesNotMatch(full,/Read full/);
  assert.match(full,/Earlier rounds: First interview · 2 submitted reviews/);
  // Compact slide preview truncates per interviewer and offers the accessible details dialog.

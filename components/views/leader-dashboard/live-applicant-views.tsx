@@ -11,7 +11,7 @@ import type { ApplicantSort } from "@/lib/live-applicant-sorting"
 import { applicantLane, applicantLanes } from "@/lib/applicant-board"
 import { relevantInterview } from "@/lib/application-presentation"
 import { TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
-import { formatAverage } from "@/lib/interview-review-summary"
+import { formatAverage, scoredEvaluationsLabel } from "@/lib/interview-review-summary"
 import { NativeSelect } from "@/components/ui/native-select"
 
 type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
@@ -29,7 +29,7 @@ function ApplicantIdentity({ label, anonymous }: { label: string; anonymous: boo
 }
 function Review({ app }: { app: Candidate; average?: Props["average"] }) {
   const summary = app.roundScore
-  return <span className="oc-applicant-review" data-reviewed={!!summary?.submitted}>{summary ? <><strong>{formatAverage(summary.average)}{summary.average !== null && <span> / 10</span>}</strong><span>{summary.submitted} of {summary.required} reviews submitted{summary.provisional && " · Provisional"}</span></> : <span className="oc-applicant-review-hidden"><Lock aria-hidden="true" size={14} />Hidden until you review</span>}</span>
+  return <span className="oc-applicant-review" data-reviewed={!!summary?.submitted}>{summary ? <><strong>{formatAverage(summary.average)}{summary.average !== null && <span> / 10</span>}</strong><span>{summary.average === null ? `${summary.submitted} of ${summary.required} reviews submitted` : `Average of ${scoredEvaluationsLabel(summary.submitted)}`}{summary.provisional && " · Provisional"}</span></> : <span className="oc-applicant-review-hidden"><Lock aria-hidden="true" size={14} />Hidden until you review</span>}</span>
 }
 const columns: { key: ApplicantSort; label: string }[] = [{ key: "name", label: "Applicant" }, { key: "year", label: "Year" }, { key: "round", label: "Round" }, { key: "gpa", label: "GPA" }, { key: "sat", label: "SAT" }, { key: "act", label: "ACT" }, { key: "score", label: "Rating" }, { key: "status", label: "Status / decision" }]
 export function LiveApplicantList({ applicants, rounds, open, compact, name, sort = "name", descending = false, sortBy, votingSelection }: Props) {

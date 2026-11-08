@@ -1,6 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import { formatAverage } from "@/lib/interview-review-summary";
+import { formatAverage, formatScore, scoredEvaluationsLabel } from "@/lib/interview-review-summary";
 import { interviewFeedbackEmpty, interviewFeedbackPending, type InterviewFeedback as Feedback } from "@/lib/interview-feedback";
 
 // Presentation only: no data access, so the Voting room slide can import it without the API graph.
@@ -13,8 +13,9 @@ export function InterviewFeedbackSection({ feedback, compact = false, onReadFull
   const limit = feedback.entries.length > 1 ? 100 : 150, truncated = compact && feedback.entries.some(e => e.summary && preview(e.summary, limit) !== e.summary);
   return <section aria-label={`Interview feedback · ${feedback.roundName}`} data-interview-feedback={feedback.roundId} className={compact ? "space-y-1" : "space-y-2"}>
     <h3 className={compact ? undefined : "oc-card-heading"}>Interview feedback · {feedback.roundName}</h3>
+    {/* On the slide the score field beside this section carries the average. */}{!compact && feedback.scoresIncluded && feedback.entries.length > 0 && <p className="text-sm" data-feedback-average><span className="text-muted-foreground">Average interview score · </span><strong>{formatAverage(feedback.average)}{feedback.average !== null && " / 10"}</strong>{feedback.average !== null && <span className="text-muted-foreground"> · {scoredEvaluationsLabel(feedback.scored)}</span>}</p>}
     {feedback.entries.length ? <ul className="divide-y">{feedback.entries.map(e => <li key={e.id} className={compact ? "py-1 first:pt-0" : "space-y-1 py-2"}>
-      <p className="text-sm font-medium">{e.interviewer}{feedback.scoresIncluded && <span className="font-normal text-muted-foreground"> · {e.score === null ? "No score" : `${formatAverage(e.score)} / 10`}</span>}</p>
+      <p className="flex flex-wrap items-baseline justify-between gap-x-3 text-sm font-medium"><span>{e.interviewer}</span>{feedback.scoresIncluded && (e.score === null ? <span className="font-normal text-muted-foreground">Not scored</span> : <span className="tabular-nums"><strong className="text-base">{formatScore(e.score)}</strong><span className="font-normal text-muted-foreground"> / 10</span></span>)}</p>
       <p className="whitespace-pre-wrap break-words text-sm">{e.summary ? (compact ? preview(e.summary, limit) : e.summary) : <span className="text-muted-foreground">No written summary submitted.</span>}</p>
     </li>)}</ul> : <p className="text-sm text-muted-foreground">{interviewFeedbackEmpty(feedback.roundName)}</p>}
     {feedback.pending > 0 && <p className="text-xs text-muted-foreground">{interviewFeedbackPending(feedback.pending)}</p>}

@@ -5,7 +5,7 @@ import type {getLiveVotingPresentation} from "@/actions/voting-room";
 import {fieldLabels} from "@/lib/applicant-display";
 import {anonymousApplicantLabel} from "@/lib/anonymous-review";
 import {liveRoomFields} from "@/lib/voting-room";
-import {formatAverage} from "@/lib/interview-review-summary";
+import {formatAverage,scoredEvaluationsLabel} from "@/lib/interview-review-summary";
 import {highlightAttribution} from "@/lib/voting-slide-preparation";
 import {Dialog,DialogContent,DialogTitle} from "@/components/ui/dialog";
 import {Button} from "@/components/ui/button";
@@ -28,10 +28,14 @@ export function ApplicantSlide({data}:{data:VotingSlideData}){
     fields.push({field:"resumeHighlight",label:"Leader-selected résumé excerpt",full:text,preview:text,note:""});
   }
   if(data.requestedFields?.includes("interviewScore")&&data.interviewScore){
-    const score=data.interviewScore,rounds=score.byRound??[];
-    const aggregate=score.average===null?"Not yet scored":`${formatAverage(score.average)} / 10 · ${score.submitted} submitted evaluation${score.submitted===1?"":"s"}`;
-    const breakdown=rounds.map(r=>`${r.roundName}: ${formatAverage(r.average)} / 10 · ${r.submitted} submitted evaluation${r.submitted===1?"":"s"}`);
-    fields.push({field:"interviewScore",label:"Interview scores · 1–10",preview:aggregate,note:rounds.map(r=>r.roundName).join(" · "),full:[aggregate,...breakdown].join("\n")});
+    // Current-round average (same canonical calculation per round); other rounds stay separate and labelled.
+    const rounds=data.interviewScore.byRound??[],feedbackRound="interviewFeedback"in data?data.interviewFeedback?.roundId:undefined;
+    const current=rounds.find(r=>r.roundId===feedbackRound)??rounds.find(r=>r.roundId===data.roundId)??rounds.at(-1);
+    const line=(r:{average:number;submitted:number})=>`${formatAverage(r.average)} / 10 · ${scoredEvaluationsLabel(r.submitted)}`;
+    const others=rounds.filter(r=>r!==current);
+    fields.push({field:"interviewScore",label:"Average interview score",preview:current?line(current):"Not scored",
+      note:current?`${current.roundName}${others.length?" · other rounds in details":""}`:"",
+      full:[current?`${current.roundName}: ${line(current)}`:"Not scored",...others.map(r=>`${r.roundName} (separate round): ${line(r)}`),"Equal-weight average of valid submitted interviewer scores; missing or unsubmitted scores are not counted."].join("\n")});
   }
   // The round-scoped Interview feedback section takes the thoughts field's place on the slide.
   // Other rounds' thoughts are never merged into it: they appear only in the details dialog, by round.

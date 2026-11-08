@@ -2,6 +2,7 @@
  * submitted evaluations (score) and completed records with a submitted evaluation
  * (final interview thoughts). Callers must pass rounds that are already authorized
  * for the viewer (see authorizedInterviewRounds / the Demo mirror). */
+import { submittedScoreSummary } from "@/lib/interview-review-summary";
 export type InterviewFeedbackEntry = { id: string; interviewer: string; summary: string | null; score: number | null };
 export type InterviewFeedbackReference = { roundId: string; roundName: string; submitted: number };
 export type InterviewFeedback = {
@@ -10,6 +11,10 @@ export type InterviewFeedback = {
   /** Assigned interviewers who have not submitted. A count only: never names or scores. */
   pending: number;
   scoresIncluded: boolean;
+  /** Equal-weight average of valid submitted scores in this round (canonical submittedScoreSummary); null when none or scores withheld. */
+  average: number | null;
+  /** Scored, submitted evaluations behind `average`. */
+  scored: number;
   /** Earlier authorized rounds, as labelled references only. Never merged into entries. */
   earlierRounds: InterviewFeedbackReference[];
 };
@@ -49,9 +54,11 @@ export function buildInterviewFeedback(input: {
     const submitted = new Set(input.reviews.filter(v => v.submittedAt && v.roundId === r.id).map(v => v.interviewerId)).size;
     return submitted ? [{ roundId: r.id, roundName: r.name, submitted }] : [];
   });
+  const summary = input.includeScores ? submittedScoreSummary(input.reviews.filter(r => r.roundId === round.id), []) : null;
   return {
     roundId: round.id, roundName: round.name,
     entries,
+    average: summary?.average ?? null, scored: summary?.submitted ?? 0,
     pending: new Set(input.pendingMemberIds.filter(id => !seen.has(id))).size,
     scoresIncluded: input.includeScores, earlierRounds,
   };
