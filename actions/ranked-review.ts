@@ -19,9 +19,13 @@ export async function getRankedReviewSettings(clubId: string, roundId: string) {
   return prisma.$transaction(async tx => {
     const membership = await authorizeClubTransaction(tx, clubId, user.id, [], { readOnly: true, allowSuspendedRead: true });
     if (!hasPermission(membership, "applicants.identify") && !hasPermission(membership, "applications.review")) throw new Error("Applicant access denied.");
-    const round = await tx.pipelineRound.findFirst({ where: { id: roundId, clubId, archivedAt: null }, select: { id: true, configuration: true } });
+    const round = await tx.pipelineRound.findFirst({ where: { id: roundId, clubId, archivedAt: null }, select: { id: true, configuration: true, anonymousReview: true } });
     if (!round) throw new Error("Round unavailable.");
-    const cycles = await tx.recruitmentCycle.findMany({ where: { clubId }, orderBy: [{ createdAt: "desc" }, { id: "asc" }], select: { id: true, name: true } });
+    // Same rule as the pipeline: without applicants.identify a reviewer works only in anonymous rounds,
+    // and anonymous rounds expose no cycle membership.
+    const identify = hasPermission(membership, "applicants.identify");
+    if (!identify && !round.anonymousReview) throw new Error("Applicant access denied.");
+    const cycles = round.anonymousReview ? [] : await tx.recruitmentCycle.findMany({ where: { clubId }, orderBy: [{ createdAt: "desc" }, { id: "asc" }], select: { id: true, name: true } });
     return { roundId: round.id, scopes: readRankedReviewSettings(round.configuration), cycles, canManage: hasPermission(membership, "recruitment.manage") };
   });
 }
@@ -50,7 +54,7 @@ export async function saveRankedReviewBands(input: unknown) {
     const current = rankedScopeSetting(round.configuration, data.cycleKey);
     if (current.revision !== data.expectedRevision) throw new Error("Discussion bands changed. Reload before saving.");
     const revision = current.revision + 1;
-    await tx.pipelineRound.update({ where: { id: round.id }, data: { configuration: withRankedScope(round.configuration, data.cycleKey, data.bands, revision, { updatedBy: user.id, updatedAt: new Date().toISOString() }) } });
+    await tx.pipelineRound.update({ where: { id: round.id }, data: { configuration: withRankedScope(round.configuration, data.cycleKey, data.bands, revision) } });
     await tx.auditLog.create({ data: { actorId: user.id, action: "round.ranked-review-bands.configure", targetId: round.id, clubId: data.clubId, details: { cycleKey: data.cycleKey, bands: data.bands, revision } } });
     return { revision, bands: data.bands };
   });

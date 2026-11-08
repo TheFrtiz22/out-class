@@ -17,7 +17,7 @@ function harness(memberA=leader,memberB=null){
   user:{findUnique:async()=>({disabledAt:null})},
   clubMember:{findUnique:async({where})=>state.members[where.userId_clubId.clubId]??null},
   club:{findUniqueOrThrow:async({where})=>state.club[where.id],update:async({where,data})=>{for(const[k,v]of Object.entries(data))state.club[where.id][k]=v?.increment?state.club[where.id][k]+v.increment:v;}},
-  pipelineRound:{findFirst:async({where})=>{const r=state.rounds.find(r=>match(r,where));return r?structuredClone({id:r.id,configuration:r.configuration}):null;},
+  pipelineRound:{findFirst:async({where})=>{const r=state.rounds.find(r=>match(r,where));return r?structuredClone({id:r.id,configuration:r.configuration,anonymousReview:!!r.anonymousReview}):null;},
    findMany:async({where})=>state.rounds.filter(r=>r.clubId===where.clubId).map(r=>structuredClone(r)),
    update:async({where,data})=>Object.assign(state.rounds.find(r=>r.id===where.id),structuredClone(data)),create:async()=>{throw Error('unexpected create');},delete:async()=>{throw Error('unexpected delete');}},
   recruitmentCycle:{findFirst:async({where})=>state.cycles.find(c=>c.id===where.id&&c.clubId===where.clubId)??null,findMany:async({where})=>state.cycles.filter(c=>c.clubId===where.clubId).map(({id,name})=>({id,name}))},
@@ -80,4 +80,12 @@ test('the existing pipeline settings writer preserves saved discussion bands',as
  const config=h.state.rounds.find(r=>r.id===roundA).configuration;
  assert.equal(config.instructions,'New kit');assert.equal(config.futureOption,true);assert.deepEqual(config.rankedReviewBands.scopes[cycleA].bands,bands);
  assert.equal(h.state.club[clubA].pipelineVersion,1,'band saves do not consume the pipeline settings version');
+});
+test('reading bands follows the pipeline rule: without applicants.identify only anonymous rounds, never cycle names; no editor id is stored',async()=>{
+ const h=harness();await h.api.saveRankedReviewBands(save());
+ assert.equal(JSON.stringify(h.state.rounds.find(r=>r.id===roundA).configuration).includes('actor'),false,'the audit log, not round configuration, records the editor');
+ const blind=harness({status:'ACTIVE',permissions:['applications.review']});
+ await assert.rejects(blind.api.getRankedReviewSettings(clubA,roundA),/denied/);
+ blind.state.rounds.find(r=>r.id===roundA).anonymousReview=true;const anon=await blind.api.getRankedReviewSettings(clubA,roundA);
+ assert.deepEqual(anon.cycles,[]);assert.equal(anon.canManage,false);
 });
