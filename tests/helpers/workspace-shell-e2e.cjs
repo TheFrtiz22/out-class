@@ -7,7 +7,8 @@ const { Actor, readConfig, totp } = require('./onboarding-e2e.cjs')
  * The bootstrapped platform administrator (verified signup + TOTP) also owns the first navigation
  * fixture club and has a student profile, so one account sees Personal · club · Admin in the pill.
  */
-async function shellAccount(configFile) {
+/** `elevate: false` skips the fresh admin verification (rate limited) for checks that never open /platform. */
+async function shellAccount(configFile, { elevate = true } = {}) {
   const config = readConfig(configFile)
   const fixture = JSON.parse(fs.readFileSync(path.join(path.dirname(configFile), 'navigation-fixture.json')))
   const admin = config.admin
@@ -24,7 +25,7 @@ async function shellAccount(configFile) {
     if (challenge.error) throw challenge.error
     // /platform needs a fresh admin verification (password, then authenticator), as on /platform/login.
     const post = body => actor.request('/api/platform/elevation', { method: 'POST', headers: { origin: config.appUrl, 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-    for (const body of [{ action: 'password', password: admin.password }, { action: 'verify', code: totp(admin.totpSecret) }]) {
+    for (const body of elevate ? [{ action: 'password', password: admin.password }, { action: 'verify', code: totp(admin.totpSecret) }] : []) {
       const response = await post(body)
       if (response.status !== 200) throw Error(`Admin elevation ${body.action} failed: ${response.status}`)
     }

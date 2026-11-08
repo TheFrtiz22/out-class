@@ -9,12 +9,37 @@
 .oc-interview-time small { color: var(--muted-foreground); font-size: var(--oc-text-caption); font-weight: var(--oc-weight-regular); }
 .oc-interview-row[data-unscheduled="true"] .oc-interview-time { color: var(--brand-ink); }
 
-/* Phones: the pipeline leads, interviews are listed in This week. */
+/* Next meeting: date chip, title, when and where, agenda excerpt, then its actions. */
+.oc-next-meeting { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 1rem; align-items: start; }
+.oc-next-meeting .oc-date-chip { width: 3.5rem; height: 3.5rem; }
+.oc-next-meeting-title { font-family: var(--oc-font-display); font-size: 1.375rem; line-height: 1.2; color: var(--foreground); }
+.oc-next-meeting-when { margin-top: .25rem; color: var(--muted-foreground); font-size: var(--oc-text-small); }
+.oc-next-meeting-agenda { margin-top: .5rem; font-size: var(--oc-text-small); color: var(--foreground); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.oc-next-meeting-agenda[data-empty="true"] { color: var(--muted-foreground); }
+.oc-next-meeting-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+.oc-next-meetings { margin-top: 1rem; border-top: 1px solid var(--oc-surface-glass-edge); }
+.oc-club-home-tasks .oc-segmented-control { margin-bottom: .5rem; }
+
+/* The one recruiting link on Club home: a slim interview-tinted strip. */
+.oc-recruiting-strip { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; min-height: 2.75rem; margin-bottom: 1.25rem; padding: .5rem 1rem; border: 1px solid color-mix(in srgb, var(--interview) 24%, transparent); border-radius: 999px; background: var(--interview-subtle); color: var(--foreground); font-size: var(--oc-text-small); text-decoration: none; }
+.oc-recruiting-strip:hover { border-color: color-mix(in srgb, var(--interview) 45%, transparent); }
+.oc-recruiting-strip:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.oc-recruiting-strip-dot { width: .5rem; height: .5rem; border-radius: 50%; background: var(--interview); flex-shrink: 0; }
+.oc-recruiting-strip-go { display: inline-flex; align-items: center; gap: .25rem; margin-left: auto; font-weight: var(--oc-weight-semibold); color: var(--interview); }
+@media (forced-colors: active) { .oc-recruiting-strip { border-color: CanvasText; } .oc-recruiting-strip-dot { background: Highlight; forced-color-adjust: none; } }
+
+/* Recruiting Overview hero actions sit beside the applications badge. */
+.oc-recruiting-actions { align-items: center; }
+.oc-recruiting-empty { padding: var(--oc-content-padding); }
+
+/* Phones: the next meeting leads, then tasks, the week and announcements. */
 @media (max-width: 759px) {
-  .oc-club-home-pipeline { order: 1; }
-  .oc-club-home-week { order: 2; }
-  .oc-club-home-updates { order: 3; }
-  .oc-club-home-pulse { order: 4; }
-  .oc-club-home-assignments { order: 5; }
-  .oc-club-home-card.oc-club-home-interviews { display: none; }
+  .oc-club-home-meeting { order: 1; }
+  .oc-club-home-tasks { order: 2; }
+  .oc-club-home-week { order: 3; }
+  .oc-club-home-updates { order: 4; }
+  .oc-club-home-members { order: 5; }
+  .oc-club-home-pulse { order: 6; }
+  .oc-club-home-assignments { order: 7; }
+  .oc-recruiting-strip-go { margin-left: 0; }
 }

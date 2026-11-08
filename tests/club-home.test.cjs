@@ -20,20 +20,56 @@ const member = (permissions, extra = {}) => ({ id: 'member', isOwner: false, per
 const owner = member([], { isOwner: true })
 const cards = data => model.needsYou(data, model.railHrefs(data.membership, club.id)).map(card => card.id)
 
-test('Needs you: most urgent first, at most four, only what the member may act on', () => {
-  assert.deepEqual(cards(overview('large', club, owner)), ['vote-live', 'overdue', 'interviews', 'reviews'])
-  assert.deepEqual(cards(overview('large', club, member(['applications.review']))), ['overdue', 'reviews'])
-  assert.deepEqual(cards(overview('large', club, member([]))), ['overdue'])
-  // An interviewer who can identify applicants but not manage interviews never gets the scheduler card.
-  assert.deepEqual(cards(overview('large', club, member(['applicants.identify'], { interviewOffices: ['PRESIDENT'] }))), ['overdue'])
+const recruiting = data => model.recruitingNeeds(data, model.railHrefs(data.membership, club.id)).map(card => card.id)
+const RECRUITING_CARDS = ['vote-live', 'vote-upcoming', 'vote-complete', 'interviews', 'reviews', 'offers']
+
+test('Club home Needs you: club work only, most urgent first, at most four, only what the member may act on', () => {
+  // Owner: own overdue task, team overdue, submissions to review, a task due soon. No vote, interview or review cards.
+  assert.deepEqual(cards(overview('large', club, owner)), ['overdue', 'team-overdue', 'submissions', 'due-soon'])
+  for (const access of [owner, member(['applications.review']), member(['applicants.identify', 'interviews.manage', 'decisions.view', 'applications.review'])]) {
+    assert.deepEqual(cards(overview('large', club, access)).filter(id => RECRUITING_CARDS.includes(id)), [], 'no recruiting cards on Club home')
+  }
+  assert.deepEqual(cards(overview('large', club, member(['applications.review']))), ['overdue', 'due-soon'])
+  assert.deepEqual(cards(overview('large', club, member([]))), ['overdue', 'due-soon'])
   assert.deepEqual(cards(overview('clear', club, owner)), [])
   const data = overview('large', club, owner)
-  data.operations.votes = []; data.operations.tasks.overdue = 0
-  assert.deepEqual(cards(data), ['interviews', 'reviews', 'submissions'])
-  const reviews = model.needsYou(data, model.railHrefs(owner, club.id)).find(card => card.id === 'reviews')
-  assert.deepEqual(reviews.progress, { done: 26, total: 40 })
+  data.operations.tasks.overdue = 0; data.operations.team.overdue = 0; data.work = data.work.filter(w => +new Date(w.task.dueAt) > Date.now() + 3 * 86400000)
+  // A meeting in the next 48 hours with no agenda, for members who run meetings; pending invitations for directory access.
+  data.operations.meetings[0].agenda = ''
+  assert.deepEqual(cards(data), ['submissions', 'agenda', 'invitations'])
   const submissions = model.needsYou(data, model.railHrefs(owner, club.id)).find(card => card.id === 'submissions')
   assert.equal(submissions.action.kind, 'task'); assert.equal(submissions.action.review, true)
+  assert.equal(model.needsYou(data, model.railHrefs(owner, club.id)).find(card => card.id === 'agenda').action.kind, 'meeting')
+  assert.ok(!cards({ ...data, membership: member([]) }).includes('agenda'), 'agenda card needs meetings.manage')
+})
+
+test('Recruiting Needs you keeps its order: live vote, reviews, interview times, voting complete, offers', () => {
+  const data = overview('large', club, owner)
+  data.operations.votes = [...data.operations.votes, { ...data.operations.votes[0], id: 'done', state: 'COMPLETED', round: { name: 'Round 1 vote' } }]
+  data.operations.offers = [{ id: 'offer', applicationId: 'app', expiresAt: new Date(Date.now() + 3 * 86400000), label: 'Jordan Avery' }]
+  assert.deepEqual(model.recruitingNeeds(data, model.railHrefs(owner, club.id)).map(card => card.id), ['vote-live', 'reviews', 'interviews', 'vote-complete'])
+  data.operations.votes = data.operations.votes.filter(v => v.id === 'done')
+  assert.deepEqual(recruiting(data), ['reviews', 'interviews', 'vote-complete', 'offers'])
+  const reviews = model.recruitingNeeds(data, model.railHrefs(owner, club.id)).find(card => card.id === 'reviews')
+  assert.deepEqual(reviews.progress, { done: 26, total: 40 })
+  assert.equal(model.recruitingNeeds(data, model.railHrefs(owner, club.id)).find(card => card.id === 'offers').action.kind, 'applicant')
+  // Permission subsets: a reviewer gets reviews only; a plain member nothing.
+  assert.deepEqual(recruiting(overview('large', club, member(['applications.review']))), ['reviews'])
+  assert.deepEqual(recruiting(overview('large', club, member([]))), [])
+})
+
+test('the recruiting strip shows only with recruiting access and an active cycle', () => {
+  const strip = (data, access = data.membership) => model.recruitingStrip(data, model.railHrefs(access, club.id))
+  const data = overview('large', club, owner)
+  assert.deepEqual(strip(data), { open: true, applicants: 213, attention: 14 + 6 + 1, href: model.railHrefs(owner, club.id).recruiting })
+  assert.equal(strip(overview('large', club, member([]))), null, 'no recruiting tool, no strip')
+  assert.equal(strip(overview('clear', club, owner)), null, 'no active cycle, no strip')
+  const closed = overview('small', club, owner)
+  closed.operations.intake.applicationOpen = false
+  assert.equal(strip(closed).open, false)
+  assert.equal(model.recruitingActive(overview('clear', club, owner).operations), false)
+  // Clubs accept applications by default: an open intake with no cycle and no rounds is not an active cycle.
+  assert.equal(model.recruitingActive({ ...overview('clear', club, owner).operations, intake: { applicationOpen: true, applicationDeadline: null } }), false)
 })
 
 test('every dashboard destination is a rail item for the same member', () => {
@@ -56,8 +92,8 @@ test('interviews never show a name or initials where the round is anonymized', (
   assert.equal(person.anonymous, true); assert.equal(person.initials, ''); assert.doesNotMatch(person.label, /Jordan|Avery/)
   assert.match(person.label, /^Applicant [0-9A-F]+$/)
   assert.equal(model.interviewPerson({ ...booking, candidate: person.label }, data.operations.rounds).initials, '')
-  const week = model.thisWeek({ ...data, operations: { ...data.operations, rounds: anonymous } })
-  assert.ok(week.filter(item => item.kind === 'interview').every(item => !/Jordan|Avery/.test(item.title)))
+  // Club home's week has no interviews at all; they live on the Recruiting Overview.
+  assert.ok(model.thisWeek(data).every(item => !/Jordan|Avery|Interview/.test(item.title)))
 })
 
 test('pipeline counts come from status counts and are absent without applicant access', () => {
@@ -68,11 +104,14 @@ test('pipeline counts come from status counts and are absent without applicant a
   assert.equal(overview('large', club, member([])).recruitment, null)
 })
 
-test('This week is soonest first and empty for a clear club', () => {
+test('This week is club work only (meetings and task due dates), soonest first, and empty for a clear club', () => {
   const week = model.thisWeek(overview('large', club, owner))
-  assert.ok(week.length >= 6)
+  assert.ok(week.length >= 4)
   assert.deepEqual(week.map(item => +item.at), week.map(item => +item.at).sort((a, b) => a - b))
-  assert.deepEqual(new Set(week.map(item => item.kind)), new Set(['meeting', 'interview', 'deadline']))
+  assert.deepEqual(new Set(week.map(item => item.kind)), new Set(['meeting', 'task']))
+  assert.ok(!week.some(item => /Applications close|Decisions/.test(item.title)), 'no recruiting dates')
+  const keys = model.keyDates(overview('large', club, owner).operations)
+  assert.deepEqual(keys.map(item => item.title), ['Applications close', 'Decisions scheduled to send'])
   assert.deepEqual(model.thisWeek(overview('clear', club, owner)), [])
 })
 
@@ -94,8 +133,9 @@ test('overview action: member counts only with member-directory access, scoped t
   const model = name => ({ findUniqueOrThrow: async () => ({ id: clubId, name: 'Club', tagline: '' }), findFirst: async () => null, findMany: async () => [], groupBy: async () => [], count: async query => { counts.push([name, query]); return 3 } })
   const prisma = { club: model('club'), meeting: model('meeting'), taskAssignment: model('taskAssignment'), application: model('application'), interviewBooking: model('interviewBooking'), votingSession: model('votingSession'), clubMember: model('clubMember'), clubInvitation: model('clubInvitation') }
   const api = load('actions/club-overview.ts', { '@/utils/prisma': { prisma }, '@/utils/auth': { requireClubMembership: async () => ({ membership: access }), requireClubPermission: async () => ({}) }, '@/utils/dashboard-summary': { dashboardSummary: async () => ({}), dashboardReviewQueue: async () => [] } })
-  assert.deepEqual((await api.getClubWorkspaceOverview(clubId)).members, { active: 3, pendingInvitations: 3 })
-  const [members, invitations] = counts.filter(([name]) => name === 'clubMember' || name === 'clubInvitation')
+  assert.deepEqual((await api.getClubWorkspaceOverview(clubId)).members, { active: 3, pendingInvitations: 3, recent: 3 })
+  const [members, invitations, recent] = counts.filter(([name]) => name === 'clubMember' || name === 'clubInvitation')
+  assert.equal(recent[1].where.clubId, clubId); assert.ok(recent[1].where.joinedAt.gte instanceof Date)
   assert.deepEqual(members[1].where, { clubId, status: 'ACTIVE', user: { disabledAt: null } })
   assert.equal(invitations[1].where.clubId, clubId); assert.equal(invitations[1].where.status, 'PENDING'); assert.equal(invitations[1].where.applicationId, null)
   assert.equal(invitations[1].where.requestedRole, 'MEMBER'); assert.deepEqual(invitations[1].where.purpose, { in: ['MEMBERSHIP', 'ACCESS_GRANT'] })
@@ -105,7 +145,11 @@ test('overview action: member counts only with member-directory access, scoped t
     assert.equal(counts.filter(([name]) => name === 'clubMember' || name === 'clubInvitation').length, 0)
   }
   access = member(['leaders.manage'])
-  assert.deepEqual((await api.getClubWorkspaceOverview(clubId)).members, { active: 3, pendingInvitations: 3 })
+  assert.deepEqual((await api.getClubWorkspaceOverview(clubId)).members, { active: 3, pendingInvitations: 3, recent: 3 })
+  // The recruiting views never read member counts; Club home's view does.
+  assert.equal((await api.getClubWorkspaceOverview(clubId, 'recruiting')).members, null)
+  assert.deepEqual((await api.getClubWorkspaceOverview(clubId, 'club')).members, { active: 3, pendingInvitations: 3, recent: 3 })
+  await assert.rejects(api.getClubWorkspaceOverview(clubId, 'everything'))
 })
 
 test('glass defaults: Card, Panel, Skeleton and Tabs default to glass; variant="default" keeps the solid surface', () => {
@@ -156,4 +200,35 @@ test('glass tokens: solid default, backdrop-filter enhancement, reduced-transpar
   const primitives = fs.readFileSync('styles/interface-primitives.css', 'utf8')
   for (const rule of primitives.split('}').filter(rule => /backdrop-filter:\s*var/.test(rule))) assert.match(rule, /::before|tabs-list|sonner-toast/, rule.trim().slice(0, 120))
   assert.doesNotMatch(fs.readFileSync('components/club-home/club-home.css', 'utf8'), /backdrop-filter:\s*(?!none)/)
+})
+
+test('each dashboard reads only its own data: Club home never queries applicants, bookings, votes or offers', async () => {
+  const reads = view => {
+    const seen = new Set(), model = name => ({ findMany: async () => { seen.add(name); return [] }, findUniqueOrThrow: async () => { seen.add(name); return { applicationOpen: true, applicationDeadline: null } }, count: async () => { seen.add(name); return 0 } })
+    const prisma = { club: model('club'), recruitmentCycle: model('cycle'), meeting: model('meeting'), clubAnnouncement: model('announcement'), taskAssignment: model('task'), interviewBooking: model('booking'), votingSession: model('vote'), scheduledCommunication: model('scheduled'), clubInvitation: model('offer'), clubTask: model('teamTasks'), $queryRaw: async () => { seen.add('raw'); return [] } }
+    const { dashboardSummary } = load('utils/dashboard-summary.ts', { '@/utils/prisma': { prisma } })
+    const everyone = ['applications.review', 'applicants.identify', 'interviews.manage', 'decisions.manage', 'decisions.view', 'decisions.vote', 'decisions.publish', 'tasks.manage']
+    return dashboardSummary('club', { id: 'member', userId: 'user', isOwner: true, permissions: everyone }, view).then(() => seen)
+  }
+  const recruiting = ['club', 'cycle', 'booking', 'vote', 'scheduled', 'offer', 'raw']
+  const home = await reads('club')
+  for (const name of recruiting.filter(name => name !== 'raw')) assert.ok(!home.has(name), `Club home does not read ${name}`)
+  for (const name of ['meeting', 'announcement', 'task', 'teamTasks']) assert.ok(home.has(name), `Club home reads ${name}`)
+  const cycle = await reads('recruiting')
+  for (const name of ['meeting', 'announcement', 'task', 'teamTasks']) assert.ok(!cycle.has(name), `Recruiting does not read ${name}`)
+  for (const name of ['club', 'cycle', 'booking', 'vote', 'raw']) assert.ok(cycle.has(name), `Recruiting reads ${name}`)
+  const strip = await reads('strip')
+  assert.deepEqual([...strip].sort(), ['club', 'cycle', 'raw', 'vote'], 'the strip reads intake, cycles, round counts and votes only')
+})
+
+test('authz: new overview fields keep their gates in every view', async () => {
+  for (const view of ['all', 'club', 'recruiting', 'strip']) {
+    const seen = new Set(), model = name => ({ findMany: async () => { seen.add(name); return [] }, findUniqueOrThrow: async () => { seen.add(name); return {} }, count: async () => { seen.add(name); return 0 } })
+    const prisma = { club: model('club'), recruitmentCycle: model('cycle'), meeting: model('meeting'), clubAnnouncement: model('announcement'), taskAssignment: model('task'), interviewBooking: model('booking'), votingSession: model('vote'), scheduledCommunication: model('scheduled'), clubInvitation: model('offer'), clubTask: model('teamTasks'), $queryRaw: async () => { seen.add('raw'); return [] } }
+    const { dashboardSummary } = load('utils/dashboard-summary.ts', { '@/utils/prisma': { prisma } })
+    // A plain member: no task-manager list (teamTasks), no round counts (reviewed lives in the rounds query), no team aggregate.
+    const result = await dashboardSummary('club', { id: 'member', userId: 'user', isOwner: false, permissions: [] }, view)
+    assert.deepEqual(result.teamTasks, [], view); assert.deepEqual(result.rounds, [], view); assert.equal(result.team, null, view)
+    assert.ok(!seen.has('teamTasks') && !seen.has('raw') && !seen.has('booking') && !seen.has('offer'), `${view}: nothing gated was queried`)
+  }
 })

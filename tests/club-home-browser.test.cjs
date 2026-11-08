@@ -34,15 +34,20 @@ test('browser: Club home dashboard, permissions, header glass, blur budget and a
   await page.goto(fixture.url('fixture=large&role=owner'), { waitUntil: 'networkidle' }); await settle(page)
   const h1 = page.locator('h1')
   assert.equal(await h1.count(), 1)
-  // The title is the club's name (greetings stay on personal Home); the cycle sits above it.
+  // The title is the club's name (greetings stay on personal Home); the subtitle is club work, never recruiting.
   assert.equal((await h1.textContent()).trim(), 'McIntire Investment Institute')
-  assert.equal((await page.locator('.oc-club-home-greeting .oc-eyebrow').textContent()).trim(), 'Fall 2026 recruiting')
-  assert.match(await page.locator('.oc-club-home-greeting .oc-page-description').textContent(), /Applications close in 2 days\./)
-  assert.deepEqual(await page.locator('.oc-needs-card').evaluateAll(cards => cards.map(card => [card.dataset.needs, card.dataset.variant])), [['vote-live', 'glass-navy'], ['overdue', 'glass-raised'], ['interviews', 'glass-raised'], ['reviews', 'glass-raised']])
-  for (const name of ['New announcement', 'New meeting', 'Open applicants', 'Open voting', 'Schedule interviews']) assert.ok(await page.getByRole('link', { name, exact: true }).first().isVisible(), name)
+  assert.equal(await page.locator('.oc-club-home-greeting .oc-eyebrow').count(), 0)
+  assert.doesNotMatch(await page.locator('.oc-club-home-greeting .oc-page-description').textContent(), /Applications|interview|review/i)
+  assert.deepEqual(await page.locator('.oc-needs-card').evaluateAll(cards => cards.map(card => [card.dataset.needs, card.dataset.variant])), [['overdue', 'glass-navy'], ['team-overdue', 'glass-raised'], ['submissions', 'glass-raised'], ['due-soon', 'glass-raised']])
+  for (const name of ['New announcement', 'New meeting']) assert.ok(await page.getByRole('link', { name, exact: true }).first().isVisible(), name)
+  // One slim strip is the only link to recruiting.
+  assert.equal(await page.locator('.oc-recruiting-strip').count(), 1)
+  assert.match(await page.locator('.oc-recruiting-strip').textContent(), /Recruiting is open · 213 applicants · 21 need attention/)
+  for (const name of ['Open applicants', 'Open voting', 'Schedule interviews']) assert.equal(await page.getByRole('link', { name, exact: true }).count(), 0, `${name} lives on the Recruiting Overview`)
   assert.equal(await page.getByRole('heading', { name: 'Needs you', exact: true }).count(), 1)
-  for (const name of ['Recruiting pipeline', 'Your interviews', 'Announcements', 'This week', 'Team pulse', 'Your tasks']) assert.equal(await page.getByRole('heading', { name, exact: true }).count(), 1, name)
-  console.log('PASS owner sees every permitted section, most urgent card first in navy glass')
+  for (const name of ['Next meeting', 'Team tasks', 'Announcements', 'This week', 'Members', 'Team pulse', 'Your tasks']) assert.equal(await page.getByRole('heading', { name, exact: true }).count(), 1, name)
+  for (const name of ['Recruiting pipeline', 'Your interviews', 'Interviews', 'Pipeline by round']) assert.equal(await page.getByRole('heading', { name, exact: true }).count(), 0, name)
+  console.log('PASS owner sees every permitted club section and no recruiting cards, most urgent card first in navy glass')
 
   // Every dashboard link is a rail destination (extra filter parameters allowed), so the rail highlight stays correct.
   const rail = await page.locator('aside nav a').evaluateAll(links => links.map(a => a.getAttribute('href')))
@@ -53,10 +58,9 @@ test('browser: Club home dashboard, permissions, header glass, blur budget and a
   }
   const links = await page.locator('.oc-club-home-hero a, .oc-club-home a').evaluateAll(links => links.map(a => a.getAttribute('href')))
   assert.ok(links.length >= 8)
-  // The one exception is "Open room", which enters the existing interview room route (authorized there).
-  const room = links.filter(href => href.startsWith('/club/fixture-mii/interview?'))
-  assert.equal(room.length, 1); assert.match(room[0], /roomId=.+/); assert.match(room[0], /bookingId=.+/)
-  for (const href of links.filter(href => !room.includes(href))) assert.ok(rail.some(r => href === r || href.startsWith(`${r}&`)), `${href} is a rail destination`)
+  // Club home has no interview room entry any more; interviews live on the Recruiting Overview.
+  assert.equal(links.filter(href => href.startsWith('/club/fixture-mii/interview?')).length, 0)
+  for (const href of links) assert.ok(rail.some(r => href === r || href.startsWith(`${r}&`)), `${href} is a rail destination`)
   assert.equal(await page.locator('aside nav [aria-current="page"]').textContent(), 'Club home')
   console.log('PASS dashboard links resolve to rail destinations; Club home stays selected')
 
@@ -66,7 +70,7 @@ test('browser: Club home dashboard, permissions, header glass, blur budget and a
   assert.equal(blurred.filter(b => b.name.includes('club-home') || b.name.includes('needs')).length, 0)
   assert.ok(!blurred.some(b => b.name.startsWith('header.oc-product-header::before')), 'the header band is frosted, not blurred')
   assert.notEqual(await page.locator('.oc-product-header').evaluate(el => getComputedStyle(el, '::before').backgroundImage), 'none', 'the header band has the frosted material')
-  const card = await page.locator('.oc-club-home-pipeline').evaluate(el => [getComputedStyle(el).backdropFilter, getComputedStyle(el, '::before').backdropFilter])
+  const card = await page.locator('.oc-club-home-meeting').evaluate(el => [getComputedStyle(el).backdropFilter, getComputedStyle(el, '::before').backdropFilter])
   assert.ok(card.every(value => !value || value === 'none'))
   console.log('PASS blur budget', blurred.length, 'surfaces')
 
@@ -91,9 +95,8 @@ test('browser: Club home dashboard, permissions, header glass, blur budget and a
   // Drawers stay in place; Refresh refreshes.
   await page.locator('.oc-needs-card[data-needs="overdue"] .oc-needs-action').click()
   await page.getByRole('dialog').waitFor(); await page.keyboard.press('Escape'); await page.getByRole('dialog').waitFor({ state: 'hidden' })
-  assert.equal(await page.getByRole('link', { name: /^Open room: Jordan Avery/ }).count(), 1)
-  await page.getByRole('button', { name: /^Prep: Priya Natarajan/ }).click()
-  await page.getByRole('dialog', { name: 'Prepare for interview' }).waitFor(); await page.keyboard.press('Escape')
+  await page.getByRole('button', { name: 'Agenda & resources', exact: true }).click()
+  await page.getByRole('dialog', { name: 'Portfolio review' }).waitFor(); await page.keyboard.press('Escape')
   // No Refresh button: the workspace reloads the overview after changes and when the person returns.
   assert.equal(await page.getByRole('button', { name: /^Refresh/ }).count(), 0)
   console.log('PASS existing drawers; no refresh button')
@@ -146,13 +149,15 @@ test('browser: Club home dashboard, permissions, header glass, blur budget and a
   // Permission subsets: no empty sections.
   const sections = () => page.locator('.oc-club-home-card').evaluateAll(cards => cards.map(c => [c.querySelector('h2').textContent, c.querySelectorAll('li').length + c.querySelectorAll('.oc-dashboard-quiet').length]))
   await page.goto(fixture.url('fixture=large&role=reviewer'), { waitUntil: 'networkidle' }); await settle(page)
-  assert.deepEqual(await page.locator('.oc-needs-card').evaluateAll(cards => cards.map(card => card.dataset.needs)), ['overdue', 'reviews'])
+  // A reviewer's Club home is club work only: reviews live on the Recruiting Overview (and the strip links there).
+  assert.deepEqual(await page.locator('.oc-needs-card').evaluateAll(cards => cards.map(card => card.dataset.needs)), ['overdue', 'due-soon'])
+  assert.deepEqual((await sections()).map(s => s[0]), ['Next meeting', 'Your tasks', 'Announcements', 'This week'])
   assert.equal(await page.getByRole('link', { name: 'New meeting' }).count(), 0)
-  assert.deepEqual((await sections()).map(s => s[0]), ['Recruiting pipeline', 'Announcements', 'This week', 'Your tasks'])
   assert.ok((await sections()).every(s => s[1] > 0))
   await page.goto(fixture.url('fixture=large&role=member'), { waitUntil: 'networkidle' }); await settle(page)
-  assert.deepEqual(await page.locator('.oc-needs-card').evaluateAll(cards => cards.map(card => card.dataset.needs)), ['overdue'])
-  assert.deepEqual((await sections()).map(s => s[0]), ['Announcements', 'This week', 'Your tasks'])
+  assert.deepEqual(await page.locator('.oc-needs-card').evaluateAll(cards => cards.map(card => card.dataset.needs)), ['overdue', 'due-soon'])
+  assert.deepEqual((await sections()).map(s => s[0]), ['Next meeting', 'Your tasks', 'Announcements', 'This week'])
+  assert.equal(await page.locator('.oc-recruiting-strip').count(), 0, 'no recruiting access, no strip')
   assert.equal(await page.getByRole('link', { name: 'New announcement' }).count(), 0)
   await page.goto(fixture.url('fixture=clear&role=member'), { waitUntil: 'networkidle' }); await settle(page)
   assert.equal(await page.getByText('You’re clear for now.', { exact: true }).count(), 1)
@@ -165,10 +170,9 @@ test('browser: Club home dashboard, permissions, header glass, blur budget and a
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true)
   // The existing bottom bar is fixed navigation and keeps its own material (unchanged here).
   assert.deepEqual((await page.evaluate(blurredSurfaces)).filter(b => !b.header && !b.overlay && b.name !== 'nav.oc-mobile-navigation'), [])
-  assert.equal(await page.locator('.oc-club-home-interviews').isVisible(), false)
-  assert.equal(await page.locator('.oc-pipeline-compact-counts').isVisible(), true)
+  assert.equal(await page.locator('.oc-club-home-interviews, .oc-pipeline-compact-counts').count(), 0)
   const order = await page.locator('.oc-club-home-card:visible').evaluateAll(cards => cards.map(c => [c.querySelector('h2').textContent, c.getBoundingClientRect().top]).sort((a, b) => a[1] - b[1]).map(c => c[0]))
-  assert.deepEqual(order.slice(0, 3), ['Recruiting pipeline', 'This week', 'Announcements'])
+  assert.deepEqual(order.slice(0, 3), ['Next meeting', 'Team tasks', 'This week'])
   console.log('PASS phone layout and blur budget')
   assert.deepEqual(errors, [])
 })

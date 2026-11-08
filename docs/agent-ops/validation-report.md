@@ -105,3 +105,13 @@ deploy dpl_HCbKqFuC85KMysoQanp1KDZ2fF7U READY yes | new runtime error classes 0 
 ```
 - PR CI on head bc715296: 14/15 green. `Local Auth, settings and navigation` failed once at tests/pipeline-release-e2e.test.cjs:67 (one RSC request to the workspace path after the same-workspace "All applicants" CTA, expected 0); the same application code passed that job on 24534c26 (run 233). The CTA itself uses history.pushState (lib/workspace-navigation.ts), so the extra request is a Link prefetch or refresh elsewhere on the page; suspected timing, not proven. The owner merged with it red. This docs PR re-runs the suite on the merged code.
 - WATCH reasons: ~8 minutes of production traffic at check time; invitation-delivery and notification-delivery crons log nothing on success; the intermittent E2E above. Security advisors unchanged; first performance-advisor counts recorded in baseline-log.md.
+
+## 2026-11-08 · SHELL-1 · ui/shell-persistence-and-dashboard-split (local, not pushed)
+```
+branch ui/shell-persistence-and-dashboard-split (from main 5f50339a), commits: Part 1 2fff5ef1, Part 2 72bf6f5a, Part 3 (this commit)
+app gates: test 1869/1805/0 fail/64 skipped (60 env-gated + 4 new stack-only: workspace-shell-e2e, header-gap-e2e, overview-view-authz-e2e, dashboards-split-e2e) migrations 71 ok (RLS 85) lint ok (0 errors, 23 baseline warnings; ui-controls OK) types ok build ok
+per part: Part 1 1862/1801/0/61; Part 2 1863/1801/0/62
+disposable stack (run-onboarding-e2e.cjs --shell; SUPABASE_INTERNAL_IMAGE_REGISTRY=docker.io): workspace-shell-e2e 4/4, header-gap-e2e 1/1, overview-view-authz-e2e 1/1, dashboards-split-e2e 1/1
+glass: check-liquid-glass OUTCLASS_GLASS_SCOPE=dashboard 0 axe violations; scope=dashboards fails on main and branch alike in this container (chrome-error navigation in the fixture), covered instead by dashboards-split-e2e axe on the real app
+local environment notes: Playwright 1.64 expects Chromium build 1248, container has 1243 (local symlink only); WebKit not installed
+```

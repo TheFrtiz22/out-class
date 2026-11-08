@@ -3,13 +3,10 @@ import { ClubMeetingsWorkspace } from "@/components/events/club-meetings-workspa
 import dynamic from "next/dynamic";
 import { PageHeader } from "@/components/ui/page-header"
 import { ClubOverviewHeader } from "@/components/product/welcome-header"
-import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { DashboardHero } from "@/components/product/dashboard/dashboard"
-import { OrganizationSetupChecklist } from "@/components/organization-setup-checklist";
-import { organizationCapabilities } from "@/lib/organization-authorization";
 import { useRouter, useSearchParams } from "next/navigation";
-import { RecruitingOverview, applicationsClosed } from "@/components/recruiting-overview";
+import { RecruitingHero, RecruitingOverview } from "@/components/recruiting-overview";
 import { ManagerOverview } from "@/components/manager-overview";
 import { ClubHomeActions } from "@/components/club-home/club-home-actions";
 import { ShellState } from "@/components/shell/shell-state";
@@ -118,7 +115,10 @@ export function ClubWorkspace({
   const authorizationScope = `${demo.isDemoEnabled ? "demo" : "live"}:${user?.id}:${clubId}:${authorizationKey}`;
   const scope = `${authorizationScope}:${membershipKey}:${privacyRevision}`;
   const owner = useRef(scope); owner.current = scope;
-  const [data, setData] = useState<{ scope: string; value: Overview } | null>(null),
+  // Each dashboard reads only what it shows: Club home the club view, the Recruiting Overview the recruiting view.
+  // Both stay cached for this mounted workspace, so switching back shows the last read while it refreshes.
+  const overviewView = section === "overview" ? "club" : "recruiting";
+  const [cache, setData] = useState<Record<string, { scope: string; value: Overview }>>({}),
     [error, setError] = useState(""),
     [retry, setRetry] = useState(0),
     [overviewPending, setOverviewPending] = useState(false);
@@ -136,13 +136,13 @@ export function ClubWorkspace({
     let current = true;
     setError("");
     setOverviewPending(true);
-    getClubWorkspaceOverview(clubId)
+    getClubWorkspaceOverview(clubId, overviewView)
       .then((value) => {
-        if (current && owner.current === scope) setData({ scope, value });
+        if (current && owner.current === scope) setData(previous => ({ ...previous, [overviewView]: { scope, value } }));
       })
       .catch(() => {
         if (current) {
-          setData(null);
+          setData(previous => { const next = { ...previous }; delete next[overviewView]; return next });
           setError(
             "Could not load this workspace. Your membership may have changed. Try again.",
           );
@@ -161,7 +161,9 @@ export function ClubWorkspace({
     membershipKey,
     needsOverview,
     scope,
+    overviewView,
   ]);
+  const data = cache[overviewView];
   const current = data?.scope === scope && data.value.club.id === clubId ? data.value : null;
   // Overview has no Refresh button: it reloads after mutations elsewhere and when the person returns.
   useRevalidate(() => setRetry(n => n + 1), { enabled: needsOverview && !!current, events: OVERVIEW_EVENTS, scopes: OVERVIEW_SCOPES });
@@ -193,9 +195,9 @@ export function ClubWorkspace({
     <RecruitmentFocus />
         {loading || needsSelection ? <p role="status">Opening club workspace…</p> : !membership ? <div className="space-y-4"><PageHeader title="Club workspace unavailable" /><p>Sign in with a current club membership to access this workspace.</p><Link href="/" className="underline">Return to OutClass</Link></div> : <>
           {section === "overview" && allowed
-            ? <DashboardHero className="oc-club-home-hero" ambientClassName="oc-club-home-ambient"><ClubOverviewHeader className="oc-club-home-greeting" density="expressive" eyebrow={error ? undefined : current?.operations?.cycles?.[0]?.name} clubName={current?.club.name || membership.club.name} context={{ mode: "club", clubId, membership, data: error ? null : current }} action={manager ? <ClubHomeActions clubId={clubId} membership={membership} /> : allClubs} /></DashboardHero>
+            ? <DashboardHero className="oc-club-home-hero" ambientClassName="oc-club-home-ambient"><ClubOverviewHeader className="oc-club-home-greeting" density="expressive" clubName={current?.club.name || membership.club.name} context={{ mode: "club", clubId, membership, data: error ? null : current }} action={manager ? <ClubHomeActions clubId={clubId} membership={membership} /> : allClubs} /></DashboardHero>
             : active === "overview" && allowed
-            ? <PageHeader density="compact" eyebrow={membership.club.name} title={TERMS.recruiting} action={section === "recruitment" && current?.operations?.intake ? <Badge variant={applicationsClosed(current.operations) ? "outline" : "success"} className="oc-command-status" data-state={applicationsClosed(current.operations) ? "closed" : "open"}>Applications {applicationsClosed(current.operations) ? "closed" : "open"}</Badge> : undefined} />
+            ? <RecruitingHero clubId={clubId} clubName={current?.club.name || membership.club.name} membership={membership} data={error ? null : current} />
             : <PageHeader density={section === "overview" ? "expressive" : "compact"} eyebrow={membership.club.name} title={nav.find(n => n.id === active)?.label || "Workspace"} action={active === "applicants" ? <div id="workspace-page-actions" data-page-header-slot className="contents" /> : manager ? undefined : allClubs} />}
           {/* URL-driven tabs live outside the keyed section below, so changing a tab slides its indicator instead of remounting it. */}
           {allowed && !(needsOverview && (error || !current)) && <>
@@ -206,7 +208,8 @@ export function ClubWorkspace({
           {section === "recruitment" && active === "decisions" && <DecisionsNavigation clubId={clubId} member={membership}/>}
           </>}
           {needsOverview && error ? <Card variant="glass" role="alert" className="oc-dashboard-error"><div className="oc-dashboard-state px-[var(--oc-content-padding)]"><p>{error}</p><Button variant="outline" onClick={() => setRetry(n => n + 1)}>Retry</Button></div></Card> : needsOverview && !current ? <DashboardLoading mode={mode === "recruiting" ? "recruiting" : "club"} /> : !allowed ? <p role="alert">This section isn’t available with your current access.</p> : <section key={`${section === "settings" ? authorizationScope : scope}:${section}:${active}`} className="shell-content-enter" aria-label={nav.find(n => n.id === active)?.label}>
-            {section === "overview" && current && (manager ? <><ManagerOverview data={current} refreshing={overviewPending} onChanged={() => setRetry(n => n + 1)} />{!demo.isDemoEnabled && organizationCapabilities(current.membership).canTransferOwnership && <OrganizationSetupChecklist key={clubId} clubId={clubId} compact />}</> : <ManagerOverview data={current} refreshing={overviewPending} onChanged={() => setRetry(n => n + 1)} />)}
+            {/* Club home: the same page for leaders and members, gated by the overview's permission-scoped data. */}
+            {section === "overview" && current && <ManagerOverview data={current} refreshing={overviewPending} onChanged={() => setRetry(n => n + 1)} />}
             {section === "tasks" && (demo.isDemoEnabled ? <ClubTasks clubId={clubId} embedded personalOnly={!manager} initialScope={taskView === "mine" ? "mine" : manager ? "team" : "mine"} /> : <SelectedClubWorkspace kind="tasks" clubId={clubId} privacyScope={scope} personalOnly={!manager} initialScope={taskView === "mine" ? "mine" : manager ? "team" : "mine"} />)}
             {section === "meetings" && (hasPermission(membership, "meetings.manage") ? <ClubMeetingsWorkspace key={clubId} clubId={clubId} clubName={membership.club.name} canSeeAttendees={hasPermission(membership, "meetings.attendance")} legacyEvents={legacyEvents} /> : <MeetingList clubId={clubId} embedded personalOnly={!manager} initialAudience="MEMBERS" />)}
             {section === "members" && (demo.isDemoEnabled ? <ClubMembers key={clubId} clubId={clubId} /> : <SelectedClubWorkspace kind="members" clubId={clubId} privacyScope={scope} />)}

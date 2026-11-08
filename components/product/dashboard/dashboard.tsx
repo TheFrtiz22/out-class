@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils"
 const enter = (index?: number) => (index === undefined ? undefined : { "--i": index } as CSSProperties)
 
 /** Ambient glow behind the page title (and the Needs you row when it is a child). */
-export function DashboardHero({ children, className, ambientClassName, glow = "club" }: { children: ReactNode; className?: string; ambientClassName?: string; glow?: "club" | "neutral" }) {
+export function DashboardHero({ children, className, ambientClassName, glow = "club" }: { children: ReactNode; className?: string; ambientClassName?: string; glow?: "club" | "neutral" | "recruiting" }) {
   return <div className={cn("oc-dashboard-hero", className)} data-glow={glow}>
     <div className={cn("oc-dashboard-ambient", ambientClassName)} aria-hidden="true" />
     {children}
