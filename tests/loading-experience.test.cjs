@@ -1,6 +1,8 @@
 const { test } = require("node:test")
 const assert = require("node:assert/strict")
 const fs = require("node:fs")
+const { execSync } = require("node:child_process")
+const path = require("node:path")
 const ts = require("typescript")
 
 function load(file, mocks, globals = {}) {
@@ -174,8 +176,58 @@ test("root providers keep demo data, workspace adapters and the Supabase client 
   for (const file of ["contexts/auth-context.tsx", "components/shell/product-shell.tsx"])
     assert.equal(staticImport(source(file), "@/utils/supabase/client"), false, `${file} must load the Supabase browser client on demand`)
   assert.match(source("contexts/auth-context.tsx"), /import\("@\/utils\/supabase\/client"\)/, "signed-in sessions load the auth listener on demand")
-  assert.match(source("contexts/demo-context.tsx"), /import\("@\/lib\/demo\/store"\)/, "demo data loads on demand")
+  // Demo data loads on demand through the shared loader, which the provider uses.
+  assert.ok(staticImport(source("contexts/demo-context.tsx"), "@/lib/demo/loader"), "the demo provider loads the store through the shared loader")
+  assert.match(source("lib/demo/loader.ts"), /import\("\.\/store"\)/, "demo data loads on demand")
   assert.match(source("contexts/corkboard-context.tsx"), /import\("@\/lib\/workspace-api"\)/, "corkboard adapters load on demand")
+})
+
+// Static (non-type) module specifiers of a source file: imports, side-effect imports,
+// re-exports and require(), including multi-line forms. import() is excluded.
+function staticSpecifiers(text) {
+  const code = text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "")
+  const found = []
+  for (const match of code.matchAll(/(?:^|[;\n])\s*(import|export)\s+(type\s+)?(?:[^"']*?\sfrom\s*)?["']([^"']+)["']/g))
+    if (!match[2]) found.push(match[3])
+  for (const match of code.matchAll(/\brequire\(\s*["']([^"']+)["']\s*\)/g)) found.push(match[1])
+  return found
+}
+// Only modules without demo records may load statically outside lib/demo: the gate
+// (loader, activation), server-side access/validation, and the monogram glyph generator (assets).
+const allowedDemo = new Set(["loader", "activation", "access", "validate", "assets"])
+function demoTarget(file, specifier) {
+  const resolved = specifier.startsWith("@/") ? specifier.slice(2) : specifier.startsWith(".") ? path.posix.normalize(path.posix.join(path.posix.dirname(file), specifier)) : null
+  const match = resolved?.match(/^lib\/demo\/([^/]+?)(\.tsx?)?$/)
+  return match ? match[1] : null
+}
+
+test("the static-import scanner sees every form a regression could take", () => {
+  const cases = [
+    ['import { demoStore } from "@/lib/demo/store"', ["@/lib/demo/store"]],
+    ['import {\n  demoStore,\n  demoUser,\n} from "@/lib/demo/store"\nimport { z } from "zod"', ["@/lib/demo/store", "zod"]],
+    ['import "@/lib/demo/seed"', ["@/lib/demo/seed"]],
+    ['"use client"\nimport "@/lib/demo/store"\nimport { z } from "zod"', ["@/lib/demo/store", "zod"]],
+    ['export { demoDirectory } from "@/lib/demo/store"', ["@/lib/demo/store"]],
+    ['export * from "@/lib/demo/workspace"', ["@/lib/demo/workspace"]],
+    ['const store = require("@/lib/demo/store")', ["@/lib/demo/store"]],
+  ]
+  for (const [text, expected] of cases) assert.deepEqual(staticSpecifiers(text), expected, text)
+  assert.equal(demoTarget("lib/x.ts", "./demo/store"), "store", "relative paths resolve")
+  for (const text of ['import type { DemoState } from "@/lib/demo/seed"', 'const load = () => import("@/lib/demo/store")', '// import { demoStore } from "@/lib/demo/store"'])
+    assert.deepEqual(staticSpecifiers(text).filter(s => demoTarget("components/x.tsx", s)), [], text)
+})
+
+test("live client adapters and components never statically import demo data or implementations", () => {
+  const source = file => fs.readFileSync(file, "utf8")
+  const files = execSync("git ls-files 'app/*.ts' 'app/*.tsx' 'components/*.ts' 'components/*.tsx' 'contexts/*.ts' 'contexts/*.tsx' 'hooks/*.ts' 'hooks/*.tsx' 'lib/*.ts' 'lib/*.tsx'", { encoding: "utf8" }).split("\n").filter(Boolean)
+  for (const nested of ["components/qr/meeting-check-in.tsx", "app/layout.tsx", "lib/demo/store.ts", "components/views/explore-view.tsx"])
+    assert.ok(files.includes(nested), `scanner covers ${nested}`)
+  assert.ok(files.length > 300, "scanner covers the source tree")
+  const imports = files.filter(file => !file.startsWith("lib/demo/")).flatMap(file => staticSpecifiers(source(file)).map(s => [file, demoTarget(file, s)]).filter(([, target]) => target))
+  assert.deepEqual(imports.filter(([, target]) => !allowedDemo.has(target)), [], "load demo modules with import() behind the demo gate")
+  assert.deepEqual(imports.filter(([, target]) => target === "assets").map(([file]) => file), ["components/product/design-patterns.tsx"], "the glyph generator stays limited to the design-system page")
+  for (const gate of ["lib/demo/loader.ts", "lib/demo/activation.ts", "lib/demo/assets.ts"])
+    assert.deepEqual(staticSpecifiers(source(gate)).filter(s => /^\.\/(store|seed|workspace|tasks|voting|interview)/.test(s)), [], `${gate} stays free of demo records`)
 })
 
 test("the root layout carries no club-customization provider or seed data", () => {

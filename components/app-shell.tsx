@@ -7,7 +7,7 @@ import type { PersonalSection } from "@/lib/product-navigation"
 import { useDemoMode } from "@/contexts/demo-context"
 import { signInReturnPath, authEntryHref } from "@/lib/auth"
 import { useAuth } from "@/contexts/auth-context"
-import { demoDashboard } from "@/lib/demo/store"
+import { loadedDemoStore } from "@/lib/demo/loader"
 import { useState, useEffect, useMemo, useRef } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { type AppMode, type ViewId } from "@/lib/views"
@@ -74,7 +74,7 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
   const showLanding = !embedded && initialView === "landing" && !searchParams.has("workspace") && !searchParams.has("view") && !searchParams.has("demoClub") && !searchParams.has("next")
   const wantsStudent = !!pathRoute || searchParams.get("workspace") === "student"
   const { selectClub, user, isImpersonating } = useAuth()
-  const initialData = demo.isDemoEnabled ? demoDashboard() : realInitialData
+  const initialData = demo.isDemoEnabled ? loadedDemoStore().demoDashboard() : realInitialData
   // ── Read auth error from URL query params (e.g. /?error=uva_only) ──
   const [authError, setAuthError] = useState("")
 
