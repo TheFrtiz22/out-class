@@ -87,6 +87,9 @@ test('Events: desktop/tablet/mobile views share filters, saves, RSVP, details an
     for (const [name, width, height] of [['desktop', 1440, 1000], ['tablet', 820, 1180], ['mobile', 390, 844]]) {
       await page.setViewportSize({ width, height });
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `${name} should not overflow`);
+      // The poster is loading="lazy": its error (and the swap to the fallback) happens when the browser
+      // loads it, so wait for the swap; a fallback that never appears still fails the assertion.
+      await page.locator('.oc-smart-event-media').nth(1).locator('img').waitFor({ state: 'detached', timeout: 10000 }).catch(() => {})
       assert.equal(await page.locator('.oc-smart-event-media').nth(1).locator('img').count(), 0, 'broken media uses the branded fallback');
       if (screenshots) { fs.mkdirSync(screenshots, { recursive: true }); await page.screenshot({ path: path.join(screenshots, `events-${name}.png`) }); }
     }
