@@ -74,7 +74,7 @@ test('a membership refresh failure never reverses committed acceptance or invite
 
 test('Settings → Organizations redirects to My Clubs, which carries the pending invitations and club requests',async()=>{
   const fs=require('node:fs');
-  assert.match(fs.readFileSync('app/settings/organizations/page.tsx','utf8'),/redirect\(`\/clubs/);
+  assert.match(fs.readFileSync('app/(workspace)/settings/organizations/page.tsx','utf8'),/redirect\(`\/clubs/);
   const clubs=fs.readFileSync('components/personal-clubs.tsx','utf8');
   assert.match(clubs,/<OrganizationOwnershipRequests enabled includeDismissed \/>/);assert.match(clubs,/Find or claim a club/);
 });

@@ -8,6 +8,8 @@ const {totp,confirmationMessage,readConfig}=require('../tests/helpers/onboarding
 const dashboards=process.argv.includes('--dashboards'),writing=process.argv.includes('--application-writing')||dashboards,appPort=dashboards?3115:writing?3109:3107;
 const projectId=dashboards?'outclass-dashboards-e2e':writing?'outclass-application-writing-e2e':'outclass-onboarding-e2e',portPrefix=dashboards?(process.env.OUTCLASS_DASHBOARD_E2E_PORT_PREFIX||'593'):writing?'573':'553';
 const releaseRepair=process.argv.includes('--pipeline-release-repair');
+// --shell: persistent workspace shell, header height and dashboard checks on the onboarding stack (no onboarding suite).
+const shellSuite=process.argv.includes('--shell');
 const selectedNavigation=process.argv.includes('--selected-navigation')||releaseRepair;
 if(selectedNavigation&&(writing||!process.argv.includes('--club-integration')))throw Error('--selected-navigation requires --club-integration on the onboarding fixture.');
 if(!/^[1-5]\d{2}$|^6[0-4]\d$/.test(portPrefix))throw Error('A disposable port prefix must reserve a valid three-digit local range.');
@@ -110,14 +112,21 @@ async function ready(url,headers={}){
  const testFiles=dashboards?['tests/operational-dashboards-e2e.test.cjs']:process.argv.includes('--application-writing')?['tests/application-writing-e2e.test.cjs']:
    process.argv.includes('--a11y')?['tests/accessibility/authenticated.test.cjs']:
    process.argv.includes('--club-integration')?[...onboardingTests,'tests/settings-navigation-e2e.test.cjs','tests/resume-import-runtime.test.cjs']:
-   process.argv.includes('--settings')?['tests/settings-navigation-e2e.test.cjs',...onboardingTests]:onboardingTests;
- const result=spawnSync(process.execPath,['--test','--test-concurrency=1',...testFiles],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
+   process.argv.includes('--settings')?['tests/settings-navigation-e2e.test.cjs',...onboardingTests]:shellSuite?[]:onboardingTests;
+ const result=testFiles.length===0?{status:0}:spawnSync(process.execPath,['--test','--test-concurrency=1',...testFiles],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
  if(result.status!==0)throw Error(`${process.argv.includes('--settings')?'Settings navigation':'Complete onboarding'} E2E failed`);
  if(selectedNavigation){
   logged(process.execPath,['scripts/navigation-audit.cjs','--seed'],'selected-navigation-seed.log',env);
   const navigationTests=['tests/navigation-phase1-e2e.test.cjs','tests/navigation-phase2-e2e.test.cjs','tests/navigation-phase10-e2e.test.cjs','tests/navigation-phase12-e2e.test.cjs'];
   const navigationResult=spawnSync(process.execPath,['--test','--test-concurrency=1',...navigationTests],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
   if(navigationResult.status!==0)throw Error('Selected navigation integration failed; inspect the disposable test log.');
+ }
+ if(shellSuite){
+  logged(process.execPath,['scripts/navigation-audit.cjs','--seed'],'shell-seed.log',env);
+  const shellTests=['tests/workspace-shell-e2e.test.cjs','tests/header-gap-e2e.test.cjs','tests/overview-view-authz-e2e.test.cjs','tests/dashboards-split-e2e.test.cjs'];
+  for(const file of shellTests)if(!fs.existsSync(path.join(repo,file)))throw Error(`Missing shell suite ${file}`);
+  const shellResult=spawnSync(process.execPath,['--test','--test-concurrency=1',...shellTests],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
+  if(shellResult.status!==0)throw Error('Workspace shell integration failed; inspect the disposable test log.');
  }
  if(releaseRepair){
   logged(process.execPath,['scripts/pipeline-release-fixtures.cjs'],'pipeline-release-fixtures.log',env);

@@ -58,7 +58,8 @@ export async function GET(request: Request) {
       case "announcements": data = await (await import("@/actions/communications")).getClubAnnouncements(...clubArgs.parse(args)); break
       case "notifications": data = await (await import("@/actions/communications")).getDurableNotifications(...z.tuple([z.string().uuid().nullish().transform(value => value ?? undefined)]).parse(Array.isArray(args) && args.length === 0 ? [null] : args)); break
       case "dashboardReviews": data = await getDashboardReviewQueue(...z.tuple([z.string().uuid(), z.string().uuid()]).parse(args)); break
-      case "overview": data = await getClubWorkspaceOverview(...clubArgs.parse(args)); break
+      // Optional view: "club" (Club home), "recruiting" (Recruiting Overview), "strip" (Club home's recruiting link).
+      case "overview": { const [clubId, view] = z.union([clubArgs, z.tuple([z.string().uuid(), z.enum(["all", "club", "recruiting", "strip"])])]).parse(args) as [string, ("all" | "club" | "recruiting" | "strip")?]; data = await getClubWorkspaceOverview(clubId, view); break }
       case "members": data = await getOrganizationMemberManagement(...clubArgs.parse(args)); break
       case "pipeline": data = await getClubPipeline(...z.tuple([z.string().uuid(), z.object({ applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), gender: z.enum(genderValues).optional(), genderCounts: z.boolean().optional() }).strict().optional()]).parse(args)); break
       case "pipelineList": data = await getClubPipelineList(...z.tuple([z.string().uuid(), z.object({ applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), gender: z.enum(genderValues).optional(), genderCounts: z.boolean().optional() }).strict().optional()]).parse(Array.isArray(args) && args.length === 1 ? [args[0], {}] : args)); break

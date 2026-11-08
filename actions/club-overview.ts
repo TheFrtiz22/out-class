@@ -1,16 +1,19 @@
 "use server";
-import { dashboardSummary, dashboardReviewQueue } from "@/utils/dashboard-summary";
+import { dashboardSummary, dashboardReviewQueue, type OverviewView } from "@/utils/dashboard-summary";
 import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import { requireClubMembership, requireClubPermission } from "@/utils/auth";
 import { hasPermission } from "@/lib/permissions";
 import { organizationCapabilities } from "@/lib/organization-authorization";
-export async function getClubWorkspaceOverview(clubId: string) {
+/** `view` limits the read to one dashboard (see OverviewView); the default keeps the full projection. */
+export async function getClubWorkspaceOverview(clubId: string, view: OverviewView = "all") {
   z.string().uuid().parse(clubId);
+  z.enum(["all", "club", "recruiting", "strip"]).parse(view);
   const { membership } = await requireClubMembership(clubId);
-  const canReview =
+  const clubPart = view === "all" || view === "club", recruitingPart = view === "all" || view === "recruiting";
+  const canReview = recruitingPart && (
     hasPermission(membership, "applicants.identify") ||
-    hasPermission(membership, "applications.review");
+    hasPermission(membership, "applications.review"));
   const now = new Date();
   // Same gate as the member directory (getOrganizationMemberManagement): counts only, no identities.
   const directory = organizationCapabilities(membership);
@@ -19,7 +22,7 @@ export async function getClubWorkspaceOverview(clubId: string) {
       where: { id: clubId },
       select: { id: true, name: true, tagline: true },
     }),
-    prisma.meeting.findFirst({
+    !clubPart ? null : prisma.meeting.findFirst({
       where: { clubId, date: { gte: now } },
       orderBy: { date: "asc" },
       select: {
@@ -30,7 +33,7 @@ export async function getClubWorkspaceOverview(clubId: string) {
         audience: true,
       },
     }),
-    prisma.taskAssignment.findMany({
+    !clubPart ? [] : prisma.taskAssignment.findMany({
       where: {
         memberId: membership.id,
         reviewedAt: null,
@@ -44,7 +47,7 @@ export async function getClubWorkspaceOverview(clubId: string) {
       orderBy: { task: { dueAt: "asc" } },
       take: 5,
     }),
-    hasPermission(membership, "tasks.manage")
+    clubPart && hasPermission(membership, "tasks.manage")
       ? prisma.taskAssignment.count({
           where: {
             task: { clubId },
@@ -67,18 +70,20 @@ export async function getClubWorkspaceOverview(clubId: string) {
           _count: { _all: true },
         })
       : Promise.resolve(null),
-    hasPermission(membership, "interviews.manage")
+    recruitingPart && hasPermission(membership, "interviews.manage")
       ? prisma.interviewBooking.count({ where: { slot: { clubId, startTime: { gte: now, lte: new Date(now.getTime() + 7 * 86400000) } } } })
       : Promise.resolve(null),
-    hasPermission(membership, "decisions.manage")
+    recruitingPart && hasPermission(membership, "decisions.manage")
       ? prisma.votingSession.findMany({ where: { clubId, state: { in: ["OPEN", "ACTIVE"] } }, select: { id: true, state: true }, take: 10, orderBy: { createdAt: "desc" } })
       : Promise.resolve(null),
-    dashboardSummary(clubId, membership),
-    directory.canManageMembers || directory.canChangeRoles
+    dashboardSummary(clubId, membership, view),
+    clubPart && (directory.canManageMembers || directory.canChangeRoles)
       ? Promise.all([
           prisma.clubMember.count({ where: { clubId, status: "ACTIVE", user: { disabledAt: null } } }),
           prisma.clubInvitation.count({ where: { clubId, applicationId: null, requestedRole: "MEMBER", purpose: { in: ["MEMBERSHIP", "ACCESS_GRANT"] }, status: "PENDING", expiresAt: { gt: now }, revokedAt: null, acceptedAt: null, declinedAt: null } }),
-        ]).then(([active, pendingInvitations]) => ({ active, pendingInvitations }))
+          // New members: joined in the last 30 days (counts only, same gate as the directory).
+          prisma.clubMember.count({ where: { clubId, status: "ACTIVE", user: { disabledAt: null }, joinedAt: { gte: new Date(+now - 30 * 86400000) } } }),
+        ]).then(([active, pendingInvitations, recent]) => ({ active, pendingInvitations, recent }))
       : Promise.resolve(null),
   ]);
   const current = await requireClubMembership(clubId);
