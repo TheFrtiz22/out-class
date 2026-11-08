@@ -1,5 +1,6 @@
 /* Ranked review: compact rows; bands always carry a text label beside the color. */
-.oc-ranked-review { --oc-band-green: #2f7d4f; --oc-band-yellow: #a77a12; --oc-band-red: #b4403a; }
+/* Design-system status tokens (light and dark themes); meaning is also carried by the text label. */
+.oc-ranked-review { --oc-band-green: var(--success); --oc-band-yellow: var(--warning); --oc-band-red: var(--destructive); }
 .oc-ranked-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
 .oc-ranked-group { display: grid; gap: 6px; }
 .oc-ranked-group + .oc-ranked-group { margin-top: 12px; }
@@ -7,7 +8,7 @@
 .oc-ranked-row[data-band="green"] { border-left-color: var(--oc-band-green); }
 .oc-ranked-row[data-band="yellow"] { border-left-color: var(--oc-band-yellow); }
 .oc-ranked-row[data-band="red"] { border-left-color: var(--oc-band-red); }
-.oc-ranked-row[data-selected] { box-shadow: 0 0 0 2px var(--ring); }
+.oc-ranked-row[data-selected] { outline: 2px solid var(--ring); outline-offset: 1px; }
 .oc-ranked-open { display: grid; grid-template-columns: 3rem minmax(0, 1fr) auto auto; align-items: center; gap: 12px; flex: 1; min-width: 0; min-height: 56px; padding: 6px 12px 6px 8px; text-align: left; border-radius: inherit; }
 .oc-ranked-open:hover { background: color-mix(in oklab, var(--muted) 55%, transparent); }
 .oc-ranked-open:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
