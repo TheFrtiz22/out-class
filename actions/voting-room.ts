@@ -32,10 +32,12 @@ export async function listLiveVotingRooms(input:unknown) {
     const m=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review"],{readOnly:true});
     const observer=hasPermission(m,"decisions.view"),voter=hasPermission(m,"decisions.vote"),leader=hasPermission(m,"decisions.start");
     if(!observer&&!voter&&!leader)throw Error("Voting room access denied.");
-    const rooms=await tx.votingSession.findMany({where:{clubId:d.clubId,mode:"LIVE",...(d.cycleId?{cycleId:d.cycleId}:{}),...(d.roundId?{roundId:d.roundId}:{}),
+    // Every session mode is listed: the room is the one home for voting. Board (LEGACY) sessions created
+    // from the Applicants ballot used to be missing here because this read only took LIVE rooms.
+    const rooms=await tx.votingSession.findMany({where:{clubId:d.clubId,...(d.cycleId?{cycleId:d.cycleId}:{}),...(d.roundId?{roundId:d.roundId}:{}),
       ...(!hasPermission(m,"applicants.identify")?{round:{anonymousReview:true}}:{}),
       ...(!observer?{OR:[...(leader?[{leaderMemberIds:{has:m.id}}]:[]),...(voter?[{participants:{some:{memberId:m.id}}}]:[])]}:{}),
-    },select:{id:true,clubId:true,cycleId:true,roundId:true,state:true,createdAt:true,updatedAt:true,finalizedAt:true,presentationOptions:true,round:{select:{name:true}},cycle:{select:{name:true}},_count:{select:{candidates:true}},leaderMemberIds:true,participants:{where:{memberId:m.id},select:{joinedAt:true}}},orderBy:[{createdAt:"desc"},{id:"desc"}],take:100});
+    },select:{id:true,mode:true,clubId:true,cycleId:true,roundId:true,state:true,createdAt:true,updatedAt:true,finalizedAt:true,presentationOptions:true,round:{select:{name:true}},cycle:{select:{name:true}},_count:{select:{candidates:true}},leaderMemberIds:true,participants:{where:{memberId:m.id},select:{joinedAt:true}}},orderBy:[{createdAt:"desc"},{id:"desc"}],take:100});
     return {rooms:rooms.map(({leaderMemberIds,participants,round,cycle,_count,presentationOptions,...room})=>({...room,meeting:(()=>{const m=meetingDetails((presentationOptions as {meeting?:unknown})?.meeting);if(!m)return null;const {announcedUserIds,...visible}=m;return visible;})(),roundName:round?.name??"Recruitment round",cycleName:cycle?.name??"Recruitment cycle",applicantCount:_count?.candidates??0,view:leaderMemberIds?.includes(m.id)&&leader?"leader" as const:participants?.length&&voter?"member" as const:"present" as const,joined:!!participants?.[0]?.joinedAt})),access:accessFingerprint(m)};
   },votingReadLimits);
   const {membership}=await requireClubPermission(d.clubId,["applications.review"]);

@@ -32,12 +32,14 @@ test("student workspace paths: old URLs redirect, back/forward and reload stay o
       ["/?workspace=student&view=explore", "/explore"],
       ["/?workspace=student&view=corkboard", "/corkboard"],
       ["/?workspace=student&view=tracker&section=applications", "/applications"],
-      ["/?workspace=student&view=status&section=status", "/applications/status"],
+      ["/?workspace=student&view=status&section=status", "/applications?tab=in-review"],
       ["/?workspace=student&view=my-clubs&section=tasks", "/clubs/tasks"],
       ["/?workspace=student&view=calendar&section=meetings", "/calendar?section=meetings"],
-      ["/?workspace=student&view=inbox&tab=preferences", "/inbox?tab=preferences"],
+      ["/?workspace=student&view=inbox&tab=preferences", "/settings/notifications"],
       ["/?workspace=student&view=student-profile", "/profile"],
-      ["/interviews?applicationId=a", "/applications/status?applicationId=a"],
+      ["/interviews?applicationId=a", "/applications?applicationId=a&tab=in-review"],
+      ["/applications/status?applicationId=a", "/applications?applicationId=a&tab=in-review"],
+      ["/clubs/meetings", "/calendar?type=meeting"],
       ["/", "/home"],
     ]
     for (const [from, to] of cases) {
@@ -55,9 +57,14 @@ test("student workspace paths: old URLs redirect, back/forward and reload stay o
     const go = async (selector, path) => { await visible(selector).click(); await page.waitForURL(url => url.pathname === path); assert.equal(await page.evaluate(() => window.__sameDocument), true, `${path} must not reload the page`) }
     await go('[data-tour="nav-applications"]', "/applications")
     await go('[data-tour="nav-clubs"]', "/clubs")
-    await go('[data-tour="nav-meetings"]', "/clubs/meetings")
-    const active = async id => assert.equal(await visible(`[data-tour="nav-${id}"]`).getAttribute("aria-current"), "page", id)
-    await active("meetings")
+    await go('[data-tour="nav-calendar"]', "/calendar")
+    // The URL changes first and the shell re-renders on the next frames; wait for the active tab
+    // instead of reading it once (a tab that never becomes active still fails after the timeout).
+    const active = async id => {
+      await page.waitForFunction(id => [...document.querySelectorAll(`[data-tour="nav-${id}"]`)].some(el => el.getClientRects().length && el.getAttribute("aria-current") === "page"), id, { timeout: 10000 }).catch(() => {})
+      assert.equal(await visible(`[data-tour="nav-${id}"]`).getAttribute("aria-current"), "page", id)
+    }
+    await active("calendar")
     await page.goBack(); await page.waitForURL(url => url.pathname === "/clubs"); await active("clubs")
     await page.goBack(); await page.waitForURL(url => url.pathname === "/applications"); await active("applications")
     await page.goForward(); await page.waitForURL(url => url.pathname === "/clubs"); await active("clubs")
@@ -65,7 +72,7 @@ test("student workspace paths: old URLs redirect, back/forward and reload stay o
   })
 
   await t.test("reloading or opening a path directly renders that view", async () => {
-    for (const [path, id] of [["/clubs/meetings", "meetings"], ["/applications/status", "status"], ["/explore", "explore"]]) {
+    for (const [path, id] of [["/clubs/tasks", "clubs"], ["/applications", "applications"], ["/explore", "explore"]]) {
       await page.goto(config.appUrl + path); await shell()
       assert.equal(here(), path)
       assert.equal(await page.locator(`[data-tour="nav-${id}"]`).filter({ visible: true }).first().getAttribute("aria-current"), "page", path)

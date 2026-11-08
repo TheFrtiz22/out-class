@@ -19,9 +19,10 @@ import { panelIssueSummary } from "@/lib/panel-issue-summary"
 import { panelPublicationStatus } from "@/lib/panel-publication-status"
 import type { BookingSettings } from "@/lib/interview-rooms"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
+import { SchedulingOverflowMenu, useSchedulingTools, type SchedulingTool } from "@/components/interviews/scheduling-tools"
 import { addDays } from "@/lib/availability"
 
-export function PanelPreviewWorkspace({ clubId, roundId, autoStart = false, autoRequest = autoStart ? 1 : 0, autoFillPublished = false, initialWindow, initialSession, initialDate, bookingSettings, onSummary, onGenerated, onRooms, onApproved }: { clubId: string; roundId: string; autoStart?: boolean; autoRequest?: number; autoFillPublished?: boolean; initialWindow?: { start: string; end: string }; initialSession?: string; initialDate?: string; bookingSettings?: Pick<BookingSettings, "bookingPublishedAt" | "bookingPaused">; onSummary?: (summary: { required: number; filled: number; state: string; hasDraft: boolean }) => void; onGenerated?: () => void; onRooms?: () => void; onApproved?: () => void }) {
+export function PanelPreviewWorkspace({ visible = true, clubId, roundId, autoStart = false, autoRequest = autoStart ? 1 : 0, autoFillPublished = false, initialWindow, initialSession, initialDate, bookingSettings, onSummary, onGenerated, onRooms, onApproved }: { visible?: boolean; clubId: string; roundId: string; autoStart?: boolean; autoRequest?: number; autoFillPublished?: boolean; initialWindow?: { start: string; end: string }; initialSession?: string; initialDate?: string; bookingSettings?: Pick<BookingSettings, "bookingPublishedAt" | "bookingPaused">; onSummary?: (summary: { required: number; filled: number; state: string; hasDraft: boolean }) => void; onGenerated?: () => void; onRooms?: () => void; onApproved?: () => void }) {
   const [workspace, setWorkspace] = useState<PanelWorkspace | null>(null), [draft, setDraft] = useState<PanelProposalView | null>(null)
   const [busy, setBusy] = useState(true), [error, setError] = useState(""), [notice, setNotice] = useState(""), [dirty, setDirty] = useState(false)
   const [start, setStart] = useState(""), [end, setEnd] = useState(""), [selected, setSelected] = useState("")
@@ -189,6 +190,15 @@ export function PanelPreviewWorkspace({ clubId, roundId, autoStart = false, auto
   const official = showPublished && !!draft && !!workspace?.published
   const scheduleSessions = official ? workspace!.published!.document.sessions : sessions
   const scheduleAssignments = official ? workspace!.published!.document.assignments : assignments
+  // Secondary actions for this step live in the Scheduling tab's single "⋯" menu.
+  const stepTools: SchedulingTool[] = !visible ? [] : [
+    { id: "rules", label: "Assignment rules", onSelect: () => setSettingsOpen(true), disabled: busy },
+    ...(draft ? [
+      { id: "regenerate", label: "Regenerate unlocked assignments", onSelect: () => generate("REGENERATE"), disabled: busy },
+      { id: "discard", label: "Discard draft", disabled: busy, onSelect: () => { if (window.confirm("Discard unapproved changes? Confirmed reservations and the published schedule are retained.")) void run(async () => { await discardPanelProposal({...scope,proposalId:draft.id,revision:draft.revision}); accept(await getPanelProposalWorkspace(scope)); setNotice("Draft discarded.") }) } },
+    ] : []),
+  ]
+  const registered = useSchedulingTools(stepTools)
   return <section className="min-w-0 space-y-5" aria-label="Review Panel Assignments" data-saving={busy} data-unsaved={dirty}>
 <header className="flex flex-wrap items-center justify-between gap-3"><h3 className="text-base font-medium">Confirm interviewers</h3><span role="status" className="text-xs text-muted-foreground">{rechecking ? "Checking…" : busy ? "Saving…" : draft ? "Draft saved" : workspace?.published ? "Interviewers confirmed" : "Not assigned"}</span></header>
     {!draft && error && <p role="alert" className="rounded-lg border border-destructive/30 p-3 text-sm text-destructive">{error} <Button variant="outline" size="sm" disabled={busy} onClick={() => { if (canLeaveWorkspace()) void run(async () => accept(await getPanelProposalWorkspace(scope))) }}>Reload draft</Button></p>}
@@ -196,10 +206,7 @@ export function PanelPreviewWorkspace({ clubId, roundId, autoStart = false, auto
     {notice && <p role="status" className="text-sm text-emerald-700">{notice}</p>}
     {!workspace && busy ? <LoadingState label="Preparing panel planning…" layout="schedule" rows={3}/> : workspace && <>
       {!workspace.scene.sessions.some(s => s.active) && !draft && <div className="space-y-2 rounded-xl border border-dashed p-4"><h4 className="font-semibold">No upcoming interview sessions</h4><p className="text-sm text-muted-foreground">Create or reopen a room with future interview times before filling panels.</p>{onRooms && <Button variant="outline" onClick={onRooms}>Go to Rooms</Button>}</div>}
-      <div className="flex flex-wrap gap-2">{workspace.published && !draft ? <><Button variant="outline" disabled={busy} onClick={() => begin()}>Edit interviewers</Button>{onApproved && <Button onClick={onApproved}>Continue to booking settings</Button>}</> : <><Button variant={draft ? "outline" : "default"} disabled={busy || !start || !end} onClick={() => generate(draft ? "FILL_MISSING" : "REGENERATE")}>{busy ? "Working…" : "Assign available interviewers"}</Button>{draft && <Button disabled={busy || !workspace.canPublish} onClick={finalize}>Confirm interviewers</Button>}</>}<div className="ml-auto"><DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="sm" disabled={busy}>Schedule tools</Button></DropdownMenuTrigger><DropdownMenuContent align="end">
-        <DropdownMenuItem className="min-h-11" onSelect={() => setSettingsOpen(true)}>Assignment rules</DropdownMenuItem>
-        {draft && <><DropdownMenuItem className="min-h-11" disabled={busy} onSelect={() => generate("REGENERATE")}>Regenerate unlocked assignments</DropdownMenuItem><DropdownMenuItem className="min-h-11" disabled={busy} onSelect={() => { if (window.confirm("Discard unapproved changes? Confirmed reservations and the published schedule are retained.")) void run(async () => { await discardPanelProposal({...scope,proposalId:draft.id,revision:draft.revision}); accept(await getPanelProposalWorkspace(scope)); setNotice("Draft discarded.") }) }}>Discard draft</DropdownMenuItem></>}
-      </DropdownMenuContent></DropdownMenu></div></div>
+      <div className="flex flex-wrap gap-2">{workspace.published && !draft ? <><Button variant="outline" disabled={busy} onClick={() => begin()}>Edit interviewers</Button>{onApproved && <Button onClick={onApproved}>Continue to booking settings</Button>}</> : <><Button variant={draft ? "outline" : "default"} disabled={busy || !start || !end} onClick={() => generate(draft ? "FILL_MISSING" : "REGENERATE")}>{busy ? "Working…" : "Assign available interviewers"}</Button>{draft && <Button disabled={busy || !workspace.canPublish} onClick={finalize}>Confirm assignments</Button>}</>}{!registered && <div className="ml-auto"><SchedulingOverflowMenu items={stepTools} disabled={busy} /></div>}</div>
       {draft && issues && <section aria-label="Staffing issues" className="space-y-2 text-sm">
         {error && <p role="alert" className="text-destructive">{error} <Button size="sm" variant="outline" disabled={busy} onClick={() => { if (canLeaveWorkspace()) void run(async () => accept(await getPanelProposalWorkspace(scope))) }}>Reload draft</Button></p>}
         {needsRecheck && <p role="status" className="text-amber-800">Availability has changed. Recheck assignments before confirming.</p>}

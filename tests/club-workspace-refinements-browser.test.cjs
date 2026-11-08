@@ -11,7 +11,7 @@ async function fixture() {
   const app = (id, firstName, gpa, sat, score) => ({ id, studentId: id, roundId: 'round', recruitmentCycleId: null, status: 'IN_REVIEW', canEvaluate: false, publicationGuard: 'fixture', student: { email: `${id}@example.invalid`, studentProfile: { firstName, lastName: 'Example', academicYear: 'Second Year', major: 'Economics', gpa, satScore: sat, actScore: 33, resumeUrl: `12345678-1234-4123-8123-123456789abc/12345678-1234-4123-8123-123456789abc.pdf`, experiences: [] } }, evaluations: [], answers: [], bookings: [], roundScore: { average: score, submitted: 2, required: 2, provisional: false } })
   const initial = () => ({ pipeline: { rounds: [{ id: 'round', name: 'Interview round', order: 0, type: 'INTERVIEW', anonymousReview: false }], applications: [app('alpha', 'Alpha', 3.7, 1450, 8), app('beta', 'Beta', 3.9, 1550, 9)] }, directory: { actor: owner, members: [member('junior', 'Zoe', 'Third Year', 'MEMBER', ['Girls']), member('senior', 'Adam', 'Fourth Year', 'MEMBER', ['Boys']), member('freshman', 'Maya', 'First Year', 'MEMBER')], invitations: [], identifierTypes: [] }, writes: [] })
   let state = initial()
-  const api = `async function call(path,input){const response=await fetch('/api/'+path,input?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)}:undefined);if(!response.ok)throw Error('Fixture save rejected');return response.json()}exports.getClubPipeline=()=>call('pipeline');exports.getClubPipelineList=()=>call('pipeline');exports.getClubPipelinePage=async(club,q={})=>require('@/lib/pipeline-page').pagePipeline(await call('pipeline'),q,'owner','owner','fixture');exports.getClubPipelineSelection=async(club,q={})=>require('@/lib/pipeline-page').completePipelineSelection(await call('pipeline'),q,'owner','owner');exports.setApplicationStatus=input=>call('status',input);exports.getOrganizationMemberManagement=()=>call('directory');exports.assignOrganizationMemberGroups=input=>call('groups',input);exports.createOrganizationMemberGroups=input=>call('create-groups',input);exports.getApplicantDisplay=()=>call('display');exports.saveApplicantObservation=input=>call('observation',input);exports.deleteApplicantObservation=input=>call('delete-observation',input);exports.listMeetings=async()=>[];exports.submitEvaluation=async()=>({});exports.moveApplicantRound=async()=>({});exports.getRecipientGroups=()=>call('catalog');exports.previewRecipientAudience=()=>call('preview');exports.publishClubAnnouncement=input=>call('announcement',input);exports.getOrganizationSetupChecklist=()=>call('checklist');`
+  const api = `async function call(path,input){const response=await fetch('/api/'+path,input?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)}:undefined);if(!response.ok)throw Error('Fixture save rejected');return response.json()}exports.getClubPipeline=()=>call('pipeline');exports.getClubPipelineList=()=>call('pipeline');exports.getClubPipelinePage=async(club,q={})=>require('@/lib/pipeline-page').pagePipeline(await call('pipeline'),q,'owner','owner','fixture');exports.getClubPipelineSelection=async(club,q={})=>require('@/lib/pipeline-page').completePipelineSelection(await call('pipeline'),q,'owner','owner');exports.setApplicationStatus=input=>call('status',input);exports.getOrganizationMemberManagement=()=>call('directory');exports.assignOrganizationMemberGroups=input=>call('groups',input);exports.createOrganizationMemberGroups=input=>call('create-groups',input);exports.getApplicantDisplay=()=>call('display');exports.getInterviewFeedback=async()=>({status:'unavailable'});exports.saveApplicantObservation=input=>call('observation',input);exports.deleteApplicantObservation=input=>call('delete-observation',input);exports.listMeetings=async()=>[];exports.submitEvaluation=async()=>({});exports.moveApplicantRound=async()=>({});exports.getRecipientGroups=()=>call('catalog');exports.previewRecipientAudience=()=>call('preview');exports.publishClubAnnouncement=input=>call('announcement',input);exports.getOrganizationSetupChecklist=()=>call('checklist');`
   const empty = 'module.exports=new Proxy({},{get:()=>()=>null});'
   const mocks = {
     // Short-link writes are outside this directory/profile fixture.
@@ -126,7 +126,7 @@ test('browser: sortable lists, wide applicant profile, drag/drop, quick decision
   await page.getByRole('button',{name:'Sort by Year',exact:true}).click()
   assert.match(await page.locator('tbody tr').first().innerText(),/Adam Example/)
   assert.equal(await page.getByRole('region',{name:'Assign member groups'}).count(),0)
-  await page.getByRole('button',{name:'Create group(s)',exact:true}).click()
+  await page.getByRole('button',{name:'More ways to add members',exact:true}).click();await page.getByRole('menuitem',{name:'Create groups',exact:true}).click()
   let creator=page.getByRole('dialog')
   await creator.getByLabel('Group name',{exact:true}).fill('Welcome')
   await creator.getByRole('button',{name:'Next',exact:true}).click()
@@ -138,7 +138,7 @@ test('browser: sortable lists, wide applicant profile, drag/drop, quick decision
   await creator.waitFor({state:'hidden'})
   assert.deepEqual(f.state().writes.at(-1).targets.map(target=>target.id),['freshman'])
   assert.ok(f.state().directory.members.find(member=>member.id==='freshman').groups.includes('Welcome'))
-  await page.getByRole('button',{name:'Create group(s)',exact:true}).click()
+  await page.getByRole('button',{name:'More ways to add members',exact:true}).click();await page.getByRole('menuitem',{name:'Create groups',exact:true}).click()
   creator=page.getByRole('dialog')
   await creator.getByLabel('Group name',{exact:true}).fill('Teams')
   await creator.getByRole('button',{name:'Next',exact:true}).click()
@@ -152,7 +152,7 @@ test('browser: sortable lists, wide applicant profile, drag/drop, quick decision
   await creator.waitFor({state:'hidden'})
   assert.ok(f.state().directory.members.every(member=>member.groups.includes('Teams')&&member.groups.some(g=>g.startsWith('Teams / '))))
   await page.setViewportSize({width:390,height:844})
-  await page.getByRole('button',{name:'Create group(s)',exact:true}).click()
+  await page.getByRole('button',{name:'More ways to add members',exact:true}).click();await page.getByRole('menuitem',{name:'Create groups',exact:true}).click()
   creator=page.getByRole('dialog')
   await creator.getByLabel('Group name',{exact:true}).fill('Mobile team')
   await creator.getByRole('button',{name:'Next',exact:true}).click()
@@ -184,7 +184,7 @@ test('browser: sortable lists, wide applicant profile, drag/drop, quick decision
   await page.getByRole('heading',{name:'This week',exact:true}).waitFor()
   assert.equal(await page.locator('.oc-club-home-card').count(),3)
   assert.equal(await page.getByText('You’re clear for now.',{exact:true}).count(),1)
-  assert.equal(await page.getByText('No assignments right now.',{exact:true}).count(),1)
+  assert.equal(await page.getByText('No tasks right now.',{exact:true}).count(),1)
   await page.screenshot({path:'/tmp/outclass-workspace-overview-desktop.png',fullPage:true})
   await page.getByRole('button',{name:'Dismiss setup introduction',exact:true}).click()
   await page.reload();await page.getByRole('heading',{name:'Needs you',exact:true}).waitFor()

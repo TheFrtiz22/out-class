@@ -28,12 +28,12 @@ export function FeatureOrbit({ perspective, onComplete }: { perspective: Landing
             </div>
             <ProductMotion scene={chapter.scene} resetKey={`${perspective}-${chapter.scene}`}>
               <figure className="oc-story-frame">
-                <div className="oc-story-toolbar"><OutClassLogo className="oc-demo-wordmark" /><strong>{perspective === "student" ? "Student workspace" : "Club workspace"}</strong><span><ProductMotionControl /></span></div>
+                <div className="oc-story-toolbar"><OutClassLogo className="oc-demo-wordmark" /><strong>{perspective === "student" ? "Student workspace" : "Club workspace"}</strong><span className="oc-story-sample">Sample</span><span><ProductMotionControl /></span></div>
                 <div className="oc-story-interface"><div className="oc-demo-observation" inert aria-hidden="true"><div className="oc-perspective-scene" data-scene={chapter.scene}><JourneyScenePreview scene={chapter.scene} /></div></div><DemoCursor /></div>
                 <figcaption><span>{chapter.label} with OutClass</span><ProductDemoProgress /></figcaption>
               </figure>
             </ProductMotion>
-            <div className="oc-orbit-footnote"><p>{chapter.detail}</p>{index === chapters.length - 1 && <button type="button" onClick={onComplete}>{perspective === "student" ? "Create your profile" : "Explore club workspace"}<ArrowUpRight size={14} aria-hidden="true" /></button>}</div>
+            <div className="oc-orbit-footnote"><p>{chapter.detail}</p>{index === chapters.length - 1 && <button type="button" onClick={onComplete}>{perspective === "student" ? "Create your profile" : "Set up your club"}<ArrowUpRight size={14} aria-hidden="true" /></button>}</div>
           </article>)}
         </div>
       </DemoPlaybackProvider>

@@ -15,6 +15,6 @@ export function clubRecruitment(club: {
   const expired = !!deadline && +deadline <= now
   const available = club.source !== "preview" && club.applicationAvailable === true && !expired
   const closingSoon = available && !!deadline && +deadline - now <= 7 * 86400000
-  const label = club.source === "preview" ? "Sample club" : club.claimed === false ? "Unclaimed profile" : expired ? "Deadline passed" : available ? "Applications open" : club.applicationAvailable === false ? "Applications unavailable" : "Recruitment not published"
+  const label = club.source === "preview" ? "Sample club" : club.claimed === false ? "Unclaimed" : expired ? "Deadline passed" : available ? "Applications open" : club.applicationAvailable === false ? "Applications unavailable" : "Recruitment not published"
   return { deadline, expired, available, closingSoon, label }
 }

@@ -8,10 +8,10 @@
 .oc-story-toolbar .oc-preview-playback button:hover { background: var(--accent); }
 .oc-demo-toggle[data-complete="true"] { visibility: hidden; }
 .oc-landing .oc-story-frame figcaption { min-height: 50px; padding: 10px 22px 12px; align-items: center; }
-.oc-story-frame figcaption > span { font-size: 11px; }
-.oc-demo-playback-caption { display: flex; flex-direction: column; gap: 3px; font-size: 11px; line-height: 1.5; max-width: 64%; }
+.oc-story-frame figcaption > span { font-size: 12px; }
+.oc-demo-playback-caption { display: flex; flex-direction: column; gap: 3px; font-size: 12px; line-height: 1.5; max-width: 64%; }
 .oc-demo-playback-caption > span:first-child { color: var(--primary); }
-.oc-demo-playback-caption > span:last-child { color: var(--muted-foreground); font-size: 10px; }
+.oc-demo-playback-caption > span:last-child { color: var(--muted-foreground); font-size: 12px; }
 .oc-demo-progress { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; border-radius: 0 0 14px 14px; background: #142d4518; overflow: hidden; }
 .oc-demo-progress-fill { display: block; width: 100%; height: 100%; background: #bf6435; transform: scaleX(1); transform-origin: left; border-radius: 3px; }
 .oc-demo-cursor { position: absolute; top: 0; left: 0; z-index: 8; width: 22px; height: 28px; pointer-events: none; opacity: 0; }

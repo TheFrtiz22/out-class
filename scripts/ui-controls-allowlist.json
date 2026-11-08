@@ -27,12 +27,6 @@
   },
   {
    "rule": "css-hex",
-   "file": "components/clubs/profile-presentation.css",
-   "max": 1,
-   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
-  },
-  {
-   "rule": "css-hex",
    "file": "components/communications/decision-letter.css",
    "max": 11,
    "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
@@ -366,12 +360,6 @@
    "file": "components/views/leader-dashboard/pipeline-view.tsx",
    "max": 1,
    "reason": "Collapsed pipeline column is a whole-column target."
-  },
-  {
-   "rule": "raw-toggle",
-   "file": "components/club-tasks.tsx",
-   "max": 1,
-   "reason": "Due / Missing / Submitted count tiles (tone and zero states) act as filters; whole-tile targets."
   },
   {
    "rule": "raw-toggle",

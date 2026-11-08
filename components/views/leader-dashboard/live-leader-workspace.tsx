@@ -14,8 +14,9 @@ import { findReviewerEvaluation } from "@/lib/reviewer-evaluation"
 import { profilePhotoSource } from "@/lib/profile-photo"
 import { genderValues } from "@/lib/student-profile"
 import { ApplicantDisplayPanel } from "@/components/applicant-intelligence"
+import { InterviewFeedbackPanel } from "@/components/interview-feedback"
 import { applicationAttachmentUrl } from "@/lib/student-applications"
-import { applicationDecisionGroup, decisionGroups, type DecisionGroup } from "@/lib/application-decisions"
+import { applicationDecisionGroup, decisionFilters, type DecisionFilter } from "@/lib/application-decisions"
 import { type ApplicantSort } from "@/lib/live-applicant-sorting"
 import { applicantLane } from "@/lib/applicant-board"
 import { LiveApplicantList, LiveApplicantKanban, LiveDecisionList, type ApplicantLane } from "./live-applicant-views"
@@ -26,7 +27,8 @@ import { hasPermission } from "@/lib/permissions"
 import { interviewCapabilities } from "@/lib/interview-access"
 import { applicantInterviewHref } from "@/lib/applicant-interview-navigation"
 import { useRouter } from "next/navigation"
-import { saveVotingSelection,votingSetupHref } from "@/lib/voting-navigation"
+import { saveVotingSelection,votingSetupHref,decisionsHref } from "@/lib/voting-navigation"
+import { RankedReviewList, type RankedReviewApi } from "@/components/ranked-review-list"
 import Link from "next/link"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
 
@@ -37,6 +39,7 @@ import { useDismissableDetails } from "@/hooks/use-dismissable-details"
 import { createPortal } from "react-dom"
 import { useRevalidate } from "@/hooks/use-revalidate"
 import { BoardDecisionMode } from "@/components/live-voting/board-decision-mode"
+import { getClubPipeline, getRankedReviewSettings, saveRankedReviewBands } from "@/lib/workspace-api"
 import { getClubPipelinePage, getClubPipelineSelection, moveApplicantRound, setApplicationStatus, reconsiderRejectedApplication, revokeRecruitmentOffer } from "@/lib/workspace-api"
 import { submitEvaluation } from "@/lib/workspace-api"
 import { useApplicationState } from "@/lib/application-state"
@@ -66,6 +69,7 @@ import {
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { NativeSelect } from "@/components/ui/native-select"
+import { pluralize } from "@/lib/copy/terms"
 
 type Pipeline = Awaited<ReturnType<typeof getClubPipelinePage>>
 type Candidate = Pipeline["applications"][number]
@@ -81,7 +85,7 @@ const average = (app: Candidate) =>
 const PAGE_HEADER_ACTIONS_ID = "workspace-page-actions"
 const sortOptions: { key: ApplicantSort; label: string }[] = [{ key: "name", label: "Name / anonymous ID" }, { key: "year", label: "Class year" }, { key: "status", label: "Status" }, { key: "gpa", label: "GPA" }, { key: "sat", label: "SAT" }, { key: "act", label: "ACT" }, { key: "round", label: "Round" }, { key: "score", label: "Rating" }]
 
-export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, rejectedOnly = false, initialData, onData, validatedInitialData = false }: { validatedInitialData?: boolean; scoped?: boolean; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: { clubId: string; pipeline: Pipeline }; onData?: (clubId: string, data: Pipeline | null) => void }) {
+export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, rejectedOnly = false, initialDecision = "all", initialData, onData, validatedInitialData = false }: { validatedInitialData?: boolean; scoped?: boolean; decisionsOnly?: boolean; rejectedOnly?: boolean; initialDecision?: DecisionFilter; initialData?: { clubId: string; pipeline: Pipeline }; onData?: (clubId: string, data: Pipeline | null) => void }) {
   const { user, activeClubId, selectClub } = useAuth()
   const demo = useDemoMode()
   const { leaderFocus } = useApplicationState()
@@ -127,7 +131,7 @@ export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, rej
           </NativeSelect>
         )}
       </div>}
-      <ClubWorkspace key={club.clubId} membership={club} decisionsOnly={decisionsOnly} rejectedOnly={rejectedOnly} validatedInitialData={validatedInitialData} initialData={initialData?.clubId === club.clubId ? initialData.pipeline : null} onData={data => onData?.(club.clubId, data)} />
+      <ClubWorkspace key={club.clubId} membership={club} decisionsOnly={decisionsOnly} rejectedOnly={rejectedOnly} initialDecision={initialDecision} validatedInitialData={validatedInitialData} initialData={initialData?.clubId === club.clubId ? initialData.pipeline : null} onData={data => onData?.(club.clubId, data)} />
       {demo.isDemoEnabled && !decisionsOnly && <details className="text-xs text-muted-foreground"><summary className="min-h-11 cursor-pointer py-3">Sample recruiting target</summary><DemoRoundTarget /></details>}
     </div>
   )
@@ -141,7 +145,7 @@ export function ApplicantReviewPreview({ clubId, applicationId, onClose, onChang
   return <ClubWorkspace key={applicationId} membership={membership} preview={{ applicationId, onClose, onChanged, onNext }} />
 }
 
-function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false, initialData = null, onData, preview, validatedInitialData = false }: { validatedInitialData?: boolean; preview?: { applicationId: string; onClose: () => void; onChanged: () => void; onNext?: () => void }; membership: ExtendedMembership; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: Pipeline | null; onData?: (data: Pipeline | null) => void }) {
+function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false, initialDecision = "all", initialData = null, onData, preview, validatedInitialData = false }: { validatedInitialData?: boolean; preview?: { applicationId: string; onClose: () => void; onChanged: () => void; onNext?: () => void }; membership: ExtendedMembership; decisionsOnly?: boolean; rejectedOnly?: boolean; initialDecision?: DecisionFilter; initialData?: Pipeline | null; onData?: (data: Pipeline | null) => void }) {
   const router=useRouter();
   const [votingSelection,setVotingSelection]=useState<string[]>([]);
   const previewId = preview?.applicationId
@@ -152,14 +156,22 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   const authority = useMemo(() => ({ user: auth.user, readAuthority: auth.readAuthority, support: auth.isImpersonating, loading: auth.loading, membership, demoReady: demo.ready, demoEnabled: demo.isDemoEnabled }), [auth.user, auth.readAuthority, auth.isImpersonating, auth.loading, membership, demo.ready, demo.isDemoEnabled])
   const canStartVoting=hasPermission(membership,"applications.review")&&hasPermission(membership,"decisions.manage")&&hasPermission(membership,"decisions.start");
   useEffect(()=>setVotingSelection([]),[auth.user?.id,membership.id,demo.isDemoEnabled]);
-  const votingChoice=canStartVoting&&!decisionsOnly&&!rejectedOnly?{ids:votingSelection,toggle:(id:string)=>setVotingSelection(old=>old.includes(id)?old.filter(v=>v!==id):[...old,id])}:undefined;
+  const votingChoice=canStartVoting&&!preview&&!rejectedOnly?{ids:votingSelection,toggle:(id:string)=>setVotingSelection(old=>old.includes(id)?old.filter(v=>v!==id):[...old,id])}:undefined;
   function startSelectedVoting(){if(!auth.user||!votingSelection.length||!canLeaveWorkspace())return;try{const key=saveVotingSelection(sessionStorage,{userId:auth.user.id,clubId:membership.clubId,demo:demo.isDemoEnabled,applicationIds:votingSelection});router.push(votingSetupHref(membership.clubId,demo.isDemoEnabled?"demo=1":"",key));}catch{setMessage("Could not retain the applicant selection in this tab. Allow session storage and retry.")}}
   const [error, setError] = useState("")
   const [revision, setRevision] = useState(0)
   const [query, setQuery] = useState("")
   const [position, setPosition] = useState<{ key: string; cursor: PipelineCursor } | null>(null)
   const [round, setRound] = useState("")
-  const [decisionGroup, setDecisionGroup] = useState<DecisionGroup>("pending")
+  const [decisionGroup, setDecisionGroupState] = useState<DecisionFilter>(rejectedOnly ? "rejected" : initialDecision)
+  // The decision filter lives in the URL (`decision=`), so Rejected and other groups are linkable.
+  const setDecisionGroup = useCallback((value: DecisionFilter) => {
+    setDecisionGroupState(value)
+    if (preview || typeof window === "undefined" || !window.location?.href || !window.history) return
+    const url = new URL(window.location.href)
+    if (value === "all") url.searchParams.delete("decision"); else url.searchParams.set("decision", value)
+    window.history.replaceState(window.history.state, "", url)
+  }, [preview])
   const [status, setStatus] = useState("")
   const [review, setReview] = useState("")
   const [major, setMajor] = useState("")
@@ -170,7 +182,16 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   const [rating, setRating] = useState("")
   const clearApplicantFilters = () => { setQuery(""); setRound(""); setStatus(""); setReview(""); setMajor(""); setYear(""); setGpa(""); setSat(""); setAct(""); setRating("") }
   const [compact, setCompact] = useState(true)
-  const [view, setView] = useState<"list" | "kanban">("list")
+  const [view, setView] = useState<"list" | "kanban" | "ranked">("list")
+  // Ranked review opens the same masked single-applicant review (with finalized interviewer feedback).
+  const [rankedOpen, setRankedOpen] = useState<string | null>(null)
+  const [rankedChanged, setRankedChanged] = useState(0)
+  const rankedApi = useMemo<RankedReviewApi>(() => ({
+    loadRound: roundId => getClubPipeline(membership.clubId, { roundId }),
+    loadSettings: roundId => getRankedReviewSettings(membership.clubId, roundId),
+    saveBands: input => saveRankedReviewBands(input),
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- a new authority (account, demo, impersonation) must reload the ranking
+  }), [membership.clubId, authority])
   const [gender, setGender] = useState("")
   const [showGenderCounts, setShowGenderCounts] = useState(false)
   const [sort, setSort] = useState<ApplicantSort>("name")
@@ -193,12 +214,12 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   const [revalidateFailures, setRevalidateFailures] = useState(0)
   const detail = usePipelineApplicant(membership.clubId, previewId || null, revision)
   const readQuery = useMemo<PipelinePageQuery>(() => ({
-    query, mode: rejectedOnly ? "rejected" : decisionsOnly ? "decisions" : "applicants", decisionGroup,
+    query, mode: "decisions", decisionGroup,
     ...(round ? { roundId: round } : {}), ...(gender ? { gender: gender as (typeof genderValues)[number] } : {}), genderCounts: showGenderCounts,
     ...(status ? { status: status as PipelinePageQuery["status"] } : {}), ...(review ? { review: review as PipelinePageQuery["review"] } : {}),
     ...(major ? { major } : {}), ...(year ? { year } : {}),
     ...(gpa ? { gpa: Number(gpa) } : {}), ...(sat ? { sat: Number(sat) } : {}), ...(act ? { act: Number(act) } : {}), ...(rating ? { rating: Number(rating) } : {}), sort, descending,
-  }), [query, rejectedOnly, decisionsOnly, decisionGroup, round, gender, showGenderCounts, status, review, major, year, gpa, sat, act, rating, sort, descending])
+  }), [query, decisionGroup, round, gender, showGenderCounts, status, review, major, year, gpa, sat, act, rating, sort, descending])
   const selectionKey = JSON.stringify([membership.clubId, membership.id, membership.userId, readQuery])
   const cursor = position?.key === selectionKey ? position.cursor : undefined
   // A changed filter starts a new selection. Clearing that filter later must
@@ -318,10 +339,10 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     if (leaderFocus.roundId) setRound(leaderFocus.roundId)
     if (leaderFocus.applicantId) {
       const target = data.applications.find((app) => app.id === leaderFocus.applicantId)
-      if (target) { if (decisionsOnly) setDecisionGroup(applicationDecisionGroup(target.status) || "pending"); open(target) }
+      if (target) { setDecisionGroup("all"); open(target) }
     }
     clearLeaderFocus()
-  }, [data, loading, leaderFocus, membership.clubId, clearLeaderFocus])
+  }, [data, loading, leaderFocus, membership.clubId, clearLeaderFocus, setDecisionGroup])
   function open(app?: Pick<Candidate, "id" | "roundId">, located = false) {
     if (busy) return
     const apply = () => {
@@ -556,41 +577,16 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     <div ref={workspaceElement} className="oc-live-pipeline oc-workspace-stack" data-unsaved={draftSave.dirty} data-saving={busy}>
       <div hidden={!!preview} className={votingBarShown ? "oc-voting-bar-clearance" : undefined}>
       {!active && message && <p role="status" className="text-sm">{message}</p>}
-      {decisionsOnly && <>
-        <SegmentedControl label="Decision groups" value={decisionGroup} onChange={setDecisionGroup} options={decisionGroups.map(group => ({ value: group.id, label: <>{group.label}<span className="ml-2 text-xs font-normal text-muted-foreground">{listData?.facets.decisions[group.id] ?? 0}</span></> }))} />
-        <p className="text-sm text-muted-foreground">{decisionGroup === "pending" ? "Submitted, in-review, and interviewing applications without a recorded decision. Round and status remain separate." : "Recorded application outcomes, visible to the applicant."} Acceptance does not automatically create club membership.</p>
-      </>}
+      {!preview && view !== "ranked" && <SegmentedControl label="Decision" value={decisionGroup} onChange={value => setDecisionGroup(value as DecisionFilter)} options={decisionFilters.map(group => ({ value: group.id, label: <>{group.label}<span className="ml-2 text-xs font-normal text-muted-foreground">{group.id === "all" ? listData?.page.baseTotal ?? 0 : listData?.facets.decisions[group.id] ?? 0}</span></> }))} />}
 {!rejectedOnly && !preview && actionSlot !== undefined && (() => {
         const actions = <div role="group" aria-label="Recruitment review" className="flex flex-wrap items-center justify-end gap-2">
           {!decisionsOnly && canDecide && <Button variant="outline" disabled={busy || !listData?.facets.quickReview} onClick={() => void startQuickReview()}>Quick review</Button>}
-          {!decisionsOnly && hasPermission(membership, "applications.review") && (["decisions.view", "decisions.manage", "decisions.vote"] as const).some(permission => hasPermission(membership, permission)) && <BoardDecisionMode
-            applicants={filtered}
-            selectionQuery={readQuery}
-            rounds={data.rounds}
-            clubId={membership.clubId}
-            clubName={membership.club.name}
-            canDecide={hasPermission(membership, "decisions.manage") && hasPermission(membership, "applicants.identify")}
-            onDecision={(id, status) => {
-              setRevision(value => value + 1)
-              setData((previous) =>
-                previous
-                  ? {
-                      ...previous,
-                      applications: previous.applications.map((app) =>
-                        app.id === id ? { ...app, status } : app,
-                      ),
-                    }
-                  : previous,
-              )
-            }}
-          />}
-          <Button variant="outline" asChild><Link href={`/club/${membership.clubId}/workspace?section=recruitment&tool=${decisionsOnly ? "applicants" : "decisions"}`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>{decisionsOnly ? "Review applicants" : "Review decisions"}</Link></Button>
         </div>
         return actionSlot ? createPortal(actions, actionSlot) : actions
       })()}
       <div className="oc-toolbar">
-        {!decisionsOnly && <SegmentedControl label="Applicant view" value={view} onChange={setView} options={[{ value: "list", label: "List" }, { value: "kanban", label: "Kanban" }]} />}
-        <div className="relative min-w-0 flex-1 basis-60">
+        {!decisionsOnly && <SegmentedControl label="Applicant view" value={view} onChange={setView} options={[{ value: "list", label: "List" }, { value: "kanban", label: "Kanban" }, { value: "ranked", label: "Ranked" }]} />}
+        {view !== "ranked" && <><div className="relative min-w-0 flex-1 basis-60">
           <Search className="absolute left-3 top-3 size-4 text-muted-foreground" />
           <Input
             ref={search}
@@ -716,11 +712,13 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
           <div className="mt-3"><Label htmlFor="leader-act">ACT greater than</Label><Input id="leader-act" type="number" min={1} max={36} className="mt-2 w-36" value={act} onChange={e => setAct(e.target.value)} /></div>
           <div className="mt-3"><Label htmlFor="leader-rating">Minimum rating (out of 10)</Label><Input id="leader-rating" type="number" min={0} max={10} step="0.1" className="mt-2 w-36" value={rating} onChange={event => setRating(event.target.value)} /></div>
       </section>}
-        </div></details>
+        </div></details></>}
       </div>
+      {view === "ranked" ? <RankedReviewList clubId={membership.clubId} rounds={data.rounds} initialRoundId={round || data.rounds.find(item => isInterviewRecruitmentRound(item.type))?.id} api={rankedApi} onOpen={setRankedOpen} votingSelection={votingChoice} changeSignal={rankedChanged}
+        votingLink={hasPermission(membership, "applications.review") ? <Button variant="outline" size="sm" asChild><Link href={decisionsHref(membership.clubId, "voting", demo.isDemoEnabled ? "demo=1" : "")}>Open Voting room</Link></Button> : undefined} /> : <>
       <div className="flex min-h-9 flex-wrap items-center justify-between gap-x-3">
         <p className="text-xs text-muted-foreground" role="status">
-          {total} {decisionsOnly ? "applications in this selection" : `of ${baseTotal} applicants · scores out of 10`}
+          {decisionsOnly ? `${pluralize(total, "application")} in this selection` : `${total} of ${pluralize(baseTotal, "applicant")} · scores out of 10`}
         </p>
         {(query || round || status || review || major || year || gpa || sat || act || rating) && (
           <Button
@@ -734,20 +732,22 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         {revalidateFailures >= 2 && <p role="status" className="flex w-full flex-wrap items-center gap-2 text-xs text-muted-foreground">Couldn’t update applicants. Showing the last loaded list.<Button variant="ghost" size="sm" disabled={busy} onClick={() => void revalidate()}>Try again</Button></p>}
       </div>
       {view === "kanban" && <p className="text-xs leading-6 text-muted-foreground">Drag a candidate to another column or use Move to. Review the change before it is saved. Interview moves require an interview round.</p>}
-      {rejectedOnly&&<p>Rejected applications are retained here with their reviews and decision history. Reconsideration returns an application to review; it does not change the student’s account or membership.</p>}
+      {decisionGroup==="rejected"&&<p className="text-sm text-muted-foreground">Rejected applications keep their reviews and decision history. Open one to reconsider it; that returns it to review and does not change the student’s account or membership.</p>}
       {invalidFilter ? <p role="alert">Enter filters within the displayed numeric ranges.</p> : updating ? <p role="status" aria-live="polite">Updating applicants…</p> : !filtered.length ? <div role="status" className="space-y-3 border-y py-10 text-sm text-muted-foreground"><p>{baseTotal ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No applications have been rejected. Published rejections appear here with their history preserved." : decisionsOnly ? "No applications are waiting for a decision." : "No one has submitted an application yet. Student drafts stay private until they submit."}</p>{baseTotal ? <Button variant="outline" size="sm" onClick={clearApplicantFilters}>Clear filters</Button> : <Button variant="outline" size="sm" asChild><Link href={rejectedOnly || decisionsOnly ? `/club/${encodeURIComponent(membership.clubId)}/workspace?section=recruitment&tool=applicants` : `/club/${encodeURIComponent(membership.clubId)}/workspace?section=settings&setting=application`}>{rejectedOnly || decisionsOnly ? "View all applicants" : "Review your application form"}</Link></Button>}</div> : decisionsOnly ? <LiveDecisionList applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban votingSelection={votingChoice} canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} laneCounts={listData?.facets.lanes} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList votingSelection={votingChoice} sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
       {displayed.count > 1 && <nav aria-label="Applicant pages" className="flex flex-wrap items-center justify-between gap-3">
         <Button variant="outline" aria-label="Previous applicant page" disabled={busy || !pageInfo?.previous} onClick={() => changePage(pageInfo?.previous ?? null)}>Previous page</Button>
         <p role="status" className="text-sm">Page {displayed.page + 1} of {displayed.count} · Showing {displayed.start + 1}–{displayed.start + displayed.items.length} of {total}</p>
         <Button variant="outline" aria-label="Next applicant page" disabled={busy || !pageInfo?.next} onClick={() => changePage(pageInfo?.next ?? null)}>Next page</Button>
       </nav>}
+      </>}
       {votingBarShown && <div ref={votingBar} role="region" aria-label="Voting selection" className="oc-voting-bar fixed inset-x-4 bottom-[var(--oc-toast-offset,1.5rem)] z-40 mx-auto flex w-fit max-w-[calc(100vw-2rem)] flex-wrap items-center justify-center gap-2 rounded-lg border bg-card p-2 pl-4 shadow-lg">
-        <span className="text-sm" role="status">{votingSelection.length} selected for voting</span>
-        <Button size="sm" disabled={busy} onClick={startSelectedVoting}>Start voting with selected applicants</Button>
+        <span className="text-sm" role="status">{votingSelection.length} selected</span>
+        <Button size="sm" disabled={busy} onClick={startSelectedVoting}>Add to voting session</Button>
         <Button size="sm" variant="ghost" onClick={() => setVotingSelection([])}>Clear selection</Button>
       </div>}
       </div>
       {preview && !active && !data.applications.length && <p role="alert">This applicant is no longer available. <Button onClick={preview.onClose}>Close preview</Button></p>}
+      {!preview && view === "ranked" && rankedOpen && <ApplicantReviewPreview key={rankedOpen} clubId={membership.clubId} applicationId={rankedOpen} onClose={() => setRankedOpen(null)} onChanged={() => setRankedChanged(value => value + 1)} />}
       <Sheet
         open={!!activeId}
         onOpenChange={(value) => {
@@ -906,7 +906,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
               <section className="space-y-3 border-b pb-6" aria-label="Interview information"><h3 className="oc-card-heading ">Interviews</h3>{active.studentId.startsWith("anonymous-") ? <p className="text-sm text-muted-foreground">Appointments are withheld during anonymous review.</p> : active.bookings.length ? <ul className="divide-y">{active.bookings.map(booking => <li key={booking.id} className="py-3 text-sm"><p>{schedulingDateTime(booking.slot.startTime)} – {slotTime(booking.slot.endTime, SCHEDULING_TIMEZONE)}</p><p className="mt-1 text-muted-foreground">{booking.slot.location || "Location not provided"}</p></li>)}</ul> : <p className="text-sm text-muted-foreground">No interview scheduled.</p>}</section>
 
               {hasPermission(membership, "applications.review") && <ApplicantDisplayPanel key={active.id} clubId={membership.clubId} applicationId={active.id} refreshKey={JSON.stringify(active.evaluations)} />}
-              </div><div className="oc-applicant-assessment min-w-0 space-y-6"><header className="oc-review-workspace-heading"><p className="oc-editorial-label">Review workspace</p><h3 id="dossier-evaluation" tabIndex={-1}>Read thoughtfully.<br /><em>Decide confidently.</em></h3><Badge variant="secondary">{applicationStatusLabels[active.status]}</Badge></header><section className="space-y-4 border-b border-border pb-6">
+              </div><div className="oc-applicant-assessment min-w-0 space-y-6"><header className="oc-review-workspace-heading"><p className="oc-editorial-label">Review workspace</p><h3 id="dossier-evaluation" tabIndex={-1}>Read thoughtfully.<br /><em>Decide confidently.</em></h3><Badge variant="secondary">{applicationStatusLabels[active.status]}</Badge></header>{hasPermission(membership, "applications.review") && !active.studentId.startsWith("anonymous-") && <InterviewFeedbackPanel key={active.id} clubId={membership.clubId} applicationId={active.id} roundId={active.roundId} refreshKey={JSON.stringify(active.evaluations)} />}<section className="space-y-4 border-b border-border pb-6">
                 <h3 className="oc-card-heading">Evaluations · score and overall feedback</h3>
                 {active.evaluations.map((item) => (
                   <div key={item.id} className="border-l-2 border-border pl-3">
@@ -994,7 +994,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                 <p className="text-xs leading-6 text-muted-foreground">
                   Final decisions cannot move rounds. Rejected Applicants provides explicit reconsideration; other final decisions can be corrected. Moving out of an interview round returns the applicant to review. Save your review before moving.
                 </p>
-      {rejectedOnly&&active&&hasPermission(membership,"decisions.manage")&&hasPermission(membership,"applicants.identify")&&<div className="space-y-2"><label>Reason for reconsideration (at least 10 characters)<textarea className="block w-full border rounded p-2" maxLength={1000} value={reconsiderReason} onChange={e=>setReconsiderReason(e.target.value)}/></label><Button disabled={busy||reconsiderReason.trim().length<10} onClick={async()=>{setBusy(true);try{await reconsiderRejectedApplication({clubId:membership.clubId,applicationId:active.id,expectedGuard:active.publicationGuard,reason:reconsiderReason});setReconsiderReason("");setActiveId(null);setRevision(v=>v+1);setMessage("Application returned to review. Historical decisions are preserved.")}catch{setMessage("Reconsideration failed. Check your access and try again.")}finally{setBusy(false)}}}>Reconsider selected application</Button></div>}
+      {active?.status==="REJECTED"&&hasPermission(membership,"decisions.manage")&&hasPermission(membership,"applicants.identify")&&<div className="space-y-2"><label>Reason for reconsideration (at least 10 characters)<textarea className="block w-full border rounded p-2" maxLength={1000} value={reconsiderReason} onChange={e=>setReconsiderReason(e.target.value)}/></label><Button disabled={busy||reconsiderReason.trim().length<10} onClick={async()=>{setBusy(true);try{await reconsiderRejectedApplication({clubId:membership.clubId,applicationId:active.id,expectedGuard:active.publicationGuard,reason:reconsiderReason});setReconsiderReason("");setActiveId(null);setRevision(v=>v+1);setMessage("Application returned to review. Historical decisions are preserved.")}catch{setMessage("Reconsideration failed. Check your access and try again.")}finally{setBusy(false)}}}>Reconsider selected application</Button></div>}
                 {active.recruitmentOffer?.status === "ACCEPTED" && <p className="text-xs text-muted-foreground">This offer was accepted. Decision changes preserve membership; use member management for access changes.</p>}
                 {active.status === "ACCEPTED" && active.recruitmentOffer?.status === "PENDING" && hasPermission(membership, "decisions.manage") && hasPermission(membership, "applicants.identify") && <div className="space-y-2"><p className="text-xs text-muted-foreground">Only pending offers can be rescinded. Accepted memberships must be managed through member management.</p><Button variant="outline" disabled={busy || dirty} onClick={async()=>{setBusy(true);try{await revokeRecruitmentOffer(membership.clubId,active.id);setRevision(v => v + 1);setMessage("Pending offer rescinded.");preview?.onChanged()}catch{setMessage("Only pending offers can be rescinded. Manage existing members through member management.")}finally{setBusy(false)}}}>Rescind pending offer</Button></div>}
                 {hasPermission(membership, "decisions.manage") && hasPermission(membership, "applicants.identify") ? (

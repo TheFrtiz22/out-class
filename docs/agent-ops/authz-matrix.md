@@ -62,3 +62,20 @@ Change: `getClubWorkspaceOverview` (`actions/club-overview.ts`) adds `members: {
 | Demo | demo store counts only; no server read, no writes | demo counts | `club-home-browser.test` fixture is isolated; demo adapter typed against the action |
 
 Untested cells: 0 for the new counts; 1 pre-existing recheck cell untested; 2 inherited rows marked. `pnpm run test:migrations`: 71 migrations, 85 RLS tables (unchanged; no schema change). Not run against disposable Postgres: the change adds two club-scoped counts behind an existing gate, proven with recorded query shapes.
+
+## 2026-11-07 · PUBLIC-SITE-1 · Signed-out Explore and link previews (branch `ui/public-site-cleanup`)
+
+Changes: (1) signed-out `/explore` renders a Server Component from the existing public projection `getClubDirectory()` (`actions/club-directory.ts`, explicit public fields; `isDiscoverable`, `suspendedAt: null`), filtered to claimed database clubs and projected to card fields only (`lib/public-explore.ts`: id, name, logo text/url/colour, logo presentation keys, category, tagline, applications open, deadline). Search is a GET form evaluated on the server over that projection; no search key or club list is sent to the browser. (2) `lib/public-link-preview.ts` adds two signed-out reads: invitation preview (club name + offered role for a PENDING, unexpired, unanswered, unrevoked invitation of an unsuspended club; selects only `requestedRole`, `schoolIdentityId`, `club.name`) and club link preview (`club.name` of an unsuspended club, the same field public SEO already exposes). (3) `/invitations`, `/club-access`, `/club-claims` layouts become `optional`; each page still runs its existing identity checks for any signed-in session. Accept, claim and access edits are unchanged.
+
+| Actor | Public Explore | Invitation preview `/invitations/[id]` | Club link preview `/club-access`, `/club-claims` | Test |
+|---|---|---|---|---|
+| Logged-out visitor | allow: claimed, discoverable, unsuspended clubs; card fields only; Apply/Follow → `/login?next=/club/<id>` | allow: club name + role only for a valid pending link; unknown, expired, revoked, answered, suspended-club and malformed ids all return the same "isn't valid" card (no existence or reason leak); no email, inviter, identity | allow: club name; editor data (`getClubAccess`) and claims are never read | `public-entry-points.test` (projection keys, unclaimed/preview excluded; preview where/select; forbidden mocks prove no identity or access read) |
+| Expired session | treated as logged out (no `getSessionUser` user) | same as logged out | same | inherited: `getSessionUser` verification (`auth-session` tests) |
+| Student A (signed in) | existing student Explore (`StudentWorkspacePage`, unchanged) | existing flow: `requireAuth({verifyEmail})`, completed profile, school identity match; invitation for someone else → "Invitation unavailable" | existing editor/claim flow | inherited: `invitations-*`, `club-access*`, `club-claims*` tests |
+| Student C (other school) | same public projection (UVA clubs only exist today) | existing identity match denies | existing | inherited |
+| Platform admin view-as | not public: platform cookie forces `requireAuth()` | unchanged | unchanged | inherited |
+| Demo | unchanged demo Explore | unchanged | unchanged | inherited |
+
+Untested cells: 0 new. The link-holder disclosure (club name and role to anyone holding a valid invitation id, a 122-bit UUID sent by email) is an owner decision recorded in the PUBLIC-SITE-1 report. `pnpm run test:migrations` unchanged (no schema change).
+
+Update 2026-11-07 (owner decision): Explore stays private. The signed-out Explore view, `lib/public-explore.ts` and the `signedOut` render prop were removed before merge; signed-out `/explore` redirects to `/login?next=/explore` as on main. The Public Explore column above no longer applies. `getPublicClub` now returns the public view of marketing (`presentPublicMarketing`) for the club page, Explore's profile view and `/api/workspace` "publicClub" (`admin-clubs.test`).

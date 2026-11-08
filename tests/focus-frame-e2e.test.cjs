@@ -28,16 +28,16 @@ test("focus frame: unchanged URLs, Exit to the referring page, interview room ro
   const club = randomUUID(), application = randomUUID(), round = randomUUID()
 
   await t.test("a focus screen keeps its URL, shows the frame, and Exit returns to the product page it came from", async () => {
-    await page.goto(config.appUrl + "/clubs/meetings"); await page.locator("[data-product-shell]").first().waitFor()
+    await page.goto(config.appUrl + "/clubs/tasks"); await page.locator("[data-product-shell]").first().waitFor()
     await page.goto(config.appUrl + "/check-in"); await frame().waitFor()
     assert.equal(here(), "/check-in")
     assert.equal(await page.locator(".oc-focus-task").textContent(), "Meeting check-in")
     assert.equal(await page.locator("main").count(), 1)
     const exit = page.getByRole("link", { name: "Exit", exact: true })
-    await page.waitForFunction(() => document.querySelector(".oc-focus-exit")?.getAttribute("href") === "/clubs/meetings")
-    await exit.click(); await page.waitForURL(url => url.pathname === "/clubs/meetings"); await page.locator("[data-product-shell]").first().waitFor()
+    await page.waitForFunction(() => document.querySelector(".oc-focus-exit")?.getAttribute("href") === "/clubs/tasks")
+    await exit.click(); await page.waitForURL(url => url.pathname === "/clubs/tasks"); await page.locator("[data-product-shell]").first().waitFor()
     await page.goBack(); await page.waitForURL(url => url.pathname === "/check-in"); await frame().waitFor()
-    await page.goForward(); await page.waitForURL(url => url.pathname === "/clubs/meetings")
+    await page.goForward(); await page.waitForURL(url => url.pathname === "/clubs/tasks")
   })
 
   await t.test("the old in-workspace interview URL moves to the interview route with its filters; no access shows no candidate", async () => {

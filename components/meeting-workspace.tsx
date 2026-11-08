@@ -13,7 +13,7 @@ import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/
 import { flushEditors } from "@/lib/autosave-navigation";
 import { meetingIsUpcoming, meetingDate } from "@/lib/meeting-presentation";
 import { CalendarDays, MapPin, ArrowRight, Plus } from "@/components/icons";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useRevalidate } from "@/hooks/use-revalidate";
 import { useDemoMode } from "@/contexts/demo-context";
 import { useAuth } from "@/contexts/auth-context";
@@ -39,7 +39,8 @@ const localDate = (date: Date) => {
   copy.setMinutes(copy.getMinutes() - copy.getTimezoneOffset());
   return copy.toISOString().slice(0, 16);
 };
-export function MeetingList({ clubId, embedded = false, initialAudience = "ALL", personalOnly = false }: { clubId?: string; embedded?: boolean; initialAudience?: string; personalOnly?: boolean }) {
+/** `toolbarStart` lets the club Meetings page put its Member Meetings / Corkboard Events switch in this one toolbar. */
+export function MeetingList({ clubId, embedded = false, initialAudience = "ALL", personalOnly = false, toolbarStart, openCreate = false }: { clubId?: string; embedded?: boolean; initialAudience?: string; personalOnly?: boolean; toolbarStart?: ReactNode; openCreate?: boolean }) {
   const [meetings, setMeetings] = useState<Meeting[]>([]),
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
@@ -72,17 +73,18 @@ export function MeetingList({ clubId, embedded = false, initialAudience = "ALL",
   return <section className="oc-workspace-stack max-w-[var(--oc-content-width)]">
     {!embedded && <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="oc-section-heading ">Club meetings</h2><Link className="text-sm underline" href="/meetings">All available meetings</Link></div>}
     <div className="flex flex-wrap items-start justify-between gap-4"><p className="max-w-xl text-sm leading-7 text-muted-foreground">Agendas, resources, and attendance for your club.</p>
-      {!personalOnly && clubId && hasPermission(member, "meetings.manage") && <MeetingCreateAction clubId={clubId} onSaved={() => { setPeriod("upcoming"); setAudience("ALL"); setNotice("Meeting created."); setRefresh(v => v + 1) }} />}
+      {!personalOnly && clubId && hasPermission(member, "meetings.manage") && <MeetingCreateAction clubId={clubId} initialOpen={openCreate} onSaved={() => { setPeriod("upcoming"); setAudience("ALL"); setNotice("Meeting created."); setRefresh(v => v + 1) }} />}
     </div>
     {notice && <p role="status" className="text-sm">{notice}</p>}
-    <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
+    <div role="toolbar" aria-label="Meeting filters" className="flex flex-wrap items-center gap-4 border-b pb-4">
+      {toolbarStart}
       <SegmentedControl label="Meeting time" size="compact" value={period} onChange={setPeriod} options={[{ value: "upcoming", label: "Upcoming" }, { value: "past", label: "Past" }]} />
-      <label className="flex items-center gap-3 text-sm">Audience<NativeSelect className="min-h-11 max-w-full rounded-md border bg-card px-3" value={audience} onChange={e => setAudience(e.target.value)}><option value="ALL">All permitted meetings</option><option value="RECRUITMENT">Recruitment / Interest</option><option value="MEMBERS">Members</option></NativeSelect></label>
+      <label className="flex items-center gap-3 text-sm">Audience<NativeSelect aria-label="Audience" className="min-h-11 max-w-full rounded-md border bg-card px-3" value={audience} onChange={e => setAudience(e.target.value)}><option value="ALL">All permitted meetings</option><option value="RECRUITMENT">Recruitment / Interest</option><option value="MEMBERS">Members</option></NativeSelect></label>
     </div>
 
     {loading && <LoadingState label="Loading meetings…" layout="schedule" rows={3} />}
     {error && <div role="alert" className="oc-feedback"><p>{error}</p><Button variant="outline" onClick={() => setRefresh(v => v + 1)}>Retry</Button></div>}
-    {!loading && !error && !visible.length && <EmptyState density="compact" align="start" title={`No ${period} meetings for this audience`} description={period === "upcoming" ? "Nothing is scheduled for this audience yet." : "No meetings for this audience have happened yet."} action={<Button variant="outline" size="sm" onClick={() => setPeriod(period === "upcoming" ? "past" : "upcoming")}>{period === "upcoming" ? "See past meetings" : "See upcoming meetings"}</Button>} />}
+    {!loading && !error && !visible.length && <EmptyState density="compact" align="start" title={`No ${period} meetings for this audience`} description={period === "upcoming" ? "Nothing is scheduled for this audience yet." : "No meetings for this audience have happened yet."} />}
     <ul className="grid gap-3">{visible.map(meeting => <li key={meeting.id} className="min-w-0">
       <button type="button" onClick={() => setActiveId(meeting.id)} className="oc-content-panel group flex w-full text-left gap-4 hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary sm:p-6"><CalendarDays aria-hidden="true" className="mt-1 size-5 shrink-0 text-primary" /><div className="min-w-0 flex-1"><p className="text-xs text-muted-foreground">{!clubId && `${meeting.club.name} · `}{meeting.audience === "MEMBERS" ? "Members" : "Recruitment / Interest"}</p><h3 className="oc-card-heading mt-2 break-words">{meeting.title}</h3><p className="mt-3 text-sm">{meetingDate(meeting.date)}{meeting.endDate && ` — ${meetingDate(meeting.endDate)}`}</p><p className="mt-2 flex items-start gap-2 break-words text-sm text-muted-foreground"><MapPin aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />{meeting.location}</p><p className="mt-4 text-xs text-muted-foreground">{meeting.recap?.trim() ? "Recap available · " : ""}Open agenda, resources & attendance</p></div><ArrowRight aria-hidden="true" className="mt-1 size-4 shrink-0" /></button>
       {!personalOnly && hasPermission(user?.memberships.find(m => m.clubId === meeting.clubId), "meetings.attendance") && <MeetingAttendanceState key={`${meeting.id}:${refresh}`} meeting={meeting} polling={pollingId === meeting.id} onOpen={setPollingId} />}
@@ -90,9 +92,11 @@ export function MeetingList({ clubId, embedded = false, initialAudience = "ALL",
     <Sheet open={!!activeId} onOpenChange={open => { if (!open && !document.querySelector('[data-saving="true"]')) void flushEditors().then(() => setActiveId(null)).catch(() => {}) }}><SheetContent className="oc-workspace-drawer w-full overflow-y-auto sm:max-w-[var(--oc-reading-width)]"><SheetTitle className="sr-only">Meeting details</SheetTitle><SheetDescription className="sr-only">Agenda, resources, and attendance.</SheetDescription>{activeId && <MeetingDetail id={activeId} onUpdated={() => { setRefresh(value => value + 1); setNotice("Meeting updated.") }} />}</SheetContent></Sheet>
   </section>;
 }
-export function MeetingCreateAction({ clubId, onSaved }: { clubId: string; onSaved?: () => void }) {
+export function MeetingCreateAction({ clubId, onSaved, initialOpen = false }: { clubId: string; onSaved?: () => void; initialOpen?: boolean }) {
   const [notice, setNotice] = useState("");
-  return <div className="space-y-2"><ActionWorkflow showCloseAction={false} title="New meeting" description="Choose a time, place, and audience. Add an agenda or resources when you’re ready." trigger={<><Plus size={16} />New meeting</>} variant="default">{done => <MeetingEditor clubId={clubId} onCancel={done} onSaved={() => { done(); setNotice("Meeting created."); onSaved?.() }} />}</ActionWorkflow>{!onSaved && notice && <p role="status" className="text-xs">{notice}</p>}</div>;
+  // `?new=1` (Club home "New meeting") opens the form directly.
+  const [open, setOpen] = useState(initialOpen);
+  return <div className="space-y-2"><ActionWorkflow showCloseAction={false} title="New meeting" description="Choose a time, place, and audience. Add an agenda or resources when you’re ready." trigger={<><Plus size={16} aria-hidden="true" />New meeting</>} variant="default" open={open} onOpenChange={setOpen}>{done => <MeetingEditor clubId={clubId} onCancel={done} onSaved={() => { done(); setNotice("Meeting created."); onSaved?.() }} />}</ActionWorkflow>{!onSaved && notice && <p role="status" className="text-xs">{notice}</p>}</div>;
 }
 
 /** Fetch the existing permission-checked roster only on request; list browsing does not fan out roster queries.

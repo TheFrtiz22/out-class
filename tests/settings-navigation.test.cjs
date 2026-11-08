@@ -14,9 +14,12 @@ test('shared route layout authenticates protected pages and retains public pages
     'next/headers': { cookies: async () => ({ has: () => false, get: () => undefined }) },
     '@/utils/auth': { getSessionUser: async () => ({ data: { user: null } }), requireAuth: async () => { checks++; throw Error('Sign in'); } },
     '@/components/shell/route-workspace-shell': { RouteWorkspaceShell: 'Shell' },
+    '@/components/landing/public-page-frame': { PublicPageFrame: 'PublicFrame' },
   };
   const { AuthenticatedPageLayout } = load('components/shell/authenticated-page-layout.tsx', mocks);
-  assert.equal(await AuthenticatedPageLayout({ children: 'public', optional: true }), 'public');
+  // Signed-out visitors get the public header, page margins and footer around public pages.
+  const visitor = await AuthenticatedPageLayout({ children: 'public', optional: true });
+  assert.equal(visitor.type, 'PublicFrame'); assert.equal(visitor.props.children, 'public');
   assert.equal(checks, 0);
   await assert.rejects(AuthenticatedPageLayout({ children: 'private' }), /Sign in/);
   assert.equal(checks, 1);
@@ -28,7 +31,7 @@ test('shared route layout authenticates protected pages and retains public pages
 test('organization Settings includes only supported configuration and keeps operations reachable', () => {
   const { availableSettings } = load('lib/club-settings.ts');
   assert.deepEqual(availableSettings({ permissions: ['application.manage'] }).map(item => item.id), ['application']);
-  assert.deepEqual(availableSettings({ permissions: ['recruitment.manage'] }).map(item => item.id), ['cycles', 'pipeline', 'interviews', 'notifications']);
+  assert.deepEqual(availableSettings({ permissions: ['recruitment.manage'] }).map(item => item.id), ['cycles', 'pipeline', 'notifications']);
   assert.deepEqual(availableSettings({ status: 'LEFT', isOwner: true }), []);
   assert.ok(!availableSettings({ isOwner: true }).some(item => item.id === 'tasks'));
   assert.ok(availableSettings({ permissions: ['club.settings'] }).some(item => item.id === 'notifications'));
@@ -57,6 +60,7 @@ test('demo-capable layouts require the verified allowlist and never bypass live 
     '@/utils/auth': { getSessionUser: async () => ({ data: { user: { email: 'presenter@virginia.edu', email_confirmed_at: verified ? 'verified' : null } } }), requireAuth: async () => { checks++; throw Error('Live authorization'); } },
     '@/lib/demo/access': { DEMO_COOKIE: 'demo', canAccessDemo: email => allowed && email === 'presenter@virginia.edu' },
     '@/components/shell/route-workspace-shell': { RouteWorkspaceShell: 'Shell' },
+    '@/components/landing/public-page-frame': { PublicPageFrame: 'PublicFrame' },
   };
   const { AuthenticatedPageLayout } = load('components/shell/authenticated-page-layout.tsx', mocks);
   assert.equal((await AuthenticatedPageLayout({ children: 'meeting', allowDemo: true })).type, 'Shell');

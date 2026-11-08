@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { scholarPrograms, scholarLabels, toggleScholar } from "@/lib/scholar-status";
+import { SegmentedControl } from "@/components/ui/segmented-control"
 import { NativeSelect } from "@/components/ui/native-select"
 
 const titles = {
@@ -33,14 +34,21 @@ const titles = {
 export function EditStudentProfileDialog({
   trigger,
   profile,
-  section = "identity",
+  section: initialSection = "identity",
   onSaved,
+  sections,
+  extra,
 }: {
   trigger?: ReactNode
   profile?: FullStudentProfile
   section?: ProfileSection
   onSaved?: (profile: FullStudentProfile) => void
+  /** One "Edit profile" entry point: the dialog switches between these sections (saving first). */
+  sections?: ProfileSection[]
+  /** Extra tools shown in the dialog, e.g. "Import from résumé". A function receives `sync`, which loads a profile saved elsewhere into the open editor. */
+  extra?: ReactNode | ((sync: (profile: FullStudentProfile) => void) => ReactNode)
 }) {
+  const [section, setSection] = useState<ProfileSection>(initialSection)
   const { user } = useAuth()
   const expected = useRef("")
   const [open, setOpen] = useState(false)
@@ -57,11 +65,13 @@ export function EditStudentProfileDialog({
     if (busy) return
     if (!value) { try { await autosave.flush(); setOpen(false) } catch { return }; return }
     setOpen(value)
+    if (value) setSection(initialSection)
     setPhotoSource(null)
     setError("")
     if (!value) return
     setDraft(profile || null)
-    if (profile) expected.current = profileSectionSnapshot(profile, section)
+    // The dialog always reopens on `initialSection`; snapshot that section, not the one shown last time.
+    if (profile) expected.current = profileSectionSnapshot(profile, initialSection)
     setOriginalGpa(profile?.gpa ?? null)
     setOriginalPhoto(profile?.headshotUrl ?? null)
     setScholarYes(!!(profile?.scholarStatus as { selections?: string[] } | null)?.selections?.some(v => v !== "NOT_APPLICABLE"))
@@ -69,7 +79,7 @@ export function EditStudentProfileDialog({
       try {
         const loaded = (await getStudentProfile()).profile
         setDraft(loaded)
-        if (loaded) expected.current = profileSectionSnapshot(loaded, section)
+        if (loaded) expected.current = profileSectionSnapshot(loaded, initialSection)
         setOriginalGpa(loaded?.gpa ?? null)
         setOriginalPhoto(loaded?.headshotUrl ?? null)
         setScholarYes(!!(loaded?.scholarStatus as { selections?: string[] } | null)?.selections?.some(v => v !== "NOT_APPLICABLE"))
@@ -162,9 +172,16 @@ export function EditStudentProfileDialog({
         onInteractOutside={(event) => event.preventDefault()}
       >
         <DialogHeader>
-          <DialogTitle>{titles[section]}</DialogTitle>
-          <DialogDescription>Update this section of your recruiting profile.</DialogDescription>
+          <DialogTitle>{sections ? "Edit profile" : titles[section]}</DialogTitle>
+          <DialogDescription>{sections ? "Choose a section. Changes save as you go." : "Update this section of your recruiting profile."}</DialogDescription>
         </DialogHeader>
+        {sections && <SegmentedControl label="Profile section" size="compact" value={section} onChange={async next => {
+          if (next === section || busy) return
+          try { await autosave.flush() } catch { return }
+          if (draft) expected.current = profileSectionSnapshot(draft, next as ProfileSection)
+          setSection(next as ProfileSection)
+        }} options={sections.map(id => ({ value: id, label: titles[id] }))} />}
+        {typeof extra === "function" ? extra(synced => { setDraft(synced); expected.current = profileSectionSnapshot(synced, section); setOriginalGpa(synced.gpa ?? null); setOriginalPhoto(synced.headshotUrl ?? null) }) : extra}
         {error && (
           <p role="alert" className="text-sm text-destructive">
             {error}

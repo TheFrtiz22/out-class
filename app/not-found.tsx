@@ -1,14 +1,21 @@
 import Link from "next/link"
-import { OutClassLogo } from "@/components/outclass-logo"
+import { ArrowRight } from "@/components/icons"
 import { Button } from "@/components/ui/button"
-import { PageHeader } from "@/components/ui/page-header"
+import { PublicPageFrame } from "@/components/landing/public-page-frame"
+import "@/components/landing/sign-in-card.css"
+
+export const metadata = { title: "Page not found" }
 
 export default function NotFound() {
-  return <main className="mx-auto flex min-h-dvh max-w-xl flex-col justify-center px-6 py-16">
-    <Link href="/" aria-label="OutClass home" className="mb-12 w-fit"><OutClassLogo /></Link>
-    <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Page not found</p>
-    <PageHeader title="Let’s find your next step." />
-    <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">This link may have changed or the page is no longer available. Return to OutClass to continue.</p>
-    <Button asChild className="mt-8 w-fit"><Link href="/">Return to OutClass</Link></Button>
-  </main>
+  return <PublicPageFrame width="narrow">
+    <section className="oc-sign-in-card" aria-labelledby="not-found-title">
+      <p className="oc-sign-in-card-eyebrow">Page not found</p>
+      <h1 id="not-found-title">We couldn’t find that page</h1>
+      <div className="oc-sign-in-card-body"><p>The link may have changed, or the page is no longer available.</p></div>
+      <div className="oc-sign-in-card-actions">
+        <Button asChild><Link prefetch={false} href="/">Go to OutClass home<ArrowRight size={16} aria-hidden="true" /></Link></Button>
+        <Button asChild variant="outline"><Link prefetch={false} href="/login">Sign in</Link></Button>
+      </div>
+    </section>
+  </PublicPageFrame>
 }

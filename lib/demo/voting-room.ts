@@ -15,6 +15,7 @@ import {selectedVotingDisplay} from "@/lib/voting-slide-fields";
 import { projectApplicantDisplay } from "@/lib/applicant-display";
 import { votingScoreEvidence, type VotingInterviewThought } from "@/lib/voting-interview-evidence";
 import { interviewCapabilities } from "@/lib/interview-access";
+import { demoAuthorizedInterviewRounds,demoInterviewFeedback,demoSubmittedReviews } from "./interview-feedback";
 import { z } from "zod";
 import type * as Final from "@/actions/voting-room-finalization";
 import {votingRecruitmentChange} from "@/lib/voting-finalization";
@@ -41,7 +42,7 @@ export async function join(input:unknown,member?:string){return typeof navigator
 class DemoConflict extends Error{constructor(public result:{ok:false;code:string;message:string}){super(result.message);}}
 async function perform<K extends keyof typeof Live>(method:K,input:unknown,member?:string):Promise<Awaited<ReturnType<(typeof Live)[K]>>>{
  let result:unknown;
- if(method==="listLiveVotingRooms"){const d=input as {clubId:string;cycleId?:string;roundId?:string},c=context(d.clubId,member);result=c.state.votingSessions.filter(s=>s.mode==="LIVE"&&s.clubId===d.clubId&&(!d.roundId||s.roundId===d.roundId)&&(!d.cycleId||s.cycleId===d.cycleId)).flatMap(s=>{const round=c.club.rounds.find(r=>r.id===s.roundId);if(!round)return [];let role;try{role=roomAuthority(s,c.m,!!round.anonymousReview)}catch{return []}return [{id:s.id,clubId:s.clubId,cycleId:s.cycleId,roundId:s.roundId,state:s.state,createdAt:s.createdAt,updatedAt:s.updatedAt,finalizedAt:s.finalizedAt,meeting:(()=>{const m=meetingDetails((s.presentationOptions as {meeting?:unknown})?.meeting);if(!m)return null;const {announcedUserIds,...safe}=m;return safe;})(),roundName:round.name,cycleName:"Demo recruitment cycle",applicantCount:s.candidates.length,view:role.leader?"leader" as const:role.voter?"member" as const:"present" as const,joined:!!s.participants.find(p=>p.memberId===c.m.id)?.joinedAt}];});}
+ if(method==="listLiveVotingRooms"){const d=input as {clubId:string;cycleId?:string;roundId?:string},c=context(d.clubId,member);result=c.state.votingSessions.filter(s=>s.clubId===d.clubId&&(!d.roundId||s.roundId===d.roundId)&&(!d.cycleId||s.cycleId===d.cycleId)).flatMap(s=>{const round=c.club.rounds.find(r=>r.id===s.roundId);if(!round)return [];let role;try{role=roomAuthority(s,c.m,!!round.anonymousReview)}catch{return []}return [{id:s.id,mode:s.mode,clubId:s.clubId,cycleId:s.cycleId,roundId:s.roundId,state:s.state,createdAt:s.createdAt,updatedAt:s.updatedAt,finalizedAt:s.finalizedAt,meeting:(()=>{const m=meetingDetails((s.presentationOptions as {meeting?:unknown})?.meeting);if(!m)return null;const {announcedUserIds,...safe}=m;return safe;})(),roundName:round.name,cycleName:"Demo recruitment cycle",applicantCount:s.candidates.length,view:role.leader?"leader" as const:role.voter?"member" as const:"present" as const,joined:!!s.participants.find(p=>p.memberId===c.m.id)?.joinedAt}];});}
  else if(method==="createLiveVotingRoom"){
   const d=createRoomSchema.parse(input),c=context(d.clubId);[d.applicationIds,d.participantIds,d.leaderMemberIds].forEach(uniqueSelection);if(!hasPermission(c.m,"decisions.manage")||!hasPermission(c.m,"decisions.start")||!d.leaderMemberIds.includes(c.m.id)||d.cycleId!==c.club.id)throw Error("Demo setup denied.");
   if(d.leaderMemberIds.some(id=>!c.state.memberships.some(m=>m.id===id&&m.clubId===d.clubId&&hasPermission(m,"applications.review")&&hasPermission(m,"decisions.start"))))throw Error("Demo leadership denied.");
@@ -132,13 +133,8 @@ function demoPresentation(c:Pick<ReturnType<typeof find>,"state"|"m"|"round"|"cl
    const person=c.state.students.find(p=>p.id===a.studentId)!,app={...a,student:{...person,studentProfile:person.profile},answers:[],evaluations:[],bookings:[]} as unknown as ReviewApplication;
    const opts=roomPresentationSchema.safeParse(c.s.presentationOptions),config=opts.success?roomDisplayConfig(opts.data.fields):{version:1 as const,fields:[]};const base=selectedVotingDisplay(projectApplicantDisplay(app,{...c.round,applicantDisplay:{}},config,[]),opts.success?opts.data.fields:[]);
    const fields=opts.success?opts.data.fields:[],caps=interviewCapabilities(c.m);
-   const allowed=!base.anonymous&&a.studentId!==c.m.userId?c.club.rounds.filter(r=>{
-     if(!['INTERVIEW','GROUP_INTERVIEW'].includes(r.type)||r.anonymousReview||r.id!==a.roundId&&!a.evaluations.some(e=>e.roundId===r.id&&e.submittedAt))return false;
-     const panel=c.state.interviewFoundation.assignments.some(g=>g.applicationId===a.id&&g.roundId===r.id&&g.memberId===c.m.id&&!g.revokedAt)&&caps.participate;
-     const own=a.evaluations.some(e=>e.roundId===r.id&&e.interviewerId===c.m.id&&e.submittedAt);
-     return (caps.readClosing||panel)&&((caps.readClosing&&!(a.roundId===r.id&&panel))||own);
-   }).sort((a,b)=>a.order-b.order||a.id.localeCompare(b.id)):[];
-   const reviews=a.evaluations.filter(e=>e.submittedAt&&allowed.some(r=>r.id===e.roundId)&&c.state.memberships.some(m=>m.id===e.interviewerId&&m.clubId===c.club.id)&&!c.state.interviews.some(r=>r.applicationId===a.id&&r.roundId===e.roundId&&r.interviewerId===e.interviewerId&&r.anonymousReview));
+   const allowed=!base.anonymous?demoAuthorizedInterviewRounds(c.state,c.club,c.m,a,a.roundId):[];
+   const reviews=demoSubmittedReviews(c.state,c.club,a,allowed);
    const thoughts:VotingInterviewThought[]=fields.includes('finalInterviewThoughts')?[...c.state.interviews].sort((a,b)=>+(new Date(b.completedAt||0))-+(new Date(a.completedAt||0))||b.id.localeCompare(a.id)).flatMap(r=>{
      const round=allowed.find(old=>old.id===r.roundId),evaluation=reviews.find(e=>e.interviewerId===r.interviewerId&&e.roundId===r.roundId),member=c.state.memberships.find(m=>m.id===r.interviewerId&&m.clubId===c.club.id);
      if(r.applicationId!==a.id||r.clubId!==c.club.id||!r.completedAt||r.anonymousReview||!round||!evaluation||!member||!r.draft.finalInterviewThoughts?.trim())return [];
@@ -148,7 +144,9 @@ function demoPresentation(c:Pick<ReturnType<typeof find>,"state"|"m"|"round"|"cl
    const quote=fields.includes('resumeHighlight')&&!base.anonymous?excerptChoices(c.state,c.m,applicationId).find(q=>q.id===opts.data?.highlights[applicationId]):undefined;
    const canReadResume=!base.anonymous&&(!!quote||caps.moderateResume||c.state.interviewFoundation.assignments.some(g=>g.applicationId===a.id&&g.roundId===a.roundId&&g.memberId===c.m.id&&!g.revokedAt&&caps.participate));
    const highlight=fields.includes('resumeHighlight')&&canReadResume?{resumeHighlight:quote??null}:{};
-   const evidence={...(allowed.length&&fields.includes('interviewScore')?{interviewScore:votingScoreEvidence(allowed,reviews)}:{}),...(allowed.length&&fields.includes('finalInterviewThoughts')?{finalInterviewThoughts:thoughts}:{})};
+   // Same contract as votingSelectedEvidence: the round-scoped section carries its round; the thoughts field keeps only other rounds.
+   const feedback=allowed.length&&fields.includes('finalInterviewThoughts')?demoInterviewFeedback(c.state,c.club,a,allowed,a.roundId,fields.includes('interviewScore')&&interviewCapabilities(demoMember()).readClosing):null;
+   const evidence={...(allowed.length&&fields.includes('interviewScore')?{interviewScore:votingScoreEvidence(allowed,reviews)}:{}),...(allowed.length&&fields.includes('finalInterviewThoughts')?{finalInterviewThoughts:feedback?thoughts.filter(t=>t.roundId!==feedback.roundId):thoughts}:{}),...(feedback?{interviewFeedback:feedback}:{})};
    const observations=demoVotingObservations(c.state,{id:c.s.id??'',clubId:c.club.id,startedAt:c.s.startedAt??null},applicationId,c.m.userId,fields.includes('additionalObservations'),base.anonymous);
    return {...base,...observations,photo:base.visible.includes('photo')?person.profile.headshotUrl??null:null,...evidence,...highlight,requestedFields:[...base.visible,...('resumeHighlight'in highlight?['resumeHighlight' as const]:[]),...(evidence.interviewScore?['interviewScore' as const]:[]),...(evidence.finalInterviewThoughts?['finalInterviewThoughts' as const]:[]),...(observations.additionalObservations?['additionalObservations' as const]:[])]};
 }

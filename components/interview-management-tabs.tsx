@@ -7,6 +7,8 @@ import { useAuth } from "@/contexts/auth-context"
 import { hasPermission } from "@/lib/permissions"
 import { CalendarDays, ListChecks } from "@/components/icons"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { sectionTabClass, sectionTabsListClass } from "@/components/ui/section-tabs"
+const interviewTabClass = `${sectionTabClass} flex-none rounded-none bg-transparent shadow-none data-[state=active]:bg-transparent data-[state=active]:shadow-none`
 import { ClubInterviewKitSettings } from "@/components/interview-kit-editor"
 import { RoomManager } from "@/components/interviews/room-manager"
 import { interviewSetupHref } from "@/lib/interview-setup"
@@ -44,7 +46,7 @@ export function InterviewManagementTabs({ clubId, initialTab, initialRoundId, se
       }
     }
   }} activationMode="manual">
-    <TabsList aria-label="Interview management">{canEnter && !settingsOnly && <TabsTrigger value="rooms">Interview rooms</TabsTrigger>}<TabsTrigger value="kits"><ListChecks aria-hidden="true" />Interview master kit</TabsTrigger>{canSchedule && !settingsOnly && <><TabsTrigger value="schedule"><CalendarDays aria-hidden="true" />Scheduling</TabsTrigger></>}{canManageGrants && <TabsTrigger value="access">Interviewers</TabsTrigger>}</TabsList>
+    <TabsList variant="underline" className={sectionTabsListClass} aria-label="Interview management">{canEnter && !settingsOnly && <TabsTrigger className={interviewTabClass} value="rooms">Rooms</TabsTrigger>}<TabsTrigger className={interviewTabClass} value="kits"><ListChecks aria-hidden="true" />Interview master kit</TabsTrigger>{canSchedule && !settingsOnly && <><TabsTrigger className={interviewTabClass} value="schedule"><CalendarDays aria-hidden="true" />Scheduling</TabsTrigger></>}{canManageGrants && <TabsTrigger className={interviewTabClass} value="access">Interviewers</TabsTrigger>}</TabsList>
     {canEnter && !settingsOnly && <TabsContent value="rooms"><InterviewRoomsList clubId={clubId} /></TabsContent>}
     <TabsContent value="kits"><ClubInterviewKitSettings key={`${clubId}:${initialRoundId ?? ""}`} clubId={clubId} initialRoundId={initialRoundId} /></TabsContent>
     {canSchedule && !settingsOnly && (scheduleVisited || tab === "schedule") && <TabsContent ref={scheduler} value="schedule" forceMount hidden={tab !== "schedule"}><RoomManager clubId={clubId} active={tab === "schedule"} /></TabsContent>}

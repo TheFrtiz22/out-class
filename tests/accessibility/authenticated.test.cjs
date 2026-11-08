@@ -56,7 +56,7 @@ test('authenticated accessibility against isolated real Auth, MFA, Next actions 
   }
   for(const [name,page,route]of [
     ['student-home',studentPage,'/home'],
-    ['student-profile',studentPage,'/settings/profile'],
+    ['student-profile',studentPage,'/profile'],
     ['student-discovery',studentPage,'/explore'],
     ['student-saved',studentPage,'/saved-clubs'],
     ['student-availability',studentPage,'/settings/availability'],

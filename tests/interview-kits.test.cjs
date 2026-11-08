@@ -38,3 +38,12 @@ test('concurrent exact final retries create one evaluation and do not change app
  const results=await Promise.all([api.saveInterviewSession(input),api.saveInterviewSession(input)]);assert.equal(results[0].evaluation.id,results[1].evaluation.id);assert.equal(h.state.evaluations.length,1);assert.deepEqual(h.state.records[0],peer);assert.deepEqual(h.app,before);
  h.as(99);await assert.rejects(api.getSubmittedInterviewReview({...h.scope,interviewerId:h.members[0].id}));h.as(10);h.round.anonymousReview=true;const anonymous=await api.getSubmittedInterviewReview({...h.scope,interviewerId:h.members[0].id});assert.equal(anonymous.textUnavailable,true);assert.equal(anonymous.additionalNotes,'');assert.equal(anonymous.submittedAt,null);
 });
+test('submitted review rows carry an authorized photo only for identified applicants and viewers who may identify them',async()=>{
+ const h=harness(),api=h.load('actions/interview-kits.ts');const path=id(11)+'/headshot.jpg';let anonymous=false;
+ h.tx.interviewRecord.findMany=async()=>[{id:id(100),applicationId:h.app.id,roundId:h.round.id,interviewerId:h.members[0].id,anonymousReview:false,round:{name:'Round',anonymousReview:anonymous},application:{round:{anonymousReview:false},student:{studentProfile:{firstName:'Synthetic',lastName:'Applicant',headshotUrl:path}}}}];
+ h.as(11);h.members[1].interviewOffices=['PRESIDENT'];h.members[1].permissions=[];h.members[1].isOwner=false;
+ assert.equal((await api.getSubmittedInterviewReviews(id(1)))[0].photo,null,'no applicants.identify, no photo');
+ h.members[1].permissions=['applicants.identify'];const row=(await api.getSubmittedInterviewReviews(id(1)))[0];
+ assert.equal(row.photo,'/api/profile-photos?'+new URLSearchParams({path,clubId:id(1),applicationId:h.app.id,mode:'crm'}),'scoped to the route-checked identified CRM mode');
+ anonymous=true;const hidden=(await api.getSubmittedInterviewReviews(id(1)))[0];assert.equal(hidden.anonymous,true);assert.equal(hidden.photo,null);assert.doesNotMatch(JSON.stringify(hidden),/headshot|Synthetic/);
+});

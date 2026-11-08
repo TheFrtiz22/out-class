@@ -1,16 +1,14 @@
-import type { ReactNode } from "react"
 import { OutClassLogo } from "@/components/outclass-logo"
 import { FooterAudienceLinks, FooterBackToTop } from "@/components/landing/footer-controls"
 import { InteractiveFooterWordmark } from "@/components/landing/interactive-footer-wordmark"
 import type { LandingPerspective } from "./journey-content"
+import { CONTACT_HREF, LEGAL_PAGES_PUBLIC } from "@/lib/legal-content"
 
-/** One shared public footer; account workspaces retain their own layouts. */
-export function PublicFooter({ homeHref = "/", overviewHref = "/#about", onPerspectiveChange, contact, children, legalNote = "OutClass is operated by OutClassPlatforms LLC and is independent from universities." }: {
+/** One shared public footer on every public page; account workspaces retain their own layouts. */
+export function PublicFooter({ homeHref = "/", overviewHref = "/#about", onPerspectiveChange, legalNote = "OutClass is operated by OutClassPlatforms LLC and is not an official University of Virginia service." }: {
   homeHref?: string
   overviewHref?: string
   onPerspectiveChange?: (perspective: LandingPerspective) => void
-  contact?: ReactNode
-  children?: ReactNode
   legalNote?: string
 }) {
   return (
@@ -32,14 +30,18 @@ export function PublicFooter({ homeHref = "/", overviewHref = "/#about", onPersp
             <a href="/uva">OutClass at UVA</a>
             <a href="/request-school">Request Your School</a>
             <a href="/uva#faq">FAQ</a>
-            {contact}
           </div>
           <div className="oc-footer-group">
             <h3>Account</h3>
             <a href="/signup">Get Started</a>
             <a href="/login">Log In</a>
           </div>
-          {children && <div className="oc-footer-group"><h3>Legal</h3>{children}</div>}
+          {LEGAL_PAGES_PUBLIC && <div className="oc-footer-group">
+            <h3>Legal</h3>
+            <a href="/privacy">Privacy</a>
+            <a href="/terms">Terms</a>
+            <a href={CONTACT_HREF}>Contact</a>
+          </div>}
         </nav>
         <InteractiveFooterWordmark />
         <div className="oc-footer-bottom">

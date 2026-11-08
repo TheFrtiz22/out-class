@@ -425,9 +425,9 @@ export function StudentOnboardingWizard({
       <div className="mx-auto w-full max-w-[480px]">
         {onBack && <Button variant="ghost" onClick={onBack} disabled={loading} className="mb-4"><ArrowLeft className="size-4" />Back to home</Button>}
         {/* Logo */}
-        <div className="mb-6 flex justify-center">
+        {!embedded && <div className="mb-6 flex justify-center">
           <OutClassLogo variant="light" className="h-8 w-auto" />
-        </div>
+        </div>}
 
         <InvitationProfileSuggestions enabled={accountCreated && !isImpersonating} onDefaults={applyInvitationDefaults} />
 
@@ -447,7 +447,7 @@ export function StudentOnboardingWizard({
             <>
               <div className="mb-6">
                 <h2 className="oc-section-heading text-foreground">
-                  {accountCreated ? "Let’s finish your profile" : "Create your account"}
+                  {accountCreated ? "Let’s finish your profile" : embedded ? "Your account" : "Create your account"}
                 </h2>
                 <p className="mt-1.5 text-sm text-muted-foreground">
                   {accountCreated ? "Review your name below. We’ll help you complete your academics and optional experience next." : "Use your UVA email to get started."}
