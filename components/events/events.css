@@ -5,21 +5,6 @@
   flex-wrap: wrap;
   margin: 8px 0;
 }
-.oc-event-periods {
-  display: flex;
-  gap: 2px;
-  flex-wrap: wrap;
-}
-.oc-event-periods button {
-  padding: 9px 10px;
-  border-radius: 5px;
-  font-size: 12px;
-  color: var(--primary);
-}
-.oc-event-periods button[aria-pressed="true"] {
-  background: var(--primary);
-  color: white;
-}
 .oc-event-search {
   display: flex;
   align-items: center;
@@ -276,9 +261,10 @@
 .oc-events-empty {
   padding: 1.5rem;
   text-align: left;
-  background: var(--card);
+  background: var(--oc-content-surface);
   border-radius: var(--oc-radius-md);
   color: var(--foreground);
+  box-shadow: var(--oc-content-shadow)
 }
 .oc-events-empty h2 {
   font-family: var(--oc-font-display);
@@ -444,9 +430,10 @@
   gap: 20px;
   align-items: center;
   padding: 16px;
-  background: var(--card);
-  border: 1px solid var(--border);
+  background: var(--oc-content-surface);
+  border: 1px solid var(--oc-content-edge);
   border-radius: 8px;
+  box-shadow: var(--oc-content-shadow)
 }
 .oc-managed-event .oc-event-paper {
   font-size: 4px;
@@ -479,19 +466,7 @@
   margin-top: 5px;
 }
 .oc-event-management-tabs {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
   margin: 20px 0;
-}
-.oc-event-management-tabs button {
-  padding: 8px 12px;
-  font-size: 13px;
-  border-bottom: 2px solid transparent;
-}
-.oc-event-management-tabs button[aria-pressed="true"] {
-  border-color: var(--primary);
-  font-weight: 600;
 }
 .oc-event-actions {
   display: flex;
@@ -705,11 +680,7 @@
 }
 
 /* Shared discovery controls; the pinned flyers retain their original layout. */
-.oc-event-view-switch.oc-segmented-control { border-radius: var(--oc-radius-sm); flex-shrink: 0; width: 184px; padding: 4px; }
-.oc-event-view-switch.oc-segmented-control button, .oc-event-view-switch.oc-segmented-control[data-sliding="true"] .oc-segmented-indicator { border-radius: var(--oc-radius-sm); }
-.oc-event-view-switch.oc-segmented-control button { min-height: 34px; }
-.oc-event-toolbar .oc-event-periods { gap: 4px; }
-.oc-event-toolbar .oc-event-periods button { min-height: 44px; border-radius: var(--oc-radius-sm); padding-inline: 15px; }
+.oc-event-view-switch.oc-segmented-control { flex-shrink: 0; width: auto; min-width: 184px; }
 .oc-event-search, .oc-event-filter summary { border-radius: var(--oc-radius-sm); min-height: 44px; }
 .oc-event-search { max-width: 300px; }
 .oc-event-filter-fields { max-width: calc(100vw - 40px); border-radius: var(--oc-content-radius); }
@@ -764,8 +735,7 @@
 @media (max-width: 700px) {
   .oc-event-view-switch.oc-segmented-control { flex: 1; min-width: 168px; }
   .oc-event-toolbar { gap: 9px; }
-  .oc-event-toolbar .oc-event-periods { width: 100%; gap: 2px; }
-  .oc-event-toolbar .oc-event-periods button { padding-inline: 12px; }
+  .oc-event-toolbar .oc-event-periods { width: 100%; }
   .oc-event-toolbar .oc-event-search { width: 100%; max-width: none; flex-basis: 100%; }
   .oc-event-filter-fields { left: 0; right: auto; }
   .oc-smart-event-card { display: flex; flex-direction: column; border-radius: 20px; }
@@ -788,7 +758,7 @@
 
 @media (max-width: 359px) { .oc-flyer-grid { grid-template-columns: minmax(0, 1fr); } .oc-physical-board { padding: 1.5rem; } }
 
-/* Search, filters, view selection and saved clubs share one aligned toolbar. */
+/* One toolbar: date range, search, the Filter menu and the view switch. */
 .oc-event-toolbar-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; flex: 1 1 38rem; min-width: 0; }
 .oc-event-toolbar-actions .oc-event-search { margin-left: auto; max-width: none; min-width: min(100%, 10rem); }
 .oc-event-toolbar-actions > [data-slot="button"] { min-height: 44px; }
@@ -798,4 +768,11 @@
   .oc-event-toolbar-actions .oc-event-view-switch { width: 100%; min-width: 0; }
   .oc-event-toolbar-actions .oc-event-filter summary { justify-content: center; }
   .oc-event-toolbar-actions > [data-slot="button"] { width: 100%; }
+}
+.oc-event-filter summary { white-space: nowrap; }
+.oc-event-filter summary::-webkit-details-marker { display: none; }
+.oc-event-filter-count { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding-inline: 6px; border-radius: 999px; background: var(--primary); color: var(--primary-foreground); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
+@media (max-width: 700px) {
+  .oc-event-toolbar-actions .oc-event-view-switch { grid-column: 1 / -1; }
+  .oc-event-view-switch.oc-segmented-control button { padding-inline: .75rem; }
 }

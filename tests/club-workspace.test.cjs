@@ -108,6 +108,8 @@ function setup(permissions = [], isOwner = false) {
     },
     interviewBooking: { count: async (args) => { queries.interviews = args; return 2; } },
     votingSession: { findMany: async (args) => { queries.voting = args; return [{ id: "session", state: "OPEN" }]; } },
+    clubMember: { count: async (args) => { queries.members = args; return 4; } },
+    clubInvitation: { count: async (args) => { queries.invitations = args; return 1; } },
     pipelineRound: {
       findMany: async (args) => {
         queries.rounds = args;
@@ -177,6 +179,10 @@ test("review-only overview restricts recruitment counts to anonymous rounds and 
   assert.equal(owner.queries.review.where.task.clubId, clubId);
   assert.equal(owner.queries.interviews.where.slot.clubId, clubId);
   assert.equal(owner.queries.voting.where.clubId, clubId);
+  assert.equal(h.queries.members, undefined);
+  assert.equal(h.queries.invitations, undefined);
+  assert.equal(owner.queries.members.where.clubId, clubId);
+  assert.equal(owner.queries.invitations.where.clubId, clubId);
   await owner.api.getWorkspaceRounds(clubId);
   assert.deepEqual(owner.queries.rounds.select, {
     id: true,
@@ -189,9 +195,10 @@ test("product modes preserve scoped URLs and limit manager destinations by capab
   const { managerNavigation, personalMode } = load("lib/product-navigation.ts");
   const ids = (permissions, mode) => managerNavigation({ permissions }, clubId, mode).map(item => item.id);
   assert.deepEqual(ids(["members.manage"], "club"), ["overview", "meetings", "tasks", "members", "settings"]);
-  assert.deepEqual(ids(["applications.review"], "recruiting"), ["overview", "applicants", "rejected", "interviews", "decisions"]);
-  assert.deepEqual(ids(["interviews.manage"], "recruiting"), ["overview", "interviews", "settings"]);
-  assert.deepEqual(ids(["recruitment.manage"], "recruiting"), ["overview", "decisions", "rounds", "rules", "settings"]);
+  assert.deepEqual(ids(["applications.review"], "recruiting"), ["overview", "applicants", "interviews"]);
+  assert.deepEqual(ids(["applications.review", "decisions.vote"], "recruiting"), ["overview", "applicants", "interviews", "decisions"]);
+  assert.deepEqual(ids(["interviews.manage"], "recruiting"), ["overview", "interviews"]);
+  assert.deepEqual(ids(["recruitment.manage"], "recruiting"), ["overview", "interviews", "decisions", "rounds", "rules", "settings"]);
   const owner = managerNavigation({ isOwner: true }, clubId, "recruiting");
   assert.equal(owner.find(item => item.id === "rules").preview, undefined)
   assert.equal(owner.find(item => item.id === "rules").quiet, true);

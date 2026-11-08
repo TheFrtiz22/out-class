@@ -30,7 +30,7 @@ test('cancel discards review without saving; selected experiences are independen
   const h = harness(); let tree = await prepare(h); const label = nodes(tree).find(n => n.type === 'label' && text(n).startsWith('Append entry ')); nodes(label).find(n => n.props?.type === 'checkbox').props.onChange({ target: { checked: true } });
   tree = h.render(); assert.equal(button(tree, 'Confirm selected changes').props.disabled, false); button(tree, 'Cancel').props.onClick(); tree = h.render(); assert.equal(button(tree, 'Confirm selected changes'), undefined); assert.equal(h.calls.some(c => c[0] === 'confirm'), false);
 });
-test('Demo import entry is disabled without action calls', () => { const h = harness({ demo: true }), tree = h.render(); assert.equal(button(tree, 'Import PDF into profile').props.disabled, true); assert.deepEqual(h.calls, []); });
+test('Demo import entry is disabled without action calls', () => { const h = harness({ demo: true }), tree = h.render(); assert.equal(button(tree, 'Import from résumé').props.disabled, true); assert.deepEqual(h.calls, []); });
 test('failed confirmation preserves editable proposal and reports an error', async () => {
   const h = harness({ saveError: true }); let tree = await prepare(h); const label = nodes(tree).find(n => n.type === 'label' && text(n) === 'Change major'); nodes(label).find(n => n.props?.type === 'checkbox').props.onChange({ target: { checked: true } }); tree = h.render(); button(tree, 'Confirm selected changes').props.onClick(); await new Promise(r => setImmediate(r)); tree = h.render(); assert.match(text(tree), /Save failed/); assert.ok(nodes(tree).some(n => n.props?.id === 'import-major')); assert.equal(h.calls.some(c => c[0] === 'saved'), false);
 });

@@ -28,7 +28,7 @@
 .oc-landing .oc-story-interface h4 { font-size: 19px; font-weight: 500; line-height: 1.4; }
 .oc-demo-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 68px; }
 .oc-demo-heading > div { min-width: 0; }
-.oc-demo-eyebrow { color: var(--muted-foreground); font-size: 11px; font-weight: 500; letter-spacing: .065em; margin-bottom: 8px; line-height: 1.5; }
+.oc-demo-eyebrow { color: var(--muted-foreground); font-size: 12px; font-weight: 500; letter-spacing: .065em; margin-bottom: 8px; line-height: 1.5; }
 .oc-demo-heading > [data-slot] { flex-shrink: 0; }
 .oc-demo-focus { display: flex; flex-direction: column; justify-content: center; gap: 20px; flex: 1; min-width: 0; }
 .oc-demo-description { font-size: 16px; color: var(--muted-foreground); line-height: 1.65; margin: 0; }
@@ -111,8 +111,8 @@
   .oc-demo-schedule-context, .oc-demo-schedule-status { font-size: 13px; }
   .oc-demo-next-step { font-size: 14px; margin-top: 16px; padding: 12px; }
   .oc-perspective-scene, .oc-demo-focus { gap: 12px; }
-  .oc-demo-heading > [data-slot] { font-size: 11px; padding: 4px 8px; }
-  .oc-demo-eyebrow { font-size: 10px; margin-bottom: 6px; }
+  .oc-demo-heading > [data-slot] { font-size: 12px; padding: 4px 8px; }
+  .oc-demo-eyebrow { font-size: 12px; margin-bottom: 6px; }
   .oc-demo-profile-attached p { font-size: 12px; }
   .oc-demo-answer > span { font-size: 13px; }
   .oc-demo-discovery .oc-demo-description { margin-top: 10px; }
@@ -142,3 +142,9 @@
   .oc-demo-outcome { min-height: 68px; padding-top: 12px; }
   .oc-demo-panel-table > div { padding-block: 14px; }
 }
+
+/* Sample rows: extra fictional entries so sample screens read as populated workspaces. */
+.oc-demo-rows { list-style: none; margin: 16px 0 0; padding: 0; border-top: 1px solid var(--border); }
+.oc-demo-rows li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.oc-demo-rows strong { display: block; font-size: 15px; font-weight: 600; color: var(--primary); }
+.oc-demo-rows span { font-size: 13px; color: var(--muted-foreground); }

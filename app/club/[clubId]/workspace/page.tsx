@@ -10,7 +10,13 @@ import { AuthSessionBoundary } from "@/components/auth-session-boundary";
 import { redirect } from "next/navigation";
 import { legacyApplicantInterviewHref } from "@/lib/applicant-interview-navigation";
 import { legacyInterviewRoomHref } from "@/lib/interview-entry";
+import { PageHeader } from "@/components/ui/page-header";
+import type { Metadata } from "next";
+import { clubWorkspaceTitle, canonicalClubWorkspaceHref } from "@/lib/workspace-routes";
 export const maxDuration = 60;
+export async function generateMetadata({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }): Promise<Metadata> {
+  return { title: clubWorkspaceTitle(await searchParams) };
+}
 export default async function Page({
   params,
   searchParams,
@@ -23,7 +29,7 @@ export default async function Page({
   const section = first(query.section), taskView = first(query.taskView), tool = first(query.tool);
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) for (const item of Array.isArray(value) ? value : value === undefined ? [] : [value]) search.append(key, item);
-  const moved = legacyApplicantInterviewHref(clubId, search.toString()) ?? legacyInterviewRoomHref(clubId, search.toString());
+  const moved = canonicalClubWorkspaceHref(clubId, search) ?? legacyApplicantInterviewHref(clubId, search.toString()) ?? legacyInterviewRoomHref(clubId, search.toString());
   if (moved) redirect(moved);
   const jar = await cookies();
   let demoEnabled = false;
@@ -33,7 +39,7 @@ export default async function Page({
   }
   const user = demoEnabled ? null : await getCurrentUser();
   const membership = user?.memberships.find(member => member.clubId === clubId);
-  if (membership?.club.suspendedAt) return <AuthenticatedPageLayout><div className="max-w-2xl space-y-4"><h1 className="font-serif text-3xl">This club is suspended</h1><p>{membership.club.name} operations are unavailable until an administrator restores the club. Your membership and existing records are preserved.</p><Link className="underline" href="/home">Return to Personal workspace</Link></div></AuthenticatedPageLayout>;
+  if (membership?.club.suspendedAt) return <AuthenticatedPageLayout><div className="max-w-[var(--oc-reading-width)] space-y-4"><PageHeader title="This club is suspended" /><p>{membership.club.name} operations are unavailable until an administrator restores the club. Your membership and existing records are preserved.</p><Link className="underline" href="/home">Return to Personal workspace</Link></div></AuthenticatedPageLayout>;
   return (
     <AuthSessionBoundary>
       <ClubWorkspace

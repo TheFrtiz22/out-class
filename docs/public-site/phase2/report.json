@@ -1,0 +1,1217 @@
+[
+  {
+    "name": "home-students",
+    "url": "/?audience=student",
+    "server": {
+      "status": 200,
+      "location": null,
+      "title": "OutClass | UVA Club Applications &amp; Recruitment",
+      "description": "Find and apply to participating UVA clubs with one OutClass profile. Manage applications, interviews, and recruitment decisions in one place.",
+      "ogImage": true,
+      "robots": "index, follow",
+      "h1": [
+        "Find and apply to UVA clubs with one profile."
+      ],
+      "headings": [
+        "h1 Find and apply to UVA clubs with one profile.",
+        "h2 From curiousto connected.",
+        "h2 Two sides of the same opportunity.",
+        "h2 Find your kind of curious.",
+        "h3 Get to know your next club.",
+        "h3 Jefferson Investment Society",
+        "h2 One profile. Your own answers.",
+        "h3 Application submitted.",
+        "h2 An invitation, with a plan.",
+        "h3 Interview confirmed.",
+        "h2 Know where you stand.",
+        "h3 Know your next step.",
+        "h3 Jefferson Investment Society",
+        "h2 From applicant to part of the team.",
+        "h3 Welcome to the team.",
+        "h3 Jefferson Investment Society",
+        "h2 Your next chapter starts here.",
+        "h3 Platform",
+        "h3 OutClass",
+        "h3 Account",
+        "h3 Legal"
+      ],
+      "loadingCover": false
+    },
+    "widths": {
+      "390": {
+        "status": 200,
+        "finalUrl": "/?audience=student",
+        "overflowX": 0,
+        "h1": [
+          "Find and apply to UVA clubs with one profile."
+        ],
+        "loadingCover": false,
+        "smallText": [
+          "10px 01",
+          "10px 01Discover",
+          "8px 01",
+          "9px Discover",
+          "8px 02",
+          "9px Apply",
+          "8px 03",
+          "9px Interview",
+          "8px 04",
+          "9px Track",
+          "8px 05",
+          "9px Belong",
+          "9px Scroll to exploreSkip to get started",
+          "9px Skip to get started",
+          "11px Free for students. Clubs join the campus pilot individually.",
+          "11px Platform",
+          "11px OutClass",
+          "11px Account",
+          "11px Legal",
+          "11px © 2026 OutClassPlatforms LLC. All rights reserved.",
+          "11px OutClass is operated by OutClassPlatforms LLC and is indepen"
+        ],
+        "smallTextCount": 21,
+        "smallTargets": [
+          "350x24 a Scroll to exploreSkip to get started",
+          "22x44 a FAQ"
+        ],
+        "smallTargetCount": 2,
+        "axe": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": 3,
+            "sample": ".oc-story-eyebrow"
+          }
+        ],
+        "errors": []
+      },
+      "1440": {
+        "status": 200,
+        "finalUrl": "/?audience=student",
+        "overflowX": 0,
+        "h1": [
+          "Find and apply to UVA clubs with one profile."
+        ],
+        "loadingCover": false,
+        "smallText": [
+          "10px 01",
+          "10px 01Discover",
+          "9px 01",
+          "11px Discover",
+          "9px 02",
+          "11px Apply",
+          "9px 03",
+          "11px Interview",
+          "9px 04",
+          "11px Track",
+          "9px 05",
+          "11px Belong",
+          "10px Scroll to exploreSkip to get started",
+          "10px Skip to get started",
+          "11px Free for students. Clubs join the campus pilot individually.",
+          "11px Platform",
+          "11px OutClass",
+          "11px Account",
+          "11px Legal",
+          "11px © 2026 OutClassPlatforms LLC. All rights reserved.",
+          "11px OutClass is operated by OutClassPlatforms LLC and is indepen"
+        ],
+        "smallTextCount": 21,
+        "smallTargets": [
+          "1040x24 a Scroll to exploreSkip to get started",
+          "23x44 a FAQ"
+        ],
+        "smallTargetCount": 2,
+        "axe": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": 3,
+            "sample": ".oc-story-eyebrow"
+          }
+        ],
+        "errors": []
+      },
+      "reduced-motion": {
+        "status": 200,
+        "finalUrl": "/?audience=student",
+        "overflowX": 0,
+        "h1": [
+          "Find and apply to UVA clubs with one profile."
+        ],
+        "loadingCover": false,
+        "smallText": [
+          "10px 01",
+          "10px 01Discover",
+          "10px Your next chapter",
+          "10px One connected journey",
+          "10px 01",
+          "10px 01Discover",
+          "11px Discover with OutClass",
+          "11px Discover · completed preview",
+          "10px Illustrative interface · sample information",
+          "10px Start with the possibilities.",
+          "10px 02",
+          "10px 02Apply",
+          "11px Apply with OutClass",
+          "11px Apply · completed preview",
+          "10px Illustrative interface · sample information",
+          "10px A shared introduction. A specific application.",
+          "10px 03",
+          "10px 03Interview",
+          "11px Interview with OutClass",
+          "11px Interview · completed preview",
+          "10px Illustrative interface · sample information",
+          "10px Make room for the conversation.",
+          "10px 04",
+          "10px 04Track",
+          "11px Track with OutClass",
+          "11px Track · completed preview",
+          "10px Illustrative interface · sample information",
+          "10px Every application. One place to look.",
+          "10px 05",
+          "10px 05Belong",
+          "11px Belong with OutClass",
+          "11px Belong · completed preview",
+          "10px Illustrative interface · sample information",
+          "10px The application is only the beginning.",
+          "9px 01",
+          "11px Discover",
+          "9px 02",
+          "11px Apply",
+          "9px 03",
+          "11px Interview"
+        ],
+        "smallTextCount": 53,
+        "smallTargets": [
+          "134x30 button Create your profile",
+          "1040x24 a Scroll to exploreSkip to get started",
+          "23x44 a FAQ"
+        ],
+        "smallTargetCount": 3,
+        "axe": null,
+        "errors": []
+      },
+      "forced-colors": {
+        "status": 200,
+        "finalUrl": "/?audience=student",
+        "overflowX": 0,
+        "h1": [
+          "Find and apply to UVA clubs with one profile."
+        ],
+        "loadingCover": false,
+        "smallText": [
+          "10px 01",
+          "10px 01Discover",
+          "9px 01",
+          "11px Discover",
+          "9px 02",
+          "11px Apply",
+          "9px 03",
+          "11px Interview",
+          "9px 04",
+          "11px Track",
+          "9px 05",
+          "11px Belong",
+          "10px Scroll to exploreSkip to get started",
+          "10px Skip to get started",
+          "11px Free for students. Clubs join the campus pilot individually.",
+          "11px Platform",
+          "11px OutClass",
+          "11px Account",
+          "11px Legal",
+          "11px © 2026 OutClassPlatforms LLC. All rights reserved.",
+          "11px OutClass is operated by OutClassPlatforms LLC and is indepen"
+        ],
+        "smallTextCount": 21,
+        "smallTargets": [
+          "1040x24 a Scroll to exploreSkip to get started",
+          "23x44 a FAQ"
+        ],
+        "smallTargetCount": 2,
+        "axe": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": 24,
+            "sample": "div[aria-labelledby=\"perspective-title\"] > button[data-perspective-option=\"leader\"][aria-controls=\"product-journey\"][type=\"button\"]"
+          }
+        ],
+        "errors": []
+      }
+    }
+  },
+  {
+    "name": "home-leaders",
+    "url": "/?audience=leader",
+    "server": {
+      "status": 200,
+      "location": null,
+      "title": "OutClass | UVA Club Applications &amp; Recruitment",
+      "description": "Find and apply to participating UVA clubs with one OutClass profile. Manage applications, interviews, and recruitment decisions in one place.",
+      "ogImage": true,
+      "robots": "index, follow",
+      "h1": [
+        "Build your next class. Bring your club together."
+      ],
+      "headings": [
+        "h1 Build your next class. Bring your club together.",
+        "h2 From first applicantto your next class.",
+        "h2 Two sides of the same opportunity.",
+        "h2 A process that fits your club.",
+        "h3 Your club, ready to discover.",
+        "h3 Jefferson Investment Society",
+        "h2 Your recruitment. All together.",
+        "h3 Ask what matters to your club.",
+        "h2 See the person behind the application.",
+        "h3 A shared point of reference.",
+        "h3 Jordan Avery",
+        "h2 A schedule your team can trust.",
+        "h3 A proposal to review.",
+        "h2 Bring the decision into focus.",
+        "h3 An offer. A new possibility.",
+        "h3 Jordan Avery",
+        "h2 Build your next class. Then keep going.",
+        "h3 A clear next step.",
+        "h4 Read the welcome brief",
+        "h3 Jordan Avery",
+        "h2 Your next class starts here.",
+        "h3 Platform",
+        "h3 OutClass",
+        "h3 Account",
+        "h3 Legal"
+      ],
+      "loadingCover": false
+    },
+    "widths": {
+      "390": {
+        "status": 200,
+        "finalUrl": "/?audience=leader",
+        "overflowX": 0,
+        "h1": [
+          "Build your next class. Bring your club together."
+        ],
+        "loadingCover": false,
+        "smallText": [
+          "10px 01",
+          "10px 01Set Up",
+          "8px 01",
+          "9px Set Up",
+          "8px 02",
+          "9px Recruit",
+          "8px 03",
+          "9px Review",
+          "8px 04",
+          "9px Interview",
+          "8px 05",
+          "9px Decide",
+          "8px 06",
+          "9px Manage",
+          "9px Scroll to exploreSkip to get started",
+          "9px Skip to get started",
+          "11px Free for students. Clubs join the campus pilot individually.",
+          "11px Platform",
+          "11px OutClass",
+          "11px Account",
+          "11px Legal",
+          "11px © 2026 OutClassPlatforms LLC. All rights reserved.",
+          "11px OutClass is operated by OutClassPlatforms LLC and is indepen"
+        ],
+        "smallTextCount": 23,
+        "smallTargets": [
+          "350x24 a Scroll to exploreSkip to get started",
+          "22x44 a FAQ"
+        ],
+        "smallTargetCount": 2,
+        "axe": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": 3,
+            "sample": ".oc-story-eyebrow"
+          }
+        ],
+        "errors": []
+      },
+      "1440": {
+        "status": 200,
+        "finalUrl": "/?audience=leader",
+        "overflowX": 0,
+        "h1": [
+          "Build your next class. Bring your club together."
+        ],
+        "loadingCover": false,
+        "smallText": [
+          "10px 01",
+          "10px 01Set Up",
+          "9px 01",
+          "11px Set Up",
+          "9px 02",
+          "11px Recruit",
+          "9px 03",
+          "11px Review",
+          "9px 04",
+          "11px Interview",
+          "9px 05",
+          "11px Decide",
+          "9px 06",
+          "11px Manage",
+          "10px Scroll to exploreSkip to get started",
+          "10px Skip to get started",
+          "11px Free for students. Clubs join the campus pilot individually.",
+          "11px Platform",
+          "11px OutClass",
+          "11px Account",
+          "11px Legal",
+          "11px © 2026 OutClassPlatforms LLC. All rights reserved.",
+          "11px OutClass is operated by OutClassPlatforms LLC and is indepen"
+        ],
+        "smallTextCount": 23,
+        "smallTargets": [
+          "1040x24 a Scroll to exploreSkip to get started",
+          "23x44 a FAQ"
+        ],
+        "smallTargetCount": 2,
+        "axe": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": 3,
+            "sample": ".oc-story-eyebrow"
+          }
+        ],
+        "errors": []
+      }
+    }
+  },
+  {
+    "name": "uva",
+    "url": "/uva",
+    "server": {
+      "status": 200,
+      "location": null,
+      "title": "OutClass at UVA | Club Recruitment at the University of Virginia",
+      "description": "Learn how OutClass helps University of Virginia students discover organizations, apply to clubs, manage interviews, and track recruitment, with tools for club leaders to manage applicants and decisions.",
+      "ogImage": true,
+      "robots": "index, follow",
+      "h1": [
+        "OutClass for UVA club recruitment."
+      ],
+      "headings": [
+        "h1 OutClass for UVA club recruitment.",
+        "h2 One profile.Every opportunity.",
+        "h2 Questions about using OutClass",
+        "h3 01Getting started",
+        "h3 02Students &amp; applications",
+        "h3 03Club leaders",
+        "h3 04Accounts &amp; campus",
+        "h3 05Other universities",
+        "h3 Not at UVA?",
+        "h3 Platform",
+        "h3 OutClass",
+        "h3 Account"
+      ],
+      "loadingCover": false
+    },
+    "widths": {
+      "390": {
+        "status": 200,
+        "finalUrl": "/uva",
+        "overflowX": 0,
+        "h1": [
+          "OutClass for UVA club recruitment."
+        ],
+        "loadingCover": false,
+        "smallText": [
+          "11px Platform",
+          "11px OutClass",
+          "11px Account",
+          "11px © 2026 OutClassPlatforms LLC. All rights reserved.",
+          "11px OutClass is operated by OutClassPlatforms LLC and is not an "
+        ],
+        "smallTextCount": 5,
+        "smallTargets": [
+          "22x44 a FAQ"
+        ],
+        "smallTargetCount": 1,
+        "axe": [],
+        "errors": []
+      },
+      "1440": {
+        "status": 200,
+        "finalUrl": "/uva",
+        "overflowX": 0,
+        "h1": [
+          "OutClass for UVA club recruitment."
+        ],
+        "loadingCover": false,
+        "smallText": [
+          "11px Platform",
+          "11px OutClass",
+          "11px Account",
+          "11px © 2026 OutClassPlatforms LLC. All rights reserved.",
+          "11px OutClass is operated by OutClassPlatforms LLC and is not an "
+        ],
+        "smallTextCount": 5,
+        "smallTargets": [
+          "23x44 a FAQ"
+        ],
+        "smallTargetCount": 1,
+        "axe": [],
+        "errors": []
+      }
+    }
+  },
+  {
+    "name": "club",
+    "url": "/club/vcg-uva",
+    "server": {
+      "status": 200,
+      "location": null,
+      "title": "Virginia Consulting Group · OutClass",
+      "description": "Virginia Consulting Group connects UVA students with client organizations through hands-on consulting. Its published material emphasizes research, experimentati",
+      "ogImage": true,
+      "robots": "index, follow",
+      "h1": [
+        "Virginia Consulting Group"
+      ],
+      "headings": [
+        "h1 Virginia Consulting Group",
+        "h2 About",
+        "h2 What members do",
+        "h3 Programs",
+        "h3 Documented historical engagements",
+        "h2 Recruitment and requirements",
+        "h3 Selectivity",
+        "h3 Before you apply",
+        "h4 Required club questions",
+        "h2 Life in the club",
+        "h3 Platform",
+        "h3 OutClass",
+        "h3 Account"
+      ],
+      "loadingCover": false
+    },
+    "widths": {
+      "390": {
+        "status": 200,
+        "finalUrl": "/club/vcg-uva",
+        "overflowX": 0,
+        "h1": [
+          "Virginia Consulting Group"
+        ],
+        "loadingCover": false,
+        "smallText": [
+          "11px Platform",
+          "11px OutClass",
+          "11px Account",
+          "11px © 2026 OutClassPlatforms LLC. All rights reserved.",
+          "11px OutClass is operated by OutClassPlatforms LLC and is indepen"
+        ],
+        "smallTextCount": 5,
+        "smallTargets": [
+          "22x44 a FAQ"
+        ],
+        "smallTargetCount": 1,
+        "axe": [],
+        "errors": []
+      },
+      "1440": {
+        "status": 200,
+        "finalUrl": "/club/vcg-uva",
+        "overflowX": 0,
+        "h1": [
+          "Virginia Consulting Group"
+        ],
+        "loadingCover": false,
+        "smallText": [
+          "11px Platform",
+          "11px OutClass",
+          "11px Account",
+          "11px © 2026 OutClassPlatforms LLC. All rights reserved.",
+          "11px OutClass is operated by OutClassPlatforms LLC and is indepen"
+        ],
+        "smallTextCount": 5,
+        "smallTargets": [
+          "131x40 button Explore clubs",
+          "23x44 a FAQ"
+        ],
+        "smallTargetCount": 2,
+        "axe": [],
+        "errors": []
+      },
+      "reduced-motion": {
+        "status": 200,
+        "finalUrl": "/club/vcg-uva",
+        "overflowX": 0,
+        "h1": [
+          "Virginia Consulting Group"
+        ],
+        "loadingCover": false,
+        "smallText": [
+          "11px Platform",
+          "11px OutClass",
+          "11px Account",
+          "11px © 2026 OutClassPlatforms LLC. All rights reserved.",
+          "11px OutClass is operated by OutClassPlatforms LLC and is indepen"
+        ],
+        "smallTextCount": 5,
+        "smallTargets": [
+          "131x40 button Explore clubs",
+          "23x44 a FAQ"
+        ],
+        "smallTargetCount": 2,
+        "axe": null,
+        "errors": []
+      },
+      "forced-colors": {
+        "status": 200,
+        "finalUrl": "/club/vcg-uva",
+        "overflowX": 0,
+        "h1": [
+          "Virginia Consulting Group"
+        ],
+        "loadingCover": false,
+        "smallText": [
+          "11px Platform",
+          "11px OutClass",
+          "11px Account",
+          "11px © 2026 OutClassPlatforms LLC. All rights reserved.",
+          "11px OutClass is operated by OutClassPlatforms LLC and is indepen"
+        ],
+        "smallTextCount": 5,
+        "smallTargets": [
+          "131x40 button Explore clubs",
+          "23x44 a FAQ"
+        ],
+        "smallTargetCount": 2,
+        "axe": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": 16,
+            "sample": ".oc-footer-masthead > p"
+          }
+        ],
+        "errors": []
+      }
+    }
+  },
+  {
+    "name": "corkboard",
+    "url": "/corkboard",
+    "server": {
+      "status": 200,
+      "location": null,
+      "title": "Events · OutClass",
+      "description": "Find and apply to participating UVA clubs with one OutClass profile. Manage applications, interviews, and recruitment decisions in one place.",
+      "ogImage": false,
+      "robots": "noindex, nofollow",
+      "h1": [
+        "Events"
+      ],
+      "headings": [
+        "h1 Events",
+        "h3 Platform",
+        "h3 OutClass",
+        "h3 Account"
+      ],
+      "loadingCover": false
+    },
+    "widths": {
+      "390": {
+        "status": 200,
+        "finalUrl": "/corkboard",
+        "overflowX": 0,
+        "h1": [
+          "Events"
+        ],
+        "loadingCover": false,
+        "smallText": [
+          "11px Platform",
+          "11px OutClass",
+          "11px Account",
+          "11px © 2026 OutClassPlatforms LLC. All rights reserved.",
+          "11px OutClass is operated by OutClassPlatforms LLC and is indepen"
+        ],
+        "smallTextCount": 5,
+        "smallTargets": [
+          "16x16 input ",
+          "22x44 a FAQ"
+        ],
+        "smallTargetCount": 2,
+        "axe": [],
+        "errors": []
+      },
+      "1440": {
+        "status": 200,
+        "finalUrl": "/corkboard",
+        "overflowX": 0,
+        "h1": [
+          "Events"
+        ],
+        "loadingCover": false,
+        "smallText": [
+          "11px Platform",
+          "11px OutClass",
+          "11px Account",
+          "11px © 2026 OutClassPlatforms LLC. All rights reserved.",
+          "11px OutClass is operated by OutClassPlatforms LLC and is indepen"
+        ],
+        "smallTextCount": 5,
+        "smallTargets": [
+          "16x16 input ",
+          "252x40 button Reset filters",
+          "115x40 a Explore clubs",
+          "23x44 a FAQ"
+        ],
+        "smallTargetCount": 4,
+        "axe": [],
+        "errors": []
+      }
+    }
+  },
+  {
+    "name": "explore",
+    "url": "/explore",
+    "server": {
+      "status": 200,
+      "location": null,
+      "title": "Explore clubs · OutClass",
+      "description": "Browse clubs at the University of Virginia on OutClass. See what each club does and when applications open.",
+      "ogImage": true,
+      "robots": "index, follow",
+      "h1": [
+        "Clubs at UVA"
+      ],
+      "headings": [
+        "h1 Clubs at UVA",
+        "h2 33 clubs",
+        "h3 Advertising and Marketing Association",
+        "h3 Alpha Kappa Psi — Alpha Gamma",
+        "h3 Alternative Investment Fund",
+        "h3 Asian Student Network at McIntire",
+        "h3 Black Commerce Student Network at McIntire",
+        "h3 BlackFin Investment Group",
+        "h3 Blockchain at UVA",
+        "h3 Business Ethics Society",
+        "h3 Common Cents",
+        "h3 Delta Sigma Pi — Alpha Xi",
+        "h3 Enactus at UVA",
+        "h3 Frank Batten Investment Fund",
+        "h3 Global Markets Group",
+        "h3 Global Research and Consulting — UVA",
+        "h3 Latinx Student Network",
+        "h3 McIntire Investment Institute",
+        "h3 Net Impact at UVA",
+        "h3 One Generation Network",
+        "h3 Phi Chi Theta",
+        "h3 Portico Impact Fund",
+        "h3 Pride at McIntire",
+        "h3 Profit with Purpose",
+        "h3 Sales &amp; Trading Group at McIntire",
+        "h3 Scholars of Finance at UVA",
+        "h3 SEED Consulting",
+        "h3 TAMID Group at UVA",
+        "h3 UVA Credit and Restructuring Club",
+        "h3 Virginia Case Club",
+        "h3 Virginia Consulting Group",
+        "h3 Virginia Mergers &amp; Acquisitions Group",
+        "h3 Virginia Undergraduate Real Estate Club",
+        "h3 Virginia Venture Fund",
+        "h3 Women&#x27;s Business Forum at McIntire",
+        "h3 Platform",
+        "h3 OutClass",
+        "h3 Account"
+      ],
+      "loadingCover": false
+    },
+    "widths": {
+      "390": {
+        "status": 200,
+        "finalUrl": "/explore",
+        "overflowX": 0,
+        "h1": [
+          "Clubs at UVA"
+        ],
+        "loadingCover": false,
+        "smallText": [
+          "11px Platform",
+          "11px OutClass",
+          "11px Account",
+          "11px © 2026 OutClassPlatforms LLC. All rights reserved.",
+          "11px OutClass is operated by OutClassPlatforms LLC and is not an "
+        ],
+        "smallTextCount": 5,
+        "smallTargets": [
+          "22x44 a FAQ"
+        ],
+        "smallTargetCount": 1,
+        "axe": [],
+        "errors": []
+      },
+      "1440": {
+        "status": 200,
+        "finalUrl": "/explore",
+        "overflowX": 0,
+        "h1": [
+          "Clubs at UVA"
+        ],
+        "loadingCover": false,
+        "smallText": [
+          "11px Platform",
+          "11px OutClass",
+          "11px Account",
+          "11px © 2026 OutClassPlatforms LLC. All rights reserved.",
+          "11px OutClass is operated by OutClassPlatforms LLC and is not an "
+        ],
+        "smallTextCount": 5,
+        "smallTargets": [
+          "76x40 button Search",
+          "23x44 a FAQ"
+        ],
+        "smallTargetCount": 2,
+        "axe": [],
+        "errors": []
+      }
+    }
+  },
+  {
+    "name": "invitation",
+    "url": "/invitations/00000000-0000-4000-8000-000000000000",
+    "server": {
+      "status": 200,
+      "location": null,
+      "title": "OutClass | UVA Club Applications &amp; Recruitment",
+      "description": "Find and apply to participating UVA clubs with one OutClass profile. Manage applications, interviews, and recruitment decisions in one place.",
+      "ogImage": false,
+      "robots": "noindex, nofollow",
+      "h1": [
+        "This invitation link isn’t valid"
+      ],
+      "headings": [
+        "h1 This invitation link isn’t valid",
+        "h3 Platform",
+        "h3 OutClass",
+        "h3 Account"
+      ],
+      "loadingCover": false
+    },
+    "widths": {
+      "390": {
+        "status": 200,
+        "finalUrl": "/invitations/00000000-0000-4000-8000-000000000000",
+        "overflowX": 0,
+        "h1": [
+          "This invitation link isn’t valid"
+        ],
+        "loadingCover": false,
+        "smallText": [
+          "11px Platform",
+          "11px OutClass",
+          "11px Account",
+          "11px © 2026 OutClassPlatforms LLC. All rights reserved.",
+          "11px OutClass is operated by OutClassPlatforms LLC and is indepen"
+        ],
+        "smallTextCount": 5,
+        "smallTargets": [
+          "22x44 a FAQ"
+        ],
+        "smallTargetCount": 1,
+        "axe": [],
+        "errors": []
+      },
+      "1440": {
+        "status": 200,
+        "finalUrl": "/invitations/00000000-0000-4000-8000-000000000000",
+        "overflowX": 0,
+        "h1": [
+          "This invitation link isn’t valid"
+        ],
+        "loadingCover": false,
+        "smallText": [
+          "11px Platform",
+          "11px OutClass",
+          "11px Account",
+          "11px © 2026 OutClassPlatforms LLC. All rights reserved.",
+          "11px OutClass is operated by OutClassPlatforms LLC and is indepen"
+        ],
+        "smallTextCount": 5,
+        "smallTargets": [
+          "197x40 a Go to OutClass home",
+          "87x40 a Sign in",
+          "23x44 a FAQ"
+        ],
+        "smallTargetCount": 3,
+        "axe": [],
+        "errors": []
+      }
+    }
+  },
+  {
+    "name": "club-access",
+    "url": "/club-access/vcg-uva",
+    "server": {
+      "status": 200,
+      "location": null,
+      "title": "OutClass | UVA Club Applications &amp; Recruitment",
+      "description": "Find and apply to participating UVA clubs with one OutClass profile. Manage applications, interviews, and recruitment decisions in one place.",
+      "ogImage": false,
+      "robots": "noindex, nofollow",
+      "h1": [
+        "Sign in to manage access for Virginia Consulting Group"
+      ],
+      "headings": [
+        "h1 Sign in to manage access for Virginia Consulting G",
+        "h3 Platform",
+        "h3 OutClass",
+        "h3 Account"
+      ],
+      "loadingCover": false
+    },
+    "widths": {
+      "390": {
+        "status": 200,
+        "finalUrl": "/club-access/vcg-uva",
+        "overflowX": 0,
+        "h1": [
+          "Sign in to manage access for Virginia Consulting Group"
+        ],
+        "loadingCover": false,
+        "smallText": [
+          "11px Platform",
+          "11px OutClass",
+          "11px Account",
+          "11px © 2026 OutClassPlatforms LLC. All rights reserved.",
+          "11px OutClass is operated by OutClassPlatforms LLC and is indepen"
+        ],
+        "smallTextCount": 5,
+        "smallTargets": [
+          "22x44 a FAQ"
+        ],
+        "smallTargetCount": 1,
+        "axe": [],
+        "errors": []
+      },
+      "1440": {
+        "status": 200,
+        "finalUrl": "/club-access/vcg-uva",
+        "overflowX": 0,
+        "h1": [
+          "Sign in to manage access for Virginia Consulting Group"
+        ],
+        "loadingCover": false,
+        "smallText": [
+          "11px Platform",
+          "11px OutClass",
+          "11px Account",
+          "11px © 2026 OutClassPlatforms LLC. All rights reserved.",
+          "11px OutClass is operated by OutClassPlatforms LLC and is indepen"
+        ],
+        "smallTextCount": 5,
+        "smallTargets": [
+          "111x40 a Sign in",
+          "23x44 a FAQ"
+        ],
+        "smallTargetCount": 2,
+        "axe": [],
+        "errors": []
+      }
+    }
+  },
+  {
+    "name": "club-claims",
+    "url": "/club-claims/vcg-uva",
+    "server": {
+      "status": 200,
+      "location": null,
+      "title": "OutClass | UVA Club Applications &amp; Recruitment",
+      "description": "Find and apply to participating UVA clubs with one OutClass profile. Manage applications, interviews, and recruitment decisions in one place.",
+      "ogImage": false,
+      "robots": "noindex, nofollow",
+      "h1": [
+        "Claim Virginia Consulting Group on OutClass"
+      ],
+      "headings": [
+        "h1 Claim Virginia Consulting Group on OutClass",
+        "h3 Platform",
+        "h3 OutClass",
+        "h3 Account"
+      ],
+      "loadingCover": false
+    },
+    "widths": {
+      "390": {
+        "status": 200,
+        "finalUrl": "/club-claims/vcg-uva",
+        "overflowX": 0,
+        "h1": [
+          "Claim Virginia Consulting Group on OutClass"
+        ],
+        "loadingCover": false,
+        "smallText": [
+          "11px Platform",
+          "11px OutClass",
+          "11px Account",
+          "11px © 2026 OutClassPlatforms LLC. All rights reserved.",
+          "11px OutClass is operated by OutClassPlatforms LLC and is indepen"
+        ],
+        "smallTextCount": 5,
+        "smallTargets": [
+          "22x44 a FAQ"
+        ],
+        "smallTargetCount": 1,
+        "axe": [],
+        "errors": []
+      },
+      "1440": {
+        "status": 200,
+        "finalUrl": "/club-claims/vcg-uva",
+        "overflowX": 0,
+        "h1": [
+          "Claim Virginia Consulting Group on OutClass"
+        ],
+        "loadingCover": false,
+        "smallText": [
+          "11px Platform",
+          "11px OutClass",
+          "11px Account",
+          "11px © 2026 OutClassPlatforms LLC. All rights reserved.",
+          "11px OutClass is operated by OutClassPlatforms LLC and is indepen"
+        ],
+        "smallTextCount": 5,
+        "smallTargets": [
+          "111x40 a Sign in",
+          "137x40 a Create account",
+          "23x44 a FAQ"
+        ],
+        "smallTargetCount": 3,
+        "axe": [],
+        "errors": []
+      }
+    }
+  },
+  {
+    "name": "check-in",
+    "url": "/check-in",
+    "server": {
+      "status": 200,
+      "location": null,
+      "title": "OutClass | UVA Club Applications &amp; Recruitment",
+      "description": "Find and apply to participating UVA clubs with one OutClass profile. Manage applications, interviews, and recruitment decisions in one place.",
+      "ogImage": false,
+      "robots": "noindex, nofollow",
+      "h1": [
+        "Meeting check-in"
+      ],
+      "headings": [
+        "h1 Meeting check-in"
+      ],
+      "loadingCover": false
+    },
+    "widths": {
+      "390": {
+        "status": 200,
+        "finalUrl": "/check-in",
+        "overflowX": 0,
+        "h1": [
+          "Meeting check-in"
+        ],
+        "loadingCover": false,
+        "smallText": [],
+        "smallTextCount": 0,
+        "smallTargets": [
+          "1x1 a Skip to content",
+          "358x20 a Meeting agenda and resources"
+        ],
+        "smallTargetCount": 2,
+        "axe": [],
+        "errors": []
+      },
+      "1440": {
+        "status": 200,
+        "finalUrl": "/check-in",
+        "overflowX": 0,
+        "h1": [
+          "Meeting check-in"
+        ],
+        "loadingCover": false,
+        "smallText": [],
+        "smallTextCount": 0,
+        "smallTargets": [
+          "1x1 a Skip to content",
+          "75x40 a Sign in",
+          "768x20 a Meeting agenda and resources"
+        ],
+        "smallTargetCount": 3,
+        "axe": [],
+        "errors": []
+      }
+    }
+  },
+  {
+    "name": "interviews-book",
+    "url": "/interviews/book",
+    "server": {
+      "status": 200,
+      "location": null,
+      "title": "OutClass | UVA Club Applications &amp; Recruitment",
+      "description": "Find and apply to participating UVA clubs with one OutClass profile. Manage applications, interviews, and recruitment decisions in one place.",
+      "ogImage": false,
+      "robots": "noindex, nofollow",
+      "h1": [
+        "Book your interview"
+      ],
+      "headings": [
+        "h1 Book your interview"
+      ],
+      "loadingCover": false
+    },
+    "widths": {
+      "390": {
+        "status": 200,
+        "finalUrl": "/interviews/book",
+        "overflowX": 0,
+        "h1": [
+          "Book your interview"
+        ],
+        "loadingCover": false,
+        "smallText": [],
+        "smallTextCount": 0,
+        "smallTargets": [
+          "1x1 a Skip to content"
+        ],
+        "smallTargetCount": 1,
+        "axe": [],
+        "errors": []
+      },
+      "1440": {
+        "status": 200,
+        "finalUrl": "/interviews/book",
+        "overflowX": 0,
+        "h1": [
+          "Book your interview"
+        ],
+        "loadingCover": false,
+        "smallText": [],
+        "smallTextCount": 0,
+        "smallTargets": [
+          "1x1 a Skip to content",
+          "75x40 a Sign in"
+        ],
+        "smallTargetCount": 2,
+        "axe": [],
+        "errors": []
+      }
+    }
+  },
+  {
+    "name": "voting-join",
+    "url": "/voting/00000000-0000-4000-8000-000000000000/join",
+    "server": {
+      "status": 200,
+      "location": null,
+      "title": "OutClass | UVA Club Applications &amp; Recruitment",
+      "description": "Find and apply to participating UVA clubs with one OutClass profile. Manage applications, interviews, and recruitment decisions in one place.",
+      "ogImage": false,
+      "robots": "noindex, nofollow",
+      "h1": [
+        "Join live voting"
+      ],
+      "headings": [
+        "h1 Join live voting"
+      ],
+      "loadingCover": false
+    },
+    "widths": {
+      "390": {
+        "status": 200,
+        "finalUrl": "/voting/00000000-0000-4000-8000-000000000000/join",
+        "overflowX": 0,
+        "h1": [
+          "Join live voting"
+        ],
+        "loadingCover": false,
+        "smallText": [],
+        "smallTextCount": 0,
+        "smallTargets": [
+          "1x1 a Skip to content"
+        ],
+        "smallTargetCount": 1,
+        "axe": [],
+        "errors": []
+      },
+      "1440": {
+        "status": 200,
+        "finalUrl": "/voting/00000000-0000-4000-8000-000000000000/join",
+        "overflowX": 0,
+        "h1": [
+          "Join live voting"
+        ],
+        "loadingCover": false,
+        "smallText": [],
+        "smallTextCount": 0,
+        "smallTargets": [
+          "1x1 a Skip to content",
+          "75x40 a Sign in"
+        ],
+        "smallTargetCount": 2,
+        "axe": [],
+        "errors": []
+      }
+    }
+  },
+  {
+    "name": "short-link",
+    "url": "/q/NOPE1234",
+    "server": {
+      "status": 404,
+      "location": null,
+      "title": "OutClass | UVA Club Applications &amp; Recruitment",
+      "description": "Find and apply to participating UVA clubs with one OutClass profile. Manage applications, interviews, and recruitment decisions in one place.",
+      "ogImage": false,
+      "robots": "noindex",
+      "h1": [],
+      "headings": [],
+      "loadingCover": false
+    },
+    "widths": {
+      "390": {
+        "status": 404,
+        "finalUrl": "/q/NOPE1234",
+        "overflowX": 0,
+        "h1": [
+          "This link isn’t recognized"
+        ],
+        "loadingCover": false,
+        "smallText": [],
+        "smallTextCount": 0,
+        "smallTargets": [
+          "1x1 a Skip to content"
+        ],
+        "smallTargetCount": 1,
+        "axe": [],
+        "errors": []
+      },
+      "1440": {
+        "status": 404,
+        "finalUrl": "/q/NOPE1234",
+        "overflowX": 0,
+        "h1": [
+          "This link isn’t recognized"
+        ],
+        "loadingCover": false,
+        "smallText": [],
+        "smallTextCount": 0,
+        "smallTargets": [
+          "1x1 a Skip to content",
+          "721x40 a Go to OutClass home",
+          "721x40 a Sign in"
+        ],
+        "smallTargetCount": 3,
+        "axe": [],
+        "errors": []
+      }
+    }
+  }
+]

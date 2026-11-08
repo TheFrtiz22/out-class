@@ -20,6 +20,7 @@ import { type ScheduleBlock } from "@/lib/scheduler";
 import { getDurableNotifications, setDurableNotificationsRead, setDurableNotificationsArchived } from "@/actions/communications"
 import { communicationsChanged, inboxNotification } from "@/lib/communications-client"
 import { toast } from "sonner"
+import { DEFAULT_CLUB_COLOR } from "@/lib/club-colors"
 
 /**
  * Single source of truth for "did the student apply to this club".
@@ -100,7 +101,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
     logoText: app.club?.logoText || "OC",
     logoUrl: app.club?.logoUrl,
     marketing: app.club?.marketing,
-    color: app.club?.color || "#051B3D",
+    color: app.club?.color || DEFAULT_CLUB_COLOR,
     status: ({ DRAFTING: "Drafting", SUBMITTED: "Submitted", IN_REVIEW: "In Review", INTERVIEWING: "Interviewing", ACCEPTED: "Accepted", REJECTED: "Rejected", WAITLISTED: "Waitlisted" } as Record<string, string>)[app.status] || app.round?.name || "In Review",
     questionsCompleted: app.answers?.length || 0,
     questionsTotal: app.club?._count?.questions ?? 0,
@@ -378,7 +379,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
     const clubId = event?.clubId ?? managed?.clubId ?? ""
     const club = clubs.find((item) => item.id === clubId)
     const body = `${title}: ${response === "declined" ? "attendance cancelled" : response === "confirmed" ? "interview confirmed" : "RSVP confirmed"}.`
-    setNotifications((previous) => [{ id: `response-${id}`, eventId: id, clubId, type: "Announcement", urgent: false, club: club?.name ?? studentMemberships.find((member) => member.clubId === clubId)?.clubName ?? event?.club ?? "Club event", color: club?.color ?? "#051B3D", logoText: club?.logoText ?? "OC", senderName: "OutClass", senderTitle: "Calendar update", title: body, preview: body, body: [body], timestamp: "Just now", fullDate: new Date().toLocaleString(), createdAt: new Date().toISOString(), read: false }, ...previous.filter((item) => item.id !== `response-${id}`)])
+    setNotifications((previous) => [{ id: `response-${id}`, eventId: id, clubId, type: "Announcement", urgent: false, club: club?.name ?? studentMemberships.find((member) => member.clubId === clubId)?.clubName ?? event?.club ?? "Club event", color: club?.color ?? DEFAULT_CLUB_COLOR, logoText: club?.logoText ?? "OC", senderName: "OutClass", senderTitle: "Calendar update", title: body, preview: body, body: [body], timestamp: "Just now", fullDate: new Date().toLocaleString(), createdAt: new Date().toISOString(), read: false }, ...previous.filter((item) => item.id !== `response-${id}`)])
   }, [events, managedEvents, setNotifications])
 
   const bookInterview = useCallback((blockId: string, slotId: string): string | null => {
@@ -396,11 +397,11 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
       return { ...entrySlot, candidates, bookedCount: candidates.length }
     }) })))
     const id = "interview-vvf-current"
-    setEvents((previous) => [...previous.filter((event) => event.id !== id), { id, date: block.date, day: Number(block.date.slice(-2)), clubId: "vvf", club: "Virginia Venture Fund", color: "#051B3D", type: "Interview", title: "Virginia Venture Fund · Round 1 interview", time: slot.time, location: block.locationName, bookingSlotId: slotId, description: "Your reserved interview slot. To change it, choose another available time.", response: "confirmed" }])
+    setEvents((previous) => [...previous.filter((event) => event.id !== id), { id, date: block.date, day: Number(block.date.slice(-2)), clubId: "vvf", club: "Virginia Venture Fund", color: DEFAULT_CLUB_COLOR, type: "Interview", title: "Virginia Venture Fund · Round 1 interview", time: slot.time, location: block.locationName, bookingSlotId: slotId, description: "Your reserved interview slot. To change it, choose another available time.", response: "confirmed" }])
     setResponses((previous) => ({ ...previous, [id]: "confirmed" }))
     setTrackedApps((previous) => previous.map((app) => app.clubId === "vvf" ? { ...app, status: "1st Round Interview", nextDeadline: `${block.date} at ${slot.time}` } : app))
     const body = `Your interview is booked for ${block.date} at ${slot.time}, ${block.locationName}.`
-    setNotifications((previous) => [{ id: "booking-vvf", eventId: id, clubId: "vvf", type: "Interview Invite", urgent: false, club: "Virginia Venture Fund", color: "#051B3D", logoText: "VVF", senderName: "Recruitment Team", senderTitle: "Interview booking", title: "Interview booking confirmed", preview: body, body: [body], timestamp: "Just now", fullDate: new Date().toLocaleString(), createdAt: new Date().toISOString(), read: false }, ...previous.filter((item) => item.id !== "booking-vvf")])
+    setNotifications((previous) => [{ id: "booking-vvf", eventId: id, clubId: "vvf", type: "Interview Invite", urgent: false, club: "Virginia Venture Fund", color: DEFAULT_CLUB_COLOR, logoText: "VVF", senderName: "Recruitment Team", senderTitle: "Interview", title: "Interview confirmed", preview: body, body: [body], timestamp: "Just now", fullDate: new Date().toLocaleString(), createdAt: new Date().toISOString(), read: false }, ...previous.filter((item) => item.id !== "booking-vvf")])
     return null
   }, [scheduleBlocks, setNotifications])
 
@@ -411,7 +412,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
     }) })))
     setEvents((previous) => previous.filter((event) => event.id !== "interview-vvf-current"))
     setTrackedApps((previous) => previous.map((app) => app.clubId === "vvf" ? { ...app, nextDeadline: "Choose a new interview time" } : app))
-    setNotifications((previous) => previous.map((item) => item.id === "booking-vvf" ? { ...item, eventId: undefined, title: "Interview booking cancelled", preview: "Your interview slot was released. Choose a new time from Calendar.", body: ["Your interview slot was released. Choose a new time from Calendar."], read: false, createdAt: new Date().toISOString(), fullDate: new Date().toLocaleString() } : item))
+    setNotifications((previous) => previous.map((item) => item.id === "booking-vvf" ? { ...item, eventId: undefined, title: "Interview cancelled", preview: "Your interview slot was released. Choose a new time from Calendar.", body: ["Your interview slot was released. Choose a new time from Calendar."], read: false, createdAt: new Date().toISOString(), fullDate: new Date().toLocaleString() } : item))
   }, [setNotifications])
 
   const notifyEventChange = useCallback((event: ManagedEvent, cancelled = false) => {
@@ -419,7 +420,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
     const club = clubs.find((item) => item.id === event.clubId)
     const body = cancelled ? `${event.title} has been cancelled.` : `${event.title} · ${event.date} at ${event.time}. Location: ${event.location}.`
     const eventId = !cancelled && !event.recurring ? `managed-${event.id}-${event.date}` : undefined
-    setNotifications((previous) => [{ id: `managed-update-${event.id}`, eventId, clubId: event.clubId, type: "Announcement", urgent: cancelled, club: club?.name ?? studentMemberships.find((member) => member.clubId === event.clubId)?.clubName ?? event.clubId, color: club?.color ?? "#051B3D", logoText: club?.logoText ?? "OC", senderName: "Club leadership", senderTitle: "Club calendar update", title: `${event.title} ${cancelled ? "cancelled" : "scheduled / updated"}`, preview: body, body: [body], timestamp: "Just now", fullDate: new Date().toLocaleString(), createdAt: new Date().toISOString(), read: false }, ...previous.filter((item) => item.id !== `managed-update-${event.id}`)])
+    setNotifications((previous) => [{ id: `managed-update-${event.id}`, eventId, clubId: event.clubId, type: "Announcement", urgent: cancelled, club: club?.name ?? studentMemberships.find((member) => member.clubId === event.clubId)?.clubName ?? event.clubId, color: club?.color ?? DEFAULT_CLUB_COLOR, logoText: club?.logoText ?? "OC", senderName: "Club leadership", senderTitle: "Club calendar update", title: `${event.title} ${cancelled ? "cancelled" : "scheduled / updated"}`, preview: body, body: [body], timestamp: "Just now", fullDate: new Date().toLocaleString(), createdAt: new Date().toISOString(), read: false }, ...previous.filter((item) => item.id !== `managed-update-${event.id}`)])
   }, [setNotifications])
 
   const submitApplication = useCallback((id: string) => {

@@ -8,6 +8,7 @@ import { useApplicationState } from "@/lib/application-state"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import type { ViewId } from "@/lib/views"
+import { NativeSelect } from "@/components/ui/native-select"
 
 export function DemoRoundTarget() {
   const { state, isDemoEnabled } = useDemoMode()
@@ -189,9 +190,9 @@ export function DemoInterviewSchedule({ onNavigate }: { onNavigate: (view: ViewI
                 </div>
                 <label className="text-xs text-muted-foreground">
                   {student ? "Scheduled candidate" : "Open slot"}
-                  <select
+                  <NativeSelect
                     aria-label={`Candidate for ${slot.id}`}
-                    className="mt-1 min-h-11 w-full rounded-md border border-border bg-card px-2 text-sm text-foreground"
+                    className="mt-1 min-h-11 w-full text-foreground"
                     value={slot.applicationId || ""}
                     onChange={(e) => assign(slot.id, e.target.value)}
                   >
@@ -210,7 +211,7 @@ export function DemoInterviewSchedule({ onNavigate }: { onNavigate: (view: ViewI
                           </option>
                         )
                       })}
-                  </select>
+                  </NativeSelect>
                 </label>
                 <Button
                   variant="outline"

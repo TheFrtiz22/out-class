@@ -15,7 +15,7 @@ test('Events: desktop/tablet/mobile views share filters, saves, RSVP, details an
     assert.equal(await page.locator('.oc-pinned-flyer').count(), 60);
     const reads = () => fixture.calls.filter(c => c.name === 'getPublicCorkboard').length;
     let before = reads();
-    await page.getByRole('button', { name: 'List View', exact: true }).click();
+    await page.getByRole('button', { name: 'List', exact: true }).click();
     assert.equal(await page.locator('.oc-smart-event-card').count(), 60);
     await page.waitForTimeout(200); assert.equal(reads(), before, 'changing only the layout must not refetch');
     await page.getByRole('button', { name: 'Save After Hours at the Art Museum', exact: true }).click();
@@ -31,7 +31,7 @@ test('Events: desktop/tablet/mobile views share filters, saves, RSVP, details an
     assert.equal(await page.getByRole('dialog').count(), 0, 'Calendar must not open the parent card');
     await page.getByLabel('Search events', { exact: true }).fill('After Hours');
     await page.getByText('13 approved events · Times shown in Eastern Time', { exact: true }).waitFor();
-    before = reads(); await page.getByRole('button', { name: 'Corkboard', exact: true }).click();
+    before = reads(); await page.getByRole('button', { name: 'Board', exact: true }).click();
     assert.equal(await page.locator('.oc-pinned-flyer').count(), 13);
     assert.equal(await page.getByLabel('Search events', { exact: true }).inputValue(), 'After Hours');
     assert.equal(reads(), before);
@@ -45,20 +45,28 @@ test('Events: desktop/tablet/mobile views share filters, saves, RSVP, details an
     await dialog.getByRole('button', { name: 'RSVP', exact: true }).waitFor();
     await page.keyboard.press('Escape'); await dialog.waitFor({ state: 'hidden' });
     assert.equal(await page.locator('.oc-pinned-flyer').first().evaluate(el => el === document.activeElement), true);
-    await page.getByRole('button', { name: 'List View', exact: true }).click();
+    await page.getByRole('button', { name: 'List', exact: true }).click();
     await page.reload();
     await page.locator('.oc-smart-event-card').first().waitFor();
-    assert.equal(await page.getByRole('button', { name: 'List View', exact: true }).getAttribute('aria-pressed'), 'true');
+    assert.equal(await page.getByRole('button', { name: 'List', exact: true }).getAttribute('aria-pressed'), 'true');
     await page.getByRole('button', { name: 'Next', exact: true }).click();
     await page.getByText('Page 2', { exact: true }).waitFor();
     await page.waitForFunction(() => document.querySelectorAll('.oc-smart-event-card').length === 5);
-    await page.getByRole('button', { name: 'Corkboard', exact: true }).click();
+    await page.getByRole('button', { name: 'Board', exact: true }).click();
     assert.equal(await page.locator('.oc-pinned-flyer').count(), 5);
     await page.getByRole('button', { name: 'Previous', exact: true }).click();
     await page.waitForFunction(() => document.querySelectorAll('.oc-pinned-flyer').length === 60);
-    await page.getByRole('button', { name: 'Saved events', exact: true }).click();
+    // One toolbar: date tabs, search, Filter and the view switch. Saved events lives in the Filter menu.
+    const toolbar = page.locator('.oc-event-toolbar');
+    assert.equal(await toolbar.getByRole('button', { name: 'Saved events', exact: true }).count(), 0);
+    assert.equal(await toolbar.getByRole('button', { name: 'Saved Clubs', exact: true }).count(), 0);
+    assert.equal(await toolbar.getByRole('button', { name: 'Board', exact: true }).evaluate(el => el.getClientRects().length), 1, 'the view label stays on one line');
+    await page.locator('.oc-event-filter > summary').click();
+    await page.getByLabel('Saved events', { exact: true }).check();
+    await page.locator('.oc-event-filter > summary').click();
+    assert.equal(await page.locator('.oc-event-filter-count [aria-hidden="true"]').innerText(), '1'); assert.equal(await page.locator('.oc-event-filter-count .sr-only').textContent(), ', 1 active');
     await page.getByText('1 approved event · Times shown in Eastern Time', { exact: true }).waitFor();
-    await page.getByRole('button', { name: 'List View', exact: true }).click();
+    await page.getByRole('button', { name: 'List', exact: true }).click();
     assert.equal(await page.locator('.oc-smart-event-card').count(), 1);
     await page.getByRole('button', { name: 'Saved After Hours at the Art Museum', exact: true }).click();
     await page.getByRole('heading', { name: 'You haven’t saved any events yet.', exact: true }).waitFor();
@@ -69,6 +77,7 @@ test('Events: desktop/tablet/mobile views share filters, saves, RSVP, details an
     await page.getByRole('heading', { name: 'No events match these filters.', exact: true }).waitFor();
     await page.getByRole('button', { name: 'Reset filters', exact: true }).click();
     await page.locator('.oc-event-filter > summary').click();
+    assert.equal(await page.locator('.oc-event-filter-count').count(), 0);
     await page.getByText('65 approved events · Times shown in Eastern Time', { exact: true }).waitFor();
     await page.getByLabel('Search events', { exact: true }).fill('no matching campus event');
     await page.getByRole('heading', { name: 'No events match “no matching campus event”.', exact: true }).waitFor();
@@ -78,6 +87,9 @@ test('Events: desktop/tablet/mobile views share filters, saves, RSVP, details an
     for (const [name, width, height] of [['desktop', 1440, 1000], ['tablet', 820, 1180], ['mobile', 390, 844]]) {
       await page.setViewportSize({ width, height });
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `${name} should not overflow`);
+      // The poster is loading="lazy": its error (and the swap to the fallback) happens when the browser
+      // loads it, so wait for the swap; a fallback that never appears still fails the assertion.
+      await page.locator('.oc-smart-event-media').nth(1).locator('img').waitFor({ state: 'detached', timeout: 10000 }).catch(() => {})
       assert.equal(await page.locator('.oc-smart-event-media').nth(1).locator('img').count(), 0, 'broken media uses the branded fallback');
       if (screenshots) { fs.mkdirSync(screenshots, { recursive: true }); await page.screenshot({ path: path.join(screenshots, `events-${name}.png`) }); }
     }

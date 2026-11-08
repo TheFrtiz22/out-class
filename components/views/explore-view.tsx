@@ -2,10 +2,11 @@
 import { NativeSelect } from "@/components/ui/native-select"
 import { useSearchParams } from "next/navigation"
 import { SavedClubsPopover } from "@/components/clubs/saved-clubs-popover"
-import { PageHeader } from "@/components/product/page-header"
+import { PageHeader } from "@/components/ui/page-header"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { ArrowRight, Search, SlidersHorizontal, X, Compass, BookOpen, BriefcaseBusiness, Globe2, Heart, Mountain, Lightbulb, ChartNoAxesCombined, MessageSquare, Users } from "@/components/icons"
+import { ArrowRight, ChevronDown, Search, SlidersHorizontal, X, Compass, BookOpen, BriefcaseBusiness, Globe2, Heart, Mountain, Lightbulb, ChartNoAxesCombined, MessageSquare, Users } from "@/components/icons"
 import { Button } from "@/components/ui/button"
+import { SegmentedControl } from "@/components/ui/segmented-control"
 import { Input } from "@/components/ui/input"
 import { LoadingState } from "@/components/ui/loading-state"
 import { EmptyState } from "@/components/ui/empty-state"
@@ -23,6 +24,13 @@ import { useDemoMode } from "@/contexts/demo-context"
 import { clubRecruitment } from "@/lib/recruitment-presentation"
 import "@/components/clubs/club-discovery.css"
 import "@/components/clubs/explore-directory.css"
+
+const recruitmentOptions = [
+  { value: "all", label: "All clubs" },
+  { value: "open", label: "Applications open" },
+  { value: "closed", label: "Not currently open" },
+  { value: "closing", label: "Closing in 7 days" },
+] as const
 
 function categoryIcon(category: string) {
   const value = category.toLowerCase()
@@ -125,6 +133,10 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
     ([key, value]) =>
       key !== "sort" && value !== emptyDirectoryFilters[key as keyof typeof filters],
   )
+  // Only the fields inside the Refine search panel; the row's own selects show their value.
+  const timeOptions = ["1-3", "3-5", "5+"].filter((time) => clubs.some((club) => club.timeCommitment === time))
+  const acceptanceReported = clubs.filter((club) => club.acceptanceRate != null).length >= 3
+  const refined = [filters.time !== emptyDirectoryFilters.time, filters.acceptance !== emptyDirectoryFilters.acceptance].filter(Boolean).length
   const recruitmentCounts = useMemo(() => {
     const matches = filterDirectory(clubs, { ...filters, recruitment: "all" }, now)
     return { all: matches.length, open: matches.filter(club => clubRecruitment(club, now).available).length, closed: matches.filter(club => !clubRecruitment(club, now).available).length, closing: matches.filter(club => clubRecruitment(club, now).closingSoon).length }
@@ -140,9 +152,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
     lastClub.current = entry
     setSelected(club)
   }
-  const highlights = clubs.some(club => club.recommended)
-    ? clubs.filter(club => club.recommended).slice(0, 3)
-    : filterDirectory(clubs, emptyDirectoryFilters).slice(0, 3)
+  const featured = clubs.filter(club => club.recommended).slice(0, 3)
   const available = filterDirectory(clubs, emptyDirectoryFilters).filter(club => clubRecruitment(club, now).available)
   function card(club: DirectoryClub, section: string) {
     const entry = `${section}-${club.id}`
@@ -159,7 +169,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
   return (
     <div className="oc-discovery" data-explore-section={section} ref={resultsRef}>
       <div className="oc-explore-heading">
-        <PageHeader density="expressive" eyebrow="Find your people" title="Discover clubs" description="Follow your interests. Make room for something new." action={<SavedClubsPopover onNavigate={onNavigate} />} />
+        <PageHeader density="expressive" eyebrow="Find your people" title="Explore clubs" description="Follow your interests. Make room for something new." action={<SavedClubsPopover onNavigate={onNavigate} />} />
       </div>
       <div className="oc-directory-search">
         <Search size={20} aria-hidden="true" />
@@ -181,52 +191,44 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
         )}
       </div>
       {!loading && !error && categories.length > 0 && (
-        <section className="oc-directory-categories" aria-label="Browse categories">
-          <button
-            aria-pressed={filters.category === "all"}
-            onClick={() => change("category", "all")}
-          >
-            <Users size={18} weight={filters.category === "all" ? "fill" : "regular"} aria-hidden="true" />All interests <span>{clubs.length}</span>
-          </button>
-          {categories.map((category) => {
-            const CategoryIcon = categoryIcon(category)
-            return (
-            <button
-              key={category}
-              aria-pressed={filters.category.toLowerCase() === category.toLowerCase()}
-              onClick={() => change("category", filters.category.toLowerCase() === category.toLowerCase() ? "all" : category)}
-            >
-              <CategoryIcon size={18} weight={filters.category.toLowerCase() === category.toLowerCase() ? "fill" : "regular"} aria-hidden="true" />{category}
-              <span>{clubs.filter((club) => club.category === category).length}</span>
-            </button>
-          )})}
-        </section>
+        <SegmentedControl
+          label="Browse categories"
+          className="oc-directory-categories"
+          value={filters.category === "all" ? "all" : categories.find((category) => category.toLowerCase() === filters.category.toLowerCase()) ?? filters.category}
+          // Choosing the selected category again returns to all interests, as before.
+          onChange={(value) => change("category", value !== "all" && value.toLowerCase() === filters.category.toLowerCase() ? "all" : value)}
+          options={[
+            { value: "all", label: <><Users size={18} weight={filters.category === "all" ? "fill" : "regular"} aria-hidden="true" />All interests <span>{clubs.length}</span></> },
+            ...categories.map((category) => {
+              const CategoryIcon = categoryIcon(category)
+              return {
+                value: category,
+                label: <><CategoryIcon size={18} weight={filters.category.toLowerCase() === category.toLowerCase() ? "fill" : "regular"} aria-hidden="true" />{category}<span>{clubs.filter((club) => club.category === category).length}</span></>,
+              }
+            }),
+          ]}
+        />
       )}
-      <div className="oc-directory-recruitment" role="group" aria-label="Recruitment availability">{[{ value: "all", label: "All clubs" }, { value: "open", label: "Applications open" }, { value: "closed", label: "Not currently open" }, { value: "closing", label: "Closing soon" }].map(option => <button type="button" key={option.value} aria-pressed={filters.recruitment === option.value} onClick={() => change("recruitment", option.value)}>{option.label}<span>{recruitmentCounts[option.value as keyof typeof recruitmentCounts]}</span></button>)}</div>
-      <p className="my-3 text-xs leading-5 text-muted-foreground">Availability reflects applications on OutClass. Check each club’s website for external recruitment.</p>
       <div className="oc-directory-tools oc-toolbar">
-        <details>
-
+        {/* Filters with fewer than two real options are hidden; acceptance needs at least three clubs reporting a rate. */}
+        {(timeOptions.length >= 2 || acceptanceReported) && <details>
           <summary>
             <SlidersHorizontal size={15} />
-            Refine search{active.length > 0 && <span>({active.length})</span>}
+            Refine search{refined > 0 && <span>({refined})</span>}
           </summary>
           <div className="oc-directory-filters">
-            <label>Recruitment<NativeSelect value={filters.recruitment} onChange={event => change("recruitment", event.target.value)}><option value="all">All recruitment</option><option value="open">Applications open</option><option value="closed">Not currently open</option><option value="closing">Closing in 7 days</option></NativeSelect></label>
-            <label>
+            {timeOptions.length >= 2 && <label>
               Time commitment
               <NativeSelect value={filters.time} onChange={(event) => change("time", event.target.value)}>
                 <option value="all">Any commitment</option>
-                {["1-3", "3-5", "5+"]
-                  .filter((time) => clubs.some((club) => club.timeCommitment === time))
-                  .map((time) => (
+                {timeOptions.map((time) => (
                     <option key={time} value={time}>
                       {time} hours / week
                     </option>
                   ))}
               </NativeSelect>
-            </label>
-            <label>
+            </label>}
+            {acceptanceReported && <label>
               Club-reported acceptance
               <NativeSelect
                 value={filters.acceptance}
@@ -239,24 +241,35 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
                   </option>
                 ))}
               </NativeSelect>
-            </label>
+            </label>}
           </div>
-        </details>
+        </details>}
+        <label className="oc-directory-sort">
+          Availability
+          <NativeSelect aria-describedby="directory-availability-note" value={filters.recruitment} onChange={event => change("recruitment", event.target.value)}>
+            {recruitmentOptions.map(option => <option key={option.value} value={option.value}>{option.label} ({recruitmentCounts[option.value]})</option>)}
+          </NativeSelect>
+        </label>
         <label className="oc-directory-sort">
           Sort
           <NativeSelect value={filters.sort} onChange={(event) => change("sort", event.target.value)}>
             <option value="name">Name A–Z</option>
             <option value="deadline">Next deadline</option>
-            <option value="acceptance">Reported acceptance rate</option>
+            {acceptanceReported && <option value="acceptance">Reported acceptance rate</option>}
           </NativeSelect>
         </label>
       </div>
+      <p id="directory-availability-note" className="oc-explore-directory-note">Availability reflects applications on OutClass. Check each club’s website for external recruitment.</p>
       {active.length > 0 && (
         <div className="oc-directory-active">
           <span>Filters applied</span>
           {active.map(([key, value]) => (
-            <button
+            <Button
               key={key}
+              type="button"
+              variant="outline"
+              size="sm"
+              className="min-h-11"
               aria-label={`Remove ${key} filter`}
               onClick={() =>
                 change(
@@ -267,9 +280,9 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
             >
               {key === "query" ? `“${value}”` : key === "recruitment" ? value === "open" ? "Applications open" : value === "closed" ? "Not currently open" : "Closing in 7 days" : `${key}: ${value}`}
               <X size={12} />
-            </button>
+            </Button>
           ))}
-          <button onClick={() => { updateFilters(emptyDirectoryFilters) }}>Clear all</button>
+          <Button type="button" variant="link" size="sm" className="min-h-11" onClick={() => { updateFilters(emptyDirectoryFilters) }}>Clear all</Button>
         </div>
       )}
       {loading ? (
@@ -294,14 +307,15 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
       ) : (
         <>
           {clubs.some(club => club.source === "preview") && <p className="oc-explore-sample" role="note">Demo directory · fictional profiles for testing only. No real applications are submitted.</p>}
-          {!active.length && filters.sort === "name" && highlights.length > 0 && (
+          {/* Only clubs the directory actually highlights; an alphabetical slice would repeat "All clubs" below. */}
+          {!active.length && filters.sort === "name" && featured.length > 0 && (
             <section className="oc-explore-section" aria-labelledby="curated-title">
               <div className="oc-explore-section-heading"><div><h2 id="curated-title">Featured clubs</h2></div>
-              <p>{clubs.some(club => club.recommended) ? "Clubs highlighted in the directory." : "Clubs from the directory, listed alphabetically."}</p></div>
-              <ul className="oc-explore-grid">{highlights.map(club => card(club, "featured"))}</ul>
+              <p>Clubs highlighted in the directory.</p></div>
+              <ul className="oc-explore-grid">{featured.map(club => card(club, "featured"))}</ul>
             </section>
           )}
-          {!active.length && available.length > 0 && <details className="oc-explore-available"><summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold">Applications open · {available.length} clubs</summary>
+          {!active.length && available.length > 0 && <details className="oc-explore-available group"><summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 py-3 text-sm font-semibold [&::-webkit-details-marker]:hidden"><ChevronDown aria-hidden="true" className="size-4 shrink-0 -rotate-90 transition-transform duration-150 group-open:rotate-0 motion-reduce:transition-none" />Applications open · {available.length} clubs</summary>
             <p>An A–Z selection of clubs accepting applications. Check their profiles for requirements.</p>
             <ul>{available.slice(0, 6).map(club => <li key={club.id}><button data-directory-entry={`available-${club.id}`} onClick={() => open(club, `available-${club.id}`)}><DirectoryLogo club={club} /><span><strong>{club.name}</strong><small>Applications open</small></span><ArrowRight size={18} aria-hidden="true" /></button></li>)}</ul>
           </details>}

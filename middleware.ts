@@ -2,7 +2,8 @@ import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
 import { DEMO_COOKIE } from '@/lib/demo/access'
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/utils/supabase/middleware'
-import { legacyStudentRedirect, STUDENT_ROUTES } from "@/lib/navigation"
+import { legacyStudentRedirect, STUDENT_ROUTES } from "@/lib/student-routes"
+import { LEGAL_PAGES_PUBLIC } from "@/lib/legal-content"
 
 export async function middleware(request: NextRequest) {
   // Protect both the presenter route and its sample assets before static-file shortcuts.
@@ -20,6 +21,11 @@ export async function middleware(request: NextRequest) {
       response.headers.set("Cache-Control", "private, no-store")
       return response
     }
+  }
+  // Privacy and Terms are not public until the owner turns them on: serve the real 404 page (an
+  // unmatched path), not a streamed 200, and never their titles.
+  if (!LEGAL_PAGES_PUBLIC && (path === "/privacy" || path === "/terms")) {
+    return NextResponse.rewrite(new URL("/__not-public", request.url), { headers: { "X-Robots-Tag": "noindex, nofollow" } })
   }
   if (path === "/preview" || path.startsWith("/preview/") || path === "/demo" || path.startsWith("/demo/")) {
     if (!["GET", "HEAD"].includes(request.method) || request.cookies.get(DEMO_COOKIE)?.value !== "1" || request.cookies.has(PLATFORM_VIEW_COOKIE)) {

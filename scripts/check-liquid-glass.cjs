@@ -1,6 +1,11 @@
 /** Screenshot, accessibility and frame-time audit of the real public UI and
  * the existing isolated ProductShell fixture. Never signs in or writes data.
  * Start `node scripts/check-floating-header.cjs --serve` for the shell URL.
+ * OUTCLASS_GLASS_SCOPE=dashboard audits Club home instead: it builds and serves the isolated
+ * fixture itself (tests/fixtures/club-home) for a small and a large club, in every display mode.
+ * OUTCLASS_GLASS_SCOPE=dashboards audits Personal Home and Recruiting Overview (tests/fixtures/dashboards)
+ * the same way, adds keyboard checks of SegmentedControl and Needs you, and, when OUTCLASS_NAV_BASE_URL
+ * serves the app, keyboard checks of Switch, menus and dialogs on /design-system.
  */
 const fs = require('node:fs/promises')
 const path = require('node:path')
@@ -98,7 +103,7 @@ async function audit() {
       await capture(page, `internal-${width}`)
       if (width === 1440 || width === 390) await accessibility(page, `internal-${width}`, '[data-product-shell]')
       if (width < 1024) {
-        await page.getByRole('button', { name: 'More navigation and workspaces', exact: true }).click()
+        await page.getByRole('button', { name: 'More sections', exact: true }).click()
         await page.waitForTimeout(500)
         await capture(page, `internal-${width}-drawer`)
         await page.keyboard.press('Escape')
@@ -165,4 +170,166 @@ async function audit() {
     }
   } finally { await browser.close() }
 }
-audit().catch(error => { console.error(error); process.exitCode = 1 })
+async function auditDashboard() {
+  const { startClubHome, blurredSurfaces } = require('../tests/helpers/club-home-fixture.cjs')
+  const browserName = engine === chromium ? 'chromium' : 'webkit'
+  const dir = path.join(output, `dashboard-${browserName}`)
+  await fs.mkdir(dir, { recursive: true })
+  const fixture = await startClubHome()
+  const browser = await engine.launch({ headless: true, ...(engine === chromium && !require('node:fs').existsSync(chromium.executablePath()) ? (require('node:fs').existsSync('/opt/pw-browsers/chromium') ? { executablePath: '/opt/pw-browsers/chromium' } : { channel: 'chrome' }) : {}) })
+  const report = { phase, browser: browserName, screenshots: [], accessibility: [], blur: {}, performance: {}, errors: [] }
+  try {
+    const context = await browser.newContext()
+    const page = await context.newPage()
+    page.on('pageerror', error => report.errors.push(error.message))
+    const open = async (query, width, height = 900) => {
+      await page.setViewportSize({ width, height })
+      await page.goto(fixture.url(query), { waitUntil: 'networkidle' })
+      await page.locator('.oc-club-home').waitFor()
+      await page.evaluate(() => document.fonts.ready)
+      await page.waitForTimeout(900)
+    }
+    const shot = async name => { await page.screenshot({ path: path.join(dir, `${name}.png`) }); report.screenshots.push(name) }
+    const axe = async name => {
+      const results = await new AxeBuilder({ page }).include('#workspace-content').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()
+      report.accessibility.push({ name, violations: results.violations.map(v => ({ id: v.id, impact: v.impact, nodes: v.nodes.map(n => n.target) })) })
+    }
+    for (const club of ['small', 'large']) {
+      for (const width of [1440, 1100, 1024, 820, 390]) {
+        await open(`fixture=${club}&role=owner`, width, width === 390 ? 844 : 900)
+        await shot(`${club}-${width}`)
+        report.blur[`${club}-${width}`] = (await page.evaluate(blurredSurfaces)).map(b => b.name)
+        if (width === 1440 || width === 390) await axe(`${club}-${width}`)
+      }
+      await open(`fixture=${club}&role=owner`, 1440)
+      await page.evaluate(() => scrollTo(0, 120)); await page.waitForTimeout(300)
+      await shot(`${club}-1440-scrolled`)
+    }
+    for (const role of ['reviewer', 'member']) { await open(`fixture=large&role=${role}`, 1440); await shot(`large-${role}-1440`); await axe(`large-${role}-1440`) }
+    await open('fixture=clear&role=member', 1440); await shot('clear-member-1440'); await axe('clear-member-1440')
+    // Display modes. Reduced transparency has no Playwright option; Chromium takes it through CDP.
+    const modes = [['reduced-motion', { reducedMotion: 'reduce' }], ['higher-contrast', { contrast: 'more' }], ['forced-colors', { forcedColors: 'active' }]]
+    for (const [name, media] of modes) {
+      await page.emulateMedia(media)
+      for (const width of [1440, 390]) { await open('fixture=large&role=owner', width, width === 390 ? 844 : 900); await shot(`large-${width}-${name}`); if (width === 1440) await axe(`large-${name}`) }
+      await page.emulateMedia({ reducedMotion: null, contrast: null, forcedColors: null })
+    }
+    if (engine === chromium) {
+      const cdp = await context.newCDPSession(page)
+      await cdp.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-transparency', value: 'reduce' }] })
+      for (const width of [1440, 390]) { await open('fixture=large&role=owner', width, width === 390 ? 844 : 900); await shot(`large-${width}-reduced-transparency`) }
+      report.reducedTransparencyBlur = (await page.evaluate(blurredSurfaces)).map(b => b.name)
+      await axe('large-reduced-transparency')
+      await cdp.send('Emulation.setEmulatedMedia', { features: [] })
+    }
+    // Scroll frame times with the glass, then with the solid fallback (higher contrast turns every glass token solid).
+    await open('fixture=large&role=owner', 1440)
+    report.performance.glass = await frames(page, '.oc-product-header')
+    await page.emulateMedia({ contrast: 'more' })
+    await open('fixture=large&role=owner', 1440)
+    report.performance.solid = await frames(page, '.oc-product-header')
+    await page.emulateMedia({ contrast: null })
+    await fs.writeFile(path.join(dir, 'report.json'), JSON.stringify(report, null, 2) + '\n')
+    const violations = report.accessibility.filter(v => v.violations.length)
+    console.log(JSON.stringify({ dir, screenshots: report.screenshots.length, blur: Object.fromEntries(Object.entries(report.blur).map(([k, v]) => [k, v.length])), performance: report.performance, violations, errors: report.errors }, null, 2))
+    if (phase === 'final') {
+      assert.deepEqual(report.errors, [], 'No browser exceptions')
+      assert.deepEqual(violations, [], 'Club home passes automated WCAG checks in every mode')
+      for (const [name, list] of Object.entries(report.blur)) assert.ok(list.length <= 6, `${name}: at most six blurred surfaces`)
+      assert.deepEqual(report.reducedTransparencyBlur ?? [], [], 'No blur with reduced transparency')
+    }
+  } finally { await browser.close(); await fixture.close() }
+}
+async function auditDashboards() {
+  const { startDashboards } = require('../tests/helpers/dashboards-fixture.cjs')
+  const { blurredSurfaces } = require('../tests/helpers/club-home-fixture.cjs')
+  const browserName = engine === chromium ? 'chromium' : 'webkit'
+  const dir = path.join(output, `dashboards-${browserName}`)
+  await fs.mkdir(dir, { recursive: true })
+  const fixture = await startDashboards()
+  const fsSync = require('node:fs')
+  const browser = await engine.launch({ headless: true, ...(engine === chromium && !fsSync.existsSync(chromium.executablePath()) && fsSync.existsSync('/opt/pw-browsers/chromium') ? { executablePath: '/opt/pw-browsers/chromium' } : {}) })
+  const report = { phase, browser: browserName, screenshots: [], accessibility: [], blur: {}, keyboard: {}, performance: {}, errors: [] }
+  const pages = [['home-full', 'page=home&scenario=full'], ['home-empty', 'page=home&scenario=empty'], ['home-error', 'page=home&scenario=error'], ['recruiting-large-owner', 'page=recruiting&fixture=large&role=owner'], ['recruiting-small-reviewer', 'page=recruiting&fixture=small&role=reviewer'], ['recruiting-clear-owner', 'page=recruiting&fixture=clear&role=owner']]
+  try {
+    const context = await browser.newContext()
+    const page = await context.newPage()
+    page.on('pageerror', error => report.errors.push(error.message))
+    const open = async (query, width, height = 900) => {
+      await page.setViewportSize({ width, height })
+      await page.goto(fixture.url(query), { waitUntil: 'networkidle' })
+      await page.locator('.oc-dashboard').first().waitFor()
+      await page.evaluate(() => document.fonts.ready)
+      await page.waitForTimeout(900)
+    }
+    const shot = async name => { await page.screenshot({ path: path.join(dir, `${name}.png`), fullPage: true, animations: 'disabled' }); report.screenshots.push(name) }
+    const axe = async name => {
+      const results = await new AxeBuilder({ page }).include('#workspace-content').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()
+      report.accessibility.push({ name, violations: results.violations.map(v => ({ id: v.id, impact: v.impact, nodes: v.nodes.map(n => n.target) })) })
+    }
+    for (const [name, query] of pages) for (const width of [1440, 1024, 390]) {
+      await open(query, width, width === 390 ? 844 : 900)
+      await shot(`${name}-${width}`)
+      report.blur[`${name}-${width}`] = (await page.evaluate(blurredSurfaces)).map(b => b.name)
+      if (width !== 1024) await axe(`${name}-${width}`)
+    }
+    const modes = [['reduced-motion', { reducedMotion: 'reduce' }], ['higher-contrast', { contrast: 'more' }], ['forced-colors', { forcedColors: 'active' }]]
+    for (const [mode, media] of modes) {
+      await page.emulateMedia(media)
+      for (const [name, query] of [pages[0], pages[3]]) { await open(query, 1440); await shot(`${name}-1440-${mode}`); await axe(`${name}-${mode}`) }
+      if (mode === 'reduced-motion') report.reducedMotionAnimations = await page.evaluate(() => [...document.querySelectorAll('.oc-dashboard *')].filter(el => getComputedStyle(el).animationName !== 'none').length)
+      await page.emulateMedia({ reducedMotion: null, contrast: null, forcedColors: null })
+    }
+    if (engine === chromium) {
+      const cdp = await context.newCDPSession(page)
+      await cdp.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-transparency', value: 'reduce' }] })
+      for (const [name, query] of [pages[0], pages[3]]) { await open(query, 1440); await shot(`${name}-1440-reduced-transparency`); await axe(`${name}-reduced-transparency`) }
+      report.reducedTransparencyBlur = (await page.evaluate(blurredSurfaces)).map(b => b.name)
+      await cdp.send('Emulation.setEmulatedMedia', { features: [] })
+    }
+    // Keyboard: the round filter is the SegmentedControl (one tab stop, arrows move, Enter/Space choose).
+    await open(pages[3][1], 1440)
+    const group = page.getByRole('group', { name: 'Filter review queue by round' }), options = group.getByRole('button')
+    await options.first().focus()
+    const tabStops = await options.evaluateAll(els => els.filter(el => el.tabIndex === 0).length)
+    await page.keyboard.press('ArrowRight'); const arrowMoved = await options.nth(1).evaluate(el => el === document.activeElement)
+    await page.keyboard.press('Enter'); const entered = await options.nth(1).getAttribute('aria-pressed')
+    await page.keyboard.press('End'); const endFocused = await options.last().evaluate(el => el === document.activeElement)
+    await page.keyboard.press('Home'); await page.keyboard.press(' '); const spaced = await options.first().getAttribute('aria-pressed')
+    const ring = await options.first().evaluate(el => getComputedStyle(el).outlineStyle)
+    report.keyboard.segmented = { tabStops, arrowMoved, entered, endFocused, spaced, ring }
+    // Needs you: the action is reachable by Tab and shows a ring.
+    await open(pages[0][1], 1440)
+    await page.locator('.oc-needs-action').first().focus()
+    report.keyboard.needs = { ring: await page.locator('.oc-needs-action').first().evaluate(el => getComputedStyle(el).outlineStyle) }
+    // Switch, menus and dialogs on the primitives gallery, when the app is served.
+    const live = await page.goto(`${publicURL}/design-system`, { waitUntil: 'networkidle', timeout: 15000 }).then(r => r?.ok()).catch(() => false)
+    if (live) {
+      const sw = page.locator('[data-slot="switch"]').first()
+      if (!(await sw.count())) report.keyboard.switch = 'no Switch on /design-system'
+      else { await sw.focus(); const before = await sw.getAttribute('data-state'); await page.keyboard.press('Space'); report.keyboard.switch = { toggled: before !== await sw.getAttribute('data-state'), ring: await sw.evaluate(el => getComputedStyle(el).outlineStyle) } }
+      const menu = page.locator('[data-slot="dropdown-menu-trigger"]').first()
+      if (await menu.count()) { await menu.focus(); await page.keyboard.press('Enter'); const opened = await page.getByRole('menu').isVisible(); const inside = await page.evaluate(() => !!document.activeElement?.closest('[role="menu"]')); await page.keyboard.press('Escape'); await page.waitForTimeout(400); report.keyboard.menu = { opened, focusInside: inside, focusReturned: await menu.evaluate(el => el === document.activeElement) } }
+      const dialogTrigger = page.getByRole('button', { name: 'Open dialog', exact: true })
+      if (await dialogTrigger.count()) { await dialogTrigger.focus(); await page.keyboard.press('Enter'); await page.getByRole('dialog').waitFor(); const opened = await page.getByRole('dialog').isVisible(); const trapped = await page.evaluate(() => !!document.activeElement?.closest('[role="dialog"]')); await page.keyboard.press('Escape'); await page.waitForTimeout(400); report.keyboard.dialog = { opened, trapped, focusReturned: await dialogTrigger.evaluate(el => el === document.activeElement) } }
+    } else report.keyboard.designSystem = 'not served (set OUTCLASS_NAV_BASE_URL to a running app)'
+    // Scroll frame times with glass and with the solid fallback.
+    for (const [name, query] of [pages[0], pages[3]]) {
+      await open(query, 1440); report.performance[`${name}-glass`] = await frames(page, '.oc-product-header')
+      await page.emulateMedia({ contrast: 'more' }); await open(query, 1440); report.performance[`${name}-solid`] = await frames(page, '.oc-product-header'); await page.emulateMedia({ contrast: null })
+    }
+    await fs.writeFile(path.join(dir, 'report.json'), JSON.stringify(report, null, 2) + '\n')
+    const violations = report.accessibility.filter(v => v.violations.length)
+    console.log(JSON.stringify({ dir, screenshots: report.screenshots.length, maxBlur: Math.max(...Object.values(report.blur).map(v => v.length)), keyboard: report.keyboard, reducedMotionAnimations: report.reducedMotionAnimations, performance: report.performance, violations, errors: report.errors }, null, 2))
+    if (phase === 'final') {
+      assert.deepEqual(report.errors, [], 'No browser exceptions')
+      assert.deepEqual(violations, [], 'Dashboards pass automated WCAG checks in every mode')
+      for (const [name, list] of Object.entries(report.blur)) assert.ok(list.length <= 6, `${name}: at most six blurred surfaces`)
+      assert.deepEqual(report.reducedTransparencyBlur ?? [], [], 'No blur with reduced transparency')
+      assert.equal(report.reducedMotionAnimations, 0, 'Reduced motion stops dashboard animations')
+      assert.deepEqual({ ...report.keyboard.segmented, ring: undefined }, { tabStops: 1, arrowMoved: true, entered: 'true', endFocused: true, spaced: 'true', ring: undefined }, 'SegmentedControl keyboard contract')
+    }
+  } finally { await browser.close(); await fixture.close() }
+}
+const scope = process.env.OUTCLASS_GLASS_SCOPE
+;(scope === 'dashboard' ? auditDashboard() : scope === 'dashboards' ? auditDashboards() : audit()).catch(error => { console.error(error); process.exitCode = 1 })

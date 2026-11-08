@@ -1,5 +1,6 @@
 "use server";
-import { directoryMarketing } from "@/lib/club-marketing";
+import { directoryMarketing, readMarketing } from "@/lib/club-marketing";
+import { presentPublicMarketing } from "@/lib/public-club-content";
 import { assertClubOperational } from "@/lib/club-suspension";
 import { publicMeetingVisibility } from "@/lib/campus-events";
 
@@ -162,7 +163,10 @@ export async function getPublicClub(
     if (!club) return { club: null };
     const { getPublicCorkboard } = await import("@/actions/campus-events");
     const { events } = await getPublicCorkboard({ clubId: club.id });
-    return { club: { ...present({ ...club, events: [] }), publicEvents: events.map(({ id, title, date, endDate, allDay, location, description }) => ({ id, title, date, endDate, allDay, location, description })) } };
+    // Display-only read (club page, Explore's profile view, /api/workspace "publicClub"): send the
+    // public view of the marketing JSON, never research notes, source links or placeholders.
+    const listed = present({ ...club, events: [] });
+    return { club: { ...listed, marketing: presentPublicMarketing(readMarketing(listed.marketing)), publicEvents: events.map(({ id, title, date, endDate, allDay, location, description }) => ({ id, title, date, endDate, allDay, location, description })) } };
   } catch {
     return {
       club: null,

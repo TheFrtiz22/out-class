@@ -36,6 +36,8 @@ import * as profile from "@/actions/profile"
 import * as directory from "@/actions/club-directory"
 import * as storage from "@/actions/storage"
 import * as search from "@/actions/workspace-search"
+import * as rankedReview from "@/actions/ranked-review"
+import * as interviewFeedbackApi from "@/actions/interview-feedback"
 import { demoGate, loadDemoWorkspace, type DemoWorkspaceModule } from "@/lib/demo/loader"
 export type { WorkspaceSearchResult } from "@/actions/workspace-search"
 // The sole client data boundary: demo operations never invoke a server action,
@@ -258,3 +260,6 @@ export const cancelAvailabilitySchedule = adapt(availabilitySchedules.cancelAvai
 export const getPipelineSettings = adapt(pipelineActions.getPipelineSettings, "getPipelineSettings");
 export const savePipelineSettings = adapt(pipelineActions.savePipelineSettings, "savePipelineSettings");
 export const getPipelineInterviewStatus = adapt(pipelineInterviewActions.getPipelineInterviewStatus, "getPipelineInterviewStatus");
+export const getInterviewFeedback = adapt(interviewFeedbackApi.getInterviewFeedback, "getInterviewFeedback")
+export const getRankedReviewSettings = adapt((...args: Parameters<typeof rankedReview.getRankedReviewSettings>) => readWorkspace<Awaited<ReturnType<typeof rankedReview.getRankedReviewSettings>>>("rankedReviewSettings", args), "getRankedReviewSettings")
+export const saveRankedReviewBands = adapt(rankedReview.saveRankedReviewBands, "saveRankedReviewBands")

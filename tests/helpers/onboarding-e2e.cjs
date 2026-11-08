@@ -45,6 +45,16 @@ async function confirmationMessage(config,email,subject=/Verify your UVA email/)
  throw Error('Local confirmation email was not captured');
 }
 // A loading boundary may flush HTTP 200 before Next emits its redirect meta tag.
+/** Where a 307 or a Next streamed redirect (200 + __next-page-redirect meta refresh) points. Pages under a loading boundary stream their redirects. */
+async function redirectDestination(response,appUrl){
+ if(response.status===307)return new URL(response.headers.get('location'),appUrl);
+ assert.equal(response.status,200,'Expected an HTTP or streamed temporary redirect');
+ const body=await response.text(),tags=body.match(/<meta\b[^>]*>/gi)||[];
+ const attributes=tag=>Object.fromEntries([...tag.matchAll(/([\w-]+)\s*=\s*["']([^"']*)["']/g)].map(([,key,value])=>[key.toLowerCase(),value]));
+ const redirect=tags.map(attributes).find(a=>a.id==='__next-page-redirect'&&a['http-equiv']?.toLowerCase()==='refresh');
+ const match=/^1;url=(.+)$/.exec(redirect?.content||'');assert.ok(match,'Missing redirect destination');
+ return new URL(match[1].replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;/g,"'"),appUrl);
+}
 async function assertProfileCompletionRedirect(response,appUrl,returnPath,protectedContent=[]){
  const body=await response.text();
  for(const content of protectedContent)assert.ok(!body.includes(content),`Protected content rendered before profile completion: ${content}`);
@@ -111,4 +121,4 @@ class Actor {
  }
  async profile(name,year){const [firstName,...last]=name.split(' ');return this.action('actions/profile.ts','upsertStudentProfile',[{firstName,lastName:last.join(' '),computingId:'browser-spoof',major:'Economics',gradYear:year,experiences:[]}]);}
 }
-module.exports={Actor,totp,readConfig,readStagingImportConfig,confirmationMessage,randomUUID,assertProfileCompletionRedirect,actionSourceMatches};
+module.exports={Actor,totp,readConfig,readStagingImportConfig,confirmationMessage,randomUUID,assertProfileCompletionRedirect,redirectDestination,actionSourceMatches};

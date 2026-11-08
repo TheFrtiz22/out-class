@@ -1,5 +1,4 @@
 "use client"
-import { AvailabilityButton } from "@/components/availability/availability-button"
 import { profilePhotoSource } from "@/lib/profile-photo"
 import { scholarNames } from "@/lib/scholar-status"
 
@@ -20,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { ResumeImportDialog } from "@/components/resume-import-dialog"
 import { EditStudentProfileDialog } from "@/components/edit-student-profile-dialog"
+import { Panel } from "@/components/ui/panel"
 
 export type ProfileMembership = StudentMembership
 
@@ -59,7 +59,7 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
   }, [user?.id, loading, retry])
   if (loading || pending)
     return (
-      <div role="status" aria-busy="true" className="max-w-4xl space-y-8">
+      <div role="status" aria-busy="true" className="max-w-[var(--oc-content-width)] space-y-8">
         <Skeleton className="h-28 w-full" />
         <Skeleton className="h-52 w-full" />
         <span className="sr-only">Loading profile</span>
@@ -84,40 +84,23 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
             ? "Complete student onboarding to create your recruiting profile."
             : "Sign in to see your saved education, experience, and résumé. This preview contains no sample personal details."}
         </p>
-        {user && <AvailabilityButton />}
       </div>
     )
   const checklist = profileChecklist(profile)
   const completed = checklist.filter((item) => item.complete).length
-  function edit(section: ProfileSection, label?: string) {
-    return (
-      <EditStudentProfileDialog
-        profile={profile!}
-        section={section}
-        onSaved={(value) => {
-          setProfile(value)
-          setSaved(true)
-        }}
-        trigger={
-          <Button
-            variant={section === "links" ? "outline" : "ghost"}
-            size="sm"
-            aria-label={label ?? `Edit ${section === "identity" ? "name and photo" : section === "experience" ? "structured experience" : section}`}
-            className="shrink-0 text-muted-foreground"
-          >
-            <Pencil className="size-3.5" />
-            <span>{label ?? (section === "experience" ? "Edit structured experience" : "Edit")}</span>
-          </Button>
-        }
-      />
-    )
-  }
+  // One entry point: "Edit profile" opens every section; "Import from résumé" lives inside it.
+  const editProfile = <EditStudentProfileDialog
+    profile={profile!}
+    sections={["identity", "education", "experience", "links"]}
+    extra={sync => <ResumeImportDialog key={profile!.userId} profile={profile!} label="Import from résumé" onSaved={value => { setProfile(value); setSaved(true); sync(value) }} />}
+    onSaved={(value) => { setProfile(value); setSaved(true) }}
+    trigger={<Button size="sm"><Pencil className="size-3.5" aria-hidden="true" />Edit profile</Button>}
+  />
   function section(title: string, key: ProfileSection, children: ReactNode, description?: string) {
     return (
-      <section aria-label={title} className="oc-content-panel">
+      <Panel as="section" aria-label={title}>
         <div className="mb-5 flex items-center justify-between gap-4">
           <h3 className="oc-card-heading ">{title}</h3>
-          {edit(key)}
         </div>
         {description && (
           <p className="mb-5 max-w-xl text-sm leading-relaxed text-muted-foreground">
@@ -125,11 +108,11 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
           </p>
         )}
         {children}
-      </section>
+      </Panel>
     )
   }
   return (
-    <article className={`oc-student-profile mx-auto max-w-5xl text-foreground${settings ? " oc-settings-profile" : ""}`}>
+    <article className={`oc-student-profile max-w-[var(--oc-content-width)] text-foreground${settings ? " oc-settings-profile" : ""}`}>
       <p role="status" className="sr-only">
         {saved ? "Profile changes saved." : ""}
       </p>
@@ -152,11 +135,9 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
             </span>
             Class of {profile.gradYear}
           </p>
-          {edit("identity")}
           <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
-            <AvailabilityButton />
+            {editProfile}
             <div role="group" aria-label="Links and résumé" className="flex flex-wrap items-center gap-2">
-              {edit("links", "Edit links & résumé")}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" aria-label="Preview links and résumé" disabled={!safeProfileUrl(profile.linkedinUrl) && !resolveResumeUrl(profile.resumeUrl)}>
@@ -176,7 +157,6 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
                   </DropdownMenuItem>}
                 </DropdownMenuContent>
               </DropdownMenu>
-              <ResumeImportDialog key={profile.userId} profile={profile} onSaved={value => { setProfile(value); setSaved(true) }} />
             </div>
           </div>
         </div>
@@ -218,7 +198,7 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
             </div>,
           )}
         </div>
-        <aside className="oc-content-panel">
+        <Panel as="aside">
           <h3 className="oc-card-heading ">Profile details</h3>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
             {completed} of {checklist.length} profile details added. These are suggestions, not
@@ -253,8 +233,7 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
               </li>
             ))}
           </ul>
-          <div className="mt-4">{edit("experience")}</div>
-        </aside>
+        </Panel>
       </div>
     </article>
   )

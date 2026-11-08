@@ -6,7 +6,7 @@ import { ApplicationJourneyCard } from "@/components/applications/application-jo
 import { RecruitingOverview } from "@/components/recruiting-overview"
 import { ManagerOverview } from "@/components/manager-overview"
 import { SlotCard } from "@/components/views/scheduler/slot-card"
-import { PageHeader } from "@/components/product/page-header"
+import { PageHeader } from "@/components/ui/page-header"
 import { SegmentedControl } from "@/components/product/segmented-control"
 import { demoMonogram } from "@/lib/demo/assets"
 import { profileDraft } from "@/lib/club-marketing"
@@ -16,23 +16,26 @@ import { currentStudent } from "@/lib/data"
 import "@/components/clubs/club-discovery.css"
 import "@/components/clubs/explore-directory.css"
 import "@/components/applications/application-tracker.css"
+import { DEFAULT_CLUB_COLOR, SAMPLE_CLUB_COLORS } from "@/lib/club-colors"
 
 const clubs: DirectoryClub[] = [
-  { id: "design-studio", name: "Campus Design Studio", logoText: "DS", logoUrl: demoMonogram("Design Studio", "#315b51"), color: "#315b51", category: "Creative", pitch: "Build thoughtful things with people who see the world a little differently.", tags: [], acceptanceRate: null, aumValue: null, timeCommitment: null, source: "preview" },
-  { id: "campus-ventures", name: "Campus Ventures", logoText: "CV", logoUrl: demoMonogram("Campus Ventures", "#514961"), color: "#514961", category: "Entrepreneurship", pitch: "Turn a curious question into your next big idea. Start small, build together.", tags: [], acceptanceRate: null, aumValue: null, timeCommitment: null, source: "preview" },
-  { id: "community-consulting", name: "Community Consulting", logoText: "CC", logoUrl: demoMonogram("Community Consulting", "#142d45"), color: "#142d45", category: "Service", pitch: "Real problems. Local partners. Work that makes a difference on Grounds and beyond.", tags: [], acceptanceRate: null, aumValue: null, timeCommitment: null, source: "preview" },
+  { id: "design-studio", name: "Campus Design Studio", logoText: "DS", logoUrl: demoMonogram("Design Studio", SAMPLE_CLUB_COLORS.design), color: SAMPLE_CLUB_COLORS.design, category: "Creative", pitch: "Build thoughtful things with people who see the world a little differently.", tags: [], acceptanceRate: null, aumValue: null, timeCommitment: null, source: "preview" },
+  { id: "campus-ventures", name: "Campus Ventures", logoText: "CV", logoUrl: demoMonogram("Campus Ventures", SAMPLE_CLUB_COLORS.ventures), color: SAMPLE_CLUB_COLORS.ventures, category: "Entrepreneurship", pitch: "Turn a curious question into your next big idea. Start small, build together.", tags: [], acceptanceRate: null, aumValue: null, timeCommitment: null, source: "preview" },
+  { id: "community-consulting", name: "Community Consulting", logoText: "CC", logoUrl: demoMonogram("Community Consulting", SAMPLE_CLUB_COLORS.consulting), color: DEFAULT_CLUB_COLOR, category: "Service", pitch: "Real problems. Local partners. Work that makes a difference on Grounds and beyond.", tags: [], acceptanceRate: null, aumValue: null, timeCommitment: null, source: "preview" },
 ]
 const overview: ComponentProps<typeof RecruitingOverview>["data"] = {
   operations: { offers: [], team: null, asOf: new Date("2026-10-01T12:00:00Z"), intake: { applicationOpen: true, applicationDeadline: new Date("2026-10-05T21:00:00Z") }, cycles: [{ id: "reference-cycle", name: "Fall recruiting", applicants: 36 }], rounds: [{ id: "reference-round", name: "Written review", type: "CUSTOM", anonymous: true, needsBooking: 0, bookingPublishedAt: null, bookingPaused: false, count: 24, eligible: 12, pending: 8 }], queue: [{ id: "reference-applicant", roundId: "reference-round", round: "Written review", anonymous: true, label: "Applicant 29AC80" }], meetings: [], announcements: [], tasks: { assigned: 5, completed: 3, overdue: 0, awaitingReview: 3 }, reviewWork: [], bookings: [], votes: [], scheduled: [] },
   club: { id: "design-studio", name: "Campus Design Studio", tagline: "Build something together." },
   membership: { id: "reference-member", isOwner: true, permissions: [], interviewOffices: [], status: "ACTIVE" },
-  meeting: null, work: [], awaitingReview: 3, upcomingInterviews: 2, votingSessions: [{ id: "reference-session", state: "OPEN" }],
+  meeting: null, work: [], awaitingReview: 3, upcomingInterviews: 2, votingSessions: [{ id: "reference-session", state: "OPEN" }], members: { active: 28, pendingInvitations: 3 },
   recruitment: [{ status: "SUBMITTED", count: 24 }, { status: "IN_REVIEW", count: 12 }, { status: "INTERVIEWING", count: 8 }, { status: "ACCEPTED", count: 5 }, { status: "WAITLISTED", count: 3 }],
 }
 const managerOverview: ComponentProps<typeof ManagerOverview>["data"] = {
   ...overview,
   meeting: { id: "reference-meeting", title: "Fall project kickoff", date: new Date("2026-10-06T21:00:00Z"), location: "Newcomb Hall", audience: "MEMBERS" },
   work: [{ id: "reference-assignment", task: { id: "reference-task", title: "Prepare the interview guide", dueAt: new Date("2026-10-05T21:00:00Z"), kind: "TASK" } }],
+  // A submission waiting for feedback shows the review card that opens the task drawer.
+  operations: { ...overview.operations, reviewWork: [{ id: "reference-submission", submittedAt: new Date("2026-09-30T18:00:00Z"), task: { id: "reference-research", title: "Sector research memo", dueAt: new Date("2026-09-29T21:00:00Z") } }] },
 }
 const options = ["Explore", "Club profile", "Applications", "Club overview", "Recruitment", "Scheduling"]
 

@@ -2,9 +2,14 @@ import Link from "next/link";
 import { requireAuth } from "@/utils/auth";
 import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
-import { redirect, notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import { prisma } from "@/utils/prisma";
 import { ClaimForm } from "@/components/claim-form";
+import { PageHeader } from "@/components/ui/page-header";
+import { SignInCard } from "@/components/landing/sign-in-card";
+import { clubLinkPreview } from "@/lib/public-link-preview";
+
+export const metadata = { title: "Claim a club", robots: { index: false, follow: false } }
 export default async function Page({
   params,
 }: {
@@ -15,8 +20,17 @@ export default async function Page({
   const {
     data: { user: session },
   } = await client.auth.getUser();
-  if (!session)
-    redirect(`/?next=${encodeURIComponent(`/club-claims/${clubId}`)}`);
+  if (!session) {
+    const next = `/club-claims/${encodeURIComponent(clubId)}`;
+    const club = await clubLinkPreview(clubId);
+    return club ? (
+      <SignInCard eyebrow="Club leaders" title={<>Claim {club.name} on OutClass</>} next={next}>
+        <p>Sign in with your UVA account to request management of this club. An OutClass administrator reviews every request before any access is granted.</p>
+      </SignInCard>
+    ) : (
+      <SignInCard invalid title="This club link isn’t valid" next={next}><p>The club may have moved or is no longer listed.</p></SignInCard>
+    );
+  }
   const { user } = await requireAuth();
   const club = await prisma.club.findUnique({
     where: { id: clubId },
@@ -28,11 +42,11 @@ export default async function Page({
     orderBy: { createdAt: "desc" },
   });
   return (
-    <div className="max-w-2xl space-y-6">
-      <Link className="underline" href="/settings/organizations">
-        Organizations
+    <div className="max-w-[var(--oc-reading-width)] space-y-6">
+      <Link className="underline" href="/clubs">
+        My Clubs
       </Link>
-      <h1 className="oc-page-title ">Claim {club.name}</h1>
+      <PageHeader title={<>Claim {club.name}</>} />
       <p>
         Keep your student identity. Once an OutClass administrator approves your
         request, this club’s workspace will become available to you.

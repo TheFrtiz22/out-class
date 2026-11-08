@@ -32,7 +32,7 @@ export function EmailLoginForm({ email, password, error, loading, microsoftLoadi
         <Input id="login-password" type="password" autoComplete="current-password" required disabled={busy} value={password} onChange={event => onPasswordChange(event.target.value)} aria-invalid={!!error} aria-describedby={error ? "auth-error" : undefined} />
       </div>
       <Button type="submit" disabled={busy || !password} loading={loading} className="oc-login-submit">Sign in<ArrowRight className="size-4" /></Button>
-      <button type="button" disabled={busy || resendSeconds > 0} onClick={onRequestCode} className="oc-login-text-link oc-login-code-link">{resendSeconds > 0 ? `Use an email code in ${resendSeconds}s` : "Use an email code instead"}</button>
+      <Button type="button" variant="link" disabled={busy || resendSeconds > 0} onClick={onRequestCode} className="oc-login-code-link h-auto min-h-11 px-0 text-sm">{resendSeconds > 0 ? `Use an email code in ${resendSeconds}s` : "Use an email code instead"}</Button>
     </form>
   )
 }

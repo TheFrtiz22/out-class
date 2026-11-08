@@ -19,7 +19,7 @@ export function eventBoardEmpty(filters: EventBoardFilterState): EventBoardEmpty
   }
   return {
     title: "No upcoming campus events yet.",
-    description: "Clubs haven’t published upcoming events. Follow clubs to hear when they do.",
+    description: "Clubs haven’t published upcoming events. Browse clubs to see what they do.",
     action: { kind: "explore-clubs", label: "Explore clubs" },
   }
 }

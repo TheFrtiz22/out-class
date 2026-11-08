@@ -7,13 +7,13 @@ import { PublicInformationPage } from "@/components/landing/public-information-p
 import { publicPageMetadata, publicPageStructuredData } from "@/lib/seo"
 
 const description = "OutClass is building infrastructure for college club recruitment, beginning at the University of Virginia. Learn who it is for and why it exists."
-export const metadata = publicPageMetadata("OutClass | About", description, "/about")
+export const metadata = publicPageMetadata("About", description, "/about")
 const structuredData = publicPageStructuredData("About OutClass", description, "/about", "AboutPage")
 
 export default function AboutPage() {
   return (
     <PublicInformationPage className="oc-editorial-page oc-about-page" eyebrow="About OutClass" title="Club recruitment, without the scattered forms and spreadsheets." introduction="OutClass is being built by UVA students to make it easier to discover organizations, apply, schedule interviews, and keep track of what happens next."
-      heroActions={<div className="oc-public-actions"><a className="oc-public-text-link" href="#why-outclass">Why we’re building it <ArrowRight size={16} aria-hidden="true" /></a></div>}
+      heroActions={<div className="oc-public-actions"><Button asChild size="lg"><Link prefetch={false} href="/signup">Create your profile <ArrowRight size={16} aria-hidden="true" /></Link></Button><a className="oc-public-text-link" href="#why-outclass">Why we’re building it</a></div>}
       heroAside={<figure className="oc-about-hero-photo"><div className="oc-about-hero-image"><Image src="/images/campus/autumn-lawn-1600.webp" alt="Autumn trees framing the University of Virginia Lawn" width={1600} height={1614} sizes="(max-width: 800px) 100vw, 45vw" priority /></div><figcaption><span>Beginning on Grounds</span><span>Charlottesville, Virginia</span></figcaption></figure>}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} />
       <SectionReveal id="why-outclass" className="oc-public-section oc-editorial-split oc-about-problem" aria-labelledby="why-title">
@@ -37,7 +37,7 @@ export default function AboutPage() {
       <aside className="oc-about-independence"><p>OutClass is operated by OutClassPlatforms LLC, a Virginia limited liability company. It is independent: it is not an official University of Virginia service and is not owned, sponsored, or endorsed by the university.</p></aside>
       <SectionReveal className="oc-public-section oc-about-next" aria-labelledby="next-campus-title">
         <div><p className="oc-public-kicker">04 / Beyond UVA</p><h2 id="next-campus-title" data-motion="text">Bring OutClass to your campus.</h2></div>
-        <div data-motion="body"><p>If your campus has the same scattered recruitment process, tell us which university and organizations could use OutClass.</p><div className="oc-public-actions"><Button asChild><Link href="/request-school" prefetch={false}>Request Your School <ArrowRight size={16} aria-hidden="true" /></Link></Button><Link className="oc-public-text-link" prefetch={false} href="/#about">Explore how it works</Link></div><p className="oc-public-note">Requests express interest. They do not approve a university or enable account access.</p></div>
+        <div data-motion="body"><p>If your campus has the same scattered recruitment process, tell us which university and organizations could use OutClass.</p><div className="oc-public-actions"><Link className="oc-public-text-link" href="/request-school" prefetch={false}>Request your school <ArrowRight size={16} aria-hidden="true" /></Link></div><p className="oc-public-note">Requests express interest. They do not approve a university or enable account access.</p></div>
       </SectionReveal>
     </PublicInformationPage>
   )

@@ -6,12 +6,12 @@ import { studentPath } from "@/lib/navigation"
 export default function Page() {
   const router = useRouter();
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="max-w-[var(--oc-content-width)]">
       <Link
-        href="/corkboard"
+        href="/explore"
         className="mb-6 inline-flex min-h-11 items-center text-sm underline"
       >
-        Campus Corkboard
+        Explore clubs
       </Link>
       <SavedClubsView
         onNavigate={(view) => router.push(studentPath(view))}

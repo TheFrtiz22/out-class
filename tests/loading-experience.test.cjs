@@ -158,8 +158,12 @@ test("route loader uses the branded mark with a stable image box and accessible 
   assert.equal(label.props.children, "Loading OutClass…")
   assert.equal(label.props.className, "oc-loading-caption")
   assert.equal(OutClassLoadingScreen({ variant: "navy" }).props["data-variant"], "navy")
-  const Loading = load("app/loading.tsx", { "@/components/outclass-loading-screen": { OutClassLoadingScreen } }).default
-  assert.equal(Loading().type, OutClassLoadingScreen)
+  // The cover belongs to authenticated workspace routes only; public routes have no route-level cover.
+  for (const route of ["app/(product)/home", "app/(product)/applications", "app/club/[clubId]/workspace", "app/platform"]) {
+    const Loading = load(`${route}/loading.tsx`, { "@/components/outclass-loading-screen": { OutClassLoadingScreen } }).default
+    assert.equal(Loading().type, OutClassLoadingScreen, route)
+  }
+  assert.equal(fs.existsSync("app/loading.tsx"), false, "a root loading.tsx would cover every public page and turn 404s into 200s")
 })
 
 test("root providers keep demo data, workspace adapters and the Supabase client out of every page's bundle", () => {

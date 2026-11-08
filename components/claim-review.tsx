@@ -4,6 +4,7 @@ import { listClubClaims } from "@/actions/club-claims";
 import { changePlatformResource } from "@/actions/platform-admin";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { NativeSelect } from "@/components/ui/native-select"
 export function ClaimReview({
   initial,
 }: {
@@ -31,8 +32,8 @@ export function ClaimReview({
     <div className="space-y-6">
       <label>
         Status{" "}
-        <select
-          className="ml-3 rounded border p-2"
+        <NativeSelect
+          className="ml-3"
           value={status}
           disabled={busy}
           onChange={(e) => void load(e.target.value, 0)}
@@ -40,7 +41,7 @@ export function ClaimReview({
           {["PENDING", "APPROVED", "REJECTED"].map((s) => (
             <option key={s}>{s}</option>
           ))}
-        </select>
+        </NativeSelect>
       </label>
       {error && <p role="alert">{error}</p>}
       {!claims.length && <p>No {status.toLowerCase()} claims on this page.</p>}

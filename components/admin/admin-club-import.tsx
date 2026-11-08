@@ -3,7 +3,7 @@ import { useState } from "react"
 import { getAdminClub, getAdminClubs, saveAdminClub } from "@/actions/admin-clubs"
 import { uploadClubAsset } from "@/actions/club-assets"
 import { clubProfileImportSchema, importImageNames, runClubProfileImport, type ClubProfileImport } from "@/lib/club-profile-import"
-import { MarketingProfile, MarketingSections } from "@/components/clubs/marketing-profile"
+import { AboutSection, MarketingProfile, MarketingSections } from "@/components/clubs/marketing-profile"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -56,7 +56,7 @@ export function AdminClubImport({ schoolId, onComplete }: { schoolId: string; on
     <label className="block space-y-2 text-sm">Profile JSON<Input type="file" accept="application/json,.json" disabled={busy} onChange={e => { void review(e.target.files?.[0]); e.target.value = '' }} /></label>
     <label className="block space-y-2 text-sm">Profile images<Input type="file" multiple accept="image/png,image/jpeg,image/webp" disabled={busy} onChange={e => setImages(Array.from(e.target.files || []))} /></label>
     <label className="block space-y-2 text-sm">Reason for import<Input value={reason} maxLength={1000} disabled={busy} onChange={e => setReason(e.target.value)} /></label>
-    {plan.length > 0 && <><ul className="space-y-2 text-sm">{plan.map(({ row, current }) => <li key={row.slug}><details><summary className="cursor-pointer py-2"><strong>{current ? 'Update' : 'Create'}:</strong> {row.profile.name} · /{row.slug} · {importImageNames(row).length} images · {current ? "recruitment settings preserved" : "applications initially closed"}</summary><div className="space-y-4 py-4"><MarketingProfile profile={row.profile} /><p className="whitespace-pre-line text-sm leading-7">{row.profile.description}</p><MarketingSections profile={row.profile} /></div></details></li>)}</ul>{missing.length > 0 && <p className="text-sm text-destructive">Missing images: {missing.join(', ')}</p>}<Button disabled={busy || !!missing.length || reason.trim().length < 10} onClick={() => void run()}>Publish {plan.length} reviewed profiles</Button></>}
+    {plan.length > 0 && <><ul className="space-y-2 text-sm">{plan.map(({ row, current }) => <li key={row.slug}><details><summary className="cursor-pointer py-2"><strong>{current ? 'Update' : 'Create'}:</strong> {row.profile.name} · /{row.slug} · {importImageNames(row).length} images · {current ? "recruitment settings preserved" : "applications initially closed"}</summary><div className="space-y-4 py-4"><MarketingProfile profile={row.profile} /><AboutSection profile={row.profile} /><MarketingSections profile={row.profile} /></div></details></li>)}</ul>{missing.length > 0 && <p className="text-sm text-destructive">Missing images: {missing.join(', ')}</p>}<Button disabled={busy || !!missing.length || reason.trim().length < 10} onClick={() => void run()}>Publish {plan.length} reviewed profiles</Button></>}
     {message && <p role="status" className="text-sm">{message}</p>}{error && <p role="alert" className="text-sm text-destructive">{error}</p>}
   </div></details>
 }

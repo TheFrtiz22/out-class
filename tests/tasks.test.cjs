@@ -461,7 +461,7 @@ test("private uploads validate ownership, file size/type/name, storage metadata,
     );
     await assert.rejects(h.api.uploadTaskFile({ ...input, mime: "text/html" }));
     h.privateBucket(false);
-    await assert.rejects(h.api.uploadTaskFile(input), /Private task storage/);
+    await assert.rejects(h.api.uploadTaskFile(input), /File uploads for tasks/);
     h.privateBucket(true);
     const upload = await h.api.uploadTaskFile(input);
     assert.equal(upload.id, fileId);

@@ -1,8 +1,8 @@
 import { CorkboardView } from "@/components/views/corkboard-view";
-export const metadata = { title: "Corkboard · Campus events" };
+export const metadata = { title: "Events" };
 export default function Page() {
   return (
-    <div className="mx-auto max-w-7xl">
+    <div className="max-w-[var(--oc-content-width)]">
       <CorkboardView />
     </div>
   );
