@@ -1,6 +1,6 @@
 import { PasswordRecovery } from "@/components/password-recovery";
 export const metadata = {
-  title: "Forgot password · OutClass",
+  title: "Forgot password",
   robots: { index: false, follow: false },
   referrer: "no-referrer",
 };

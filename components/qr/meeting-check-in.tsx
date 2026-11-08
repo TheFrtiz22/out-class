@@ -68,15 +68,13 @@ export function MeetingCheckIn() {
       ) : !user ? (
         <>
           <p>
-            Sign in with your UVA account, then scan the current code again.
-            Codes expire quickly to protect attendance.
+            This records your attendance at a club meeting. Sign in with your
+            UVA account, then scan the current code again. Codes expire quickly
+            to protect attendance.
           </p>
-          <a
-            className="underline"
-            href={`/?next=${encodeURIComponent(`/check-in?meetingId=${id}`)}`}
-          >
-            Sign in
-          </a>
+          <Button asChild className="w-fit">
+            <a href={`/login?next=${encodeURIComponent(`/check-in${id ? `?meetingId=${encodeURIComponent(id)}` : ""}`)}`}>Sign in</a>
+          </Button>
         </>
       ) : !id || !token ? (
         <p role="alert">
@@ -124,7 +122,7 @@ export function MeetingCheckIn() {
       )}
       {error && <p role="alert">{error}</p>}
       <a
-        className="block text-sm underline"
+        className="inline-flex min-h-11 items-center text-sm underline"
         href={id ? `/meetings/${id}` : "/meetings"}
       >
         Meeting agenda and resources

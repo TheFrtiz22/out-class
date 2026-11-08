@@ -15,6 +15,10 @@ const marks: Record<string, string> = {
   "j.p. morgan": "/employers/seed-extra-25.png",
   "goldman sachs": "/employers/seed-extra-26.png"
 };
+/** Owner decision 2026-11-07: employer logos are hidden for now; firm names render as text.
+ * Turn this on to show the marks beside the names again. */
+export const SHOW_EMPLOYER_MARKS = false
+
 export function employerMark(name: string): string | undefined {
   return marks[name.trim().toLowerCase()];
 }

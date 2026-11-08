@@ -58,7 +58,12 @@ test("student workspace paths: old URLs redirect, back/forward and reload stay o
     await go('[data-tour="nav-applications"]', "/applications")
     await go('[data-tour="nav-clubs"]', "/clubs")
     await go('[data-tour="nav-calendar"]', "/calendar")
-    const active = async id => assert.equal(await visible(`[data-tour="nav-${id}"]`).getAttribute("aria-current"), "page", id)
+    // The URL changes first and the shell re-renders on the next frames; wait for the active tab
+    // instead of reading it once (a tab that never becomes active still fails after the timeout).
+    const active = async id => {
+      await page.waitForFunction(id => [...document.querySelectorAll(`[data-tour="nav-${id}"]`)].some(el => el.getClientRects().length && el.getAttribute("aria-current") === "page"), id, { timeout: 10000 }).catch(() => {})
+      assert.equal(await visible(`[data-tour="nav-${id}"]`).getAttribute("aria-current"), "page", id)
+    }
     await active("calendar")
     await page.goBack(); await page.waitForURL(url => url.pathname === "/clubs"); await active("clubs")
     await page.goBack(); await page.waitForURL(url => url.pathname === "/applications"); await active("applications")
