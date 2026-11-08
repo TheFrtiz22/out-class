@@ -207,13 +207,13 @@ fieldset { min-inline-size: 0; }
   }
   [data-slot="tabs-list"][data-variant="segmented"]:not(:has([data-state="active"]))::before { opacity: 0; }
   [data-slot="tabs-list"][data-variant="segmented"] [data-slot="tabs-trigger"][data-state="active"] { background: transparent; box-shadow: none; }
-  [data-slot="tabs-list"][data-variant="segmented"]:not(:has(> :nth-child(2))) { --segments: 1; }
+  [data-slot="tabs-list"][data-variant="segmented"]:not(:has(> [data-slot="tabs-trigger"] ~ [data-slot="tabs-trigger"])) { --segments: 1; }
   /* Three or more tabs: a scrolling track where the active tab fills itself, so labels never truncate on phones. */
-  [data-slot="tabs-list"][data-variant="segmented"]:has(> :nth-child(3)) { display: flex; justify-content: flex-start; }
-  [data-slot="tabs-list"][data-variant="segmented"]:has(> :nth-child(3))::before { display: none; }
-  [data-slot="tabs-list"][data-variant="segmented"]:has(> :nth-child(3)) [data-slot="tabs-trigger"] { flex: 1 0 auto; min-width: max-content; }
-  [data-slot="tabs-list"][data-variant="segmented"]:has(> :nth-child(3)) [data-slot="tabs-trigger"][data-state="active"] { background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); }
-  [data-slot="tabs-list"][data-variant="segmented"]:has(> :nth-child(2)[data-state="active"]) { --segment: 1; }
+  [data-slot="tabs-list"][data-variant="segmented"]:has(> [data-slot="tabs-trigger"] ~ [data-slot="tabs-trigger"] ~ [data-slot="tabs-trigger"]) { display: flex; justify-content: flex-start; }
+  [data-slot="tabs-list"][data-variant="segmented"]:has(> [data-slot="tabs-trigger"] ~ [data-slot="tabs-trigger"] ~ [data-slot="tabs-trigger"])::before { display: none; }
+  [data-slot="tabs-list"][data-variant="segmented"]:has(> [data-slot="tabs-trigger"] ~ [data-slot="tabs-trigger"] ~ [data-slot="tabs-trigger"]) [data-slot="tabs-trigger"] { flex: 1 0 auto; min-width: max-content; }
+  [data-slot="tabs-list"][data-variant="segmented"]:has(> [data-slot="tabs-trigger"] ~ [data-slot="tabs-trigger"] ~ [data-slot="tabs-trigger"]) [data-slot="tabs-trigger"][data-state="active"] { background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); }
+  [data-slot="tabs-list"][data-variant="segmented"]:has(> [data-slot="tabs-trigger"] ~ [data-slot="tabs-trigger"][data-state="active"]) { --segment: 1; }
 }
 @supports selector(:has(*)) and (transition-timing-function: linear(0, 1)) {
   [data-slot="tabs-list"][data-variant="segmented"]::before { transition-timing-function: var(--oc-floating-spring, var(--oc-glass-ease)), ease; }
@@ -228,7 +228,23 @@ fieldset { min-inline-size: 0; }
   background: var(--oc-surface-glass); box-shadow: var(--oc-surface-glass-depth);
 }
 
+/* Measured indicator (components/ui/tabs.tsx): follows the active trigger's box at any tab count and
+   slides when the value changes. Until measured, the :has() indicator or the active trigger's own fill shows. */
+.oc-tabs-indicator { display: none; }
+[data-slot="tabs-list"][data-variant="segmented"][data-measured="true"] .oc-tabs-indicator {
+  display: block; position: absolute; z-index: -1; top: 4px; bottom: 4px; left: 0; width: var(--indicator-width, 0px);
+  border: 1px solid var(--oc-glass-pill-navy-edge); border-radius: 999px; background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth);
+  transform: translateX(var(--indicator-x, 0px)); pointer-events: none;
+  transition: transform 420ms var(--oc-glass-ease), width 420ms var(--oc-glass-ease);
+}
+@supports (transition-timing-function: linear(0, 1)) { [data-slot="tabs-list"][data-variant="segmented"][data-measured="true"] .oc-tabs-indicator { transition-timing-function: var(--oc-floating-spring, var(--oc-glass-ease)), var(--oc-floating-spring, var(--oc-glass-ease)); } }
+[data-slot="tabs-list"][data-variant="segmented"][data-measured="true"]::before { display: none; }
+[data-slot="tabs-list"][data-variant="segmented"][data-measured="true"] [data-slot="tabs-trigger"][data-state="active"],
+[data-slot="tabs-list"][data-variant="segmented"][data-measured="true"]:has(> [data-slot="tabs-trigger"] ~ [data-slot="tabs-trigger"] ~ [data-slot="tabs-trigger"]) [data-slot="tabs-trigger"][data-state="active"] { background: transparent; box-shadow: none; }
+@media (forced-colors: active) { [data-slot="tabs-list"][data-variant="segmented"][data-measured="true"] .oc-tabs-indicator { background: Highlight; forced-color-adjust: none; } }
+
 @media (prefers-reduced-motion: reduce) {
+  .oc-tabs-indicator { transition: none !important; }
   /* No animation, but the indicator keeps the transform that positions it on the selected tab. */
   [data-button], [data-slot="tabs-list"][data-variant="segmented"]::before, [data-slot="tabs-list"][data-variant="segmented"] [data-slot="tabs-trigger"] { transition: none !important; }
   [data-button] { transform: none !important; }

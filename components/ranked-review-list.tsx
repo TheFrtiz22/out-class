@@ -13,6 +13,8 @@ import { formatAverage, scoredEvaluationsLabel } from "@/lib/interview-review-su
 import { profilePhotoSource } from "@/lib/profile-photo"
 import { applicationStatusLabels } from "@/lib/application-status"
 import { RANKED_REVIEW_NO_CYCLE, assignBands, bandsFromBoundaries, rankApplicants, rankedBandLabels, rankedBandOrder, rankedCycleKey, rankingSignature, tieCrossesBoundary, validateBands, type RankedBand, type RankedBands } from "@/lib/ranked-review"
+import { VotingTargetSummary, type ScopedTargetSummary } from "@/components/voting-target-summary"
+import { bandCounts } from "@/lib/voting-target-summary"
 import "./ranked-review-list.css"
 
 type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
@@ -22,6 +24,8 @@ export type RankedReviewApi = {
   loadRound: (roundId: string) => Promise<Pipeline>
   loadSettings: (roundId: string) => Promise<Settings>
   saveBands: (input: Parameters<typeof saveRankedReviewBands>[0]) => Promise<{ revision: number; bands: RankedBands | null }>
+  /** Entire-round target and decision counts (server-authorized, counts only). Optional: omitted, decisions are not shown. */
+  loadRoundSummary?: (input: { roundId: string; cycleId?: string }) => Promise<ScopedTargetSummary>
 }
 type Round = { id: string; name: string; anonymousReview: boolean }
 type Snapshot = { roundId: string; data: Pipeline; settings: Settings; signature: string }
@@ -69,6 +73,9 @@ export function RankedReviewList({ clubId, rounds, initialRoundId, api, onOpen, 
   const [chosenCycle, setChosenCycle] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const ticket = useRef(0)
+  const [roundSummary, setRoundSummary] = useState<{ key: string; value: ScopedTargetSummary | null; failed: boolean } | null>(null)
+  const [summaryTick, setSummaryTick] = useState(0)
+  const summaryTicket = useRef(0)
   const listHeading = useRef<HTMLHeadingElement>(null)
 
   const load = useCallback(async (target: string) => {
@@ -88,6 +95,7 @@ export function RankedReviewList({ clubId, rounds, initialRoundId, api, onOpen, 
   const check = useCallback(async () => {
     const current = shown
     if (!current) return
+    setSummaryTick(v => v + 1)
     const mine = ticket.current
     try {
       const [data, settings] = await Promise.all([api.loadRound(current.roundId), api.loadSettings(current.roundId)])
@@ -125,6 +133,19 @@ export function RankedReviewList({ clubId, rounds, initialRoundId, api, onOpen, 
   const ties = tieCrossesBoundary(ranked, setting.bands)
   const tiedRanks = new Set(ranked.filter((r, i) => ranked.some((o, j) => j !== i && o.rank === r.rank)).map(r => r.rank))
   const canManage = !!shown?.settings.canManage
+  const bandSummary = shown ? bandCounts({ banded, notScored: notScored.length, hidden: hidden.length, bandsSet: !!setting.bands }) : null
+  // Decision counts follow the same round and cycle as the list; applicants without a cycle have no voting room.
+  const summaryCycle = round?.anonymousReview ? undefined : cycleKey === RANKED_REVIEW_NO_CYCLE ? null : cycleKey
+  const summaryKey = shown && api.loadRoundSummary && summaryCycle !== null ? `${shown.roundId}:${summaryCycle ?? "all"}` : ""
+  useEffect(() => {
+    if (!summaryKey || !shown || !api.loadRoundSummary) return
+    const mine = ++summaryTicket.current
+    api.loadRoundSummary({ roundId: shown.roundId, ...(summaryCycle ? { cycleId: summaryCycle } : {}) })
+      .then(value => { if (mine === summaryTicket.current) setRoundSummary({ key: summaryKey, value, failed: false }) })
+      .catch(() => { if (mine === summaryTicket.current) setRoundSummary({ key: summaryKey, value: null, failed: true }) })
+  }, [summaryKey, summaryTick]) // eslint-disable-line react-hooks/exhaustive-deps
+  const currentSummary = roundSummary?.key === summaryKey ? roundSummary : null
+  const summaryStatus = !api.loadRoundSummary ? undefined : summaryCycle === null ? "Voting decisions are recorded per recruitment cycle." : currentSummary?.failed ? "Round decisions unavailable." : !currentSummary ? "Loading…" : undefined
   const selectedMissing = !!selectedId && !!shown && !rows.some(r => r.id === selectedId)
 
   function select(id: string) { setSelectedId(id); onOpen(id) }
@@ -167,6 +188,7 @@ export function RankedReviewList({ clubId, rounds, initialRoundId, api, onOpen, 
       : <>
         <BandSettings key={`${shown.roundId}:${cycleKey}:${setting.revision}`} clubId={clubId} roundId={shown.roundId} cycleKey={cycleKey} bands={setting.bands} revision={setting.revision} canManage={canManage} api={api}
           onSaved={(bands, revision) => setShown(s => s && s.roundId === shown.roundId ? { ...s, settings: { ...s.settings, scopes: { ...s.settings.scopes, [cycleKey]: { bands, revision } } }, signature: signatureOf(s.data, { ...s.settings, scopes: { ...s.settings.scopes, [cycleKey]: { bands, revision } } }, s.roundId) } : s)} />
+        <VotingTargetSummary label="Round target and counts" target={currentSummary?.value ?? null} targetFallback={summaryKey && !currentSummary ? "Loading…" : "Not available"} bands={bandSummary} round={currentSummary?.value ?? null} roundStatus={summaryStatus} />
         {ties.map(t => <p key={`${t.band}:${t.rank}`} role="note" className="oc-ranked-tie text-xs" data-band={t.band}>{t.message}</p>)}
         {selectedMissing && <p role="status" className="text-xs text-muted-foreground">The selected applicant is no longer in this round.</p>}
         <h3 ref={listHeading} tabIndex={-1} id="ranked-review-heading" className="text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring">Ranked applicants <span className="font-normal text-muted-foreground">· {ranked.length} scored</span></h3>

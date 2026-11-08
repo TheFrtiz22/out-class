@@ -14,6 +14,7 @@ import { hasPermission } from "@/lib/permissions";
 import { organizationCapabilities } from "@/lib/organization-authorization";
 import * as demoRankedReview from "./ranked-review";
 import * as demoInterviewFeedback from "./interview-feedback";
+import { roundTargetSummary as demoRoundTargetSummary } from "./voting-room";
 import { genderVisibility } from "@/lib/recruitment-profile";
 import type * as tutorials from "@/actions/tutorials"
 import { tutorialExperience, tutorialInput } from "@/lib/tutorials"
@@ -383,7 +384,7 @@ export const getClubWorkspaceOverview: Demo<"getClubWorkspaceOverview"> = (clubI
   operations:demoDashboardSummary(clubId,membership.id),
   upcomingInterviews:null,votingSessions:null,
   // Read-only counts from the demo store; demo has no pending invitations.
-  members:organizationCapabilities(membership).canManageMembers||organizationCapabilities(membership).canChangeRoles?{active:s.memberships.filter(m=>m.clubId===clubId&&m.status==="ACTIVE").length,pendingInvitations:0}:null,
+  members:organizationCapabilities(membership).canManageMembers||organizationCapabilities(membership).canChangeRoles?{active:s.memberships.filter(m=>m.clubId===clubId&&m.status==="ACTIVE").length,pendingInvitations:0,recent:0}:null,
   club:{id:club.id,name:club.name,tagline:""},membership:{id:membership.id,isOwner:membership.isOwner,permissions:membership.permissions,interviewOffices:membership.interviewOffices,status:membership.status},
   meeting:s.meetings.filter(m=>m.clubId===clubId&&m.date>=now).sort((a,b)=>+a.date-+b.date).map(m=>({id:m.id,title:m.title,date:m.date,location:m.location,audience:m.audience}))[0]??null,
   work:s.tasks.filter(t=>t.clubId===clubId&&!["DRAFT","DONE"].includes(t.status)).flatMap(t=>t.assignments.filter(a=>a.memberId===membership.id&&(!a.submittedAt||a.revisionRequestedAt)&&!a.reviewedAt).map(a=>({id:a.id,task:{id:t.id,title:t.title,dueAt:t.dueAt,kind:t.kind}}))).sort((a,b)=>(a.task.dueAt?+a.task.dueAt:Infinity)-(b.task.dueAt?+b.task.dueAt:Infinity)).slice(0,5),
@@ -558,3 +559,5 @@ export const getPipelineInterviewStatus: Demo<"getPipelineInterviewStatus"> = de
 export const getInterviewFeedback: Demo<"getInterviewFeedback"> = input => demoInterviewFeedback.getInterviewFeedback(input)
 export const getRankedReviewSettings: Demo<"getRankedReviewSettings"> = demoRankedReview.getRankedReviewSettings
 export const saveRankedReviewBands: Demo<"saveRankedReviewBands"> = demoRankedReview.saveRankedReviewBands
+
+export const getRoundTargetSummary: Demo<"getRoundTargetSummary"> = input => demoRoundTargetSummary(input)

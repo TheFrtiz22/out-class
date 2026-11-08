@@ -87,7 +87,7 @@ test('password attempts and committed MFA failures are limited, and logout revok
 }));
 test('direct Admin routes and server actions use the elevated guard; impersonation cannot bypass it',async()=>configured(async()=>{
  const h=harness();h.jar.set('outclass-platform-view','a'.repeat(64));await assert.rejects(h.guard.requirePlatformAdmin(),/Exit impersonation/);await assert.rejects(h.guard.requirePlatformAdmin({allowViewAs:true}),/Fresh Admin/);
- for(const file of ['app/platform/page.tsx','app/platform/[section]/page.tsx','app/platform/events/page.tsx','app/platform/claims/page.tsx','app/platform/view-as/page.tsx'])assert.match(fs.readFileSync(file,'utf8'),/requirePlatformAdmin|getAdminOverview|platformViewSession/);
+ for(const file of ['app/(workspace)/platform/page.tsx','app/(workspace)/platform/[section]/page.tsx','app/(workspace)/platform/events/page.tsx','app/(workspace)/platform/claims/page.tsx','app/(workspace)/platform/view-as/page.tsx'])assert.match(fs.readFileSync(file,'utf8'),/requirePlatformAdmin|getAdminOverview|platformViewSession/);
  for(const file of ['actions/platform-admin.ts','actions/admin-workspace.ts','actions/campus-events.ts'])assert.match(fs.readFileSync(file,'utf8'),/requirePlatformAdmin/);
 }));
 

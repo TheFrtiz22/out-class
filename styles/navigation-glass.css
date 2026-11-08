@@ -64,6 +64,7 @@
   --oc-surface-glass-track: color-mix(in srgb, var(--school-primary) 8%, transparent);
   --oc-surface-ambient: none;
   --oc-surface-ambient-neutral: none;
+  --oc-surface-ambient-recruiting: none;
 }
 @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   :root {
@@ -87,6 +88,8 @@
     --oc-surface-glass-navy-filter: var(--oc-glass-navy-filter);
     --oc-surface-ambient: radial-gradient(56% 90% at 6% 0%, color-mix(in srgb, var(--primary) 8%, transparent), transparent 72%), radial-gradient(46% 80% at 96% 6%, color-mix(in srgb, var(--oc-club-accent, var(--brand-orange)) 8%, transparent), transparent 70%);
     --oc-surface-ambient-neutral: radial-gradient(56% 90% at 6% 0%, color-mix(in srgb, var(--primary) 9%, transparent), transparent 72%), radial-gradient(46% 80% at 96% 6%, color-mix(in srgb, var(--primary) 5%, transparent), transparent 70%);
+    /* Recruiting Overview: interview purple and navy, so it reads differently from Club home at a glance. */
+    --oc-surface-ambient-recruiting: radial-gradient(56% 90% at 6% 0%, color-mix(in srgb, var(--interview) 30%, transparent), transparent 72%), radial-gradient(46% 80% at 96% 6%, color-mix(in srgb, var(--primary) 18%, transparent), transparent 70%);
   }
 }
 
@@ -168,6 +171,7 @@
     --oc-surface-glass-track: var(--border);
     --oc-surface-ambient: none;
     --oc-surface-ambient-neutral: none;
+    --oc-surface-ambient-recruiting: none;
   }
 }
 @media (prefers-reduced-motion: reduce) {
