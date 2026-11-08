@@ -141,3 +141,10 @@ not run: browser/E2E suites, next build, test:migrations (no linux chromium/nati
 2026-11-09 VOTING-WITHOUT-VOTE-1 (Windows, PGlite): new voting-without-vote-flag-migration 1/1 | test:migrations exit 0, 75 migrations | voting-decide-without-vote 7/7, voting-decide-without-vote-sql 1/1, voting-room-migration 1/1, all other non-browser tests/voting-* and tests/live-* pass one file at a time; native suites skipped (no OUTCLASS_SECURITY_TEST_DATABASE_URL) | tsc scoped to changed files 0 errors (full tsc exceeded the 2-minute command limit) | eslint changed files 0 | ui-controls OK
 not run: *-browser suites (each >2 min), next build, full pnpm run test
 ```
+
+```
+2026-11-08 #166/3e779e55 app gates: test 1887/1822/0 fail/65 skipped (env-gated) migrations 71 ok (RLS 85; no schema change) lint ok (0 errors, 23 baseline warnings) types ok | integration skips env-gated (4 new stack-only suites run in CI matrix `shell`) | agent-hook tests n/a
+deploy dpl_GAbgrcXkPkMfwCRmmJv4QWH6U7yt READY yes | new runtime error classes 0 | advisor delta +0/-0 (security 0/52/43, performance 68/18/1) | rollback target dpl_4rQtzY7FKXNfXuDgh297fBjU4fz9 | verdict WATCH
+```
+- PR CI on head cf733625: 16/16 green. Earlier heads failed `Local Auth, settings and navigation`: legacy URLs redirected after a loading.tsx had streamed the persistent shell (second document load), and navigation-phase10 waited for removed overview text. Fixed in f17657a5 (club workspace), 957cdd7c (test), cf733625 (every redirecting workspace page now sits under no loader; guarded by tests/loading-experience.test.cjs). One `authenticated-accessibility` run failed on Supabase startup (infra) and passed on the next head.
+- WATCH reasons: ~9 minutes of Sunday-evening production traffic for a shell/layout/navigation change; invitation-delivery and notification-delivery crons log nothing on success. Re-check runtime errors after weekday traffic.
