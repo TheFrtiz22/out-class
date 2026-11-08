@@ -182,6 +182,7 @@ test('sign-in intent overrides a saved demo perspective or existing session and 
       '@/contexts/auth-context': { useAuth: () => ({ user: null, selectClub() {} }) },
       '@/contexts/demo-context': { useDemoMode: () => ({ isDemoEnabled: true, state: { perspective: { role: 'leader', clubId: 'sample' } } }) },
       '@/lib/demo/store': { demoDashboard: () => ({}) },
+      '@/lib/demo/loader': { loadedDemoStore: () => ({ demoDashboard: () => ({}) }) },
       '@/lib/student-navigation': { canonicalStudentParams: () => null },
     })
     const tree = AppShell({ initialView: 'landing', initialAuthRole: role, initialSession: { id: 'existing' }, hasProfile: true })

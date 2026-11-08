@@ -1,3 +1,4 @@
+import { setDemoActive } from "./activation"
 import { clubInterviewHref, interviewEntryHref } from "@/lib/interview-entry"
 import { demoCommunicationRows, demoPublishLetter } from "./communications"
 import { inboxNotification } from "@/lib/communications-client"
@@ -174,10 +175,12 @@ export const demoStore = {
     state = demoSnapshotSchema.safeParse(saved).success ? saved! : seed ? structuredClone(seed) : createDemoSeed()
     ensurePresentation(state!)
     enabled = true
+    setDemoActive(true)
     demoStore.save()
   },
   stop: () => {
     enabled = false
+    setDemoActive(false)
     state = null
     storedRaw = null
     listeners.forEach((fn) => fn())
