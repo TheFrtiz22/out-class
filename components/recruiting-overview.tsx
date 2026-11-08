@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
 import { handleClubLink } from "@/lib/workspace-navigation"
+import { canLeaveWorkspace } from "@/lib/product-navigation"
 import { getDashboardReviewQueue, type getClubWorkspaceOverview } from "@/lib/workspace-api"
 import { hasPermission } from "@/lib/permissions"
 import { memberDate } from "@/components/member-overview"
@@ -49,8 +50,8 @@ export function RecruitingHero({ clubId, clubName, membership, data }: { clubId:
       action={<DashboardActions className="oc-recruiting-actions">
         {active && op?.intake && <Badge variant={applicationsClosed(op) ? "outline" : "success"} className="oc-command-status" data-state={applicationsClosed(op) ? "closed" : "open"}>Applications {applicationsClosed(op) ? "closed" : "open"}</Badge>}
         {/* Cycle actions appear once the overview shows an active cycle; with none, the page offers setup instead. */}
-        {active && hrefs.applicants && <Button variant="outline" size="lg" asChild><Link href={hrefs.applicants} onClick={event => handleClubLink(event, hrefs.applicants!)}><Users2 aria-hidden="true" />Open applicants</Link></Button>}
-        {active && hasPermission(membership, "interviews.manage") && hrefs.interviews && <Button size="lg" data-tone="interview" asChild><Link href={`${hrefs.interviews}&interviewTab=schedule`}><CalendarPlus aria-hidden="true" />{TERMS.scheduleInterviews}</Link></Button>}
+        {active && hrefs.applicants && <Button variant="outline" size="lg" asChild><Link href={hrefs.applicants} onClick={event => { if (!canLeaveWorkspace()) { event.preventDefault(); return } handleClubLink(event, hrefs.applicants!) }}><Users2 aria-hidden="true" />Open applicants</Link></Button>}
+        {active && hasPermission(membership, "interviews.manage") && hrefs.interviews && <Button size="lg" data-tone="interview" asChild><Link href={`${hrefs.interviews}&interviewTab=schedule`} onClick={event => { if (!canLeaveWorkspace()) { event.preventDefault(); return } handleClubLink(event, `${hrefs.interviews}&interviewTab=schedule`) }}><CalendarPlus aria-hidden="true" />{TERMS.scheduleInterviews}</Link></Button>}
       </DashboardActions>} />
   </DashboardHero>
 }

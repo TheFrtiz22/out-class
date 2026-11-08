@@ -1,6 +1,8 @@
 "use client"
 
-import { createContext, useContext, useEffect, useRef, useState } from "react"
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from "react"
+
+const useBrowserLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect
 import type { PersonalSection } from "@/lib/product-navigation"
 import type { ViewId } from "@/lib/views"
 
@@ -46,7 +48,8 @@ export function useShellBindings(bindings: ShellBindings, enabled = true) {
   const registry = useContext(WorkspaceShellContext)
   const [owner] = useState(() => Symbol("shell-bindings"))
   const latest = useRef(bindings)
-  latest.current = bindings
+  // Committed callbacks only: a discarded concurrent render never reaches the shell.
+  useBrowserLayoutEffect(() => { latest.current = bindings })
   const { title, active, bare } = bindings
   const has = [!!bindings.onNavigate, !!bindings.onSelect, !!bindings.onReviewTool, !!bindings.onModeSelect].join()
   useEffect(() => {

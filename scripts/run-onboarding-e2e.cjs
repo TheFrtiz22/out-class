@@ -123,7 +123,8 @@ async function ready(url,headers={}){
  }
  if(shellSuite){
   logged(process.execPath,['scripts/navigation-audit.cjs','--seed'],'shell-seed.log',env);
-  const shellTests=['tests/workspace-shell-e2e.test.cjs','tests/header-gap-e2e.test.cjs','tests/overview-view-authz-e2e.test.cjs'].filter(file=>fs.existsSync(path.join(repo,file)));
+  const shellTests=['tests/workspace-shell-e2e.test.cjs','tests/header-gap-e2e.test.cjs','tests/overview-view-authz-e2e.test.cjs','tests/dashboards-split-e2e.test.cjs'];
+  for(const file of shellTests)if(!fs.existsSync(path.join(repo,file)))throw Error(`Missing shell suite ${file}`);
   const shellResult=spawnSync(process.execPath,['--test','--test-concurrency=1',...shellTests],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
   if(shellResult.status!==0)throw Error('Workspace shell integration failed; inspect the disposable test log.');
  }

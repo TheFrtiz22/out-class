@@ -36,11 +36,13 @@ function useSegmentIndicator(list: React.RefObject<HTMLDivElement | null>, enabl
       el.setAttribute('data-measured', 'true')
     }
     place()
-    const mutations = new MutationObserver(place)
-    mutations.observe(el, { subtree: true, attributes: true, attributeFilter: ['data-state'], childList: true })
     const resize = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(place)
+    const observeTriggers = () => el.querySelectorAll(':scope > [data-slot="tabs-trigger"]').forEach(trigger => resize?.observe(trigger))
+    // Triggers added later (counts, late data) are observed too, so their size changes re-place the indicator.
+    const mutations = new MutationObserver(() => { observeTriggers(); place() })
+    mutations.observe(el, { subtree: true, attributes: true, attributeFilter: ['data-state'], childList: true })
     resize?.observe(el)
-    el.querySelectorAll(':scope > [data-slot="tabs-trigger"]').forEach(trigger => resize?.observe(trigger))
+    observeTriggers()
     return () => { mutations.disconnect(); resize?.disconnect() }
   }, [list, enabled])
 }

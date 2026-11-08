@@ -196,8 +196,11 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
   /** The persistent workspace shell owns this store; a student page hands it the data its server render loaded. */
   const seedServerData = useCallback((data: any) => {
     if (demo.isDemoEnabled || !data) return
-    setTrackedApps(serverTrackedApps(data))
-    setEvents(studentCalendarEvents(data))
+    // A later payload (router.refresh) updates what the server knows without dropping client-only entries:
+    // server applications win per club, and events not in the payload (optimistic, bookings) are kept.
+    const apps = serverTrackedApps(data), events = studentCalendarEvents(data)
+    setTrackedApps(previous => [...previous.filter(app => !apps.some(server => server.clubId === app.clubId)), ...apps])
+    setEvents(previous => [...previous.filter(event => !events.some(server => server.id === event.id)), ...events])
   }, [demo.isDemoEnabled])
   const [focusApplicationClubId, setFocusApplicationClubId] = useState<string | null>(null)
 

@@ -1,6 +1,8 @@
 "use client"
 import Link from "next/link"
 import { useState } from "react"
+import { handleClubLink } from "@/lib/workspace-navigation"
+import { canLeaveWorkspace } from "@/lib/product-navigation"
 import { ArrowRight, UserRound } from "@/components/icons"
 import { SegmentedControl } from "@/components/ui/segmented-control"
 import { Button } from "@/components/ui/button"
@@ -146,7 +148,7 @@ export function MembersCard({ data, hrefs, index }: { data: Overview; hrefs: Rai
 
 /** One slim strip from Club home to the Recruiting Overview while a cycle is active. */
 export function RecruitingStripLink({ strip }: { strip: RecruitingStrip }) {
-  return <Link href={strip.href} className="oc-recruiting-strip" data-tone="interview">
+  return <Link href={strip.href} className="oc-recruiting-strip" data-tone="interview" onClick={event => { if (!canLeaveWorkspace()) { event.preventDefault(); return } handleClubLink(event, strip.href) }}>
     <span className="oc-recruiting-strip-dot" aria-hidden="true" />
     <span>{strip.open ? "Recruiting is open" : "Recruiting is underway"} · {strip.applicants} {strip.applicants === 1 ? "applicant" : "applicants"}{strip.attention > 0 ? ` · ${strip.attention} need${strip.attention === 1 ? "s" : ""} attention` : ""}</span>
     <span className="oc-recruiting-strip-go">Recruiting overview <ArrowRight aria-hidden="true" size={14} /></span>

@@ -34,9 +34,10 @@ test('a club the account cannot run never gets a leader rail', () => {
   // Suspended club: personal rail (the page explains the suspension); demo ignores suspension as before.
   assert.equal(route('/club/club-c/workspace').kind, 'personal')
   assert.equal(route('/club/club-c/workspace', '', [suspended], true).manager, true)
-  // No membership: the member rail with no club pages beyond the URL's; the page itself refuses access.
+  // No membership: the personal rail (no club pages at all); the page itself refuses access.
   const stranger = route('/club/other/workspace', '', [leader])
-  assert.deepEqual([stranger.manager, stranger.membership], [false, undefined])
+  assert.deepEqual([stranger.kind, stranger.manager, stranger.membership], ['personal', false, undefined])
+  assert.ok(!stranger.sections.some(section => section.id === 'member-club' || section.id === 'recruiting'))
   assert.equal(route('/club-access/club-b').kind, 'personal', 'club access shows the leader rail only for a workspace member')
   assert.equal(route('/club-access/club-a').manager, true)
 })

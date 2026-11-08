@@ -49,7 +49,7 @@ export function workspaceRoute(pathname: string, params: URLSearchParams, member
     const clubId = decodeURIComponent(workspace[1]!)
     const membership = memberships.find(member => member.clubId === clubId)
     const suspended = !demo && !!membership?.club.suspendedAt
-    if (!suspended) {
+    if (membership && !suspended) {
       const manager = !!membership && hasWorkspace(membership)
       const section = params.get("section") ?? "overview"
       const recruiting = section === "recruitment" || section === "announcements" && params.get("mode") === "recruiting"

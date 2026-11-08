@@ -70,7 +70,7 @@ export function WorkspaceSelector({ access, current, clubId, onSwitch, clubSwitc
           // Modified clicks keep the browser's own behaviour (new tab, new window).
           if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return
           event.preventDefault()
-          if (current === option.id && !target) return
+          if (current === option.id) { setTarget(null); return }
           setTarget(option.id)
           if (!leaveMayPrompt()) { go(option); return }
           // Let the slide start painting before the leave prompt blocks the page; a cancel slides it back.
