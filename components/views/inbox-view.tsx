@@ -258,7 +258,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                           setSelectedId(item.id)
                           markNotificationRead(item.id)
                         }}
-                        className="min-w-0 flex-1 space-y-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                        className="min-w-0 flex-1 space-y-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                       >
                         <div className="flex items-center gap-2">
                           <ClubLogo

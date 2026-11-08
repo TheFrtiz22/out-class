@@ -19,7 +19,7 @@
 .oc-public-text-link { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; font-size: 14px; text-decoration: underline !important; text-underline-offset: 5px; text-decoration-color: var(--brand-orange) !important; }
 .oc-public-navy { background: var(--primary); color: var(--oc-public-paper); }
 .oc-public-navy .oc-public-kicker { color: #d5dce4; }
-.oc-public-navy :is(a, button):focus-visible { outline-color: var(--oc-public-paper); }
+.oc-public-navy :is(a, button):focus-visible { outline-color: var(--ring); }
 .oc-public-navy [data-slot="button"] { background: var(--oc-public-paper); color: var(--primary); }
 .oc-public-navy [data-slot="button"]:hover { background: white; }
 .oc-public-note { font-size: 12px; color: var(--muted-foreground); line-height: 1.7; }

@@ -538,5 +538,5 @@ html.oc-native-navigation { scroll-behavior: smooth; }
   html.oc-native-navigation { scroll-behavior: auto; }
   .oc-demo-fill, .oc-discover-scroll { transition: none; }
 }
-.oc-sample-monogram { display: grid; place-items: center; width: 48px; height: 48px; flex-shrink: 0; border-radius: 8px; background: #142d4e; color: white; font-size: var(--oc-text-small); }
+.oc-sample-monogram { display: grid; place-items: center; width: 48px; height: 48px; flex-shrink: 0; border-radius: 8px; background: var(--school-primary); color: white; font-size: var(--oc-text-small); }
 .oc-demo-control:disabled { cursor: default; }

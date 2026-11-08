@@ -15,10 +15,10 @@
 .oc-perspective-switcher button { min-height: 48px; padding: 10px 12px; border-radius: var(--oc-radius-sm); font-size: var(--oc-text-small); font-weight: 500; color: #fff7ec; white-space: nowrap; }
 .oc-perspective-switcher button[aria-pressed="true"] { color: var(--primary); font-weight: 600; }
 .oc-perspective-switcher[data-compact="false"] button { white-space: normal; }
-.oc-landing .oc-perspective-switcher button:focus-visible { outline-color: var(--ring); outline-offset: -4px; }
+.oc-landing .oc-perspective-switcher button:focus-visible { outline-color: var(--ring); outline-offset: -4px; box-shadow: inset 0 0 0 6px var(--focus-halo) }
 .oc-perspective-copy > p:last-child { margin-top: 20px; color: var(--muted-foreground); }
 /* A close product crop uses the app's navy, paper, borders and native controls. */
-.oc-story-frame { --card: #fffefa; --background: #f6f5f1; --foreground: #1c2d40; --muted-foreground: #52606d; --primary: #142d45; --border: #cbd2cf; --accent: #e7ebe7; --brand-orange: #e8793e; --brand-ink: #9f3d12; --input: #8793a0; color: var(--foreground); }
+.oc-story-frame { --card: #fffefa; --background: #f6f5f1; --foreground: var(--school-primary); --muted-foreground: #52606d; --primary: var(--school-primary); --border: #cbd2cf; --accent: #e7ebe7; --brand-orange: var(--school-accent); --brand-ink: var(--school-accent-text); --input: #8793a0; color: var(--foreground); }
 .oc-landing .oc-story-toolbar { gap: 16px; padding: 4px 22px; background: #f6f5f1; min-height: 52px; }
 .oc-demo-wordmark { width: 96px; height: auto; flex-shrink: 0; }
 .oc-story-toolbar strong { font-size: 12px; font-weight: 500; }
@@ -39,7 +39,7 @@
 .oc-demo-club p, .oc-demo-person p { margin-top: 5px; color: var(--muted-foreground); font-size: 14px; line-height: 1.5; }
 .oc-demo-focus [data-slot="badge"], .oc-demo-heading [data-slot="badge"] { font-size: 12px; padding: 5px 10px; }
 .oc-demo-outcome { display: flex; align-items: center; gap: 20px; min-height: 72px; border-top: 1px solid var(--border); padding-top: 16px; margin-top: auto; }
-.oc-landing .oc-demo-button { display: inline-flex; justify-content: center; align-items: center; gap: 12px; flex-shrink: 0; margin-left: auto; padding: 12px 20px; min-width: 220px; min-height: 52px; max-width: 100%; font-size: 15px; line-height: 1.45; font-weight: 500; border: 1px solid var(--primary); border-radius: 8px; background: var(--primary); color: #fffefa; box-shadow: 0 2px 3px #142d4510; }
+.oc-landing .oc-demo-button { display: inline-flex; justify-content: center; align-items: center; gap: 12px; flex-shrink: 0; margin-left: auto; padding: 12px 20px; min-width: 220px; min-height: 52px; max-width: 100%; font-size: 15px; line-height: 1.45; font-weight: 500; border: 1px solid var(--primary); border-radius: 8px; background: var(--primary); color: #fffefa; box-shadow: 0 2px 3px color-mix(in srgb, var(--school-primary) 6%, transparent); }
 .oc-demo-button[data-complete="true"] { background: #e9efe8; border-color: #afc1b0; color: #31513d; }
 .oc-demo-button > svg { flex-shrink: 0; }
 .oc-demo-result { display: flex; align-items: center; gap: 10px; color: #31513d; font-size: 14px; line-height: 1.55; min-height: 44px; max-width: 38ch; }

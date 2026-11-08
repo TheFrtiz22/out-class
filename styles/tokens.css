@@ -1,13 +1,26 @@
 /* OutClass foundations: the single palette for every surface. Semantic variables are the source of truth; Tailwind
    and the existing shadcn APIs consume them through app/globals.css. */
 :root {
+  /* School theme layer. UVA is the default school. Values from brand.virginia.edu/design-assets/colors
+     and its accessible type-colour combinations (verified 2026-11-08). Another school overrides only these
+     four under [data-school="<id>"] (template at the end of this file); everything else reads them through
+     the semantic tokens below. lib/qr keeps its own constants. */
+  --school-primary: #232d4b;     /* UVA Blue */
+  --school-accent: #e57200;      /* UVA Orange: accents, large text (24px, or 18.66px bold) and UI parts only (3.1:1 on white) */
+  --school-accent-text: #a04d00; /* OutClass-derived UVA-hue orange for small text: >= 4.5:1 on every light surface, tinted ones included */
+  --school-ring: #c86400;        /* the one focus ring: >= 3:1 on canvas, cards, soft panels, UVA Blue and the projector theme */
+  --school-accent-on-dark: #f3a274; /* accent text on navy and dark surfaces (footer, hero, projector): >= 4.5:1 on UVA Blue */
+  /* Two-colour focus indicator (WCAG C40): where the ring sits on or inside a filled element, a cream halo
+     separates it from the fill (ring vs halo 3.94:1; halo vs the darkest navy pill 9:1+). Owner decision 2026-11-08. */
+  --focus-halo: #fffefa;
+
   /* Editorial composition: display scale is independent of operational controls. */
   --oc-editorial-display: clamp(2.75rem, 5.1vw, 4.5rem);
   --oc-editorial-feature: clamp(1.75rem, 3.1vw, 2.75rem);
   --oc-editorial-section: clamp(1.4rem, 2.1vw, 1.875rem);
   --oc-editorial-gap: clamp(1.5rem, 3vw, 2.75rem);
   --oc-editorial-radius: 1.5rem;
-  --oc-editorial-shadow: 0 12px 32px rgb(20 45 69 / 6%);
+  --oc-editorial-shadow: 0 12px 32px color-mix(in srgb, var(--school-primary) 6%, transparent);
   --oc-editorial-rule: var(--border);
 
   /* Content geometry is shared across public forms, product and focused modes.
@@ -18,7 +31,7 @@
      form fields and every fallback; --oc-surface-glass* resolve to them when glass is unavailable. */
   --oc-content-solid: #fffefa;
   --oc-content-edge-solid: #e0e5e3;
-  --oc-content-shadow-solid: 0 1px 2px rgb(20 45 69 / 4%), 0 10px 24px -20px rgb(20 45 69 / 18%);
+  --oc-content-shadow-solid: 0 1px 2px color-mix(in srgb, var(--school-primary) 4%, transparent), 0 10px 24px -20px color-mix(in srgb, var(--school-primary) 18%, transparent);
   --oc-content-surface: var(--oc-surface-glass);
   --oc-content-soft: #f1f4f3;
   --oc-content-soft-blue: #eaf0f2;
@@ -28,26 +41,26 @@
   --oc-content-padding: clamp(1rem, 1.55vw, 1.5rem);
   --oc-content-gap: clamp(1rem, 1.6vw, 1.5rem);
   --oc-content-shadow: var(--oc-surface-glass-depth);
-  --oc-content-shadow-hover: 0 3px 8px rgb(20 45 69 / 5%), 0 16px 30px -22px rgb(20 45 69 / 22%);
+  --oc-content-shadow-hover: 0 3px 8px color-mix(in srgb, var(--school-primary) 5%, transparent), 0 16px 30px -22px color-mix(in srgb, var(--school-primary) 22%, transparent);
   --oc-content-motion: 180ms;
   --oc-overlay-radius: 1.5rem;
   --background: #f6f5f1;
-  --foreground: #1c2d40;
+  --foreground: var(--school-primary);
   --card: #fffefa;
   --card-foreground: var(--foreground);
   --popover: #fffefa;
   --popover-foreground: var(--foreground);
-  --primary: #142d45;
+  --primary: var(--school-primary);
   --primary-foreground: #ffffff;
   --secondary: #eaece8;
   --secondary-foreground: #34485a;
   --muted: #edeee9;
   --muted-foreground: #52606d;
   --accent: #e7ebe7;
-  --accent-foreground: #142d45;
-  --brand-orange: #e8793e;
+  --accent-foreground: var(--school-primary);
+  --brand-orange: var(--school-accent);
   --brand-subtle: #fceadd;
-  --brand-ink: #9f3d12;
+  --brand-ink: var(--school-accent-text);
   --destructive: #ac3544;
   --destructive-foreground: #ffffff;
   --error-subtle: #fbeef0;
@@ -61,7 +74,7 @@
   --interview-subtle: #f1eef7;
   --border: #dfe3dd;
   --input: #8793a0;
-  --ring: #ba501f;
+  --ring: var(--school-ring);
   --overlay: rgb(12 25 43 / 42%);
   --chart-1: #295c88;
   --chart-2: #296448;
@@ -73,10 +86,10 @@
   --oc-radius-md: .625rem;
   --oc-radius-lg: 1rem;
   --oc-radius-xl: 1.375rem;
-  --oc-shadow-surface: 0 1px 3px rgb(20 45 69 / 5%);
-  --oc-shadow-popover: 0 6px 12px rgb(20 45 69 / 6%), 0 20px 56px rgb(20 45 69 / 12%);
-  --oc-shadow-modal: 0 24px 100px rgb(20 45 69 / 22%);
-  --oc-shadow-surface-hover: 0 4px 12px rgb(20 45 69 / 9%);
+  --oc-shadow-surface: 0 1px 3px color-mix(in srgb, var(--school-primary) 5%, transparent);
+  --oc-shadow-popover: 0 6px 12px color-mix(in srgb, var(--school-primary) 6%, transparent), 0 20px 56px color-mix(in srgb, var(--school-primary) 12%, transparent);
+  --oc-shadow-modal: 0 24px 100px color-mix(in srgb, var(--school-primary) 22%, transparent);
+  --oc-shadow-surface-hover: 0 4px 12px color-mix(in srgb, var(--school-primary) 9%, transparent);
   --oc-control-height: 2.5rem;
   --oc-control-height-compact: 2.25rem;
   --oc-control-height-large: 2.75rem;
@@ -155,7 +168,7 @@
   --sidebar-border: var(--border);
   --sidebar-ring: var(--ring);
   /* Former product-only tokens (rail, surfaces, field, shell geometry). */
-  --oc-rail: #142d45;
+  --oc-rail: var(--school-primary);
   --oc-rail-text: #f6f5f1;
   --oc-rail-muted: #b0c1cc;
   --oc-rail-selected: #2a4156;
@@ -183,7 +196,7 @@
   --popover: #162638;
   --popover-foreground: var(--foreground);
   --primary: #f6f5f1;
-  --primary-foreground: #142d45;
+  --primary-foreground: var(--school-primary);
   --secondary: #22364b;
   --secondary-foreground: #e3e8ec;
   --muted: #1d3045;
@@ -191,7 +204,7 @@
   --accent: #22364b;
   --accent-foreground: #f6f5f1;
   --brand-subtle: #3a2618;
-  --brand-ink: #f3a274;
+  --brand-ink: var(--school-accent-on-dark);
   --destructive: #e07a86;
   --destructive-foreground: #0f1c2b;
   --error-subtle: #3a1e24;
@@ -205,7 +218,7 @@
   --interview-subtle: #2a2338;
   --border: #2c4257;
   --input: #5d7286;
-  --ring: #f3a274;
+  --ring: var(--school-ring);
   --oc-content-surface: #162638;
   --oc-content-soft: #1d3045;
   --oc-content-soft-blue: #1b2f44;
@@ -213,3 +226,13 @@
   /* The live voting slide stays solid: no glass highlight on the projector. */
   --oc-content-shadow: var(--oc-content-shadow-solid);
 }
+
+/* Another school's colours override only the school layer. Set data-school on <html>: the semantic tokens
+   are declared on :root and resolve there, so the attribute on a lower element would change nothing. For example:
+   [data-school="example"] {
+     --school-primary: #...;      text and primary actions; >= 4.5:1 on the light canvas
+     --school-accent: #...;       accents, large text and UI parts; >= 3:1
+     --school-accent-text: #...;  small accent text; >= 4.5:1 on every light surface
+     --school-ring: #...;         >= 3:1 on canvas, cards, --school-primary and the projector theme
+   }
+   tests/school-theme-tokens.test.cjs checks these ratios for every school defined here. */

@@ -112,7 +112,7 @@
 .oc-about-page .oc-information-hero { background: var(--oc-public-linen); padding-block: 72px; }
 .oc-about-hero-photo { position: relative; margin: 0; }
 .oc-about-hero-image { position: relative; padding-left: 24px; }
-.oc-about-hero-image::before { content: ""; position: absolute; inset: 28px 24px 0 0; border: 1px solid #142d4e40; pointer-events: none; }
+.oc-about-hero-image::before { content: ""; position: absolute; inset: 28px 24px 0 0; border: 1px solid color-mix(in srgb, var(--school-primary) 25%, transparent); pointer-events: none; }
 .oc-about-hero-photo img { display: block; position: relative; width: 100%; aspect-ratio: 4 / 4.6; object-fit: cover; object-position: center 55%; }
 .oc-about-hero-photo figcaption { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin: 16px 0 0 24px; font-size: 12px; line-height: 1.5; color: var(--muted-foreground); }
 .oc-about-problem { border-bottom: 1px solid var(--border); }
@@ -144,7 +144,7 @@
 /* UVA: a balanced opening with the Lawn photograph beside the introduction. */
 .oc-campus-page .oc-information-hero { background: var(--oc-public-linen); gap: clamp(32px, 4vw, 64px); }
 .oc-campus-page .oc-information-hero h1 { max-width: 16ch; font-size: clamp(2.5rem, 4.1vw, 4rem); }
-.oc-campus-hero-photo { margin: 0; overflow: hidden; border: 1px solid color-mix(in srgb, var(--primary) 12%, transparent); border-radius: var(--oc-radius-lg); background: var(--oc-public-paper); box-shadow: 0 16px 40px rgb(20 45 69 / 8%); }
+.oc-campus-hero-photo { margin: 0; overflow: hidden; border: 1px solid color-mix(in srgb, var(--primary) 12%, transparent); border-radius: var(--oc-radius-lg); background: var(--oc-public-paper); box-shadow: 0 16px 40px color-mix(in srgb, var(--school-primary) 8%, transparent); }
 .oc-campus-hero-photo img { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: contain; }
 .oc-campus-context { padding-bottom: 64px; }
 .oc-campus-context h2 { max-width: 15ch; }
@@ -185,7 +185,7 @@
 
 /* School requests: a campus letter alongside a welcoming, short form. */
 .oc-request-page .oc-information-hero { background: var(--oc-public-linen); padding-block: 64px; }
-.oc-campus-letter { padding: 28px; border: 1px solid #142d4e30; background: var(--oc-public-paper); transform: rotate(-2deg); max-width: 440px; margin-left: auto; position: relative; }
+.oc-campus-letter { padding: 28px; border: 1px solid color-mix(in srgb, var(--school-primary) 19%, transparent); background: var(--oc-public-paper); transform: rotate(-2deg); max-width: 440px; margin-left: auto; position: relative; }
 .oc-campus-letter-top, .oc-campus-letter-bottom { display: flex; justify-content: space-between; gap: 20px; font-size: 12px; letter-spacing: .06em; color: var(--muted-foreground); }
 .oc-campus-letter-art { height: 120px; margin: 22px 0 10px; background: url('/images/landing/rotunda-lines.svg') center / contain no-repeat; opacity: .7; }
 .oc-campus-letter > p { font-size: clamp(24px, 3vw, 36px); line-height: 1.25; text-align: center; margin: 16px 0 32px; }

@@ -62,7 +62,7 @@ export function PipelineView({ columns, applicants, getScore, onMove, onViewProf
               }}
               onDrop={() => handleDrop(column.id)}
               className={cn(
-                "flex w-14 shrink-0 flex-col items-center gap-2 rounded-xl border border-dashed border-border bg-white py-4 text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+                "flex w-14 shrink-0 flex-col items-center gap-2 rounded-xl border border-dashed border-border bg-white py-4 text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                 dragOverColumn === column.id && "border-foreground bg-muted text-muted-foreground",
               )}
               aria-label="Expand Rejected column"

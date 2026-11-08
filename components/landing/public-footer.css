@@ -1,13 +1,13 @@
 /* The final invitation and brand signature share one quiet navy surface. */
 /* `main` raises specificity above product-story-editorial.css, whose cream rule otherwise wins when the CSS chunks load in a different order. */
-.oc-landing main .oc-final-invitation { background: radial-gradient(ellipse 75% 120% at 50% 100%, rgb(48 82 116 / 34%), transparent 75%), #142d4e; color: #fff7ec; border: 0; padding-block: clamp(72px, 7vw, 104px) 64px; }
+.oc-landing main .oc-final-invitation { background: radial-gradient(ellipse 75% 120% at 50% 100%, rgb(48 82 116 / 34%), transparent 75%), var(--school-primary); color: #fff7ec; border: 0; padding-block: clamp(72px, 7vw, 104px) 64px; }
 .oc-landing main .oc-final-invitation h2 { color: #fff7ec; }
 .oc-landing .oc-final-invitation :is(.oc-invitation-note, p[data-motion="body"]) { color: #c6cbd1; }
-.oc-landing .oc-final-invitation .oc-invitation-campus { color: #ef9d70; }
-.oc-landing .oc-final-invitation .oc-invitation-cta { background: #fff7ec; color: #142d4e; }
+.oc-landing .oc-final-invitation .oc-invitation-campus { color: var(--school-accent-on-dark); }
+.oc-landing .oc-final-invitation .oc-invitation-cta { background: #fff7ec; color: var(--school-primary); }
 .oc-landing .oc-final-invitation .oc-invitation-cta:hover { background: #f0e5d5; }
-.oc-landing .oc-final-invitation :focus-visible { outline-color: #ef9d70; }
-.oc-landing .oc-public-footer { background: #142d4e; color: #fff7ec; width: 100%; padding: 0 clamp(20px, 4vw, 64px); }
+.oc-landing .oc-final-invitation :focus-visible { outline-color: var(--ring); }
+.oc-landing .oc-public-footer { background: var(--school-primary); color: #fff7ec; width: 100%; padding: 0 clamp(20px, 4vw, 64px); }
 .oc-footer-inner { max-width: 1680px; margin-inline: auto; }
 .oc-footer-masthead { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding-block: 36px; border-top: 1px solid #fff7ec26; }
 .oc-footer-masthead > a { display: inline-flex; align-items: center; min-height: 44px; }
@@ -17,8 +17,8 @@
 .oc-footer-group { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
 .oc-footer-group h3 { margin: 0 0 14px; font-family: var(--oc-font-sans); font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: .1em; color: #adb7c4; }
 .oc-footer-group :is(a, button) { display: inline-flex; align-items: center; min-height: 44px; text-align: left; font-size: 14px; font-weight: 400; line-height: 1.5; color: #eee9e0; }
-.oc-landing .oc-public-footer :is(a, button):hover { color: #ef9d70; }
-.oc-landing .oc-public-footer :focus-visible { outline: 2px solid #ef9d70; outline-offset: 5px; border-radius: 2px; }
+.oc-landing .oc-public-footer :is(a, button):hover { color: var(--school-accent-on-dark); }
+.oc-landing .oc-public-footer :focus-visible { outline: 2px solid var(--ring); outline-offset: 5px; border-radius: 2px; }
 .oc-footer-field { container-type: inline-size; display: flex; justify-content: center; align-items: center; padding-block: clamp(28px, 4vw, 64px); border-block: 1px solid #fff7ec26; }
 .oc-footer-letters { position: relative; display: flex; width: max-content; font-family: var(--oc-font-display); font-size: 17.1cqw; font-weight: 400; line-height: 1.18; letter-spacing: -.035em; color: #fff7ec; }
 .oc-footer-letter { display: block; }
