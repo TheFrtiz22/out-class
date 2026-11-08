@@ -180,3 +180,6 @@
   .oc-public-journey-desktop, .oc-public-nav .oc-perspective-indicator { transition: none !important; }
   .oc-public-journey-desktop { transform: translateY(-50%); }
 }
+
+/* Every header link is at least 44px tall and 44px wide (short labels such as "FAQ" included). */
+.oc-public-desktop .oc-public-link, .oc-public-nav .oc-public-login { min-height: 44px; min-width: 44px; justify-content: center; }

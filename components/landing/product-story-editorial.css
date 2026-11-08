@@ -8,7 +8,7 @@
 .oc-journey-index { display: grid; grid-template-columns: repeat(var(--oc-chapter-count, 5), minmax(0, 1fr)); max-width: var(--oc-public-width); margin: auto; padding: 24px 0 12px; }
 .oc-journey-index a { display: flex; flex-direction: column; gap: 8px; min-height: 64px; padding: 8px 20px; border-left: 1px solid #142d4e25; font-size: 15px; color: var(--primary); transition: color var(--oc-motion-state) var(--oc-motion-ease); }
 .oc-journey-index a:first-child { border-left: 0; padding-left: 0; }
-.oc-journey-index a span { color: var(--brand-ink); font-size: 11px; }
+.oc-journey-index a span { color: var(--brand-ink); font-size: 12px; }
 .oc-journey-index a[aria-current], .oc-journey-index a:hover { color: var(--brand-ink); text-decoration: underline; text-underline-offset: 6px; }
 .oc-journey-thread { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 20px var(--oc-journey-gutter) 0; font-size: 12px; color: var(--primary); }
 .oc-journey-thread > span:first-child { width: 6px; height: 6px; border-radius: 50%; background: var(--brand-orange); }

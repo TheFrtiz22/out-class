@@ -20,6 +20,10 @@ function Facts({ items }: { items: [string, ReactNode][] }) {
 function Action({ children, target, done }: { children: ReactNode; target: string; done: boolean }) {
   return <span className="oc-demo-button" data-demo-target={target} data-complete={done}>{children}{done ? <Check size={18} aria-hidden="true" /> : <ArrowRight size={18} aria-hidden="true" />}</span>
 }
+/** Additional fictional rows so each sample screen reads like a real, populated workspace. */
+function SampleRows({ rows }: { rows: [string, string, string][] }) {
+  return <ul className="oc-demo-rows">{rows.map(([title, detail, status]) => <li key={title}><div><strong>{title}</strong><span>{detail}</span></div><Badge variant="outline">{status}</Badge></li>)}</ul>
+}
 function Result({ children, done }: { children: ReactNode; done: boolean }) {
   return <div className="oc-demo-result" data-visible={done} data-demo-entering={done}><CheckCircle2 size={20} /><p>{children}</p></div>
 }
@@ -40,6 +44,7 @@ function DiscoverScene() {
       <p className="oc-demo-description">Research ideas. Build conviction. Learn together.</p>
       <div className="oc-demo-reveal" data-visible={done} data-demo-entering={done}><Facts items={[["Focus", "Finance & investing"], ["Recruitment", "Applications open"]]} /></div>
     </div>
+    <SampleRows rows={[["Rotunda Consulting Collective", "Consulting · Applications open", "Open"], ["Lawn Policy Review", "Journalism · Opens in spring", "Follow"]]} />
   </Focus>
 }
 function ApplyScene() {
@@ -60,7 +65,7 @@ function StatusScene() {
   const done = useDemoState() > 0
   return <Focus eyebrow="YOUR APPLICATIONS · STATUS" title="Know your next step." badge="Interviewing" target="status-application" action={done ? "Application details opened" : "View application"} result="Interview confirmed. Your next step is in view." done={done}>
     <Club />
-
+    <SampleRows rows={[["Rotunda Consulting Collective", "Submitted October 3", "In review"], ["Cavalier Product Studio", "Draft saved", "Draft"]]} />
     <div className="oc-demo-reveal" data-visible={done} data-demo-entering={done}><div className="oc-demo-next-step"><CalendarDays size={22} /><div><strong>Thursday · {sample.time}</strong><p>Confirmed · {example.room}</p></div></div></div>
   </Focus>
 }

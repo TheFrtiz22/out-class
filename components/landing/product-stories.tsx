@@ -10,8 +10,9 @@ import "./product-story-editorial.css"
 import "./demo-playback.css"
 import type { useJourneyNavigation } from "@/hooks/use-journey-navigation"
 
-export function ProductJourney({ perspective, onPerspectiveChange, onCreateProfile, onLeaderEnter, navigation }: {
+export function ProductJourney({ perspective, selected = perspective, onPerspectiveChange, onCreateProfile, onLeaderEnter, navigation }: {
   perspective: LandingPerspective
+  selected?: LandingPerspective
   onPerspectiveChange: (perspective: LandingPerspective) => void
   onCreateProfile: () => void
   onLeaderEnter: () => void
@@ -32,7 +33,7 @@ export function ProductJourney({ perspective, onPerspectiveChange, onCreateProfi
         <span ref={navigation.controlsRef} className="oc-journey-handoff-sentinel" aria-hidden="true" />
         <div className="oc-journey-controls" inert={navigation.merged} aria-hidden={navigation.merged}>
           <h2 id="perspective-title">Two sides of the same opportunity.</h2>
-          <PerspectiveSwitcher perspective={perspective} onChange={onPerspectiveChange} />
+          <PerspectiveSwitcher perspective={selected} onChange={onPerspectiveChange} />
         </div>
       </div>
       <p className="sr-only" role="status">Showing the {perspective === "student" ? "student" : "club leader"} walkthrough.</p>
