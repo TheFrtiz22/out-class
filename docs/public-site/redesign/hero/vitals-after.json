@@ -1,0 +1,47 @@
+{
+  "base": "http://127.0.0.1:3202",
+  "runs": 5,
+  "measuredAt": "2026-11-08T22:02:34.730Z",
+  "results": [
+    {
+      "page": "/",
+      "profile": "desktop",
+      "state": "cold",
+      "lcp": 236,
+      "cls": 0.003,
+      "inp": 32,
+      "content": 162,
+      "lcpElement": "H1.oc-hero-headline"
+    },
+    {
+      "page": "/",
+      "profile": "desktop",
+      "state": "warm",
+      "lcp": 168,
+      "cls": 0.003,
+      "inp": 24,
+      "content": 108,
+      "lcpElement": "H1.oc-hero-headline"
+    },
+    {
+      "page": "/",
+      "profile": "phone",
+      "state": "cold",
+      "lcp": 936,
+      "cls": 0.005,
+      "inp": 80,
+      "content": 888,
+      "lcpElement": "H1.oc-hero-headline"
+    },
+    {
+      "page": "/",
+      "profile": "phone",
+      "state": "warm",
+      "lcp": 516,
+      "cls": 0,
+      "inp": 72,
+      "content": 450,
+      "lcpElement": "H1.oc-hero-headline"
+    }
+  ]
+}
