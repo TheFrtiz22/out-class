@@ -2,6 +2,8 @@
 
 Appended by `outclass-release-check`. Newest first.
 
+2026-11-08 MOBILE-1 mobile/foundation (from main 3e779e5) in a cloud container: new tests bearer-auth 6/6, api-v1-routes 5/5 | unit suites (293 files, browser/e2e/native excluded): 1638 pass, 0 fail, 3 skip before the run hit the 10-minute container limit; full `pnpm run test` hung in additional-observations-browser (no browser here) | lint 0 errors / 23 baseline warnings + ui-controls OK | typecheck ok | build not run: binaries.prisma.sh is blocked in this container (client generated with --no-engine) | mobile: tsc ok, expo export ios + android ok | CI on the PR is the authoritative gate
+
 
 2026-11-05 backend/booking-throughput (merge on bd3e12d3) app gates: test 1588/0/58 migrations 67 ok (80 tables RLS) lint ok types ok build ok | integration skips 58 (env-gated e2e/native suites; security suite run separately 11/11, booking+ballot contention 14/0) | agent-hook tests 29/0 | authz-reviewer: no high/medium, LOW-1/LOW-2 fixed before merge
 deploy <pending> | runtime errors <pending> | advisor delta <n/a, no migration> | rollback target: production deploy of bd3e12d3 | verdict <pending>
