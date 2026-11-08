@@ -3,7 +3,7 @@ import { schedulingDateTime } from "@/lib/scheduling-config"
 import { academicYear } from "@/lib/recruitment-profile"
 import { useState } from "react"
 import { useDemoMode } from "@/contexts/demo-context"
-import { demoStore } from "@/lib/demo/store"
+import { loadedDemoStore } from "@/lib/demo/loader"
 import { useApplicationState } from "@/lib/application-state"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
@@ -132,7 +132,7 @@ export function DemoInterviewSchedule({ onNavigate }: { onNavigate: (view: ViewI
   )
   function assign(slotId: string, applicationId: string) {
     try {
-      demoStore.mutate((s) => {
+      loadedDemoStore().demoStore.mutate((s) => {
         const slot = s.slots.find((i) => i.id === slotId && i.clubId === clubId)!
         if (applicationId && !applications.some((a) => a.id === applicationId))
           throw new Error("Applicant unavailable")
