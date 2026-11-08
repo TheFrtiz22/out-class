@@ -36,7 +36,9 @@ When a page is built from a mockup, use the repo asset, never the blob URL.
 3. **Type.** Source Sans (`--oc-font-sans`) for body text. Libre Caslon (`--oc-font-display`) for headings
    only, always upright. No italics anywhere.
 4. **Brand orange appears in exactly two places:** the hero headline's accent word, and "class" in the final
-   call to action. Not in kickers, links, rules, dots or focus rings.
+   call to action. Not in kickers, links, rules, dots or focus rings. One exception: the large step number in
+   "How OutClass works" (the mockup's orange numeral), set in `--brand-ink` because `--brand-orange` fails
+   contrast on the linen canvas.
 5. **No decorative icons.** The only images are logos, headshots and campus photos.
 
 ## Glass utilities
@@ -59,6 +61,10 @@ one blurred surface inside another.
 - Hero tagline and feature statements on the landing page moved from Caslon (the tagline was italic) to
   Source Sans.
 - `docs/design-system.md` no longer says public pages use Caslon throughout.
+
+## Homepage journey
+
+"Sound familiar?" and "How OutClass works" are built; evidence in [`journey/README.md`](journey/README.md).
 
 Still to do, page by page: rebuild the homepage from `Main.mockup.html`, then the other public pages, and
 remove brand orange from every place except the two allowed by rule 4.

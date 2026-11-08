@@ -2,32 +2,28 @@
 
 import { PerspectiveSwitcher } from "./perspective-switcher"
 import type { LandingPerspective } from "./journey-content"
-import { FeatureOrbit } from "./feature-orbit"
+import { JourneyTabs } from "./journey-tabs"
 import "./journey.css"
+import "./journey-tabs.css"
 import "./journey-atmosphere.css"
 import "./public-foundations.css"
-import "./product-story-editorial.css"
-import "./demo-playback.css"
 import type { useJourneyNavigation } from "@/hooks/use-journey-navigation"
 
-export function ProductJourney({ perspective, selected = perspective, onPerspectiveChange, onCreateProfile, onLeaderEnter, navigation }: {
+/** "How OutClass works" (docs/public-site/redesign/Main.mockup.html): a heading, the audience switch and one tabbed walkthrough. */
+export function ProductJourney({ perspective, selected = perspective, onPerspectiveChange, navigation }: {
   perspective: LandingPerspective
   selected?: LandingPerspective
   onPerspectiveChange: (perspective: LandingPerspective) => void
-  onCreateProfile: () => void
-  onLeaderEnter: () => void
   navigation: ReturnType<typeof useJourneyNavigation>
 }) {
   return (
-    <section ref={navigation.showcaseRef} id="about" className="oc-product-stories" aria-label="How OutClass works">
+    <section ref={navigation.showcaseRef} id="about" className="oc-product-stories" aria-labelledby="how-title">
       <span id="students" className="oc-perspective-anchor" tabIndex={-1} role="group" aria-label="Student product overview" />
       <span id="club-leaders" className="oc-perspective-anchor" tabIndex={-1} role="group" aria-label="Club leader product overview" />
       <span id="clubs" className="oc-perspective-anchor" tabIndex={-1} role="group" aria-label="Club leader product overview" />
-      <div className="oc-how-introduction oc-public-section">
-        <p className="oc-public-kicker">How OutClass works</p>
-        <h2>{perspective === "student" ? <>From curious<br />to connected.</> : <>From first applicant<br />to your next class.</>}</h2>
-        <p>{perspective === "student" ? "College club recruitment, brought together. Discover organizations, apply through one profile, and keep your next steps in view." : "One workspace for the people building campus communities. Shape your recruitment, coordinate your team, and welcome the members who come next."}</p>
-        <span className="oc-public-note">Beginning with participating clubs at the University of Virginia.</span>
+      <div className="oc-how-introduction">
+        <p className="oc-journey-kicker">How OutClass works</p>
+        <h2 id="how-title">{perspective === "student" ? "From discovering a club to joining it." : "From first applicant to your next class."}</h2>
       </div>
       <div className="oc-journey-controls-slot" data-merged={navigation.merged}>
         <span ref={navigation.controlsRef} className="oc-journey-handoff-sentinel" aria-hidden="true" />
@@ -37,7 +33,7 @@ export function ProductJourney({ perspective, selected = perspective, onPerspect
         </div>
       </div>
       <p className="sr-only" role="status">Showing the {perspective === "student" ? "student" : "club leader"} walkthrough.</p>
-      <FeatureOrbit key={perspective} perspective={perspective} onComplete={perspective === "student" ? onCreateProfile : onLeaderEnter} />
+      <JourneyTabs perspective={perspective} />
       <span ref={navigation.endRef} className="oc-journey-end-sentinel" aria-hidden="true" />
     </section>
   )
