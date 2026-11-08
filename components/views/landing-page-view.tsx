@@ -3,10 +3,10 @@
 import { LandingNavigation } from "@/components/landing/landing-navigation"
 import { LaunchClubs } from "@/components/landing/launch-clubs"
 import type { LaunchClub } from "@/lib/launch-clubs"
-import { ArrowRight } from "@/components/icons"
 import { PublicFooter } from "@/components/landing/public-footer"
+import { CampusBand } from "@/components/landing/campus-band"
 import { Button } from "@/components/ui/button"
-import { ScrollMotion, SectionReveal, TextReveal } from "@/components/motion/scroll-motion"
+import { ScrollMotion } from "@/components/motion/scroll-motion"
 import { LandingHero } from "@/components/landing/landing-hero"
 import { LandingIntro } from "@/components/landing/landing-intro"
 import { PublicNavigation } from "@/components/landing/public-navigation"
@@ -21,14 +21,12 @@ import { DEFAULT_LANDING_AUDIENCE } from "@/lib/landing-audience"
 interface LandingPageViewProps {
   onNavigateToApp: (role?: "student" | "leader") => void
   launchClubs?: LaunchClub[]
-  campusName?: string
   initialAudience?: LandingPerspective
 }
 
 export function LandingPageView({
   onNavigateToApp: _onNavigateToApp,
   launchClubs = [],
-  campusName = "University of Virginia",
   initialAudience = DEFAULT_LANDING_AUDIENCE,
 }: LandingPageViewProps) {
   const { perspective, selected, switchPerspective } = useLandingPerspective(initialAudience)
@@ -47,28 +45,17 @@ export function LandingPageView({
         </LandingIntro>
         <LaunchClubs clubs={launchClubs} />
         <ProductJourney perspective={perspective} selected={selected} onPerspectiveChange={switchPerspective} onCreateProfile={createProfile} onLeaderEnter={enterLeader} navigation={journeyNavigation} />
-        <SectionReveal
-          id="create-account"
-          className="oc-final-invitation"
-          aria-labelledby="invitation-title"
-        >
-          <p data-motion="context" className="oc-story-eyebrow oc-invitation-campus">
-            Beginning at {campusName}
-          </p>
-          <TextReveal asChild>
-            <h2 id="invitation-title">{perspective === "student" ? "Your next chapter starts here." : "Your next class starts here."}</h2>
-          </TextReveal>
-          <p data-motion="body">{perspective === "student" ? "A little more possibility." : "Good people. A clearer process."}</p>
-          <Button size="lg" className="oc-invitation-cta" aria-describedby="pricing" onClick={start}>
-            {perspective === "student" ? "Create your profile" : "Set up your club"}
-            <ArrowRight aria-hidden="true" size={16} />
-          </Button>
-          <p id="pricing" className="oc-invitation-note">
-            Free for students. Clubs join the campus pilot individually.
-          </p>
-        </SectionReveal>
+        <CampusBand />
       </main>
-      <PublicFooter homeHref="#top" overviewHref="#about" onPerspectiveChange={switchPerspective} />
+      <PublicFooter homeHref="#top" overviewHref="#about" onPerspectiveChange={switchPerspective} invitation={
+        <div id="create-account" className="oc-footer-invitation" role="group" aria-labelledby="invitation-title">
+          <h2 id="invitation-title">Your next <span className="oc-footer-accent">class</span> starts here.</h2>
+          <p>{perspective === "student" ? "Create your profile once and use it for every club you apply to." : "Set up your club’s workspace and run this season’s recruitment in one place."}</p>
+          <Button size="lg" className="oc-invitation-cta" onClick={start}>
+            {perspective === "student" ? "Create your profile" : "Set up your club"}
+          </Button>
+        </div>
+      } />
     </ScrollMotion>
   )
 }

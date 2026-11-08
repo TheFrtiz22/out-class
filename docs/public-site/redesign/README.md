@@ -60,5 +60,9 @@ one blurred surface inside another.
   Source Sans.
 - `docs/design-system.md` no longer says public pages use Caslon throughout.
 
+## Footer, "Built at UVA" and FAQ
+
+Built; evidence in [`footer/README.md`](footer/README.md).
+
 Still to do, page by page: rebuild the homepage from `Main.mockup.html`, then the other public pages, and
 remove brand orange from every place except the two allowed by rule 4.
