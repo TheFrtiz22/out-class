@@ -14,6 +14,7 @@ import { findReviewerEvaluation } from "@/lib/reviewer-evaluation"
 import { profilePhotoSource } from "@/lib/profile-photo"
 import { genderValues } from "@/lib/student-profile"
 import { ApplicantDisplayPanel } from "@/components/applicant-intelligence"
+import { InterviewFeedbackPanel } from "@/components/interview-feedback"
 import { applicationAttachmentUrl } from "@/lib/student-applications"
 import { applicationDecisionGroup, decisionFilters, type DecisionFilter } from "@/lib/application-decisions"
 import { type ApplicantSort } from "@/lib/live-applicant-sorting"
@@ -890,7 +891,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
               <section className="space-y-3 border-b pb-6" aria-label="Interview information"><h3 className="oc-card-heading ">Interviews</h3>{active.studentId.startsWith("anonymous-") ? <p className="text-sm text-muted-foreground">Appointments are withheld during anonymous review.</p> : active.bookings.length ? <ul className="divide-y">{active.bookings.map(booking => <li key={booking.id} className="py-3 text-sm"><p>{schedulingDateTime(booking.slot.startTime)} – {slotTime(booking.slot.endTime, SCHEDULING_TIMEZONE)}</p><p className="mt-1 text-muted-foreground">{booking.slot.location || "Location not provided"}</p></li>)}</ul> : <p className="text-sm text-muted-foreground">No interview scheduled.</p>}</section>
 
               {hasPermission(membership, "applications.review") && <ApplicantDisplayPanel key={active.id} clubId={membership.clubId} applicationId={active.id} refreshKey={JSON.stringify(active.evaluations)} />}
-              </div><div className="oc-applicant-assessment min-w-0 space-y-6"><header className="oc-review-workspace-heading"><p className="oc-editorial-label">Review workspace</p><h3 id="dossier-evaluation" tabIndex={-1}>Read thoughtfully.<br /><em>Decide confidently.</em></h3><Badge variant="secondary">{applicationStatusLabels[active.status]}</Badge></header><section className="space-y-4 border-b border-border pb-6">
+              </div><div className="oc-applicant-assessment min-w-0 space-y-6"><header className="oc-review-workspace-heading"><p className="oc-editorial-label">Review workspace</p><h3 id="dossier-evaluation" tabIndex={-1}>Read thoughtfully.<br /><em>Decide confidently.</em></h3><Badge variant="secondary">{applicationStatusLabels[active.status]}</Badge></header>{hasPermission(membership, "applications.review") && !active.studentId.startsWith("anonymous-") && <InterviewFeedbackPanel key={active.id} clubId={membership.clubId} applicationId={active.id} roundId={active.roundId} refreshKey={JSON.stringify(active.evaluations)} />}<section className="space-y-4 border-b border-border pb-6">
                 <h3 className="oc-card-heading">Evaluations · score and overall feedback</h3>
                 {active.evaluations.map((item) => (
                   <div key={item.id} className="border-l-2 border-border pl-3">
