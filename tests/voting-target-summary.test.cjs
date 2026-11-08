@@ -104,8 +104,8 @@ test('entire-round scope is a separate, server-authorized read: canonical once p
  assert.equal(round.target.value,null);assert.match(round.target.note,/different targets/);
  assert.deepEqual(counts((await h.read()).targetSummary),[1,0,0,2,3],'session scope is unchanged by another room');
  assert.doesNotMatch(JSON.stringify(round),new RegExp([...apps,leaderId,voterId,'ballot'].join('|')));
- // The voter can open only the first room: the second is not counted and the result says so.
- h.as(voterId);const voterView=await api.getRoundTargetSummary({clubId,roundId});assert.equal(voterView.sessions,1);assert.equal(voterView.partial,true);assert.deepEqual(counts(voterView),[1,0,0,2,3]);
+ // The voter can open only the first room: the second is neither counted nor hinted at (no partial flag for rooms they cannot list).
+ h.as(voterId);const voterView=await api.getRoundTargetSummary({clubId,roundId});assert.equal(voterView.sessions,1);assert.equal(voterView.partial,false);assert.deepEqual(counts(voterView),[1,0,0,2,3]);
  h.members[1].permissions=h.members[1].permissions.filter(p=>p!=='applicants.identify');await assert.rejects(api.getRoundTargetSummary({clubId,roundId}),/denied/i);
  h.members[1].permissions=[];await assert.rejects(api.getRoundTargetSummary({clubId,roundId}),/Denied/);
 });

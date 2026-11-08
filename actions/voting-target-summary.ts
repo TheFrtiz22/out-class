@@ -4,21 +4,37 @@ import { prisma } from "@/utils/prisma";
 import { requireClubPermission } from "@/utils/auth";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { votingReadLimits } from "@/lib/voting-transaction-limits";
-import { roomInclude } from "@/utils/voting-room";
+import { hasPermission } from "@/lib/permissions";
+import { roomInclude, roomFingerprint } from "@/utils/voting-room";
 import { projectRoundTargetSummary } from "@/lib/voting-room-projection";
 
 const ROUND_SESSION_LIMIT = 50;
 const roundSummaryInput = z.object({ clubId: z.string().uuid(), roundId: z.string().uuid(), cycleId: z.string().uuid().optional() }).strict();
+const accessFingerprint = (m: { id: string; status: string; permissions: string[]; accessRole: string; isOwner: boolean }) =>
+  roomFingerprint({ id: m.id, status: m.status, permissions: m.permissions, accessRole: m.accessRole, isOwner: m.isOwner });
 
-/** Entire-round target and decision counts (counts only). Authorization mirrors the voting room, per session. */
+/**
+ * Entire-round target and decision counts (counts only). Authorization mirrors the voting room, per session.
+ * Like listLiveVotingRooms, a member without decisions.view only ever loads rooms they lead or vote in, so
+ * neither the counts nor the `partial` flag reveal rooms they could not list.
+ */
 export async function getRoundTargetSummary(input: unknown) {
   const d = roundSummaryInput.parse(input), { user } = await requireClubPermission(d.clubId, ["applications.review"]);
-  return prisma.$transaction(async tx => {
+  const result = await prisma.$transaction(async tx => {
     const m = await authorizeClubTransaction(tx, d.clubId, user.id, ["applications.review"], { readOnly: true });
     const round = await tx.pipelineRound.findFirst({ where: { id: d.roundId, clubId: d.clubId, archivedAt: null } });
     if (!round) throw Error("Round unavailable.");
+    const observer = hasPermission(m, "decisions.view"), voter = hasPermission(m, "decisions.vote"), leader = hasPermission(m, "decisions.start");
     const later = await tx.pipelineRound.count({ where: { clubId: d.clubId, archivedAt: null, order: { gt: round.order } } });
-    const rooms = await tx.votingSession.findMany({ where: { clubId: d.clubId, roundId: d.roundId, mode: "LIVE", ...(d.cycleId ? { cycleId: d.cycleId } : {}) }, include: roomInclude, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: ROUND_SESSION_LIMIT + 1 });
-    return projectRoundTargetSummary(rooms.slice(0, ROUND_SESSION_LIMIT), m, { name: round.name, final: later === 0, anonymousReview: round.anonymousReview }, rooms.length > ROUND_SESSION_LIMIT);
+    const rooms = await tx.votingSession.findMany({
+      where: { clubId: d.clubId, roundId: d.roundId, mode: "LIVE", ...(d.cycleId ? { cycleId: d.cycleId } : {}),
+        ...(!observer ? { OR: [...(leader ? [{ leaderMemberIds: { has: m.id } }] : []), ...(voter ? [{ participants: { some: { memberId: m.id } } }] : [])] } : {}) },
+      include: roomInclude, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: ROUND_SESSION_LIMIT + 1,
+    });
+    const summary = projectRoundTargetSummary(rooms.slice(0, ROUND_SESSION_LIMIT), m, { name: round.name, final: later === 0, anonymousReview: round.anonymousReview }, rooms.length > ROUND_SESSION_LIMIT);
+    return { summary, access: accessFingerprint(m) };
   }, votingReadLimits);
+  const { membership } = await requireClubPermission(d.clubId, ["applications.review"]);
+  if (result.access !== accessFingerprint(membership)) throw Error("Voting permissions changed. Reconnect to the room.");
+  return result.summary;
 }
