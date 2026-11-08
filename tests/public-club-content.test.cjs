@@ -88,3 +88,17 @@ test('public club page: no logo wall, no unknown tiles, Follow instead of a devi
   // Real clubs do not wait for device customization, so server HTML includes the h1.
   assert.match(view, /if \(!ready && !real\) return <LoadingState/)
 })
+
+test('content-fix apply writes only the reviewed plan and skips rows edited since the dry run', () => {
+  const script = fs.readFileSync('scripts/clean-public-club-profiles.cjs', 'utf8')
+  assert.match(script, /if \(!args\.plan\) throw Error\('--apply needs --plan=/)
+  assert.match(script, /reviewed\.database !== database/)
+  // Compare-and-set against the plan's reviewed `before`, then write the plan's reviewed `after`.
+  assert.match(script, /current\.description !== item\.before\.description/)
+  assert.match(script, /data: \{ tagline: item\.after\.tagline, description: item\.after\.description, marketing: item\.after\.marketing \}/)
+  assert.doesNotMatch(script.slice(script.indexOf("if (!args.plan)")), /cleanPublicProfile\(/, 'apply never recomputes the cleanup')
+})
+
+test('editor and import previews include the About section (about sections, video, links)', () => {
+  for (const file of ['components/clubs/club-profile-editor.tsx', 'components/admin/admin-club-import.tsx']) assert.match(fs.readFileSync(file, 'utf8'), /<AboutSection [^>]*profile=/, file)
+})
