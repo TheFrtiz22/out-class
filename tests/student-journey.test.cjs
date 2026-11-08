@@ -89,7 +89,7 @@ test('public club entry retains unified Status, submitted responses, Calendar, a
   function nodes(node) { return !node || typeof node !== 'object' ? [] : [node, ...[node.props?.children].flat(Infinity).flatMap(nodes)] }
   const render = () => { cursor = 0; return nodes(mod.exports.PublicClubPage({ club: { id: 'club' } })) }
   const profile = render().find(node => node.type === 'ClubProfile')
-  assert.equal(profile.props.backLabel, 'Explore clubs')
+  assert.equal(profile.props.backLabel, 'Back to OutClass')
   profile.props.onNavigate('auth')
   assert.equal(window.location.href, '/login?next=%2Fclub%2Fclub%3Fref%3Dcampus%23apply')
   profile.props.onNavigate('student-onboarding')

@@ -74,10 +74,11 @@ test('reviewed import packages carry no research notes or source links in public
 test('public club page: no logo wall, no unknown tiles, Follow instead of a device-only Subscribe', () => {
   const profile = fs.readFileSync('components/clubs/marketing-profile.tsx', 'utf8')
   const view = fs.readFileSync('components/views/club-profile-view.tsx', 'utf8')
-  assert.doesNotMatch(profile, /employerMark|next\/image|Research source/)
+  assert.doesNotMatch(profile, /Research source/)
   assert.match(profile, /Club-reported/)
-  assert.equal(fs.existsSync('public/employers'), false)
-  assert.equal(fs.existsSync('lib/employer-marks.ts'), false)
+  // Logos are hidden for now, not deleted: the switch is off and the list renders names only.
+  assert.match(fs.readFileSync('lib/employer-marks.ts', 'utf8'), /export const SHOW_EMPLOYER_MARKS = false/)
+  assert.match(profile, /SHOW_EMPLOYER_MARKS \? employerMark\(name\) : undefined/)
   assert.equal(fs.existsSync('components/clubs/subscribe-button.tsx'), false)
   assert.doesNotMatch(view, /Applications unavailable|email updates not yet available|Recruitment dates have not been published|No additional requirements have been published|No upcoming public events have been published/)
   assert.match(view, /Applications aren’t open yet · Follow/)

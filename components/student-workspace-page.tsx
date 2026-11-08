@@ -1,4 +1,3 @@
-import type { ReactNode } from "react"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { unstable_cache } from "next/cache"
@@ -26,7 +25,7 @@ function query(params: Record<string, string | string[] | undefined>) {
  * identity, demo, platform-view-as and disabled-account rules the homepage
  * applied to `/?workspace=student…`; the view now comes from the path.
  */
-export async function StudentWorkspacePage({ path, searchParams, signedOut }: { path: string; searchParams: SearchParams; signedOut?: (params: URLSearchParams) => ReactNode | Promise<ReactNode> }) {
+export async function StudentWorkspacePage({ path, searchParams }: { path: string; searchParams: SearchParams }) {
   const params = query(await searchParams)
   const route = studentRouteForPath(path, params)
   if (!route) throw Error(`Not a student workspace path: ${path}`)
@@ -38,8 +37,6 @@ export async function StudentWorkspacePage({ path, searchParams, signedOut }: { 
   if (jar.get(DEMO_COOKIE)?.value === "1" && canAccessDemo(authError ? undefined : user?.email)) {
     return <HomeEntry launchClubs={await getCachedLaunchClubs()} initialView={route.view} />
   }
-  // A path with a public signed-out view (Explore) renders it; every other path asks for sign-in.
-  if (!user && signedOut) return signedOut(params)
   if (!user) redirect(`/login?next=${encodeURIComponent(params.size ? `${path}?${params}` : path)}`)
 
   const account = await prisma.user.findUnique({ where: { id: user.id }, select: { disabledAt: true } })

@@ -36,11 +36,11 @@ test('homepage: audience toggle in the hero, per-audience final call to action, 
   assert.match(read('components/landing/feature-orbit.tsx'), /className="oc-story-sample">Sample</)
 })
 
-test('about has one primary action; UVA has Create your profile + Browse clubs and a separate Not at UVA section', () => {
+test('about has one primary action; UVA has Create your profile + Read the FAQs (Explore is private) and a separate Not at UVA section', () => {
   const about = read('app/about/page.tsx')
   assert.equal((about.match(/<Button asChild/g) || []).length, 1)
   const uva = read('app/uva/page.tsx')
-  assert.match(uva, /href="\/signup">Create your profile/); assert.match(uva, /variant="outline"><Link prefetch=\{false\} href="\/explore">Browse clubs/)
+  assert.match(uva, /href="\/signup">Create your profile/); assert.match(uva, /variant="outline"><a href="#faq">Read the FAQs/); assert.doesNotMatch(uva, /\/explore/)
   assert.match(uva, /<section className="oc-public-section oc-faq-next" aria-labelledby="not-uva-title">/)
 })
 

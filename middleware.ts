@@ -52,9 +52,8 @@ export async function middleware(request: NextRequest) {
   // Product views share the homepage URL. Preserve their query parameters and
   // authentication while explicitly keeping those responses out of search.
   const accountView = request.nextUrl.pathname === "/" && ["workspace", "view", "demoClub", "next", "error", "signup"].some(key => request.nextUrl.searchParams.has(key)) ||
-    // /corkboard predates the move and stays a public page; /explore has a public signed-out view
-    // (account cookies below still mark signed-in Explore noindex).
-    STUDENT_ROUTES.some(route => route.path !== "/corkboard" && route.path !== "/explore" && route.path === request.nextUrl.pathname)
+    // /corkboard predates the move and stays a public page.
+    STUDENT_ROUTES.some(route => route.path !== "/corkboard" && route.path === request.nextUrl.pathname)
   const accountCookie = request.cookies.has(PLATFORM_VIEW_COOKIE) || request.cookies.get(DEMO_COOKIE)?.value === "1" || request.cookies.getAll().some(cookie => /^sb-.+-auth-token(?:\.\d+)?$/.test(cookie.name))
   if (accountView || accountCookie) response.headers.set("X-Robots-Tag", "noindex, nofollow")
   return response

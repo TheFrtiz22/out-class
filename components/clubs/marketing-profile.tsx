@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { ClubLogo } from "@/components/club-logo"
 import { clubAssetSource } from "@/lib/club-assets"
 import type { ReactNode } from "react"
@@ -7,6 +8,7 @@ import { Globe, Instagram, Linkedin, Mail, ExternalLink, Check, Play } from "@/c
 import "@/components/clubs/profile-presentation.css"
 import { profileStatistics, readMarketing, type ClubMarketing, type ClubProfileDraft } from "@/lib/club-marketing"
 import { presentPublicMarketing } from "@/lib/public-club-content"
+import { employerMark, SHOW_EMPLOYER_MARKS } from "@/lib/employer-marks"
 
 /** The public view of a profile's marketing: unknown placeholders and research links hidden. */
 export function publicMarketing(value: unknown): ClubMarketing {
@@ -142,7 +144,7 @@ export function ProfileStatistics({ profile, compact = false }: { profile: Param
   </dl> : null
 }
 
-/** Member destinations as a text list. Firm names only: no third-party logos. */
+/** Member destinations as a text list labelled club-reported. Employer logos are hidden (SHOW_EMPLOYER_MARKS). */
 export function MemberOutcomes({ profile, compact = false }: { profile: { marketing?: unknown }; compact?: boolean }) {
   const m = readMarketing(profile.marketing)
   const names = [...new Set(m.placements.map(name => name.trim()).filter(Boolean))]
@@ -150,6 +152,6 @@ export function MemberOutcomes({ profile, compact = false }: { profile: { market
   const Heading = compact ? "p" : "h3"
   return <div className={compact ? "oc-member-outcomes" : "oc-member-outcomes oc-club-subsection"}>
     <Heading className="oc-member-outcomes-title">Where members go <span>Club-reported</span></Heading>
-    <ul>{names.slice(0, compact ? 6 : undefined).map(name => <li key={name}>{name}</li>)}</ul>
+    <ul>{names.slice(0, compact ? 6 : undefined).map(name => { const mark = SHOW_EMPLOYER_MARKS ? employerMark(name) : undefined; return <li key={name}>{mark && <Image src={mark} alt="" width={90} height={28} loading="lazy" className="oc-member-outcome-mark" />}{name}</li> })}</ul>
   </div>
 }

@@ -254,12 +254,11 @@ test("old URLs: middleware 307s on real hosts; loopback IPs fall through to the 
   // Only GET/HEAD redirect: a POST (server action) to / with old params reaches the normal path.
   const post = request("https://www.outclass.example", "?workspace=student&view=inbox"); post.method = "POST"
   assert.equal((await middleware(post)).status, 200)
-  // Every new path is kept out of search; /corkboard predates the move and stays public, and
-  // /explore has a public signed-out view (account cookies still mark it noindex).
+  // Every new path is kept out of search; /corkboard predates the move and stays public.
   const at = path => { const url = new URL(`https://www.outclass.example${path}`); return { method: "GET", url: url.toString(), nextUrl: url, headers: new Headers({ host: url.host }), cookies: { get: () => undefined, has: () => false, getAll: () => [] } } }
   for (const route of nav.STUDENT_ROUTES) {
     const robots = (await middleware(at(route.path))).headers.get("x-robots-tag")
-    assert.equal(robots, ["/corkboard", "/explore"].includes(route.path) ? null : "noindex, nofollow", route.path)
+    assert.equal(robots, route.path === "/corkboard" ? null : "noindex, nofollow", route.path)
   }
 
   const page = params => load("app/page.tsx", pageMocks({})).default({ searchParams: Promise.resolve(params) })

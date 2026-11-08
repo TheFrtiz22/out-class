@@ -1,0 +1,119 @@
+[
+  {
+    "name": "Blackstone",
+    "path": "images/employer-blackstone.png",
+    "url": "https://images.squarespace-cdn.com/content/v1/694f1f8168b1fa57676bbd00/b1a7ccab-16f6-4913-bd9f-aa360e10b6f3/Blackstone-PRESS-QUALITY-6312.webp",
+    "sourcePage": "https://www.virginiaventurefund.com/placements",
+    "role": "employer-mark",
+    "format": "PNG",
+    "sha256": "4c42dc84a9222d871495b535914a9805f2727fc1a7f9cadbbeb4ed54f7de11b7"
+  },
+  {
+    "name": "Morgan Stanley",
+    "path": "images/employer-morgan-stanley.png",
+    "url": "https://images.squarespace-cdn.com/content/v1/694f1f8168b1fa57676bbd00/69f592e3-883b-43cd-ac3a-8f189c3bbad0/Morgan-Stanley-Logo-2006.png",
+    "sourcePage": "https://www.virginiaventurefund.com/placements",
+    "role": "employer-mark",
+    "format": "PNG",
+    "sha256": "ffc3d4eabb24ab53ebafb87b24b0ad005ed6d8f473e94d19d4680dfed5450e9a"
+  },
+  {
+    "name": "Evercore",
+    "path": "images/employer-evercore.png",
+    "url": "https://images.squarespace-cdn.com/content/v1/694f1f8168b1fa57676bbd00/f486cc5b-45a6-45fe-9d22-7198d735e4bd/Evercore.webp",
+    "sourcePage": "https://www.virginiaventurefund.com/placements",
+    "role": "employer-mark",
+    "format": "PNG",
+    "sha256": "81fcf410500201c586240fa37e9f32c74e7b029ae9faff08fe8aad3e7dc20fa3"
+  },
+  {
+    "name": "Guggenheim Partners",
+    "path": "images/employer-guggenheim-partners.png",
+    "url": "https://images.squarespace-cdn.com/content/v1/694f1f8168b1fa57676bbd00/d8771e84-d960-4d22-82b0-2a39a62dc3b7/guggenheim-logo.png",
+    "sourcePage": "https://www.virginiaventurefund.com/placements",
+    "role": "employer-mark",
+    "format": "PNG",
+    "sha256": "1377ce8710c14fe727bcefe4c438767f719515c9051277312a444a74ccb61038"
+  },
+  {
+    "name": "Boston Consulting Group",
+    "path": "images/employer-boston-consulting-group.png",
+    "url": "https://images.squarespace-cdn.com/content/v1/694f1f8168b1fa57676bbd00/07dd4e57-57d4-4887-9b2d-ee063c631d71/boston-consulting-group-bcg-vector-logo.webp",
+    "sourcePage": "https://www.virginiaventurefund.com/placements",
+    "role": "employer-mark",
+    "format": "PNG",
+    "sha256": "b74d556fd8a830fe5fd6abe655907178cb3eff043589c3660c6af732e4fbca6c"
+  },
+  {
+    "name": "Google",
+    "path": "images/employer-google.png",
+    "url": "https://images.squarespace-cdn.com/content/v1/694f1f8168b1fa57676bbd00/f8682240-6327-4a3a-80fc-2fd804427552/Google_2015_logo.svg.webp",
+    "sourcePage": "https://www.virginiaventurefund.com/placements",
+    "role": "employer-mark",
+    "format": "PNG",
+    "sha256": "5cccac53148b38d649784211fcc3ad04506646cb1270dc0175af7306c1780a97"
+  },
+  {
+    "name": "McKinsey & Company",
+    "path": "images/employer-mckinsey-and-company.png",
+    "url": "https://images.squarespace-cdn.com/content/v1/694f1f8168b1fa57676bbd00/629d5a8e-9da9-4afa-93a1-b94f3307f6fb/mckinsey---company_owler_20190728_090718_original.png",
+    "sourcePage": "https://www.virginiaventurefund.com/placements",
+    "role": "employer-mark",
+    "format": "PNG",
+    "sha256": "2ab3ee7b5cef7213188522d03a5239376607ed55bce0902dd459742cfa36a6e7"
+  },
+  {
+    "name": "Bain & Company",
+    "path": "images/seed-extra-21.png",
+    "url": "https://static.wixstatic.com/media/a7faef_a6cd626d34ee404490f893521f369a9d~mv2.png",
+    "sourcePage": "https://www.seeduva.com/",
+    "role": "employer-mark",
+    "format": "PNG",
+    "sha256": "4a8a5c2fe9b0c9e6d8ade9a3bf2ca18ce06573228275104d11ac0f09d7f8c567"
+  },
+  {
+    "name": "McKinsey & Company",
+    "path": "images/seed-extra-22.png",
+    "url": "https://static.wixstatic.com/media/a7faef_8e69b51aec5346de8d10303a4c07ad48~mv2.webp",
+    "sourcePage": "https://www.seeduva.com/",
+    "role": "employer-mark",
+    "format": "PNG",
+    "sha256": "b6873380270ad59f1a49afdbea838a4738d01dc7b00f6d99403eb50c63e94830"
+  },
+  {
+    "name": "Citadel",
+    "path": "images/seed-extra-23.png",
+    "url": "https://static.wixstatic.com/media/a7faef_30d61ea372d64103a6deba30351d5fb6~mv2.webp",
+    "sourcePage": "https://www.seeduva.com/",
+    "role": "employer-mark",
+    "format": "PNG",
+    "sha256": "8ac1766f32eea86321669775f0c2e578466025b19184f568b46a7dab28b68382"
+  },
+  {
+    "name": "Amazon",
+    "path": "images/seed-extra-24.png",
+    "url": "https://static.wixstatic.com/media/a7faef_8c4775190eab4100829b556328f1f84e~mv2.png",
+    "sourcePage": "https://www.seeduva.com/",
+    "role": "employer-mark",
+    "format": "PNG",
+    "sha256": "677ea66d36858bf7e9a777347f9167213aa938567315cedd7e45acb358fccd88"
+  },
+  {
+    "name": "J.P. Morgan",
+    "path": "images/seed-extra-25.png",
+    "url": "https://static.wixstatic.com/media/a7faef_fe602b213f3b40d2bce471387e770bab~mv2.png",
+    "sourcePage": "https://www.seeduva.com/",
+    "role": "employer-mark",
+    "format": "PNG",
+    "sha256": "317aca18287d0c31daa903d30a30dd63fefd0221179de7f541eb46eb94f098eb"
+  },
+  {
+    "name": "Goldman Sachs",
+    "path": "images/seed-extra-26.png",
+    "url": "https://static.wixstatic.com/media/a7faef_99b47877f38b4b4ab2d67fb0942a3e93~mv2.png",
+    "sourcePage": "https://www.seeduva.com/",
+    "role": "employer-mark",
+    "format": "PNG",
+    "sha256": "8b19872029927b521beb9d86964b5ae0ab57c2c9250450e7061d28f2e35ad965"
+  }
+]

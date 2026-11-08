@@ -43,7 +43,7 @@ export default function UvaPage() {
           />
         </figure>
       }
-      heroActions={<div className="oc-public-actions"><Button asChild size="lg"><Link prefetch={false} href="/signup">Create your profile <ArrowRight size={16} aria-hidden="true" /></Link></Button><Button asChild size="lg" variant="outline"><Link prefetch={false} href="/explore">Browse clubs</Link></Button></div>}
+      heroActions={<div className="oc-public-actions"><Button asChild size="lg"><Link prefetch={false} href="/signup">Create your profile <ArrowRight size={16} aria-hidden="true" /></Link></Button><Button asChild size="lg" variant="outline"><a href="#faq">Read the FAQs</a></Button></div>}
     >
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} />
       <section className="oc-campus-context oc-public-section"><p className="oc-public-kicker">Starting at the University of Virginia</p><div className="oc-editorial-split"><h2>One profile.<br />Every opportunity.</h2><div className="oc-editorial-prose"><p>Students can discover organizations, submit applications, manage interviews, and follow their recruitment status. Leaders have tools to configure applications, coordinate interviews, evaluate applicants, and manage decisions.</p><p>OutClass is independent: it is not an official University of Virginia service and is not owned, sponsored, or endorsed by the university.</p><a className="oc-public-text-link" href="/about">The story behind OutClass <ArrowRight size={16} aria-hidden="true" /></a></div></div></section>

@@ -77,3 +77,5 @@ Changes: (1) signed-out `/explore` renders a Server Component from the existing 
 | Demo | unchanged demo Explore | unchanged | unchanged | inherited |
 
 Untested cells: 0 new. The link-holder disclosure (club name and role to anyone holding a valid invitation id, a 122-bit UUID sent by email) is an owner decision recorded in the PUBLIC-SITE-1 report. `pnpm run test:migrations` unchanged (no schema change).
+
+Update 2026-11-07 (owner decision): Explore stays private. The signed-out Explore view, `lib/public-explore.ts` and the `signedOut` render prop were removed before merge; signed-out `/explore` redirects to `/login?next=/explore` as on main. The Public Explore column above no longer applies. `getPublicClub` now returns the public view of marketing (`presentPublicMarketing`) for the club page, Explore's profile view and `/api/workspace` "publicClub" (`admin-clubs.test`).

@@ -36,6 +36,12 @@ OUTCLASS_CHROMIUM=/opt/pw-browsers/chromium OUTCLASS_AUDIT_URL=http://127.0.0.1:
   existing 16px checkbox (with a clickable label) in the shared Corkboard filter.
 - Unique titles in the form "<Page> · OutClass"; og:image on every page; `/q/<unknown>` and unknown paths return 404.
 
+## Owner decisions applied after review (2026-11-07)
+Club leaders remain the default homepage audience; Explore stays private; employer logos are hidden
+(not deleted); Privacy and Terms are formal legal text kept off the public site (404 until
+`LEGAL_PAGES_PUBLIC`). Screenshots in `before/` … `phase4/` show the intermediate states (students as the
+default, public Explore, plain-language legal pages); `after/` is the final state.
+
 ## Known gaps
 - WebKit/Safari not run (not installed in the container).
 - Signed-in pages were not rendered (no Supabase Auth here); signed-in Explore, club pages for members and

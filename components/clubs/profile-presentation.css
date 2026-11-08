@@ -47,3 +47,4 @@
 .oc-club-faq summary:focus-visible { outline:2px solid var(--ring); outline-offset:2px; border-radius:6px; }
 .oc-club-faq p { padding:0 0 16px; white-space:pre-line; font-size:16px; line-height:1.7; color:var(--muted-foreground); }
 @media (max-width:639px) { .oc-club-hero-actions { flex-direction:column; align-items:stretch; } }
+.oc-member-outcomes .oc-member-outcome-mark { display:inline-block; vertical-align:middle; margin-right:8px; height:20px; width:auto; object-fit:contain; }

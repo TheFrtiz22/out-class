@@ -47,7 +47,7 @@ test('public SEO fails closed during a database outage without loading sample cl
 })
 test('sitemap emits canonical public pages without query strings or fabricated timestamps', async () => {
   const { default: sitemap } = load('app/sitemap.ts', { '@/lib/seo': seo, '@/lib/public-club-seo': { getIndexableClubs: async () => [club] } })
-  assert.deepEqual(await sitemap(), ['/', '/uva', '/about', '/explore', '/request-school', '/privacy', '/terms', '/club/real-club'].map(path => ({ url: `https://www.out-class.net${path}` })))
+  assert.deepEqual(await sitemap(), ['/', '/uva', '/about', '/request-school', '/club/real-club'].map(path => ({ url: `https://www.out-class.net${path}` })))
 })
 test('robots permits marketing and public clubs while excluding actual product interfaces', () => {
   const result = load('app/robots.ts', { '@/lib/seo': seo }).default()
@@ -151,7 +151,7 @@ test('shared public footer connects all public pages with real HTML links', () =
   assert.ok(html.includes('OutClass is operated by OutClassPlatforms LLC'))
   assert.ok(html.includes('© 2026 OutClassPlatforms LLC. All rights reserved.'))
   // Privacy and Terms are real pages now (Phase 3), linked from the footer's Legal column.
-  assert.ok(html.includes('href="/privacy"') && html.includes('href="/terms"') && html.includes('href="/explore"'))
+  assert.ok(!html.includes('href="/explore"'))
 })
 test('landing entry preserves student and leader sign-in intent without loading a workspace view first', () => {
   let role

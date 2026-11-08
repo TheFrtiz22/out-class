@@ -12,7 +12,6 @@ import type { LandingPerspective } from "./journey-content"
 import "./public-navigation.css"
 
 const links = [
-  { label: "Explore Clubs", href: "/explore" },
   { label: "How It Works", href: "/#about" },
   { label: "About OutClass", href: "/about" },
   { label: "FAQ", href: "/uva#faq" },

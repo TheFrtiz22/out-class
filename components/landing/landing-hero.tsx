@@ -20,8 +20,10 @@ const copy = {
   },
 } as const
 
-export function LandingHero({ perspective, onPerspectiveChange, onCreateProfile, onLeaderEnter }: {
+export function LandingHero({ perspective, selected = perspective, onPerspectiveChange, onCreateProfile, onLeaderEnter }: {
   perspective: LandingPerspective
+  /** The toggle's immediate value; `perspective` (the content) may follow in a transition. */
+  selected?: LandingPerspective
   onPerspectiveChange: (perspective: LandingPerspective) => void
   onCreateProfile: () => void
   onLeaderEnter: () => void
@@ -32,7 +34,7 @@ export function LandingHero({ perspective, onPerspectiveChange, onCreateProfile,
       <div className="oc-hero-introduction" data-scroll-indicator-content="">
         <div className="oc-hero-copy">
           <p className="oc-hero-context">Made for University of Virginia</p>
-          <SegmentedControl className="oc-hero-audience-toggle" label="Show OutClass for" value={perspective} onChange={onPerspectiveChange}
+          <SegmentedControl className="oc-hero-audience-toggle" label="Show OutClass for" value={selected} onChange={onPerspectiveChange}
             options={[{ value: "student", label: "Students" }, { value: "leader", label: "Club Leaders" }]} />
           <h1 id="outclass-hero-title" className="oc-hero-headline">{text.headline}</h1>
           <p className="oc-hero-tagline">{text.tagline}</p>

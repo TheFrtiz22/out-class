@@ -31,7 +31,7 @@ export function LandingPageView({
   campusName = "University of Virginia",
   initialAudience = DEFAULT_LANDING_AUDIENCE,
 }: LandingPageViewProps) {
-  const { perspective, switchPerspective } = useLandingPerspective(initialAudience)
+  const { perspective, selected, switchPerspective } = useLandingPerspective(initialAudience)
   const journeyNavigation = useJourneyNavigation()
   const createProfile = () => { window.location.href = "/signup" }
   const enterLeader = () => { window.location.href = "/signup?intent=leader" }
@@ -40,13 +40,13 @@ export function LandingPageView({
     <ScrollMotion className="oc-landing" id="top" data-landing-audience={perspective}>
       <LandingNavigation />
       <a className="oc-skip-link" href="#about">Skip to product overview</a>
-      <PublicNavigation hero navigationRef={journeyNavigation.headerRef} journey={{ perspective, onChange: switchPerspective, merged: journeyNavigation.merged }} />
+      <PublicNavigation hero navigationRef={journeyNavigation.headerRef} journey={{ perspective: selected, onChange: switchPerspective, merged: journeyNavigation.merged }} />
       <main>
         <LandingIntro>
-          <LandingHero perspective={perspective} onPerspectiveChange={switchPerspective} onCreateProfile={createProfile} onLeaderEnter={enterLeader} />
+          <LandingHero perspective={perspective} selected={selected} onPerspectiveChange={switchPerspective} onCreateProfile={createProfile} onLeaderEnter={enterLeader} />
         </LandingIntro>
         <LaunchClubs clubs={launchClubs} />
-        <ProductJourney perspective={perspective} onPerspectiveChange={switchPerspective} onCreateProfile={createProfile} onLeaderEnter={enterLeader} navigation={journeyNavigation} />
+        <ProductJourney perspective={perspective} selected={selected} onPerspectiveChange={switchPerspective} onCreateProfile={createProfile} onLeaderEnter={enterLeader} navigation={journeyNavigation} />
         <SectionReveal
           id="create-account"
           className="oc-final-invitation"

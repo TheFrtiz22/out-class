@@ -63,9 +63,9 @@ export function PublicClubPage({
         ) : (
           <ClubProfileView
             club={club}
-            backLabel="Explore clubs"
+            backLabel={embedded ? "Explore clubs" : "Back to OutClass"}
             onBack={() => {
-              window.location.href = "/explore"
+              window.location.href = embedded ? "/explore" : "/"
             }}
             onNavigate={navigate}
           />

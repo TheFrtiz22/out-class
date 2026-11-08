@@ -13,12 +13,14 @@ const { chromium } = require('playwright')
 const base = process.env.OUTCLASS_VITALS_URL || 'http://127.0.0.1:3000'
 const runs = Number(process.env.OUTCLASS_VITALS_RUNS || 3)
 const club = process.env.OUTCLASS_AUDIT_CLUB || 'vcg-uva'
-const pages = [['/', '/'], ['/uva', '/uva'], ['/club/[id]', `/club/${club}`], ['/login', '/login']]
+const only = (process.env.OUTCLASS_VITALS_ONLY || '').split(',').filter(Boolean)
+const pages = [['/', '/'], ['/uva', '/uva'], ['/club/[id]', `/club/${club}`], ['/login', '/login']].filter(([name]) => !only.length || only.includes(name))
 const profiles = {
   desktop: { context: { viewport: { width: 1440, height: 1000 } }, throttle: null },
   phone: { context: { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }, throttle: { cpu: 4, latency: 150, down: 1.6e6 / 8, up: 750e3 / 8 } },
 }
-const interactions = ['[aria-label="Open menu"]', '.oc-public-nav button', '[role="radiogroup"] [role="radio"]', '[role="tablist"] [role="tab"]', 'input[type="email"]', 'main button', 'main a']
+// Non-navigating controls only (a link or a navigating button would measure the next page).
+const interactions = ['.oc-public-menu-toggle', '[data-segment]', 'input[type="email"]', 'details summary', 'h1']
 
 const observe = () => {
   window.__vitals = { lcp: 0, cls: 0, inp: 0, lcpElement: '', content: 0 }
@@ -41,6 +43,9 @@ async function load(context, profile, url) {
   await page.addInitScript(observe)
   await page.goto(base + url, { waitUntil: 'load', timeout: 120000 })
   await page.waitForTimeout(profile.throttle ? 4000 : 1500)
+  // LCP and CLS are read before any interaction; INP after one interaction on the same URL.
+  const loaded = await page.evaluate(() => ({ ...window.__vitals }))
+  const loadedUrl = new URL(page.url()).pathname
   for (const selector of interactions) {
     const target = page.locator(selector).first()
     if (await target.isVisible().catch(() => false)) {
@@ -50,7 +55,9 @@ async function load(context, profile, url) {
     }
   }
   await page.waitForTimeout(800)
-  const vitals = await page.evaluate(() => window.__vitals)
+  const after = await page.evaluate(() => window.__vitals)
+  const vitals = { ...loaded, inp: new URL(page.url()).pathname === loadedUrl ? after.inp : NaN }
+  if (process.env.OUTCLASS_VITALS_DEBUG) vitals.target = await page.evaluate(() => document.activeElement?.outerHTML.slice(0, 120))
   await page.close()
   return vitals
 }

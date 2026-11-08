@@ -49,7 +49,6 @@ test('every public page has a unique title and none repeats "OutClass"', () => {
     'app/uva/page.tsx': 'Club recruitment at UVA · OutClass',
     'app/about/page.tsx': 'About · OutClass',
     'app/request-school/page.tsx': 'Request your school · OutClass',
-    'app/(product)/explore/page.tsx': 'Explore clubs · OutClass',
     'app/login/page.tsx': 'Sign in · OutClass',
     'app/signup/page.tsx': 'Create your profile · OutClass',
     'app/forgot-password/page.tsx': 'Forgot password · OutClass',
@@ -82,18 +81,31 @@ test('every page inherits a social image; public pages carry their own with the 
   assert.ok(fs.existsSync('public/images/outclass-social.jpg'))
 })
 
-test('Privacy and Terms are real pages from one source; the footer links them on every public page', () => {
-  const { privacyPolicy, termsOfService, CONTACT_HREF } = load('lib/legal-content.ts')
+test('Privacy and Terms: formal text from one source, rendered by one component, and not public until the switch is on', async () => {
+  const legal = load('lib/legal-content.ts')
+  assert.equal(legal.LEGAL_PAGES_PUBLIC, false)
   const { LegalPage } = load('components/landing/legal-page.tsx', { './public-page-frame': { PublicPageFrame: ({ children }) => React.createElement('main', null, children) } })
-  for (const content of [privacyPolicy, termsOfService]) {
+  for (const content of [legal.privacyPolicy, legal.termsOfService]) {
     const html = renderToStaticMarkup(React.createElement(LegalPage, content))
     assert.equal((html.match(/<h1/g) || []).length, 1); assert.match(html, new RegExp(`<h1[^>]*>${content.title}</h1>`))
     assert.match(html, /OutClassPlatforms LLC/); assert.match(html, /href="mailto:/)
-    assert.doesNotMatch(html, /has not yet been published/)
+    assert.ok(content.sections.length >= 10, content.title)
+  }
+  assert.match(JSON.stringify(legal.termsOfService), /Commonwealth of Virginia/)
+  assert.match(JSON.stringify(legal.privacyPolicy), /do not sell personal information/)
+  // While the switch is off: both routes 404, the footer has no Legal column, the sitemap omits them.
+  for (const file of ['app/privacy/page.tsx', 'app/terms/page.tsx']) {
+    const source = fs.readFileSync(file, 'utf8')
+    assert.match(source, /if \(!LEGAL_PAGES_PUBLIC\) notFound\(\)/, file)
+    const page = load(file, { 'next/navigation': { notFound: () => { throw Error('NEXT_NOT_FOUND') } }, '@/components/landing/legal-page': { LegalPage: () => null } }).default
+    assert.throws(() => page(), /NEXT_NOT_FOUND/, file)
   }
   const { PublicFooter } = load('components/landing/public-footer.tsx', { '@/components/landing/interactive-footer-wordmark': { InteractiveFooterWordmark: () => null } })
   const footer = renderToStaticMarkup(React.createElement(PublicFooter))
-  assert.match(footer, /<h3>Legal<\/h3>/); assert.match(footer, /href="\/privacy"/); assert.match(footer, /href="\/terms"/); assert.match(footer, new RegExp(`href="${CONTACT_HREF}"`))
+  assert.doesNotMatch(footer, /<h3>Legal<\/h3>|href="\/privacy"|href="\/terms"|mailto:/)
+  const sitemap = load('app/sitemap.ts', { '@/lib/public-club-seo': { getIndexableClubs: async () => [] } }).default
+  const urls = (await sitemap()).map(entry => entry.url)
+  assert.equal(urls.some(url => /\/(privacy|terms)$/.test(url)), false)
   // One footer component, used by the homepage, information pages and the public frame; no legal dialogs remain.
   for (const file of ['components/views/landing-page-view.tsx', 'components/landing/public-information-page.tsx', 'components/landing/public-page-frame.tsx']) assert.match(fs.readFileSync(file, 'utf8'), /<PublicFooter/, file)
   assert.doesNotMatch(fs.readFileSync('components/views/landing-page-view.tsx', 'utf8'), /Dialog|has not yet been published/)
@@ -101,6 +113,6 @@ test('Privacy and Terms are real pages from one source; the footer links them on
 
 test('robots allows the new public pages and keeps the private disallows', () => {
   const robots = load('app/robots.ts').default()
-  for (const p of ['/privacy', '/terms', '/explore', '/request-school']) assert.equal(robots.rules.disallow.some(d => p.startsWith(d.replace('*', ''))), false, p)
+  for (const p of ['/privacy', '/terms', '/request-school']) assert.equal(robots.rules.disallow.some(d => p.startsWith(d.replace('*', ''))), false, p)
   for (const p of ['/login', '/signup', '/invitations/', '/club-access/', '/club-claims/', '/check-in', '/voting/', '/platform', '/settings/']) assert.ok(robots.rules.disallow.includes(p), p)
 })

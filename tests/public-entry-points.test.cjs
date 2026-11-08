@@ -86,30 +86,13 @@ test('signed-out club access and club claim links show sign-in cards; access edi
   for (const layout of ['app/invitations/layout.tsx', 'app/club-access/layout.tsx', 'app/club-claims/layout.tsx']) assert.match(fs.readFileSync(layout, 'utf8'), /<AuthenticatedPageLayout optional>/, layout)
 })
 
-test('public Explore lists only claimed database clubs and projects only card fields', () => {
-  const { publicExploreSelection } = load('lib/public-explore.ts', { '@/actions/club-directory': { getClubDirectory: forbidden } })
-  const club = (over) => ({ id: 'a', name: 'Alpha Fund', logoText: 'AF', logoUrl: null, color: '#123456', category: 'Finance', pitch: 'Investing.', tags: [], acceptanceRate: 4, aumValue: 5e6, timeCommitment: null, source: 'database', claimed: true, applicationAvailable: true, applicationDeadline: new Date(Date.now() + 864e5).toISOString(), marketing: { logoOnBrand: true, placements: ['Goldman Sachs'], memberCount: 40, acceptanceNote: 'x' }, description: 'Private-ish long text', requirements: ['Essay'], ...over })
-  const { results, categories, total } = publicExploreSelection([club(), club({ id: 'b', name: 'Beta', claimed: false }), club({ id: 'c', name: 'Gamma', source: 'preview' }), club({ id: 'd', name: 'Delta Consulting', category: 'Consulting', applicationAvailable: false })], '', 'all')
-  assert.equal(total, 2); assert.deepEqual(results.map(c => c.id), ['a', 'd']); assert.deepEqual(categories, ['Consulting', 'Finance'])
-  assert.deepEqual(Object.keys(results[0]).sort(), ['applicationsOpen', 'category', 'color', 'deadline', 'id', 'logo', 'logoText', 'logoUrl', 'name', 'pitch'])
-  assert.deepEqual(Object.keys(results[0].logo).sort(), ['logoBackground', 'logoOnBrand'])
-  assert.doesNotMatch(JSON.stringify(results), /Goldman|memberCount|acceptance|aum|Essay|Private-ish|requirements/)
-  assert.equal(results[0].applicationsOpen, true); assert.equal(results[1].applicationsOpen, false)
-  assert.deepEqual(publicExploreSelection([club(), club({ id: 'd', name: 'Delta Consulting', category: 'Consulting' })], 'delta', 'all').results.map(c => c.id), ['d'])
-  assert.deepEqual(publicExploreSelection([club(), club({ id: 'd', name: 'Delta Consulting', category: 'Consulting' })], '', 'consulting').results.map(c => c.id), ['d'])
-  assert.equal(publicExploreSelection([club()], '', 'not-a-category').category, 'all')
-})
-
-test('public Explore cards ask for sign-in with next= back to the club and link the profile', () => {
-  const { PublicExplore } = load('components/landing/public-explore.tsx', { '@/components/landing/public-information-page': { PublicInformationPage: ({ title, children }) => React.createElement('main', null, React.createElement('h1', null, title), children) }, '@/components/club-logo': { ClubLogo: () => null } })
-  const html = renderToStaticMarkup(React.createElement(PublicExplore, { results: [{ id: 'club-1', name: 'Alpha Fund', logoText: 'AF', logoUrl: null, color: '#123456', category: 'Finance', pitch: 'Investing.', logo: {}, applicationsOpen: true, deadline: null }], categories: ['Finance'], category: 'all', query: '', total: 1 }))
-  assert.match(html, /href="\/club\/club-1"/)
-  assert.equal((html.match(/href="\/login\?next=%2Fclub%2Fclub-1"/g) || []).length, 2)
-  assert.match(html, /Sign in to apply/); assert.match(html, />Follow</)
-  assert.match(html, /action="\/explore" method="get"/)
+test('Explore stays private: signed-out visitors are sent to sign-in and the page is not in the sitemap or header', () => {
   const page = fs.readFileSync('app/(product)/explore/page.tsx', 'utf8')
-  assert.match(page, /signedOut=\{/); assert.doesNotMatch(page, /typesense/i)
-  assert.match(fs.readFileSync('components/student-workspace-page.tsx', 'utf8'), /if \(!user && signedOut\) return signedOut\(params\)/)
+  assert.match(page, /robots: privateRobots/); assert.doesNotMatch(page, /signedOut|PublicExplore/)
+  assert.match(fs.readFileSync('components/student-workspace-page.tsx', 'utf8'), /if \(!user\) redirect\(`\/login\?next=/)
+  assert.equal(fs.existsSync('lib/public-explore.ts'), false)
+  assert.doesNotMatch(fs.readFileSync('components/landing/public-navigation.tsx', 'utf8'), /\/explore/)
+  assert.doesNotMatch(fs.readFileSync('components/landing/public-footer.tsx', 'utf8'), /\/explore/)
 })
 
 test('unknown short links are a real 404 with sentence-case copy and Home / Sign in', async () => {
@@ -127,8 +110,8 @@ test('unknown short links are a real 404 with sentence-case copy and Home / Sign
 test('sitemap lists public pages and indexable clubs; robots keeps every private disallow', async () => {
   const sitemap = load('app/sitemap.ts', { '@/lib/public-club-seo': { getIndexableClubs: async () => [{ id: 'club one' }] } }).default
   const urls = (await sitemap()).map(entry => entry.url.replace('https://www.out-class.net', ''))
-  for (const url of ['/', '/uva', '/about', '/explore', '/club/club%20one']) assert.ok(urls.includes(url), url)
+  for (const url of ['/', '/uva', '/about', '/club/club%20one']) assert.ok(urls.includes(url), url)
+  assert.equal(urls.includes('/explore'), false)
   const robots = load('app/robots.ts').default()
   for (const path of ['/api/', '/login', '/signup', '/settings/', '/invitations/', '/club-access/', '/club-claims/', '/club/*/workspace', '/check-in', '/voting/', '/preview']) assert.ok(robots.rules.disallow.includes(path), path)
-  assert.equal(robots.rules.disallow.includes('/explore'), false)
 })
