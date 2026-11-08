@@ -15,6 +15,8 @@ import * as demoBookingApi from "@/lib/demo/interview-booking";
 import * as invitationSchedules from "@/actions/invitation-schedules";
 import * as decisionSchedules from "@/actions/decision-schedules";
 import * as recruitmentManagement from "@/actions/recruitment-management";
+import * as rankedReview from "@/actions/ranked-review";
+import * as demoRankedReview from "@/lib/demo/ranked-review";
 import * as decisionCommunications from "@/actions/communications";
 import * as demoDecisionCommunications from "@/lib/demo/communications";
 import * as offers from "@/actions/recruitment-offers";
@@ -662,3 +664,5 @@ export const cancelAvailabilitySchedule = adapt(availabilitySchedules.cancelAvai
 export const getPipelineSettings = adapt(pipelineActions.getPipelineSettings, demoPipeline.getPipelineSettings);
 export const savePipelineSettings = adapt(pipelineActions.savePipelineSettings, demoPipeline.savePipelineSettings);
 export const getPipelineInterviewStatus = adapt(pipelineInterviewActions.getPipelineInterviewStatus, demoPipeline.getPipelineInterviewStatus);
+export const getRankedReviewSettings = adapt((...args: Parameters<typeof rankedReview.getRankedReviewSettings>) => readWorkspace<Awaited<ReturnType<typeof rankedReview.getRankedReviewSettings>>>("rankedReviewSettings", args), demoRankedReview.getRankedReviewSettings);
+export const saveRankedReviewBands = adapt(rankedReview.saveRankedReviewBands, demoRankedReview.saveRankedReviewBands);

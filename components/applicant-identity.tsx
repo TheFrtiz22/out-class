@@ -36,11 +36,13 @@ export function ApplicantIdentity({ name, photo, anonymous = false, size = "sm",
   const [loaded, setLoaded] = useState<{ src: string; ok: boolean } | null>(null)
   const visible = shown && loaded?.src === photo && loaded.ok
   const label = announcePhoto ? { role: "img" as const, "aria-label": visible ? "Applicant headshot" : "No applicant photo" } : { "aria-hidden": true as const }
-  return <div className={cn("oc-applicant-identity", className)} data-size={size}>
+  // Rows render this inside <button> (phrasing content only); a heading needs a block container.
+  const Box = heading ? "div" : "span"
+  return <Box className={cn("oc-applicant-identity", className)} data-size={size}>
     <Avatar className="oc-applicant-identity-photo" {...label} data-anonymous={anonymous || undefined} data-photo={visible ? "loaded" : "placeholder"}>
       {shown && <AvatarImage src={photo!} alt="" decoding="async" loading="lazy" draggable={false} onLoadingStatusChange={status => { if (status === "loaded" || status === "error") setLoaded({ src: photo!, ok: status === "loaded" }); }} />}
       <AvatarFallback className="oc-applicant-identity-fallback" delayMs={photo ? 400 : 0}>{initials || <UserRound aria-hidden="true" />}</AvatarFallback>
     </Avatar>
-    <div className="oc-applicant-identity-text">{heading ?? <span className="oc-applicant-identity-name">{name}</span>}{children}</div>
-  </div>
+    <Box className="oc-applicant-identity-text">{heading ?? <span className="oc-applicant-identity-name">{name}</span>}{children}</Box>
+  </Box>
 }
