@@ -1,10 +1,17 @@
+import { Suspense } from "react";
+import { WorkspaceLoading } from "@/components/workspace-loading";
 import { adminPageLoad } from "@/utils/admin-page";
 import { AdminRecovery } from "@/components/admin/admin-recovery";
 import { getAdminOverview } from "@/actions/admin-workspace";
 import { PageHeader } from "@/components/ui/page-header";
 import { Dashboard, DashboardCard, DashboardHero, GlassRow, GlassRowList, MetricTiles, NeedsAction, NeedsYouRow } from "@/components/product/dashboard/dashboard";
 
-export default async function PlatformPage() {
+// The placeholder streams from each page, not platform/loading.tsx, so /platform/view-as stays a real 307.
+export default function PlatformPage() {
+  return <Suspense fallback={<WorkspaceLoading label="Loading admin…" layout="workspace" rows={3} />}><PlatformOverview /></Suspense>;
+}
+
+async function PlatformOverview() {
   const result = await adminPageLoad("/platform", getAdminOverview, "ADMIN_DATA_LOAD_FAILED");
   if (result.supportCode) return <AdminRecovery supportCode={result.supportCode} />;
   const metrics = result.value!;

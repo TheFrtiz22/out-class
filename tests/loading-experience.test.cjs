@@ -160,15 +160,23 @@ test("route loader uses the branded mark with a stable image box and accessible 
   assert.equal(OutClassLoadingScreen({ variant: "navy" }).props["data-variant"], "navy")
   // Workspace routes keep the persistent shell on screen: their loaders are content-area placeholders, never the
   // full-screen cover (that stays for the first session restore, demo setup and /preview). Public routes have none.
-  for (const route of ["app/(workspace)/home", "app/(workspace)/applications", "app/(workspace)/platform", "app/(workspace)/calendar", "app/(workspace)/inbox", "app/(workspace)/profile", "app/(workspace)/clubs", "app/(workspace)/explore/categories", "app/(workspace)/club/[clubId]/tasks", "app/(workspace)/settings", "app/(workspace)/meetings"]) {
+  for (const route of ["app/(workspace)/home", "app/(workspace)/platform/events", "app/(workspace)/calendar", "app/(workspace)/profile", "app/(workspace)/explore/categories", "app/(workspace)/settings/notifications", "app/(workspace)/meetings"]) {
     const Loading = load(`${route}/loading.tsx`, { "@/components/outclass-loading-screen": { OutClassLoadingScreen }, "@/components/workspace-loading": { WorkspaceLoading: "WorkspaceLoading" }, "@/components/shell/workspace-route-loading": { WorkspaceRouteLoading: "WorkspaceRouteLoading" }, "@/components/ui/loading-state": { LoadingState: "LoadingState" } }).default
     assert.notEqual(Loading().type, OutClassLoadingScreen, route)
     assert.ok(["WorkspaceLoading", "WorkspaceRouteLoading", "LoadingState"].includes(Loading().type), route)
   }
-  // The club workspace streams its placeholder from the page, after the legacy-URL redirect, so old links get a real 307.
-  assert.equal(fs.existsSync("app/(workspace)/club/[clubId]/workspace/loading.tsx"), false)
-  const workspacePage = fs.readFileSync("app/(workspace)/club/[clubId]/workspace/page.tsx", "utf8")
-  assert.ok(workspacePage.indexOf("redirect(moved)") < workspacePage.indexOf("<Suspense fallback={<WorkspaceRouteLoading />}>"), "redirect before the placeholder streams")
+  // A loading.tsx streams the persistent shell before its page runs, so a page that redirects under one loads a
+  // second document instead of answering 307. Redirecting pages sit under no loader; their placeholder streams from
+  // the page itself (club workspace, applications, clubs, inbox, platform overview), after the redirect check.
+  const pages = dir => fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? pages(`${dir}/${entry.name}`) : entry.name === "page.tsx" ? [`${dir}/page.tsx`] : [])
+  for (const page of pages("app/(workspace)").filter(page => /\bredirect\(/.test(fs.readFileSync(page, "utf8")))) {
+    for (let dir = page.slice(0, page.lastIndexOf("/")); dir !== "app"; dir = dir.slice(0, dir.lastIndexOf("/"))) assert.equal(fs.existsSync(`${dir}/loading.tsx`), false, `${page} redirects under ${dir}/loading.tsx`)
+  }
+  for (const [page, fallback] of [["club/[clubId]/workspace", "WorkspaceRouteLoading"], ["applications", "WorkspaceLoading"], ["clubs", "WorkspaceLoading"], ["inbox", "WorkspaceLoading"], ["platform", "WorkspaceLoading"]]) {
+    const source = fs.readFileSync(`app/(workspace)/${page}/page.tsx`, "utf8")
+    assert.match(source, new RegExp(`<Suspense fallback={<${fallback} `.replace(/[{}()<]/g, "\\$&")), page)
+    if (source.includes("redirect(")) assert.ok(source.indexOf("redirect(") < source.indexOf("<Suspense"), `${page} redirects before its placeholder streams`)
+  }
   assert.equal(fs.existsSync("app/(workspace)/loading.tsx"), false, "a group loading.tsx would stream 200s for pages that call notFound()")
   assert.equal(fs.existsSync("app/loading.tsx"), false, "a root loading.tsx would cover every public page and turn 404s into 200s")
 })
