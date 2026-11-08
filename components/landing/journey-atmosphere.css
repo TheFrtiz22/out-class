@@ -3,7 +3,6 @@
 .oc-landing:has(.oc-product-stories) main { background: var(--oc-journey-linen); }
 .oc-landing .oc-launch-clubs { background: var(--oc-journey-linen); }
 .oc-landing .oc-product-stories { max-width: none; background: var(--oc-journey-linen); }
-.oc-landing .oc-journey-controls { background: var(--oc-journey-linen); }
 .oc-landing .oc-final-invitation h2 { color: var(--primary); max-width: 20ch; font-size: clamp(2rem, 4.5vw, 3.5rem); font-weight: 400; }
 .oc-landing .oc-invitation-campus { color: var(--brand-ink); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
 .oc-landing .oc-invitation-note { max-width: 42ch; }

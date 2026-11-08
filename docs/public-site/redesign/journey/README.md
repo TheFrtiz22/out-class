@@ -13,7 +13,7 @@ Built from the "Sound familiar?" and "How OutClass works" sections of `../Main.m
   - `aria-selected` on the tabs
   - exactly one `tabpanel`
   Each step shows:
-  - the step number in upright Caslon
+  - the step number in upright navy Caslon
   - the title, description and detail from `journey-content.ts`
   - a light-glass sample card, labelled "Sample data"
 - **Deep links**: `journeyChapters`, `equivalentJourneyStage` and `journeyChapterHref` are kept.
@@ -21,13 +21,16 @@ Built from the "Sound familiar?" and "How OutClass works" sections of `../Main.m
     for step N of `?audience=` is selected (out of range selects the last step).
   - Choosing a tab writes the `journeyChapterHref` link with `replaceState`.
   - Switching audience keeps the task: Interview stays Interview; Decide becomes Track.
-- **Kept**: the existing audience switch block ("Two sides of the same opportunity.") and its header
-  handoff (`useJourneyNavigation`), so readers can still change audience inside the section.
+- **Audience switch**: the section has no switch of its own; the hero sets the audience. The
+  `useJourneyNavigation` sentinel stays, so the header's compact switch still appears while reading the
+  section, as before.
+- **Bare deep links**: a `#journey-N` with no `?audience=` resolves the audience as `useLandingPerspective`
+  does (query, then stored preference, then the current audience).
 
 ## Deviations
 
-- The step number is `--brand-ink`, not `--brand-orange`: orange is 2.51:1 on the linen canvas and fails
-  axe's 3:1 large-text minimum. The spec's orange rule now names this exception.
+- The step number is navy, not the mockup's orange (owner decision; orange stays limited to the two places
+  in the spec).
 - Kickers are muted ink, not the mockup's orange-brown, per the spec's orange rule.
 - Sample chips use the success, info, muted and navy tokens; the mockup's orange "active" chip is info blue.
 
@@ -40,6 +43,8 @@ All of these pass:
 - **Deep links**: `?audience=leader#journey-4` opens Interview, `student#journey-3` Interview,
   `student#journey-5` Belong, `leader#journey-1` Set Up, and `student#journey-9` Belong. Each one
   scrolls to the section.
+- **Stored preference**: a bare `#journey-3` opens Interview with a stored student preference and Review
+  with a stored club-leader preference.
 - **hashchange** to `#journey-5` selects Decide.
 - **360, 390 and 1440, both audiences**: horizontal overflow 0, no transitions or animations under
   reduced motion, and axe 0 on both sections.

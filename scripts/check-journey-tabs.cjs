@@ -1,7 +1,7 @@
 /**
  * Homepage "How OutClass works" tabs against a local production build, signed out:
  * keyboard (arrows, Home/End, Tab out to the panel), one tabpanel, #journey-N deep links and hashchange,
- * the audience switch keeping the task, no horizontal overflow at 360/390/1440, no transitions under
+ * the hero audience switch keeping the task, a bare hash following the stored preference, no horizontal overflow at 360/390/1440, no transitions under
  * reduced motion, and axe on both new sections. Screenshots go to <out>.
  *
  *   node scripts/check-journey-tabs.cjs http://127.0.0.1:3203 /tmp/journey-shots
@@ -25,11 +25,11 @@ const state = async p => { await p.waitForTimeout(150); return p.evaluate(() => 
     await p.locator('.oc-journey-tablist [role=tab]', { hasText: 'Interview' }).click()
     assert.match(p.url(), /\?audience=leader#journey-4$/, 'tab choice keeps a shareable deep link')
     // Audience switch keeps the task: leader Interview -> student Interview; leader Decide -> student Track.
-    await p.locator('.oc-journey-controls [data-perspective-option=student]').click(); await p.waitForFunction(() => document.querySelector('#product-journey')?.dataset.perspective === 'student')
+    await p.locator('.oc-hero-audience-toggle [data-segment]', { hasText: 'Students' }).click(); await p.waitForFunction(() => document.querySelector('#product-journey')?.dataset.perspective === 'student')
     s = await state(p); assert.deepEqual(s.selected, ['Interview']); assert.equal(s.number, '03')
-    await p.locator('.oc-journey-controls [data-perspective-option=leader]').click(); await p.waitForFunction(() => document.querySelector('#product-journey')?.dataset.perspective === 'leader')
+    await p.locator('.oc-hero-audience-toggle [data-segment]', { hasText: /Club/i }).click(); await p.waitForFunction(() => document.querySelector('#product-journey')?.dataset.perspective === 'leader')
     await p.locator('.oc-journey-tablist [role=tab]', { hasText: 'Decide' }).click()
-    await p.locator('.oc-journey-controls [data-perspective-option=student]').click(); await p.waitForFunction(() => document.querySelector('#product-journey')?.dataset.perspective === 'student')
+    await p.locator('.oc-hero-audience-toggle [data-segment]', { hasText: 'Students' }).click(); await p.waitForFunction(() => document.querySelector('#product-journey')?.dataset.perspective === 'student')
     s = await state(p); assert.deepEqual(s.selected, ['Track'])
     log('PASS keyboard tabs, single panel, deep link on click, audience switch keeps the task'); await c.close() }
   // Old deep links.
@@ -38,6 +38,11 @@ const state = async p => { await p.waitForTimeout(150); return p.evaluate(() => 
     const s = await state(p); assert.deepEqual(s.selected, [label], url); assert.equal(s.number, num, url)
     const top = await p.evaluate(() => document.querySelector('#product-journey').getBoundingClientRect().top); assert.ok(top > -10 && top < 400, url + ' scrolled to section, top=' + top)
     log('PASS deep link', url, '->', label); await c.close() }
+  // A bare #journey-N follows the stored audience preference (resolved before the hook commits it).
+  for (const [pref, label] of [['students', 'Interview'], ['club-leaders', 'Review']]) {
+    const c = await b.newContext({ viewport: { width: 1440, height: 1000 } }); await c.addInitScript(v => { try { localStorage.setItem('outclass-landing-audience', v) } catch {} }, pref)
+    const p = await c.newPage(); await p.goto(base + '/#journey-3', { waitUntil: 'networkidle' }); await p.waitForTimeout(300)
+    assert.deepEqual((await state(p)).selected, [label], pref); log('PASS bare #journey-3 with stored', pref, '->', label); await c.close() }
   // hashchange on the same page.
   { const c = await b.newContext({ viewport: { width: 1440, height: 1000 } }); const p = await c.newPage(); await p.goto(base + '/?audience=leader', { waitUntil: 'networkidle' })
     await p.evaluate(() => { location.hash = '#journey-5' }); await p.waitForTimeout(300); assert.deepEqual((await state(p)).selected, ['Decide']); log('PASS hashchange #journey-5 -> Decide'); await c.close() }

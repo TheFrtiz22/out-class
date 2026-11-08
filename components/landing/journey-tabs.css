@@ -33,7 +33,7 @@
 .oc-journey-panel { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 5fr); align-items: start; gap: 48px; }
 .oc-journey-panel:focus-visible { outline: 2px solid var(--primary); outline-offset: 8px; }
 .oc-journey-copy { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-.oc-journey-number { margin: 0 0 -12px; font-family: var(--oc-font-display); font-size: 96px; line-height: 1; color: var(--brand-ink); } /* --brand-orange is 2.5:1 on the linen canvas; brand-ink passes 3:1 */
+.oc-journey-number { margin: 0 0 -12px; font-family: var(--oc-font-display); font-size: 96px; line-height: 1; color: var(--primary); }
 .oc-journey-copy h3 { margin: 0; font-family: var(--oc-font-display); font-size: 32px; font-weight: 400; line-height: 1.2; letter-spacing: -.02em; color: var(--primary); }
 .oc-journey-description { margin: 0; font-size: 18px; line-height: 1.6; color: var(--secondary-foreground); }
 .oc-journey-detail { margin: 0; font-size: 15px; color: var(--muted-foreground); }

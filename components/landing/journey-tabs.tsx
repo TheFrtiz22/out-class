@@ -1,17 +1,21 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { equivalentJourneyStage, journeyChapterHref, journeyChapters, journeySample, type JourneyStage, type LandingPerspective } from "./journey-content"
-import { audienceFromQuery } from "@/lib/landing-audience"
+import { audienceFromPreference, audienceFromQuery, LANDING_AUDIENCE_PREFERENCE } from "@/lib/landing-audience"
 
 type Selection = { perspective: LandingPerspective; index: number }
 
-/** `#journey-N` (built by journeyChapterHref) names a step of the `?audience=` story, or of the current one. */
+/** `#journey-N` (built by journeyChapterHref) names a step of the `?audience=` story. A bare hash resolves the
+ *  audience as useLandingPerspective does (query, stored preference, then the current audience), because on
+ *  first load this runs before the hook's choice has committed. */
 function selectionFromLocation(fallback: LandingPerspective): Selection | null {
   const match = /^#journey-(\d+)$/.exec(window.location.hash)
   if (!match) return null
-  const perspective = audienceFromQuery(new URLSearchParams(window.location.search).get("audience")) ?? fallback
+  let saved: LandingPerspective | null = null
+  try { saved = audienceFromPreference(window.localStorage.getItem(LANDING_AUDIENCE_PREFERENCE)) } catch { /* Storage may be blocked. */ }
+  const perspective = audienceFromQuery(new URLSearchParams(window.location.search).get("audience")) ?? saved ?? fallback
   const last = journeyChapters[perspective].length - 1
   return { perspective, index: Math.min(Math.max(Number(match[1]) - 1, 0), last) }
 }
@@ -28,9 +32,13 @@ export function JourneyTabs({ perspective }: { perspective: LandingPerspective }
   const chapter = chapters[index]
   const sample = journeySample(perspective, chapter.stage)
 
+  // The audience the page has settled on (the hook resolves hash, query and stored preference after SSR).
+  const current = useRef(perspective)
+  useLayoutEffect(() => { current.current = perspective }, [perspective])
+
   useEffect(() => {
     const sync = () => {
-      const next = selectionFromLocation(perspective)
+      const next = selectionFromLocation(current.current)
       if (!next) return
       setSelection(next)
       // An out-of-range step (#journey-9) has no anchor for the browser to scroll to; bring the section into view.
@@ -39,8 +47,6 @@ export function JourneyTabs({ perspective }: { perspective: LandingPerspective }
     sync()
     window.addEventListener("hashchange", sync)
     return () => window.removeEventListener("hashchange", sync)
-    // The fallback audience only matters for a bare #journey-N; the hash handler must not re-run on every switch.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const choose = (value: string) => {
@@ -54,7 +60,7 @@ export function JourneyTabs({ perspective }: { perspective: LandingPerspective }
   return (
     <div id="product-journey" className="oc-journey-tabs" data-perspective={perspective}>
       {/* Old deep links (#journey-1 …) still land on this section; the effect above selects their tab. */}
-      {chapters.map((item, i) => <span key={item.stage} id={`journey-${i + 1}`} className="oc-journey-anchor" tabIndex={-1} aria-hidden="true" />)}
+      {chapters.map((item, i) => <span key={item.stage} id={`journey-${i + 1}`} className="oc-journey-anchor" />)}
       <Tabs value={chapter.stage} onValueChange={choose}>
         <TabsList className="oc-journey-tablist" aria-label={perspective === "student" ? "Steps for students" : "Steps for club leaders"}>
           {chapters.map(item => <TabsTrigger key={item.stage} value={item.stage}>{item.label}</TabsTrigger>)}

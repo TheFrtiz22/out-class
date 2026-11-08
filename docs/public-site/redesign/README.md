@@ -36,9 +36,7 @@ When a page is built from a mockup, use the repo asset, never the blob URL.
 3. **Type.** Source Sans (`--oc-font-sans`) for body text. Libre Caslon (`--oc-font-display`) for headings
    only, always upright. No italics anywhere.
 4. **Brand orange appears in exactly two places:** the hero headline's accent word, and "class" in the final
-   call to action. Not in kickers, links, rules, dots or focus rings. One exception: the large step number in
-   "How OutClass works" (the mockup's orange numeral), set in `--brand-ink` because `--brand-orange` fails
-   contrast on the linen canvas.
+   call to action. Not in kickers, links, rules, dots or focus rings.
 5. **No decorative icons.** The only images are logos, headshots and campus photos.
 
 ## Glass utilities

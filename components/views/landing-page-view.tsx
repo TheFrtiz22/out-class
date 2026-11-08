@@ -48,7 +48,7 @@ export function LandingPageView({
         </LandingIntro>
         <LaunchClubs clubs={launchClubs} />
         <ScatteredTools />
-        <ProductJourney perspective={perspective} selected={selected} onPerspectiveChange={switchPerspective} navigation={journeyNavigation} />
+        <ProductJourney perspective={perspective} navigation={journeyNavigation} />
         <SectionReveal
           id="create-account"
           className="oc-final-invitation"

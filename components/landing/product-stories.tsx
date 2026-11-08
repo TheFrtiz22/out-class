@@ -1,6 +1,5 @@
 "use client"
 
-import { PerspectiveSwitcher } from "./perspective-switcher"
 import type { LandingPerspective } from "./journey-content"
 import { JourneyTabs } from "./journey-tabs"
 import "./journey.css"
@@ -9,11 +8,9 @@ import "./journey-atmosphere.css"
 import "./public-foundations.css"
 import type { useJourneyNavigation } from "@/hooks/use-journey-navigation"
 
-/** "How OutClass works" (docs/public-site/redesign/Main.mockup.html): a heading, the audience switch and one tabbed walkthrough. */
-export function ProductJourney({ perspective, selected = perspective, onPerspectiveChange, navigation }: {
+/** "How OutClass works" (docs/public-site/redesign/Main.mockup.html): a heading and one tabbed walkthrough. */
+export function ProductJourney({ perspective, navigation }: {
   perspective: LandingPerspective
-  selected?: LandingPerspective
-  onPerspectiveChange: (perspective: LandingPerspective) => void
   navigation: ReturnType<typeof useJourneyNavigation>
 }) {
   return (
@@ -25,12 +22,9 @@ export function ProductJourney({ perspective, selected = perspective, onPerspect
         <p className="oc-journey-kicker">How OutClass works</p>
         <h2 id="how-title">{perspective === "student" ? "From discovering a club to joining it." : "From first applicant to your next class."}</h2>
       </div>
+      {/* No in-section switch: the hero sets the audience. The sentinel still hands the header its compact switch. */}
       <div className="oc-journey-controls-slot" data-merged={navigation.merged}>
         <span ref={navigation.controlsRef} className="oc-journey-handoff-sentinel" aria-hidden="true" />
-        <div className="oc-journey-controls" inert={navigation.merged} aria-hidden={navigation.merged}>
-          <h2 id="perspective-title">Two sides of the same opportunity.</h2>
-          <PerspectiveSwitcher perspective={selected} onChange={onPerspectiveChange} />
-        </div>
       </div>
       <p className="sr-only" role="status">Showing the {perspective === "student" ? "student" : "club leader"} walkthrough.</p>
       <JourneyTabs perspective={perspective} />

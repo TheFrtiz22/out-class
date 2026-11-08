@@ -6,9 +6,6 @@
 .oc-journey-handoff-sentinel, .oc-journey-end-sentinel { position: absolute; width: 1px; height: 1px; pointer-events: none; }
 .oc-journey-handoff-sentinel { top: 0; left: 0; }
 .oc-journey-end-sentinel { bottom: 0; left: 0; }
-.oc-journey-controls { position: relative; z-index: 25; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 24px 0; transition: opacity var(--oc-motion-state) var(--oc-motion-ease), transform var(--oc-motion-scene) var(--oc-motion-ease); }
-.oc-journey-controls-slot[data-merged="true"] .oc-journey-controls { opacity: 0; transform: translateY(-12px); pointer-events: none; }
-.oc-journey-controls > h2 { margin: 0; color: var(--primary); font-size: 20px; font-weight: 500; line-height: 1.4; letter-spacing: var(--oc-tracking-heading); text-wrap: balance; }
 .oc-perspective-switcher { position: relative; isolation: isolate; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); flex-shrink: 0; width: 360px; max-width: 100%; padding: 4px; border: 1px solid var(--primary); background: var(--primary); border-radius: var(--oc-radius-md); }
 .oc-perspective-indicator { position: absolute; z-index: -1; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 8px) / 2); border-radius: var(--oc-radius-sm); background: #fff7ec; border-bottom: 2px solid var(--brand-orange); transition: transform var(--oc-motion-state, 260ms) var(--oc-motion-ease, ease-out); }
 .oc-perspective-switcher[data-perspective="leader"] .oc-perspective-indicator { transform: translateX(100%); }
@@ -16,13 +13,10 @@
 .oc-perspective-switcher button[aria-pressed="true"] { color: var(--primary); font-weight: 600; }
 .oc-perspective-switcher[data-compact="false"] button { white-space: normal; }
 .oc-landing .oc-perspective-switcher button:focus-visible { outline-color: var(--ring); outline-offset: -4px; }
-@media (max-width: 800px) { .oc-journey-controls { flex-direction: column; gap: 12px; padding-block: 18px; text-align: center; } .oc-journey-controls > h2 { font-size: 18px; } }
 @media (max-width: 540px) {
-  .oc-journey-controls > h2 { font-size: 16px; }
   .oc-perspective-switcher { width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) {
   .oc-landing { --oc-motion-press: 0ms; --oc-motion-state: 0ms; --oc-motion-scene: 0ms; }
-  .oc-journey-controls { transition: none; transform: none !important; }
   .oc-perspective-indicator { transition: none; }
 }
