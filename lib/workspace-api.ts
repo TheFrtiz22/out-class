@@ -69,6 +69,7 @@ import * as profile from "@/actions/profile"
 import * as directory from "@/actions/club-directory"
 import * as storage from "@/actions/storage"
 import * as search from "@/actions/workspace-search"
+import * as votingTargetSummary from "@/actions/voting-target-summary"
 import {
   demoStore,
   demoMember,
@@ -666,3 +667,5 @@ export const savePipelineSettings = adapt(pipelineActions.savePipelineSettings, 
 export const getPipelineInterviewStatus = adapt(pipelineInterviewActions.getPipelineInterviewStatus, demoPipeline.getPipelineInterviewStatus);
 export const getRankedReviewSettings = adapt((...args: Parameters<typeof rankedReview.getRankedReviewSettings>) => readWorkspace<Awaited<ReturnType<typeof rankedReview.getRankedReviewSettings>>>("rankedReviewSettings", args), demoRankedReview.getRankedReviewSettings);
 export const saveRankedReviewBands = adapt(rankedReview.saveRankedReviewBands, demoRankedReview.saveRankedReviewBands);
+/** Entire-round target and decision counts (counts only). The Demo voting module loads only in Demo Mode. */
+export const getRoundTargetSummary = adapt(votingTargetSummary.getRoundTargetSummary, async input => (await import("@/lib/demo/voting-room")).roundTargetSummary(input));

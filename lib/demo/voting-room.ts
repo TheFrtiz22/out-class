@@ -7,7 +7,8 @@ import type * as Live from "@/actions/voting-room";
 import type * as Setup from "@/actions/voting-room-setup";
 import { demoStore,demoMember } from "./store";
 import { createRoomSchema,roomScope,roomBallotSchema,roomCommandSchema,roomCommandResultSchema,roomOutcomes,roomDisplayConfig,roomPresentationSchema,liveRoomFields,recommendedOutcome,storedChoice,uniqueSelection,finalizationPreviewInput,finalizeRoomInput } from "@/lib/voting-room";
-import { roomAuthority,requireRoomLeader,projectVotingRoom,type LiveRoom } from "@/lib/voting-room-projection";
+import { roomAuthority,requireRoomLeader,projectVotingRoom,projectRoundTargetSummary,type LiveRoom } from "@/lib/voting-room-projection";
+import type * as TargetSummary from "@/actions/voting-target-summary";
 import { editorValue } from "@/lib/editor-value";
 import { hasPermission } from "@/lib/permissions";
 import { anonymousApplicantLabel,type ReviewApplication } from "@/lib/anonymous-review";
@@ -52,7 +53,7 @@ async function perform<K extends keyof typeof Live>(method:K,input:unknown,membe
  }else{
   const d=roomScope.parse({clubId:(input as {clubId:string}).clubId,sessionId:(input as {sessionId:string}).sessionId}),c=find(d.clubId,d.sessionId,member);
   if(method==="getLiveVotingRoom"){
-   const snapshot=projectVotingRoom(c.s,c.m,c.round.anonymousReview??false),entry=c.s.passes.find(p=>p.number===c.s.currentPass)?.candidates.find(v=>v.applicationId===c.s.activeApplicationId);
+   const snapshot=projectVotingRoom(c.s,c.m,c.round.anonymousReview??false,{name:c.round.name,final:!c.club.rounds.some(r=>!r.archivedAt&&r.order>c.round.order)}),entry=c.s.passes.find(p=>p.number===c.s.currentPass)?.candidates.find(v=>v.applicationId===c.s.activeApplicationId);
    const eligible=c.state.memberships.filter(m=>c.s.participants.some(p=>p.memberId===m.id)&&hasPermission(m,"applications.review")&&hasPermission(m,"decisions.vote"));const opts=roomPresentationSchema.safeParse(c.s.presentationOptions);
    result={...snapshot,accessVersion:editorValue([c.m.permissions,c.round.anonymousReview]),fields:opts.success?opts.data.fields:null,joinedSelf:!!c.s.participants.find(p=>p.memberId===c.m.id)?.joinedAt,participation:{voted:entry?.ballots.filter(b=>eligible.some(m=>m.id===b.memberId)).length??0,eligible:eligible.length},joinedParticipants:c.role.leader?eligible.map(m=>({id:m.id,label:label(c.state,m.userId),joined:!!c.s.participants.find(p=>p.memberId===m.id)?.joinedAt})):[]};
   }else if(method==="getLiveVotingPresentation"){
@@ -176,3 +177,11 @@ async function sessionSetupUnlocked<K extends keyof typeof Plans>(method:K,input
  return result as Awaited<ReturnType<(typeof Plans)[K]>>;
 }
 export async function sessionSetup<K extends keyof typeof Plans>(method:K,input:unknown):Promise<Awaited<ReturnType<(typeof Plans)[K]>>>{return ['updateVotingSessionSetup','cancelVotingSession'].includes(method)&&typeof navigator!=='undefined'&&navigator.locks?navigator.locks.request('outclass-demo-voting-room',()=>sessionSetupUnlocked(method,input)):sessionSetupUnlocked(method,input);}
+
+/** Demo mirror of getRoundTargetSummary: same projection and per-room authorization, fictional store only. */
+export async function roundTargetSummary(input:unknown):Promise<Awaited<ReturnType<typeof TargetSummary.getRoundTargetSummary>>>{
+ const d=z.object({clubId:z.string().uuid(),roundId:z.string().uuid(),cycleId:z.string().uuid().optional()}).strict().parse(input),c=context(d.clubId),round=c.club.rounds.find(r=>r.id===d.roundId&&!r.archivedAt);
+ if(!round)throw Error("Demo round unavailable.");
+ const rooms=c.state.votingSessions.filter(s=>s.clubId===d.clubId&&s.roundId===d.roundId&&s.mode==="LIVE"&&(!d.cycleId||s.cycleId===d.cycleId));
+ return projectRoundTargetSummary(rooms,c.m,{name:round.name,final:!c.club.rounds.some(r=>!r.archivedAt&&r.order>round.order),anonymousReview:round.anonymousReview??false});
+}

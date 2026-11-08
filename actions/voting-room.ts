@@ -77,7 +77,8 @@ export async function getLiveVotingRoom(input:unknown) {
   const result=await prisma.$transaction(async tx=>{
     const m=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review"],{readOnly:true});
     const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId);
-    const snapshot=projectVotingRoom(s,m,round.anonymousReview);
+    const later=await tx.pipelineRound.count({where:{clubId:d.clubId,archivedAt:null,order:{gt:round.order}}});
+    const snapshot=projectVotingRoom(s,m,round.anonymousReview,{name:round.name,final:later===0});
     const members=await tx.clubMember.findMany({where:{clubId:d.clubId,id:{in:s.participants.map(p=>p.memberId)},status:"ACTIVE",user:{disabledAt:null}},include:{user:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}});
     const eligible=members.filter(v=>hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")&&(round.anonymousReview||hasPermission(v,"applicants.identify")));
     const current=s.passes.find(p=>p.number===s.currentPass)?.candidates.find(c=>c.applicationId===s.activeApplicationId);

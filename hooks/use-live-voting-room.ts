@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { getLiveVotingRoom } from "@/lib/voting-room-api";
 import { votingRoomSubscription } from "@/lib/voting-room-subscription";
+import { newerByRevision } from "@/lib/voting-target-summary";
 type Snapshot=Awaited<ReturnType<typeof getLiveVotingRoom>>;
 /** Part 2 supplies current authenticated user ID; QR/session IDs are never identities. */
 export function useLiveVotingRoom(clubId:string,sessionId:string,userId:string|null,demoMemberId?:string){
@@ -11,7 +12,9 @@ export function useLiveVotingRoom(clubId:string,sessionId:string,userId:string|n
   useEffect(()=>{
     setState({identity,room:null,error:null});
     if(!userId)return;
-    const subscription=votingRoomSubscription(()=>getLiveVotingRoom({clubId,sessionId},demoMemberId),(room,error)=>setState({identity,room,error}));
+    // An older room revision (e.g. a slow read landing after a command's refresh) never replaces a newer one,
+    // so decision counts and the target summary cannot regress or double-apply. A failed read still clears state.
+    const subscription=votingRoomSubscription(()=>getLiveVotingRoom({clubId,sessionId},demoMemberId),(room,error)=>setState(prev=>({identity,room:room&&prev.identity===identity?newerByRevision(prev.room,room):room,error})));
     connection.current=subscription;
     const refresh=()=>void subscription.refresh();
     window.addEventListener("online",refresh);window.addEventListener("focus",refresh);
