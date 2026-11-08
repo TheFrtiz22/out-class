@@ -22,6 +22,30 @@
 .oc-public-navy :is(a, button):focus-visible { outline-color: var(--oc-public-paper); }
 .oc-public-navy [data-slot="button"] { background: var(--oc-public-paper); color: var(--primary); }
 .oc-public-navy [data-slot="button"]:hover { background: white; }
+/* Public glass (docs/public-site/redesign/README.md). Round surfaces built on the shared glass tokens in
+   styles/navigation-glass.css, the same optics as Card/Panel data-variant="glass-raised" and "glass-navy":
+   light glass on the warm canvas, navy glass over photos. Blur sits on an isolated ::before layer so text
+   never passes through a filter; the tokens already fall back to solid for no backdrop-filter support,
+   phones, reduced transparency and higher contrast. Never nest one blurred surface in another. */
+.oc-public-glass, .oc-public-glass-navy {
+  position: relative; isolation: isolate;
+  border: 1px solid var(--oc-glass-light-edge);
+  border-radius: var(--oc-public-glass-radius, var(--oc-overlay-radius));
+  box-shadow: var(--oc-glass-light-depth);
+  color: var(--primary);
+}
+.oc-public-glass-navy { border-color: var(--oc-glass-navy-edge); box-shadow: var(--oc-glass-navy-depth); color: var(--oc-glass-cream); }
+.oc-public-glass::before, .oc-public-glass-navy::before {
+  content: ""; position: absolute; z-index: -1; inset: 0; border-radius: inherit; pointer-events: none;
+  background: var(--oc-surface-glass-raised);
+  -webkit-backdrop-filter: var(--oc-surface-glass-filter); backdrop-filter: var(--oc-surface-glass-filter);
+}
+.oc-public-glass-navy::before {
+  background: var(--oc-surface-glass-navy);
+  -webkit-backdrop-filter: var(--oc-surface-glass-navy-filter); backdrop-filter: var(--oc-surface-glass-navy-filter);
+}
+.oc-public-glass-navy :is(.oc-public-kicker, .oc-public-note) { color: var(--oc-rail-muted); }
+.oc-public-glass-navy :is(a, button):focus-visible { outline: 2px solid var(--oc-glass-cream); outline-offset: 2px; }
 .oc-public-note { font-size: 12px; color: var(--muted-foreground); line-height: 1.7; }
 html.oc-native-navigation { scroll-padding-top: 0; }
 .oc-landing :is(section, article, details, span)[tabindex="-1"]:focus { outline: none; }
