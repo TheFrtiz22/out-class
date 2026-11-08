@@ -93,7 +93,9 @@ test('Privacy and Terms: formal text from one source, rendered by one component,
   }
   assert.match(JSON.stringify(legal.termsOfService), /Commonwealth of Virginia/)
   assert.match(JSON.stringify(legal.privacyPolicy), /do not sell personal information/)
-  // While the switch is off: both routes 404, the footer has no Legal column, the sitemap omits them.
+  // While the switch is off: middleware serves the real 404 page for both routes (no streamed 200,
+  // no titles), the footer has no Legal column, and the sitemap omits them.
+  assert.match(fs.readFileSync('middleware.ts', 'utf8'), /if \(!LEGAL_PAGES_PUBLIC && \(path === "\/privacy" \|\| path === "\/terms"\)\) \{\n\s*return NextResponse\.rewrite\(new URL\("\/__not-public"/)
   for (const file of ['app/privacy/page.tsx', 'app/terms/page.tsx']) {
     const source = fs.readFileSync(file, 'utf8')
     assert.match(source, /if \(!LEGAL_PAGES_PUBLIC\) notFound\(\)/, file)
