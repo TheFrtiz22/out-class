@@ -160,11 +160,15 @@ test("route loader uses the branded mark with a stable image box and accessible 
   assert.equal(OutClassLoadingScreen({ variant: "navy" }).props["data-variant"], "navy")
   // Workspace routes keep the persistent shell on screen: their loaders are content-area placeholders, never the
   // full-screen cover (that stays for the first session restore, demo setup and /preview). Public routes have none.
-  for (const route of ["app/(workspace)/home", "app/(workspace)/applications", "app/(workspace)/club/[clubId]/workspace", "app/(workspace)/platform", "app/(workspace)/calendar", "app/(workspace)/inbox", "app/(workspace)/profile", "app/(workspace)/clubs", "app/(workspace)/explore/categories", "app/(workspace)/club/[clubId]/tasks", "app/(workspace)/settings", "app/(workspace)/meetings"]) {
+  for (const route of ["app/(workspace)/home", "app/(workspace)/applications", "app/(workspace)/platform", "app/(workspace)/calendar", "app/(workspace)/inbox", "app/(workspace)/profile", "app/(workspace)/clubs", "app/(workspace)/explore/categories", "app/(workspace)/club/[clubId]/tasks", "app/(workspace)/settings", "app/(workspace)/meetings"]) {
     const Loading = load(`${route}/loading.tsx`, { "@/components/outclass-loading-screen": { OutClassLoadingScreen }, "@/components/workspace-loading": { WorkspaceLoading: "WorkspaceLoading" }, "@/components/shell/workspace-route-loading": { WorkspaceRouteLoading: "WorkspaceRouteLoading" }, "@/components/ui/loading-state": { LoadingState: "LoadingState" } }).default
     assert.notEqual(Loading().type, OutClassLoadingScreen, route)
     assert.ok(["WorkspaceLoading", "WorkspaceRouteLoading", "LoadingState"].includes(Loading().type), route)
   }
+  // The club workspace streams its placeholder from the page, after the legacy-URL redirect, so old links get a real 307.
+  assert.equal(fs.existsSync("app/(workspace)/club/[clubId]/workspace/loading.tsx"), false)
+  const workspacePage = fs.readFileSync("app/(workspace)/club/[clubId]/workspace/page.tsx", "utf8")
+  assert.ok(workspacePage.indexOf("redirect(moved)") < workspacePage.indexOf("<Suspense fallback={<WorkspaceRouteLoading />}>"), "redirect before the placeholder streams")
   assert.equal(fs.existsSync("app/(workspace)/loading.tsx"), false, "a group loading.tsx would stream 200s for pages that call notFound()")
   assert.equal(fs.existsSync("app/loading.tsx"), false, "a root loading.tsx would cover every public page and turn 404s into 200s")
 })

@@ -12,6 +12,8 @@ import { legacyApplicantInterviewHref } from "@/lib/applicant-interview-navigati
 import { legacyInterviewRoomHref } from "@/lib/interview-entry";
 import { PageHeader } from "@/components/ui/page-header";
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import { WorkspaceRouteLoading } from "@/components/shell/workspace-route-loading";
 import { clubWorkspaceTitle, canonicalClubWorkspaceHref } from "@/lib/workspace-routes";
 export const maxDuration = 60;
 export async function generateMetadata({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }): Promise<Metadata> {
@@ -31,6 +33,12 @@ export default async function Page({
   for (const [key, value] of Object.entries(query)) for (const item of Array.isArray(value) ? value : value === undefined ? [] : [value]) search.append(key, item);
   const moved = canonicalClubWorkspaceHref(clubId, search) ?? legacyApplicantInterviewHref(clubId, search.toString()) ?? legacyInterviewRoomHref(clubId, search.toString());
   if (moved) redirect(moved);
+  // No route loading.tsx: its boundary would stream the persistent shell before this redirect, turning a 307 into
+  // a second document load. The placeholder streams from here instead, after the redirect check.
+  return <Suspense fallback={<WorkspaceRouteLoading />}><Workspace clubId={clubId} section={section} taskView={taskView} tool={tool} /></Suspense>;
+}
+
+async function Workspace({ clubId, section, taskView, tool }: { clubId: string; section?: string; taskView?: string; tool?: string }) {
   const jar = await cookies();
   let demoEnabled = false;
   if (!jar.has(PLATFORM_VIEW_COOKIE) && jar.get(DEMO_COOKIE)?.value === "1") {
