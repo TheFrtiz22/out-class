@@ -4,7 +4,7 @@ import {useEffect,useRef,useState} from "react";
 import Link from "next/link";
 import {Button} from "@/components/ui/button";
 import {Dialog,DialogContent,DialogTitle} from "@/components/ui/dialog";
-import {commandLiveVotingRoom,getLiveVotingSummary,previewLiveVotingFinalization,finalizeLiveVotingRoom,sendLiveVotingNotifications} from "@/lib/voting-room-api";
+import {commandLiveVotingRoom,getRoundTargetSummary,getLiveVotingSummary,previewLiveVotingFinalization,finalizeLiveVotingRoom,sendLiveVotingNotifications} from "@/lib/voting-room-api";
 import type {useLiveVotingRoom} from "@/hooks/use-live-voting-room";
 import {roomCommandSchema,leadingBallotChoice,outcomeLabels,savedOutcomeLabels} from "@/lib/voting-room";
 import type {z} from "zod";
@@ -12,14 +12,18 @@ import {decisionsHref} from "@/lib/voting-navigation";
 import {useDemoMode} from "@/contexts/demo-context";
 import {Check, XIcon, MoreHorizontal, Pause} from "@/components/icons";
 import { NativeSelect } from "@/components/ui/native-select"
+import {VotingTargetSummary,type ScopedTargetSummary} from "@/components/voting-target-summary";
 type Room=NonNullable<ReturnType<typeof useLiveVotingRoom>["room"]>;
 type Command=z.infer<typeof roomCommandSchema>;
 type Summary=Awaited<ReturnType<typeof getLiveVotingSummary>>;
 type Plan=Awaited<ReturnType<typeof previewLiveVotingFinalization>>;
 const outcomeNames=outcomeLabels;
+/** Leader summary: this session's counts arrive with every room snapshot (same authorized polling path,
+ * counts only); the entire round is a separate, server-authorized read refreshed when the room changes. */
 export function OutcomeCounts({room}:{room:Room}){
- const count=(s:string)=>room.outcomes.filter(o=>o.outcome===s).length;
- return <section aria-label="Decision totals" className="vr-stats"><span>Passed {count("ACCEPT")}</span><span>Hold {count("HOLD")}</span><span>Not passed {count("REJECT")}</span><span>Unreviewed {count("UNREVIEWED")}</span><span>{room.targetSize==null?"Target not set":`Target ${room.targetSize} · Guidance`}</span>{room.targetSize!=null&&count("ACCEPT")>room.targetSize&&<p role="status">{count("ACCEPT")-room.targetSize} above target. You can continue passing applicants.</p>}</section>;
+ const [round,setRound]=useState<ScopedTargetSummary|null>(null),[roundStatus,setRoundStatus]=useState("Loading…"),ticket=useRef(0);
+ useEffect(()=>{const mine=++ticket.current;getRoundTargetSummary({clubId:room.clubId,roundId:room.roundId,cycleId:room.cycleId}).then(r=>{if(mine===ticket.current){setRound(r);setRoundStatus("")}}).catch(()=>{if(mine===ticket.current){setRound(null);setRoundStatus("Round totals unavailable.")}});},[room.clubId,room.roundId,room.cycleId,room.revision]);
+ return <VotingTargetSummary label="Decision totals" target={room.targetSummary} session={room.targetSummary} round={round} roundStatus={roundStatus}/>;
 }
 export function LeaderControls({room,refresh,member,transitioning=false}:{room:Room;refresh:()=>Promise<void>|undefined;member?:string;transitioning?:boolean}){
  const [confirmedRevision,setConfirmedRevision]=useState(0),[busy,setBusy]=useState(false),[error,setError]=useState(""),[reason,setReason]=useState(""),[pending,setPending]=useState<Command|null>(null),[summary,setSummary]=useState<Summary|null>(null),[summaryError,setSummaryError]=useState(false),[reload,setReload]=useState(0),[correction,setCorrection]=useState(""),[correctionReason,setCorrectionReason]=useState(""),[electorateIssue,setElectorateIssue]=useState("");
