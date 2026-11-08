@@ -12,16 +12,18 @@ Hero only, deviceScaleFactor 2: `before-*` and `after-*` for each audience at 14
 
 | Profile | LCP before | LCP after | CLS before | CLS after |
 | --- | --- | --- | --- | --- |
-| desktop cold | 276 ms | 236 ms | 0.018 | 0.003 |
-| desktop warm | 208 ms | 168 ms | 0.000 | 0.003 |
-| phone cold | 1056 ms | 936 ms | 0.001 | 0.005 |
-| phone warm | 504 ms | 516 ms | 0.000 | 0.000 |
+| desktop cold | 276 ms | 232 ms | 0.018 | 0.003 |
+| desktop warm | 208 ms | 176 ms | 0.000 | 0.000 |
+| phone cold | 1056 ms | 916 ms | 0.001 | 0.005 |
+| phone warm | 504 ms | 524 ms | 0.000 | 0.000 |
 
 The LCP element is the server-rendered `h1` in every run. Raw numbers are in `vitals-before.json` and
 `vitals-after.json`. A first phone build hit CLS 0.184: Caslon swaps in after first paint
 (`display: swap`, no preload, no fallback metrics), and at 35px the headline wrapped to 3 lines in Caslon
 but 2 in the fallback. On phones the headline is now the previous hero's size (`clamp(1.875rem, 7.7vw,
 2.5rem)`), which wraps the same in both fonts. Below 375px it also reserves three lines.
+Sample avatars stay `loading="lazy"`: eager loading raised phone cold LCP to 1080 ms, because on phones
+the frame is below the fold and its images compete with the headline.
 
 ## Deviations from the mockup, by the spec's rules
 

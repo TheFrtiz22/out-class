@@ -43,6 +43,7 @@
 .oc-hero-sample { font-size: 12px; white-space: nowrap; }
 .oc-hero-avatar { flex-shrink: 0; border-radius: 999px; object-fit: cover; border: 1px solid var(--border); }
 .oc-hero-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 18px; background: var(--background); }
+.oc-hero-columns:focus-visible { outline: 2px solid var(--primary); outline-offset: -3px; }
 .oc-hero-column { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .oc-hero-column-title { margin: 0 4px; font-size: 13px; font-weight: 600; color: var(--muted-foreground); }
 .oc-hero-list { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 18px; list-style: none; background: var(--background); }

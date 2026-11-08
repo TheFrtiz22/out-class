@@ -22,6 +22,8 @@
   --nav-hover: var(--oc-glass-navy-hover-tint);
 }
 .oc-public-nav[data-open="true"] { --nav-surface: var(--oc-glass-frosted-material); }
+/* Over the photo the open menu stays navy, so the cream ink and ivory wordmark stay legible. */
+.oc-public-nav[data-hero="true"][data-open="true"] { --nav-surface: var(--oc-glass-navy-frosted-material); }
 .oc-landing > .oc-public-nav[data-hero] { position: fixed; inset-inline: 0; }
 .oc-information > .oc-public-nav[data-hero] { position: sticky; }
 .oc-public-nav-surface {
@@ -47,9 +49,9 @@
 .oc-public-logo { position: relative; display: flex; align-items: center; flex: 0 0 132px; height: 44px; border-radius: 8px; }
 .oc-public-logo > span { position: absolute; inset: 0; display: flex; align-items: center; transition: opacity 240ms var(--nav-ease); }
 .oc-public-logo img { display: block; width: 100%; height: auto; }
-.oc-public-logo-dark { opacity: 0; }
+.oc-public-logo-ivory { opacity: 0; }
 .oc-public-nav[data-hero="true"] .oc-public-logo-light { opacity: 0; }
-.oc-public-nav[data-hero="true"] .oc-public-logo-dark { opacity: 1; }
+.oc-public-nav[data-hero="true"] .oc-public-logo-ivory { opacity: 1; }
 .oc-public-desktop, .oc-public-account { display: flex; align-items: center; gap: 4px; }
 .oc-public-desktop { margin-left: auto; }
 .oc-public-account { gap: 8px; }

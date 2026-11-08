@@ -24,7 +24,7 @@ type Tone = "neutral" | "done" | "attention" | "navy"
 const Chip = ({ tone, children }: { tone: Tone; children: string }) => <span className="oc-hero-chip" data-tone={tone}>{children}</span>
 
 const Avatar = ({ src, size }: { src: string; size: 30 | 34 | 36 | 44 }) =>
-  <Image className="oc-hero-avatar" src={src} alt="" width={size} height={size} sizes={`${size}px`} loading="lazy" />
+  <Image className="oc-hero-avatar" src={src} alt="" width={size} height={size} loading="lazy" />
 
 const leaderColumns = [
   { title: "In review", count: 11, cards: [

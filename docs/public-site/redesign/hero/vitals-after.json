@@ -1,46 +1,46 @@
 {
   "base": "http://127.0.0.1:3202",
   "runs": 5,
-  "measuredAt": "2026-11-08T22:02:34.730Z",
+  "measuredAt": "2026-11-08T22:14:09.738Z",
   "results": [
     {
       "page": "/",
       "profile": "desktop",
       "state": "cold",
-      "lcp": 236,
+      "lcp": 232,
       "cls": 0.003,
       "inp": 32,
-      "content": 162,
+      "content": 151,
       "lcpElement": "H1.oc-hero-headline"
     },
     {
       "page": "/",
       "profile": "desktop",
       "state": "warm",
-      "lcp": 168,
-      "cls": 0.003,
+      "lcp": 176,
+      "cls": 0,
       "inp": 24,
-      "content": 108,
+      "content": 117,
       "lcpElement": "H1.oc-hero-headline"
     },
     {
       "page": "/",
       "profile": "phone",
       "state": "cold",
-      "lcp": 936,
+      "lcp": 916,
       "cls": 0.005,
-      "inp": 80,
-      "content": 888,
+      "inp": 72,
+      "content": 861,
       "lcpElement": "H1.oc-hero-headline"
     },
     {
       "page": "/",
       "profile": "phone",
       "state": "warm",
-      "lcp": 516,
+      "lcp": 524,
       "cls": 0,
-      "inp": 72,
-      "content": 450,
+      "inp": 64,
+      "content": 456,
       "lcpElement": "H1.oc-hero-headline"
     }
   ]

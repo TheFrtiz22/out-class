@@ -82,7 +82,7 @@ export function PublicNavigation({ hero = false, journey, navigationRef }: {
         <div className="oc-public-nav-row">
           <Link prefetch={false} className="oc-public-logo" href="/" aria-label="OutClass home" onClick={close}>
             <span className="oc-public-logo-light"><OutClassLogo variant="light" /></span>
-            {hero && <span className="oc-public-logo-dark" aria-hidden="true"><Image src="/brand/05-wordmark-two-color-dark.svg" alt="" width={466} height={105} priority unoptimized /></span>}
+            {hero && <span className="oc-public-logo-ivory" aria-hidden="true"><Image src="/brand/05-wordmark-two-color-dark.svg" alt="" width={466} height={105} priority unoptimized /></span>}
           </Link>
           {journey && <div className="oc-public-journey oc-public-journey-desktop" inert={!journey.merged} aria-hidden={!journey.merged}>
             <PerspectiveSwitcher compact perspective={journey.perspective} onChange={journey.onChange} />
