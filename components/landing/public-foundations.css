@@ -27,10 +27,11 @@
    light glass on the warm canvas, navy glass over photos. Blur sits on an isolated ::before layer so text
    never passes through a filter; the tokens already fall back to solid for no backdrop-filter support,
    phones, reduced transparency and higher contrast. Never nest one blurred surface in another. */
+:where(.oc-public-glass, .oc-public-glass-navy) { --oc-public-glass-radius: var(--oc-overlay-radius); }
 .oc-public-glass, .oc-public-glass-navy {
   position: relative; isolation: isolate;
   border: 1px solid var(--oc-glass-light-edge);
-  border-radius: var(--oc-public-glass-radius, var(--oc-overlay-radius));
+  border-radius: var(--oc-public-glass-radius);
   box-shadow: var(--oc-glass-light-depth);
   color: var(--primary);
 }
