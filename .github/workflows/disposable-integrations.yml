@@ -82,7 +82,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [dashboards, application-writing]
+        # shell: persistent workspace shell, header height/spacing, dashboard split and overview views.
+        suite: [dashboards, application-writing, shell]
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

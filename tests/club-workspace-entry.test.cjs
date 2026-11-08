@@ -11,7 +11,10 @@ function harness({ search = '', permissions = ['applications.review'], owner = f
   const browser = { location: { href: `https://outclass.test/club/club/workspace${search ? '?' + search : ''}` }, history: { replaceState(_state, _title, href) { changes.push(href); browser.location.href = href; search = new URL(href).search.slice(1) } } };
   const localStorage = { getItem: key => { if (blockedStorage) throw Error('Blocked'); return storage.get(key) ?? null }, setItem: (key, value) => { if (blockedStorage) throw Error('Blocked'); storage.set(key, value) } };
   const router = { replace: href => redirects.push(href) };
+  const bindings = { current: null };
   const mocks = {
+    // The persistent shell draws the rail; ClubWorkspace registers its callbacks with it.
+    '@/components/shell/workspace-shell-context': { useShellBindings: value => { bindings.current = value } },
     react: { useState: value => [value, () => {}], useRef: value => ({ current: value }), useEffect: effect => effects.push(effect) },
     'next/navigation': { useRouter: () => router, useSearchParams: () => new URLSearchParams(search) },
     'next/dynamic': { default: () => 'Dynamic' },
@@ -32,6 +35,13 @@ function harness({ search = '', permissions = ['applications.review'], owner = f
   const preference = load('lib/club-workspace-preference.ts');
   const key = preference.clubWorkspacePreferenceKey('user', 'club', 'live');
   const Workspace = load('components/club-workspace.tsx').ClubWorkspace;
+  const { workspaceRoute } = load('components/shell/workspace-shell.tsx'), { activeNavItem } = load('lib/navigation.ts');
+  // What the persistent shell shows for the current URL, plus the callbacks this page registered.
+  const screen = tree => {
+    const url = new URL(browser.location.href), params = new URLSearchParams(search), route = workspaceRoute(url.pathname, params, auth.user.memberships, false);
+    return { type: tree.type === 'WorkspaceLoading' ? 'WorkspaceLoading' : 'ProductShell', props: { ...route, active: activeNavItem(url.pathname, params, { member: !route.manager }) ?? route.active, onModeSelect: bindings.current?.onModeSelect } };
+  };
+  current = { screen };
   return { auth, demo, storage, key, reads, changes, redirects, selections, preference, member,
     render: () => Workspace({ clubId: 'club' }),
     flush: () => { for (const effect of effects.splice(0)) effect() },
@@ -39,7 +49,8 @@ function harness({ search = '', permissions = ['applications.review'], owner = f
     href: () => browser.location.href,
   };
 }
-const shell = tree => tree.props.children[1];
+let current;
+const shell = tree => current.screen(tree);
 
 test('first leader entry shows a neutral loader and selects Recruiting overview without a router redirect or Club data read', () => {
   const h = harness();

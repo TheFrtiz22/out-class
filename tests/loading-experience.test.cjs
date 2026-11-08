@@ -158,11 +158,26 @@ test("route loader uses the branded mark with a stable image box and accessible 
   assert.equal(label.props.children, "Loading OutClass…")
   assert.equal(label.props.className, "oc-loading-caption")
   assert.equal(OutClassLoadingScreen({ variant: "navy" }).props["data-variant"], "navy")
-  // The cover belongs to authenticated workspace routes only; public routes have no route-level cover.
-  for (const route of ["app/(product)/home", "app/(product)/applications", "app/club/[clubId]/workspace", "app/platform"]) {
-    const Loading = load(`${route}/loading.tsx`, { "@/components/outclass-loading-screen": { OutClassLoadingScreen } }).default
-    assert.equal(Loading().type, OutClassLoadingScreen, route)
+  // Workspace routes keep the persistent shell on screen: their loaders are content-area placeholders, never the
+  // full-screen cover (that stays for the first session restore, demo setup and /preview). Public routes have none.
+  for (const route of ["app/(workspace)/home", "app/(workspace)/platform/events", "app/(workspace)/calendar", "app/(workspace)/profile", "app/(workspace)/explore/categories", "app/(workspace)/settings/notifications", "app/(workspace)/meetings"]) {
+    const Loading = load(`${route}/loading.tsx`, { "@/components/outclass-loading-screen": { OutClassLoadingScreen }, "@/components/workspace-loading": { WorkspaceLoading: "WorkspaceLoading" }, "@/components/shell/workspace-route-loading": { WorkspaceRouteLoading: "WorkspaceRouteLoading" }, "@/components/ui/loading-state": { LoadingState: "LoadingState" } }).default
+    assert.notEqual(Loading().type, OutClassLoadingScreen, route)
+    assert.ok(["WorkspaceLoading", "WorkspaceRouteLoading", "LoadingState"].includes(Loading().type), route)
   }
+  // A loading.tsx streams the persistent shell before its page runs, so a page that redirects under one loads a
+  // second document instead of answering 307. Redirecting pages sit under no loader; their placeholder streams from
+  // the page itself (club workspace, applications, clubs, inbox, platform overview), after the redirect check.
+  const pages = dir => fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? pages(`${dir}/${entry.name}`) : entry.name === "page.tsx" ? [`${dir}/page.tsx`] : [])
+  for (const page of pages("app/(workspace)").filter(page => /\bredirect\(/.test(fs.readFileSync(page, "utf8")))) {
+    for (let dir = page.slice(0, page.lastIndexOf("/")); dir !== "app"; dir = dir.slice(0, dir.lastIndexOf("/"))) assert.equal(fs.existsSync(`${dir}/loading.tsx`), false, `${page} redirects under ${dir}/loading.tsx`)
+  }
+  for (const [page, fallback] of [["club/[clubId]/workspace", "WorkspaceRouteLoading"], ["applications", "WorkspaceLoading"], ["clubs", "WorkspaceLoading"], ["inbox", "WorkspaceLoading"], ["platform", "WorkspaceLoading"]]) {
+    const source = fs.readFileSync(`app/(workspace)/${page}/page.tsx`, "utf8")
+    assert.match(source, new RegExp(`<Suspense fallback={<${fallback} `.replace(/[{}()<]/g, "\\$&")), page)
+    if (source.includes("redirect(")) assert.ok(source.indexOf("redirect(") < source.indexOf("<Suspense"), `${page} redirects before its placeholder streams`)
+  }
+  assert.equal(fs.existsSync("app/(workspace)/loading.tsx"), false, "a group loading.tsx would stream 200s for pages that call notFound()")
   assert.equal(fs.existsSync("app/loading.tsx"), false, "a root loading.tsx would cover every public page and turn 404s into 200s")
 })
 
@@ -228,4 +243,14 @@ test("live client adapters and components never statically import demo data or i
   assert.deepEqual(imports.filter(([, target]) => target === "assets").map(([file]) => file), ["components/product/design-patterns.tsx"], "the glyph generator stays limited to the design-system page")
   for (const gate of ["lib/demo/loader.ts", "lib/demo/activation.ts", "lib/demo/assets.ts"])
     assert.deepEqual(staticSpecifiers(source(gate)).filter(s => /^\.\/(store|seed|workspace|tasks|voting|interview)/.test(s)), [], `${gate} stays free of demo records`)
+})
+
+test("the root layout carries no club-customization provider or seed data", () => {
+  const layout = fs.readFileSync("app/layout.tsx", "utf8")
+  // Any import form (named, side-effect, re-export), including multi-line.
+  const imports = [...layout.matchAll(/(?:^|[;\n])\s*(?:import|export)\s+(?:type\s+)?(?:[^"']*?\sfrom\s*)?["']([^"']+)["']/g)].map(m => m[1])
+  assert.ok(imports.includes("@/contexts/corkboard-context"), "the import scan sees the layout's imports")
+  assert.deepEqual(imports.filter(s => /club-customization|lib\/data$/.test(s)), [], "club customization loads only with the views that use it")
+  assert.doesNotMatch(layout, /ClubCustomizationProvider/)
+  assert.doesNotMatch(fs.readFileSync("lib/club-customization.tsx", "utf8"), /export function ClubCustomizationProvider/, "the store replaced the root provider")
 })

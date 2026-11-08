@@ -43,6 +43,7 @@ import { hasPermission } from "@/lib/permissions"
 import { cn } from "@/lib/utils"
 import { handleClubLink } from "@/lib/workspace-navigation"
 import { TERMS } from "@/lib/copy/terms"
+import { countShellStart } from "@/lib/shell-metrics"
 
 const navigationIcons: Record<string, typeof Home> = { rejected: Users2, resumes: FileText, reviews: FileText, "scheduled-decisions": CheckCircle2, users: Users2, reports: FileText, events: CalendarDays, claims: Shield, "school-requests": FileText, onboarding: Users2, support: Shield, activity: FileText, permissions: Shield, audit: FileText, "student-dashboard": Home, "club-home": Home, "club-meetings": CalendarDays, "club-tasks": ListChecks, explore: Compass, categories: Compass, status: CheckCircle2, inbox: Bell, "student-profile": UserRound, corkboard: Bookmark, calendar: CalendarDays, applications: FileText, interviews: Video, decisions: CheckCircle2, clubs: Users2, overview: Home, meetings: CalendarDays, tasks: ListChecks, applicants: Users2, members: Users2, announcements: Megaphone, settings: Settings, rounds: Shield, rules: SlidersHorizontal, cycles: RefreshCw }
 
@@ -62,8 +63,10 @@ function usePhoneLayout() {
   return useSyncExternalStore(subscribePhone, () => window.matchMedia(PHONE_QUERY).matches, () => false)
 }
 
-export function ProductShell({ children, mode, sections, active, title, clubId = "", clubName, manager = false, workspaceKind, onSelect, onNavigate, onReviewTool, onModeSelect }: {
+export function ProductShell({ children, mode, sections, active, title, clubId = "", clubName, manager = false, workspaceKind, chrome = true, onSelect, onNavigate, onReviewTool, onModeSelect }: {
   workspaceKind?: "admin";
+  /** False hides the header, rail and bottom bar with CSS; the tree (and every running job) stays mounted. */
+  chrome?: boolean;
   onReviewTool?: (id: string) => void;
   /** Remembers whether a leader last used Recruiting or Club, for the next workspace entry. */
   onModeSelect?: (id: "recruiting" | "club") => void;
@@ -107,6 +110,7 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
   useEffect(() => {
     if (!userId || demo.isDemoEnabled) return
     let active = true, running = false, again = false
+    countShellStart("task-poll")
     setTaskLoad({ loading: true, failed: false })
     const refresh = async () => {
       if (running) { again = true; return }
@@ -133,6 +137,7 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
       finally { running = false; if (again && active) { again = false; void refresh() } }
     }
     void refresh()
+    countShellStart("communications-live")
     const stop = startCommunicationsLive({ streamAllowed: !isImpersonating, openRealtime: inboxRealtime(userId), changed: () => { void refresh(); window.dispatchEvent(new Event("outclass:communications-refresh")) } })
     return () => { active = false; stop() }
   }, [userId, demo.isDemoEnabled, isImpersonating, syncDurableNotifications])
@@ -183,7 +188,7 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
     </div>)}
   </div> }
   const otherClubs = manager && !platform ? access.clubs.filter(club => club.clubId !== clubId) : []
-  return <div className="min-h-dvh bg-background text-foreground" data-product-shell={platform ? "admin" : manager ? "manager" : "personal"} style={{ "--oc-club-accent": member?.club.color || "var(--brand-orange)" } as CSSProperties}>
+  return <div className="min-h-dvh bg-background text-foreground" data-product-shell={platform ? "admin" : manager ? "manager" : "personal"} data-shell-chrome={chrome ? undefined : "hidden"} style={{ "--oc-club-accent": member?.club.color || "var(--brand-orange)" } as CSSProperties}>
     <a href="#workspace-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[80] focus:bg-card focus:p-3">Skip to content</a>
     <header className="oc-product-header">
       <div className="oc-product-header-row">
@@ -203,7 +208,8 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
       {!allowed ? <LoadingState label="Checking workspace access…" layout="inline" rows={3} /> : <>{demo.isDemoEnabled && <p className="oc-demo-note mb-6 text-xs text-muted-foreground">Fictional demo data · changes stay in this browser; no messages are sent.</p>}{children}</>}
     </main></div>
     <MobileNavigation items={allowed ? bottomBarItems(railSections, mode === "preview" ? "preview" : workspace, current) : []} groups={allowed ? items : []} active={current} onSelect={select} onLink={event => { if (!canLeaveWorkspace()) event.preventDefault() }} onMore={() => { mobileOrigin.current = document.activeElement as HTMLElement; setMobile(true) }} />
-    {user && !platform && allowed && <TutorialWalkthrough key={`${user.id}:${manager ? "leader" : "student"}`} experience={manager ? "leader" : "student"} clubId={manager ? clubId : undefined} preview={user.impersonating} onOpenStep={step => {
+    {/* No key: the walkthrough stays mounted across navigation and reloads only when its experience or club changes. */}
+    {user && !platform && allowed && <TutorialWalkthrough experience={manager ? "leader" : "student"} clubId={manager ? clubId : undefined} preview={user.impersonating} onOpenStep={step => {
       if (!canLeaveWorkspace()) return
       if ("view" in step) navigate(step.view)
       else router.push(`/club/${encodeURIComponent(clubId)}/workspace?section=${step.section}${step.tool ? `&tool=${step.tool}` : ""}`)

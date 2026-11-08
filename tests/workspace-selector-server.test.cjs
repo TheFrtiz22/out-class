@@ -1,4 +1,6 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript')
+// The platform page streams its overview inside a Suspense placeholder; render the overview itself.
+const platformOverview = mod => async () => { const outer = mod.default(); return outer.props.children.type(outer.props.children.props); };
 
 // Execute the real page → loader → action → platform guard chain. Only external
 // identity, provider and database boundaries are controlled by this test.
@@ -27,7 +29,7 @@ test('direct Admin page keeps server allowlist, active grant, MFA and elevation 
    function load(file){if(cache[file])return cache[file];const mod={exports:{}};new Function('require','module','exports','console',ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText)(name=>name in mocks?mocks[name]:name.startsWith('@/')?load(name.slice(2)+(name.startsWith('@/components/')?'.tsx':'.ts')):require(name),mod,mod.exports,{error(){}});return cache[file]=mod.exports}
    const {AdminAccessError}=load('lib/admin-failure.ts')
    mocks['@/utils/admin-elevation']={requireAdminElevation:async()=>{if(!scenario.elevated)throw new AdminAccessError('ADMIN_ELEVATION_REQUIRED','Verification required');return {}}}
-   const page=load('app/platform/page.tsx').default
+   const page=platformOverview(load('app/(workspace)/platform/page.tsx'))
    if(scenario.denied){await assert.rejects(page(),e=>e.url==='/platform/login');assert.deepEqual(reads,[])}
    else{const html=require('react-dom/server').renderToStaticMarkup(await page());assert.match(html,/Platform metrics/);assert.equal(reads.length,7)}
   }

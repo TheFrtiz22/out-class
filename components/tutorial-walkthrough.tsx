@@ -1,4 +1,5 @@
 "use client";
+import { countShellStart } from "@/lib/shell-metrics";
 import { useAuth } from "@/contexts/auth-context";
 import { useDemoMode } from "@/contexts/demo-context";
 import { tutorialDismissalKey, tutorialDismissed, setTutorialDismissed } from "@/lib/tutorial-dismissal";
@@ -31,6 +32,9 @@ export function TutorialWalkthrough({ experience, clubId, preview, onOpenStep }:
     let active = true;
     owner.current = identity;
     const loadIntent = intent.current;
+    // The walkthrough stays mounted in the persistent shell: drop the previous experience's progress first.
+    setProgress(null); setRect(null);
+    countShellStart("tutorial");
     setDismissed(tutorialDismissed(identity, preview));
     setHelpHidden(tutorialDismissed(helpKey, preview));
     getTutorial(experience, clubId).then(value => {

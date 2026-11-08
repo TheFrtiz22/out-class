@@ -688,3 +688,6 @@
   .oc-club-profile .oc-club-follow, .oc-club-action-row > .space-y-2 { flex: 1 1 100%; }
   .oc-club-action-row > .space-y-2 > button { width: 100%; }
 }
+/* Inside the workspace shell every page starts 10px under the header: the back control stays a 24px target
+   without the 44px button box above the club name. Signed-out public pages keep the full-size button. */
+[data-product-shell] .oc-club-back.oc-club-back { min-height: 24px; height: auto; padding-block: 0; margin-top: 0; }

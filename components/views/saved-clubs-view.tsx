@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Bookmark, ArrowRight, RefreshCw } from "@/components/icons";
 import { useCorkboard } from "@/contexts/corkboard-context";
 import { PageHeader } from "@/components/ui/page-header";
@@ -15,8 +15,11 @@ import "@/components/clubs/club-discovery.css";
 import "@/components/clubs/explore-directory.css";
 export function SavedClubsView({
   onNavigate,
+  headerAction,
 }: {
   onNavigate: (view: ViewId) => void;
+  /** The page's own link (Explore clubs) sits in the title row, never above it. */
+  headerAction?: ReactNode;
 }) {
   const { items, loading, authenticated, error, refresh } = useCorkboard();
   const [selected, setSelected] = useState<DirectoryClub | null>(null);
@@ -33,6 +36,7 @@ export function SavedClubsView({
     <div className="oc-corkboard space-y-6">
       <PageHeader
         title="Saved clubs"
+        action={headerAction}
       />
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
         <p>Saving a club does not apply, subscribe, or join you.</p>

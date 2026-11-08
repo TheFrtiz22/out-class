@@ -51,7 +51,7 @@ async function audit() {
   assert.ok(shellURL, 'Set OUTCLASS_SHELL_BASE_URL to the isolated shell fixture URL')
   for (const url of [publicURL, shellURL]) assert.ok(['127.0.0.1', 'localhost'].includes(new URL(url).hostname), 'Local audit only')
   await fs.mkdir(output, { recursive: true })
-  const browser = await engine.launch({ headless: true, ...(engine === chromium ? { channel: 'chrome' } : {}) })
+  const browser = await engine.launch({ headless: true, ...(engine === chromium ? (require('node:fs').existsSync(chromium.executablePath()) ? {} : require('node:fs').existsSync('/opt/pw-browsers/chromium') ? { executablePath: '/opt/pw-browsers/chromium' } : { channel: 'chrome' }) : {}) })
   const errors = [], report = { phase, browser: engine === chromium ? 'chrome' : 'webkit', screenshots: [], accessibility: [], performance: {} }
   async function capture(page, name) {
     // Radix portals animate from transparent; inspect the settled material.
