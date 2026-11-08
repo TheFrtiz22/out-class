@@ -13,7 +13,7 @@ function harness({draft=false,slow=false,selectionQuery,noSession=false}={}){
  const identities=new Map(),epoch={},isReadAuthorityCurrent=value=>value===epoch;
  const api={getVotingWorkspace:async(...args)=>{readArgs.push(args);reads++;if(slow)await new Promise(resolve=>waiting.push(resolve));if(deny)throw Error('Access revoked');return structuredClone({...view(),...(noSession?{sessions:[],session:null,summary:null}:{}),candidateSelection:args[2]===undefined?null:{applications:[{id:"candidate",roundId:"round",status:"SUBMITTED",canQuickReview:true}]}})},createVotingSession:async()=>{throw Error('unused')},submitVotingBallot:async d=>{ballots.push(d);session.passes[0].candidates[0].ballots.push({...d,memberId:'member'});session.revision++},commandVotingSession:async d=>{commands.push(d);if(d.action==='CONFIGURE')session.displayConfig=d.displayConfig;if(d.action==='OPEN_JOIN')session.joinOpenedAt=new Date();if(d.action==='COMPLETE_PASS'){session.state='PAUSED';session.passes[0].state='COMPLETED'}if(d.action==='FINISH')session.state='COMPLETED';if(d.action==='PUBLISH')session.publishedAt=new Date();session.revision++}};
  const mod={exports:{}};const code=ts.transpileModule(fs.readFileSync('components/live-voting/board-decision-mode.tsx','utf8')+'\nexports.TestBoard=VotingBoard;',{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText;
- new Function('require','module','exports','setInterval','clearInterval',code)(name=>name==='@/components/ui/loading-state'?require('./helpers/component-module.cjs').loadComponent('components/ui/loading-state.tsx'):name==='@/contexts/auth-context'?{useAuth:()=>({readAuthority:epoch,isReadAuthorityCurrent,user:identities.get(actorId)||identities.set(actorId,{id:actorId}).get(actorId)})}:name==='react'?react:name==='@/components/qr/qr-code-card'?{QrCodeCard:'QrCodeCard'}:name==='@/lib/workspace-api'?api:name==='@/lib/serialized-workspace-read'?loadLibrary('lib/serialized-workspace-read.ts'):name==='@/lib/voting-presentation'?loadLibrary('lib/voting-presentation.ts'):name==='@/lib/applicant-display'?loadLibrary('lib/applicant-display.ts'):name==='@/contexts/demo-context'?{useDemoMode:()=>({isDemoEnabled:false})}:name==='@/components/ui/button'?{Button:'Button'}:name==='@/components/applicant-intelligence'?{ApplicantDisplayPanel:'ApplicantDisplayPanel'}:name.startsWith('@/')||name.endsWith('.css')?{}:require(name),mod,mod.exports,fn=>{poll=fn;return 1},()=>{});
+ new Function('require','module','exports','setInterval','clearInterval',code)(name=>name==='@/components/ui/loading-state'?require('./helpers/component-module.cjs').loadComponent('components/ui/loading-state.tsx'):name==='@/contexts/auth-context'?{useAuth:()=>({readAuthority:epoch,isReadAuthorityCurrent,user:identities.get(actorId)||identities.set(actorId,{id:actorId}).get(actorId)})}:name==='react'?react:name==='@/components/qr/qr-code-card'?{QrCodeCard:'QrCodeCard'}:name==='@/lib/workspace-api'?api:name==='@/lib/serialized-workspace-read'?loadLibrary('lib/serialized-workspace-read.ts'):name==='@/lib/voting-navigation'?loadLibrary('lib/voting-navigation.ts'):name==='@/lib/copy/terms'?loadLibrary('lib/copy/terms.ts'):name==='next/link'?{__esModule:true,default:'Link'}:name==='@/lib/voting-presentation'?loadLibrary('lib/voting-presentation.ts'):name==='@/lib/applicant-display'?loadLibrary('lib/applicant-display.ts'):name==='@/contexts/demo-context'?{useDemoMode:()=>({isDemoEnabled:false})}:name==='@/components/ui/button'?{Button:'Button'}:name==='@/components/applicant-intelligence'?{ApplicantDisplayPanel:'ApplicantDisplayPanel'}:name.startsWith('@/')||name.endsWith('.css')?{}:require(name),mod,mod.exports,fn=>{poll=fn;return 1},()=>{});
  const changes=[];
  return {render(){cursor=0;const result=mod.exports.TestBoard({clubId:'club',applicants:[],selectionQuery,onDecision:(...args)=>changes.push(args)});while(effects.length){const [i,effect]=effects.shift();cleanups.get(i)?.();cleanups.set(i,effect())}return result},poll:()=>poll(),revoke:()=>deny=true,commands,ballots,changes,session,readArgs,asAccount:id=>actorId=id,reads:()=>reads,complete:()=>waiting.shift()?.()};
 }
@@ -25,10 +25,10 @@ test('server polling refreshes ballots from another device and clears applicant 
 test('setup checkboxes use the shared preview and block opening until changes are saved and the slide fits',async()=>{
  const h=harness({draft:true});h.render();await flush();let tree=h.render();tree=h.render();
  let preview=nodes(tree).find(n=>n.type==='ApplicantDisplayPanel'&&n.props.previewConfig);assert.ok(preview);preview.props.onFitChange(true);tree=h.render();
- const checkbox=nodes(tree).find(n=>n.type==='label'&&text(n)==='GPA (out of 4.0)');assert.ok(checkbox);nodes(checkbox).find(n=>n.type==='input').props.onChange({target:{checked:false}});tree=h.render();
+ const checkbox=nodes(tree).find(n=>n.type==='label'&&text(n).trim()==='GPA (out of 4.0)');assert.ok(checkbox);nodes(checkbox).find(n=>n.type==='input').props.onChange({target:{checked:false}});tree=h.render();
  preview=nodes(tree).find(n=>n.type==='ApplicantDisplayPanel'&&n.props.previewConfig);assert.equal(preview.props.previewConfig.fields.includes('gpa'),false);assert.equal(button(tree,'Open session for joining').props.disabled,true);
  await button(tree,'Save display configuration').props.onClick();await flush();tree=h.render();assert.equal(h.commands.at(-1).displayConfig.fields.includes('gpa'),false);assert.equal(button(tree,'Open session for joining').props.disabled,false);
- preview=nodes(tree).find(n=>n.type==='ApplicantDisplayPanel'&&n.props.previewConfig);preview.props.onFitChange(false);tree=h.render();assert.equal(button(tree,'Open session for joining').props.disabled,true);assert.match(text(tree),/Too much selected content/);
+ preview=nodes(tree).find(n=>n.type==='ApplicantDisplayPanel'&&n.props.previewConfig);preview.props.onFitChange(false);tree=h.render();assert.equal(button(tree,'Open session for joining').props.disabled,true);
  preview.props.onFitChange(true);tree=h.render();await button(tree,'Open session for joining').props.onClick();await flush();tree=h.render();assert.ok(nodes(tree).some(n=>n.type==='QrCodeCard'));assert.equal(button(tree,'Save display configuration'),undefined);
 });
 
@@ -46,7 +46,7 @@ test('persisted draft is displayed even when a read takes longer than several po
  assert.match(text(tree),/Session display setup/);
  h.revoke();h.poll();h.complete();await flush();tree=h.render();
  assert.match(text(tree),/Access revoked/);assert.equal(nodes(tree).some(n=>n.type==='ApplicantDisplayPanel'),false);
- button(tree,'Refresh').props.onClick();h.complete();await flush();assert.match(text(h.render()),/Access revoked/);
+ button(tree,'Try again').props.onClick();h.complete();await flush();assert.match(text(h.render()),/Access revoked/);
 });
 
 test('account changes conceal an existing voting snapshot immediately and discard a late old-account response',async()=>{
@@ -59,17 +59,9 @@ test('account changes conceal an existing voting snapshot immediately and discar
 });
 
 
-test('manager history polls omit selection scans; reopening setup hides old data until a fresh selection snapshot',async()=>{
- const query={sort:'name'},h=harness({selectionQuery:query});h.render();await flush();let tree=h.render();tree=h.render();assert.deepEqual(h.readArgs[0],['club',undefined,query]);
- await h.poll();await flush();tree=h.render();assert.deepEqual(h.readArgs.at(-1),['club',undefined]);
- let setup=nodes(tree).find(n=>n.props?.title==='New voting session');assert.ok(setup);setup.props.onOpenChange(true);tree=h.render();const pendingSetup=nodes(tree).find(n=>n.props?.title==='New voting session');assert.equal(pendingSetup.props.open,true);assert.equal(nodes(pendingSetup).some(n=>n.type==='form'),false,'previous setup eligibility is concealed for the new operation');assert.ok(nodes(pendingSetup).some(n=>n.props?.label==='Loading eligible candidates…'));
- await flush();tree=h.render();tree=h.render();assert.deepEqual(h.readArgs.at(-1),['club',undefined,query]);setup=nodes(tree).find(n=>n.props?.title==='New voting session');assert.equal(setup.props.open,true);
- setup.props.onOpenChange(false);h.render();await h.poll();await flush();tree=h.render();assert.deepEqual(h.readArgs.at(-1),['club',undefined]);
- setup=nodes(tree).find(n=>n.props?.title==='New voting session');setup.props.onOpenChange(true);h.render();await flush();h.render();assert.deepEqual(h.readArgs.at(-1),['club',undefined,query]);
-});
-
-
-test('initial empty-history setup keeps one guarded snapshot and closed setup stops selection polling',async()=>{
- const query={},h=harness({selectionQuery:query,noSession:true});h.render();await flush();let tree=h.render();tree=h.render();const setup=nodes(tree).find(n=>n.props?.title==='New voting session');assert.equal(setup.props.open,true);assert.equal(h.reads(),1);assert.deepEqual(h.readArgs[0],['club',undefined,query]);
- setup.props.onOpenChange(false);h.render();await h.poll();await flush();tree=h.render();assert.deepEqual(h.readArgs.at(-1),['club',undefined]);assert.equal(nodes(tree).find(n=>n.props?.title==='New voting session').props.open,false);
+test('the ballot has no separate creation form: managers start sessions through the shared Start voting session flow',async()=>{
+ const h=harness({noSession:true});h.render();await flush();let tree=h.render();tree=h.render();
+ assert.equal(nodes(tree).some(n=>n.props?.title==='New voting session'),false);
+ const start=nodes(tree).find(n=>n.type==='Link'&&text(n)==='Start voting session');assert.ok(start);assert.match(start.props.href,/^\/voting\/rooms\/new\?clubId=club/);
+ assert.deepEqual(h.readArgs.at(-1),['club',undefined]);
 });

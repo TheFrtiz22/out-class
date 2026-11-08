@@ -3,7 +3,6 @@
 .oc-interview-room.oc-interview-room .oc-room-header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 24px; border-bottom: 1px solid var(--border); background: var(--card); color: var(--foreground); }
 .oc-interview-room.oc-interview-room .oc-room-header button { color: var(--foreground); font-weight: 500; }
 .oc-interview-room.oc-interview-room .oc-room-header button:hover { background: var(--accent); }
-.oc-interview-room.oc-interview-room .oc-room-header [data-slot="button"].border { border-color: var(--input); background: transparent; }
 .oc-interview-room > details { margin: 0; padding: 6px 24px; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; }
 .oc-interview-room > details > summary { font-size: .75rem; color: var(--muted-foreground); }
 .oc-room-save { margin-left: auto; display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
@@ -32,8 +31,11 @@
 .oc-question-row { display: block; width: 100%; padding: 12px 0; text-align: left; font-size: .9375rem; line-height: 1.5; }
 .oc-question-row:hover,.oc-completed-row:hover { background: var(--accent); }
 .oc-question-kind { display: block; color: var(--muted-foreground); font-size: .75rem; font-weight: 400; }
-.oc-off-script { padding-top: 6px; }
-.oc-off-script > button { padding-left: 0; color: var(--muted-foreground); }
+.oc-question-heading-actions { display: flex; align-items: center; gap: 2px; margin-left: auto; }
+.oc-add-original { width: 36px; height: 36px; color: var(--muted-foreground); }
+.oc-add-original:hover { color: var(--foreground); }
+@media (pointer: coarse) { .oc-add-original { width: 44px; height: 44px; } }
+.oc-original-question { padding: 10px 0 4px; }
 .oc-room-applicant { border-bottom: 1px solid var(--border); }
 .oc-room-applicant > .oc-candidate-content { display: flex; flex-direction: column; gap: var(--oc-content-gap); }
 .oc-applicant-identity { display: flex; align-items: center; gap: 14px; }

@@ -2,19 +2,24 @@
 import { ClubMeetingsWorkspace } from "@/components/events/club-meetings-workspace";
 import dynamic from "next/dynamic";
 import { PageHeader } from "@/components/ui/page-header"
-import { LocalWelcomeHeader as WelcomeHeader } from "@/components/product/welcome-header"
+import { ClubOverviewHeader } from "@/components/product/welcome-header"
+import { Badge } from "@/components/ui/badge"
+import { Card } from "@/components/ui/card"
+import { DashboardHero } from "@/components/product/dashboard/dashboard"
 import { OrganizationSetupChecklist } from "@/components/organization-setup-checklist";
 import { organizationCapabilities } from "@/lib/organization-authorization";
 import { useRouter, useSearchParams } from "next/navigation";
-import { RecruitingOverview } from "@/components/recruiting-overview";
+import { RecruitingOverview, applicationsClosed } from "@/components/recruiting-overview";
 import { ManagerOverview } from "@/components/manager-overview";
+import { ClubHomeActions } from "@/components/club-home/club-home-actions";
 import { RouteWorkspaceShell } from "@/components/shell/route-workspace-shell";
 import { ProductShell } from "@/components/shell/product-shell";
-import { managerNavigation, personalModes, personalDestination } from "@/lib/product-navigation";
+import { canLeaveWorkspace, managerNavigation, mobileDestinations } from "@/lib/product-navigation";
 const ScreeningDashboardView = dynamic(() => import("@/components/views/screening-dashboard-view").then(m => m.ScreeningDashboardView), { loading: () => <WorkspaceLoading label="Loading recruiting rules…" layout="form" rows={3} /> });
 const ClubAnnouncements = dynamic(() => import("@/components/club-announcements").then(m => m.ClubAnnouncements), { loading: () => <WorkspaceLoading label="Loading announcements…" layout="feed" rows={3} /> });
 import type { ViewId } from "@/lib/views";
 import { useEffect, useRef, useState } from "react";
+import { useRevalidate } from "@/hooks/use-revalidate";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { useDemoMode } from "@/contexts/demo-context";
@@ -38,7 +43,10 @@ import { MeetingList } from "@/components/meeting-workspace";
 const LiveLeaderWorkspace = dynamic(() => import("@/components/views/leader-dashboard/live-leader-workspace").then(m => m.LiveLeaderWorkspace), { loading: () => <WorkspaceLoading label="Preparing your applicant pipeline…" layout="applicants" rows={3} /> });
 const InterviewManagementTabs = dynamic(() => import("@/components/interview-management-tabs").then(m => m.InterviewManagementTabs), { loading: () => <WorkspaceLoading label="Loading interview scheduling…" layout="calendar" rows={3} /> });
 const ApplicantInterviewReviews = dynamic(() => import("@/components/applicant-interview-reviews").then(m => m.ApplicantInterviewReviews), { loading: () => <WorkspaceLoading label="Loading submitted reviews…" layout="rows" rows={3} /> });
-import { decisionsHref,legacyDecisionTab } from "@/lib/voting-navigation";
+import { legacyDecisionTab } from "@/lib/voting-navigation";
+import { canonicalClubWorkspaceHref } from "@/lib/workspace-routes";
+import { decisionFilter } from "@/lib/application-decisions";
+import { TERMS } from "@/lib/copy/terms";
 import { DecisionsNavigation } from "@/components/live-voting/decisions-navigation";
 const VotingRoomLanding=dynamic(()=>import("@/components/live-voting/room-landing").then(m=>m.VotingRoomLanding),{loading:()=> <WorkspaceLoading label="Loading voting sessions…" layout="rows" rows={3}/>});
 const DecisionTemplateEditor=dynamic(()=>import("@/components/communications/template-editor").then(m=>m.DecisionTemplateEditor),{loading:()=> <WorkspaceLoading label="Loading decision letters…" layout="form" rows={3}/>});
@@ -46,14 +54,19 @@ import { DecisionSchedules } from "@/components/decision-schedules";
 import { RecruitmentReviewSettings } from "@/components/recruitment-review-settings";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { navigateWithinClub } from "@/lib/workspace-navigation";
+import { handleClubLink, navigateWithinClub } from "@/lib/workspace-navigation";
 import { DashboardLoading } from "@/components/product/dashboard-presentation";
 import { WorkspaceLoading } from "@/components/workspace-loading";
 import { SelectedClubWorkspace } from "@/components/selected-club-workspace";
 import { clubWorkspaceEntryHref, clubWorkspacePreferenceKey, readClubWorkspacePreference, saveClubWorkspacePreference } from "@/lib/club-workspace-preference";
-import { studentPath } from "@/lib/navigation"
+import { leaderRailSections, memberRailSections, studentPath } from "@/lib/navigation"
 import { RecruitmentFocus } from "@/components/recruitment-focus"
+import { SectionTabs } from "@/components/ui/section-tabs";
+import { NativeSelect } from "@/components/ui/native-select"
 type Overview = Awaited<ReturnType<typeof getClubWorkspaceOverview>>;
+const OVERVIEW_EVENTS = ["outclass:tasks-changed", "outclass:panels-changed", "outclass:interview-rounds-changed", "outclass:staffing-changed", "outclass:decision-schedules"];
+const OVERVIEW_SCOPES = ["overview", "tasks", "meetings", "recruiting"];
+
 export function ClubWorkspace({
   clubId,
 }: {
@@ -64,31 +77,14 @@ export function ClubWorkspace({
 }) {
   const router = useRouter();
   const params = useSearchParams();
-  // Keep cycle bookmarks while locating configuration in Settings.
-  const legacyConfiguration = params.get("section") === "recruitment" && params.get("tool") === "cycles";
-  useEffect(() => {
-    if (!legacyConfiguration) return;
-    const next = new URLSearchParams(params.toString());
-    next.set("section", "settings"); next.set("setting", params.get("tool") === "letters" ? "notifications" : "cycles"); next.delete("tool");
-    const href = `/club/${encodeURIComponent(clubId)}/workspace?${next}`;
-    if (!navigateWithinClub(href, true)) router.replace(href);
-  }, [legacyConfiguration, clubId, params, router]);
-  const oldDecisionTab=params.get("section")==="recruitment"&&!!legacyDecisionTab(params.get("tool"));
-  useEffect(()=>{if(!oldDecisionTab)return;const next=new URLSearchParams(params.toString());next.set("decisionTab",legacyDecisionTab(params.get("tool"))!);next.set("tool","decisions");const href=`/club/${encodeURIComponent(clubId)}/workspace?${next}`;if(!navigateWithinClub(href,true))router.replace(href);},[oldDecisionTab,params,clubId,router]);
-  const legacyInterviewTool = params.get("section") === "settings" && params.get("setting") === "interviews" && ["rooms", "schedule", "availability"].includes(params.get("interviewTab") ?? "");
-  useEffect(() => {
-    if (!legacyInterviewTool) return;
-    const next = new URLSearchParams(params.toString());
-    next.set("section", "recruitment"); next.set("tool", "interviews"); next.delete("setting");
-    if (next.get("interviewTab") === "availability") next.set("interviewTab", "schedule");
-    const href = `/club/${encodeURIComponent(clubId)}/workspace?${next}`;
-    if (!navigateWithinClub(href, true)) router.replace(href);
-  }, [legacyInterviewTool, clubId, params, router]);
+  // Old section/tool/tab values (bookmarks, notifications, email) move to their current home.
+  const canonical = canonicalClubWorkspaceHref(clubId, params);
+  useEffect(() => { if (canonical && !navigateWithinClub(canonical, true)) router.replace(canonical); }, [canonical, router]);
+  const oldDecisionTab = params.get("section") === "recruitment" && !!legacyDecisionTab(params.get("tool"));
   const legacyEvents = params.get("section") === "events";
   const section = legacyEvents ? "meetings" : params.get("section") ?? "overview";
   const taskView = params.get("taskView") ?? undefined;
   const tool = oldDecisionTab ? "decisions" : params.get("tool") ?? undefined;
-  const decisionTab=params.get("decisionTab")||(legacyDecisionTab(params.get("tool"))??"overview");
   const moved = legacyApplicantInterviewHref(clubId, params.toString());
   useEffect(() => { if (moved && !navigateWithinClub(moved, true)) router.replace(moved); }, [moved, router]);
   // The interview room has its own route; old in-workspace room URLs move there.
@@ -103,6 +99,8 @@ export function ClubWorkspace({
   const { user, loading, activeClubId, selectClub } = useAuth(),
     demo = useDemoMode();
   const membership = user?.memberships.find((m) => m.clubId === clubId);
+  const canVote = !!membership && hasPermission(membership, "applications.review") && (["decisions.start", "decisions.vote", "decisions.view"] as const).some(p => hasPermission(membership, p));
+  const decisionTab = params.get("decisionTab") || legacyDecisionTab(params.get("tool")) || (canVote ? "voting" : "letters");
   const manager = !!membership && hasWorkspace(membership);
   const preferenceKey = user ? clubWorkspacePreferenceKey(user.id, clubId, demo.isDemoEnabled ? "demo" : user.impersonating ? "preview" : "live") : "";
   const suspended = !demo.isDemoEnabled && !!membership?.club.suspendedAt;
@@ -166,6 +164,8 @@ export function ClubWorkspace({
     scope,
   ]);
   const current = data?.scope === scope && data.value.club.id === clubId ? data.value : null;
+  // Overview has no Refresh button: it reloads after mutations elsewhere and when the person returns.
+  useRevalidate(() => setRetry(n => n + 1), { enabled: needsOverview && !!current, events: OVERVIEW_EVENTS, scopes: OVERVIEW_SCOPES });
   if (suspended) return <RouteWorkspaceShell><div className="max-w-[var(--oc-reading-width)] space-y-4"><PageHeader title="This club is suspended" /><p className="mt-3">Club operations are unavailable until an administrator restores it. Your membership and existing records are preserved.</p><Link href="/" className="mt-6 inline-block underline">Return to Personal</Link></div></RouteWorkspaceShell>;
   if (resolvingEntry || moved || legacyRoom) return <WorkspaceLoading label="Opening club workspace…" />;
   const mode = section === "recruitment" || section === "announcements" && params.get("mode") === "recruiting" ? "recruiting" : "club";
@@ -187,23 +187,29 @@ export function ClubWorkspace({
   return <ApplicationStateProvider initialData={{ applications: [], attendances: [] }} persistLocalState={false}>
     <RecruitmentFocus />
       <ProductShell manager={manager} clubId={clubId} clubName={current?.club.name || membership?.club.name} mode={manager ? mode : "clubs"}
-        modes={manager ? [...(recruitmentTools(membership!).length ? [{ id: "recruiting", label: "Recruiting", href: `${clubWorkspaceHref(clubId, "recruitment")}&tool=overview` }] : []), { id: "club", label: "Club", href: clubWorkspaceHref(clubId, "overview") }] : personalModes.map(item => { const destination = personalDestination(item.id); const params = new URLSearchParams({ workspace: "student", view: destination.view }); if (destination.section) params.set("section", destination.section); return { ...item, href: `/?${params}` } })}
-        onModeSelect={id => { if (manager && (id === "recruiting" || id === "club")) saveClubWorkspacePreference(preferenceKey, id) }}
-        onReviewTool={id => { reviewTrigger.current = document.activeElement as HTMLElement; setReviewTool(id) }} items={nav} active={active} title={nav.find(n => n.id === active)?.label || "Club workspace"} onSelect={() => {}} onNavigate={navigate}>
+        sections={manager ? leaderRailSections(membership!, clubId, params.toString()) : memberRailSections(clubId, current?.club.name || membership?.club.name)}
+        onModeSelect={id => { if (manager) saveClubWorkspacePreference(preferenceKey, id) }}
+        onReviewTool={id => { reviewTrigger.current = document.activeElement as HTMLElement; setReviewTool(id) }} active={active} title={nav.find(n => n.id === active)?.label || "Club workspace"} onSelect={() => {}} onNavigate={navigate}>
         {loading || needsSelection ? <p role="status">Opening club workspace…</p> : !membership ? <div className="space-y-4"><PageHeader title="Club workspace unavailable" /><p>Sign in with a current club membership to access this workspace.</p><Link href="/" className="underline">Return to OutClass</Link></div> : <>
           {!manager && <Link className="mb-5 inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4" href="/clubs">← All my clubs</Link>}
-          {active === "overview" && allowed
-            ? <WelcomeHeader density={section === "overview" ? "expressive" : "compact"} eyebrow={membership.club.name} firstName={user?.profile?.firstName} context={{ mode: "club", clubId, membership, data: error ? null : current }} />
-            : <PageHeader density={section === "overview" ? "expressive" : "compact"} eyebrow={membership.club.name} title={nav.find(n => n.id === active)?.label || "Workspace"} />}
-          {needsOverview && error ? <div role="alert" className="oc-dashboard-error"><p>{error}</p><Button variant="outline" onClick={() => setRetry(n => n + 1)}>Retry</Button></div> : needsOverview && !current ? <DashboardLoading mode={mode === "recruiting" ? "recruiting" : "club"} /> : !allowed ? <p role="alert">This section isn’t available with your current access.</p> : <section key={`${section === "settings" ? authorizationScope : scope}:${section}:${active}`} className="shell-content-enter" aria-label={nav.find(n => n.id === active)?.label}>
-            {section === "overview" && current && (manager ? <><ManagerOverview data={current} refreshing={overviewPending} onChanged={() => setRetry(n => n + 1)} />{!demo.isDemoEnabled && organizationCapabilities(current.membership).canTransferOwnership && <OrganizationSetupChecklist key={`${clubId}:${retry}`} clubId={clubId} compact />}</> : <ManagerOverview data={current} refreshing={overviewPending} onChanged={() => setRetry(n => n + 1)} />)}
+          {section === "overview" && allowed
+            ? <DashboardHero className="oc-club-home-hero" ambientClassName="oc-club-home-ambient"><ClubOverviewHeader className="oc-club-home-greeting" density="expressive" eyebrow={error ? undefined : current?.operations?.cycles?.[0]?.name} clubName={current?.club.name || membership.club.name} context={{ mode: "club", clubId, membership, data: error ? null : current }} action={<ClubHomeActions clubId={clubId} membership={membership} />} /></DashboardHero>
+            : active === "overview" && allowed
+            ? <PageHeader density="compact" eyebrow={membership.club.name} title={TERMS.recruiting} action={section === "recruitment" && current?.operations?.intake ? <Badge variant={applicationsClosed(current.operations) ? "outline" : "success"} className="oc-command-status" data-state={applicationsClosed(current.operations) ? "closed" : "open"}>Applications {applicationsClosed(current.operations) ? "closed" : "open"}</Badge> : undefined} />
+            : <PageHeader density={section === "overview" ? "expressive" : "compact"} eyebrow={membership.club.name} title={nav.find(n => n.id === active)?.label || "Workspace"} action={active === "applicants" ? <div id="workspace-page-actions" data-page-header-slot className="contents" /> : undefined} />}
+          {needsOverview && error ? <Card variant="glass" role="alert" className="oc-dashboard-error"><div className="oc-dashboard-state px-[var(--oc-content-padding)]"><p>{error}</p><Button variant="outline" onClick={() => setRetry(n => n + 1)}>Retry</Button></div></Card> : needsOverview && !current ? <DashboardLoading mode={mode === "recruiting" ? "recruiting" : "club"} /> : !allowed ? <p role="alert">This section isn’t available with your current access.</p> : <section key={`${section === "settings" ? authorizationScope : scope}:${section}:${active}`} className="shell-content-enter" aria-label={nav.find(n => n.id === active)?.label}>
+            {section === "overview" && current && (manager ? <><ManagerOverview data={current} refreshing={overviewPending} onChanged={() => setRetry(n => n + 1)} />{!demo.isDemoEnabled && organizationCapabilities(current.membership).canTransferOwnership && <OrganizationSetupChecklist key={clubId} clubId={clubId} compact />}</> : <ManagerOverview data={current} refreshing={overviewPending} onChanged={() => setRetry(n => n + 1)} />)}
             {section === "tasks" && (demo.isDemoEnabled ? <ClubTasks clubId={clubId} embedded personalOnly={!manager} initialScope={taskView === "mine" ? "mine" : manager ? "team" : "mine"} /> : <SelectedClubWorkspace kind="tasks" clubId={clubId} privacyScope={scope} personalOnly={!manager} initialScope={taskView === "mine" ? "mine" : manager ? "team" : "mine"} />)}
             {section === "meetings" && (hasPermission(membership, "meetings.manage") ? <ClubMeetingsWorkspace key={clubId} clubId={clubId} clubName={membership.club.name} canSeeAttendees={hasPermission(membership, "meetings.attendance")} legacyEvents={legacyEvents} /> : <MeetingList clubId={clubId} embedded personalOnly={!manager} initialAudience="MEMBERS" />)}
             {section === "members" && (demo.isDemoEnabled ? <ClubMembers key={clubId} clubId={clubId} /> : <SelectedClubWorkspace kind="members" clubId={clubId} privacyScope={scope} />)}
             {section === "settings" && <ClubSettingsWorkspace key={clubId} clubId={clubId} onSaved={() => { setRetry(n => n + 1); setPrivacyRevision(n => n + 1) }} />}
             {section === "announcements" && (demo.isDemoEnabled ? <ClubAnnouncements key={clubId} clubId={clubId} /> : <SelectedClubWorkspace kind="announcements" clubId={clubId} privacyScope={scope} />)}
+            {/* Phones reach recruiting through one bottom-bar item, so its pages show here as tabs. The rail covers wide screens. */}
+            {section === "recruitment" && manager && <SectionTabs label="Recruiting sections" className="mb-5 lg:hidden" current={nav.find(n => n.id === active)?.navGroup === "applicants" ? "applicants" : nav.find(n => n.id === active)?.navGroup === "decisions" ? "decisions" : active}
+              items={mobileDestinations(nav.filter(n => n.mode !== "club" && !["announcements", "settings"].includes(n.id))).map(n => ({ id: n.navGroup ?? n.id, label: n.navGroup ? n.label : n.id === "overview" ? TERMS.recruiting : n.label, href: n.href! }))}
+              onNavigate={(event, href) => { if (!canLeaveWorkspace()) { event.preventDefault(); return } handleClubLink(event, href) }} />}
             {section === "recruitment" && active === "decisions" && <DecisionsNavigation clubId={clubId} member={membership}/>}
-            {section === "recruitment" && (active === "decisions" && decisionTab === "voting" ? <VotingRoomLanding clubId={clubId}/> : active === "decisions" && decisionTab === "letters" && !hasPermission(membership,"recruitment.manage")&&!hasPermission(membership,"decisions.manage") ? <p role="alert">Decision letters are unavailable with your current access.</p> : active === "decisions" && decisionTab === "letters" ? <div className="space-y-4"><h2 className="oc-section-heading">Decision letters</h2><p className="text-sm text-muted-foreground">Voting does not send applicant messages. Prepare letters here; review and send decisions separately.</p>{hasPermission(membership,"recruitment.manage")?<DecisionTemplateEditor clubId={clubId}/>:<p role="status">Letter template editing requires recruitment management access.</p>}<Button variant="outline" asChild><Link href={decisionsHref(clubId,"overview",params.toString())}>Review decisions and send letters</Link></Button></div> : active === "resumes" || active === "reviews" ? <ApplicantInterviewReviews clubId={clubId} tool={active} /> : active === "scheduled-decisions" ? <DecisionSchedules clubId={clubId} /> : active === "overview" && current ? <RecruitingOverview data={current} refreshing={overviewPending} onChanged={() => setRetry(n => n + 1)} /> : active === "interviews" ? <div className="space-y-3">{(hasPermission(membership, "interviews.manage") || interviewCapabilities(membership).editKit || interviewCapabilities(membership).participate || interviewCapabilities(membership).readClosing) && <RecruitmentWorkspace clubId={clubId} member={membership} onInterview={openInterviewRoom} initialTool="kits" />}</div> : <>{(active === "decisions" || active === "rejected") && <p className="mb-5 text-sm text-muted-foreground">{active === "decisions" ? "Publish final decisions with a formal letter and inbox notification. Decision-availability email follows the student’s application-email preferences." : active === "rejected" ? "Review retained rejected applications and their history. Use explicit reconsideration to return an eligible application to review." : "Review submitted applications and move candidates through your club’s rounds."}</p>}{(demo.isDemoEnabled ? <LiveLeaderWorkspace key={privacyRevision} scoped rejectedOnly={active === "rejected"} decisionsOnly={active === "decisions"} /> : <SelectedClubWorkspace kind="pipeline" clubId={clubId} privacyScope={scope} rejectedOnly={active === "rejected"} decisionsOnly={active === "decisions"} />)}</>)}
+            {section === "recruitment" && (active === "decisions" && decisionTab === "voting" ? <VotingRoomLanding clubId={clubId}/> : active === "decisions" && decisionTab === "letters" && !hasPermission(membership,"recruitment.manage")&&!hasPermission(membership,"decisions.manage") ? <p role="alert">Decision letters are unavailable with your current access.</p> : active === "decisions" && decisionTab === "letters" ? <div className="space-y-4"><div className="flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-muted-foreground">Voting does not send applicant messages. Prepare letters here, then review decisions and send them from Applicants.</p><Button asChild><Link href={`/club/${encodeURIComponent(clubId)}/workspace?section=recruitment&tool=applicants&decision=pending`}>Review decisions and send letters</Link></Button></div>{hasPermission(membership,"recruitment.manage")?<DecisionTemplateEditor clubId={clubId} inline/>:<p role="status">Letter template editing requires recruitment management access.</p>}</div> : active === "resumes" || active === "reviews" ? <ApplicantInterviewReviews clubId={clubId} tool={active} /> : active === "scheduled-decisions" ? <DecisionSchedules clubId={clubId} /> : active === "overview" && current ? <RecruitingOverview data={current} refreshing={overviewPending} onChanged={() => setRetry(n => n + 1)} /> : active === "interviews" ? <div className="space-y-3">{(hasPermission(membership, "interviews.manage") || interviewCapabilities(membership).editKit || interviewCapabilities(membership).participate || interviewCapabilities(membership).readClosing) && <RecruitmentWorkspace clubId={clubId} member={membership} onInterview={openInterviewRoom} initialTool="kits" />}</div> : <>{(demo.isDemoEnabled ? <LiveLeaderWorkspace key={privacyRevision} scoped initialDecision={decisionFilter(params.get("decision"))} /> : <SelectedClubWorkspace kind="pipeline" clubId={clubId} privacyScope={scope} decision={decisionFilter(params.get("decision"))} />)}</>)}
           </section>}
         </>}
         <Sheet open={!!reviewTool && !!membership && mode === "recruiting" && nav.some(n => n.id === reviewTool && n.quiet)} onOpenChange={open => { if (!open) { if (document.querySelector('[data-saving="true"]')) return; if (document.querySelector('[data-rule-dirty="true"]') && !window.confirm("Discard unsaved rule changes?")) return; setReviewTool(null); if (tool === "rounds" || tool === "rules") { const next = new URLSearchParams(params.toString()); next.set("tool", "overview"); router.replace(`/club/${encodeURIComponent(clubId)}/workspace?${next}`) } } }}>
@@ -250,9 +256,9 @@ function RecruitmentWorkspace({
         </div>
         <label className="text-sm">
           Recruitment tool
-          <select
+          <NativeSelect
             aria-label="Recruitment tool"
-            className="mt-1 block min-h-11 max-w-full rounded-md border bg-background px-3"
+            className="mt-1 block min-h-11 max-w-full"
             value={active}
             onChange={(e) =>
               e.target.value === "interviews"
@@ -265,7 +271,7 @@ function RecruitmentWorkspace({
                 {t.label}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </label>
       </div>
       {active === "applicants" && <LiveLeaderWorkspace scoped />}

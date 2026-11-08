@@ -64,12 +64,13 @@ const settingsCases = [
  ['profile capability Appearance', {permissions:['club.settings']}, 'general', 'general', undefined],
  ['application-only inaccessible General', {permissions:['application.manage']}, 'general', 'application', undefined],
  ['members-only inaccessible General', {permissions:['members.manage']}, 'general', 'members', undefined],
- ['interviews-only inaccessible General', {permissions:['interviews.manage']}, 'general', 'interviews', undefined],
+ // Settings → Interviews moved into the Interviews tool, so interview managers have no Settings section.
+ ['interviews-only has no settings', {permissions:['interviews.manage']}, 'general', undefined, undefined],
  ['direct operational tab', {isOwner:true}, 'application', 'application', undefined],
  ['inaccessible operational request falls back to Appearance', {permissions:['club.settings']}, 'interviews', 'general', undefined],
  ['inaccessible operational request falls back to permitted operational tab', {permissions:['application.manage']}, 'members', 'application', undefined],
  ['unknown requested tab follows permitted Appearance fallback', {isOwner:true}, 'unknown', 'general', undefined],
- ['default limited-permission tab', {permissions:['interviews.manage']}, null, 'interviews', undefined],
+ ['default limited-permission tab', {permissions:['members.manage']}, null, 'members', undefined],
  ['no permitted settings', {permissions:[]}, 'general', undefined, undefined],
  ['revoked membership', {isOwner:true,status:'REVOKED'}, 'general', undefined, undefined],
 ]
@@ -105,8 +106,9 @@ function renderSettingsWorkspace(member, requested, section = 'settings') {
    if(name==='@/components/product/welcome-header') return component('components/product/welcome-header.tsx')
    if(name==='@/lib/welcome') return load('lib/welcome.ts')
    if(name==='@/components/ui/page-header') return component('components/ui/page-header.tsx')
+   if(name==='@/components/product/dashboard/dashboard') return component('components/product/dashboard/dashboard.tsx')
    if(name==='./campus-illustration') return component('components/product/campus-illustration.tsx')
-   if(['@/lib/club-settings','@/lib/product-navigation','@/lib/permissions','@/lib/interview-access','@/lib/club-workspace','@/lib/workspace-navigation'].includes(name)) return load(name.replace('@/','')+'.ts')
+   if(['@/lib/club-settings','@/lib/product-navigation','@/lib/permissions','@/lib/interview-access','@/lib/club-workspace','@/lib/workspace-navigation','@/lib/organization-authorization','@/lib/club-onboarding','@/lib/copy/terms'].includes(name)) return load(name.replace('@/','')+'.ts')
    return new Proxy({}, {get:()=>()=>null})
   },exports)
   return exports
@@ -129,9 +131,9 @@ for(const [name,member,requested,effective,illustration] of settingsCases) test(
  else assert.doesNotMatch(html,/oc-campus-illustration|data-illustrated/)
 })
 
-test('club Overview keeps its club name and neutral welcome without repetitive public profile shortcuts or artwork',()=>{
+test('club Overview opens with the club name, not a greeting, without repetitive public profile shortcuts or artwork',()=>{
  const html=renderSettingsWorkspace({isOwner:true},null,'overview');
- assert.match(html,/<h1[^>]*>.*Welcome to OutClass\..*<\/h1>/);assert.match(html,/Fixture Club/);
+ assert.match(html,/<h1[^>]*>.*Fixture Club.*<\/h1>/);assert.doesNotMatch(html,/Good (morning|afternoon|evening)|Welcome to OutClass|Still up/);
  assert.doesNotMatch(html,/Public club profile|href="\/club\/visual-fixture-club"/);
  assert.doesNotMatch(html,/oc-campus-illustration|data-illustrated|oc-campus-ribbon/);
 })

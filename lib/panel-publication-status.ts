@@ -6,10 +6,10 @@ export function panelPublicationStatus(booking: Pick<BookingSettings, "bookingPu
   const next = published && draft ? mergePanelPublication(published, draft) : undefined
   const sessions = (doc: PanelDocument) => doc.sessions.map(s => [s.id, s.roomId, s.roomName, s.timezone, s.startTime, s.endTime, s.buffer, s.required, s.active]).sort((a, b) => String(a[0]).localeCompare(String(b[0])))
   const changed = !!(published && next && (panelScheduleChanges(published, next).length || JSON.stringify(sessions(published)) !== JSON.stringify(sessions(next)) || published.options.maxConsecutiveMinutes !== next.options.maxConsecutiveMinutes || published.options.breakMinutes !== next.options.breakMinutes))
-  const status = !booking?.bookingPublishedAt ? "Booking is unpublished" : booking.bookingPaused ? "Booking is paused" : "Booking is live"
+  const status = !booking?.bookingPublishedAt ? "Schedule not published yet" : booking.bookingPaused ? "Booking paused" : "Schedule published"
   return {
     changed,
     label: `${status}${changed ? " · Unpublished changes" : !published && draft ? " · Awaiting interviewer approval" : ""}`,
-    detail: changed ? "Your changes take effect after approval." : !published && draft ? "Confirm interviewers before publishing booking." : "",
+    detail: changed ? "Your changes take effect after approval." : !published && draft ? "Confirm interviewers before publishing the schedule." : "",
   }
 }

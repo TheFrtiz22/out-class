@@ -66,3 +66,29 @@ test('exact destination invitations require own final review; confirm is idempot
  assert.equal((await h.db.query('SELECT count(*)::int AS n FROM "InterviewInvitation"')).rows[0].n,1);
  }finally{await h.db.close();}
 });
+test('an original question is shared with the room only by its author; prompt only, no answer key, notes stay private',async()=>{
+ const h=await setup();try{
+ const original=randomUUID(),prompt='Synthetic original: what would you change first?';
+ h.as(h.ids.peer);await h.api.getInterviewCollaboration(h.two);
+ h.as(h.ids.panel);await h.api.getInterviewCollaboration(h.one);
+ await h.kit.saveInterviewSession({...h.scope,revision:0,draft:{...h.a.draft,additionalQuestions:[{id:original,question:prompt,notes:'panel-private-original'}]}});
+ h.as(h.ids.peer);await assert.rejects(h.api.selectSharedInterviewQuestion({...h.two,questionId:original}),/authorized bank question/,'another interviewer cannot share an unshared original question');
+ h.as(h.ids.panel);const pick=await h.api.selectSharedInterviewQuestion({...h.one,questionId:original});assert.deepEqual(pick.question,{id:original,prompt,guidance:''});
+ h.as(h.ids.peer);const view=await h.api.getInterviewCollaboration(h.two);assert.equal(view.selection.question.prompt,prompt);assert.equal(view.selection.question.guidance,'');
+ assert.doesNotMatch(JSON.stringify(view),/panel-private-original/);
+ const saved=await h.kit.saveInterviewSession({...h.scope,revision:0,draft:{...h.b.draft,additionalQuestions:[{id:original,question:prompt,bankQuestion:{guidance:''},notes:'peer-private-original'}]}});
+ assert.equal(saved.session.draft.additionalQuestions[0].id,original,'the peer can keep the shared original in their own draft');
+ h.as(h.ids.panel);const mine=await h.kit.openInterviewSession(h.scope);assert.equal(mine.draft.additionalQuestions[0].notes,'panel-private-original');assert.doesNotMatch(JSON.stringify(mine),/peer-private-original/);
+ }finally{await h.db.close();}
+});
+test('an original question cannot stand in for a master-kit question id when shared',async()=>{
+ const h=await setup();try{
+ const kitId=randomUUID();
+ h.as(h.ids.panel);await h.api.getInterviewCollaboration(h.one);
+ h.as(h.ids.owner);const current=await h.kit.getInterviewKit(h.ids.club,h.ids.round);await h.kit.saveInterviewKit(h.ids.club,h.ids.round,current.version,[...current.questions,{id:kitId,prompt:'Genuine kit prompt',guidance:'Genuine key'}]);
+ h.as(h.ids.panel);await h.kit.saveInterviewSession({...h.scope,revision:0,draft:{...h.a.draft,additionalQuestions:[{id:kitId,question:'Injected text',notes:''}]}});
+ const pick=await h.api.selectSharedInterviewQuestion({...h.one,questionId:kitId});
+ assert.deepEqual(pick.question,{id:kitId,prompt:'Genuine kit prompt',guidance:'Genuine key'});
+ h.as(h.ids.peer);const view=await h.api.getInterviewCollaboration(h.two);assert.equal(view.selection.question.prompt,'Genuine kit prompt');assert.doesNotMatch(JSON.stringify(view),/Injected text/);
+ }finally{await h.db.close();}
+});

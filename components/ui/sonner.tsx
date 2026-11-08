@@ -16,9 +16,9 @@ const Toaster = ({ style, ...props }: ToasterProps) => {
       className="toaster group"
       style={
         {
-          '--normal-bg': 'var(--popover)',
+          '--normal-bg': 'var(--oc-glass-frosted-material)',
           '--normal-text': 'var(--popover-foreground)',
-          '--normal-border': 'var(--border)',
+          '--normal-border': 'var(--oc-glass-light-edge)',
           '--success-bg': 'var(--success-subtle)',
           '--success-text': 'var(--success)',
           '--success-border': 'var(--border)',

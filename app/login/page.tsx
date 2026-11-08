@@ -3,6 +3,8 @@ import { getAuthEntryAccount } from "@/utils/auth-entry"
 import { safeReturnPath, authEntryHref, authenticationError } from "@/lib/auth"
 import { redirect } from "next/navigation"
 
+export const metadata = { title: "Sign in", robots: { index: false, follow: false } }
+
 export default async function LoginPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const params = await searchParams
   const account = await getAuthEntryAccount()

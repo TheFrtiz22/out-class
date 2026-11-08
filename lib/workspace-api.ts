@@ -15,6 +15,8 @@ import * as demoBookingApi from "@/lib/demo/interview-booking";
 import * as invitationSchedules from "@/actions/invitation-schedules";
 import * as decisionSchedules from "@/actions/decision-schedules";
 import * as recruitmentManagement from "@/actions/recruitment-management";
+import * as rankedReview from "@/actions/ranked-review";
+import * as demoRankedReview from "@/lib/demo/ranked-review";
 import * as decisionCommunications from "@/actions/communications";
 import * as demoDecisionCommunications from "@/lib/demo/communications";
 import * as offers from "@/actions/recruitment-offers";
@@ -22,6 +24,7 @@ import * as demoOffers from "@/lib/demo/recruitment-offers";
 import { assertRecruitmentRoundMove } from "@/lib/recruitment-lifecycle";
 import { interviewCapabilities } from "@/lib/interview-access";
 import { hasPermission } from "@/lib/permissions";
+import { organizationCapabilities } from "@/lib/organization-authorization";
 import { genderVisibility } from "@/lib/recruitment-profile";
 import { readWorkspace } from "@/lib/workspace-read"
 import * as campusEvents from "@/actions/campus-events"
@@ -52,6 +55,8 @@ import * as interviewResumes from "@/actions/interview-resumes"
 import * as interviewGrants from "@/actions/organization-members"
 import * as demoInterviews from "@/lib/demo/interview-foundation"
 import * as interviewKits from "@/actions/interview-kits"
+import * as interviewFeedbackApi from "@/actions/interview-feedback"
+import * as demoInterviewFeedback from "@/lib/demo/interview-feedback"
 import * as collaboration from "@/actions/interview-collaboration"
 import * as demoCollaboration from "@/lib/demo/interview-collaboration"
 
@@ -168,7 +173,7 @@ export const moveApplicantRound = adapt(crm.moveApplicantRound, (input) => {
   return demoStore.mutate((s) => {
     const app = s.applications.find((a) => a.id === input.applicationId)!
     if (input.expectedRoundId && app.roundId !== input.expectedRoundId)
-      throw new Error("Application changed. Refresh before moving rounds.")
+      throw new Error("Application changed. Reload the page and try again.")
     assertRecruitmentRoundMove(app.status)
     const round = s.clubs.find(c=>c.id===input.clubId)!.rounds.find(r=>r.id===input.newRoundId)!
     if(app.status === "INTERVIEWING" && !/interview/i.test(round.name)) app.status = "IN_REVIEW"
@@ -179,7 +184,7 @@ export const moveApplicantRound = adapt(crm.moveApplicantRound, (input) => {
 export const setApplicationStatus = adapt(crm.setApplicationStatus, (input) => {
   const app = scopedApplication(input.clubId, input.applicationId)
   if (input.expectedStatus && app.status !== input.expectedStatus)
-    throw new Error("This candidate changed. Refresh before deciding.")
+    throw new Error("This candidate changed. Reload the page and try again.")
   return demoStore.mutate((s) => {
     const app = s.applications.find((a) => a.id === input.applicationId)!
     demoOffers.demoDecision(s, app.id, input.status)
@@ -337,6 +342,7 @@ export const getAssignedInterviewRooms = adapt((...args: Parameters<typeof inter
 export const resolveInterviewRoomEntry = adapt(interviewEntry.resolveInterviewRoomEntry, demoInterviewEntry.resolveInterviewRoomEntry)
 export const getEarlierInterviewReviews = adapt(interviewKits.getEarlierInterviewReviews, demoInterviews.getEarlierInterviewReviews)
 export const getInterviewRoundScore = adapt(interviewKits.getInterviewRoundScore, demoInterviews.getInterviewRoundScore)
+export const getInterviewFeedback = adapt(interviewFeedbackApi.getInterviewFeedback, input => demoInterviewFeedback.getInterviewFeedback(input))
 export const getInterviewCollaboration = adapt(collaboration.getInterviewCollaboration, demoCollaboration.getInterviewCollaboration)
 export const selectSharedInterviewQuestion = adapt(collaboration.selectSharedInterviewQuestion, demoCollaboration.selectSharedInterviewQuestion)
 export const leaveInterviewCollaboration = adapt(collaboration.leaveInterviewCollaboration, demoCollaboration.leaveInterviewCollaboration)
@@ -438,6 +444,8 @@ export const getClubWorkspaceOverview = adapt((...args: Parameters<typeof clubOv
  return {
   operations:demoDashboardSummary(clubId,membership.id),
   upcomingInterviews:null,votingSessions:null,
+  // Read-only counts from the demo store; demo has no pending invitations.
+  members:organizationCapabilities(membership).canManageMembers||organizationCapabilities(membership).canChangeRoles?{active:s.memberships.filter(m=>m.clubId===clubId&&m.status==="ACTIVE").length,pendingInvitations:0}:null,
   club:{id:club.id,name:club.name,tagline:""},membership:{id:membership.id,isOwner:membership.isOwner,permissions:membership.permissions,interviewOffices:membership.interviewOffices,status:membership.status},
   meeting:s.meetings.filter(m=>m.clubId===clubId&&m.date>=now).sort((a,b)=>+a.date-+b.date).map(m=>({id:m.id,title:m.title,date:m.date,location:m.location,audience:m.audience}))[0]??null,
   work:s.tasks.filter(t=>t.clubId===clubId&&!["DRAFT","DONE"].includes(t.status)).flatMap(t=>t.assignments.filter(a=>a.memberId===membership.id&&(!a.submittedAt||a.revisionRequestedAt)&&!a.reviewedAt).map(a=>({id:a.id,task:{id:t.id,title:t.title,dueAt:t.dueAt,kind:t.kind}}))).sort((a,b)=>(a.task.dueAt?+a.task.dueAt:Infinity)-(b.task.dueAt?+b.task.dueAt:Infinity)).slice(0,5),
@@ -656,3 +664,5 @@ export const cancelAvailabilitySchedule = adapt(availabilitySchedules.cancelAvai
 export const getPipelineSettings = adapt(pipelineActions.getPipelineSettings, demoPipeline.getPipelineSettings);
 export const savePipelineSettings = adapt(pipelineActions.savePipelineSettings, demoPipeline.savePipelineSettings);
 export const getPipelineInterviewStatus = adapt(pipelineInterviewActions.getPipelineInterviewStatus, demoPipeline.getPipelineInterviewStatus);
+export const getRankedReviewSettings = adapt((...args: Parameters<typeof rankedReview.getRankedReviewSettings>) => readWorkspace<Awaited<ReturnType<typeof rankedReview.getRankedReviewSettings>>>("rankedReviewSettings", args), demoRankedReview.getRankedReviewSettings);
+export const saveRankedReviewBands = adapt(rankedReview.saveRankedReviewBands, demoRankedReview.saveRankedReviewBands);

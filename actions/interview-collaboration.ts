@@ -94,8 +94,13 @@ export async function selectSharedInterviewQuestion(input: z.infer<typeof inputS
     let question = questions.find(q => q.id === data.questionId);
     if (!question) {
       const draft = interviewDraftSchema.parse(record.draft);
-      const added = draft.additionalQuestions.find(q => q.id === data.questionId && q.bankQuestion);
-      question = kitSchema.parse(record.questions).find(q => q.id === data.questionId) || (added ? { id: added.id, prompt: added.question, guidance: added.bankQuestion!.guidance } : kitSchema.parse(round.interviewKit).find(q => q.id === data.questionId));
+      // The actor's own added questions: validated bank snapshots, then the round kit, and only then an
+      // original question the actor wrote (no answer key). An original can never stand in for a kit ID.
+      const added = draft.additionalQuestions.find(q => q.id === data.questionId);
+      const kitQuestion = kitSchema.parse(round.interviewKit).find(q => q.id === data.questionId);
+      question = kitSchema.parse(record.questions).find(q => q.id === data.questionId)
+        || (added?.bankQuestion ? { id: added.id, prompt: added.question, guidance: added.bankQuestion.guidance } : kitQuestion)
+        || (added ? { id: added.id, prompt: added.question, guidance: "" } : undefined);
       if (!question) throw Error("Select an authorized bank question.");
       if (questions.length >= 50) throw Error("This room has reached its saved bank limit.");
       questions.push(question);

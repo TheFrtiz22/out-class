@@ -1,3 +1,4 @@
+import { profilePhotoSource } from "@/lib/profile-photo";
 import { interviewHistoryWindow, previousApplicantScores } from "@/lib/interview-score-history";
 import { validateFinalInterviewThoughts } from "@/lib/interview-final-thoughts";
 import { anonymousApplicantLabel } from "@/lib/anonymous-review";
@@ -125,6 +126,11 @@ export function submitEvaluation(input: { clubId: string; applicationId: string;
   if (record.completedAt) throw new Error("Submitted evaluation is immutable.");
   return { success: true, evaluation: saveInterviewSession({ ...scope, revision: record.revision, draft: { ...record.draft, score: input.score, additionalNotes: input.notes ?? record.draft.overallReview }, complete: true }).evaluation! };
 }
+/** Demo shows only bundled fictional headshots, never an authenticated storage URL. */
+function demoApplicantPhoto(anonymous: boolean, value: string | null | undefined) {
+  const source = anonymous ? undefined : profilePhotoSource(value);
+  return source && !source.startsWith("/api/") ? source : null;
+}
 export function getSubmittedInterviewReviews(clubId: string, filters: import("@/lib/applicant-interview-navigation").ApplicantInterviewFilters = {}) {
   demoStore.refresh();
   const { s, caps } = actor(clubId);
@@ -136,7 +142,7 @@ export function getSubmittedInterviewReviews(clubId: string, filters: import("@/
     try { access({ clubId, applicationId: r.applicationId, roundId: r.roundId }, "closingReview"); return true; } catch { return false; }
   }).sort((a,b) => (+new Date(b.completedAt!) - +new Date(a.completedAt!)) || b.id.localeCompare(a.id)).slice(0,100).map(r => {
     const app = s.applications.find(a => a.id === r.applicationId)!, profile = s.students.find(p => p.id === app.studentId)?.profile;
-    const club = s.clubs.find(c => c.id === clubId)!; const round = club.rounds.find(round => round.id === r.roundId)!; const anonymous = !!(r.anonymousReview || round.anonymousReview || club.rounds.find(round => round.id === app.roundId)?.anonymousReview); return { id: r.id, applicationId: r.applicationId, roundId: r.roundId, interviewerId: r.interviewerId, anonymous, roundName: anonymous ? "Interview review" : round.name, applicantName: anonymous ? anonymousApplicantLabel(app.id) : profile ? `${profile.firstName} ${profile.lastName}` : "Profile not provided" };
+    const club = s.clubs.find(c => c.id === clubId)!; const round = club.rounds.find(round => round.id === r.roundId)!; const anonymous = !!(r.anonymousReview || round.anonymousReview || club.rounds.find(round => round.id === app.roundId)?.anonymousReview); return { id: r.id, applicationId: r.applicationId, roundId: r.roundId, interviewerId: r.interviewerId, anonymous, roundName: anonymous ? "Interview review" : round.name, applicantName: anonymous ? anonymousApplicantLabel(app.id) : profile ? `${profile.firstName} ${profile.lastName}` : "Profile not provided", photo: demoApplicantPhoto(anonymous, profile?.headshotUrl) };
   });
 }
 export function getSubmittedInterviewReview(input: InterviewScope & { interviewerId: string }) {

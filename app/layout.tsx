@@ -10,7 +10,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
 import { RouteContent } from "@/components/route-content"
-import { SITE_URL, SITE_TITLE, SITE_DESCRIPTION, LEGAL_ORGANIZATION_NAME, privateRobots } from "@/lib/seo"
+import { SITE_URL, SITE_TITLE, SITE_DESCRIPTION, LEGAL_ORGANIZATION_NAME, privateRobots, socialDefaults } from "@/lib/seo"
 
 // One Caslon family, with real variable weights and a real italic face.
 // Let rendered text request its faces; root preloads also download unused italics.
@@ -42,7 +42,9 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, view
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: SITE_TITLE, template: "%s | OutClass" },
+  title: { default: SITE_TITLE, template: "%s · OutClass" },
+  // Every page inherits a social card unless it sets its own (public pages do, with their title).
+  ...socialDefaults(),
   description: SITE_DESCRIPTION,
   applicationName: "OutClass",
   publisher: LEGAL_ORGANIZATION_NAME,

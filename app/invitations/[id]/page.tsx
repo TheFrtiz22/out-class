@@ -5,12 +5,15 @@ import { prisma } from "@/utils/prisma";
 import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 import { requireAuth } from "@/utils/auth";
-import { redirect } from "next/navigation";
 import { clubWriteTransaction } from "@/utils/club-write-transaction";
 import { verifiedSchoolIdentities, prepareVerifiedSchoolAccount } from "@/utils/school-identity";
 import { UniversityVerificationError } from "@/utils/verified-email-policy";
 import { requireCompletedStudentProfile } from "@/utils/profile-onboarding";
 import { PageHeader } from "@/components/ui/page-header";
+import { SignInCard } from "@/components/landing/sign-in-card";
+import { invitationPreview } from "@/lib/public-link-preview";
+
+export const metadata = { title: "Club invitation", robots: { index: false, follow: false } }
 export default async function Invitation({
   params,
 }: {
@@ -21,7 +24,21 @@ export default async function Invitation({
   const {
     data: { user },
   } = await client.auth.getUser();
-  if (!user) redirect(`/?next=${encodeURIComponent(`/invitations/${id}`)}`);
+  if (!user) {
+    // Signed out: say what this is and return here after sign-in. Acceptance below still
+    // re-verifies the signed-in identity against the invitation; the link alone grants nothing.
+    const next = `/invitations/${encodeURIComponent(id)}`;
+    const preview = await invitationPreview(id);
+    return preview ? (
+      <SignInCard eyebrow="Club invitation" title={<>You’ve been invited to join {preview.clubName} as {preview.owner ? "its owner" : `${/^[AEIOU]/.test(preview.role) ? "an" : "a"} ${preview.role.toLowerCase()}`}</>} next={next}>
+        <p>Sign in with the UVA email address this invitation was sent to, or create your account with it.</p>
+      </SignInCard>
+    ) : (
+      <SignInCard invalid title="This invitation link isn’t valid" next={next}>
+        <p>It may have expired, been withdrawn or already been answered. Ask the club for a new invitation, or sign in to see invitations sent to you.</p>
+      </SignInCard>
+    );
+  }
   const account = await requireAuth({ verifyEmail: true });
   const person = account.user;
   await requireCompletedStudentProfile(person.id, `/invitations/${id}`);
@@ -75,7 +92,7 @@ export default async function Invitation({
         Accept with the UVA account this invitation was sent to. Your personal
         profile and existing memberships stay intact.
       </p>
-      <div className="rounded-xl border bg-card p-4 sm:p-5"><h2 className="oc-section-heading ">Your organization access</h2><ul className="mt-3 flex flex-wrap gap-2">{(invitation.permissions.length ? invitation.permissions : ["membership"]).map(permission => <li key={permission} className="rounded-md bg-muted px-2.5 py-1.5 text-xs leading-5">{permissionLabels[permission as ClubPermission] || "Club membership"}</li>)}</ul></div>
+      <div className="rounded-xl border oc-glass-surface p-4 sm:p-5"><h2 className="oc-section-heading ">Your organization access</h2><ul className="mt-3 flex flex-wrap gap-2">{(invitation.permissions.length ? invitation.permissions : ["membership"]).map(permission => <li key={permission} className="rounded-md bg-muted px-2.5 py-1.5 text-xs leading-5">{permissionLabels[permission as ClubPermission] || "Club membership"}</li>)}</ul></div>
       {(invitation.schoolIdentityId && invitation.requestedRole === "OWNER") && <p className="text-sm leading-7">You’ve been designated as an administrator. Claiming gives you owner access to manage members, roles, applications, recruiting, interviews, and organization settings.</p>}
       <InvitationResponse id={id} owner={!!invitation.schoolIdentityId && invitation.requestedRole === "OWNER"} />
     </div>

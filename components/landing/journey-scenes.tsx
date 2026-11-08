@@ -20,6 +20,10 @@ function Facts({ items }: { items: [string, ReactNode][] }) {
 function Action({ children, target, done }: { children: ReactNode; target: string; done: boolean }) {
   return <span className="oc-demo-button" data-demo-target={target} data-complete={done}>{children}{done ? <Check size={18} aria-hidden="true" /> : <ArrowRight size={18} aria-hidden="true" />}</span>
 }
+/** Additional fictional rows so each sample screen reads like a real, populated workspace. */
+function SampleRows({ rows }: { rows: [string, string, string][] }) {
+  return <ul className="oc-demo-rows">{rows.map(([title, detail, status]) => <li key={title}><div><strong>{title}</strong><span>{detail}</span></div><Badge variant="outline">{status}</Badge></li>)}</ul>
+}
 function Result({ children, done }: { children: ReactNode; done: boolean }) {
   return <div className="oc-demo-result" data-visible={done} data-demo-entering={done}><CheckCircle2 size={20} /><p>{children}</p></div>
 }
@@ -40,6 +44,7 @@ function DiscoverScene() {
       <p className="oc-demo-description">Research ideas. Build conviction. Learn together.</p>
       <div className="oc-demo-reveal" data-visible={done} data-demo-entering={done}><Facts items={[["Focus", "Finance & investing"], ["Recruitment", "Applications open"]]} /></div>
     </div>
+    <SampleRows rows={[["Rotunda Consulting Collective", "Consulting · Applications open", "Open"], ["Lawn Policy Review", "Journalism · Opens in spring", "Follow"]]} />
   </Focus>
 }
 function ApplyScene() {
@@ -51,7 +56,7 @@ function ApplyScene() {
 }
 function InterviewScene() {
   const done = useDemoState() > 0
-  return <Focus eyebrow="JIS · PANEL INTERVIEW" title={done ? "Interview confirmed." : "A time that works for you."} badge={done ? "Confirmed" : "Selected"} target="confirm-booking" action={done ? "Interview confirmed" : "Confirm interview"} result="Your booking is saved with your application." done={done}>
+  return <Focus eyebrow="JIS · PANEL INTERVIEW" title={done ? "Interview confirmed." : "A time that works for you."} badge={done ? "Confirmed" : "Selected"} target="confirm-booking" action={done ? "Interview confirmed" : "Confirm interview"} result="Your interview is saved with your application." done={done}>
     <div className="oc-demo-booking"><CalendarDays size={28} /><div><strong>Thursday, October 22</strong><p>{sample.time} · Eastern Time</p></div></div>
     <Facts items={[["Location", <span className="oc-demo-inline" key="room"><MapPin size={18} />{example.room}</span>], ["Duration", "20 minutes"]]} />
   </Focus>
@@ -60,7 +65,7 @@ function StatusScene() {
   const done = useDemoState() > 0
   return <Focus eyebrow="YOUR APPLICATIONS · STATUS" title="Know your next step." badge="Interviewing" target="status-application" action={done ? "Application details opened" : "View application"} result="Interview confirmed. Your next step is in view." done={done}>
     <Club />
-
+    <SampleRows rows={[["Rotunda Consulting Collective", "Submitted October 3", "In review"], ["Cavalier Product Studio", "Draft saved", "Draft"]]} />
     <div className="oc-demo-reveal" data-visible={done} data-demo-entering={done}><div className="oc-demo-next-step"><CalendarDays size={22} /><div><strong>Thursday · {sample.time}</strong><p>Confirmed · {example.room}</p></div></div></div>
   </Focus>
 }
@@ -97,7 +102,7 @@ function ReviewScene() {
 }
 function LeaderInterviewScene() {
   const done = useDemoState() > 0
-  return <Focus eyebrow="JIS · INTERVIEW PANELS" title={done ? "A proposal to review." : "A plan for every panel."} badge={done ? "Draft" : "Ready"} target="auto-fill" action={done ? "Panel proposal created" : "Auto-Fill Panels"} result="Draft ready. Owner review before publication." done={done}>
+  return <Focus eyebrow="JIS · INTERVIEW PANELS" title={done ? "A proposal to review." : "A plan for every panel."} badge={done ? "Draft" : "Ready"} target="auto-fill" action={done ? "Panel proposal created" : "Auto-Fill Panels"} result="Draft ready. The owner reviews it before it goes out." done={done}>
     <div className="oc-demo-schedule-context"><span><MapPin size={18} />Room 204</span><span><Users size={18} />2 interviewers per session</span></div>
     <div className="oc-demo-panel-table"><div><span>Thursday, Oct 22</span><span>Panel assignment</span></div>{["6:00 PM", sample.time].map(time => <div key={time}><strong>{time}</strong><span data-demo-entering={done}>{done ? "Alex J. · Sam K." : "Ready to auto-fill"}</span></div>)}</div>
     <p className="oc-demo-schedule-status">{done ? "4 of 4 staffed · 0 hard conflicts · Unpublished" : "Alex J. & Sam K. · Available 6–8 PM"}</p>

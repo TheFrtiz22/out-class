@@ -15,6 +15,7 @@ import { ChevronUp, ChevronDown, Search, SlidersHorizontal, Play, ChevronLeft, C
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { SegmentedControl } from "@/components/ui/segmented-control"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { Label } from "@/components/ui/label"
@@ -34,6 +35,7 @@ import { PipelineView } from "@/components/views/leader-dashboard/pipeline-view"
 import { type Applicant, workspaceRounds } from "@/lib/data"
 
 import { averageApplicantScore, nextApplicantSort, sortApplicants, type ApplicantSortKey, type SortConfig } from "@/lib/applicant-sorting"
+import { NativeSelect } from "@/components/ui/native-select"
 
 const SORT_COLUMNS: { key: ApplicantSortKey; label: string; className?: string }[] = [
   { key: "name", label: "Applicant" },
@@ -276,10 +278,7 @@ function LocalLeaderDashboardView() {
 
   return (
     <div className="space-y-4 font-sans">
-      <div className="flex gap-2" role="group" aria-label="CRM pipeline">
-        <Button variant="outline" aria-pressed={pipeline === "applicants"} className={cn("shadow-none", pipeline === "applicants" && "bg-black text-white hover:bg-primary/90 hover:text-white")} onClick={() => setPipeline("applicants")}>Active Applicants</Button>
-        <Button variant="outline" aria-pressed={pipeline === "leads"} className={cn("shadow-none", pipeline === "leads" && "bg-black text-white hover:bg-primary/90 hover:text-white")} onClick={() => setPipeline("leads")}>Interested Leads</Button>
-      </div>
+      <SegmentedControl label="CRM pipeline" value={pipeline} onChange={setPipeline} options={[{ value: "applicants", label: "Active Applicants" }, { value: "leads", label: "Interested Leads" }]} />
       {pipeline === "leads" ? <LeadsTable attendance={attendance} applicantIds={applicantIds} clubId="vvf" /> : <>
       <CRMViewManager />
       <fieldset disabled={!ready} className="min-w-0 space-y-4">
@@ -437,7 +436,7 @@ function LocalLeaderDashboardView() {
 
       {/* CRM data table */}
       {viewMode === "table" && (
-      <Card className="overflow-hidden rounded-xl border-border bg-white py-0 shadow-none">
+      <Card variant="default" className="overflow-hidden rounded-xl border-border bg-white py-0 shadow-none">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             {crmColumns.every(column => !visible(column.id)) ? <p className="p-8 text-center text-sm text-muted-foreground">All columns are hidden. Open View Settings to show columns.</p> : <Table>
@@ -453,14 +452,14 @@ function LocalLeaderDashboardView() {
                   {SORT_COLUMNS.filter(column => visible(column.key)).map((column) => (
                     <TableHead key={column.key} scope="col" className={column.className}
                       aria-sort={sortConfig.key === column.key ? sortConfig.direction : "none"}>
-                      <button type="button" onClick={() => requestSort(column.key)}
+                      <Button type="button" variant="ghost" size="sm" onClick={() => requestSort(column.key)}
                         aria-label={`Sort by ${column.label} ${sortConfig.key === column.key && sortConfig.direction === "descending" ? "ascending" : "descending"}`}
-                        className={cn("flex min-h-10 w-full cursor-pointer select-none items-center gap-1 whitespace-nowrap rounded px-1 text-left text-[length:var(--oc-size-11)] font-medium uppercase tracking-wide transition-colors hover:bg-muted hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", column.key === "score" && "justify-end", sortConfig.key === column.key && "text-foreground")}>
+                        className={cn("w-full select-none justify-start gap-1 px-1 text-left text-[length:var(--oc-size-11)] font-medium uppercase tracking-wide", column.key === "score" && "justify-end", sortConfig.key === column.key && "text-foreground")}>
                         {column.label}
                         <span className="inline-flex size-3 shrink-0" aria-hidden="true">
                           {sortConfig.key === column.key && (sortConfig.direction === "ascending" ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />)}
                         </span>
-                      </button>
+                      </Button>
                     </TableHead>
                   ))}
                   {visible("events") && <TableHead>Events Attended</TableHead>}
@@ -495,7 +494,7 @@ function LocalLeaderDashboardView() {
                     {visible("gpa") && <TableCell className="font-sans tabular-nums">{a.gpa}</TableCell>}
                     {visible("satScore") && <TableCell className="font-sans tabular-nums">{a.satScore}</TableCell>}
                     {visible("status") && <TableCell>
-                      <select aria-label={`Recruitment stage for ${a.name}`} value={a.status} onClick={event => event.stopPropagation()} onChange={event => movePipelineCandidate(a.id, event.target.value)} className="max-w-44 rounded-md border border-border bg-white p-1.5 text-xs">{stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select>
+                      <NativeSelect aria-label={`Recruitment stage for ${a.name}`} value={a.status} onClick={event => event.stopPropagation()} onChange={event => movePipelineCandidate(a.id, event.target.value)} className="max-w-44 rounded-md border border-border bg-white p-1.5 text-xs">{stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</NativeSelect>
                     </TableCell>}
                     {visible("score") && <TableCell className="pr-4 text-right font-sans font-medium">
                       {averageScore(a.id, a.score) > 0 ? averageScore(a.id, a.score).toFixed(1) : "—"}
@@ -611,7 +610,7 @@ function LocalLeaderDashboardView() {
 
               <Tabs defaultValue="application" className="flex flex-1 flex-col gap-0 overflow-hidden">
                 <div className="border-b px-4">
-                  <TabsList className="h-auto bg-transparent p-0">
+                  <TabsList variant="subtle" className="h-auto bg-transparent p-0">
                     <TabsTrigger
                       value="application"
                       className="rounded-none border-b-2 border-transparent px-3 py-2.5 text-xs data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none"

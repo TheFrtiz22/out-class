@@ -22,6 +22,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { scholarPrograms, scholarLabels, toggleScholar } from "@/lib/scholar-status";
+import { SegmentedControl } from "@/components/ui/segmented-control"
+import { NativeSelect } from "@/components/ui/native-select"
 
 const titles = {
   identity: "Name & photo",
@@ -32,14 +34,21 @@ const titles = {
 export function EditStudentProfileDialog({
   trigger,
   profile,
-  section = "identity",
+  section: initialSection = "identity",
   onSaved,
+  sections,
+  extra,
 }: {
   trigger?: ReactNode
   profile?: FullStudentProfile
   section?: ProfileSection
   onSaved?: (profile: FullStudentProfile) => void
+  /** One "Edit profile" entry point: the dialog switches between these sections (saving first). */
+  sections?: ProfileSection[]
+  /** Extra tools shown in the dialog, e.g. "Import from résumé". A function receives `sync`, which loads a profile saved elsewhere into the open editor. */
+  extra?: ReactNode | ((sync: (profile: FullStudentProfile) => void) => ReactNode)
 }) {
+  const [section, setSection] = useState<ProfileSection>(initialSection)
   const { user } = useAuth()
   const expected = useRef("")
   const [open, setOpen] = useState(false)
@@ -56,11 +65,13 @@ export function EditStudentProfileDialog({
     if (busy) return
     if (!value) { try { await autosave.flush(); setOpen(false) } catch { return }; return }
     setOpen(value)
+    if (value) setSection(initialSection)
     setPhotoSource(null)
     setError("")
     if (!value) return
     setDraft(profile || null)
-    if (profile) expected.current = profileSectionSnapshot(profile, section)
+    // The dialog always reopens on `initialSection`; snapshot that section, not the one shown last time.
+    if (profile) expected.current = profileSectionSnapshot(profile, initialSection)
     setOriginalGpa(profile?.gpa ?? null)
     setOriginalPhoto(profile?.headshotUrl ?? null)
     setScholarYes(!!(profile?.scholarStatus as { selections?: string[] } | null)?.selections?.some(v => v !== "NOT_APPLICABLE"))
@@ -68,7 +79,7 @@ export function EditStudentProfileDialog({
       try {
         const loaded = (await getStudentProfile()).profile
         setDraft(loaded)
-        if (loaded) expected.current = profileSectionSnapshot(loaded, section)
+        if (loaded) expected.current = profileSectionSnapshot(loaded, initialSection)
         setOriginalGpa(loaded?.gpa ?? null)
         setOriginalPhoto(loaded?.headshotUrl ?? null)
         setScholarYes(!!(loaded?.scholarStatus as { selections?: string[] } | null)?.selections?.some(v => v !== "NOT_APPLICABLE"))
@@ -161,9 +172,16 @@ export function EditStudentProfileDialog({
         onInteractOutside={(event) => event.preventDefault()}
       >
         <DialogHeader>
-          <DialogTitle>{titles[section]}</DialogTitle>
-          <DialogDescription>Update this section of your recruiting profile.</DialogDescription>
+          <DialogTitle>{sections ? "Edit profile" : titles[section]}</DialogTitle>
+          <DialogDescription>{sections ? "Choose a section. Changes save as you go." : "Update this section of your recruiting profile."}</DialogDescription>
         </DialogHeader>
+        {sections && <SegmentedControl label="Profile section" size="compact" value={section} onChange={async next => {
+          if (next === section || busy) return
+          try { await autosave.flush() } catch { return }
+          if (draft) expected.current = profileSectionSnapshot(draft, next as ProfileSection)
+          setSection(next as ProfileSection)
+        }} options={sections.map(id => ({ value: id, label: titles[id] }))} />}
+        {typeof extra === "function" ? extra(synced => { setDraft(synced); expected.current = profileSectionSnapshot(synced, section); setOriginalGpa(synced.gpa ?? null); setOriginalPhoto(synced.headshotUrl ?? null) }) : extra}
         {error && (
           <p role="alert" className="text-sm text-destructive">
             {error}
@@ -223,11 +241,11 @@ export function EditStudentProfileDialog({
                     />
                   </div>
                   {field("highSchool", "High school (optional)")}
-                  <div className="grid gap-4 sm:grid-cols-2">{([["gender", "Gender", genderValues], ["pronouns", "Pronouns", pronounValues]] as const).map(([key, label, values]) => <div className="space-y-2" key={key}><Label htmlFor={`profile-${key}`}>{label}</Label><select id={`profile-${key}`} className="w-full rounded-md border bg-background p-2" value={draft[key] ?? ""} onChange={e => setDraft({ ...draft, [key]: e.target.value || null })}><option value="">Not provided</option>{values.map(v => <option key={v}>{v}</option>)}</select></div>)}</div>
+                  <div className="grid gap-4 sm:grid-cols-2">{([["gender", "Gender", genderValues], ["pronouns", "Pronouns", pronounValues]] as const).map(([key, label, values]) => <div className="space-y-2" key={key}><Label htmlFor={`profile-${key}`}>{label}</Label><NativeSelect id={`profile-${key}`} className="w-full" value={draft[key] ?? ""} onChange={e => setDraft({ ...draft, [key]: e.target.value || null })}><option value="">Not provided</option>{values.map(v => <option key={v}>{v}</option>)}</NativeSelect></div>)}</div>
                   <p className="text-xs text-muted-foreground">Gender is shared with recruitment reviewers only when explicitly enabled for the round. Pronouns and high school stay on your personal profile.</p>
                   <label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" checked={draft.transferStudent} onChange={e => setDraft({ ...draft, transferStudent: e.target.checked })} />Transfer student</label>
                   <fieldset className="space-y-3"><legend className="text-sm font-medium">Are you a scholar?</legend>
-                    <select aria-label="Are you a scholar?" className="rounded-md border bg-background p-2" value={scholarYes ? "yes" : draft.scholarStatus ? "no" : ""} onChange={e => { setScholarYes(e.target.value === "yes"); setDraft({ ...draft, scholarStatus: e.target.value === "no" ? { selections: ["NOT_APPLICABLE"], other: "" } : null }) }}><option value="">Not provided</option><option value="yes">Yes</option><option value="no">No</option></select>
+                    <NativeSelect aria-label="Are you a scholar?"  value={scholarYes ? "yes" : draft.scholarStatus ? "no" : ""} onChange={e => { setScholarYes(e.target.value === "yes"); setDraft({ ...draft, scholarStatus: e.target.value === "no" ? { selections: ["NOT_APPLICABLE"], other: "" } : null }) }}><option value="">Not provided</option><option value="yes">Yes</option><option value="no">No</option></NativeSelect>
                     {scholarYes && <div className="grid gap-3 sm:grid-cols-2">{([...scholarPrograms, "OTHER"] as const).map(selection => <label key={selection} className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" checked={!!(draft.scholarStatus as { selections?: string[] } | null)?.selections?.includes(selection)} onChange={e => setDraft({ ...draft, scholarStatus: toggleScholar(draft.scholarStatus, selection, e.target.checked) })} />{scholarLabels[selection]}</label>)}</div>}
                     {scholarYes && scholarship?.selections.includes("OTHER") && <label className="block space-y-2 text-sm">Scholarship name<Input aria-label="Other scholarship name" maxLength={200} value={scholarship.other || ""} onChange={e => setDraft({ ...draft, scholarStatus: { ...scholarship!, other: e.target.value } })} /></label>}
                   </fieldset>

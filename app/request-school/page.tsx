@@ -2,7 +2,7 @@ import { PublicInformationPage } from "@/components/landing/public-information-p
 import { SchoolRequestForm } from "@/components/landing/school-request-form"
 import { publicPageMetadata } from "@/lib/seo"
 
-export const metadata = publicPageMetadata("Request Your School | OutClass", "Bring your university’s interest in OutClass to our team. Students, club leaders, and university administrators can request access without an account.", "/request-school")
+export const metadata = publicPageMetadata("Request your school", "Bring your university’s interest in OutClass to our team. Students, club leaders, and university administrators can request access without an account.", "/request-school")
 
 export default function RequestSchoolPage() {
   return <PublicInformationPage className="oc-editorial-page oc-request-page" eyebrow="Request another campus" title="Request OutClass at your university." introduction="We’re beginning at UVA. Tell us which campus you’d like OutClass to support and how you’d use it."

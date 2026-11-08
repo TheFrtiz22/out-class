@@ -60,19 +60,16 @@ export function ClubManagementPortalView() {
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id
             return (
-              <button
+              <Button
                 key={tab.id}
                 type="button"
+                variant={isActive ? "default" : "ghost"}
                 onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  "flex shrink-0 items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium whitespace-nowrap transition-colors",
-                  isActive ? "text-white" : "text-muted-foreground hover:bg-muted",
-                )}
-                style={isActive ? { backgroundColor: NAVY } : undefined}
+                className={cn("min-h-11 shrink-0 justify-start gap-2.5 text-left", !isActive && "text-muted-foreground")}
               >
                 <tab.icon className="size-4 shrink-0" />
                 {tab.label}
-              </button>
+              </Button>
             )
           })}
         </nav>
@@ -139,7 +136,7 @@ function PublicPageDetailsPanel() {
               onDragLeave={() => setIsDragging(false)}
               onDrop={handleDrop}
               className={cn(
-                "group relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-border bg-white text-muted-foreground transition-colors hover:border-input",
+                "group relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-border bg-white text-muted-foreground transition-colors hover:border-input focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
                 isDragging && "border-solid bg-orange-50",
               )}
               style={isDragging ? { borderColor: ORANGE, color: ORANGE } : undefined}
@@ -167,21 +164,23 @@ function PublicPageDetailsPanel() {
             <div className="min-w-0 flex-1 space-y-1.5">
               <p className="text-xs text-muted-foreground">Square image recommended, at least 200×200px.</p>
               <div className="flex gap-2">
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="sm"
                   onClick={() => inputRef.current?.click()}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted"
                 >
                   <Upload className="size-3.5" /> {details.logoUrl ? "Replace" : "Upload"}
-                </button>
+                </Button>
                 {details.logoUrl && (
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={() => set("logoUrl", null)}
-                    className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-red-600"
                   >
                     <X className="size-3.5" /> Remove
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>

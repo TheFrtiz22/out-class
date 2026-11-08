@@ -15,7 +15,7 @@ export async function saveCommunicationSchedule(input: unknown) {
  const scheduledAt=resolveScheduleTime(data.localTime,data.timeZone,data.occurrence);
  const {user}=await requireClubPermission(data.clubId,["meetings.manage"]);
  // A temporary support session must not mint authority that outlives that session.
- if(await supportContext()) throw Error("Exit support impersonation before scheduling a future publication.");
+ if(await supportContext()) throw Error("Leave support mode before scheduling.");
  return clubWriteTransaction(async tx=>{
   await authorizeClubTransaction(tx,data.clubId,user.id,["meetings.manage"]);
   const previous=await tx.scheduledCommunication.findFirst({where:{id:data.id,clubId:data.clubId,kind:"ANNOUNCEMENT"}});
@@ -24,11 +24,11 @@ export async function saveCommunicationSchedule(input: unknown) {
   // Response-loss retries do not recapture a fixed snapshot or increment revision.
   if(previous && previous.status==="SCHEDULED" && audienceKey({title:previous.title,body:previous.body,audience:previous.audience,recipientMode:previous.recipientMode,scheduledAt:previous.scheduledAt.toISOString(),timeZone:previous.timeZone,localTime:previous.localTime,occurrence:previous.occurrence})===audienceKey({...values,scheduledAt:scheduledAt.toISOString()}) && previous.revision===(data.revision===null?0:data.revision+1)) return {id:previous.id,revision:previous.revision,scheduledAt:previous.scheduledAt};
   requireFutureSchedule(scheduledAt);
-  if(previous && (previous.revision!==data.revision || !["SCHEDULED","FAILED"].includes(previous.status))) throw Error("Scheduled send changed or already published. Refresh before editing.");
+  if(previous && (previous.revision!==data.revision || !["SCHEDULED","FAILED"].includes(previous.status))) throw Error("Scheduled send changed or already published. Reload the page and try again.");
   if(!previous && data.revision!==null) throw Error("Scheduled send unavailable.");
   if(!previous && await tx.scheduledCommunication.count({where:{clubId:data.clubId,status:{in:["SCHEDULED","PROCESSING","FAILED"]}}})>=100) throw Error("This club has 100 queued sends. Cancel unused sends first.");
   const snapshot=await captureRecipientAudience(tx,data.clubId,user.id,data.audience);
-  if(!snapshot.userIds.length) throw Error("No eligible recipients for this audience.");
+  if(!snapshot.userIds.length) throw Error("No one in this audience can receive this.");
   const json=snapshot as unknown as Prisma.InputJsonValue;
   const saved=previous?await tx.scheduledCommunication.update({where:{id:previous.id},data:{...values,snapshot:json,revision:{increment:1},status:"SCHEDULED",failureCode:null}}):await tx.scheduledCommunication.create({data:{...values,id:data.id,clubId:data.clubId,senderId:user.id,actorId:user.id,requestKey:data.id,snapshot:json}});
   await tx.auditLog.create({data:{actorId:user.id,clubId:data.clubId,targetId:saved.id,action:"communication.schedule.save",details:{revision:saved.revision,recipientMode:data.recipientMode,scheduledAt:scheduledAt.toISOString(),count:snapshot.userIds.length}}});
@@ -71,7 +71,7 @@ export async function cancelCommunicationSchedule(clubId:string,id:string,revisi
   const row=await tx.scheduledCommunication.findFirst({where:{id,clubId,kind:"ANNOUNCEMENT"}});
   if(!row) throw Error("Scheduled send unavailable.");
   if(row.status==="CANCELLED"&&row.revision===revision+1) return {cancelled:true};
-  if(row.revision!==revision||!["SCHEDULED","FAILED"].includes(row.status)) throw Error("Scheduled send changed or already published. Refresh before cancelling.");
+  if(row.revision!==revision||!["SCHEDULED","FAILED"].includes(row.status)) throw Error("Scheduled send changed or already published. Reload the page and try again.");
   await tx.scheduledCommunication.update({where:{id},data:{status:"CANCELLED",revision:{increment:1},failureCode:null}});
   await tx.auditLog.create({data:{actorId:user.id,clubId,targetId:id,action:"communication.schedule.cancel",details:{revision}}});
   return {cancelled:true};

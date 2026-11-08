@@ -6,12 +6,11 @@ import { ApplicationStateProvider } from "@/lib/application-state"
 import { AuthSessionBoundary } from "@/components/auth-session-boundary"
 import { ProductShell } from "@/components/shell/product-shell"
 import { useAuth } from "@/contexts/auth-context"
-import { recruitmentTools } from "@/lib/club-workspace"
 import { hasWorkspace } from "@/lib/permissions"
-import { managerNavigation, personalDestination, personalItems, personalModes } from "@/lib/product-navigation"
+import { personalDestination } from "@/lib/product-navigation"
 import { personalSettingsSections } from "@/lib/settings-navigation"
 import type { ViewId } from "@/lib/views"
-import { studentPath } from "@/lib/navigation"
+import { leaderRailSections, personalRailSections, studentPath } from "@/lib/navigation"
 
 const initialData = { applications: [], attendances: [] }
 
@@ -30,7 +29,7 @@ function RouteWorkspaceContent({ children }: { children: ReactNode }) {
   const meetings = pathname.startsWith("/meetings")
   const organizations = pathname.startsWith("/club-claims") || pathname.startsWith("/invitations")
   const mode = meetings ? "clubs" : "explore"
-  const title = member ? "Workspace access" : settings ? settingSection?.label ?? "Settings" : schedule ? "My Interview Schedule" : meetings ? "Meetings" : organizations ? "Organizations" : pathname === "/saved-clubs" ? "Saved clubs" : pathname === "/corkboard" ? "Corkboard" : pathname.endsWith("/workspace") ? "Club workspace" : "Club profile"
+  const title = member ? "Workspace access" : settings ? settingSection?.label ?? "Settings" : schedule ? "My Interview Schedule" : meetings ? "Meetings" : organizations ? "Clubs" : pathname === "/saved-clubs" ? "Saved clubs" : pathname === "/corkboard" ? "Events" : pathname.endsWith("/workspace") ? "Club workspace" : "Club profile"
   const active = member ? "settings" : settings || organizations ? "settings" : schedule ? "calendar" : meetings ? "meetings" : pathname === "/corkboard" || pathname === "/saved-clubs" ? "corkboard" : "explore"
   function navigate(view: ViewId) {
     router.push(view === "landing" ? "/" : studentPath(view))
@@ -39,10 +38,8 @@ function RouteWorkspaceContent({ children }: { children: ReactNode }) {
     const destination = personalDestination(id)
     return studentPath(destination.view, destination.section)
   }
-  const clubRoot = member ? `/club/${encodeURIComponent(member.clubId)}/workspace` : ""
   return <ProductShell manager={!!member} clubId={member?.clubId} clubName={member?.club.name} mode={member ? "club" : mode}
-    modes={member ? [...(recruitmentTools(member).length ? [{ id: "recruiting", label: "Recruiting", href: `${clubRoot}?section=recruitment&tool=overview` }] : []), { id: "club", label: "Club", href: `${clubRoot}?section=overview` }] : personalModes.map(item => ({ ...item, href: personalHref(item.id) }))}
-    items={member ? managerNavigation(member, member.clubId, "club") : personalItems(mode).map(item => ({ ...item, href: personalHref(item.id) }))}
+    sections={member ? leaderRailSections(member, member.clubId) : personalRailSections()}
     active={active} title={title} onNavigate={navigate} onSelect={id => router.push(personalHref(id))}>
     {children}
   </ProductShell>

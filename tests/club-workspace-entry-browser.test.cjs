@@ -17,6 +17,8 @@ test('browser: workspace entry, explicit choices, club changes and history stay 
   delete mocks['@/components/shell/product-shell'];
   delete mocks['@/components/shell/use-workspace-access'];
   delete mocks['@/components/shell/workspace-selector'];
+  // The real rail: Recruiting and Club are its sections, and the active item follows the URL.
+  delete mocks['@/components/shell/navigation-rail'];
   Object.assign(mocks, {
     'next/dynamic': `const React=require('react');module.exports=load=>{const Lazy=React.lazy(()=>load().then(component=>({default:component})));return props=>React.createElement(React.Suspense,{fallback:null},React.createElement(Lazy,props));};`,
     'next/link': `const React=require('react');module.exports=({href,onClick,children,prefetch,...props})=>React.createElement('a',{...props,href,onClick:e=>{onClick?.(e);if(!e.defaultPrevented&&!e.ctrlKey&&!e.metaKey){e.preventDefault();history.pushState(null,'',href)}}},children);`,
@@ -31,7 +33,7 @@ test('browser: workspace entry, explicit choices, club changes and history stay 
     '@/components/interview-management-tabs': `const React=require('react');exports.InterviewManagementTabs=({clubId,initialRoundId})=>{const [draft,setDraft]=React.useState('');return React.createElement('input',{'aria-label':'Scheduling state probe','data-club':clubId,'data-round':initialRoundId,value:draft,onChange:e=>setDraft(e.target.value)})};`,
     '@/components/workspace-loading': `const React=require('react');exports.WorkspaceLoading=({label})=>React.createElement('p',{role:'status'},label);`,
     '@/components/ui/page-header': `const React=require('react');exports.PageHeader=({title})=>React.createElement('h1',null,title);`,
-    '@/components/shell/floating-header-controls': `const React=require('react');exports.FloatingModeNavigation=({children})=>React.createElement('nav',{'aria-label':'Product modes'},children);exports.FloatingSearchTrigger=()=>null;`,
+    '@/components/shell/floating-header-controls': `const React=require('react');exports.FloatingSearchTrigger=()=>null;`,
   });
   const entry = `import React,{useSyncExternalStore}from'react';import{createRoot}from'react-dom/client';import{ClubWorkspace}from'@/components/club-workspace';
 window.EventSource=class{addEventListener(){}close(){}};for(const method of ['pushState','replaceState']){const native=history[method].bind(history);history[method]=(...args)=>{native(...args);dispatchEvent(new Event('popstate'))}}const subscribe=fn=>{addEventListener('popstate',fn);return()=>removeEventListener('popstate',fn)};function App(){const pathname=useSyncExternalStore(subscribe,()=>location.pathname);return <ClubWorkspace key={pathname} clubId={pathname.split('/')[2]} section="overview"/>}createRoot(document.getElementById('root')).render(<App/>);`;
@@ -49,20 +51,21 @@ window.EventSource=class{addEventListener(){}close(){}};for(const method of ['pu
       const context = await browser.newContext({ viewport }), page = await context.newPage(), errors = [];
       page.setDefaultTimeout(7000);
       page.on('pageerror', error => errors.push(error.message));
-      await page.addInitScript(() => { window.renderedModes = []; new MutationObserver(() => { const link = document.querySelector('[data-tour^="mode-"][aria-current="page"]'); if (link) window.renderedModes.push(link.textContent) }).observe(document, { childList: true, subtree: true, attributes: true }) });
+      await page.addInitScript(() => { window.renderedModes = []; new MutationObserver(() => { const link = document.querySelector('[data-tour^="mode-"] [aria-current="page"]'); if (link) window.renderedModes.push(link.closest('[data-tour^="mode-"]').dataset.tour) }).observe(document, { childList: true, subtree: true, attributes: true }) });
       const go = id => page.goto(base + '/club/' + id + '/workspace');
       const switchClub = id => page.evaluate(id => history.pushState(null, '', '/club/' + id + '/workspace'), id);
-      const mode = id => page.locator('[data-tour="mode-' + id + '"]');
-      const active = id => page.waitForSelector('[data-tour="mode-' + id + '"][aria-current="page"]');
+      // A mode is a rail section; choosing it opens its first destination.
+      const mode = id => page.locator('[data-tour="mode-' + id + '"] a').first();
+      const active = id => page.waitForSelector('[data-tour="mode-' + id + '"] [aria-current="page"]');
       await go('one'); await active('recruiting');
-      assert.ok((await page.evaluate(() => window.renderedModes)).every(value => value === 'Recruiting'), 'Club must never flash during first entry');
+      assert.ok((await page.evaluate(() => window.renderedModes)).every(value => value === 'mode-recruiting'), 'Club must never flash during first entry');
       await mode('club').click(); await active('club');
       assert.equal(new URL(page.url()).searchParams.get('section'), 'overview');
       await go('one'); await active('club');
       await switchClub('two'); await active('recruiting');
       await mode('club').click(); await active('club');
       await switchClub('limited'); await active('club');
-      assert.equal(await mode('recruiting').count(), 0);
+      assert.equal(await page.locator('[data-tour="mode-recruiting"]').count(), 0);
       await page.goto(base + '/club/one/workspace?section=tasks&taskView=mine');
       await active('club'); assert.equal(new URL(page.url()).searchParams.get('taskView'), 'mine');
       await mode('recruiting').click(); await active('recruiting');

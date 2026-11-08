@@ -40,6 +40,9 @@ export function RoundKitEditor({ clubId, roundInfo, initiallyOpen = false }: {
   useEffect(() => { if (initiallyOpen) setOpen(true); }, [initiallyOpen]);
   const { user } = useAuth();
   const version = useRef(0);
+  // IDs the server has accepted. A newly added question stays a local draft until it
+  // has a prompt; an existing question cleared to blank still fails validation visibly.
+  const savedIds = useRef(new Set<string>());
   const canEdit = interviewCapabilities(user?.memberships.find(m => m.clubId === clubId)).editKit;
   const round = roundInfo.id;
   const [questions, setQuestions] = useState<KitQuestion[]>([]),
@@ -58,6 +61,7 @@ export function RoundKitEditor({ clubId, roundInfo, initiallyOpen = false }: {
         if (current) {
           setQuestions(result.questions);
           version.current = result.version;
+          savedIds.current = new Set(result.questions.map(q => q.id));
           setLoaded(true);
         }
       })
@@ -71,7 +75,12 @@ export function RoundKitEditor({ clubId, roundInfo, initiallyOpen = false }: {
   const autosave = useAutosave({
     identity: `${user?.id}:kit:${clubId}:${round}`,
     value: questions, restore: setQuestions, enabled: loaded && canEdit && canReadKit,
-    save: async value => { const result = await saveInterviewKit(clubId, round, version.current, value); version.current = result.version; },
+    save: async value => {
+      const ready = value.filter(q => q.prompt.trim() || savedIds.current.has(q.id));
+      const result = await saveInterviewKit(clubId, round, version.current, ready);
+      version.current = result.version;
+      savedIds.current = new Set(ready.map(q => q.id));
+    },
   });
   const dirty = autosave.dirty, busy = autosave.saving;
   function edit(value: KitQuestion[]) {
@@ -87,7 +96,7 @@ export function RoundKitEditor({ clubId, roundInfo, initiallyOpen = false }: {
   }
   return (
     <section className="oc-kit-round" data-autosave-editor="true" data-unsaved={dirty} data-saving={busy} aria-label={roundInfo.name}>
-      <h3><button type="button" id={'kit-heading-' + round} aria-expanded={open} aria-controls={'kit-panel-' + round} onClick={() => setOpen(value => !value)} className="flex min-h-11 w-full items-center gap-3 p-4 text-left text-sm focus-visible:outline-2 focus-visible:outline-ring"><ChevronDown aria-hidden="true" className={`size-4 shrink-0 transition-transform motion-reduce:transition-none ${open ? "" : "-rotate-90"}`} /><span className="flex-1 font-medium">{roundInfo.name}</span><span className="text-xs text-muted-foreground">{!canReadKit ? "Restricted" : loaded ? `${questions.length} questions` : message ? "Could not load" : "Loading…"}</span>{(busy || autosave.error || dirty) && <span className="text-xs" role="status">{busy ? "Saving…" : autosave.error ? "Couldn't save" : "Unsaved changes"}</span>}</button></h3>
+      <h3><button type="button" id={'kit-heading-' + round} aria-expanded={open} aria-controls={'kit-panel-' + round} onClick={() => setOpen(value => !value)} className="flex min-h-11 w-full items-center gap-3 p-4 text-left text-sm focus-visible:outline-2 focus-visible:outline-primary"><ChevronDown aria-hidden="true" className={`size-4 shrink-0 transition-transform motion-reduce:transition-none ${open ? "" : "-rotate-90"}`} /><span className="flex-1 font-medium">{roundInfo.name}</span><span className="text-xs text-muted-foreground">{!canReadKit ? "Restricted" : loaded ? `${questions.length} questions` : message ? "Could not load" : "Loading…"}</span>{(busy || autosave.error || dirty) && <span className="text-xs" role="status">{busy ? "Saving…" : autosave.error ? "Couldn't save" : "Unsaved changes"}</span>}</button></h3>
       <div id={'kit-panel-' + round} hidden={!open} aria-labelledby={'kit-heading-' + round} className="oc-kit-builder" onBlur={autosave.onBlur} data-autosave-editor="true" data-unsaved={dirty} data-saving={busy}>
           {!canReadKit ? <div role="alert" className="space-y-3"><p>This round is saved. Editing its kit requires an explicit President, Vice-president or Board grant. Assigned interviewers can browse its question bank.</p>{canManageGrants && <Link className="underline" href={interviewSetupHref(clubId, round, "access")}>Manage interview access</Link>}</div> : <>
           {!canEdit && <p className="mb-4 text-sm text-muted-foreground">Read-only question bank. Use questions in your assigned interview workspace.</p>}
@@ -233,6 +242,6 @@ export function ClubInterviewKitSettings({ clubId, initialRoundId }: { clubId: s
     return (
       <p>{member && canDiscoverInterviewSetup(member) ? "No active interview rounds. Configure an Interview or Group Interview round in Recruiting Pipeline." : "No assigned interview rounds. Ask your club owner to confirm your panel assignment."}</p>
     );
-  if (initialRoundId && !rounds.some(r => r.id === initialRoundId)) return <p role="alert">The requested round is unavailable under your current access or is no longer an active interview round. Return to Interview Setup to choose an eligible round.</p>;
+  if (initialRoundId && !rounds.some(r => r.id === initialRoundId)) return <p role="alert">That round isn’t available to you or is no longer active. Go back to Interview setup and choose another.</p>;
   return <InterviewKitEditor key={`${clubId}:${initialRoundId || ""}`} clubId={clubId} rounds={rounds} initialRoundId={initialRoundId} />;
 }

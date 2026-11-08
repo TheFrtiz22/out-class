@@ -11,16 +11,18 @@ import { getPublicClubSeo, isIndexableClub } from "@/lib/public-club-seo"
 import { publicPageMetadata, privateRobots } from "@/lib/seo"
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
 import { PageHeader } from "@/components/ui/page-header"
+import { presentPublicMarketing } from "@/lib/public-club-content"
+import { readMarketing } from "@/lib/club-marketing"
 
 export async function generateMetadata({ params }: { params: Promise<{ clubId: string }> }): Promise<Metadata> {
   const { clubId } = await params
   const club = await getPublicClubSeo(clubId)
-  if (!club || !isIndexableClub(club)) return { title: club?.name ?? "Club profile", robots: privateRobots }
+  if (!club || !isIndexableClub(club)) return { title: club?.name ?? "Club not found", robots: privateRobots }
   const jar = await cookies()
   const accountPage = jar.has(PLATFORM_VIEW_COOKIE) || jar.get(DEMO_COOKIE)?.value === "1" ||
     jar.getAll().some(cookie => /^sb-.+-auth-token(?:\.\d+)?$/.test(cookie.name))
   return {
-    ...publicPageMetadata(`${club.name} | OutClass`, club.description.trim().replace(/\s+/g, " ").slice(0, 160), `/club/${encodeURIComponent(club.id)}`),
+    ...publicPageMetadata(club.name, club.description.trim().replace(/\s+/g, " ").slice(0, 160), `/club/${encodeURIComponent(club.id)}`),
     ...(accountPage ? { robots: privateRobots } : {}),
   }
 }
@@ -33,7 +35,10 @@ export default async function ClubPage({ params }: { params: Promise<{ clubId: s
   }
   const result = await getPublicClub(clubId)
   const sample = publicClubs.find((club) => club.id === clubId)
-  const club = result.club || (sample ? { ...sample, source: "preview" as const } : null)
+  const found = result.club || (sample ? { ...sample, source: "preview" as const } : null)
+  // The client receives the public view of the marketing JSON only: research notes,
+  // source links and "not published" placeholders never reach the page or its payload.
+  const club = found && { ...found, marketing: presentPublicMarketing(readMarketing(found.marketing)) }
   if (!club) {
     if (result.error)
       return (

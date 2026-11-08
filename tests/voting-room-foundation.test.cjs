@@ -7,7 +7,7 @@ test('creation is scoped, retry safe, and validates current leaders/voters; ID a
  const h=harness();await h.create();await h.create();assert.equal(h.state().sessions.length,1);assert.equal(h.state().audit.length,1);
  await assert.rejects(h.create({targetSize:2}),/already used/);h.as(uuid(7));await assert.rejects(h.read(),/access denied/);h.as(voterId);await assert.rejects(h.create(),/Denied/);await assert.rejects(h.command('START'),/Denied/);
  for(const change of [{cycleId:uuid(99)},{roundId:uuid(99)},{clubId:uuid(99)},{participantIds:[uuid(99)]},{leaderMemberIds:[voterId]}])await assert.rejects(harness().create(change));
- const wrong=harness();wrong.state().apps[0].recruitmentCycleId=uuid(99);await assert.rejects(wrong.create(),/eligible/);
+ const wrong=harness();wrong.state().apps[0].recruitmentCycleId=uuid(99);await assert.rejects(wrong.create(),/Select applicants from this cycle and round/);
  const disabled=harness();disabled.members[1].user.disabledAt=new Date();await assert.rejects(disabled.create(),/permissions/);
 });
 test('room discovery exposes only authorized club/cycle/round metadata, including anonymous restrictions',async()=>{
@@ -99,4 +99,12 @@ test('refresh/reconnect restores projected state; failed polling clears it, late
  const sub=votingRoomSubscription(async()=>{reads++;return h.read()},(v,e)=>seen.push([v,e]),100000);await new Promise(r=>setImmediate(r));assert.equal(seen[0][0].history[0].candidates[0].ownBallot.choice,'HOLD');
  h.members[0].status='LEFT';await sub.refresh();assert.equal(seen.at(-1)[0],null);assert.match(seen.at(-1)[1],/unavailable/);sub.close();
  const late=votingRoomSubscription(()=>new Promise(r=>resolve=r),(v)=>seen.push([v]),100000);late.close();const n=seen.length;resolve({private:'late'});await new Promise(r=>setImmediate(r));assert.equal(seen.length,n);assert.equal(reads,2);
+});
+test('the Voting room lists board (LEGACY) draft sessions alongside live rooms, with their mode, under the same access rules',async()=>{
+ const h=harness();await h.create();const legacy={...structuredClone(h.state().sessions[0]),id:uuid(901),mode:'LEGACY',state:'DRAFT',leaderMemberIds:[]};h.state().sessions.push(legacy);
+ h.as(leaderId);let rows=await h.api.listLiveVotingRooms({clubId});assert.deepEqual(rows.map(r=>r.id).sort(),[sessionId,uuid(901)].sort());
+ assert.equal(rows.find(r=>r.id===uuid(901)).mode,'LEGACY');assert.equal(rows.find(r=>r.id===uuid(901)).state,'DRAFT');assert.equal(rows.find(r=>r.id===sessionId).mode,'LIVE');
+ // The draft keeps the room's filters: another cycle, or no access, hides it.
+ assert.deepEqual(await h.api.listLiveVotingRooms({clubId,cycleId:uuid(99)}),[]);h.as(uuid(7));assert.deepEqual(await h.api.listLiveVotingRooms({clubId}),[]);
+ assert.doesNotMatch(fs.readFileSync('actions/voting-room.ts','utf8').match(/export async function listLiveVotingRooms[\s\S]*?findMany\(\{where:\{[^}]*/)[0],/mode:"LIVE"/);
 });

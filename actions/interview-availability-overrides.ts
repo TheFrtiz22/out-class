@@ -33,7 +33,7 @@ export async function assignPanelAvailabilityOverride(raw: unknown) {
     const session = scene.sessions.find(s => s.id === input.slotId)
     if (!session || !document.sessions.some(s => s.id === session.id)) throw new Error("Choose a current session in this draft.")
     const reasons = canProposeMember(scene, document.assignments, input.slotId, input.memberId, document.options)
-    if (!reasons.length || reasons.some(r => !availabilityOverrideConditions.includes(r as typeof availabilityOverrideConditions[number])) || document.assignments.filter(a => a.slotId === session.id).length >= session.required) throw new Error("This assignment cannot be overridden. Check eligibility, access, staffing and official conflicts.")
+    if (!reasons.length || reasons.some(r => !availabilityOverrideConditions.includes(r as typeof availabilityOverrideConditions[number])) || document.assignments.filter(a => a.slotId === session.id).length >= session.required) throw new Error("This assignment can't be changed. Check the interviewer's role, access, coverage and conflicts.")
     const room = await tx.interviewRoom.findUniqueOrThrow({ where: { id: session.roomId } })
     await tx.$queryRaw`SELECT set_config('outclass.override_actor',${user.id},true)`
     await tx.interviewAvailabilityOverride.create({ data: { id: input.requestId, clubId: input.clubId, roundId: input.roundId, slotId: session.id, memberId: input.memberId, createdBy: user.id, startTime: new Date(session.startTime), endTime: new Date(session.endTime), duration: room.duration, buffer: session.buffer, conditions: reasons, reason: input.reason || null } })

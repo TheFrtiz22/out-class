@@ -5,20 +5,10 @@ import { decisionsHref } from "@/lib/voting-navigation"
 import { applicantInterviewHref } from "@/lib/applicant-interview-navigation"
 export type PersonalSection = "explore" | "categories" | "corkboard" | "calendar" | "applications" | "status" | "clubs" | "meetings" | "tasks"
 export type PersonalMode = "explore" | "apply" | "clubs"
-export type ProductNavItem = { id: string; label: string; href?: string; quiet?: boolean; preview?: boolean; navGroup?: "applicants" | "decisions" }
-export const personalModes: ProductNavItem[] = [
-  { id: "explore", label: "Explore" }, { id: "apply", label: "Apply" }, { id: "clubs", label: "My Clubs" },
-]
-export const personalUniversalItems: ProductNavItem[] = [
-  { id: "student-dashboard", label: "Home" },
-  { id: "calendar", label: "Calendar" },
-  { id: "inbox", label: "Notifications" },
-  { id: "student-profile", label: "Profile" },
-  { id: "settings", label: "Settings", href: "/settings" },
-]
+export type ProductNavItem = { id: string; label: string; href?: string; quiet?: boolean; preview?: boolean; navGroup?: "applicants" | "decisions"; mode?: "recruiting" | "club"; /** Other item ids this destination stands for (the phone bar's Recruiting). */ matches?: string[] }
 const personalNavigation: Record<PersonalMode, ProductNavItem[]> = {
-  explore: [{ id: "explore", label: "Discover" }, { id: "corkboard", label: "Corkboard" }],
-  apply: [{ id: "applications", label: "Applications" }, { id: "status", label: "Status" }],
+  explore: [{ id: "explore", label: "Explore" }, { id: "corkboard", label: "Events" }],
+  apply: [{ id: "applications", label: "Applications" }, { id: "status", label: "Applications" }],
   clubs: [{ id: "clubs", label: "Clubs" }, { id: "meetings", label: "Meetings" }, { id: "tasks", label: "Tasks" }],
 }
 export function personalItems(mode: PersonalMode): ProductNavItem[] { return personalNavigation[mode] }
@@ -38,12 +28,15 @@ export function managerNavigation(member: ClubAccess, clubId: string, mode: stri
   const item = (id: string, label: string, section = id, extra = {}) => ({ id, label, href: href(section, section === "recruitment" ? id : undefined), ...extra })
   if (mode === "recruiting") {
     const read = hasPermission(member, "applications.review") || hasPermission(member, "applicants.identify")
+    const canVote = hasPermission(member, "applications.review") && (["decisions.start", "decisions.vote", "decisions.view"] as const).some(p => hasPermission(member, p))
+    const canLetters = hasPermission(member, "recruitment.manage") || hasPermission(member, "decisions.manage")
     return [item("overview", "Overview", "recruitment"),
-      ...(read ? [item("applicants", "All Applicants", "recruitment", { navGroup: "applicants" as const }), item("rejected", "Rejected Applicants", "recruitment", { navGroup: "applicants" as const })] : []),
+      ...(read ? [item("applicants", "All Applicants", "recruitment", { navGroup: "applicants" as const })] : []),
       ...(interviewCapabilities(member).moderateResume ? [item("resumes", "Résumé moderation", "recruitment", { navGroup: "applicants" as const, href: applicantInterviewHref(clubId, "resumes", search) })] : []),
       ...(interviewCapabilities(member).readClosing ? [item("reviews", "Submitted reviews", "recruitment", { navGroup: "applicants" as const, href: applicantInterviewHref(clubId, "reviews", search) })] : []),
-      ...(hasPermission(member, "applications.review") || hasPermission(member, "interviews.manage") || interviewCapabilities(member).editKit ? [item("interviews", "Interviews", "recruitment")] : []),
-      ...(read || hasPermission(member,"recruitment.manage") ? [item("decisions", "Decisions", "recruitment", { navGroup: "decisions" as const, href: decisionsHref(clubId,"overview",search) })] : []),
+      // Interview participants reach kits here (Settings no longer repeats the Interviews tool).
+      ...(hasPermission(member, "applications.review") || hasPermission(member, "interviews.manage") || hasPermission(member, "recruitment.manage") || interviewCapabilities(member).editKit || interviewCapabilities(member).participate ? [item("interviews", "Interviews", "recruitment")] : []),
+      ...(canVote || canLetters ? [item("decisions", "Decisions", "recruitment", { navGroup: "decisions" as const, href: decisionsHref(clubId, canVote ? "voting" : "letters", search) })] : []),
       ...((hasPermission(member,"decisions.manage")||hasPermission(member,"decisions.publish"))&&hasPermission(member,"applicants.identify") ? [item("scheduled-decisions","Scheduled Decisions","recruitment", { navGroup: "decisions" as const })] : []),
       ...(hasPermission(member, "recruitment.manage") ? [item("rounds", "Anonymous Review", "recruitment", { quiet: true }), item("rules", "Auto-Reject Rules", "recruitment", { quiet: true })] : []),
       ...(hasPermission(member, "meetings.manage") ? [{ ...item("announcements", "Announcements"), href: `${href("announcements")}&mode=recruiting` }] : []),

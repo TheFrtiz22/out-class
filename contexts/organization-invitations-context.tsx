@@ -67,7 +67,7 @@ export function OrganizationInvitationsProvider({ children }: { children: ReactN
     const message = change.kind === "accepted" ? `You’ve joined ${change.clubName}.`
       : change.kind === "declined" ? `You’ve declined the invitation from ${change.clubName}.`
       : change.kind === "restored" ? `${change.clubName} will appear on your dashboard again.`
-      : `${change.clubName} is hidden from your dashboard. The invitation is still pending in Settings → Organizations.`;
+      : `${change.clubName} is hidden from your dashboard. The invitation is still pending in My Clubs.`;
     setData(previous => ({ ...previous, notice: message, invitations: change.kind === "accepted" || change.kind === "declined"
       ? previous.invitations.filter(invitation => invitation.id !== change.id)
       : previous.invitations.map(invitation => invitation.id === change.id ? { ...invitation, dismissedAt: change.kind === "dismissed" ? new Date() : null } : invitation) }));

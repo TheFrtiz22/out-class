@@ -64,6 +64,7 @@ export async function GET(request: Request) {
       case "pipelineList": data = await getClubPipelineList(...z.tuple([z.string().uuid(), z.object({ applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), gender: z.enum(genderValues).optional(), genderCounts: z.boolean().optional() }).strict().optional()]).parse(Array.isArray(args) && args.length === 1 ? [args[0], {}] : args)); break
       case "pipelinePage": data = await getClubPipelinePage(...z.tuple([z.string().uuid(), pipelinePageQuery]).parse(Array.isArray(args) && args.length === 1 ? [args[0], {}] : args)); break
       case "pipelineSelection": data = await getClubPipelineSelection(...z.tuple([z.string().uuid(), pipelinePageQuery.omit({ cursor: true })]).parse(Array.isArray(args) && args.length === 1 ? [args[0], {}] : args)); break
+      case "rankedReviewSettings": data = await (await import("@/actions/ranked-review")).getRankedReviewSettings(...z.tuple([z.string().uuid(), z.string().uuid()]).parse(args)); break
       case "rounds": data = await getWorkspaceRounds(...clubArgs.parse(args)); break
       case "applicationSettings": data = await getApplicationSettings(...clubArgs.parse(args)); break
       case "pipelineSettings": data = await getPipelineSettings(...clubArgs.parse(args)); break

@@ -59,3 +59,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) { .oc-hero-ctas [data-slot="button"] { transition: none; } .oc-hero-ctas [data-slot="button"]:hover { transform: none; } }
+
+/* Audience toggle sits in the hero, above the headline, so it is visible without scrolling. */
+.oc-hero-audience-toggle { margin: 0 0 24px; }
+.oc-hero-context { font-size: var(--oc-size-12); }
+@media (max-width: 767px) {
+  .oc-hero-context { font-size: var(--oc-size-12); }
+  .oc-hero-audience-toggle { margin-bottom: 20px; }
+}

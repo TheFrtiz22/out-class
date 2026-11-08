@@ -83,7 +83,7 @@ function routes(f) {
     decisions:{href:base+'?section=recruitment&tool=decisions',selector:'.oc-live-pipeline',text:'Audit Student 000',tour:'nav-decisions'},
     settings:{href:base+'?section=settings',selector:'.oc-settings-workspace',text:'Organization settings',tour:'nav-settings'},
     club2:{href:'/club/'+f.clubIds[1]+'/workspace?section=recruitment&tool=overview',selector:'.oc-recruiting-overview',text:'Submitted',clubLabel:'Navigation Audit Club 2'},
-    personal:{href:'/home',selector:'.oc-student-home:not([role="status"])',text:'Your next step'},
+    personal:{href:'/home',selector:'.oc-student-home:not([role="status"])',text:'Needs you'},
     voting:{selector:'[role="dialog"]',text:'No voting session yet.'},
     applicantDetail:{selector:'[data-slot="sheet-content"]',text:'configured fields'},
     memberDetail:{selector:'[data-slot="sheet-content"]',text:'Audit Student 000'},
@@ -159,7 +159,7 @@ async function main() {
   const browser=await chromium.launch({headless:true});
   const descriptors=routes(fixture), allSamples=[], failures=[];
   if(process.argv.includes('--phase3')) Object.assign(descriptors.applicantDetail,{text:'Synthetic application evidence.'});
-  if(process.argv.includes('--phase2')) { Object.assign(descriptors.overview,{selector:'.oc-command-club'}); Object.assign(descriptors.recruiting,{selector:'.oc-command-recruiting',text:'Current pipeline'}); }
+  if(process.argv.includes('--phase2')) { Object.assign(descriptors.overview,{selector:'.oc-club-home'}); Object.assign(descriptors.recruiting,{selector:'.oc-command-recruiting',text:'Current pipeline'}); }
   if(process.argv.includes('--deferred-screens')) {
     const base='/club/'+fixture.clubIds[0]+'/workspace';
     descriptors.settingsProfile={href:base+'?section=settings',selector:'.oc-club-settings fieldset:not([disabled])',text:'One-line pitch',tour:'nav-settings'};

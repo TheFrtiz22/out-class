@@ -1,7 +1,7 @@
 "use client"
 
 import { useLayoutEffect, useRef, useState } from "react"
-import { orbitOffset, orbitPose } from "@/lib/feature-orbit"
+import { orbitOffset, orbitPose, orbitStep } from "@/lib/feature-orbit"
 
 export function useFeatureOrbit(count: number) {
   const rootRef = useRef<HTMLDivElement>(null)
@@ -16,7 +16,8 @@ export function useFeatureOrbit(count: number) {
     const titles = cards.map(card => card.querySelector<HTMLElement>(".oc-orbit-title")!)
     const descriptions = cards.map(card => card.querySelector<HTMLElement>(".oc-orbit-description")!)
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)")
-    const roomy = window.matchMedia("(min-width: 900px) and (min-height: 760px), (min-width: 768px) and (max-width: 899px) and (min-height: 900px), (min-width: 380px) and (max-width: 767px) and (min-height: 840px)")
+    // Phones never pin: they read the chapters as a stacked list. Reduced motion is a static stack too.
+    const roomy = window.matchMedia("(min-width: 900px) and (min-height: 760px), (min-width: 768px) and (max-width: 899px) and (min-height: 900px)")
     let frame = 0, step = 1, width = 1, enhanced = false, last = ""
     const publish = (active: number, settled: number | null) => {
       const key = `${active}:${settled}:${enhanced}`
@@ -36,7 +37,9 @@ export function useFeatureOrbit(count: number) {
       cards.forEach((card, index) => {
         const offset = orbitOffset(position, index)
         const pose = orbitPose(offset, width)
-        const visible = !enhanced || Math.abs(index - position) < .79
+        // Exactly one panel is visible while pinned (no ghost panel at the edge), and it is the one
+        // the step tracker marks as current.
+        const visible = !enhanced || index === active
         const readable = !enhanced || offset === 0
         if (enhanced && readable) settled = index
         card.style.visibility = visible ? "visible" : "hidden"
@@ -57,7 +60,7 @@ export function useFeatureOrbit(count: number) {
     const schedule = () => { if (!frame) frame = requestAnimationFrame(render) }
     const measure = () => {
       enhanced = roomy.matches && !reduced.matches
-      step = Math.max(480, window.innerHeight * .8)
+      step = orbitStep(count, window.innerHeight)
       width = Math.min(1040, root.clientWidth - (window.innerWidth < 768 ? 40 : 96))
       root.style.setProperty("--oc-orbit-step", `${step}px`)
       root.style.setProperty("--oc-orbit-run", `${(count - 1 + .35) * step}px`)

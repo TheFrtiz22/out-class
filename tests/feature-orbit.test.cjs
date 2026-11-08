@@ -35,17 +35,28 @@ test("the sequence has at most one upright demo and no discontinuities in either
   }
 })
 
-test("neighboring panels travel around the same wheel with complementary rotations", () => {
+test("neighboring panels crossfade upright: mirrored drift, no tilt or sideways travel, gone by the midpoint", () => {
   const outgoing = orbitPose(orbitOffset(.5, 0), 1040)
   const incoming = orbitPose(orbitOffset(.5, 1), 1040)
-  assert.equal(outgoing.x, -incoming.x)
-  assert.equal(outgoing.y, incoming.y)
-  assert.equal(outgoing.rotation, -incoming.rotation)
+  assert.equal(outgoing.y, -incoming.y)
   assert.equal(outgoing.opacity, incoming.opacity)
-  assert.ok(outgoing.y > 0)
-  assert.ok(Math.abs(outgoing.rotation) < 12)
-  assert.ok(orbitPose(1, 1040).x > 1040)
-  assert.equal(orbitPose(1, 1040).opacity, 0)
+  assert.equal(outgoing.opacity, 0)
+  for (let offset = -1; offset <= 1; offset += .05) {
+    const pose = orbitPose(offset, 1040)
+    assert.equal(pose.rotation, 0); assert.equal(pose.x, 0); assert.ok(pose.opacity >= 0 && pose.opacity <= 1)
+  }
+})
+
+test("the pinned run stays within about 2,500px for both audiences and every viewport", () => {
+  const { orbitStep, ORBIT_MAX_RUN } = mod.exports
+  for (const count of [5, 6]) for (const height of [700, 900, 1000, 1400]) {
+    const run = (count - 1 + .35) * orbitStep(count, height)
+    assert.ok(run <= ORBIT_MAX_RUN + 1e-9, `${count} stops at ${height}px: ${run}`)
+  }
+  const hook = fs.readFileSync("hooks/use-feature-orbit.ts", "utf8")
+  assert.doesNotMatch(hook, /max-width: 767px\) and \(min-height/, "phones must not pin")
+  assert.match(hook, /const visible = !enhanced \|\| index === active/)
+  assert.match(hook, /prefers-reduced-motion: reduce/)
 })
 
 test("motion eases to rest at the reading boundary and retraces exactly when scrolling back", () => {

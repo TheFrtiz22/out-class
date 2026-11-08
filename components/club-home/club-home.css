@@ -1,0 +1,20 @@
+/* Club home: only what is specific to it. The hero, Needs you row, cards, rows, pipeline, date chips and
+   metric tiles come from the shared dashboard pieces (components/product/dashboard/dashboard.css). */
+
+.oc-club-home-assignments [data-slot="tabs"] { gap: .75rem; }
+
+/* Interview rows: time, avatar, person and the room action. */
+.oc-interview-row { display: grid; grid-template-columns: 3.75rem 2.5rem minmax(0, 1fr) auto; align-items: center; gap: .75rem; min-height: 3.75rem; padding-block: .625rem; }
+.oc-interview-time { display: grid; color: var(--foreground); font-size: var(--oc-text-small); font-weight: var(--oc-weight-semibold); font-variant-numeric: tabular-nums; }
+.oc-interview-time small { color: var(--muted-foreground); font-size: var(--oc-text-caption); font-weight: var(--oc-weight-regular); }
+.oc-interview-row[data-unscheduled="true"] .oc-interview-time { color: var(--brand-ink); }
+
+/* Phones: the pipeline leads, interviews are listed in This week. */
+@media (max-width: 759px) {
+  .oc-club-home-pipeline { order: 1; }
+  .oc-club-home-week { order: 2; }
+  .oc-club-home-updates { order: 3; }
+  .oc-club-home-pulse { order: 4; }
+  .oc-club-home-assignments { order: 5; }
+  .oc-club-home-card.oc-club-home-interviews { display: none; }
+}

@@ -1,7 +1,7 @@
 import { getMyAvailability } from "@/actions/availability"
 import { MyAvailability } from "@/components/availability/my-availability"
 
-export const metadata = { title: "My Availability | OutClass" }
+export const metadata = { title: "Availability" }
 export default async function AvailabilityPage({ searchParams }: { searchParams: Promise<{ roundId?: string; clubId?: string }> }) {
   const params = await searchParams
   const data = await getMyAvailability()
