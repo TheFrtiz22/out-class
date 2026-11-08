@@ -19,7 +19,7 @@ import { getClubDirectory, getPublicClub } from "@/lib/workspace-api"
 import { filterDirectory, emptyDirectoryFilters, directoryFiltersFromParams, directoryFilterParams, type DirectoryClub } from "@/lib/club-directory"
 import { ClubProfileView } from "@/components/views/club-profile-view"
 import type { ViewId } from "@/lib/views"
-import { demoStore, demoDirectory } from "@/lib/demo/store"
+import { isDemoActive, loadedDemoStore } from "@/lib/demo/loader"
 import { useDemoMode } from "@/contexts/demo-context"
 import { clubRecruitment } from "@/lib/recruitment-presentation"
 import "@/components/clubs/club-discovery.css"
@@ -61,11 +61,11 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
   const [searchMatches, setSearchMatches] = useState<{ query: string; ids: string[] } | null>(null)
   const [now, setNow] = useState(Date.now())
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 60000); return () => clearInterval(timer) }, [])
-  const [selected, setSelected] = useState<DirectoryClub | null>(() => demoStore.active() ? demoDirectory().find(c => [c.id, c.slug].includes(new URLSearchParams(window.location.search).get("demoClub") || "")) || null : null)
+  const [selected, setSelected] = useState<DirectoryClub | null>(() => isDemoActive() ? loadedDemoStore().demoDirectory().find(c => [c.id, c.slug].includes(new URLSearchParams(window.location.search).get("demoClub") || "")) || null : null)
   // The directory list carries summary data; the full profile loads on open.
   const [profile, setProfile] = useState<{ id: string; club: DirectoryClub | null } | null>(null)
   useEffect(() => {
-    if (!selected || demoStore.active()) return
+    if (!selected || isDemoActive()) return
     let current = true
     getPublicClub(selected.id)
       .then(result => { if (current) setProfile({ id: selected.id, club: result.club }) })
@@ -161,7 +161,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
   if (selected) {
     // Demo data is already complete. If the full profile cannot load, show the
     // listed summary rather than nothing.
-    const loaded = demoStore.active() ? selected : profile?.id === selected.id ? profile.club ?? selected : null
+    const loaded = isDemoActive() ? selected : profile?.id === selected.id ? profile.club ?? selected : null
     return loaded
       ? <ClubProfileView club={loaded} onBack={() => setSelected(null)} onNavigate={onNavigate} />
       : <LoadingState label="Loading club profile…" layout="workspace" rows={3} />

@@ -11,6 +11,7 @@ function shell(routeSearch,windowSearch='') {
   '@/contexts/demo-context':{useDemoMode:()=>demo},
   '@/contexts/auth-context':{useAuth:()=>({user:{memberships:[]},selectClub(){}})},
   '@/lib/demo/store':{demoDashboard:()=>({applications:[],attendances:[]})},
+  '@/lib/demo/loader':{loadedDemoStore:()=>({demoDashboard:()=>({applications:[],attendances:[]})})},
   '@/lib/student-navigation':navigationModule.exports,
   '@/lib/navigation':require('./helpers/navigation-module.cjs'),
   '@/lib/club-workspace':{clubWorkspaceHref:id=>`/club/${id}/workspace`},

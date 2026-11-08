@@ -21,6 +21,7 @@ function harness(api = {}) {
   const { ApplicationStateProvider } = load('lib/application-state.tsx', {
     react, '@/contexts/demo-context': { useDemoMode: () => ({ isDemoEnabled: false }) },
     '@/lib/demo/store': { demoStore: { active: () => false } },
+    '@/lib/demo/loader': { isDemoActive: () => false, loadedDemoStore: () => { throw Error('demo not loaded') } },
     '@/lib/communications-client': { ...load('lib/communications-client.ts'), communicationsChanged: () => events.push('changed') },
     '@/actions/communications': { setDurableNotificationsRead: async (ids, read) => { reads.push({ ids, read }) }, setDurableNotificationsArchived: async (ids, archived) => { archives.push({ ids, archived }) }, ...api },
     sonner: { toast: { error: text => errors.push(text) } },
