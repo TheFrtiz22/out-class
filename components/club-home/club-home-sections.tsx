@@ -45,9 +45,9 @@ export function InterviewsCard({ data, hrefs, index, onOpen }: { data: Overview;
         <time className="oc-interview-time" dateTime={new Date(booking.slot.startTime).toISOString()}>{time(booking.slot.startTime)}<small>{new Date(booking.slot.startTime).toLocaleDateString([], { weekday: "short" })}</small></time>
         <span className="oc-dashboard-avatar" aria-hidden="true">{person.initials || <UserRound size={16} />}</span>
         <span className="oc-dashboard-row-copy"><strong>{person.label}</strong><small>{[booking.round?.name, booking.slot.location].filter(Boolean).join(" · ")}</small></span>
-        {i === 0 && booking.slot.roomId && booking.roundId
-          ? <Button size="lg" className="px-3" data-tone="interview" asChild><Link href={interviewEntryHref({ clubId: data.club.id, applicationId: booking.applicationId, roundId: booking.roundId, slotId: booking.slot.id, bookingId: booking.id, roomId: booking.slot.roomId })} aria-label={`Open room: ${person.label}, ${memberDate(booking.slot.startTime)}`}>Open room</Link></Button>
-          : <Button size="lg" className="px-3" variant="outline" onClick={() => onOpen(booking)} aria-label={`Prep: ${person.label}, ${memberDate(booking.slot.startTime)}`}>Prep</Button>}
+        {/* Every booking can open its preparation; the first one with a room can also be entered. */}
+        <span className="oc-interview-actions"><Button size="lg" className="px-3" variant="outline" onClick={() => onOpen(booking)} aria-label={`Prep: ${person.label}, ${memberDate(booking.slot.startTime)}`}>Prep</Button>
+          {i === 0 && booking.slot.roomId && booking.roundId && <Button size="lg" className="px-3" data-tone="interview" asChild><Link href={interviewEntryHref({ clubId: data.club.id, applicationId: booking.applicationId, roundId: booking.roundId, slotId: booking.slot.id, bookingId: booking.id, roomId: booking.slot.roomId })} aria-label={`Open room: ${person.label}, ${memberDate(booking.slot.startTime)}`}>Open room</Link></Button>}</span>
       </li> })}
       {unscheduled.map(round => <li key={round.id} className="oc-interview-row" data-unscheduled="true">
         <span className="oc-interview-time">Not set</span>
@@ -109,7 +109,7 @@ export function NextMeetingCard({ data, hrefs, index, onOpen }: { data: Overview
   </DashboardCard>
 }
 
-type TaskTab = "week" | "overdue" | "feedback"
+type TaskTab = "week" | "overdue" | "feedback" | "all"
 /** Due this week · Overdue · Awaiting feedback. Task managers see the team (per task); everyone else sees their own. */
 export function TasksCard({ data, hrefs, index, onTask }: { data: Overview; hrefs: RailHrefs; index: number; onTask: (taskId: string, assignmentId: string | undefined, title: string, review?: boolean) => void }) {
   const op = data.operations, now = +new Date(op.asOf), team = hasPermission(data.membership, "tasks.manage")
@@ -118,16 +118,19 @@ export function TasksCard({ data, hrefs, index, onTask }: { data: Overview; href
     week: op.teamTasks.filter(t => week(t.dueAt)).map(t => ({ id: t.id, title: t.title, detail: `Due ${memberDate(t.dueAt)} · ${t.outstanding} open`, open: () => onTask(t.id, undefined, t.title) })),
     overdue: op.teamTasks.filter(t => isOverdue(t.dueAt, now)).map(t => ({ id: t.id, title: t.title, detail: `Overdue since ${memberDate(t.dueAt)} · ${t.outstanding} open`, open: () => onTask(t.id, undefined, t.title) })),
     feedback: op.reviewWork.map(r => ({ id: r.id, title: r.task.title, detail: r.submittedAt ? `Submitted ${memberDate(r.submittedAt)}` : "Submitted", open: () => onTask(r.task.id, r.id, r.task.title, true) })),
+    all: [],
   } : {
     week: data.work.filter(w => week(w.task.dueAt)).map(w => ({ id: w.id, title: w.task.title, detail: `Due ${memberDate(w.task.dueAt!)}`, open: () => onTask(w.task.id, w.id, w.task.title) })),
     overdue: data.work.filter(w => isOverdue(w.task.dueAt, now)).map(w => ({ id: w.id, title: w.task.title, detail: `Overdue · due ${memberDate(w.task.dueAt!)}`, open: () => onTask(w.task.id, w.id, w.task.title) })),
     feedback: [],
+    // Members see all their own work here (there is no separate "Your tasks" card for them).
+    all: data.work.map(w => ({ id: w.id, title: w.task.title, detail: w.task.dueAt ? `${isOverdue(w.task.dueAt, now) ? "Overdue · " : "Due "}${memberDate(w.task.dueAt)}` : "No deadline", open: () => onTask(w.task.id, w.id, w.task.title) })),
   }
-  const tabs: TaskTab[] = team ? ["week", "overdue", "feedback"] : ["week", "overdue"]
+  const tabs: TaskTab[] = team ? ["week", "overdue", "feedback"] : ["week", "overdue", "all"]
   const [tab, setTab] = useState<TaskTab>(() => tabs.find(id => rows[id].length) ?? "week")
-  const label = { week: "Due this week", overdue: "Overdue", feedback: "Awaiting feedback" }
-  const empty = { week: "Nothing due this week.", overdue: "Nothing overdue.", feedback: "No submissions waiting for feedback." }
-  return <DashboardCard id="club-home-tasks" title={team ? TERMS.teamTasks : TERMS.yourTasks} index={index} className="oc-club-home-card oc-club-home-tasks" moreAt="foot"
+  const label = { week: "Due this week", overdue: "Overdue", feedback: "Awaiting feedback", all: "All" }
+  const empty = { week: "Nothing due this week.", overdue: "Nothing overdue.", feedback: "No submissions waiting for feedback.", all: "No tasks right now." }
+  return <DashboardCard id="club-home-tasks" title={team ? TERMS.teamTasks : "Tasks"} index={index} className="oc-club-home-card oc-club-home-tasks" moreAt="foot"
     more={hrefs.tasks ? { href: `${hrefs.tasks}&taskView=${team ? "team" : "mine"}`, label: team ? "Manage tasks" : "All tasks" } : undefined}>
     <SegmentedControl label={team ? TERMS.teamTasks : TERMS.yourTasks} value={tab} onChange={setTab}
       options={tabs.map(id => ({ value: id, label: rows[id].length ? `${label[id]} · ${rows[id].length}` : label[id] }))} />

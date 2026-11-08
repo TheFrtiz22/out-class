@@ -136,6 +136,10 @@ export function RecruitingOverview({ data, refreshing = false, onChanged = () =>
         <MetricTiles items={[{ label: "Applicants with a submitted review", value: reviewed, of: total }]} />
         <progress className="oc-dashboard-progress" value={reviewed} max={total} aria-label="Team review progress" />
       </DashboardCard>}
+      {op.offers.length > 0 && <DashboardCard id="dashboard-offers" title="Offers awaiting response" index={cards.length + 5}>
+        <GlassRowList>{op.offers.map(o => <li key={o.id}><GlassRow data-applicant-id={o.applicationId} onClick={() => { setReviewContext(false); setApplicant(o.applicationId) }}
+          title={o.label} detail={`Pending membership offer · expires ${memberDate(o.expiresAt)}`} trailing={<span className="oc-dashboard-row-end">View offer</span>} /></li>)}</GlassRowList>
+      </DashboardCard>}
       {vote && <DashboardCard id="dashboard-voting" title="Voting" index={cards.length + 5} className="oc-voting-summary">
         <GlassRowList><li><GlassRow title={vote.round.name} detail={vote.state === "COMPLETE" || vote.state === "COMPLETED" ? "Voting complete · Send decisions when you are ready" : `${votingStateLabel(vote.state)} session`}
           action={<Button variant="outline" asChild><Link href={voteHref(club.id, membership, vote)}>{!vote.participants.length && vote.joinOpenedAt && !hasPermission(membership, "decisions.manage") ? "Join session" : TERMS.openSession}</Link></Button>} /></li></GlassRowList>

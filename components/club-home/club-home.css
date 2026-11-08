@@ -8,6 +8,7 @@
 .oc-interview-time { display: grid; color: var(--foreground); font-size: var(--oc-text-small); font-weight: var(--oc-weight-semibold); font-variant-numeric: tabular-nums; }
 .oc-interview-time small { color: var(--muted-foreground); font-size: var(--oc-text-caption); font-weight: var(--oc-weight-regular); }
 .oc-interview-row[data-unscheduled="true"] .oc-interview-time { color: var(--brand-ink); }
+.oc-interview-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; }
 
 /* Next meeting: date chip, title, when and where, agenda excerpt, then its actions. */
 .oc-next-meeting { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 1rem; align-items: start; }
