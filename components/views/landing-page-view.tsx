@@ -11,6 +11,7 @@ import { LandingHero } from "@/components/landing/landing-hero"
 import { LandingIntro } from "@/components/landing/landing-intro"
 import { PublicNavigation } from "@/components/landing/public-navigation"
 import { ProductJourney } from "@/components/landing/product-stories"
+import { LandingMoments } from "@/components/landing/landing-moments"
 import { useLandingPerspective } from "@/hooks/use-landing-perspective"
 import { useJourneyNavigation } from "@/hooks/use-journey-navigation"
 import "./landing.css"
@@ -47,6 +48,7 @@ export function LandingPageView({
         </LandingIntro>
         <LaunchClubs clubs={launchClubs} />
         <ProductJourney perspective={perspective} selected={selected} onPerspectiveChange={switchPerspective} onCreateProfile={createProfile} onLeaderEnter={enterLeader} navigation={journeyNavigation} />
+        <LandingMoments perspective={perspective} />
         <SectionReveal
           id="create-account"
           className="oc-final-invitation"

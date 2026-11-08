@@ -60,5 +60,10 @@ one blurred surface inside another.
   Source Sans.
 - `docs/design-system.md` no longer says public pages use Caslon throughout.
 
+## Homepage moments
+
+The decision moment, "A season on Grounds" and the feature grid are built; evidence in
+[`moments/README.md`](moments/README.md).
+
 Still to do, page by page: rebuild the homepage from `Main.mockup.html`, then the other public pages, and
 remove brand orange from every place except the two allowed by rule 4.
