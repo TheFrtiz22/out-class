@@ -27,7 +27,8 @@ import { hasPermission } from "@/lib/permissions"
 import { interviewCapabilities } from "@/lib/interview-access"
 import { applicantInterviewHref } from "@/lib/applicant-interview-navigation"
 import { useRouter } from "next/navigation"
-import { saveVotingSelection,votingSetupHref } from "@/lib/voting-navigation"
+import { saveVotingSelection,votingSetupHref,decisionsHref } from "@/lib/voting-navigation"
+import { RankedReviewList, type RankedReviewApi } from "@/components/ranked-review-list"
 import Link from "next/link"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
 
@@ -38,6 +39,7 @@ import { useDismissableDetails } from "@/hooks/use-dismissable-details"
 import { createPortal } from "react-dom"
 import { useRevalidate } from "@/hooks/use-revalidate"
 import { BoardDecisionMode } from "@/components/live-voting/board-decision-mode"
+import { getClubPipeline, getRankedReviewSettings, saveRankedReviewBands } from "@/lib/workspace-api"
 import { getClubPipelinePage, getClubPipelineSelection, moveApplicantRound, setApplicationStatus, reconsiderRejectedApplication, revokeRecruitmentOffer } from "@/lib/workspace-api"
 import { submitEvaluation } from "@/lib/workspace-api"
 import { useApplicationState } from "@/lib/application-state"
@@ -180,7 +182,16 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   const [rating, setRating] = useState("")
   const clearApplicantFilters = () => { setQuery(""); setRound(""); setStatus(""); setReview(""); setMajor(""); setYear(""); setGpa(""); setSat(""); setAct(""); setRating("") }
   const [compact, setCompact] = useState(true)
-  const [view, setView] = useState<"list" | "kanban">("list")
+  const [view, setView] = useState<"list" | "kanban" | "ranked">("list")
+  // Ranked review opens the same masked single-applicant review (with finalized interviewer feedback).
+  const [rankedOpen, setRankedOpen] = useState<string | null>(null)
+  const [rankedChanged, setRankedChanged] = useState(0)
+  const rankedApi = useMemo<RankedReviewApi>(() => ({
+    loadRound: roundId => getClubPipeline(membership.clubId, { roundId }),
+    loadSettings: roundId => getRankedReviewSettings(membership.clubId, roundId),
+    saveBands: input => saveRankedReviewBands(input),
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- a new authority (account, demo, impersonation) must reload the ranking
+  }), [membership.clubId, authority])
   const [gender, setGender] = useState("")
   const [showGenderCounts, setShowGenderCounts] = useState(false)
   const [sort, setSort] = useState<ApplicantSort>("name")
@@ -566,7 +577,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     <div ref={workspaceElement} className="oc-live-pipeline oc-workspace-stack" data-unsaved={draftSave.dirty} data-saving={busy}>
       <div hidden={!!preview} className={votingBarShown ? "oc-voting-bar-clearance" : undefined}>
       {!active && message && <p role="status" className="text-sm">{message}</p>}
-      {!preview && <SegmentedControl label="Decision" value={decisionGroup} onChange={value => setDecisionGroup(value as DecisionFilter)} options={decisionFilters.map(group => ({ value: group.id, label: <>{group.label}<span className="ml-2 text-xs font-normal text-muted-foreground">{group.id === "all" ? listData?.page.baseTotal ?? 0 : listData?.facets.decisions[group.id] ?? 0}</span></> }))} />}
+      {!preview && view !== "ranked" && <SegmentedControl label="Decision" value={decisionGroup} onChange={value => setDecisionGroup(value as DecisionFilter)} options={decisionFilters.map(group => ({ value: group.id, label: <>{group.label}<span className="ml-2 text-xs font-normal text-muted-foreground">{group.id === "all" ? listData?.page.baseTotal ?? 0 : listData?.facets.decisions[group.id] ?? 0}</span></> }))} />}
 {!rejectedOnly && !preview && actionSlot !== undefined && (() => {
         const actions = <div role="group" aria-label="Recruitment review" className="flex flex-wrap items-center justify-end gap-2">
           {!decisionsOnly && canDecide && <Button variant="outline" disabled={busy || !listData?.facets.quickReview} onClick={() => void startQuickReview()}>Quick review</Button>}
@@ -574,8 +585,8 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         return actionSlot ? createPortal(actions, actionSlot) : actions
       })()}
       <div className="oc-toolbar">
-        {!decisionsOnly && <SegmentedControl label="Applicant view" value={view} onChange={setView} options={[{ value: "list", label: "List" }, { value: "kanban", label: "Kanban" }]} />}
-        <div className="relative min-w-0 flex-1 basis-60">
+        {!decisionsOnly && <SegmentedControl label="Applicant view" value={view} onChange={setView} options={[{ value: "list", label: "List" }, { value: "kanban", label: "Kanban" }, { value: "ranked", label: "Ranked" }]} />}
+        {view !== "ranked" && <><div className="relative min-w-0 flex-1 basis-60">
           <Search className="absolute left-3 top-3 size-4 text-muted-foreground" />
           <Input
             ref={search}
@@ -701,8 +712,10 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
           <div className="mt-3"><Label htmlFor="leader-act">ACT greater than</Label><Input id="leader-act" type="number" min={1} max={36} className="mt-2 w-36" value={act} onChange={e => setAct(e.target.value)} /></div>
           <div className="mt-3"><Label htmlFor="leader-rating">Minimum rating (out of 10)</Label><Input id="leader-rating" type="number" min={0} max={10} step="0.1" className="mt-2 w-36" value={rating} onChange={event => setRating(event.target.value)} /></div>
       </section>}
-        </div></details>
+        </div></details></>}
       </div>
+      {view === "ranked" ? <RankedReviewList clubId={membership.clubId} rounds={data.rounds} initialRoundId={round || data.rounds.find(item => isInterviewRecruitmentRound(item.type))?.id} api={rankedApi} onOpen={setRankedOpen} votingSelection={votingChoice} changeSignal={rankedChanged}
+        votingLink={hasPermission(membership, "applications.review") ? <Button variant="outline" size="sm" asChild><Link href={decisionsHref(membership.clubId, "voting", demo.isDemoEnabled ? "demo=1" : "")}>Open Voting room</Link></Button> : undefined} /> : <>
       <div className="flex min-h-9 flex-wrap items-center justify-between gap-x-3">
         <p className="text-xs text-muted-foreground" role="status">
           {decisionsOnly ? `${pluralize(total, "application")} in this selection` : `${total} of ${pluralize(baseTotal, "applicant")} · scores out of 10`}
@@ -726,6 +739,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         <p role="status" className="text-sm">Page {displayed.page + 1} of {displayed.count} · Showing {displayed.start + 1}–{displayed.start + displayed.items.length} of {total}</p>
         <Button variant="outline" aria-label="Next applicant page" disabled={busy || !pageInfo?.next} onClick={() => changePage(pageInfo?.next ?? null)}>Next page</Button>
       </nav>}
+      </>}
       {votingBarShown && <div ref={votingBar} role="region" aria-label="Voting selection" className="oc-voting-bar fixed inset-x-4 bottom-[var(--oc-toast-offset,1.5rem)] z-40 mx-auto flex w-fit max-w-[calc(100vw-2rem)] flex-wrap items-center justify-center gap-2 rounded-lg border bg-card p-2 pl-4 shadow-lg">
         <span className="text-sm" role="status">{votingSelection.length} selected</span>
         <Button size="sm" disabled={busy} onClick={startSelectedVoting}>Add to voting session</Button>
@@ -733,6 +747,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       </div>}
       </div>
       {preview && !active && !data.applications.length && <p role="alert">This applicant is no longer available. <Button onClick={preview.onClose}>Close preview</Button></p>}
+      {!preview && view === "ranked" && rankedOpen && <ApplicantReviewPreview key={rankedOpen} clubId={membership.clubId} applicationId={rankedOpen} onClose={() => setRankedOpen(null)} onChanged={() => setRankedChanged(value => value + 1)} />}
       <Sheet
         open={!!activeId}
         onOpenChange={(value) => {

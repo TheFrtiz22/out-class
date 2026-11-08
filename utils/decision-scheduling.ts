@@ -1,12 +1,13 @@
 import type {AppTransactionClient} from "@/utils/prisma";
 import { decisionSnapshotSchema, MAX_SCHEDULED_DECISIONS } from "@/lib/decision-schedule";
 import {audienceKey} from "@/lib/recipient-audience";
+import {withoutRankedReviewConfiguration} from "@/lib/ranked-review";
 import {authorizeClubTransaction} from "@/lib/club-transaction-authorization";
 import {publishRecruitmentDecision} from "@/utils/recruitment-offers";
 import {publishReviewedVotingCandidates} from "@/utils/voting-publication";
 export const decisionCapabilities=["decisions.manage","applicants.identify"] as const;
 export function roundPublicationKey(r:{id:string;type:string;anonymousReview:boolean;archivedAt:Date|null;configuration:unknown}){
- return audienceKey({id:r.id,type:r.type,anonymousReview:r.anonymousReview,archivedAt:r.archivedAt?.toISOString()??null,configuration:r.configuration});
+ return audienceKey({id:r.id,type:r.type,anonymousReview:r.anonymousReview,archivedAt:r.archivedAt?.toISOString()??null,configuration:withoutRankedReviewConfiguration(r.configuration)});
 }
 export async function publishScheduledDecision(tx:AppTransactionClient,row:{clubId:string;senderId:string;snapshot:unknown}){
  const snapshot=decisionSnapshotSchema.parse(row.snapshot);
