@@ -131,9 +131,9 @@ test('glass defaults: Card, Panel, Skeleton and Tabs default to glass; variant="
   assert.match(tabs, /variant\?: 'subtle' \| 'underline' \| 'segmented'/)
   assert.match(tabs, /variant = 'segmented'/)
   // Three or more tabs scroll inside the track at full label width instead of clipping on phones.
-  assert.match(fs.readFileSync('styles/interface-primitives.css', 'utf8'), /\[data-variant="segmented"\]:has\(> :nth-child\(3\)\) \[data-slot="tabs-trigger"\] \{ flex: 1 0 auto; min-width: max-content; \}/)
+  assert.match(fs.readFileSync('styles/interface-primitives.css', 'utf8'), /\[data-variant="segmented"\]:has\(> \[data-slot="tabs-trigger"\] ~ \[data-slot="tabs-trigger"\] ~ \[data-slot="tabs-trigger"\]\) \[data-slot="tabs-trigger"\] \{ flex: 1 0 auto; min-width: max-content; \}/)
   // A single tab (e.g. members who only see the interview kit) gets a full-width indicator.
-  assert.match(fs.readFileSync('styles/interface-primitives.css', 'utf8'), /\[data-variant="segmented"\]:not\(:has\(> :nth-child\(2\)\)\) \{ --segments: 1; \}/)
+  assert.match(fs.readFileSync('styles/interface-primitives.css', 'utf8'), /\[data-variant="segmented"\]:not\(:has\(> \[data-slot="tabs-trigger"\] ~ \[data-slot="tabs-trigger"\]\)\) \{ --segments: 1; \}/)
   // Overlays share the frosted navigation material; tables, the projector and fields keep solid surfaces.
   assert.match(fs.readFileSync('styles/product-components.css', 'utf8'), /\[data-slot="alert-dialog-content"\]\):not\([^)]*\) \{ background: var\(--oc-glass-frosted-material\)/)
   assert.match(fs.readFileSync('styles/workspace-composition.css', 'utf8'), /\.oc-data-surface \{[^}]*background: var\(--oc-content-solid\)/)

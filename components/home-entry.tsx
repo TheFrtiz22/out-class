@@ -6,13 +6,20 @@ import { useSearchParams } from "next/navigation"
 import { LandingPageView } from "@/components/views/landing-page-view"
 import type { AppShellProps } from "@/components/app-shell"
 import { OutClassLoadingScreen } from "@/components/outclass-loading-screen"
+import { WorkspaceLoading } from "@/components/workspace-loading"
+import { useInWorkspaceShell } from "@/components/shell/workspace-shell-context"
 import { DEFAULT_LANDING_AUDIENCE, type LandingAudience } from "@/lib/landing-audience"
 
 // Marketing HTML is rendered immediately. The authenticated product bundle is
 // requested only when a visitor enters an account view or follows a workspace URL.
 const AppShell = dynamic(() => import("@/components/app-shell").then(module => module.AppShell), {
-  loading: () => <OutClassLoadingScreen />,
+  loading: () => <AppLoading />,
 })
+
+/** Inside the persistent workspace shell the bundle loads under content placeholders; elsewhere it keeps the full cover. */
+function AppLoading() {
+  return useInWorkspaceShell() ? <WorkspaceLoading label="Loading your workspace…" /> : <OutClassLoadingScreen />
+}
 
 export function HomeEntry({ initialLandingAudience = DEFAULT_LANDING_AUDIENCE, ...props }: AppShellProps & { initialLandingAudience?: LandingAudience }) {
   const params = useSearchParams()

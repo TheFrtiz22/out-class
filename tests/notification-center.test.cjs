@@ -112,14 +112,13 @@ test('overlapping bulk clicks share one pagination operation and retain IDs disp
 })
 
 test('platform notification expansion reaches the existing inbox while profile and personal destinations remain intact', () => {
-  const destinations = []
-  const { AdminShell } = load('components/admin/admin-shell.tsx', {
-    'next/navigation': { usePathname: () => '/platform/users', useRouter: () => ({ push: href => destinations.push(href) }) },
-    '@/lib/application-state': { ApplicationStateProvider: 'Provider' }, '@/components/shell/product-shell': { ProductShell: 'ProductShell' },
+  // The persistent shell owns Admin's navigation (AdminShell renders page content only).
+  const { viewHref } = load('components/shell/workspace-shell.tsx', {
+    'next/navigation': {}, '@/lib/application-state': { ApplicationStateProvider: 'Provider' }, '@/components/shell/product-shell': { ProductShell: 'ProductShell' },
+    '@/components/auth-session-boundary': {}, '@/components/shell/workspace-shell-context': {}, '@/contexts/auth-context': {}, '@/contexts/demo-context': {},
   })
-  const shell = AdminShell({ children: null }).props.children
-  for (const view of ['inbox', 'student-profile', 'student-dashboard']) shell.props.onNavigate(view)
-  assert.deepEqual(destinations, ['/inbox', '/profile', '/home'])
+  assert.deepEqual(['inbox', 'student-profile', 'student-dashboard'].map(view => viewHref('admin', view)), ['/inbox', '/profile', '/home'])
+  assert.equal(viewHref('personal', 'inbox'), '/inbox')
 })
 
 function notificationClickHarness({ read = false, result = true, allowed = true, sameClub = true } = {}) {

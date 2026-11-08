@@ -11,6 +11,7 @@ function render(search,{permission=true,selected=true,loading=false}={}) {
   '@/contexts/auth-context':{useAuth:()=>({user:{id:'one',memberships:[member]},loading,activeClubId:selected?'club':'elsewhere',selectClub(){}})},
   '@/contexts/demo-context':{useDemoMode:()=>({ready:true,isDemoEnabled:false})},
   '@/hooks/use-revalidate':{useRevalidate(){}},
+  '@/components/shell/workspace-shell-context':{useShellBindings(){}},
   '@/lib/permissions':{hasWorkspace:()=>true,hasPermission:(m,p)=>m.permissions.includes(p)},
   '@/lib/club-workspace':{clubWorkspaceHref:id=>`/club/${id}/workspace`,recruitmentTools:()=>[{id:'interviews'}]},
   '@/lib/club-workspace-preference':{clubWorkspacePreferenceKey:()=> 'test-preference'},
@@ -28,7 +29,7 @@ function render(search,{permission=true,selected=true,loading=false}={}) {
   '@/lib/applicant-interview-navigation':require('./helpers/interview-harness.cjs').harness().load('lib/applicant-interview-navigation.ts'),
  };
  const mod={exports:{}};new Function('require','module','exports',compile('components/club-workspace.tsx'))(name=>mocks[name]||(name.startsWith('@/')?new Proxy({},{get:(_,key)=>String(key)}):require(name)),mod,mod.exports);
- const tree=mod.exports.ClubWorkspace({clubId:'club'}),screen=tree.type==='WorkspaceLoading'?tree:tree.props.children[1];
+ const tree=mod.exports.ClubWorkspace({clubId:'club'}),screen=tree;
  const nodes=[];function collect(node){if(!node||typeof node!=='object')return;if(Array.isArray(node)){node.forEach(collect);return}nodes.push(node);collect(node.props?.children)}collect(screen);
  return {screen,nodes,changes,redirects};
 }
@@ -64,13 +65,14 @@ test('the interview route restores the room on a fresh mount without assigning p
  screen.props.onExit();assert.deepEqual(resumed.pushes,['/club/club/workspace?interviewTab=rooms&roundId=r&section=recruitment&tool=interviews']);
  assert.equal(resumed.frames[0].exitHref,resumed.pushes[0]);assert.deepEqual(resumed.frames[0].club,{name:'Synthetic',color:'#123456'});
 });
+// The persistent shell lives in app/(workspace)/layout.tsx; the workspace renders its content (ShellState), not a loader.
 test('scheduled list replaces generic entry and unrelated screens do not restore a room',()=>{
  const initial=render('section=recruitment&tool=interviews');
- assert.equal(initial.screen.type,'ProductShell');
+ assert.equal(initial.screen.type,'ShellState');
  assert.equal(initial.nodes.some(node=>node.props?.children==='Enter interview mode'),false);
  assert.deepEqual(initial.changes,[]);
- assert.equal(render('section=overview&interview=1').screen.type,'ProductShell');
- assert.equal(render('section=recruitment&tool=applicants&interview=1').screen.type,'ProductShell');
+ assert.equal(render('section=overview&interview=1').screen.type,'ShellState');
+ assert.equal(render('section=recruitment&tool=applicants&interview=1').screen.type,'ShellState');
 });
 test('URL restoration still waits for current membership and selected club permissions',()=>{
  for(const options of [{selected:false},{loading:true}])assert.equal(room('applicationId=a&roundId=r',options).tree.type,'WorkspaceLoading');

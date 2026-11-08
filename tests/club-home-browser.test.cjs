@@ -72,10 +72,12 @@ test('browser: Club home dashboard, permissions, header glass, blur budget and a
 
   // Segmented tabs: real tabs, sliding indicator, keyboard.
   const tabs = page.getByRole('tablist', { name: 'Your tasks' })
-  const before = await tabs.evaluate(el => getComputedStyle(el, '::before').transform)
+  // The measured indicator (components/ui/tabs.tsx) slides to the selected tab.
+  const indicator = el => getComputedStyle(el.querySelector('.oc-tabs-indicator')).transform
+  const before = await tabs.evaluate(indicator)
   await tabs.getByRole('tab', { name: /^Overdue/ }).click()
   await page.waitForTimeout(500)
-  assert.notEqual(await tabs.evaluate(el => getComputedStyle(el, '::before').transform), before)
+  assert.notEqual(await tabs.evaluate(indicator), before)
   assert.equal(await page.getByRole('tabpanel').locator('li').count(), 1)
   await tabs.getByRole('tab', { name: /^Overdue/ }).focus()
   await page.keyboard.press('ArrowLeft')
@@ -136,8 +138,8 @@ test('browser: Club home dashboard, permissions, header glass, blur budget and a
   // Reduced motion removes the slide, not the position: the indicator still sits under the selected tab.
   const reducedTabs = page.getByRole('tablist', { name: 'Your tasks' })
   await reducedTabs.getByRole('tab', { name: /^Overdue/ }).click()
-  assert.notEqual(await reducedTabs.evaluate(el => getComputedStyle(el, '::before').transform), 'none')
-  assert.equal(await reducedTabs.evaluate(el => getComputedStyle(el, '::before').transitionDuration.split(',').every(v => parseFloat(v) === 0)), true)
+  assert.notEqual(await reducedTabs.evaluate(el => getComputedStyle(el.querySelector('.oc-tabs-indicator')).transform), 'none')
+  assert.equal(await reducedTabs.evaluate(el => getComputedStyle(el.querySelector('.oc-tabs-indicator')).transitionDuration.split(',').every(v => parseFloat(v) === 0)), true)
   await page.emulateMedia({ reducedMotion: null, forcedColors: null })
   console.log('PASS reduced motion and forced colors')
 

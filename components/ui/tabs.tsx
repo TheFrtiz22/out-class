@@ -18,13 +18,50 @@ function Tabs({
   )
 }
 
+const useBrowserLayoutEffect = typeof window === 'undefined' ? React.useEffect : React.useLayoutEffect
+
+/**
+ * Segmented lists place one indicator on the active trigger's measured box and follow Radix's
+ * data-state changes, so the indicator slides between tabs at any count instead of repainting.
+ */
+function useSegmentIndicator(list: React.RefObject<HTMLDivElement | null>, enabled: boolean) {
+  useBrowserLayoutEffect(() => {
+    const el = list.current
+    if (!enabled || !el) return
+    const place = () => {
+      const active = el.querySelector<HTMLElement>(':scope > [data-slot="tabs-trigger"][data-state="active"]')
+      if (!active || !active.offsetWidth) { el.removeAttribute('data-measured'); return }
+      el.style.setProperty('--indicator-x', `${active.offsetLeft}px`)
+      el.style.setProperty('--indicator-width', `${active.offsetWidth}px`)
+      el.setAttribute('data-measured', 'true')
+    }
+    place()
+    const mutations = new MutationObserver(place)
+    mutations.observe(el, { subtree: true, attributes: true, attributeFilter: ['data-state'], childList: true })
+    const resize = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(place)
+    resize?.observe(el)
+    el.querySelectorAll(':scope > [data-slot="tabs-trigger"]').forEach(trigger => resize?.observe(trigger))
+    return () => { mutations.disconnect(); resize?.disconnect() }
+  }, [list, enabled])
+}
+
 function TabsList({
   className,
   variant = 'segmented',
+  ref,
+  children,
   ...props
 }: React.ComponentProps<typeof TabsPrimitive.List> & { variant?: 'subtle' | 'underline' | 'segmented' }) {
+  const list = React.useRef<HTMLDivElement | null>(null)
+  useSegmentIndicator(list, variant === 'segmented')
+  const setRef = React.useCallback((node: HTMLDivElement | null) => {
+    list.current = node
+    if (typeof ref === 'function') ref(node)
+    else if (ref) (ref as React.RefObject<HTMLDivElement | null>).current = node
+  }, [ref])
   return (
     <TabsPrimitive.List
+      ref={setRef}
       data-slot="tabs-list"
       data-variant={variant}
       className={cn(
@@ -33,7 +70,10 @@ function TabsList({
         className,
       )}
       {...props}
-    />
+    >
+      {children}
+      {variant === 'segmented' && <span className="oc-tabs-indicator" aria-hidden="true" />}
+    </TabsPrimitive.List>
   )
 }
 

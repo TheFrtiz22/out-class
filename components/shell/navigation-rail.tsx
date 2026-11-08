@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useId, useRef, useState, useSyncExternalStore, type KeyboardEvent, type ReactElement } from "react"
+import { useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent, type ReactElement } from "react"
 import { CheckCircle2, ChevronRight, Users2 } from "@/components/icons"
 import { DockBrand } from "./dock-brand"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -32,15 +32,47 @@ function RailTip({ label, enabled, children }: { label: string; enabled: boolean
   return <Tooltip open={enabled && open} onOpenChange={setOpen}><TooltipTrigger asChild>{children}</TooltipTrigger><TooltipContent side="right" sideOffset={14} className="oc-rail-tooltip">{label}</TooltipContent></Tooltip>
 }
 
+const useBrowserLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect
+
+/**
+ * One active marker for the whole rail, placed on the current item's measured box, so it slides
+ * between items when the URL changes (the rail never remounts in the persistent shell). Until it is
+ * measured, and with no active item, each item's own ::before marker shows instead.
+ */
+function useRailMarker(container: React.RefObject<HTMLDivElement | null>, active: string | null, sections: RailSection[]) {
+  const key = sections.map(section => section.items.map(item => item.id).join()).join("|")
+  useBrowserLayoutEffect(() => {
+    const el = container.current
+    if (!el) return
+    const place = () => {
+      const item = el.querySelector<HTMLElement>(':scope nav :is([aria-current="page"],[data-active="true"])')
+      if (!item || !item.offsetHeight) { el.removeAttribute("data-marker"); return }
+      const box = el.getBoundingClientRect(), rect = item.getBoundingClientRect()
+      el.style.setProperty("--rail-marker-y", `${rect.top - box.top + 16}px`)
+      el.style.setProperty("--rail-marker-height", `${rect.height - 32}px`)
+      el.style.setProperty("--rail-marker-x", `${rect.left - box.left}px`)
+      el.setAttribute("data-marker", "true")
+    }
+    place()
+    if (typeof ResizeObserver === "undefined") return
+    const observer = new ResizeObserver(place)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [container, active, key])
+}
+
 /** Desktop rail. Routes, permission filtering and leave guards stay in ProductShell and lib/navigation. */
 export function NavigationRail({ sections, active, renderItem, onHome }: {
   sections: RailSection[]; active: string | null; renderItem: RenderItem; onHome: () => void
 }) {
   const labelled = useLabelledRail()
+  const content = useRef<HTMLDivElement>(null)
+  useRailMarker(content, active, sections)
   return <aside className="oc-expanding-dock hidden lg:block" aria-label="Workspace navigation" data-rail-labels={labelled}>
     <div className="oc-context-sidebar oc-dock-rail">
       <RailTip label="OutClass home" enabled={!labelled}><button type="button" className="oc-dock-brand" aria-label="OutClass home" onClick={onHome}><DockBrand /></button></RailTip>
-      <div className="oc-dock-navigation"><div className="oc-dock-navigation-content">
+      <div className="oc-dock-navigation"><div className="oc-dock-navigation-content" ref={content}>
+        <span className="oc-dock-marker" aria-hidden="true" />
         {sections.filter(section => section.items.length).map(section => {
           const rendered = new Set<Group>()
           return <section key={section.id} className="oc-dock-section" data-tour={section.tour}>

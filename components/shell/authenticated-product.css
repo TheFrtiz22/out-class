@@ -58,3 +58,7 @@
 
 /* Section headings share the rail background and require its light text token. */
 .oc-context-sidebar p.text-muted-foreground { color: var(--oc-rail-muted); }
+/* Full-page steps inside the persistent shell (student onboarding): chrome hidden, nothing remounted. */
+[data-product-shell][data-shell-chrome="hidden"] > :is(header, a[href="#workspace-content"], .oc-mobile-navigation), [data-product-shell][data-shell-chrome="hidden"] > div > aside { display: none; }
+[data-product-shell][data-shell-chrome="hidden"] > div:has(> aside) { margin-left: 0; }
+[data-product-shell][data-shell-chrome="hidden"] main.oc-workspace-content { max-width: none; padding: 0; }

@@ -4,7 +4,7 @@ const nodes=n=>!n||typeof n!=='object'?[]:Array.isArray(n)?n.flatMap(nodes):[n,.
 const sheetLinks=shell=>nodes(shell).filter(n=>n.type==='WorkspaceNavigation').flatMap(n=>n.props.items.map(n.props.renderItem));
 const text=n=>typeof n==='string'||typeof n==='number'?String(n):Array.isArray(n)?n.map(text).join(''):n?.props?text(n.props.children):'';
 function load(file,mocks={}) {
- mocks={ '@/components/shell/use-workspace-access':{useWorkspaceAccess:()=>({clubs:[],personal:true,admin:false,pending:false})}, '@/lib/autosave-navigation':{flushEditors:async()=>{}}, '@/actions/communications':{}, ...mocks };
+ mocks={ ...require('./helpers/shell-stubs.cjs'), '@/components/shell/use-workspace-access':{useWorkspaceAccess:()=>({clubs:[],personal:true,admin:false,pending:false})}, '@/lib/autosave-navigation':{flushEditors:async()=>{}}, '@/actions/communications':{}, ...mocks };
  // The shell reads its active item from the URL; tests that omit routing hooks render at '/'.
  if(mocks['next/navigation'])mocks['next/navigation']={usePathname:()=>'/',useSearchParams:()=>new URLSearchParams(),...mocks['next/navigation']};
  mocks={'@/components/shell/workspace-selector':{WorkspaceSelector:'WorkspaceSelector',useWorkspaceOptions:()=>[]},...mocks};

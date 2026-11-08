@@ -102,6 +102,7 @@ function renderSettingsWorkspace(member, requested, section = 'settings') {
    if(name==='@/lib/application-state') return {ApplicationStateProvider:passthrough,useApplicationState:()=>({focusLeader:()=>{}})}
    if(name==='@/lib/utils') return {cn:(...s)=>s.filter(Boolean).join(' ')}
    if(name==='@/components/shell/product-shell') return {ProductShell:passthrough}
+   if(name==='@/components/shell/shell-state') return {ShellState:passthrough}
    if(name==='@/components/club-settings-workspace') return component('components/club-settings-workspace.tsx')
    if(name==='@/components/product/welcome-header') return component('components/product/welcome-header.tsx')
    if(name==='@/lib/welcome') return load('lib/welcome.ts')

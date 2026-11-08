@@ -90,7 +90,7 @@ test("Public profile: the roster count is a suggestion and never remounts the ed
 })
 
 test("Settings → Organizations keeps its sign-in and profile-completion gate before redirecting", () => {
-  const page = fs.readFileSync("app/settings/organizations/page.tsx", "utf8")
+  const page = fs.readFileSync("app/(workspace)/settings/organizations/page.tsx", "utf8")
   assert.ok(page.indexOf("requireCompletedStudentProfile(user.id, \"/settings/organizations\")") < page.indexOf("redirect(`/clubs"))
   assert.match(page, /requireAuth\(\{ verifyEmail: true \}\)/)
 })

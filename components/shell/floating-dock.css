@@ -105,3 +105,12 @@
   .oc-dock-rail nav :is([aria-current="page"],[data-active="true"])::before, .oc-dock-flyout nav [aria-current="page"]::before { background: Highlight; forced-color-adjust: none; }
   .oc-expanding-dock :is(a,button):focus-visible, .oc-dock-flyout nav :is(a,button):focus-visible { outline-color: Highlight; }
 }
+/* One sliding active marker (navigation-rail.tsx useRailMarker); per-item markers are the unmeasured fallback. */
+@media (min-width: 1024px) {
+  .oc-dock-marker { position: absolute; z-index: 1; top: 0; left: 0; width: 3px; height: var(--rail-marker-height, 16px); border-radius: 3px; background: var(--brand-orange); opacity: 0; pointer-events: none; transform: translate(var(--rail-marker-x, 0px), var(--rail-marker-y, 0px)); transition: transform 420ms var(--oc-floating-ease), height 420ms var(--oc-floating-ease), opacity var(--oc-glass-quick) ease; }
+  .oc-dock-navigation-content[data-marker="true"] .oc-dock-marker { opacity: 1; }
+  .oc-dock-navigation-content[data-marker="true"] nav :is([aria-current="page"],[data-active="true"])::before { display: none; }
+  @supports (transition-timing-function: linear(0, 1)) { .oc-dock-marker { transition-timing-function: var(--oc-floating-spring), var(--oc-floating-spring), ease; } }
+}
+@media (prefers-reduced-motion: reduce) { .oc-dock-marker { transition: none; } }
+@media (forced-colors: active) { .oc-dock-marker { background: Highlight; forced-color-adjust: none; } }
