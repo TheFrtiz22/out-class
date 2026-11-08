@@ -194,13 +194,16 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
     setEvents(previous => [...previous.filter(event => !(event.readOnly && event.id.startsWith("booking-"))), ...studentCalendarEvents({ applications })])
   }, [demo.isDemoEnabled])
   /** The persistent workspace shell owns this store; a student page hands it the data its server render loaded. */
+  // Entries the last server payload supplied. A later payload (router.refresh, returning to a page) replaces
+  // exactly these, so removed or rescheduled records disappear while client-only entries are kept.
+  const seeded = useRef<{ apps: Set<string>; events: Set<string> }>({ apps: new Set(), events: new Set() })
   const seedServerData = useCallback((data: any) => {
     if (demo.isDemoEnabled || !data) return
-    // A later payload (router.refresh) updates what the server knows without dropping client-only entries:
-    // server applications win per club, and events not in the payload (optimistic, bookings) are kept.
-    const apps = serverTrackedApps(data), events = studentCalendarEvents(data)
-    setTrackedApps(previous => [...previous.filter(app => !apps.some(server => server.clubId === app.clubId)), ...apps])
-    setEvents(previous => [...previous.filter(event => !events.some(server => server.id === event.id)), ...events])
+    const apps = serverTrackedApps(data), events = studentCalendarEvents(data), last = seeded.current
+    // Server-owned: anything the previous payload supplied, plus read-only booking events (server projections).
+    setTrackedApps(previous => [...previous.filter(app => !last.apps.has(app.id) && !apps.some(server => server.clubId === app.clubId)), ...apps])
+    setEvents(previous => [...previous.filter(event => !last.events.has(event.id) && !(event.readOnly && event.id.startsWith("booking-")) && !events.some(server => server.id === event.id)), ...events])
+    seeded.current = { apps: new Set(apps.map(app => app.id)), events: new Set(events.map(event => event.id)) }
   }, [demo.isDemoEnabled])
   const [focusApplicationClubId, setFocusApplicationClubId] = useState<string | null>(null)
 
