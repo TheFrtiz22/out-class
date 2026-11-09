@@ -1,5 +1,8 @@
 "use server";
 import {z} from "zod";
+import {Prisma} from "@prisma/client";
+import {randomUUID} from "node:crypto";
+import {editorDraftKey,editorScopeSchema} from "@/lib/editor-drafts";
 import {prisma} from "@/utils/prisma";
 import {requireClubPermission} from "@/utils/auth";
 import {authorizeClubTransaction} from "@/lib/club-transaction-authorization";
@@ -29,7 +32,26 @@ export async function previewVotingSetup(input:unknown){
 }
 export async function listVotingSetupDrafts(input:unknown){
  const {clubId}=z.object({clubId:z.string().uuid()}).strict().parse(input),{user}=await requireClubPermission(clubId,[...permissions]);
- return prisma.$transaction(async tx=>{await authorizeClubTransaction(tx,clubId,user.id,[...permissions],{readOnly:true});const rows=await tx.editorDraft.findMany({where:{userId:user.id,key:{startsWith:`voting-setup:${clubId}:`}},orderBy:{updatedAt:'desc'},take:50});return rows.flatMap(r=>{const parsed=setupDraftSchema.safeParse(r.content);return parsed.success?[{id:r.key.split(':').at(-1)!,name:parsed.data.name||'Untitled voting session',applicantCount:parsed.data.applicants.length,updatedAt:r.updatedAt}]:[]});},votingReadLimits);
+ return prisma.$transaction(async tx=>{await authorizeClubTransaction(tx,clubId,user.id,[...permissions],{readOnly:true});const rows=await tx.editorDraft.findMany({where:{userId:user.id,key:{startsWith:`voting-setup:${clubId}:`}},orderBy:{updatedAt:'desc'},take:50});
+  const drafts=rows.flatMap(r=>{const parsed=setupDraftSchema.safeParse(r.content);return parsed.success?[{id:r.key.split(':').at(-1)!,sessionId:parsed.data.sessionId,name:parsed.data.name||'Untitled voting session',applicantCount:parsed.data.applicants.length,updatedAt:r.updatedAt}]:[]});
+  // A draft whose session already exists (created, scheduled, started or being edited) is reached from that session, not "Continue setup".
+  const ids=[...new Set(drafts.flatMap(d=>[d.id,d.sessionId]).filter(id=>z.string().uuid().safeParse(id).success))];
+  const created=new Set(ids.length?(await tx.votingSession.findMany({where:{clubId,id:{in:ids}},select:{id:true}})).map(s=>s.id):[]);
+  return drafts.filter(d=>!created.has(d.id)&&!created.has(d.sessionId)).map(d=>({id:d.id,name:d.name,applicantCount:d.applicantCount,updatedAt:d.updatedAt}));},votingReadLimits);
+}
+/** Discards only the caller's own private setup draft in this club; sessions, ballots and audit history are untouched. */
+export async function discardVotingSetupDraft(input:unknown){
+ const d=z.object({clubId:z.string().uuid(),draftId:z.string().min(1).max(180).regex(/^[A-Za-z0-9-]+$/)}).strict().parse(input),{user}=await requireClubPermission(d.clubId,[...permissions]);
+ const key=editorDraftKey(editorScopeSchema.parse({kind:'voting-setup',clubId:d.clubId,resourceId:d.draftId}));
+ return clubWriteTransaction(async tx=>{
+  await authorizeClubTransaction(tx,d.clubId,user.id,[...permissions]);
+  // Same per-user, per-key serialization and revision tombstone as saveEditorDraft, so an open editor tab gets a conflict instead of resurrecting the draft.
+  await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${user.id+":"+key}, 0))::text`;
+  const where={userId_key:{userId:user.id,key}},current=await tx.editorDraft.findUnique({where});
+  if(!current||current.content==null)return {discarded:true as const};
+  await tx.editorDraft.update({where,data:{content:Prisma.DbNull,mutationId:randomUUID(),revision:current.revision+1}});
+  return {discarded:true as const};
+ },{maxWait:2_000,timeout:5_000});
 }
 export async function getVotingSessionSetup(input:unknown){
  const d=roomScope.parse(input),{user}=await requireClubPermission(d.clubId,[...permissions]);

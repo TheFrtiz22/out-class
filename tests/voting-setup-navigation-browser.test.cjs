@@ -28,3 +28,21 @@ test('a working copy saved against an older session revision shows a clear confl
   assert.equal(await page.getByRole('textbox',{name:'Session name',exact:true}).inputValue(),'Saved by the other tab');
  }finally{await browser.close();await f.close()}
 });
+
+test('opening setup persists nothing until the leader edits; created sessions drop out of Drafts; Discard draft asks and removes only the caller draft',{timeout:150000},async()=>{
+ const f=await fixture(),browser=await chromium.launch({headless:true}),page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const live=()=>f.h.state().drafts.filter(d=>d.content!=null);
+ try{
+  await page.goto(f.url+'/voting/rooms/new?actor=leader');const name=page.getByRole('textbox',{name:'Session name',exact:true});await name.waitFor({timeout:15000});await page.waitForTimeout(2000);
+  assert.equal(f.h.state().drafts.length,0,'merely opening setup must not autosave');
+  await name.fill('Leader-named draft');await page.getByText('All changes saved',{exact:true}).waitFor({timeout:10000});assert.equal(live().length,1);
+  // A draft whose session already exists, and another user's draft, never appear as Continue setup.
+  await scheduled(f);f.h.state().drafts.push({...workingCopy(0,'Already scheduled'),revision:2});f.h.state().drafts.push({...workingCopy(0,'Someone else'),userId:voterId});
+  await page.goto(f.url+'/landing?actor=leader');const drafts=page.getByRole('region',{name:'Setup drafts'});await drafts.waitFor({timeout:15000});
+  assert.equal(await drafts.getByRole('listitem').count(),1);await drafts.getByText('Leader-named draft',{exact:true}).waitFor();assert.equal(await drafts.getByText('Already scheduled').count(),0);
+  await drafts.getByRole('button',{name:'Discard draft · Leader-named draft'}).click();const dialog=page.getByRole('alertdialog');await dialog.getByText('Discard this setup draft?').waitFor();
+  await dialog.getByRole('button',{name:'Keep draft'}).click();await dialog.waitFor({state:'detached'});assert.equal(live().length,3);
+  await drafts.getByRole('button',{name:'Discard draft · Leader-named draft'}).click();await page.getByRole('alertdialog').getByRole('button',{name:'Discard draft',exact:true}).click();await drafts.waitFor({state:'detached'});
+  assert.deepEqual(live().map(d=>d.content.name).sort(),['Already scheduled','Someone else']);assert.equal(f.h.state().sessions.length,1);assert.deepEqual(errors,[]);
+ }finally{await browser.close();await f.close()}
+});
