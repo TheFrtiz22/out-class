@@ -38,5 +38,12 @@ export function useApplicationState() {
     focusApplication: noop, focusEvent: noop, focusNotification: noop, markNotificationRead: async () => true, syncTaskNotifications: noop, syncDurableNotifications: noop, durableUnread: 1 }
 }
 export function useDemoMode() { return { isDemoEnabled: true, allowed: false } }
+// Home's Suggested clubs: one saved club and a small public directory (the app's root layout provides CorkboardProvider).
+const directory = [
+  { id: 'fixture-saved', name: 'Virginia Consulting Group', category: 'Consulting', tags: ['Strategy'], pitch: '', logoText: 'VC', color: '#142d45', acceptanceRate: null, aumValue: null, timeCommitment: null, source: 'preview' },
+  { id: 'fixture-suggested', name: 'Impact Consulting', category: 'Consulting', tags: ['Strategy'], pitch: '', logoText: 'IC', color: '#142d45', acceptanceRate: null, aumValue: null, timeCommitment: null, source: 'preview' },
+]
+export function useCorkboard() { return { items: scenario() === 'full' ? [{ club: directory[0], savedAt: iso(at(-day)) }] : [], loading: false, authenticated: true, error: '', pending: new Set(), refresh: async () => {}, saveClub: async () => {} } }
+export async function getClubDirectory() { return { clubs: directory } }
 export async function getDashboardReviewQueue(clubId, roundId) { await new Promise(resolve => setTimeout(resolve, 200)); return [{ id: 'queue-r1', label: 'Applicant 7Q2K', round: 'Written review', anonymous: true }] }
 export function ApplicantReviewPreview() { return null }
