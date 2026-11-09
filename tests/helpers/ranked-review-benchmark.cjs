@@ -22,13 +22,14 @@ const prose = n => "Synthetic answer text about a fictional applicant's interest
 const relations = new Set(["round", "student", "studentProfile", "experiences", "evaluations", "interviewAssignments", "member", "answers", "question", "bookings", "slot", "recruitmentOffer"]);
 
 /** Full fictional application rows (every column and relation) for `size` applicants, `scored` submitted evaluations each. */
-function syntheticApplications(size, scored = 4) {
+function syntheticApplications(size, scored = 4, { anonymousReview = false } = {}) {
+  const shownRound = { ...round, anonymousReview };
   return Array.from({ length: size }, (_, i) => {
     const id = uuid("50000000", i + 1), studentId = uuid("60000000", i + 1);
     const status = ["INTERVIEWING", "IN_REVIEW", "ACCEPTED", "REJECTED", "WAITLISTED"][i % 5]; // decided applicants stay in the list
     const evaluations = interviewers.slice(0, scored + 1).map((m, j) => ({ id: uuid("70000000", i * 10 + j), applicationId: id, interviewerId: m.id, roundId, score: 1 + ((i * 7 + j * 3) % 19) / 2, submittedAt: j < scored ? new Date(1e12 + i) : null, createdAt: new Date(1e12 + j), updatedAt: new Date(1e12 + j), notes: prose(6), applicantQuestions: prose(2), criteria: { communication: 4, leadership: 3 } }));
     return { id, clubId, roundId: i % 20 === 19 ? otherRoundId : roundId, studentId, status, recruitmentCycleId: cycleId, submittedAt: new Date(1e12), createdAt: new Date(1e12), updatedAt: new Date(1e12), decisionVersion: 1, decisionStateRevision: 1, anonymousReviewText: null,
-      round, recruitmentOffer: status === "ACCEPTED" ? { status: "PENDING", expiresAt: new Date(2e12) } : null,
+      round: shownRound, recruitmentOffer: status === "ACCEPTED" ? { status: "PENDING", expiresAt: new Date(2e12) } : null,
       student: { id: studentId, email: `applicant${i}@example.test`, role: "STUDENT", createdAt: new Date(0), disabledAt: null,
         studentProfile: { id: uuid("80000000", i + 1), userId: studentId, firstName: `Synthetic${i}`, lastName: "Applicant", computingId: `syn${i}`, major: "Fictional Studies", gradYear: 2028, gpa: 3.5, satScore: 1400, actScore: null, actEnglish: null, actMath: null, actReading: null, actScience: null, highSchool: "Example High", gender: null, pronouns: null, transferStudent: false, scholarStatus: null, linkedinUrl: null, bio: prose(4), resumeUrl: null, headshotUrl: i % 3 ? null : `${studentId}/headshot.png`,
           experiences: Array.from({ length: 3 }, (_, k) => ({ id: uuid("90000000", i * 10 + k), studentProfileId: uuid("80000000", i + 1), title: "Fictional role", subtitle: "Example org", period: "2025" })) } },
@@ -55,30 +56,30 @@ function shape(row, args = {}) {
   return out;
 }
 
-function harness(rows) {
-  const stats = { fetchedBytes: 0, applicationQueries: 0, queries: 0 };
+function harness(rows, { member = viewer } = {}) {
+  const stats = { fetched: [], applicationQueries: 0, queries: 0, fetchedBytes() { return this.fetched.reduce((n, r) => n + JSON.stringify(r).length, 0); } };
   const permissions = load("lib/permissions.ts");
   const tx = {
     $queryRaw: async () => { stats.queries++; return []; },
-    pipelineRound: { findMany: async () => { stats.queries++; return [round]; }, findFirst: async () => { stats.queries++; return { id: roundId, configuration: round.configuration, anonymousReview: false }; } },
+    pipelineRound: { findMany: async () => { stats.queries++; return [rows[0]?.round ?? round]; }, findFirst: async () => { stats.queries++; return { id: roundId, configuration: round.configuration, anonymousReview: false }; } },
     recruitmentCycle: { findMany: async () => { stats.queries++; return [{ id: cycleId, name: "Fall" }]; } },
     application: { findMany: async args => {
       stats.queries++; stats.applicationQueries++;
       const where = args.where || {};
-      const result = rows.filter(r => r.clubId === where.clubId && (!where.roundId || r.roundId === where.roundId) && r.status !== "DRAFTING").map(r => shape(r, args));
-      stats.fetchedBytes += JSON.stringify(result).length;
+      const result = rows.filter(r => r.clubId === where.clubId && (!where.roundId || r.roundId === where.roundId) && (!where.round || r.round.anonymousReview === where.round.anonymousReview) && r.status !== "DRAFTING").map(r => shape(r, args));
+      stats.fetched.push(result); // sized after timing, so measuring never inflates the timed read
       return result;
     } },
   };
   const auth = { requireClubPermission: async (club, required) => {
-    if (club !== clubId || required.some(p => !permissions.hasPermission(viewer, p))) throw Error("Denied");
-    return { user: { id: viewer.userId }, membership: viewer };
+    if (club !== clubId || required.some(p => !permissions.hasPermission(member, p))) throw Error("Denied");
+    return { user: { id: member.userId }, membership: member };
   } };
   const mocks = { "@/utils/auth": auth, "@/utils/prisma": { prisma: { $transaction: async fn => fn(tx) } }, "next/cache": { revalidatePath() {}, revalidateTag() {} } };
-  return { stats, crm: load("actions/crm.ts", mocks), ranked: load("lib/ranked-review.ts") };
+  return { stats, crm: load("actions/crm.ts", mocks), ranked: load("lib/ranked-review.ts"), read: load("lib/ranked-review-read.ts") };
 }
 
 const median = values => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
 async function time(fn, runs = 5) { const samples = []; let result; for (let i = 0; i < runs; i++) { const t = performance.now(); result = await fn(); samples.push(performance.now() - t); } return { ms: median(samples), result }; }
 
-module.exports = { load, harness, syntheticApplications, time, median, clubId, roundId, cycleId, viewer };
+module.exports = { load, harness, syntheticApplications, time, median, clubId, roundId, cycleId, viewer, interviewers };

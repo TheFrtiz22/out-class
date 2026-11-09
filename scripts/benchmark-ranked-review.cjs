@@ -10,16 +10,16 @@ async function measure(size, scored = 4) {
   const out = { size };
   // Legacy: the full CRM detail read the Ranked view used before this change.
   const legacyRead = () => h.crm.getClubPipeline(b.clubId, { roundId: b.roundId });
-  await legacyRead(); h.stats.fetchedBytes = 0;
+  await legacyRead(); h.stats.fetched = [];
   const legacy = await b.time(legacyRead);
-  out.legacyServerMs = +legacy.ms.toFixed(1); out.legacyFetchedKB = Math.round(h.stats.fetchedBytes / 5 / 1024); out.legacyPayloadKB = Math.round(JSON.stringify(legacy.result).length / 1024);
+  out.legacyServerMs = +legacy.ms.toFixed(1); out.legacyFetchedKB = Math.round(h.stats.fetchedBytes() / 5 / 1024); out.legacyPayloadKB = Math.round(JSON.stringify(legacy.result).length / 1024);
   if (h.crm.getRankedReviewRound) {
     const read = () => h.crm.getRankedReviewRound(b.clubId, b.roundId);
-    await read(); h.stats.fetchedBytes = 0;
+    await read(); h.stats.fetched = [];
     const current = await b.time(read);
-    out.serverMs = +current.ms.toFixed(1); out.fetchedKB = Math.round(h.stats.fetchedBytes / 5 / 1024); out.payloadKB = Math.round(JSON.stringify(current.result).length / 1024);
+    out.serverMs = +current.ms.toFixed(1); out.fetchedKB = Math.round(h.stats.fetchedBytes() / 5 / 1024); out.payloadKB = Math.round(JSON.stringify(current.result).length / 1024);
     if (h.ranked.rankedReviewView) {
-      const rows = h.ranked.rankedCandidateRows(current.result, b.roundId);
+      const rows = current.result.applications.filter(a => a.roundId === b.roundId).map(app => ({ id: app.id, cycle: app.recruitmentCycleId || "no-cycle", visible: !!app.roundScore, average: app.roundScore?.average ?? null, submitted: app.roundScore?.submitted ?? 0 }));
       const view = await b.time(() => h.ranked.rankedReviewView(rows.filter(r => r.cycle === b.cycleId), bands));
       out.projectionMs = +view.ms.toFixed(2);
     }
