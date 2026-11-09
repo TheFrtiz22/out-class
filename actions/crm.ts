@@ -58,7 +58,12 @@ export async function getClubPipelineSelection(clubId: string, input: PipelinePa
 
 async function loadPipelineDetails(tx: AppTransactionClient, where: Prisma.ApplicationWhereInput, membership: PipelineMembership) {
   const applications = await tx.application.findMany({ where, include: pipelineDetailInclude });
-  return applications.map(raw => pipelineDetailProjection(raw, membership));
+  // A member who stepped out of an applicant cannot evaluate them; the server also refuses.
+  const recused = new Set((applications.length ? await tx.applicantRecusal.findMany({ where: { memberId: membership.id, liftedAt: null, applicationId: { in: applications.map(app => app.id) } }, select: { applicationId: true } }) : []).map(r => r.applicationId));
+  return applications.map(raw => {
+    const projected = pipelineDetailProjection(raw, membership);
+    return recused.has(raw.id) ? { ...projected, canEvaluate: false, recused: true } : projected;
+  });
 }
 
 async function readClubPipeline(clubId: string, input: z.infer<typeof pipelineFilter>) {

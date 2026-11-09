@@ -35,6 +35,7 @@ function fixture() {
       findFirst: async ({ where, select }) => { if(select)state.narrowReads++; return matches(where) ? app : null; }
     },
     evaluation: {findMany:async ({where})=>matches(where.application) && where.applicationId.in.includes(app.id) ? app.evaluations.filter(e=>e.submittedAt).map(e=>({...e,applicationId:app.id})):[]},
+    applicantRecusal: {findFirst:async()=>null,findMany:async()=>[]},
     interviewPanelAssignment: {findMany:async ({where})=>matches(where.application) && where.applicationId.in.includes(app.id) ? app.interviewAssignments.map(e=>({...e,applicationId:app.id})):[]},
     clubMember: { findFirst: async () => membership(), findUnique: async({where})=>state.clubAccess && where.userId_clubId.clubId===clubId ? membership():null },
     applicantObservation: { findMany: async () => [] }

@@ -21,6 +21,7 @@ import { type ApplicantSort } from "@/lib/live-applicant-sorting"
 import { applicantLane } from "@/lib/applicant-board"
 import { LiveApplicantList, LiveApplicantKanban, LiveDecisionList, type ApplicantLane } from "./live-applicant-views"
 import { useDemoMode } from "@/contexts/demo-context"
+import { ApplicantRecusal } from "@/components/applicant-recusal"
 import { RecruitmentAttendanceSummary } from "@/components/recruitment-attendance-summary"
 import { RevealApplicant } from "@/components/reveal-applicant"
 import { hasPermission } from "@/lib/permissions"
@@ -799,6 +800,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                 <SheetDescription>
                   {active.studentId.startsWith("anonymous-") ? "Anonymous review · identity and appointments withheld" : [active.student.studentProfile?.major || "Academic profile not provided", active.student.email].filter(Boolean).join(" · ")}
                 </SheetDescription>
+                <ApplicantRecusal key={active.id} clubId={membership.clubId} applicationId={active.id} anonymous={active.studentId.startsWith("anonymous-")} onChanged={() => setRevision(v => v + 1)} />
                 <Button variant="ghost" className="oc-dossier-jump" onClick={() => document.getElementById("dossier-evaluation")?.focus()}>Jump to review workspace <ArrowRight size={15} aria-hidden="true" /></Button>
               </SheetHeader>
               {(interviewCapabilities(membership).readClosing || interviewCapabilities(membership).moderateResume) && <nav aria-label="Applicant interview records" className="flex flex-wrap gap-x-4 gap-y-1 text-sm">

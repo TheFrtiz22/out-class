@@ -38,6 +38,7 @@ for(const [name,access,mode] of personas) test(`${name}: server boundaries ignor
     user:{findUnique:async()=>null,upsert:async()=>({id:actorId,email:'actor@virginia.edu',email_confirmed_at:'2026-01-01',role:'CLUB_ADMIN'})},
     clubMember:{findUnique:async({where})=>where.userId_clubId.clubId===clubId?membership:null,findMany:async()=>[]},
     pipelineRound:{findMany:async({where})=>{assert.equal(where.clubId,clubId);return [privateApp.round]}},
+    applicantRecusal:{findMany:async()=>[]},
     application:{findMany:async({where})=>{assert.equal(where.clubId,clubId);if(name==='anonymous reviewer')assert.deepEqual(where.round,{anonymousReview:true});return [privateApp]}},
     clubInvitation:{findMany:async({where})=>{assert.equal(where.clubId,clubId);return []}},
     clubTask:{findMany:async({where,include})=>{assert.equal(where.clubId,clubId);if(!access?.permissions.includes('tasks.manage')) {assert.deepEqual(where.assignments,{some:{memberId:membership.id}});assert.deepEqual(include.assignments.where,{memberId:membership.id})}return []}},
