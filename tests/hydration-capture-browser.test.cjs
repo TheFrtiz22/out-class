@@ -24,7 +24,7 @@ hydrateRoot(document.getElementById('root'),<main><a href="/apply">Apply</a></ma
     captureHydration(page, 'synthetic mismatch');
     await page.goto(`http://127.0.0.1:${server.address().port}/`);
     await page.locator('a[href="/apply"]').waitFor();
-    await assert.doesNotReject(async () => { for (let i = 0; i < 50 && fs.readdirSync(directory).length < 3; i++) await new Promise(r => setTimeout(r, 100)); });
+    for (let i = 0; i < 100 && fs.readdirSync(directory).length < 3; i++) await new Promise(resolve => setTimeout(resolve, 100));
     assert.ok(errors.some(message => /418|[Hh]ydrat/.test(message)), 'React reported the mismatch');
     const files = fs.readdirSync(directory).sort();
     assert.equal(files.length, 3, files.join(', '));

@@ -79,7 +79,7 @@ export function ClubProfileView({
   const upcoming = events
     .filter(
       (event) =>
-        event.clubId === club.id && event.type !== "Deadline" && eventStart(event) >= new Date(),
+        event.clubId === club.id && event.type !== "Deadline" && eventStart(event) >= new Date(now),
     )
     .sort((a, b) => eventStart(a).getTime() - eventStart(b).getTime())
   const deadline = !real
@@ -88,12 +88,12 @@ export function ClubProfileView({
           (event) =>
             event.clubId === club.id &&
             event.type === "Deadline" &&
-            eventStart(event) >= new Date(),
+            eventStart(event) >= new Date(now),
         )
         .sort((a, b) => eventStart(a).getTime() - eventStart(b).getTime())[0]
     : undefined
   const publicEvents = (club.publicEvents || []).filter(
-    (event) => new Date(event.endDate || event.date) >= new Date(),
+    (event) => new Date(event.endDate || event.date) >= new Date(now),
   )
   const roster =
     !real && (!customized || profile.showDirectory)

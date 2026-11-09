@@ -1,19 +1,29 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useSyncExternalStore } from "react"
+
+// Offset from this device's clock to the server's, measured when a server-rendered view hydrates. It
+// includes the render-to-hydration delay (seconds), which is fine for minute-level deadline display.
+let measuredOffset = 0
+const subscribeNever = () => () => {}
 
 /**
- * A minute clock anchored to the server's render time. The first render (server and hydration) uses
- * `serverNow`, so time-dependent markup such as deadline state matches the server's HTML even when the
- * device clock is off; later ticks keep the offset measured at hydration. Without `serverNow` (a view
- * opened client-side) it is the device clock.
+ * A minute clock for deadline and event state. While a server-rendered view hydrates, the first render
+ * uses `serverNow`, the server's render time, so the markup matches the server's HTML even when the
+ * device clock is off. Later renders and later mounts (e.g. returning to the profile from another view)
+ * use the device clock plus the offset measured at that hydration, never the stale render time.
+ * Without a hydration anchor it is the device clock.
  */
 export function useServerAnchoredNow(serverNow?: number, tickMs = 60_000) {
-  const [offset] = useState(() => serverNow === undefined ? 0 : serverNow - Date.now())
-  const [now, setNow] = useState(() => serverNow ?? Date.now())
+  const hydrating = useSyncExternalStore(subscribeNever, () => false, () => true)
+  const [now, setNow] = useState(() => {
+    if (serverNow === undefined || !hydrating) return Date.now() + measuredOffset
+    if (typeof window !== "undefined") measuredOffset = serverNow - Date.now()
+    return serverNow
+  })
   useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now() + offset), tickMs)
+    const timer = setInterval(() => setNow(Date.now() + measuredOffset), tickMs)
     return () => clearInterval(timer)
-  }, [offset, tickMs])
+  }, [tickMs])
   return now
 }

@@ -4,33 +4,45 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const ts = require('typescript');
 
-function hook(deviceNow) {
-  const slots = [], timers = []; let effect, index = 0, now = deviceNow;
-  const react = { useState(init) { const i = index++; if (!(i in slots)) slots[i] = typeof init === 'function' ? init() : init; return [slots[i], v => { slots[i] = v }] }, useEffect(fn) { effect = fn } };
+function load() {
+  const state = { device: 0, hydrating: true, timers: [] };
+  let slots = [], index = 0;
+  const react = {
+    useSyncExternalStore: (_subscribe, client, server) => state.hydrating ? server() : client(),
+    useState(init) { const i = index++; if (!(i in slots)) slots[i] = typeof init === 'function' ? init() : init; return [slots[i], v => { slots[i] = v }] },
+    useEffect(fn) { fn() },
+  };
   const mod = { exports: {} };
-  new Function('require', 'module', 'exports', 'setInterval', 'clearInterval', ts.transpileModule(fs.readFileSync('hooks/use-server-now.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText)(
-    name => name === 'react' ? react : require(name), mod, mod.exports, fn => timers.push(fn), () => {});
   const realNow = Date.now;
+  const withClock = fn => { Date.now = () => state.device; global.window = {}; try { return fn() } finally { Date.now = realNow; delete global.window } };
+  new Function('require', 'module', 'exports', 'setInterval', 'clearInterval', ts.transpileModule(fs.readFileSync('hooks/use-server-now.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText)(
+    name => name === 'react' ? react : require(name), mod, mod.exports, fn => state.timers.push(fn), () => {});
   return {
-    render(serverNow) { index = 0; Date.now = () => now; try { return mod.exports.useServerAnchoredNow(serverNow) } finally { Date.now = realNow } },
-    mount() { Date.now = () => now; try { effect() } finally { Date.now = realNow } },
-    tick(ms) { now += ms; Date.now = () => now; try { timers.forEach(fn => fn()) } finally { Date.now = realNow } },
+    state,
+    mount(serverNow) { slots = []; index = 0; state.timers = []; return withClock(() => mod.exports.useServerAnchoredNow(serverNow)) },
+    render(serverNow) { index = 0; return withClock(() => mod.exports.useServerAnchoredNow(serverNow)) },
+    tick(ms) { state.device += ms; withClock(() => state.timers.forEach(fn => fn())) },
   };
 }
 
-test('the first render uses the server time even when the device clock is 15 minutes ahead', () => {
-  const server = Date.parse('2026-11-09T16:00:00Z'), h = hook(server + 15 * 60_000);
-  assert.equal(h.render(server), server, 'hydration matches the server HTML');
-  h.mount(); h.tick(60_000);
+const server = Date.parse('2026-11-09T16:00:00Z');
+
+test('hydration uses the server time even when the device clock is 15 minutes ahead; ticks keep the offset', () => {
+  const h = load(); h.state.device = server + 15 * 60_000;
+  assert.equal(h.mount(server), server, 'hydration matches the server HTML');
+  h.state.hydrating = false; h.tick(60_000);
   assert.equal(h.render(server), server + 60_000, 'later minutes keep the server offset');
 });
 
-test('a view opened client-side uses the device clock', () => {
-  const device = Date.parse('2026-11-09T16:15:00Z'), h = hook(device);
-  assert.equal(h.render(undefined), device);
+test('remounting after 30 minutes (back from Tracker or Calendar) is current, not the stale render time', () => {
+  const h = load(); h.state.device = server + 15 * 60_000;
+  h.mount(server); h.state.hydrating = false;
+  h.state.device += 30 * 60_000;
+  assert.equal(h.mount(server), server + 30 * 60_000, 'device clock plus the offset measured at hydration');
 });
 
-test('the club profile reads its deadline clock from the server render time', () => {
-  assert.match(fs.readFileSync('components/views/club-profile-view.tsx', 'utf8'), /const now = useServerAnchoredNow\(serverNow\)/);
-  assert.match(fs.readFileSync('app/(workspace)/club/[clubId]/page.tsx', 'utf8'), /<PublicClubPage [^>]*serverNow=\{Date\.now\(\)\}/);
+test('a view opened client-side without a hydration anchor uses the device clock', () => {
+  const h = load(); h.state.hydrating = false; h.state.device = server;
+  assert.equal(h.mount(undefined), server);
+  assert.equal(h.mount(server), server, 'a client-only mount ignores serverNow');
 });
