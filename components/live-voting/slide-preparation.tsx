@@ -4,7 +4,7 @@ import {useDemoMode} from "@/contexts/demo-context";
 import {getVotingSlidePreparation,getVotingSlidePreparationApplicant,saveVotingSlidePreparation} from "@/lib/voting-slide-preparation-api";
 import {getLiveVotingPresentation} from "@/lib/voting-room-api";
 import {maxQuoteLength,maxSlideHighlights,maxSummaryLength,slideSourceTypeLabels,slideSourceTypes,type SlideSource} from "@/lib/voting-slide-preparation";
-import {liveRoomPath} from "@/lib/voting-room";
+import {liveRoomPath,isStalePresentation} from "@/lib/voting-room";
 import {Button} from "@/components/ui/button";
 import {LoadingState} from "@/components/ui/loading-state";
 import {ArrowDown,ArrowUp,TriangleAlert,Trash2,Check,Eye} from "@/components/icons";
@@ -107,7 +107,7 @@ function ApplicantPreparation({clubId,sessionId,applicationId,name,onSaved}:{clu
   const hidden=data.hiddenCount??0,full=items.length+hidden>=maxSlideHighlights,editable=data.editable;
   const add=(source:SlideSource,mode:"QUOTE"|"SUMMARY",text:string)=>{if(full)return;change([...items,{id:crypto.randomUUID(),mode,text,source}]);if(announce.current)announce.current.textContent=`${mode==="QUOTE"?"Excerpt":"Summary"} added. ${items.length+1} of ${maxSlideHighlights} highlights.`;};
   const move=(i:number,by:number)=>{const next=[...items];[next[i],next[i+by]]=[next[i+by],next[i]];change(next);};
-  const showPreview=async()=>{setPreviewState("loading");try{setPreview(await getLiveVotingPresentation({clubId,sessionId,applicationId,preparation:true}));setPreviewState("");}catch{setPreviewState("error");}};
+  const showPreview=async()=>{setPreviewState("loading");try{const value=await getLiveVotingPresentation({clubId,sessionId,applicationId,preparation:true});if(isStalePresentation(value))throw Error("Presentation changed.");setPreview(value);setPreviewState("");}catch{setPreviewState("error");}};
 
   return <section className="vr-prep-main" aria-labelledby="prep-applicant">
     <div className="flex flex-wrap items-center justify-between gap-2"><h2 id="prep-applicant" className="text-lg font-semibold">{name}</h2><SaveStatus save={save} dirty={dirty} onRetry={()=>void persist(items,data.revision)} onReload={()=>{writeBackup(key,null);request.current=null;setSave({state:"idle"});setReload(v=>v+1);}}/></div>

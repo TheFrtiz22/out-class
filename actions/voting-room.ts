@@ -8,7 +8,7 @@ import { requireClubPermission } from "@/utils/auth";
 import { clubWriteTransaction, votingWriteLimits } from "@/utils/club-write-transaction";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { hasPermission } from "@/lib/permissions";
-import { createRoomSchema, roomScope, roomCommandSchema, roomBallotSchema, uniqueSelection, roomOutcomes, storedChoice, recommendedOutcome,roomPresentationSchema,roomDisplayConfig, roomCommandResultSchema } from "@/lib/voting-room";
+import { createRoomSchema, roomScope, roomCommandSchema, roomBallotSchema, uniqueSelection, roomOutcomes, storedChoice, recommendedOutcome,roomPresentationSchema,roomDisplayConfig, roomCommandResultSchema, VotingPresentationChanged } from "@/lib/voting-room";
 import { loadVotingRoom, requireRoomLeader, roomAuthority, projectVotingRoom, roomFingerprint, type LiveRoom } from "@/utils/voting-room";
 import { getApplicantDisplay } from "@/actions/applicant-intelligence";
 import { z } from "zod";
@@ -106,7 +106,14 @@ export async function getLiveVotingRoom(input:unknown) {
   return result.snapshot;
 }
 
+/** A viewer asked for an applicant the room has already moved past. Typed so the client
+ * refreshes the room instead of the server action failing with a 500; carries no applicant data. */
+export type StalePresentation={stale:true};
 export async function getLiveVotingPresentation(input:unknown) {
+  try { return await readLivePresentation(input); }
+  catch(e) { if(e instanceof VotingPresentationChanged)return {stale:true} as StalePresentation; throw e; }
+}
+async function readLivePresentation(input:unknown) {
   const d=roomScope.extend({applicationId:roomBallotSchema.shape.applicationId,preparation:z.boolean().optional()}).parse(input);
   // The canonical display action independently rechecks session/current candidate,
   // cycle, anonymity, field and submitted-feedback permissions in its transaction.
@@ -115,7 +122,8 @@ export async function getLiveVotingPresentation(input:unknown) {
     const m=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review"],{readOnly:true});
     const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId);const role=roomAuthority(s,m,round.anonymousReview);
     const app=await tx.application.findFirst({where:{id:d.applicationId,clubId:d.clubId,roundId:s.roundId,recruitmentCycleId:s.cycleId,status:{not:"DRAFTING"}}});
-    if(!app||!s.candidates.some(c=>c.applicationId===app.id)||(!role.leader&&s.activeApplicationId!==app.id)||display.anonymous!==round.anonymousReview)throw Error("Presentation changed. Reload the page to continue.");
+    if(app&&s.candidates.some(c=>c.applicationId===app.id)&&!role.leader&&s.activeApplicationId!==app.id)throw new VotingPresentationChanged();
+    if(!app||!s.candidates.some(c=>c.applicationId===app.id)||display.anonymous!==round.anonymousReview)throw Error("Presentation changed. Reload the page to continue.");
     const parsed=roomPresentationSchema.safeParse(s.presentationOptions),options=parsed.success?parsed.data:null;
     const highlight=await votingSelectedHighlight(tx,{clubId:d.clubId,applicationId:d.applicationId,roundId:s.roundId},user.id,!!options?.fields.includes("resumeHighlight"),display.anonymous,options?.highlights[d.applicationId]);
     const evidence=await votingSelectedEvidence(tx,d.clubId,d.applicationId,user.id,options?.fields??[],display.anonymous,s.roundId);

@@ -45,3 +45,22 @@ test('the leader catches up when its tab becomes visible and per-ballot extra re
  assert.doesNotMatch(meeting,/room\.revision,reload\]|room\.cycleId,room\.revision\]/);
  assert.match(meeting,/send\("CLOSE_VOTING",\{confirmed:true,applicationId:room\.currentApplicantId!,passNumber:room\.passNumber\}\)/);
 });
+
+test('a member asking for an applicant the room already left gets a typed stale result, not a 500',async()=>{
+ const h=harness();await h.create({presentationOptions:{fields:['name'],highlights:{}}});ok(await h.command('START'));
+ h.tx.interviewResumeAnnotation={findMany:async()=>[]};
+ const shared=load('lib/voting-room.ts'),display=id=>({applicationId:id,roundId:h.round.id,anonymous:false,configured:['name'],visible:['name'],withheld:[],sections:[{field:'name',label:'Name',items:['Synthetic applicant']}],photo:null,links:[],observations:[]});
+ let thrown=null;
+ const room=load('actions/voting-room.ts',{...h.mocks,'@/lib/voting-room':shared,'@/actions/applicant-intelligence':{getApplicantDisplay:async({applicationId})=>{if(thrown)throw thrown;return display(applicationId)}}});
+ h.as(voterId);
+ // Current applicant: the presentation is returned as before.
+ assert.equal((await room.getLiveVotingPresentation({...h.scope,applicationId:apps[0]})).stale,undefined);
+ // The leader advanced: the old applicant's request returns {stale:true} with no applicant data.
+ assert.deepEqual(await room.getLiveVotingPresentation({...h.scope,applicationId:apps[1]}),{stale:true});
+ // The canonical display check raising the same race is converted too; other failures still throw.
+ thrown=new shared.VotingPresentationChanged();assert.deepEqual(await room.getLiveVotingPresentation({...h.scope,applicationId:apps[0]}),{stale:true});
+ thrown=Error('Review access required.');await assert.rejects(room.getLiveVotingPresentation({...h.scope,applicationId:apps[0]}),/Review access required/);
+ // The member view refetches the room instead of showing "Applicant information unavailable".
+ assert.match(fs.readFileSync('components/live-voting/room-presentation.tsx','utf8'),/isStalePresentation\(data\)/);
+ assert.match(fs.readFileSync('components/live-voting/room-view.tsx','utf8'),/onStale=\{refresh\}/);
+});
