@@ -2,7 +2,6 @@
 
 import { useEffect, useId, useRef, useState, type RefObject } from "react"
 import { usePathname } from "next/navigation"
-import Image from "next/image"
 import Link from "next/link"
 import { OutClassLogo } from "@/components/outclass-logo"
 import { Button } from "@/components/ui/button"
@@ -82,7 +81,7 @@ export function PublicNavigation({ hero = false, journey, navigationRef }: {
         <div className="oc-public-nav-row">
           <Link prefetch={false} className="oc-public-logo" href="/" aria-label="OutClass home" onClick={close}>
             <span className="oc-public-logo-light"><OutClassLogo variant="light" /></span>
-            {hero && <span className="oc-public-logo-ivory" aria-hidden="true"><Image src="/brand/05-wordmark-two-color-dark.svg" alt="" width={466} height={105} priority unoptimized /></span>}
+            {hero && <span className="oc-public-logo-ivory" aria-hidden="true"><OutClassLogo variant="dark" /></span>}
           </Link>
           {journey && <div className="oc-public-journey oc-public-journey-desktop" inert={!journey.merged} aria-hidden={!journey.merged}>
             <PerspectiveSwitcher compact perspective={journey.perspective} onChange={journey.onChange} />
