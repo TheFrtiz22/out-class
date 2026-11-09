@@ -40,7 +40,7 @@ function FaqEntry({ id, question, answer }: { id: string; question: string; answ
     animation.current = current
     current.onfinish = () => { element.open = opening; animation.current = null }
   }
-  return <details id={`faq-answer-${id}`} ref={details} className="oc-faq-entry">
+  return <details id={`faq-answer-${id}`} ref={details} className="oc-faq-entry oc-public-glass">
     <summary onClick={toggle}>{question}<span className="oc-faq-indicator" aria-hidden="true" /></summary>
     <div ref={body} className="oc-faq-answer"><p>{answer}</p></div>
   </details>

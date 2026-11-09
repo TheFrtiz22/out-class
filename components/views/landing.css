@@ -41,50 +41,6 @@
   align-items: center;
   gap: 12px;
 }
-.oc-story-eyebrow {
-  color: var(--muted-foreground);
-  font-size: var(--oc-size-11);
-  font-weight: var(--oc-weight-medium);
-  letter-spacing: 0.055em;
-  margin: 0 0 20px;
-}
-.oc-story-eyebrow > span {
-  margin-right: 12px;
-  color: var(--brand-ink);
-  font-variant-numeric: tabular-nums;
-}
-.oc-final-invitation h2 {
-  margin: 0;
-  font-family: var(--oc-font-display);
-  font-size: var(--oc-text-section);
-  line-height: var(--oc-leading-heading);
-  font-weight: var(--oc-weight-regular);
-  letter-spacing: var(--oc-tracking-heading);
-  text-wrap: balance;
-}
-.oc-final-invitation {
-  text-align: center;
-  padding: 72px 24px;
-  background: var(--background);
-  border-block: 1px solid var(--border);
-}
-.oc-final-invitation h2 {
-  margin-inline: auto;
-}
-.oc-final-invitation > p[data-motion="body"] {
-  margin: 20px 0 26px;
-  font-size: var(--oc-size-14);
-  color: var(--muted-foreground);
-}
-.oc-final-invitation [data-slot="button"] {
-  min-height: 46px;
-}
-.oc-invitation-note {
-  margin-top: 18px;
-  margin-inline: auto;
-  font-size: var(--oc-size-11);
-  color: var(--muted-foreground);
-}
 @media (max-width: 800px) {
   .oc-header {
     height: 76px;

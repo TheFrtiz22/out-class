@@ -78,7 +78,7 @@ export function useLandingPerspective(initial: LandingPerspective = DEFAULT_LAND
       const bounds = element.getBoundingClientRect()
       return bounds.top <= line && bounds.bottom > line
     })
-    const afterJourney = [".oc-how-introduction", ".oc-journey-controls-slot", ".oc-journey-index", ".oc-journey-thread", ".oc-final-invitation", ".oc-public-footer", ".oc-photo-credit"].find(selector => {
+    const afterJourney = [".oc-how-introduction", ".oc-journey-controls-slot", ".oc-journey-index", ".oc-journey-thread", ".oc-footer-invitation", ".oc-public-footer", ".oc-photo-credit"].find(selector => {
       const bounds = document.querySelector(selector)?.getBoundingClientRect()
       return bounds && bounds.top <= line && bounds.bottom > line
     })

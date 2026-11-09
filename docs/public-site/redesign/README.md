@@ -74,5 +74,9 @@ Built from `Main.mockup.html`; evidence and deviations in [`hero/README.md`](her
 The decision moment, "A season on Grounds" and the feature grid are built; evidence in
 [`moments/README.md`](moments/README.md).
 
+## Footer, "Built at UVA" and FAQ
+
+Built; evidence in [`footer/README.md`](footer/README.md).
+
 Still to do, page by page: the rest of the homepage from `Main.mockup.html`, then the other public pages,
 and remove brand orange from every place except the two allowed by rule 4.

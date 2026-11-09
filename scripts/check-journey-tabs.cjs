@@ -52,7 +52,7 @@ const state = async p => { await p.waitForTimeout(150); return p.evaluate(() => 
     const overflow = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth)
     const animated = await p.evaluate(() => [...document.querySelectorAll('.oc-scattered *, #product-journey *')].filter(e => { const s = getComputedStyle(e); return s.animationName !== 'none' && parseFloat(s.animationDuration) > 0 || parseFloat(s.transitionDuration) > .02 }).map(e => e.className).slice(0, 5))
     const axe = await new AxeBuilder({ page: p }).include('.oc-scattered').include('#about').analyze()
-    for (const sel of ['.oc-scattered', '#about']) { const el = p.locator(sel); await el.scrollIntoViewIfNeeded(); if (w !== 360) await el.screenshot({ path: `${out}/${sel.replace(/[#.]/, '')}-${a}-${w}.png` }) }
+    for (const sel of ['.oc-scattered', '#about']) { const el = p.locator(sel); await el.scrollIntoViewIfNeeded(); if (w !== 360 && out) await el.screenshot({ path: `${out}/${sel.replace(/[#.]/, '')}-${a}-${w}.png` }) }
     log(`${w} ${a}: overflow=${overflow} reducedMotionAnimated=${JSON.stringify(animated)} axe=${axe.violations.map(v => v.id + ':' + v.nodes.length).join(',') || 0}`)
     assert.equal(overflow, 0); assert.equal(axe.violations.length, 0); await c.close() }
   await b.close()

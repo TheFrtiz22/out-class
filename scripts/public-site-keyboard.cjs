@@ -52,7 +52,7 @@ check('homepage audience toggle works from the keyboard and survives a reload (c
   assert.equal(cookie?.value, 'students')
   await page.goto(base + '/', { waitUntil: 'networkidle' })
   assert.match(await page.textContent('h1'), /Find and apply/, 'server render follows the saved preference')
-  assert.equal(await page.locator('.oc-final-invitation [data-slot="button"]').textContent(), 'Create your profile')
+  assert.equal(await page.locator('.oc-footer-invitation [data-slot="button"]').textContent(), 'Create your profile')
 })
 
 check('sign in: fields, Forgot password and the submit button are reachable in order; errors are announced', async browser => {

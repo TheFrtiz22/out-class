@@ -1,7 +1,6 @@
 "use client"
 
 import type { MouseEvent } from "react"
-import { ArrowUp } from "@/components/icons"
 import type { LandingPerspective } from "./journey-content"
 
 const scrollBehavior = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" as const : "smooth" as const
@@ -38,5 +37,5 @@ export function FooterBackToTop() {
       // Preserve audience and campaign parameters without triggering another navigation.
       window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#top`)
     }
-  }}>Back to Top <ArrowUp size={15} aria-hidden="true" /></a>
+  }}>Back to Top</a>
 }
