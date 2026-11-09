@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ClubLogo } from "@/components/club-logo"
+import { DirectoryLogo } from "@/components/clubs/directory-logo"
+import { useSuggestedClubs } from "@/hooks/use-suggested-clubs"
 import { StatusPill } from "@/components/ui/status-pill"
 import { useApplicationState } from "@/lib/application-state"
 import { useAuth } from "@/contexts/auth-context"
@@ -116,6 +118,10 @@ export function StudentDashboardView({
     onNavigate("calendar")
   }
 
+  // Called before the loading return so hook order never changes between renders.
+  const { suggestions, hasSignal } = useSuggestedClubs(null, 4)
+  const suggestedRows = <GlassRowList>{suggestions.map(({ club, reason }) => <li key={club.id}><GlassRow href={`/club/${encodeURIComponent(club.id)}`} className="oc-home-suggested" title={club.name} detail={reason}
+    lead={<DirectoryLogo club={club} />} /></li>)}</GlassRowList>
   const welcome = <WelcomeHeader
     className="oc-home-header"
     now={now} firstName={user?.profile?.firstName}
@@ -201,6 +207,9 @@ export function StudentDashboardView({
         trailing={<span className="oc-dashboard-row-end"><StatusPill status={app.status} /></span>} /></li>)}</GlassRowList>
         : <DashboardQuiet><strong>Nothing submitted yet.</strong> Find clubs to apply to in Explore. <DashboardMore onClick={() => onNavigate("explore")}>Explore clubs</DashboardMore></DashboardQuiet>}
     </DashboardCard>
+    {suggestions.length > 0 && <DashboardCard id="home-phone-suggested-title" title="Suggested clubs" className="oc-home-phone-suggested" more={{ onClick: () => onNavigate("explore"), label: "Explore" }}>
+      {suggestedRows}
+    </DashboardCard>}
     <section className="oc-home-phone-clubs" aria-labelledby="home-phone-clubs-title">
       <div className="oc-home-phone-heading-row"><h2 id="home-phone-clubs-title" className="oc-home-phone-heading">{TERMS.myClubs}</h2><DashboardMore onClick={() => onNavigate("my-clubs")}>All clubs</DashboardMore></div>
       {clubs.length ? <ul className="oc-home-club-grid">{clubs.map(m => <li key={m.clubId}><a href={clubWorkspaceHref(m.clubId)} className="oc-home-club-tile">
@@ -246,6 +255,10 @@ export function StudentDashboardView({
                 empty={agendaUnavailable
                   ? empty("Your agenda is unavailable", "We couldn’t load your scheduled events just now.", <Button variant="outline" onClick={() => window.location.reload()}>Try again</Button>)
                   : empty("Nothing scheduled yet", "You have no interviews or RSVP’d events coming up.", <DashboardMore onClick={() => onNavigate("corkboard")}>{TERMS.browseEvents}</DashboardMore>)} />
+            </DashboardCard>
+            <DashboardCard id="home-suggested-title" title="Suggested clubs" index={needsItems.length + 4} className="oc-home-suggested-card" more={{ onClick: () => onNavigate("explore"), label: "Explore" }}>
+              {suggestions.length ? suggestedRows
+                : <DashboardQuiet>{hasSignal ? "No close matches yet. Browse every club in Explore." : "Save clubs you like in Explore and similar ones will show up here."}</DashboardQuiet>}
             </DashboardCard>
           </div>
         </div>

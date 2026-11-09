@@ -129,3 +129,7 @@ disposable stack after fixes: workspace-shell-e2e, header-gap-e2e, overview-view
 reviewers: migration-reviewer safe as written (keep single ALTER; deploy order: migration before code); authz-reviewer no bypass, 1 high fixed (admin projection lost shortName) + 1 low fixed (snapshot shim), matrix corrected (1 untested cell: real cross-club membership)
 not run: run-disposable-postgres.cjs (no Docker daemon in this container), authenticated E2E stack
 ```
+```
+2026-11-09 EXPLORE-SUGGEST-1 (device Linux VM, macOS node_modules): club-suggestions 4/4 | related unit suites 129/129 (welcome mock added for new hook) | all non-browser unit files 1799 pass / 8 fail env-only (sharp, Prisma query engine, lightningcss native binaries) / 24 skipped | typecheck: only pre-existing lib/account-data.ts shortName (shared Prisma client generated from older schema) | eslint changed files 0 | ui-controls OK
+not run: browser/E2E suites, next build, test:migrations (no linux chromium/native binaries in this shell) — run `pnpm run validate` on the Mac before PR
+```
