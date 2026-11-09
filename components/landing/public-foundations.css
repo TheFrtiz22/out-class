@@ -1,5 +1,7 @@
 /* Public pages share a reading rhythm; product workspaces keep their own tokens. */
 .oc-landing {
+  /* Navy focus rings on public pages (the app-wide --ring is orange; spec rule 4). Navy surfaces set cream. */
+  --ring: var(--primary);
   --oc-public-paper: #fff7ec;
   --oc-public-linen: #eee7da;
   --oc-public-width: 1120px;
@@ -9,14 +11,15 @@
   --oc-public-ease: cubic-bezier(.2, .7, .2, 1);
 }
 .oc-public-kicker { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted-foreground); }
-.oc-public-kicker::before { content: ""; width: 28px; height: 2px; background: var(--brand-orange); flex-shrink: 0; }
+/* No orange rule before kickers (spec rule 4). */
+.oc-public-kicker::before { content: none; }
 .oc-public-section { width: min(var(--oc-public-width), calc(100% - var(--oc-public-gutter) * 2)); margin-inline: auto; padding-block: var(--oc-public-space); }
 .oc-public-section :is(h2, h3) { text-wrap: balance; }
 .oc-public-section h2 { font-family: var(--oc-font-display); font-size: var(--oc-public-heading); font-weight: 400; line-height: 1.15; letter-spacing: -.035em; }
 .oc-public-section p { line-height: 1.75; }
 .oc-public-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 16px 28px; margin-top: 32px; }
 .oc-public-actions [data-slot="button"] { min-height: 48px; padding-inline: 24px; }
-.oc-public-text-link { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; font-size: 14px; text-decoration: underline !important; text-underline-offset: 5px; text-decoration-color: var(--brand-orange) !important; }
+.oc-public-text-link { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; font-size: 14px; text-decoration: underline !important; text-underline-offset: 5px; text-decoration-color: color-mix(in srgb, currentColor 45%, transparent) !important; }
 .oc-public-navy { background: var(--primary); color: var(--oc-public-paper); }
 .oc-public-navy .oc-public-kicker { color: #d5dce4; }
 .oc-public-navy :is(a, button):focus-visible { outline-color: var(--oc-public-paper); }
@@ -61,7 +64,7 @@ html.oc-native-navigation { scroll-padding-top: 0; }
 
 /* Body copy on public pages is at least 14px on phones (12px stays for labels and eyebrows only). */
 @media (max-width: 767px) {
-  .oc-landing :is(.oc-public-note, .oc-invitation-note, .oc-orbit-footnote p, .oc-about-independence p, .oc-request-form .oc-public-note) { font-size: 14px; }
+  .oc-landing :is(.oc-public-note, .oc-about-independence p, .oc-request-form .oc-public-note) { font-size: 14px; }
   .oc-landing .oc-request-layout p, .oc-landing .oc-request-form p { font-size: 14px; }
   .oc-auth-page .oc-signup-content :is(p, span).text-xs { font-size: 14px; }
   .oc-landing .oc-corkboard-events [role="status"], .oc-landing .oc-corkboard-events > p { font-size: 14px; }

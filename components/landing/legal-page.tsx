@@ -5,7 +5,7 @@ import "./legal-page.css"
 /** Privacy and Terms: one readable column inside the shared public frame. */
 export function LegalPage({ title, summary, sections }: { title: string; summary: string; sections: LegalSection[] }) {
   return <PublicPageFrame width="reading">
-    <article className="oc-legal" aria-labelledby="legal-title">
+    <article className="oc-legal oc-public-glass" aria-labelledby="legal-title">
       <header>
         <p className="oc-legal-eyebrow">Legal</p>
         <h1 id="legal-title">{title}</h1>
