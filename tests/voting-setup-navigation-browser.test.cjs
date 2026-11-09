@@ -29,6 +29,37 @@ test('a working copy saved against an older session revision shows a clear confl
  }finally{await browser.close();await f.close()}
 });
 
+test('two tabs editing one scheduled session: the second save never overwrites, shows one conflict alert, and Load latest recovers',{timeout:170000},async()=>{
+ const f=await fixture(),browser=await chromium.launch({headless:true}),context=await browser.newContext(),errors=[];
+ const saved=()=>f.h.state().sessions[0],savedName=()=>saved().presentationOptions.meeting.name;
+ const toReview=async page=>{await page.getByRole('button',{name:'Continue',exact:true}).click();await page.getByRole('button',{name:'Continue',exact:true}).click();await page.getByRole('button',{name:'Save session changes',exact:true}).waitFor({timeout:15000});};
+ try{
+  await scheduled(f);const original=saved().revision;
+  const b=await context.newPage();b.on('pageerror',e=>errors.push(e.message));await b.goto(editUrl(f));const bName=b.getByRole('textbox',{name:'Session name',exact:true});await bName.waitFor({timeout:15000});
+  await bName.fill('Edited in tab B');await toReview(b);await b.getByText('All changes saved',{exact:true}).waitFor({timeout:10000});
+  const a=await context.newPage();a.on('pageerror',e=>errors.push(e.message));await a.goto(editUrl(f));const aName=a.getByRole('textbox',{name:'Session name',exact:true});
+  // Tab A reopens the shared working copy on review, then goes back to rename.
+  await a.getByRole('button',{name:'Save session changes',exact:true}).waitFor({timeout:15000});await a.getByRole('button',{name:'Back',exact:true}).click();await a.getByRole('button',{name:'Back',exact:true}).click();
+  await aName.fill('Saved by tab A');await toReview(a);await a.getByRole('button',{name:'Save session changes',exact:true}).click();
+  for(let i=0;i<100&&saved().revision===original;i++)await a.waitForTimeout(100);
+  assert.equal(saved().revision,original+1);assert.equal(savedName(),'Saved by tab A');
+  await b.getByRole('button',{name:'Save session changes',exact:true}).click();
+  const alert=b.getByRole('alert').filter({hasText:'This session was changed in another tab or by another leader.'});await alert.waitFor({timeout:15000});await b.waitForTimeout(1500);
+  assert.equal(saved().revision,original+1,'the stale save must not commit');assert.equal(savedName(),'Saved by tab A');
+  assert.equal(await b.getByRole('alert').count(),1,'exactly one alert');
+  assert.equal(await b.getByText(/draft changed in another tab/i).count(),0);
+  for(const name of ['Retry session','Retry draft','Retry'])assert.equal(await b.getByRole('button',{name,exact:true}).count(),0,name);
+  // Unsaved edits are only discarded after a confirm: dismissing keeps the conflict and the form.
+  b.once('dialog',d=>d.dismiss());await b.getByRole('button',{name:'Load latest session',exact:true}).click();await b.waitForTimeout(300);assert.equal(await alert.count(),1);
+  b.once('dialog',d=>d.accept());await b.getByRole('button',{name:'Load latest session',exact:true}).click();await alert.waitFor({state:'detached'});
+  await b.getByRole('button',{name:'Back',exact:true}).click();await b.getByRole('button',{name:'Back',exact:true}).click();assert.equal(await bName.inputValue(),'Saved by tab A');
+  // After loading the latest session the tab saves normally against the new revision.
+  await bName.fill('Edited after loading latest');await toReview(b);await b.getByRole('button',{name:'Save session changes',exact:true}).click();
+  for(let i=0;i<100&&saved().revision===original+1;i++)await b.waitForTimeout(100);
+  assert.equal(saved().revision,original+2);assert.equal(savedName(),'Edited after loading latest');assert.deepEqual(errors,[]);
+ }finally{await browser.close();await f.close()}
+});
+
 test('opening setup persists nothing until the leader edits; created sessions drop out of Drafts; Discard draft asks and removes only the caller draft',{timeout:150000},async()=>{
  const f=await fixture(),browser=await chromium.launch({headless:true}),page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
  const live=()=>f.h.state().drafts.filter(d=>d.content!=null);

@@ -58,7 +58,7 @@
 .ir-manager button:not([data-slot="sheet-close"]):not([data-slot="dialog-close"]) { min-height: 36px; }
 .ir-schedule-row { display:grid; grid-template-columns: minmax(9rem,1fr) minmax(0,2fr) auto; align-items:center; gap:12px; width:100%; min-height:48px; padding:12px 4px; text-align:left; font-size:14px; font-weight:400; border-radius:var(--oc-radius-md); }
 .ir-schedule-row:hover { background:var(--muted); }
-.ir-schedule-row:focus-visible { outline:2px solid var(--primary); outline-offset:2px; }
+.ir-schedule-row:focus-visible { outline:2px solid var(--ring); outline-offset:2px; }
 .ir-schedule-row:disabled { cursor:wait; opacity:.7; }
 .ir-slot-editor .ir-field, .ir-slot-editor .grid { min-width:0; max-width:100%; }
 .ir-slot-editor select { min-width:0; width:100%; max-width:100%; }
