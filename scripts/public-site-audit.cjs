@@ -72,7 +72,7 @@ async function measure(page) {
       .map(({ el, r }) => `${Math.round(r.width)}x${Math.round(r.height)} ${el.tagName.toLowerCase()} ${label(el)}`)
     // Body copy: paragraphs and list items outside sample mockups and the footer's fine print.
     const smallBody = [...document.querySelectorAll('main p, main li, main dd')].filter(visible)
-      .filter(el => !el.closest('.oc-story-frame, .oc-login-example, .oc-hero-feature-stack, [class*="eyebrow"], [class*="kicker"], [class*="caption"], small'))
+      .filter(el => !el.closest('.oc-story-frame, .oc-login-example, .oc-hero-frame-area, [class*="eyebrow"], [class*="kicker"], [class*="caption"], small'))
       .filter(el => el.textContent.trim().length > 40 && parseFloat(getComputedStyle(el).fontSize) < 14)
       .map(el => `${parseFloat(getComputedStyle(el).fontSize)}px ${label(el)}`)
     return {
