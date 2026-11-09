@@ -24,14 +24,16 @@ class RoomConflict extends Error { constructor(public code:string,message:string
 async function domainResult<T>(work:()=>Promise<T>) { try { return {ok:true as const,result:await work()}; } catch(e) { if(e instanceof RoomConflict)return {ok:false as const,code:e.code,message:e.message}; throw e; } }
 const retryConflict=()=>new RoomConflict("STALE_STATE","The room changed. Reload the page, check the latest, and try again.");
 const ballotReceipt=z.object({accepted:z.literal(true),ballotRevision:z.number().int().nonnegative()}).strict();
-/** Closing from a slightly older view is still what the leader meant when the only room changes since
- * that view are ballots arriving for this same open ballot (or voters joining, which write no receipt).
- * Every other room command writes a receipt, so any non-ballot receipt among the latest ones refuses as before. */
+const revisionReceipt=z.object({revision:z.number().int().nonnegative()}).passthrough();
+/** Opening or closing the named current ballot from a slightly older view is still what the leader meant
+ * when the only room changes since that view are ballots or voters joining (joins write no receipt).
+ * Every other room, setup or finalization command writes a receipt carrying its resulting revision, so a
+ * newer one than the leader's view refuses exactly as before. */
 async function onlyBallotsSince(tx:AppTransactionClient,s:LiveRoom,d:z.infer<typeof roomCommandSchema>){
-  const drift=s.revision-d.revision;
-  if(d.action!=="CLOSE_VOTING"||drift<=0||drift>500||!d.applicationId||d.applicationId!==s.activeApplicationId||d.passNumber!==s.currentPass)return false;
-  const recent=await tx.votingRoomCommand.findMany({where:{sessionId:s.id},orderBy:{createdAt:"desc"},take:drift,select:{result:true}});
-  return recent.length>0&&recent.every(r=>ballotReceipt.safeParse(r.result).success);
+  if(!["OPEN_VOTING","CLOSE_VOTING"].includes(d.action)||s.revision<=d.revision||!d.applicationId||d.applicationId!==s.activeApplicationId||d.passNumber!==s.currentPass)return false;
+  const recent=await tx.votingRoomCommand.findMany({where:{sessionId:s.id},orderBy:{createdAt:"desc"},take:500,select:{result:true}});
+  const command=recent.find(r=>!ballotReceipt.safeParse(r.result).success),saved=revisionReceipt.safeParse(command?.result);
+  return saved.success&&saved.data.revision<=d.revision;
 }
 function accessFingerprint(m:{id:string;status:string;permissions:string[];accessRole:string;isOwner:boolean}) { return roomFingerprint({id:m.id,status:m.status,permissions:m.permissions,accessRole:m.accessRole,isOwner:m.isOwner}); }
 

@@ -26,6 +26,24 @@ test('a stale close is refused when a leader command happened after that view',a
  assert.equal((await h.api.commandLiveVotingRoom({...h.scope,requestId:uuid(711),revision:session(h).revision-1,action:'END',confirmed:true})).code,'STALE_STATE');
 });
 
+test('a view taken mid-ballot can still close once more ballots arrive',async()=>{
+ const h=harness();await begin(h);h.as(voterId);ok(await h.vote('ACCEPT'));const view=session(h).revision;
+ ok(await h.vote('REJECT'));h.as(leaderId);ok(await h.vote('HOLD'));
+ ok(await h.api.commandLiveVotingRoom({...h.scope,requestId:uuid(720),revision:view,action:'CLOSE_VOTING',confirmed:true,applicationId:apps[0],passNumber:1}));
+});
+
+test('one Open voting click opens the ballot even when a voter joined after Start',async()=>{
+ const h=harness();await h.create();ok(await h.command('START'));const view=session(h).revision;
+ const setup=load('actions/voting-room-setup.ts',h.mocks);h.as(voterId);await setup.joinLiveVotingRoom(h.scope);h.as(leaderId);
+ assert.equal(session(h).revision,view+1,'joining still bumps the room revision so every view refreshes');
+ assert.equal((await h.api.commandLiveVotingRoom({...h.scope,requestId:uuid(730),revision:view,action:'OPEN_VOTING'})).code,'STALE_STATE');
+ ok(await h.api.commandLiveVotingRoom({...h.scope,requestId:uuid(731),revision:view,action:'OPEN_VOTING',applicationId:apps[0],passNumber:1}));
+ assert.equal(session(h).passes[0].candidates[0].ballotState,'OPEN');
+ // A replay of an already-applied open is still refused rather than reopening anything.
+ assert.equal((await h.api.commandLiveVotingRoom({...h.scope,requestId:uuid(732),revision:view,action:'OPEN_VOTING',applicationId:apps[0],passNumber:1})).code,'STALE_STATE');
+ assert.match(fs.readFileSync('components/live-voting/room-meeting.tsx','utf8'),/send\("OPEN_VOTING",\{applicationId:room\.currentApplicantId!,passNumber:room\.passNumber\}\)/);
+});
+
 test('a hung poll is abandoned so the room keeps refreshing; its late result is discarded',async()=>{
  const {votingRoomSubscription}=load('lib/voting-room-subscription.ts');
  let calls=0,release;const seen=[];
