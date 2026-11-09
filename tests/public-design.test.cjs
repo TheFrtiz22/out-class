@@ -33,12 +33,15 @@ test('homepage: audience toggle in the hero, per-audience final call to action, 
   const student = hero.slice(hero.indexOf('student: {'), hero.indexOf('leader: {'))
   assert.equal((student.match(/one profile/gi) || []).length, 1)
   assert.match(read('components/views/landing-page-view.tsx'), /perspective === "student" \? "Create your profile" : "Set up your club"/)
-  assert.match(read('components/landing/feature-orbit.tsx'), /className="oc-story-sample">Sample</)
+  assert.match(read('components/landing/journey-tabs.tsx'), /className="oc-journey-sample">Sample data</)
 })
 
-test('about has one primary action; UVA has Create your profile + Read the FAQs (Explore is private) and a separate Not at UVA section', () => {
+test('about has the hero action plus two CTA pills (owner decision 2026-11-09); UVA has Create your profile + Read the FAQs (Explore is private) and a separate Not at UVA section', () => {
   const about = read('app/about/page.tsx')
-  assert.equal((about.match(/<Button asChild/g) || []).length, 1)
+  assert.equal((about.match(/<Button asChild/g) || []).length, 3)
+  assert.equal((about.match(/<Button asChild size="lg" className="oc-public-cta">/g) || []).length, 2)
+  assert.match(about, /className="oc-public-cta"><Link prefetch=\{false\} href="\/uva">Explore OutClass at UVA/)
+  assert.match(about, /className="oc-public-cta"><Link href="\/request-school" prefetch=\{false\}>Request your school/)
   const uva = read('app/uva/page.tsx')
   assert.match(uva, /href="\/signup">Create your profile/); assert.match(uva, /variant="outline"><a href="#faq">Read the FAQs/); assert.doesNotMatch(uva, /\/explore/)
   assert.match(uva, /<section className="oc-public-section oc-faq-next" aria-labelledby="not-uva-title">/)

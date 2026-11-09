@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Request your school</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&amp;family=Source+Sans+3:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#f6f5f1}
+a{color:#142d45}a:hover{color:#9f3d12}
+.oc-wrap{width:100%;max-width:1200px;margin:0 auto;padding:0 32px;box-sizing:border-box}
+.oc-req{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:56px;align-items:start}
+.oc-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.oc-navlinks{display:flex;align-items:center;gap:28px}
+@media (max-width:820px){.oc-wrap{padding:0 16px}.oc-req,.oc-pair{grid-template-columns:minmax(0,1fr);gap:24px}.oc-navlinks{display:none}}
+</style>
+</helmet>
+<div style="font-family: 'Source Sans 3', Arial, sans-serif; color: #1c2d40; background: #f6f5f1; font-size: 17px; line-height: 1.6">
+<header style="padding: 16px 0">
+<div class="oc-wrap">
+<nav aria-label="Main" style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 10px 10px 22px; background: rgba(255,254,250,0.86); border: 1px solid #dfe3dd; border-radius: 999px; box-shadow: 0 8px 24px rgba(20,45,69,0.08)">
+<a href="Main.dc.html" aria-label="OutClass home" style="display: flex; align-items: center"><img src="./assets/84e1b76d3bdbc520308d9858f70f248f.svg" alt="OutClass" style="height: 22px; width: auto; display: block"></a>
+<div class="oc-navlinks">
+<a href="Main.dc.html" style="font-size: 15px; font-weight: 500; text-decoration: none">How it works</a>
+<a href="About.dc.html" style="font-size: 15px; font-weight: 500; text-decoration: none">About</a>
+<a href="Main.dc.html" style="font-size: 15px; font-weight: 500; text-decoration: none">FAQ</a>
+<a href="RequestSchool.dc.html" aria-current="page" style="font-size: 15px; font-weight: 600; text-decoration: underline; text-decoration-color: #e8793e; text-underline-offset: 6px">Request your school</a>
+</div>
+<div style="display: flex; align-items: center; gap: 8px">
+<a href="SignIn.dc.html" style="font-size: 15px; font-weight: 600; text-decoration: none; padding: 10px 14px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center">Log in</a>
+<a href="SignIn.dc.html" style="font-size: 15px; font-weight: 600; text-decoration: none; padding: 10px 20px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; border-radius: 999px; background: #142d45; color: #ffffff">Get started</a>
+</div>
+</nav>
+</div>
+</header>
+<main style="padding: 56px 0 96px">
+<div class="oc-wrap oc-req">
+<div style="display: flex; flex-direction: column; gap: 20px; padding-top: 12px">
+<p style="margin: 0; font-size: 14px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #9f3d12">Beyond UVA</p>
+<h1 style="margin: 0; font-family: 'Libre Caslon Text', Georgia, serif; font-size: 50px; font-weight: 400; line-height: 1.12; letter-spacing: -0.03em; color: #142d45">Bring OutClass to your campus.</h1>
+<p style="margin: 0; font-size: 19px; color: #34485a">If your campus has the same scattered recruitment process, tell us which university and organizations could use OutClass.</p>
+<p style="margin: 0; font-size: 14px; color: #52606d; padding-left: 14px; border-left: 2px solid #e8793e">Requests express interest. They do not approve a university or enable account access.</p>
+</div>
+<form style="background: #fffefa; border: 1px solid #dfe3dd; border-radius: 22px; padding: 36px; display: flex; flex-direction: column; gap: 18px; box-shadow: 0 16px 40px rgba(20,45,69,0.06)">
+<div class="oc-pair">
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="rname" style="font-size: 14px; font-weight: 600">Your name</label><input id="rname" type="text" autocomplete="name" style="font: inherit; font-size: 16px; min-height: 48px; padding: 0 14px; border: 1px solid #c9cfc8; border-radius: 12px; background: #ffffff; box-sizing: border-box"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="remail" style="font-size: 14px; font-weight: 600">Email</label><input id="remail" type="email" autocomplete="email" style="font: inherit; font-size: 16px; min-height: 48px; padding: 0 14px; border: 1px solid #c9cfc8; border-radius: 12px; background: #ffffff; box-sizing: border-box"></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="rschool" style="font-size: 14px; font-weight: 600">University</label><input id="rschool" type="text" style="font: inherit; font-size: 16px; min-height: 48px; padding: 0 14px; border: 1px solid #c9cfc8; border-radius: 12px; background: #ffffff; box-sizing: border-box"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="rorgs" style="font-size: 14px; font-weight: 600">Organizations that could use OutClass</label><textarea id="rorgs" rows="4" style="font: inherit; font-size: 16px; padding: 12px 14px; border: 1px solid #c9cfc8; border-radius: 12px; background: #ffffff; resize: vertical; box-sizing: border-box"></textarea><span style="font-size: 13px; color: #52606d">Optional. Club names, or the kinds of clubs that recruit selectively.</span></div>
+<button type="submit" style="align-self: flex-start; min-height: 48px; padding: 0 26px; border: 0; border-radius: 999px; background: #142d45; color: #ffffff; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer">Send request</button>
+</form>
+</div>
+</main>
+<footer style="border-top: 1px solid #dfe3dd; padding: 32px 0; background: #fffefa">
+<div class="oc-wrap" style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; font-size: 13px; color: #52606d">
+<img src="./assets/84e1b76d3bdbc520308d9858f70f248f.svg" alt="OutClass" style="height: 20px; width: auto">
+<span>© 2026 OutClassPlatforms LLC · Same footer as the homepage</span>
+</div>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

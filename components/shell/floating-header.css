@@ -27,6 +27,7 @@
 .oc-product-header-row { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 48px; padding: 0; }
 .oc-product-header-row > * { pointer-events: auto; }
 .oc-product-utilities { display: flex; align-items: center; flex-shrink: 0; gap: 12px; margin-left: auto; }
+.oc-product-brand { display: none; }
 .oc-product-header .oc-floating-circle {
   border: 1px solid var(--oc-floating-border);
   border-radius: 999px;
@@ -99,21 +100,41 @@ button.oc-header-club:hover { color: var(--primary); background: color-mix(in sr
 }
 @media (max-width: 1023px) { [data-product-shell] { --oc-shell-gutter: 20px; } .oc-product-header { margin-left: 0; } .oc-product-header .oc-floating-drawer { display: none; } }
 @media (max-width: 759px) {
-  .oc-product-header-row { grid-template-columns: minmax(0,1fr); gap: 4px; }
   .oc-product-workspaces, .oc-evolving-toggle { width: 100%; }
-  .oc-evolving-toggle > .oc-evolving-bar { flex-basis: 100%; }
-  .oc-evolving-toggle { --workspace-selected-track: minmax(0,2.5fr); --workspace-ratio: 2.5; }
   .oc-product-utilities { justify-self: end; margin-top: 0; }
   .oc-evolving-indicator { transition: transform 420ms var(--oc-floating-ease), opacity 180ms ease; }
   .oc-evolving-toggle .oc-evolving-segments .oc-workspace-option { padding-inline: 3px; font-size: 12px; }
-  /* Phones: the bottom bar is the section nav and the account menu switches workspace. */
-  .oc-product-workspaces { display: none; }
-  .oc-product-header-row { min-height: 48px; }
+  /* Phones, as in the app: the logo leads, search · bell · account follow. When there is somewhere to switch to,
+     a mini workspace pill takes the logo's place (equal segments, the club by its short label); the bottom bar
+     is the section nav and the account menu still lists every workspace by full name. */
+  .oc-product-header-row { min-height: 48px; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 8px; }
+  .oc-product-brand { display: inline-flex; align-items: center; justify-self: start; min-height: 44px; padding-right: 8px; border-radius: var(--oc-radius-sm); }
+  .oc-product-brand:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+  .oc-product-header-row:has(.oc-workspace-selector) .oc-product-brand, .oc-product-workspaces:not(:has(.oc-workspace-selector)) { display: none; }
+  .oc-product-workspaces { align-self: center; }
+  .oc-evolving-toggle { --workspace-selected-track: minmax(0,1fr); --workspace-ratio: 1; --workspace-width: 96px; }
+  .oc-evolving-toggle[data-workspace-count="2"] { --workspace-width: 176px; }
+  .oc-evolving-toggle[data-workspace-count="3"] { --workspace-width: 236px; }
+  .oc-evolving-toggle > .oc-evolving-bar { flex-basis: var(--workspace-width); }
+  .oc-evolving-bar { height: 50px; padding: 2px; }
+  .oc-evolving-segments { height: 44px; }
+  .oc-evolving-toggle .oc-evolving-segments .oc-workspace-option { min-height: 44px; padding-inline: 6px; }
+  /* One label in the DOM: the phone pill swaps in the short label visually (the name already starts with it). */
+  .oc-workspace-option-label[data-mini] { font-size: 0; }
+  .oc-workspace-option-label[data-mini]::after { content: attr(data-mini); font-size: 12px; }
+  .oc-workspace-club-switch { display: none; }
 }
 @media (max-width: 639px) {
   .oc-product-header { padding: 10px 12px; }
   .oc-product-utilities { gap: 6px; }
   .oc-product-header .oc-floating-circle, .oc-product-header .oc-floating-search { width: 44px; height: 44px; min-width: 44px; min-height: 44px; flex-basis: 44px; }
+}
+/* The narrowest phones: tighter spacing so three mini segments keep whole labels. */
+@media (max-width: 359px) {
+  .oc-product-header-row { gap: 4px; }
+  .oc-product-utilities { gap: 4px; }
+  .oc-evolving-toggle .oc-evolving-segments .oc-workspace-option { padding-inline: 1px; font-size: 11px; }
+  .oc-workspace-option-label[data-mini]::after { font-size: 11px; }
 }
 @media (prefers-reduced-motion: reduce) { .oc-evolving-toggle *, .oc-floating-search::before, .oc-product-header :is(a,button) { transition: none !important; animation: none !important; } }
 @media (forced-colors: active) { .oc-evolving-bar { border-color: CanvasText; } .oc-evolving-indicator { background: Highlight; forced-color-adjust: none; } .oc-evolving-toggle .oc-workspace-option[aria-current="page"] { color: HighlightText; forced-color-adjust: none; } }

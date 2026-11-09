@@ -106,7 +106,7 @@ test('public information pages render factual content, consistent entity referen
     assert.equal(meta.alternates.canonical, `${seo.SITE_URL}${path}`)
     assert.equal(meta.openGraph.url, meta.alternates.canonical)
     assert.equal(meta.openGraph.siteName, 'OutClass')
-    assert.equal(meta.openGraph.images[0].url, `${seo.SITE_URL}/images/outclass-social.jpg`)
+    assert.equal(meta.openGraph.images[0].url, `${seo.SITE_URL}/og/outclass.png`)
     assert.equal(meta.robots.index, true)
     assert.equal(meta.robots.follow, true)
     const html = renderToStaticMarkup(React.createElement(page.default))

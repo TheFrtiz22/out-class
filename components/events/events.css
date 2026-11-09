@@ -776,3 +776,25 @@
   .oc-event-toolbar-actions .oc-event-view-switch { grid-column: 1 / -1; }
   .oc-event-view-switch.oc-segmented-control button { padding-inline: .75rem; }
 }
+
+/* Phones and tablets, as in the OutClass app's Corkboard: compact event cards (list is the phone default). */
+@media (max-width: 1023px) {
+  .oc-smart-event-list { gap: 12px; }
+  .oc-smart-event-list > li { contain-intrinsic-size: auto 380px; }
+  .oc-smart-event-card { display: flex; flex-direction: column; min-height: 0; border-radius: var(--oc-content-radius); }
+  .oc-smart-event-media { height: auto; min-height: 0; aspect-ratio: 16 / 9; }
+  /* Without a flyer, a short tinted band carries the date; the title is already in the copy below. */
+  .oc-smart-event-media:has(.oc-smart-event-fallback) { aspect-ratio: auto; height: 84px; }
+  .oc-smart-event-fallback { display: none; }
+  .oc-smart-event-date { top: 14px; left: 14px; width: 52px; min-height: 58px; }
+  .oc-smart-event-date > strong { font-size: 22px; }
+  .oc-smart-event-media:has(.oc-smart-event-fallback) .oc-smart-event-date { top: 13px; }
+  .oc-smart-event-copy { padding: 14px 16px 16px; }
+  .oc-smart-event-copy h2 { margin-bottom: 6px; font-size: 20px; line-height: 1.2; }
+  .oc-smart-event-facts { gap: 4px; margin-bottom: 8px; font-size: var(--oc-text-small); }
+  .oc-smart-event-description { margin-bottom: 12px; }
+  .oc-smart-event-footer { flex-direction: column; align-items: stretch; gap: 8px; }
+  .oc-smart-event-footer > .oc-event-pill-primary { width: 100%; min-height: 46px; justify-content: center; border-radius: 999px; }
+  .oc-smart-event-actions { display: flex; width: 100%; gap: 8px; }
+  .oc-smart-event-actions > .oc-event-pill { flex: 1; min-height: 44px; padding-inline: 12px; }
+}

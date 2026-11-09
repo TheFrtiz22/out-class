@@ -30,8 +30,15 @@ export const roomCommandSchema = roomScope.extend({ requestId: z.string().uuid()
   choice: roomChoice.optional(), reason: z.string().trim().min(1).max(1000).optional(),
   /** Threshold rooms: explicitly recount without voters who lost eligibility (reason required). */
   resolveElectorate: z.boolean().optional(),
+  /** Database time the leader's room snapshot was read (snapshot.viewedAt); bounds the ballot-only drift check. */
+  viewedAt: z.string().datetime().optional(),
+  /** Server HMAC binding viewedAt to that snapshot's session, revision and viewer (snapshot.viewToken). */
+  viewToken: z.string().regex(/^[a-f0-9]{64}$/).optional(),
 });
 export const roomBallotSchema = roomScope.extend({ requestId: z.string().uuid(), passNumber: z.number().int().positive(), applicationId: z.string().uuid(), choice: roomChoice, ballotRevision: z.number().int().nonnegative().nullable() });
+/** The room moved to another applicant after this viewer's last snapshot: a normal race, not a failure. */
+export class VotingPresentationChanged extends Error { readonly stale=true as const; constructor(message="Voting presentation changed. Reload the page to continue."){super(message);this.name="VotingPresentationChanged";} }
+export function isStalePresentation(value:unknown):value is {stale:true}{return !!value&&typeof value==="object"&&(value as {stale?:unknown}).stale===true;}
 export function uniqueSelection(values: string[]) { if (new Set(values).size !== values.length) throw Error("Duplicate selection."); }
 export type RoomEntry = { applicationId: string; passNumber?: number; position: number; ballotState: string; confirmedDecision: string | null; ballots: { memberId: string; decision: string; revision: number }[] };
 export function roomOutcomes(s: { candidates: { applicationId: string }[]; passes: { number: number; candidates: RoomEntry[] }[] }) {

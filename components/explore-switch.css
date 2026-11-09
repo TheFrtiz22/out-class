@@ -1,0 +1,8 @@
+.oc-explore-switch { display: none; }
+@media (max-width: 1023px) {
+  [data-product-shell] .oc-explore-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 1rem; padding: 4px; border: 1px solid var(--oc-glass-light-edge); border-radius: 999px; background: var(--oc-glass-light-solid); box-shadow: var(--oc-content-shadow, var(--oc-shadow-surface)); }
+  .oc-explore-switch > a { display: grid; place-items: center; min-height: 40px; border-radius: 999px; color: var(--foreground); font-size: var(--oc-text-small); font-weight: var(--oc-weight-semibold); text-decoration: none; }
+  .oc-explore-switch > a[aria-current="page"] { background: var(--oc-glass-pill-navy, var(--primary)); box-shadow: var(--oc-glass-pill-navy-depth, none); color: var(--oc-glass-cream); }
+  .oc-explore-switch > a:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+}
+@media (forced-colors: active) { .oc-explore-switch > a[aria-current="page"] { border: 2px solid Highlight; } }

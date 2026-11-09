@@ -202,7 +202,7 @@ export function ClubWorkspace({
           {/* URL-driven tabs live outside the keyed section below, so changing a tab slides its indicator instead of remounting it. */}
           {allowed && !(needsOverview && (error || !current)) && <>
           {/* Phones reach recruiting through one bottom-bar item, so its pages show here as tabs. The rail covers wide screens. */}
-          {section === "recruitment" && manager && <SectionTabs label="Recruiting sections" className="mb-5 lg:hidden" current={nav.find(n => n.id === active)?.navGroup === "applicants" ? "applicants" : nav.find(n => n.id === active)?.navGroup === "decisions" ? "decisions" : active}
+          {section === "recruitment" && manager && <SectionTabs label="Recruiting sections" className="oc-recruiting-switch mb-5 lg:hidden" current={nav.find(n => n.id === active)?.navGroup === "applicants" ? "applicants" : nav.find(n => n.id === active)?.navGroup === "decisions" ? "decisions" : active}
               items={mobileDestinations(nav.filter(n => n.mode !== "club" && !["announcements", "settings"].includes(n.id))).map(n => ({ id: n.navGroup ?? n.id, label: n.navGroup ? n.label : n.id === "overview" ? TERMS.recruiting : n.label, href: n.href! }))}
               onNavigate={(event, href) => { if (!canLeaveWorkspace()) { event.preventDefault(); return } handleClubLink(event, href) }} />}
           {section === "recruitment" && active === "decisions" && <DecisionsNavigation clubId={clubId} member={membership}/>}

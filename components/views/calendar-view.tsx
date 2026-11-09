@@ -6,7 +6,7 @@ import Link from "next/link";
 
 import { SegmentedControl } from "@/components/product/segmented-control"
 import { useEffect, useMemo, useState } from "react"
-import { ChevronLeft, ChevronRight, CalendarDays, Download, MapPin } from "@/components/icons"
+import { ChevronLeft, ChevronRight, CalendarDays, Download, MapPin, SlidersHorizontal } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { NativeSelect, NativeSelectField } from "@/components/ui/native-select"
@@ -58,8 +58,10 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
   const [includeDeclined, setIncludeDeclined] = useState(false)
   // `?type=meeting` (old /clubs/meetings) opens Calendar filtered to club meetings.
   const [filter, setFilter] = useState("all")
+  const [phoneFilters, setPhoneFilters] = useState(false)
   useEffect(() => { if (readSearchParam("type") === "meeting") setFilter(MEETINGS_FILTER) }, [])
   const [query, setQuery] = useState("")
+  const phoneActive = Number(!!query) + Number(filter !== "all") + Number(includePast) + Number(includeDeclined)
   const [hiddenClubs, setHiddenClubs] = useState<Set<string>>(new Set())
   const clearCalendarFilters = () => { setQuery(""); setFilter("all"); setHiddenClubs(new Set()) }
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -214,7 +216,11 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
           />
         </div>
       )}
-      {events.length > 0 && <div className="oc-toolbar">
+      {/* Phones, as in the app: search and filters sit behind a Filter button. */}
+      {events.length > 0 && <Button variant="outline" size="sm" className="oc-calendar-filter-toggle" aria-expanded={phoneFilters} aria-controls="calendar-tools" onClick={() => setPhoneFilters(open => !open)}>
+        <SlidersHorizontal className="size-4" aria-hidden="true" />{phoneActive ? `Filter · ${phoneActive}` : "Filter"}
+      </Button>}
+      {events.length > 0 && <div id="calendar-tools" className="oc-toolbar oc-calendar-tools" data-phone-open={phoneFilters || undefined}>
         <Input
           aria-label="Search calendar"
           placeholder="Search events, clubs, or locations"
