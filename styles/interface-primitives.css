@@ -193,8 +193,6 @@ fieldset { min-inline-size: 0; }
   background: var(--oc-glass-pill-navy);
   box-shadow: var(--oc-glass-pill-navy-depth);
 }
-[data-slot="tabs-list"][data-variant="segmented"] [data-slot="tabs-trigger"]:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; box-shadow: var(--focus-halo-inset-4); }
-[data-slot="tabs-list"][data-variant="segmented"] [data-slot="tabs-trigger"][data-state="active"]:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; box-shadow: var(--focus-halo-outset) }
 @supports selector(:has(*)) {
   [data-slot="tabs-list"][data-variant="segmented"]::before {
     content: ""; position: absolute; z-index: -1; top: 4px; bottom: 4px; left: 4px;
@@ -241,6 +239,9 @@ fieldset { min-inline-size: 0; }
 [data-slot="tabs-list"][data-variant="segmented"][data-measured="true"]::before { display: none; }
 [data-slot="tabs-list"][data-variant="segmented"][data-measured="true"] [data-slot="tabs-trigger"][data-state="active"],
 [data-slot="tabs-list"][data-variant="segmented"][data-measured="true"]:has(> [data-slot="tabs-trigger"] ~ [data-slot="tabs-trigger"] ~ [data-slot="tabs-trigger"]) [data-slot="tabs-trigger"][data-state="active"] { background: transparent; box-shadow: none; }
+/* Focus after the measured-indicator rules: they clear the active tab's shadow at equal specificity. */
+[data-slot="tabs-list"][data-variant="segmented"] [data-slot="tabs-trigger"]:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; box-shadow: var(--focus-halo-inset-4); }
+[data-slot="tabs-list"][data-variant="segmented"] [data-slot="tabs-trigger"][data-state="active"]:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; box-shadow: var(--focus-halo-outset) }
 @media (forced-colors: active) { [data-slot="tabs-list"][data-variant="segmented"][data-measured="true"] .oc-tabs-indicator { background: Highlight; forced-color-adjust: none; } }
 
 @media (prefers-reduced-motion: reduce) {
