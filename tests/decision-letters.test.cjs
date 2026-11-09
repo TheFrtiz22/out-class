@@ -32,7 +32,7 @@ test('Demo letters, templates, notifications and offer confirmations persist wit
 });
 test('formal letter renderer escapes untrusted text and keeps print content semantic',()=>{
  const fs=require('node:fs'),ts=require('typescript'),React=require('react'),{renderToStaticMarkup}=require('react-dom/server');const m={exports:{}};
- const mocks={'@/components/ui/loading-state':require('./helpers/component-module.cjs').loadComponent('components/ui/loading-state.tsx'),'next/link':{default:'a'},'next/navigation':{},'@/lib/workspace-api':{},'@/contexts/auth-context':{},'@/components/ui/button':{Button:'button'},'@/components/club-logo':require('./helpers/component-module.cjs').loadComponent('components/club-logo.tsx'),'./decision-letter.css':{},'@/components/shell/focus-frame-context':{useFocusFrame(){}},'@/components/ui/page-header':require('./helpers/component-module.cjs').loadComponent('components/ui/page-header.tsx')};
+ const mocks={'@/components/ui/loading-state':require('./helpers/component-module.cjs').loadComponent('components/ui/loading-state.tsx'),'next/link':{default:'a'},'next/navigation':{},'@/lib/workspace-api':{},'@/contexts/auth-context':{},'@/components/ui/button':{Button:'button'},'@/components/club-logo':require('./helpers/component-module.cjs').loadComponent('components/club-logo.tsx'),'./decision-letter.css':{},'./decision-celebration':{Celebration:()=>null,prefersReducedMotion:()=>false,useCelebration:()=>({run:0,play(){}})},'@/components/icons':{PartyPopper:'svg',RotateCcw:'svg'},'@/lib/decision-letters':require('./helpers/demo-harness.cjs').harness().load('lib/decision-letters.ts'),'@/components/shell/focus-frame-context':{useFocusFrame(){}},'@/components/ui/page-header':require('./helpers/component-module.cjs').loadComponent('components/ui/page-header.tsx')};
  new Function('require','module','exports',ts.transpileModule(fs.readFileSync('components/communications/decision-letter.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText)(n=>n in mocks?mocks[n]:require(n),m,m.exports);
  const content={title:'<script>bad()</script>',body:'Hello <img src=x onerror=evil()>\n\nAnother paragraph.',closing:'Sincerely,',signer:'Example Club',footer:'Safe instructions',studentName:'Alex <Student>',clubName:'Club',accent:'#142d4e',date:'October 10, 2026'};
  const html=renderToStaticMarkup(React.createElement(m.exports.LetterPaper,{content}));assert.ok(html.includes('<article'));assert.ok(html.includes('<h1>'));assert.ok(html.includes('&lt;script&gt;'));assert.ok(!html.includes('<script>'));assert.ok(!html.includes('<img src=x'));
@@ -43,7 +43,7 @@ test('letter offer controls respect current decision, expiry, revocation and sus
  const content={title:'Decision',body:'Formal wording.',closing:'Sincerely,',signer:'Club',footer:'',studentName:'Student',clubName:'Club',accent:'#142d4e',date:'October 10, 2026'};
  const base={isCurrent:true,currentStatus:'ACCEPTED',suspended:false,letter:{id:'letter',decision:'ACCEPTED',content},offer:{status:'PENDING',expiresAt:'2999-01-01'}};
  function render(data){let i=0;const state=[data,false,'',false],m={exports:{}};
-  const mocks={'@/components/ui/loading-state':require('./helpers/component-module.cjs').loadComponent('components/ui/loading-state.tsx'),react:{...React,useState:()=>[state[i++],()=>{}],useRef:()=>({current:0}),useCallback:f=>f,useEffect(){}},'next/link':{default:'a'},'next/navigation':{useSearchParams:()=>new URLSearchParams()},'@/lib/workspace-api':{},'@/contexts/auth-context':{useAuth:()=>({user:{id:'student'},refreshUser:async()=>{}})},'@/components/ui/button':{Button:'button'},'@/components/club-logo':require('./helpers/component-module.cjs').loadComponent('components/club-logo.tsx'),'./decision-letter.css':{},'@/components/shell/focus-frame-context':{useFocusFrame(){}},'@/components/ui/page-header':require('./helpers/component-module.cjs').loadComponent('components/ui/page-header.tsx')};
+  const mocks={'@/components/ui/loading-state':require('./helpers/component-module.cjs').loadComponent('components/ui/loading-state.tsx'),react:{...React,useState:()=>[state[i++],()=>{}],useRef:()=>({current:0}),useCallback:f=>f,useEffect(){}},'next/link':{default:'a'},'next/navigation':{useSearchParams:()=>new URLSearchParams()},'@/lib/workspace-api':{},'@/contexts/auth-context':{useAuth:()=>({user:{id:'student'},refreshUser:async()=>{}})},'@/components/ui/button':{Button:'button'},'@/components/club-logo':require('./helpers/component-module.cjs').loadComponent('components/club-logo.tsx'),'./decision-letter.css':{},'./decision-celebration':{Celebration:()=>null,prefersReducedMotion:()=>false,useCelebration:()=>({run:0,play(){}})},'@/components/icons':{PartyPopper:'svg',RotateCcw:'svg'},'@/lib/decision-letters':require('./helpers/demo-harness.cjs').harness().load('lib/decision-letters.ts'),'@/components/shell/focus-frame-context':{useFocusFrame(){}},'@/components/ui/page-header':require('./helpers/component-module.cjs').loadComponent('components/ui/page-header.tsx')};
   new Function('require','module','exports',ts.transpileModule(fs.readFileSync('components/communications/decision-letter.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText)(n=>n in mocks?mocks[n]:require(n),m,m.exports);
   return renderToStaticMarkup(React.createElement(m.exports.DecisionLetterView,{applicationId:'application'}));
  }
@@ -53,4 +53,45 @@ test('letter offer controls respect current decision, expiry, revocation and sus
  }
  assert.match(render({...base,offer:{...base.offer,status:'ACCEPTED'}}),/Open My Clubs/);
  assert.ok(!render(null).includes('Formal wording.'));
+});
+
+test('acceptance celebration: club choice is validated, snapshotted, and defaults for older letters',()=>{
+ const h=harness(),{resolveLetter,letterTemplatesSchema,defaultLetters,letterCelebration,celebrationKinds}=h.load('lib/decision-letters.ts');
+ const values={firstName:'Alex',fullName:'Alex Student',clubName:'Example Club',date:new Date('2026-10-10'),expiresAt:new Date('2026-11-10'),logoReference:null,accent:'#336699'};
+ assert.deepEqual([...celebrationKinds],['confetti','fireworks','sparkles','none']);
+ assert.equal(resolveLetter('ACCEPTED',{},values).celebration,'confetti');
+ for(const kind of celebrationKinds)assert.equal(resolveLetter('ACCEPTED',{ACCEPTED:{...defaultLetters.ACCEPTED,celebration:kind}},values).celebration,kind);
+ for(const decision of ['WAITLISTED','REJECTED'])assert.equal('celebration' in resolveLetter(decision,{},values),false);
+ assert.equal(letterTemplatesSchema.safeParse({ACCEPTED:{...defaultLetters.ACCEPTED,celebration:'lasers'}}).success,false);
+ assert.equal(letterTemplatesSchema.safeParse({ACCEPTED:{...defaultLetters.ACCEPTED,celebration:'<script>'}}).success,false);
+ // Letters published before celebrations existed carry no field.
+ const {celebration,...legacy}=resolveLetter('ACCEPTED',{},values);assert.equal(celebration,'confetti');
+ assert.equal(letterCelebration('ACCEPTED',legacy),'confetti');assert.equal(letterCelebration('ACCEPTED',{celebration:'bogus'}),'confetti');
+ assert.equal(letterCelebration('REJECTED',{celebration:'fireworks'}),'none');assert.equal(letterCelebration('ACCEPTED',{celebration:'none'}),'none');
+ // Templates saved before this change (no celebration key) still parse.
+ assert.equal(letterTemplatesSchema.safeParse({ACCEPTED:{title:'t',body:'b',closing:'',signer:'',footer:''}}).success,true);
+});
+test('acceptance banner and replay appear only for a current, live acceptance; seal is decorative',()=>{
+ const fs=require('node:fs'),ts=require('typescript'),React=require('react'),{renderToStaticMarkup}=require('react-dom/server');
+ const content={title:'Decision',body:'Formal wording.',closing:'Sincerely,',signer:'Club',footer:'',studentName:'Alex Student',clubName:'Club of Investing',accent:'#142d4e',date:'October 10, 2026',celebration:'fireworks'};
+ const base={isCurrent:true,currentStatus:'ACCEPTED',suspended:false,letter:{id:'letter',decision:'ACCEPTED',content},offer:{status:'PENDING',expiresAt:'2999-01-01'}};
+ const lib=harness().load('lib/decision-letters.ts');
+ function load(data){let i=0;const state=[data,false,'',false],m={exports:{}};
+  const mocks={'@/components/ui/loading-state':require('./helpers/component-module.cjs').loadComponent('components/ui/loading-state.tsx'),react:{...React,useState:v=>i<4?[state[i++],()=>{}]:[v,()=>{}],useRef:()=>({current:0}),useCallback:f=>f,useEffect(){}},'next/link':{default:'a'},'next/navigation':{useSearchParams:()=>new URLSearchParams()},'@/lib/workspace-api':{},'@/contexts/auth-context':{useAuth:()=>({user:{id:'student'},refreshUser:async()=>{}})},'@/components/ui/button':{Button:'button'},'@/components/club-logo':require('./helpers/component-module.cjs').loadComponent('components/club-logo.tsx'),'./decision-letter.css':{},'@/components/shell/focus-frame-context':{useFocusFrame(){}},'@/components/ui/page-header':require('./helpers/component-module.cjs').loadComponent('components/ui/page-header.tsx'),'./decision-celebration':{Celebration:({kind})=>React.createElement('canvas',{'data-celebration':kind}),prefersReducedMotion:()=>false,useCelebration:()=>({run:0,play(){}})},'@/components/icons':{PartyPopper:'svg',RotateCcw:'svg'},'@/lib/decision-letters':lib};
+  new Function('require','module','exports',ts.transpileModule(fs.readFileSync('components/communications/decision-letter.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText)(n=>n in mocks?mocks[n]:require(n),m,m.exports);
+  return m.exports;
+ }
+ const render=data=>renderToStaticMarkup(React.createElement(load(data).DecisionLetterView,{applicationId:'application'}));
+ const live=render(base);assert.match(live,/Congratulations, Alex!/);assert.match(live,/Celebrate again/);assert.match(live,/data-celebration="fireworks"/);
+ assert.match(live,/data-decision="accepted"/);
+ for(const data of [{...base,isCurrent:false},{...base,suspended:true},...['REVOKED','EXPIRED','DECLINED'].map(status=>({...base,offer:{...base.offer,status}})),{...base,offer:{...base.offer,expiresAt:'2000-01-01'}},...['WAITLISTED','REJECTED'].map(decision=>({...base,currentStatus:decision,letter:{...base.letter,decision},offer:null}))]){
+  const html=render(data);assert.ok(!html.includes('Congratulations, Alex'));assert.ok(!html.includes('Celebrate again'));assert.ok(!html.includes('data-celebration'));assert.ok(html.includes('Formal wording.'));
+ }
+ const accepted=render({...base,offer:{...base.offer,status:'ACCEPTED'}});assert.match(accepted,/Celebrate again/);
+ const none=render({...base,letter:{...base.letter,content:{...content,celebration:'none'}}});assert.match(none,/Congratulations, Alex!/);assert.ok(!none.includes('Celebrate again'));
+ const {LetterPaper,clubMonogram}=load(base);
+ assert.equal(clubMonogram('Club of Investing'),'CI');assert.equal(clubMonogram('The Virginia Consulting Group'),'VCG');assert.equal(clubMonogram('  '),'OC');
+ const paper=renderToStaticMarkup(React.createElement(LetterPaper,{content:{...content,clubName:'<b>Club</b>'}}));
+ assert.match(paper,/<svg[^>]*aria-hidden="true"/);assert.ok(!paper.includes('<b>Club'));assert.ok(paper.includes('&lt;B&gt;CLUB&lt;/B&gt;'));
+ const css=fs.readFileSync('components/communications/decision-letter.css','utf8');assert.match(css,/\.decision-celebrate-banner,\.decision-celebration-canvas\{display:none!important\}/);
 });
