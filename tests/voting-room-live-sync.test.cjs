@@ -69,6 +69,17 @@ test('early-close wording is singular for one missing ballot',async()=>{
  const meeting=fs.readFileSync('components/live-voting/room-meeting.tsx','utf8');assert.match(meeting,/missing===1\?"ballot is":"ballots are"/);assert.doesNotMatch(meeting,/\$\{missing\} ballots are missing/);
 });
 
+test('deciding without a vote is reported as without a vote for Pass and Do not pass, with no fabricated ballots',async()=>{
+ const h=harness();await h.create();ok(await h.command('START'));
+ ok(await h.command('DECIDE_WITHOUT_VOTE_AND_ADVANCE',{applicationId:apps[0],passNumber:1,choice:'ACCEPT',reason:'Clear yes',confirmed:true}));
+ ok(await h.command('OPEN_VOTING',{applicationId:apps[1],passNumber:1}));
+ ok(await h.command('DECIDE_WITHOUT_VOTE_AND_ADVANCE',{applicationId:apps[1],passNumber:1,choice:'REJECT',reason:'Clear no',confirmed:true}));
+ const view=await h.read(),rows=view.history[0].candidates;
+ assert.deepEqual(rows.slice(0,2).map(c=>[c.outcome,c.withoutVote]),[['ACCEPT',true],['REJECT',true]]);
+ assert.equal(session(h).passes[0].candidates.slice(0,2).reduce((n,c)=>n+c.ballots.length,0),0,'no ballots are created');
+ assert.match(fs.readFileSync('components/live-voting/room-meeting.tsx','utf8'),/"Not passed":"Passed"\} without a vote/);
+});
+
 test('a hung poll is abandoned so the room keeps refreshing; its late result is discarded',async()=>{
  const {votingRoomSubscription}=load('lib/voting-room-subscription.ts');
  let calls=0,release;const seen=[];
