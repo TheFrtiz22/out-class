@@ -28,7 +28,7 @@
 .oc-public-text-link { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; font-size: 14px; text-decoration: underline !important; text-underline-offset: 5px; text-decoration-color: color-mix(in srgb, currentColor 45%, transparent) !important; }
 .oc-public-navy { background: var(--primary); color: var(--oc-public-paper); }
 .oc-public-navy .oc-public-kicker { color: #d5dce4; }
-.oc-public-navy :is(a, button):focus-visible { outline-color: var(--oc-public-paper); }
+.oc-public-navy :is(a, button):focus-visible { outline-color: var(--ring); }
 .oc-public-navy [data-slot="button"] { background: var(--oc-public-paper); color: var(--primary); }
 .oc-public-navy [data-slot="button"]:hover { background: white; }
 /* Public glass (docs/public-site/redesign/README.md). Round surfaces built on the shared glass tokens in
@@ -55,7 +55,7 @@
   -webkit-backdrop-filter: var(--oc-surface-glass-navy-filter); backdrop-filter: var(--oc-surface-glass-navy-filter);
 }
 .oc-public-glass-navy :is(.oc-public-kicker, .oc-public-note) { color: var(--oc-rail-muted); }
-.oc-public-glass-navy :is(a, button):focus-visible { outline: 2px solid var(--oc-glass-cream); outline-offset: 2px; }
+.oc-public-glass-navy :is(a, button):focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 .oc-public-note { font-size: 12px; color: var(--muted-foreground); line-height: 1.7; }
 html.oc-native-navigation { scroll-padding-top: 0; }
 .oc-landing :is(section, article, details, span)[tabindex="-1"]:focus { outline: none; }

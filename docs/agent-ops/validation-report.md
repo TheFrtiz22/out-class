@@ -130,6 +130,11 @@ reviewers: migration-reviewer safe as written (keep single ALTER; deploy order: 
 not run: run-disposable-postgres.cjs (no Docker daemon in this container), authenticated E2E stack
 ```
 ```
+2026-11-09 SEC-SEARCHPATH-1 (security/function-search-path from main 5cbaeb60): app gates: test 1975/1909/0 fail/66 skipped (env-gated) migrations 73 ok (RLS 85) lint ok types ok | build: CI
+targeted: database-reconciliation 5/5; test:migrations new pin assertion fails without the migration; shadow probe alone fails without it (actual 1, expected 0)
+disposable postgres:16 rehearsal (prod is 17.6): 72 prior migrations -> 49/65 public functions unpinned; non-owner role: exit 0, 49 WARNINGs, 49/65 unchanged; owner x2: exit 0, silent, 0/65; 74 user triggers attached+enabled; owners/secdef unchanged
+production read-only (catalog only): advisor 0/52/43 unchanged; 49 functions owned by postgres, INVOKER, proconfig null; md5(prosrc) = ledger for 42, other 7 equal after stripping CRLF
+reviewers: migration-reviewer nothing blocking; L1 verify advisor after apply, L2 ledger ordering vs #191, L3 try/finally (fixed)
 2026-11-09 EXPLORE-SUGGEST-1 (device Linux VM, macOS node_modules): club-suggestions 4/4 | related unit suites 129/129 (welcome mock added for new hook) | all non-browser unit files 1799 pass / 8 fail env-only (sharp, Prisma query engine, lightningcss native binaries) / 24 skipped | typecheck: only pre-existing lib/account-data.ts shortName (shared Prisma client generated from older schema) | eslint changed files 0 | ui-controls OK
 not run: browser/E2E suites, next build, test:migrations (no linux chromium/native binaries in this shell) — run `pnpm run validate` on the Mac before PR
 ```

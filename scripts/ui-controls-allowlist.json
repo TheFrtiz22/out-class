@@ -22,19 +22,19 @@
   {
    "rule": "css-hex",
    "file": "components/communications/decision-letter.css",
-   "max": 11,
+   "max": 8,
    "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
   },
   {
    "rule": "css-hex",
    "file": "components/events/events.css",
-   "max": 35,
+   "max": 30,
    "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
   },
   {
    "rule": "css-hex",
    "file": "components/landing/journey-atmosphere.css",
-   "max": 3,
+   "max": 2,
    "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
   },
   {
@@ -64,7 +64,7 @@
   {
    "rule": "css-hex",
    "file": "components/landing/scroll-indicator.css",
-   "max": 3,
+   "max": 1,
    "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
   },
   {
