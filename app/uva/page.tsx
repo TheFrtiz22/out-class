@@ -1,4 +1,3 @@
-import { ArrowRight } from "@/components/icons"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
@@ -43,15 +42,15 @@ export default function UvaPage() {
           />
         </figure>
       }
-      heroActions={<div className="oc-public-actions"><Button asChild size="lg"><Link prefetch={false} href="/signup">Create your profile <ArrowRight size={16} aria-hidden="true" /></Link></Button><Button asChild size="lg" variant="outline"><a href="#faq">Read the FAQs</a></Button></div>}
+      heroActions={<div className="oc-public-actions"><Button asChild size="lg"><Link prefetch={false} href="/signup">Create your profile</Link></Button><Button asChild size="lg" variant="outline"><a href="#faq">Read the FAQs</a></Button></div>}
     >
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} />
-      <section className="oc-campus-context oc-public-section"><p className="oc-public-kicker">Starting at the University of Virginia</p><div className="oc-editorial-split"><h2>One profile.<br />Every opportunity.</h2><div className="oc-editorial-prose"><p>Students can discover organizations, submit applications, manage interviews, and follow their recruitment status. Leaders have tools to configure applications, coordinate interviews, evaluate applicants, and manage decisions.</p><p>OutClass is independent: it is not an official University of Virginia service and is not owned, sponsored, or endorsed by the university.</p><a className="oc-public-text-link" href="/about">The story behind OutClass <ArrowRight size={16} aria-hidden="true" /></a></div></div></section>
+      <section className="oc-campus-context oc-public-section"><p className="oc-public-kicker">Starting at the University of Virginia</p><div className="oc-editorial-split"><h2>One profile.<br />Every opportunity.</h2><div className="oc-editorial-prose"><p>Students can discover organizations, submit applications, manage interviews, and follow their recruitment status. Leaders have tools to configure applications, coordinate interviews, evaluate applicants, and manage decisions.</p><p>OutClass is independent: it is not an official University of Virginia service and is not owned, sponsored, or endorsed by the university.</p><a className="oc-public-text-link" href="/about">The story behind OutClass</a></div></div></section>
       <section id="faq" className="oc-public-section oc-information-faq" aria-labelledby="faq-title">
         <div className="oc-faq-heading"><p className="oc-public-kicker">Frequently asked questions</p><h2 id="faq-title">Questions about using OutClass</h2><p>Accounts, applications, interview scheduling, and who can use OutClass.</p></div>
         <PublicFaq />
       </section>
-      <section className="oc-public-section oc-faq-next" aria-labelledby="not-uva-title"><div><h2 id="not-uva-title">Not at UVA?</h2><p>Your campus could be next. Tell us where you’d like to see OutClass.</p></div><a className="oc-public-text-link" href="/request-school">Request your school <ArrowRight size={16} aria-hidden="true" /></a></section>
+      <section className="oc-public-section oc-faq-next" aria-labelledby="not-uva-title"><div><h2 id="not-uva-title">Not at UVA?</h2><p>Your campus could be next. Tell us where you’d like to see OutClass.</p></div><a className="oc-public-text-link" href="/request-school">Request your school</a></section>
     </PublicInformationPage>
   )
 }

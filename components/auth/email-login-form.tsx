@@ -1,6 +1,5 @@
 import type { FormEvent } from "react"
 import Link from "next/link"
-import { ArrowRight } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -31,7 +30,7 @@ export function EmailLoginForm({ email, password, error, loading, microsoftLoadi
         <div className="oc-login-password-label"><Label htmlFor="login-password">Password</Label><Link href="/forgot-password" className="oc-login-text-link">Forgot password?</Link></div>
         <Input id="login-password" type="password" autoComplete="current-password" required disabled={busy} value={password} onChange={event => onPasswordChange(event.target.value)} aria-invalid={!!error} aria-describedby={error ? "auth-error" : undefined} />
       </div>
-      <Button type="submit" disabled={busy || !password} loading={loading} className="oc-login-submit">Sign in<ArrowRight className="size-4" /></Button>
+      <Button type="submit" disabled={busy || !password} loading={loading} className="oc-login-submit">Sign in</Button>
       <Button type="button" variant="link" disabled={busy || resendSeconds > 0} onClick={onRequestCode} className="oc-login-code-link h-auto min-h-11 px-0 text-sm">{resendSeconds > 0 ? `Use an email code in ${resendSeconds}s` : "Use an email code instead"}</Button>
     </form>
   )

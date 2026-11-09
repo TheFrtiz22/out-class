@@ -3,7 +3,6 @@ import { LoadingState } from "@/components/ui/loading-state"
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { ArrowLeft, ShieldCheck } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -103,10 +102,6 @@ export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
     <PublicPageFrame width="narrow" className="oc-auth-page">
       <div>
         <section className="oc-login-auth-content oc-recovery-card" aria-labelledby="recovery-title">
-          <ShieldCheck
-            className="mb-6 size-7 text-muted-foreground"
-            aria-hidden="true"
-          />
           <h1 id="recovery-title" className="oc-auth-title">{done
               ? mode === "request"
                 ? "Check your inbox"
@@ -230,7 +225,6 @@ export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
             href="/login"
             className="mt-8 inline-flex min-h-11 items-center gap-2 text-sm underline underline-offset-4"
           >
-            <ArrowLeft className="size-4" aria-hidden="true" />
             Back to sign in
           </Link>
         </section>

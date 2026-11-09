@@ -78,5 +78,10 @@ The decision moment, "A season on Grounds" and the feature grid are built; evide
 
 Built; evidence in [`footer/README.md`](footer/README.md).
 
+## Public pages
+
+About, UVA, Request School, sign-in, sign-up, password recovery and legal are restyled; evidence in
+[`pages/README.md`](pages/README.md).
+
 Still to do, page by page: the rest of the homepage from `Main.mockup.html`, then the other public pages,
 and remove brand orange from every place except the two allowed by rule 4.
