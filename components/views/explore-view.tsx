@@ -3,6 +3,7 @@ import { NativeSelect } from "@/components/ui/native-select"
 import { useSearchParams } from "next/navigation"
 import { SavedClubsPopover } from "@/components/clubs/saved-clubs-popover"
 import { PageHeader } from "@/components/ui/page-header"
+import { ExploreSwitch } from "@/components/explore-switch"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { ArrowRight, ChevronDown, Search, SlidersHorizontal, X, Compass, BookOpen, BriefcaseBusiness, Globe2, Heart, Mountain, Lightbulb, ChartNoAxesCombined, MessageSquare, Users } from "@/components/icons"
 import { Button } from "@/components/ui/button"
@@ -168,6 +169,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
   }
   return (
     <div className="oc-discovery" data-explore-section={section} ref={resultsRef}>
+      <ExploreSwitch current="clubs" />
       <div className="oc-explore-heading">
         <PageHeader density="expressive" eyebrow="Find your people" title="Explore clubs" description="Follow your interests. Make room for something new." action={<SavedClubsPopover onNavigate={onNavigate} />} />
       </div>

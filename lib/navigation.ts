@@ -2,7 +2,7 @@ import { managerNavigation, mobileDestinations, type ProductNavItem } from "@/li
 import type { ClubAccess } from "@/lib/permissions"
 import { adminNavigation } from "@/lib/admin-navigation"
 import { STUDENT_HOME } from "@/lib/student-routes"
-import { TERMS } from "@/lib/copy/terms"
+import { INBOX_HREF, TERMS } from "@/lib/copy/terms"
 
 /**
  * Navigation for OutClass. Student URL routes (and the old-URL redirects that
@@ -131,13 +131,20 @@ export function activeNavItem(pathname: string, params: URLSearchParams = new UR
 }
 
 /**
- * Phone bottom bar: four destinations, then More for the rest of the rail.
- * A leader sees the section holding the current page (Recruiting or Club).
+ * Phone bottom bar. Personal: the same five tabs as the OutClass app — Home (which also holds
+ * Applications and My Clubs), Explore (with Events), Inbox, Calendar and Profile — and no More.
+ * A leader sees four destinations, then More for the rest of the rail.
  */
 export function bottomBarItems(sections: RailSection[], kind: WorkspaceKind | "preview", active?: string | null): ProductNavItem[] {
   if (kind === "personal") {
-    const items = railItems(sections)
-    return ["student-dashboard", "explore", "applications", "clubs"].map(id => items.find(item => item.id === id)).filter((item): item is ProductNavItem => !!item)
+    const items = railItems(sections), find = (id: string) => items.find(item => item.id === id)
+    const home = find("student-dashboard"), explore = find("explore"), calendar = find("calendar"), profile = find("student-profile")
+    return [
+      home && { ...home, matches: ["applications", "clubs"] },
+      explore && { ...explore, matches: ["corkboard"] },
+      { id: "inbox", label: TERMS.inbox, href: INBOX_HREF },
+      calendar, profile,
+    ].filter((item): item is ProductNavItem => !!item)
   }
   if (kind === "leader") return leaderBottomBar(sections)
   const current = sections.find(section => section.items.some(item => item.id === active)) ?? sections[0]

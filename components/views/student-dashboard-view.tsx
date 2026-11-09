@@ -4,7 +4,7 @@ import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
 import { AvailabilityDashboardRequests } from "@/components/availability/dashboard-requests"
 
 import { useWelcomeClock } from "@/hooks/use-welcome-clock"
-import { Bell, ChevronRight } from "@/components/icons"
+import { Bell, CheckCircle2, ChevronRight, Circle } from "@/components/icons"
 import { WelcomeHeader } from "@/components/product/welcome-header"
 import { Dashboard, DashboardCard, DashboardFoot, DashboardHero, DashboardMore, DashboardQuiet, DateChipList, GlassRow, GlassRowList, NeedsAction, NeedsYouRow, PipelineBars, type DateChipItem, type NeedsItem } from "@/components/product/dashboard/dashboard"
 import { Button } from "@/components/ui/button"
@@ -162,11 +162,60 @@ export function StudentDashboardView({
   const empty = (title: string, copy: string, action: ReactNode) => <div className="oc-dashboard-state"><DashboardQuiet><strong>{title}.</strong> {copy}</DashboardQuiet>{action}</div>
   const stages = applicationStages(applications)
 
+  // Phones: the OutClass app's Home — To-do, Coming up, the furthest-along application, every
+  // application, then My clubs — from the same records the desktop dashboard below reads.
+  const stageOf = (status: string) => ["Accepted", "Rejected", "Waitlisted"].includes(status) ? 3 : status === "Interviewing" ? 2 : status === "In Review" ? 1 : 0
+  const furthest = applications.filter(app => !app.draft && !app.closed && stageOf(app.status) < 3).sort((a, b) => stageOf(b.status) - stageOf(a.status))[0]
+  const clubs = user?.memberships.filter(m => m.status === "ACTIVE" && m.club) ?? []
+  const phone = <div className="oc-home-phone">
+    {unavailable
+      ? <Card variant="glass" className="oc-needs-clear" role="status"><div className="oc-dashboard-state"><p><strong>We couldn’t load your applications.</strong> Try again to see the latest information for your account.</p><Button onClick={() => window.location.reload()}>Try again</Button></div></Card>
+      : <DashboardCard id="home-phone-todo-title" title="To-do" className="oc-home-phone-todo">
+        {needsItems.length ? <ul className="oc-home-todo">{needsItems.map(item => <li key={item.id} data-urgent={item.order === 0 || undefined}>
+          <span className="oc-home-todo-box" aria-hidden="true" />
+          <span className="oc-home-todo-copy"><strong>{item.title}</strong>{item.detail && <small>{item.detail}</small>}{item.action}</span>
+        </li>)}</ul>
+          : <DashboardQuiet><strong>You’re clear for now.</strong> Deadlines, interview invitations and club tasks that need you will show up here.</DashboardQuiet>}
+      </DashboardCard>}
+    {coming.length > 0 && <DashboardCard id="home-phone-agenda-title" title="Coming up" className="oc-home-phone-agenda" more={{ onClick: () => onNavigate("calendar"), label: "Calendar" }}>
+      <DateChipList items={coming.slice(0, 3)} when={when} timeZone={SCHEDULING_TIMEZONE} empty="" />
+    </DashboardCard>}
+    {furthest && <section className="oc-home-furthest" aria-labelledby="home-phone-furthest-title">
+      <h2 id="home-phone-furthest-title" className="oc-home-phone-heading">Furthest along</h2>
+      <button type="button" className="oc-home-furthest-card" onClick={() => openApplication(furthest)}>
+        <small>Application status</small>
+        <strong>{furthest.name}</strong>
+        <ol>{["Application submitted", "Club review", "Interview", "Decision"].map((label, i) => {
+          const at = stageOf(furthest.status)
+          return <li key={label} data-state={i < at ? "done" : i === at ? "current" : undefined}>
+            {i < at ? <CheckCircle2 size={20} weight="regular" aria-hidden="true" /> : i === at ? <span className="oc-home-furthest-dot" aria-hidden="true" /> : <Circle size={20} aria-hidden="true" />}
+            <span>{i === at && i === 1 ? "Club review in progress" : i === at && i === 2 ? "Interview stage" : label}</span>
+          </li>
+        })}</ol>
+      </button>
+    </section>}
+    <DashboardCard id="home-phone-applications-title" title="Applications" className="oc-home-phone-applications" more={{ onClick: () => onNavigate("tracker"), label: "View all" }}>
+      {applications.length ? <GlassRowList>{applications.slice(0, 5).map(app => <li key={app.id}><GlassRow onClick={() => openApplication(app)} className="oc-home-application" title={app.name} detail={applicationNote(app)}
+        lead={<ClubLogo clubId={app.clubId} logoUrl={app.logoUrl} marketing={app.marketing} text={app.name.slice(0, 2)} color={app.color} />}
+        trailing={<span className="oc-dashboard-row-end"><StatusPill status={app.status} /></span>} /></li>)}</GlassRowList>
+        : <DashboardQuiet><strong>Nothing submitted yet.</strong> Find clubs to apply to in Explore. <DashboardMore onClick={() => onNavigate("explore")}>Explore clubs</DashboardMore></DashboardQuiet>}
+    </DashboardCard>
+    <section className="oc-home-phone-clubs" aria-labelledby="home-phone-clubs-title">
+      <div className="oc-home-phone-heading-row"><h2 id="home-phone-clubs-title" className="oc-home-phone-heading">{TERMS.myClubs}</h2><DashboardMore onClick={() => onNavigate("my-clubs")}>All clubs</DashboardMore></div>
+      {clubs.length ? <ul className="oc-home-club-grid">{clubs.map(m => <li key={m.clubId}><a href={clubWorkspaceHref(m.clubId)} className="oc-home-club-tile">
+        <ClubLogo clubId={m.clubId} logoUrl={m.club.logoUrl} text={m.club.name.slice(0, 2)} color={m.club.color ?? undefined} />
+        <strong>{m.club.name}</strong><small>{m.role === "PRESIDENT" ? "President" : m.role === "RECRUITMENT_LEAD" ? "Recruitment lead" : "Member"}</small>
+      </a></li>)}</ul>
+        : <Card variant="glass" className="oc-home-phone-empty"><DashboardQuiet>Clubs you join appear here, with their meetings and tasks.</DashboardQuiet></Card>}
+    </section>
+  </div>
+
   return (
     <div className="oc-student-home">
       {hero}
+      <AvailabilityDashboardRequests />
+      {phone}
       <Dashboard className="oc-home-dashboard">
-        <AvailabilityDashboardRequests />
         {unavailable
           ? <Card variant="glass" className="oc-needs-clear oc-home-next" role="status"><div className="oc-dashboard-state"><p><strong>We couldn’t load your applications.</strong> Try again to see the latest information for your account.</p><Button onClick={() => window.location.reload()}>Try again</Button></div></Card>
           : <NeedsYouRow headingId="home-next-title" className="oc-home-next" items={needsItems}
