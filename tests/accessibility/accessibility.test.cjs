@@ -110,7 +110,7 @@ for(const [index,route] of publicRoutes.entries()){
     assert.ok(process.env.OUTCLASS_A11Y_URL,'Use pnpm test:a11y to start the isolated local app');
     const f=await pageFor(process.env.OUTCLASS_A11Y_URL+route);const p=f.page;try{
       assert.equal(await p.locator('main').count(),1);assert.ok(await p.title());await expect(p.locator('html')).toHaveAttribute('lang','en');await scan(p,`public-${index}-desktop`);
-      if(index===0){await p.screenshot({path:path.join(output,'home-after.png'),fullPage:true});assert.equal(await p.locator('.oc-demo-observation button').count(),0);await p.getByRole('button',{name:'Next feature'}).click();await scan(p,'carousel-manual');}
+      if(index===0){await p.screenshot({path:path.join(output,'home-after.png'),fullPage:true});assert.equal(await p.locator('.oc-demo-observation button').count(),0);await p.locator('.oc-hero-audience-toggle').getByRole('button',{name:'Students',exact:true}).click();await expect(p.locator('h1')).toContainText('one profile');await scan(p,'hero-students');}
       if(route==='/uva'){await p.locator('#faq summary, #faq button').first().click();await scan(p,'faq-expanded');}
       await p.setViewportSize({width:320,height:800});await reflow(p);await scan(p,`public-${index}-320`);
       await p.addStyleTag({content:'*{letter-spacing:.12em!important;word-spacing:.16em!important;line-height:1.5!important}p{margin-bottom:2em!important}'});await reflow(p);

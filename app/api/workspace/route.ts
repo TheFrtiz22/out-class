@@ -30,6 +30,10 @@ const noArgs = z.tuple([])
 const votingArgs = z.preprocess(args => Array.isArray(args) && args.length === 1 ? [args[0], null] : args,
   z.tuple([z.string().uuid(), z.string().uuid().nullish().transform(value => value ?? undefined)]))
 
+// Every `case` below, so logs carry only a known constant, never a raw query value.
+const workspaceReadKinds = new Set(["myAvailability", "roundAvailability", "availabilityOverview", "staffingCoverage", "panelWorkspace", "assignedRooms", "interviewWorkspace", "interviewRounds", "roomWorkspace", "bookingPublication", "tasks", "meetings", "announcements", "notifications", "dashboardReviews", "overview", "members", "pipeline", "pipelineList", "pipelinePage", "pipelineSelection", "rankedReviewSettings", "rounds", "applicationSettings", "pipelineSettings", "directory", "publicClub", "corkboard", "taskNotifications", "studentDashboard", "voting", "votingJoin", "invitations", "tutorial", "applicantDisplay", "attendance"])
+const loggedReadKind = (kind: string | null) => kind && workspaceReadKinds.has(kind) ? kind : "unknown"
+
 // An explicit read allowlist. Each private loader still runs its original live
 // authentication/authorization; no client identity or arbitrary action dispatch.
 export async function GET(request: Request) {
@@ -87,6 +91,8 @@ export async function GET(request: Request) {
     if (error instanceof UniversityVerificationError) return Response.json({ error: error.code }, { status: error.code === "UNIVERSITY_VERIFICATION_REQUIRED" ? 403 : 503, headers })
     const redirect = error && typeof error === "object" && "digest" in error && String(error.digest).startsWith("NEXT_REDIRECT")
     const invalid = error instanceof z.ZodError || error instanceof SyntaxError
+    // Name the refused read kind (an allowlisted constant) so a recurring 403 can be traced; no arguments, ids or messages.
+    if (!redirect) console.warn(JSON.stringify({ event: "workspace.read.refused", kind: loggedReadKind(new URL(request.url).searchParams.get("kind")), status: invalid ? 400 : 403, error: error instanceof Error ? error.name : typeof error }))
     return Response.json({ error: invalid ? "Invalid workspace read" : "Workspace access unavailable" }, { status: invalid ? 400 : redirect ? 401 : 403, headers })
   }
   })

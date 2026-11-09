@@ -98,3 +98,21 @@ Changes: `getClubWorkspaceOverview(clubId, view)` (`actions/club-overview.ts`) t
 Shell (Part 1): signed-out on a required route → the route's gate redirects/denies (`settings-navigation.test`); the client shell derives the rail from the account's own memberships (`workspace-shell.test`: no leader rail for a club without workspace access, suspended club → personal rail); access loss still runs the existing `router.replace` reconciliation (unchanged code in `ProductShell`).
 
 Untested cells: 0 new; 1 pre-existing recheck cell untested (unchanged). `pnpm run test:migrations`: see validation-report (no schema change).
+
+## 2026-11-09 · CLUB-SHORTNAME-1 · Club short name (branch `feature/club-short-name`, local only)
+
+Changes: nullable `Club.shortName` (migration `20261109120000_club_short_name`, CHECK `Club_shortName_format`). Written only through the existing `updateClubSettings` (`club.settings` at request and inside the write transaction, revision compare now includes `shortName`, unchanged `club.settings.update` audit) and the existing platform-admin club editor (`requirePlatformAdmin` unchanged; its `editable` projection now includes `shortName` so an admin save keeps it and its version check sees a concurrent change). Read through `accountClubSelect`: the signed-in user's own active memberships (workspace pill) and the clubs on their own applications (RSC bootstrap, `/api/users/me`). Not indexed, not on public pages, not in the club switcher or phone account menu. Not private data: a club-chosen display label.
+
+| Actor | Write `shortName` | Read in shell | Test |
+|---|---|---|---|
+| Logged-out / expired session | deny (`requireClubPermission` throws before any read) | n/a | existing `club-marketing.test` (denied publish writes 0) |
+| Leader of X with `club.settings` | allow; trimmed, 2–8 `[A-Za-z0-9& -]`, empty → `null`; audit row | own club | `club-short-name.test` (save, clear, reject, audit, both capability checks) |
+| Member of X without `club.settings` | deny, 0 writes | own club (via membership) | `club-short-name.test` (denied leader writes nothing) |
+| Leader of club Y sending X's id | deny: both checks use `data.clubId` and the update uses the same id | n/a | mocked denial only (`club-short-name.test`, `club-marketing.test`); no real cross-club membership run, so **untested** with real memberships |
+| Concurrent editor with a stale snapshot | conflict error, 0 writes | — | `club-short-name.test` (revision check includes shortName; a pre-deploy snapshot without the key still detects other edits and cannot be used to overwrite a concurrent shortName change) |
+| Direct SQL / other writer bypassing zod | rejected by `Club_shortName_format` | — | `club-short-name.test` (PGlite, all migrations, as non-superuser table owner `outclass_production_app`) |
+| Suspended club / expired admin impersonation | deny (inherited `assertClubOperational`, `clubWriteTransaction`) | — | inherited, existing `club-suspension.test` |
+| Platform admin | allow via existing admin club editor; keeps shortName on other edits; conflict on concurrent change | — | `admin-clubs.test` (new: short name kept, concurrent change → "Club changed") |
+| Demo | demo store only (`Object.assign` on demo club); no server write | demo club | existing demo isolation (`demo-public-boundary.test`) |
+
+Untested cells: 1 (cross-club write with a real membership in Y; covered by mocked denial and code review). Applicants also read the shortName of clubs they applied to; it is a public display label, not private data. `pnpm run test:migrations`: see validation-report.

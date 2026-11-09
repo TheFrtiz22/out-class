@@ -101,15 +101,15 @@ test('pollWhileVisible whileHidden keeps presenter polling in a hidden tab; a fu
 })
 
 function presentation(presenting) {
-  const reads = []
-  let effect
-  const react = { useState: v => [v, () => {}], useEffect(fn) { effect = fn } }
+  const reads = [], effects = []
+  const react = { useState: v => [v, () => {}], useRef: v => ({ current: v }), useEffect(fn) { effects.push(fn) } }
   const mod = load('components/live-voting/room-presentation.tsx', {
     react, '@/lib/voting-room-api': { getLiveVotingPresentation: async input => { reads.push(input); return null } },
     '@/components/ui/loading-state': { LoadingState: 'LoadingState' }, '@/components/ui/button': { Button: 'Button' }, './applicant-slide': { ApplicantSlide: 'ApplicantSlide' },
   })
   mod.RoomPresentation({ clubId: 'club', sessionId: 'session', applicationId: 'app', identity: 'id', refreshKey: 0, presenting })
-  return { reads, cleanup: effect() }
+  const cleanups = effects.map(fn => fn())
+  return { reads, cleanup: () => cleanups.forEach(fn => typeof fn === 'function' && fn()) }
 }
 
 test('the projector and leader slide keep refreshing while hidden or covered; a member slide pauses', async () => {

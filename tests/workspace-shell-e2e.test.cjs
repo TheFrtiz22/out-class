@@ -70,7 +70,7 @@ test('the workspace shell persists across workspace switches', { skip: !configFi
     let prompted = false
     page.once('dialog', dialog => { prompted = true; void dialog.dismiss() })
     const url = page.url()
-    await page.locator(`a[data-workspace-option][aria-label="${club}"]`).click()
+    await page.locator(`a[data-workspace-option][aria-label$="${club}"]`).click()
     await page.waitForTimeout(900)
     assert.equal(prompted, true, 'the unsaved-changes prompt appeared')
     assert.equal(page.url(), url, 'no navigation after cancelling')

@@ -1,0 +1,85 @@
+name: Database migrations
+
+# Applies Prisma migrations (the authoritative schema history) to one hosted database.
+# Manual only. Each run is bound to a GitHub environment ("staging" or "production") and can read only
+# that environment's MIGRATION_DATABASE_URL secret (an operator connection: direct or session mode,
+# not the transaction pooler). Protect "production" with Required reviewers so every production run
+# waits for an owner's approval. See docs/database-deployment.md.
+run-name: "Migrate ${{ inputs.environment }} from ${{ inputs.ref }}${{ inputs.dry_run && ' (dry run)' || '' }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Database to migrate
+        type: choice
+        options: [staging, production]
+        required: true
+      ref:
+        description: Branch, tag or commit whose prisma/migrations to apply
+        type: string
+        default: main
+        required: true
+      dry_run:
+        description: Only list pending migrations; apply nothing
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: database-migrate-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: ${{ inputs.environment }}
+    env:
+      DATABASE_URL: ${{ secrets.MIGRATION_DATABASE_URL }}
+      TARGET_ENVIRONMENT: ${{ inputs.environment }}
+      DRY_RUN: ${{ inputs.dry_run }}
+    steps:
+      - name: Require the environment's migration secret
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::MIGRATION_DATABASE_URL is not set on the $TARGET_ENVIRONMENT environment."
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+      # Scripts skipped: migrations need only the Prisma CLI, not the client or PDF assets.
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Prisma is the only migration history
+        run: node scripts/check-migration-path.cjs
+      - name: Pending migrations
+        # `migrate status` exits 1 both for pending migrations (expected here) and for real failures:
+        # no connection, bad credentials, failed or divergent history. Only the first may pass.
+        run: |
+          set +e
+          pnpm exec prisma migrate status > "$RUNNER_TEMP/migrate-status.txt" 2>&1
+          code=$?
+          cat "$RUNNER_TEMP/migrate-status.txt"
+          if [ "$code" -eq 0 ]; then exit 0; fi
+          if grep -Eq 'Following migrations? ha(s|ve) not yet been applied' "$RUNNER_TEMP/migrate-status.txt" \
+            && ! grep -Eqi 'error|failed|P1[0-9]{3}|P3[0-9]{3}|are different|drift' "$RUNNER_TEMP/migrate-status.txt"; then
+            echo "::notice::Pending migrations are listed above."
+            exit 0
+          fi
+          echo "::error::prisma migrate status failed (connection, credentials, or a failed or divergent history). Nothing was applied."
+          exit 1
+      - name: Apply migrations
+        if: ${{ !inputs.dry_run }}
+        run: pnpm exec prisma migrate deploy
+      - name: Confirm the history is current
+        if: ${{ !inputs.dry_run }}
+        run: pnpm exec prisma migrate status

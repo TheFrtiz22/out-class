@@ -21,7 +21,7 @@ The updated build rates **Good**. The homepage is crawlable, has consistent head
 
 **Important, fixed:** Production robots.txt and sitemap.xml returned 404; canonical, Open Graph, Twitter, and structured metadata were missing; most product routes inherited indexable metadata; the homepage initially loaded 536 kB of product JavaScript; original image optimization was globally disabled; the favicon alone transferred over 700 kB; fonts were served as TTF; three perspective anchors had prohibited ARIA labels; asynchronous metadata could appear outside the head in ordinary browsers.
 
-**Social image, completed:** The supplied 1200 × 630 JPEG is bundled at `public/images/outclass-social.jpg`. The existing metadata helper defaults both `og:image` and `twitter:image` to `https://www.out-class.net/images/outclass-social.jpg`; `OUTCLASS_OG_IMAGE_PATH` remains an optional deployment override.
+**Social image, superseded Nov 8, 2026:** the site-wide card is now the glass card rendered by `lib/share-card.tsx` and prerendered at `/og/outclass.png`; club profiles render their own card at `/club/<id>/opengraph-image`. The original note follows. The supplied 1200 × 630 JPEG is bundled at `public/images/outclass-social.jpg`. The existing metadata helper defaults both `og:image` and `twitter:image` to `https://www.out-class.net/images/outclass-social.jpg`; `OUTCLASS_OG_IMAGE_PATH` remains an optional deployment override.
 
 **Important, remaining:** Simulated mobile LCP is 4.4 seconds; measure real users after deployment before making further tradeoffs.
 

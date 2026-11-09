@@ -74,11 +74,11 @@ test('every public page has a unique title and none repeats "OutClass"', () => {
 
 test('every page inherits a social image; public pages carry their own with the page title', () => {
   const defaults = seo.socialDefaults()
-  assert.equal(defaults.openGraph.images[0].url, 'https://www.out-class.net/images/outclass-social.jpg')
+  assert.equal(defaults.openGraph.images[0].url, 'https://www.out-class.net/og/outclass.png')
   assert.equal(defaults.twitter.card, 'summary_large_image')
   const about = seo.publicPageMetadata('About', 'd', '/about')
   assert.equal(about.openGraph.title, 'About · OutClass'); assert.ok(about.openGraph.images.length)
-  assert.ok(fs.existsSync('public/images/outclass-social.jpg'))
+  assert.ok(fs.existsSync('app/og/outclass.png/route.tsx'))
 })
 
 test('Privacy and Terms: formal text from one source, rendered by one component, and not public until the switch is on', async () => {
@@ -104,7 +104,7 @@ test('Privacy and Terms: formal text from one source, rendered by one component,
   }
   const { PublicFooter } = load('components/landing/public-footer.tsx', { '@/components/landing/interactive-footer-wordmark': { InteractiveFooterWordmark: () => null } })
   const footer = renderToStaticMarkup(React.createElement(PublicFooter))
-  assert.doesNotMatch(footer, /<h3>Legal<\/h3>|href="\/privacy"|href="\/terms"|mailto:/)
+  assert.doesNotMatch(footer, /<h[23]>Legal<\/h[23]>|href="\/privacy"|href="\/terms"|mailto:/)
   const sitemap = load('app/sitemap.ts', { '@/lib/public-club-seo': { getIndexableClubs: async () => [] } }).default
   const urls = (await sitemap()).map(entry => entry.url)
   assert.equal(urls.some(url => /\/(privacy|terms)$/.test(url)), false)
