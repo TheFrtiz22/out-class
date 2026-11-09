@@ -13,6 +13,18 @@
 
 After reconciliation, npm run db:deploy uses Prisma migrate deploy and rejects an active conflicting Supabase SQL history. The repository guard is not a remote drift detector or a baseline approval. Run prisma migrate status and inspect the reviewed plan first. Generate Prisma Client and deploy the application after the required migrations.
 
+## Hosted migrations from GitHub Actions
+
+`.github/workflows/database-migrate.yml` runs `prisma migrate deploy` against one hosted database, by hand only (Actions → Database migrations → Run workflow). Inputs: `environment` (`staging` or `production`), `ref` (the branch, tag or commit whose `prisma/migrations` to apply; default `main`) and `dry_run` (default on: lists pending migrations and applies nothing).
+
+One-time owner setup (repository Settings → Environments):
+
+1. Create `staging` and `production`.
+2. In each, add the secret `MIGRATION_DATABASE_URL`: that database's operator connection string, in direct or session mode (not the transaction pooler; `migrate deploy` needs a session connection). Never commit it or paste it into chat.
+3. On `production`, enable **Required reviewers** with the owner. Every production run then waits for that approval, which shows the run name ("Migrate production from <ref>").
+
+Order for a schema change: dry run on staging, apply on staging, verify, dry run on production, apply on production (approve), then merge and let Vercel deploy. The production build's read-only schema check (`prebuild`) refuses to publish code whose columns are missing. Runs for one environment queue behind each other and are never cancelled mid-migration. The job checks out the ref without credentials, installs without scripts, runs `scripts/check-migration-path.cjs`, shows `prisma migrate status`, applies, and confirms the status is current.
+
 ## Fresh installations
 
 Provision PostgreSQL (and Supabase Auth/Storage if used). Use npm run db:deploy against an empty application schema, then npx prisma generate. Do not load the archived snapshot. Existing Supabase-managed auth/storage schemas are not replaced by Prisma.
