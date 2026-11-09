@@ -9,7 +9,7 @@ export function CampusBand() {
       <div className="oc-campus-band-inner">
         <div className="oc-campus-band-card oc-public-glass-navy">
           <p className="oc-campus-band-kicker">Built at UVA</p>
-          <h2 id="campus-band-title">Made on Grounds, by students who’ve sat on both sides of the table.</h2>
+          <h2 id="campus-band-title">Made by students on Grounds.</h2>
           <p>We’re rolling out with participating clubs one at a time, testing the real workflow and fixing what doesn’t work before taking it to other campuses.</p>
           <a className="oc-campus-band-link" href="/about">About OutClass</a>
         </div>
