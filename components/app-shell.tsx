@@ -11,7 +11,9 @@ import { loadedDemoStore } from "@/lib/demo/loader"
 import { useState, useEffect, useMemo, useRef } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { type AppMode, type ViewId } from "@/lib/views"
-import { ApplicationStateProvider } from "@/lib/application-state"
+import { ApplicationStateProvider, useSeedApplicationData } from "@/lib/application-state"
+import { useInWorkspaceShell, useShellBindings } from "@/components/shell/workspace-shell-context"
+import type { ReactNode } from "react"
 import { AuthSessionBoundary } from "@/components/auth-session-boundary"
 import { OutClassLoadingScreen } from "@/components/outclass-loading-screen"
 import { WorkspaceLoading } from "@/components/workspace-loading"
@@ -145,6 +147,9 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
     if (!first || pathname !== STUDENT_HOME) setView(pathRoute.view)
   }, [pathRoute, pathname, searchKey])
 
+  // Full-page steps hide the persistent shell's chrome (it stays mounted underneath).
+  useShellBindings({ bare: true }, view === "student-onboarding" || view === "interview-workspace" || view === "auth" || view === "landing")
+
   function handleEnter(next: ViewId) {
     if (!adminViewIds.includes(next)) {
       try { sessionStorage.setItem("outclass-demo-student", "true") } catch { /* Demo remains usable without session storage. */ }
@@ -200,7 +205,7 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
 
 
   return (
-    <ApplicationStateProvider initialData={initialData ?? (initialSession ? { applications: [], attendances: [] } : null)} persistLocalState={!demo.isDemoEnabled && !initialSession && initialData == null}>
+    <StudentState serverData={initialData} initialData={initialData ?? (initialSession ? { applications: [], attendances: [] } : null)} persistLocalState={!demo.isDemoEnabled && !initialSession && initialData == null}>
       {view === "interview-workspace" ? <FocusFrame task="Interview" width="full"><AuthSessionBoundary><InterviewWorkspaceView onExit={() => navigate("leader-dashboard")} /></AuthSessionBoundary></FocusFrame> : <DashboardLayout view={view} appMode={appMode} onNavigate={navigate} onModeChange={switchMode} personalSection={personalSection} onPersonalSection={setPersonalSection}>
             {view === "student-dashboard" && <><OrganizationOwnershipRequests enabled={!!initialSession && !demo.isDemoEnabled} /><StudentDashboardView onNavigate={navigate} initialData={initialData} authenticated={!!initialSession} /></>}
             {view === "student-profile" && <UnifiedStudentProfileView />}
@@ -208,8 +213,8 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
             {view === "my-clubs" && <PersonalClubs section={personalSection} />}
             {view === "explore" && <ExploreView onNavigate={navigate} section={personalSection === "categories" ? "categories" : "explore"} />}
             {view === "corkboard" && <CorkboardView onNavigate={navigate} />}
-            {view === "tracker" && <ApplicationTrackerView onNavigate={navigate} scope="all" />}
-            {view === "status" && <ApplicationTrackerView onNavigate={navigate} scope="status" />}
+            {/* One instance for both scopes: its stage control slides instead of remounting. */}
+            {(view === "tracker" || view === "status") && <ApplicationTrackerView onNavigate={navigate} scope={view === "status" ? "status" : "all"} />}
             {view === "calendar" && <CalendarView onNavigate={navigate} />}
             {view === "leader-dashboard" && <LeaderDashboardView />}
             {view === "screening-dashboard" && <ScreeningDashboardView />}
@@ -218,6 +223,17 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
             {view === "club-manager" && (demo.isDemoEnabled ? <DemoClubSettings /> : <ClubWorkspaceSettings />)}
             {view === "club-management-portal" && <ClubManagementPortalView />}
       </DashboardLayout>}
-    </ApplicationStateProvider>
+    </StudentState>
   )
+}
+
+/** Inside `app/(workspace)` the shell owns the store, so the student app seeds it; elsewhere (`/`, `/preview`) it keeps its own. */
+function StudentState({ serverData, initialData, persistLocalState, children }: { serverData: any; initialData: any; persistLocalState: boolean; children: ReactNode }) {
+  // `serverData` is the page's server payload (stable identity), so the store is seeded once per page load.
+  if (useInWorkspaceShell()) return <SeededState initialData={serverData}>{children}</SeededState>
+  return <ApplicationStateProvider initialData={initialData} persistLocalState={persistLocalState}>{children}</ApplicationStateProvider>
+}
+function SeededState({ initialData, children }: { initialData: any; children: ReactNode }) {
+  useSeedApplicationData(initialData)
+  return children
 }

@@ -113,14 +113,13 @@ test('overlapping bulk clicks share one pagination operation and retain IDs disp
 })
 
 test('platform notification expansion reaches the existing inbox while profile and personal destinations remain intact', () => {
-  const destinations = []
-  const { AdminShell } = load('components/admin/admin-shell.tsx', {
-    'next/navigation': { usePathname: () => '/platform/users', useRouter: () => ({ push: href => destinations.push(href) }) },
-    '@/lib/application-state': { ApplicationStateProvider: 'Provider' }, '@/components/shell/product-shell': { ProductShell: 'ProductShell' },
+  // The persistent shell owns Admin's navigation (AdminShell renders page content only).
+  const { viewHref } = load('components/shell/workspace-shell.tsx', {
+    'next/navigation': {}, '@/lib/application-state': { ApplicationStateProvider: 'Provider' }, '@/components/shell/product-shell': { ProductShell: 'ProductShell' },
+    '@/components/auth-session-boundary': {}, '@/components/shell/workspace-shell-context': {}, '@/contexts/auth-context': {}, '@/contexts/demo-context': {},
   })
-  const shell = AdminShell({ children: null }).props.children
-  for (const view of ['inbox', 'student-profile', 'student-dashboard']) shell.props.onNavigate(view)
-  assert.deepEqual(destinations, ['/inbox', '/profile', '/home'])
+  assert.deepEqual(['inbox', 'student-profile', 'student-dashboard'].map(view => viewHref('admin', view)), ['/inbox', '/profile', '/home'])
+  assert.equal(viewHref('personal', 'inbox'), '/inbox')
 })
 
 function notificationClickHarness({ read = false, result = true, allowed = true, sameClub = true } = {}) {
@@ -210,4 +209,23 @@ test('welcome task facts survive inbox deduplication/archive and are replaced by
   assert.deepEqual(h.render().personalTaskActivities, { userId: 'student', items: [] })
   h.render().syncTaskNotifications([item], 'other-student')
   assert.equal(h.render().personalTaskActivities.userId, 'other-student')
+})
+
+test('reseeding the shared store replaces what the last server payload supplied and keeps client-only entries', () => {
+  const h = harness()
+  const at = (days, hours = 15) => new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate() + days, hours)).toISOString()
+  const app = (id, clubId, bookings = []) => ({ id, clubId, status: 'SUBMITTED', club: { name: clubId, color: '#123456' }, bookings: bookings.map(([bookingId, start]) => ({ id: bookingId, slot: { startTime: start, endTime: start, location: 'Room' } })) })
+  // First payload: two applications, one interview booking.
+  h.render().seedServerData({ applications: [app('a1', 'club-a', [['b1', at(2)]]), app('a2', 'club-b')], attendances: [] })
+  let state = h.render()
+  assert.deepEqual(state.trackedApps.map(a => a.id).sort(), ['a1', 'a2'])
+  assert.ok(state.events.some(e => e.id === 'booking-b1'))
+  // A client-only application (optimistic start) survives a reseed.
+  state.applyToClub({ id: 'club-c', name: 'Club C', logoText: 'C', color: '#123456' })
+  // Second payload: a2 withdrawn, b1 rescheduled to b2.
+  h.render().seedServerData({ applications: [app('a1', 'club-a', [['b2', at(3)]])], attendances: [] })
+  state = h.render()
+  assert.deepEqual(state.trackedApps.map(a => a.clubId).sort(), ['club-a', 'club-c'], 'withdrawn server application removed, client-only kept')
+  assert.ok(!state.events.some(e => e.id === 'booking-b1'), 'the old booking time is gone')
+  assert.ok(state.events.some(e => e.id === 'booking-b2'), 'the new booking time is shown')
 })

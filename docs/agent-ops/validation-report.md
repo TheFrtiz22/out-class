@@ -116,3 +116,38 @@ deploy dpl_HCbKqFuC85KMysoQanp1KDZ2fF7U READY yes | new runtime error classes 0 
 
 ## 2026-11-06 OPS-4 tests/onboarding-port-prefix (#139; base 4d531bdf)
 - Unit 1704 total, 1645 pass, 0 fail, 59 skipped; typecheck 0; lint 0 errors (412 warnings, same as main). Build not rerun (script-only change).
+
+## 2026-11-08 · SHELL-1 · ui/shell-persistence-and-dashboard-split (local, not pushed)
+```
+branch ui/shell-persistence-and-dashboard-split (from main 5f50339a), commits: Part 1 2fff5ef1, Part 2 72bf6f5a, Part 3 (this commit)
+app gates: test 1869/1805/0 fail/64 skipped (60 env-gated + 4 new stack-only: workspace-shell-e2e, header-gap-e2e, overview-view-authz-e2e, dashboards-split-e2e) migrations 71 ok (RLS 85) lint ok (0 errors, 23 baseline warnings; ui-controls OK) types ok build ok
+per part: Part 1 1862/1801/0/61; Part 2 1863/1801/0/62
+disposable stack (run-onboarding-e2e.cjs --shell; SUPABASE_INTERNAL_IMAGE_REGISTRY=docker.io): workspace-shell-e2e 4/4, header-gap-e2e 1/1, overview-view-authz-e2e 1/1, dashboards-split-e2e 1/1
+glass: check-liquid-glass OUTCLASS_GLASS_SCOPE=dashboard 0 axe violations; scope=dashboards fails on main and branch alike in this container (chrome-error navigation in the fixture), covered instead by dashboards-split-e2e axe on the real app
+local environment notes: Playwright 1.64 expects Chromium build 1248, container has 1243 (local symlink only); WebKit not installed
+```
+2026-11-08 SHELL-1 after merging main b4cd90e8 and review fixes: app gates: test 1886/1821/0 fail/65 skipped (61 env-gated incl. main's new demo-browser-e2e + 4 stack-only shell suites) migrations 71 ok (RLS 85) lint ok (0 errors, 23 baseline warnings) types ok build ok | integration skips 10 unwired suites (unchanged from main); new shell suites wired to CI matrix `shell` | agent-hook tests n/a
+reviewers: authz-reviewer 0 high/medium (3 low: non-member nameless member rail fixed with test; view-as frame matches previous behavior; reviewed count is a team total by design); nextjs-reviewer 0 high (fixed: seeding merges instead of replacing, tabs observe late triggers, ref written in layout effect, pill re-click cancels pending, leave guard on Schedule interviews / strip / Open applicants; kept: meeting buttons open the meeting drawer where attendance and edit live; strip refreshes on remount); test-gap-reviewer: dashboards-split-e2e restored to the --shell runner and missing suites now fail the run
+disposable stack after fixes: workspace-shell-e2e, header-gap-e2e, overview-view-authz-e2e, dashboards-split-e2e 7/7 subtests
+
+## 2026-11-08 · Post-merge release check · #138 FE-1 (b4cd90e8), #149 FE-3 (2ac4efca), #165 FE-6 (6801a2c8)
+```
+#138 b4cd90e8 app gates: test 1875/1814/0/61 (after merging 5f50339a) | CI 16/16 green
+deploy dpl_4rQtzY7FKXNfXuDgh297fBjU4fz9 READY yes
+#149 2ac4efca app gates: test 1887/1825/0/62 | CI 16/16 green after one rerun of the settings job (React #418, pre-existing on main, BUG-1)
+deploy dpl_5Mpw9h3W3NGzAcChC5nqvEUYSoum READY yes
+#165 6801a2c8 app gates: test 1875/1814/0/61 | CI 16/16 green
+deploy dpl_8B3cAEH6efVNkrgAx3JpdSXuy2ye READY yes (production at check time)
+new runtime error classes 0 (none since 18:20Z; the two classes in the prior 24 h predate these merges) | rollback target dpl_GAbgrcXkPkMfwCRmmJv4QWH6U7yt (3e779e55, #166); before #138 dpl_CweCYcA8R6hSXo3FyV1UbhBv3MNW (5f50339a)
+crons: owner confirmed scheduled-communications ran every minute for 3 h with 0 failures; the other two log nothing when idle
+advisors: security advisor counts unchanged vs baseline; no migrations in these PRs. Performance advisors unchanged vs baseline.
+verdict WATCH (release-verifier; not a rollback candidate)
+```
+
+## 2026-11-08 · FE-7 #167 design-guard fix
+```
+cause: halo box-shadows with px literals in page CSS counted as css-shadow by scripts/check-ui-controls.cjs (6 files over allowlist)
+fix: --focus-halo-outset / --focus-halo-inset-4/5/6 tokens in styles/tokens.css, 22 rules use them; allowlist ratcheted down (10 entries shrunk, 3 removed); merged origin/main 928dcb27 (one new focus rule converted to var(--ring); active segmented-tab focus rules moved after main's measured-indicator rule, which cleared the halo)
+app gates: test 1920/1854/0/66 lint ok (0 errors, 23 baseline warnings; ui-controls OK) types ok build ok
+first full run: 2 fails (focus-ring active-tab halo, fixed; club-home-browser hover transform under load, then 3/3 in isolation, flake)
+```

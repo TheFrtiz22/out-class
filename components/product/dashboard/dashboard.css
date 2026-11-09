@@ -16,6 +16,7 @@
 }
 /* The admin glow is neutral navy: no club accent. */
 .oc-dashboard-hero[data-glow="neutral"] .oc-dashboard-ambient { background: var(--oc-surface-ambient-neutral); }
+.oc-dashboard-hero[data-glow="recruiting"] .oc-dashboard-ambient { background: var(--oc-surface-ambient-recruiting, var(--oc-surface-ambient-neutral)); }
 .oc-dashboard-hero > :not(.oc-dashboard-ambient) { position: relative; }
 .oc-dashboard-hero h1 { font-family: var(--oc-font-display); font-size: clamp(2rem, 1.25rem + 2vw, 2.75rem); line-height: 1.12; letter-spacing: -.02em; }
 .oc-dashboard-hero .oc-eyebrow { color: var(--muted-foreground); }

@@ -2,6 +2,7 @@
 
 import { AccountAvatar } from "@/components/account-avatar"
 import { useEffect, useRef, useState } from "react"
+import { countShellStart } from "@/lib/shell-metrics"
 import { ArrowUpRight, Building2, FileText, Layers, UserRound } from "@/components/icons"
 import {
   Dialog,
@@ -63,6 +64,8 @@ export function NavigationSearch({
   const [error, setError] = useState(false)
   const [retry, setRetry] = useState(0)
   const selectedDestination = useRef(false)
+  // Mounted once by the persistent shell; the counter proves navigation never remounts it.
+  useEffect(() => { countShellStart("search") }, [])
   const pages = items.filter((item) =>
     item.title.toLowerCase().includes(query.trim().toLowerCase()),
   )

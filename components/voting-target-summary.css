@@ -1,0 +1,28 @@
+/* Target-and-counts summary: a few labelled figures; colour is never the only signal. */
+.oc-target-summary { --oc-band-green: var(--success); --oc-band-yellow: var(--warning); --oc-band-red: var(--destructive); display: grid; gap: 8px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--oc-radius-md, 0); background: var(--card, transparent); font-size: .875rem; }
+.oc-target-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.oc-target-label { color: var(--muted-foreground); }
+.oc-target-value { font-weight: 600; font-variant-numeric: tabular-nums; }
+.oc-target-progress { font-variant-numeric: tabular-nums; }
+.oc-target-line[data-over] .oc-target-progress strong { color: var(--warning); }
+.oc-target-bar { display: block; flex: 1 1 120px; max-width: 220px; height: 6px; border-radius: 999px; background: var(--muted); overflow: hidden; align-self: center; }
+.oc-target-bar > span { display: block; height: 100%; background: var(--primary); }
+.oc-target-line[data-over] .oc-target-bar > span { background: var(--warning); }
+.oc-target-note { margin: 0; font-size: .75rem; color: var(--muted-foreground); }
+.oc-target-groups { display: flex; flex-wrap: wrap; gap: 8px 24px; }
+.oc-target-group { display: grid; gap: 4px; min-width: 0; }
+.oc-target-group + .oc-target-group { padding-left: 24px; border-left: 1px solid var(--border); }
+.oc-target-heading { margin: 0; font-size: .75rem; font-weight: 500; color: var(--muted-foreground); }
+.oc-target-sub { font-weight: 400; }
+.oc-target-figures { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; }
+.oc-target-figure { display: flex; align-items: baseline; gap: 6px; }
+.oc-target-figure dt { color: var(--muted-foreground); }
+.oc-target-figure dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.oc-target-figure[data-band] dt::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 999px; }
+.oc-target-figure[data-band="green"] dt::before { background: var(--oc-band-green); }
+.oc-target-figure[data-band="yellow"] dt::before { background: var(--oc-band-yellow); }
+.oc-target-figure[data-band="red"] dt::before { background: var(--oc-band-red); }
+@media (max-width: 640px) {
+  .oc-target-groups { display: grid; }
+  .oc-target-group + .oc-target-group { padding-left: 0; padding-top: 8px; border-left: 0; border-top: 1px solid var(--border); }
+}

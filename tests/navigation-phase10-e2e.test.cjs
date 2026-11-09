@@ -14,7 +14,8 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 390, height: 844
     page.on('pageerror', error => errors.push(error.name));
     try {
       await page.goto(config.appUrl + '/club/' + fixture.clubIds[0] + '/workspace?section=recruitment&tool=overview');
-      await page.getByText('Current pipeline', { exact: false }).first().waitFor();
+      // The Recruiting Overview: its pipeline card, or the empty state when the fixture has no active cycle.
+      await page.locator('#dashboard-pipeline, .oc-recruiting-empty').first().waitFor();
       await page.evaluate(() => document.fonts.ready);
       assert.equal(await page.locator('link[rel="preload"][as="font"]').count(), 0);
       const initial = await page.evaluate(() => [...document.fonts].filter(f => !f.family.includes('Fallback')).map(f => ({ family: f.family, style: f.style, weight: f.weight, status: f.status })));

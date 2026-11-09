@@ -45,7 +45,7 @@ test('invitation preview reads only a pending, unexpired, unanswered invitation 
 })
 
 function invitationPage(preview) {
-  return load('app/invitations/[id]/page.tsx', {
+  return load('app/(workspace)/invitations/[id]/page.tsx', {
     ...signedOut,
     '@/lib/public-link-preview': { invitationPreview: async () => preview },
     '@/utils/auth': { requireAuth: forbidden },
@@ -75,19 +75,19 @@ test('signed-out invitation: an invalid or expired link gets a clear message, no
 
 test('signed-out club access and club claim links show sign-in cards; access editor data is never read', async () => {
   const preview = { '@/lib/public-link-preview': { clubLinkPreview: async clubId => clubId === 'vvf' ? { name: 'Virginia Venture Fund' } : null } }
-  const access = load('app/club-access/[clubId]/page.tsx', { ...preview, '@/utils/auth': { getSessionUser: async () => ({ data: { user: null } }) }, '@/actions/club-access': { getClubAccess: forbidden }, '@/components/club-access-editor': { ClubAccessEditor: () => null } }).default
+  const access = load('app/(workspace)/club-access/[clubId]/page.tsx', { ...preview, '@/utils/auth': { getSessionUser: async () => ({ data: { user: null } }) }, '@/actions/club-access': { getClubAccess: forbidden }, '@/components/club-access-editor': { ClubAccessEditor: () => null } }).default
   let html = renderToStaticMarkup(await access({ params: Promise.resolve({ clubId: 'vvf' }) }))
   assert.match(html, /Sign in to manage access for Virginia Venture Fund/); assert.match(html, /href="\/login\?next=%2Fclub-access%2Fvvf"/); assert.doesNotMatch(html, /\/signup/)
   html = renderToStaticMarkup(await access({ params: Promise.resolve({ clubId: 'missing' }) }))
   assert.match(html, /This club link isn’t valid/)
-  const claims = load('app/club-claims/[clubId]/page.tsx', { ...signedOut, ...preview, '@/utils/auth': { requireAuth: forbidden }, '@/utils/prisma': { prisma: new Proxy({}, { get: forbidden }) }, '@/components/claim-form': { ClaimForm: () => null } }).default
+  const claims = load('app/(workspace)/club-claims/[clubId]/page.tsx', { ...signedOut, ...preview, '@/utils/auth': { requireAuth: forbidden }, '@/utils/prisma': { prisma: new Proxy({}, { get: forbidden }) }, '@/components/claim-form': { ClaimForm: () => null } }).default
   html = renderToStaticMarkup(await claims({ params: Promise.resolve({ clubId: 'vvf' }) }))
   assert.match(html, /Claim Virginia Venture Fund on OutClass/); assert.match(html, /href="\/signup\?next=%2Fclub-claims%2Fvvf"/)
-  for (const layout of ['app/invitations/layout.tsx', 'app/club-access/layout.tsx', 'app/club-claims/layout.tsx']) assert.match(fs.readFileSync(layout, 'utf8'), /<AuthenticatedPageLayout optional>/, layout)
+  for (const layout of ['app/(workspace)/invitations/layout.tsx', 'app/(workspace)/club-access/layout.tsx', 'app/(workspace)/club-claims/layout.tsx']) assert.match(fs.readFileSync(layout, 'utf8'), /<AuthenticatedPageLayout optional>/, layout)
 })
 
 test('Explore stays private: signed-out visitors are sent to sign-in and the page is not in the sitemap or header', () => {
-  const page = fs.readFileSync('app/(product)/explore/page.tsx', 'utf8')
+  const page = fs.readFileSync('app/(workspace)/explore/page.tsx', 'utf8')
   assert.match(page, /robots: privateRobots/); assert.doesNotMatch(page, /signedOut|PublicExplore/)
   assert.match(fs.readFileSync('components/student-workspace-page.tsx', 'utf8'), /if \(!user\) redirect\(`\/login\?next=/)
   assert.equal(fs.existsSync('lib/public-explore.ts'), false)

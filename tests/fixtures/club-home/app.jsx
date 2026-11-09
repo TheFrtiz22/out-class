@@ -10,7 +10,8 @@ import { DashboardHero } from '@/components/product/dashboard/dashboard'
 import { leaderRailSections, memberRailSections } from '@/lib/navigation'
 import { FixtureBoundary, useAuth, clubs } from '../floating-header/boundaries'
 import { useSearchParams, usePathname } from '../floating-header/navigation'
-import { overview } from './data.cjs'
+import { overview, clubView } from './data.cjs'
+import { railHrefs, recruitingStrip } from '@/components/club-home/club-home-model'
 
 function ClubHomeFixture() {
   const params = useSearchParams(), path = usePathname(), { user, role } = useAuth()
@@ -20,11 +21,14 @@ function ClubHomeFixture() {
   const kind = params.get('fixture') || 'large'
   const [refreshes, setRefreshes] = useState(0)
   const dto = { id: member.id, isOwner: member.isOwner, permissions: member.permissions, interviewOffices: member.interviewOffices, status: member.status }
-  const data = overview(kind, kind === 'small' ? { id: clubId, name: 'Campus Chess Club' } : member.club, dto)
+  const full = overview(kind, kind === 'small' ? { id: clubId, name: 'Campus Chess Club' } : member.club, dto)
+  // Club home reads the club view; its recruiting strip reads the small recruiting summary separately.
+  const data = clubView(full)
+  window.__clubHomeStrip = recruitingStrip(full, railHrefs(dto, clubId))
   const name = data.club.name
   return <ProductShell manager={manager} sections={manager ? leaderRailSections(member, clubId, params.toString()) : memberRailSections(clubId, name)} mode={manager ? 'club' : 'clubs'} active="overview" clubId={clubId} clubName={name} title="Club home" onSelect={() => {}} onNavigate={() => {}}>
     {/* Same composition as components/club-workspace.tsx for section=overview. */}
-    <DashboardHero className="oc-club-home-hero" ambientClassName="oc-club-home-ambient"><ClubOverviewHeader className="oc-club-home-greeting" density="expressive" eyebrow={data.operations.cycles[0]?.name} clubName={name} context={{ mode: 'club', clubId, membership: member, data }} action={<ClubHomeActions clubId={clubId} membership={member} />} /></DashboardHero>
+    <DashboardHero className="oc-club-home-hero" ambientClassName="oc-club-home-ambient"><ClubOverviewHeader className="oc-club-home-greeting" density="expressive" clubName={name} context={{ mode: 'club', clubId, membership: member, data }} action={<ClubHomeActions clubId={clubId} membership={member} />} /></DashboardHero>
     <section className="shell-content-enter" aria-label="Club home" data-refreshes={refreshes}>
       <ManagerOverview data={data} onChanged={() => setRefreshes(n => n + 1)} />
     </section>
