@@ -187,6 +187,45 @@
   .oc-pipeline-bars[data-compact="true"] .oc-pipeline-compact-counts { display: grid; }
 }
 
+/* Phones and tablets inside the signed-in shell: the OutClass app's look for club dashboards (Club home,
+   Recruiting, Admin), matching the personal Home (components/views/student-home.css). Desktop is unchanged. */
+@media (max-width: 1023px) {
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-dashboard { gap: 1.125rem; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-welcome-header h1 { font-size: 1.875rem; line-height: 1.15; min-block-size: 0; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-welcome-header .oc-page-description { min-block-size: 0; font-size: var(--oc-text-small); }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-dashboard-section-head { margin-bottom: .5rem; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-dashboard-section-head h2 { font-size: 1.0625rem; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-dashboard-card[data-slot="panel"] { gap: .625rem; padding-block: .875rem 1rem; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-dashboard-card-head { min-height: 2.25rem; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-dashboard h2 { font-size: 1.0625rem; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-dashboard-more { min-height: 40px; }
+  /* Needs you: the top card stays navy, the rest one checklist card. */
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-needs-card[data-slot="card"] { gap: .25rem; min-height: 0; padding: .875rem 1rem .25rem; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-needs-title { font-size: var(--oc-text-small); }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-needs-detail { font-size: var(--oc-text-caption); }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-needs-action { min-height: 40px; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-needs-grid { gap: .625rem; }
+  /* Tablets get the phone stack too: one column, the rest of Needs you as one list card. */
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-needs-grid[data-count] { grid-template-columns: minmax(0, 1fr); }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-needs-rest { display: block; overflow: hidden; border: 1px solid var(--oc-surface-glass-edge); border-radius: var(--oc-radius-xl); background: var(--oc-surface-glass-raised); box-shadow: var(--oc-surface-glass-raised-depth); }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-needs-rest > li { display: block; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-needs-rest > li + li { border-top: 1px solid var(--oc-surface-glass-edge); }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-needs-rest .oc-needs-card[data-slot="card"] { border: 0; border-radius: 0; box-shadow: none; animation: none; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-needs-rest .oc-needs-card::before { display: none; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-needs-rest .oc-needs-card[data-slot="card"] { padding-block: .75rem .25rem; }
+  /* Rows and chips: tighter, like the app's lists. */
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-dashboard-row { min-height: 3rem; padding-block: .5rem; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-date-chip { width: 2.5rem; height: 2.625rem; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-date-chip strong { font-size: 1rem; }
+  /* Metric tiles: three across, smaller numbers. */
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-metric-tiles { grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr)); gap: .75rem .5rem; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-metric-tiles dd, [data-product-shell]:not([data-product-shell="personal"]) .oc-metric-tiles[data-size="large"] dd { font-size: 1.5rem; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-pipeline-stages .oc-dashboard-number { font-size: 1.625rem; }
+  /* Segmented filters scroll sideways instead of clipping. */
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-dashboard .oc-segmented-control { min-height: 44px; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-dashboard .oc-segmented-control button { min-height: 36px; padding: .375rem .875rem; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .oc-dashboard *, .oc-dashboard-hero * { animation: none !important; transition: none !important; }
   .oc-needs-card:hover { transform: none; }
