@@ -17,8 +17,10 @@ export function useLiveVotingRoom(clubId:string,sessionId:string,userId:string|n
     const subscription=votingRoomSubscription(()=>getLiveVotingRoom({clubId,sessionId},demoMemberId),(room,error)=>setState(prev=>({identity,room:room&&prev.identity===identity?newerByRevision(prev.room,room):room,error})));
     connection.current=subscription;
     const refresh=()=>void subscription.refresh();
-    window.addEventListener("online",refresh);window.addEventListener("focus",refresh);
-    return ()=>{subscription.close();connection.current=null;window.removeEventListener("online",refresh);window.removeEventListener("focus",refresh);};
+    // Background tabs throttle timers; catch up as soon as this tab is shown again.
+    const visible=()=>{if(document.visibilityState==="visible")refresh();};
+    window.addEventListener("online",refresh);window.addEventListener("focus",refresh);document.addEventListener("visibilitychange",visible);
+    return ()=>{subscription.close();connection.current=null;window.removeEventListener("online",refresh);window.removeEventListener("focus",refresh);document.removeEventListener("visibilitychange",visible);};
   },[identity,clubId,sessionId,userId,demoMemberId]);
   const refresh=useCallback(()=>connection.current?.refresh(),[]);
   return {...(state.identity===identity?state:{identity,room:null,error:null}),refresh};

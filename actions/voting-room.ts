@@ -3,13 +3,13 @@ import {validateVotingSetup,notifyVotingVoters} from "@/utils/voting-room-setup"
 import {meetingDetails,resolveVotingMeeting} from "@/lib/voting-session-setup";
 import { votingReadLimits } from "@/lib/voting-transaction-limits";
 import { Prisma } from "@prisma/client";
-import { prisma } from "@/utils/prisma";
+import { prisma, type AppTransactionClient } from "@/utils/prisma";
 import { requireClubPermission } from "@/utils/auth";
 import { clubWriteTransaction, votingWriteLimits } from "@/utils/club-write-transaction";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { hasPermission } from "@/lib/permissions";
 import { createRoomSchema, roomScope, roomCommandSchema, roomBallotSchema, uniqueSelection, roomOutcomes, storedChoice, recommendedOutcome,roomPresentationSchema,roomDisplayConfig, roomCommandResultSchema } from "@/lib/voting-room";
-import { loadVotingRoom, requireRoomLeader, roomAuthority, projectVotingRoom, roomFingerprint } from "@/utils/voting-room";
+import { loadVotingRoom, requireRoomLeader, roomAuthority, projectVotingRoom, roomFingerprint, type LiveRoom } from "@/utils/voting-room";
 import { getApplicantDisplay } from "@/actions/applicant-intelligence";
 import { z } from "zod";
 import { votingSelectedHighlight,votingSelectedEvidence } from "@/utils/voting-room-presentation";
@@ -23,6 +23,16 @@ import {lockPreparedSlides,presentedSlideHighlights} from '@/utils/voting-slide-
 class RoomConflict extends Error { constructor(public code:string,message:string){super(message);} }
 async function domainResult<T>(work:()=>Promise<T>) { try { return {ok:true as const,result:await work()}; } catch(e) { if(e instanceof RoomConflict)return {ok:false as const,code:e.code,message:e.message}; throw e; } }
 const retryConflict=()=>new RoomConflict("STALE_STATE","The room changed. Reload the page, check the latest, and try again.");
+const ballotReceipt=z.object({accepted:z.literal(true),ballotRevision:z.number().int().nonnegative()}).strict();
+/** Closing from a slightly older view is still what the leader meant when the only room changes since
+ * that view are ballots arriving for this same open ballot (or voters joining, which write no receipt).
+ * Every other room command writes a receipt, so any non-ballot receipt among the latest ones refuses as before. */
+async function onlyBallotsSince(tx:AppTransactionClient,s:LiveRoom,d:z.infer<typeof roomCommandSchema>){
+  const drift=s.revision-d.revision;
+  if(d.action!=="CLOSE_VOTING"||drift<=0||drift>500||!d.applicationId||d.applicationId!==s.activeApplicationId||d.passNumber!==s.currentPass)return false;
+  const recent=await tx.votingRoomCommand.findMany({where:{sessionId:s.id},orderBy:{createdAt:"desc"},take:drift,select:{result:true}});
+  return recent.length>0&&recent.every(r=>ballotReceipt.safeParse(r.result).success);
+}
 function accessFingerprint(m:{id:string;status:string;permissions:string[];accessRole:string;isOwner:boolean}) { return roomFingerprint({id:m.id,status:m.status,permissions:m.permissions,accessRole:m.accessRole,isOwner:m.isOwner}); }
 
 export async function listLiveVotingRooms(input:unknown) {
@@ -156,7 +166,7 @@ export async function commandLiveVotingRoom(input:unknown) {
     const prior=await tx.votingRoomCommand.findUnique({where:{sessionId_requestId:key}});
     if(prior){if(prior.actorId!==user.id||prior.fingerprint!==fingerprint)throw Error("Request ID reused with different content.");return roomCommandResultSchema.parse(prior.result);}
     if(s.finalizedAt)throw new RoomConflict("FINALIZED","This session is finalized and read only.");
-    if(s.revision!==d.revision)throw retryConflict();
+    if(s.revision!==d.revision&&!await onlyBallotsSince(tx,s,d))throw retryConflict();
     const pass=s.passes.find(p=>p.number===s.currentPass),current=pass?.candidates.find(c=>c.applicationId===s.activeApplicationId);
     if(["OPEN_VOTING","CONFIRM","ACCEPT_WITHOUT_VOTE","DECIDE_AND_ADVANCE","PASS_WITHOUT_VOTE_AND_ADVANCE","DECIDE_WITHOUT_VOTE_AND_ADVANCE"].includes(d.action)&&(!current||!await tx.application.findFirst({where:{id:current.applicationId,clubId:s.clubId,roundId:s.roundId,recruitmentCycleId:s.cycleId,status:s.candidates.find(c=>c.applicationId===current.applicationId)!.expectedStatus}})))throw new RoomConflict("APPLICANT_CHANGED","The applicant's recruitment context changed. Close or end the session and review the application.");
     const advancing=["DECIDE_AND_ADVANCE","PASS_WITHOUT_VOTE_AND_ADVANCE","DECIDE_WITHOUT_VOTE_AND_ADVANCE"].includes(d.action);
