@@ -12,6 +12,7 @@ import { LandingIntro } from "@/components/landing/landing-intro"
 import { PublicNavigation } from "@/components/landing/public-navigation"
 import { ProductJourney } from "@/components/landing/product-stories"
 import { ScatteredTools } from "@/components/landing/scattered-tools"
+import { LandingMoments } from "@/components/landing/landing-moments"
 import { useLandingPerspective } from "@/hooks/use-landing-perspective"
 import { useJourneyNavigation } from "@/hooks/use-journey-navigation"
 import "./landing.css"
@@ -49,6 +50,7 @@ export function LandingPageView({
         <LaunchClubs clubs={launchClubs} />
         <ScatteredTools />
         <ProductJourney perspective={perspective} navigation={journeyNavigation} />
+        <LandingMoments perspective={perspective} />
         <SectionReveal
           id="create-account"
           className="oc-final-invitation"

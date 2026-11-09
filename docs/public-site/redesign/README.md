@@ -69,5 +69,10 @@ Built from `Main.mockup.html`; evidence and deviations in [`hero/README.md`](her
 
 "Sound familiar?" and "How OutClass works" are built; evidence in [`journey/README.md`](journey/README.md).
 
+## Homepage moments
+
+The decision moment, "A season on Grounds" and the feature grid are built; evidence in
+[`moments/README.md`](moments/README.md).
+
 Still to do, page by page: the rest of the homepage from `Main.mockup.html`, then the other public pages,
 and remove brand orange from every place except the two allowed by rule 4.
