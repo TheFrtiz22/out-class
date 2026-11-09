@@ -22,13 +22,8 @@ export function ProductJourney({ perspective, navigation }: {
         <p className="oc-journey-kicker">How OutClass works</p>
         <h2 id="how-title">{perspective === "student" ? "From discovering a club to joining it." : "From first applicant to your next class."}</h2>
       </div>
-      {/* No in-section switch: the hero sets the audience. The sentinel still hands the header its compact switch. */}
-      <div className="oc-journey-controls-slot" data-merged={navigation.merged}>
-        <span ref={navigation.controlsRef} className="oc-journey-handoff-sentinel" aria-hidden="true" />
-      </div>
       <p className="sr-only" role="status">Showing the {perspective === "student" ? "student" : "club leader"} walkthrough.</p>
       <JourneyTabs perspective={perspective} />
-      <span ref={navigation.endRef} className="oc-journey-end-sentinel" aria-hidden="true" />
     </section>
   )
 }
