@@ -4,6 +4,8 @@
  * reported as unavailable, so one hung request neither freezes the room nor silently shows stale data.
  * Consecutive failures or abandonments back the poll off (interval, 2x, 4x … capped at `maxInterval`);
  * a successful read resets it. Explicit refreshes (focus, after a command) are never delayed. */
+/** Browser events that fire together (focus + visibilitychange on tab switch, online) trigger one refresh. */
+export function coalescedRefresh(refresh:()=>unknown,windowMs=1000){let last=-Infinity;return ()=>{const now=Date.now();if(now-last<windowMs)return;last=now;void refresh();};}
 export const votingRoomUnavailable="Voting room unavailable. Reconnect or retry; your last command may already be saved.";
 export function votingRoomSubscription<T>(read:()=>Promise<T>,deliver:(value:T|null,error:string|null)=>void,interval=5000,stallAfter=Math.max(15000,interval*3),maxInterval=Math.max(30000,interval)) {
   let stopped=false,busy=false,again=false,generation=0,startedAt=0,failures=0,timer:ReturnType<typeof setTimeout>|undefined,watchdog:ReturnType<typeof setTimeout>|undefined;

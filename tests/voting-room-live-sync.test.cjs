@@ -121,6 +121,14 @@ test('a hung poll is abandoned so the room keeps refreshing; its late result is 
  assert.ok(seen.some(([v,e])=>v===null&&/unavailable/.test(e)),'the abandoned read is reported as unavailable, not silently stale');
 });
 
+test('focus and visibilitychange firing together cause one refresh (review finding 6)',t=>{
+ t.mock.timers.enable({apis:['Date'],now:10000});
+ const {coalescedRefresh}=load('lib/voting-room-subscription.ts');let n=0;const nudge=coalescedRefresh(()=>n++,1000);
+ nudge();nudge();assert.equal(n,1,'focus + visibilitychange together refresh once');
+ t.mock.timers.tick(999);nudge();assert.equal(n,1);t.mock.timers.tick(1);nudge();assert.equal(n,2,'a later event refreshes again');
+ const hook=fs.readFileSync('hooks/use-live-voting-room.ts','utf8');assert.match(hook,/const refresh=coalescedRefresh\(/);assert.match(hook,/addEventListener\("focus",refresh\)/);assert.match(hook,/visibilityState==="visible"\)refresh\(\)/);
+});
+
 test('reads that never settle report unavailable each time and back off 5→10→20→30 s, resetting on success (fake timers)',async t=>{
  t.mock.timers.enable({apis:['setTimeout','Date'],now:0});
  const {votingRoomSubscription}=load('lib/voting-room-subscription.ts');
