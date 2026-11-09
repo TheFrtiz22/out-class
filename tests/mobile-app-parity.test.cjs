@@ -33,3 +33,12 @@ test('phone club page: full-width actions and card sections only below 1024px',(
  assert.match(phone,/\.oc-club-action-row \{ display: grid; grid-template-columns: 1fr;/);
  assert.match(phone,/\.oc-club-profile \.oc-club-section \{[^}]*border-radius: var\(--oc-content-radius\)/);
 });
+test('phone Events open on the card list until the student picks a view; desktop keeps the board',()=>{
+ const src=css('components/events/public-event-board.tsx');
+ const at=src.indexOf('const preference = localStorage.getItem("outclass:events:view:v1");');assert.ok(at>0);
+ const block=src.slice(at,at+400);
+ assert.ok(block.indexOf('if (preference === "list" || preference === "corkboard") setView(preference);')<block.indexOf('matchMedia?.("(max-width: 1023px)").matches) setView("list")'),'a saved choice wins over the phone default');
+ assert.match(src,/useState<"corkboard" \| "list">\("corkboard"\)/,'desktop default unchanged');
+ const s=css('components/events/events.css'),phone=s.slice(s.lastIndexOf('@media (max-width: 1023px) {'));
+ assert.match(phone,/\.oc-smart-event-card \{ display: flex; flex-direction: column;/);
+});
