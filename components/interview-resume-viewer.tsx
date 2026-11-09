@@ -275,7 +275,7 @@ function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resou
           <div className="flex gap-2"><Button type="button" size="sm" disabled={busy || conflict} onClick={save}>{busy ? "Saving…" : "Save comment"}</Button><Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => setDraft(null)}>Cancel comment</Button></div>
         </div>}
         {!annotations.length && <p className="text-sm text-muted-foreground">No shared comments yet.</p>}
-        <ul className="space-y-3">{annotations.map(a => <li key={a.id} ref={node => { if (node) annotationNodes.current.set(a.id, node); else annotationNodes.current.delete(a.id); }} tabIndex={-1} className={`space-y-2 rounded border p-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${active === a.id ? "border-primary bg-accent/30" : ""}`}>
+        <ul className="space-y-3">{annotations.map(a => <li key={a.id} ref={node => { if (node) annotationNodes.current.set(a.id, node); else annotationNodes.current.delete(a.id); }} tabIndex={-1} className={`space-y-2 rounded border p-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring ${active === a.id ? "border-primary bg-accent/30" : ""}`}>
           <p className="text-sm font-medium">{a.authorName}</p>
           {a.anchor ? <Button type="button" variant="ghost" className="h-auto max-w-full justify-start whitespace-normal break-words px-0 text-left text-xs" onClick={() => { setPage(a.anchor!.page); setActive(a.id); setMobileTab("document"); }}>Page {a.anchor.page}: “{a.anchor.quote}”</Button> : <p className="text-xs text-muted-foreground">General résumé note</p>}
           <p className="whitespace-pre-wrap break-words text-sm">{a.comment}</p>

@@ -12,7 +12,7 @@
 .oc-perspective-switcher button { min-height: 48px; padding: 10px 12px; border-radius: var(--oc-radius-sm); font-size: var(--oc-text-small); font-weight: 500; color: #fff7ec; white-space: nowrap; }
 .oc-perspective-switcher button[aria-pressed="true"] { color: var(--primary); font-weight: 600; }
 .oc-perspective-switcher[data-compact="false"] button { white-space: normal; }
-.oc-landing .oc-perspective-switcher button:focus-visible { outline-color: var(--ring); outline-offset: -4px; }
+.oc-landing .oc-perspective-switcher button:focus-visible { outline-color: var(--ring); outline-offset: -4px; box-shadow: var(--focus-halo-inset-6); }
 @media (max-width: 540px) {
   .oc-perspective-switcher { width: 100%; }
 }

@@ -44,15 +44,15 @@
 .oc-floating-profile [data-slot="avatar"] { width: 32px; height: 32px; border-radius: 50%; }
 .oc-product-header .oc-floating-search { position: relative; isolation: isolate; display: flex; align-items: center; justify-content: flex-start; gap: 10px; width: 232px; height: 48px; min-height: 48px; padding: 12px 16px; border: 0; border-radius: 999px; background: transparent; color: var(--muted-foreground); box-shadow: none; font-size: 13px; }
 .oc-floating-search::before { content: ""; position: absolute; z-index: -1; inset: 0; border: 1px solid var(--oc-floating-border); border-radius: inherit; background: var(--oc-floating-surface); box-shadow: var(--oc-floating-shadow); -webkit-backdrop-filter: var(--oc-glass-light-filter); backdrop-filter: var(--oc-glass-light-filter); transform: scaleX(1); transition: transform 260ms var(--oc-floating-ease), border-color var(--oc-glass-quick) var(--oc-floating-ease); }
-.oc-floating-search:focus-visible::before, .oc-floating-search[aria-expanded="true"]::before { transform: scaleX(1.05); border-color: rgb(20 45 69 / 30%); }
+.oc-floating-search:focus-visible::before, .oc-floating-search[aria-expanded="true"]::before { transform: scaleX(1.05); border-color: color-mix(in srgb, var(--school-primary) 30%, transparent); }
 .oc-floating-search kbd { display: inline-flex; align-items: center; justify-content: center; margin-left: auto; flex-shrink: 0; width: 40px; min-height: 22px; border: 1px solid var(--oc-floating-border); border-radius: 6px; font-size: 10px; line-height: 16px; font-family: inherit; color: var(--muted-foreground); }
-.oc-product-header :is(a,button):focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+.oc-product-header :is(a,button):focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
 .oc-floating-account-menu { border-radius: 16px; padding: 6px; }
 .oc-floating-account-menu [role="menuitem"] { min-height: 44px; border-radius: 10px; }
 [data-product-shell] #workspace-content { scroll-margin-top: calc(var(--oc-shell-header-height) + var(--support-banner-height, 0px) + 16px); }
 @media (hover: hover) and (pointer: fine) {
-  .oc-product-header .oc-floating-circle:hover { background: #fff7ec; border-color: rgb(20 45 69 / 22%); box-shadow: 0 6px 18px rgb(20 45 69 / 8%); }
-  .oc-floating-search:hover::before { border-color: rgb(20 45 69 / 22%); }
+  .oc-product-header .oc-floating-circle:hover { background: #fff7ec; border-color: color-mix(in srgb, var(--school-primary) 22%, transparent); box-shadow: 0 6px 18px color-mix(in srgb, var(--school-primary) 8%, transparent); }
+  .oc-floating-search:hover::before { border-color: color-mix(in srgb, var(--school-primary) 22%, transparent); }
 }
 /* One row at every width: the pill column shrinks (segments compress, the club name truncates) and the
    utilities keep their size, so the header is the same height everywhere and never wraps. */
@@ -73,14 +73,14 @@
 .oc-evolving-toggle .oc-evolving-segments .oc-workspace-option[aria-current="page"] { color: #fff7ec; }
 .oc-workspace-option-label { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .oc-evolving-toggle .oc-evolving-segments .oc-workspace-option::before, .oc-evolving-toggle .oc-evolving-segments .oc-workspace-option::after { display: none; }
-.oc-evolving-toggle :is(a,button):focus-visible { outline: 2px solid var(--brand-orange); outline-offset: -2px; }
+.oc-evolving-toggle :is(a,button):focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; box-shadow: var(--focus-halo-inset-4) }
 /* A leader of several clubs picks another club beside the pill, in the same row. */
 .oc-workspace-club-switch { display: flex; flex: 0 1 auto; min-width: 0; justify-content: flex-start; }
 .oc-header-club { display: flex; align-items: center; justify-content: center; gap: 6px; width: min(100%,240px); min-width: 0; min-height: 44px; padding: 4px 8px; border-radius: 12px; color: var(--muted-foreground); font-size: 12px; font-weight: 500; text-align: center; }
 .oc-header-club > :first-child { display: none; }
 .oc-header-club-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .oc-header-club > svg:last-child { flex-shrink: 0; width: 12px; }
-button.oc-header-club:hover { color: var(--primary); background: rgb(20 45 69 / 4%); }
+button.oc-header-club:hover { color: var(--primary); background: color-mix(in srgb, var(--school-primary) 4%, transparent); }
 .oc-header-club-menu [role="menuitem"] { min-height: 48px; }
 .oc-header-club-menu [role="menuitem"] > :first-child { width: 28px; height: 28px; flex-shrink: 0; }
 .oc-evolving-guest { border-radius: 999px; background: var(--primary); }

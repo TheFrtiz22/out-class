@@ -136,7 +136,7 @@ function PublicPageDetailsPanel() {
               onDragLeave={() => setIsDragging(false)}
               onDrop={handleDrop}
               className={cn(
-                "group relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-border bg-white text-muted-foreground transition-colors hover:border-input focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+                "group relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-border bg-white text-muted-foreground transition-colors hover:border-input focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                 isDragging && "border-solid bg-orange-50",
               )}
               style={isDragging ? { borderColor: ORANGE, color: ORANGE } : undefined}
