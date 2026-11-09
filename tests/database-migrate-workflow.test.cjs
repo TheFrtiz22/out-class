@@ -5,12 +5,13 @@ const fs = require('node:fs')
 const workflow = fs.readFileSync('.github/workflows/database-migrate.yml', 'utf8')
 const steps = workflow.slice(workflow.indexOf('    steps:'))
 
-test('database migrations run only by hand, one database at a time, bound to that database\'s environment', () => {
+test('database migrations run only by hand, one at a time, bound to the production environment', () => {
   assert.match(workflow, /\non:\n  workflow_dispatch:\n/)
   assert.doesNotMatch(workflow, /\n  (push|pull_request|pull_request_target|schedule|workflow_run):/, 'no automatic trigger can migrate a database')
-  assert.match(workflow, /options: \[staging, production\]/)
-  assert.match(workflow, /environment: \$\{\{ inputs\.environment \}\}/, 'the secret comes from the chosen environment, so production approval rules apply')
-  assert.match(workflow, /group: database-migrate-\$\{\{ inputs\.environment \}\}\n  cancel-in-progress: false/, 'a running migration is never cancelled by a second run')
+  // There is no staging database: no input can pick a target, so the run always waits for production's reviewers.
+  assert.doesNotMatch(workflow, /staging|inputs\.environment/)
+  assert.match(workflow, /\n    environment: production\n/, 'the secret comes from the production environment, so its approval rules apply')
+  assert.match(workflow, /group: database-migrate-production\n  cancel-in-progress: false/, 'a running migration is never cancelled by a second run')
   assert.match(workflow, /\npermissions:\n  contents: read\n/)
 })
 
