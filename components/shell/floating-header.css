@@ -27,6 +27,7 @@
 .oc-product-header-row { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 48px; padding: 0; }
 .oc-product-header-row > * { pointer-events: auto; }
 .oc-product-utilities { display: flex; align-items: center; flex-shrink: 0; gap: 12px; margin-left: auto; }
+.oc-product-brand { display: none; }
 .oc-product-header .oc-floating-circle {
   border: 1px solid var(--oc-floating-border);
   border-radius: 999px;
@@ -108,7 +109,10 @@ button.oc-header-club:hover { color: var(--primary); background: rgb(20 45 69 / 
   .oc-evolving-toggle .oc-evolving-segments .oc-workspace-option { padding-inline: 3px; font-size: 12px; }
   /* Phones: the bottom bar is the section nav and the account menu switches workspace. */
   .oc-product-workspaces { display: none; }
-  .oc-product-header-row { min-height: 48px; }
+  .oc-product-header-row { min-height: 48px; grid-template-columns: minmax(0,1fr) auto; align-items: center; }
+  /* As in the app: the logo leads, search · bell · account follow. */
+  .oc-product-brand { display: inline-flex; align-items: center; justify-self: start; min-height: 44px; padding-right: 8px; border-radius: var(--oc-radius-sm); }
+  .oc-product-brand:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 }
 @media (max-width: 639px) {
   .oc-product-header { padding: 10px 12px; }

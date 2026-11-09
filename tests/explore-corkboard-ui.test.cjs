@@ -22,12 +22,20 @@ test('rail and phone bar read one registry: one name per destination, Notificati
  assert.equal(items.some(item=>item.id==='inbox'||item.label==='Discover'),false);
  assert.ok(items.every(item=>item.href?.startsWith('/')),'every rail item is a real path');
  assert.ok(sections.every(section=>section.label||section.name),'every rail group has an accessible name');
- const bar=nav.bottomBarItems(sections,'personal');assert.deepEqual(bar.map(item=>item.label),['Home','Explore','Applications','My Clubs']);
+ // Phones: the OutClass app's five tabs. Home stands for Applications and My Clubs, Explore for Events; no More.
+ const bar=nav.bottomBarItems(sections,'personal');assert.deepEqual(bar.map(item=>item.label),['Home','Explore','Inbox','Calendar','Profile']);
+ assert.deepEqual(bar.map(item=>item.href),['/home','/explore','/inbox','/calendar','/profile']);
  const {MobileNavigation}=load('components/shell/mobile-navigation.tsx',{'next/link':{default:'Link'}});
- const tree=MobileNavigation({items:bar,groups:items,active:nav.activeNavItem('/explore/categories'),onSelect(){},onLink(){},onMore(){}});
- const links=nodes(tree).filter(node=>node.type==='Link');assert.deepEqual(links.map(label),['Home','Explore','Applications','My Clubs']);
+ const render=active=>MobileNavigation({items:bar,groups:items,active,onSelect(){},onLink(){},onMore(){}});
+ const tree=render(nav.activeNavItem('/explore/categories'));
+ const links=nodes(tree).filter(node=>node.type==='Link');assert.deepEqual(links.map(label),['Home','Explore','Inbox','Calendar','Profile']);
  assert.equal(links.find(node=>label(node)==='Explore').props['aria-current'],'page');
- assert.equal(nodes(tree).find(node=>node.type==='button').props['aria-label'],'More sections');
+ assert.equal(nodes(tree).some(node=>node.type==='button'&&node.props['aria-label']==='More sections'),false,'five tabs leave no More');
+ const current=path=>nodes(render(nav.activeNavItem(path))).filter(node=>node.type==='Link'&&node.props['aria-current']==='page').map(label);
+ for(const [path,tab] of [['/corkboard','Explore'],['/club/abc','Explore'],['/applications','Home'],['/clubs','Home'],['/clubs/tasks','Home'],['/calendar','Calendar'],['/profile','Profile']])assert.deepEqual(current(path),[tab],path);
+ assert.deepEqual(nodes(render('inbox')).filter(node=>node.type==='Link'&&node.props['aria-current']==='page').map(label),['Inbox']);
+ // Fewer than five destinations (club workspaces) still end with More.
+ assert.equal(nodes(MobileNavigation({items:bar.slice(0,4),groups:items,active:'',onSelect(){},onLink(){},onMore(){}})).find(node=>node.type==='button').props['aria-label'],'More sections');
 });
 test('the active rail item follows the URL, including detail pages, and stays empty where no rail item applies',()=>{
  const {activeNavItem,inPlaceSections,personalRailSections,railItems}=require('./helpers/navigation-module.cjs'),q=v=>new URLSearchParams(v);

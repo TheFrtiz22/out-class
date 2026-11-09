@@ -10,7 +10,7 @@ const { chromium, webkit } = require('playwright')
 const repo = path.resolve(__dirname, '..')
 const fixture = path.join(repo, 'tests/fixtures/floating-header')
 const engine = process.env.OUTCLASS_NAV_BROWSER === 'webkit' ? webkit : chromium
-async function build(root, { realNotificationState = false, entry = path.join(fixture, 'app.jsx'), aliases = {} } = {}) {
+async function build(root, { realNotificationState = false, entry = path.join(fixture, 'app.jsx'), aliases = {}, keep = [], plugins = () => [] } = {}) {
   const tsLoader = path.join(root, 'typescript-loader.cjs'), cssLoader = path.join(root, 'style-loader.cjs')
   await fs.writeFile(tsLoader, `const ts=require(${JSON.stringify(require.resolve('typescript'))});module.exports=function(source){return ts.transpileModule(source,{fileName:this.resourcePath,compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText}`)
   await fs.writeFile(cssLoader, 'module.exports = ' + function(source) { return 'const style=document.createElement("style");style.textContent=' + JSON.stringify(source) + ';document.head.append(style);' }.toString())
@@ -19,9 +19,10 @@ async function build(root, { realNotificationState = false, entry = path.join(fi
   const alias = { 'next/link$': path.join(fixture, 'navigation.jsx'), 'next/navigation$': path.join(fixture, 'navigation.jsx'), 'next/image$': boundaries }
   for (const key of ['@/contexts/auth-context', '@/contexts/demo-context', '@/contexts/organization-invitations-context', '@/lib/application-state', '@/lib/workspace-api', '@/actions/communications', '@/actions/club-onboarding', '@/utils/supabase/client', '@/components/tutorial-walkthrough']) alias[`${key}$`] = boundaries
   if (realNotificationState) delete alias['@/lib/application-state$']
+  for (const key of keep) delete alias[`${key}$`]
   Object.assign(alias, aliases)
   alias['@'] = repo
-  await new Promise((resolve, reject) => compiled.webpack({ mode: 'development', context: repo, entry, output: { path: root, filename: 'bundle.js' }, devtool: false, resolve: { alias, extensions: ['.tsx', '.ts', '.jsx', '.js'], modules: ['node_modules'] }, module: { rules: [{ test: /\.[jt]sx?$/, exclude: /node_modules/, use: tsLoader }, { test: /\.css$/, use: cssLoader }] }, performance: { hints: false } }, (error, stats) => { if (error) reject(error); else if (stats.hasErrors()) reject(Error(stats.toString({ all: false, errors: true }))); else resolve() }))
+  await new Promise((resolve, reject) => compiled.webpack({ mode: 'development', context: repo, entry, output: { path: root, filename: 'bundle.js' }, devtool: false, resolve: { alias, extensions: ['.tsx', '.ts', '.jsx', '.js'], modules: ['node_modules'] }, module: { rules: [{ test: /\.[jt]sx?$/, exclude: /node_modules/, use: tsLoader }, { test: /\.css$/, use: cssLoader }] }, performance: { hints: false }, plugins: plugins(compiled.webpack) }, (error, stats) => { if (error) reject(error); else if (stats.hasErrors()) reject(Error(stats.toString({ all: false, errors: true }))); else resolve() }))
   const postcss = require('postcss'), plugin = require('@tailwindcss/postcss')
   const css = await fs.readFile(path.join(repo, 'app/globals.css'), 'utf8')
   const result = await postcss([plugin({ base: repo })]).process(css, { from: path.join(repo, 'app/globals.css') })

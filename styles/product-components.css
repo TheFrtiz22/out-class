@@ -147,3 +147,26 @@
   a[data-slot="badge"]:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 }
 @media (forced-colors: active) { [data-slot="badge"] { border-color: CanvasText; } }
+
+/* Phones and tablets, as in the OutClass app (Inbox, Calendar, Profile). Desktop keeps the layouts above. */
+.oc-calendar-filter-toggle { display: none !important; }
+@media (max-width: 1023px) {
+  /* Inbox: compact day/group headings and rows. */
+  [data-product-shell] .oc-inbox-workspace [aria-label="Notification list"] section > div:first-child { padding: 12px 16px 6px; border-bottom: 0; }
+  [data-product-shell] .oc-inbox-workspace [aria-label="Notification list"] section h3 { color: var(--foreground); font-family: var(--oc-font-sans); font-size: 1rem; font-weight: var(--oc-weight-semibold); letter-spacing: 0; text-transform: none; }
+
+  /* Calendar: a Filter button opens search, type and the past/declined toggles. */
+  .oc-calendar-filter-toggle { display: inline-flex !important; align-self: flex-start; min-height: 44px; border-radius: 999px; }
+  .oc-calendar-filter-toggle[aria-expanded="true"] { background: var(--oc-glass-pill-navy, var(--primary)); color: var(--oc-glass-cream); }
+  .oc-calendar-tools:not([data-phone-open]) { display: none; }
+
+  /* Profile: the student card in navy glass, as in the app. */
+  [data-product-shell] .oc-student-profile > .oc-profile-identity { margin-bottom: 16px; padding: 18px; border: 1px solid var(--oc-glass-navy-edge); border-radius: var(--oc-content-radius); background: var(--oc-glass-navy-material); box-shadow: var(--oc-glass-navy-depth); color: var(--oc-glass-cream); }
+  [data-product-shell] .oc-student-profile > .oc-profile-identity :is(h2, p, span) { color: inherit; }
+  [data-product-shell] .oc-student-profile > .oc-profile-identity p { color: color-mix(in srgb, var(--oc-glass-cream) 75%, transparent); }
+  [data-product-shell] .oc-student-profile > .oc-profile-identity [data-slot="avatar"] { width: 4rem; height: 4rem; box-shadow: 0 0 0 2px color-mix(in srgb, var(--oc-glass-cream) 60%, transparent); }
+  [data-product-shell] .oc-student-profile > .oc-profile-identity [data-slot="avatar-fallback"] { background: var(--oc-glass-cream); color: var(--primary); font-family: var(--oc-font-display); }
+  [data-product-shell] .oc-student-profile > .oc-profile-identity .oc-section-heading { font-size: 1.5rem; line-height: 1.15; }
+  [data-product-shell] .oc-student-profile > .oc-profile-identity [data-slot="button"] { min-height: 44px; border-color: color-mix(in srgb, var(--oc-glass-cream) 30%, transparent); background: var(--oc-glass-cream); color: var(--primary); box-shadow: none; }
+  [data-product-shell] .oc-student-profile > .oc-profile-identity [data-slot="button"] svg { color: currentColor; }
+}

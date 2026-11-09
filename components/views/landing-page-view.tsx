@@ -45,11 +45,18 @@ export function LandingPageView({
         <LandingIntro>
           <LandingHero perspective={perspective} selected={selected} onPerspectiveChange={switchPerspective} onCreateProfile={createProfile} onLeaderEnter={enterLeader} />
         </LandingIntro>
+        {/* The sticky nav carries the audience switch from below the hero until the footer (useJourneyNavigation). */}
+        <div className="oc-journey-controls-slot" data-merged={journeyNavigation.merged}>
+          <span ref={journeyNavigation.controlsRef} className="oc-journey-handoff-sentinel" aria-hidden="true" />
+        </div>
         <LaunchClubs clubs={launchClubs} />
         <ScatteredTools />
         <ProductJourney perspective={perspective} navigation={journeyNavigation} />
         <LandingMoments perspective={perspective} />
         <CampusBand />
+        <div className="oc-journey-controls-slot">
+          <span ref={journeyNavigation.endRef} className="oc-journey-end-sentinel" aria-hidden="true" />
+        </div>
       </main>
       <PublicFooter homeHref="#top" overviewHref="#about" onPerspectiveChange={switchPerspective} invitation={
         <div id="create-account" className="oc-footer-invitation" role="group" aria-labelledby="invitation-title">
