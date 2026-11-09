@@ -9,6 +9,8 @@ import { cookies } from "next/headers"
 import type { Metadata } from "next"
 import { getPublicClubSeo, isIndexableClub } from "@/lib/public-club-seo"
 import { publicPageMetadata, privateRobots } from "@/lib/seo"
+import { getClubShareProfile } from "@/lib/club-share-profile"
+import { clubShareMetadata } from "@/lib/club-share-text"
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
 import { PageHeader } from "@/components/ui/page-header"
 import { presentPublicMarketing } from "@/lib/public-club-content"
@@ -16,13 +18,16 @@ import { readMarketing } from "@/lib/club-marketing"
 
 export async function generateMetadata({ params }: { params: Promise<{ clubId: string }> }): Promise<Metadata> {
   const { clubId } = await params
-  const club = await getPublicClubSeo(clubId)
-  if (!club || !isIndexableClub(club)) return { title: club?.name ?? "Club not found", robots: privateRobots }
+  const [club, share] = await Promise.all([getPublicClubSeo(clubId), getClubShareProfile(clubId)])
+  // Shared links unfurl as the club's profile card whether or not the page is indexed.
+  const preview = share ? clubShareMetadata(share) : {}
+  if (!club || !isIndexableClub(club)) return { title: club?.name ?? "Club not found", robots: privateRobots, ...preview }
   const jar = await cookies()
   const accountPage = jar.has(PLATFORM_VIEW_COOKIE) || jar.get(DEMO_COOKIE)?.value === "1" ||
     jar.getAll().some(cookie => /^sb-.+-auth-token(?:\.\d+)?$/.test(cookie.name))
   return {
     ...publicPageMetadata(club.name, club.description.trim().replace(/\s+/g, " ").slice(0, 160), `/club/${encodeURIComponent(club.id)}`),
+    ...preview,
     ...(accountPage ? { robots: privateRobots } : {}),
   }
 }
