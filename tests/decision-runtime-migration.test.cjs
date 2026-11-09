@@ -1,6 +1,7 @@
+// These rehearse a historical repair in its historical order; 20261110090000_postgres_owned_tables (which later moves every table to the operator) is covered by tests/postgres-owned-tables.test.cjs.
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{PGlite}=require('@electric-sql/pglite');
 const dir=path.resolve('prisma/migrations'),decision='20261010190001_reconciled_decision_letters',repair='20261011194930_decision_letter_runtime_access';
-const names=fs.readdirSync(dir).filter(n=>fs.existsSync(path.join(dir,n,'migration.sql'))).sort();
+const names=fs.readdirSync(dir).filter(n=>n<'20261110090000'&&fs.existsSync(path.join(dir,n,'migration.sql'))).sort();
 const sql=n=>fs.readFileSync(path.join(dir,n,'migration.sql'),'utf8');
 for(const mode of ['fresh','current-main','original-reconciliation'])test(`DecisionLetter bounded runtime: ${mode} upgrade preserves populated data`,{timeout:120000},async()=>{
  const db=new PGlite();try{

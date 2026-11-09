@@ -29,7 +29,7 @@ test('recipient audiences on bounded native PostgreSQL',{skip:!url,timeout:12000
   const [role]=await db.$queryRaw`SELECT current_user,rolsuper,rolbypassrls,has_schema_privilege(current_user,'public','CREATE') AS creates FROM pg_roles WHERE rolname=current_user`;
   assert.deepEqual(role,{current_user:'outclass_production_app',rolsuper:false,rolbypassrls:false,creates:false});
   for(const table of ['RecipientGroup','RecipientGroupEntry']){
-   const [state]=await operator.$queryRawUnsafe(`SELECT pg_get_userbyid(relowner) owner,relrowsecurity rls FROM pg_class WHERE oid='public."${table}"'::regclass`);assert.deepEqual(state,{owner:'outclass_production_app',rls:true});
+   const [state]=await operator.$queryRawUnsafe(`SELECT pg_get_userbyid(relowner)='outclass_production_app' AS runtime_owner,relrowsecurity rls FROM pg_class WHERE oid='public."${table}"'::regclass`);assert.deepEqual(state,{runtime_owner:false,rls:true});
    for(const role of ['anon','authenticated']){const [p]=await operator.$queryRawUnsafe(`SELECT has_table_privilege('${role}','public."${table}"','SELECT,INSERT,UPDATE,DELETE') allowed`);assert.equal(p.allowed,false);}
   }
   await operator.$transaction(async tx=>{await tx.$executeRawUnsafe('GRANT SELECT ON "RecipientGroup" TO authenticated');await tx.$executeRawUnsafe('CREATE POLICY accidental_group_read ON "RecipientGroup" FOR SELECT TO authenticated USING(true)');await tx.$executeRawUnsafe('SET LOCAL ROLE authenticated');assert.equal((await tx.$queryRawUnsafe('SELECT * FROM "RecipientGroup"')).length,0);});

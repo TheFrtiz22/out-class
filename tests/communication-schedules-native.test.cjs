@@ -15,8 +15,8 @@ test('scheduled publication on bounded native PostgreSQL',{skip:!url,timeout:120
  const input=(extra={})=>({id:randomUUID(),clubId:club.id,revision:null,title:'Scheduled '+randomUUID(),body:'Immutable inbox intent',audience:{include:[{source:'MEMBERS'}]},recipientMode:'SEND_TIME',localTime:new Date(Date.now()+3600000).toISOString().slice(0,16),timeZone:'UTC',occurrence:'EARLIER',...extra});
  const due=async id=>op.scheduledCommunication.update({where:{id},data:{scheduledAt:new Date(Date.now()-1000)}});
  await t.test('bounded owner and restrictive browser denial including accidental grants',async()=>{
-  const [state]=await op.$queryRaw`SELECT pg_get_userbyid(relowner) owner,relrowsecurity rls,relforcerowsecurity force FROM pg_class WHERE oid='public."ScheduledCommunication"'::regclass`;
-  assert.deepEqual(state,{owner:'outclass_production_app',rls:true,force:false});
+  const [state]=await op.$queryRaw`SELECT pg_get_userbyid(relowner)='outclass_production_app' AS runtime_owner,relrowsecurity rls,relforcerowsecurity force FROM pg_class WHERE oid='public."ScheduledCommunication"'::regclass`;
+  assert.deepEqual(state,{runtime_owner:false,rls:true,force:false});
   for(const role of ['anon','authenticated']){const [p]=await op.$queryRawUnsafe(`SELECT has_table_privilege('${role}','public."ScheduledCommunication"','SELECT,INSERT,UPDATE,DELETE') allowed`);assert.equal(p.allowed,false);}
  });
  let first;

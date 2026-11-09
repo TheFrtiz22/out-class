@@ -1,10 +1,11 @@
+// These rehearse a historical repair in its historical order; 20261110090000_postgres_owned_tables (which later moves every table to the operator) is covered by tests/postgres-owned-tables.test.cjs.
 const { test } = require('node:test'), assert = require('node:assert/strict');
 const fs = require('node:fs'), { PGlite } = require('@electric-sql/pglite');
 const repair = '20261016030000_event_flyer_deletion_runtime_access';
 async function beforeRepair() {
   const db = new PGlite();
   await db.exec('CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE outclass_production_app; ALTER DEFAULT PRIVILEGES GRANT ALL ON TABLES TO anon, authenticated;');
-  for (const name of fs.readdirSync('prisma/migrations').sort()) {
+  for (const name of fs.readdirSync('prisma/migrations').filter(n => n < '20261110090000').sort()) {
     const file = `prisma/migrations/${name}/migration.sql`;
     if (name !== repair && fs.existsSync(file)) await db.exec(fs.readFileSync(file, 'utf8'));
   }
