@@ -82,6 +82,54 @@ test('pollWhileVisible starts paused in a hidden tab and can leave catch-up to u
   } finally { p.restore() }
 })
 
+test('pollWhileVisible whileHidden keeps presenter polling in a hidden tab; a function is read each tick', () => {
+  const p = page()
+  try {
+    const { pollWhileVisible } = load('hooks/use-revalidate.ts')
+    let always = 0, toggled = 0, presenting = false
+    const stopAlways = pollWhileVisible(() => { always++ }, 5_000, { whileHidden: true })
+    const stopToggled = pollWhileVisible(() => { toggled++ }, 5_000, { whileHidden: () => presenting })
+    p.setHidden(true)
+    p.advance(5_000)
+    assert.equal(always, 1, 'whileHidden: true polls while hidden')
+    assert.equal(toggled, 0, 'not presenting: paused while hidden')
+    presenting = true; p.advance(5_000)
+    assert.equal(toggled, 1, 'presenting: polls while hidden')
+    stopAlways(); stopToggled()
+    assert.equal(p.timers.size, 0)
+  } finally { p.restore() }
+})
+
+function presentation(presenting) {
+  const reads = []
+  let effect
+  const react = { useState: v => [v, () => {}], useEffect(fn) { effect = fn } }
+  const mod = load('components/live-voting/room-presentation.tsx', {
+    react, '@/lib/voting-room-api': { getLiveVotingPresentation: async input => { reads.push(input); return null } },
+    '@/components/ui/loading-state': { LoadingState: 'LoadingState' }, '@/components/ui/button': { Button: 'Button' }, './applicant-slide': { ApplicantSlide: 'ApplicantSlide' },
+  })
+  mod.RoomPresentation({ clubId: 'club', sessionId: 'session', applicationId: 'app', identity: 'id', refreshKey: 0, presenting })
+  return { reads, cleanup: effect() }
+}
+
+test('the projector and leader slide keep refreshing while hidden or covered; a member slide pauses', async () => {
+  const p = page()
+  try {
+    p.setHidden(true)
+    const projector = presentation(true), memberSlide = presentation(false)
+    await new Promise(resolve => setImmediate(resolve))
+    assert.equal(projector.reads.length, 1); assert.equal(memberSlide.reads.length, 1)
+    p.advance(5_000); await new Promise(resolve => setImmediate(resolve))
+    assert.equal(projector.reads.length, 2, 'presenting: hidden window still refreshes')
+    assert.equal(memberSlide.reads.length, 1, 'member: no refresh while hidden')
+    projector.cleanup(); memberSlide.cleanup()
+    assert.equal(p.timers.size, 0)
+  } finally { p.restore() }
+  const view = fs.readFileSync('components/live-voting/room-view.tsx', 'utf8')
+  assert.match(view, /<RoomPresentation [^>]*presenting=\{view!=="member"\}/, 'the room passes presenting for the leader and projector views')
+  assert.match(fs.readFileSync('components/live-voting/board-decision-mode.tsx', 'utf8'), /useEffect\(\(\)=>\{presenting\.current=present\},\[present\]\)/, 'the board follows its projector toggle')
+})
+
 test('SupportSessionSync makes no view-as calls without a support marker, but still checks a restored page', async () => {
   const p = page()
   try {
@@ -149,14 +197,17 @@ test('every network poll in these views pauses in hidden tabs', () => {
   // [file, interval, options]: catchUp:false where useRevalidate or a visibility check already refreshes on return.
   const files = [
     ['components/decision-schedules.tsx', 30000], ['components/invitation-schedules.tsx', 30000], ['components/availability/scheduled-requests.tsx', 30000],
-    ['components/communication-schedules.tsx', 30000, '{catchUp:false}'], ['components/live-voting/room-presentation.tsx', 5000], ['components/live-voting/room-view.tsx', 5000],
-    ['components/live-voting/session-join.tsx', 5000], ['components/live-voting/board-decision-mode.tsx', 5000], ['components/support-session-sync.tsx', 30000, '{ catchUp: false }'],
+    ['components/communication-schedules.tsx', 30000, '{catchUp:false}'], ['components/live-voting/room-presentation.tsx', 5000, '{whileHidden:presenting}'], ['components/live-voting/room-view.tsx', 5000],
+    ['components/live-voting/session-join.tsx', 5000], ['components/live-voting/board-decision-mode.tsx', 5000, '{whileHidden:()=>presenting.current}'], ['components/support-session-sync.tsx', 30000, '{ catchUp: false }'],
   ]
   for (const [file, ms, options] of files) {
     const source = fs.readFileSync(file, 'utf8')
     assert.doesNotMatch(source, /setInterval\(/, `${file} polls through pollWhileVisible, not a raw interval`)
-    const call = source.match(/pollWhileVisible\(([^()]*)\)/)?.[1] ?? ''
-    const args = call.split(',').map(part => part.trim())
+    const start = source.indexOf('pollWhileVisible(') + 'pollWhileVisible('.length
+    let depth = 1, end = start
+    while (depth && end < source.length) { const c = source[end++]; if ('({['.includes(c)) depth++; else if (')}]'.includes(c)) depth-- }
+    const args = [], call = source.slice(start, end - 1)
+    for (let i = 0, d = 0, from = 0; i <= call.length; i++) { const c = call[i]; if (c === undefined || (c === ',' && !d)) { args.push(call.slice(from, i).trim()); from = i + 1 } else if ('({['.includes(c)) d++; else if (')}]'.includes(c)) d-- }
     assert.equal(args[1], String(ms), `${file} keeps its ${ms} ms interval`)
     assert.equal(args.slice(2).join(',') || undefined, options, `${file} catch-up option`)
   }

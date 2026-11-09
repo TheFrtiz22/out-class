@@ -62,6 +62,9 @@ export function VotingBoard({ clubId, applicants: fallbackApplicants, selectionQ
   const [present,setPresent]=useState(false),[displayFields,setDisplayFields]=useState<ApplicantField[]>(defaultVotingDisplay.fields),[creationCandidates,setCreationCandidates]=useState<string[]>([])
   const [index,setIndex]=useState(0),[ballotFilter,setBallotFilter]=useState("ALL"),[filter,setFilter]=useState("ALL"),[year,setYear]=useState("ALL"),[viewPass,setViewPass]=useState(0),[selected,setSelected]=useState<string[]>([]),[publishReview,setPublishReview]=useState(false),[override,setOverride]=useState<Decision>("HOLD"),[reason,setReason]=useState("")
   const refresh=useCallback(()=>reader.current?.refresh()??Promise.resolve(),[])
+  // The projector view keeps refreshing while its window is covered or shared (reported hidden).
+  const presenting=useRef(false)
+  useEffect(()=>{presenting.current=present},[present])
   useEffect(()=>{
     setData(null);setError("")
     const reads=serializedWorkspaceRead(async()=>{
@@ -72,7 +75,7 @@ export function VotingBoard({ clubId, applicants: fallbackApplicants, selectionQ
       return { workspace, setup }
     },({workspace,setup})=>{if(auth.isReadAuthorityCurrent(auth.readAuthority)){setDataOwner(owner);setData(workspace);if(setup&&requestedSetup.current===setup&&workspace.candidateSelection)setReadySetup(setup);setError("")}},error=>{setData(null);setError(error instanceof Error?error.message:"Session unavailable.")})
     reader.current=reads;void reads.poll()
-    const stopPolling=pollWhileVisible(reads.poll,5000)
+    const stopPolling=pollWhileVisible(reads.poll,5000,{whileHidden:()=>presenting.current})
     return()=>{reads.dispose();if(reader.current===reads)reader.current=null;stopPolling()}
   },[clubId,sessionId,demo.isDemoEnabled,auth.user,auth.readAuthority,auth.isImpersonating,auth.isReadAuthorityCurrent,selectionQuery,scope,owner])
   async function run(work:()=>Promise<unknown>){if(busy)return;setBusy(true);try{await work();await refresh()}catch(e){setError(e instanceof Error?e.message:"Could not save.")}finally{setBusy(false)}}
