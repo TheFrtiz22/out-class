@@ -6,6 +6,8 @@
 -- Apply as the function's owner. A REVOKE removes only grants made by the role running it, so a grant made by
 -- another role survives; that case is reported as a WARNING (not an error, so the migration ledger never
 -- blocks later deploys) and must be checked after applying.
+BEGIN;
+
 DO $grants$
 DECLARE r text;
 BEGIN
@@ -23,3 +25,5 @@ BEGIN
   END LOOP;
 END
 $grants$;
+
+COMMIT;
