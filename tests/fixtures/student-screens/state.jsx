@@ -1,5 +1,8 @@
 /* Fictional data for the student-screens fixture. Local only; no sessions, server actions or production data. */
 export * from '../dashboards/state'
+import { useApplicationState as dashboardState } from '../dashboards/state'
+const noop = () => {}
+export function useApplicationState() { return { scheduleBlocks: [], focusEventId: null, respondToEvent: async () => true, cancelInterview: async () => true, setCalendarYear: noop, ...dashboardState() } }
 const now = Date.now(), day = (d, h = 18) => { const x = new Date(now + d * 864e5); x.setHours(h, 0, 0, 0); return x.toISOString() }
 const rounds = n => Array.from({ length: n }, (_, i) => ({ id: `r${i}`, name: ['Application', 'First-round interview', 'Case interview'][i] || `Round ${i + 1}`, order: i }))
 export const fixtureClubs = [
@@ -26,3 +29,4 @@ export async function getCampusEventRsvp() { return { going: false } }
 export async function setCampusEventRsvp({ going }) { return { ok: true, going, count: 19 } }
 export async function getMyCampusEventRsvps() { return [] }
 export function useDemoMode() { return { isDemoEnabled: false, allowed: false } }
+export async function getStudentProfile() { return { profile: { id: 'p1', userId: 'fixture-user', firstName: 'Avery', lastName: 'Morgan', computingId: 'am4fx', major: 'Commerce', gradYear: 2028, gpa: 3.7, satScore: null, actScore: null, actEnglish: null, actMath: null, actReading: null, actScience: null, highSchool: 'Riverside High School', gender: null, pronouns: 'she/her', transferStudent: false, scholarStatus: null, linkedinUrl: 'https://www.linkedin.com/in/avery-fixture', bio: 'Second-year in Commerce interested in investing and nonprofit consulting.', resumeUrl: null, headshotUrl: null, experiences: [{ id: 'x1', kind: 'WORK', title: 'Analyst intern', organization: 'Blue Ridge Capital', startDate: '2026-06-01', endDate: '2026-08-15', current: false, description: 'Built comparable-company models.' }] } } }

@@ -42,3 +42,13 @@ test('phone Events open on the card list until the student picks a view; desktop
  const s=css('components/events/events.css'),phone=s.slice(s.lastIndexOf('@media (max-width: 1023px) {'));
  assert.match(phone,/\.oc-smart-event-card \{ display: flex; flex-direction: column;/);
 });
+test('phone Calendar: filters behind a Filter button; phone Profile: navy student card; both scoped to <1024px',()=>{
+ const src=css('components/views/calendar-view.tsx');
+ assert.match(src,/className="oc-calendar-filter-toggle" aria-expanded=\{phoneFilters\} aria-controls="calendar-tools"/);
+ assert.match(src,/id="calendar-tools" className="oc-toolbar oc-calendar-tools" data-phone-open=\{phoneFilters \|\| undefined\}/);
+ assert.match(css('components/views/unified-student-profile-view.tsx'),/"oc-profile-identity pb-9/);
+ const s=css('styles/product-components.css');assert.match(s,/^\.oc-calendar-filter-toggle \{ display: none !important; \}/m);
+ const phone=s.slice(s.lastIndexOf('@media (max-width: 1023px) {'));
+ assert.match(phone,/\.oc-calendar-tools:not\(\[data-phone-open\]\) \{ display: none; \}/);
+ assert.match(phone,/\[data-product-shell\] \.oc-student-profile > \.oc-profile-identity \{[^}]*var\(--oc-glass-navy-material\)/);
+});

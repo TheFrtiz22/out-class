@@ -9,6 +9,6 @@ async function startStudentScreens() {
   const aliases = Object.fromEntries(['@/contexts/auth-context', '@/lib/application-state', '@/contexts/demo-context', '@/lib/workspace-api', '@/components/views/leader-dashboard/live-leader-workspace', '@/actions/typesense-search', '@/contexts/corkboard-context', '@/components/clubs/saved-clubs-popover'].map(key => [`${key}$`, state]))
   await build(root, { entry: path.join(repo, 'tests/fixtures/student-screens/app.jsx'), aliases })
   const { server, base } = await serve(root)
-  return { base, url: query => `${base}/explore?${query}`, async close() { await new Promise(resolve => server.close(resolve)); await fs.rm(root, { recursive: true, force: true }) } }
+  return { base, url: query => { const page = new URLSearchParams(query).get("page") || "explore"; const path = { club: "/club/fixture-mii", corkboard: "/corkboard", inbox: "/inbox", calendar: "/calendar", profile: "/profile" }[page] || "/explore"; return `${base}${path}?${query}` }, async close() { await new Promise(resolve => server.close(resolve)); await fs.rm(root, { recursive: true, force: true }) } }
 }
 module.exports = { startStudentScreens }
