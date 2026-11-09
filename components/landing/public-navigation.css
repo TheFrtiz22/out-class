@@ -181,7 +181,7 @@
 .oc-public-nav .oc-perspective-switcher button { min-height: 44px; padding: 8px 6px; border-radius: 999px; background: transparent; color: var(--primary); font-size: 12px; font-weight: 600; line-height: 20px; white-space: nowrap; transition: color var(--oc-glass-quick) var(--oc-glass-ease), background-color var(--oc-glass-quick) var(--oc-glass-ease); }
 @media (hover: hover) and (pointer: fine) { .oc-public-nav .oc-perspective-switcher button[aria-pressed="false"]:hover { background: var(--oc-glass-hover-tint); } }
 .oc-public-nav .oc-perspective-switcher button[aria-pressed="true"] { color: var(--oc-glass-cream); }
-.oc-landing .oc-public-nav .oc-perspective-switcher button:focus-visible { outline: 2px solid var(--primary); outline-offset: -3px; }
+.oc-landing .oc-public-nav .oc-perspective-switcher button:focus-visible { outline: 2px solid var(--ring); outline-offset: -3px; }
 .oc-landing .oc-public-nav .oc-perspective-switcher button[aria-pressed="true"]:focus-visible { outline-color: var(--oc-glass-cream); outline-offset: -5px; }
 .oc-public-journey-mobile { display: none; }
 @media (max-width: 1099px) { .oc-public-journey-desktop { left: 164px; } }
