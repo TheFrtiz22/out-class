@@ -58,7 +58,7 @@
   {
    "rule": "css-hex",
    "file": "components/landing/public-navigation.css",
-   "max": 4,
+   "max": 2,
    "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
   },
   {
@@ -166,7 +166,7 @@
   {
    "rule": "css-shadow",
    "file": "components/landing/public-navigation.css",
-   "max": 4,
+   "max": 3,
    "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
   },
   {
