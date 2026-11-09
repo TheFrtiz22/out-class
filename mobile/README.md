@@ -26,9 +26,16 @@ npx expo start         # then press i (iOS simulator), a (Android), or scan the 
 | Endpoint | Screen |
 | --- | --- |
 | `GET /api/v1/me` | Home (clubs, applications), Profile |
-| `GET /api/v1/clubs` | Explore |
+| `GET /api/v1/todo` | Home To-do |
+| `GET /api/v1/calendar` | Home Coming up, Calendar |
+| `GET /api/v1/clubs`, `GET /api/v1/clubs/:id` | Explore, club page |
+| `GET`/`POST /api/v1/following` | Follow a club |
+| `GET /api/v1/corkboard`, `POST /api/v1/corkboard/:id/rsvp`, `POST /api/v1/corkboard/:id/save` | Corkboard |
+| `GET`/`POST /api/v1/inbox` | Inbox, mark read |
 
-Add an endpoint by moving the action's logic into a function the server action and a thin `app/api/v1/.../route.ts` both call, and start the route with `requireBearerAuth(request)`. `tests/api-v1-routes.test.cjs` fails any v1 route that doesn't.
+Applying, editing the profile and task submissions open the matching page on the web for now.
+
+Add an endpoint as a thin `app/api/v1/.../route.ts` that calls the existing server action inside `v1Route(request, …)` (`lib/api-v1.ts`). `v1Route` verifies the bearer token first and runs the action in a scope where `requireAuth()` resolves that account (`utils/bearer-context.ts`), so the action's own authorization applies. Return only the fields the screen needs. `tests/api-v1-routes.test.cjs` fails any v1 route that skips this.
 
 ## Conventions
 

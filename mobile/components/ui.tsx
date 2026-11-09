@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View, type TextStyle, type ViewStyle } from "react-native";
 import { SvgXml } from "react-native-svg";
 import { lockupOnLight, lockupOnNavy } from "@/assets/brand/logos";
-import { font, navyDepth, navyGradient, radius, space, text, useTheme } from "@/theme/tokens";
+import { font, hit, navyDepth, navyGradient, radius, space, text, useTheme } from "@/theme/tokens";
 
 /* Building blocks that reproduce the web's surfaces. Colors come only from the theme. */
 
@@ -56,7 +56,7 @@ export function PrimaryButton({ label, onPress, disabled, loading, arrow = true 
       {loading ? <ActivityIndicator color={fg} /> : (
         <View style={styles.buttonRow}>
           <Text style={[text.bodyStrong, { color: fg }]}>{label}</Text>
-          {arrow ? <ArrowRight size={17} color={fg} weight="bold" /> : null}
+          {arrow ? <ArrowRight size={15} color={fg} weight="bold" /> : null}
         </View>
       )}
     </Pressable>
@@ -67,7 +67,7 @@ export function PrimaryButton({ label, onPress, disabled, loading, arrow = true 
 export function SecondaryButton({ label, onPress, icon, compact }: { label: string; onPress: () => void; icon?: ReactNode; compact?: boolean }) {
   const t = useTheme();
   return (
-    <Pressable accessibilityRole="button" onPress={onPress}
+    <Pressable accessibilityRole="button" onPress={onPress} hitSlop={compact ? hit(38) : undefined}
       style={({ pressed }) => [styles.button, compact && styles.compact, { backgroundColor: t.raised, borderColor: t.edge, borderWidth: 1, boxShadow: t.shadowRaised, transform: [{ scale: pressed ? 0.985 : 1 }] }]}>
       <View style={styles.buttonRow}>{icon}<Text style={[text.bodyStrong, { color: t.ink }]}>{label}</Text></View>
     </Pressable>
@@ -89,7 +89,7 @@ export function TextLink({ label, onPress, arrow = true, color }: { label: strin
 export function RoundButton({ label, children, onPress, dot }: { label: string; children: ReactNode; onPress?: () => void; dot?: boolean }) {
   const t = useTheme();
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress}
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={hit(38)}
       style={[styles.round, { backgroundColor: t.raised, borderColor: t.edge, boxShadow: t.shadowRaised }]}>
       {children}
       {dot ? <View style={[styles.dot, { backgroundColor: t.accent, borderColor: t.raised }]} /> : null}
@@ -111,16 +111,16 @@ export function Initials({ name, size = 40 }: { name: string; size?: number }) {
 export function ScreenHeader({ title, eyebrow, subtitle, accountName }: { title: string; eyebrow?: string; subtitle?: string; accountName?: string }) {
   const t = useTheme();
   return (
-    <View style={{ marginBottom: space.xl }}>
+    <View style={{ marginBottom: space.lg }}>
       <View style={styles.actions}>
-        <View style={{ flex: 1 }}><Logo width={118} /></View>
-        <RoundButton label="Search"><MagnifyingGlass size={20} color={t.ink} /></RoundButton>
-        <RoundButton label="Notifications" dot><Bell size={20} color={t.ink} /></RoundButton>
-        {accountName ? <Initials name={accountName} size={44} /> : null}
+        <View style={{ flex: 1 }}><Logo width={104} /></View>
+        <RoundButton label="Search"><MagnifyingGlass size={18} color={t.ink} /></RoundButton>
+        <RoundButton label="Notifications" dot><Bell size={18} color={t.ink} /></RoundButton>
+        {accountName ? <Initials name={accountName} size={38} /> : null}
       </View>
       {eyebrow ? <Eyebrow style={{ marginBottom: space.sm }}>{eyebrow}</Eyebrow> : null}
       <Display size="hero">{title}</Display>
-      {subtitle ? <Text style={[text.body, { color: t.muted, marginTop: space.md }]}>{subtitle}</Text> : null}
+      {subtitle ? <Text style={[text.body, { color: t.muted, marginTop: space.sm }]}>{subtitle}</Text> : null}
     </View>
   );
 }
@@ -136,7 +136,7 @@ export function SectionTitle({ title, action }: { title: string; action?: ReactN
 }
 
 /** Navy calendar tile, as on the web's meeting rows. */
-export function DateTile({ date, size = 64 }: { date: Date; size?: number }) {
+export function DateTile({ date, size = 50 }: { date: Date; size?: number }) {
   return (
     <View style={[styles.dateTile, { width: size, height: size }]}>
       <LinearGradient colors={navyGradient} style={StyleSheet.absoluteFill} />
@@ -168,7 +168,7 @@ export function Pill({ label, tone = "neutral" }: { label: string; tone?: "neutr
   }[tone];
   return (
     <View style={[styles.pill, { backgroundColor: bg }, tone === "outline" && { borderWidth: 1, borderColor: t.hairline }]}>
-      <Text style={[text.label, { color: fg, fontSize: 13 }]}>{label}</Text>
+      <Text style={[text.label, { color: fg, fontSize: 12 }]}>{label}</Text>
     </View>
   );
 }
@@ -181,9 +181,9 @@ export function Segmented<T extends string>({ options, value, onChange }: { opti
       {options.map((o) => {
         const on = o.value === value;
         return (
-          <Pressable key={o.value} accessibilityRole="tab" accessibilityState={{ selected: on }} onPress={() => onChange(o.value)} style={[styles.segment, on && { boxShadow: navyDepth }]}>
+          <Pressable key={o.value} accessibilityRole="tab" accessibilityState={{ selected: on }} onPress={() => onChange(o.value)} hitSlop={hit(36)} style={[styles.segment, on && { boxShadow: navyDepth }]}>
             {on ? <LinearGradient colors={navyGradient} style={[StyleSheet.absoluteFill, { borderRadius: radius.pill }]} /> : null}
-            <Text style={[text.label, { fontSize: 15, color: on ? "#fff9f1" : t.ink }]}>{o.label}</Text>
+            <Text style={[text.label, { fontSize: 14, color: on ? "#fff9f1" : t.ink }]}>{o.label}</Text>
           </Pressable>
         );
       })}
@@ -194,18 +194,18 @@ export function Segmented<T extends string>({ options, value, onChange }: { opti
 const styles = StyleSheet.create({
   surface: { borderRadius: radius.lg, borderWidth: 1, borderCurve: "continuous" },
   navyPanel: { borderRadius: radius.lg, overflow: "hidden", padding: space.xl, borderCurve: "continuous" },
-  button: { minHeight: 52, borderRadius: radius.pill, overflow: "hidden", alignItems: "center", justifyContent: "center", paddingHorizontal: space.xxl },
-  compact: { minHeight: 44, alignSelf: "flex-start", paddingHorizontal: space.xl },
+  button: { minHeight: 46, borderRadius: radius.pill, overflow: "hidden", alignItems: "center", justifyContent: "center", paddingHorizontal: space.xl },
+  compact: { minHeight: 38, alignSelf: "flex-start", paddingHorizontal: space.lg },
   buttonRow: { flexDirection: "row", alignItems: "center", gap: space.sm },
   link: { flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 4 },
-  round: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, alignItems: "center", justifyContent: "center" },
-  dot: { position: "absolute", top: 9, right: 10, width: 9, height: 9, borderRadius: 5, borderWidth: 1.5 },
+  round: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+  dot: { position: "absolute", top: 7, right: 8, width: 8, height: 8, borderRadius: 5, borderWidth: 1.5 },
   initials: { alignItems: "center", justifyContent: "center" },
-  actions: { flexDirection: "row", alignItems: "center", gap: space.md, marginBottom: space.xxl },
-  sectionRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: space.xxl, marginBottom: space.md },
+  actions: { flexDirection: "row", alignItems: "center", gap: space.sm, marginBottom: space.xl },
+  sectionRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: space.xl, marginBottom: space.sm },
   dateTile: { borderRadius: 14, overflow: "hidden", alignItems: "center", justifyContent: "center", borderCurve: "continuous" },
   clubTile: { alignItems: "center", justifyContent: "center", borderWidth: 1, borderCurve: "continuous" },
-  pill: { alignSelf: "flex-start", paddingHorizontal: 12, paddingVertical: 5, borderRadius: radius.pill },
-  segmented: { flexDirection: "row", padding: 5, borderRadius: radius.pill, borderWidth: 1 },
-  segment: { flex: 1, minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: radius.pill, overflow: "hidden" },
+  pill: { alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 3, borderRadius: radius.pill },
+  segmented: { flexDirection: "row", padding: 4, borderRadius: radius.pill, borderWidth: 1 },
+  segment: { flex: 1, minHeight: 36, alignItems: "center", justifyContent: "center", borderRadius: radius.pill, overflow: "hidden" },
 });

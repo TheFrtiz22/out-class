@@ -8,6 +8,7 @@ import { hasPermission, isActiveMembership, type ClubPermission } from "@/lib/pe
 import { DEMO_COOKIE } from "@/lib/demo/access";
 import { isUvaEmail } from "@/lib/auth";
 import { sessionIdFromVerifiedToken } from "@/lib/auth-session";
+import { bearerIdentity } from "@/utils/bearer-context";
 import { createClient } from "./supabase/server";
 import { cookies } from "next/headers";
 import { prisma } from "./prisma";
@@ -41,6 +42,15 @@ export const getSessionUser = cache(async () => {
  * Redirects to /auth (or home) if not authenticated.
  */
 export async function requireAuth(options: { allowPlatformView?: boolean; verifyEmail?: boolean; adminDiagnostics?: boolean } = {}) {
+  // Native-client routes verify a bearer token first (utils/bearer-context.ts); inside
+  // that scope the verified account is the only identity. Cookies, demo mode and
+  // view-as are never consulted for it.
+  const bearer = bearerIdentity();
+  if (bearer) {
+    // Admin checks (view-as, MFA, diagnostics) read the cookie session, so they never run for an app token.
+    if (options.allowPlatformView || options.adminDiagnostics) throw new AdminAccessError("ADMIN_ACCESS_DENIED", "Admin tools aren’t available in the app.");
+    return { supabaseUser: bearer.supabaseUser, user: bearer.user, impersonation: null };
+  }
   const cookieStore = await cookies();
   if (cookieStore.has(PLATFORM_VIEW_COOKIE) && !options.allowPlatformView) {
     const session = await serverPhase("identity", () => platformViewSession());

@@ -75,19 +75,23 @@ export const font = {
   textBold: "SourceSans3_700Bold",
 } as const;
 
-export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 28, xxxl: 40 } as const;
-export const radius = { sm: 10, md: 14, lg: 22, xl: 26, pill: 999 } as const;
+export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 18, xxl: 24, xxxl: 32 } as const;
+export const radius = { sm: 10, md: 12, lg: 18, xl: 22, pill: 999 } as const;
+
+/** Every control keeps at least a 44-point tap area (Apple HIG), even when it draws smaller. */
+export const TAP = 44;
+export const hit = (height: number) => { const pad = Math.max(0, Math.ceil((TAP - height) / 2)); return { top: pad, bottom: pad, left: pad, right: pad }; };
 
 export const text = {
-  hero: { fontFamily: font.display, fontSize: 40, lineHeight: 44, letterSpacing: -0.6 },
-  title: { fontFamily: font.display, fontSize: 30, lineHeight: 34, letterSpacing: -0.3 },
-  cardTitle: { fontFamily: font.display, fontSize: 23, lineHeight: 28, letterSpacing: -0.2 },
-  section: { fontFamily: font.textSemibold, fontSize: 19, lineHeight: 24 },
-  body: { fontFamily: font.text, fontSize: 16, lineHeight: 23 },
-  bodyStrong: { fontFamily: font.textSemibold, fontSize: 16, lineHeight: 22 },
-  small: { fontFamily: font.text, fontSize: 14, lineHeight: 19 },
-  label: { fontFamily: font.textSemibold, fontSize: 14, lineHeight: 18 },
-  eyebrow: { fontFamily: font.textSemibold, fontSize: 12, lineHeight: 16, letterSpacing: 1.6, textTransform: "uppercase" as const },
+  hero: { fontFamily: font.display, fontSize: 32, lineHeight: 36, letterSpacing: -0.4 },
+  title: { fontFamily: font.display, fontSize: 25, lineHeight: 29, letterSpacing: -0.2 },
+  cardTitle: { fontFamily: font.display, fontSize: 20, lineHeight: 24, letterSpacing: -0.1 },
+  section: { fontFamily: font.textSemibold, fontSize: 17, lineHeight: 22 },
+  body: { fontFamily: font.text, fontSize: 15, lineHeight: 21 },
+  bodyStrong: { fontFamily: font.textSemibold, fontSize: 15, lineHeight: 20 },
+  small: { fontFamily: font.text, fontSize: 13, lineHeight: 17 },
+  label: { fontFamily: font.textSemibold, fontSize: 13, lineHeight: 17 },
+  eyebrow: { fontFamily: font.textSemibold, fontSize: 11, lineHeight: 14, letterSpacing: 1.4, textTransform: "uppercase" as const },
 } as const;
 
 /** The app always follows the system light/dark setting. */

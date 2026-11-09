@@ -1,6 +1,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { cookies } from "next/headers";
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
+import { bearerIdentity } from "@/utils/bearer-context";
 
 // A lexical async scope prevents recursion while resolving the REAL administrator.
 // Never use enterWith: it could leak identity between concurrent requests.
@@ -14,6 +15,8 @@ export const supportTransactionScope = new AsyncLocalStorage<{
 }>();
 export async function supportContext(): Promise<SupportSession | null> {
   if (supportInternal.getStore()) return null;
+  // Native-client requests act only as the bearer token's account; view-as never applies.
+  if (bearerIdentity()) return null;
   const transaction = supportTransactionScope.getStore();
   if (transaction) {
     await transaction.validate();

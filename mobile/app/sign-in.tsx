@@ -56,7 +56,7 @@ export default function SignIn() {
   });
 
   const field = [styles.input, text.body, { color: t.ink, backgroundColor: t.scheme === "dark" ? t.raised : "#fffefb", borderColor: t.scheme === "dark" ? t.hairline : "#d5dad6" }];
-  const label = [text.label, { fontSize: 15, color: t.ink, marginBottom: 8 }];
+  const label = [text.label, { fontSize: 14, color: t.ink, marginBottom: 6 }];
 
   return (
     <View style={{ flex: 1, backgroundColor: t.background }}>
@@ -65,26 +65,26 @@ export default function SignIn() {
           <View style={[styles.hero, { paddingTop: insets.top + space.xl }]}>
             <Image source={require("@/assets/campus/sunset-rotunda-960.webp")} style={StyleSheet.absoluteFill} contentFit="cover" accessibilityIgnoresInvertColors />
             <LinearGradient colors={["rgba(14,35,56,0.62)", "rgba(14,35,56,0.30)", "rgba(14,35,56,0.78)", "rgba(14,35,56,0.94)"]} locations={[0, 0.35, 0.7, 1]} style={StyleSheet.absoluteFill} />
-            <View style={{ zIndex: 1, alignSelf: "flex-start" }}><Logo onNavy width={168} /></View>
+            <View style={{ zIndex: 1, alignSelf: "flex-start" }}><Logo onNavy width={140} /></View>
             <View style={{ flex: 1 }} />
             <Text style={[text.eyebrow, { color: "rgba(255,249,241,0.78)" }]}>Made for University of Virginia</Text>
             <Text style={styles.heroLine}>Find and apply to UVA clubs with one profile.</Text>
           </View>
 
           <View style={[styles.card, { backgroundColor: t.surface, borderColor: t.edge, boxShadow: t.shadow }]}>
-            <Display size="title" style={{ fontSize: 34, lineHeight: 38 }}>Welcome back</Display>
+            <Display size="title" style={{ fontSize: 29, lineHeight: 33 }}>Welcome back</Display>
             <Text style={[text.body, { color: t.muted, marginTop: 6 }]}>Sign in with your UVA account.</Text>
             <View style={[styles.rule, { backgroundColor: t.hairline }]} />
 
             <Text style={label}>Email address</Text>
             <TextInput accessibilityLabel="Email address" autoCapitalize="none" autoComplete="email" keyboardType="email-address" textContentType="username"
               placeholder="computingid@virginia.edu" placeholderTextColor={t.faint} style={field} value={email} editable={step !== "verify-code"} onChangeText={setEmail} />
-            <Text style={[text.small, { color: t.muted, marginTop: 8, marginBottom: space.xl }]}>Use your @virginia.edu email address.</Text>
+            <Text style={[text.small, { color: t.muted, marginTop: 6, marginBottom: space.lg }]}>Use your @virginia.edu email address.</Text>
 
             {step === "password" && (
               <>
                 <Text style={label}>Password</Text>
-                <TextInput accessibilityLabel="Password" secureTextEntry autoComplete="current-password" textContentType="password" style={[field, { marginBottom: space.xl }]} value={password} onChangeText={setPassword} onSubmitEditing={signIn} />
+                <TextInput accessibilityLabel="Password" secureTextEntry autoComplete="current-password" textContentType="password" style={[field, { marginBottom: space.lg }]} value={password} onChangeText={setPassword} onSubmitEditing={signIn} />
                 <PrimaryButton label="Sign in" onPress={signIn} loading={loading} disabled={!email || !password} />
                 <Choice label="Use an email code instead" onPress={() => { setError(""); setStep("request-code"); }} />
               </>
@@ -120,16 +120,16 @@ export default function SignIn() {
 function Choice({ label, onPress }: { label: string; onPress: () => void }) {
   const t = useTheme();
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={{ paddingVertical: space.lg, alignItems: "center" }}>
+    <Pressable accessibilityRole="button" onPress={onPress} style={{ minHeight: 44, justifyContent: "center", alignItems: "center", marginTop: 4 }}>
       <Text style={[text.bodyStrong, { color: t.ink }]}>{label}</Text>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  hero: { height: 360, paddingHorizontal: space.xl, paddingBottom: 64, overflow: "hidden" },
-  heroLine: { fontFamily: font.display, fontSize: 32, lineHeight: 37, color: "#fff9f1", marginTop: space.sm, letterSpacing: -0.3 },
+  hero: { height: 300, paddingHorizontal: space.xl, paddingBottom: 64, overflow: "hidden" },
+  heroLine: { fontFamily: font.display, fontSize: 27, lineHeight: 31, color: "#fff9f1", marginTop: space.sm, letterSpacing: -0.3 },
   card: { marginTop: -40, marginHorizontal: space.lg, borderRadius: radius.xl, borderWidth: 1, padding: space.xl, paddingTop: space.xxl, borderCurve: "continuous" },
-  input: { height: 54, borderWidth: 1, borderRadius: radius.md, paddingHorizontal: space.lg },
-  rule: { height: 1, marginVertical: space.xl },
+  input: { height: 48, borderWidth: 1, borderRadius: radius.md, paddingHorizontal: space.lg },
+  rule: { height: 1, marginVertical: space.lg },
 });

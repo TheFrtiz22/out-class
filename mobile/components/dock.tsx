@@ -14,7 +14,7 @@ const items: Record<string, { label: string; icon: Icon }> = {
   profile: { label: "Profile", icon: UserCircle },
 };
 
-export const DOCK_SPACE = 112;
+export const DOCK_SPACE = 96;
 
 export function Dock({ state, navigateToTab }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
@@ -33,7 +33,7 @@ export function Dock({ state, navigateToTab }: BottomTabBarProps) {
               onPress={() => { if (!focused) navigateToTab(route.key); }}
               style={[styles.item, focused && styles.itemOn]}>
               {focused ? <View style={styles.marker} /> : null}
-              <Icon size={23} color={focused ? "#fff9f1" : "rgba(255,249,241,0.74)"} weight={focused ? "fill" : "regular"} />
+              <Icon size={20} color={focused ? "#fff9f1" : "rgba(255,249,241,0.74)"} weight={focused ? "fill" : "regular"} />
               <Text style={[styles.label, { color: focused ? "#fff9f1" : "rgba(255,249,241,0.74)", fontFamily: focused ? font.textSemibold : font.text }]}>{item.label}</Text>
             </Pressable>
           );
@@ -45,9 +45,9 @@ export function Dock({ state, navigateToTab }: BottomTabBarProps) {
 
 const styles = StyleSheet.create({
   wrap: { position: "absolute", left: 14, right: 14 },
-  dock: { flexDirection: "row", borderRadius: 30, overflow: "hidden", padding: 7, borderWidth: 1, borderColor: "rgba(191,216,238,0.25)", borderCurve: "continuous" },
-  item: { flex: 1, alignItems: "center", justifyContent: "center", paddingTop: 10, paddingBottom: 8, borderRadius: 22, gap: 3 },
+  dock: { flexDirection: "row", borderRadius: 26, overflow: "hidden", padding: 5, borderWidth: 1, borderColor: "rgba(191,216,238,0.25)", borderCurve: "continuous" },
+  item: { flex: 1, minHeight: 48, alignItems: "center", justifyContent: "center", paddingTop: 6, paddingBottom: 5, borderRadius: 20, gap: 2 },
   itemOn: { backgroundColor: "rgba(255,249,241,0.10)" },
-  marker: { position: "absolute", top: 3, width: 18, height: 3, borderRadius: 2, backgroundColor: "#e8793e" },
-  label: { fontSize: 12, letterSpacing: 0.1 },
+  marker: { position: "absolute", top: 2, width: 16, height: 3, borderRadius: 2, backgroundColor: "#e8793e" },
+  label: { fontSize: 11, letterSpacing: 0.1 },
 });

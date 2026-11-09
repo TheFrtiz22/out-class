@@ -42,6 +42,7 @@ function RootNavigator() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Protected guard={!!session}>
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="club/[id]" />
         </Stack.Protected>
         <Stack.Protected guard={!session}>
           <Stack.Screen name="sign-in" />
