@@ -129,3 +129,6 @@ disposable stack after fixes: workspace-shell-e2e, header-gap-e2e, overview-view
 reviewers: migration-reviewer safe as written (keep single ALTER; deploy order: migration before code); authz-reviewer no bypass, 1 high fixed (admin projection lost shortName) + 1 low fixed (snapshot shim), matrix corrected (1 untested cell: real cross-club membership)
 not run: run-disposable-postgres.cjs (no Docker daemon in this container), authenticated E2E stack
 ```
+```
+2026-11-09 RANKED-PERF-1 (Windows, shared node_modules): ranked-review 10/10, ranked-review-actions 6/6, ranked-review-browser 1/1 (alone), ranked-review-performance 3/3, ranked-review-performance-browser 1/1 (alone), voting-target-summary-browser 2/2, voting-navigation 4/4, voting-room-demo 4/4 | loading-experience 10/11 (1 env: `git ls-files '...'` quoting under cmd.exe; changed files checked by hand for static lib/demo imports) | typecheck: only lib/account-data.ts shortName error from the stale shared Prisma client (pre-existing, not regenerated) | eslint changed files 0 errors (1 pre-existing warning) | ui-controls OK | full test, test:migrations, build NOT run
+```
