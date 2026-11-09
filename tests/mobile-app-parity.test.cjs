@@ -52,3 +52,11 @@ test('phone Calendar: filters behind a Filter button; phone Profile: navy studen
  assert.match(phone,/\.oc-calendar-tools:not\(\[data-phone-open\]\) \{ display: none; \}/);
  assert.match(phone,/\[data-product-shell\] \.oc-student-profile > \.oc-profile-identity \{[^}]*var\(--oc-glass-navy-material\)/);
 });
+test('a member inside a club keeps More for the club pages; the personal rail gets the five app tabs',()=>{
+ const nav=require('./helpers/navigation-module.cjs');
+ const member=nav.memberRailSections('club-1','Chess Club');
+ assert.deepEqual(nav.bottomBarItems(member,'personal','club-home').map(item=>item.id),['student-dashboard','explore','inbox','calendar'],'four tabs, so More opens the sheet');
+ assert.deepEqual(member.find(section=>section.id==='member-club').items.map(item=>item.id),['club-home','club-meetings','club-tasks'],'the sheet lists the club pages');
+ assert.ok(nav.railItems?nav.railItems(member).some(item=>item.id==='student-profile'):member.some(section=>section.items.some(item=>item.id==='student-profile')),'Profile stays in the sheet');
+ assert.deepEqual(nav.bottomBarItems(nav.personalRailSections(),'personal','student-dashboard').map(item=>item.id),['student-dashboard','explore','inbox','calendar','student-profile']);
+});

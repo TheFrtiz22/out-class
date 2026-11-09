@@ -138,12 +138,14 @@ export function activeNavItem(pathname: string, params: URLSearchParams = new UR
 export function bottomBarItems(sections: RailSection[], kind: WorkspaceKind | "preview", active?: string | null): ProductNavItem[] {
   if (kind === "personal") {
     const items = railItems(sections), find = (id: string) => items.find(item => item.id === id)
+    // A member inside a club keeps More (its sheet lists that club's Meetings and Tasks), so Profile moves there.
+    const inClub = sections.some(section => section.id === "member-club")
     const home = find("student-dashboard"), explore = find("explore"), calendar = find("calendar"), profile = find("student-profile")
     return [
       home && { ...home, matches: ["applications", "clubs"] },
       explore && { ...explore, matches: ["corkboard"] },
       { id: "inbox", label: TERMS.inbox, href: INBOX_HREF },
-      calendar, profile,
+      calendar, inClub ? undefined : profile,
     ].filter((item): item is ProductNavItem => !!item)
   }
   if (kind === "leader") return leaderBottomBar(sections)

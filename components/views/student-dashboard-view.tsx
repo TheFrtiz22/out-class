@@ -182,9 +182,10 @@ export function StudentDashboardView({
     </DashboardCard>}
     {furthest && <section className="oc-home-furthest" aria-labelledby="home-phone-furthest-title">
       <h2 id="home-phone-furthest-title" className="oc-home-phone-heading">Furthest along</h2>
-      <button type="button" className="oc-home-furthest-card" onClick={() => openApplication(furthest)}>
+      {/* A list can't live inside a button: the club name is the button and its hit area covers the card. */}
+      <div className="oc-home-furthest-card" role="group" aria-labelledby="home-furthest-open">
         <small>Application status</small>
-        <strong>{furthest.name}</strong>
+        <button type="button" id="home-furthest-open" className="oc-home-furthest-open" onClick={() => openApplication(furthest)}>{furthest.name}</button>
         <ol>{["Application submitted", "Club review", "Interview", "Decision"].map((label, i) => {
           const at = stageOf(furthest.status)
           return <li key={label} data-state={i < at ? "done" : i === at ? "current" : undefined}>
@@ -192,7 +193,7 @@ export function StudentDashboardView({
             <span>{i === at && i === 1 ? "Club review in progress" : i === at && i === 2 ? "Interview stage" : label}</span>
           </li>
         })}</ol>
-      </button>
+      </div>
     </section>}
     <DashboardCard id="home-phone-applications-title" title="Applications" className="oc-home-phone-applications" more={{ onClick: () => onNavigate("tracker"), label: "View all" }}>
       {applications.length ? <GlassRowList>{applications.slice(0, 5).map(app => <li key={app.id}><GlassRow onClick={() => openApplication(app)} className="oc-home-application" title={app.name} detail={applicationNote(app)}
@@ -213,7 +214,8 @@ export function StudentDashboardView({
   return (
     <div className="oc-student-home">
       {hero}
-      <AvailabilityDashboardRequests />
+      {/* Mounted once for both layouts, inside the same dashboard context (no blur, card type) as before. */}
+      <Dashboard className="oc-home-availability-slot"><AvailabilityDashboardRequests /></Dashboard>
       {phone}
       <Dashboard className="oc-home-dashboard">
         {unavailable

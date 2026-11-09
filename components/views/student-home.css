@@ -3,6 +3,7 @@
 .oc-student-home { display: grid; gap: var(--oc-content-gap); color: var(--foreground); font-family: var(--oc-font-sans); }
 .oc-home-hero .oc-page-header { margin-bottom: 0; }
 .oc-home-loading { display: grid; gap: var(--oc-content-gap); }
+.oc-home-availability-slot:empty { display: none; }
 
 .oc-home-application > :first-child { width: 2.25rem; height: 2.25rem; border-radius: var(--oc-radius-md); }
 .oc-home-update-indicator { align-self: start; margin-top: .125rem; color: var(--muted-foreground); }
@@ -37,10 +38,13 @@
   .oc-home-todo-copy > .oc-needs-action { min-height: 36px; margin-top: .125rem; }
 
   /* Furthest along: navy glass status card, as on the app and the sign-in sample. */
-  .oc-home-furthest-card { display: grid; width: 100%; padding: 1rem 1.125rem .5rem; border: 1px solid var(--oc-glass-navy-edge); border-radius: var(--oc-glass-card-radius, 1.375rem); background: var(--oc-glass-navy-material); box-shadow: var(--oc-glass-navy-depth); color: var(--oc-glass-cream); text-align: left; cursor: pointer; }
-  .oc-home-furthest-card:focus-visible { outline: 2px solid var(--brand-orange); outline-offset: 2px; }
+  .oc-home-furthest-card { position: relative; display: grid; width: 100%; padding: 1rem 1.125rem .5rem; border: 1px solid var(--oc-glass-navy-edge); border-radius: var(--oc-glass-card-radius, 1.375rem); background: var(--oc-glass-navy-material); box-shadow: var(--oc-glass-navy-depth); color: var(--oc-glass-cream); text-align: left; cursor: pointer; }
+  .oc-home-furthest-open { margin: 0; padding: 0; border: 0; background: none; color: inherit; text-align: left; cursor: pointer; }
+  .oc-home-furthest-open::after { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: var(--oc-glass-card-radius, 1.375rem); }
+  .oc-home-furthest-open:focus-visible { outline: none; }
+  .oc-home-furthest-open:focus-visible::after { outline: 2px solid var(--brand-orange); outline-offset: 2px; }
   .oc-home-furthest-card > small { color: color-mix(in srgb, var(--oc-glass-cream) 70%, transparent); font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
-  .oc-home-furthest-card > strong { margin-top: .25rem; padding-bottom: .75rem; border-bottom: 1px solid color-mix(in srgb, var(--oc-glass-cream) 14%, transparent); font-family: var(--oc-font-display); font-size: 1.25rem; font-weight: 400; line-height: 1.2; }
+  .oc-home-furthest-card > .oc-home-furthest-open { margin-top: .25rem; padding-bottom: .75rem; border-bottom: 1px solid color-mix(in srgb, var(--oc-glass-cream) 14%, transparent); font-family: var(--oc-font-display); font-size: 1.25rem; font-weight: 400; line-height: 1.2; }
   .oc-home-furthest-card ol { margin: 0; padding: 0; list-style: none; }
   .oc-home-furthest-card li { display: flex; align-items: center; gap: .75rem; min-height: 2.75rem; color: color-mix(in srgb, var(--oc-glass-cream) 72%, transparent); font-size: var(--oc-text-small); }
   .oc-home-furthest-card li + li { border-top: 1px solid color-mix(in srgb, var(--oc-glass-cream) 10%, transparent); }
