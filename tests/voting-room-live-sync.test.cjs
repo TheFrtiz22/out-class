@@ -4,44 +4,71 @@ const ok=r=>assert.equal(r.ok,true,JSON.stringify(r));
 async function begin(h){await h.create();ok(await h.command('START'));ok(await h.command('OPEN_VOTING'));}
 const session=h=>h.state().sessions[0];
 
+const tick=()=>new Promise(r=>setTimeout(r,5));
+/** The leader's room snapshot as the client holds it: revision plus the database time it was read. */
+async function view(h){h.as(leaderId);const v=await h.read();await tick();return {revision:v.revision,viewedAt:v.viewedAt};}
+const close=(h,v,requestId,extra={})=>h.api.commandLiveVotingRoom({...h.scope,requestId,revision:v.revision,viewedAt:v.viewedAt,action:'CLOSE_VOTING',confirmed:true,applicationId:apps[0],passNumber:1,...extra});
+
 test('a close confirmed from a view older only by new ballots succeeds; any other change still refuses',async()=>{
- const h=harness();await begin(h);const stale=session(h).revision;
+ const h=harness();await begin(h);const v=await view(h);
  h.as(voterId);ok(await h.vote('ACCEPT'));h.as(leaderId);ok(await h.vote('HOLD'));
- assert.equal(session(h).revision,stale+2);
- // Without naming the ballot instance the optimistic revision check is unchanged.
- assert.equal((await h.api.commandLiveVotingRoom({...h.scope,requestId:uuid(700),revision:stale,action:'CLOSE_VOTING',confirmed:true})).code,'STALE_STATE');
+ assert.equal(session(h).revision,v.revision+2);
+ // Without naming the ballot instance, or without the view time, the optimistic revision check is unchanged.
+ assert.equal((await h.api.commandLiveVotingRoom({...h.scope,requestId:uuid(700),revision:v.revision,viewedAt:v.viewedAt,action:'CLOSE_VOTING',confirmed:true})).code,'STALE_STATE');
+ assert.equal((await close(h,{revision:v.revision},uuid(703))).code,'STALE_STATE');
  // Naming another applicant never closes the current one.
- assert.equal((await h.api.commandLiveVotingRoom({...h.scope,requestId:uuid(701),revision:stale,action:'CLOSE_VOTING',confirmed:true,applicationId:apps[1],passNumber:1})).code,'STALE_STATE');
- ok(await h.api.commandLiveVotingRoom({...h.scope,requestId:uuid(702),revision:stale,action:'CLOSE_VOTING',confirmed:true,applicationId:apps[0],passNumber:1}));
+ assert.equal((await close(h,v,uuid(701),{applicationId:apps[1]})).code,'STALE_STATE');
+ ok(await close(h,v,uuid(702)));
  assert.equal(session(h).passes[0].candidates[0].ballotState,'CLOSED');
  assert.equal(h.state().audit.at(-1).details.missingBallots,0);
 });
 
 test('a stale close is refused when a leader command happened after that view',async()=>{
- const h=harness();await h.create();ok(await h.command('START'));const stale=session(h).revision;ok(await h.command('OPEN_VOTING'));
+ const h=harness();await h.create();ok(await h.command('START'));const v=await view(h);ok(await h.command('OPEN_VOTING'));
  h.as(voterId);ok(await h.vote('ACCEPT'));h.as(leaderId);
- assert.equal((await h.api.commandLiveVotingRoom({...h.scope,requestId:uuid(710),revision:stale,action:'CLOSE_VOTING',confirmed:true,applicationId:apps[0],passNumber:1})).code,'STALE_STATE');
+ assert.equal((await close(h,v,uuid(710))).code,'STALE_STATE');
  assert.equal(session(h).passes[0].candidates[0].ballotState,'OPEN');
  // Other leader commands keep the strict revision check even when only ballots changed.
  assert.equal((await h.api.commandLiveVotingRoom({...h.scope,requestId:uuid(711),revision:session(h).revision-1,action:'END',confirmed:true})).code,'STALE_STATE');
 });
 
+test('slide-preparation receipts never hide room commands behind a stale close (review finding)',async()=>{
+ const slideReceipt=(h,revision,createdAt=new Date())=>h.state().receipts.push({sessionId:h.scope.sessionId,requestId:uuid(800+h.state().receipts.length),actorId:leaderId,fingerprint:'slides',result:{revision},createdAt});
+ // START, OPEN, record the view, Pass without vote, Undo, Open voting, then a slide save (same receipt shape as saveVotingSlidePreparation).
+ const h=harness();await h.create();ok(await h.command('START'));const v=await view(h);
+ const decided=uuid(790);ok(await h.command('PASS_WITHOUT_VOTE_AND_ADVANCE',{requestId:decided,applicationId:apps[0],passNumber:1,confirmed:true,reason:'Clear yes'}));
+ ok(await h.command('UNDO_DECISION',{applicationId:apps[0],passNumber:1,undoRequestId:decided}));
+ ok(await h.command('OPEN_VOTING'));slideReceipt(h,1);
+ assert.equal(session(h).activeApplicationId,apps[0]);
+ assert.equal((await close(h,v,uuid(791))).code,'STALE_STATE','commands after the view refuse even with a newer low-revision slide receipt');
+ // Receipt order does not matter.
+ h.state().receipts.reverse();assert.equal((await close(h,v,uuid(792))).code,'STALE_STATE');
+ // A slide save after an otherwise ballot-only view refuses too: unidentified receipts are never treated as ballots.
+ const w=await view(h);h.as(voterId);ok(await h.vote('ACCEPT'));slideReceipt(h,2);h.as(leaderId);
+ assert.equal((await close(h,w,uuid(793))).code,'STALE_STATE');
+ // A slide save from before the view is harmless; a ballot-only drift then closes.
+ const x=await view(h);h.as(voterId);ok(await h.vote('REJECT'));h.as(leaderId);
+ slideReceipt(h,3,new Date(Date.parse(x.viewedAt)-1000));
+ ok(await close(h,x,uuid(794)));
+});
+
 test('a view taken mid-ballot can still close once more ballots arrive',async()=>{
- const h=harness();await begin(h);h.as(voterId);ok(await h.vote('ACCEPT'));const view=session(h).revision;
- ok(await h.vote('REJECT'));h.as(leaderId);ok(await h.vote('HOLD'));
- ok(await h.api.commandLiveVotingRoom({...h.scope,requestId:uuid(720),revision:view,action:'CLOSE_VOTING',confirmed:true,applicationId:apps[0],passNumber:1}));
+ const h=harness();await begin(h);h.as(voterId);ok(await h.vote('ACCEPT'));const v=await view(h);
+ h.as(voterId);ok(await h.vote('REJECT'));h.as(leaderId);ok(await h.vote('HOLD'));
+ ok(await close(h,v,uuid(720)));
 });
 
 test('one Open voting click opens the ballot even when a voter joined after Start',async()=>{
- const h=harness();await h.create();ok(await h.command('START'));const view=session(h).revision;
+ const h=harness();await h.create();ok(await h.command('START'));const v=await view(h);
  const setup=load('actions/voting-room-setup.ts',h.mocks);h.as(voterId);await setup.joinLiveVotingRoom(h.scope);h.as(leaderId);
- assert.equal(session(h).revision,view+1,'joining still bumps the room revision so every view refreshes');
- assert.equal((await h.api.commandLiveVotingRoom({...h.scope,requestId:uuid(730),revision:view,action:'OPEN_VOTING'})).code,'STALE_STATE');
- ok(await h.api.commandLiveVotingRoom({...h.scope,requestId:uuid(731),revision:view,action:'OPEN_VOTING',applicationId:apps[0],passNumber:1}));
+ assert.equal(session(h).revision,v.revision+1,'joining still bumps the room revision so every view refreshes');
+ const open=(requestId,extra)=>h.api.commandLiveVotingRoom({...h.scope,requestId,revision:v.revision,viewedAt:v.viewedAt,action:'OPEN_VOTING',...extra});
+ assert.equal((await open(uuid(730),{})).code,'STALE_STATE');
+ ok(await open(uuid(731),{applicationId:apps[0],passNumber:1}));
  assert.equal(session(h).passes[0].candidates[0].ballotState,'OPEN');
  // A replay of an already-applied open is still refused rather than reopening anything.
- assert.equal((await h.api.commandLiveVotingRoom({...h.scope,requestId:uuid(732),revision:view,action:'OPEN_VOTING',applicationId:apps[0],passNumber:1})).code,'STALE_STATE');
- assert.match(fs.readFileSync('components/live-voting/room-meeting.tsx','utf8'),/send\("OPEN_VOTING",\{applicationId:room\.currentApplicantId!,passNumber:room\.passNumber\}\)/);
+ assert.equal((await open(uuid(732),{applicationId:apps[0],passNumber:1})).code,'STALE_STATE');
+ assert.match(fs.readFileSync('components/live-voting/room-meeting.tsx','utf8'),/send\("OPEN_VOTING",\{applicationId:room\.currentApplicantId!,passNumber:room\.passNumber,viewedAt:room\.viewedAt\}\)/);
 });
 
 test('a voter losing eligibility mid-ballot shows the leader a notice at once, pauses voting, and the recount counts missing ballots against the new electorate',async()=>{
@@ -97,7 +124,7 @@ test('the leader catches up when its tab becomes visible and per-ballot extra re
  const hook=fs.readFileSync('hooks/use-live-voting-room.ts','utf8'),meeting=fs.readFileSync('components/live-voting/room-meeting.tsx','utf8');
  assert.match(hook,/visibilitychange/);
  assert.doesNotMatch(meeting,/room\.revision,reload\]|room\.cycleId,room\.revision\]/);
- assert.match(meeting,/send\("CLOSE_VOTING",\{confirmed:true,applicationId:room\.currentApplicantId!,passNumber:room\.passNumber\}\)/);
+ assert.match(meeting,/send\("CLOSE_VOTING",\{confirmed:true,applicationId:room\.currentApplicantId!,passNumber:room\.passNumber,viewedAt:room\.viewedAt\}\)/);
 });
 
 test('a member asking for an applicant the room already left gets a typed stale result, not a 500',async()=>{

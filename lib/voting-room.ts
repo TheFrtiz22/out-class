@@ -30,6 +30,8 @@ export const roomCommandSchema = roomScope.extend({ requestId: z.string().uuid()
   choice: roomChoice.optional(), reason: z.string().trim().min(1).max(1000).optional(),
   /** Threshold rooms: explicitly recount without voters who lost eligibility (reason required). */
   resolveElectorate: z.boolean().optional(),
+  /** Database time the leader's room snapshot was read (snapshot.viewedAt); bounds the ballot-only drift check. */
+  viewedAt: z.string().datetime().optional(),
 });
 export const roomBallotSchema = roomScope.extend({ requestId: z.string().uuid(), passNumber: z.number().int().positive(), applicationId: z.string().uuid(), choice: roomChoice, ballotRevision: z.number().int().nonnegative().nullable() });
 /** The room moved to another applicant after this viewer's last snapshot: a normal race, not a failure. */

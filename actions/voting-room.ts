@@ -24,16 +24,30 @@ class RoomConflict extends Error { constructor(public code:string,message:string
 async function domainResult<T>(work:()=>Promise<T>) { try { return {ok:true as const,result:await work()}; } catch(e) { if(e instanceof RoomConflict)return {ok:false as const,code:e.code,message:e.message}; throw e; } }
 const retryConflict=()=>new RoomConflict("STALE_STATE","The room changed. Reload the page, check the latest, and try again.");
 const ballotReceipt=z.object({accepted:z.literal(true),ballotRevision:z.number().int().nonnegative()}).strict();
-const revisionReceipt=z.object({revision:z.number().int().nonnegative()}).passthrough();
+/** Room command receipts (and slide-preparation receipts, which share this shape but never move the room). */
+const revisionReceipt=z.union([z.object({revision:z.number().int().nonnegative(),decision:z.unknown().optional(),undone:z.boolean().optional()}).strict(),
+  /** Session creation ({sessionId}) and setup updates ({sessionId,revision}). */
+  z.object({sessionId:z.string(),revision:z.number().int().nonnegative().default(0)}).strict()]);
+/** Longest a write transaction can run (votingWriteLimits.timeout) plus clock margin: a receipt from a
+ * transaction that started earlier than this cannot have committed after the leader's view. */
+const receiptWindowMs=60_000;
 /** Opening or closing the named current ballot from a slightly older view is still what the leader meant
  * when the only room changes since that view are ballots or voters joining (joins write no receipt).
- * Every other room, setup or finalization command writes a receipt carrying its resulting revision, so a
- * newer one than the leader's view refuses exactly as before. */
+ * Order-independent: every receipt that may postdate the view is judged on its own. Only a positively
+ * identified ballot receipt passes. Any other receipt (room command, slide preparation, setup, unknown)
+ * written after the view started refuses; one that started before the view passes only if the room
+ * revision it records is already part of the view. */
 async function onlyBallotsSince(tx:AppTransactionClient,s:LiveRoom,d:z.infer<typeof roomCommandSchema>){
-  if(!["OPEN_VOTING","CLOSE_VOTING"].includes(d.action)||s.revision<=d.revision||!d.applicationId||d.applicationId!==s.activeApplicationId||d.passNumber!==s.currentPass)return false;
-  const recent=await tx.votingRoomCommand.findMany({where:{sessionId:s.id},orderBy:{createdAt:"desc"},take:500,select:{result:true}});
-  const command=recent.find(r=>!ballotReceipt.safeParse(r.result).success),saved=revisionReceipt.safeParse(command?.result);
-  return saved.success&&saved.data.revision<=d.revision;
+  if(!["OPEN_VOTING","CLOSE_VOTING"].includes(d.action)||s.revision<=d.revision||!d.viewedAt||!d.applicationId||d.applicationId!==s.activeApplicationId||d.passNumber!==s.currentPass)return false;
+  const viewedAt=new Date(d.viewedAt);
+  const recent=await tx.votingRoomCommand.findMany({where:{sessionId:s.id,createdAt:{gte:new Date(+viewedAt-receiptWindowMs)}},take:1000,select:{result:true,createdAt:true}});
+  if(recent.length>=1000)return false;
+  return recent.every(r=>{
+    if(ballotReceipt.safeParse(r.result).success)return true;
+    if(r.createdAt>viewedAt)return false;
+    const saved=revisionReceipt.safeParse(r.result);
+    return saved.success&&saved.data.revision<=d.revision;
+  });
 }
 function electorateChangedMessage(n:number){return `${n} voter${n===1?"":"s"} can no longer vote, so voting is paused. Recount without ${n===1?"this voter":"them"} and give a reason to close, or restore ${n===1?"their":"those voters'"} access to continue.`;}
 function accessFingerprint(m:{id:string;status:string;permissions:string[];accessRole:string;isOwner:boolean}) { return roomFingerprint({id:m.id,status:m.status,permissions:m.permissions,accessRole:m.accessRole,isOwner:m.isOwner}); }
@@ -89,6 +103,9 @@ export async function getLiveVotingRoom(input:unknown) {
   const d=roomScope.parse(input),{user}=await requireClubPermission(d.clubId,["applications.review"]);
   const result=await prisma.$transaction(async tx=>{
     const m=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review"],{readOnly:true});
+    // Database clock at this read's start, before the room loads: bounds the leader's ballot-only drift check.
+    const clock=await tx.$queryRaw<{now:Date}[]>`SELECT now() AS now`;
+    const viewedAt=(clock?.[0]?.now?new Date(clock[0].now):new Date()).toISOString();
     const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId);
     const later=await tx.pipelineRound.count({where:{clubId:d.clubId,archivedAt:null,order:{gt:round.order}}});
     const snapshot=projectVotingRoom(s,m,round.anonymousReview,{name:round.name,final:later===0});
@@ -105,7 +122,7 @@ export async function getLiveVotingRoom(input:unknown) {
     const discussion=current&&s.state==="OPEN"&&(snapshot.permissions.leader||snapshot.permissions.voter)?await votingDiscussion(tx,{clubId:d.clubId,sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId,roundId:s.roundId,anonymous:round.anonymousReview},{memberId:m.id,userId:user.id,leader:snapshot.permissions.leader},eligible.map(v=>({id:v.id,label:v.user.studentProfile?`${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}`:"Club member"}))):null;
     return {snapshot:{...snapshot,discussion,rule:{mode:rules.mode,description:describeVotingRules(rules)},ruleResult:ruled?{...ruled.result,summary:ruleResultSummary(ruled.result,ruled.rule)}:null,accessVersion:roomFingerprint({permissions:m.permissions,offices:m.interviewOffices,anonymous:round.anonymousReview}),fields:options.success?options.data.fields:null,joinedSelf:!!s.participants.find(p=>p.memberId===m.id)?.joinedAt,
       participation:{voted:current?.ballots.filter(b=>eligible.some(m=>m.id===b.memberId)).length??0,eligible:eligible.length},
-      votingPaused:removedVoters>0,electorateChange:snapshot.permissions.leader&&removedVoters>0?{removed:removedVoters}:null,
+      votingPaused:removedVoters>0,viewedAt,electorateChange:snapshot.permissions.leader&&removedVoters>0?{removed:removedVoters}:null,
       joinedParticipants:snapshot.permissions.leader?eligible.map(v=>({id:v.id,label:v.user.studentProfile?`${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}`:"Club member",joined:!!s.participants.find(p=>p.memberId===v.id)?.joinedAt})):[]},access:accessFingerprint(m)};
   },votingReadLimits);
   const {membership:m}=await requireClubPermission(d.clubId,["applications.review"]);
