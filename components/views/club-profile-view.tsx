@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { LoadingState } from "@/components/ui/loading-state"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { CorkboardButton } from "@/components/clubs/corkboard-button"
+import { ShareClubButton } from "@/components/clubs/share-club-button"
 import { RecruitmentTimeline } from "@/components/clubs/recruitment-timeline"
 import { useClubCustomization } from "@/lib/club-customization"
 import { useApplicationState } from "@/lib/application-state"
@@ -169,6 +170,7 @@ export function ClubProfileView({
     {closed
       ? <>
           {!preview && <CorkboardButton club={club} onNavigate={onNavigate} mode="follow" variant="default" className="oc-club-apply" />}
+          {real && !preview && <ShareClubButton club={club} className="oc-club-share" />}
           <p className="oc-club-action-note">Applications aren’t open yet · Follow to keep this club in your saved clubs</p>
         </>
       : <>
@@ -177,6 +179,7 @@ export function ClubProfileView({
             <ArrowRight size={16} aria-hidden="true" />
           </Button>
           {real && !preview && <CorkboardButton club={club} onNavigate={onNavigate} mode="follow" className="oc-club-follow" />}
+          {real && !preview && <ShareClubButton club={club} className="oc-club-share" />}
           {(recruitment.deadline || deadline) && <p className="oc-club-action-note">{recruitment.closingSoon ? "Closing soon · " : ""}{deadlineText}</p>}
         </>}
     {application && <StatusPill status={application.status} />}
