@@ -19,3 +19,17 @@ test('the Explore switch and the phone logo appear only on phones inside the sig
  const h=css('components/shell/floating-header.css');assert.match(h,/^\.oc-product-brand \{ display: none; \}/m);
  const phone=h.slice(h.indexOf('@media (max-width: 759px) {'));assert.match(phone.slice(0,phone.indexOf('\n}')),/\.oc-product-brand \{ display: inline-flex;[^}]*min-height: 44px/);
 });
+test('phone Explore: filters sit behind a Filter button with an active count; desktop keeps them open',()=>{
+ const src=css('components/views/explore-view.tsx');
+ assert.match(src,/className="oc-directory-filter-toggle" aria-label=\{phoneActive \? `Filter clubs \(\$\{phoneActive\} active\)` : "Filter clubs"\} aria-expanded=\{phoneFilters\} aria-controls="directory-tools"/);
+ assert.match(src,/id="directory-tools" className="oc-directory-tools oc-toolbar" data-phone-open=\{phoneFilters \|\| undefined\}/);
+ const s=css('components/clubs/explore-directory.css');assert.match(s,/^\.oc-directory-filter-toggle \{ display: none; \}/m);
+ const phone=s.slice(s.lastIndexOf('@media (max-width: 1023px) {'));
+ assert.match(phone,/\.oc-discovery \.oc-directory-tools:not\(\[data-phone-open\]\)[^{]*\{ display: none; \}/);
+ assert.match(phone,/\.oc-explore-card-cover \{ height: 5\.25rem; \}/);
+});
+test('phone club page: full-width actions and card sections only below 1024px',()=>{
+ const s=css('components/clubs/club-discovery.css'),phone=s.slice(s.lastIndexOf('@media (max-width: 1023px) {'));
+ assert.match(phone,/\.oc-club-action-row \{ display: grid; grid-template-columns: 1fr;/);
+ assert.match(phone,/\.oc-club-profile \.oc-club-section \{[^}]*border-radius: var\(--oc-content-radius\)/);
+});

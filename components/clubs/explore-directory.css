@@ -75,3 +75,24 @@
  .oc-discovery .oc-directory-sort { width: 100%; justify-content: space-between; }
 }
 @media (prefers-reduced-motion: reduce) { .oc-explore-card article { transition: none; } }
+
+/* Phones and tablets, as in the OutClass app: compact club cards, filters behind a Filter button. */
+.oc-directory-filter-toggle { display: none; }
+@media (max-width: 1023px) {
+  .oc-discovery .oc-directory-search { min-height: 2.75rem; padding: .125rem .25rem .125rem .875rem; border-radius: 999px; }
+  .oc-discovery .oc-directory-search input { min-height: 2.5rem; font-size: 1rem; }
+  .oc-directory-filter-toggle { position: relative; display: inline-grid; flex-shrink: 0; }
+  .oc-directory-filter-toggle[aria-expanded="true"] { background: var(--oc-glass-pill-navy, var(--primary)); color: var(--oc-glass-cream); }
+  .oc-directory-filter-count { position: absolute; top: 2px; right: 2px; display: grid; place-items: center; min-width: 1rem; height: 1rem; padding: 0 .25rem; border-radius: 999px; background: var(--brand-orange); color: var(--oc-glass-cream); font-size: 10px; font-weight: 700; line-height: 1; }
+  .oc-discovery .oc-directory-tools:not([data-phone-open]), .oc-discovery .oc-directory-tools:not([data-phone-open]) + #directory-availability-note { display: none; }
+  .oc-discovery .oc-directory-tools[data-phone-open] { padding: .875rem; border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius-small); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); }
+
+  .oc-explore-card-cover { height: 5.25rem; }
+  .oc-explore-card-logo { inset: auto auto -1.375rem 1rem; }
+  .oc-explore-card-logo > :first-child { width: 3.25rem; height: 3.25rem; border-width: 3px; }
+  .oc-explore-category { right: .75rem; bottom: .625rem; padding: .2rem .5rem; }
+  .oc-explore-card-body { padding: 2.125rem 1rem 1rem; }
+  .oc-explore-card h3 { color: var(--foreground); font-family: var(--oc-font-display); font-size: 1.25rem; font-weight: 400; line-height: 1.2; letter-spacing: -.01em; }
+  .oc-explore-pitch { min-height: 0; margin: .375rem 0 .75rem; line-height: 1.5; }
+  .oc-explore-card .oc-explore-open { width: 2.75rem; height: 2.75rem; }
+}
