@@ -1,6 +1,7 @@
 # Public-site redesign spec
 
-Status: approved mockups. Foundations and the homepage hero are built; the rest of the homepage and the other public pages are not.
+Status: approved mockups. Foundations, the homepage hero and the homepage journey are built; the rest of the homepage
+and the other public pages are not.
 
 ## Mockups
 
@@ -63,6 +64,19 @@ one blurred surface inside another.
 ## Homepage hero
 
 Built from `Main.mockup.html`; evidence and deviations in [`hero/README.md`](hero/README.md).
+
+## Homepage journey
+
+"Sound familiar?" and "How OutClass works" are built; evidence in [`journey/README.md`](journey/README.md).
+
+## Homepage moments
+
+The decision moment, "A season on Grounds" and the feature grid are built; evidence in
+[`moments/README.md`](moments/README.md).
+
+## Footer, "Built at UVA" and FAQ
+
+Built; evidence in [`footer/README.md`](footer/README.md).
 
 ## Public pages
 

@@ -64,7 +64,7 @@ html.oc-native-navigation { scroll-padding-top: 0; }
 
 /* Body copy on public pages is at least 14px on phones (12px stays for labels and eyebrows only). */
 @media (max-width: 767px) {
-  .oc-landing :is(.oc-public-note, .oc-invitation-note, .oc-orbit-footnote p, .oc-about-independence p, .oc-request-form .oc-public-note) { font-size: 14px; }
+  .oc-landing :is(.oc-public-note, .oc-about-independence p, .oc-request-form .oc-public-note) { font-size: 14px; }
   .oc-landing .oc-request-layout p, .oc-landing .oc-request-form p { font-size: 14px; }
   .oc-auth-page .oc-signup-content :is(p, span).text-xs { font-size: 14px; }
   .oc-landing .oc-corkboard-events [role="status"], .oc-landing .oc-corkboard-events > p { font-size: 14px; }

@@ -104,7 +104,7 @@ test('Privacy and Terms: formal text from one source, rendered by one component,
   }
   const { PublicFooter } = load('components/landing/public-footer.tsx', { '@/components/landing/interactive-footer-wordmark': { InteractiveFooterWordmark: () => null } })
   const footer = renderToStaticMarkup(React.createElement(PublicFooter))
-  assert.doesNotMatch(footer, /<h3>Legal<\/h3>|href="\/privacy"|href="\/terms"|mailto:/)
+  assert.doesNotMatch(footer, /<h[23]>Legal<\/h[23]>|href="\/privacy"|href="\/terms"|mailto:/)
   const sitemap = load('app/sitemap.ts', { '@/lib/public-club-seo': { getIndexableClubs: async () => [] } }).default
   const urls = (await sitemap()).map(entry => entry.url)
   assert.equal(urls.some(url => /\/(privacy|terms)$/.test(url)), false)

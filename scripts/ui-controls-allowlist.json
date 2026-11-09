@@ -33,18 +33,6 @@
   },
   {
    "rule": "css-hex",
-   "file": "components/landing/demo-playback.css",
-   "max": 6,
-   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
-  },
-  {
-   "rule": "css-hex",
-   "file": "components/landing/feature-orbit.css",
-   "max": 7,
-   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
-  },
-  {
-   "rule": "css-hex",
    "file": "components/landing/journey-atmosphere.css",
    "max": 3,
    "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
@@ -52,19 +40,7 @@
   {
    "rule": "css-hex",
    "file": "components/landing/journey.css",
-   "max": 25,
-   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
-  },
-  {
-   "rule": "css-hex",
-   "file": "components/landing/product-story-editorial.css",
-   "max": 10,
-   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
-  },
-  {
-   "rule": "css-hex",
-   "file": "components/landing/public-footer.css",
-   "max": 22,
+   "max": 2,
    "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
   },
   {
@@ -89,12 +65,6 @@
    "rule": "css-hex",
    "file": "components/landing/scroll-indicator.css",
    "max": 3,
-   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
-  },
-  {
-   "rule": "css-hex",
-   "file": "components/views/landing.css",
-   "max": 1,
    "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
   },
   {
@@ -129,30 +99,6 @@
   },
   {
    "rule": "css-radius",
-   "file": "components/landing/demo-playback.css",
-   "max": 3,
-   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
-  },
-  {
-   "rule": "css-radius",
-   "file": "components/landing/feature-orbit.css",
-   "max": 1,
-   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
-  },
-  {
-   "rule": "css-radius",
-   "file": "components/landing/journey.css",
-   "max": 8,
-   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
-  },
-  {
-   "rule": "css-radius",
-   "file": "components/landing/product-story-editorial.css",
-   "max": 1,
-   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
-  },
-  {
-   "rule": "css-radius",
    "file": "components/landing/public-footer.css",
    "max": 1,
    "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
@@ -173,12 +119,6 @@
    "rule": "css-radius",
    "file": "components/views/interview/interview-mode.css",
    "max": 1,
-   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
-  },
-  {
-   "rule": "css-radius",
-   "file": "components/views/landing.css",
-   "max": 2,
    "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
   },
   {
@@ -215,24 +155,6 @@
    "rule": "css-shadow",
    "file": "components/events/events.css",
    "max": 10,
-   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
-  },
-  {
-   "rule": "css-shadow",
-   "file": "components/landing/feature-orbit.css",
-   "max": 1,
-   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
-  },
-  {
-   "rule": "css-shadow",
-   "file": "components/landing/journey.css",
-   "max": 1,
-   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
-  },
-  {
-   "rule": "css-shadow",
-   "file": "components/landing/product-story-editorial.css",
-   "max": 1,
    "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
   },
   {
