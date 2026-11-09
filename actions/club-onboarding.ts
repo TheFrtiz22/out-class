@@ -9,7 +9,6 @@ import { prisma } from "@/utils/prisma";
 import { requireAuth, requireClubPermission } from "@/utils/auth";
 import { requirePlatformAdmin } from "@/utils/platform-admin";
 import { verifiedSchoolIdentities, prepareVerifiedSchoolAccount } from "@/utils/school-identity";
-import { hasConfirmedUniversityEmail } from "@/utils/verified-email-policy";
 import { canGrantOnboardingRole } from "@/lib/club-onboarding";
 import { acceptIdentityInvitationInTransaction, recipientInvitation, createIdentityInvitationInTransaction } from "@/utils/club-onboarding";
 import { hasPermission, type ClubPermission } from "@/lib/permissions";
@@ -38,10 +37,6 @@ export async function createClubIdentityInvitation(input: unknown) {
 export async function getOrganizationInvitations(includeDismissed = false) {
   z.boolean().parse(includeDismissed);
   const account = await requireAuth({ verifyEmail: true });
-  // An account without a confirmed university email has no verified school identity, so it
-  // has no school invitations to list. Only this read returns empty; accepting, declining and
-  // dismissing still require verification, and an unavailable policy check still fails.
-  if (!hasConfirmedUniversityEmail(account)) return [];
   await prepareVerifiedSchoolAccount(account);
   return clubWriteTransaction(async tx => {
     const identities = await verifiedSchoolIdentities(tx, account);

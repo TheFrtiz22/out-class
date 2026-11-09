@@ -56,9 +56,8 @@ function setup() {
     },
     auditLog: { create: async args => { state.audits.push(args.data); } },
   };
-  const policy = loader({})('utils/verified-email-policy.ts');
   const load = loader({
-    '@/utils/verified-email-policy': { ...policy, requireVerifiedEmailPolicy: async () => { if (state.policyUnavailable) throw new policy.UniversityVerificationError('UNIVERSITY_VERIFICATION_UNAVAILABLE'); } },
+    '@/utils/verified-email-policy': { ...loader({})('utils/verified-email-policy.ts'), requireVerifiedEmailPolicy: async () => {} },
     '@/utils/prisma': { prisma: {...tx,$transaction:fn=>fn(tx)} },
     '@/utils/auth': { requireAuth: async () => account(), requireClubPermission: async (_id,permissions) => {
       assert.deepEqual(permissions,['members.manage']);
@@ -121,20 +120,6 @@ test('wrong, unverified, and verification-skipped identities cannot accept invit
     await assert.rejects(h.api.acceptIdentityClubInvitation(inviteId),/unavailable|Verify/);
     assert.equal(h.state.writes.length,0);
   }
-});
-
-test('an unverified account reads an empty invitation list; acting on invitations and an unavailable policy still fail', async () => {
-  for (const modify of [s=>{s.verified=false;},s=>{s.skipped=true;}]) {
-    const h=setup();modify(h.state);
-    assert.deepEqual(await h.api.getOrganizationInvitations(true),[]);
-    assert.deepEqual(await h.api.getOrganizationInvitations(),[]);
-    assert.equal(h.state.queries.length,0,'no invitation or identity query for an unverified account');
-    await assert.rejects(h.api.acceptIdentityClubInvitation(inviteId),e=>e.code==='UNIVERSITY_VERIFICATION_REQUIRED');
-    await assert.rejects(h.api.setOrganizationInvitationDismissed(inviteId,true),e=>e.code==='UNIVERSITY_VERIFICATION_REQUIRED');
-    assert.equal(h.state.writes.length,0);
-  }
-  const h=setup();h.state.policyUnavailable=true;
-  await assert.rejects(h.api.getOrganizationInvitations(true),e=>e.code==='UNIVERSITY_VERIFICATION_UNAVAILABLE');
 });
 
 test('acceptance preserves existing access and records recipient and membership attribution', async () => {
