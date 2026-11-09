@@ -169,6 +169,25 @@ const assert = require("node:assert/strict")
   assert.equal(emitted[0].href, '/applications')
   await db.query(`UPDATE "Application" SET status=$1, "submittedAt"=$2 WHERE id='app'`, [before.status, before.submittedAt])
   console.log("Notification triggers emit /applications, keep pinned search_path and stay attached; a real status change stores /applications.")
+  // Every application function pins search_path (Supabase advisor function_search_path_mutable). A later
+  // CREATE OR REPLACE without SET would silently drop the pin, so check all of them, not a fixed list.
+  const unpinnedFunctions = async (database) => (await database.query(`SELECT p.oid::regprocedure::text AS sig FROM pg_proc p
+    WHERE p.pronamespace='public'::regnamespace AND p.prokind='f'
+      AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.objid=p.oid AND d.deptype='e')
+      AND NOT EXISTS (SELECT 1 FROM unnest(coalesce(p.proconfig, '{}')) c WHERE c LIKE 'search\\_path=%') ORDER BY 1`)).rows.map(row => row.sig)
+  assert.deepEqual(await unpinnedFunctions(db), [], 'public functions without a pinned search_path')
+  // A caller's search_path cannot redirect a function's unqualified table names to a look-alike table.
+  await db.exec(`CREATE SCHEMA shadow; CREATE TABLE shadow."UserNotification" (LIKE public."UserNotification" INCLUDING ALL)`)
+  const callerPath = (await db.query(`SELECT current_setting('search_path') AS path`)).rows[0].path
+  try {
+    await db.exec(`SET search_path = shadow, public; SELECT outclass_notify('member','club','search-path-probe','APPLICATION','Probe','Probe','/applications')`)
+  } finally {
+    await db.query(`SELECT set_config('search_path', $1, false)`, [callerPath])
+  }
+  assert.equal((await db.query(`SELECT count(*)::int AS n FROM shadow."UserNotification"`)).rows[0].n, 0, 'shadow table received the notification')
+  assert.equal((await db.query(`SELECT count(*)::int AS n FROM public."UserNotification" WHERE "eventKey"='search-path-probe'`)).rows[0].n, 1)
+  await db.exec(`DELETE FROM public."UserNotification" WHERE "eventKey"='search-path-probe'; DROP SCHEMA shadow CASCADE`)
+  console.log("Every public function pins search_path; a shadowing schema on the caller's path cannot redirect its writes.")
   // Every application table must be private, including tables added after the original capability migration.
   const tables = (await db.query(`SELECT c.relname, c.relrowsecurity FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relkind='r'`)).rows
   for (const table of tables) {
@@ -183,6 +202,7 @@ const assert = require("node:assert/strict")
   const fresh = new PGlite()
   await fresh.exec('CREATE ROLE anon; CREATE ROLE authenticated;')
   for (const migration of migrationNames) await fresh.exec(fs.readFileSync(dir+ migration+'/migration.sql','utf8'))
+  assert.deepEqual(await unpinnedFunctions(fresh), [], 'fresh database: public functions without a pinned search_path')
   await fresh.close()
   console.log(`All ${migrationNames.length} migrations applied on fresh and legacy databases; all ${tables.length} tables enforce RLS and deny browser-role CRUD.`)
   await db.close()
