@@ -43,5 +43,7 @@ test('the room page renders the access states with no applicant data and leaves 
  assert.match(page,/view!=="member"&&q\.demo!=="1"\?await votingRoomPageAccess\(/);
  assert.match(page,/You don’t have access to this voting session\./);
  assert.match(page,/access==="SUSPENDED"\?<p role="alert">\{CLUB_SUSPENDED_MESSAGE\}<\/p>/);
+ assert.ok(page.includes('if(access!=="CONTINUE")return present('),"a refused projector keeps the dark present theme");
+ assert.ok(page.includes('return present(entry)'));
  assert.doesNotMatch(page,/applicant|getLiveVotingRoom/i);
 });
