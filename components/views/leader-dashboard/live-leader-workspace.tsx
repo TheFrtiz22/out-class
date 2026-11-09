@@ -39,7 +39,7 @@ import { useDismissableDetails } from "@/hooks/use-dismissable-details"
 import { createPortal } from "react-dom"
 import { useRevalidate } from "@/hooks/use-revalidate"
 import { BoardDecisionMode } from "@/components/live-voting/board-decision-mode"
-import { getClubPipeline, getRankedReviewSettings, saveRankedReviewBands } from "@/lib/workspace-api"
+import { getClubPipeline, getRankedReviewSettings, getRoundTargetSummary, saveRankedReviewBands } from "@/lib/workspace-api"
 import { getClubPipelinePage, getClubPipelineSelection, moveApplicantRound, setApplicationStatus, reconsiderRejectedApplication, revokeRecruitmentOffer } from "@/lib/workspace-api"
 import { submitEvaluation } from "@/lib/workspace-api"
 import { useApplicationState } from "@/lib/application-state"
@@ -190,6 +190,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     loadRound: roundId => getClubPipeline(membership.clubId, { roundId }),
     loadSettings: roundId => getRankedReviewSettings(membership.clubId, roundId),
     saveBands: input => saveRankedReviewBands(input),
+    loadRoundSummary: input => getRoundTargetSummary({ clubId: membership.clubId, ...input }),
   // eslint-disable-next-line react-hooks/exhaustive-deps -- a new authority (account, demo, impersonation) must reload the ranking
   }), [membership.clubId, authority])
   const [gender, setGender] = useState("")

@@ -9,11 +9,11 @@ test('ranked review: labelled bands, decisions note, Not scored and hidden group
  window.__apps=[app(1,'Alpha',s(9,2)),app(2,'Bravo',s(8,2)),app(3,'Charlie',s(8,2)),app(4,'Delta',s(7,2)),app(5,'Echo',s(null,0)),app(6,'Foxtrot',null)];
  window.__opened=[];window.__reads=0;window.__saved=[];
  const settings={roundId:round,cycles:[],canManage:true,scopes:{'no-cycle':{bands:{green:{start:1,end:2},yellow:{start:3,end:3},red:{start:4}},revision:1}}};
- const api={loadRound:async()=>{window.__reads++;return{rounds:[],genderCounts:null,applications:structuredClone(window.__apps)}},loadSettings:async()=>structuredClone(settings),saveBands:async input=>{window.__saved.push(input);return{revision:input.expectedRevision+1,bands:input.bands}}};
+ const api={loadRound:async()=>{window.__reads++;return{rounds:[],genderCounts:null,applications:structuredClone(window.__apps)}},loadSettings:async()=>structuredClone(settings),saveBands:async input=>{window.__saved.push(input);return{revision:input.expectedRevision+1,bands:input.bands}},loadRoundSummary:async input=>{window.__summaryInputs=[...(window.__summaryInputs||[]),input];throw Error('not expected for applicants without a cycle')}};
  function Host(){const[ids,setIds]=React.useState([]);return <main className="p-4"><RankedReviewList clubId="00000000-0000-4000-8000-000000000009" rounds={[{id:round,name:'Interview',anonymousReview:false}]} initialRoundId={round} api={api} onOpen={id=>window.__opened.push(id)} votingSelection={{ids,toggle:id=>setIds(o=>o.includes(id)?o.filter(v=>v!==id):[...o,id])}}/></main>}
  createRoot(document.getElementById('root')).render(<Host/>);`);
  const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'outclass-ranked-'));cp.execFileSync(process.execPath,['tests/helpers/interview-browser-css.cjs',path.join(tmp,'style.css')],{windowsHide:true});
- const css=fs.readFileSync(path.join(tmp,'style.css'),'utf8')+fs.readFileSync('components/applicant-identity.css','utf8')+fs.readFileSync('components/ranked-review-list.css','utf8');
+ const css=fs.readFileSync(path.join(tmp,'style.css'),'utf8')+fs.readFileSync('components/applicant-identity.css','utf8')+fs.readFileSync('components/ranked-review-list.css','utf8')+fs.readFileSync('components/voting-target-summary.css','utf8');
  const server=http.createServer((req,res)=>{res.setHeader('Content-Type',req.url==='/app.js'?'text/javascript':req.url==='/style.css'?'text/css':'text/html');res.end(req.url==='/app.js'?js:req.url==='/style.css'?css:'<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/style.css"><div id="root"></div><script src="/app.js"></script>')});
  await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;
  try{browser=await chromium.launch({headless:true,...(fs.existsSync(chromium.executablePath())?{}:{channel:'chrome'})});
@@ -38,6 +38,11 @@ test('ranked review: labelled bands, decisions note, Not scored and hidden group
    const notScored=page.locator('[data-group="not-scored"]');assert.match(await notScored.innerText(),/Not scored · 1[\s\S]*Echo Synthetic/);
    assert.equal(await page.locator('.oc-ranked-row',{hasText:'Echo'}).getAttribute('data-band'),null);
    const hidden=page.locator('[data-group="hidden"]');assert.match(await hidden.innerText(),/Score not available · 1[\s\S]*Foxtrot Synthetic[\s\S]*Hidden until you review/);
+   // Discussion-group counts sit apart from decisions; hidden scores are not counted as Not scored.
+   const summary=page.getByRole('region',{name:'Round target and counts'});const st=await summary.innerText();
+   assert.match(st,/Discussion groups · Entire round/);assert.match(st,/Green\s*3/);assert.match(st,/Yellow\s*0/);assert.match(st,/Red\s*1/);assert.match(st,/Not scored\s*1/);assert.match(st,/Score not available\s*1/);
+   // Applicants without a recruitment cycle have no voting room: no cross-cycle decision read, and no implied target.
+   assert.match(st,/Voting decisions are recorded per recruitment cycle\./);assert.match(st,/Target\s*Not available/);assert.equal(await page.evaluate(()=>window.__summaryInputs),undefined);
    assert.equal(await page.locator('.oc-ranked-row',{hasText:'Foxtrot'}).getAttribute('data-band'),null);
    assert.equal(await page.getByRole('checkbox',{name:'Select Bravo Synthetic for voting'}).count(),1);
    // Select by keyboard; then new data arrives in the background.

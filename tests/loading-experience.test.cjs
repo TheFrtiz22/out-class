@@ -244,3 +244,13 @@ test("live client adapters and components never statically import demo data or i
   for (const gate of ["lib/demo/loader.ts", "lib/demo/activation.ts", "lib/demo/assets.ts"])
     assert.deepEqual(staticSpecifiers(source(gate)).filter(s => /^\.\/(store|seed|workspace|tasks|voting|interview)/.test(s)), [], `${gate} stays free of demo records`)
 })
+
+test("the root layout carries no club-customization provider or seed data", () => {
+  const layout = fs.readFileSync("app/layout.tsx", "utf8")
+  // Any import form (named, side-effect, re-export), including multi-line.
+  const imports = [...layout.matchAll(/(?:^|[;\n])\s*(?:import|export)\s+(?:type\s+)?(?:[^"']*?\sfrom\s*)?["']([^"']+)["']/g)].map(m => m[1])
+  assert.ok(imports.includes("@/contexts/corkboard-context"), "the import scan sees the layout's imports")
+  assert.deepEqual(imports.filter(s => /club-customization|lib\/data$/.test(s)), [], "club customization loads only with the views that use it")
+  assert.doesNotMatch(layout, /ClubCustomizationProvider/)
+  assert.doesNotMatch(fs.readFileSync("lib/club-customization.tsx", "utf8"), /export function ClubCustomizationProvider/, "the store replaced the root provider")
+})

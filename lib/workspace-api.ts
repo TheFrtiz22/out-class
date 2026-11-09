@@ -38,6 +38,7 @@ import * as storage from "@/actions/storage"
 import * as search from "@/actions/workspace-search"
 import * as rankedReview from "@/actions/ranked-review"
 import * as interviewFeedbackApi from "@/actions/interview-feedback"
+import * as votingTargetSummary from "@/actions/voting-target-summary"
 import { demoGate, loadDemoWorkspace, type DemoWorkspaceModule } from "@/lib/demo/loader"
 export type { WorkspaceSearchResult } from "@/actions/workspace-search"
 // The sole client data boundary: demo operations never invoke a server action,
@@ -263,3 +264,5 @@ export const getPipelineInterviewStatus = adapt(pipelineInterviewActions.getPipe
 export const getInterviewFeedback = adapt(interviewFeedbackApi.getInterviewFeedback, "getInterviewFeedback")
 export const getRankedReviewSettings = adapt((...args: Parameters<typeof rankedReview.getRankedReviewSettings>) => readWorkspace<Awaited<ReturnType<typeof rankedReview.getRankedReviewSettings>>>("rankedReviewSettings", args), "getRankedReviewSettings")
 export const saveRankedReviewBands = adapt(rankedReview.saveRankedReviewBands, "saveRankedReviewBands")
+/** Entire-round target and decision counts (counts only). Demo implementation loads only in Demo Mode. */
+export const getRoundTargetSummary = adapt(votingTargetSummary.getRoundTargetSummary, "getRoundTargetSummary")
