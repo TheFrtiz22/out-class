@@ -1,4 +1,5 @@
 "use client"
+import { answerText } from "@/lib/student-applications"
 import "@/components/product/operational-dashboard.css"
 import { completePipelineSelection, type PipelinePageQuery, type PipelineCursor } from "@/lib/pipeline-page"
 import { usePipelinePage } from "@/hooks/use-pipeline-page"
@@ -849,7 +850,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                       </a>
                     ) : (
                       <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-7 text-muted-foreground">
-                        {answer.response || "No response"}
+                        {answerText(answer.question, answer.response) || "No response"}
                       </p>
                     )}
                   </div>
