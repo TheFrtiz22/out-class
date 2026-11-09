@@ -1,69 +1,93 @@
-/* The original editorial language, with a quieter bridge into the walkthrough. */
-.oc-nav-sentinel { position: absolute; top: 0; height: 32px; width: 1px; pointer-events: none; }
-.oc-nav-shell { position: fixed; inset: 0 0 auto; z-index: 40; background: transparent; border-bottom: 1px solid transparent; transition: background-color 300ms, border-color 300ms; }
-.oc-nav-shell[data-scrolled="true"] { background: rgb(255 255 255 / 96%); border-color: #dfe3e899; backdrop-filter: blur(12px); }
-.oc-landing .oc-hero-header { position: relative; background: transparent; }
-.oc-hero-header > a { display: flex; align-items: center; width: 140px; flex-shrink: 0; }
-.oc-hero-header > a img { width: 100%; height: auto; }
-.oc-hero-header .nav-actions [data-slot="button"] { min-height: 48px; height: auto; padding: 12px 22px; font-size: var(--oc-size-16); font-weight: var(--oc-weight-semibold); }
-.oc-hero-header .nav-cta { border-color: var(--primary); background: transparent; color: var(--primary); }
-.oc-hero-header .nav-cta:hover { background: var(--background); }
-.oc-nav-shell[data-scrolled="false"] .nav-cta { border-color: #fff7ec; background: rgb(20 45 78 / 25%); color: #fff7ec; }
-.oc-nav-shell[data-scrolled="false"] .nav-cta:hover { background: #ffffff20; }
-.oc-nav-shell[data-scrolled="false"] .oc-nav-primary { background: #fff7ec; color: var(--primary); box-shadow: 0 10px 30px rgb(4 15 28 / 17%), inset 0 1px 0 rgb(255 255 255 / 80%); transition: background-color 220ms var(--oc-ease-out), box-shadow 220ms var(--oc-ease-out), transform 220ms var(--oc-ease-out); }
-.oc-nav-shell[data-scrolled="false"] .oc-nav-primary:hover { background: white; }
-.oc-nav-shell[data-scrolled="false"] :is(a, button):focus-visible { outline-color: #fff7ec; }
-/* One editorial hero, above the Rotunda photograph. */
-.oc-landing .oc-hero-editorial { width: 100%; padding: 128px 40px 96px; color: #fff7ec; position: relative; z-index: 1; }
-.oc-hero-introduction { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: center; gap: clamp(32px, 5vw, 72px); max-width: 1160px; margin: 0 auto; }
-.oc-hero-copy { min-width: 0; }
-.oc-hero-context { margin: 0 0 24px; font-size: var(--oc-size-11); font-weight: var(--oc-weight-semibold); letter-spacing: .12em; text-transform: uppercase; line-height: 1.8; }
-.oc-hero-headline { margin: 0; font-family: var(--oc-font-display); font-size: clamp(2.3rem, 3.65vw, 3.35rem); font-weight: var(--oc-weight-display); line-height: 1.15; letter-spacing: -.045em; text-shadow: 0 12px 32px rgb(3 14 28 / 20%); text-wrap: balance; }
-.oc-hero-tagline { margin: 16px 0 0; font-family: var(--oc-font-sans); font-size: clamp(1.12rem, 1.65vw, 1.5rem); line-height: 1.35; color: #f2e5d3; }
-.oc-hero-support > p:first-child { margin: 24px 0 0; max-width: 460px; font-size: var(--oc-size-16); line-height: var(--oc-leading-body); text-wrap: pretty; }
-.oc-hero-ctas { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-top: 28px; }
-.oc-hero-ctas [data-slot="button"] { min-height: 48px; height: auto; padding: 14px 22px; font-size: var(--oc-text-small); background: #fff7ec; color: var(--primary); }
-.oc-hero-ctas [data-slot="button"]:hover { background: white; box-shadow: 0 14px 36px rgb(4 15 28 / 22%); transform: translateY(-2px); }
+/* Homepage hero (docs/public-site/redesign/Main.mockup.html): copy and a navy-glass product frame over
+   the Rotunda photograph, club types along the bottom edge. Glass comes from .oc-public-glass(-navy). */
+.oc-landing .oc-hero-editorial {
+  --hero-ink: var(--oc-glass-cream);
+  --hero-soft: color-mix(in srgb, var(--oc-glass-cream) 88%, transparent);
+  --hero-quiet: color-mix(in srgb, var(--oc-glass-cream) 76%, transparent);
+  position: relative; z-index: 1; width: 100%;
+  padding: 172px 32px 120px;
+  color: var(--hero-ink);
+}
+.oc-hero-introduction { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); align-items: center; gap: 64px; max-width: 1136px; margin: 0 auto; }
+.oc-hero-copy { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; min-width: 0; }
+.oc-hero-headline { margin: 0; font-family: var(--oc-font-display); font-size: clamp(2.5rem, 4.3vw, 3.875rem); font-weight: 400; line-height: 1.08; letter-spacing: -.03em; text-wrap: balance; }
+.oc-hero-accent { color: var(--brand-orange); }
+.oc-hero-support { margin: 0; max-width: 32em; font-size: 19px; line-height: 1.6; color: var(--hero-soft); text-wrap: pretty; }
+.oc-hero-ctas { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; }
+.oc-hero-ctas [data-slot="button"] { min-height: 50px; height: auto; padding: 0 28px; font-size: 16px; font-weight: 600; background: var(--oc-glass-cream); color: var(--primary); box-shadow: var(--oc-glass-pill-highlight); }
+.oc-hero-ctas [data-slot="button"]:hover { background: white; transform: translateY(-2px); }
 .oc-hero-ctas [data-slot="button"]:active { transform: translateY(0); }
-.oc-hero-demo-link { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; font-size: var(--oc-text-small); text-decoration: underline !important; text-underline-offset: 5px; text-decoration-color: var(--brand-orange) !important; }
-.oc-hero-audience { margin-top: 20px; font-size: var(--oc-size-12); line-height: var(--oc-leading-body); color: #eee5d9; }
-.oc-landing .oc-hero-copy :is(a, button):focus-visible { outline-color: #fff7ec; }
-@media (max-width: 800px) {
-  .oc-landing .oc-hero-editorial { padding: 112px 24px 88px; }
-  .oc-hero-introduction { grid-template-columns: minmax(0, 1fr); gap: 36px; max-width: 560px; }
-  .oc-hero-headline { font-size: clamp(2.2rem, 6.3vw, 3rem); }
-}
-@media (max-width: 540px) {
-  .oc-hero-header > a { width: clamp(84px, 26vw, 120px); }
-  .oc-hero-header .nav-actions { gap: 8px; }
-  .oc-hero-header .nav-actions [data-slot="button"] { min-height: 44px; padding: 10px; font-size: var(--oc-text-small); }
-  .oc-landing .oc-hero-editorial { padding: 104px 20px 88px; }
-  .oc-hero-headline { font-size: clamp(1.95rem, 7.7vw, 2.5rem); }
-  .oc-hero-context { font-size: var(--oc-size-10); letter-spacing: .1em; }
-  .oc-hero-support > p:first-child { font-size: var(--oc-size-14); }
-  .oc-hero-ctas { gap: 10px 12px; }
-  .oc-hero-ctas [data-slot="button"] { padding-inline: 16px; }
-}
-@media (max-width: 360px) {
-  .oc-hero-header .nav-actions [data-slot="button"] { padding-inline: 8px; }
-}
-@media (prefers-reduced-motion: reduce) { .oc-nav-shell { transition: none; } }
+.oc-hero-demo-link { display: inline-flex; align-items: center; min-height: 44px; font-size: 16px; font-weight: 600; color: var(--hero-ink); text-decoration: underline; text-underline-offset: 5px; text-decoration-color: var(--hero-quiet); }
+.oc-hero-audience { margin: 0; font-size: 14px; color: var(--hero-quiet); }
+.oc-landing .oc-hero-editorial :is(a, button):focus-visible { outline: 2px solid var(--hero-ink); outline-offset: 3px; }
 
-@media (max-height: 500px) and (min-width: 801px) {
-  .oc-landing .oc-hero-editorial { padding: 104px 32px 88px; }
-  .oc-hero-introduction { align-items: start; }
-  .oc-hero-headline { font-size: 2rem; }
-  .oc-hero-context { margin-bottom: 16px; }
-  .oc-hero-support > p:first-child { margin-top: 16px; }
-  .oc-hero-ctas { margin-top: 20px; }
+/* Audience switch: light glass track on the photo, ivory pill for the selected audience. */
+.oc-hero-audience-toggle.oc-segmented-control { min-height: 0; border-color: var(--oc-glass-navy-edge); background: var(--oc-glass-navy-hover-tint); box-shadow: var(--oc-glass-navy-highlight); -webkit-backdrop-filter: var(--oc-glass-navy-filter); backdrop-filter: var(--oc-glass-navy-filter); }
+.oc-hero-audience-toggle.oc-segmented-control button { padding: 10px 18px; color: var(--hero-ink); font-size: 15px; font-weight: 600; }
+.oc-hero-audience-toggle.oc-segmented-control button[data-selected] { color: var(--primary); background: var(--oc-glass-cream); box-shadow: none; }
+.oc-hero-audience-toggle.oc-segmented-control .oc-segmented-indicator { border-color: transparent; background: var(--oc-glass-cream); box-shadow: var(--oc-glass-pill-highlight); }
+.oc-hero-audience-toggle.oc-segmented-control[data-sliding="true"][data-measured="true"] button[data-selected] { background: transparent; }
+@media (hover: hover) and (pointer: fine) { .oc-hero-audience-toggle.oc-segmented-control button:not([data-selected]):hover { background: var(--oc-glass-navy-hover-tint); } }
+.oc-landing .oc-hero-audience-toggle button:focus-visible { outline: 2px solid var(--hero-ink); outline-offset: -3px; }
+.oc-landing .oc-hero-audience-toggle button[data-selected]:focus-visible { outline-color: var(--primary); }
+
+/* Product frame: navy glass around a light screen of static sample data. */
+.oc-hero-frame-area { position: relative; min-width: 0; margin: 0; }
+.oc-hero-frame { --oc-public-glass-radius: 2.125rem; padding: 12px; }
+.oc-hero-screen { overflow: hidden; border-radius: var(--oc-radius-xl); background: var(--oc-glass-light-solid); color: var(--foreground); }
+.oc-hero-screen-header { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+.oc-hero-screen-title { flex: 1; min-width: 0; }
+.oc-hero-screen-title p { margin: 0; line-height: 1.3; }
+.oc-hero-screen-title p:first-child { font-size: 15px; font-weight: 600; }
+.oc-hero-screen-title p + p, .oc-hero-sample, .oc-hero-meta { font-size: 13px; color: var(--muted-foreground); }
+.oc-hero-sample { font-size: 12px; white-space: nowrap; }
+.oc-hero-avatar { flex-shrink: 0; border-radius: 999px; object-fit: cover; border: 1px solid var(--border); }
+.oc-hero-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 18px; background: var(--background); }
+.oc-hero-columns:focus-visible { outline: 2px solid var(--primary); outline-offset: -3px; }
+.oc-hero-column { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.oc-hero-column-title { margin: 0 4px; font-size: 13px; font-weight: 600; color: var(--muted-foreground); }
+.oc-hero-list { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 18px; list-style: none; background: var(--background); }
+.oc-hero-card { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: var(--oc-radius-xl); background: var(--card); box-shadow: var(--oc-shadow-surface-hover); }
+.oc-hero-card[data-focus] { outline: 2px solid var(--primary); }
+.oc-hero-person { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.oc-hero-name { margin: 0; font-size: 14px; font-weight: 600; line-height: 1.3; }
+.oc-hero-meta { margin: 0; font-size: 12px; line-height: 1.3; }
+.oc-hero-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.oc-hero-card-foot .oc-hero-meta { white-space: nowrap; }
+.oc-hero-row { flex-direction: row; align-items: center; gap: 14px; padding: 16px; }
+.oc-hero-row-text { flex: 1; min-width: 0; }
+.oc-hero-row .oc-hero-name { font-size: 15px; }
+.oc-hero-row .oc-hero-meta { font-size: 13px; line-height: 1.4; }
+.oc-hero-chip { flex-shrink: 0; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; background: var(--muted); color: var(--secondary-foreground); }
+.oc-hero-chip[data-tone="done"] { background: var(--success-subtle); color: var(--success); }
+.oc-hero-chip[data-tone="attention"] { background: var(--info-subtle); color: var(--info); }
+.oc-hero-chip[data-tone="navy"] { background: var(--primary); color: var(--primary-foreground); }
+
+/* Two floating updates around the frame; hidden on phones. */
+/* Parent-scoped: outranks the position: relative that .oc-public-glass sets on the same element. */
+.oc-hero-frame-area > .oc-hero-update { position: absolute; z-index: 2; margin: 0; }
+.oc-hero-frame-area > .oc-hero-update-person { top: -26px; left: -36px; display: flex; align-items: center; gap: 10px; padding: 10px 16px 10px 10px; --oc-public-glass-radius: 999px; font-size: 14px; }
+.oc-hero-update-person strong { font-weight: 600; }
+.oc-hero-frame-area > .oc-hero-update-count { bottom: -24px; right: -20px; display: flex; flex-direction: column; padding: 12px 18px; --oc-public-glass-radius: 22px; }
+.oc-hero-update-label { font-size: 12px; color: var(--oc-rail-muted); }
+.oc-hero-update-value { font-family: var(--oc-font-display); font-size: 22px; line-height: 1.2; }
+
+/* Club types along the bottom edge of the hero. */
+.oc-hero-club-types { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; max-width: 1136px; margin: 88px auto 0; padding: 22px 0 0; border-top: 1px solid var(--oc-glass-navy-edge); list-style: none; font-size: 13px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--hero-quiet); }
+
+@media (max-width: 820px) {
+  .oc-landing .oc-hero-editorial { padding: 120px 16px 104px; }
+  .oc-hero-introduction { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+  /* Caslon swaps in after first paint (display: swap, no preload). At this size the headline wraps to
+     the same lines in Caslon and the fallback, so the swap causes no layout shift (CLS). */
+  .oc-hero-headline { font-size: clamp(1.875rem, 7.7vw, 2.5rem); }
+  .oc-hero-support { font-size: 17px; }
+  .oc-hero-frame-area > .oc-hero-update { display: none; }
+  .oc-hero-columns { grid-template-columns: repeat(3, minmax(190px, 1fr)); overflow-x: auto; }
+  .oc-hero-club-types { justify-content: flex-start; margin-top: 56px; font-size: 12px; }
 }
-
-@media (prefers-reduced-motion: reduce) { .oc-hero-ctas [data-slot="button"] { transition: none; } .oc-hero-ctas [data-slot="button"]:hover { transform: none; } }
-
-/* Audience toggle sits in the hero, above the headline, so it is visible without scrolling. */
-.oc-hero-audience-toggle { margin: 0 0 24px; }
-.oc-hero-context { font-size: var(--oc-size-12); }
-@media (max-width: 767px) {
-  .oc-hero-context { font-size: var(--oc-size-12); }
-  .oc-hero-audience-toggle { margin-bottom: 20px; }
+@media (max-width: 374px) { .oc-hero-headline { min-height: calc(3 * 1.08em); } }
+@media (prefers-reduced-motion: reduce) {
+  .oc-hero-ctas [data-slot="button"] { transition: none; }
+  .oc-hero-ctas [data-slot="button"]:hover { transform: none; }
 }
