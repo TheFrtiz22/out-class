@@ -4,7 +4,8 @@ Status: approved mockups, foundation work only. No public page has been redesign
 
 ## Mockups
 
-The approved mockups live in this folder. `Main.mockup.html` is the homepage.
+The approved mockups live in this folder. `Main.mockup.html` is the homepage; `About.mockup.html`,
+`SignIn.mockup.html` and `RequestSchool.mockup.html` give the other pages' layouts (they predate the glass pass).
 
 `Main.mockup.html` is the design tool's export (`Main.dc.html`) of the desktop homepage. Its inline styles
 carry the reference values; replicate them with the app's tokens and components, do not copy the markup.
@@ -59,6 +60,11 @@ one blurred surface inside another.
 - Hero tagline and feature statements on the landing page moved from Caslon (the tagline was italic) to
   Source Sans.
 - `docs/design-system.md` no longer says public pages use Caslon throughout.
+
+## Public pages
+
+About, UVA, Request School, sign-in, sign-up, password recovery and legal are restyled; evidence in
+[`pages/README.md`](pages/README.md).
 
 Still to do, page by page: rebuild the homepage from `Main.mockup.html`, then the other public pages, and
 remove brand orange from every place except the two allowed by rule 4.
