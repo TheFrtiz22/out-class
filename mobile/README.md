@@ -32,8 +32,9 @@ Add an endpoint by moving the action's logic into a function the server action a
 
 ## Conventions
 
-- Colors only from `theme/tokens.ts` (mirrors `styles/tokens.css`; light = web default, dark = the web's dark "present" theme). Every screen must work in both.
-- Icons: Phosphor (`phosphor-react-native`) in screens. The native tab bar takes only SF Symbols / Material Symbols, so tab icons use those.
+- The app is the website's design language on a phone: Libre Caslon Text for titles, Source Sans 3 for text, ivory cards with soft navy shadows, navy glass panels and buttons, the floating navy dock as the tab bar, the site's logo artwork (`assets/brand/logos.ts`, generated from `public/brand/premium-board`) and its campus photography. Build new screens from `components/ui.tsx`, not raw styles.
+- Colors only from `theme/tokens.ts` (mirrors `styles/tokens.css` and `styles/navigation-glass.css`; light = web default, dark = the web's dark "present" theme). Every screen must work in both.
+- Icons: Phosphor (`phosphor-react-native`), as on the web.
 - Add packages with versions from `node_modules/expo/bundledNativeModules.json` (or `npx expo install` where it can reach Expo's API).
 
 ## Checks

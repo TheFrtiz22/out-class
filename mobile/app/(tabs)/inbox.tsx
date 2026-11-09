@@ -1,17 +1,24 @@
-import { ScrollView } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { EmptyState, Title } from "@/components/ui";
-import { space, useTheme } from "@/theme/tokens";
+import { Text } from "react-native";
+import { Screen } from "@/components/screen";
+import { ScreenHeader, SectionTitle, Segmented, Surface } from "@/components/ui";
+import { useState } from "react";
+import { text, useTheme } from "@/theme/tokens";
 
-/** Inbox: messages, decisions and notifications. Wired to /api/v1 in the next build. */
+/** Inbox: club messages, application decisions and notifications. Data arrives with the inbox endpoints. */
 export default function Inbox() {
   const t = useTheme();
+  const [filter, setFilter] = useState<"all" | "applications" | "clubs">("all");
   return (
-    <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: t.background }}>
-      <ScrollView contentContainerStyle={{ padding: space.lg }}>
-        <Title>Inbox</Title>
-        <EmptyState title="Messages are coming next" body="Club messages and application decisions will appear here. For now, check out-class.net." />
-      </ScrollView>
-    </SafeAreaView>
+    <Screen>
+      <ScreenHeader title="Inbox" subtitle="Messages and decisions from your clubs." />
+      <Segmented value={filter} onChange={setFilter} options={[{ value: "all", label: "All" }, { value: "applications", label: "Applications" }, { value: "clubs", label: "Clubs" }]} />
+      <SectionTitle title="Today" />
+      <Surface>
+        <Text style={[text.body, { color: t.muted }]}>
+          <Text style={[text.bodyStrong, { color: t.ink }]}>You’re all caught up. </Text>
+          Club messages, interview invitations and decisions will arrive here, with a notification on your phone.
+        </Text>
+      </Surface>
+    </Screen>
   );
 }

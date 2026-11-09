@@ -1,19 +1,22 @@
+import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Button, Title } from "@/components/ui";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Display, Logo, PrimaryButton } from "@/components/ui";
 import { isUvaEmail, supabase } from "@/lib/supabase";
-import { radius, space, type, useTheme } from "@/theme/tokens";
+import { font, radius, space, text, useTheme } from "@/theme/tokens";
 
 /**
  * Same sign-in options as the web (components/views/auth-view.tsx): UVA email
  * with a password, or a 6-digit emailed code. Neither creates accounts; new
- * students sign up on the web first.
+ * students create their profile on the web first.
  */
 type Step = "password" | "request-code" | "verify-code";
 
 export default function SignIn() {
   const t = useTheme();
+  const insets = useSafeAreaInsets();
   const [step, setStep] = useState<Step>("password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -52,78 +55,81 @@ export default function SignIn() {
     }
   });
 
-  const input = [styles.input, type.body, { color: t.foreground, backgroundColor: t.card, borderColor: t.border }];
+  const field = [styles.input, text.body, { color: t.ink, backgroundColor: t.scheme === "dark" ? t.raised : "#fffefb", borderColor: t.scheme === "dark" ? t.hairline : "#d5dad6" }];
+  const label = [text.label, { fontSize: 15, color: t.ink, marginBottom: 8 }];
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: t.background }}>
+    <View style={{ flex: 1, backgroundColor: t.background }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-          <Text style={[type.headline, { color: t.brand, marginBottom: space.sm }]}>OutClass</Text>
-          <Title>Sign in</Title>
-          <Text style={[type.body, { color: t.mutedForeground, marginTop: space.sm, marginBottom: space.xl }]}>
-            One profile for every club at UVA.
-          </Text>
+        <ScrollView keyboardShouldPersistTaps="handled" bounces={false} contentContainerStyle={{ paddingBottom: insets.bottom + space.xxl }}>
+          <View style={[styles.hero, { paddingTop: insets.top + space.xl }]}>
+            <Image source={require("@/assets/campus/sunset-rotunda-960.webp")} style={StyleSheet.absoluteFill} contentFit="cover" accessibilityIgnoresInvertColors />
+            <LinearGradient colors={["rgba(14,35,56,0.62)", "rgba(14,35,56,0.30)", "rgba(14,35,56,0.78)", "rgba(14,35,56,0.94)"]} locations={[0, 0.35, 0.7, 1]} style={StyleSheet.absoluteFill} />
+            <View style={{ zIndex: 1, alignSelf: "flex-start" }}><Logo onNavy width={168} /></View>
+            <View style={{ flex: 1 }} />
+            <Text style={[text.eyebrow, { color: "rgba(255,249,241,0.78)" }]}>Made for University of Virginia</Text>
+            <Text style={styles.heroLine}>Find and apply to UVA clubs with one profile.</Text>
+          </View>
 
-          <Text style={[type.caption, { color: t.mutedForeground }]}>UVA email</Text>
-          <TextInput
-            accessibilityLabel="UVA email"
-            autoCapitalize="none"
-            autoComplete="email"
-            keyboardType="email-address"
-            placeholder="computingid@virginia.edu"
-            placeholderTextColor={t.input}
-            style={input}
-            value={email}
-            editable={step !== "verify-code"}
-            onChangeText={setEmail}
-          />
+          <View style={[styles.card, { backgroundColor: t.surface, borderColor: t.edge, boxShadow: t.shadow }]}>
+            <Display size="title" style={{ fontSize: 34, lineHeight: 38 }}>Welcome back</Display>
+            <Text style={[text.body, { color: t.muted, marginTop: 6 }]}>Sign in with your UVA account.</Text>
+            <View style={[styles.rule, { backgroundColor: t.hairline }]} />
 
-          {step === "password" && (
-            <>
-              <Text style={[type.caption, { color: t.mutedForeground }]}>Password</Text>
-              <TextInput accessibilityLabel="Password" secureTextEntry autoComplete="current-password" style={input} value={password} onChangeText={setPassword} onSubmitEditing={signIn} />
-              <Button label="Sign in" onPress={signIn} loading={loading} disabled={!email || !password} />
-              <LinkButton label="Email me a code instead" onPress={() => { setError(""); setStep("request-code"); }} />
-            </>
-          )}
+            <Text style={label}>Email address</Text>
+            <TextInput accessibilityLabel="Email address" autoCapitalize="none" autoComplete="email" keyboardType="email-address" textContentType="username"
+              placeholder="computingid@virginia.edu" placeholderTextColor={t.faint} style={field} value={email} editable={step !== "verify-code"} onChangeText={setEmail} />
+            <Text style={[text.small, { color: t.muted, marginTop: 8, marginBottom: space.xl }]}>Use your @virginia.edu email address.</Text>
 
-          {step === "request-code" && (
-            <>
-              <Button label="Send code" onPress={requestCode} loading={loading} disabled={!email} />
-              <LinkButton label="Use my password" onPress={() => { setError(""); setStep("password"); }} />
-            </>
-          )}
+            {step === "password" && (
+              <>
+                <Text style={label}>Password</Text>
+                <TextInput accessibilityLabel="Password" secureTextEntry autoComplete="current-password" textContentType="password" style={[field, { marginBottom: space.xl }]} value={password} onChangeText={setPassword} onSubmitEditing={signIn} />
+                <PrimaryButton label="Sign in" onPress={signIn} loading={loading} disabled={!email || !password} />
+                <Choice label="Use an email code instead" onPress={() => { setError(""); setStep("request-code"); }} />
+              </>
+            )}
+            {step === "request-code" && (
+              <>
+                <PrimaryButton label="Email me a code" onPress={requestCode} loading={loading} disabled={!email} />
+                <Choice label="Use my password" onPress={() => { setError(""); setStep("password"); }} />
+              </>
+            )}
+            {step === "verify-code" && (
+              <>
+                <Text style={label}>6-digit code</Text>
+                <TextInput accessibilityLabel="6-digit code" keyboardType="number-pad" textContentType="oneTimeCode" autoComplete="one-time-code" maxLength={6}
+                  style={[field, { marginBottom: space.xl, fontFamily: font.textSemibold, fontSize: 22, letterSpacing: 8, textAlign: "center" }]} value={code} onChangeText={setCode} />
+                <PrimaryButton label="Verify and sign in" onPress={verifyCode} loading={loading} disabled={code.length !== 6} />
+                <Choice label="Use a different email" onPress={() => { setStep("request-code"); setCode(""); setNotice(""); }} />
+              </>
+            )}
 
-          {step === "verify-code" && (
-            <>
-              <Text style={[type.caption, { color: t.mutedForeground }]}>6-digit code</Text>
-              <TextInput accessibilityLabel="6-digit code" keyboardType="number-pad" textContentType="oneTimeCode" autoComplete="one-time-code" maxLength={6} style={input} value={code} onChangeText={setCode} />
-              <Button label="Verify" onPress={verifyCode} loading={loading} disabled={code.length !== 6} />
-              <LinkButton label="Use a different email" onPress={() => { setStep("request-code"); setCode(""); setNotice(""); }} />
-            </>
-          )}
+            {notice ? <Text style={[text.body, { color: t.success, marginTop: space.md }]}>{notice}</Text> : null}
+            {error ? <Text accessibilityRole="alert" style={[text.body, { color: t.danger, marginTop: space.md }]}>{error}</Text> : null}
 
-          {notice ? <Text style={[type.body, { color: t.success, marginTop: space.lg }]}>{notice}</Text> : null}
-          {error ? <Text accessibilityRole="alert" style={[type.body, { color: t.destructive, marginTop: space.lg }]}>{error}</Text> : null}
-
-          <View style={{ height: space.xxl }} />
-          <Text style={[type.caption, { color: t.mutedForeground }]}>New to OutClass? Create your account at out-class.net, then sign in here.</Text>
+            <View style={[styles.rule, { backgroundColor: t.hairline }]} />
+            <Text style={[text.body, { color: t.muted, textAlign: "center" }]}>New to OutClass? <Text style={[text.bodyStrong, { color: t.ink }]}>Create your profile at out-class.net</Text></Text>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
-function LinkButton({ label, onPress }: { label: string; onPress: () => void }) {
+function Choice({ label, onPress }: { label: string; onPress: () => void }) {
   const t = useTheme();
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={{ paddingVertical: space.md, alignItems: "center" }}>
-      <Text style={[type.headline, { color: t.info }]}>{label}</Text>
+    <Pressable accessibilityRole="button" onPress={onPress} style={{ paddingVertical: space.lg, alignItems: "center" }}>
+      <Text style={[text.bodyStrong, { color: t.ink }]}>{label}</Text>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: space.xl, paddingTop: space.xxl },
-  input: { borderWidth: 1, borderRadius: radius.md, paddingHorizontal: space.lg, paddingVertical: 14, marginTop: space.xs, marginBottom: space.lg },
+  hero: { height: 360, paddingHorizontal: space.xl, paddingBottom: 64, overflow: "hidden" },
+  heroLine: { fontFamily: font.display, fontSize: 32, lineHeight: 37, color: "#fff9f1", marginTop: space.sm, letterSpacing: -0.3 },
+  card: { marginTop: -40, marginHorizontal: space.lg, borderRadius: radius.xl, borderWidth: 1, padding: space.xl, paddingTop: space.xxl, borderCurve: "continuous" },
+  input: { height: 54, borderWidth: 1, borderRadius: radius.md, paddingHorizontal: space.lg },
+  rule: { height: 1, marginVertical: space.xl },
 });
