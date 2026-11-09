@@ -2,12 +2,9 @@
 .oc-landing:has(.oc-product-stories) { --oc-journey-linen: #f3eee5; --oc-journey-cool: #f6f5f1; --oc-journey-navy: #142d4e; background: var(--oc-journey-linen); overflow-anchor: none; }
 .oc-landing:has(.oc-product-stories) main { background: var(--oc-journey-linen); }
 .oc-landing .oc-launch-clubs { background: var(--oc-journey-linen); }
-.oc-landing .oc-product-stories { --oc-journey-gutter: max(40px, calc((100% - 1200px) / 2)); max-width: none; padding: 0; background: var(--oc-journey-linen); }
-.oc-landing .oc-journey-controls { padding-inline: var(--oc-journey-gutter); background: var(--oc-journey-linen); }
-.oc-landing[data-scroll-motion] .oc-product-story { isolation: isolate; padding-inline: var(--oc-journey-gutter); border: 0; }
-.oc-landing[data-scroll-motion] .oc-product-story::before { display: none; }
+.oc-landing .oc-product-stories { max-width: none; background: var(--oc-journey-linen); }
 .oc-landing .oc-final-invitation h2 { color: var(--primary); max-width: 20ch; font-size: clamp(2rem, 4.5vw, 3.5rem); font-weight: 400; }
 .oc-landing .oc-invitation-campus { color: var(--brand-ink); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
 .oc-landing .oc-invitation-note { max-width: 42ch; }
-@media (max-width: 800px) { .oc-landing .oc-product-stories { --oc-journey-gutter: 24px; } }
-@media (max-width: 420px) { .oc-landing .oc-product-stories { --oc-journey-gutter: 20px; } }
+.oc-landing .oc-final-invitation { min-height: 420px; background: var(--oc-public-paper); padding-block: 80px; border-top: 1px solid var(--border); }
+.oc-landing .oc-final-invitation .oc-invitation-cta { min-height: 52px; width: auto; padding: 14px 28px; font-size: 16px; box-shadow: none; }
