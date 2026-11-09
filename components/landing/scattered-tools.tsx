@@ -1,4 +1,4 @@
-import Image from "next/image"
+import { OutClassLogo } from "@/components/outclass-logo"
 import "./journey-tabs.css"
 
 /** Decorative stand-ins for the tools recruitment usually spreads across; hidden from assistive technology. */
@@ -16,8 +16,8 @@ export function ScatteredTools() {
           <h2 id="scattered-title">Recruitment season, minus the open tabs.</h2>
           <p>Students retype the same answers into a dozen forms. Leaders chase spreadsheets, booking links and reply-all threads. OutClass puts every application, interview and decision in one place your whole team can see.</p>
           <p className="oc-scattered-summary oc-public-glass">
-            <Image src="/brand/04-wordmark-two-color.svg" alt="OutClass" width={80} height={18} unoptimized />
-            <span>One profile · one pipeline · one source of truth</span>
+            <OutClassLogo variant="light" className="oc-scattered-logo" />
+            <span>One profile. One pipeline.<br />One single source of truth.</span>
           </p>
         </div>
       </div>
