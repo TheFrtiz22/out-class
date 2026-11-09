@@ -41,7 +41,7 @@ const pages = [['home', '/?audience=leader'], ['home-student', '/?audience=stude
       assert.ok(rows.length > 0 && rows.every(r => r.summary && r.glass && parseFloat(r.radius) >= 20), 'FAQ rows are separate round glass details')
       const first = p.locator('#faq details.oc-faq-entry summary').first(); await first.focus(); await p.keyboard.press('Enter'); await p.waitForTimeout(300)
       assert.equal(await p.evaluate(() => document.querySelector('#faq details.oc-faq-entry').open), true, 'Enter opens a FAQ row')
-      await p.locator('#faq').screenshot({ path: `${out}/faq-${w}.png` })
+      if (out) await p.locator('#faq').screenshot({ path: `${out}/faq-${w}.png` })
     }
     if (out) { await p.locator('.oc-public-footer').screenshot({ path: `${out}/footer-${name}-${w}.png` }); if (name === 'home') await p.locator('.oc-campus-band').screenshot({ path: `${out}/campus-band-${w}.png` }) }
     console.log(`PASS ${name} ${w}: one panel, invitation ${f.invitation}, overflow 0, axe 0`)
