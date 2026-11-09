@@ -12,6 +12,7 @@ import { getLiveVotingSetup,getVotingHighlightOptions,createLiveVotingRoom,resol
 import { createRoomSchema,liveRoomPath,roomDisplayConfig,type LiveRoomField } from "@/lib/voting-room";
 import { fieldLabels } from "@/lib/applicant-display";
 // Demo draft persistence loads only when a Demo Mode draft is read or written.
+type SavedSession=Awaited<ReturnType<typeof getVotingSessionSetup>>;
 const demoDrafts=()=>import("@/lib/demo/voting-setup-drafts");
 const getSetupDraft=async(input:unknown)=>(await demoDrafts()).getSetupDraft(input);
 const saveSetupDraft=async(input:unknown)=>(await demoDrafts()).saveSetupDraft(input);
@@ -33,7 +34,7 @@ export function VotingRoomSetup({clubId,demoScoped,initialCycleId="",initialRoun
  const [observationRevision,setObservationRevision]=useState(0);
  const restoredScope=useRef(''),heading=useRef<HTMLHeadingElement>(null);
  // State, not a ref: the rounds load below must re-run once the saved session has been read, even when a restored working copy changes nothing else.
- const [editLoaded,setEditLoaded]=useState(''),[editConflict,setEditConflict]=useState<Awaited<ReturnType<typeof getVotingSessionSetup>>|null>(null);
+ const [editLoaded,setEditLoaded]=useState(''),[editConflict,setEditConflict]=useState<{latest:SavedSession;unsaved:boolean}|null>(null);
  const value={version:1 as const,step,cycle,round,...details,applicants,voters,target,fields,highlights,initialized,sessionId,planRevision,startRequestId:startRequestId||undefined,updateRequestId:updateRequestId||undefined,leaderMemberIds,rules:ruleDraft??undefined};
  const ruleChoice=rulesFromDraft(ruleDraft??leaderDraft),ruleRules="rules"in ruleChoice?ruleChoice.rules:null;
  // Opening setup only pre-fills defaults; nothing is persisted until the leader changes something, so visits never leave junk drafts.
@@ -41,15 +42,15 @@ export function VotingRoomSetup({clubId,demoScoped,initialCycleId="",initialRoun
  // Club/round defaults pre-fill once; automatic settings still require review in this session.
  const draft=useEditorDraft({demoPersistence:{read:getSetupDraft,write:saveSetupDraft},scope:{kind:'voting-setup',clubId,resourceId:draftId},value:touched?value:pristine.current,enabled:!!auth.user&&demo.ready&&demoScoped===demo.isDemoEnabled,restore:(raw)=>{const v=setupDraftSchema.parse(raw);restoredScope.current=`${v.cycle}:${v.round}`;setCycle(v.cycle);setRound(v.round);setDetails({name:v.name,timing:v.timing,localTime:v.localTime,timeZone:v.timeZone,occurrence:v.occurrence,duration:v.duration,location:v.location,instructions:v.instructions,notify:v.notify});setApplicants(v.applicants);setVoters(v.voters);setTarget(v.target);setRuleDraft(readRuleDraft(v.rules));setFields(v.fields as LiveRoomField[]);setHighlights(v.highlights);setStep(v.step);setInitialized(v.initialized);setSessionId(v.sessionId);setPlanRevision(v.planRevision);setStartRequestId(v.startRequestId||'');setUpdateRequestId(v.updateRequestId||'');setLeaderMemberIds(v.leaderMemberIds??[]);}});
  useEffect(()=>{if(!draft.ready)return;if(!/^[0-9a-f-]{36}$/i.test(sessionId))setSessionId(crypto.randomUUID());if(!startRequestId)setStartRequestId(crypto.randomUUID());if(!updateRequestId)setUpdateRequestId(crypto.randomUUID());},[draft.ready,sessionId,startRequestId,updateRequestId]);
- function applySavedSession(v:Awaited<ReturnType<typeof getVotingSessionSetup>>){restoredScope.current=`${v.cycleId}:${v.roundId}`;setCycle(v.cycleId);setRound(v.roundId);setApplicants(v.applicationIds);setVoters(v.participantIds);setFields(v.fields);setHighlights(v.highlights);setTarget(v.targetSize==null?'':String(v.targetSize));setRuleDraft(draftFromRules((v as {rules?:Parameters<typeof draftFromRules>[0]}).rules));setPlanRevision(v.revision);setLeaderMemberIds(v.leaderMemberIds);setSessionId(v.sessionId);setInitialized(true);if(v.meeting){const m=v.meeting;setDetails({name:m.name,timing:m.timing,localTime:m.localTime,timeZone:m.timeZone,occurrence:m.occurrence,duration:m.duration==null?'':String(m.duration),location:m.location,instructions:m.instructions,notify:false});}}
+ function applySavedSession(v:SavedSession){restoredScope.current=`${v.cycleId}:${v.roundId}`;setCycle(v.cycleId);setRound(v.roundId);setApplicants(v.applicationIds);setVoters(v.participantIds);setFields(v.fields);setHighlights(v.highlights);setTarget(v.targetSize==null?'':String(v.targetSize));setRuleDraft(draftFromRules((v as {rules?:Parameters<typeof draftFromRules>[0]}).rules));setPlanRevision(v.revision);setLeaderMemberIds(v.leaderMemberIds);setSessionId(v.sessionId);setInitialized(true);if(v.meeting){const m=v.meeting;setDetails({name:m.name,timing:m.timing,localTime:m.localTime,timeZone:m.timeZone,occurrence:m.occurrence,duration:m.duration==null?'':String(m.duration),location:m.location,instructions:m.instructions,notify:false});}}
  useEffect(()=>{if(!draft.ready||!editSession||editLoaded===editSession)return;let current=true;getVotingSessionSetup({clubId,sessionId:editSession}).then(v=>{if(!current)return;if(v.status!=='DRAFT')throw Error('Session already started or ended. Setup is locked.');
   // A working copy saved against an older revision (another tab or leader saved since) must be resolved explicitly, never silently merged.
-  if(initialized&&planRevision!==null&&planRevision!==v.revision)setEditConflict(v);else if(!initialized)applySavedSession(v);
+  if(initialized&&planRevision!==null&&planRevision!==v.revision)setEditConflict({latest:v,unsaved:false});else if(!initialized)applySavedSession(v);
   setEditLoaded(editSession);}).catch(e=>{if(current)setError(e instanceof Error?e.message:'Could not load this saved session. Retry.');});return()=>{current=false};
  },[draft.ready,editSession,editLoaded,clubId,initialized,planRevision,retry]);
  const [selection,setSelection]=useState<{identity:string;value:ReturnType<typeof selectionScopes>}|null>(null),[selectionError,setSelectionError]=useState(""),[approvedScope,setApprovedScope]=useState("");
  const navigating=useRef(false);
- const pending=useRef<ReturnType<typeof createRoomSchema.parse>|null>(null),lock=useRef(false),selectionScope=useRef("");
+ const pending=useRef<ReturnType<typeof createRoomSchema.parse>|null>(null),updateSent=useRef(false),lock=useRef(false),selectionScope=useRef("");
  const identity=`${auth.user?.id}:${demo.isDemoEnabled}:${clubId}`,permitted=demo.ready&&!auth.loading&&!!auth.user&&demoScoped===demo.isDemoEnabled;
  const selected=selection?.identity===identity?selection.value:null;
  const selectionReady=!selectionKey||!!selected&&(selected.scopes.length===1||!!approvedScope);
@@ -63,20 +64,44 @@ export function VotingRoomSetup({clubId,demoScoped,initialCycleId="",initialRoun
  useEffect(()=>{let current=true;setData(null);setError("");if(!permitted||!selectionReady||!draft.ready||editSession&&editLoaded!==editSession)return;getLiveVotingSetup({clubId,cycleId:cycle||undefined,roundId:round||undefined}).then(v=>{if(!current)return;setData(v);setDataScope(loadScope);if(!cycle&&v.cycles[0])setCycle(v.cycles[0].id);if(!round&&v.rounds[0])setRound(v.rounds[0].id);if(selectionScope.current!==loadScope){selectionScope.current=loadScope;if(restoredScope.current!==`${cycle}:${round}`){setApplicants(v.applicants.filter(a=>!selectionKey||selected?.scopes.some(g=>g.cycleId===cycle&&g.roundId===round&&g.applicationIds.includes(a.id))).map(a=>a.id));setVoters(v.voters.filter(a=>a.defaultSelected).map(a=>a.id));setPreview(v.applicants[0]?.id??"");setHighlights({});}setInitialized(true);setDetails(old=>({...old,name:old.name||(round?`${v.rounds.find(r=>r.id===round)?.name??"Voting"} · ${new Date().toLocaleDateString()}`:""),timeZone:old.timeZone||v.timeZone}));}setFields(old=>old.filter(f=>v.allowedFields.includes(f)));}).catch(()=>{if(current)setError("Couldn't load voting setup. Check access and retry.")});return()=>{current=false;};},[clubId,cycle,round,permitted,identity,loadScope,retry,selectionReady,selectionKey,selected,draft.ready,editSession,editLoaded,initialized]);
  useEffect(()=>{let current=true;setQuotes([]);if(permitted&&preview&&fields.includes("resumeHighlight"))getVotingHighlightOptions({clubId,cycleId:cycle,roundId:round,applicationId:preview}).then(v=>{if(current)setQuotes(v)}).catch(()=>{if(current)setError("Résumé excerpts unavailable. Retry or leave this field unselected.")});return()=>{current=false;};},[permitted,clubId,cycle,round,preview,fields]);
  useEffect(()=>{pending.current=null;return()=>{pending.current=null;};},[identity]);
+ // A working-copy conflict while editing a saved session usually means another tab saved it; show the session conflict instead of a draft error.
+ useEffect(()=>{if(!draft.error||!editSession||planRevision===null||editConflict)return;let current=true;getVotingSessionSetup({clubId,sessionId:editSession}).then(v=>{if(current&&v.status==='DRAFT'&&v.revision!==planRevision){pending.current=null;setEditConflict({latest:v,unsaved:true});}}).catch(()=>{});return()=>{current=false};},[draft.error,editSession,planRevision,editConflict,clubId]);
  function move(next:number){setTouched(true);setStep(next);setError('');requestAnimationFrame(()=>heading.current?.focus());}
  function changeScope(nextCycle:string,nextRound:string){if(editSession||planRevision!==null)return;restoredScope.current='';setCycle(nextCycle);setRound(nextRound);setDetails(v=>({...v,name:''}));setInitialized(false);}
  function meetingInput(){const {notify,...meeting}=details;void notify;return {...meeting,version:1,duration:details.duration===''?null:Number(details.duration),status:details.timing==='LATER'?'SCHEDULED':'READY'};}
  function validate(at:number){if(at>=1){if(!cycle||!round)throw Error('Choose a recruitment cycle and round.');resolveVotingMeeting(meetingInput());}if(at>=2){if(!applicants.length)throw Error('Select at least one applicant.');if(!voters.length)throw Error('Select at least one voter.');if(target!==''&&(!/^\d+$/.test(target)||Number(target)<1||Number(target)>2000))throw Error('Target number to pass must be a positive whole number, up to 2000.');{const rr=rulesFromDraft(ruleDraft??leaderDraft);if('error'in rr)throw Error(rr.error);}if(applicants.some(id=>!data?.applicants.some(a=>a.id===id))||voters.some(id=>!data?.voters.some(v=>v.id===id)))throw Error('Some saved selections are no longer eligible. Review applicants and voters before continuing.');}}
  async function saveDraft(){if(lock.current)return;lock.current=true;setBusy(true);setSavedDraft(false);setTouched(true);try{await new Promise(r=>setTimeout(r));await draft.flush();setSavedDraft(true);}catch(e){setError(e instanceof Error?e.message:'Draft could not be saved. Retry; your input is retained.');}finally{lock.current=false;setBusy(false);}}
+ // An update retry always replays the original request against the revision this form was loaded from, so it can never overwrite a newer save.
+ const sendUpdate=()=>{updateSent.current=true;return updateVotingSessionSetup({...pending.current!,revision:planRevision!,requestId:updateRequestId});};
+ async function finish(result:{sessionId:string}){
+  if(details.timing==='NOW'){const room=await getLiveVotingRoom({clubId,sessionId:result.sessionId});if(room.status==='DRAFT'){const started=await commandLiveVotingRoom({clubId,sessionId:result.sessionId,revision:room.revision,requestId:startRequestId,action:'START'});if(!started.ok)throw Error(started.message);}else if(room.status!=='OPEN')throw Error('Session changed. Open its details to review the current state.');}
+  await draft.clear();navigating.current=true;router.push(liveRoomPath(clubId,result.sessionId,'leader',demoScoped)+`&cycleId=${encodeURIComponent(cycle)}&roundId=${encodeURIComponent(round)}`);
+ }
+ /** Resolves a failed edit save by reading the saved session: a newer revision is a conflict, never a retry. Returns true when handled. */
+ async function resolveEditFailure(){
+  if(planRevision===null||!pending.current)return false;
+  let latest:SavedSession;try{latest=await getVotingSessionSetup({clubId,sessionId});}catch{return false;}
+  if(latest.revision===planRevision)return false;
+  // A lost response to this tab's own committed update replays to its receipt instead of reporting a conflict.
+  if(updateSent.current){let replay:{sessionId:string}|null=null;try{replay=await sendUpdate();}catch{}if(replay){try{await finish(replay);}catch(e){setError(e instanceof Error?e.message:'Session could not be confirmed. Open its details to review.');}return true;}}
+  pending.current=null;updateSent.current=false;
+  if(latest.status!=='DRAFT')setError('Session already started or ended. Setup is locked.');else setEditConflict({latest,unsaved:true});
+  return true;
+ }
  async function prepare(){
   if(lock.current||!data)return;lock.current=true;setBusy(true);setError('');
   try{
-   if(!pending.current){validate(2);const meeting=resolveVotingMeeting(meetingInput());pending.current=createRoomSchema.parse({clubId,sessionId,cycleId:cycle,roundId:round,leaderMemberIds:leaderMemberIds.length?leaderMemberIds:[data.memberId],participantIds:voters,applicationIds:applicants,targetSize:target===''?null:Number(target),displayConfig:roomDisplayConfig(fields),presentationOptions:{fields,highlights:Object.fromEntries(Object.entries(highlights).filter(([id,v])=>applicants.includes(id)&&!!v)),meeting,...(ruleRules?.mode==='THRESHOLD'?{rules:ruleRules}:{})},notifyVoters:(details.timing==='LATER'||planRevision!==null)&&details.notify});}
+   if(!pending.current){validate(2);const meeting=resolveVotingMeeting(meetingInput());updateSent.current=false;pending.current=createRoomSchema.parse({clubId,sessionId,cycleId:cycle,roundId:round,leaderMemberIds:leaderMemberIds.length?leaderMemberIds:[data.memberId],participantIds:voters,applicationIds:applicants,targetSize:target===''?null:Number(target),displayConfig:roomDisplayConfig(fields),presentationOptions:{fields,highlights:Object.fromEntries(Object.entries(highlights).filter(([id,v])=>applicants.includes(id)&&!!v)),meeting,...(ruleRules?.mode==='THRESHOLD'?{rules:ruleRules}:{})},notifyVoters:(details.timing==='LATER'||planRevision!==null)&&details.notify});}
    await draft.flush();
-   const result=planRevision!==null?await updateVotingSessionSetup({...pending.current,revision:planRevision,requestId:updateRequestId}):await createLiveVotingRoom(pending.current);
-   if(details.timing==='NOW'){const room=await getLiveVotingRoom({clubId,sessionId:result.sessionId});if(room.status==='DRAFT'){const started=await commandLiveVotingRoom({clubId,sessionId:result.sessionId,revision:room.revision,requestId:startRequestId,action:'START'});if(!started.ok)throw Error(started.message);}else if(room.status!=='OPEN')throw Error('Session changed. Open its details to review the current state.');}
-   await draft.clear();navigating.current=true;router.push(liveRoomPath(clubId,result.sessionId,'leader',demoScoped)+`&cycleId=${encodeURIComponent(cycle)}&roundId=${encodeURIComponent(round)}`);
-  }catch(e){setError(e instanceof Error?e.message:'Session could not be confirmed. Retry uses the same request and preserves your setup.');}finally{if(!navigating.current){lock.current=false;setBusy(false);}}
+   await finish(planRevision!==null?await sendUpdate():await createLiveVotingRoom(pending.current));
+  }catch(e){if(!await resolveEditFailure())setError(e instanceof Error?e.message:'Session could not be confirmed. Retry uses the same request and preserves your setup.');}finally{if(!navigating.current){lock.current=false;setBusy(false);}}
+ }
+ async function loadLatest(){
+  if(!editConflict)return;
+  if(editConflict.unsaved&&!window.confirm('Discard your unsaved changes and load the latest saved session?'))return;
+  applySavedSession(editConflict.latest);setEditConflict(null);setError('');pending.current=null;updateSent.current=false;setUpdateRequestId(crypto.randomUUID());setTouched(true);
+  // The working copy now follows the latest saved session, so later autosaves supersede the other tab's copy instead of conflicting forever.
+  await draft.rebase().catch(()=>{});
  }
 
  if(auth.loading||!demo.ready)return <div className="vr-page"><LoadingState label="Checking your session…" layout="inline" /></div>;
@@ -84,9 +109,9 @@ export function VotingRoomSetup({clubId,demoScoped,initialCycleId="",initialRoun
  if(demoScoped!==demo.isDemoEnabled)return <div className="vr-page"><PageHeader title="Voting workspace unavailable" /><p>Use a link for your current Live or Demo workspace.</p></div>;
  return <div className="vr-page"><div className="vr-form"><header className="vr-header"><PageHeader title="Set up voting" titleRef={heading} focusable /><VotingBackLink clubId={clubId} cycleId={cycle} roundId={round}/></header>
  <ol className="vr-stats" aria-label="Setup progress">{['Session details','Applicants and voters','Presentation and review'].map((text,i)=><li key={text} aria-current={step===i+1?'step':undefined}>{i+1}. {text}</li>)}</ol>
- {error&&<div role="alert" className="vr-error">{error} {pending.current&&<Link className="vr-link" href={liveRoomPath(clubId,sessionId,'leader',demoScoped)}>Open session details to review saved setup</Link>} <Button variant="outline" disabled={busy} onClick={()=>pending.current?void prepare():setRetry(v=>v+1)}>Retry</Button></div>}
- {draft.error&&<div role="alert">{draft.error} <Button variant="outline" onClick={draft.retry}>Retry draft</Button></div>}
- {editConflict&&<div role="alert" className="vr-error">This session was changed in another tab or by another leader after your working copy was saved. Load the latest saved session to keep editing; your older working copy will be replaced. <Button variant="outline" onClick={()=>{applySavedSession(editConflict);setEditConflict(null);setTouched(true);}}>Load latest session</Button></div>}
+ {error&&!editConflict&&<div role="alert" className="vr-error">{error} {pending.current&&<Link className="vr-link" href={liveRoomPath(clubId,sessionId,'leader',demoScoped)}>Open session details to review saved setup</Link>} <Button variant="outline" disabled={busy} onClick={()=>pending.current?void prepare():setRetry(v=>v+1)}>Retry</Button></div>}
+ {draft.error&&!editConflict&&<div role="alert">{draft.error} <Button variant="outline" onClick={draft.retry}>Retry draft</Button></div>}
+ {editConflict&&<div role="alert" className="vr-error">This session was changed in another tab or by another leader. {editConflict.unsaved?'Your changes were not saved.':'Your older working copy will be replaced.'} <Button variant="outline" onClick={()=>void loadLatest()}>Load latest session</Button></div>}
  {!!draft.recovery&&<div role="alert">A saved working copy is available. <Button onClick={draft.restoreRecovery}>Restore draft</Button><Button variant="outline" onClick={()=>void draft.discardRecovery()}>Discard working copy</Button></div>}
  {selectionKey?<Link className="vr-link" href={`/club/${encodeURIComponent(clubId)}/workspace?section=recruitment&tool=applicants`}>Return to Applicants</Link>:<Link className="vr-link" href={`/club/${encodeURIComponent(clubId)}/workspace?section=recruitment&tool=decisions&decisionTab=voting`}>Back to Voting room</Link>}
  {selectionError&&<div role="alert">{selectionError} <Button variant="outline" onClick={()=>setRetry(v=>v+1)}>Retry selection</Button></div>}
