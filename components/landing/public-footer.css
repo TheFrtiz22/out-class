@@ -6,13 +6,14 @@
   --oc-footer-rule: var(--oc-glass-navy-edge);
   --oc-footer-frame-radius: 2.75rem;
   width: 100%;
-  padding: 0 max(16px, calc((100% - 1200px) / 2)) 24px;
+  /* Near full-bleed: a slim gutter that grows with the viewport, capped only on very wide screens. */
+  padding: 0 max(clamp(12px, 2vw, 32px), calc((100% - 1680px) / 2)) 24px;
 }
 .oc-footer-frame { position: relative; isolation: isolate; overflow: hidden; padding: 14px; border-radius: var(--oc-footer-frame-radius); background: var(--primary); box-shadow: var(--oc-shadow-modal); }
 .oc-footer-frame > .oc-footer-photo { z-index: -2; object-fit: cover; object-position: center 35%; }
 /* The hero's navy shade, so the panel's cream text never depends on the photograph. */
 .oc-footer-frame::before { content: ""; position: absolute; z-index: -1; inset: 0; background: linear-gradient(180deg, rgb(10 24 40 / 50%) 0%, rgb(10 24 40 / 70%) 55%, rgb(10 24 40 / 94%) 100%); }
-.oc-footer-panel { --oc-public-glass-radius: 2.125rem; display: flex; flex-direction: column; gap: 56px; padding: 72px 40px 40px; }
+.oc-footer-panel { --oc-public-glass-radius: 2.125rem; display: flex; flex-direction: column; gap: 56px; padding: 72px clamp(40px, 4vw, 72px) 40px; }
 
 /* Final call to action (homepage only) */
 .oc-footer-invitation { display: flex; flex-direction: column; align-items: center; gap: 18px; text-align: center; }

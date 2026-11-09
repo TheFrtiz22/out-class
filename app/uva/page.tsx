@@ -50,7 +50,7 @@ export default function UvaPage() {
         <div className="oc-faq-heading"><p className="oc-public-kicker">Frequently asked questions</p><h2 id="faq-title">Questions about using OutClass</h2><p>Accounts, applications, interview scheduling, and who can use OutClass.</p></div>
         <PublicFaq />
       </section>
-      <section className="oc-public-section oc-faq-next" aria-labelledby="not-uva-title"><div><h2 id="not-uva-title">Not at UVA?</h2><p>Your campus could be next. Tell us where you’d like to see OutClass.</p></div><a className="oc-public-text-link" href="/request-school">Request your school</a></section>
+      <section className="oc-public-section oc-faq-next" aria-labelledby="not-uva-title"><div><h2 id="not-uva-title">Not at UVA?</h2><p>Your campus could be next. Tell us where you’d like to see OutClass.</p></div><Button asChild size="lg" className="oc-public-cta"><Link href="/request-school" prefetch={false}>Request your school</Link></Button></section>
     </PublicInformationPage>
   )
 }
