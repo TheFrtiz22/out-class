@@ -23,7 +23,8 @@ test('workspace pill switches workspace only: same segments everywhere, eligibil
    await go(role);await expect(header.locator('.oc-product-utilities')).toBeVisible();await noRestricted();assert.equal(await workspaces.count(),0,'a student with only Personal sees no pill: nothing to switch to')
    assert.equal(await header.getByRole('navigation',{name:'Product modes'}).count(),0,'sections are not in the pill')
    await header.getByRole('button',{name:/^Search OutClass/}).click();const search=page.getByRole('dialog',{name:'Search OutClass',exact:true});await search.getByRole('combobox').fill('Admin');await expect(search.getByRole('option')).toHaveCount(0);await page.keyboard.press('Escape')
-   await page.setViewportSize({width:390,height:844});const before=calls;await page.getByRole('button',{name:'More sections'}).click();await page.getByRole('dialog',{name:'Workspace navigation',exact:true}).waitFor();await noRestricted();assert.equal(calls,before,'opening mobile navigation never refetches eligibility');await page.keyboard.press('Escape');await page.setViewportSize({width:1600,height:1000})
+   // Phones: the personal bar is the app's five tabs, with no More sheet.
+   await page.setViewportSize({width:390,height:844});const before=calls;await expect(page.getByRole('navigation',{name:'Sections',exact:true}).getByRole('link')).toHaveText(['Home','Explore','Inbox','Calendar','Profile']);assert.equal(await page.getByRole('button',{name:'More sections'}).count(),0);await noRestricted();assert.equal(calls,before,'the phone bar never refetches eligibility');await page.setViewportSize({width:1600,height:1000})
   }
   await shot('personal')
   eligible=true;await go('student');assert.deepEqual(await kinds(),['personal','admin'],'Admin eligibility is independent of club leadership');eligible=false
@@ -73,7 +74,7 @@ test('workspace pill switches workspace only: same segments everywhere, eligibil
   await header.getByRole('button',{name:/^Account menu for/}).click();const account=page.getByRole('menu')
   await expect(account.getByRole('menuitem',{name:'McIntire Investment Institute club workspace'})).toHaveAttribute('aria-current','page')
   await expect(account.getByRole('menuitem',{name:'Virginia Volunteers club workspace'})).toBeVisible();await expect(account.getByRole('menuitem',{name:'Admin workspace'})).toBeVisible()
-  await account.getByRole('menuitem',{name:'Personal workspace'}).click();await page.waitForURL('**/home');await expect(page.getByRole('navigation',{name:'Sections',exact:true}).getByRole('link')).toHaveText(['Home','Explore','Applications','My Clubs'])
+  await account.getByRole('menuitem',{name:'Personal workspace'}).click();await page.waitForURL('**/home');await expect(page.getByRole('navigation',{name:'Sections',exact:true}).getByRole('link')).toHaveText(['Home','Explore','Inbox','Calendar','Profile'])
   await page.setViewportSize({width:1600,height:1000});await header.getByRole('button',{name:/^Account menu for/}).click();await expect(page.getByRole('menu').getByRole('menuitem',{name:'Personal workspace'})).toBeVisible();await page.keyboard.press('Escape')
   // Workspaces stay readable and reachable at narrow widths and 200% zoom.
   for(const role of ['student','owner','platform']){

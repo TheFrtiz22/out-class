@@ -3,9 +3,11 @@ import { NativeSelect } from "@/components/ui/native-select"
 import { useSearchParams } from "next/navigation"
 import { SavedClubsPopover } from "@/components/clubs/saved-clubs-popover"
 import { PageHeader } from "@/components/ui/page-header"
+import { ExploreSwitch } from "@/components/explore-switch"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { ArrowRight, ChevronDown, Search, SlidersHorizontal, X, Compass, BookOpen, BriefcaseBusiness, Globe2, Heart, Mountain, Lightbulb, ChartNoAxesCombined, MessageSquare, Users } from "@/components/icons"
 import { Button } from "@/components/ui/button"
+import { IconButton } from "@/components/ui/icon-button"
 import { SegmentedControl } from "@/components/ui/segmented-control"
 import { Input } from "@/components/ui/input"
 import { LoadingState } from "@/components/ui/loading-state"
@@ -60,6 +62,8 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
   }, [filterQuery])
   const [searchMatches, setSearchMatches] = useState<{ query: string; ids: string[] } | null>(null)
   const [now, setNow] = useState(Date.now())
+  // Phones, as in the app: Availability, Sort and Refine sit behind a Filter button beside search.
+  const [phoneFilters, setPhoneFilters] = useState(false)
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 60000); return () => clearInterval(timer) }, [])
   const [selected, setSelected] = useState<DirectoryClub | null>(() => isDemoActive() ? loadedDemoStore().demoDirectory().find(c => [c.id, c.slug].includes(new URLSearchParams(window.location.search).get("demoClub") || "")) || null : null)
   // The directory list carries summary data; the full profile loads on open.
@@ -137,6 +141,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
   const timeOptions = ["1-3", "3-5", "5+"].filter((time) => clubs.some((club) => club.timeCommitment === time))
   const acceptanceReported = clubs.filter((club) => club.acceptanceRate != null).length >= 3
   const refined = [filters.time !== emptyDirectoryFilters.time, filters.acceptance !== emptyDirectoryFilters.acceptance].filter(Boolean).length
+  const phoneActive = refined + Number(filters.recruitment !== emptyDirectoryFilters.recruitment) + Number(filters.sort !== emptyDirectoryFilters.sort)
   const recruitmentCounts = useMemo(() => {
     const matches = filterDirectory(clubs, { ...filters, recruitment: "all" }, now)
     return { all: matches.length, open: matches.filter(club => clubRecruitment(club, now).available).length, closed: matches.filter(club => !clubRecruitment(club, now).available).length, closing: matches.filter(club => clubRecruitment(club, now).closingSoon).length }
@@ -168,6 +173,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
   }
   return (
     <div className="oc-discovery" data-explore-section={section} ref={resultsRef}>
+      <ExploreSwitch current="clubs" />
       <div className="oc-explore-heading">
         <PageHeader density="expressive" eyebrow="Find your people" title="Explore clubs" description="Follow your interests. Make room for something new." action={<SavedClubsPopover onNavigate={onNavigate} />} />
       </div>
@@ -189,6 +195,9 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
             <X size={16} />
           </Button>
         )}
+        <IconButton className="oc-directory-filter-toggle" aria-label={phoneActive ? `Filter clubs (${phoneActive} active)` : "Filter clubs"} aria-expanded={phoneFilters} aria-controls="directory-tools" onClick={() => setPhoneFilters(open => !open)}>
+          <SlidersHorizontal size={18} aria-hidden="true" />{phoneActive > 0 && <span className="oc-directory-filter-count" aria-hidden="true">{phoneActive}</span>}
+        </IconButton>
       </div>
       {!loading && !error && categories.length > 0 && (
         <SegmentedControl
@@ -209,7 +218,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
           ]}
         />
       )}
-      <div className="oc-directory-tools oc-toolbar">
+      <div id="directory-tools" className="oc-directory-tools oc-toolbar" data-phone-open={phoneFilters || undefined}>
         {/* Filters with fewer than two real options are hidden; acceptance needs at least three clubs reporting a rate. */}
         {(timeOptions.length >= 2 || acceptanceReported) && <details>
           <summary>

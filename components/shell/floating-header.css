@@ -27,6 +27,7 @@
 .oc-product-header-row { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 48px; padding: 0; }
 .oc-product-header-row > * { pointer-events: auto; }
 .oc-product-utilities { display: flex; align-items: center; flex-shrink: 0; gap: 12px; margin-left: auto; }
+.oc-product-brand { display: none; }
 .oc-product-header .oc-floating-circle {
   border: 1px solid var(--oc-floating-border);
   border-radius: 999px;
@@ -103,9 +104,13 @@ button.oc-header-club:hover { color: var(--primary); background: rgb(20 45 69 / 
   .oc-product-utilities { justify-self: end; margin-top: 0; }
   .oc-evolving-indicator { transition: transform 420ms var(--oc-floating-ease), opacity 180ms ease; }
   .oc-evolving-toggle .oc-evolving-segments .oc-workspace-option { padding-inline: 3px; font-size: 12px; }
-  /* Phones: a mini pill beside the utilities (equal segments, club by short label); the bottom bar is the
-     section nav and the account menu still lists every workspace by full name. */
-  .oc-product-header-row { grid-template-columns: minmax(0,1fr) auto; gap: 8px; min-height: 48px; }
+  /* Phones, as in the app: the logo leads, search · bell · account follow. When there is somewhere to switch to,
+     a mini workspace pill takes the logo's place (equal segments, the club by its short label); the bottom bar
+     is the section nav and the account menu still lists every workspace by full name. */
+  .oc-product-header-row { min-height: 48px; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 8px; }
+  .oc-product-brand { display: inline-flex; align-items: center; justify-self: start; min-height: 44px; padding-right: 8px; border-radius: var(--oc-radius-sm); }
+  .oc-product-brand:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+  .oc-product-header-row:has(.oc-workspace-selector) .oc-product-brand, .oc-product-workspaces:not(:has(.oc-workspace-selector)) { display: none; }
   .oc-product-workspaces { align-self: center; }
   .oc-evolving-toggle { --workspace-selected-track: minmax(0,1fr); --workspace-ratio: 1; --workspace-width: 96px; }
   .oc-evolving-toggle[data-workspace-count="2"] { --workspace-width: 176px; }
