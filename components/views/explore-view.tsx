@@ -18,6 +18,7 @@ import { DirectoryLogo } from "@/components/clubs/directory-logo"
 import { discoverClubs } from "@/lib/data"
 import { searchPublicClubIds } from "@/actions/typesense-search"
 import { getClubDirectory, getPublicClub } from "@/lib/workspace-api"
+import { getClubSuggestions } from "@/actions/club-suggestions"
 import { filterDirectory, emptyDirectoryFilters, directoryFiltersFromParams, directoryFilterParams, type DirectoryClub } from "@/lib/club-directory"
 import { ClubProfileView } from "@/components/views/club-profile-view"
 import type { ViewId } from "@/lib/views"
@@ -79,6 +80,14 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
   const lastClub = useRef<string | null>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
   const { isDemoEnabled } = useDemoMode()
+  // Personal suggestions load separately from the shared, cached directory.
+  const [suggestions, setSuggestions] = useState<string[]>([])
+  useEffect(() => {
+    if (isDemoEnabled) return
+    let current = true
+    getClubSuggestions().then(ids => { if (current) setSuggestions(ids) }).catch(() => {})
+    return () => { current = false }
+  }, [isDemoEnabled])
 
   useEffect(() => {
     let active = true
@@ -158,6 +167,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
     setSelected(club)
   }
   const featured = clubs.filter(club => club.recommended).slice(0, 3)
+  const suggested = suggestions.map(id => clubs.find(club => club.id === id)).filter((club): club is DirectoryClub => !!club)
   const available = filterDirectory(clubs, emptyDirectoryFilters).filter(club => clubRecruitment(club, now).available)
   function card(club: DirectoryClub, section: string) {
     const entry = `${section}-${club.id}`
@@ -317,6 +327,13 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
         <>
           {clubs.some(club => club.source === "preview") && <p className="oc-explore-sample" role="note">Demo directory · fictional profiles for testing only. No real applications are submitted.</p>}
           {/* Only clubs the directory actually highlights; an alphabetical slice would repeat "All clubs" below. */}
+          {!active.length && filters.sort === "name" && suggested.length > 0 && (
+            <section className="oc-explore-section" aria-labelledby="suggested-title">
+              <div className="oc-explore-section-heading"><div><h2 id="suggested-title">Suggested for you</h2></div>
+              <p>Similar to clubs you’ve saved, applied to or joined.</p></div>
+              <ul className="oc-explore-grid">{suggested.map(club => card(club, "suggested"))}</ul>
+            </section>
+          )}
           {!active.length && filters.sort === "name" && featured.length > 0 && (
             <section className="oc-explore-section" aria-labelledby="curated-title">
               <div className="oc-explore-section-heading"><div><h2 id="curated-title">Featured clubs</h2></div>
