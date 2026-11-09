@@ -87,6 +87,8 @@ export async function GET(request: Request) {
     if (error instanceof UniversityVerificationError) return Response.json({ error: error.code }, { status: error.code === "UNIVERSITY_VERIFICATION_REQUIRED" ? 403 : 503, headers })
     const redirect = error && typeof error === "object" && "digest" in error && String(error.digest).startsWith("NEXT_REDIRECT")
     const invalid = error instanceof z.ZodError || error instanceof SyntaxError
+    // Name the refused read kind (an allowlisted constant) so a recurring 403 can be traced; no arguments, ids or messages.
+    if (!redirect) console.warn(JSON.stringify({ event: "workspace.read.refused", kind: new URL(request.url).searchParams.get("kind")?.slice(0, 40) ?? null, status: invalid ? 400 : 403, error: error instanceof Error ? error.name : typeof error }))
     return Response.json({ error: invalid ? "Invalid workspace read" : "Workspace access unavailable" }, { status: invalid ? 400 : redirect ? 401 : 403, headers })
   }
   })

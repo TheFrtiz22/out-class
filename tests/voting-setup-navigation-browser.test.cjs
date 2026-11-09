@@ -47,6 +47,15 @@ test('opening setup persists nothing until the leader edits; created sessions dr
  }finally{await browser.close();await f.close()}
 });
 
+test('step 3 Additional observations field can be checked and stays checked on a phone-width screen',{timeout:120000},async()=>{
+ const f=await fixture(),browser=await chromium.launch({headless:true}),page=await browser.newPage({viewport:{width:390,height:844}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ try{
+  await page.goto(f.url+'/voting/rooms/new?actor=leader');await page.getByRole('button',{name:'Continue',exact:true}).click();await page.getByRole('button',{name:'Select all voters',exact:true}).click();await page.getByRole('button',{name:'Continue',exact:true}).click();
+  const box=page.getByRole('checkbox',{name:'Additional observations',exact:true});assert.equal(await box.isDisabled(),false);await box.check();await page.waitForTimeout(1500);
+  assert.equal(await box.isChecked(),true);assert.deepEqual(errors,[]);
+ }finally{await browser.close();await f.close()}
+});
+
 test('a scheduled session reads View details on the landing, and an early member sees its start in Eastern Time',{timeout:120000},async()=>{
  const f=await fixture(),browser=await chromium.launch({headless:true}),page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
  try{
