@@ -743,7 +743,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       </>}
       {votingBarShown && <div ref={votingBar} role="region" aria-label="Voting selection" className="oc-voting-bar fixed inset-x-4 bottom-[var(--oc-toast-offset,1.5rem)] z-40 mx-auto flex w-fit max-w-[calc(100vw-2rem)] flex-wrap items-center justify-center gap-2 rounded-lg border bg-card p-2 pl-4 shadow-lg">
         <span className="text-sm" role="status">{votingSelection.length} selected</span>
-        <Button size="sm" disabled={busy} onClick={startSelectedVoting}>Add to voting session</Button>
+        <Button size="sm" disabled={busy} onClick={startSelectedVoting}>Start voting with selected applicants</Button>
         <Button size="sm" variant="ghost" onClick={() => setVotingSelection([])}>Clear selection</Button>
       </div>}
       </div>

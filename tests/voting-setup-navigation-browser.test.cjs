@@ -46,3 +46,15 @@ test('opening setup persists nothing until the leader edits; created sessions dr
   assert.deepEqual(live().map(d=>d.content.name).sort(),['Already scheduled','Someone else']);assert.equal(f.h.state().sessions.length,1);assert.deepEqual(errors,[]);
  }finally{await browser.close();await f.close()}
 });
+
+test('a scheduled session reads View details on the landing, and an early member sees its start in Eastern Time',{timeout:120000},async()=>{
+ const f=await fixture(),browser=await chromium.launch({headless:true}),page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ try{
+  await scheduled(f);const plannedAt=f.h.state().sessions[0].presentationOptions.meeting.plannedAt;assert.ok(plannedAt);
+  await page.goto(f.url+'/landing?actor=leader');await page.getByRole('link',{name:/^View details/}).waitFor({timeout:15000});assert.equal(await page.getByRole('link',{name:/^Open session|^Resume|^Join/}).count(),0);
+  await page.goto(f.url+'/landing?actor=member');await page.getByRole('link',{name:/^View details/}).click();
+  await page.getByRole('button',{name:'Join session',exact:true}).click();
+  const expected=new Date(plannedAt).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',timeZone:'America/New_York'});
+  await page.getByText(`Scheduled start · ${expected} Eastern Time · 30 minutes expected`,{exact:true}).waitFor({timeout:15000});assert.deepEqual(errors,[]);
+ }finally{await browser.close();await f.close()}
+});

@@ -222,8 +222,8 @@ test('sorting lives in the column headers; header-less views keep an in-filter s
  const sortRow=t=>{const select=nodes(t).find(n=>n.props?.['aria-label']==='Sort applicants');return nodes(t).find(n=>[].concat(n.props?.children).includes(select))};
  assert.match(sortRow(tree).props.className,/xl:hidden/,'wide list sorts from headers');
  view(tree).props.sortBy('sat');tree=h.render();assert.equal(view(tree).props.sort,'sat');assert.equal(view(tree).props.descending,true);view(tree).props.sortBy('sat');tree=h.render();assert.equal(view(tree).props.descending,false);
- assert.doesNotMatch(text(tree),/\d selected/);assert.equal(button(tree,'Add to voting session'),undefined);
- view(tree).props.votingSelection.toggle('candidate');tree=h.render();const bar=nodes(tree).find(n=>n.props?.['aria-label']==='Voting selection');assert.match(bar.props.className,/fixed/,'overlay bar does not shift the table');assert.match(text(bar),/selected/);assert.ok(button(tree,'Add to voting session'));assert.ok(nodes(bar).some(n=>n.type==='span'&&[].concat(n.props.children)[0]===1),'shows the selection count');
+ assert.doesNotMatch(text(tree),/\d selected/);assert.equal(button(tree,'Start voting with selected applicants'),undefined);
+ view(tree).props.votingSelection.toggle('candidate');tree=h.render();const bar=nodes(tree).find(n=>n.props?.['aria-label']==='Voting selection');assert.match(bar.props.className,/fixed/,'overlay bar does not shift the table');assert.match(text(bar),/selected/);assert.ok(button(tree,'Start voting with selected applicants'));assert.ok(nodes(bar).some(n=>n.type==='span'&&[].concat(n.props.children)[0]===1),'shows the selection count');
  button(tree,'Clear selection').props.onClick();tree=h.render();assert.equal(nodes(tree).find(n=>n.props?.['aria-label']==='Voting selection'),undefined);
  button(tree,'Kanban').props.onClick();tree=h.render();assert.doesNotMatch(sortRow(tree).props.className,/xl:hidden/,'Kanban keeps the sort control at every width');
 });
@@ -238,10 +238,10 @@ test('authorized selected-applicant shortcut retains stable IDs and navigates wi
  global.sessionStorage={setItem:(key,value)=>stored.set(key,value)};global.document={querySelector:()=>null,getElementById:()=>null};
  try{
   const h=harness(['applications.review','applicants.identify','decisions.manage','decisions.start']);h.render();await flush();let tree=h.render();
-  view(tree).props.votingSelection.toggle('candidate');tree=h.render();button(tree,'Add to voting session').props.onClick();
+  view(tree).props.votingSelection.toggle('candidate');tree=h.render();button(tree,'Start voting with selected applicants').props.onClick();
   const navigation=h.calls.find(c=>c[0]==='navigate');assert.ok(navigation);const url=new URL(navigation[1],'https://fixture.test');assert.equal(url.pathname,'/voting/rooms/new');assert.equal(url.searchParams.get('clubId'),'club');assert.ok(url.searchParams.get('selection'));assert.ok(!navigation[1].includes('candidate'));
   assert.deepEqual(JSON.parse(stored.values().next().value),{userId:'reviewer',clubId:'club',demo:false,applicationIds:['candidate']});assert.ok(h.calls.every(c=>['load','navigate'].includes(c[0])));
-  const denied=harness(['applications.review']);denied.render();await flush();const deniedTree=denied.render();assert.equal(view(deniedTree).props.votingSelection,undefined);assert.equal(button(deniedTree,'Add to voting session'),undefined);
+  const denied=harness(['applications.review']);denied.render();await flush();const deniedTree=denied.render();assert.equal(view(deniedTree).props.votingSelection,undefined);assert.equal(button(deniedTree,'Start voting with selected applicants'),undefined);
  }finally{if(previousStorage===undefined)delete global.sessionStorage;else global.sessionStorage=previousStorage;if(previousDocument===undefined)delete global.document;else global.document=previousDocument;}
 });
 
