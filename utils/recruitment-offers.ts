@@ -1,5 +1,5 @@
 import type { FrozenLetterSettings } from "@/lib/decision-schedule";
-import { publishDecisionCommunication, offerResponseNotification } from "@/utils/decision-communications";
+import { publishDecisionCommunication, offerResponseNotification, declinedOfferLeaderNotification } from "@/utils/decision-communications";
 import { revokeClubInvitations } from "@/utils/revoke-club-invitations";
 import type { AppStatus } from "@prisma/client";
 import type { AppTransactionClient } from "@/utils/prisma";
@@ -71,6 +71,7 @@ export async function respondToRecruitmentOffer(tx: AppTransactionClient, applic
     await tx.clubInvitation.update({ where: { id: offer.id }, data: { status: "DECLINED", declinedAt: new Date() } });
     await event(tx, userId, app.clubId, offer.id, "offer.declined", app.id);
     await offerResponseNotification(tx, app, offer.id, "DECLINE");
+    await declinedOfferLeaderNotification(tx, app, offer.id);
     return { clubId: app.clubId, status: "DECLINED" as const };
   }
   if (existing && existing.status !== "ACTIVE") return { clubId: app.clubId, status: "INACTIVE_MEMBERSHIP" as const };
