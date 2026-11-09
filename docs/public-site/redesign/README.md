@@ -1,6 +1,7 @@
 # Public-site redesign spec
 
-Status: approved mockups. Foundations and the homepage hero are built; the rest of the homepage and the other public pages are not.
+Status: approved mockups. Foundations, the homepage hero and the homepage journey are built; the rest of the homepage
+and the other public pages are not.
 
 ## Mockups
 
@@ -63,6 +64,10 @@ one blurred surface inside another.
 ## Homepage hero
 
 Built from `Main.mockup.html`; evidence and deviations in [`hero/README.md`](hero/README.md).
+
+## Homepage journey
+
+"Sound familiar?" and "How OutClass works" are built; evidence in [`journey/README.md`](journey/README.md).
 
 Still to do, page by page: the rest of the homepage from `Main.mockup.html`, then the other public pages,
 and remove brand orange from every place except the two allowed by rule 4.
