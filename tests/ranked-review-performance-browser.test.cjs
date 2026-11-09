@@ -34,8 +34,23 @@ test('ranked review stays fast with 1000 and 2000 applicants',async t=>{
    // Interaction: opening an applicant (selection) re-renders the list.
    const selectMs=await page.evaluate(()=>new Promise(r=>{const b=document.querySelectorAll('button.oc-ranked-open')[5],t=performance.now();b.click();requestAnimationFrame(()=>setTimeout(()=>r(performance.now()-t),0))}));
    const domNodes=await page.evaluate(()=>document.getElementsByTagName('*').length);
-   t.diagnostic(JSON.stringify({size,initialMs:Math.round(initialMs),toggleMs:Math.round(toggleMs),selectMs:Math.round(selectMs),renderedRows:rendered,domNodes}));
+   // Every applicant stays reachable: "Show more" by keyboard moves focus to the first newly shown applicant.
+   let showAllMs=null,toggleAllMs=null;
+   if(rendered<size){
+    assert.equal(rendered,200);assert.equal(await page.getByText(`Showing 200 of ${size} applicants`).count(),1);
+    const next=await page.evaluate(()=>[...document.querySelectorAll('button.oc-ranked-open')].length);assert.equal(next,200);
+    await page.getByRole('button',{name:'Show 200 more'}).focus();await page.keyboard.press('Enter');
+    await page.waitForFunction(()=>document.querySelectorAll('.oc-ranked-row').length===400);
+    await page.waitForFunction(()=>document.activeElement?.matches('button.oc-ranked-open'));
+    assert.equal(await page.evaluate(()=>[...document.querySelectorAll('button.oc-ranked-open')].indexOf(document.activeElement)),200,'focus lands on the first newly shown applicant');
+    assert.equal(await page.getByText(`Showing 400 of ${size} applicants`).count(),1);
+    showAllMs=await page.evaluate(n=>new Promise(r=>{const b=[...document.querySelectorAll('button')].find(e=>e.textContent==='Show all '+n),t=performance.now();b.click();requestAnimationFrame(()=>setTimeout(()=>r(performance.now()-t),0))}),size);
+    assert.equal(await page.locator('.oc-ranked-row').count(),size);assert.equal(await page.getByText(/Showing \d+ of/).count(),0);
+    toggleAllMs=await page.evaluate(()=>new Promise(r=>{const box=document.querySelectorAll('.oc-ranked-row input[type=checkbox]:not(:disabled)')[1],t=performance.now();box.click();requestAnimationFrame(()=>setTimeout(()=>r(performance.now()-t),0))}));
+   }
+   t.diagnostic(JSON.stringify({size,initialMs:Math.round(initialMs),toggleMs:Math.round(toggleMs),selectMs:Math.round(selectMs),renderedRows:rendered,domNodes,showAllMs:showAllMs&&Math.round(showAllMs),toggleAfterShowAllMs:toggleAllMs&&Math.round(toggleAllMs)}));
    assert.ok(initialMs<8000,`initial render ${initialMs}ms at ${size}`);assert.ok(toggleMs<1500,`toggle ${toggleMs}ms at ${size}`);assert.ok(selectMs<1500,`select ${selectMs}ms at ${size}`);
+   if(toggleAllMs!==null)assert.ok(toggleAllMs<1500,`toggle after show all ${toggleAllMs}ms at ${size}`);
    assert.deepEqual(errors,[]);await page.close();
   }
  }finally{await browser?.close();await new Promise(r=>server.close(r));fs.rmSync(tmp,{recursive:true,force:true})}
