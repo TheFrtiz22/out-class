@@ -22,7 +22,7 @@ export function PublicFooter({ homeHref = "/", overviewHref = "/#about", onPersp
     <footer className="oc-public-footer" aria-label="OutClass footer">
       <div className="oc-footer-frame">
         {/* Below the fold on every page, so the photograph loads lazily and never competes with LCP. */}
-        <Image className="oc-footer-photo" src="/images/campus/sunset-rotunda-1600.webp" alt="" fill sizes="(max-width: 1240px) 100vw, 1200px" loading="lazy" />
+        <Image className="oc-footer-photo" src="/images/campus/sunset-rotunda-1600.webp" alt="" fill sizes="(max-width: 1720px) 100vw, 1680px" loading="lazy" />
         <div className="oc-footer-panel oc-public-glass-navy">
           {invitation}
           <div className="oc-footer-columns">
