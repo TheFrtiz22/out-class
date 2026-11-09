@@ -121,3 +121,8 @@ disposable stack after fixes: workspace-shell-e2e, header-gap-e2e, overview-view
 ```
 2026-11-08 SHARE-PREVIEWS-1 (Linux sandbox, macOS node_modules): club-share-preview 4/4; related unit suites 265/267 (2 env: sharp + Prisma native binaries) | typecheck ok | eslint changed files 0 errors | ui-controls OK | full test, test:migrations, build NOT run in this environment
 ```
+```
+2026-11-09 CLUB-SHORTNAME-1: app gates: test 1918/1852/0 fail/66 skipped (env-gated) migrations 72 ok (RLS 85) lint ok types ok build ok | targeted: club-short-name 12/12 (incl. PGlite constraint as non-superuser table owner), club-abbreviation 5/5, admin-clubs 13/13 (new short-name round trip fails without fix), selector/caption/rail/application-writing browser suites pass | real browser (shell fixture, Chromium): desktop MIIx/MII/full name/after-switch; phone mini pill 390/360/320 × 1–3 segments, 0 clipping, 0 overlap, axe (label-content-name-mismatch, target-size, color-contrast) 0
+reviewers: migration-reviewer safe as written (keep single ALTER; deploy order: migration before code); authz-reviewer no bypass, 1 high fixed (admin projection lost shortName) + 1 low fixed (snapshot shim), matrix corrected (1 untested cell: real cross-club membership)
+not run: run-disposable-postgres.cjs (no Docker daemon in this container), authenticated E2E stack
+```
