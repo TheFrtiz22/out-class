@@ -44,3 +44,24 @@ export function useRevalidate(reload: () => unknown, options: { events?: string[
     }
   }, [enabled, eventKey, scopeKey, minIntervalMs])
 }
+
+/**
+ * Runs `poll` every `intervalMs` while the tab is visible. A hidden tab stops the timer and makes no
+ * requests; on return it polls once if a full interval has passed (pass `catchUp: false` when
+ * `useRevalidate` already refreshes on return) and resumes. The caller does its own first load.
+ * Returns the cleanup for a `useEffect`.
+ */
+export function pollWhileVisible(poll: () => unknown, intervalMs: number, { catchUp = true }: { catchUp?: boolean } = {}) {
+  let timer: number | undefined, last = Date.now()
+  const run = () => { last = Date.now(); void poll() }
+  const start = () => { if (timer === undefined) timer = window.setInterval(run, intervalMs) }
+  const stop = () => { if (timer !== undefined) { window.clearInterval(timer); timer = undefined } }
+  const changed = () => {
+    if (document.visibilityState === "hidden") { stop(); return }
+    if (catchUp && Date.now() - last >= intervalMs) run()
+    start()
+  }
+  if (document.visibilityState !== "hidden") start()
+  document.addEventListener("visibilitychange", changed)
+  return () => { stop(); document.removeEventListener("visibilitychange", changed) }
+}

@@ -6,6 +6,7 @@ import { ScheduleDecision } from "@/components/decision-schedules";
 import { serializedWorkspaceRead } from "@/lib/serialized-workspace-read"
 import { compareAcademicYears } from "@/lib/recruitment-profile"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { pollWhileVisible } from "@/hooks/use-revalidate"
 import { ApplicantDisplayPanel } from "@/components/applicant-intelligence"
 import { getVotingWorkspace, createVotingSession, submitVotingBallot, commandVotingSession, seedVotingDemo } from "@/lib/workspace-api"
 import type { PipelinePageQuery } from "@/lib/pipeline-page"
@@ -71,8 +72,8 @@ export function VotingBoard({ clubId, applicants: fallbackApplicants, selectionQ
       return { workspace, setup }
     },({workspace,setup})=>{if(auth.isReadAuthorityCurrent(auth.readAuthority)){setDataOwner(owner);setData(workspace);if(setup&&requestedSetup.current===setup&&workspace.candidateSelection)setReadySetup(setup);setError("")}},error=>{setData(null);setError(error instanceof Error?error.message:"Session unavailable.")})
     reader.current=reads;void reads.poll()
-    const timer=setInterval(()=>void reads.poll(),5000)
-    return()=>{reads.dispose();if(reader.current===reads)reader.current=null;clearInterval(timer)}
+    const stopPolling=pollWhileVisible(reads.poll,5000)
+    return()=>{reads.dispose();if(reader.current===reads)reader.current=null;stopPolling()}
   },[clubId,sessionId,demo.isDemoEnabled,auth.user,auth.readAuthority,auth.isImpersonating,auth.isReadAuthorityCurrent,selectionQuery,scope,owner])
   async function run(work:()=>Promise<unknown>){if(busy)return;setBusy(true);try{await work();await refresh()}catch(e){setError(e instanceof Error?e.message:"Could not save.")}finally{setBusy(false)}}
   const s=data?.session,summary=data?.summary,current=s?.passes.find(p=>p.number===s.currentPass),shown=s?.passes.find(p=>p.number===(viewPass||s.currentPass))
