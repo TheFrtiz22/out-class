@@ -1,4 +1,6 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
+// Synthetic server-only secret for the room-view signature (never a real key).
+process.env.SUPABASE_SECRET_KEY='synthetic-test-secret';delete process.env.SUPABASE_SERVICE_ROLE_KEY;
 const {harness,uuid,leaderId,voterId,apps,load}=require('./helpers/voting-room-harness.cjs');
 const ok=r=>assert.equal(r.ok,true,JSON.stringify(r));
 async function begin(h){await h.create();ok(await h.command('START'));ok(await h.command('OPEN_VOTING'));}
@@ -6,8 +8,8 @@ const session=h=>h.state().sessions[0];
 
 const tick=()=>new Promise(r=>setTimeout(r,5));
 /** The leader's room snapshot as the client holds it: revision plus the database time it was read. */
-async function view(h){h.as(leaderId);const v=await h.read();await tick();return {revision:v.revision,viewedAt:v.viewedAt};}
-const close=(h,v,requestId,extra={})=>h.api.commandLiveVotingRoom({...h.scope,requestId,revision:v.revision,viewedAt:v.viewedAt,action:'CLOSE_VOTING',confirmed:true,applicationId:apps[0],passNumber:1,...extra});
+async function view(h){h.as(leaderId);const v=await h.read();await tick();return {revision:v.revision,viewedAt:v.viewedAt,viewToken:v.viewToken};}
+const close=(h,v,requestId,extra={})=>h.api.commandLiveVotingRoom({...h.scope,requestId,revision:v.revision,viewedAt:v.viewedAt,viewToken:v.viewToken??undefined,action:'CLOSE_VOTING',confirmed:true,applicationId:apps[0],passNumber:1,...extra});
 
 test('a close confirmed from a view older only by new ballots succeeds; any other change still refuses',async()=>{
  const h=harness();await begin(h);const v=await view(h);
@@ -52,6 +54,31 @@ test('slide-preparation receipts never hide room commands behind a stale close (
  ok(await close(h,x,uuid(794)));
 });
 
+test('a client-supplied viewedAt cannot bypass the revision check: it must carry the server signature for that view (re-review)',async()=>{
+ const h=harness();await h.create();ok(await h.command('START'));
+ const decided=uuid(760);ok(await h.command('PASS_WITHOUT_VOTE_AND_ADVANCE',{requestId:decided,applicationId:apps[0],passNumber:1,confirmed:true,reason:'Clear yes'}));
+ const v=await view(h);assert.match(v.viewToken,/^[a-f0-9]{64}$/);
+ // A co-leader undoes and reopens the ballot after this view.
+ ok(await h.command('UNDO_DECISION',{applicationId:apps[0],passNumber:1,undoRequestId:decided}));ok(await h.command('OPEN_VOTING'));
+ const future=new Date(Date.now()+3600_000).toISOString();
+ assert.equal((await close(h,{...v,viewedAt:future},uuid(761))).code,'STALE_STATE','viewedAt an hour ahead with the real token is refused');
+ assert.equal((await close(h,{...v,viewedAt:future,viewToken:undefined},uuid(762))).code,'STALE_STATE','unsigned viewedAt is refused');
+ const tampered=v.viewToken.slice(0,-1)+(v.viewToken.endsWith('0')?'1':'0');
+ assert.equal((await close(h,{...v,viewedAt:future,viewToken:tampered},uuid(763))).code,'STALE_STATE','tampered signature is refused');
+ assert.equal((await close(h,v,uuid(764))).code,'STALE_STATE','the genuine view still sees the co-leader commands');
+ assert.equal(session(h).passes[0].candidates[0].ballotState,'OPEN');
+ // A token for one revision does not authorize another.
+ const w=await view(h);h.as(voterId);ok(await h.vote('ACCEPT'));h.as(leaderId);
+ assert.equal((await close(h,{...w,revision:w.revision-1},uuid(765))).code,'STALE_STATE');
+ // Voters receive no token; with no server secret there are no tokens and the strict check applies.
+ h.as(voterId);assert.equal((await h.read()).viewToken,null);h.as(leaderId);
+ const saved=process.env.SUPABASE_SECRET_KEY;delete process.env.SUPABASE_SECRET_KEY;
+ try{const x=await view(h);assert.equal(x.viewToken,null);h.as(voterId);ok(await h.vote('REJECT'));h.as(leaderId);assert.equal((await close(h,x,uuid(766))).code,'STALE_STATE');}
+ finally{process.env.SUPABASE_SECRET_KEY=saved;}
+ // The genuine signed view with ballot-only drift still closes.
+ const y=await view(h);h.as(voterId);ok(await h.vote('HOLD'));h.as(leaderId);ok(await close(h,y,uuid(767)));
+});
+
 test('a view taken mid-ballot can still close once more ballots arrive',async()=>{
  const h=harness();await begin(h);h.as(voterId);ok(await h.vote('ACCEPT'));const v=await view(h);
  h.as(voterId);ok(await h.vote('REJECT'));h.as(leaderId);ok(await h.vote('HOLD'));
@@ -62,13 +89,13 @@ test('one Open voting click opens the ballot even when a voter joined after Star
  const h=harness();await h.create();ok(await h.command('START'));const v=await view(h);
  const setup=load('actions/voting-room-setup.ts',h.mocks);h.as(voterId);await setup.joinLiveVotingRoom(h.scope);h.as(leaderId);
  assert.equal(session(h).revision,v.revision+1,'joining still bumps the room revision so every view refreshes');
- const open=(requestId,extra)=>h.api.commandLiveVotingRoom({...h.scope,requestId,revision:v.revision,viewedAt:v.viewedAt,action:'OPEN_VOTING',...extra});
+ const open=(requestId,extra)=>h.api.commandLiveVotingRoom({...h.scope,requestId,revision:v.revision,viewedAt:v.viewedAt,viewToken:v.viewToken,action:'OPEN_VOTING',...extra});
  assert.equal((await open(uuid(730),{})).code,'STALE_STATE');
  ok(await open(uuid(731),{applicationId:apps[0],passNumber:1}));
  assert.equal(session(h).passes[0].candidates[0].ballotState,'OPEN');
  // A replay of an already-applied open is still refused rather than reopening anything.
  assert.equal((await open(uuid(732),{applicationId:apps[0],passNumber:1})).code,'STALE_STATE');
- assert.match(fs.readFileSync('components/live-voting/room-meeting.tsx','utf8'),/send\("OPEN_VOTING",\{applicationId:room\.currentApplicantId!,passNumber:room\.passNumber,viewedAt:room\.viewedAt\}\)/);
+ assert.match(fs.readFileSync('components/live-voting/room-meeting.tsx','utf8'),/send\("OPEN_VOTING",\{applicationId:room\.currentApplicantId!,passNumber:room\.passNumber,viewedAt:room\.viewedAt,viewToken:room\.viewToken\?\?undefined\}\)/);
 });
 
 test('a voter losing eligibility mid-ballot shows the leader a notice at once, pauses voting, and the recount counts missing ballots against the new electorate',async()=>{
@@ -107,14 +134,16 @@ test('deciding without a vote is reported as without a vote for Pass and Do not 
  assert.match(fs.readFileSync('components/live-voting/room-meeting.tsx','utf8'),/"Not passed":"Passed"\} without a vote/);
 });
 
-test('a hung poll is abandoned so the room keeps refreshing; its late result is discarded',async()=>{
+test('a hung poll is abandoned so the room keeps refreshing; its late result is discarded',async t=>{
+ // Fake timers: deterministic under load (the real-timer version was flaky in a busy batch).
+ t.mock.timers.enable({apis:['setTimeout','Date'],now:0});
  const {votingRoomSubscription}=load('lib/voting-room-subscription.ts');
- let calls=0,release;const seen=[];
+ let calls=0,release;const seen=[];const flush=async()=>{for(let i=0;i<5;i++)await Promise.resolve();};
  const sub=votingRoomSubscription(()=>{calls++;return calls===1?new Promise(r=>release=r):Promise.resolve({revision:calls});},(v,e)=>seen.push([v,e]),100000,30);
- await new Promise(r=>setTimeout(r,10));
+ t.mock.timers.tick(10);await flush();
  await sub.refresh();assert.equal(calls,1,'a fresh in-flight read is not duplicated');
- await new Promise(r=>setTimeout(r,60));
- await sub.refresh();await new Promise(r=>setImmediate(r));
+ t.mock.timers.tick(60);await flush();
+ await sub.refresh();await flush();
  assert.ok(calls>=2);assert.deepEqual(seen.at(-1),[{revision:calls},null]);
  const n=seen.length;release({revision:0,stale:true});await new Promise(r=>setImmediate(r));
  assert.equal(seen.length,n,'the abandoned read never overwrites a newer snapshot');sub.close();
@@ -157,7 +186,7 @@ test('the leader catches up when its tab becomes visible and per-ballot extra re
  assert.doesNotMatch(meeting,/room\.revision,reload\]|room\.cycleId,room\.revision\]/);
  // Round totals still re-read when the viewer's access changes (review finding 3).
  assert.match(meeting,/\[room\.clubId,room\.roundId,room\.cycleId,room\.accessVersion,outcomeKey\]/);
- assert.match(meeting,/send\("CLOSE_VOTING",\{confirmed:true,applicationId:room\.currentApplicantId!,passNumber:room\.passNumber,viewedAt:room\.viewedAt\}\)/);
+ assert.match(meeting,/send\("CLOSE_VOTING",\{confirmed:true,applicationId:room\.currentApplicantId!,passNumber:room\.passNumber,viewedAt:room\.viewedAt,viewToken:room\.viewToken\?\?undefined\}\)/);
 });
 
 test('a member asking for an applicant the room already left gets a typed stale result, not a 500',async()=>{

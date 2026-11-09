@@ -9,7 +9,7 @@ import { clubWriteTransaction, votingWriteLimits } from "@/utils/club-write-tran
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { hasPermission } from "@/lib/permissions";
 import { createRoomSchema, roomScope, roomCommandSchema, roomBallotSchema, uniqueSelection, roomOutcomes, storedChoice, recommendedOutcome,roomPresentationSchema,roomDisplayConfig, roomCommandResultSchema, VotingPresentationChanged } from "@/lib/voting-room";
-import { loadVotingRoom, requireRoomLeader, roomAuthority, projectVotingRoom, roomFingerprint, type LiveRoom } from "@/utils/voting-room";
+import { loadVotingRoom, requireRoomLeader, roomAuthority, projectVotingRoom, roomFingerprint, signRoomView, verifyRoomView, type LiveRoom } from "@/utils/voting-room";
 import { getApplicantDisplay } from "@/actions/applicant-intelligence";
 import { z } from "zod";
 import { votingSelectedHighlight,votingSelectedEvidence } from "@/utils/voting-room-presentation";
@@ -28,8 +28,9 @@ const ballotReceipt=z.object({accepted:z.literal(true),ballotRevision:z.number()
 const revisionReceipt=z.union([z.object({revision:z.number().int().nonnegative(),decision:z.unknown().optional(),undone:z.boolean().optional()}).strict(),
   /** Session creation ({sessionId}) and setup updates ({sessionId,revision}). */
   z.object({sessionId:z.string(),revision:z.number().int().nonnegative().default(0)}).strict()]);
-/** Longest a write transaction can run (votingWriteLimits.timeout) plus clock margin: a receipt from a
- * transaction that started earlier than this cannot have committed after the leader's view. */
+/** Receipt `createdAt` (Prisma @default(now())) is likely stamped from the app server's clock, while
+ * `viewedAt` is the database clock. The window covers app/DB clock skew plus the 30 s write timeout
+ * (votingWriteLimits.timeout), so a receipt that could have committed after the view is always checked. */
 const receiptWindowMs=60_000;
 /** Opening or closing the named current ballot from a slightly older view is still what the leader meant
  * when the only room changes since that view are ballots or voters joining (joins write no receipt).
@@ -37,8 +38,10 @@ const receiptWindowMs=60_000;
  * identified ballot receipt passes. Any other receipt (room command, slide preparation, setup, unknown)
  * written after the view started refuses; one that started before the view passes only if the room
  * revision it records is already part of the view. */
-async function onlyBallotsSince(tx:AppTransactionClient,s:LiveRoom,d:z.infer<typeof roomCommandSchema>){
+async function onlyBallotsSince(tx:AppTransactionClient,s:LiveRoom,d:z.infer<typeof roomCommandSchema>,memberId:string){
   if(!["OPEN_VOTING","CLOSE_VOTING"].includes(d.action)||s.revision<=d.revision||!d.viewedAt||!d.applicationId||d.applicationId!==s.activeApplicationId||d.passNumber!==s.currentPass)return false;
+  // viewedAt is trusted only as the server signed it for this session, revision and viewer; otherwise strict check.
+  if(!verifyRoomView({sessionId:s.id,revision:d.revision,viewedAt:d.viewedAt,memberId},d.viewToken))return false;
   const viewedAt=new Date(d.viewedAt);
   const recent=await tx.votingRoomCommand.findMany({where:{sessionId:s.id,createdAt:{gte:new Date(+viewedAt-receiptWindowMs)}},take:1000,select:{result:true,createdAt:true}});
   if(recent.length>=1000)return false;
@@ -122,7 +125,7 @@ export async function getLiveVotingRoom(input:unknown) {
     const discussion=current&&s.state==="OPEN"&&(snapshot.permissions.leader||snapshot.permissions.voter)?await votingDiscussion(tx,{clubId:d.clubId,sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId,roundId:s.roundId,anonymous:round.anonymousReview},{memberId:m.id,userId:user.id,leader:snapshot.permissions.leader},eligible.map(v=>({id:v.id,label:v.user.studentProfile?`${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}`:"Club member"}))):null;
     return {snapshot:{...snapshot,discussion,rule:{mode:rules.mode,description:describeVotingRules(rules)},ruleResult:ruled?{...ruled.result,summary:ruleResultSummary(ruled.result,ruled.rule)}:null,accessVersion:roomFingerprint({permissions:m.permissions,offices:m.interviewOffices,anonymous:round.anonymousReview}),fields:options.success?options.data.fields:null,joinedSelf:!!s.participants.find(p=>p.memberId===m.id)?.joinedAt,
       participation:{voted:current?.ballots.filter(b=>eligible.some(m=>m.id===b.memberId)).length??0,eligible:eligible.length},
-      votingPaused:removedVoters>0,viewedAt,electorateChange:snapshot.permissions.leader&&removedVoters>0?{removed:removedVoters}:null,
+      votingPaused:removedVoters>0,viewedAt,viewToken:snapshot.permissions.leader?signRoomView({sessionId:s.id,revision:s.revision,viewedAt,memberId:m.id}):null,electorateChange:snapshot.permissions.leader&&removedVoters>0?{removed:removedVoters}:null,
       joinedParticipants:snapshot.permissions.leader?eligible.map(v=>({id:v.id,label:v.user.studentProfile?`${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}`:"Club member",joined:!!s.participants.find(p=>p.memberId===v.id)?.joinedAt})):[]},access:accessFingerprint(m)};
   },votingReadLimits);
   const {membership:m}=await requireClubPermission(d.clubId,["applications.review"]);
@@ -204,7 +207,7 @@ export async function commandLiveVotingRoom(input:unknown) {
     const prior=await tx.votingRoomCommand.findUnique({where:{sessionId_requestId:key}});
     if(prior){if(prior.actorId!==user.id||prior.fingerprint!==fingerprint)throw Error("Request ID reused with different content.");return roomCommandResultSchema.parse(prior.result);}
     if(s.finalizedAt)throw new RoomConflict("FINALIZED","This session is finalized and read only.");
-    if(s.revision!==d.revision&&!await onlyBallotsSince(tx,s,d))throw retryConflict();
+    if(s.revision!==d.revision&&!await onlyBallotsSince(tx,s,d,m.id))throw retryConflict();
     const pass=s.passes.find(p=>p.number===s.currentPass),current=pass?.candidates.find(c=>c.applicationId===s.activeApplicationId);
     if(["OPEN_VOTING","CONFIRM","ACCEPT_WITHOUT_VOTE","DECIDE_AND_ADVANCE","PASS_WITHOUT_VOTE_AND_ADVANCE","DECIDE_WITHOUT_VOTE_AND_ADVANCE"].includes(d.action)&&(!current||!await tx.application.findFirst({where:{id:current.applicationId,clubId:s.clubId,roundId:s.roundId,recruitmentCycleId:s.cycleId,status:s.candidates.find(c=>c.applicationId===current.applicationId)!.expectedStatus}})))throw new RoomConflict("APPLICANT_CHANGED","The applicant's recruitment context changed. Close or end the session and review the application.");
     const advancing=["DECIDE_AND_ADVANCE","PASS_WITHOUT_VOTE_AND_ADVANCE","DECIDE_WITHOUT_VOTE_AND_ADVANCE"].includes(d.action);
