@@ -19,12 +19,12 @@ const expected = [
   "recruitment-native", "recruitment-offers-native", "resume-import-runtime",
   "scheduler-polling-native", "scheduler-release-native",
   "session-revocation-e2e", "settings-navigation-e2e", "signup-privacy-e2e",
-  "student-claim-e2e",
+  "student-claim-e2e", "clock-skew-hydration-e2e",
 ];
 const runners = {
   "scripts/run-onboarding-e2e.cjs": [
     "account-data-e2e", "onboarding-e2e", "resume-import-runtime",
-    "session-revocation-e2e", "settings-navigation-e2e",
+    "session-revocation-e2e", "settings-navigation-e2e", "clock-skew-hydration-e2e",
     "signup-privacy-e2e", "student-claim-e2e",
   ],
   "scripts/run-disposable-postgres.cjs": [
@@ -49,8 +49,8 @@ const runners = {
   ],
 };
 const expectedSet = new Set(expected);
-assert.equal(expected.length, 34, "The inventory must track all 34 environment-gated top-level suites");
-assert.equal(expectedSet.size, expected.length, "Duplicate suite in the 34-test inventory");
+assert.equal(expected.length, 35, "The inventory must track all 35 environment-gated top-level suites");
+assert.equal(expectedSet.size, expected.length, "Duplicate suite in the 35-test inventory");
 const covered = new Set();
 for (const [runner, suites] of Object.entries(runners)) {
   const source = fs.readFileSync(runner, "utf8");

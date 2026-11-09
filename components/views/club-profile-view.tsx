@@ -1,4 +1,5 @@
 "use client"
+import { useServerAnchoredNow } from "@/hooks/use-server-now"
 import Link from "next/link"
 import { eventScheduleLabel, eventDateLabel, eventTimeLabel } from "@/lib/campus-events"
 import { UnclaimedProfileNotice } from "@/components/clubs/unclaimed-profile-notice"
@@ -31,12 +32,15 @@ export function ClubProfileView({
   onNavigate,
   preview = false,
   backLabel = "Back to Explore",
+  serverNow,
 }: {
   club: DirectoryClub
   onBack: () => void
   onNavigate: (view: ViewId) => void
   preview?: boolean
   backLabel?: string
+  /** The server's render time, when this view is server-rendered: deadline state follows the server. */
+  serverNow?: number
 }) {
   const demo = useDemoMode()
   const sampleDeadline = demo.isDemoEnabled ? demo.state?.clubs.find(c => c.id === club.id)?.deadline : null
@@ -51,8 +55,7 @@ export function ClubProfileView({
     if (ready && !preview) heading.current?.focus({ preventScroll: true })
   }, [ready, preview])
   const real = club.source === "database"
-  const [now, setNow] = useState(Date.now())
-  useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 60000); return () => clearInterval(timer) }, [])
+  const now = useServerAnchoredNow(serverNow)
   const recruitment = clubRecruitment({ ...club, applicationDeadline: club.applicationDeadline || sampleDeadline }, now)
   const customized = !real && (configured || club.id === "vvf")
   const profile = state.profile

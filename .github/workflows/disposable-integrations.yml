@@ -73,7 +73,17 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - name: Run Next.js / Supabase Auth / SMTP / settings and selected-navigation integration
+        env:
+          OUTCLASS_HYDRATION_CAPTURE_DIR: ${{ runner.temp }}/hydration-captures
         run: node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair
+      # Server HTML and the hydrated DOM from any React hydration error (#418/#423/#425), disposable fixture data only.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hydration-captures
+          path: ${{ runner.temp }}/hydration-captures
+          if-no-files-found: ignore
+          retention-days: 7
 
   applicant-workflow-regressions:
     name: Applicant workflow / ${{ matrix.suite }}
