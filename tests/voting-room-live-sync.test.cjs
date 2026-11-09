@@ -44,6 +44,31 @@ test('one Open voting click opens the ballot even when a voter joined after Star
  assert.match(fs.readFileSync('components/live-voting/room-meeting.tsx','utf8'),/send\("OPEN_VOTING",\{applicationId:room\.currentApplicantId!,passNumber:room\.passNumber\}\)/);
 });
 
+test('a voter losing eligibility mid-ballot shows the leader a notice at once, pauses voting, and the recount counts missing ballots against the new electorate',async()=>{
+ const third=uuid(7),rules={mode:'THRESHOLD',threshold:{numerator:2,denominator:3},denominator:'BALLOTS_CAST',minimumParticipation:{numerator:2,denominator:3},belowThreshold:'HOLD',reviewed:true};
+ const h=harness();await h.create({participantIds:[leaderId,voterId,third],presentationOptions:{fields:['name'],highlights:{},rules}});ok(await h.command('START'));ok(await h.command('OPEN_VOTING'));
+ h.as(voterId);ok(await h.vote('ACCEPT'));h.as(leaderId);
+ let view=await h.read();assert.equal(view.votingPaused,false);assert.equal(view.electorateChange,null);
+ h.members[2].permissions=h.members[2].permissions.filter(p=>p!=='decisions.vote');
+ view=await h.read();assert.equal(view.votingPaused,true);assert.deepEqual(view.electorateChange,{removed:1});assert.deepEqual(view.participation,{voted:1,eligible:2});
+ // Voters see only that voting is paused: no count, no identity.
+ h.as(voterId);const member=await h.read();assert.equal(member.votingPaused,true);assert.equal(member.electorateChange,null);
+ assert.equal((await h.vote('REJECT')).code,'VOTING_PAUSED');h.as(leaderId);assert.equal((await h.vote('HOLD')).code,'VOTING_PAUSED');
+ const paused=await h.command('CLOSE_VOTING');assert.equal(paused.code,'ELECTORATE_CHANGED');assert.match(paused.message,/^1 voter can no longer vote, so voting is paused\./);
+ ok(await h.command('CLOSE_VOTING',{resolveElectorate:true,reason:'Member left the board'}));
+ const audit=h.state().audit.findLast(a=>a.action==='voting.room.close_voting');assert.equal(audit.details.missingBallots,1,'electorate 2 with 1 ballot is 1 missing');
+ // Restoring access instead resumes voting without a recount.
+ const r=harness();await r.create({participantIds:[leaderId,voterId,third],presentationOptions:{fields:['name'],highlights:{},rules}});ok(await r.command('START'));ok(await r.command('OPEN_VOTING'));
+ const kept=r.members[2].permissions;r.members[2].permissions=kept.filter(p=>p!=='decisions.vote');assert.equal((await r.read()).votingPaused,true);
+ r.members[2].permissions=kept;assert.equal((await r.read()).votingPaused,false);r.as(voterId);ok(await r.vote('ACCEPT'));
+});
+
+test('early-close wording is singular for one missing ballot',async()=>{
+ const h=harness();await begin(h);h.as(voterId);ok(await h.vote('ACCEPT'));h.as(leaderId);
+ const r=await h.command('CLOSE_VOTING',{confirmed:false});assert.equal(r.code,'EARLY_CLOSE_CONFIRMATION');assert.match(r.message,/^1 ballot is missing\./);
+ const meeting=fs.readFileSync('components/live-voting/room-meeting.tsx','utf8');assert.match(meeting,/missing===1\?"ballot is":"ballots are"/);assert.doesNotMatch(meeting,/\$\{missing\} ballots are missing/);
+});
+
 test('a hung poll is abandoned so the room keeps refreshing; its late result is discarded',async()=>{
  const {votingRoomSubscription}=load('lib/voting-room-subscription.ts');
  let calls=0,release;const seen=[];
