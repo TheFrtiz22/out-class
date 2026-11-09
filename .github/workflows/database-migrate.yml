@@ -62,8 +62,21 @@ jobs:
       - name: Prisma is the only migration history
         run: node scripts/check-migration-path.cjs
       - name: Pending migrations
-        # Exits non-zero while migrations are pending; the list is the point of this step.
-        run: pnpm exec prisma migrate status || echo "::notice::Pending migrations are listed above."
+        # `migrate status` exits 1 both for pending migrations (expected here) and for real failures:
+        # no connection, bad credentials, failed or divergent history. Only the first may pass.
+        run: |
+          set +e
+          pnpm exec prisma migrate status > "$RUNNER_TEMP/migrate-status.txt" 2>&1
+          code=$?
+          cat "$RUNNER_TEMP/migrate-status.txt"
+          if [ "$code" -eq 0 ]; then exit 0; fi
+          if grep -Eq 'Following migrations? ha(s|ve) not yet been applied' "$RUNNER_TEMP/migrate-status.txt" \
+            && ! grep -Eqi 'error|failed|P1[0-9]{3}|P3[0-9]{3}|are different|drift' "$RUNNER_TEMP/migrate-status.txt"; then
+            echo "::notice::Pending migrations are listed above."
+            exit 0
+          fi
+          echo "::error::prisma migrate status failed (connection, credentials, or a failed or divergent history). Nothing was applied."
+          exit 1
       - name: Apply migrations
         if: ${{ !inputs.dry_run }}
         run: pnpm exec prisma migrate deploy

@@ -36,3 +36,30 @@ test('the connection string stays a secret and inputs never reach a shell line',
   }
   assert.match(workflow, /persist-credentials: false/)
 })
+
+test('a dry run passes only when status lists pending migrations, never on a connection or history error', () => {
+  const step = steps.slice(steps.indexOf('name: Pending migrations'), steps.indexOf('name: Apply migrations'))
+  assert.doesNotMatch(step, /\|\|\s*(echo|true)/, 'status failures are not swallowed')
+  assert.match(step, /Following migrations\? ha\(s\|ve\) not yet been applied/)
+  assert.match(step, /error\|failed\|P1\[0-9\]\{3\}\|P3\[0-9\]\{3\}\|are different\|drift/)
+  assert.match(step, /\n {10}exit 1$/m)
+})
+
+test('the status classifier accepts pending migrations and rejects real failures', () => {
+  const { execFileSync } = require('node:child_process'), os = require('node:os'), path = require('node:path')
+  const step = steps.slice(steps.indexOf('name: Pending migrations'), steps.indexOf('name: Apply migrations'))
+  const script = step.slice(step.indexOf('run: |') + 6).split('\n').map(line => line.slice(10)).join('\n')
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'migrate-status-'))
+  const run = (output, code) => {
+    fs.writeFileSync(path.join(dir, 'pnpm'), `#!/bin/sh\ncat <<'OUT'\n${output}\nOUT\nexit ${code}\n`, { mode: 0o755 })
+    try { execFileSync('bash', ['-c', script], { env: { PATH: `${dir}:${process.env.PATH}`, RUNNER_TEMP: dir }, stdio: 'pipe' }); return 0 } catch (error) { return error.status }
+  }
+  assert.equal(run('Database schema is up to date!', 0), 0)
+  assert.equal(run('Following migration have not yet been applied:\n20261109120000_club_short_name', 1), 0)
+  assert.equal(run('Following migrations have not yet been applied:\na\nb', 1), 0)
+  assert.equal(run("Error: P1001: Can't reach database server at `db.example:5432`", 1), 1)
+  assert.equal(run('Error: P1000: Authentication failed against database server', 1), 1)
+  assert.equal(run('Following migration have failed:\n20261109120000_club_short_name', 1), 1)
+  assert.equal(run('Your local migration history and the migrations table from your database are different', 1), 1)
+  fs.rmSync(dir, { recursive: true, force: true })
+})
