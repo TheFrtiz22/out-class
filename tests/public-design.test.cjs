@@ -33,7 +33,7 @@ test('homepage: audience toggle in the hero, per-audience final call to action, 
   const student = hero.slice(hero.indexOf('student: {'), hero.indexOf('leader: {'))
   assert.equal((student.match(/one profile/gi) || []).length, 1)
   assert.match(read('components/views/landing-page-view.tsx'), /perspective === "student" \? "Create your profile" : "Set up your club"/)
-  assert.match(read('components/landing/feature-orbit.tsx'), /className="oc-story-sample">Sample</)
+  assert.match(read('components/landing/journey-tabs.tsx'), /className="oc-journey-sample">Sample data</)
 })
 
 test('about has one primary action; UVA has Create your profile + Read the FAQs (Explore is private) and a separate Not at UVA section', () => {

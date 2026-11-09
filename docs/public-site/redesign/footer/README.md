@@ -46,8 +46,7 @@ were checked as 404s.
 - The `taps:1` results and the 500s on login, signup and short-link pages are the same before and after;
   those pages need Supabase, which this container lacks.
 
-## Follow-up after #172 merges
+## Old final-invitation CSS
 
-The old `.oc-final-invitation` rules in `components/views/landing.css` and `journey-atmosphere.css` (or
-`product-story-editorial.css` until #172 lands) no longer match any markup. This branch leaves them alone
-to avoid merge conflicts with #172; delete them once both are in.
+The `.oc-final-invitation` rules in `components/views/landing.css` and `journey-atmosphere.css` matched no markup
+once the call to action moved into the footer; they were removed when this branch was updated after #172.
