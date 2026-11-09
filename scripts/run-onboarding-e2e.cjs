@@ -42,9 +42,29 @@ function logged(binary,args,log,env=process.env){
  const fd=fs.openSync(path.join(root,log),'w');const result=spawnSync(executable,argv,{cwd:repo,env,stdio:['ignore',fd,fd]});fs.closeSync(fd);
  if(binary==='supabase'){
   const filename=path.join(root,log),output=fs.readFileSync(filename,'utf8');
-  fs.writeFileSync(filename,output.split('\n').map(line=>/DB_URL|SERVICE_ROLE_KEY|SECRET_KEY|JWT_SECRET|ANON_KEY|PUBLISHABLE_KEY|S3_PROTOCOL_ACCESS|sb_(secret|publishable)_|postgresql:\/\//.test(line)?'[Local service connection/key line redacted]':line).join('\n'));
+  fs.writeFileSync(filename,output.split('\n').map(line=>/DB_URL|SERVICE_ROLE_KEY|SECRET_KEY|JWT_SECRET|ANON_KEY|PUBLISHABLE_KEY|S3_PROTOCOL_ACCESS|sb_(secret|publishable)_|postgres(?:ql)?:\/\/|eyJ[\w-]{10,}\./.test(line)?'[Local service connection/key line redacted]':line).join('\n'));
  }
  if(result.status!==0)throw Error(`${binary} failed; inspect ${path.join(root,log)}`);
+}
+// CI's Supabase containers occasionally fail to start (image pulls, port races). Retry once after a clean
+// stop; keep each failed attempt's (already redacted) log, and copy it to OUTCLASS_E2E_LOG_DIR for upload.
+function keepStartLog(name){
+ const from=path.join(root,'supabase-start.log'),dir=process.env.OUTCLASS_E2E_LOG_DIR;
+ try{fs.copyFileSync(from,path.join(root,name));if(dir){fs.mkdirSync(dir,{recursive:true});fs.copyFileSync(from,path.join(dir,`${projectId}-${name}`));}}
+ catch(error){console.warn(`Could not keep ${name}: ${error.message}`);}
+}
+function startSupabase(){
+ const args=['start','--workdir',root,'-x','studio,edge-runtime,logflare,vector,imgproxy'];
+ let first;
+ try{logged('supabase',args,'supabase-start.log');return 1;}
+ catch(error){first=error;keepStartLog('supabase-start-attempt-1.log');}
+ // A half-initialised volume would fail the same way: discard it (the project is disposable).
+ logged('supabase',['stop','--workdir',root,'--no-backup'],'supabase-stop-retry.log');
+ try{logged('supabase',args,'supabase-start.log');}
+ catch(error){keepStartLog('supabase-start-attempt-2.log');throw error;}
+ // Visible on a green run too, so a recurring infrastructure problem is not hidden by the retry.
+ console.log(`::warning title=supabase start retried::First attempt failed (${first.message}); the retry started. See the supabase-start-logs artifact.`);
+ return 2;
 }
 async function ready(url,headers={}){
  for(let n=0;n<100;n++){try{const response=await fetch(url,{headers,signal:AbortSignal.timeout(1000)});if(response.ok)return;}catch{}await new Promise(resolve=>setTimeout(resolve,200));}
@@ -72,7 +92,7 @@ async function ready(url,headers={}){
  // Stop only this explicitly disposable project; the normal out-class stack is untouched.
  stackTouched=true;
  logged('supabase',['stop','--workdir',root],'supabase-stop.log');
- logged('supabase',['start','--workdir',root,'-x','studio,edge-runtime,logflare,vector,imgproxy'],'supabase-start.log');
+ startSupabase();
  const status=JSON.parse(command('supabase',['status','--workdir',root,'-o','json']));
  const settings={projectId,portPrefix,appUrl:`http://127.0.0.1:${appPort}`,status,buildDir:path.join(repo,writing?'.next':'.next-publish'),suite:dashboards?'dashboards':writing?'application-writing':undefined};
  const configFile=path.join(root,'config.json');fs.writeFileSync(configFile,JSON.stringify(settings),{mode:0o600});readConfig(configFile);
