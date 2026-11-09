@@ -124,6 +124,8 @@ test('the leader catches up when its tab becomes visible and per-ballot extra re
  const hook=fs.readFileSync('hooks/use-live-voting-room.ts','utf8'),meeting=fs.readFileSync('components/live-voting/room-meeting.tsx','utf8');
  assert.match(hook,/visibilitychange/);
  assert.doesNotMatch(meeting,/room\.revision,reload\]|room\.cycleId,room\.revision\]/);
+ // Round totals still re-read when the viewer's access changes (review finding 3).
+ assert.match(meeting,/\[room\.clubId,room\.roundId,room\.cycleId,room\.accessVersion,outcomeKey\]/);
  assert.match(meeting,/send\("CLOSE_VOTING",\{confirmed:true,applicationId:room\.currentApplicantId!,passNumber:room\.passNumber,viewedAt:room\.viewedAt\}\)/);
 });
 

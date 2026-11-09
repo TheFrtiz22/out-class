@@ -26,7 +26,7 @@ export function OutcomeCounts({room}:{room:Room}){
  // Re-read the round only when confirmed outcomes change, not on every ballot: each extra
  // server action queues ahead of the next room poll and made the leader's counts lag.
  const outcomeKey=outcomeSignature(room);
- useEffect(()=>{const mine=++ticket.current;getRoundTargetSummary({clubId:room.clubId,roundId:room.roundId,cycleId:room.cycleId}).then(r=>{if(mine===ticket.current){setRound(r);setRoundStatus("")}}).catch(()=>{if(mine===ticket.current){setRound(null);setRoundStatus("Round totals unavailable.")}});},[room.clubId,room.roundId,room.cycleId,outcomeKey]);
+ useEffect(()=>{const mine=++ticket.current;getRoundTargetSummary({clubId:room.clubId,roundId:room.roundId,cycleId:room.cycleId}).then(r=>{if(mine===ticket.current){setRound(r);setRoundStatus("")}}).catch(()=>{if(mine===ticket.current){setRound(null);setRoundStatus("Round totals unavailable.")}});},[room.clubId,room.roundId,room.cycleId,room.accessVersion,outcomeKey]);
  return <VotingTargetSummary label="Decision totals" target={room.targetSummary} session={room.targetSummary} round={round} roundStatus={roundStatus}/>;
 }
 export function LeaderControls({room,refresh,member,transitioning=false}:{room:Room;refresh:()=>Promise<void>|undefined;member?:string;transitioning?:boolean}){
