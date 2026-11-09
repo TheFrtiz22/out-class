@@ -69,6 +69,13 @@ export function useEditorDraft<T>({ scope, value, restore, enabled = true, base 
   return { ...autosave, ready, error: loadError || autosave.error, state: loadError ? "error" as const : autosave.state,
     flush: async () => { if (!ready || recovery !== null) throw Error("Resolve draft recovery before continuing."); await autosave.flush() },
     retry: () => { if (loadError) setRetry(n => n + 1); else void autosave.flush().catch(() => {}) }, clear,
+    /** After the caller explicitly replaced its form with authoritative saved state, adopt the stored revision so this tab's copy supersedes the other tab's. */
+    rebase: async () => {
+      if (demo.isDemoEnabled && !hasDemoPersistence) return
+      const current = await (demo.isDemoEnabled ? latest.current.demoPersistence!.read(scope) : getEditorDraft(scope))
+      session.revision = current?.revision ?? 0; session.mutation = null
+      await autosave.flush().catch(() => {})
+    },
     recovery: recovery ?? autosave.recovery, restoreRecovery: () => { if (recovery !== null) restore(recovery); else autosave.restoreRecovery?.(); setRecovery(null) },
     discardRecovery: async () => { if (recovery !== null) await clear(); else await autosave.discardRecovery?.(); setRecovery(null) },
   }
