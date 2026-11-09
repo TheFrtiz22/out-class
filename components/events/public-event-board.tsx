@@ -77,6 +77,8 @@ export function PublicEventBoard() {
     try {
       const preference = localStorage.getItem("outclass:events:view:v1");
       if (preference === "list" || preference === "corkboard") setView(preference);
+      // Phones open on the list of event cards, as in the OutClass app, until the student picks a view.
+      else if (window.matchMedia?.("(max-width: 1023px)").matches) setView("list");
     } catch { /* Storage may be unavailable in private browsing. */ }
   }, []);
   useEffect(() => {

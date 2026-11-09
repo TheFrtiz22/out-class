@@ -121,3 +121,6 @@ disposable stack after fixes: workspace-shell-e2e, header-gap-e2e, overview-view
 ```
 2026-11-08 SHARE-PREVIEWS-1 (Linux sandbox, macOS node_modules): club-share-preview 4/4; related unit suites 265/267 (2 env: sharp + Prisma native binaries) | typecheck ok | eslint changed files 0 errors | ui-controls OK | full test, test:migrations, build NOT run in this environment
 ```
+```
+2026-11-09 WEB-APP-2 (container): mobile-leader-parity-browser 2/2 | related unit suites 150/150 | club-home-browser, club-home, operational-dashboards, mobile-app-parity 26/26 | typecheck ok | eslint changed files 0 errors | ui-controls OK | desktop 1440 pixel-identical (reduced motion) | club-workspace-refinements-browser fails before and after (Playwright expects chromium_headless_shell-1248, container has 1243) | full test, test:migrations, build NOT run in this environment (CI is the gate)
+```

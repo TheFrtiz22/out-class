@@ -188,11 +188,10 @@ test('settings and authenticated navigation across roles, saves, history and res
       await studentPage.getByRole('heading', { name: 'Notifications', exact: true }).waitFor();
       assert.equal(await studentPage.locator('#personal-settings-section').count(), 0);
       await noOverflow(studentPage);
-      await studentPage.getByRole('button', { name: 'More sections', exact: true }).click();
-      const drawer = studentPage.getByRole('dialog', { name: 'Workspace navigation', exact: true });
-      await drawer.waitFor();
-      assert.ok(await drawer.getByRole('link', { name: 'Profile', exact: true }).isVisible());
-      await studentPage.keyboard.press('Escape'); await drawer.waitFor({ state: 'hidden' });
+      // The personal phone bar holds the app's five tabs (no More), Profile among them.
+      const bar = studentPage.getByRole('navigation', { name: 'Sections', exact: true });
+      assert.ok(await bar.getByRole('link', { name: 'Profile', exact: true }).isVisible());
+      assert.equal(await bar.getByRole('button', { name: 'More sections', exact: true }).count(), 0);
       // Settings is reached from the account menu at every width.
       await studentPage.getByRole('button', { name: /^Account menu for/ }).click();
       assert.ok(await studentPage.getByRole('menuitem', { name: 'Settings', exact: true }).isVisible());
