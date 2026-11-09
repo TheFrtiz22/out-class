@@ -27,10 +27,10 @@ async function shot(page, name) {
         await shot(page, `${width}-personal`)
         if (width > 760) {
           // One frame mid-slide: the indicator moves before the club workspace has loaded.
-          await page.locator(`a[data-workspace-option][aria-label="${club}"]`).click(); await page.waitForTimeout(140)
+          await page.locator(`a[data-workspace-option][aria-label$="${club}"]`).click(); await page.waitForTimeout(140)
           await page.screenshot({ path: path.join(out, `${width}-switching.png`), clip: { x: 0, y: 0, width, height: 140 } }); console.log('saved switching')
           await h.contentPainted(page, club); await shot(page, `${width}-club`)
-          await page.locator(`a[data-workspace-option][aria-label="${admin}"]`).click(); await h.contentPainted(page, admin); await shot(page, `${width}-admin`)
+          await page.locator(`a[data-workspace-option][aria-label$="${admin}"]`).click(); await h.contentPainted(page, admin); await shot(page, `${width}-admin`)
         } else {
           await page.goto(account.config.appUrl + `/club/${account.clubId}/workspace?section=overview`); await page.locator('main h1').first().waitFor(); await shot(page, `${width}-club`)
         }

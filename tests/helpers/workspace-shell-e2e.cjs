@@ -53,7 +53,9 @@ async function contentPainted(page, label) {
   await page.waitForFunction(label => {
     const current = document.querySelector('a[data-workspace-option][aria-current="page"]')
     const main = document.querySelector('main#workspace-content')
-    return current?.getAttribute('aria-label') === label && main && !main.querySelector('.oc-loading-state, .oc-dashboard-loading, [role="status"][aria-busy="true"]') && !!main.querySelector('h1')
+    // The club segment's name is "<short label>, <full name> club workspace"; match the full-name ending.
+    const name = current?.getAttribute('aria-label') || ''
+    return (name === label || name.endsWith(`, ${label}`)) && main && !main.querySelector('.oc-loading-state, .oc-dashboard-loading, [role="status"][aria-busy="true"]') && !!main.querySelector('h1')
   }, label, { timeout: 30000 })
 }
 
@@ -70,13 +72,13 @@ async function switchWorkspace(page, label) {
     requestAnimationFrame(sample)
   })
   const started = await page.evaluate(() => performance.now())
-  await page.locator(`a[data-workspace-option][aria-label="${label}"]`).click()
+  await page.locator(`a[data-workspace-option][aria-label$="${label}"]`).click()
   await contentPainted(page, label)
   const painted = await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => resolve(performance.now()))))
   await page.waitForTimeout(700)
   return page.evaluate(({ started, painted, label }) => {
     const indicator = document.querySelector('.oc-evolving-indicator').getBoundingClientRect()
-    const selected = document.querySelector(`a[data-workspace-option][aria-label="${label}"]`).closest('.oc-workspace-segment').getBoundingClientRect()
+    const selected = document.querySelector(`a[data-workspace-option][aria-label$="${label}"]`).closest('.oc-workspace-segment').getBoundingClientRect()
     return { ms: Math.round(painted - started), transforms: [...new Set(window.__transforms)], offset: Math.abs(indicator.left - selected.left), widthDelta: Math.abs(indicator.width - selected.width) }
   }, { started, painted, label })
 }
