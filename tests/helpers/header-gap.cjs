@@ -23,7 +23,9 @@ function measureHeaderGap() {
     if (!rect) continue
     // The line box: the glyph box centred in the element's line height.
     const lineHeight = parseFloat(style.lineHeight) || rect.height
-    const lineTop = rect.top + rect.height / 2 - lineHeight / 2
+    // Content that opens with a pill switch (phone Explore / Events) starts at the switch's edge.
+    const surface = element.closest('.oc-explore-switch')
+    const lineTop = surface ? surface.getBoundingClientRect().top : rect.top + rect.height / 2 - lineHeight / 2
     return { headerHeight: Math.round(box.height * 10) / 10, gap: Math.round((lineTop - box.bottom) * 10) / 10, glyphGap: Math.round((rect.top - box.bottom) * 10) / 10, text: node.textContent.trim().slice(0, 48), rows: headerRows(header) }
   }
   return null

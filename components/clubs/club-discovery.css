@@ -691,3 +691,17 @@
 /* Inside the workspace shell every page starts 10px under the header: the back control stays a 24px target
    without the 44px button box above the club name. Signed-out public pages keep the full-size button. */
 [data-product-shell] .oc-club-back.oc-club-back { min-height: 24px; height: auto; padding-block: 0; margin-top: 0; }
+
+/* Phones and tablets, as in the OutClass app's club page: full-width actions, each section a compact card. */
+@media (max-width: 1023px) {
+  .oc-club-profile .oc-club-back { margin-bottom: 8px; }
+  .oc-club-action-row { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .oc-club-profile .oc-club-apply, .oc-club-profile .oc-club-follow { width: 100%; min-height: 46px; }
+  .oc-club-profile .oc-club-share { justify-self: start; min-height: 44px; }
+  .oc-club-action-note { font-size: var(--oc-text-caption); }
+  .oc-club-profile .oc-club-section { margin-top: 12px; padding: 16px; border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); }
+  .oc-club-profile .oc-club-events, .oc-club-profile .oc-club-leadership { padding-top: 16px; }
+  .oc-club-profile .oc-club-section h2 { margin-bottom: 10px; font-family: var(--oc-font-sans); font-size: 1.0625rem; font-weight: var(--oc-weight-semibold); letter-spacing: 0; }
+  .oc-club-profile .oc-club-prose { font-size: var(--oc-text-small); line-height: 1.55; }
+  .oc-club-profile > div:has(> .oc-marketing-profile) { margin-bottom: 4px; }
+}

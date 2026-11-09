@@ -35,7 +35,11 @@
   .oc-mobile-navigation { display: flex; justify-content: space-around; position: fixed; z-index: 35; inset: auto 12px max(8px, env(safe-area-inset-bottom)); padding: .5rem; border-radius: 26px; background: var(--oc-glass-navy-material); -webkit-backdrop-filter: var(--oc-glass-navy-filter); backdrop-filter: var(--oc-glass-navy-filter); border: 1px solid var(--oc-glass-navy-edge); box-shadow: var(--oc-glass-navy-depth); }
   .oc-mobile-destination { display: flex; flex: 1; min-width: 0; min-height: 3.25rem; flex-direction: column; align-items: center; justify-content: center; gap: .3rem; border-radius: 18px; color: #c5d5e2; font-size: var(--oc-size-10); font-weight: 500; transition: background-color var(--oc-glass-quick) var(--oc-glass-ease), color var(--oc-glass-quick) var(--oc-glass-ease); }
   .oc-mobile-destination[aria-current="page"] { color: #fff9f1; background: rgb(210 231 250 / 12%); box-shadow: inset 0 1px 0 rgb(232 243 255 / 15%); }
-  .oc-mobile-destination[aria-current="page"] svg { color: var(--brand-orange); }
+  /* As in the OutClass app: the selected tab fills its icon in ivory under a short orange marker. */
+  .oc-mobile-destination { position: relative; }
+  .oc-mobile-destination[aria-current="page"] svg { color: var(--oc-glass-cream); }
+  .oc-mobile-destination[aria-current="page"]::before { content: ""; position: absolute; top: 3px; left: 50%; width: 1rem; height: 3px; margin-left: -.5rem; border-radius: 2px; background: var(--brand-orange); }
+  .oc-mobile-destination[aria-current="page"] span { font-weight: 600; }
   .oc-mobile-destination:focus-visible { outline: 2px solid var(--brand-orange); outline-offset: -2px; }
   body:has([data-product-shell]) { --oc-toast-offset: calc(6rem + env(safe-area-inset-bottom)); }
 }

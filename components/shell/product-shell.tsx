@@ -193,6 +193,8 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
     <header className="oc-product-header">
       <div className="oc-product-header-row">
         <Sheet open={mobile} onOpenChange={setMobile}><SheetTrigger asChild><IconButton aria-label="Open navigation" className="oc-floating-circle oc-floating-drawer"><Menu /></IconButton></SheetTrigger><SheetContent side="left" className="oc-navigation-sheet w-[min(88vw,300px)] p-0" onCloseAutoFocus={e => { if (moved.current) { e.preventDefault(); main.current?.focus(); moved.current = false; mobileOrigin.current = null } else if (mobileOrigin.current?.isConnected) { e.preventDefault(); mobileOrigin.current.focus(); mobileOrigin.current = null } }}><SheetTitle className="oc-modal-title sr-only">Workspace navigation</SheetTitle><SheetDescription className="sr-only">Every section of this workspace.</SheetDescription>{sidebar()}</SheetContent></Sheet>
+        {/* Phones, as in the app: the logo leads the header (the workspace pill is hidden there). */}
+        <button type="button" className="oc-product-brand" aria-label="OutClass home" onClick={() => navigate("student-dashboard")}><OutClassLogo className="h-7" /></button>
         <div className="oc-product-workspaces"><WorkspaceSelector access={access} current={workspace} clubId={clubId} clubSwitcher={manager && !platform && allowed && <ClubWorkspaceSwitcher clubId={clubId} access={access} />} /></div>
         <div className="oc-product-utilities">
           <FloatingSearchTrigger open={search} onOpen={trigger => { searchOrigin.current = trigger; setSearch(true) }} />
