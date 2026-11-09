@@ -2,7 +2,7 @@ import {pinDemoObservations,demoVotingObservations} from './additional-observati
 import {stageVotingNotices} from "./voting-session-notifications";
 import {meetingDetails,resolveVotingMeeting} from "@/lib/voting-session-setup";
 import type * as Plans from "@/actions/voting-session-setup";
-import {listSetupDrafts} from './voting-setup-drafts';
+import {listSetupDrafts,discardSetupDraft} from './voting-setup-drafts';
 import type * as Live from "@/actions/voting-room";
 import type * as Setup from "@/actions/voting-room-setup";
 import { demoStore,demoMember } from "./store";
@@ -156,6 +156,7 @@ async function sessionSetupUnlocked<K extends keyof typeof Plans>(method:K,input
  const raw=input as {clubId:string;sessionId:string},c=context(raw.clubId);if(!hasPermission(c.m,'decisions.manage')||!hasPermission(c.m,'decisions.start'))throw Error('Demo setup denied.');
  let result:unknown;
  if(method==='listVotingSetupDrafts')result=await listSetupDrafts(raw.clubId);
+ else if(method==='discardVotingSetupDraft')result=await discardSetupDraft(input);
  else if(method==='previewVotingSetup'){
   const d=z.object({clubId:z.string().uuid(),cycleId:z.string().uuid(),roundId:z.string().uuid(),applicationId:z.string().uuid(),options:roomPresentationSchema}).strict().parse(input),setup=await getSetup(d);
   if(!setup.applicants.some(a=>a.id===d.applicationId)||d.options.fields.some(f=>!setup.allowedFields.includes(f)))throw Error('Demo presentation denied.');
