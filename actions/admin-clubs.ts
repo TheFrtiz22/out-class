@@ -12,7 +12,7 @@ import { adminClubInput, adminClubFilters } from "@/lib/admin-clubs";
 import { profileDraft } from "@/lib/club-marketing";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
-const editable = { id: true, name: true, slug: true, schoolId: true, campusKey: true, tagline: true, description: true, category: true, color: true, logoUrl: true, bannerUrl: true, marketing: true, acceptanceRate: true, aumValue: true, isDiscoverable: true, applicationOpen: true, applicationDeadline: true, suspendedAt: true } as const;
+const editable = { id: true, name: true, shortName: true, slug: true, schoolId: true, campusKey: true, tagline: true, description: true, category: true, color: true, logoUrl: true, bannerUrl: true, marketing: true, acceptanceRate: true, aumValue: true, isDiscoverable: true, applicationOpen: true, applicationDeadline: true, suspendedAt: true } as const;
 function version(value: unknown) { return createHash('sha256').update(JSON.stringify(value)).digest('hex'); }
 export async function getAdminClubs(input: unknown = {}) {
   await requirePlatformAdmin();

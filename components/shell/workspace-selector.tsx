@@ -17,7 +17,7 @@ export function useWorkspaceOptions(access: WorkspaceAccess, clubId: string): Wo
   const inSettings = params.get("section") === "settings" || pathname.startsWith("/settings") && pathname !== "/settings/interviews"
   const settings = club && inSettings ? availableSettings(club) : []
   const section = settings.find(section => section.id === params.get("setting")) ?? settings[0]
-  return workspaceOptions({ personal: access.personal, admin: access.admin, club: club ? { clubId: club.clubId, name: club.club.name } : null, inSettings, settingsSection: section?.id })
+  return workspaceOptions({ personal: access.personal, admin: access.admin, club: club ? { clubId: club.clubId, name: club.club.name, shortName: club.club.shortName } : null, inSettings, settingsSection: section?.id })
 }
 
 /** True when leaving now could open the unsaved-changes prompt (or is blocked by a save in flight). */
@@ -44,8 +44,9 @@ export function WorkspaceSelector({ access, current, clubId, onSwitch, clubSwitc
     const timer = window.setTimeout(() => setTarget(null), 15000)
     return () => window.clearTimeout(timer)
   }, [target])
-  // A student without other workspaces still sees "Personal": the pill reads the same everywhere.
-  if (!options.length) return null
+  // The pill only appears when there is somewhere to switch to: a student with no club workspace or
+  // admin access sees no pill at any width (Personal is the only workspace they have).
+  if (options.length < 2) return null
   const shown = target ?? current
   const index = options.findIndex(option => option.id === shown)
   const columns = options.map((_, position) => position === index ? "var(--workspace-selected-track)" : "minmax(0,1fr)").join(" ")
@@ -56,8 +57,13 @@ export function WorkspaceSelector({ access, current, clubId, onSwitch, clubSwitc
   return <div className="oc-workspace-selector oc-evolving-toggle" data-workspace-count={options.length} data-current-workspace={current} data-pending-workspace={target ?? undefined} style={{ "--workspace-count": options.length, "--workspace-index": Math.max(0, index), "--workspace-columns": columns } as CSSProperties}>
     <div className="oc-evolving-bar"><nav aria-label="Workspaces" className="oc-evolving-segments" data-has-active={index >= 0}>
       <span className="oc-evolving-indicator" aria-hidden="true" />
-      {options.map(option => <div key={option.id} className="oc-workspace-segment" data-selected={shown === option.id} data-workspace-kind={option.id} data-workspace-label={option.label}>
-        <Link data-workspace-option href={option.href} className="oc-workspace-option" aria-label={workspaceOptionName(option)} title={option.id === "leader" ? option.label : undefined} aria-current={current === option.id ? "page" : undefined}
+      {options.map(option => {
+        // The club segment shows its short label when not selected (and always in the phone mini pill); the
+        // accessible name starts with it so it contains every visible label (WCAG 2.5.3), then the full name.
+        const abbreviated = option.shortLabel && option.shortLabel !== option.label ? option.shortLabel : null
+        const short = shown !== option.id ? abbreviated : null
+        return <div key={option.id} className="oc-workspace-segment" data-selected={shown === option.id} data-workspace-kind={option.id} data-workspace-label={option.label}>
+        <Link data-workspace-option href={option.href} className="oc-workspace-option" aria-label={abbreviated ? `${abbreviated}, ${workspaceOptionName(option)}` : workspaceOptionName(option)} title={option.id === "leader" ? option.label : undefined} aria-current={current === option.id ? "page" : undefined}
           onMouseEnter={() => { if (current !== option.id) router.prefetch(option.href) }}
           onFocus={() => { if (current !== option.id) router.prefetch(option.href) }}
           onKeyDown={event => {
@@ -78,8 +84,8 @@ export function WorkspaceSelector({ access, current, clubId, onSwitch, clubSwitc
             if (canLeaveWorkspace()) go(option)
             else setTarget(null)
           }))
-        }}><span className="oc-workspace-option-label">{option.label}</span></Link>
-      </div>)}
+        }}><span className="oc-workspace-option-label" data-mini={abbreviated ?? undefined}>{short ?? option.label}</span></Link>
+      </div> })}
     </nav></div>
     {current === "leader" && access.clubs.length > 1 && clubSwitcher && <div className="oc-workspace-club-switch">{clubSwitcher}</div>}
   </div>
