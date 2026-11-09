@@ -10,8 +10,8 @@ test('workspace pill segments have names that include their visible labels, with
   await page.goto(fixture.base+'/platform?role=platform',{waitUntil:'networkidle'})
   const pill=page.getByRole('navigation',{name:'Workspaces',exact:true})
   await expect(pill.getByRole('link',{name:'Admin workspace',exact:true})).toHaveAttribute('aria-current','page')
-  await expect(pill.getByRole('link')).toHaveText(['Personal','McIntire Investment Institute','Admin'])
-  assert.deepEqual(await pill.getByRole('link').evaluateAll(links=>links.map(link=>link.getAttribute('aria-label'))),['Personal workspace','McIntire Investment Institute club workspace','Admin workspace'])
+  await expect(pill.getByRole('link')).toHaveText(['Personal','MII','Admin'])
+  assert.deepEqual(await pill.getByRole('link').evaluateAll(links=>links.map(link=>link.getAttribute('aria-label'))),['Personal workspace','MII, McIntire Investment Institute club workspace','Admin workspace'])
   for(const width of [1280,320]){
    await page.setViewportSize({width,height:900})
    const result=await new AxeBuilder({page}).withRules(['aria-prohibited-attr','label-content-name-mismatch']).analyze()

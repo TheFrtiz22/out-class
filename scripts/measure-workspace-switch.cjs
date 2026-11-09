@@ -19,7 +19,7 @@ const label = process.argv[2] || 'run', configFile = process.argv[3] || '/tmp/ou
     for (let round = 0; round < 3; round++) for (const [to, from] of [[club, 'personal'], [admin, 'club'], [personal, 'admin']]) {
       await h.watchShell(page)
       const started = await page.evaluate(() => performance.now())
-      await page.locator(`a[data-workspace-option][aria-label="${to}"]`).click()
+      await page.locator(`a[data-workspace-option][aria-label$="${to}"]`).click()
       await h.contentPainted(page, to)
       const painted = await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => resolve(performance.now()))))
       const state = await page.evaluate(() => ({ sameHeader: window.__shellHeader === document.querySelector('.oc-product-header'), loader: window.__loaderSeen }))

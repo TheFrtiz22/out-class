@@ -19,7 +19,29 @@ export * from "@/lib/student-routes"
 /** `label` is a visible heading; `name` labels an unheaded group for assistive technology. */
 export type RailSection = { id: string; label?: string; name?: string; tour?: string; items: ProductNavItem[] }
 export type WorkspaceKind = "personal" | "leader" | "admin"
-export type WorkspaceOption = { id: WorkspaceKind; clubId?: string; label: string; href: string }
+export type WorkspaceOption = { id: WorkspaceKind; clubId?: string; label: string; shortLabel?: string; href: string }
+
+/** Connector words that never contribute a letter to a club abbreviation. */
+const ABBREVIATION_SKIP = new Set(["a", "an", "and", "at", "for", "in", "of", "on", "the", "to", "&", "-"])
+
+/**
+ * A club's automatic short label for the workspace pill when no nickname is set: the initials of its
+ * significant words, up to four ("McIntire Investment Institute" → "MII", "Society of Women Engineers"
+ * → "SWE"). A one-word name of eight characters or fewer stays as written; a longer one is cut to six.
+ * Unlike the share card's monogram (lib/club-share-text initials), connector words are skipped.
+ */
+export function clubAbbreviation(name: string) {
+  const words = name.replace(/[()[\]{}"'’.,:;!?]/g, " ").split(/\s+/).filter(Boolean)
+  const significant = words.filter(word => !ABBREVIATION_SKIP.has(word.toLowerCase()))
+  const source = significant.length ? significant : words
+  if (source.length === 1) return source[0].length <= 8 ? source[0] : source[0].slice(0, 6)
+  return source.map(word => word.match(/[A-Za-z0-9]/)?.[0] ?? "").join("").slice(0, 4).toUpperCase() || name.trim().slice(0, 6)
+}
+
+/** The pill's short label: the club's own short name when set, otherwise the automatic abbreviation. */
+export function clubShortLabel(club: { name: string; shortName?: string | null }) {
+  return club.shortName?.trim() || clubAbbreviation(club.name)
+}
 
 const personal = (id: string, label: string, path: string): ProductNavItem => ({ id, label, href: path })
 
@@ -84,13 +106,13 @@ export function railItems(sections: RailSection[]): ProductNavItem[] {
  */
 export function workspaceOptions(input: {
   personal: boolean; admin: boolean
-  club?: { clubId: string; name: string } | null
+  club?: { clubId: string; name: string; shortName?: string | null } | null
   settingsSection?: string | null; inSettings?: boolean
 }): WorkspaceOption[] {
   const { club } = input
   return [
     ...(input.personal ? [{ id: "personal" as const, label: "Personal", href: input.inSettings ? "/settings" : STUDENT_HOME }] : []),
-    ...(club ? [{ id: "leader" as const, clubId: club.clubId, label: club.name, href: input.settingsSection ? `/club/${encodeURIComponent(club.clubId)}/workspace?section=settings&setting=${input.settingsSection}` : `/club/${encodeURIComponent(club.clubId)}/workspace` }] : []),
+    ...(club ? [{ id: "leader" as const, clubId: club.clubId, label: club.name, shortLabel: clubShortLabel(club), href: input.settingsSection ? `/club/${encodeURIComponent(club.clubId)}/workspace?section=settings&setting=${input.settingsSection}` : `/club/${encodeURIComponent(club.clubId)}/workspace` }] : []),
     ...(input.admin ? [{ id: "admin" as const, label: "Admin", href: "/platform" }] : []),
   ]
 }
