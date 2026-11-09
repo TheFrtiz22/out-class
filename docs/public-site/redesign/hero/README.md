@@ -32,5 +32,6 @@ the frame is below the fold and its images compete with the headline.
 - No italics. The mockup's comment calls for Caslon italic club types; they are small upright uppercase
   Source Sans, as asked.
 - The phone headline is about 30px, not the mockup's 40px (see CLS above).
-- The nav keeps the existing links and labels. Only its hero-state material (navy glass) and wordmark
-  (`public/brand/05-wordmark-two-color-dark.svg`) change.
+- The nav keeps the existing links and labels. Over the hero only its material (navy glass) and logo change.
+  The logo is the full sword lockup for navy (`public/brand/premium-board/10_hero_transparent.svg`, via
+  `OutClassLogo variant="dark"`), not the mockup's thin wordmark (owner decision).

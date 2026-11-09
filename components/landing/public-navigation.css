@@ -52,6 +52,9 @@
 .oc-public-logo-ivory { opacity: 0; }
 .oc-public-nav[data-hero="true"] .oc-public-logo-light { opacity: 0; }
 .oc-public-nav[data-hero="true"] .oc-public-logo-ivory { opacity: 1; }
+/* The navy-background sword lockup is wider than the light lockup at the same height, so the slot grows over the photo. */
+.oc-public-nav[data-hero="true"] .oc-public-logo { flex-basis: 172px; }
+@media (max-width: 540px) { .oc-public-nav[data-hero="true"] .oc-public-logo { flex-basis: clamp(120px, 34vw, 150px); } }
 .oc-public-desktop, .oc-public-account { display: flex; align-items: center; gap: 4px; }
 .oc-public-desktop { margin-left: auto; }
 .oc-public-account { gap: 8px; }
