@@ -83,3 +83,4 @@ jobs:
       - name: Confirm the history is current
         if: ${{ !inputs.dry_run }}
         run: pnpm exec prisma migrate status
+
