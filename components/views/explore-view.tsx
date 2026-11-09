@@ -273,7 +273,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
             // Choosing the selected category again returns to all interests, as before.
             onChange={(value) => change("category", value !== "all" && value.toLowerCase() === filters.category.toLowerCase() ? "all" : value)}
             options={[
-              { value: "all", label: <><Users size={16} weight={filters.category === "all" ? "fill" : "regular"} aria-hidden="true" />All <span>{clubs.length}</span></>, ariaLabel: `All interests, ${clubs.length} clubs` },
+              { value: "all", label: <><Users size={16} weight={filters.category === "all" ? "fill" : "regular"} aria-hidden="true" />All <span>{clubs.length}</span></> },
               ...primaryCategories.map((category) => {
                 const CategoryIcon = categoryIcon(category)
                 return {
