@@ -118,6 +118,29 @@ test('a hung poll is abandoned so the room keeps refreshing; its late result is 
  assert.ok(calls>=2);assert.deepEqual(seen.at(-1),[{revision:calls},null]);
  const n=seen.length;release({revision:0,stale:true});await new Promise(r=>setImmediate(r));
  assert.equal(seen.length,n,'the abandoned read never overwrites a newer snapshot');sub.close();
+ assert.ok(seen.some(([v,e])=>v===null&&/unavailable/.test(e)),'the abandoned read is reported as unavailable, not silently stale');
+});
+
+test('reads that never settle report unavailable each time and back off 5→10→20→30 s, resetting on success (fake timers)',async t=>{
+ t.mock.timers.enable({apis:['setTimeout','Date'],now:0});
+ const {votingRoomSubscription}=load('lib/voting-room-subscription.ts');
+ const flush=async()=>{for(let i=0;i<5;i++)await Promise.resolve();};
+ let calls=0,settle=false;const seen=[];
+ const sub=votingRoomSubscription(()=>{calls++;return settle?Promise.resolve({revision:calls}):new Promise(()=>{});},(v,e)=>seen.push([v,e]),5000,15000);
+ const errors=()=>seen.filter(([v,e])=>v===null&&e).length,advance=async ms=>{t.mock.timers.tick(ms);await flush();};
+ assert.equal(calls,1);
+ await advance(14999);assert.equal(errors(),0);
+ await advance(1);assert.equal(errors(),1,'abandoning a hung read delivers the unavailable state');
+ await advance(9999);assert.equal(calls,1);await advance(1);assert.equal(calls,2,'first retry after 10 s');
+ await advance(15000);assert.equal(errors(),2);
+ await advance(19999);assert.equal(calls,2);await advance(1);assert.equal(calls,3,'then 20 s');
+ await advance(15000);assert.equal(errors(),3);
+ await advance(29999);assert.equal(calls,3);await advance(1);assert.equal(calls,4,'capped at 30 s');
+ await advance(15000);assert.equal(errors(),4);
+ await advance(30000);assert.equal(calls,5,'stays capped');
+ settle=true;await advance(15000);await advance(30000);assert.equal(calls,6);assert.deepEqual(seen.at(-1),[{revision:6},null]);
+ await advance(4999);assert.equal(calls,6);await advance(1);assert.equal(calls,7,'success resets to the 5 s interval');
+ sub.close();
 });
 
 test('the leader catches up when its tab becomes visible and per-ballot extra reads are gone',()=>{
