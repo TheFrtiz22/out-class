@@ -35,7 +35,7 @@ export function ShareClubButton({ club, className }: { club: Pick<DirectoryClub,
     }
   }
   return <>
-    <Button type="button" variant="outline" className={className} aria-label={`Share ${club.name}`} onClick={() => void share()}>
+    <Button type="button" variant="outline" className={className} aria-label={status === "Link copied" ? undefined : `Share ${club.name}`} onClick={() => void share()}>
       <Share className="size-4" aria-hidden="true" />{status === "Link copied" ? "Link copied" : "Share"}
     </Button>
     <span role="status" className={status && status !== "Link copied" ? "text-sm text-destructive" : "sr-only"}>{status}</span>

@@ -10,7 +10,9 @@ import { SHARE_CARD_COLORS as C } from "@/lib/share-card-palette"
 export const SHARE_CARD_SIZE = { width: 1200, height: 630 }
 export const SHARE_CARD_TYPE = "image/png"
 // Crawlers (iMessage, Slack, LinkedIn, X) fetch once; the CDN absorbs repeats. A profile edit shows within the hour.
-export const CACHE = "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400"
+export const CACHE = "public, max-age=3600, s-maxage=3600"
+// A card rendered while the database was unreachable: browsers may reuse it briefly, the CDN must not.
+export const TRANSIENT = "public, max-age=60, s-maxage=0"
 
 export const local = (...parts: string[]) => readFile(join(process.cwd(), ...parts))
 export const dataUrl = (type: string, bytes: Buffer) => `data:${type};base64,${bytes.toString("base64")}`
@@ -25,11 +27,13 @@ export const caslon = (regular: Buffer, semibold: Buffer) => [
   { name: "Caslon", data: arrayBuffer(regular), weight: 400 as const, style: "normal" as const },
   { name: "Caslon", data: arrayBuffer(semibold), weight: 600 as const, style: "normal" as const },
 ]
+// Literal paths so file tracing bundles them into the image functions (also listed in
+// next.config.mjs outputFileTracingIncludes; public/ is otherwise CDN-only on Vercel).
 export const loadType = () => Promise.all([
-  local("app", "fonts", "libre-caslon-text", "libre-caslon-text-400-static.ttf"),
-  local("app", "fonts", "libre-caslon-text", "libre-caslon-text-600-static.ttf"),
+  readFile(join(process.cwd(), "app/fonts/libre-caslon-text/libre-caslon-text-400-static.ttf")),
+  readFile(join(process.cwd(), "app/fonts/libre-caslon-text/libre-caslon-text-600-static.ttf")),
 ])
-export const loadWordmark = () => local("public", "brand", "premium-board", "04_wordmark_no_sword.svg")
+export const loadWordmark = () => readFile(join(process.cwd(), "public/brand/premium-board/04_wordmark_no_sword.svg"))
 
 // The light glass material from styles/navigation-glass.css (--oc-glass-light-material / -edge / -depth).
 export const glassPanel = {
@@ -55,9 +59,9 @@ export function rgba(color: string, alpha: number) {
  * The site-wide OutClass card (homepage and every page without its own): the same glass panel
  * over the sunset Rotunda from the homepage opening. Served prerendered from /og/outclass.png.
  */
-export async function renderSiteShareCard() {
+export async function renderSiteShareCard(cacheControl = CACHE) {
   const [photo, wordmark, [serif, serifBold]] = await Promise.all([
-    local("public", "images", "campus", "sunset-rotunda-1600.webp"), loadWordmark(), loadType(),
+    readFile(join(process.cwd(), "public/images/campus/sunset-rotunda-1600.webp")), loadWordmark(), loadType(),
   ])
   // Sharp Rotunda on the left, fading into a blurred wash of the same sunset behind the glass.
   const fade = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="760" height="630"><defs><linearGradient id="f"><stop offset="0.62" stop-color="white" stop-opacity="1"/><stop offset="1" stop-color="white" stop-opacity="0"/></linearGradient></defs><rect width="760" height="630" fill="url(#f)"/></svg>')
@@ -81,6 +85,6 @@ export async function renderSiteShareCard() {
         </div>
       </div>
     </div>,
-    { ...SHARE_CARD_SIZE, headers: { "Cache-Control": CACHE }, fonts: caslon(serif, serifBold) },
+    { ...SHARE_CARD_SIZE, headers: { "Cache-Control": cacheControl }, fonts: caslon(serif, serifBold) },
   )
 }

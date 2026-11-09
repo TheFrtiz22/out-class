@@ -25,7 +25,7 @@ test('share card renderer only reads assets the club publicly shows and never fe
   assert.match(card, /clubProfileImages\(club, true\)\.includes\(stored\)/)
   assert.match(card, /stored\.split\("\/"\)\[1\] !== club\.id/)
   assert.doesNotMatch(card, /\bfetch\(/)
-  const fields = /const shareFields = \{([\s\S]*?)\} as const/.exec(card)[1]
+  const fields = /const shareFields = \{([\s\S]*?)\} as const/.exec(fs.readFileSync('lib/club-share-profile.ts', 'utf8'))[1]
   assert.deepEqual([...fields.matchAll(/(\w+): (?:true|\{)/g)].map(m => m[1]), ['id', 'name', 'tagline', 'description', 'category', 'color', 'logoUrl', 'bannerUrl', 'marketing', 'suspendedAt', 'school', 'select', 'name'])
   for (const kind of ['opengraph', 'twitter']) assert.match(fs.readFileSync(`app/(workspace)/club/[clubId]/${kind}-image.tsx`, 'utf8'), /renderClubShareCard\(\(await params\)\.clubId\)/)
 })

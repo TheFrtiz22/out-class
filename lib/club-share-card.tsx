@@ -1,34 +1,16 @@
 import "server-only"
 /* eslint-disable @next/next/no-img-element -- next/og renders <img> into a PNG; next/image does not apply. */
-import { cache } from "react"
 import { ImageResponse } from "next/og"
 import sharp from "sharp"
-import { prisma } from "@/utils/prisma"
+import { loadClubShareProfile, type ClubShareProfile } from "@/lib/club-share-profile"
 import { clubAssetReference, clubLogoSource, clubProfileImages } from "@/lib/club-assets"
 import { analyzeLogoPixels, logoBackgroundColor } from "@/lib/club-logo-background"
 import { privateClubAssetStorage } from "@/utils/club-asset-storage"
-import { initials, shareSummary } from "@/lib/club-share-text"
+import { initials } from "@/lib/club-share-text"
 import { SHARE_CARD_COLORS as C } from "@/lib/share-card-palette"
-import { CACHE, SHARE_CARD_SIZE, caslon, clip, dataUrl, glassChip, glassPanel, loadType, loadWordmark, local, renderSiteShareCard, rgba } from "@/lib/share-card"
+import { CACHE, TRANSIENT, SHARE_CARD_SIZE, caslon, clip, dataUrl, glassChip, glassPanel, loadType, loadWordmark, local, renderSiteShareCard, rgba } from "@/lib/share-card"
 
-/**
- * Link-preview ("share card") data for a public club profile. Same public fields the club page
- * shows; never members, applicants, contacts, events or research notes.
- */
-const shareFields = {
-  id: true, name: true, tagline: true, description: true, category: true, color: true,
-  logoUrl: true, bannerUrl: true, marketing: true, suspendedAt: true, school: { select: { name: true } },
-} as const
-
-export const getClubShareProfile = cache(async (idOrSlug: string) => {
-  try {
-    const club = await prisma.club.findFirst({ where: { OR: [{ id: idOrSlug }, { slug: idOrSlug }], suspendedAt: null }, select: shareFields })
-    return club && { ...club, summary: shareSummary(club.tagline, club.description) }
-  } catch {
-    return null
-  }
-})
-type ShareProfile = NonNullable<Awaited<ReturnType<typeof getClubShareProfile>>>
+type ShareProfile = ClubShareProfile
 
 
 /**
@@ -87,7 +69,13 @@ const hex = (value: string) => (/^#[0-9a-f]{6}$/i.test(value) ? value : C.navy)
  * of its brand colour.
  */
 export async function renderClubShareCard(idOrSlug: string) {
-  const club = await getClubShareProfile(idOrSlug)
+  let club: ShareProfile | null
+  try {
+    club = await loadClubShareProfile(idOrSlug)
+  } catch {
+    // Couldn't check: show the site card, but never let the CDN pin it to this club's URL.
+    return renderSiteShareCard(TRANSIENT)
+  }
   if (!club) return renderSiteShareCard()
   const [logo, cover, wordmark, [serif, serifBold]] = await Promise.all([logoTile(club), backdrop(club), loadWordmark(), loadType()])
   const color = hex(club.color)
