@@ -14,6 +14,7 @@ import { hasPermission } from "@/lib/permissions";
 import { organizationCapabilities } from "@/lib/organization-authorization";
 import * as demoRankedReview from "./ranked-review";
 import * as demoInterviewFeedback from "./interview-feedback";
+import { roundTargetSummary as demoRoundTargetSummary } from "./voting-room";
 import { genderVisibility } from "@/lib/recruitment-profile";
 import type * as tutorials from "@/actions/tutorials"
 import { tutorialExperience, tutorialInput } from "@/lib/tutorials"
@@ -558,3 +559,5 @@ export const getPipelineInterviewStatus: Demo<"getPipelineInterviewStatus"> = de
 export const getInterviewFeedback: Demo<"getInterviewFeedback"> = input => demoInterviewFeedback.getInterviewFeedback(input)
 export const getRankedReviewSettings: Demo<"getRankedReviewSettings"> = demoRankedReview.getRankedReviewSettings
 export const saveRankedReviewBands: Demo<"saveRankedReviewBands"> = demoRankedReview.saveRankedReviewBands
+
+export const getRoundTargetSummary: Demo<"getRoundTargetSummary"> = input => demoRoundTargetSummary(input)
