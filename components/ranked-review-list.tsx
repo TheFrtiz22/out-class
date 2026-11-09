@@ -10,6 +10,7 @@ import { NativeSelect } from "@/components/ui/native-select"
 import { Lock } from "@/components/icons"
 import { useRevalidate } from "@/hooks/use-revalidate"
 import { formatAverage, scoredEvaluationsLabel } from "@/lib/interview-review-summary"
+import { NO_INTERVIEW_SCORES } from "@/lib/interview-feedback"
 import { profilePhotoSource } from "@/lib/profile-photo"
 import { applicationStatusLabels } from "@/lib/application-status"
 import { RANKED_REVIEW_NO_CYCLE, assignBands, bandsFromBoundaries, rankApplicants, rankedBandLabels, rankedBandOrder, rankedCycleKey, rankingSignature, tieCrossesBoundary, validateBands, type RankedBand, type RankedBands } from "@/lib/ranked-review"
@@ -66,12 +67,17 @@ export function RankedReviewList({ clubId, rounds, initialRoundId, api, onOpen, 
   changeSignal?: number
 }) {
   const [roundId, setRoundId] = useState(initialRoundId && rounds.some(r => r.id === initialRoundId) ? initialRoundId : rounds[0]?.id ?? "")
-  const [shown, setShown] = useState<Snapshot | null>(null)
-  const [pending, setPending] = useState<Snapshot | null>(null)
+  const [loaded, setShown] = useState<Snapshot | null>(null)
+  // Only the selected round's snapshot is ever rendered: while another round loads, nothing from the previous one shows.
+  const shown = loaded?.roundId === roundId ? loaded : null
+  const [pendingSnapshot, setPending] = useState<Snapshot | null>(null)
+  const pending = pendingSnapshot?.roundId === roundId ? pendingSnapshot : null
   const [error, setError] = useState("")
   const [checkFailed, setCheckFailed] = useState(false)
   const [chosenCycle, setChosenCycle] = useState<string | null>(null)
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  // Selection, cycle and pending results belong to one club + round; switching rounds clears them.
+  const [selection, setSelection] = useState<{ key: string; id: string } | null>(null)
+  const selectedId = selection?.key === `${clubId}:${roundId}` ? selection.id : null
   const ticket = useRef(0)
   const [roundSummary, setRoundSummary] = useState<{ key: string; value: ScopedTargetSummary | null; failed: boolean } | null>(null)
   const [summaryTick, setSummaryTick] = useState(0)
@@ -148,7 +154,7 @@ export function RankedReviewList({ clubId, rounds, initialRoundId, api, onOpen, 
   const summaryStatus = !api.loadRoundSummary ? undefined : summaryCycle === null ? "Voting decisions are recorded per recruitment cycle." : currentSummary?.failed ? "Round decisions unavailable." : !currentSummary ? "Loading…" : undefined
   const selectedMissing = !!selectedId && !!shown && !rows.some(r => r.id === selectedId)
 
-  function select(id: string) { setSelectedId(id); onOpen(id) }
+  function select(id: string) { setSelection({ key: `${clubId}:${roundId}`, id }); onOpen(id) }
 
   const row = (r: Row & { rank?: number; band?: RankedBand | null }) => <li key={r.id} className="oc-ranked-row" data-band={r.band ?? undefined} data-selected={selectedId === r.id || undefined}>
     {votingSelection && <VotingSelection app={r.app} name={r.name} selection={votingSelection} />}
@@ -192,7 +198,7 @@ export function RankedReviewList({ clubId, rounds, initialRoundId, api, onOpen, 
         {ties.map(t => <p key={`${t.band}:${t.rank}`} role="note" className="oc-ranked-tie text-xs" data-band={t.band}>{t.message}</p>)}
         {selectedMissing && <p role="status" className="text-xs text-muted-foreground">The selected applicant is no longer in this round.</p>}
         <h3 ref={listHeading} tabIndex={-1} id="ranked-review-heading" className="text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring">Ranked applicants <span className="font-normal text-muted-foreground">· {ranked.length} scored</span></h3>
-        {!ranked.length ? <p className="text-sm text-muted-foreground">No applicants in this round have a submitted interview score yet.</p>
+        {!ranked.length ? <p className="text-sm text-muted-foreground">{NO_INTERVIEW_SCORES}</p>
           : setting.bands ? rankedBandOrder.map(band => {
             const members = banded.filter(r => r.band === band)
             const b = setting.bands!

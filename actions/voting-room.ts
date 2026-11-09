@@ -101,7 +101,7 @@ export async function getLiveVotingPresentation(input:unknown) {
   // The canonical display action independently rechecks session/current candidate,
   // cycle, anonymity, field and submitted-feedback permissions in its transaction.
   const display=await getApplicantDisplay({clubId:d.clubId,sessionId:d.sessionId,applicationId:d.applicationId}),{user}=await requireClubPermission(d.clubId,["applications.review"]);
-  return prisma.$transaction(async tx=>{
+  const result=await prisma.$transaction(async tx=>{
     const m=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review"],{readOnly:true});
     const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId);const role=roomAuthority(s,m,round.anonymousReview);
     const app=await tx.application.findFirst({where:{id:d.applicationId,clubId:d.clubId,roundId:s.roundId,recruitmentCycleId:s.cycleId,status:{not:"DRAFTING"}}});
@@ -114,8 +114,12 @@ export async function getLiveVotingPresentation(input:unknown) {
     // Preparation preview shows the leader's unlocked working copy; everyone else sees the locked pass copy.
     if(d.preparation)requireRoomLeader(s,m,"decisions.manage");
     const prepared=await presentedSlideHighlights(tx,s,app.id,user.id,display.anonymous,!!d.preparation);
-    return {...selectedDisplay,...evidence,...highlight,...observations,...prepared,requestedFields:[...selectedDisplay.visible,...("resumeHighlight"in highlight?["resumeHighlight" as const]:[]),...(evidence.interviewScore?["interviewScore" as const]:[]),...(evidence.finalInterviewThoughts?["finalInterviewThoughts" as const]:[]),...(observations.additionalObservations?['additionalObservations' as const]:[])]};
+    return {access:accessFingerprint(m),presentation:{...selectedDisplay,...evidence,...highlight,...observations,...prepared,requestedFields:[...selectedDisplay.visible,...("resumeHighlight"in highlight?["resumeHighlight" as const]:[]),...(evidence.interviewScore?["interviewScore" as const]:[]),...(evidence.finalInterviewThoughts?["finalInterviewThoughts" as const]:[]),...(observations.additionalObservations?['additionalObservations' as const]:[])]}};
   },votingReadLimits);
+  // Same post-read re-check as the room read: evidence computed under since-revoked access is never returned.
+  const {membership}=await requireClubPermission(d.clubId,["applications.review"]);
+  if(result.access!==accessFingerprint(membership))throw Error("Voting permissions changed. Reconnect to the room.");
+  return result.presentation;
 }
 
 export async function castLiveVotingBallot(input:unknown) {
