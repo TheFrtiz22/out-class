@@ -20,8 +20,8 @@
 .oc-public-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 16px 28px; margin-top: 32px; }
 .oc-public-actions [data-slot="button"] { min-height: 48px; padding-inline: 24px; }
 /* Primary public CTA (shared Button, size lg): a navy pill that lifts on hover/focus to invite the click. */
-.oc-public-cta { min-height: 52px !important; height: auto; padding-inline: 30px !important; font-size: 16px; font-weight: 600; border-radius: 999px; box-shadow: 0 10px 24px -14px rgb(10 24 40 / 55%); transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease; }
-.oc-public-cta:is(:hover, :focus-visible) { transform: translateY(-2px); box-shadow: 0 16px 30px -14px rgb(10 24 40 / 70%); }
+.oc-public-cta { min-height: 52px !important; height: auto; padding-inline: 30px !important; font-size: 16px; font-weight: 600; border-radius: 999px; box-shadow: var(--oc-shadow-surface-hover); transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease; }
+.oc-public-cta:is(:hover, :focus-visible) { transform: translateY(-2px); box-shadow: var(--oc-shadow-popover); }
 .oc-public-text-link { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; font-size: 14px; text-decoration: underline !important; text-underline-offset: 5px; text-decoration-color: color-mix(in srgb, currentColor 45%, transparent) !important; }
 .oc-public-navy { background: var(--primary); color: var(--oc-public-paper); }
 .oc-public-navy .oc-public-kicker { color: #d5dce4; }
