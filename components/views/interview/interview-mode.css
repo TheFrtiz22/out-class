@@ -47,7 +47,7 @@
 .oc-interview-room.oc-interview-room .oc-resume-trigger { display: flex; width: 36px; height: 36px; margin-left: auto; padding: 8px; background: transparent; }
 .oc-resume-mini > p { font-size: .75rem; color: var(--muted-foreground); margin-bottom: 6px; }
 .oc-resume-preview { height: clamp(360px,65dvh,760px); width: 100%; border: 1px solid var(--border); border-radius: var(--oc-radius-sm); overflow: auto; overscroll-behavior: contain; touch-action: pan-y; scrollbar-width: thin; background: var(--card); }
-.oc-resume-preview:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+.oc-resume-preview:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
 .oc-resume-sheet { width: 100%; background: white; }
 .oc-resume-sheet + .oc-resume-sheet { border-top: 8px solid var(--background); }
 .oc-resume-sheet canvas { display: block; width: 100%; height: 100%; }
@@ -78,7 +78,7 @@
 .oc-score-history { font-size: .8125rem; border-top: 1px solid var(--border); padding-top: 14px; }
 .oc-score-history h3 { font-size: .8125rem; font-weight: 500; margin-bottom: 8px; }
 .oc-score-history li { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; }
-.oc-focused-interview :is(button,input,textarea):focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+.oc-focused-interview :is(button,input,textarea):focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
 @media (min-width: 1024px) {
   .oc-interview-room.oc-interview-room .oc-interview-columns { grid-template-columns: minmax(190px,26fr) minmax(0,49fr) minmax(190px,25fr); }
   .oc-interview-room.oc-interview-room .oc-room-applicant { padding-inline: 18px; }
