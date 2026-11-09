@@ -30,6 +30,7 @@ export function OutcomeCounts({room}:{room:Room}){
  return <VotingTargetSummary label="Decision totals" target={room.targetSummary} session={room.targetSummary} round={round} roundStatus={roundStatus}/>;
 }
 export function LeaderControls({room,refresh,member,transitioning=false}:{room:Room;refresh:()=>Promise<void>|undefined;member?:string;transitioning?:boolean}){
+ const [staleRevision,setStaleRevision]=useState<number|null>(null);
  const [confirmedRevision,setConfirmedRevision]=useState(0),[busy,setBusy]=useState(false),[error,setError]=useState(""),[reason,setReason]=useState(""),[pending,setPending]=useState<Command|null>(null),[summary,setSummary]=useState<Summary|null>(null),[summaryError,setSummaryError]=useState(false),[reload,setReload]=useState(0),[correction,setCorrection]=useState(""),[correctionReason,setCorrectionReason]=useState(""),[electorateIssue,setElectorateIssue]=useState("");
  const [savedDecision,setSaved]=useState<{requestId:string;applicationId:string;passNumber:number;choice:"ACCEPT"|"HOLD"|"REJECT";nextApplicationId:string|null}|null>(null);
  // A saved-decision notice belongs to its pass; Undo shows only while the applicant after that decision
@@ -45,9 +46,13 @@ export function LeaderControls({room,refresh,member,transitioning=false}:{room:R
  async function send(action:Command["action"],extra:Partial<Command>={},retry=false){
   if(lock.current)return;lock.current=true;setBusy(true);setError("");
   const body=retry&&pending?pending:{clubId:room.clubId,sessionId:room.id,requestId:crypto.randomUUID(),revision:room.revision,action,...extra};setPending(body);
-  try{const r=await commandLiveVotingRoom(body,member);if(!r.ok){setPending(null);setError(r.code==="STALE_STATE"?"The room changed since this view loaded. The latest state is shown below; check it and try again.":r.code==="ELECTORATE_CHANGED"?"":r.message);if(r.code==="ELECTORATE_CHANGED")setElectorateIssue(r.message);await refresh();return;}if(action==="CLOSE_VOTING")setElectorateIssue("");setConfirmedRevision(r.result.revision);setPending(null);if(r.result.decision)setSaved(r.result.decision);if(r.result.undone)setSaved(null);if(action==="CORRECT"){setCorrection("");setCorrectionReason("")}await refresh()}catch{setError("Command could not be confirmed. Reconnecting before retry; your decision may already be saved.");await refresh()}finally{lock.current=false;setBusy(false)}
+  try{const r=await commandLiveVotingRoom(body,member);if(!r.ok){setPending(null);if(r.code==="STALE_STATE")setStaleRevision(body.revision);setError(r.code==="STALE_STATE"?"The room changed since this view loaded. The latest state is shown below; check it and try again.":r.code==="ELECTORATE_CHANGED"?"":r.message);if(r.code==="ELECTORATE_CHANGED")setElectorateIssue(r.message);await refresh();return;}if(action==="CLOSE_VOTING")setElectorateIssue("");setConfirmedRevision(r.result.revision);setPending(null);if(r.result.decision)setSaved(r.result.decision);if(r.result.undone)setSaved(null);if(action==="CORRECT"){setCorrection("");setCorrectionReason("")}await refresh()}catch{setError("Command could not be confirmed. Reconnecting before retry; your decision may already be saved.");await refresh()}finally{lock.current=false;setBusy(false)}
  }
- const waitingForSnapshot=room.revision<confirmedRevision;
+ // After STALE_STATE the controls stay disabled until a newer snapshot than the refused command's arrives
+ // (refresh() can return at once while a poll is already in flight), or a short timeout passes.
+ const awaitingNewer=staleRevision!==null&&room.revision<=staleRevision;
+ useEffect(()=>{if(staleRevision===null)return;const t=setTimeout(()=>setStaleRevision(null),4000);return()=>clearTimeout(t);},[staleRevision]);
+ const waitingForSnapshot=room.revision<confirmedRevision||awaitingNewer;
  const counts=(s:string)=>room.outcomes.filter(o=>o.outcome===s).length,missing=Math.max(0,room.participation.eligible-room.participation.voted);
  // Shown as soon as the room snapshot reports it, not only after a Close attempt.
  const removed=room.electorateChange?.removed??0,electorateNotice=electorateIssue||(removed?`${removed} voter${removed===1?"":"s"} can no longer vote, so voting is paused. Recount without ${removed===1?"this voter":"them"} and give a reason to close, or restore ${removed===1?"their":"those voters'"} access to continue.`:"");
