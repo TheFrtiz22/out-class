@@ -57,6 +57,9 @@ export function RecruitingHero({ clubId, clubName, membership, data }: { clubId:
 }
 
 /** Recruiting Overview: running the cycle. Club work (meetings, tasks, announcements) lives on Club home. */
+// Loaded on demand: only recruitment leads see it, and it fetches its own data.
+const RecruitingInsightsCards = dynamic(() => import("@/components/recruiting-insights-card").then(module => module.RecruitingInsightsCards), { ssr: false })
+
 export function RecruitingOverview({ data, refreshing = false, onChanged = () => {} }: { data: Overview; refreshing?: boolean; onChanged?: () => void }) {
   const { club, membership, operations: op } = data
   const [round, setRound] = useState(""), [applicant, setApplicant] = useState<string | null>(null), [booking, setBooking] = useState<Overview["operations"]["bookings"][number] | null>(null)
@@ -136,6 +139,7 @@ export function RecruitingOverview({ data, refreshing = false, onChanged = () =>
         <MetricTiles items={[{ label: "Applicants with a submitted review", value: reviewed, of: total }]} />
         <progress className="oc-dashboard-progress" value={reviewed} max={total} aria-label="Team review progress" />
       </DashboardCard>}
+      {hasPermission(membership, "recruitment.manage") && <RecruitingInsightsCards clubId={club.id} index={cards.length + 5} />}
       {op.offers.length > 0 && <DashboardCard id="dashboard-offers" title="Offers awaiting response" index={cards.length + 5}>
         <GlassRowList>{op.offers.map(o => <li key={o.id}><GlassRow data-applicant-id={o.applicationId} onClick={() => { setReviewContext(false); setApplicant(o.applicationId) }}
           title={o.label} detail={`Pending membership offer · expires ${memberDate(o.expiresAt)}`} trailing={<span className="oc-dashboard-row-end">View offer</span>} /></li>)}</GlassRowList>
