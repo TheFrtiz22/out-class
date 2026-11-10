@@ -6,12 +6,12 @@ import {observationScope,observationSave,observationChange} from '@/lib/addition
 import {authorizeObservation,listObservations} from '@/utils/additional-observations';
 export async function getAdditionalObservations(input:unknown){
  const d=observationScope.parse(input),{user}=await requireClubPermission(d.clubId,['applications.review','applicants.identify']);
- return prisma.$transaction(tx=>listObservations(tx,d,user.id));
+ return prisma.$transaction(tx=>listObservations(tx,d,user.id,true));
 }
 export async function saveAdditionalObservation(input:unknown){
  const d=observationSave.parse(input),{user}=await requireClubPermission(d.clubId,['applications.review','applicants.identify']);
  return clubWriteTransaction(async tx=>{
-  const {app,moderator}=await authorizeObservation(tx,d,user.id);
+  const {app,moderator}=await authorizeObservation(tx,d,user.id,false,true);
   const old=await tx.applicantObservation.findUnique({where:{id:d.id}});
   if(old&&(old.applicationId!==app.id||old.clubId!==d.clubId||old.cycleId!==app.recruitmentCycleId||old.kind!=='ADDITIONAL'))throw Error('Observation unavailable.');
   const locked=!!old&&!!await tx.votingObservationReference.findFirst({where:{observationId:old.id},select:{sessionId:true}});

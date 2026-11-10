@@ -61,6 +61,7 @@ function harness(rows, { member = viewer, memberships = { [clubId]: member }, su
   const permissions = load("lib/permissions.ts");
   const tx = {
     $queryRaw: async () => { stats.queries++; return []; },
+    applicantRecusal: { findMany: async () => [], findFirst: async () => null },
     pipelineRound: { findMany: async ({ where }) => { stats.queries++; const found = new Map(rows.filter(r => r.round.clubId === where.clubId).map(r => [r.round.id, r.round])); if (where.clubId === clubId && !found.size) found.set(round.id, round); return [...found.values()]; }, findFirst: async () => { stats.queries++; return { id: roundId, configuration: round.configuration, anonymousReview: false }; } },
     recruitmentCycle: { findMany: async () => { stats.queries++; return [{ id: cycleId, name: "Fall" }]; } },
     application: { findMany: async args => {

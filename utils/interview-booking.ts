@@ -25,7 +25,10 @@ export async function interviewBookingCoverage(tx: AppTransactionClient, clubId:
   // Self-review is never an authorized panel position for this applicant.
   if (applicant) {
     const self = await tx.clubMember.findMany({ where: { clubId, userId: applicant.studentId }, select: { id: true } })
-    scene.members = scene.members.map(m => self.some(s => s.id === m.id) ? { ...m, evidenceAccess: false } : m)
+    // A member who stepped out of this applicant (conflict of interest) cannot sit on their panel either,
+    // so a session staffed by them is not bookable for this applicant; they pick another time.
+    const recused = await tx.applicantRecusal.findMany({ where: { applicationId: applicant.id, liftedAt: null }, select: { memberId: true } })
+    scene.members = scene.members.map(m => self.some(s => s.id === m.id) || recused.some(r => r.memberId === m.id) ? { ...m, evidenceAccess: false } : m)
   }
   const active = await tx.interviewPanelScheduleVersion.findFirst({ where: { clubId, roundId, status: "PUBLISHED" }, orderBy: { version: "desc" } })
   const parsedOptions = panelOptionsSchema.safeParse((active?.document as { options?: unknown } | undefined)?.options)

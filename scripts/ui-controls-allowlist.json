@@ -16,7 +16,7 @@
   {
    "rule": "css-hex",
    "file": "components/communications/decision-letter.css",
-   "max": 8,
+   "max": 3,
    "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
   },
   {
@@ -156,12 +156,6 @@
    "file": "components/qr/outclass-qr-code.tsx",
    "max": 2,
    "reason": "QR export controls stay with the canonical QR component (CLAUDE.md: QR is owned by @/components/qr)."
-  },
-  {
-   "rule": "raw-button",
-   "file": "components/shell/navigation.tsx",
-   "max": 1,
-   "reason": "Navigation is fixed for this redesign (owner rule)."
   },
   {
    "rule": "raw-button",
