@@ -148,3 +148,9 @@ deploy dpl_GAbgrcXkPkMfwCRmmJv4QWH6U7yt READY yes | new runtime error classes 0 
 ```
 - PR CI on head cf733625: 16/16 green. Earlier heads failed `Local Auth, settings and navigation`: legacy URLs redirected after a loading.tsx had streamed the persistent shell (second document load), and navigation-phase10 waited for removed overview text. Fixed in f17657a5 (club workspace), 957cdd7c (test), cf733625 (every redirecting workspace page now sits under no loader; guarded by tests/loading-experience.test.cjs). One `authenticated-accessibility` run failed on Supabase startup (infra) and passed on the next head.
 - WATCH reasons: ~9 minutes of Sunday-evening production traffic for a shell/layout/navigation change; invitation-delivery and notification-delivery crons log nothing on success. Re-check runtime errors after weekday traffic.
+```
+2026-11-10 FILTER-UI-1 (cloud container, Linux): app gates: test 1996/1929/0 fail/67 skipped (env-gated) migrations 75 ok (RLS 85) lint ok (0 errors, 21 warnings) types ok build ok (prerender logs a Prisma DATABASE_URL message; no env in container)
+targeted: filter-controls 5/5, filter-controls-browser 1/1 (axe 0), live-applicant-views 35/35, campus-event-discovery + -browser 5/5 on disposable local Postgres 16 (port 55442, migrate deploy, same role setup as run-disposable-postgres.cjs, no Docker)
+real browser (leader/student screen fixtures, Chromium 1243 aliased as 1248): 13 surfaces x 1280/375, filter panels open: 0 viewport overflow, 0 page errors; filter exercise 25/27 (Events fixture does not filter server-side)
+not run: stack-gated e2e (availability-browser, scheduling-quality-browser, operational-dashboards-e2e, demo-browser-e2e) need the Supabase stack; their selectors were updated blind
+```
