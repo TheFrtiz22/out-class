@@ -48,6 +48,7 @@ import { updateTaskMember } from "@/lib/workspace-api";
 import { ClubAccessEditor } from "@/components/club-access-editor";
 import { RosterCsvImporter } from "@/components/roster-csv-importer";
 import { Button } from "@/components/ui/button";
+import { ClubExportLink } from "@/components/club-export-link";
 import {
   onboardingTable,
   onboardingFocus,
@@ -368,7 +369,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
               </label>
 </>}
             </div>
-            {!invitesOpen && caps.canManageMembers && <div className="flex flex-wrap items-center gap-3"><NativeSelect aria-label="Filter members by group" className="min-h-11" value={groupFilter} onChange={event => { setGroupFilter(event.target.value); setPage(0); setSelection([]); }}><option value="">All groups</option>{[...new Set(data.members.flatMap(member => member.groups))].sort().map(group => <option key={group}>{group}</option>)}</NativeSelect></div>}
+            {!invitesOpen && caps.canManageMembers && <div className="flex flex-wrap items-center gap-3"><NativeSelect aria-label="Filter members by group" className="min-h-11" value={groupFilter} onChange={event => { setGroupFilter(event.target.value); setPage(0); setSelection([]); }}><option value="">All groups</option>{[...new Set(data.members.flatMap(member => member.groups))].sort().map(group => <option key={group}>{group}</option>)}</NativeSelect><ClubExportLink clubId={clubId} kind="roster" membership={data.actor} label="Export roster" /><ClubExportLink clubId={clubId} kind="attendance" membership={data.actor} label="Export attendance" /></div>}
             {selection.length > 0 && (
               <div
                 role="toolbar"
