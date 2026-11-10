@@ -526,6 +526,8 @@ model InterviewRoom {
   panelApprovedBy String?
   panelApprover User? @relation("RoomPanelApprover", fields: [panelApprovedBy], references: [id], onDelete: Restrict)
   panelApprovalRevision Int @default(0)
+  /// Leader-confirmed: the physical room was also reserved through the school's system (UVA: 25Live).
+  externallyBookedAt DateTime?
   createdAt      DateTime        @default(now())
   slots          InterviewSlot[]
 
