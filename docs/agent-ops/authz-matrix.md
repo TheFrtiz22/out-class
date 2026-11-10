@@ -79,3 +79,40 @@ Changes: (1) signed-out `/explore` renders a Server Component from the existing 
 Untested cells: 0 new. The link-holder disclosure (club name and role to anyone holding a valid invitation id, a 122-bit UUID sent by email) is an owner decision recorded in the PUBLIC-SITE-1 report. `pnpm run test:migrations` unchanged (no schema change).
 
 Update 2026-11-07 (owner decision): Explore stays private. The signed-out Explore view, `lib/public-explore.ts` and the `signedOut` render prop were removed before merge; signed-out `/explore` redirects to `/login?next=/explore` as on main. The Public Explore column above no longer applies. `getPublicClub` now returns the public view of marketing (`presentPublicMarketing`) for the club page, Explore's profile view and `/api/workspace` "publicClub" (`admin-clubs.test`).
+
+## 2026-11-08 · SHELL-1 · Overview views and the persistent shell (branch `ui/shell-persistence-and-dashboard-split`)
+
+Changes: `getClubWorkspaceOverview(clubId, view)` (`actions/club-overview.ts`) takes `view` ∈ `all | club | recruiting | strip` (zod enum; `/api/workspace` accepts `[clubId]` or `[clubId, view]`). A view only **skips** queries; every query that runs keeps its existing gate. New fields: `operations.teamTasks` (per task: title, due, outstanding count; `tasks.manage`, never per person), `operations.rounds[].reviewed` (inside the existing rounds query and its `read` gate), `members.recent` (30-day count, member-directory gate). Part 1 moved routes into `app/(workspace)`: `AuthenticatedPageLayout` keeps each route's rule (now a gate only) and `workspaceFrame()` only picks the chrome; pages keep `requireAuth` / `requireClubPermission` / `requirePlatformAdmin`.
+
+| Actor | Overview any view | `teamTasks` | `rounds[].reviewed` | `members.recent` | Test |
+|---|---|---|---|---|---|
+| Logged-out / expired session | deny (401/403) | not queried | not queried | not queried | `overview-view-authz-e2e` (signed out, club + strip) |
+| Owner of club X | allow, every view | listed (club/all views) | counts | counts | `overview-view-authz-e2e` (5 views 200), `club-home.test` (view scoping, members) |
+| Plain member of X | allow | `[]`, no `clubTask` query | `[]`, no raw query | `null`, not queried | `club-home.test` (authz: new fields keep their gates, all 4 views) |
+| Reviewer of X | allow | `[]` | counts (existing rounds gate) | `null` | `club-home.test`, `operational-dashboards.test` |
+| Leader of club Y requesting X | deny | not queried | not queried | not queried | `overview-view-authz-e2e` (other club, 3 views) |
+| Unknown `view` value | 400 at the route, throws in the action | — | — | — | `overview-view-authz-e2e`, `club-home.test` (`'everything'` rejects) |
+| Membership revoked between reads | existing post-read recheck throws | discarded | discarded | discarded | untested for the overview (pre-existing, unchanged) |
+| Demo | demo store only; adapter ignores `view`; no server read | demo per-task list | demo counts | 0 | `club-home-browser.test` fixture (isolated) |
+
+Shell (Part 1): signed-out on a required route → the route's gate redirects/denies (`settings-navigation.test`); the client shell derives the rail from the account's own memberships (`workspace-shell.test`: no leader rail for a club without workspace access, suspended club → personal rail); access loss still runs the existing `router.replace` reconciliation (unchanged code in `ProductShell`).
+
+Untested cells: 0 new; 1 pre-existing recheck cell untested (unchanged). `pnpm run test:migrations`: see validation-report (no schema change).
+
+## 2026-11-09 · CLUB-SHORTNAME-1 · Club short name (branch `feature/club-short-name`, local only)
+
+Changes: nullable `Club.shortName` (migration `20261109120000_club_short_name`, CHECK `Club_shortName_format`). Written only through the existing `updateClubSettings` (`club.settings` at request and inside the write transaction, revision compare now includes `shortName`, unchanged `club.settings.update` audit) and the existing platform-admin club editor (`requirePlatformAdmin` unchanged; its `editable` projection now includes `shortName` so an admin save keeps it and its version check sees a concurrent change). Read through `accountClubSelect`: the signed-in user's own active memberships (workspace pill) and the clubs on their own applications (RSC bootstrap, `/api/users/me`). Not indexed, not on public pages, not in the club switcher or phone account menu. Not private data: a club-chosen display label.
+
+| Actor | Write `shortName` | Read in shell | Test |
+|---|---|---|---|
+| Logged-out / expired session | deny (`requireClubPermission` throws before any read) | n/a | existing `club-marketing.test` (denied publish writes 0) |
+| Leader of X with `club.settings` | allow; trimmed, 2–8 `[A-Za-z0-9& -]`, empty → `null`; audit row | own club | `club-short-name.test` (save, clear, reject, audit, both capability checks) |
+| Member of X without `club.settings` | deny, 0 writes | own club (via membership) | `club-short-name.test` (denied leader writes nothing) |
+| Leader of club Y sending X's id | deny: both checks use `data.clubId` and the update uses the same id | n/a | mocked denial only (`club-short-name.test`, `club-marketing.test`); no real cross-club membership run, so **untested** with real memberships |
+| Concurrent editor with a stale snapshot | conflict error, 0 writes | — | `club-short-name.test` (revision check includes shortName; a pre-deploy snapshot without the key still detects other edits and cannot be used to overwrite a concurrent shortName change) |
+| Direct SQL / other writer bypassing zod | rejected by `Club_shortName_format` | — | `club-short-name.test` (PGlite, all migrations, as non-superuser table owner `outclass_production_app`) |
+| Suspended club / expired admin impersonation | deny (inherited `assertClubOperational`, `clubWriteTransaction`) | — | inherited, existing `club-suspension.test` |
+| Platform admin | allow via existing admin club editor; keeps shortName on other edits; conflict on concurrent change | — | `admin-clubs.test` (new: short name kept, concurrent change → "Club changed") |
+| Demo | demo store only (`Object.assign` on demo club); no server write | demo club | existing demo isolation (`demo-public-boundary.test`) |
+
+Untested cells: 1 (cross-club write with a real membership in Y; covered by mocked denial and code review). Applicants also read the shortName of clubs they applied to; it is a public display label, not private data. `pnpm run test:migrations`: see validation-report.

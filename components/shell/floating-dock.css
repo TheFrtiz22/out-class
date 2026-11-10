@@ -60,7 +60,7 @@
   .oc-dock-chevron { margin-left: auto; margin-right: 14px; flex-shrink: 0; transition: transform 220ms var(--oc-floating-ease); }
   .oc-dock-group-trigger[aria-expanded="true"] .oc-dock-chevron { transform: translateX(3px); color: var(--oc-rail-text); }
   .oc-dock-rail nav :is(a,button):hover { background: rgb(212 232 252 / 9%); }
-  .oc-expanding-dock :is(a,button):focus-visible { outline: 2px solid var(--brand-orange); outline-offset: -2px; }
+  .oc-expanding-dock :is(a,button):focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; box-shadow: var(--focus-halo-inset-4) }
 }
 /* Icon-only rail: labels stay in the accessibility tree (clipped, not hidden) and show as tooltips. */
 @media (min-width: 1024px) and (max-width: 1279px) {
@@ -95,7 +95,7 @@
 .oc-dock-flyout nav :is(a,button) { position: relative; display: flex; align-items: center; width: 100%; min-height: 44px; padding: 10px 12px; gap: 10px; border-radius: 10px; color: var(--oc-rail-text); background: transparent; font-size: 14px; text-align: left; text-decoration: none; }
 .oc-dock-flyout nav :is(a,button):is(:hover,:focus-visible) { background: var(--oc-rail-selected); outline: 2px solid transparent; outline-offset: -2px; }
 .oc-dock-flyout nav [aria-current="page"]::before { content: ""; position: absolute; left: 0; top: 15px; bottom: 15px; width: 3px; border-radius: 3px; background: var(--brand-orange); }
-.oc-dock-flyout nav :is(a,button):focus-visible { outline-color: var(--brand-orange); }
+.oc-dock-flyout nav :is(a,button):focus-visible { outline-color: var(--ring); outline-offset: 2px; box-shadow: var(--focus-halo-outset) }
 @keyframes oc-dock-flyout-in { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; transform: translateX(0); } }
 @media (prefers-reduced-motion: reduce) {
   [data-product-shell] > div > aside.oc-expanding-dock, .oc-expanding-dock *, .oc-dock-flyout, .oc-dock-flyout * { transition: none !important; animation: none !important; }
@@ -105,3 +105,12 @@
   .oc-dock-rail nav :is([aria-current="page"],[data-active="true"])::before, .oc-dock-flyout nav [aria-current="page"]::before { background: Highlight; forced-color-adjust: none; }
   .oc-expanding-dock :is(a,button):focus-visible, .oc-dock-flyout nav :is(a,button):focus-visible { outline-color: Highlight; }
 }
+/* One sliding active marker (navigation-rail.tsx useRailMarker); per-item markers are the unmeasured fallback. */
+@media (min-width: 1024px) {
+  .oc-dock-marker { position: absolute; z-index: 1; top: 0; left: 0; width: 3px; height: var(--rail-marker-height, 16px); border-radius: 3px; background: var(--brand-orange); opacity: 0; pointer-events: none; transform: translate(var(--rail-marker-x, 0px), var(--rail-marker-y, 0px)); transition: transform 420ms var(--oc-floating-ease), height 420ms var(--oc-floating-ease), opacity var(--oc-glass-quick) ease; }
+  .oc-dock-navigation-content[data-marker="true"] .oc-dock-marker { opacity: 1; }
+  .oc-dock-navigation-content[data-marker="true"] nav :is([aria-current="page"],[data-active="true"])::before { display: none; }
+  @supports (transition-timing-function: linear(0, 1)) { .oc-dock-marker { transition-timing-function: var(--oc-floating-spring), var(--oc-floating-spring), ease; } }
+}
+@media (prefers-reduced-motion: reduce) { .oc-dock-marker { transition: none; } }
+@media (forced-colors: active) { .oc-dock-marker { background: Highlight; forced-color-adjust: none; } }

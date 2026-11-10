@@ -4,7 +4,7 @@ const nodes=n=>!n||typeof n!=='object'?[]:Array.isArray(n)?n.flatMap(nodes):[n,.
 const sheetLinks=shell=>nodes(shell).filter(n=>n.type==='WorkspaceNavigation').flatMap(n=>n.props.items.map(n.props.renderItem));
 const text=n=>typeof n==='string'||typeof n==='number'?String(n):Array.isArray(n)?n.map(text).join(''):n?.props?text(n.props.children):'';
 function load(file,mocks={}) {
- mocks={ '@/components/shell/use-workspace-access':{useWorkspaceAccess:()=>({clubs:[],personal:true,admin:false,pending:false})}, '@/lib/autosave-navigation':{flushEditors:async()=>{}}, '@/actions/communications':{}, ...mocks };
+ mocks={ ...require('./helpers/shell-stubs.cjs'), '@/components/shell/use-workspace-access':{useWorkspaceAccess:()=>({clubs:[],personal:true,admin:false,pending:false})}, '@/lib/autosave-navigation':{flushEditors:async()=>{}}, '@/actions/communications':{}, ...mocks };
  // The shell reads its active item from the URL; tests that omit routing hooks render at '/'.
  if(mocks['next/navigation'])mocks['next/navigation']={usePathname:()=>'/',useSearchParams:()=>new URLSearchParams(),...mocks['next/navigation']};
  mocks={'@/components/shell/workspace-selector':{WorkspaceSelector:'WorkspaceSelector',useWorkspaceOptions:()=>[]},...mocks};
@@ -200,7 +200,8 @@ test('Calendar is one rail destination in every personal section and keeps its t
   const shell=h.render(()=>ProductShell(layout.props));
   const calendar=sheetLinks(shell).filter(node=>node.props?.['data-tour']==='nav-calendar');
   assert.equal(calendar.length,1);assert.equal(calendar[0].props.href,'/calendar');assert.equal(calendar[0].props['aria-current'],'page');
-  const mobile=nodes(shell).find(node=>node.type==='MobileNavigation');assert.equal(mobile.props.items.some(item=>item.id==='calendar'),false);
+  // The phone bar is the app's five tabs, so Calendar is one of them (and highlighted here).
+  const mobile=nodes(shell).find(node=>node.type==='MobileNavigation');assert.deepEqual(mobile.props.items.map(item=>item.id),['student-dashboard','explore','inbox','calendar','student-profile']);assert.equal(mobile.props.active,'calendar');
  }
 });
 test('a background reload that lands after a draft opens keeps the open draft object and still updates the rest',async()=>{

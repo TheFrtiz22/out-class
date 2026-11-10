@@ -116,7 +116,7 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
       <p role="status" className="sr-only">
         {saved ? "Profile changes saved." : ""}
       </p>
-      <header className={`flex items-start gap-5 ${settings ? "pb-5 sm:gap-5" : "pb-9 sm:gap-7 sm:pb-12"}`}>
+      <header className={`flex items-start gap-5 ${settings ? "pb-5 sm:gap-5" : "oc-profile-identity pb-9 sm:gap-7 sm:pb-12"}`}>
         <Avatar className={settings ? "size-20 shrink-0" : "size-24 shrink-0 sm:size-32"}>
           <AvatarImage src={profilePhotoSource(profile.headshotUrl)} alt="" />
           <AvatarFallback className="bg-secondary text-xl font-medium text-primary sm:text-3xl">

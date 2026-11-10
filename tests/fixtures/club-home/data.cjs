@@ -2,7 +2,7 @@
 const HOUR = 3600000, DAY = 24 * HOUR
 const at = (now, ms) => new Date(now + ms)
 const id = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`
-const empty = now => ({ offers: [], team: null, asOf: new Date(now), intake: null, cycles: [], rounds: [], queue: [], meetings: [], announcements: [], tasks: { assigned: 0, completed: 0, overdue: 0, awaitingReview: null }, reviewWork: [], bookings: [], votes: [], scheduled: [] })
+const empty = now => ({ offers: [], team: null, asOf: new Date(now), intake: null, cycles: [], rounds: [], queue: [], meetings: [], announcements: [], tasks: { assigned: 0, completed: 0, overdue: 0, awaitingReview: null }, reviewWork: [], bookings: [], votes: [], scheduled: [], teamTasks: [] })
 
 /** kind: large | small | clear. membership: the fixture member DTO. */
 function overview(kind, club, membership, now = Date.now()) {
@@ -13,12 +13,12 @@ function overview(kind, club, membership, now = Date.now()) {
   if (kind === 'small') {
     return { ...base,
       recruitment: read ? [{ status: 'SUBMITTED', count: 6 }, { status: 'IN_REVIEW', count: 3 }, { status: 'INTERVIEWING', count: 2 }] : null,
-      members: perms.has('members.manage') ? { active: 12, pendingInvitations: 1 } : null,
+      members: perms.has('members.manage') ? { active: 12, pendingInvitations: 1, recent: 2 } : null,
       work: [{ id: id(901), task: { id: id(911), title: 'Draft the spring flyer', dueAt: at(now, 3 * DAY), kind: 'TASK' } }],
       operations: { ...empty(now),
         intake: read ? { applicationOpen: true, applicationDeadline: at(now, 5 * DAY + 3 * HOUR) } : null,
         cycles: read ? [{ id: id(1), name: 'Spring 2027', applicants: 11 }] : [],
-        rounds: read ? [{ id: id(21), name: 'Written review', type: 'CUSTOM', anonymous: true, count: 9, eligible: 9, pending: perms.has('applications.review') ? 4 : 0, needsBooking: 0, bookingPublishedAt: null, bookingPaused: false }] : [],
+        rounds: read ? [{ id: id(21), name: 'Written review', type: 'CUSTOM', anonymous: true, count: 9, eligible: 9, pending: perms.has('applications.review') ? 4 : 0, needsBooking: 0, reviewed: 5, bookingPublishedAt: null, bookingPaused: false }] : [],
         meetings: [{ id: id(31), title: 'General body meeting', date: at(now, 2 * DAY), location: 'Clark Hall 107', agenda: 'Spring plans', audience: 'MEMBERS', canRsvp: true }],
         announcements: [{ id: id(41), title: 'Welcome back', body: 'Our first meeting of the term is Thursday.', publishedAt: at(now, -2 * DAY) }],
         tasks: { assigned: 2, completed: 1, overdue: 0, awaitingReview: perms.has('tasks.manage') ? 0 : null },
@@ -28,7 +28,7 @@ function overview(kind, club, membership, now = Date.now()) {
   const names = ['Jordan Avery', 'Priya Natarajan', 'Marcus Hale', 'Elena Ruiz']
   return { ...base,
     recruitment: read ? [{ status: 'SUBMITTED', count: 84 }, { status: 'IN_REVIEW', count: 61 }, { status: 'INTERVIEWING', count: 24 }, { status: 'ACCEPTED', count: 9 }, { status: 'WAITLISTED', count: 4 }, { status: 'REJECTED', count: 31 }] : null,
-    members: perms.has('members.manage') ? { active: 146, pendingInvitations: 7 } : null,
+    members: perms.has('members.manage') ? { active: 146, pendingInvitations: 7, recent: 9 } : null,
     work: [
       { id: id(901), task: { id: id(911), title: 'Submit interview scorecards for Round 2', dueAt: at(now, -DAY), kind: 'TASK' } },
       { id: id(902), task: { id: id(912), title: 'Prepare the stock pitch outline', dueAt: at(now, 2 * DAY), kind: 'TASK' } },
@@ -38,8 +38,8 @@ function overview(kind, club, membership, now = Date.now()) {
       intake: read ? { applicationOpen: true, applicationDeadline: at(now, 2 * DAY + 5 * HOUR) } : null,
       cycles: read ? [{ id: id(1), name: 'Fall 2026 recruiting', applicants: 213 }] : [],
       rounds: read ? [
-        { id: id(21), name: 'Written review', type: 'CUSTOM', anonymous: true, count: 145, eligible: 40, pending: perms.has('applications.review') ? 14 : 0, needsBooking: 0, bookingPublishedAt: null, bookingPaused: false },
-        { id: id(22), name: 'First-round interviews', type: 'INTERVIEW', anonymous: false, count: 24, eligible: 0, pending: 0, needsBooking: perms.has('applicants.identify') ? 6 : 0, bookingPublishedAt: at(now, -3 * DAY), bookingPaused: false },
+        { id: id(21), name: 'Written review', type: 'CUSTOM', anonymous: true, count: 145, eligible: 40, pending: perms.has('applications.review') ? 14 : 0, needsBooking: 0, reviewed: 101, bookingPublishedAt: null, bookingPaused: false },
+        { id: id(22), name: 'First-round interviews', type: 'INTERVIEW', anonymous: false, count: 24, eligible: 0, pending: 0, needsBooking: perms.has('applicants.identify') ? 6 : 0, reviewed: 18, bookingPublishedAt: at(now, -3 * DAY), bookingPaused: false },
       ] : [],
       bookings: perms.has('applicants.identify') ? names.map((name, i) => ({ id: id(51 + i), applicationId: id(61 + i), roundId: id(22), slot: { id: id(71 + i), startTime: at(now, (i + 1) * 5 * HOUR), endTime: at(now, (i + 1) * 5 * HOUR + 30 * 60000), location: i % 2 ? 'Rouss & Robertson 223' : 'Robertson Hall 132', roomId: id(81) }, round: { name: 'First-round interviews' }, candidate: name, kitQuestions: 6 })) : [],
       votes: read && perms.has('decisions.view') ? [{ id: id(91), state: 'OPEN', joinOpenedAt: at(now, -HOUR), participants: [], publishedAt: null, round: { name: 'Final round vote' } }] : [],
@@ -56,6 +56,17 @@ function overview(kind, club, membership, now = Date.now()) {
       tasks: { assigned: 12, completed: 7, overdue: 1, awaitingReview: perms.has('tasks.manage') ? 9 : null },
       reviewWork: perms.has('tasks.manage') ? [{ id: id(301), submittedAt: at(now, -DAY), task: { id: id(311), title: 'Sector research memo', dueAt: at(now, -2 * DAY) } }] : [],
       team: perms.has('tasks.manage') ? { assigned: 120, reviewed: 74, overdue: 11, recentSubmissions: 23 } : null,
+      // Per task, never per person (Club home Tasks for task managers).
+      teamTasks: perms.has('tasks.manage') ? [
+        { id: id(321), title: 'Chapter dues reconciliation', dueAt: at(now, -3 * DAY), outstanding: 4 },
+        { id: id(322), title: 'Alumni outreach list', dueAt: at(now, 2 * DAY), outstanding: 6 },
+        { id: id(323), title: 'Room booking for the spring social', dueAt: at(now, 5 * DAY), outstanding: 1 },
+      ] : [],
     } }
 }
-module.exports = { overview, id }
+/** What Club home receives (getClubWorkspaceOverview(clubId, "club")): club work only, recruiting parts empty. */
+function clubView(data) {
+  const op = data.operations
+  return { ...data, recruitment: null, operations: { ...op, intake: null, cycles: [], rounds: [], queue: [], bookings: [], votes: [], scheduled: [], offers: [] } }
+}
+module.exports = { overview, clubView, id }

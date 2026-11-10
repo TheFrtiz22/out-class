@@ -2,7 +2,7 @@ import { managerNavigation, mobileDestinations, type ProductNavItem } from "@/li
 import type { ClubAccess } from "@/lib/permissions"
 import { adminNavigation } from "@/lib/admin-navigation"
 import { STUDENT_HOME } from "@/lib/student-routes"
-import { TERMS } from "@/lib/copy/terms"
+import { INBOX_HREF, TERMS } from "@/lib/copy/terms"
 
 /**
  * Navigation for OutClass. Student URL routes (and the old-URL redirects that
@@ -19,7 +19,29 @@ export * from "@/lib/student-routes"
 /** `label` is a visible heading; `name` labels an unheaded group for assistive technology. */
 export type RailSection = { id: string; label?: string; name?: string; tour?: string; items: ProductNavItem[] }
 export type WorkspaceKind = "personal" | "leader" | "admin"
-export type WorkspaceOption = { id: WorkspaceKind; clubId?: string; label: string; href: string }
+export type WorkspaceOption = { id: WorkspaceKind; clubId?: string; label: string; shortLabel?: string; href: string }
+
+/** Connector words that never contribute a letter to a club abbreviation. */
+const ABBREVIATION_SKIP = new Set(["a", "an", "and", "at", "for", "in", "of", "on", "the", "to", "&", "-"])
+
+/**
+ * A club's automatic short label for the workspace pill when no nickname is set: the initials of its
+ * significant words, up to four ("McIntire Investment Institute" → "MII", "Society of Women Engineers"
+ * → "SWE"). A one-word name of eight characters or fewer stays as written; a longer one is cut to six.
+ * Unlike the share card's monogram (lib/club-share-text initials), connector words are skipped.
+ */
+export function clubAbbreviation(name: string) {
+  const words = name.replace(/[()[\]{}"'’.,:;!?]/g, " ").split(/\s+/).filter(Boolean)
+  const significant = words.filter(word => !ABBREVIATION_SKIP.has(word.toLowerCase()))
+  const source = significant.length ? significant : words
+  if (source.length === 1) return source[0].length <= 8 ? source[0] : source[0].slice(0, 6)
+  return source.map(word => word.match(/[A-Za-z0-9]/)?.[0] ?? "").join("").slice(0, 4).toUpperCase() || name.trim().slice(0, 6)
+}
+
+/** The pill's short label: the club's own short name when set, otherwise the automatic abbreviation. */
+export function clubShortLabel(club: { name: string; shortName?: string | null }) {
+  return club.shortName?.trim() || clubAbbreviation(club.name)
+}
 
 const personal = (id: string, label: string, path: string): ProductNavItem => ({ id, label, href: path })
 
@@ -84,13 +106,13 @@ export function railItems(sections: RailSection[]): ProductNavItem[] {
  */
 export function workspaceOptions(input: {
   personal: boolean; admin: boolean
-  club?: { clubId: string; name: string } | null
+  club?: { clubId: string; name: string; shortName?: string | null } | null
   settingsSection?: string | null; inSettings?: boolean
 }): WorkspaceOption[] {
   const { club } = input
   return [
     ...(input.personal ? [{ id: "personal" as const, label: "Personal", href: input.inSettings ? "/settings" : STUDENT_HOME }] : []),
-    ...(club ? [{ id: "leader" as const, clubId: club.clubId, label: club.name, href: input.settingsSection ? `/club/${encodeURIComponent(club.clubId)}/workspace?section=settings&setting=${input.settingsSection}` : `/club/${encodeURIComponent(club.clubId)}/workspace` }] : []),
+    ...(club ? [{ id: "leader" as const, clubId: club.clubId, label: club.name, shortLabel: clubShortLabel(club), href: input.settingsSection ? `/club/${encodeURIComponent(club.clubId)}/workspace?section=settings&setting=${input.settingsSection}` : `/club/${encodeURIComponent(club.clubId)}/workspace` }] : []),
     ...(input.admin ? [{ id: "admin" as const, label: "Admin", href: "/platform" }] : []),
   ]
 }
@@ -131,13 +153,22 @@ export function activeNavItem(pathname: string, params: URLSearchParams = new UR
 }
 
 /**
- * Phone bottom bar: four destinations, then More for the rest of the rail.
- * A leader sees the section holding the current page (Recruiting or Club).
+ * Phone bottom bar. Personal: the same five tabs as the OutClass app — Home (which also holds
+ * Applications and My Clubs), Explore (with Events), Inbox, Calendar and Profile — and no More.
+ * A leader sees four destinations, then More for the rest of the rail.
  */
 export function bottomBarItems(sections: RailSection[], kind: WorkspaceKind | "preview", active?: string | null): ProductNavItem[] {
   if (kind === "personal") {
-    const items = railItems(sections)
-    return ["student-dashboard", "explore", "applications", "clubs"].map(id => items.find(item => item.id === id)).filter((item): item is ProductNavItem => !!item)
+    const items = railItems(sections), find = (id: string) => items.find(item => item.id === id)
+    // A member inside a club keeps More (its sheet lists that club's Meetings and Tasks), so Profile moves there.
+    const inClub = sections.some(section => section.id === "member-club")
+    const home = find("student-dashboard"), explore = find("explore"), calendar = find("calendar"), profile = find("student-profile")
+    return [
+      home && { ...home, matches: ["applications", "clubs"] },
+      explore && { ...explore, matches: ["corkboard"] },
+      { id: "inbox", label: TERMS.inbox, href: INBOX_HREF },
+      calendar, inClub ? undefined : profile,
+    ].filter((item): item is ProductNavItem => !!item)
   }
   if (kind === "leader") return leaderBottomBar(sections)
   const current = sections.find(section => section.items.some(item => item.id === active)) ?? sections[0]

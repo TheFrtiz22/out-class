@@ -53,7 +53,7 @@ test("club workspace: canonical URLs are left alone", () => {
 })
 
 test("the server page and the client workspace both apply the same redirects", () => {
-  assert.match(fs.readFileSync("app/club/[clubId]/workspace/page.tsx", "utf8"), /canonicalClubWorkspaceHref\(clubId, search\)[\s\S]*redirect\(moved\)/)
+  assert.match(fs.readFileSync("app/(workspace)/club/[clubId]/workspace/page.tsx", "utf8"), /canonicalClubWorkspaceHref\(clubId, search\)[\s\S]*redirect\(moved\)/)
   assert.match(fs.readFileSync("components/club-workspace.tsx", "utf8"), /canonicalClubWorkspaceHref\(clubId, params\)/)
 })
 
@@ -103,9 +103,9 @@ test("personal workspace: folded pages redirect with their focus parameters", ()
 
 test("personal pages folded into others redirect on the server", () => {
   const page = file => fs.readFileSync(file, "utf8")
-  assert.match(page("app/(product)/applications/status/page.tsx"), /redirect\(movedStudentHref\("\/applications\/status", params\)!\)/)
-  assert.match(page("app/(product)/clubs/meetings/page.tsx"), /redirect\(movedStudentHref\("\/clubs\/meetings", params\)!\)/)
-  assert.match(page("app/settings/profile/page.tsx"), /redirect\(`\/profile/)
-  assert.match(page("app/settings/organizations/page.tsx"), /redirect\(`\/clubs/)
-  assert.match(page("app/(product)/inbox/page.tsx"), /tab === "preferences"\) redirect\("\/settings\/notifications"\)/)
+  assert.match(page("app/(workspace)/applications/status/page.tsx"), /redirect\(movedStudentHref\("\/applications\/status", params\)!\)/)
+  assert.match(page("app/(workspace)/clubs/meetings/page.tsx"), /redirect\(movedStudentHref\("\/clubs\/meetings", params\)!\)/)
+  assert.match(page("app/(workspace)/settings/profile/page.tsx"), /redirect\(`\/profile/)
+  assert.match(page("app/(workspace)/settings/organizations/page.tsx"), /redirect\(`\/clubs/)
+  assert.match(page("app/(workspace)/inbox/page.tsx"), /tab === "preferences"\) redirect\("\/settings\/notifications"\)/)
 })

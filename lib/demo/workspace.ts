@@ -2,6 +2,7 @@
 // lib/workspace-api.ts while Demo Mode is active; never imported statically
 // by live code. Each export mirrors the facade export of the same name.
 import { pipelineListProjection } from "@/lib/pipeline-list";
+import { rankedReviewCandidate } from "@/lib/ranked-review-read";
 import { pagePipeline, completePipelineSelection, pipelinePageQuery, pipelineSelectionKey } from "@/lib/pipeline-page";
 import * as demoPipeline from "./pipeline";
 import * as demoInterviewEntry from "./interview-entry";
@@ -131,6 +132,7 @@ export const getClubPipeline: Demo<"getClubPipeline"> = (clubId, filter = {}) =>
       .map((a) => { const app = joinedApplication(a.id); const projected = s.clubs.find(c => c.id === clubId)?.rounds.find(r => r.id === a.roundId)?.anonymousReview ? anonymousApplication(app as unknown as ReviewApplication, genderVisibility(s.applicantDisplay[a.roundId]?.config)) : identifiedApplication(app as unknown as ReviewApplication, genderVisibility(s.applicantDisplay[a.roundId]?.config)); const ownSubmitted = a.evaluations.some(e=>e.interviewerId===demoMember().id&&e.roundId===a.roundId&&e.submittedAt); const assigned=s.interviewFoundation.assignments.some(g=>g.applicationId===a.id&&g.roundId===a.roundId&&g.memberId===demoMember().id&&!g.revokedAt);const caps=interviewCapabilities(demoMember());const self=a.studentId===demoMember().userId;const allowed=!self&&((caps.readClosing&&!assigned)||caps.participate&&assigned&&ownSubmitted); const roundScore=allowed?demoInterviews.getInterviewRoundScore({clubId,applicationId:a.id,roundId:a.roundId}):null;return { ...projected, evaluations: projected.evaluations.filter(e=>!self&&e.submittedAt&&(caps.participate&&e.interviewerId===demoMember().id&&s.interviewFoundation.assignments.some(g=>g.applicationId===a.id&&g.roundId===e.roundId&&g.memberId===demoMember().id&&!g.revokedAt)||allowed&&e.roundId===a.roundId)), roundScore, canEvaluate: !self && !ownSubmitted && (s.clubs.find(c=>c.id===clubId)?.rounds.find(r=>r.id===a.roundId)?.anonymousReview ? caps.participate : caps.participate && assigned), recruitmentOffer: s.recruitmentOffers.find(o=>o.applicationId===a.id) ?? null } }),
   }
 }
+export const getRankedReviewRound: Demo<"getRankedReviewRound"> = async (clubId, roundId) => ({ applications: (await api.getClubPipeline(clubId, { roundId })).applications.map(rankedReviewCandidate) })
 export const getClubPipelineList: Demo<"getClubPipelineList"> = async (...args: Parameters<typeof getClubPipeline>) => pipelineListProjection(await api.getClubPipeline(...args))
 export const getClubPipelinePage: Demo<"getClubPipelinePage"> = async (clubId, input = {}) => {
     const query = pipelinePageQuery.parse(input), member = demoMember()
@@ -384,7 +386,7 @@ export const getClubWorkspaceOverview: Demo<"getClubWorkspaceOverview"> = (clubI
   operations:demoDashboardSummary(clubId,membership.id),
   upcomingInterviews:null,votingSessions:null,
   // Read-only counts from the demo store; demo has no pending invitations.
-  members:organizationCapabilities(membership).canManageMembers||organizationCapabilities(membership).canChangeRoles?{active:s.memberships.filter(m=>m.clubId===clubId&&m.status==="ACTIVE").length,pendingInvitations:0}:null,
+  members:organizationCapabilities(membership).canManageMembers||organizationCapabilities(membership).canChangeRoles?{active:s.memberships.filter(m=>m.clubId===clubId&&m.status==="ACTIVE").length,pendingInvitations:0,recent:0}:null,
   club:{id:club.id,name:club.name,tagline:""},membership:{id:membership.id,isOwner:membership.isOwner,permissions:membership.permissions,interviewOffices:membership.interviewOffices,status:membership.status},
   meeting:s.meetings.filter(m=>m.clubId===clubId&&m.date>=now).sort((a,b)=>+a.date-+b.date).map(m=>({id:m.id,title:m.title,date:m.date,location:m.location,audience:m.audience}))[0]??null,
   work:s.tasks.filter(t=>t.clubId===clubId&&!["DRAFT","DONE"].includes(t.status)).flatMap(t=>t.assignments.filter(a=>a.memberId===membership.id&&(!a.submittedAt||a.revisionRequestedAt)&&!a.reviewedAt).map(a=>({id:a.id,task:{id:t.id,title:t.title,dueAt:t.dueAt,kind:t.kind}}))).sort((a,b)=>(a.task.dueAt?+a.task.dueAt:Infinity)-(b.task.dueAt?+b.task.dueAt:Infinity)).slice(0,5),

@@ -7,7 +7,7 @@ import { z } from "zod"
 import { cookies } from "next/headers"
 import { DEMO_COOKIE } from "@/lib/demo/access"
 import { getDashboardReviewQueue, getClubWorkspaceOverview, getWorkspaceRounds } from "@/actions/club-overview"
-import { getClubPipeline, getClubPipelineList, getClubPipelinePage, getClubPipelineSelection } from "@/actions/crm"
+import { getClubPipeline, getClubPipelineList, getClubPipelinePage, getClubPipelineSelection, getRankedReviewRound } from "@/actions/crm"
 import { pipelinePageQuery } from "@/lib/pipeline-page"
 import { getOrganizationMemberManagement } from "@/actions/organization-members"
 import { getOrganizationInvitations } from "@/actions/club-onboarding"
@@ -29,6 +29,10 @@ const noArgs = z.tuple([])
 // JSON serializes an explicit undefined optional argument as null.
 const votingArgs = z.preprocess(args => Array.isArray(args) && args.length === 1 ? [args[0], null] : args,
   z.tuple([z.string().uuid(), z.string().uuid().nullish().transform(value => value ?? undefined)]))
+
+// Every `case` below, so logs carry only a known constant, never a raw query value.
+const workspaceReadKinds = new Set(["myAvailability", "roundAvailability", "availabilityOverview", "staffingCoverage", "panelWorkspace", "assignedRooms", "interviewWorkspace", "interviewRounds", "roomWorkspace", "bookingPublication", "tasks", "meetings", "announcements", "notifications", "dashboardReviews", "overview", "members", "pipeline", "pipelineList", "pipelinePage", "pipelineSelection", "rankedReviewSettings", "rankedReviewRound", "rounds", "applicationSettings", "pipelineSettings", "directory", "publicClub", "corkboard", "taskNotifications", "studentDashboard", "voting", "votingJoin", "invitations", "tutorial", "applicantDisplay", "attendance"])
+const loggedReadKind = (kind: string | null) => kind && workspaceReadKinds.has(kind) ? kind : "unknown"
 
 // An explicit read allowlist. Each private loader still runs its original live
 // authentication/authorization; no client identity or arbitrary action dispatch.
@@ -58,12 +62,14 @@ export async function GET(request: Request) {
       case "announcements": data = await (await import("@/actions/communications")).getClubAnnouncements(...clubArgs.parse(args)); break
       case "notifications": data = await (await import("@/actions/communications")).getDurableNotifications(...z.tuple([z.string().uuid().nullish().transform(value => value ?? undefined)]).parse(Array.isArray(args) && args.length === 0 ? [null] : args)); break
       case "dashboardReviews": data = await getDashboardReviewQueue(...z.tuple([z.string().uuid(), z.string().uuid()]).parse(args)); break
-      case "overview": data = await getClubWorkspaceOverview(...clubArgs.parse(args)); break
+      // Optional view: "club" (Club home), "recruiting" (Recruiting Overview), "strip" (Club home's recruiting link).
+      case "overview": { const [clubId, view] = z.union([clubArgs, z.tuple([z.string().uuid(), z.enum(["all", "club", "recruiting", "strip"])])]).parse(args) as [string, ("all" | "club" | "recruiting" | "strip")?]; data = await getClubWorkspaceOverview(clubId, view); break }
       case "members": data = await getOrganizationMemberManagement(...clubArgs.parse(args)); break
       case "pipeline": data = await getClubPipeline(...z.tuple([z.string().uuid(), z.object({ applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), gender: z.enum(genderValues).optional(), genderCounts: z.boolean().optional() }).strict().optional()]).parse(args)); break
       case "pipelineList": data = await getClubPipelineList(...z.tuple([z.string().uuid(), z.object({ applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), gender: z.enum(genderValues).optional(), genderCounts: z.boolean().optional() }).strict().optional()]).parse(Array.isArray(args) && args.length === 1 ? [args[0], {}] : args)); break
       case "pipelinePage": data = await getClubPipelinePage(...z.tuple([z.string().uuid(), pipelinePageQuery]).parse(Array.isArray(args) && args.length === 1 ? [args[0], {}] : args)); break
       case "pipelineSelection": data = await getClubPipelineSelection(...z.tuple([z.string().uuid(), pipelinePageQuery.omit({ cursor: true })]).parse(Array.isArray(args) && args.length === 1 ? [args[0], {}] : args)); break
+      case "rankedReviewRound": data = await getRankedReviewRound(...z.tuple([z.string().uuid(), z.string().uuid()]).parse(args)); break
       case "rankedReviewSettings": data = await (await import("@/actions/ranked-review")).getRankedReviewSettings(...z.tuple([z.string().uuid(), z.string().uuid()]).parse(args)); break
       case "rounds": data = await getWorkspaceRounds(...clubArgs.parse(args)); break
       case "applicationSettings": data = await getApplicationSettings(...clubArgs.parse(args)); break
@@ -86,6 +92,8 @@ export async function GET(request: Request) {
     if (error instanceof UniversityVerificationError) return Response.json({ error: error.code }, { status: error.code === "UNIVERSITY_VERIFICATION_REQUIRED" ? 403 : 503, headers })
     const redirect = error && typeof error === "object" && "digest" in error && String(error.digest).startsWith("NEXT_REDIRECT")
     const invalid = error instanceof z.ZodError || error instanceof SyntaxError
+    // Name the refused read kind (an allowlisted constant) so a recurring 403 can be traced; no arguments, ids or messages.
+    if (!redirect) console.warn(JSON.stringify({ event: "workspace.read.refused", kind: loggedReadKind(new URL(request.url).searchParams.get("kind")), status: invalid ? 400 : 403, error: error instanceof Error ? error.name : typeof error }))
     return Response.json({ error: invalid ? "Invalid workspace read" : "Workspace access unavailable" }, { status: invalid ? 400 : redirect ? 401 : 403, headers })
   }
   })

@@ -85,7 +85,7 @@ test("the frame renders the mark, club, task, Exit and one main", () => {
 })
 
 test("the interview room has its own route; old in-workspace room URLs and every producer point to it", () => {
-  const workspace = fs.readFileSync("app/club/[clubId]/workspace/page.tsx", "utf8")
+  const workspace = fs.readFileSync("app/(workspace)/club/[clubId]/workspace/page.tsx", "utf8")
   assert.match(workspace, /legacyInterviewRoomHref\(clubId, search\.toString\(\)\)/)
   const room = fs.readFileSync("app/(focus)/club/[clubId]/interview/page.tsx", "utf8")
   for (const rule of [/canAccessDemo/, /getCurrentUser\(\)/, /suspendedAt/, /redirect\(`\/login\?next=/, /getSessionUser\(\)[\s\S]*getCurrentUser\(\)/, /<AuthSessionBoundary><ClubInterviewRoom/]) assert.match(room, rule)

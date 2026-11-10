@@ -59,15 +59,15 @@ test("club workspace pages have their own title, not the club name", () => {
 
 test("every personal and settings page sets a server title; the template adds ' · OutClass'", () => {
   assert.match(fs.readFileSync("app/layout.tsx", "utf8"), /template: "%s · OutClass"/)
-  const pages = ["home", "explore", "explore/categories", "corkboard", "applications", "applications/status", "clubs", "clubs/meetings", "clubs/tasks", "calendar", "inbox", "profile"].map(p => `app/(product)/${p}/page.tsx`)
-    .concat(["page", "account/page", "notifications/page", "organizations/page", "profile/page", "availability/page", "interviews/page"].map(p => `app/settings/${p}.tsx`))
+  const pages = ["home", "explore", "explore/categories", "corkboard", "applications", "applications/status", "clubs", "clubs/meetings", "clubs/tasks", "calendar", "inbox", "profile"].map(p => `app/(workspace)/${p}/page.tsx`)
+    .concat(["page", "account/page", "notifications/page", "organizations/page", "profile/page", "availability/page", "interviews/page"].map(p => `app/(workspace)/settings/${p}.tsx`))
   for (const file of pages) {
     const source = fs.readFileSync(file, "utf8")
     assert.match(source, /metadata[^=]*=\s*\{\s*title:\s*"[^"|]+"/, file)
     assert.doesNotMatch(source, /\| OutClass/, file)
   }
-  assert.match(fs.readFileSync("app/(product)/inbox/page.tsx", "utf8"), /title: "Inbox"/)
-  assert.match(fs.readFileSync("app/club/[clubId]/workspace/page.tsx", "utf8"), /generateMetadata[\s\S]*clubWorkspaceTitle/)
+  assert.match(fs.readFileSync("app/(workspace)/inbox/page.tsx", "utf8"), /title: "Inbox"/)
+  assert.match(fs.readFileSync("app/(workspace)/club/[clubId]/workspace/page.tsx", "utf8"), /generateMetadata[\s\S]*clubWorkspaceTitle/)
 })
 
 test("retired names do not come back in navigation, search or Home", () => {

@@ -9,12 +9,15 @@ test('browser: workspace entry, explicit choices, club changes and history stay 
   // Real workspace, shell, permission checks and preference storage. Auth/data and
   // unrelated content surfaces are synthetic; this never contacts a live service.
   const mocks = {};
-  for (const file of ['components/club-workspace.tsx', 'components/shell/product-shell.tsx']) {
+  for (const file of ['components/club-workspace.tsx', 'components/shell/product-shell.tsx', 'components/shell/workspace-shell.tsx']) {
     for (const match of fs.readFileSync(file, 'utf8').matchAll(/["'](@\/components\/[^"']+)["']/g)) {
       mocks[match[1]] = 'module.exports=new Proxy({},{get:()=>()=>null});';
     }
   }
   delete mocks['@/components/shell/product-shell'];
+  // The persistent shell (as app/(workspace)/layout.tsx mounts it) wraps the workspace page.
+  for (const real of ['workspace-shell', 'workspace-shell-context', 'shell-state']) delete mocks['@/components/shell/' + real];
+  delete mocks['@/components/auth-session-boundary'];
   delete mocks['@/components/shell/use-workspace-access'];
   delete mocks['@/components/shell/workspace-selector'];
   // The real rail: Recruiting and Club are its sections, and the active item follows the URL.
@@ -35,8 +38,8 @@ test('browser: workspace entry, explicit choices, club changes and history stay 
     '@/components/ui/page-header': `const React=require('react');exports.PageHeader=({title})=>React.createElement('h1',null,title);`,
     '@/components/shell/floating-header-controls': `const React=require('react');exports.FloatingSearchTrigger=()=>null;`,
   });
-  const entry = `import React,{useSyncExternalStore}from'react';import{createRoot}from'react-dom/client';import{ClubWorkspace}from'@/components/club-workspace';
-window.EventSource=class{addEventListener(){}close(){}};for(const method of ['pushState','replaceState']){const native=history[method].bind(history);history[method]=(...args)=>{native(...args);dispatchEvent(new Event('popstate'))}}const subscribe=fn=>{addEventListener('popstate',fn);return()=>removeEventListener('popstate',fn)};function App(){const pathname=useSyncExternalStore(subscribe,()=>location.pathname);return <ClubWorkspace key={pathname} clubId={pathname.split('/')[2]} section="overview"/>}createRoot(document.getElementById('root')).render(<App/>);`;
+  const entry = `import React,{useSyncExternalStore}from'react';import{createRoot}from'react-dom/client';import{ClubWorkspace}from'@/components/club-workspace';import{WorkspaceShell}from'@/components/shell/workspace-shell';
+window.EventSource=class{addEventListener(){}close(){}};for(const method of ['pushState','replaceState']){const native=history[method].bind(history);history[method]=(...args)=>{native(...args);dispatchEvent(new Event('popstate'))}}const subscribe=fn=>{addEventListener('popstate',fn);return()=>removeEventListener('popstate',fn)};function App(){const pathname=useSyncExternalStore(subscribe,()=>location.pathname);return <WorkspaceShell><ClubWorkspace key={pathname} clubId={pathname.split('/')[2]} section="overview"/></WorkspaceShell>}createRoot(document.getElementById('root')).render(<App/>);`;
   const js = bundle(entry, mocks);
   const server = http.createServer((req, res) => {
     res.setHeader('content-type', req.url === '/fixture.js' ? 'text/javascript' : 'text/html');

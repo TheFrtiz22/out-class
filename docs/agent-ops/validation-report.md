@@ -105,3 +105,37 @@ deploy dpl_HCbKqFuC85KMysoQanp1KDZ2fF7U READY yes | new runtime error classes 0 
 ```
 - PR CI on head bc715296: 14/15 green. `Local Auth, settings and navigation` failed once at tests/pipeline-release-e2e.test.cjs:67 (one RSC request to the workspace path after the same-workspace "All applicants" CTA, expected 0); the same application code passed that job on 24534c26 (run 233). The CTA itself uses history.pushState (lib/workspace-navigation.ts), so the extra request is a Link prefetch or refresh elsewhere on the page; suspected timing, not proven. The owner merged with it red. This docs PR re-runs the suite on the merged code.
 - WATCH reasons: ~8 minutes of production traffic at check time; invitation-delivery and notification-delivery crons log nothing on success; the intermittent E2E above. Security advisors unchanged; first performance-advisor counts recorded in baseline-log.md.
+
+## 2026-11-08 · SHELL-1 · ui/shell-persistence-and-dashboard-split (local, not pushed)
+```
+branch ui/shell-persistence-and-dashboard-split (from main 5f50339a), commits: Part 1 2fff5ef1, Part 2 72bf6f5a, Part 3 (this commit)
+app gates: test 1869/1805/0 fail/64 skipped (60 env-gated + 4 new stack-only: workspace-shell-e2e, header-gap-e2e, overview-view-authz-e2e, dashboards-split-e2e) migrations 71 ok (RLS 85) lint ok (0 errors, 23 baseline warnings; ui-controls OK) types ok build ok
+per part: Part 1 1862/1801/0/61; Part 2 1863/1801/0/62
+disposable stack (run-onboarding-e2e.cjs --shell; SUPABASE_INTERNAL_IMAGE_REGISTRY=docker.io): workspace-shell-e2e 4/4, header-gap-e2e 1/1, overview-view-authz-e2e 1/1, dashboards-split-e2e 1/1
+glass: check-liquid-glass OUTCLASS_GLASS_SCOPE=dashboard 0 axe violations; scope=dashboards fails on main and branch alike in this container (chrome-error navigation in the fixture), covered instead by dashboards-split-e2e axe on the real app
+local environment notes: Playwright 1.64 expects Chromium build 1248, container has 1243 (local symlink only); WebKit not installed
+```
+2026-11-08 SHELL-1 after merging main b4cd90e8 and review fixes: app gates: test 1886/1821/0 fail/65 skipped (61 env-gated incl. main's new demo-browser-e2e + 4 stack-only shell suites) migrations 71 ok (RLS 85) lint ok (0 errors, 23 baseline warnings) types ok build ok | integration skips 10 unwired suites (unchanged from main); new shell suites wired to CI matrix `shell` | agent-hook tests n/a
+reviewers: authz-reviewer 0 high/medium (3 low: non-member nameless member rail fixed with test; view-as frame matches previous behavior; reviewed count is a team total by design); nextjs-reviewer 0 high (fixed: seeding merges instead of replacing, tabs observe late triggers, ref written in layout effect, pill re-click cancels pending, leave guard on Schedule interviews / strip / Open applicants; kept: meeting buttons open the meeting drawer where attendance and edit live; strip refreshes on remount); test-gap-reviewer: dashboards-split-e2e restored to the --shell runner and missing suites now fail the run
+disposable stack after fixes: workspace-shell-e2e, header-gap-e2e, overview-view-authz-e2e, dashboards-split-e2e 7/7 subtests
+```
+2026-11-08 SHARE-PREVIEWS-1 (Linux sandbox, macOS node_modules): club-share-preview 4/4; related unit suites 265/267 (2 env: sharp + Prisma native binaries) | typecheck ok | eslint changed files 0 errors | ui-controls OK | full test, test:migrations, build NOT run in this environment
+```
+```
+2026-11-09 WEB-APP-2 (container): mobile-leader-parity-browser 2/2 | related unit suites 150/150 | club-home-browser, club-home, operational-dashboards, mobile-app-parity 26/26 | typecheck ok | eslint changed files 0 errors | ui-controls OK | desktop 1440 pixel-identical (reduced motion) | club-workspace-refinements-browser fails before and after (Playwright expects chromium_headless_shell-1248, container has 1243) | full test, test:migrations, build NOT run in this environment (CI is the gate)
+```
+```
+2026-11-09 CLUB-SHORTNAME-1: app gates: test 1918/1852/0 fail/66 skipped (env-gated) migrations 72 ok (RLS 85) lint ok types ok build ok | targeted: club-short-name 12/12 (incl. PGlite constraint as non-superuser table owner), club-abbreviation 5/5, admin-clubs 13/13 (new short-name round trip fails without fix), selector/caption/rail/application-writing browser suites pass | real browser (shell fixture, Chromium): desktop MIIx/MII/full name/after-switch; phone mini pill 390/360/320 × 1–3 segments, 0 clipping, 0 overlap, axe (label-content-name-mismatch, target-size, color-contrast) 0
+reviewers: migration-reviewer safe as written (keep single ALTER; deploy order: migration before code); authz-reviewer no bypass, 1 high fixed (admin projection lost shortName) + 1 low fixed (snapshot shim), matrix corrected (1 untested cell: real cross-club membership)
+not run: run-disposable-postgres.cjs (no Docker daemon in this container), authenticated E2E stack
+```
+```
+2026-11-09 RANKED-PERF-1 (Windows, shared node_modules): ranked-review 10/10, ranked-review-actions 6/6, ranked-review-browser 1/1 (alone), ranked-review-performance 3/3, ranked-review-performance-browser 1/1 (alone), voting-target-summary-browser 2/2, voting-navigation 4/4, voting-room-demo 4/4 | loading-experience 10/11 (1 env: `git ls-files '...'` quoting under cmd.exe; changed files checked by hand for static lib/demo imports) | typecheck: only lib/account-data.ts shortName error from the stale shared Prisma client (pre-existing, not regenerated) | eslint changed files 0 errors (1 pre-existing warning) | ui-controls OK | full test, test:migrations, build NOT run
+2026-11-09 SEC-SEARCHPATH-1 (security/function-search-path from main 5cbaeb60): app gates: test 1975/1909/0 fail/66 skipped (env-gated) migrations 73 ok (RLS 85) lint ok types ok | build: CI
+targeted: database-reconciliation 5/5; test:migrations new pin assertion fails without the migration; shadow probe alone fails without it (actual 1, expected 0)
+disposable postgres:16 rehearsal (prod is 17.6): 72 prior migrations -> 49/65 public functions unpinned; non-owner role: exit 0, 49 WARNINGs, 49/65 unchanged; owner x2: exit 0, silent, 0/65; 74 user triggers attached+enabled; owners/secdef unchanged
+production read-only (catalog only): advisor 0/52/43 unchanged; 49 functions owned by postgres, INVOKER, proconfig null; md5(prosrc) = ledger for 42, other 7 equal after stripping CRLF
+reviewers: migration-reviewer nothing blocking; L1 verify advisor after apply, L2 ledger ordering vs #191, L3 try/finally (fixed)
+2026-11-09 EXPLORE-SUGGEST-1 (device Linux VM, macOS node_modules): club-suggestions 4/4 | related unit suites 129/129 (welcome mock added for new hook) | all non-browser unit files 1799 pass / 8 fail env-only (sharp, Prisma query engine, lightningcss native binaries) / 24 skipped | typecheck: only pre-existing lib/account-data.ts shortName (shared Prisma client generated from older schema) | eslint changed files 0 | ui-controls OK
+not run: browser/E2E suites, next build, test:migrations (no linux chromium/native binaries in this shell) — run `pnpm run validate` on the Mac before PR
+```

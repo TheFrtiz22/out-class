@@ -70,6 +70,7 @@ export const getStudentDashboardData = adapt(() => readWorkspace<Awaited<ReturnT
 export const getClubDirectory = adapt((...args: Parameters<typeof directory.getClubDirectory>) => readWorkspace<Awaited<ReturnType<typeof directory.getClubDirectory>>>("directory", args), "getClubDirectory")
 export const getPublicClub = adapt((...args: Parameters<typeof directory.getPublicClub>) => readWorkspace<Awaited<ReturnType<typeof directory.getPublicClub>>>("publicClub", args), "getPublicClub")
 export const getClubPipeline = adapt((...args: Parameters<typeof crm.getClubPipeline>) => readWorkspace<Awaited<ReturnType<typeof crm.getClubPipeline>>>("pipeline", args), "getClubPipeline")
+export const getRankedReviewRound = adapt((...args: Parameters<typeof crm.getRankedReviewRound>) => readWorkspace<Awaited<ReturnType<typeof crm.getRankedReviewRound>>>("rankedReviewRound", args), "getRankedReviewRound")
 export const getClubPipelineList = adapt((...args: Parameters<typeof crm.getClubPipelineList>) => readWorkspace<Awaited<ReturnType<typeof crm.getClubPipelineList>>>("pipelineList", args), "getClubPipelineList")
 export const getClubPipelinePage = adapt((...args: Parameters<typeof crm.getClubPipelinePage>) => readWorkspace<Awaited<ReturnType<typeof crm.getClubPipelinePage>>>("pipelinePage", args), "getClubPipelinePage")
 export const getClubPipelineSelection = adapt((...args: Parameters<typeof crm.getClubPipelineSelection>) => readWorkspace<Awaited<ReturnType<typeof crm.getClubPipelineSelection>>>("pipelineSelection", args), "getClubPipelineSelection")

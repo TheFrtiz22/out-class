@@ -13,6 +13,18 @@
 
 After reconciliation, npm run db:deploy uses Prisma migrate deploy and rejects an active conflicting Supabase SQL history. The repository guard is not a remote drift detector or a baseline approval. Run prisma migrate status and inspect the reviewed plan first. Generate Prisma Client and deploy the application after the required migrations.
 
+## Hosted migrations (production only)
+
+There is no staging database (owner decision, 2026-11-09). A schema change is rehearsed on disposable PostgreSQL in the PR (`pnpm run test:migrations` and its tests), dry-run against production, then applied to production before the code that needs it is deployed. The production build's read-only schema check (`prebuild`) refuses to publish code whose columns are missing, so applying late blocks a release; it never breaks the live site.
+
+**From GitHub Actions:** `.github/workflows/database-migrate.yml` (Actions → Database migrations → Run workflow) runs `prisma migrate deploy` against production, by hand only. Inputs: `ref` (the branch, tag or commit whose `prisma/migrations` to apply; default `main`) and `dry_run` (default on: lists pending migrations and applies nothing; it fails on a connection, credential, failed or divergent-history error). Runs queue behind each other and are never cancelled mid-migration. The job checks out the ref without credentials, installs without scripts, runs `scripts/check-migration-path.cjs`, shows `prisma migrate status`, applies, and confirms the status is current.
+
+One-time owner setup (repository Settings → Environments): create `production`, add the secret `MIGRATION_DATABASE_URL` (the operator connection string in direct or session mode, not the transaction pooler; never commit it or paste it into chat), and enable **Required reviewers** with the owner. Every run then waits for that approval, which shows the run name ("Migrate production from <ref>").
+
+**From an owner's machine:** with the operator connection in `DATABASE_URL` for that terminal only, run `npx prisma migrate status`, check that only the expected migrations are pending, then `npm run db:deploy` and `npx prisma migrate status` again.
+
+Order for a schema change: merge-ready PR, dry run, apply (approve), then merge the PR (or redeploy `main` if it merged first).
+
 ## Fresh installations
 
 Provision PostgreSQL (and Supabase Auth/Storage if used). Use npm run db:deploy against an empty application schema, then npx prisma generate. Do not load the archived snapshot. Existing Supabase-managed auth/storage schemas are not replaced by Prisma.

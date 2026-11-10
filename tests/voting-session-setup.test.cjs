@@ -29,3 +29,16 @@ test('unfinished setup drafts use private revisioned editor storage, require lea
  const h=harness(),api=load('actions/editor-drafts.ts',h.mocks),plans=load('actions/voting-session-setup.ts',h.mocks),scope={kind:'voting-setup',clubId,resourceId:uuid(2000)},content={version:1,step:1,cycle:cycleId,round:roundId,name:'Unfinished synthetic setup',timing:'NOW',localTime:'',timeZone:'America/New_York',occurrence:'EARLIER',duration:'',location:'',instructions:'',applicants:[],voters:[],target:'',fields:[],highlights:{},notify:false,initialized:true,sessionId:uuid(2000),planRevision:null};const d={scope,content,base:'',revision:0,mutationId:uuid(2001)};
  assert.equal((await api.saveEditorDraft(d)).revision,1);assert.equal((await api.saveEditorDraft(d)).revision,1);assert.equal((await api.getEditorDraft(scope)).content.name,content.name);assert.equal((await plans.listVotingSetupDrafts({clubId})).length,1);assert.equal((await api.saveEditorDraft({...d,mutationId:uuid(2002)})).error,'conflict');h.as(voterId);await assert.rejects(api.getEditorDraft(scope),/Denied|permission/);assert.equal(h.state().sessions.length,0);assert.equal(h.state().notifications.length,0);
 });
+test('Discard draft tombstones only the caller own club-scoped setup draft, requires leadership and hides drafts of created sessions',async()=>{
+ const h=harness(),api=load('actions/editor-drafts.ts',h.mocks),plans=load('actions/voting-session-setup.ts',h.mocks),content=(id,name)=>({version:1,step:1,cycle:cycleId,round:roundId,name,timing:'NOW',localTime:'',timeZone:'America/New_York',occurrence:'EARLIER',duration:'',location:'',instructions:'',applicants:[],voters:[],target:'',fields:[],highlights:{},notify:false,initialized:true,sessionId:id,planRevision:null});
+ const save=(id,name,n)=>api.saveEditorDraft({scope:{kind:'voting-setup',clubId,resourceId:id},content:content(id,name),base:'',revision:0,mutationId:uuid(3000+n)});
+ await save(uuid(2100),'Keep me',1);await save(uuid(2101),'Discard me',2);await save(sessionId,'Scheduled already',3);await h.api.createLiveVotingRoom(body());
+ assert.deepEqual((await plans.listVotingSetupDrafts({clubId})).map(d=>d.name).sort(),['Discard me','Keep me']);
+ h.as(voterId);await assert.rejects(plans.discardVotingSetupDraft({clubId,draftId:uuid(2101)}),/Denied|permission/);h.as(leaderId);
+ await assert.rejects(plans.discardVotingSetupDraft({clubId,draftId:'../other'}));
+ assert.deepEqual(await plans.discardVotingSetupDraft({clubId,draftId:uuid(2101)}),{discarded:true});assert.deepEqual(await plans.discardVotingSetupDraft({clubId,draftId:uuid(2101)}),{discarded:true});
+ const row=h.state().drafts.find(d=>d.key===`voting-setup:${clubId}:${uuid(2101)}`);assert.equal(row.content,null);assert.equal(row.revision,2);
+ assert.deepEqual((await plans.listVotingSetupDrafts({clubId})).map(d=>d.name),['Keep me']);assert.equal(h.state().sessions.length,1);
+ // An open editor still holding revision 1 cannot resurrect the discarded draft.
+ assert.equal((await api.saveEditorDraft({scope:{kind:'voting-setup',clubId,resourceId:uuid(2101)},content:content(uuid(2101),'Stale tab'),base:'',revision:1,mutationId:uuid(3999)})).error,'conflict');
+});

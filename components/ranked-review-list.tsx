@@ -1,6 +1,6 @@
 "use client"
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
-import type { getClubPipeline, getRankedReviewSettings, saveRankedReviewBands } from "@/lib/workspace-api"
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import type { getRankedReviewRound, getRankedReviewSettings, saveRankedReviewBands } from "@/lib/workspace-api"
 import { ApplicantIdentity } from "@/components/applicant-identity"
 import { VotingSelection } from "@/components/views/leader-dashboard/live-applicant-views"
 import { Button } from "@/components/ui/button"
@@ -13,13 +13,12 @@ import { formatAverage, scoredEvaluationsLabel } from "@/lib/interview-review-su
 import { NO_INTERVIEW_SCORES } from "@/lib/interview-feedback"
 import { profilePhotoSource } from "@/lib/profile-photo"
 import { applicationStatusLabels } from "@/lib/application-status"
-import { RANKED_REVIEW_NO_CYCLE, assignBands, bandsFromBoundaries, rankApplicants, rankedBandLabels, rankedBandOrder, rankedCycleKey, rankingSignature, tieCrossesBoundary, validateBands, type RankedBand, type RankedBands } from "@/lib/ranked-review"
+import { RANKED_REVIEW_NO_CYCLE, bandsFromBoundaries, rankedBandLabels, rankedBandOrder, rankedCycleKey, rankedReviewView, rankingSignature, validateBands, type RankedBand, type RankedBands } from "@/lib/ranked-review"
 import { VotingTargetSummary, type ScopedTargetSummary } from "@/components/voting-target-summary"
 import { bandCounts } from "@/lib/voting-target-summary"
 import "./ranked-review-list.css"
 
-type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
-type Candidate = Pipeline["applications"][number]
+type Pipeline = Awaited<ReturnType<typeof getRankedReviewRound>>
 type Settings = Awaited<ReturnType<typeof getRankedReviewSettings>>
 export type RankedReviewApi = {
   loadRound: (roundId: string) => Promise<Pipeline>
@@ -30,9 +29,12 @@ export type RankedReviewApi = {
 }
 type Round = { id: string; name: string; anonymousReview: boolean }
 type Snapshot = { roundId: string; data: Pipeline; settings: Settings; signature: string }
-type Row = { id: string; app: Candidate; name: string; photo: string | null; anonymous: boolean; cycle: string; average: number | null; submitted: number; required: number; visible: boolean; status: string }
+type Row = { id: string; name: string; photo: string | null; anonymous: boolean; cycle: string; average: number | null; submitted: number; required: number; visible: boolean; status: string }
+type ShownRow = Row & { rank?: number; band?: RankedBand | null }
 
 const selectStyle = "h-9 max-w-full rounded-md border border-border bg-background px-2 text-sm focus-visible:outline-2 focus-visible:outline-ring"
+/** Large rounds render in steps so the first ranks paint quickly; every applicant stays reachable. */
+const RANKED_PAGE_SIZE = 200
 
 function toRows(data: Pipeline, roundId: string): Row[] {
   // Server reads are already scoped to the round; this keeps another round's rows out by construction.
@@ -40,7 +42,7 @@ function toRows(data: Pipeline, roundId: string): Row[] {
     const anonymous = app.studentId.startsWith("anonymous-")
     const profile = app.student.studentProfile
     const summary = app.roundScore
-    return { id: app.id, app, anonymous, status: app.status,
+    return { id: app.id, anonymous, status: app.status,
       name: profile ? `${profile.firstName} ${profile.lastName}`.trim() : app.student.email,
       photo: anonymous ? null : profilePhotoSource(profile?.headshotUrl) ?? null,
       cycle: anonymous ? RANKED_REVIEW_NO_CYCLE : rankedCycleKey(app.recruitmentCycleId),
@@ -83,6 +85,8 @@ export function RankedReviewList({ clubId, rounds, initialRoundId, api, onOpen, 
   const [summaryTick, setSummaryTick] = useState(0)
   const summaryTicket = useRef(0)
   const listHeading = useRef<HTMLHeadingElement>(null)
+  const listRoot = useRef<HTMLElement>(null)
+  const [limit, setLimit] = useState({ key: "", count: RANKED_PAGE_SIZE })
 
   const load = useCallback(async (target: string) => {
     const mine = ++ticket.current
@@ -123,25 +127,27 @@ export function RankedReviewList({ clubId, rounds, initialRoundId, api, onOpen, 
   }
 
   const round = rounds.find(r => r.id === roundId)
-  const rows = useMemo(() => shown ? toRows(shown.data, shown.roundId) : [], [shown])
+  const anonymousRound = !!round?.anonymousReview
+  // Rows depend only on the loaded data, so saving bands or selecting never rebuilds them.
+  const shownData = shown?.data, shownRound = shown?.roundId
+  const rows = useMemo(() => shownData && shownRound ? toRows(shownData, shownRound) : [], [shownData, shownRound])
   const cycleOptions = useMemo(() => {
-    if (!shown || round?.anonymousReview) return []
+    if (!shown || anonymousRound) return []
     const present = new Set(rows.map(r => r.cycle))
     const named = shown.settings.cycles.filter(c => present.has(c.id)).map(c => ({ key: c.id, label: c.name }))
     const unknown = [...present].filter(key => key !== RANKED_REVIEW_NO_CYCLE && !named.some(c => c.key === key)).sort().map(key => ({ key, label: "Unnamed cycle" }))
     return [...named, ...unknown, ...(present.has(RANKED_REVIEW_NO_CYCLE) ? [{ key: RANKED_REVIEW_NO_CYCLE, label: "No cycle recorded" }] : [])]
-  }, [shown, rows, round?.anonymousReview])
-  const cycleKey = round?.anonymousReview ? RANKED_REVIEW_NO_CYCLE : cycleOptions.find(c => c.key === chosenCycle)?.key ?? cycleOptions[0]?.key ?? RANKED_REVIEW_NO_CYCLE
-  const scoped = rows.filter(r => r.cycle === cycleKey || round?.anonymousReview)
+  }, [shown, rows, anonymousRound])
+  const cycleKey = anonymousRound ? RANKED_REVIEW_NO_CYCLE : cycleOptions.find(c => c.key === chosenCycle)?.key ?? cycleOptions[0]?.key ?? RANKED_REVIEW_NO_CYCLE
   const setting = shown?.settings.scopes[cycleKey] ?? { bands: null, revision: 0 }
-  const { ranked, notScored, hidden } = rankApplicants(scoped)
-  const banded = assignBands(ranked, setting.bands)
-  const ties = tieCrossesBoundary(ranked, setting.bands)
-  const tiedRanks = new Set(ranked.filter((r, i) => ranked.some((o, j) => j !== i && o.rank === r.rank)).map(r => r.rank))
+  const settingBands = setting.bands
+  // Ranking, bands and ties are derived once per data/scope/bands change, never on selection or voting toggles.
+  const view = useMemo(() => rankedReviewView(rows.filter(r => r.cycle === cycleKey || anonymousRound), settingBands), [rows, cycleKey, anonymousRound, settingBands])
+  const { ranked, notScored, hidden, banded, byBand, ties, tiedRanks } = view
   const canManage = !!shown?.settings.canManage
-  const bandSummary = shown ? bandCounts({ banded, notScored: notScored.length, hidden: hidden.length, bandsSet: !!setting.bands }) : null
+  const bandSummary = useMemo(() => shown ? bandCounts({ banded, notScored: notScored.length, hidden: hidden.length, bandsSet: !!settingBands }) : null, [shown, banded, notScored, hidden, settingBands])
   // Decision counts follow the same round and cycle as the list; applicants without a cycle have no voting room.
-  const summaryCycle = round?.anonymousReview ? undefined : cycleKey === RANKED_REVIEW_NO_CYCLE ? null : cycleKey
+  const summaryCycle = anonymousRound ? undefined : cycleKey === RANKED_REVIEW_NO_CYCLE ? null : cycleKey
   const summaryKey = shown && api.loadRoundSummary && summaryCycle !== null ? `${shown.roundId}:${summaryCycle ?? "all"}` : ""
   useEffect(() => {
     if (!summaryKey || !shown || !api.loadRoundSummary) return
@@ -154,20 +160,45 @@ export function RankedReviewList({ clubId, rounds, initialRoundId, api, onOpen, 
   const summaryStatus = !api.loadRoundSummary ? undefined : summaryCycle === null ? "Voting decisions are recorded per recruitment cycle." : currentSummary?.failed ? "Round decisions unavailable." : !currentSummary ? "Loading…" : undefined
   const selectedMissing = !!selectedId && !!shown && !rows.some(r => r.id === selectedId)
 
-  function select(id: string) { setSelection({ key: `${clubId}:${roundId}`, id }); onOpen(id) }
+  // Stable handlers so unchanged rows skip re-rendering; the host's toggle may change identity every render.
+  const onOpenRef = useRef(onOpen), toggleRef = useRef(votingSelection?.toggle)
+  useEffect(() => { onOpenRef.current = onOpen; toggleRef.current = votingSelection?.toggle })
+  // Selection is keyed by club + round, so it never carries into another round.
+  const select = useCallback((id: string) => { setSelection({ key: `${clubId}:${roundId}`, id }); onOpenRef.current(id) }, [clubId, roundId])
+  const toggle = useCallback((id: string) => toggleRef.current?.(id), [])
+  const votingIds = votingSelection?.ids
+  const chosen = useMemo(() => new Set(votingIds), [votingIds])
+  const voting = !!votingSelection
 
-  const row = (r: Row & { rank?: number; band?: RankedBand | null }) => <li key={r.id} className="oc-ranked-row" data-band={r.band ?? undefined} data-selected={selectedId === r.id || undefined}>
-    {votingSelection && <VotingSelection app={r.app} name={r.name} selection={votingSelection} />}
-    <button type="button" data-applicant-id={r.id} aria-current={selectedId === r.id ? "true" : undefined} className="oc-ranked-open" onClick={() => select(r.id)}>
-      <span className="oc-ranked-rank">{r.rank !== undefined ? <><span aria-hidden="true">{r.rank}</span><span className="sr-only">Rank {r.rank}{tiedRanks.has(r.rank) ? ", tied" : ""}</span>{tiedRanks.has(r.rank) && <span className="oc-ranked-tied" aria-hidden="true">Tied</span>}</> : <span aria-hidden="true">–</span>}</span>
-      <ApplicantIdentity name={r.name} photo={r.photo} anonymous={r.anonymous} className="oc-ranked-identity"><span className="text-xs text-muted-foreground">{applicationStatusLabels[r.status as keyof typeof applicationStatusLabels] ?? r.status}</span></ApplicantIdentity>
-      <span className="oc-ranked-score">{!r.visible ? <span className="oc-ranked-hidden"><Lock aria-hidden="true" size={14} />Hidden until you review</span> : <><strong>{formatAverage(r.average)}{r.average !== null && <span className="text-muted-foreground"> / 10</span>}</strong><span className="text-xs text-muted-foreground">{r.average === null ? `${r.submitted} of ${r.required} reviews submitted` : scoredEvaluationsLabel(r.submitted)}</span></>}</span>
-      {r.band && <span className="oc-ranked-band" data-band={r.band}>{rankedBandLabels[r.band]}</span>}
-      <span className="sr-only"> · Open applicant review and interviewer feedback</span>
-    </button>
-  </li>
+  // Display order: ranked (by band when set), then Not scored, then hidden. Only the first `visibleCount` render.
+  const ordered = useMemo(() => [...(settingBands ? rankedBandOrder.flatMap(b => byBand[b]) : banded), ...notScored, ...hidden], [settingBands, byBand, banded, notScored, hidden])
+  const limitKey = `${shown?.roundId ?? ""}:${cycleKey}`
+  const requested = limit.key === limitKey ? limit.count : RANKED_PAGE_SIZE
+  const selectedIndex = selectedId ? ordered.findIndex(r => r.id === selectedId) : -1
+  // The open applicant always stays on screen, even after a refresh moves them down.
+  const visibleCount = Math.min(ordered.length, Math.max(requested, selectedIndex + 1))
+  const remaining = ordered.length - visibleCount
+  function showMore(count: number) {
+    const next = ordered[visibleCount]?.id
+    setLimit({ key: limitKey, count: visibleCount + count })
+    // Keyboard users continue from the first newly shown applicant.
+    if (next) requestAnimationFrame(() => listRoot.current?.querySelector<HTMLButtonElement>(`button[data-applicant-id="${CSS.escape(next)}"]`)?.focus())
+  }
 
-  return <section className="oc-ranked-review space-y-4" aria-labelledby="ranked-review-heading">
+  let budget = visibleCount
+  const take = <T,>(items: readonly T[]) => { const part = items.slice(0, Math.max(0, budget)); budget -= part.length; return part }
+  const renderRow = (r: ShownRow) => <RankedRow key={r.id} row={r} tied={r.rank !== undefined && tiedRanks.has(r.rank)} selected={selectedId === r.id} voting={voting} checked={chosen.has(r.id)} onSelect={select} onToggle={toggle} />
+  const rankedSection = !ranked.length ? <p className="text-sm text-muted-foreground">{NO_INTERVIEW_SCORES}</p>
+    : settingBands ? rankedBandOrder.map(band => {
+      const members = byBand[band]
+      const visible = take(members)
+      const b = settingBands
+      const range = band === "red" ? `ranks ${b.red.start}+` : `ranks ${b[band].start}–${b[band].end}`
+      return visible.length ? <div key={band} className="oc-ranked-group" data-band={band}><h4 className="oc-ranked-group-heading text-xs font-medium"><span className="oc-ranked-band" data-band={band}>{rankedBandLabels[band]}</span> {range} · {members.length}</h4><ol className="oc-ranked-list">{visible.map(renderRow)}</ol></div> : null
+    }) : <ol className="oc-ranked-list">{take(banded).map(renderRow)}</ol>
+  const notScoredShown = take(notScored), hiddenShown = take(hidden)
+
+  return <section ref={listRoot} className="oc-ranked-review space-y-4" aria-labelledby="ranked-review-heading">
     <div className="flex flex-wrap items-end justify-between gap-3">
       <div className="flex flex-wrap items-end gap-3">
         <label className="grid gap-1 text-xs text-muted-foreground">Round
@@ -198,18 +229,31 @@ export function RankedReviewList({ clubId, rounds, initialRoundId, api, onOpen, 
         {ties.map(t => <p key={`${t.band}:${t.rank}`} role="note" className="oc-ranked-tie text-xs" data-band={t.band}>{t.message}</p>)}
         {selectedMissing && <p role="status" className="text-xs text-muted-foreground">The selected applicant is no longer in this round.</p>}
         <h3 ref={listHeading} tabIndex={-1} id="ranked-review-heading" className="text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring">Ranked applicants <span className="font-normal text-muted-foreground">· {ranked.length} scored</span></h3>
-        {!ranked.length ? <p className="text-sm text-muted-foreground">{NO_INTERVIEW_SCORES}</p>
-          : setting.bands ? rankedBandOrder.map(band => {
-            const members = banded.filter(r => r.band === band)
-            const b = setting.bands!
-            const range = band === "red" ? `ranks ${b.red.start}+` : `ranks ${b[band].start}–${b[band].end}`
-            return members.length ? <div key={band} className="oc-ranked-group" data-band={band}><h4 className="oc-ranked-group-heading text-xs font-medium"><span className="oc-ranked-band" data-band={band}>{rankedBandLabels[band]}</span> {range} · {members.length}</h4><ol className="oc-ranked-list">{members.map(row)}</ol></div> : null
-          }) : <ol className="oc-ranked-list">{banded.map(row)}</ol>}
-        {notScored.length > 0 && <div className="oc-ranked-group" data-group="not-scored"><h4 className="text-xs font-medium">Not scored · {notScored.length}</h4><p className="text-xs text-muted-foreground">No submitted interview score yet. Not ranked and not placed in a band.</p><ul className="oc-ranked-list">{notScored.map(row)}</ul></div>}
-        {hidden.length > 0 && <div className="oc-ranked-group" data-group="hidden"><h4 className="text-xs font-medium">Score not available · {hidden.length}</h4><p className="text-xs text-muted-foreground">You can’t see these scores yet, so they are not ranked.</p><ul className="oc-ranked-list">{hidden.map(row)}</ul></div>}
+        {rankedSection}
+        {notScoredShown.length > 0 && <div className="oc-ranked-group" data-group="not-scored"><h4 className="text-xs font-medium">Not scored · {notScored.length}</h4><p className="text-xs text-muted-foreground">No submitted interview score yet. Not ranked and not placed in a band.</p><ul className="oc-ranked-list">{notScoredShown.map(renderRow)}</ul></div>}
+        {hiddenShown.length > 0 && <div className="oc-ranked-group" data-group="hidden"><h4 className="text-xs font-medium">Score not available · {hidden.length}</h4><p className="text-xs text-muted-foreground">You can’t see these scores yet, so they are not ranked.</p><ul className="oc-ranked-list">{hiddenShown.map(renderRow)}</ul></div>}
+        {remaining > 0 && <div className="oc-ranked-more flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <p aria-live="polite" className="mr-auto">Showing {visibleCount} of {ordered.length} applicants</p>
+          <Button type="button" size="sm" variant="outline" onClick={() => showMore(RANKED_PAGE_SIZE)}>Show {Math.min(RANKED_PAGE_SIZE, remaining)} more</Button>
+          {remaining > RANKED_PAGE_SIZE && <Button type="button" size="sm" variant="ghost" onClick={() => showMore(remaining)}>Show all {ordered.length}</Button>}
+        </div>}
       </>}
   </section>
 }
+
+/** One ranked row. Memoized: selecting an applicant or toggling a vote re-renders only the rows that changed. */
+const RankedRow = memo(function RankedRow({ row: r, tied, selected, voting, checked, onSelect, onToggle }: { row: ShownRow; tied: boolean; selected: boolean; voting: boolean; checked: boolean; onSelect: (id: string) => void; onToggle: (id: string) => void }) {
+  return <li className="oc-ranked-row" data-band={r.band ?? undefined} data-selected={selected || undefined}>
+    {voting && <VotingSelection app={r} name={r.name} selection={{ ids: checked ? [r.id] : [], toggle: onToggle }} />}
+    <button type="button" data-applicant-id={r.id} aria-current={selected ? "true" : undefined} className="oc-ranked-open" onClick={() => onSelect(r.id)}>
+      <span className="oc-ranked-rank">{r.rank !== undefined ? <><span aria-hidden="true">{r.rank}</span><span className="sr-only">Rank {r.rank}{tied ? ", tied" : ""}</span>{tied && <span className="oc-ranked-tied" aria-hidden="true">Tied</span>}</> : <span aria-hidden="true">–</span>}</span>
+      <ApplicantIdentity name={r.name} photo={r.photo} anonymous={r.anonymous} className="oc-ranked-identity"><span className="text-xs text-muted-foreground">{applicationStatusLabels[r.status as keyof typeof applicationStatusLabels] ?? r.status}</span></ApplicantIdentity>
+      <span className="oc-ranked-score">{!r.visible ? <span className="oc-ranked-hidden"><Lock aria-hidden="true" size={14} />Hidden until you review</span> : <><strong>{formatAverage(r.average)}{r.average !== null && <span className="text-muted-foreground"> / 10</span>}</strong><span className="text-xs text-muted-foreground">{r.average === null ? `${r.submitted} of ${r.required} reviews submitted` : scoredEvaluationsLabel(r.submitted)}</span></>}</span>
+      {r.band && <span className="oc-ranked-band" data-band={r.band}>{rankedBandLabels[r.band]}</span>}
+      <span className="sr-only"> · Open applicant review and interviewer feedback</span>
+    </button>
+  </li>
+})
 
 function BandSettings({ clubId, roundId, cycleKey, bands, revision, canManage, api, onSaved }: { clubId: string; roundId: string; cycleKey: string; bands: RankedBands | null; revision: number; canManage: boolean; api: RankedReviewApi; onSaved: (bands: RankedBands | null, revision: number) => void }) {
   const [greenEnd, setGreenEnd] = useState(String(bands?.green.end ?? 20))

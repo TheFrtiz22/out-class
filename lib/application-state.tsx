@@ -2,7 +2,7 @@
 
 import { useDemoMode } from "@/contexts/demo-context"
 import { isDemoActive, loadedDemoStore } from "@/lib/demo/loader"
-import { createContext, useCallback, useContext, useMemo, useState, useEffect, useRef, type Dispatch, type SetStateAction, type ReactNode } from "react"
+import { createContext, useCallback, useContext, useMemo, useState, useEffect, useLayoutEffect, useRef, type Dispatch, type SetStateAction, type ReactNode } from "react"
 import {
   managedEvents as seedManagedEvents, currentStudent, clubs, studentMemberships,
   type ManagedEvent,
@@ -47,6 +47,7 @@ type ApplicationStateValue = {
   clearLeaderFocus: () => void
   hydrated: boolean
   syncApplications: (apps: TrackedApplication[]) => void
+  seedServerData: (data: any) => void
   syncApplicationBookings: (apps: NonNullable<CalendarSource["applications"]>) => void
   trackedApps: TrackedApplication[]
   syncTaskNotifications: (items: Notification[], userId?: string) => void
@@ -85,16 +86,9 @@ type ApplicationStateValue = {
   notifyEventChange: (event: ManagedEvent, cancelled?: boolean) => void
 }
 
-const ApplicationStateContext = createContext<ApplicationStateValue | null>(null)
-
-// Persist the demo across navigation and reloads on this browser only.
-const STORAGE_KEY = "outclass-platform-v2"
-
-export function ApplicationStateProvider({ children, initialData, persistLocalState = initialData == null }: { children: ReactNode, initialData?: any, persistLocalState?: boolean }) {
-  const demo = useDemoMode()
-  if (demo.isDemoEnabled) { initialData = loadedDemoStore().demoDashboard(); persistLocalState = false }
-  // Map Prisma database models back to the UI's TrackedApplication structure
-  const serverApps = initialData?.applications?.map((app: any) => ({
+// Map Prisma database models back to the UI's TrackedApplication structure
+function serverTrackedApps(initialData: any): TrackedApplication[] {
+  return initialData?.applications?.map((app: any) => ({
     id: app.id,
     clubId: app.clubId,
     clubName: app.club?.name || app.clubId,
@@ -108,6 +102,17 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
     nextDeadline: app.status === "DRAFTING" ? "Finish draft" : "Under review",
     dueInHours: 0
   })) || []
+}
+
+const ApplicationStateContext = createContext<ApplicationStateValue | null>(null)
+
+// Persist the demo across navigation and reloads on this browser only.
+const STORAGE_KEY = "outclass-platform-v2"
+
+export function ApplicationStateProvider({ children, initialData, persistLocalState = initialData == null }: { children: ReactNode, initialData?: any, persistLocalState?: boolean }) {
+  const demo = useDemoMode()
+  if (demo.isDemoEnabled) { initialData = loadedDemoStore().demoDashboard(); persistLocalState = false }
+  const serverApps = serverTrackedApps(initialData)
 
   const [leaderFocus, focusLeader] = useState<LeaderFocus | null>(null)
   const clearLeaderFocus = useCallback(() => focusLeader(null), [])
@@ -187,6 +192,18 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
   const syncApplicationBookings = useCallback((applications: NonNullable<CalendarSource["applications"]>) => {
     if (demo.isDemoEnabled) return // Demo bookings already refresh from the shared demo store.
     setEvents(previous => [...previous.filter(event => !(event.readOnly && event.id.startsWith("booking-"))), ...studentCalendarEvents({ applications })])
+  }, [demo.isDemoEnabled])
+  /** The persistent workspace shell owns this store; a student page hands it the data its server render loaded. */
+  // Entries the last server payload supplied. A later payload (router.refresh, returning to a page) replaces
+  // exactly these, so removed or rescheduled records disappear while client-only entries are kept.
+  const seeded = useRef<{ apps: Set<string>; events: Set<string> }>({ apps: new Set(), events: new Set() })
+  const seedServerData = useCallback((data: any) => {
+    if (demo.isDemoEnabled || !data) return
+    const apps = serverTrackedApps(data), events = studentCalendarEvents(data), last = seeded.current
+    // Server-owned: anything the previous payload supplied, plus read-only booking events (server projections).
+    setTrackedApps(previous => [...previous.filter(app => !last.apps.has(app.id) && !apps.some(server => server.clubId === app.clubId)), ...apps])
+    setEvents(previous => [...previous.filter(event => !last.events.has(event.id) && !(event.readOnly && event.id.startsWith("booking-")) && !events.some(server => server.id === event.id)), ...events])
+    seeded.current = { apps: new Set(apps.map(app => app.id)), events: new Set(events.map(event => event.id)) }
   }, [demo.isDemoEnabled])
   const [focusApplicationClubId, setFocusApplicationClubId] = useState<string | null>(null)
 
@@ -442,6 +459,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
       hydrated,
       leaderFocus, focusLeader, clearLeaderFocus,
       syncApplications: setTrackedApps,
+      seedServerData,
       syncApplicationBookings,
       trackedApps,
       notifications, personalTaskActivities, syncTaskNotifications, durableUnread, durableCursor, syncDurableNotifications, markAllNotificationsRead,
@@ -460,7 +478,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
       managedEvents, setManagedEvents, scheduleBlocks, setScheduleBlocks, bookInterview, submitApplication, cancelInterview, notifyEventChange, calendarYear, setCalendarYear,
     }),
     [
-      leaderFocus, clearLeaderFocus, syncApplicationBookings,
+      leaderFocus, clearLeaderFocus, syncApplicationBookings, seedServerData,
       hydrated,
       trackedApps,
       notifications, personalTaskActivities, syncTaskNotifications, durableUnread, durableCursor, syncDurableNotifications, markAllNotificationsRead,
@@ -489,4 +507,11 @@ export function useApplicationState() {
     throw new Error("useApplicationState must be used within an ApplicationStateProvider")
   }
   return ctx
+}
+
+/** Applies a student page's server data to the shell-owned store once per payload, before paint. */
+const useBrowserLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect
+export function useSeedApplicationData(data: any) {
+  const { seedServerData } = useApplicationState()
+  useBrowserLayoutEffect(() => { seedServerData(data) }, [data, seedServerData])
 }

@@ -5,7 +5,7 @@ const { build, serve } = require(path.join(repo, 'scripts/check-floating-header.
 async function startClubHome() {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'outclass-club-home-'))
   const drawers = path.join(repo, 'tests/fixtures/club-home/drawers.jsx')
-  const aliases = Object.fromEntries(['@/components/tasks/dashboard-task', '@/components/events/dashboard-meeting', '@/components/interviews/dashboard-preparation'].map(key => [`${key}$`, drawers]))
+  const aliases = Object.fromEntries(['@/components/tasks/dashboard-task', '@/components/events/dashboard-meeting', '@/components/interviews/dashboard-preparation', '@/components/organization-setup-checklist', '@/components/club-home/use-recruiting-strip'].map(key => [`${key}$`, drawers]))
   await build(root, { entry: path.join(repo, 'tests/fixtures/club-home/app.jsx'), aliases })
   const { server, base } = await serve(root)
   return { base, url: query => `${base}/club/fixture-mii/workspace?section=overview&${query}`, async close() { await new Promise(resolve => server.close(resolve)); await fs.rm(root, { recursive: true, force: true }) } }

@@ -31,7 +31,7 @@ changing every screen's spacing in a foundations change.
 
 The intentional current font exception is documented in [the typography audit](typography-audit.md) and [Campus OS](outclass-campus-os.md). The October 2 migration replaced Horsham Serial with self-hosted Libre Caslon Text. Do not silently restore Horsham or add another downloaded family.
 
-Public marketing and authentication use Caslon throughout. Authenticated product shells, focused workspaces, and the reference page use self-hosted Source Sans 3 for operational text and Caslon for display/page/dialog headings. `styles/product-tokens.css` owns that context, including portaled overlays. `app/layout.tsx` loads actual Caslon normal/italic weights 400–700; synthetic faces remain disabled. Brand artwork keeps its original typography; invitation emails retain Arial for email compatibility.
+Public marketing and authentication pages use Source Sans 3 for body text and Libre Caslon Text for headings only, always upright (no italics); see [the public-site redesign spec](public-site/redesign/README.md). Authenticated product shells, focused workspaces, and the reference page use self-hosted Source Sans 3 for operational text and Caslon for display/page/dialog headings. `styles/product-tokens.css` owns that context, including portaled overlays. `app/layout.tsx` loads actual Caslon normal/italic weights 400–700; synthetic faces remain disabled. Brand artwork keeps its original typography; invitation emails retain Arial for email compatibility.
 
 ## Components
 

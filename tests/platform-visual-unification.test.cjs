@@ -23,7 +23,7 @@ test("authenticated surfaces share a restrained material vocabulary distinct fro
 
 test("every dashboard is built from the shared club home pieces, in glass, without blurring content", () => {
   const editorial = read("styles/editorial.css"), dashboard = read("components/product/dashboard/dashboard.css")
-  for (const file of ["components/manager-overview.tsx", "components/recruiting-overview.tsx", "components/views/student-dashboard-view.tsx", "app/platform/page.tsx", "components/club-home/club-home-sections.tsx"]) assert.match(read(file), /from "@\/components\/product\/dashboard\/dashboard"/, file)
+  for (const file of ["components/manager-overview.tsx", "components/recruiting-overview.tsx", "components/views/student-dashboard-view.tsx", "app/(workspace)/platform/page.tsx", "components/club-home/club-home-sections.tsx"]) assert.match(read(file), /from "@\/components\/product\/dashboard\/dashboard"/, file)
   assert.match(read("app/globals.css"), /@import "\.\.\/components\/product\/dashboard\/dashboard\.css";/)
   assert.match(dashboard, /\.oc-dashboard-ambient \{[\s\S]*?var\(--oc-surface-ambient\)/)
   assert.doesNotMatch(dashboard + home + operations, /#[0-9a-f]{3,8}\b/i, "dashboard CSS uses tokens, not hex colors")

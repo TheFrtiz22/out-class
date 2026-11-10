@@ -97,7 +97,7 @@ class Actor {
   const entry=Object.entries(manifest.node).find(([,value])=>actionSourceMatches(value.filename,file)&&value.exportedName===name);assert.ok(entry,`Action ${file}:${name} is in the production manifest`);
   const [actionId,definition]=entry;const worker=Object.keys(definition.workers).find(w=>w==='app/page')||Object.keys(definition.workers)[0];
   // Next forwards the action to its owning worker. No handler or Auth/DB mock is used.
-  const route=worker==='app/platform/page'?'/platform':worker==='app/page'?'/':worker==='app/settings/organizations/page'?'/settings/organizations':'/';
+  const route=worker==='app/(workspace)/platform/page'?'/platform':worker==='app/page'?'/':worker==='app/(workspace)/settings/organizations/page'?'/settings/organizations':'/';
   const body=args.some(value=>value instanceof FormData)?await encodeReply(args):JSON.stringify(args);
   const response=await this.request(route,{method:'POST',headers:{origin:this.config.appUrl,...(typeof body==='string'?{'content-type':'text/plain;charset=UTF-8'}:{}),'next-action':actionId,accept:'text/x-component'},body});
   const text=await response.text();
