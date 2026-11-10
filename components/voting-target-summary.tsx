@@ -68,6 +68,7 @@ export function VotingTargetSummary({ label, target, session, round, bands, roun
 }) {
   return <section className="oc-target-summary" aria-label={label}>
     {target ? <TargetFigure summary={target} /> : <div className="oc-target-line"><span className="oc-target-label">Target</span><span className="oc-target-value">{targetFallback}</span></div>}
+    {target?.pass && <p className="oc-target-note" data-pass-meaning={target.pass.kind}>{target.pass.label}</p>}
     <p className="oc-target-note">Guidance only. Reaching the target does not stop voting or reject anyone.</p>
     <div className="oc-target-groups">
       {bands && <BandFigures bands={bands} />}

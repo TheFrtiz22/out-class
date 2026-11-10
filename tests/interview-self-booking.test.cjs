@@ -23,6 +23,15 @@ test('president attestation counts toward approval/publication/booking without c
  h.as(i.owner);await h.booking.setInterviewBookingPublication(publishInput(h));await h.booking.setInterviewBookingPublication(publishInput(h));
  assert.equal((await h.db.query('SELECT count(*)::int n FROM "UserNotification" WHERE "eventKey" LIKE \'applicant-interview-booking:published:%\'')).rows[0].n,1);
  h.as(i.student);schedule=await h.rooms.getApplicantSchedule(i.app);assert.equal(schedule.publicationState,'PUBLISHED');assert.equal(schedule.rooms.flatMap(r=>r.slots).length,2);assert.ok(schedule.rooms.every(r=>r.panelMemberIds.length===0&&!('approvedPanelMemberIds'in r)));
+ // A booked interview with another club at the same time hides that time here instead of failing on submit.
+ {const slot=(await h.db.query('SELECT "startTime","endTime" FROM "InterviewSlot" WHERE id=$1',[h.slotIds[0]])).rows[0],c=randomUUID(),r=randomUUID(),a=randomUUID(),sl=randomUUID(),b=randomUUID();
+  await h.db.query('INSERT INTO "Club"(id,slug,name,tagline,description,color,category) VALUES ($1,$2,\'Other club\',\'\',\'\',\'\',\'\')',[c,'other-'+c]);
+  await h.db.query('INSERT INTO "PipelineRound"(id,"clubId",name,"order") VALUES ($1,$2,\'Interview\',1)',[r,c]);
+  await h.db.query('INSERT INTO "Application"(id,"clubId","studentId","roundId",status) VALUES ($1,$2,$3,$4,\'INTERVIEWING\')',[a,c,i.student,r]);
+  await h.db.query('INSERT INTO "InterviewSlot"(id,"clubId","startTime","endTime",capacity,location) VALUES ($1,$2,$3,$4,1,\'Elsewhere\')',[sl,c,slot.startTime,slot.endTime]);
+  await h.db.query('INSERT INTO "InterviewBooking"(id,"slotId","applicationId") VALUES ($1,$2,$3)',[b,sl,a]);
+  const hidden=await h.rooms.getApplicantSchedule(i.app);assert.equal(hidden.conflictingTimes,1);assert.deepEqual(hidden.rooms.flatMap(r=>r.slots).map(s=>s.id),[h.slotIds[1]]);
+  await h.db.query('DELETE FROM "InterviewBooking" WHERE id=$1',[b]);assert.equal((await h.rooms.getApplicantSchedule(i.app)).conflictingTimes,0);}
  const booked=await h.rooms.reserveInterview({applicationId:i.app,slotId:h.slotIds[1]});await h.rooms.reserveInterview({applicationId:i.app,slotId:h.slotIds[1]});
  assert.equal((await h.db.query('SELECT count(*)::int n FROM "InterviewBooking"')).rows[0].n,1);assert.equal((await h.db.query('SELECT count(*)::int n FROM "UserNotification" WHERE "eventKey" LIKE $1',['booking:'+booked.id+':INSERT:%'])).rows[0].n,1);
  const before=(await h.db.query('SELECT * FROM "InterviewBooking"')).rows;h.as(i.owner);await h.overrides.revokePanelAvailabilityOverride({clubId:i.club,overrideId:input.requestId});h.as(i.student);
