@@ -9,14 +9,18 @@ const preview = (text: string, limit = 150) => text.length > limit ? `${text.sli
 
 /** Read-only renderer for one round of submitted interview feedback. `compact`
  * truncates summaries for the voting slide; full text stays in its details dialog. */
-export function InterviewFeedbackSection({ feedback, compact = false, onReadFull }: { feedback: Feedback; compact?: boolean; onReadFull?: (e: React.MouseEvent<HTMLButtonElement>) => void }) {
-  const limit = feedback.entries.length > 1 ? 100 : 150, truncated = compact && feedback.entries.some(e => e.summary && preview(e.summary, limit) !== e.summary);
+export function InterviewFeedbackSection({ feedback, compact = false, onReadFull, excerpt, renderText }: { feedback: Feedback; compact?: boolean; onReadFull?: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  /** Compact only: the slide's own excerpt for each summary (count-aware) and a renderer for line breaks and lists. */
+  excerpt?: (text: string, entries: number) => string; renderText?: (text: string) => React.ReactNode }) {
+  const limit = feedback.entries.length > 1 ? 100 : 150, clip = (text: string) => excerpt ? excerpt(text, feedback.entries.length) : preview(text, limit);
+  const truncated = compact && feedback.entries.some(e => e.summary && clip(e.summary) !== e.summary);
   return <section aria-label={`Interview feedback · ${feedback.roundName}`} data-interview-feedback={feedback.roundId} className={compact ? "space-y-1" : "space-y-2"}>
     <h3 className={compact ? undefined : "oc-card-heading"}>Interview feedback · {feedback.roundName}</h3>
     {/* On the slide the score field beside this section carries the average. */}{!compact && feedback.scoresIncluded && feedback.entries.length > 0 && <p className="text-sm" data-feedback-average><span className="text-muted-foreground">Average interview score · </span><strong>{formatAverage(feedback.average)}{feedback.average !== null && " / 10"}</strong>{feedback.average !== null && <span className="text-muted-foreground"> · {scoredEvaluationsLabel(feedback.scored)}</span>}</p>}
     {feedback.entries.length ? <ul className="divide-y">{feedback.entries.map(e => <li key={e.id} className={compact ? "py-1 first:pt-0" : "space-y-1 py-2"}>
       <p className="flex flex-wrap items-baseline justify-between gap-x-3 text-sm font-medium"><span>{e.interviewer}</span>{feedback.scoresIncluded && (e.score === null ? <span className="font-normal text-muted-foreground">Not scored</span> : <span className="tabular-nums"><strong className="text-base">{formatScore(e.score)}</strong><span className="font-normal text-muted-foreground"> / 10</span></span>)}</p>
-      <p className="whitespace-pre-wrap break-words text-sm">{e.summary ? (compact ? preview(e.summary, limit) : e.summary) : <span className="text-muted-foreground">No written summary submitted.</span>}</p>
+      {e.summary && compact && renderText ? <div className="break-words text-sm">{renderText(clip(e.summary))}</div>
+        : <p className="whitespace-pre-wrap break-words text-sm">{e.summary ? (compact ? clip(e.summary) : e.summary) : <span className="text-muted-foreground">No written summary submitted.</span>}</p>}
     </li>)}</ul> : <p className="text-sm text-muted-foreground">{interviewFeedbackEmpty(feedback.roundName)}</p>}
     {feedback.pending > 0 && <p className="text-xs text-muted-foreground">{interviewFeedbackPending(feedback.pending)}</p>}
     {truncated && onReadFull && <Button type="button" variant="link" className="h-auto min-h-11 p-0" onClick={onReadFull}>Read full interview feedback</Button>}
