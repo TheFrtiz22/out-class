@@ -3,7 +3,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),React=req
 const {loadComponent}=require('./helpers/component-module.cjs');
 const text=html=>html.replace(/<[^>]+>/g,' ').replace(/&#x27;/g,"'").replace(/\s+/g,' ').trim();
 const long='The applicant explained their reasoning clearly and considered alternative evidence before reaching a conclusion, then described a collaboration example with real nuance.';
-const feedback={roundId:'r2',roundName:'Final interview',pending:1,scoresIncluded:true,average:7.25,scored:2,earlierRounds:[{roundId:'r1',roundName:'First interview',submitted:2}],
+const feedback={roundId:'r2',roundName:'Final interview',pending:1,scoresIncluded:true,average:7.25,scored:2,earlierRounds:[{roundId:'r1',roundName:'First interview',submitted:2,average:6.5,entries:[{id:'e1',interviewer:'Casey Earlier',summary:'Earlier round summary.',score:7,source:'kit'},{id:'e2',interviewer:'Drew Earlier',summary:null,score:6,source:'evaluation'}]}],
  entries:[{id:'a',interviewer:'Avery Panel',summary:long,score:8.5},{id:'b',interviewer:'Blake Peer',summary:null,score:6}]};
 
 test('section lists each interviewer with their own score and finalized summary, labels the round and counts pending neutrally',()=>{
@@ -13,7 +13,10 @@ test('section lists each interviewer with their own score and finalized summary,
  assert.match(full,/Avery Panel ?8\.5 \/ 10/);assert.match(full,/Average interview score · 7\.3 \/ 10 · 2 scored evaluations/);assert.ok(full.includes(long),'full text outside compact mode');
  assert.match(full,/Blake Peer ?6 \/ 10 ?No written summary submitted\./);
  assert.match(full,/1 review not yet submitted/);assert.doesNotMatch(full,/Read full/);
- assert.match(full,/Earlier rounds: First interview · 2 submitted reviews/);
+ // Earlier rounds: their own labelled group, with round, interviewer attribution and source; never in the current average.
+ assert.match(full,/Earlier rounds First interview · 6\.5 \/ 10 · 2 scored evaluations/);
+ assert.match(full,/Casey Earlier · First interview · Interview kit ?7 \/ 10 ?Earlier round summary\./);assert.match(full,/Drew Earlier · First interview · Evaluation ?6 \/ 10/);
+ assert.ok(full.indexOf('Earlier rounds')>full.indexOf('Average interview score · 7.3'),'current round first');
  // Compact slide preview truncates per interviewer and offers the accessible details dialog.
  const compact=renderToStaticMarkup(React.createElement(InterviewFeedbackSection,{feedback,compact:true,onReadFull(){}}));
  assert.ok(!text(compact).includes(long));assert.match(text(compact),/…/);assert.match(compact,/<button[^>]*>Read full interview feedback<\/button>/);
