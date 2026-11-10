@@ -3,36 +3,73 @@ import type { ClubAccess } from "@/lib/permissions"
 import { pipelineSummarySelect, pipelineSummaryProjection } from "@/lib/pipeline-summary"
 import { applicationStatusLabel } from "@/lib/application-status"
 import type { CsvCell } from "@/lib/csv"
+import { membershipRoleLabel } from "@/lib/copy/terms"
 import { defaultProfileFieldVisibility, restrictApplicationProfile, type ProfileFieldVisibility } from "@/lib/profile-field-visibility"
 
 type Member = ClubAccess & { id: string; userId: string }
 export type ExportTable = { header: string[]; rows: CsvCell[][] }
 
+/** Pilot-club column set (owner decision 2026-11-10), shared by the roster and
+ * the leading applicant columns. No schema field holds "exec" or a member's
+ * cycle, so both are derived (see memberRoleCells and memberCycleSelect). */
+const personHeader = (profileFields: ProfileFieldVisibility) =>
+  ["First name", "Last name", ...(profileFields.academicYear ? ["Grad year"] : []), "Role within org", "Exec", "Recruitment cycle"]
+
+const execAccessRoles = new Set(["OWNER", "ADMIN", "RECRUITING_ADMIN"])
+const execClubRoles = new Set(["PRESIDENT", "RECRUITMENT_LEAD"])
+const execOffices = new Set(["PRESIDENT", "VICE_PRESIDENT", "BOARD"])
+export type RoleFields = { title: string | null; isOwner: boolean; accessRole: string; role: string; interviewOffices: string[] }
+export const memberRoleSelect = { title: true, isOwner: true, accessRole: true, role: true, interviewOffices: true } as const
+
+/** Role = the member's own title, else the access-role label shown on the members screen.
+ * Exec = owner, an Owner/Admin/Recruiting-lead access role, a President/Recruitment-lead
+ * club role, or an explicit President/Vice-president/Board office. Interviewer and
+ * Member access alone are not exec. */
+export function memberRoleCells(member: RoleFields | null | undefined): CsvCell[] {
+  if (!member) return ["", "false"]
+  const exec = member.isOwner || execAccessRoles.has(member.accessRole) || execClubRoles.has(member.role)
+    || member.interviewOffices.some(office => execOffices.has(office))
+  return [member.title?.trim() || membershipRoleLabel(member), exec ? "true" : "false"]
+}
+
+/** A member's cycle: the newest accepted application to this club with a cycle, else the
+ * recorded membership cohort. Nothing is inferred beyond those two stored values. */
+const memberCycleSelect = (clubId: string) => ({
+  where: { clubId, status: "ACCEPTED" as const, recruitmentCycleId: { not: null } },
+  select: { recruitmentCycle: { select: { name: true } } },
+  orderBy: [{ submittedAt: "desc" as const }, { id: "desc" as const }], take: 1,
+})
+
 /** Applicants through the same privacy projection the pipeline uses: anonymous
- * rounds stay anonymous and only scores this member may already see are included. */
-export async function applicantExport(tx: AppTransactionClient, clubId: string, member: Member, profileFields: ProfileFieldVisibility = defaultProfileFieldVisibility()): Promise<ExportTable> {
+ * rounds stay anonymous (no name, grad year, role or exec) and only scores this
+ * member may already see are included. No email, GPA, test score, LinkedIn,
+ * résumé, note or vote columns. */
+export async function applicantExport(tx: AppTransactionClient, clubId: string, member: Member, profileFields: ProfileFieldVisibility = defaultProfileFieldVisibility(), roundId?: string | null): Promise<ExportTable> {
   const [apps, rounds] = await Promise.all([
     tx.application.findMany({
-      where: { clubId, status: { not: "DRAFTING" } },
+      // A round filter only narrows: the club id stays in the where clause, so another club's round returns nothing.
+      where: { clubId, status: { not: "DRAFTING" }, ...(roundId ? { roundId } : {}) },
       select: { ...pipelineSummarySelect, submittedAt: true, recruitmentCycle: { select: { name: true } } },
       orderBy: [{ submittedAt: "asc" }, { id: "asc" }],
     }),
     tx.pipelineRound.findMany({ where: { clubId }, select: { id: true, name: true } }),
   ])
   const roundName = new Map(rounds.map(round => [round.id, round.name]))
-  // Profile columns the club has hidden are left out entirely, and their values are cleared first.
-  // The export carries no GPA, test score, LinkedIn or résumé columns.
-  const profileColumns = [
-    { field: "major" as const, header: "Major", value: (p: { major?: string } | null) => p?.major ?? "" },
-    { field: "academicYear" as const, header: "Year", value: (p: { academicYear?: string } | null) => p?.academicYear ?? "" },
-  ].filter(column => profileFields[column.field])
-  const header = ["First name", "Last name", "Email", ...profileColumns.map(column => column.header), "Status", "Round", "Cycle", "Submitted", "Average score", "Reviews submitted"]
-  const rows = apps.map(app => {
-    const view = restrictApplicationProfile(pipelineSummaryProjection(app, member), profileFields)
+  const views = apps.map(app => ({ app, view: restrictApplicationProfile(pipelineSummaryProjection(app, member), profileFields) }))
+  // Only identified applicants are looked up as members of this club.
+  const identifiedIds = [...new Set(views.filter(({ app, view }) => view.studentId === app.studentId).map(({ app }) => app.studentId))]
+  const memberships = identifiedIds.length ? await tx.clubMember.findMany({ where: { clubId, userId: { in: identifiedIds } }, select: { userId: true, ...memberRoleSelect } }) : []
+  const memberOf = new Map(memberships.map(m => [m.userId, m]))
+  const header = [...personHeader(profileFields), "Status", "Round", "Submitted", "Average score", "Reviews submitted"]
+  const rows = views.map(({ app, view }) => {
+    const identified = view.studentId === app.studentId
     const profile = view.student.studentProfile
     return [
-      profile?.firstName ?? "", profile?.lastName ?? "", view.student.email, ...profileColumns.map(column => column.value(profile)),
-      applicationStatusLabel(view.status), roundName.get(view.roundId) ?? "", app.recruitmentCycle?.name ?? "",
+      profile?.firstName ?? "", profile?.lastName ?? "",
+      ...(profileFields.academicYear ? [identified ? app.student.studentProfile?.gradYear ?? "" : ""] : []),
+      ...(identified ? memberRoleCells(memberOf.get(app.studentId)) : ["", ""]),
+      app.recruitmentCycle?.name ?? "",
+      applicationStatusLabel(view.status), roundName.get(view.roundId) ?? "",
       app.submittedAt ? app.submittedAt.toISOString().slice(0, 10) : "",
       view.roundScore?.average == null ? "" : Math.round(view.roundScore.average * 10) / 10,
       view.roundScore ? view.roundScore.submitted : "",
@@ -41,38 +78,61 @@ export async function applicantExport(tx: AppTransactionClient, clubId: string, 
   return { header, rows }
 }
 
+/** Active members only: the pilot column set has no status column. */
 export async function rosterExport(tx: AppTransactionClient, clubId: string, profileFields: ProfileFieldVisibility = defaultProfileFieldVisibility()): Promise<ExportTable> {
   const members = await tx.clubMember.findMany({
-    where: { clubId },
-    select: { title: true, status: true, joinedAt: true, cohort: true, isOwner: true, accessRole: true,
-      user: { select: { email: true, studentProfile: { select: { firstName: true, lastName: true, gradYear: true } } } } },
+    where: { clubId, status: "ACTIVE" },
+    select: { ...memberRoleSelect, cohort: true,
+      user: { select: { studentProfile: { select: { firstName: true, lastName: true, gradYear: true } }, applications: memberCycleSelect(clubId) } } },
     orderBy: [{ joinedAt: "asc" }, { id: "asc" }],
   })
   return {
     // Graduation year is the class-year profile field; it follows the club setting.
-    header: ["First name", "Last name", "Email", ...(profileFields.academicYear ? ["Graduation year"] : []), "Title", "Access", "Status", "Cohort", "Joined"],
+    header: personHeader(profileFields),
     rows: members.map(m => [
-      m.user.studentProfile?.firstName ?? "", m.user.studentProfile?.lastName ?? "", m.user.email,
-      ...(profileFields.academicYear ? [m.user.studentProfile?.gradYear ?? ""] : []), m.title ?? "", m.isOwner ? "Owner" : sentence(m.accessRole),
-      sentence(m.status), m.cohort ?? "", m.joinedAt.toISOString().slice(0, 10),
+      m.user.studentProfile?.firstName ?? "", m.user.studentProfile?.lastName ?? "",
+      ...(profileFields.academicYear ? [m.user.studentProfile?.gradYear ?? ""] : []),
+      ...memberRoleCells(m), m.user.applications[0]?.recruitmentCycle?.name ?? m.cohort ?? "",
     ]),
   }
 }
 
-export async function attendanceExport(tx: AppTransactionClient, clubId: string): Promise<ExportTable> {
+/** Same rule as the attendance and RSVP screens (`meetingAttendance`,
+ * `getCampusEventRsvpDashboard`): a person with a submitted application in an
+ * anonymous-review round of this club is listed without name or email. */
+function anonymousApplicantWhere(clubId: string) {
+  return { where: { clubId, status: { not: "DRAFTING" as const }, round: { anonymousReview: true } }, select: { id: true }, take: 1 }
+}
+type PersonRow = { email: string; studentProfile: { firstName: string; lastName: string } | null; applications: { id: string }[] }
+function personCells(person: PersonRow): CsvCell[] {
+  if (person.applications.length) return ["Anonymous applicant", "", ""]
+  return [person.studentProfile?.firstName ?? "", person.studentProfile?.lastName ?? "", person.email]
+}
+
+export async function attendanceExport(tx: AppTransactionClient, clubId: string, eventId?: string | null): Promise<ExportTable> {
   const records = await tx.eventAttendance.findMany({
-    where: { event: { clubId } },
+    where: { event: { clubId }, ...(eventId ? { eventId } : {}) },
     select: { checkedInAt: true, event: { select: { title: true, date: true } },
-      student: { select: { email: true, studentProfile: { select: { firstName: true, lastName: true } } } } },
+      student: { select: { email: true, studentProfile: { select: { firstName: true, lastName: true } }, applications: anonymousApplicantWhere(clubId) } } },
     orderBy: [{ event: { date: "asc" } }, { checkedInAt: "asc" }],
   })
   return {
     header: ["Meeting", "Meeting date", "First name", "Last name", "Email", "Checked in"],
-    rows: records.map(r => [
-      r.event.title, r.event.date.toISOString().slice(0, 10), r.student.studentProfile?.firstName ?? "",
-      r.student.studentProfile?.lastName ?? "", r.student.email, r.checkedInAt.toISOString(),
-    ]),
+    rows: records.map(r => [r.event.title, r.event.date.toISOString().slice(0, 10), ...personCells(r.student), r.checkedInAt.toISOString()]),
   }
 }
 
-function sentence(value: string) { return value.charAt(0) + value.slice(1).toLowerCase().replace(/_/g, " ") }
+/** RSVPs to the club's published campus events. RSVP intent is separate from check-in attendance. */
+export async function rsvpExport(tx: AppTransactionClient, clubId: string, eventId?: string | null): Promise<ExportTable> {
+  const records = await tx.eventRsvp.findMany({
+    where: { event: { clubId, publication: { isNot: null } }, ...(eventId ? { eventId } : {}) },
+    select: { createdAt: true, event: { select: { title: true, date: true } },
+      user: { select: { email: true, studentProfile: { select: { firstName: true, lastName: true } }, applications: anonymousApplicantWhere(clubId) } } },
+    orderBy: [{ event: { date: "asc" } }, { createdAt: "asc" }],
+  })
+  return {
+    header: ["Event", "Event date", "First name", "Last name", "Email", "RSVP at"],
+    rows: records.map(r => [r.event.title, r.event.date.toISOString().slice(0, 10), ...personCells(r.user), r.createdAt.toISOString()]),
+  }
+}
+

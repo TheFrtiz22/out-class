@@ -636,7 +636,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       })()}
       <div className="oc-toolbar">
         {!decisionsOnly && <SegmentedControl label="Applicant view" value={view} onChange={setView} options={[{ value: "list", label: "List" }, { value: "kanban", label: "Kanban" }, { value: "ranked", label: "Ranked" }]} />}
-        {!decisionsOnly && <ClubExportLink clubId={membership.clubId} kind="applicants" membership={membership} label="Export CSV" />}
+        {!decisionsOnly && <ClubExportLink clubId={membership.clubId} kind="applicants" membership={membership} filter={round || null} label="Export CSV" />}
         {view !== "ranked" && <><SearchField
             ref={search}
             aria-label="Search applicants"
