@@ -33,7 +33,9 @@ test("club workspace: removed tools and tabs redirect, keeping other parameters"
     "section=recruitment&tool=letters": "section=recruitment&tool=decisions&decisionTab=letters",
     "section=recruitment&tool=decision-letters": "section=recruitment&tool=decisions&decisionTab=letters",
     "section=recruitment&tool=cycles": "section=settings&setting=cycles",
-    "section=events": "section=meetings",
+    // Club events have their own section (FE-12); the old Meetings tab redirects there, keeping other parameters
+    "section=meetings&meetingTab=events": "section=events",
+    "section=meetings&meetingTab=events&new=1": "section=events&new=1",
     "section=settings&setting=interviews&interviewTab=rooms": "section=recruitment&interviewTab=rooms&tool=interviews",
     "section=settings&setting=interviews&interviewTab=availability": "section=recruitment&interviewTab=schedule&tool=interviews",
     // Settings → Interviews only repeated the Interviews tool
@@ -47,7 +49,8 @@ test("club workspace: removed tools and tabs redirect, keeping other parameters"
 test("club workspace: canonical URLs are left alone", () => {
   for (const query of ["", "section=overview", "section=recruitment&tool=applicants", "section=recruitment&tool=applicants&decision=rejected",
     "section=recruitment&tool=decisions&decisionTab=voting", "section=recruitment&tool=decisions&decisionTab=voting&sessionId=s1",
-    "section=recruitment&tool=decisions&decisionTab=letters", "section=recruitment&tool=interviews&interviewTab=schedule"]) {
+    "section=recruitment&tool=decisions&decisionTab=letters", "section=recruitment&tool=interviews&interviewTab=schedule",
+    "section=events", "section=meetings", "section=meetings&meetingTab=members"]) {
     assert.equal(workspace(query), null, query || "(empty)")
   }
 })

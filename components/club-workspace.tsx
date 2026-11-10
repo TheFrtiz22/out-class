@@ -77,8 +77,7 @@ export function ClubWorkspace({
   const canonical = canonicalClubWorkspaceHref(clubId, params);
   useEffect(() => { if (canonical && !navigateWithinClub(canonical, true)) router.replace(canonical); }, [canonical, router]);
   const oldDecisionTab = params.get("section") === "recruitment" && !!legacyDecisionTab(params.get("tool"));
-  const legacyEvents = params.get("section") === "events";
-  const section = legacyEvents ? "meetings" : params.get("section") ?? "overview";
+  const section = params.get("section") ?? "overview";
   const taskView = params.get("taskView") ?? undefined;
   const tool = oldDecisionTab ? "decisions" : params.get("tool") ?? undefined;
   const moved = legacyApplicantInterviewHref(clubId, params.toString());
@@ -211,7 +210,8 @@ export function ClubWorkspace({
             {/* Club home: the same page for leaders and members, gated by the overview's permission-scoped data. */}
             {section === "overview" && current && <ManagerOverview data={current} refreshing={overviewPending} onChanged={() => setRetry(n => n + 1)} />}
             {section === "tasks" && (demo.isDemoEnabled ? <ClubTasks clubId={clubId} embedded personalOnly={!manager} initialScope={taskView === "mine" ? "mine" : manager ? "team" : "mine"} /> : <SelectedClubWorkspace kind="tasks" clubId={clubId} privacyScope={scope} personalOnly={!manager} initialScope={taskView === "mine" ? "mine" : manager ? "team" : "mine"} />)}
-            {section === "meetings" && (hasPermission(membership, "meetings.manage") ? <ClubMeetingsWorkspace key={clubId} clubId={clubId} clubName={membership.club.name} canSeeAttendees={hasPermission(membership, "meetings.attendance")} legacyEvents={legacyEvents} /> : <MeetingList clubId={clubId} embedded personalOnly={!manager} initialAudience="MEMBERS" />)}
+            {section === "meetings" && (hasPermission(membership, "meetings.manage") ? <ClubMeetingsWorkspace key={clubId} clubId={clubId} clubName={membership.club.name} canSeeAttendees={hasPermission(membership, "meetings.attendance")} /> : <MeetingList clubId={clubId} embedded personalOnly={!manager} initialAudience="MEMBERS" />)}
+            {section === "events" && (hasPermission(membership, "meetings.manage") ? <ClubMeetingsWorkspace key={`${clubId}:events`} clubId={clubId} clubName={membership.club.name} canSeeAttendees={hasPermission(membership, "meetings.attendance")} events /> : <MeetingList clubId={clubId} embedded personalOnly={!manager} initialAudience="MEMBERS" />)}
             {section === "members" && (demo.isDemoEnabled ? <ClubMembers key={clubId} clubId={clubId} /> : <SelectedClubWorkspace kind="members" clubId={clubId} privacyScope={scope} />)}
             {section === "settings" && <ClubSettingsWorkspace key={clubId} clubId={clubId} onSaved={() => { setRetry(n => n + 1); setPrivacyRevision(n => n + 1) }} />}
             {section === "announcements" && (demo.isDemoEnabled ? <ClubAnnouncements key={clubId} clubId={clubId} /> : <SelectedClubWorkspace kind="announcements" clubId={clubId} privacyScope={scope} />)}
