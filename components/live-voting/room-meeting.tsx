@@ -22,12 +22,15 @@ const outcomeNames=outcomeLabels;
  * counts only); the entire round is a separate, server-authorized read refreshed when the room changes. */
 function outcomeSignature(room:Room){return room.outcomes.map(o=>`${o.applicationId}:${o.passNumber}:${o.outcome}`).join("|");}
 export function OutcomeCounts({room}:{room:Room}){
- const [round,setRound]=useState<ScopedTargetSummary|null>(null),[roundStatus,setRoundStatus]=useState("Loading…"),ticket=useRef(0);
+ // Round totals are keyed by club, cycle and round: another round's counts never show while this one loads.
+ const scope=`${room.clubId}:${room.cycleId}:${room.roundId}`;
+ const [loaded,setLoaded]=useState<{scope:string;round:ScopedTargetSummary|null;status:string}|null>(null),ticket=useRef(0);
  // Re-read the round only when confirmed outcomes change, not on every ballot: each extra
  // server action queues ahead of the next room poll and made the leader's counts lag.
  const outcomeKey=outcomeSignature(room);
- useEffect(()=>{const mine=++ticket.current;getRoundTargetSummary({clubId:room.clubId,roundId:room.roundId,cycleId:room.cycleId}).then(r=>{if(mine===ticket.current){setRound(r);setRoundStatus("")}}).catch(()=>{if(mine===ticket.current){setRound(null);setRoundStatus("Round totals unavailable.")}});},[room.clubId,room.roundId,room.cycleId,room.accessVersion,outcomeKey]);
- return <VotingTargetSummary label="Decision totals" target={room.targetSummary} session={room.targetSummary} round={round} roundStatus={roundStatus}/>;
+ useEffect(()=>{const mine=++ticket.current,scope=`${room.clubId}:${room.cycleId}:${room.roundId}`;getRoundTargetSummary({clubId:room.clubId,roundId:room.roundId,cycleId:room.cycleId}).then(r=>{if(mine===ticket.current)setLoaded({scope,round:r,status:""})}).catch(()=>{if(mine===ticket.current)setLoaded({scope,round:null,status:"Round totals unavailable."})});},[room.clubId,room.roundId,room.cycleId,room.accessVersion,outcomeKey]);
+ const current=loaded?.scope===scope?loaded:null;
+ return <VotingTargetSummary label="Decision totals" target={room.targetSummary} session={room.targetSummary} round={current?.round??null} roundStatus={current?current.status:"Loading…"}/>;
 }
 export function LeaderControls({room,refresh,member,transitioning=false}:{room:Room;refresh:()=>Promise<void>|undefined;member?:string;transitioning?:boolean}){
  const [staleRevision,setStaleRevision]=useState<number|null>(null);

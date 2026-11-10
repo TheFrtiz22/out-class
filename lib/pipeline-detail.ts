@@ -5,6 +5,7 @@ import { applicationReviewVisibility } from "@/lib/application-review-visibility
 import { anonymousApplication, identifiedApplication } from "@/lib/anonymous-review";
 import { genderVisibility } from "@/lib/recruitment-profile";
 import { decisionPublicationGuard } from "@/lib/decision-publication-guard";
+import { visibleQuestionIds } from "@/lib/student-applications";
 
 // Exactly the canonical CRM detail projection, hydrated only for visible IDs.
 export const pipelineDetailInclude = {
@@ -19,6 +20,9 @@ export const pipelineDetailInclude = {
 export function pipelineDetailProjection(raw: Prisma.ApplicationGetPayload<{ include: typeof pipelineDetailInclude }>, membership: ClubAccess & { id: string; userId: string }) {
         const { caps, ownSubmitted, assigned, roundScore, evaluations } = applicationReviewVisibility(raw, membership);
         const safe = { ...raw }; delete (safe as Partial<typeof raw>).interviewAssignments;
+        // Answers to follow-up questions the applicant can no longer see are not shown to reviewers.
+        const visible = visibleQuestionIds(raw.answers.flatMap(a => a.question ? [a.question] : []), raw.answers);
+        safe.answers = raw.answers.filter(a => !a.question || visible.has(a.questionId));
         const app = { ...safe, evaluations: evaluations.map(e => ({ ...e, notes: null, applicantQuestions: null })) };
         const projected = !hasPermission(membership, "applicants.identify") || app.round.anonymousReview ? anonymousApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay)) : identifiedApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay), "crm");
         const canEvaluate = !ownSubmitted && raw.studentId !== membership.userId && (raw.round.anonymousReview ? hasPermission(membership, "applications.review") : caps.participate && assigned);
