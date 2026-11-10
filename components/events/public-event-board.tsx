@@ -4,8 +4,7 @@ import Link from "next/link";
 import { z } from "zod";
 import { useSearchParams } from "next/navigation";
 import { LoadingState } from "@/components/ui/loading-state";
-import { Search, SlidersHorizontal, Check, ChevronDown } from "@/components/icons";
-import { useDismissableDetails } from "@/hooks/use-dismissable-details";
+import { Check, ChevronDown } from "@/components/icons";
 import { useAuth } from "@/contexts/auth-context";
 import {
   getPublicCorkboard,
@@ -38,7 +37,13 @@ import {
 } from "@/components/ui/dialog";
 import "./events.css";
 import { eventBoardEmpty } from "@/lib/event-board-empty";
-import { NativeSelect } from "@/components/ui/native-select"
+import { SearchField } from "@/components/ui/search-field"
+import { FilterPopover } from "@/components/ui/filter-popover"
+import { FilterChips } from "@/components/ui/filter-chips"
+import { PillSelect } from "@/components/ui/pill-select"
+import { PillGroup } from "@/components/ui/segmented-control"
+import { Toggle } from "@/components/ui/toggle"
+import { DateField } from "@/components/ui/date-picker"
 const initialFilters: EventFilters = {
   query: "",
   period: "All",
@@ -54,7 +59,6 @@ const initialFilters: EventFilters = {
 export function PublicEventBoard() {
   const { user } = useAuth(),
     identity = user?.id || "";
-  const filterMenu = useDismissableDetails();
   const [filters, setFilters] = useState(initialFilters),
     [events, setEvents] = useState<CampusEvent[]>([]),
     [clubs, setClubs] = useState<{ id: string; name: string }[]>([]),
@@ -182,107 +186,37 @@ export function PublicEventBoard() {
           }))}
         />
         <div className="oc-event-toolbar-actions">
-        <label className="oc-event-search">
-          <Search size={16} aria-hidden="true" />
-          <Input
-            aria-label="Search events"
-            value={filters.query || ""}
-            placeholder="Search events…"
-            onChange={(e) => filter({ query: e.target.value })}
-          />
-        </label>
-        <details ref={filterMenu} className="oc-event-filter">
-          <summary>
-            <SlidersHorizontal size={16} aria-hidden="true" />
-            Filter
-            {menuFilters > 0 && <span className="oc-event-filter-count"><span aria-hidden="true">{menuFilters}</span><span className="sr-only">, {menuFilters} active</span></span>}
-          </summary>
-          <div className="oc-event-filter-fields">
-            {identity && (
-              <label className="oc-event-check">
-                <input
-                  type="checkbox"
-                  checked={!!filters.savedOnly}
-                  onChange={(e) => filter({ savedOnly: e.target.checked })}
-                />
-                Saved events
-              </label>
-            )}
-            <label>
-              Category
-              <NativeSelect
-                value={filters.category}
-                onChange={(e) =>
-                  filter({
-                    category: e.target.value as EventFilters["category"],
-                  })
-                }
-              >
-                <option value="">All categories</option>
-                {eventCategories.map((c) => (
-                  <option key={c}>{c}</option>
-                ))}
-              </NativeSelect>
+        <SearchField
+          aria-label="Search events"
+          value={filters.query || ""}
+          placeholder="Search events…"
+          onChange={(e) => filter({ query: e.target.value })}
+          onClear={() => filter({ query: "" })}
+          containerClassName="oc-event-search"
+        />
+        <FilterPopover count={menuFilters} label="Filter" title="Event filters"
+          footer={<Button type="button" variant="ghost" size="sm" onClick={() => setFilters(initialFilters)}>Reset filters</Button>}>
+            {identity && <Toggle label="Saved events" checked={!!filters.savedOnly} onCheckedChange={(savedOnly) => filter({ savedOnly })} />}
+            <div className="oc-filter-field"><span className="oc-filter-field-label">Category</span>
+              <FilterChips label="Category" visible={5} moreLabel={(n) => `+${n} more categories`} value={filters.category || ""} onChange={(category) => filter({ category: category as EventFilters["category"] })}
+                options={[{ value: "", label: "All categories" }, ...eventCategories.map((c) => ({ value: c, label: c }))]} />
+            </div>
+            <div className="oc-filter-field"><span className="oc-filter-field-label">Club</span>
+              <PillSelect label="Club" allLabel="All clubs" value={filters.clubId || ""} onChange={(clubId) => filter({ clubId })}
+                options={clubs.map((c) => ({ value: c.id, label: c.name }))} />
+            </div>
+            <div className="oc-filter-field"><span className="oc-filter-field-label">Date (Eastern Time)</span>
+              <DateField label="Date (Eastern Time)" value={filters.date || ""} onChange={(date) => filter({ date })} placeholder="Any date" clearLabel="Any date" />
+            </div>
+            <label className="oc-filter-field"><span className="oc-filter-field-label">Location</span>
+              <Input className="oc-pill-input" value={filters.location} onChange={(e) => filter({ location: e.target.value })} />
             </label>
-            <label>
-              Club
-              <NativeSelect
-                value={filters.clubId}
-                onChange={(e) => filter({ clubId: e.target.value })}
-              >
-                <option value="">All clubs</option>
-                {clubs.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </NativeSelect>
-            </label>
-            <label>
-              Date (Eastern Time)
-              <Input
-                type="date"
-                value={filters.date}
-                onChange={(e) => filter({ date: e.target.value })}
-              />
-            </label>
-            <label>
-              Location
-              <Input
-                value={filters.location}
-                onChange={(e) => filter({ location: e.target.value })}
-              />
-            </label>
-            <label>
-              Sort
-              <NativeSelect
-                value={filters.sort}
-                onChange={(e) =>
-                  filter({ sort: e.target.value as EventFilters["sort"] })
-                }
-              >
-                <option value="soonest">Soonest first</option>
-                <option value="latest">Latest first</option>
-                <option value="name">Name A–Z</option>
-              </NativeSelect>
-            </label>
-            <label className="oc-event-check">
-              <input
-                type="checkbox"
-                checked={filters.required || false}
-                onChange={(e) => filter({ required: e.target.checked })}
-              />
-              RSVP required
-            </label>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setFilters(initialFilters)}
-            >
-              Reset filters
-            </Button>
-          </div>
-        </details>
+            <div className="oc-filter-field"><span className="oc-filter-field-label">Sort</span>
+              <PillGroup label="Sort" size="compact" value={filters.sort ?? "soonest"} onChange={(sort) => filter({ sort })}
+                options={[{ value: "soonest", label: "Soonest" }, { value: "latest", label: "Latest" }, { value: "name", label: "Name A–Z" }]} />
+            </div>
+            <Toggle label="RSVP required" checked={filters.required || false} onCheckedChange={(required) => filter({ required })} />
+        </FilterPopover>
         <SegmentedControl label="Event view" value={view} onChange={changeView} animated className="oc-event-view-switch" options={[{ value: "corkboard", label: "Board" }, { value: "list", label: "List" }]} />
         </div>
       </div>

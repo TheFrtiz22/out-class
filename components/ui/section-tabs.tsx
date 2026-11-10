@@ -1,17 +1,16 @@
 "use client"
 import Link from "next/link"
-import type { MouseEvent, ReactNode } from "react"
+import { useEffect, useLayoutEffect, useRef, type MouseEvent, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
 
 /**
- * The one look for in-page section tabs (Decisions, the phone Recruiting sub-tabs, and
- * the Interviews tablist, which keeps Radix tab semantics but uses the same classes).
- * Each tab is a link, so tabs are bookmarkable and work with the browser's back button.
+ * The one look for in-page section tabs that navigate (Decisions, the phone Recruiting sub-tabs): the
+ * segmented pill track with a sliding navy indicator. Each tab is a link, so tabs are bookmarkable and
+ * work with the browser's back button. Tab panels that do not navigate use segmented `Tabs`.
  */
-export const sectionTabsListClass = "oc-section-tabs flex max-w-full gap-4 overflow-x-auto border-b border-border"
-export const sectionTabClass = "inline-flex min-h-11 shrink-0 items-center gap-1.5 border-b-2 border-transparent px-1 text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring aria-[current=page]:border-primary aria-[current=page]:font-medium aria-[current=page]:text-foreground data-[state=active]:border-primary data-[state=active]:font-medium data-[state=active]:text-foreground"
-
 export type SectionTab = { id: string; label: ReactNode; href: string; count?: number }
+
+const useBrowserLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect
 
 export function SectionTabs({ label, items, current, onNavigate, className }: {
   label: string
@@ -21,11 +20,33 @@ export function SectionTabs({ label, items, current, onNavigate, className }: {
   onNavigate?: (event: MouseEvent<HTMLAnchorElement>, href: string) => void
   className?: string
 }) {
+  const nav = useRef<HTMLElement>(null)
+  const index = items.findIndex(item => item.id === current)
+  useBrowserLayoutEffect(() => {
+    const el = nav.current
+    if (!el) return
+    const place = () => {
+      const active = el.querySelectorAll<HTMLElement>("[data-segment]")[index]
+      if (!active) { el.removeAttribute("data-measured"); return }
+      el.style.setProperty("--indicator-x", `${active.offsetLeft}px`)
+      el.style.setProperty("--indicator-width", `${active.offsetWidth}px`)
+      el.setAttribute("data-measured", "true")
+    }
+    place()
+    if (typeof ResizeObserver === "undefined") return
+    const observer = new ResizeObserver(place)
+    observer.observe(el)
+    el.querySelectorAll("[data-segment]").forEach(link => observer.observe(link))
+    return () => observer.disconnect()
+  }, [index, items.length])
   if (items.length < 2) return null
-  return <nav aria-label={label} className={cn(sectionTabsListClass, className)}>
-    {items.map(item => <Link key={item.id} href={item.href} prefetch={false} aria-current={current === item.id ? "page" : undefined} className={sectionTabClass}
+  return <nav ref={nav} aria-label={label} data-slot="section-tabs" data-size="compact" data-sliding="true" data-has-active={index >= 0}
+    className={cn("oc-segmented-control oc-section-tabs", className)}>
+    <span className="oc-segmented-indicator" aria-hidden="true" />
+    {items.map(item => <Link key={item.id} href={item.href} prefetch={false} data-segment="" data-selected={current === item.id || undefined}
+      aria-current={current === item.id ? "page" : undefined}
       onClick={event => { if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return; onNavigate?.(event, item.href) }}>
-      {item.label}{item.count != null && <span className="text-xs text-muted-foreground">{item.count}</span>}
+      {item.label}{item.count != null && <span className="oc-segment-count">{" "}{item.count}</span>}
     </Link>)}
   </nav>
 }

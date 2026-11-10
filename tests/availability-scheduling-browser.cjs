@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path')
 const { PrismaClient, Prisma } = require('@prisma/client'), { createServerClient } = require('@supabase/ssr'), { chromium, devices } = require('playwright')
 const { Actor } = require('./helpers/onboarding-e2e.cjs')
+const { pickDate, pickedDate, long } = require('./helpers/date-picker-browser.cjs')
 async function prepare(db, auth, config) {
   await require('./panel-publication-browser.cjs').prepare(db, auth, config)
   const club = config.clubs[0]
@@ -66,13 +67,13 @@ async function verify(config, root) {
     await admin.page.getByText('Staffing requirement saved.', { exact: false }).waitFor(); await admin.page.waitForFunction(() => document.querySelector('select[aria-label="Interviewers needed for Room A"]').value === '3'); await admin.page.getByLabel('Interviewers needed for Room A', { exact: true }).selectOption('2'); await admin.page.getByText('Staffing requirement saved.', { exact: false }).waitFor()
     // Let the saved requirement's refresh settle, then generate only a private proposal.
     await admin.page.waitForFunction(() => !document.querySelector('select[aria-label="Interviewers needed for Room A"]').disabled)
-    const filterDate = config.panels.window.start.slice(0, 10); await admin.page.getByLabel('Filter interview date', { exact: true }).fill(filterDate)
+    const filterDate = config.panels.window.start.slice(0, 10); await pickDate(admin.page, 'Filter interview date', filterDate)
     await admin.page.getByRole('button', { name: 'Auto-Fill Panels', exact: true }).first().click(); const panel = admin.page.getByRole('region', { name: 'Review Panel Assignments' }); await panel.getByText('100% staffed', { exact: false }).waitFor()
     assert.equal(new URL(admin.page.url()).searchParams.get('schedule'), 'review'); assert.equal(await db.interviewPanelScheduleVersion.count(), 0)
     await panel.getByRole('button', { name: /^Lock / }).first().click(); await panel.getByText('Change validated.', { exact: false }).waitFor()
     const locked = await panel.getByRole('button', { name: /^Unlock / }).first().getAttribute('aria-label')
     await workflow(admin.page).getByRole('button', { name: 'Availability', exact: true }).click(); await workflow(admin.page).getByRole('button', { name: 'Review & Publish', exact: true }).click()
-    await panel.getByRole('button', { name: locked, exact: true }).waitFor(); assert.equal(await panel.getAttribute('data-unsaved'), 'true'); assert.equal(await admin.page.getByLabel('Filter interview date', { exact: true }).inputValue(), filterDate)
+    await panel.getByRole('button', { name: locked, exact: true }).waitFor(); assert.equal(await panel.getAttribute('data-unsaved'), 'true'); assert.equal(await pickedDate(admin.page, 'Filter interview date'), long(filterDate))
     await admin.page.goBack(); await workflow(admin.page).getByRole('button', { name: 'Availability', exact: true }).waitFor(); await admin.page.goForward(); await panel.getByRole('button', { name: locked, exact: true }).waitFor()
     await panel.getByRole('button', { name: 'Save Draft', exact: true }).click(); await panel.getByText('Draft saved.', { exact: true }).waitFor(); await panel.getByRole('button', { name: 'Discard Draft', exact: true }).click(); await panel.getByText('Draft discarded.', { exact: true }).waitFor()
     // Mobile request deep-link and explicit decline in a different club leave the first response intact.

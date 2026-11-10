@@ -76,7 +76,7 @@ test("interview day rows show the first and last slot time", () => {
   assert.equal(dates.interviewDaySpan([row("a", "2026-11-10T14:00:00Z")], "America/New_York"), "9:00 AM EST")
   assert.match(read("components/interviews/interview-rooms-list.tsx"), /\{span && <span className="oc-interview-day-span">\{span\}<\/span>\}/)
   assert.doesNotMatch(read("components/interviews/interview-rooms-list.tsx"), /type="date"/)
-  assert.match(read("components/interviews/interview-rooms-list.tsx"), /<DatePicker label="Filter assigned interview date"/)
+  assert.match(read("components/interviews/interview-rooms-list.tsx"), /<DateField label="Filter assigned interview date"/)
 })
 
 test("date picker math works on plain days, independent of the browser time zone", () => {

@@ -56,6 +56,6 @@ test('browser: leader pages at 390px use the app switch, grouped lists and the f
   assert.ok(Math.abs(nameBox.y - roleBox.y) < 4 && roleBox.x > nameBox.x, 'role sits beside the name')
 
   const desktop = await open('section=recruitment&tool=applicants', 1440)
-  assert.equal(await desktop.locator('.oc-recruiting-switch').evaluate(el => getComputedStyle(el).display), 'none', 'desktop keeps the rail')
+  assert.equal(await desktop.locator('.oc-recruiting-switch').isVisible(), false, 'desktop keeps the rail')
   assert.equal(await desktop.locator('.oc-applicant-mobile-list').evaluate(el => getComputedStyle(el).display), 'none', 'desktop keeps the table')
 })

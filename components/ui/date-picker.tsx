@@ -11,9 +11,11 @@ import { formatDay, isIsoDay, monthGrid, monthOf, moveDay, addMonths, todayIn } 
  * move through days; Enter or Space picks; Escape closes. `marked` days (e.g. days that
  * have interviews) carry a dot and are announced.
  */
-export function DatePicker({ value, onChange, label, placeholder = "Any date", marked = [], markedLabel = "has events", className, clearLabel = "Any date" }: {
+export function DatePicker({ value, onChange, label, placeholder = "Any date", marked = [], markedLabel = "has events", className, clearLabel = "Any date", variant = "field" }: {
   value: string; onChange: (value: string) => void; label: string; placeholder?: string
   marked?: string[]; markedLabel?: string; className?: string; clearLabel?: string
+  /** "pill" is the filter-row trigger (DateField): the segmented pills' track and height. */
+  variant?: "field" | "pill"
 }) {
   const [open, setOpen] = useState(false)
   const today = todayIn()
@@ -27,11 +29,11 @@ export function DatePicker({ value, onChange, label, placeholder = "Any date", m
   const pick = (day: string) => { onChange(day); setOpen(false) }
   return <Popover open={open} onOpenChange={setOpen}>
     <PopoverTrigger asChild>
-      <button type="button" aria-label={`${label}: ${selected ? formatDay(selected, { weekday: "long", month: "long", day: "numeric", year: "numeric" }) : placeholder}`} className={cn("oc-date-picker-trigger", className)} data-empty={!selected}>
+      <button type="button" aria-label={`${label}: ${selected ? formatDay(selected, { weekday: "long", month: "long", day: "numeric", year: "numeric" }) : placeholder}`} className={cn("oc-date-picker-trigger", className)} data-empty={!selected} data-variant={variant}>
         <CalendarDays aria-hidden="true" />{selected ? formatDay(selected) : placeholder}
       </button>
     </PopoverTrigger>
-    <PopoverContent align="start" className="oc-date-picker w-auto p-3" onOpenAutoFocus={event => { event.preventDefault(); event.currentTarget instanceof HTMLElement && event.currentTarget.querySelector<HTMLButtonElement>(`[data-day="${selected || today}"]`)?.focus() }}>
+    <PopoverContent align="start" collisionPadding={16} className="oc-date-picker w-auto p-3" onOpenAutoFocus={event => { event.preventDefault(); event.currentTarget instanceof HTMLElement && event.currentTarget.querySelector<HTMLButtonElement>(`[data-day="${selected || today}"]`)?.focus() }}>
       <div className="oc-date-picker-header">
         <button type="button" aria-label="Previous month" onClick={() => setFocusDay(addMonths(focusDay, -1))}><ChevronLeft aria-hidden="true" /></button>
         <h2 id={headingId} aria-live="polite">{formatDay(`${monthOf(focusDay)}-01`, { month: "long", year: "numeric" })}</h2>
@@ -57,4 +59,9 @@ export function DatePicker({ value, onChange, label, placeholder = "Any date", m
       </div>
     </PopoverContent>
   </Popover>
+}
+
+/** The filter-row date control: the DatePicker in the pill style. Value is YYYY-MM-DD or "". */
+export function DateField(props: Omit<Parameters<typeof DatePicker>[0], "variant">) {
+  return <DatePicker {...props} variant="pill" />
 }
