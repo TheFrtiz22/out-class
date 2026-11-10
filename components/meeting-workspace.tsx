@@ -39,8 +39,7 @@ const localDate = (date: Date) => {
   copy.setMinutes(copy.getMinutes() - copy.getTimezoneOffset());
   return copy.toISOString().slice(0, 16);
 };
-/** `toolbarStart` lets the club Meetings page put its Member Meetings / Corkboard Events switch in this one toolbar. */
-export function MeetingList({ clubId, embedded = false, initialAudience = "ALL", personalOnly = false, toolbarStart, openCreate = false }: { clubId?: string; embedded?: boolean; initialAudience?: string; personalOnly?: boolean; toolbarStart?: ReactNode; openCreate?: boolean }) {
+export function MeetingList({ clubId, embedded = false, initialAudience = "ALL", personalOnly = false, openCreate = false }: { clubId?: string; embedded?: boolean; initialAudience?: string; personalOnly?: boolean; openCreate?: boolean }) {
   const [meetings, setMeetings] = useState<Meeting[]>([]),
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
@@ -77,7 +76,6 @@ export function MeetingList({ clubId, embedded = false, initialAudience = "ALL",
     </div>
     {notice && <p role="status" className="text-sm">{notice}</p>}
     <div role="toolbar" aria-label="Meeting filters" className="flex flex-wrap items-center gap-4 border-b pb-4">
-      {toolbarStart}
       <SegmentedControl label="Meeting time" size="compact" value={period} onChange={setPeriod} options={[{ value: "upcoming", label: "Upcoming" }, { value: "past", label: "Past" }]} />
       <SegmentedControl label="Audience" size="compact" value={audience} onChange={setAudience} options={[{ value: "ALL", label: "All permitted meetings" }, { value: "RECRUITMENT", label: "Recruitment / Interest" }, { value: "MEMBERS", label: "Members" }]} />
     </div>

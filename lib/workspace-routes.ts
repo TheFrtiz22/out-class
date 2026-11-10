@@ -12,7 +12,7 @@ function read(query: Query, key: string) {
 }
 
 const sectionTitles: Record<string, string> = {
-  overview: TERMS.clubHome, meetings: "Meetings", events: "Meetings", tasks: TERMS.tasks, members: "Members",
+  overview: TERMS.clubHome, meetings: "Meetings", events: "Events", tasks: TERMS.tasks, members: "Members",
   announcements: TERMS.announcements, settings: "Settings",
 }
 const toolTitles: Record<string, string> = {
@@ -42,7 +42,8 @@ export function canonicalClubWorkspaceQuery(input: URLSearchParams): URLSearchPa
   const section = q.get("section"), tool = q.get("tool")
   let changed = false
   const set = (key: string, value: string | null) => { if (value === null) q.delete(key); else q.set(key, value); changed = true }
-  if (section === "events") set("section", "meetings")
+  // Club events have their own section (owner decision 2026-11-05, FE-12); the old Meetings tab redirects there.
+  if (section === "meetings" && q.get("meetingTab") === "events") { set("section", "events"); set("meetingTab", null) }
   if (section === "recruitment") {
     // Configuration moved to Settings.
     if (tool === "cycles") { set("section", "settings"); set("setting", "cycles"); set("tool", null) }

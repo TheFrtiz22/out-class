@@ -1,6 +1,6 @@
 # Club leader Corkboard management
 
-Public event management lives in **Meetings → Corkboard Events**. Member Meetings retains its existing agenda/resource/check-in tools and Meetings campus illustration. Old `section=events` links remain aliases. No additional sidebar destination, model, migration, storage system, or realtime service was added.
+Public event management has its own leader nav entry, **Events** (FE-12, owner decision 2026-11-05), next to Meetings for members who manage meetings. Member Meetings retains its existing agenda/resource/check-in tools and Meetings campus illustration. Old `section=meetings&meetingTab=events` links redirect to `section=events`. No additional model, migration, storage system, or realtime service was added.
 
 ## Canonical operations
 
