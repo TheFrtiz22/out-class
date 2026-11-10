@@ -17,6 +17,7 @@ const suites = {
       "tests/voting-room-native.test.cjs",
       "tests/inbox-realtime-signal-native.test.cjs",
       "tests/new-user-trigger-execute-native.test.cjs",
+      "tests/clear-unproven-password-native.test.cjs",
     ],
   },
   events: {
