@@ -99,10 +99,10 @@ test('browser: sortable lists, wide applicant profile, drag/drop, quick decision
   await observations.getByText('0 / 50 words',{exact:true}).waitFor()
   await observations.getByRole('button',{name:'Cancel',exact:true}).click()
   await page.waitForFunction(()=>document.activeElement?.textContent==='Add observation')
-  // Status is one StatusPill: a filled, rounded token pill, not the old thin left bar.
+  // Status is one StatusPill: a tinted icon and plain text, with no capsule fill and no left bar.
   const status=page.locator('[data-slot="status-pill"]').first()
-  const pill=await status.evaluate(element=>({radius:getComputedStyle(element).borderRadius,border:getComputedStyle(element).borderInlineStartWidth,code:element.dataset.status}))
-  assert.equal(pill.radius,'999px');assert.equal(pill.border,'0px');assert.ok(pill.code)
+  const pill=await status.evaluate(element=>({background:getComputedStyle(element).backgroundColor,border:getComputedStyle(element).borderInlineStartWidth,icon:!!element.querySelector('svg[data-icon-pack="phosphor"]'),code:element.dataset.status}))
+  assert.equal(pill.background,'rgba(0, 0, 0, 0)');assert.equal(pill.border,'0px');assert.ok(pill.icon);assert.ok(pill.code)
   await resumeResponse
   await page.getByRole('dialog').evaluate(element=>Promise.all(element.getAnimations().map(animation=>animation.finished.catch(()=>{}))))
   assert.ok((await page.getByRole('dialog').boundingBox()).x<1440*.1)
