@@ -178,7 +178,10 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   const [revision, setRevision] = useState(0)
   const [query, setQuery] = useState("")
   const [position, setPosition] = useState<{ key: string; cursor: PipelineCursor } | null>(null)
-  const [round, setRound] = useState("")
+  // `roundId` and `quickReview=1` arrive from the Overview review card and Decide; read once, then the filters own them.
+  const initialParams = useRef(preview || typeof window === "undefined" || !window.location?.href ? new URLSearchParams() : new URL(window.location.href).searchParams)
+  const [round, setRound] = useState(() => initialParams.current.get("roundId") ?? "")
+  const quickReviewRequested = useRef(initialParams.current.get("quickReview") === "1")
   const [decisionGroup, setDecisionGroupState] = useState<DecisionFilter>(rejectedOnly ? "rejected" : initialDecision)
   // The decision filter lives in the URL (`decision=`), so Rejected and other groups are linkable.
   const setDecisionGroup = useCallback((value: DecisionFilter) => {
@@ -538,9 +541,26 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       // Release the guard before opening the next profile; identity comes from the refreshed projection.
       mutating.current = false; setBusy(false)
       if (next) open(next)
-      else { setActiveId(null); setQuickQueue(null); setMessage("Quick review complete.") }
+      else { setActiveId(null); setQuickQueue(null); setMessage("Quick decisions complete.") }
     } catch { setMessage("This decision could not be saved. The candidate stays open. Check your access before retrying.") }
     finally { mutating.current = false; setBusy(false) }
+  }
+  /**
+   * Start quick review: the first applicant in the current round and filters that you haven't reviewed, opened in
+   * the one-column quick layout (#225), where ←/→ move between applicants. Looks at the loaded page first, then at
+   * the whole selection's applicants with no evaluations yet.
+   */
+  async function startReview() {
+    if (busy || mutating.current || !data) return
+    const unreviewed = filtered.find(app => !app.evaluations?.some(evaluation => evaluation.interviewerId === membership.id))
+    let target: Pick<Candidate, "id" | "roundId"> | undefined = unreviewed
+    if (!target) {
+      try { target = (await getClubPipelineSelection(membership.clubId, { ...readQuery, review: "unreviewed" })).applications[0] }
+      catch { setMessage("Couldn’t find the next applicant to review. Please try again."); return }
+    }
+    if (!target) { setMessage("Everyone in this view has a review. Change the round or filters to keep going."); return }
+    setFullProfile(false)
+    open(target)
   }
   async function startQuickReview() {
     if (!canDecide || busy || mutating.current) return
@@ -601,6 +621,13 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     observer.observe(bar)
     return () => { observer.disconnect(); root.style.removeProperty("--oc-voting-bar-height") }
   }, [votingBarShown])
+  useEffect(() => {
+    if (!quickReviewRequested.current || !data || loading || !pageReady) return
+    quickReviewRequested.current = false
+    if (data.rounds.length && round && !data.rounds.some(item => item.id === round)) setRound("")
+    if (typeof window !== "undefined" && window.history) { const url = new URL(window.location.href); url.searchParams.delete("quickReview"); window.history.replaceState(window.history.state, "", url) }
+    if (hasPermission(membership, "applications.review")) void startReview()
+  })
   if (loading) return <WorkspaceLoading label="Preparing your applicant pipeline…" layout="applicants" rows={5} />
   if (!data || error || readError)
     return (
@@ -620,7 +647,9 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         options={[{ value: "", label: decisionGroup === "pending" ? "All pending" : "All stages" }, ...pendingStatuses.map(key => ({ value: key, label: applicationStatusLabels[key] }))]} />}
 {!rejectedOnly && !preview && actionSlot !== undefined && (() => {
         const actions = <div role="group" aria-label="Recruitment review" className="flex flex-wrap items-center justify-end gap-2">
-          {!decisionsOnly && canDecide && <Button variant="outline" disabled={busy || !listData?.facets.quickReview} onClick={() => void startQuickReview()}>Quick review</Button>}
+          {!decisionsOnly && hasPermission(membership, "applications.review") && <Button variant="outline" disabled={busy || !filtered.length} onClick={() => void startReview()}>Start quick review</Button>}
+          {/* The decision queue (Accept & next / Deny & next) from #225, renamed so it isn't confused with Start quick review. */}
+          {!decisionsOnly && canDecide && <Button variant="outline" disabled={busy || !listData?.facets.quickReview} onClick={() => void startQuickReview()}>Quick decisions</Button>}
         </div>
         return actionSlot ? createPortal(actions, actionSlot) : actions
       })()}
@@ -746,7 +775,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                     <div className="oc-quick-title-row">
                       <SheetTitle ref={heading} tabIndex={-1} className="oc-quick-name" title={anonymousActive ? undefined : active.student.email}>{name(active)}</SheetTitle>
                       <StatusPill status={active.status} />
-                      {quickQueue && <span className="oc-quick-fact">Quick review · {quickQueue.length} left</span>}
+                      {quickQueue && <span className="oc-quick-fact">Quick decisions · {quickQueue.length} left</span>}
                     </div>
                     <SheetDescription className="oc-quick-facts">
                       {anonymousActive ? "Anonymous review · identity and appointments withheld" : joinFacts(profile?.major, profile?.academicYear, profile?.gpa != null && `GPA ${profile.gpa.toFixed(2)}`, profile?.actScore != null && `ACT ${profile.actScore}`, profile?.satScore != null && `SAT ${profile.satScore}`) || "Academic profile not provided"}
@@ -843,7 +872,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                   {canEvaluate && <Button type="submit" variant="outline" disabled={busy || !canReview}>{busy ? "Saving…" : "Finalize evaluation"}</Button>}
                   {canEvaluate && <span className="oc-quick-save-state"><AutosaveStatus save={draftSave} />{dirty ? "Draft · not finalized" : score ? "Finalized review" : ""}</span>}
                 </form>
-                <div className="oc-quick-actions" role="group" aria-label={quickQueue ? "Quick review decisions" : "Decisions"}>
+                <div className="oc-quick-actions" role="group" aria-label={quickQueue ? "Quick decisions" : "Decisions"}>
                   {quickQueue ? <>
                     <Button variant="ghost" disabled={busy} onClick={() => void skipQuickReview()}>Skip</Button>
                     <Button variant="outline" aria-describedby="quick-review-publishes" disabled={busy || !canDecide || !pendingCandidate(active) || !draftSave.ready || draftSave.recovery != null} onClick={() => void quickDecision("REJECTED")}>Deny & next</Button>
