@@ -73,6 +73,19 @@ export function restrictApplicationProfile<A extends { student: { studentProfile
   return profile ? { ...app, student: { ...app.student, studentProfile: restrictProfileFields(profile, visibility) } } : app;
 }
 
+/**
+ * Roster reads that include the member's club relation: academic fields follow the club
+ * setting and the relation itself is not returned. Name, email, role and permissions stay,
+ * because roster administration depends on them.
+ */
+export function rosterMembers<M extends { club?: { profileFieldVisibility?: unknown } | null; user: { studentProfile: object | null } }>(members: M[]) {
+  return members.map(({ club, ...member }) => {
+    const visibility = normalizeProfileFieldVisibility(club?.profileFieldVisibility);
+    const profile = member.user.studentProfile;
+    return { ...member, user: { ...member.user, studentProfile: profile ? restrictProfileFields(profile, visibility) : null } } as Omit<M, "club">;
+  });
+}
+
 /** Applicant Display and voting-slide fields that the club setting caps. Other fields are unaffected. */
 const cappedDisplayFields = new Set<string>(["name", "photo", "major", "academicYear", "gpa", "sat", "act", "experiences", "resume", "linkedin"]);
 export function allowedByProfileCeiling(field: string, visibility: ProfileFieldVisibility) {

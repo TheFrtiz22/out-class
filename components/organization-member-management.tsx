@@ -195,6 +195,9 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
     }
   }
   const needle = query.trim().toLowerCase();
+  // Class year is a profile field: members' years follow the club setting (cleared by the server when hidden).
+  // Invitations carry an admin-entered year, so that tab keeps the column.
+  const showYear = invitesOpen || data?.profileFields?.academicYear !== false;
   const rows = data
     ? [
         ...data.members.map((member) => ({
@@ -355,7 +358,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 }}
               />
               <label className="text-sm"><span className="sr-only">Role</span><NativeSelect aria-label="Filter members by role" className="min-h-11" value={roleFilter} onChange={e => { setRoleFilter(e.target.value); setPage(0); setSelection([]) }}><option value="">All roles</option>{organizationRoles.map(role => <option key={role} value={role}>{organizationRoleLabels[role]}</option>)}</NativeSelect></label>
-              <label className="text-sm"><span className="sr-only">Year</span><NativeSelect aria-label="Filter members by year" className="min-h-11" value={yearFilter} onChange={e => { setYearFilter(e.target.value); setPage(0); setSelection([]) }}><option value="">All years</option>{[...new Set([...data.members.map(m => m.user.studentProfile?.academicYear), ...data.invitations.map(i => i.invitedYear && /^\d{4}$/.test(i.invitedYear) ? academicYear({ gradYear: Number(i.invitedYear) }) : i.invitedYear)].filter((year): year is string => !!year))].sort(compareAcademicYears).map(year => <option key={year}>{year}</option>)}</NativeSelect></label>
+              {showYear && <label className="text-sm"><span className="sr-only">Year</span><NativeSelect aria-label="Filter members by year" className="min-h-11" value={yearFilter} onChange={e => { setYearFilter(e.target.value); setPage(0); setSelection([]) }}><option value="">All years</option>{[...new Set([...data.members.map(m => m.user.studentProfile?.academicYear), ...data.invitations.map(i => i.invitedYear && /^\d{4}$/.test(i.invitedYear) ? academicYear({ gradYear: Number(i.invitedYear) }) : i.invitedYear)].filter((year): year is string => !!year))].sort(compareAcademicYears).map(year => <option key={year}>{year}</option>)}</NativeSelect></label>}
               {invitesOpen && <>              <label className="inline-flex min-h-11 items-center gap-2 text-sm">
                 <input
                   type="checkbox"
@@ -548,7 +551,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                         }
                       />
                     </th>
-                    {["Member", "Year", "Role", "Status", ...(invitesOpen ? ["Actions"] : [])].map(
+                    {["Member", ...(showYear ? ["Year"] : []), "Role", "Status", ...(invitesOpen ? ["Actions"] : [])].map(
                       (label) => (
                         <th key={label} scope="col" className="px-3" aria-sort={label === "Actions" ? undefined : sort === label ? descending ? "descending" : "ascending" : "none"}>
                           {label === "Actions" ? label : <SortLabel label={label} active={sort === label} descending={descending} onClick={() => sortBy(label)} />}
@@ -605,9 +608,9 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                         </p>
                         {!!row.member?.groups.length && <p className="mt-1 text-xs text-muted-foreground">{row.member.groups.join(" · ")}</p>}
                       </td>
-                      <td data-label="Year" className={onboardingTable.cell}>
+                      {showYear && <td data-label="Year" className={onboardingTable.cell}>
                         {row.year || "—"}
-                      </td>
+                      </td>}
                       <td data-label="Role" className={onboardingTable.cell}>
                         {organizationRoleLabels[row.role]}
                       </td>
@@ -1020,8 +1023,8 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                     active.isOwner ? "OWNER" : active.accessRole
                   ]
                 }{" "}
-                · {statusLabel(active.status)} ·{" "}
-                {active.user.studentProfile?.academicYear || "Year not provided"}
+                · {statusLabel(active.status)}
+                {data?.profileFields?.academicYear !== false && <> · {active.user.studentProfile?.academicYear || "Year not provided"}</>}
               </p>
               <p className="text-sm text-muted-foreground">
                 {active.title || active.role.replaceAll("_", " ")} · Groups:{" "}
