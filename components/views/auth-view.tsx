@@ -12,7 +12,7 @@ import { isUvaEmail, loginReturnPath } from "@/lib/auth"
 import type { ViewId } from "@/lib/views"
 import { createClient } from "@/utils/supabase/client"
 import Link from "next/link"
-import { authEmailError, confirmedEmailSession } from "@/lib/auth-email"
+import { authEmailError, confirmedEmailSession, isNoAccountCodeError, signInCodeNotice } from "@/lib/auth-email"
 import { MICROSOFT_AUTH_ENABLED } from "@/lib/auth-features"
 
 export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "student", initialError = "" }: {
@@ -87,11 +87,12 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
     try {
       const { error } = await supabase.auth.signInWithOtp(withCaptcha({ email: email.trim().toLowerCase(), options: { shouldCreateUser: false } }, turnstileToken))
       if (captchaFailed(error)) { setError(turnstileMessage("rejected")); return }
-      if (error) { setError(authEmailError(error, "send")); if (error.status === 429) setResendSeconds(60); return }
+      // An address with no account must look the same as one that was sent a code.
+      if (error && !isNoAccountCodeError(error)) { setError(authEmailError(error, "send")); if (error.status === 429) setResendSeconds(60); return }
       setEmail(email.trim().toLowerCase())
       setResendSeconds(60)
       setStep("verify")
-      setNotice(`Code sent. We sent a 6-digit code to ${email}.`)
+      setNotice(signInCodeNotice(email.trim().toLowerCase()))
     } catch { setError("Unable to send a code. Try signing in with your password.") }
     finally { setLoading(false); setTurnstileReset(value => value + 1) }
   }

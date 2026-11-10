@@ -10,6 +10,16 @@ export function authEmailError(error: { code?: string; status?: number }, operat
   return "Unable to send a code. Please try again in a moment."
 }
 
+// Sign-in codes are requested with shouldCreateUser:false, so Supabase Auth answers an address with no
+// account with otp_disabled (422). The sign-in screen treats that exactly like a sent code.
+export function isNoAccountCodeError(error: { code?: string; status?: number }) {
+  return error.code === "otp_disabled" && (error.status === 400 || error.status === 422)
+}
+
+export function signInCodeNotice(email: string) {
+  return `If ${email} has an OutClass account, we sent it a 6-digit code.`
+}
+
 export function confirmedEmailSession(data: {
   session: { user: { id: string } } | null;
   user: { id: string; email?: string; email_confirmed_at?: string | null } | null;

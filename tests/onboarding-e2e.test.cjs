@@ -96,7 +96,7 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
   const loginMessage=await confirmationMessage(config,email,/Your OutClass sign-in code/);
   const loginCode=loginMessage.Text.match(/\b(\d{6})\b/)[1];
   const loginVerified=await actor.client.auth.verifyOtp({email,token:loginCode,type:'email'});assert.equal(loginVerified.error,null);assert.ok(loginVerified.data.session);
-  const absent=await actor.client.auth.signInWithOtp({email:`absent${suffix}@virginia.edu`,options:{shouldCreateUser:false}});assert.ok(absent.error);
+  const absent=await actor.client.auth.signInWithOtp({email:`absent${suffix}@virginia.edu`,options:{shouldCreateUser:false}});assert.ok(absent.error);assert.equal(absent.error.code,'otp_disabled');assert.ok([400,422].includes(absent.error.status),String(absent.error.status));// the sign-in screen maps exactly this to the same notice as a sent code
   const after=await authAdmin.auth.admin.listUsers();assert.ok(!after.data.users.some(user=>user.email===`absent${suffix}@virginia.edu`));
  });
  await scenario('A — superadmin designation → normal verified signup → profile → atomic ownership → club dashboard',async()=>{
