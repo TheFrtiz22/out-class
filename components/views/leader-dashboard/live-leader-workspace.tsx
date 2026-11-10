@@ -21,6 +21,7 @@ import { type ApplicantSort } from "@/lib/live-applicant-sorting"
 import { applicantLane } from "@/lib/applicant-board"
 import { LiveApplicantList, LiveApplicantKanban, LiveDecisionList, type ApplicantLane } from "./live-applicant-views"
 import { useDemoMode } from "@/contexts/demo-context"
+import { ClubExportLink } from "@/components/club-export-link"
 import { RecruitmentAttendanceSummary } from "@/components/recruitment-attendance-summary"
 import { RevealApplicant } from "@/components/reveal-applicant"
 import { hasPermission } from "@/lib/permissions"
@@ -39,7 +40,7 @@ import { useDismissableDetails } from "@/hooks/use-dismissable-details"
 import { createPortal } from "react-dom"
 import { useRevalidate } from "@/hooks/use-revalidate"
 import { BoardDecisionMode } from "@/components/live-voting/board-decision-mode"
-import { getClubPipeline, getRankedReviewSettings, getRoundTargetSummary, saveRankedReviewBands } from "@/lib/workspace-api"
+import { getRankedReviewRound, getRankedReviewSettings, getRoundTargetSummary, saveRankedReviewBands } from "@/lib/workspace-api"
 import { getClubPipelinePage, getClubPipelineSelection, moveApplicantRound, setApplicationStatus, reconsiderRejectedApplication, revokeRecruitmentOffer } from "@/lib/workspace-api"
 import { submitEvaluation } from "@/lib/workspace-api"
 import { useApplicationState } from "@/lib/application-state"
@@ -187,7 +188,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   const [rankedOpen, setRankedOpen] = useState<string | null>(null)
   const [rankedChanged, setRankedChanged] = useState(0)
   const rankedApi = useMemo<RankedReviewApi>(() => ({
-    loadRound: roundId => getClubPipeline(membership.clubId, { roundId }),
+    loadRound: roundId => getRankedReviewRound(membership.clubId, roundId),
     loadSettings: roundId => getRankedReviewSettings(membership.clubId, roundId),
     saveBands: input => saveRankedReviewBands(input),
     loadRoundSummary: input => getRoundTargetSummary({ clubId: membership.clubId, ...input }),
@@ -587,6 +588,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       })()}
       <div className="oc-toolbar">
         {!decisionsOnly && <SegmentedControl label="Applicant view" value={view} onChange={setView} options={[{ value: "list", label: "List" }, { value: "kanban", label: "Kanban" }, { value: "ranked", label: "Ranked" }]} />}
+        {!decisionsOnly && <ClubExportLink clubId={membership.clubId} kind="applicants" membership={membership} label="Export CSV" />}
         {view !== "ranked" && <><div className="relative min-w-0 flex-1 basis-60">
           <Search className="absolute left-3 top-3 size-4 text-muted-foreground" />
           <Input

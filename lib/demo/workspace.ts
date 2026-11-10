@@ -2,6 +2,7 @@
 // lib/workspace-api.ts while Demo Mode is active; never imported statically
 // by live code. Each export mirrors the facade export of the same name.
 import { pipelineListProjection } from "@/lib/pipeline-list";
+import { rankedReviewCandidate } from "@/lib/ranked-review-read";
 import { pagePipeline, completePipelineSelection, pipelinePageQuery, pipelineSelectionKey } from "@/lib/pipeline-page";
 import * as demoPipeline from "./pipeline";
 import * as demoInterviewEntry from "./interview-entry";
@@ -131,6 +132,7 @@ export const getClubPipeline: Demo<"getClubPipeline"> = (clubId, filter = {}) =>
       .map((a) => { const app = joinedApplication(a.id); const projected = s.clubs.find(c => c.id === clubId)?.rounds.find(r => r.id === a.roundId)?.anonymousReview ? anonymousApplication(app as unknown as ReviewApplication, genderVisibility(s.applicantDisplay[a.roundId]?.config)) : identifiedApplication(app as unknown as ReviewApplication, genderVisibility(s.applicantDisplay[a.roundId]?.config)); const ownSubmitted = a.evaluations.some(e=>e.interviewerId===demoMember().id&&e.roundId===a.roundId&&e.submittedAt); const assigned=s.interviewFoundation.assignments.some(g=>g.applicationId===a.id&&g.roundId===a.roundId&&g.memberId===demoMember().id&&!g.revokedAt);const caps=interviewCapabilities(demoMember());const self=a.studentId===demoMember().userId;const allowed=!self&&((caps.readClosing&&!assigned)||caps.participate&&assigned&&ownSubmitted); const roundScore=allowed?demoInterviews.getInterviewRoundScore({clubId,applicationId:a.id,roundId:a.roundId}):null;return { ...projected, evaluations: projected.evaluations.filter(e=>!self&&e.submittedAt&&(caps.participate&&e.interviewerId===demoMember().id&&s.interviewFoundation.assignments.some(g=>g.applicationId===a.id&&g.roundId===e.roundId&&g.memberId===demoMember().id&&!g.revokedAt)||allowed&&e.roundId===a.roundId)), roundScore, canEvaluate: !self && !ownSubmitted && (s.clubs.find(c=>c.id===clubId)?.rounds.find(r=>r.id===a.roundId)?.anonymousReview ? caps.participate : caps.participate && assigned), recruitmentOffer: s.recruitmentOffers.find(o=>o.applicationId===a.id) ?? null } }),
   }
 }
+export const getRankedReviewRound: Demo<"getRankedReviewRound"> = async (clubId, roundId) => ({ applications: (await api.getClubPipeline(clubId, { roundId })).applications.map(rankedReviewCandidate) })
 export const getClubPipelineList: Demo<"getClubPipelineList"> = async (...args: Parameters<typeof getClubPipeline>) => pipelineListProjection(await api.getClubPipeline(...args))
 export const getClubPipelinePage: Demo<"getClubPipelinePage"> = async (clubId, input = {}) => {
     const query = pipelinePageQuery.parse(input), member = demoMember()
