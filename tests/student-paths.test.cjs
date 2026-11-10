@@ -292,7 +292,7 @@ test("FE-4: a direct /explore load seeds Explore with the public directory after
   assert.deepEqual(page.props.initialDirectory, { clubs: [{ id: "public-club" }] })
   assert.equal(typeof page.props.serverNow, "number")
   const home = await h.render("/home")
-  assert.equal(home.props.initialDirectory, undefined); assert.equal(home.props.serverNow, undefined)
+  assert.equal(home.props.initialDirectory, undefined); assert.equal(typeof home.props.serverNow, "number")
   assert.equal(h.calls.directory, 1)
   const disabled = entryHarness({ session: confirmed, account: { disabledAt: new Date() } })
   assert.equal((await disabled.render("/explore")).type, "main"); assert.equal(disabled.calls.directory, undefined)

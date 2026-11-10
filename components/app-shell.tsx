@@ -214,11 +214,11 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
             {view === "student-profile" && <UnifiedStudentProfileView />}
             {view === "inbox" && <InboxView onNavigate={navigate} />}
             {view === "my-clubs" && <PersonalClubs section={personalSection} />}
-            {view === "explore" && <ExploreView onNavigate={navigate} section={personalSection === "categories" ? "categories" : "explore"} initialDirectory={demo.isDemoEnabled ? undefined : directorySeed} serverNow={directorySeed ? serverNow : undefined} onInitialDirectoryUsed={() => setDirectorySeed(undefined)} />}
+            {view === "explore" && <ExploreView onNavigate={navigate} section={personalSection === "categories" ? "categories" : "explore"} initialDirectory={demo.isDemoEnabled ? undefined : directorySeed} serverNow={serverNow} onInitialDirectoryUsed={() => setDirectorySeed(undefined)} />}
             {view === "corkboard" && <CorkboardView onNavigate={navigate} />}
             {/* One instance for both scopes: its stage control slides instead of remounting. */}
-            {(view === "tracker" || view === "status") && <ApplicationTrackerView onNavigate={navigate} scope={view === "status" ? "status" : "all"} />}
-            {view === "calendar" && <CalendarView onNavigate={navigate} />}
+            {(view === "tracker" || view === "status") && <ApplicationTrackerView onNavigate={navigate} scope={view === "status" ? "status" : "all"} serverNow={serverNow} />}
+            {view === "calendar" && <CalendarView onNavigate={navigate} serverNow={serverNow} />}
             {view === "leader-dashboard" && <LeaderDashboardView />}
             {view === "screening-dashboard" && <ScreeningDashboardView />}
             {view === "interview-scheduler" && (demo.isDemoEnabled ? <DemoInterviewSchedule onNavigate={navigate} /> : <InterviewSchedulerView onNavigate={navigate} />)}

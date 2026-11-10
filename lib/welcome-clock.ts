@@ -1,4 +1,4 @@
-type ClockHost = {
+export type ClockHost = {
   now: () => Date
   setTimeout: (callback: () => void, delay: number) => ReturnType<typeof setTimeout>
   clearTimeout: (timer: ReturnType<typeof setTimeout>) => void

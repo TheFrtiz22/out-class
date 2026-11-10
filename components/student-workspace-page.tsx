@@ -49,5 +49,5 @@ export async function StudentWorkspacePage({ path, searchParams }: { path: strin
     getCachedLaunchClubs(),
     route.view === "explore" ? getClubDirectory() : undefined,
   ])
-  return <HomeEntry launchClubs={launchClubs} initialView={route.view} initialSession={user} initialData={initialData} hasProfile={!!profile} initialDirectory={initialDirectory} serverNow={initialDirectory ? Date.now() : undefined} />
+  return <HomeEntry launchClubs={launchClubs} initialView={route.view} initialSession={user} initialData={initialData} hasProfile={!!profile} initialDirectory={initialDirectory} serverNow={Date.now()} />
 }
