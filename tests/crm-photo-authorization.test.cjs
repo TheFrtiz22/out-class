@@ -31,10 +31,11 @@ function fixture() {
     user: { findUnique: async()=>({disabledAt:state.disabled?new Date():null}) },
     pipelineRound: { findMany: async options => { state.roundQuery = options; return [app.round]; } },
     application: {
-      findMany: async ({ where, include, omit, select }) => { state.pipelineOmit=omit; state.pipelineQuery=include; state.pipelineSelect=select; if(state.pipelineError)throw state.pipelineError; return (state.pipelineReads++, matches(where)) && (!where.round || app.round.anonymousReview) ? [app] : []; },
+      findMany: async ({ where, include, omit, select }) => { if(select?.recruitmentCycle&&where?.studentId?.in){state.historyReads=(state.historyReads||0)+1;return [];} state.pipelineOmit=omit; state.pipelineQuery=include; state.pipelineSelect=select; if(state.pipelineError)throw state.pipelineError; return (state.pipelineReads++, matches(where)) && (!where.round || app.round.anonymousReview) ? [app] : []; },
       findFirst: async ({ where, select }) => { if(select)state.narrowReads++; return matches(where) ? app : null; }
     },
     evaluation: {findMany:async ({where})=>matches(where.application) && where.applicationId.in.includes(app.id) ? app.evaluations.filter(e=>e.submittedAt).map(e=>({...e,applicationId:app.id})):[]},
+    applicantRecusal: {findFirst:async()=>null,findMany:async()=>[]},
     interviewPanelAssignment: {findMany:async ({where})=>matches(where.application) && where.applicationId.in.includes(app.id) ? app.interviewAssignments.map(e=>({...e,applicationId:app.id})):[]},
     clubMember: { findFirst: async () => membership(), findUnique: async({where})=>state.clubAccess && where.userId_clubId.clubId===clubId ? membership():null },
     applicantObservation: { findMany: async () => [] }

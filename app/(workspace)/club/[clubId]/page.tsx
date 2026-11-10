@@ -60,5 +60,5 @@ export default async function ClubPage({ params }: { params: Promise<{ clubId: s
   const {
     data: { user },
   } = await getSessionUser()
-  return <AuthenticatedPageLayout optional><PublicClubPage club={club} authenticated={!!user} embedded={!!user} /></AuthenticatedPageLayout>
+  return <AuthenticatedPageLayout optional><PublicClubPage club={club} authenticated={!!user} embedded={!!user} serverNow={Date.now()} /></AuthenticatedPageLayout>
 }

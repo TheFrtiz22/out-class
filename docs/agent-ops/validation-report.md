@@ -2,6 +2,35 @@
 
 Appended by `outclass-release-check`. Newest first.
 
+## 2026-11-10 OPS-OVERNIGHT-1 overnight release run (main c2c6efa9 → see merge SHAs)
+- Scope: owner-approved unattended run. GitHub merges through the PR API only; Supabase and Vercel read-only; no migration applied, no env var, DNS, email or data write.
+- Gate per PR: the 5 required checks (validate, Integration infrastructure coverage, Native PostgreSQL / security, Native PostgreSQL / transactions, Applicant workflow / application-writing) green on the head; local typecheck, lint, test:migrations and the PR's changed unit tests on the exact merge result (the container cannot download Prisma engines, so the full unit suite, build, browser and E2E suites ran only in CI and the Vercel preview/production builds); Vercel production deployment READY for the merge SHA; `get_runtime_errors` since the run started: none.
+- Merged, production READY: #144 39c09803, #139 67145007, #217 5344a24a, #218 fe1e304a, #213 83f8b1e5, #146 70a96fc0, #117 e59c462e, #179 c4865c27, #226 65e73101 (revert of #209), #215 e669c31f, #196 b6e7b35f, #219 1e90b391, #147 05552952. Merged by other sessions or auto-merge during the run: #201, #199, #222 081418cc, #148 e9456745, #190 d135f4fe, #209 e3604be9 (reverted).
+- Incident: #209 had auto-merge enabled and merged at 08:27 UTC when its checks passed, before migration 20261109160000_calendar_feed_token was applied. Production build e3604be9 failed `check-release-database` ("4 required database columns are unavailable: CalendarFeedToken.*"); production kept serving c4865c27. Revert #226 merged 10:06 UTC; production READY at 65e73101. To re-land: apply the migration, then revert the revert.
+- Reviews (read-only reviewer subagents, evidence passed in): authz-reviewer on #146, #148, #211 (two passes), #219, #221, #209, #206, #171; nextjs-reviewer on #179, #117, #196; migration-reviewer on #205, #206, #209, #220, #200. Blocking findings fixed on the branch: #211 (named reviewer offsets were gated only on recruitment.manage and included anonymous rounds; now uses interviewCapabilities.readClosing and applicationReviewVisibility, 6 new tests), #209 (create/disable allowed during support view-as; RSVP'd events not filtered by publicMeetingVisibility; 2 new tests), #206 (recused members still received scores, answers and observations; 3 new tests). #206 still shows roundScore to a recused member in the pipeline list and ranked review.
+- Not verified: authenticated E2E and real-browser behaviour beyond what CI ran; Turnstile, Sentry and Outlook with their keys set (all three are inert without configuration); any migration against production; #211's Prisma filters against a real database (unit tests mock the transaction).
+- CI notes: several non-required suites failed with "supabase-start failed" (infrastructure); `validate` jobs on four heads hung for 4–6 hours and were replaced by pushing a fresh merge of main. Stale runs could not be cancelled from this session.
+- Held with owner steps: #205 (apply migration, then merge), #206 and #209 (apply migration first; owner decisions on recusal and voting), #224 (migration; not reviewed here), #220 (hold: clears new students' passwords unless the E2E helper and flow are updated; four suites fail), #200 (rehearse on a restored copy), #171 (no CI yet; auto-merge is on), #212 (duplicates main), #187 (no longer needed).
+
+## 2026-11-09 DB-RECON-1 db/migration-reconciliation (base main 5cbaeb60)
+- Gates: test 1975 total, 1909 pass, 0 fail, 66 skipped (env-gated); test:migrations 73 applied on fresh and legacy, RLS 85 tables, new assertion that `InterviewSlot_clubId_fkey` is validated (fails without the migration); lint 0 errors / 21 warnings; typecheck ok; build ok.
+- Disposable PostgreSQL 16 (loopback, in-container): 72 then 73 migrations from zero on CI-style and Supabase-shaped databases; new migration applied once, repeated as a no-op, and fails cleanly on an orphaned slot (P3009 on the next deploy, documented); production-like ledger (CRLF checksums, zero-step rows) accepted by `migrate status` and `migrate deploy`.
+- Production, read-only catalog queries: 72/72 ledger rows finished, none rolled back; differences listed in `migration-reconciliation-2026-11-09.md`. Nothing written.
+- migration-reviewer: no critical/high; 1 medium fixed (rollback text was wrong about the failed ledger row), 2 low (test assertion added; silent skip when the constraint is absent kept, noted).
+- Environment notes: browser suites ran against the container's Chromium 1243 through a symlink (repo pins 1248). No Docker daemon, so `run-disposable-postgres.cjs`, the pinned Supabase 17 image and the authenticated E2E stack were not run. No PostgreSQL 17 restore rehearsal.
+2026-11-05 #127 / 2427d3b8 (authz follow-up to #120; no migration) app gates: CI required checks pass; local voting-slide-preparation.test.cjs 7/0/0, 2/0 browser | fixes MEDIUM: preparation page now withholds highlights whose source the leader cannot view (count only, preserved on save); LOW: profile highlights limited to the round applicant display
+deploy dpl_9J6Whiq6SWA1DjfYVzt3dLg7QX85 READY yes, serving out-class.net / www / uva | verdict OK | rollback target dpl_9TMorBuQ8uqQtjhk4KdZZK9L38jh
+2026-11-05 #125 / 0a9a34f0 (club voting rules) app gates: CI 16/16 on merged head; local feature tests 25/0/0, migrations 68+ fresh/legacy ok (82 tables RLS) lint ok types ok | integration skips: CI env-gated suites as baseline | agent-hook tests n/a | authz review (general-purpose agent with authz-reviewer brief; agent type not yet loaded): no high; MEDIUM (prep read path) fixed in #127
+deploy dpl_9TMorBuQ8uqQtjhk4KdZZK9L38jh READY yes | new runtime error classes 0 (2h window: one pre-existing /login Supabase-env class since 2026-10-12) | advisor delta 0 (new tables RLS+policies, functions set search_path, no SECURITY DEFINER) | migration 20261105170000_voting_rules applied by owner approval, ledger 69 | rollback target dpl_H6WkuK4TNf8tWsjXKvUt6dqftTgV | verdict OK
+2026-11-05 #120 / 3a1be040 (voting slide preparation) app gates: CI 16/16; local slide-prep tests 5/0/0 unit + 1/0 PGlite, 2/0 browser | migration 20261105150000_voting_slide_preparation applied by owner approval (ledger 68), checksum = sha256 of committed file | authz: MEDIUM co-leader could read withheld-source highlight text on the preparation page (slides unaffected) -> fix #127
+deploy dpl_CnLJCeMS23sFu8hDhc1wSwmXNFeC READY yes | new runtime error classes 0 | advisor delta 0 | rollback target dpl_Ech7R1kGKSJLN5Xckkzwfn6W2uWY | verdict OK after #127
+2026-11-05 #121 / b872cafa (voting in every round; no migration) app gates: CI 16/16; local every-round tests 4/0/0 | authz n/a beyond #125 review
+deploy dpl_CKY6uFSoom6tKMBa37QYEhZTiLwt READY yes | new runtime error classes 0 (24h groups all pre-existing) | advisor delta 0 (0/54/43 = baseline) | rollback target dpl_9E2uRkPbZkvtR7sgB8TDgWx7oTmM | verdict OK
+## 2026-11-10 DB-RESUME-1 db/resume-storage-guard (base main 318b5e3)
+- Targeted: tests/storage-policy.test.cjs 4/4 (PGlite, stub storage schema): before the guard an unqualified DELETE or column-free UPDATE as `authenticated` changes the owner's resume rows; after it none change; owner INSERT to a new path and BYPASSRLS service access still work; no-op without Storage. test:migrations 75 applied, RLS 85; lint 0 errors.
+- Not run locally: full unit suite, typecheck and build (SQL and one test file only; CI `validate` covers them), and the real Supabase Storage API (no Docker). CI's Local Auth and Private Storage jobs exercise real uploads.
+- authz-reviewer: no high/medium. Low: not proven against the real Storage API; separate existing gap noted (browser can INSERT to own folder without server-side file validation; bucket has no size or MIME limit).
+
 
 2026-11-05 backend/booking-throughput (merge on bd3e12d3) app gates: test 1588/0/58 migrations 67 ok (80 tables RLS) lint ok types ok build ok | integration skips 58 (env-gated e2e/native suites; security suite run separately 11/11, booking+ballot contention 14/0) | agent-hook tests 29/0 | authz-reviewer: no high/medium, LOW-1/LOW-2 fixed before merge
 deploy <pending> | runtime errors <pending> | advisor delta <n/a, no migration> | rollback target: production deploy of bd3e12d3 | verdict <pending>
@@ -105,6 +134,17 @@ deploy dpl_HCbKqFuC85KMysoQanp1KDZ2fF7U READY yes | new runtime error classes 0 
 ```
 - PR CI on head bc715296: 14/15 green. `Local Auth, settings and navigation` failed once at tests/pipeline-release-e2e.test.cjs:67 (one RSC request to the workspace path after the same-workspace "All applicants" CTA, expected 0); the same application code passed that job on 24534c26 (run 233). The CTA itself uses history.pushState (lib/workspace-navigation.ts), so the extra request is a Link prefetch or refresh elsewhere on the page; suspected timing, not proven. The owner merged with it red. This docs PR re-runs the suite on the merged code.
 - WATCH reasons: ~8 minutes of production traffic at check time; invitation-delivery and notification-delivery crons log nothing on success; the intermittent E2E above. Security advisors unchanged; first performance-advisor counts recorded in baseline-log.md.
+## 2026-11-05/06 FE-1 perf/demo-split-workspace-api (#138; base 60aef457, rebased locally onto 00840eea as 85b9f461, not yet pushed)
+- Bundle (audit gzip script, prod builds of 4d531bdf vs FE-1): demo-seed marker on 15 of 61 routes → 0; `/club/[clubId]/workspace` 464 → 387 kB gz; meetings, booking, decision letter, voting join −85 to −90 kB; root layout 164 → 164.
+- Unit, `node --test --test-timeout=120000 tests/*.test.cjs` on the final tree: 1728 total, 1668 pass, 0 fail, 60 skipped (58 env-gated + `student-paths-e2e` + new `demo-browser-e2e`). Repeat full runs on this machine: 4 clean; 1 file-level failure of `scheduling-simplification-browser` (2 of 3 tests reported, then "test failed"; passes 4/4 alone; exit code/signal not captured by the spec reporter); 2 runs slowed by machine load (load average ~30), with browser timeouts in unrelated files that pass alone. Main 60aef457: 2/2 full runs clean (1711 tests).
+- Targeted (every test referencing workspace-api or lib/demo): 84 files main 538/0/5 → FE-1 554/0/5; after rebase onto 00840eea, 85 files 555/0/6 (+`focus-frame-e2e`, gated). `test:migrations` 70 applied, RLS on 84 tables; typecheck 0; lint 0 errors, 412 warnings (same as main); build ok.
+- Disposable stack (`run-onboarding-e2e --club-integration --selected-navigation`, prod build, demo enabled for one test address): onboarding 54/54; selected navigation 16/16 incl. "Phase 1 GET reads preserve live authority, no-store, Demo isolation…"; `demo-browser-e2e` 4/4 (non-demo leader: 8 routes, 330 scripts, 0 demo chunks; demo routes: 0 flashed empty states, 0 live requests; blocked chunk → error + Try again → recovered; stalled chunk → alert at 10.5 s → recovered).
+- 2026-11-06 rerun on 85b9f461 with the OPS-5 fixture fix applied locally (uncommitted) and a stale fixture planted: onboarding 59/59; selected navigation 16/16 incl. Demo isolation; `demo-browser-e2e` 5/5 with the positive control: Demo Mode loaded demo chunks 2243 (seed/store) and 9982 (implementations); non-demo leader 322 scripts, 0 demo chunks; 0 flashed empty states on 4 demo routes; blocked chunk recovered; stalled-chunk alert at 10.45 s, recovered.
+- Earlier attempts (superseded): `demo-browser-e2e` with the added chunk-scan positive control was blocked. Two stack reruns failed for environment reasons: (1) `navigation-audit.cjs:36` reused a navigation fixture from a stopped stack → "Invalid login credentials" in all 7 selected-navigation tests; (2) Mailpit SMTP timeout in admin bootstrap ("Error sending confirmation email"). Stopped per the two-attempt rule.
+- Reviewers: nextjs (no high), failure-path (1 high + 3 medium, all fixed, re-review CONFIRMED), test-gap (2 high + 2 medium, all closed on re-review).
+
+## 2026-11-06 OPS-4 tests/onboarding-port-prefix (#139; base 4d531bdf)
+- Unit 1704 total, 1645 pass, 0 fail, 59 skipped; typecheck 0; lint 0 errors (412 warnings, same as main). Build not rerun (script-only change).
 
 ## 2026-11-08 · SHELL-1 · ui/shell-persistence-and-dashboard-split (local, not pushed)
 ```
@@ -141,3 +181,50 @@ not run: browser/E2E suites, next build, test:migrations (no linux chromium/nati
 2026-11-09 VOTING-WITHOUT-VOTE-1 (Windows, PGlite): new voting-without-vote-flag-migration 1/1 | test:migrations exit 0, 75 migrations | voting-decide-without-vote 7/7, voting-decide-without-vote-sql 1/1, voting-room-migration 1/1, all other non-browser tests/voting-* and tests/live-* pass one file at a time; native suites skipped (no OUTCLASS_SECURITY_TEST_DATABASE_URL) | tsc scoped to changed files 0 errors (full tsc exceeded the 2-minute command limit) | eslint changed files 0 | ui-controls OK
 not run: *-browser suites (each >2 min), next build, full pnpm run test
 ```
+
+```
+2026-11-08 #166/3e779e55 app gates: test 1887/1822/0 fail/65 skipped (env-gated) migrations 71 ok (RLS 85; no schema change) lint ok (0 errors, 23 baseline warnings) types ok | integration skips env-gated (4 new stack-only suites run in CI matrix `shell`) | agent-hook tests n/a
+deploy dpl_GAbgrcXkPkMfwCRmmJv4QWH6U7yt READY yes | new runtime error classes 0 | advisor delta +0/-0 (security 0/52/43, performance 68/18/1) | rollback target dpl_4rQtzY7FKXNfXuDgh297fBjU4fz9 | verdict WATCH
+```
+- PR CI on head cf733625: 16/16 green. Earlier heads failed `Local Auth, settings and navigation`: legacy URLs redirected after a loading.tsx had streamed the persistent shell (second document load), and navigation-phase10 waited for removed overview text. Fixed in f17657a5 (club workspace), 957cdd7c (test), cf733625 (every redirecting workspace page now sits under no loader; guarded by tests/loading-experience.test.cjs). One `authenticated-accessibility` run failed on Supabase startup (infra) and passed on the next head.
+- WATCH reasons: ~9 minutes of Sunday-evening production traffic for a shell/layout/navigation change; invitation-delivery and notification-delivery crons log nothing on success. Re-check runtime errors after weekday traffic.
+```
+2026-11-10 FILTER-UI-1 (cloud container, Linux): app gates: test 1996/1929/0 fail/67 skipped (env-gated) migrations 75 ok (RLS 85) lint ok (0 errors, 21 warnings) types ok build ok (prerender logs a Prisma DATABASE_URL message; no env in container)
+targeted: filter-controls 5/5, filter-controls-browser 1/1 (axe 0), live-applicant-views 35/35, campus-event-discovery + -browser 5/5 on disposable local Postgres 16 (port 55442, migrate deploy, same role setup as run-disposable-postgres.cjs, no Docker)
+real browser (leader/student screen fixtures, Chromium 1243 aliased as 1248): 13 surfaces x 1280/375, filter panels open: 0 viewport overflow, 0 page errors; filter exercise 25/27 (Events fixture does not filter server-side)
+not run: stack-gated e2e (availability-browser, scheduling-quality-browser, operational-dashboards-e2e, demo-browser-e2e) need the Supabase stack; their selectors were updated blind
+```
+2026-11-09 SEC-HEADERS-1 (security/frame-ancestors from main 318b5e31): app gates: test 1990/1923/0 fail/67 skipped (env-gated) lint ok types ok build ok | targeted: frame-ancestors-headers 2/2
+next start (local, no Supabase env): both headers present on / 200, /explore 307, /privacy 404 (rewrite), /preview 404 (middleware), /robots.txt 200, /api/recruiting-resumes 400, /api/club-assets 404, unknown path 404, malformed path 400, /login and /signup 500 (no env)
+not verified: a 200 from club-assets/decision-letter-assets, which set their own Content-Security-Policy
+
+## 2026-11-08 · Post-merge release check · #138 FE-1 (b4cd90e8), #149 FE-3 (2ac4efca), #165 FE-6 (6801a2c8)
+#138 b4cd90e8 app gates: test 1875/1814/0/61 (after merging 5f50339a) | CI 16/16 green
+deploy dpl_4rQtzY7FKXNfXuDgh297fBjU4fz9 READY yes
+#149 2ac4efca app gates: test 1887/1825/0/62 | CI 16/16 green after one rerun of the settings job (React #418, pre-existing on main, BUG-1)
+deploy dpl_5Mpw9h3W3NGzAcChC5nqvEUYSoum READY yes
+#165 6801a2c8 app gates: test 1875/1814/0/61 | CI 16/16 green
+deploy dpl_8B3cAEH6efVNkrgAx3JpdSXuy2ye READY yes (production at check time)
+new runtime error classes 0 (none since 18:20Z; the two classes in the prior 24 h predate these merges) | rollback target dpl_GAbgrcXkPkMfwCRmmJv4QWH6U7yt (3e779e55, #166); before #138 dpl_CweCYcA8R6hSXo3FyV1UbhBv3MNW (5f50339a)
+crons: owner confirmed scheduled-communications ran every minute for 3 h with 0 failures; the other two log nothing when idle
+advisors: security advisor counts unchanged vs baseline; no migrations in these PRs. Performance advisors unchanged vs baseline.
+verdict WATCH (release-verifier; not a rollback candidate)
+
+## 2026-11-08 · FE-7 #167 design-guard fix
+cause: halo box-shadows with px literals in page CSS counted as css-shadow by scripts/check-ui-controls.cjs (6 files over allowlist)
+fix: --focus-halo-outset / --focus-halo-inset-4/5/6 tokens in styles/tokens.css, 22 rules use them; allowlist ratcheted down (10 entries shrunk, 3 removed); merged origin/main 928dcb27 (one new focus rule converted to var(--ring); active segmented-tab focus rules moved after main's measured-indicator rule, which cleared the halo)
+app gates: test 1920/1854/0/66 lint ok (0 errors, 23 baseline warnings; ui-controls OK) types ok build ok
+first full run: 2 fails (focus-ring active-tab halo, fixed; club-home-browser hover transform under load, then 3/3 in isolation, flake)
+2026-11-09 DEPS-NEXT-15528 (security/next-15-5-28 from main 318b5e31): test 1988/1921/0 fail/67 skipped (gated suites) migrations 74 ok (RLS 85) lint ok types ok build ok (Next.js 15.5.28)
+pnpm audit --prod after: no Next.js advisories; 1 high (zod) and 3 moderate (nodemailer) tracked separately
+note: one earlier full run under machine load average ~23 had 9 Playwright click timeouts; those files pass alone and the full suite passes at normal load
+```
+## 2026-11-06 SEC-TURNSTILE security/turnstile (8a25f81)
+- test 1733: 1673 pass, 0 fail, 60 skipped (env-gated; same 60 as main 00840ee, which ran 1662/0/60). Browser suites ran against a local Chromium 1243 aliased for Playwright 1.64.
+- test:migrations: 71 applied on fresh and legacy, RLS on 85 tables. typecheck ok. lint 0 errors / 401 warnings (unchanged). build ok, 76 pages; /login 209 kB, /signup 281 kB first load.
+- Not run: disposable E2E stack, real Cloudflare or Supabase captcha enforcement.
+## 2026-11-06 OPS-SENTRY ops/sentry
+- a24dac4: test 1728: 1668 pass, 0 fail, 60 skipped (= main's 60). test:migrations 71, RLS 85. typecheck ok. lint 0 errors / 401 warnings. build ok, 76 pages.
+- Bundle check without a DSN: shared first-load JS 107 kB vs 105 kB on a branch without Sentry; cause: scrub module statically imported by instrumentation-client. Fixed in 2b437ea (SDK and filter load only inside the DSN branch). SDK code exists only in lazily loaded chunks.
+- 2b437ea rebuild without a DSN: shared first-load JS 105 kB (= main 00840ee); /home 186 kB, /login 209 kB vs 208 kB on main. tests/sentry-scrub 6/6, typecheck ok after the change.
+- First-load deltas vs main on the other branches (no keys set): security/turnstile /login +1 kB, /signup +1 kB, /platform/login +1 kB, /request-school +1 kB; scheduling/outlook-busy /settings/availability +2 kB.

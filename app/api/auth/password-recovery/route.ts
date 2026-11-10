@@ -8,6 +8,7 @@ import {
 } from "@/lib/password-recovery";
 import { DEMO_COOKIE } from "@/lib/demo/access";
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
+import { captchaFailed, captchaOption, turnstileMessage } from "@/lib/turnstile";
 
 const reply = (body: object, status = 200) =>
   NextResponse.json(body, {
@@ -70,9 +71,14 @@ export async function POST(request: NextRequest) {
   });
   if (input.action === "request" && email.success) {
     try {
+      // Only requests send email; Supabase Bot and Abuse Protection verifies the token when enabled.
       const { error } = await client.auth.resetPasswordForEmail(email.data, {
         redirectTo: `${request.nextUrl.origin}/reset-password`,
+        ...captchaOption(input.turnstileToken),
       });
+      // A failed security check says nothing about whether the account exists.
+      if (captchaFailed(error))
+        return reply({ error: turnstileMessage("rejected") }, 400);
       if (error)
         console.warn("Password recovery delivery unavailable", {
           code: error.code,

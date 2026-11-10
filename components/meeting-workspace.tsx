@@ -79,7 +79,7 @@ export function MeetingList({ clubId, embedded = false, initialAudience = "ALL",
     <div role="toolbar" aria-label="Meeting filters" className="flex flex-wrap items-center gap-4 border-b pb-4">
       {toolbarStart}
       <SegmentedControl label="Meeting time" size="compact" value={period} onChange={setPeriod} options={[{ value: "upcoming", label: "Upcoming" }, { value: "past", label: "Past" }]} />
-      <label className="flex items-center gap-3 text-sm">Audience<NativeSelect aria-label="Audience" className="min-h-11 max-w-full rounded-md border bg-card px-3" value={audience} onChange={e => setAudience(e.target.value)}><option value="ALL">All permitted meetings</option><option value="RECRUITMENT">Recruitment / Interest</option><option value="MEMBERS">Members</option></NativeSelect></label>
+      <SegmentedControl label="Audience" size="compact" value={audience} onChange={setAudience} options={[{ value: "ALL", label: "All permitted meetings" }, { value: "RECRUITMENT", label: "Recruitment / Interest" }, { value: "MEMBERS", label: "Members" }]} />
     </div>
 
     {loading && <LoadingState label="Loading meetings…" layout="schedule" rows={3} />}

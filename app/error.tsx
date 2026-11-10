@@ -1,11 +1,14 @@
 "use client"
+import { useEffect } from "react"
 import Link from "next/link"
 import { OutClassLogo } from "@/components/outclass-logo"
 import { Button } from "@/components/ui/button"
+import { reportClientError } from "@/lib/report-client-error"
 import "@/components/landing/sign-in-card.css"
 
 /** Catches errors on public and signed-in routes alike, so it carries no account-specific header. */
-export default function ErrorPage({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  useEffect(() => reportClientError(error), [error])
   return <main className="mx-auto flex min-h-[80dvh] max-w-xl flex-col justify-center px-4 py-16 sm:px-6">
     <Link href="/" aria-label="OutClass home" className="mb-10 inline-flex min-h-11 w-fit items-center"><OutClassLogo /></Link>
     <section className="oc-sign-in-card w-full" aria-labelledby="error-title">

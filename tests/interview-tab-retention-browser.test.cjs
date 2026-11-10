@@ -1,5 +1,6 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),http=require('node:http');
 const {chromium}=require('playwright'),{bundle}=require('./helpers/browser-bundle.cjs');
+const { pickDate, pickedDate, long } = require('./helpers/date-picker-browser.cjs');
 test('interview tabs lazily mount Scheduling, retain a dirty editor across rapid switches and follow URL tab changes',async()=>{
  const code=bundle(`const replace=history.replaceState;history.replaceState=function(...args){replace.apply(this,args);dispatchEvent(new PopStateEvent('popstate'))};import React,{useEffect,useState}from'react';import{createRoot}from'react-dom/client';import{InterviewManagementTabs}from'@/components/interview-management-tabs';function App(){const[tab,setTab]=useState('rooms');useEffect(()=>{const changed=()=>setTab(new URLSearchParams(location.search).get('interviewTab')||'rooms');window.addEventListener('popstate',changed);return()=>window.removeEventListener('popstate',changed)},[]);return <InterviewManagementTabs clubId="club" initialTab={tab}/>};createRoot(document.getElementById('root')).render(<App/>);`,{
   'next/link':"module.exports=()=>null",
@@ -30,11 +31,11 @@ test('retained real scheduler revalidates before reveal, keeps editor state, and
  try{const page=await browser.newPage();page.setDefaultTimeout(10000);const calls=[];page.on('request',r=>{if(r.url().endsWith('/action'))calls.push(JSON.parse(r.postData()).name)});
   await page.goto(f.url+'?interviewTab=rooms&roundId='+f.scope.roundId);await page.getByRole('heading',{name:'Your interview rooms',exact:true}).waitFor();assert.equal(calls.includes('getRoomWorkspace'),false);
   const schedule=page.getByRole('tab',{name:'Scheduling',exact:true}),rooms=page.getByRole('tab',{name:'Rooms',exact:true});
-  await schedule.click();await page.locator('.ir-manager').waitFor();await page.getByLabel('Filter interview date',{exact:true}).fill('2099-09-07');await rooms.click();
+  await schedule.click();await page.locator('.ir-manager').waitFor();await pickDate(page,'Filter interview date','2099-09-07');await rooms.click();
   let release,held;const barrier=new Promise(r=>release=r),arrived=new Promise(r=>held=r);
   await page.route('**/action',async route=>{if(JSON.parse(route.request().postData()).name==='getRoomWorkspace'){held();await barrier}await route.continue()});
-  await schedule.click();await arrived;assert.equal(await page.locator('.ir-manager').isVisible(),false);release();await page.locator('.ir-manager').waitFor();assert.equal(await page.getByLabel('Filter interview date',{exact:true}).inputValue(),'2099-09-07');
-  await page.unroute('**/action');await rooms.click();await page.evaluate(id=>{const url=new URL(location.href);url.searchParams.set('roundId',id);history.replaceState(null,'',url)},secondRound);await schedule.click();await page.waitForFunction(id=>document.querySelector('[aria-label="Recruitment round"]')?.value===id,secondRound);
+  await schedule.click();await arrived;assert.equal(await page.locator('.ir-manager').isVisible(),false);release();await page.locator('.ir-manager').waitFor();assert.equal(await pickedDate(page,'Filter interview date'),long('2099-09-07'));
+  await page.unroute('**/action');await rooms.click();await page.evaluate(id=>{const url=new URL(location.href);url.searchParams.set('roundId',id);history.replaceState(null,'',url)},secondRound);await schedule.click();await page.waitForFunction(id=>document.querySelector('[aria-label="Recruitment round"] [aria-pressed="true"]')?.dataset.value===id,secondRound);
   await rooms.click();await page.route('**/action',route=>JSON.parse(route.request().postData()).name==='getRoomWorkspace'?route.fulfill({status:403,contentType:'application/json',body:JSON.stringify({error:'Access revoked'})}):route.continue());
   await schedule.click();await page.getByRole('alert').filter({hasText:'Check your current access'}).waitFor();assert.equal(await page.locator('.ir-manager').isVisible(),false);assert.equal(f.liveCalls(),0);
  }finally{await browser.close();await f.close()}

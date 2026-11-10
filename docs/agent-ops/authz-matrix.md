@@ -116,3 +116,24 @@ Changes: nullable `Club.shortName` (migration `20261109120000_club_short_name`, 
 | Demo | demo store only (`Object.assign` on demo club); no server write | demo club | existing demo isolation (`demo-public-boundary.test`) |
 
 Untested cells: 1 (cross-club write with a real membership in Y; covered by mocked denial and code review). Applicants also read the shortName of clubs they applied to; it is a public display label, not private data. `pnpm run test:migrations`: see validation-report.
+
+## 2026-11-06 · AUTH-TURNSTILE · Bot checks on signed-out writes (branch `security/turnstile`)
+
+Resource: Supabase Auth email-sending and password operations, and school-request rows. No new data access; this adds a precondition. Enforcement: Supabase Auth Bot and Abuse Protection (owner setting) for Auth; `verifyTurnstile` for `/api/school-requests`.
+
+| Actor | Signup / resend / code request / password sign-in / recovery email / Admin password | School request | Test |
+|---|---|---|---|
+| Visitor with a fresh token for any action | allow (token passed as `captchaToken`) | allow only if the token's action is `school-request` | `turnstile.test` (signup passes token; action mismatch rejected) |
+| Visitor or script without a token, with a spent token, or calling Supabase Auth directly | deny by Supabase once enforcement is on; message "security check expired" | deny before storage | `turnstile.test` (captcha_failed mapping; missing/reused/mismatched) |
+| Any caller when keys are unset | unchanged | unchanged | `turnstile.test` (unconfigured skip; params unchanged) |
+| Signed-in account settings reset | same as recovery (token required) | n/a | `turnstile.test` (widget present) |
+| Admin view or Demo | unchanged existing denials | unchanged | existing tests |
+## 2026-11-06 · AUTH-OUTLOOK · Outlook busy-time lookup (branch `scheduling/outlook-busy`)
+Resource: the requester's own Microsoft calendar (start, end, showAs, isCancelled, isAllDay for one week) and their own availability editor. No OutClass data is read or written by the routes; edits go through the existing availability actions.
+| Actor | GET /api/calendar/outlook/start | GET /api/calendar/outlook/callback | Test |
+| Signed-in account | allow; cookie binds state, PKCE verifier, week, nonce, account ID for 10 min | allow only with matching state and the same account; cookie cleared on every response | `outlook-busy.test` (routes) |
+| Signed out | popup message "sign-in expired", no redirect | same | `outlook-busy.test` (session before requireAuth) |
+| Admin view or Demo | deny (popup message) | deny | `outlook-busy.test` (routes) |
+| Attacker page / other origin | cannot receive results: postMessage targets the site origin; editor accepts only its own popup, nonce and week | attacker code cannot be injected: state and PKCE verifier are in the victim's httpOnly cookie | `outlook-busy.test` (popup escaping, widget checks) |
+| Account in another Microsoft tenant | refused by Microsoft: single required tenant | n/a | `outlook-busy.test` (config refuses common/organizations) |
+| Unconfigured deployment | 404 popup message; button hidden | 404 | `outlook-busy.test` (config) |

@@ -71,6 +71,12 @@ test("no stylesheet outside tokens.css hard-codes the brand navy or orange", () 
   assert.deepEqual(offenders, [], "use var(--school-…) or the semantic tokens")
 })
 
+test("only the token layer defines the ring: no page or section redefines --ring (owner decision 2026-11-09)", () => {
+  const files = execSync("git ls-files '*.css'", { encoding: "utf8" }).split("\n").filter(file => file && file !== "styles/tokens.css")
+  const redefined = files.filter(file => /(?<![-\w])--ring\s*:/.test(fs.readFileSync(file, "utf8").replace(/\/\*[\s\S]*?\*\//g, "")))
+  assert.deepEqual(redefined, [], "--ring is set once in styles/tokens.css (and [data-school] overrides there)")
+})
+
 test("every focus outline uses the one ring (forced-colors system colours excepted)", () => {
   const files = execSync("git ls-files '*.css'", { encoding: "utf8" }).split("\n").filter(file => file && file !== "styles/tokens.css")
   const system = /\b(Highlight|CanvasText|ButtonText|LinkText|Canvas|ButtonFace|transparent|currentColor|inherit|none)\b/
@@ -109,4 +115,11 @@ test("no Tailwind focus utility in source picks a colour other than the ring", (
   for (const file of files) for (const [utility] of fs.readFileSync(file, "utf8").matchAll(/\b(?:focus|focus-visible|focus-within):(?:outline|ring|border)-(?!offset|hidden|none|0\b|1\b|2\b|4\b|\[\d)[a-z][\w/-]*/g))
     if (!/-(ring)(\/\d+)?$/.test(utility)) offenders.push(`${file}: ${utility}`)
   assert.deepEqual(offenders, [], "use outline-ring / ring-ring / border-ring")
+})
+
+test("the interview-kit editor's tabs take their colours from theme tokens, not literals (FE-10)", () => {
+  const css = fs.readFileSync("components/clubs/interview-kit-editor.css", "utf8").replace(/\/\*[\s\S]*?\*\//g, "")
+  assert.deepEqual(css.match(/#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?|oklch|oklab|lab|lch|color-mix)\(|:\s*(?:white|black)\b/g) ?? [], [], "no literal colours, so the editor follows the school theme and any dark theme")
+  assert.match(css, /\[data-slot="tabs-trigger"\] \{[^}]*color: var\(--primary\)/)
+  assert.match(css, /\[data-state="active"\] \{ background: var\(--card\); box-shadow: var\(--oc-shadow-surface\); \}/)
 })

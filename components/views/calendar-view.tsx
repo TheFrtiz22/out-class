@@ -6,10 +6,14 @@ import Link from "next/link";
 
 import { SegmentedControl } from "@/components/product/segmented-control"
 import { useEffect, useMemo, useState } from "react"
-import { ChevronLeft, ChevronRight, CalendarDays, Download, MapPin, SlidersHorizontal } from "@/components/icons"
+import { ChevronLeft, ChevronRight, CalendarDays, Download, MapPin } from "@/components/icons"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { NativeSelect, NativeSelectField } from "@/components/ui/native-select"
+import { SearchField } from "@/components/ui/search-field"
+import { PillSelect } from "@/components/ui/pill-select"
+import { PillGroup } from "@/components/ui/segmented-control"
+import { Toggle } from "@/components/ui/toggle"
+import { DateField } from "@/components/ui/date-picker"
+import { FilterButton } from "@/components/ui/filter-popover"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
@@ -207,55 +211,31 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
           <Button variant="ghost" onClick={() => setDate(today)}>
             Today
           </Button>
-          <Input
-            type="date"
-            aria-label="Go to date"
-            value={date}
-            onChange={(event) => event.target.value && setDate(event.target.value)}
-            className="w-auto"
-          />
+          <DateField label="Go to date" value={date} onChange={(value) => { if (value) setDate(value) }} placeholder="Choose a date" clearLabel="Today" />
         </div>
       )}
       {/* Phones, as in the app: search and filters sit behind a Filter button. */}
-      {events.length > 0 && <Button variant="outline" size="sm" className="oc-calendar-filter-toggle" aria-expanded={phoneFilters} aria-controls="calendar-tools" onClick={() => setPhoneFilters(open => !open)}>
-        <SlidersHorizontal className="size-4" aria-hidden="true" />{phoneActive ? `Filter · ${phoneActive}` : "Filter"}
-      </Button>}
+      {events.length > 0 && <FilterButton size="sm" label="Filter" count={phoneActive} className="oc-calendar-filter-toggle" aria-expanded={phoneFilters} aria-controls="calendar-tools" onClick={() => setPhoneFilters(open => !open)} />}
       {events.length > 0 && <div id="calendar-tools" className="oc-toolbar oc-calendar-tools" data-phone-open={phoneFilters || undefined}>
-        <Input
+        <SearchField
           aria-label="Search calendar"
           placeholder="Search events, clubs, or locations"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          className="max-w-sm"
+          onClear={() => setQuery("")}
+          containerClassName="min-w-0 flex-1 basis-60 max-w-sm"
         />
-        <NativeSelectField
-          aria-label="Filter event type"
+        <PillSelect
+          label="Filter event type"
           value={filter}
-          onChange={(event) => setFilter(event.target.value)}
-          className="max-w-full"
-        >
-          <option value="all">All event types</option>
-          <option value={MEETINGS_FILTER}>Club meetings</option>
-          {Object.keys(eventStyle).map((type) => (
-            <option key={type}>{type}</option>
-          ))}
-        </NativeSelectField>
+          active={filter !== "all"}
+          onChange={setFilter}
+          options={[{ value: "all", label: "All event types" }, { value: MEETINGS_FILTER, label: "Club meetings" }, ...Object.keys(eventStyle).map((type) => ({ value: type, label: type }))]}
+        />
         {view === "agenda" && (
           <>
-            <label className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Checkbox
-                checked={includePast}
-                onCheckedChange={(value) => setIncludePast(value === true)}
-              />
-              Include past events
-            </label>
-            <label className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Checkbox
-                checked={includeDeclined}
-                onCheckedChange={(value) => setIncludeDeclined(value === true)}
-              />
-              Include declined
-            </label>
+            <Toggle label="Include past events" checked={includePast} onCheckedChange={setIncludePast} />
+            <Toggle label="Include declined" checked={includeDeclined} onCheckedChange={setIncludeDeclined} />
           </>
         )}
       </div>}
@@ -678,15 +658,8 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
           </DialogHeader>
           {bookingDates.length ? (
             <>
-              <NativeSelect
-                aria-label="Interview date"
-                value={activeBookingDate}
-                onChange={(event) => setBookingDate(event.target.value)}
-              >
-                {bookingDates.map((day) => (
-                  <option key={day}>{day}</option>
-                ))}
-              </NativeSelect>
+              <PillGroup label="Interview date" size="compact" value={activeBookingDate} onChange={setBookingDate}
+                options={bookingDates.map((day) => ({ value: day, label: day }))} />
               <StudentBookingPreview
                 key={activeBookingDate}
                 blocks={scheduleBlocks.filter((block) => block.date === activeBookingDate)}

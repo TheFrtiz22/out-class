@@ -10,6 +10,6 @@ async function startLeaderScreens() {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'outclass-leader-screens-'))
   await build(root, { entry: path.join(repo, 'tests/fixtures/leader-screens/app.jsx'), keep: ['@/contexts/auth-context', '@/contexts/demo-context', '@/lib/application-state', '@/lib/workspace-api'], plugins: webpack => [new webpack.NormalModuleReplacementPlugin(server, resource => { resource.request = stub })] })
   const { server: http, base } = await serve(root)
-  return { base, url: query => `${base}/club/x/workspace?${query}`, async close() { await new Promise(resolve => http.close(resolve)); await fs.rm(root, { recursive: true, force: true }) } }
+  return { base, url: query => `${base}/club/x/workspace?${query}`, async close() { const closed = new Promise(resolve => http.close(resolve)); http.closeAllConnections(); await closed; await fs.rm(root, { recursive: true, force: true }) } }
 }
 module.exports = { startLeaderScreens }

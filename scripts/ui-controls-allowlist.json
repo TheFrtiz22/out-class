@@ -15,20 +15,14 @@
   },
   {
    "rule": "css-hex",
-   "file": "components/clubs/interview-kit-editor.css",
-   "max": 4,
-   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
-  },
-  {
-   "rule": "css-hex",
    "file": "components/communications/decision-letter.css",
-   "max": 8,
+   "max": 3,
    "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
   },
   {
    "rule": "css-hex",
    "file": "components/events/events.css",
-   "max": 30,
+   "max": 29,
    "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
   },
   {
@@ -69,56 +63,20 @@
   },
   {
    "rule": "css-radius",
-   "file": "components/auth/login.css",
-   "max": 1,
-   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
-  },
-  {
-   "rule": "css-radius",
-   "file": "components/clubs/club-discovery.css",
-   "max": 5,
-   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
-  },
-  {
-   "rule": "css-radius",
    "file": "components/clubs/explore-directory.css",
    "max": 1,
    "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
   },
   {
    "rule": "css-radius",
-   "file": "components/clubs/profile-presentation.css",
-   "max": 2,
-   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
-  },
-  {
-   "rule": "css-radius",
    "file": "components/events/events.css",
-   "max": 15,
-   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
-  },
-  {
-   "rule": "css-radius",
-   "file": "components/landing/public-footer.css",
    "max": 1,
    "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
   },
   {
    "rule": "css-radius",
    "file": "components/landing/public-navigation.css",
-   "max": 3,
-   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
-  },
-  {
-   "rule": "css-radius",
-   "file": "components/live-voting/room.css",
-   "max": 15,
-   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
-  },
-  {
-   "rule": "css-radius",
-   "file": "components/views/interview/interview-mode.css",
-   "max": 1,
+   "max": 2,
    "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
   },
   {
@@ -147,14 +105,8 @@
   },
   {
    "rule": "css-shadow",
-   "file": "components/clubs/interview-kit-editor.css",
-   "max": 1,
-   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
-  },
-  {
-   "rule": "css-shadow",
    "file": "components/events/events.css",
-   "max": 10,
+   "max": 9,
    "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
   },
   {
@@ -204,12 +156,6 @@
    "file": "components/qr/outclass-qr-code.tsx",
    "max": 2,
    "reason": "QR export controls stay with the canonical QR component (CLAUDE.md: QR is owned by @/components/qr)."
-  },
-  {
-   "rule": "raw-button",
-   "file": "components/shell/navigation.tsx",
-   "max": 1,
-   "reason": "Navigation is fixed for this redesign (owner rule)."
   },
   {
    "rule": "raw-button",

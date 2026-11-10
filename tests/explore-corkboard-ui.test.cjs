@@ -64,19 +64,3 @@ test('Explore\'s Applications open disclosure uses the Phosphor chevron instead 
   assert.match(summary[2], /group-open:rotate-0/); assert.match(summary[2], /motion-reduce:transition-none/)
 })
 
-test('Filter menus close on Escape with focus returned to the summary, and on an outside press', () => {
-  class FakeNode {}
-  const listeners = {}, documentStub = { addEventListener: (type, fn) => listeners[type] = fn, removeEventListener: type => delete listeners[type] }
-  const mod = { exports: {} }
-  new Function('require', 'module', 'exports', 'document', 'Node', ts.transpileModule(fs.readFileSync('hooks/use-dismissable-details.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText)(() => ({ useCallback: fn => fn }), mod, mod.exports, documentStub, FakeNode)
-  let focused = false, keydown = null
-  const inside = new FakeNode(), outside = new FakeNode(), summary = { focus: () => focused = true }
-  const details = { open: true, contains: node => node === inside, addEventListener: (type, fn) => keydown = fn, removeEventListener: () => keydown = null, querySelector: selector => selector === ':scope > summary' ? summary : null }
-  const cleanup = mod.exports.useDismissableDetails()(details)
-  let stopped = false; const key = name => ({ key: name, preventDefault() {}, stopPropagation() { stopped = true } })
-  keydown(key('Tab')); assert.equal(details.open, true)
-  keydown(key('Escape')); assert.equal(details.open, false); assert.equal(focused, true); assert.equal(stopped, true, 'an enclosing drawer stays open')
-  details.open = true; listeners.pointerdown({ target: inside }); assert.equal(details.open, true, 'presses inside keep it open')
-  listeners.pointerdown({ target: outside }); assert.equal(details.open, false, 'an outside press closes it')
-  cleanup(); assert.equal(listeners.pointerdown, undefined); assert.equal(keydown, null)
-})

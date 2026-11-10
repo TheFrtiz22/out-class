@@ -6,6 +6,7 @@
 @import "../styles/product-workflows.css";
 @import "../styles/loading.css";
 @import "../styles/interface-primitives.css";
+@import "../styles/filter-controls.css";
 @import "../styles/workspace-composition.css";
 @import "../styles/editorial.css";
 @import "../styles/navigation-glass.css";
@@ -80,6 +81,8 @@
   --radius-md: var(--oc-radius-md);
   --radius-lg: var(--oc-radius-lg);
   --radius-xl: var(--oc-radius-xl);
+  --radius-2xl: var(--oc-radius-xl);
+  --radius-3xl: var(--oc-radius-2xl);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);

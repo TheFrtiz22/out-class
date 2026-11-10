@@ -3,6 +3,7 @@ import { LoadingState } from "@/components/ui/loading-state"
 import { serializedWorkspaceRead } from "@/lib/serialized-workspace-read"
 import Link from "next/link"
 import { useCallback, useEffect, useRef, useState } from "react"
+import { pollWhileVisible } from "@/hooks/use-revalidate"
 import { useAuth } from "@/contexts/auth-context"
 import { useDemoMode } from "@/contexts/demo-context"
 import { getVotingJoinInfo, joinVotingSession, getJoinedVotingWorkspace, submitVotingBallot } from "@/lib/workspace-api"
@@ -36,8 +37,8 @@ export function VotingSessionJoin({sessionId,demoScoped}:{sessionId:string;demoS
       setError("")
     },error=>{setData(null);setInfo(null);setError(error instanceof Error?error.message:"Session temporarily unavailable. Retry shortly.")})
     reader.current=reads;void reads.poll()
-    const timer=setInterval(()=>void reads.poll(),5000)
-    return()=>{reads.dispose();if(reader.current===reads)reader.current=null;clearInterval(timer)}
+    const stopPolling=pollWhileVisible(reads.poll,5000)
+    return()=>{reads.dispose();if(reader.current===reads)reader.current=null;stopPolling()}
   },[sessionId,joined,member,demoScoped,permitted,auth.user?.id,scope])
   async function join(){setBusy(true);setError("");try{await joinVotingSession(sessionId,demoScoped?member||undefined:undefined);setJoinedScope(identityScope)}catch(e){setError(e instanceof Error?e.message:"Could not join. Try again.")}finally{setBusy(false)}}
   const s=data?.session,pass=s?.passes.find(p=>p.number===s.currentPass),candidate=pass?.candidates.find(c=>c.applicationId===s?.activeApplicationId),ballot=candidate?.ballots.find(b=>b.memberId===data?.memberId)
