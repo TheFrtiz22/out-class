@@ -42,7 +42,7 @@ export async function getVotingWorkspace(clubId: string, sessionId?: string, sel
     if (!club || club.suspendedAt) throw Error(CLUB_SUSPENDED_MESSAGE);
     const m = await tx.clubMember.findFirst({ where: { id: membership.id, clubId } });
     if (!m || !hasPermission(m,"applications.review")) throw Error("Voting permission required.");
-    if (JSON.stringify(m) !== JSON.stringify(membership)) throw Error("Voting access changed. Refresh and try again.");
+    if (JSON.stringify(m) !== JSON.stringify(membership)) throw Error("Voting access changed. Reload the page and try again.");
     const leadershipView = hasPermission(m,"decisions.view") || hasPermission(m,"decisions.manage")
     if (!hasPermission(m,"decisions.vote") && !leadershipView) throw Error("Voting access required.")
     const s = await tx.votingSession.findFirst({ where: { clubId, mode: {not:"LIVE"}, ...(sessionId ? {id:sessionId} : !leadershipView ? {participants:{some:{memberId:m.id}}} : {}) }, orderBy: {createdAt:"desc"}, include })
@@ -61,10 +61,10 @@ export async function getVotingWorkspace(clubId: string, sessionId?: string, sel
   // Revalidate after releasing the snapshot: suspension, account disablement,
   // support-session expiry, and membership/role revocation must deny its payload.
   const current = await requireClubPermission(clubId, ["applications.review"]);
-  if (JSON.stringify(current.membership) !== JSON.stringify(membership)) throw Error("Voting access changed. Refresh and try again.");
+  if (JSON.stringify(current.membership) !== JSON.stringify(membership)) throw Error("Voting access changed. Reload the page and try again.");
   if (result.session && !hasPermission(current.membership,"decisions.view") && !hasPermission(current.membership,"decisions.manage")) {
     const participant = await prisma.votingParticipant.findUnique({ where: { sessionId_memberId: { sessionId: result.session.id, memberId: current.membership.id } } });
-    if (!participant) throw Error("Voting access changed. Refresh and try again.");
+    if (!participant) throw Error("Voting access changed. Reload the page and try again.");
   }
   return result;
 }
@@ -98,7 +98,7 @@ export async function submitVotingBallot(input: unknown) {
     const round=await tx.pipelineRound.findFirst({where:{id:s.roundId,clubId:s.clubId}})
     const voter=await tx.clubMember.findFirst({where:{id:membership.id,clubId:s.clubId}})
     if(!round || (!round.anonymousReview&&!hasPermission(voter,"applicants.identify")))throw Error("Participant identification access required.")
-    if(s.activeApplicationId && d.applicationId!==s.activeApplicationId && !hasPermission(voter,"decisions.start")&&!hasPermission(voter,"decisions.manage"))throw Error("Active candidate changed. Refresh before voting.")
+    if(s.activeApplicationId && d.applicationId!==s.activeApplicationId && !hasPermission(voter,"decisions.start")&&!hasPermission(voter,"decisions.manage"))throw Error("Active candidate changed. Reload the page and try again.")
     if(c.ballots.some(b=>b.memberId===membership.id)) throw Error("Your ballot is already recorded. Ballots are immutable.")
     const before=ballotOutcome(c.ballots,s.participants.length,s.autoAdvance,s.threshold)
     const after=ballotOutcome([...c.ballots,{decision:d.decision}],s.participants.length,s.autoAdvance,s.threshold)
@@ -124,7 +124,7 @@ export async function commandVotingSession(input: unknown) {
       const published = s.candidates.filter(c=>c.publishedStatus).map(c=>c.applicationId);
       if(published.length === d.applicationIds.length && published.every(id=>d.applicationIds!.includes(id))) return {success:true};
     }
-    if(s.revision!==d.revision) throw Error("Session changed. Refresh and review before trying again.")
+    if(s.revision!==d.revision) throw Error("Session changed. Reload the page, check the latest, and try again.")
     if(s.publishedAt) throw Error("Published sessions are sealed. Create a new session to review again.")
     const active=s.passes.find(p=>p.number===s.currentPass)
     const summary=summarizeVoting(s)

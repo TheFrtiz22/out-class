@@ -1,8 +1,9 @@
 "use client"
 import { ArrowRight, CalendarDays, Clock3, FileCheck2, FilePenLine } from "@/components/icons"
 import { ClubLogo } from "@/components/club-logo"
-import { StatusBadge } from "@/components/status-badge"
+import { StatusPill } from "@/components/ui/status-pill"
 import { RecruitmentTimeline } from "@/components/clubs/recruitment-timeline"
+import { DEFAULT_CLUB_COLOR } from "@/lib/club-colors"
 
 /** Presentation only: fetching, scope, drafts and navigation stay with the workflow. */
 export function ApplicationJourneyCard({ id, club, status, round, nextStep, showIcon = true, onOpen }: {
@@ -12,11 +13,11 @@ export function ApplicationJourneyCard({ id, club, status, round, nextStep, show
   const Icon = draft ? FilePenLine : status === "INTERVIEWING" ? CalendarDays : ["ACCEPTED", "REJECTED", "WAITLISTED"].includes(status) ? FileCheck2 : Clock3
   return <article className="oc-application-row" data-status={status}>
     <div className="oc-application-identity">
-      <ClubLogo clubId={club.id} logoUrl={club.logoUrl} marketing={club.marketing} color={club.color || "#142d45"} text={club.name.split(/\s+/).map(word => word[0]).slice(0,2).join("")} size="lg" />
+      <ClubLogo clubId={club.id} logoUrl={club.logoUrl} marketing={club.marketing} color={club.color || DEFAULT_CLUB_COLOR} text={club.name.split(/\s+/).map(word => word[0]).slice(0,2).join("")} size="lg" />
       <div className="min-w-0"><h2><button type="button" data-application-id={id} onClick={onOpen}>{club.name}<span className="sr-only"> · {draft ? "Continue draft" : "View application"}</span></button></h2>
         <p className="oc-application-round">{draft ? "Draft · not yet applied" : round ? `Club round: ${round}` : "Club round not provided"}</p>
       </div>
-      <StatusBadge status={status} className="oc-application-status" />
+      <StatusPill status={status} className="oc-application-status" />
     </div>
     <div className="oc-application-progress"><RecruitmentTimeline status={status} compact /></div>
     <div className="oc-application-next" data-has-icon={showIcon}>{showIcon && <Icon className="oc-application-next-icon" size={20} aria-hidden="true" />}<p>{nextStep}</p><span aria-hidden="true">{draft ? "Continue draft" : "View details"}<ArrowRight size={15} /></span></div>

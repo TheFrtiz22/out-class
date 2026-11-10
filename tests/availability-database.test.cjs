@@ -66,13 +66,13 @@ test('bulk and role defaults, membership overrides, round overrides, and revocat
   await api.setInterviewerEligibility({ clubId: ids.club, revision: 1, targets: [{ memberId: ids.peerMember, eligible: false }, { memberId: ids.schedulerMember, eligible: true }] })
   await assert.rejects(api.setInterviewerEligibility({ clubId: ids.club, revision: 1, roles: [] }), /changed/)
   const before = (await h.db.query('SELECT permissions,"isOwner","interviewOffices" FROM "ClubMember" WHERE id=$1', [ids.schedulerMember])).rows[0]
-  h.as(ids.peer); await assert.rejects(api.getMyRoundAvailability({ clubId: ids.club, roundId: ids.round }), /not eligible/)
+  h.as(ids.peer); await assert.rejects(api.getMyRoundAvailability({ clubId: ids.club, roundId: ids.round }), /aren.t an interviewer/)
   h.as(ids.owner); await api.setInterviewerEligibility({ clubId: ids.club, revision: 2, roundId: ids.round, targets: [{ memberId: ids.peerMember, eligible: true }] })
   h.as(ids.peer); const initial = await api.getMyRoundAvailability({ clubId: ids.club, roundId: ids.round })
   await api.saveMyRoundAvailability({ ...initial.document, clubId: ids.club, roundId: ids.round, schedule, confirm: true })
   h.as(ids.owner); await api.setInterviewerEligibility({ clubId: ids.club, revision: 3, roundId: ids.round, targets: [{ memberId: ids.peerMember, eligible: false }] })
   assert.equal((await h.db.query('SELECT "confirmedAt" FROM "InterviewRoundParticipation" WHERE "memberId"=$1', [ids.peerMember])).rows[0].confirmedAt, null)
-  h.as(ids.peer); await assert.rejects(api.saveMyRoundAvailability({ clubId: ids.club, roundId: ids.round, revision: 2, schedule, confirm: true }), /not eligible/)
+  h.as(ids.peer); await assert.rejects(api.saveMyRoundAvailability({ clubId: ids.club, roundId: ids.round, revision: 2, schedule, confirm: true }), /aren.t an interviewer/)
   const after = (await h.db.query('SELECT permissions,"isOwner","interviewOffices" FROM "ClubMember" WHERE id=$1', [ids.schedulerMember])).rows[0]
   assert.deepEqual(after, before)
   h.as(ids.owner); await assert.rejects(api.setInterviewerEligibility({ clubId: ids.club, revision: 4, targets: [{ memberId: require('node:crypto').randomUUID(), eligible: true }] }), /active members/)

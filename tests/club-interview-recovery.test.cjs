@@ -10,20 +10,26 @@ function render(search,{permission=true,selected=true,loading=false}={}) {
   'next/dynamic':{default:()=> 'Dynamic'},
   '@/contexts/auth-context':{useAuth:()=>({user:{id:'one',memberships:[member]},loading,activeClubId:selected?'club':'elsewhere',selectClub(){}})},
   '@/contexts/demo-context':{useDemoMode:()=>({ready:true,isDemoEnabled:false})},
+  '@/hooks/use-revalidate':{useRevalidate(){}},
+  '@/components/shell/workspace-shell-context':{useShellBindings(){}},
   '@/lib/permissions':{hasWorkspace:()=>true,hasPermission:(m,p)=>m.permissions.includes(p)},
   '@/lib/club-workspace':{clubWorkspaceHref:id=>`/club/${id}/workspace`,recruitmentTools:()=>[{id:'interviews'}]},
   '@/lib/club-workspace-preference':{clubWorkspacePreferenceKey:()=> 'test-preference'},
-  '@/lib/product-navigation':{managerNavigation:()=>[{id:'interviews',label:'Interviews'}],personalModes:[]},
+  '@/lib/product-navigation':{mobileDestinations:items=>items,canLeaveWorkspace:()=>true,managerNavigation:()=>[{id:'interviews',label:'Interviews'}]},
+  '@/lib/navigation':{leaderRailSections:()=>[{id:'recruiting',items:[{id:'interviews',label:'Interviews'}]}],memberRailSections:()=>[],studentPath:()=>'/home'},
   '@/lib/club-settings':{resolveSettingsTab:()=>({})},
   '@/lib/campus-illustrations':{clubCampusIllustration:()=>undefined},
   '@/lib/interview-access':{interviewCapabilities:()=>({participate:true})},
   '@/lib/workspace-navigation':nav.exports,
   '@/lib/voting-navigation':require('./helpers/interview-harness.cjs').harness().load('lib/voting-navigation.ts'),
+  '@/lib/workspace-routes':require('./helpers/interview-harness.cjs').harness().load('lib/workspace-routes.ts'),
+  '@/lib/application-decisions':require('./helpers/interview-harness.cjs').harness().load('lib/application-decisions.ts'),
+  '@/lib/copy/terms':require('./helpers/interview-harness.cjs').harness().load('lib/copy/terms.ts'),
   '@/lib/interview-entry':require('./helpers/interview-harness.cjs').harness().load('lib/interview-entry.ts'),
   '@/lib/applicant-interview-navigation':require('./helpers/interview-harness.cjs').harness().load('lib/applicant-interview-navigation.ts'),
  };
  const mod={exports:{}};new Function('require','module','exports',compile('components/club-workspace.tsx'))(name=>mocks[name]||(name.startsWith('@/')?new Proxy({},{get:(_,key)=>String(key)}):require(name)),mod,mod.exports);
- const tree=mod.exports.ClubWorkspace({clubId:'club'}),screen=tree.type==='WorkspaceLoading'?tree:tree.props.children[1];
+ const tree=mod.exports.ClubWorkspace({clubId:'club'}),screen=tree;
  const nodes=[];function collect(node){if(!node||typeof node!=='object')return;if(Array.isArray(node)){node.forEach(collect);return}nodes.push(node);collect(node.props?.children)}collect(screen);
  return {screen,nodes,changes,redirects};
 }
@@ -59,13 +65,14 @@ test('the interview route restores the room on a fresh mount without assigning p
  screen.props.onExit();assert.deepEqual(resumed.pushes,['/club/club/workspace?interviewTab=rooms&roundId=r&section=recruitment&tool=interviews']);
  assert.equal(resumed.frames[0].exitHref,resumed.pushes[0]);assert.deepEqual(resumed.frames[0].club,{name:'Synthetic',color:'#123456'});
 });
+// The persistent shell lives in app/(workspace)/layout.tsx; the workspace renders its content (ShellState), not a loader.
 test('scheduled list replaces generic entry and unrelated screens do not restore a room',()=>{
  const initial=render('section=recruitment&tool=interviews');
- assert.equal(initial.screen.type,'ProductShell');
+ assert.equal(initial.screen.type,'ShellState');
  assert.equal(initial.nodes.some(node=>node.props?.children==='Enter interview mode'),false);
  assert.deepEqual(initial.changes,[]);
- assert.equal(render('section=overview&interview=1').screen.type,'ProductShell');
- assert.equal(render('section=recruitment&tool=applicants&interview=1').screen.type,'ProductShell');
+ assert.equal(render('section=overview&interview=1').screen.type,'ShellState');
+ assert.equal(render('section=recruitment&tool=applicants&interview=1').screen.type,'ShellState');
 });
 test('URL restoration still waits for current membership and selected club permissions',()=>{
  for(const options of [{selected:false},{loading:true}])assert.equal(room('applicationId=a&roundId=r',options).tree.type,'WorkspaceLoading');

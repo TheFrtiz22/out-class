@@ -3,13 +3,13 @@ import {validateVotingSetup,notifyVotingVoters} from "@/utils/voting-room-setup"
 import {meetingDetails,resolveVotingMeeting} from "@/lib/voting-session-setup";
 import { votingReadLimits } from "@/lib/voting-transaction-limits";
 import { Prisma } from "@prisma/client";
-import { prisma } from "@/utils/prisma";
+import { prisma, type AppTransactionClient } from "@/utils/prisma";
 import { requireClubPermission } from "@/utils/auth";
 import { clubWriteTransaction, votingWriteLimits } from "@/utils/club-write-transaction";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { hasPermission } from "@/lib/permissions";
-import { createRoomSchema, roomScope, roomCommandSchema, roomBallotSchema, uniqueSelection, roomOutcomes, storedChoice, recommendedOutcome,roomPresentationSchema,roomDisplayConfig, roomCommandResultSchema } from "@/lib/voting-room";
-import { loadVotingRoom, requireRoomLeader, roomAuthority, projectVotingRoom, roomFingerprint } from "@/utils/voting-room";
+import { createRoomSchema, roomScope, roomCommandSchema, roomBallotSchema, uniqueSelection, roomOutcomes, storedChoice, recommendedOutcome,roomPresentationSchema,roomDisplayConfig, roomCommandResultSchema, VotingPresentationChanged } from "@/lib/voting-room";
+import { loadVotingRoom, requireRoomLeader, roomAuthority, projectVotingRoom, roomFingerprint, signRoomView, verifyRoomView, type LiveRoom } from "@/utils/voting-room";
 import { getApplicantDisplay } from "@/actions/applicant-intelligence";
 import { z } from "zod";
 import { votingSelectedHighlight,votingSelectedEvidence } from "@/utils/voting-room-presentation";
@@ -22,7 +22,37 @@ import {lockPreparedSlides,presentedSlideHighlights} from '@/utils/voting-slide-
 
 class RoomConflict extends Error { constructor(public code:string,message:string){super(message);} }
 async function domainResult<T>(work:()=>Promise<T>) { try { return {ok:true as const,result:await work()}; } catch(e) { if(e instanceof RoomConflict)return {ok:false as const,code:e.code,message:e.message}; throw e; } }
-const retryConflict=()=>new RoomConflict("STALE_STATE","The room changed. Refresh and review before trying again.");
+const retryConflict=()=>new RoomConflict("STALE_STATE","The room changed. Reload the page, check the latest, and try again.");
+const ballotReceipt=z.object({accepted:z.literal(true),ballotRevision:z.number().int().nonnegative()}).strict();
+/** Room command receipts (and slide-preparation receipts, which share this shape but never move the room). */
+const revisionReceipt=z.union([z.object({revision:z.number().int().nonnegative(),decision:z.unknown().optional(),undone:z.boolean().optional()}).strict(),
+  /** Session creation ({sessionId}) and setup updates ({sessionId,revision}). */
+  z.object({sessionId:z.string(),revision:z.number().int().nonnegative().default(0)}).strict()]);
+/** Receipt `createdAt` (Prisma @default(now())) is likely stamped from the app server's clock, while
+ * `viewedAt` is the database clock. The window covers app/DB clock skew plus the 30 s write timeout
+ * (votingWriteLimits.timeout), so a receipt that could have committed after the view is always checked. */
+const receiptWindowMs=60_000;
+/** Opening or closing the named current ballot from a slightly older view is still what the leader meant
+ * when the only room changes since that view are ballots or voters joining (joins write no receipt).
+ * Order-independent: every receipt that may postdate the view is judged on its own. Only a positively
+ * identified ballot receipt passes. Any other receipt (room command, slide preparation, setup, unknown)
+ * written after the view started refuses; one that started before the view passes only if the room
+ * revision it records is already part of the view. */
+async function onlyBallotsSince(tx:AppTransactionClient,s:LiveRoom,d:z.infer<typeof roomCommandSchema>,memberId:string){
+  if(!["OPEN_VOTING","CLOSE_VOTING"].includes(d.action)||s.revision<=d.revision||!d.viewedAt||!d.applicationId||d.applicationId!==s.activeApplicationId||d.passNumber!==s.currentPass)return false;
+  // viewedAt is trusted only as the server signed it for this session, revision and viewer; otherwise strict check.
+  if(!verifyRoomView({sessionId:s.id,revision:d.revision,viewedAt:d.viewedAt,memberId},d.viewToken))return false;
+  const viewedAt=new Date(d.viewedAt);
+  const recent=await tx.votingRoomCommand.findMany({where:{sessionId:s.id,createdAt:{gte:new Date(+viewedAt-receiptWindowMs)}},take:1000,select:{result:true,createdAt:true}});
+  if(recent.length>=1000)return false;
+  return recent.every(r=>{
+    if(ballotReceipt.safeParse(r.result).success)return true;
+    if(r.createdAt>viewedAt)return false;
+    const saved=revisionReceipt.safeParse(r.result);
+    return saved.success&&saved.data.revision<=d.revision;
+  });
+}
+function electorateChangedMessage(n:number){return `${n} voter${n===1?"":"s"} can no longer vote, so voting is paused. Recount without ${n===1?"this voter":"them"} and give a reason to close, or restore ${n===1?"their":"those voters'"} access to continue.`;}
 function accessFingerprint(m:{id:string;status:string;permissions:string[];accessRole:string;isOwner:boolean}) { return roomFingerprint({id:m.id,status:m.status,permissions:m.permissions,accessRole:m.accessRole,isOwner:m.isOwner}); }
 
 export async function listLiveVotingRooms(input:unknown) {
@@ -32,10 +62,12 @@ export async function listLiveVotingRooms(input:unknown) {
     const m=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review"],{readOnly:true});
     const observer=hasPermission(m,"decisions.view"),voter=hasPermission(m,"decisions.vote"),leader=hasPermission(m,"decisions.start");
     if(!observer&&!voter&&!leader)throw Error("Voting room access denied.");
-    const rooms=await tx.votingSession.findMany({where:{clubId:d.clubId,mode:"LIVE",...(d.cycleId?{cycleId:d.cycleId}:{}),...(d.roundId?{roundId:d.roundId}:{}),
+    // Every session mode is listed: the room is the one home for voting. Board (LEGACY) sessions created
+    // from the Applicants ballot used to be missing here because this read only took LIVE rooms.
+    const rooms=await tx.votingSession.findMany({where:{clubId:d.clubId,...(d.cycleId?{cycleId:d.cycleId}:{}),...(d.roundId?{roundId:d.roundId}:{}),
       ...(!hasPermission(m,"applicants.identify")?{round:{anonymousReview:true}}:{}),
       ...(!observer?{OR:[...(leader?[{leaderMemberIds:{has:m.id}}]:[]),...(voter?[{participants:{some:{memberId:m.id}}}]:[])]}:{}),
-    },select:{id:true,clubId:true,cycleId:true,roundId:true,state:true,createdAt:true,updatedAt:true,finalizedAt:true,presentationOptions:true,round:{select:{name:true}},cycle:{select:{name:true}},_count:{select:{candidates:true}},leaderMemberIds:true,participants:{where:{memberId:m.id},select:{joinedAt:true}}},orderBy:[{createdAt:"desc"},{id:"desc"}],take:100});
+    },select:{id:true,mode:true,clubId:true,cycleId:true,roundId:true,state:true,createdAt:true,updatedAt:true,finalizedAt:true,presentationOptions:true,round:{select:{name:true}},cycle:{select:{name:true}},_count:{select:{candidates:true}},leaderMemberIds:true,participants:{where:{memberId:m.id},select:{joinedAt:true}}},orderBy:[{createdAt:"desc"},{id:"desc"}],take:100});
     return {rooms:rooms.map(({leaderMemberIds,participants,round,cycle,_count,presentationOptions,...room})=>({...room,meeting:(()=>{const m=meetingDetails((presentationOptions as {meeting?:unknown})?.meeting);if(!m)return null;const {announcedUserIds,...visible}=m;return visible;})(),roundName:round?.name??"Recruitment round",cycleName:cycle?.name??"Recruitment cycle",applicantCount:_count?.candidates??0,view:leaderMemberIds?.includes(m.id)&&leader?"leader" as const:participants?.length&&voter?"member" as const:"present" as const,joined:!!participants?.[0]?.joinedAt})),access:accessFingerprint(m)};
   },votingReadLimits);
   const {membership}=await requireClubPermission(d.clubId,["applications.review"]);
@@ -74,18 +106,26 @@ export async function getLiveVotingRoom(input:unknown) {
   const d=roomScope.parse(input),{user}=await requireClubPermission(d.clubId,["applications.review"]);
   const result=await prisma.$transaction(async tx=>{
     const m=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review"],{readOnly:true});
+    // Database clock at this read's start, before the room loads: bounds the leader's ballot-only drift check.
+    const clock=await tx.$queryRaw<{now:Date}[]>`SELECT now() AS now`;
+    const viewedAt=(clock?.[0]?.now?new Date(clock[0].now):new Date()).toISOString();
     const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId);
-    const snapshot=projectVotingRoom(s,m,round.anonymousReview);
+    const later=await tx.pipelineRound.count({where:{clubId:d.clubId,archivedAt:null,order:{gt:round.order}}});
+    const snapshot=projectVotingRoom(s,m,round.anonymousReview,{name:round.name,final:later===0});
     const members=await tx.clubMember.findMany({where:{clubId:d.clubId,id:{in:s.participants.map(p=>p.memberId)},status:"ACTIVE",user:{disabledAt:null}},include:{user:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}});
     const eligible=members.filter(v=>hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")&&(round.anonymousReview||hasPermission(v,"applicants.identify")));
     const current=s.passes.find(p=>p.number===s.currentPass)?.candidates.find(c=>c.applicationId===s.activeApplicationId);
     const options=roomPresentationSchema.safeParse(s.presentationOptions);
     // Rule wording for everyone; its counts only after the leader closes this ballot (totals are hidden while open).
     const rules=sessionRules(s.presentationOptions);
+    // Threshold ballots pause as soon as a captured voter can no longer vote; the leader sees it at once.
+    const openRule=rules.mode==="THRESHOLD"&&current?.ballotState==="OPEN"&&s.state==="OPEN"?await latestBallotRule(tx,{sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId}):null;
+    const removedVoters=openRule?.rules.mode==="THRESHOLD"?openRule.electorate.filter(id=>!eligible.some(v=>v.id===id)).length:0;
     const ruled=rules.mode==="THRESHOLD"&&current&&["CLOSED","CONFIRMED"].includes(current.ballotState)?ballotRuleResult(await latestBallotRule(tx,{sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId}),current.ballots):null;
     const discussion=current&&s.state==="OPEN"&&(snapshot.permissions.leader||snapshot.permissions.voter)?await votingDiscussion(tx,{clubId:d.clubId,sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId,roundId:s.roundId,anonymous:round.anonymousReview},{memberId:m.id,userId:user.id,leader:snapshot.permissions.leader},eligible.map(v=>({id:v.id,label:v.user.studentProfile?`${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}`:"Club member"}))):null;
     return {snapshot:{...snapshot,discussion,rule:{mode:rules.mode,description:describeVotingRules(rules)},ruleResult:ruled?{...ruled.result,summary:ruleResultSummary(ruled.result,ruled.rule)}:null,accessVersion:roomFingerprint({permissions:m.permissions,offices:m.interviewOffices,anonymous:round.anonymousReview}),fields:options.success?options.data.fields:null,joinedSelf:!!s.participants.find(p=>p.memberId===m.id)?.joinedAt,
       participation:{voted:current?.ballots.filter(b=>eligible.some(m=>m.id===b.memberId)).length??0,eligible:eligible.length},
+      votingPaused:removedVoters>0,viewedAt,viewToken:snapshot.permissions.leader?signRoomView({sessionId:s.id,revision:s.revision,viewedAt,memberId:m.id}):null,electorateChange:snapshot.permissions.leader&&removedVoters>0?{removed:removedVoters}:null,
       joinedParticipants:snapshot.permissions.leader?eligible.map(v=>({id:v.id,label:v.user.studentProfile?`${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}`:"Club member",joined:!!s.participants.find(p=>p.memberId===v.id)?.joinedAt})):[]},access:accessFingerprint(m)};
   },votingReadLimits);
   const {membership:m}=await requireClubPermission(d.clubId,["applications.review"]);
@@ -93,16 +133,24 @@ export async function getLiveVotingRoom(input:unknown) {
   return result.snapshot;
 }
 
+/** A viewer asked for an applicant the room has already moved past. Typed so the client
+ * refreshes the room instead of the server action failing with a 500; carries no applicant data. */
+export type StalePresentation={stale:true};
 export async function getLiveVotingPresentation(input:unknown) {
+  try { return await readLivePresentation(input); }
+  catch(e) { if(e instanceof VotingPresentationChanged)return {stale:true} as StalePresentation; throw e; }
+}
+async function readLivePresentation(input:unknown) {
   const d=roomScope.extend({applicationId:roomBallotSchema.shape.applicationId,preparation:z.boolean().optional()}).parse(input);
   // The canonical display action independently rechecks session/current candidate,
   // cycle, anonymity, field and submitted-feedback permissions in its transaction.
   const display=await getApplicantDisplay({clubId:d.clubId,sessionId:d.sessionId,applicationId:d.applicationId}),{user}=await requireClubPermission(d.clubId,["applications.review"]);
-  return prisma.$transaction(async tx=>{
+  const result=await prisma.$transaction(async tx=>{
     const m=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review"],{readOnly:true});
     const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId);const role=roomAuthority(s,m,round.anonymousReview);
     const app=await tx.application.findFirst({where:{id:d.applicationId,clubId:d.clubId,roundId:s.roundId,recruitmentCycleId:s.cycleId,status:{not:"DRAFTING"}}});
-    if(!app||!s.candidates.some(c=>c.applicationId===app.id)||(!role.leader&&s.activeApplicationId!==app.id)||display.anonymous!==round.anonymousReview)throw Error("Presentation changed. Refresh the room.");
+    if(app&&s.candidates.some(c=>c.applicationId===app.id)&&!role.leader&&s.activeApplicationId!==app.id)throw new VotingPresentationChanged();
+    if(!app||!s.candidates.some(c=>c.applicationId===app.id)||display.anonymous!==round.anonymousReview)throw Error("Presentation changed. Reload the page to continue.");
     const parsed=roomPresentationSchema.safeParse(s.presentationOptions),options=parsed.success?parsed.data:null;
     const highlight=await votingSelectedHighlight(tx,{clubId:d.clubId,applicationId:d.applicationId,roundId:s.roundId},user.id,!!options?.fields.includes("resumeHighlight"),display.anonymous,options?.highlights[d.applicationId]);
     const evidence=await votingSelectedEvidence(tx,d.clubId,d.applicationId,user.id,options?.fields??[],display.anonymous,s.roundId);
@@ -111,8 +159,12 @@ export async function getLiveVotingPresentation(input:unknown) {
     // Preparation preview shows the leader's unlocked working copy; everyone else sees the locked pass copy.
     if(d.preparation)requireRoomLeader(s,m,"decisions.manage");
     const prepared=await presentedSlideHighlights(tx,s,app.id,user.id,display.anonymous,!!d.preparation);
-    return {...selectedDisplay,...evidence,...highlight,...observations,...prepared,requestedFields:[...selectedDisplay.visible,...("resumeHighlight"in highlight?["resumeHighlight" as const]:[]),...(evidence.interviewScore?["interviewScore" as const]:[]),...(evidence.finalInterviewThoughts?["finalInterviewThoughts" as const]:[]),...(observations.additionalObservations?['additionalObservations' as const]:[])]};
+    return {access:accessFingerprint(m),presentation:{...selectedDisplay,...evidence,...highlight,...observations,...prepared,requestedFields:[...selectedDisplay.visible,...("resumeHighlight"in highlight?["resumeHighlight" as const]:[]),...(evidence.interviewScore?["interviewScore" as const]:[]),...(evidence.finalInterviewThoughts?["finalInterviewThoughts" as const]:[]),...(observations.additionalObservations?['additionalObservations' as const]:[])]}};
   },votingReadLimits);
+  // Same post-read re-check as the room read: evidence computed under since-revoked access is never returned.
+  const {membership}=await requireClubPermission(d.clubId,["applications.review"]);
+  if(result.access!==accessFingerprint(membership))throw Error("Voting permissions changed. Reconnect to the room.");
+  return result.presentation;
 }
 
 export async function castLiveVotingBallot(input:unknown) {
@@ -122,15 +174,21 @@ export async function castLiveVotingBallot(input:unknown) {
     // lock); the shared club lock lets voters' authorization run concurrently.
     const m=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review","decisions.vote"],{sharedClubLock:true});
     const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId,true);
-    if(!roomAuthority(s,m,round.anonymousReview).voter)throw Error("Eligible session voter required.");
+    if(!roomAuthority(s,m,round.anonymousReview).voter)throw Error("Only voters in this session can do that.");
     const fingerprint=roomFingerprint(d),key={sessionId:s.id,requestId:d.requestId};
     const receipt=await tx.votingRoomCommand.findUnique({where:{sessionId_requestId:key}});
     if(receipt){if(receipt.actorId!==user.id||receipt.fingerprint!==fingerprint)throw Error("Request ID reused with different content.");return z.object({accepted:z.literal(true),ballotRevision:z.number().int().nonnegative()}).strict().parse(receipt.result);}
     const entry=s.passes.find(p=>p.number===d.passNumber)?.candidates.find(c=>c.applicationId===d.applicationId);
     if(s.finalizedAt||s.state!=="OPEN"||s.currentPass!==d.passNumber||s.activeApplicationId!==d.applicationId||entry?.ballotState!=="OPEN")throw new RoomConflict("VOTING_CLOSED","Voting is closed or the current applicant changed. Your vote was not recorded.");
     if(!await tx.application.findFirst({where:{id:d.applicationId,clubId:s.clubId,roundId:s.roundId,recruitmentCycleId:s.cycleId,status:s.candidates.find(c=>c.applicationId===d.applicationId)!.expectedStatus}}))throw new RoomConflict("APPLICANT_CHANGED","The applicant's recruitment context changed. Your vote was not recorded.");
+    // A threshold ballot is paused while a captured voter has lost eligibility, until the leader resolves it.
+    const rule=sessionRules(s.presentationOptions).mode==="THRESHOLD"?await latestBallotRule(tx,{sessionId:s.id,passNumber:d.passNumber,applicationId:d.applicationId}):null;
+    if(rule?.rules.mode==="THRESHOLD"){
+      const eligible=await currentEligibleVoterIds(tx,s.clubId,s.participants.map(p=>p.memberId),round.anonymousReview);
+      if(rule.electorate.some(id=>!eligible.includes(id)))throw new RoomConflict("VOTING_PAUSED","Voting is paused while the leader reviews a change in who can vote. Your vote was not recorded.");
+    }
     const own=entry.ballots.find(b=>b.memberId===m.id);
-    if((own?.revision??null)!==d.ballotRevision)throw new RoomConflict("STALE_BALLOT","Your ballot changed on another device. Refresh before voting again.");
+    if((own?.revision??null)!==d.ballotRevision)throw new RoomConflict("STALE_BALLOT","Your ballot changed on another device. Reload the page and try again.");
     const decision=storedChoice[d.choice],revision=own?own.revision+1:0;
     if(own)await tx.votingBallot.update({where:{sessionId_passNumber_applicationId_memberId:{sessionId:s.id,passNumber:d.passNumber,applicationId:d.applicationId,memberId:m.id}},data:{decision,revision,updatedAt:new Date()}});
     else await tx.votingBallot.create({data:{sessionId:s.id,passNumber:d.passNumber,applicationId:d.applicationId,memberId:m.id,decision}});
@@ -153,11 +211,11 @@ export async function commandLiveVotingRoom(input:unknown) {
     const prior=await tx.votingRoomCommand.findUnique({where:{sessionId_requestId:key}});
     if(prior){if(prior.actorId!==user.id||prior.fingerprint!==fingerprint)throw Error("Request ID reused with different content.");return roomCommandResultSchema.parse(prior.result);}
     if(s.finalizedAt)throw new RoomConflict("FINALIZED","This session is finalized and read only.");
-    if(s.revision!==d.revision)throw retryConflict();
+    if(s.revision!==d.revision&&!await onlyBallotsSince(tx,s,d,m.id))throw retryConflict();
     const pass=s.passes.find(p=>p.number===s.currentPass),current=pass?.candidates.find(c=>c.applicationId===s.activeApplicationId);
     if(["OPEN_VOTING","CONFIRM","ACCEPT_WITHOUT_VOTE","DECIDE_AND_ADVANCE","PASS_WITHOUT_VOTE_AND_ADVANCE","DECIDE_WITHOUT_VOTE_AND_ADVANCE"].includes(d.action)&&(!current||!await tx.application.findFirst({where:{id:current.applicationId,clubId:s.clubId,roundId:s.roundId,recruitmentCycleId:s.cycleId,status:s.candidates.find(c=>c.applicationId===current.applicationId)!.expectedStatus}})))throw new RoomConflict("APPLICANT_CHANGED","The applicant's recruitment context changed. Close or end the session and review the application.");
     const advancing=["DECIDE_AND_ADVANCE","PASS_WITHOUT_VOTE_AND_ADVANCE","DECIDE_WITHOUT_VOTE_AND_ADVANCE"].includes(d.action);
-    let overrideAudit:Record<string,unknown>|null=null;
+    let overrideAudit:Record<string,unknown>|null=null,missingBallots=0;
     if(advancing&&(d.applicationId!==s.activeApplicationId||d.passNumber!==s.currentPass))throw retryConflict();
     let decision:z.infer<typeof roomCommandResultSchema>["decision"];
     const patch:Prisma.VotingSessionUpdateInput={revision:{increment:1}};
@@ -173,7 +231,7 @@ export async function commandLiveVotingRoom(input:unknown) {
           if(meeting?.status==='CANCELLED')throw new RoomConflict("CANCELLED","This session was cancelled.");
           if(meeting?.plannedAt&&+new Date(meeting.plannedAt)>Date.now()&&!d.confirmed)throw new RoomConflict("EARLY_CONFIRMATION_REQUIRED","Confirm starting before the planned time.");
           const validated=await validateVotingSetup(tx,createRoomSchema.parse({clubId:s.clubId,sessionId:s.id,cycleId:s.cycleId,roundId:s.roundId,leaderMemberIds:s.leaderMemberIds,participantIds:s.participants.map(p=>p.memberId),applicationIds:s.candidates.map(c=>c.applicationId),targetSize:s.targetUnset?null:s.targetSize,presentationOptions:roomPresentationSchema.safeParse(s.presentationOptions).success?s.presentationOptions:undefined}),user);
-          if(validated.apps.some(a=>s.candidates.find(c=>c.applicationId===a.id)?.expectedStatus!==a.status))throw new RoomConflict("SELECTION_CHANGED","Applicant eligibility changed. Review the saved selection before starting.");
+          if(validated.apps.some(a=>s.candidates.find(c=>c.applicationId===a.id)?.expectedStatus!==a.status))throw new RoomConflict("SELECTION_CHANGED","The applicant list changed. Review your selection before starting.");
           if(d.confirmed)await tx.$queryRaw`SELECT set_config('outclass.voting_early_start','confirmed',true)`;
         }
 
@@ -206,7 +264,7 @@ export async function commandLiveVotingRoom(input:unknown) {
           const eligible=await currentEligibleVoterIds(tx,s.clubId,s.participants.map(p=>p.memberId),round.anonymousReview);
           const removed=snapshot.electorate.filter(id=>!eligible.includes(id));
           if(removed.length){
-            if(!d.resolveElectorate||!d.reason)throw new RoomConflict("ELECTORATE_CHANGED",`${removed.length} voter${removed.length===1?"":"s"} lost eligibility after voting opened. Confirm recounting without ${removed.length===1?"them":"them"} and give a reason, or keep voting open.`);
+            if(!d.resolveElectorate||!d.reason)throw new RoomConflict("ELECTORATE_CHANGED",electorateChangedMessage(removed.length));
             const electorate=snapshot.electorate.filter(id=>eligible.includes(id));
             await tx.votingBallotRule.create({data:{...key,version:snapshot.version+1,rules:snapshot.rules,electorate,reason:d.reason,createdBy:user.id}});
             await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:"voting.room.electorate_resolved",reason:d.reason,details:{applicationId:current.applicationId,passNumber:s.currentPass,removed:removed.length,electorate:electorate.length,version:snapshot.version+1}}});
@@ -215,7 +273,10 @@ export async function commandLiveVotingRoom(input:unknown) {
           const evaluated=ballotRuleResult(snapshot,current.ballots);
           ruleAudit={mode:"THRESHOLD",outcome:evaluated?.result.outcome??null,noResult:evaluated?.result.noResult??null,passVotes:evaluated?.result.passVotes,cast:evaluated?.result.cast,eligible:evaluated?.result.eligible,requiredPass:evaluated?.result.requiredPass};
         }
-        if(current.ballots.length<s.participants.length&&!d.confirmed)throw new RoomConflict("EARLY_CLOSE_CONFIRMATION",`${s.participants.length-current.ballots.length} missing ballots. Confirm early closure; missing votes are not Reject votes.`);
+        // Missing ballots count against the (possibly recounted) electorate, not voters removed from it.
+        const roster=snapshot?.rules.mode==="THRESHOLD"?snapshot.electorate:s.participants.map(p=>p.memberId);
+        missingBallots=Math.max(0,roster.length-current.ballots.filter(b=>roster.includes(b.memberId)).length);
+        if(missingBallots>0&&!d.confirmed)throw new RoomConflict("EARLY_CLOSE_CONFIRMATION",`${missingBallots} ${missingBallots===1?"ballot is":"ballots are"} missing. Confirm early closure; missing votes are not Reject votes.`);
         await updateEntry({ballotState:"CLOSED",closedAt:new Date()});break;
       }
       case "PASS_WITHOUT_VOTE_AND_ADVANCE":
@@ -225,14 +286,19 @@ export async function commandLiveVotingRoom(input:unknown) {
       case "DECIDE_WITHOUT_VOTE_AND_ADVANCE": {
         // Explicit leader decision without a vote. No ballot is created; any ballots
         // already cast are kept, and the outcome is recorded as a leader override that
-        // stays distinct from their totals. Opening/closing happen in this transaction,
-        // so a late ballot finds the instance closed and is refused.
+        // stays distinct from their totals. With no ballot, the instance is confirmed
+        // directly with withoutVote (no invented open time; an open instance keeps its
+        // real openedAt). With ballots, it is closed then confirmed. Either way a late
+        // ballot finds the instance no longer open and is refused.
         if(s.state!=="OPEN"||!current||!["PENDING","OPEN"].includes(current.ballotState)||!d.choice||d.choice==="HOLD"||!d.confirmed||!d.reason)
           throw new RoomConflict("CONFIRMATION_REQUIRED","Confirm Pass or Do not pass without a vote and give a reason.");
-        const now=new Date(),previousState=current.ballotState;
-        if(previousState==="PENDING")await updateEntry({ballotState:"OPEN",openedAt:now});
-        await updateEntry({ballotState:"CLOSED",closedAt:now});
-        await updateEntry({ballotState:"CONFIRMED",confirmedDecision:storedChoice[d.choice],confirmedBy:user.id,confirmedAt:now,override:storedChoice[d.choice],overrideBy:user.id,overrideAt:now});
+        const now=new Date(),previousState=current.ballotState,confirmed={ballotState:"CONFIRMED",confirmedDecision:storedChoice[d.choice],confirmedBy:user.id,confirmedAt:now,override:storedChoice[d.choice],overrideBy:user.id,overrideAt:now};
+        if(!current.ballots.length)await updateEntry({...confirmed,withoutVote:true,...(previousState==="OPEN"?{closedAt:now}:{})});
+        else{
+          if(previousState==="PENDING")await updateEntry({ballotState:"OPEN",openedAt:now});
+          await updateEntry({ballotState:"CLOSED",closedAt:now});
+          await updateEntry(confirmed);
+        }
         overridden=true;overrideAudit={withoutVote:true,previousState,ballotsCast:current.ballots.length};break;
       }
       case "DECIDE_AND_ADVANCE":
@@ -243,7 +309,7 @@ export async function commandLiveVotingRoom(input:unknown) {
           // Threshold rooms: the configured rule decides. With no automatic result,
           // Hold (vote again) needs no reason; any other outcome is an explicit, reasoned leader decision.
           const decided=ruled.result.outcome;
-          if(decided&&storedChoice[decided]!==storedChoice[d.choice])throw new RoomConflict("RULE_DECIDED",`The configured voting rule produced ${decided==="ACCEPT"?"Pass":decided==="HOLD"?"Hold":"Do not pass"}. Confirm that outcome.`);
+          if(decided&&storedChoice[decided]!==storedChoice[d.choice])throw new RoomConflict("RULE_DECIDED",`The voting rule gave ${decided==="ACCEPT"?"Pass":decided==="HOLD"?"Hold":"Do not pass"}. Confirm this result.`);
           overridden=!decided&&d.choice!=="HOLD";
           ruleAudit={mode:"THRESHOLD",outcome:decided,noResult:ruled.result.noResult};
           if(overridden&&!d.reason)throw new RoomConflict("REASON_REQUIRED","No automatic result was reached. Give a reason to decide without one, or Hold for another vote.");
@@ -263,7 +329,8 @@ export async function commandLiveVotingRoom(input:unknown) {
         previousDecision=old.confirmedDecision;
         await tx.auditLog.create({data:{actorId:user.id,clubId:s.clubId,targetId:s.id,action:"voting.room.undo_authorized",details:{requestId:d.requestId,applicationId:old.applicationId,passNumber:s.currentPass,revision:s.revision,previousDecision}}});
         await tx.$executeRaw`SELECT set_config('outclass.voting_undo',${d.requestId},true)`;
-        await updateEntry({ballotState:old.withoutVote?"PENDING":"CLOSED",withoutVote:false,confirmedDecision:null,confirmedBy:null,confirmedAt:null,override:null,overrideBy:null,overrideAt:null},old);
+        // Never-opened instances return to PENDING; an instance that was opened returns CLOSED with its times.
+        await updateEntry({ballotState:old.openedAt?"CLOSED":"PENDING",withoutVote:false,confirmedDecision:null,confirmedBy:null,confirmedAt:null,override:null,overrideBy:null,overrideAt:null},old);
         await tx.$executeRaw`SELECT set_config('outclass.voting_undo','',true)`;
         await tx.votingPass.update({where:{sessionId_number:{sessionId:s.id,number:s.currentPass}},data:{state:"OPEN",completedAt:null}});
         Object.assign(patch,{activeApplicationId:old.applicationId,state:"OPEN"});break;
@@ -308,7 +375,7 @@ export async function commandLiveVotingRoom(input:unknown) {
     await tx.votingSession.update({where:{id:s.id},data:patch});
     const result={revision:s.revision+1,...(decision?{decision}:{}),...(d.action==="UNDO_DECISION"?{undone:true}:{})};
     await tx.votingRoomCommand.create({data:{...key,actorId:user.id,fingerprint,result}});
-    await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:`voting.room.${d.action.toLowerCase()}`,reason:d.reason,details:{applicationId:d.applicationId??current?.applicationId??null,passNumber:d.passNumber??s.currentPass,decision:["ACCEPT_WITHOUT_VOTE","PASS_WITHOUT_VOTE_AND_ADVANCE"].includes(d.action)?"ACCEPT":d.choice??null,overridden,previousDecision,...(overrideAudit??{}),...(d.action==="CLOSE_VOTING"?{missingBallots:s.participants.length-(current?.ballots.length??0),earlyClosureConfirmed:!!d.confirmed}:{}),...(ruleAudit?{rule:ruleAudit}:{}),...(d.action==="END"?{held:roomOutcomes(s).filter(o=>o.outcome==="HOLD").length,unreviewed:roomOutcomes(s).filter(o=>o.outcome==="UNREVIEWED").length}:{} )}}});
+    await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:`voting.room.${d.action.toLowerCase()}`,reason:d.reason,details:{applicationId:d.applicationId??current?.applicationId??null,passNumber:d.passNumber??s.currentPass,decision:["ACCEPT_WITHOUT_VOTE","PASS_WITHOUT_VOTE_AND_ADVANCE"].includes(d.action)?"ACCEPT":d.choice??null,overridden,previousDecision,...(overrideAudit??{}),...(d.action==="CLOSE_VOTING"?{missingBallots,earlyClosureConfirmed:!!d.confirmed}:{}),...(ruleAudit?{rule:ruleAudit}:{}),...(d.action==="END"?{held:roomOutcomes(s).filter(o=>o.outcome==="HOLD").length,unreviewed:roomOutcomes(s).filter(o=>o.outcome==="UNREVIEWED").length}:{} )}}});
     return result;
   },votingWriteLimits));
 }

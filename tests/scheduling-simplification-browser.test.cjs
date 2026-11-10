@@ -28,7 +28,7 @@ test('browser: times → confirmed interviewers → booking, issue editor/overri
   browser=await launch();const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.setDefaultTimeout(15000);page.on('pageerror',e=>{errors.push(e.message);console.error('Fixture browser error:',e.message)});page.on('dialog',d=>d.accept())
   await page.route('**/*',route=>route.request().url().startsWith(f.url)?route.continue():route.abort())
   await page.goto(`${f.url}/?roundId=${f.scope.roundId}`)
-  const nav=page.getByRole('navigation',{name:'Scheduling workflow'}),panel=page.getByRole('region',{name:'Review Panel Assignments'}),publication=page.getByRole('region',{name:'Publish interview booking'}),dialog=page.getByRole('dialog')
+  const nav=page.getByRole('navigation',{name:'Scheduling workflow'}),panel=page.getByRole('region',{name:'Review Panel Assignments'}),publication=page.getByRole('region',{name:'Publish schedule'}),dialog=page.getByRole('dialog')
   await nav.waitFor();assert.equal(await nav.getByRole('button').count(),4);assert.equal(await nav.getByRole('button',{name:/Availability/}).count(),1)
   const steps=[];async function step(label,locator){await locator.click();steps.push(label)}
   await step('Open times form',page.getByRole('button',{name:'Add interview times',exact:true}))
@@ -44,11 +44,11 @@ test('browser: times → confirmed interviewers → booking, issue editor/overri
   await step('Assign available interviewers',panel.getByRole('button',{name:'Assign available interviewers',exact:true}))
   await expandDates(panel);await panel.locator('.ir-schedule-row').first().waitFor();assert.equal(await page.getByRole('dialog').count(),0,'no inline/automatic slot editor')
   await shot(page,'scheduling-confirm-desktop')
-  await step('Review interviewer approval',panel.getByRole('button',{name:'Confirm interviewers',exact:true}))
+  await step('Review interviewer approval',panel.getByRole('button',{name:'Confirm assignments',exact:true}))
   await step('Explicit owner approval',dialog.getByRole('button',{name:'Approve interviewers',exact:true}))
   await publication.getByText('1 slot ready',{exact:true}).waitFor()
   await shot(page,'scheduling-publish-desktop')
-  await step('Publish booking',publication.getByRole('button',{name:'Publish booking',exact:true}))
+  await step('Publish schedule',publication.getByRole('button',{name:'Publish schedule',exact:true}))
   await page.getByRole('heading',{name:'Bookings',exact:true}).waitFor();assert.equal(steps.length,6)
   console.log('Ordinary setup/publish button actions:',JSON.stringify(steps))
   const applicant=await browser.newPage();await applicant.goto(f.url+'/?applicant=1')
@@ -67,10 +67,10 @@ test('browser: times → confirmed interviewers → booking, issue editor/overri
   await editor.getByLabel('Add interviewer',{exact:true}).selectOption(target.id)
   const override=page.getByRole('dialog',{name:'Assign despite availability?',exact:true});await override.getByRole('button',{name:'Assign anyway',exact:true}).click();await override.waitFor({state:'hidden'})
   assert.ok(f.state().bookingFlow.overrides.some(o=>o.memberId===target.id&&!o.revokedAt));await editor.getByRole('button',{name:'Done',exact:true}).click()
-  await panel.getByRole('button',{name:'Confirm interviewers',exact:true}).click();await dialog.getByRole('button',{name:'Approve interviewers',exact:true}).click()
+  await panel.getByRole('button',{name:'Confirm assignments',exact:true}).click();await dialog.getByRole('button',{name:'Approve interviewers',exact:true}).click()
   assert.deepEqual(f.state().roomBookings,reservation)
   await publication.getByRole('button',{name:'Pause booking',exact:true}).click();await dialog.getByRole('button',{name:'Pause booking',exact:true}).click();await publication.getByText('Paused',{exact:true}).waitFor()
-  await applicant.reload();await applicant.getByText('Interview confirmed',{exact:true}).waitFor();await applicant.getByText(/paused new bookings/).waitFor();assert.deepEqual(f.state().roomBookings,reservation)
+  await applicant.reload();await applicant.getByText('Interview confirmed',{exact:true}).waitFor();await applicant.getByText(/paused new interview times/).waitFor();assert.deepEqual(f.state().roomBookings,reservation)
   const publishedBeforeAddingTimes=structuredClone(f.state().bookingFlow.panels[f.scope.roundId].published);await nav.getByRole('button',{name:/Set interview times/}).click();await page.getByRole('button',{name:'Add interview times',exact:true}).click();await dialog.getByLabel('Room name',{exact:true}).fill('Synthetic Hall B');await dialog.getByLabel('End time',{exact:true}).fill('10:20');await dialog.getByRole('button',{name:'Save times & continue',exact:true}).click();assert.deepEqual(f.state().roomBookings,reservation)
   await page.setViewportSize({width:390,height:844});await shot(page,'scheduling-publish-mobile');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false)
   // Sheet visibility and Radix's unmount focus restoration settle separately.
@@ -89,6 +89,6 @@ test('browser: an existing published round opens bookings directly; request fail
 if(process.env.OUTCLASS_SCHEDULING_BASELINE)test('comparison: previous scheduling path requires seven button actions',async()=>{
  const f=await fixture({fresh:true,baseline:process.env.OUTCLASS_SCHEDULING_BASELINE});let browser
  try{browser=await launch();const page=await browser.newPage({viewport:{width:1440,height:1000}}),steps=[];page.setDefaultTimeout(15000);await page.goto(`${f.url}/?roundId=${f.scope.roundId}`);async function click(label,locator){await locator.click();steps.push(label)}
- await click('Continue to rooms',page.getByRole('button',{name:'Continue to Rooms',exact:true}));await click('Open times form',page.getByRole('button',{name:'Create interview room',exact:true}).first());const dialog=page.getByRole('dialog');await dialog.getByLabel('Room name',{exact:true}).fill('Previous synthetic hall');await dialog.getByLabel('Location',{exact:true}).fill('Previous synthetic hall');await dialog.getByLabel('End time',{exact:true}).fill('10:20');await click('Create room',dialog.getByRole('button',{name:/^Create room ·/}));await click('Auto-fill panels',page.getByRole('button',{name:'Auto-Fill Panels',exact:true}).filter({visible:true}).first());const panel=page.getByRole('region',{name:'Review Panel Assignments'});await panel.getByText('100% staffed',{exact:false}).waitFor();await shot(page,'scheduling-before-desktop');await click('Review panel approval',panel.getByRole('button',{name:'Review & Publish',exact:true}));await click('Explicit owner approval',dialog.getByRole('button',{name:'Confirm & Publish Panels',exact:true}));await click('Publish booking',page.getByRole('button',{name:'Publish interview booking',exact:true}));assert.equal(steps.length,7);console.log('Previous setup/publish button actions:',JSON.stringify(steps));assert.equal(f.liveCalls(),0)
+ await click('Continue to rooms',page.getByRole('button',{name:'Continue to Rooms',exact:true}));await click('Open times form',page.getByRole('button',{name:'Create interview room',exact:true}).first());const dialog=page.getByRole('dialog');await dialog.getByLabel('Room name',{exact:true}).fill('Previous synthetic hall');await dialog.getByLabel('Location',{exact:true}).fill('Previous synthetic hall');await dialog.getByLabel('End time',{exact:true}).fill('10:20');await click('Create room',dialog.getByRole('button',{name:/^Create room ·/}));await click('Auto-fill panels',page.getByRole('button',{name:'Auto-Fill Panels',exact:true}).filter({visible:true}).first());const panel=page.getByRole('region',{name:'Review Panel Assignments'});await panel.getByText('100% staffed',{exact:false}).waitFor();await shot(page,'scheduling-before-desktop');await click('Review panel approval',panel.getByRole('button',{name:'Review & Publish',exact:true}));await click('Explicit owner approval',dialog.getByRole('button',{name:'Confirm & Publish Panels',exact:true}));await click('Publish schedule',page.getByRole('button',{name:'Publish schedule',exact:true}));assert.equal(steps.length,7);console.log('Previous setup/publish button actions:',JSON.stringify(steps));assert.equal(f.liveCalls(),0)
  }finally{await browser?.close();await f.close()}
 })

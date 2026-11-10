@@ -3,11 +3,22 @@ import { z } from "zod";
 export const votingSelectionSchema = z.object({clubId:z.string().uuid(),applicationIds:z.array(z.string().uuid()).min(1).max(2000)}).strict();
 export const votingEligibleStatuses = ["SUBMITTED","IN_REVIEW","INTERVIEWING","WAITLISTED"] as const;
 export function legacyDecisionTab(tool:string|null){return tool==="voting"?"voting":tool==="letters"||tool==="decision-letters"?"letters":null;}
-export function decisionsHref(clubId:string, tab:"overview"|"voting"|"letters"="voting", search="") {
+export function decisionsHref(clubId:string, tab:"voting"|"letters"="voting", search="") {
   const source=new URLSearchParams(search),q=new URLSearchParams({section:"recruitment",tool:"decisions",decisionTab:tab});
   for(const key of ["cycleId","roundId","demo"])if(source.get(key))q.set(key,source.get(key)!);
   return `/club/${encodeURIComponent(clubId)}/workspace?${q}`;
 }
+/** The one link into a voting session. LIVE rooms open the room; board (LEGACY) sessions open the ballot in the Voting room. */
+export function votingSessionHref(clubId:string,session:{id:string;mode?:string|null;cycleId?:string|null;roundId?:string|null},view:"leader"|"present"|"member"="member",demo=false){
+  if(session.mode==="LIVE"){
+    const q=new URLSearchParams({clubId,view});if(demo)q.set("demo","1");if(session.cycleId)q.set("cycleId",session.cycleId);if(session.roundId)q.set("roundId",session.roundId);
+    return `/voting/rooms/${encodeURIComponent(session.id)}?${q}`;
+  }
+  const q=new URLSearchParams({section:"recruitment",tool:"decisions",decisionTab:"voting",sessionId:session.id});if(demo)q.set("demo","1");
+  return `/club/${encodeURIComponent(clubId)}/workspace?${q}`;
+}
+/** Readable state for a voting session: Draft, Open, Paused or Closed. */
+export function votingStateLabel(state:string){return state==="OPEN"?"Open":state==="PAUSED"?"Paused":state==="COMPLETED"||state==="COMPLETE"?"Closed":"Draft";}
 export function votingSetupHref(clubId:string,search="",selectionKey?:string){
   const source=new URLSearchParams(search),q=new URLSearchParams({clubId});
   for(const key of ["cycleId","roundId","demo","draft","session"])if(source.get(key))q.set(key,source.get(key)!);

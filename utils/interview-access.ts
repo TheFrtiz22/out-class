@@ -15,6 +15,11 @@ export async function interviewActor(tx: AppTransactionClient, clubId: string, u
 
 export const interviewTransactionOptions = { maxWait: 10000, timeout: 20000 };
 
+/** The expected denials authorizeInterview raises for a viewer without current access. */
+export function isInterviewAccessDenial(e: unknown) {
+  return e instanceof Error && [/^Interview access unavailable/, /^Identified interview unavailable/, /^Current panel assignment or explicit leadership permission required/].some(p => p.test(e.message));
+}
+
 export async function authorizeInterview(tx: AppTransactionClient, scope: InterviewScope, userId: string, mode: "panel" | "resume" | "closing" | "closingReview" = "panel", applicationLock: "share" | "update" = "update") {
   const actor = await interviewActor(tx, scope.clubId, userId);
   if (applicationLock === "share") await tx.$queryRaw`SELECT id FROM "Application" WHERE id = ${scope.applicationId} FOR SHARE`;

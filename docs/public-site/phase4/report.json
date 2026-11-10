@@ -1,0 +1,190 @@
+[
+  {
+    "name": "uva",
+    "url": "/uva",
+    "server": {
+      "status": 200,
+      "location": null,
+      "title": "Club recruitment at UVA · OutClass",
+      "description": "Learn how OutClass helps University of Virginia students discover organizations, apply to clubs, manage interviews, and track recruitment, with tools for club leaders to manage applicants and decisions.",
+      "ogImage": true,
+      "robots": "index, follow",
+      "h1": [
+        "OutClass for UVA club recruitment."
+      ],
+      "headings": [
+        "h1 OutClass for UVA club recruitment.",
+        "h2 One profile.Every opportunity.",
+        "h2 Questions about using OutClass",
+        "h3 01Getting started",
+        "h3 02Students &amp; applications",
+        "h3 03Club leaders",
+        "h3 04Accounts &amp; campus",
+        "h3 05Other universities",
+        "h3 Not at UVA?",
+        "h3 Platform",
+        "h3 OutClass",
+        "h3 Account",
+        "h3 Legal"
+      ],
+      "loadingCover": false
+    },
+    "widths": {
+      "390": {
+        "status": 200,
+        "finalUrl": "/uva",
+        "overflowX": 0,
+        "h1": [
+          "OutClass for UVA club recruitment."
+        ],
+        "loadingCover": false,
+        "smallText": [
+          "11px Platform",
+          "11px OutClass",
+          "11px Account",
+          "11px Legal",
+          "11px © 2026 OutClassPlatforms LLC. All rights reserved.",
+          "11px OutClass is operated by OutClassPlatforms LLC and is not an "
+        ],
+        "smallTextCount": 6,
+        "smallTargets": [
+          "22x44 a FAQ"
+        ],
+        "smallTargetCount": 1,
+        "axe": [],
+        "errors": []
+      },
+      "1440": {
+        "status": 200,
+        "finalUrl": "/uva",
+        "overflowX": 0,
+        "h1": [
+          "OutClass for UVA club recruitment."
+        ],
+        "loadingCover": false,
+        "smallText": [
+          "11px Platform",
+          "11px OutClass",
+          "11px Account",
+          "11px Legal",
+          "11px © 2026 OutClassPlatforms LLC. All rights reserved.",
+          "11px OutClass is operated by OutClassPlatforms LLC and is not an "
+        ],
+        "smallTextCount": 6,
+        "smallTargets": [
+          "23x44 a FAQ"
+        ],
+        "smallTargetCount": 1,
+        "axe": [],
+        "errors": []
+      }
+    }
+  },
+  {
+    "name": "login",
+    "url": "/login",
+    "server": {
+      "status": 200,
+      "location": null,
+      "title": "Sign in · OutClass",
+      "description": "Find and apply to participating UVA clubs with one OutClass profile. Manage applications, interviews, and recruitment decisions in one place.",
+      "ogImage": true,
+      "robots": "noindex, nofollow",
+      "h1": [
+        "One profile.Every opportunity."
+      ],
+      "headings": [
+        "h1 One profile.Every opportunity.",
+        "h3 Sample club application",
+        "h2 Welcome back."
+      ],
+      "loadingCover": false
+    },
+    "widths": {
+      "390": {
+        "status": 200,
+        "finalUrl": "/login",
+        "overflowX": 0,
+        "h1": [
+          "One profile.Every opportunity."
+        ],
+        "loadingCover": false,
+        "smallText": [],
+        "smallTextCount": 0,
+        "smallTargets": [
+          "90x24 a Forgot password?"
+        ],
+        "smallTargetCount": 1,
+        "axe": [],
+        "errors": []
+      },
+      "1440": {
+        "status": 200,
+        "finalUrl": "/login",
+        "overflowX": 0,
+        "h1": [
+          "One profile.Every opportunity."
+        ],
+        "loadingCover": false,
+        "smallText": [],
+        "smallTextCount": 0,
+        "smallTargets": [
+          "115x36 button Back to home",
+          "90x24 a Forgot password?",
+          "374x40 button Use an email code instead",
+          "142x40 button Create an account"
+        ],
+        "smallTargetCount": 4,
+        "axe": [],
+        "errors": []
+      },
+      "reduced-motion": {
+        "status": 200,
+        "finalUrl": "/login",
+        "overflowX": 0,
+        "h1": [
+          "One profile.Every opportunity."
+        ],
+        "loadingCover": false,
+        "smallText": [],
+        "smallTextCount": 0,
+        "smallTargets": [
+          "115x36 button Back to home",
+          "90x24 a Forgot password?",
+          "374x40 button Use an email code instead",
+          "142x40 button Create an account"
+        ],
+        "smallTargetCount": 4,
+        "axe": null,
+        "errors": []
+      },
+      "forced-colors": {
+        "status": 200,
+        "finalUrl": "/login",
+        "overflowX": 0,
+        "h1": [
+          "One profile.Every opportunity."
+        ],
+        "loadingCover": false,
+        "smallText": [],
+        "smallTextCount": 0,
+        "smallTargets": [
+          "115x36 button Back to home",
+          "90x24 a Forgot password?",
+          "374x40 button Use an email code instead",
+          "142x40 button Create an account"
+        ],
+        "smallTargetCount": 4,
+        "axe": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": 7,
+            "sample": ".oc-login-brand-description"
+          }
+        ],
+        "errors": []
+      }
+    }
+  }
+]

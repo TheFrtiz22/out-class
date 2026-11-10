@@ -1,0 +1,98 @@
+[
+  {
+    "name": "club",
+    "url": "/club/vcg-uva",
+    "server": {
+      "status": 200,
+      "location": null,
+      "title": "Virginia Consulting Group · OutClass",
+      "description": "Virginia Consulting Group connects UVA students with client organizations through hands-on consulting. Its published material emphasizes research, experimentati",
+      "ogImage": true,
+      "robots": "index, follow",
+      "h1": [
+        "Virginia Consulting Group"
+      ],
+      "headings": [
+        "h1 Virginia Consulting Group",
+        "h2 About",
+        "h2 What members do",
+        "h3 Programs",
+        "h3 Documented historical engagements",
+        "h2 Recruitment and requirements",
+        "h3 Selectivity",
+        "h3 Before you apply",
+        "h4 Required club questions",
+        "h2 Life in the club"
+      ],
+      "loadingCover": true
+    },
+    "widths": {
+      "390": {
+        "status": 200,
+        "finalUrl": "/club/vcg-uva",
+        "overflowX": 0,
+        "h1": [
+          "Virginia Consulting Group"
+        ],
+        "loadingCover": false,
+        "smallText": [],
+        "smallTextCount": 0,
+        "smallTargets": [],
+        "smallTargetCount": 0,
+        "axe": [],
+        "errors": []
+      },
+      "1440": {
+        "status": 200,
+        "finalUrl": "/club/vcg-uva",
+        "overflowX": 0,
+        "h1": [
+          "Virginia Consulting Group"
+        ],
+        "loadingCover": false,
+        "smallText": [],
+        "smallTextCount": 0,
+        "smallTargets": [
+          "131x40 button Explore clubs"
+        ],
+        "smallTargetCount": 1,
+        "axe": [],
+        "errors": []
+      },
+      "reduced-motion": {
+        "status": 200,
+        "finalUrl": "/club/vcg-uva",
+        "overflowX": 0,
+        "h1": [
+          "Virginia Consulting Group"
+        ],
+        "loadingCover": false,
+        "smallText": [],
+        "smallTextCount": 0,
+        "smallTargets": [
+          "131x40 button Explore clubs"
+        ],
+        "smallTargetCount": 1,
+        "axe": null,
+        "errors": []
+      },
+      "forced-colors": {
+        "status": 200,
+        "finalUrl": "/club/vcg-uva",
+        "overflowX": 0,
+        "h1": [
+          "Virginia Consulting Group"
+        ],
+        "loadingCover": false,
+        "smallText": [],
+        "smallTextCount": 0,
+        "smallTargets": [
+          "131x40 button Explore clubs"
+        ],
+        "smallTargetCount": 1,
+        "axe": [],
+        "errors": []
+      }
+    }
+  }
+]

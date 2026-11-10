@@ -2,6 +2,7 @@
 
 import { InvitationEmailControls } from "@/components/invitation-email-controls";
 import { useRef, useState } from "react";
+import { announceDataChanged } from "@/hooks/use-revalidate";
 import { previewRosterImport, confirmRosterImport } from "@/actions/roster-import";
 import { parseRosterCsv, ROSTER_MAX_BYTES, ROSTER_MAX_ROWS } from "@/lib/roster-csv";
 import { Button } from "@/components/ui/button";
@@ -41,7 +42,7 @@ export function RosterCsvImporter({ clubId, onImported }: { clubId: string; onIm
         const outcome = await confirmRosterImport(preview.id);
         setResult(outcome);
         if (outcome.completed) {
-          try { await onImported?.(); } catch { setError("Import completed. Refresh members to update the directory."); }
+          try { await onImported?.(); } catch { announceDataChanged("members"); setError("Import completed. The member list will update in a moment."); }
           break;
         }
         if (outcome.processed <= previousProcessed) throw new Error("Import paused. Retry to resume processing.");

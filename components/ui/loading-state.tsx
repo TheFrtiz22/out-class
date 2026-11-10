@@ -14,22 +14,26 @@ export function LoadingState({
   layout = "rows",
   rows = 4,
   calendarView = "month",
+  variant,
   className,
 }: {
   label?: string
   layout?: LoadingLayout
   rows?: number
   calendarView?: "month" | "week"
+  /** "glass" places the preview on the light glass material (no blur). */
+  variant?: "default" | "glass"
   className?: string
 }) {
+  const surface = variant === "glass" ? "glass" : undefined
   const count = Math.max(1, Math.min(12, Math.floor(rows) || 4))
   if (layout === "inline") {
-    return <div data-slot="loading-state" data-layout="inline" role="status" aria-busy="true" className={cn("oc-loading-state", className)}>
+    return <div data-slot="loading-state" data-layout="inline" data-variant={surface} role="status" aria-busy="true" className={cn("oc-loading-state", className)}>
       <LoadingIndicator /><span>{label}</span>
     </div>
   }
 
-  return <div data-slot="loading-state" data-layout={layout} role="status" aria-busy="true" className={cn("oc-loading-state", className)}>
+  return <div data-slot="loading-state" data-layout={layout} data-variant={surface} role="status" aria-busy="true" className={cn("oc-loading-state", className)}>
     <span className="sr-only">{label}</span>
     <div className="oc-loading-preview" aria-hidden="true">
       {layout === "feed" && <div className="oc-loading-feed">{Array.from({ length: count }, (_, index) => <div className="oc-loading-feed-item" key={index}>

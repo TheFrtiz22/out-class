@@ -31,7 +31,11 @@ test('real account HTTP and RSC keep internal templates behind recruiting permis
     assert.equal(response.headers.get('cache-control'), 'private, no-store'); assert.ok(response.headers.get('vary').split(/\s*,\s*/).includes('Cookie'));
     const body = await response.json(); assert.equal(body.id, person.id); assert.equal(body.applications.length, 1); assert.equal(body.applications[0].studentId, person.id); assert.equal(body.memberships.length, 2);
     for (const record of [...body.memberships, ...body.applications, ...body.adminRoles]) assert.equal(Object.hasOwn(record.club, 'decisionLetterTemplates'), false);
-    const page = await person.actor.request('/'), html = await page.text(); assert.equal(page.status, 200);
+    // Signed-in visitors with a profile get a real 307 from "/" to their workspace (no root
+    // loading boundary streams a 200 first); check the server-rendered destination instead.
+    let page = await person.actor.request('/')
+    if (page.status === 307) page = await person.actor.request(new URL(page.headers.get('location'), 'http://outclass.invalid').pathname)
+    const html = await page.text(); assert.equal(page.status, 200);
     for (const marker of markers) assert.ok(!html.includes(marker), 'Initial server-rendered account data must omit internal drafts');
     return body;
   };

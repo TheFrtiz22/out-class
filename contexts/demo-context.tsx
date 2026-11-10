@@ -6,9 +6,10 @@ import { resolveStudentView } from "@/lib/student-navigation"
 import { studentRouteForPath } from "@/lib/navigation"
 // The demo store and seed data load only when Demo Mode is enabled, so they are
 // not part of every page's root bundle. Presenter-only.
-type DemoStoreModule = typeof import("@/lib/demo/store")
+// One shared loader, so live adapters can test Demo Mode without bundling the store.
+import { loadDemoStore, type DemoStoreModule } from "@/lib/demo/loader"
+import { DEMO_READY_TIMEOUT_MS, failDemoActivation, retryDemoActivation, setDemoRequested } from "@/lib/demo/activation"
 let loadedStore: DemoStoreModule | null = null
-const loadDemoStore = async () => (loadedStore ??= await import("@/lib/demo/store"))
 import type { DemoState } from "@/lib/demo/seed"
 import { OutClassLoadingScreen } from "@/components/outclass-loading-screen"
 
@@ -31,24 +32,51 @@ export function DemoDataProvider({
     [error, setError] = useState("")
   const [epoch, setEpoch] = useState(0)
   const [cleanupRetry, setCleanupRetry] = useState(0)
+  const [loadRetry, setLoadRetry] = useState(0)
+  const [loadFailed, setLoadFailed] = useState(false)
+  // Browser-only and idempotent (see setDemoRequested). Set during render so adapter
+  // calls from anywhere on the page wait for the store instead of reaching live actions.
+  setDemoRequested(enabled && allowed)
   useEffect(() => {
     let current = true
     let unsubscribe = () => {}
+    let timeout: ReturnType<typeof setTimeout> | undefined
     if (enabled && allowed) {
+      retryDemoActivation()
+      const fail = (message: string) => {
+        // A superseded run (retry or unmount) must not record a failure for the current one.
+        if (!current) return
+        failDemoActivation()
+        setLoadFailed(true)
+        setError(message)
+      }
+      // No indefinite loader: a stalled chunk request surfaces the error with a retry.
+      timeout = setTimeout(() => fail("Demo Mode is taking too long to load. Check your connection and try again."), DEMO_READY_TIMEOUT_MS)
       loadDemoStore()
-        .then(({ demoStore }) => {
+        .then((module) => {
+          loadedStore = module
+          const { demoStore } = module
           if (!current) return
           unsubscribe = demoStore.subscribe(() =>
             setState(demoStore.active() ? demoStore.get() : null),
           )
+          clearTimeout(timeout)
           try {
             demoStore.start(template)
+            // A load that finishes after the timeout replaces its stale alert.
+            setLoadFailed(false)
+            setError("")
           } catch {
+            // start() can fail after marking itself active (e.g. storage writes); roll
+            // back so gated calls reject instead of using an unsaved in-memory store.
+            demoStore.stop()
+            failDemoActivation()
             setError("Demo storage is unavailable. Allow browser storage or turn Demo Mode off.")
           }
         })
         .catch(() => {
-          if (current) setError("Demo Mode could not load. Check your connection and try again.")
+          clearTimeout(timeout)
+          fail("Demo Mode could not load. Check your connection and try again.")
         })
     } else loadedStore?.demoStore.stop()
     if (clearStaleSession) {
@@ -77,10 +105,11 @@ export function DemoDataProvider({
     window.addEventListener("storage", sync)
     return () => {
       current = false
+      clearTimeout(timeout)
       unsubscribe()
       window.removeEventListener("storage", sync)
     }
-  }, [allowed, enabled, clearStaleSession, cleanupRetry, template])
+  }, [allowed, enabled, clearStaleSession, cleanupRetry, loadRetry, template])
   async function toggleDemo() {
     try {
       const response = await fetch("/api/demo", {
@@ -98,7 +127,10 @@ export function DemoDataProvider({
         }
         throw new Error(reasons[result?.reason] || "Demo mode could not be changed. Check your access and try again.")
       }
-      if (enabled) loadedStore?.demoStore.stop()
+      if (enabled) {
+        setDemoRequested(false)
+        loadedStore?.demoStore.stop()
+      }
       try {
         localStorage.setItem("outclass.demo-mode-change", String(Date.now()))
       } catch {
@@ -177,6 +209,11 @@ export function DemoDataProvider({
           <button onClick={() => clearStaleSession ? setCleanupRetry(value => value + 1) : void toggleDemo()} className="ml-4 underline">
             {enabled ? "Exit demo" : "Try again"}
           </button>
+          {loadFailed && (
+            <button onClick={() => { setError(""); setLoadFailed(false); setLoadRetry(value => value + 1) }} className="ml-4 underline">
+              Try again
+            </button>
+          )}
         </div>
       )}
       {ready && (!enabled || state) ? (

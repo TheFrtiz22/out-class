@@ -9,14 +9,16 @@ import { onboardingFocus } from "@/lib/onboarding-presentation";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Panel } from "@/components/ui/panel";
+import { NativeSelect } from "@/components/ui/native-select"
 
 export function PlatformOrganizationOnboarding({ onCreated }: { onCreated: () => void }) {
   const [open, setOpen] = useState(false), [busy, setBusy] = useState(false);
   return <>
-    <section className="oc-content-panel flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+    <Panel as="section" className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
       <div className="min-w-0"><h2 className="oc-section-heading ">Onboard an organization</h2><p className="mt-1 text-sm text-muted-foreground">Create its listing and designate the initial president as owner.</p></div>
       <Button className="h-auto min-h-11 whitespace-normal text-center sm:max-w-72" type="button" onClick={() => setOpen(true)}>Create organization &amp; invite president</Button>
-    </section>
+    </Panel>
     <Dialog open={open} onOpenChange={next => { if (!busy) setOpen(next); }}>
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-xl" onEscapeKeyDown={event => { if (busy) event.preventDefault(); }} onPointerDownOutside={event => { if (busy) event.preventDefault(); }}>
         <DialogHeader><DialogTitle>Create organization &amp; invite president</DialogTitle><DialogDescription>The president receives owner access after accepting with their verified university identity.</DialogDescription></DialogHeader>
@@ -40,7 +42,7 @@ export function OrganizationOnboardingForm({ onCreated, onClose, onBusy }: { onC
     getOrganizationOnboardingSchools().then(options => {
       if (!current) return;
       setSchools(options); setSchoolId(options[0]?.identifierTypeId || "");
-      if (!options.length) setLoadError("No schools are configured for president invitations.");
+      if (!options.length) setLoadError("No schools are ready for president invitations yet.");
     }).catch(() => { if (current) setLoadError("Could not load schools. Verify administrator access and retry."); })
       .finally(() => { if (current) setLoading(false); });
     return () => { current = false; };
@@ -85,10 +87,10 @@ export function OrganizationOnboardingForm({ onCreated, onClose, onBusy }: { onC
     {loadError && <p role="alert" className="text-sm text-destructive">{loadError} <Button type="button" variant="outline" disabled={loading} onClick={() => setLoadVersion(version => version + 1)}>Retry schools</Button></p>}
     <fieldset disabled={busy || loading || !!loadError} className="space-y-4">
       <label className="block space-y-2 text-sm font-medium">School
-        <select value={schoolId} onChange={event => setSchoolId(event.target.value)} className="mt-1 block min-h-11 w-full rounded-md border border-input bg-card px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring" required {...errorProps("identifierTypeId")}>
+        <NativeSelect value={schoolId} onChange={event => setSchoolId(event.target.value)} className="mt-1 block min-h-11 w-full rounded-md border border-input bg-card px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring" required {...errorProps("identifierTypeId")}>
           {!schools.length && <option value="">Choose a school</option>}
           {schools.map(school => <option key={school.identifierTypeId} value={school.identifierTypeId}>{school.schoolName}{schools.filter(other => other.schoolName === school.schoolName).length > 1 ? ` · ${school.identifierLabel}` : ""}</option>)}
-        </select>{errorsFor("identifierTypeId")}
+        </NativeSelect>{errorsFor("identifierTypeId")}
       </label>
       <label className="block space-y-2 text-sm font-medium">Organization name<Input className="font-normal" name="organizationName" placeholder="Madison Investment Fund" minLength={2} maxLength={150} required {...errorProps("organizationName")} />{errorsFor("organizationName")}</label>
       <label className="block space-y-2 text-sm font-medium">President name<Input className="font-normal" name="presidentName" placeholder="John Smith" autoComplete="name" minLength={2} maxLength={150} required {...errorProps("presidentName")} />{errorsFor("presidentName")}</label>

@@ -9,3 +9,6 @@
   .oc-welcome-text { animation: oc-welcome-opacity 180ms ease-out; }
   @keyframes oc-welcome-opacity { from { opacity: .85; } to { opacity: 1; } }
 }
+.oc-page-title-row { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .9rem; }
+.oc-page-title-row > h1 { min-width: 0; }
+.oc-page-title-row > .oc-command-status { padding: .2rem .6rem; border: 1px solid var(--border); border-radius: 999px; color: var(--muted-foreground); white-space: nowrap; }

@@ -11,7 +11,7 @@ export function RecruitmentOffer({application:app,onChanged,onMyClubs}:{applicat
  async function respond(response:"ACCEPT"|"DECLINE"){
   if(busy)return;setBusy(true);setMessage("");
   try{const result=await respondToOffer(app.id,response);if(result.status==="INACTIVE_MEMBERSHIP"){setMessage("Your membership is inactive. Contact an organization owner about reinstatement; this offer cannot restore access.");return;}await refreshUser();onChanged();}
-  catch{setMessage("Your response could not be saved. Refresh your status and try again.");}
+  catch{setMessage("Your response could not be saved. Try again.");}
   finally{setBusy(false);}
  }
  return <section className="mt-4 rounded-lg border bg-background p-4" aria-label="Club offer">

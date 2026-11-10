@@ -81,7 +81,7 @@ export function PublicNavigation({ hero = false, journey, navigationRef }: {
         <div className="oc-public-nav-row">
           <Link prefetch={false} className="oc-public-logo" href="/" aria-label="OutClass home" onClick={close}>
             <span className="oc-public-logo-light"><OutClassLogo variant="light" /></span>
-            <span className="oc-public-logo-dark" aria-hidden="true"><OutClassLogo variant="dark" /></span>
+            {hero && <span className="oc-public-logo-ivory" aria-hidden="true"><OutClassLogo variant="dark" /></span>}
           </Link>
           {journey && <div className="oc-public-journey oc-public-journey-desktop" inert={!journey.merged} aria-hidden={!journey.merged}>
             <PerspectiveSwitcher compact perspective={journey.perspective} onChange={journey.onChange} />

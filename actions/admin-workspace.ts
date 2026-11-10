@@ -21,7 +21,7 @@ const uuid = z.string().uuid();
 const statuses = z.enum(["OPEN", "INVESTIGATING", "RESOLVED", "DISMISSED"]);
 function adminAuth() {
   const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!secret) throw Error("Account invitations are not configured.");
+  if (!secret) throw Error("Account invitations are unavailable right now. Try again later.");
   return providerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, secret, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 export async function getAdminOverview() {
@@ -116,7 +116,7 @@ export async function createAdminStudent(input: unknown) {
   if (await prisma.user.findFirst({ where: { email: { equals: d.email, mode: "insensitive" } } })) throw Error("An account already exists. Inspect it in Users before resending an invitation.");
   const relationship = d.clubId ? await prisma.club.findUniqueOrThrow({ where: { id: d.clubId }, include: { school: { include: { identifierTypes: true } } } }) : null;
   const relationshipType = relationship?.school.identifierTypes.find(t => t.verification === "EMAIL_LOCAL_PART" && t.emailDomain === "virginia.edu");
-  if (relationship && (!relationshipType || !relationship.school.active || relationship.suspendedAt)) throw Error("Choose an active club configured for UVA invitations.");
+  if (relationship && (!relationshipType || !relationship.school.active || relationship.suspendedAt)) throw Error("Choose an active UVA club that can receive invitations.");
   const client = adminAuth();
   // Auth owns expiry and single use. The audit fingerprint binds the issued
   // capability to this account before verification can consume it.

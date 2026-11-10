@@ -73,7 +73,7 @@ export function votingRuleExamples(rule:ThresholdRule,eligible:number){
   return casts.map(ex);
 }
 export function ruleResultSummary(r:RuleResult,rule:ThresholdRule){
-  if(r.noResult==="NO_ELIGIBLE_VOTERS")return "No eligible voters remain for this ballot. Decide explicitly with a reason.";
+  if(r.noResult==="NO_ELIGIBLE_VOTERS")return "No voters are left for this ballot. Decide directly and give a reason.";
   if(r.noResult)return `No automatic result: ${plural(r.cast,"ballot")} cast, at least ${r.requiredParticipation} required. Nobody is rejected automatically.`;
   const base=rule.denominator==="BALLOTS_CAST"?`${plural(r.cast,"ballot")} cast`:`${plural(r.eligible,"eligible voter")}`;
   return `${plural(r.passVotes,"Pass vote")} of ${base}; ${r.requiredPass} needed (${frac(rule.threshold)}).`;
