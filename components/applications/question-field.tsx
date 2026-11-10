@@ -1,6 +1,7 @@
 "use client";
 import { NativeSelect } from "@/components/ui/native-select"
-import type { ApplicationQuestion } from "@/lib/student-applications";
+import { encodeSelections, selectedOptions, type ApplicationQuestion } from "@/lib/student-applications";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 export function QuestionField({
@@ -35,6 +36,27 @@ export function QuestionField({
         placeholder="Take your time. Write in your own voice."
       />
     );
+  if (question.type === "MULTI_SELECT" && question.options?.length) {
+    const chosen = selectedOptions(question, value);
+    return (
+      <fieldset id={props.id} aria-describedby={props["aria-describedby"]} aria-invalid={props["aria-invalid"]} disabled={disabled} className="space-y-2" tabIndex={-1}>
+        <legend className="sr-only">Select all that apply</legend>
+        {question.options.map((option) => (
+          <label key={option} className="flex min-h-11 items-center gap-3 rounded-md border px-4 py-2 text-sm">
+            <Checkbox
+              checked={chosen.includes(option)}
+              onCheckedChange={(checked) => {
+                // Keep the club's option order regardless of click order.
+                const next = question.options!.filter((item) => item === option ? checked === true : chosen.includes(item));
+                onChange(encodeSelections(next));
+              }}
+            />
+            {option}
+          </label>
+        ))}
+      </fieldset>
+    );
+  }
   if (question.type === "MULTIPLE_CHOICE" && question.options?.length)
     return (
       <NativeSelect

@@ -1,1 +1,5 @@
 *.pdf binary
+# Migration SQL is checksummed by Prisma and stored verbatim in function bodies: always LF.
+prisma/migrations/**/*.sql text eol=lf
+scripts/db/*.sql text eol=lf
+supabase/*.sql text eol=lf

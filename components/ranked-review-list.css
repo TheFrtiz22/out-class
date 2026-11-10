@@ -16,8 +16,8 @@
 .oc-ranked-tied { font-size: .6875rem; font-weight: 500; color: var(--muted-foreground); }
 .oc-ranked-score { display: grid; justify-items: end; font-variant-numeric: tabular-nums; text-align: right; }
 .oc-ranked-hidden { display: inline-flex; align-items: center; gap: 4px; font-size: .75rem; color: var(--muted-foreground); }
-.oc-ranked-band { display: inline-flex; align-items: center; gap: 6px; padding: 1px 8px; border-radius: 999px; font-size: .75rem; font-weight: 500; color: var(--foreground); border: 1px solid transparent; }
-.oc-ranked-band::before { content: ""; width: 8px; height: 8px; border-radius: 999px; }
+.oc-ranked-band { display: inline-flex; align-items: center; gap: 6px; padding: 1px 8px; border-radius: var(--oc-radius-full); font-size: .75rem; font-weight: 500; color: var(--foreground); border: 1px solid transparent; }
+.oc-ranked-band::before { content: ""; width: 8px; height: 8px; border-radius: var(--oc-radius-full); }
 .oc-ranked-band[data-band="green"] { background: color-mix(in oklab, var(--oc-band-green) 16%, transparent); border-color: color-mix(in oklab, var(--oc-band-green) 45%, transparent); }
 .oc-ranked-band[data-band="green"]::before { background: var(--oc-band-green); }
 .oc-ranked-band[data-band="yellow"] { background: color-mix(in oklab, var(--oc-band-yellow) 18%, transparent); border-color: color-mix(in oklab, var(--oc-band-yellow) 45%, transparent); }

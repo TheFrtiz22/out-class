@@ -178,6 +178,7 @@ test('personal welcome uses current authenticated applications, neutral loading 
     '@/contexts/auth-context': { useAuth: () => auth },
     '@/lib/application-state': { useApplicationState: () => state },
     '@/hooks/use-welcome-clock': { useWelcomeClock: () => now },
+    '@/hooks/use-suggested-clubs': { useSuggestedClubs: () => ({ suggestions: [], hasSignal: false }) },
   }
   // Unrelated content uses element sentinels; the actual welcome logic is evaluated below.
   for (const name of [...fs.readFileSync('components/views/student-dashboard-view.tsx', 'utf8').matchAll(/from "(@\/components\/[^"]+)"/g)].map(m => m[1])) mocks[name] = new Proxy({}, { get: (_, key) => key })

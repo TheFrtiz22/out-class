@@ -71,6 +71,12 @@ test("no stylesheet outside tokens.css hard-codes the brand navy or orange", () 
   assert.deepEqual(offenders, [], "use var(--school-…) or the semantic tokens")
 })
 
+test("only the token layer defines the ring: no page or section redefines --ring (owner decision 2026-11-09)", () => {
+  const files = execSync("git ls-files '*.css'", { encoding: "utf8" }).split("\n").filter(file => file && file !== "styles/tokens.css")
+  const redefined = files.filter(file => /(?<![-\w])--ring\s*:/.test(fs.readFileSync(file, "utf8").replace(/\/\*[\s\S]*?\*\//g, "")))
+  assert.deepEqual(redefined, [], "--ring is set once in styles/tokens.css (and [data-school] overrides there)")
+})
+
 test("every focus outline uses the one ring (forced-colors system colours excepted)", () => {
   const files = execSync("git ls-files '*.css'", { encoding: "utf8" }).split("\n").filter(file => file && file !== "styles/tokens.css")
   const system = /\b(Highlight|CanvasText|ButtonText|LinkText|Canvas|ButtonFace|transparent|currentColor|inherit|none)\b/

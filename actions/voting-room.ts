@@ -145,7 +145,7 @@ async function readLivePresentation(input:unknown) {
   // The canonical display action independently rechecks session/current candidate,
   // cycle, anonymity, field and submitted-feedback permissions in its transaction.
   const display=await getApplicantDisplay({clubId:d.clubId,sessionId:d.sessionId,applicationId:d.applicationId}),{user}=await requireClubPermission(d.clubId,["applications.review"]);
-  return prisma.$transaction(async tx=>{
+  const result=await prisma.$transaction(async tx=>{
     const m=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review"],{readOnly:true});
     const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId);const role=roomAuthority(s,m,round.anonymousReview);
     const app=await tx.application.findFirst({where:{id:d.applicationId,clubId:d.clubId,roundId:s.roundId,recruitmentCycleId:s.cycleId,status:{not:"DRAFTING"}}});
@@ -159,8 +159,12 @@ async function readLivePresentation(input:unknown) {
     // Preparation preview shows the leader's unlocked working copy; everyone else sees the locked pass copy.
     if(d.preparation)requireRoomLeader(s,m,"decisions.manage");
     const prepared=await presentedSlideHighlights(tx,s,app.id,user.id,display.anonymous,!!d.preparation);
-    return {...selectedDisplay,...evidence,...highlight,...observations,...prepared,requestedFields:[...selectedDisplay.visible,...("resumeHighlight"in highlight?["resumeHighlight" as const]:[]),...(evidence.interviewScore?["interviewScore" as const]:[]),...(evidence.finalInterviewThoughts?["finalInterviewThoughts" as const]:[]),...(observations.additionalObservations?['additionalObservations' as const]:[])]};
+    return {access:accessFingerprint(m),presentation:{...selectedDisplay,...evidence,...highlight,...observations,...prepared,requestedFields:[...selectedDisplay.visible,...("resumeHighlight"in highlight?["resumeHighlight" as const]:[]),...(evidence.interviewScore?["interviewScore" as const]:[]),...(evidence.finalInterviewThoughts?["finalInterviewThoughts" as const]:[]),...(observations.additionalObservations?['additionalObservations' as const]:[])]}};
   },votingReadLimits);
+  // Same post-read re-check as the room read: evidence computed under since-revoked access is never returned.
+  const {membership}=await requireClubPermission(d.clubId,["applications.review"]);
+  if(result.access!==accessFingerprint(membership))throw Error("Voting permissions changed. Reconnect to the room.");
+  return result.presentation;
 }
 
 export async function castLiveVotingBallot(input:unknown) {
@@ -282,14 +286,19 @@ export async function commandLiveVotingRoom(input:unknown) {
       case "DECIDE_WITHOUT_VOTE_AND_ADVANCE": {
         // Explicit leader decision without a vote. No ballot is created; any ballots
         // already cast are kept, and the outcome is recorded as a leader override that
-        // stays distinct from their totals. Opening/closing happen in this transaction,
-        // so a late ballot finds the instance closed and is refused.
+        // stays distinct from their totals. With no ballot, the instance is confirmed
+        // directly with withoutVote (no invented open time; an open instance keeps its
+        // real openedAt). With ballots, it is closed then confirmed. Either way a late
+        // ballot finds the instance no longer open and is refused.
         if(s.state!=="OPEN"||!current||!["PENDING","OPEN"].includes(current.ballotState)||!d.choice||d.choice==="HOLD"||!d.confirmed||!d.reason)
           throw new RoomConflict("CONFIRMATION_REQUIRED","Confirm Pass or Do not pass without a vote and give a reason.");
-        const now=new Date(),previousState=current.ballotState;
-        if(previousState==="PENDING")await updateEntry({ballotState:"OPEN",openedAt:now});
-        await updateEntry({ballotState:"CLOSED",closedAt:now});
-        await updateEntry({ballotState:"CONFIRMED",confirmedDecision:storedChoice[d.choice],confirmedBy:user.id,confirmedAt:now,override:storedChoice[d.choice],overrideBy:user.id,overrideAt:now});
+        const now=new Date(),previousState=current.ballotState,confirmed={ballotState:"CONFIRMED",confirmedDecision:storedChoice[d.choice],confirmedBy:user.id,confirmedAt:now,override:storedChoice[d.choice],overrideBy:user.id,overrideAt:now};
+        if(!current.ballots.length)await updateEntry({...confirmed,withoutVote:true,...(previousState==="OPEN"?{closedAt:now}:{})});
+        else{
+          if(previousState==="PENDING")await updateEntry({ballotState:"OPEN",openedAt:now});
+          await updateEntry({ballotState:"CLOSED",closedAt:now});
+          await updateEntry(confirmed);
+        }
         overridden=true;overrideAudit={withoutVote:true,previousState,ballotsCast:current.ballots.length};break;
       }
       case "DECIDE_AND_ADVANCE":
@@ -320,7 +329,8 @@ export async function commandLiveVotingRoom(input:unknown) {
         previousDecision=old.confirmedDecision;
         await tx.auditLog.create({data:{actorId:user.id,clubId:s.clubId,targetId:s.id,action:"voting.room.undo_authorized",details:{requestId:d.requestId,applicationId:old.applicationId,passNumber:s.currentPass,revision:s.revision,previousDecision}}});
         await tx.$executeRaw`SELECT set_config('outclass.voting_undo',${d.requestId},true)`;
-        await updateEntry({ballotState:old.withoutVote?"PENDING":"CLOSED",withoutVote:false,confirmedDecision:null,confirmedBy:null,confirmedAt:null,override:null,overrideBy:null,overrideAt:null},old);
+        // Never-opened instances return to PENDING; an instance that was opened returns CLOSED with its times.
+        await updateEntry({ballotState:old.openedAt?"CLOSED":"PENDING",withoutVote:false,confirmedDecision:null,confirmedBy:null,confirmedAt:null,override:null,overrideBy:null,overrideAt:null},old);
         await tx.$executeRaw`SELECT set_config('outclass.voting_undo','',true)`;
         await tx.votingPass.update({where:{sessionId_number:{sessionId:s.id,number:s.currentPass}},data:{state:"OPEN",completedAt:null}});
         Object.assign(patch,{activeApplicationId:old.applicationId,state:"OPEN"});break;

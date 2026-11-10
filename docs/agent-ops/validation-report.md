@@ -2,6 +2,13 @@
 
 Appended by `outclass-release-check`. Newest first.
 
+## 2026-11-09 DB-RECON-1 db/migration-reconciliation (base main 5cbaeb60)
+- Gates: test 1975 total, 1909 pass, 0 fail, 66 skipped (env-gated); test:migrations 73 applied on fresh and legacy, RLS 85 tables, new assertion that `InterviewSlot_clubId_fkey` is validated (fails without the migration); lint 0 errors / 21 warnings; typecheck ok; build ok.
+- Disposable PostgreSQL 16 (loopback, in-container): 72 then 73 migrations from zero on CI-style and Supabase-shaped databases; new migration applied once, repeated as a no-op, and fails cleanly on an orphaned slot (P3009 on the next deploy, documented); production-like ledger (CRLF checksums, zero-step rows) accepted by `migrate status` and `migrate deploy`.
+- Production, read-only catalog queries: 72/72 ledger rows finished, none rolled back; differences listed in `migration-reconciliation-2026-11-09.md`. Nothing written.
+- migration-reviewer: no critical/high; 1 medium fixed (rollback text was wrong about the failed ledger row), 2 low (test assertion added; silent skip when the constraint is absent kept, noted).
+- Environment notes: browser suites ran against the container's Chromium 1243 through a symlink (repo pins 1248). No Docker daemon, so `run-disposable-postgres.cjs`, the pinned Supabase 17 image and the authenticated E2E stack were not run. No PostgreSQL 17 restore rehearsal.
+
 
 2026-11-05 backend/booking-throughput (merge on bd3e12d3) app gates: test 1588/0/58 migrations 67 ok (80 tables RLS) lint ok types ok build ok | integration skips 58 (env-gated e2e/native suites; security suite run separately 11/11, booking+ballot contention 14/0) | agent-hook tests 29/0 | authz-reviewer: no high/medium, LOW-1/LOW-2 fixed before merge
 deploy <pending> | runtime errors <pending> | advisor delta <n/a, no migration> | rollback target: production deploy of bd3e12d3 | verdict <pending>
@@ -128,4 +135,16 @@ disposable stack after fixes: workspace-shell-e2e, header-gap-e2e, overview-view
 2026-11-09 CLUB-SHORTNAME-1: app gates: test 1918/1852/0 fail/66 skipped (env-gated) migrations 72 ok (RLS 85) lint ok types ok build ok | targeted: club-short-name 12/12 (incl. PGlite constraint as non-superuser table owner), club-abbreviation 5/5, admin-clubs 13/13 (new short-name round trip fails without fix), selector/caption/rail/application-writing browser suites pass | real browser (shell fixture, Chromium): desktop MIIx/MII/full name/after-switch; phone mini pill 390/360/320 × 1–3 segments, 0 clipping, 0 overlap, axe (label-content-name-mismatch, target-size, color-contrast) 0
 reviewers: migration-reviewer safe as written (keep single ALTER; deploy order: migration before code); authz-reviewer no bypass, 1 high fixed (admin projection lost shortName) + 1 low fixed (snapshot shim), matrix corrected (1 untested cell: real cross-club membership)
 not run: run-disposable-postgres.cjs (no Docker daemon in this container), authenticated E2E stack
+```
+```
+2026-11-09 RANKED-PERF-1 (Windows, shared node_modules): ranked-review 10/10, ranked-review-actions 6/6, ranked-review-browser 1/1 (alone), ranked-review-performance 3/3, ranked-review-performance-browser 1/1 (alone), voting-target-summary-browser 2/2, voting-navigation 4/4, voting-room-demo 4/4 | loading-experience 10/11 (1 env: `git ls-files '...'` quoting under cmd.exe; changed files checked by hand for static lib/demo imports) | typecheck: only lib/account-data.ts shortName error from the stale shared Prisma client (pre-existing, not regenerated) | eslint changed files 0 errors (1 pre-existing warning) | ui-controls OK | full test, test:migrations, build NOT run
+2026-11-09 SEC-SEARCHPATH-1 (security/function-search-path from main 5cbaeb60): app gates: test 1975/1909/0 fail/66 skipped (env-gated) migrations 73 ok (RLS 85) lint ok types ok | build: CI
+targeted: database-reconciliation 5/5; test:migrations new pin assertion fails without the migration; shadow probe alone fails without it (actual 1, expected 0)
+disposable postgres:16 rehearsal (prod is 17.6): 72 prior migrations -> 49/65 public functions unpinned; non-owner role: exit 0, 49 WARNINGs, 49/65 unchanged; owner x2: exit 0, silent, 0/65; 74 user triggers attached+enabled; owners/secdef unchanged
+production read-only (catalog only): advisor 0/52/43 unchanged; 49 functions owned by postgres, INVOKER, proconfig null; md5(prosrc) = ledger for 42, other 7 equal after stripping CRLF
+reviewers: migration-reviewer nothing blocking; L1 verify advisor after apply, L2 ledger ordering vs #191, L3 try/finally (fixed)
+2026-11-09 EXPLORE-SUGGEST-1 (device Linux VM, macOS node_modules): club-suggestions 4/4 | related unit suites 129/129 (welcome mock added for new hook) | all non-browser unit files 1799 pass / 8 fail env-only (sharp, Prisma query engine, lightningcss native binaries) / 24 skipped | typecheck: only pre-existing lib/account-data.ts shortName (shared Prisma client generated from older schema) | eslint changed files 0 | ui-controls OK
+not run: browser/E2E suites, next build, test:migrations (no linux chromium/native binaries in this shell) — run `pnpm run validate` on the Mac before PR
+2026-11-09 VOTING-WITHOUT-VOTE-1 (Windows, PGlite): new voting-without-vote-flag-migration 1/1 | test:migrations exit 0, 75 migrations | voting-decide-without-vote 7/7, voting-decide-without-vote-sql 1/1, voting-room-migration 1/1, all other non-browser tests/voting-* and tests/live-* pass one file at a time; native suites skipped (no OUTCLASS_SECURITY_TEST_DATABASE_URL) | tsc scoped to changed files 0 errors (full tsc exceeded the 2-minute command limit) | eslint changed files 0 | ui-controls OK
+not run: *-browser suites (each >2 min), next build, full pnpm run test
 ```

@@ -76,7 +76,13 @@ export async function readPlatformResource(
             : f.status === "STUDENT" ? { role: "STUDENT" } : {}),
           ...(dates ? { createdAt: dates } : {}),
         },
-        select: { id: true, email: true, disabledAt: true, createdAt: true },
+        select: {
+          id: true,
+          email: true,
+          disabledAt: true,
+          createdAt: true,
+          studentProfile: { select: { firstName: true, lastName: true } },
+        },
         orderBy: [{ createdAt: "desc" }, { id: "asc" }],
       });
     case "clubs":
