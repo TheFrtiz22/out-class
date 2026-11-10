@@ -19,7 +19,7 @@
 .oc-hero-ctas [data-slot="button"]:active { transform: translateY(0); }
 .oc-hero-demo-link { display: inline-flex; align-items: center; min-height: 44px; font-size: 16px; font-weight: 600; color: var(--hero-ink); text-decoration: underline; text-underline-offset: 5px; text-decoration-color: var(--hero-quiet); }
 .oc-hero-audience { margin: 0; font-size: 14px; color: var(--hero-quiet); }
-.oc-landing .oc-hero-editorial :is(a, button):focus-visible { outline: 2px solid var(--hero-ink); outline-offset: 3px; }
+.oc-landing .oc-hero-editorial :is(a, button):focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
 
 /* Audience switch: light glass track on the photo, ivory pill for the selected audience. */
 .oc-hero-audience-toggle.oc-segmented-control { min-height: 0; border-color: var(--oc-glass-navy-edge); background: var(--oc-glass-navy-hover-tint); box-shadow: var(--oc-glass-navy-highlight); -webkit-backdrop-filter: var(--oc-glass-navy-filter); backdrop-filter: var(--oc-glass-navy-filter); }
@@ -28,8 +28,8 @@
 .oc-hero-audience-toggle.oc-segmented-control .oc-segmented-indicator { border-color: transparent; background: var(--oc-glass-cream); box-shadow: var(--oc-glass-pill-highlight); }
 .oc-hero-audience-toggle.oc-segmented-control[data-sliding="true"][data-measured="true"] button[data-selected] { background: transparent; }
 @media (hover: hover) and (pointer: fine) { .oc-hero-audience-toggle.oc-segmented-control button:not([data-selected]):hover { background: var(--oc-glass-navy-hover-tint); } }
-.oc-landing .oc-hero-audience-toggle button:focus-visible { outline: 2px solid var(--hero-ink); outline-offset: -3px; }
-.oc-landing .oc-hero-audience-toggle button[data-selected]:focus-visible { outline-color: var(--primary); }
+.oc-landing .oc-hero-audience-toggle button:focus-visible { outline: 2px solid var(--ring); outline-offset: -3px; box-shadow: var(--focus-halo-inset-5); }
+.oc-landing .oc-hero-audience-toggle button[data-selected]:focus-visible { outline-color: var(--ring); }
 
 /* Product frame: navy glass around a light screen of static sample data. */
 .oc-hero-frame-area { position: relative; min-width: 0; margin: 0; }
@@ -43,7 +43,7 @@
 .oc-hero-sample { font-size: 12px; white-space: nowrap; }
 .oc-hero-avatar { flex-shrink: 0; border-radius: 999px; object-fit: cover; border: 1px solid var(--border); }
 .oc-hero-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 18px; background: var(--background); }
-.oc-hero-columns:focus-visible { outline: 2px solid var(--primary); outline-offset: -3px; }
+.oc-hero-columns:focus-visible { outline: 2px solid var(--ring); outline-offset: -3px; }
 .oc-hero-column { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .oc-hero-column-title { margin: 0 4px; font-size: 13px; font-weight: 600; color: var(--muted-foreground); }
 .oc-hero-list { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 18px; list-style: none; background: var(--background); }
