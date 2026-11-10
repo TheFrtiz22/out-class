@@ -5,6 +5,7 @@ import { prisma } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
 import { authorizeInterview, interviewActor } from "@/utils/interview-access";
 import { hasPermission } from "@/lib/permissions";
+import { assertNotRecused } from "@/lib/recusal";
 import { interviewScoreSchema } from "@/lib/interview-access";
 import { openInterviewSession, saveInterviewSession } from "@/actions/interview-kits";
 
@@ -18,6 +19,7 @@ export async function submitEvaluation(data: z.infer<typeof evaluateSchema>) {
     const app = await tx.application.findFirst({ where: { id: input.applicationId, clubId: input.clubId, status: { not: "DRAFTING" } }, include: { round: true } });
     if (!app || app.studentId === user.id) throw new Error("Application unavailable.");
     if (!app.round.anonymousReview) return null;
+    await assertNotRecused(tx, app.id, member.id);
     if (!hasPermission(member, "applications.review") || (input.roundId ? input.roundId !== app.roundId : input.roundName !== app.round.name)) throw new Error("Anonymous review unavailable.");
     if (await tx.evaluation.findFirst({ where: { applicationId: app.id, interviewerId: member.id, OR: [{ roundId: null }, { roundId: app.roundId, submittedAt: { not: null } }] } })) throw new Error("Evaluation already submitted or requires historical reconciliation.");
     const key = { applicationId: app.id, interviewerId: member.id, roundId: app.roundId };

@@ -131,8 +131,8 @@ async function ready(url,headers={}){
  const onboardingTests=['tests/onboarding-e2e.test.cjs','tests/student-paths-e2e.test.cjs','tests/focus-frame-e2e.test.cjs','tests/account-data-e2e.test.cjs','tests/session-revocation-e2e.test.cjs','tests/signup-privacy-e2e.test.cjs','tests/student-claim-e2e.test.cjs','tests/share-card-production-e2e.test.cjs'];
  const testFiles=dashboards?['tests/operational-dashboards-e2e.test.cjs']:process.argv.includes('--application-writing')?['tests/application-writing-e2e.test.cjs']:
    process.argv.includes('--a11y')?['tests/accessibility/authenticated.test.cjs']:
-   process.argv.includes('--club-integration')?[...onboardingTests,'tests/settings-navigation-e2e.test.cjs','tests/resume-import-runtime.test.cjs']:
-   process.argv.includes('--settings')?['tests/settings-navigation-e2e.test.cjs',...onboardingTests]:shellSuite?[]:onboardingTests;
+   process.argv.includes('--club-integration')?[...onboardingTests,'tests/settings-navigation-e2e.test.cjs','tests/clock-skew-hydration-e2e.test.cjs','tests/resume-import-runtime.test.cjs']:
+   process.argv.includes('--settings')?['tests/settings-navigation-e2e.test.cjs','tests/clock-skew-hydration-e2e.test.cjs',...onboardingTests]:shellSuite?[]:onboardingTests;
  const result=testFiles.length===0?{status:0}:spawnSync(process.execPath,['--test','--test-concurrency=1',...testFiles],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
  if(result.status!==0)throw Error(`${process.argv.includes('--settings')?'Settings navigation':'Complete onboarding'} E2E failed`);
  if(selectedNavigation){

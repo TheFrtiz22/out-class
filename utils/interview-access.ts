@@ -1,3 +1,4 @@
+import { assertNotRecused } from "@/lib/recusal";
 import { assertClubOperational } from "@/lib/club-suspension";
 import type { AppTransactionClient } from "@/utils/prisma";
 import { interviewCapabilities, type InterviewScope } from "@/lib/interview-access";
@@ -32,6 +33,8 @@ export async function authorizeInterview(tx: AppTransactionClient, scope: Interv
   const anonymous = !!(round?.anonymousReview || currentRound?.anonymousReview);
   if (!app || !round || !currentRound || app.studentId === userId || (anonymous && !(mode === "closingReview" && actor.caps.readClosing)))
     throw new Error("Identified interview unavailable under current privacy settings.");
+  // A member who stepped out because they know this applicant is out of every interview path for them.
+  await assertNotRecused(tx, app.id, actor.member.id);
   const assignment = await tx.interviewPanelAssignment.findUnique({ where: { applicationId_roundId_memberId: { applicationId: app.id, roundId: round.id, memberId: actor.member.id } } });
   const panel = actor.caps.participate && !!assignment && !assignment.revokedAt;
   if (!(panel || (mode === "resume" && actor.caps.moderateResume) || ((mode === "closing" || mode === "closingReview") && actor.caps.readClosing)))

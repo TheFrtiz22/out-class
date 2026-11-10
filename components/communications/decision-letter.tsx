@@ -1,26 +1,66 @@
 'use client';
 import { LoadingState } from "@/components/ui/loading-state"
-import { useCallback,useEffect,useRef,useState } from 'react';
+import { useCallback,useEffect,useId,useRef,useState } from 'react';
 import Link from 'next/link';
 import { ClubLogo } from '@/components/club-logo';
 import { useSearchParams } from 'next/navigation';
 import { getDecisionLetter,respondToOffer,setDecisionNotificationsRead } from '@/lib/workspace-api';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
-import type { LetterContent } from '@/lib/decision-letters';
+import { letterCelebration,type CelebrationKind,type LetterContent } from '@/lib/decision-letters';
+import { PartyPopper,RotateCcw } from '@/components/icons';
+import { Celebration,prefersReducedMotion,useCelebration } from './decision-celebration';
 import './decision-letter.css';
 import { useFocusFrame } from '@/components/shell/focus-frame-context';
 import { PageHeader } from "@/components/ui/page-header";
-export function LetterPaper({content,preview=false,logoSource,marketing}:{content:LetterContent;preview?:boolean;logoSource?:string;marketing?:unknown}) {
- return <article className="decision-paper" aria-label={preview?'Sample decision letter preview':'Formal decision letter'} style={{borderTopColor:content.accent}}>
+const MINOR_WORDS=new Set(['of','the','and','at','for','in','a','an','&']);
+/** Up to three initials for the seal, skipping minor words ("Club of Investing" -> "CI"). */
+export function clubMonogram(name:string){
+ const words=name.split(/\s+/).filter(word=>word&&!MINOR_WORDS.has(word.toLowerCase()));
+ return (words.length?words:[name]).slice(0,3).map(word=>Array.from(word.replace(/[^\p{L}\p{N}]/gu,''))[0]??'').join('').toUpperCase()||'OC';
+}
+/** Embossed seal beside the signature: club initials inside a ring of the club name. Decorative. */
+function LetterSeal({clubName,accent}:{clubName:string;accent:string}){
+ const id=useId().replace(/:/g,'');
+ const ring=`${clubName.length>34?clubName.slice(0,33)+'…':clubName} · Recruitment · `.toUpperCase();
+ return <svg className="decision-seal-mark" viewBox="0 0 120 120" aria-hidden="true" focusable="false" style={{color:accent}}>
+  <defs><path id={`seal-${id}`} d="M60 60 m-43 0 a43 43 0 1 1 86 0 a43 43 0 1 1 -86 0"/></defs>
+  <circle cx="60" cy="60" r="57" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+  <circle cx="60" cy="60" r="52" fill="none" stroke="currentColor" strokeWidth=".75"/>
+  <circle cx="60" cy="60" r="33" fill="none" stroke="currentColor" strokeWidth=".75"/>
+  <text className="decision-seal-ring"><textPath href={`#seal-${id}`} textLength="268" lengthAdjust="spacingAndGlyphs">{ring}</textPath></text>
+  <text x="60" y="60" textAnchor="middle" dominantBaseline="central" className="decision-seal-initials">{clubMonogram(clubName)}</text>
+ </svg>;
+}
+export function LetterPaper({content,preview=false,logoSource,marketing,decision}:{content:LetterContent;preview?:boolean;logoSource?:string;marketing?:unknown;decision?:string}) {
+ const accent=/^#[\da-f]{6}$/i.test(content.accent)?content.accent:undefined;
+ return <article className="decision-paper" data-decision={decision?.toLowerCase()} aria-label={preview?'Sample decision letter preview':'Formal decision letter'} style={accent?{['--letter-accent' as string]:accent}:undefined}>
   {preview&&<p className="decision-preview">PREVIEW · SAMPLE STUDENT · NOT A PUBLISHED DECISION</p>}
-  <header className="decision-masthead">{logoSource&&<ClubLogo logoUrl={logoSource} marketing={marketing} text={content.clubName.slice(0,2)} color={content.accent} alt={`${content.clubName} logo`} size="lg" className="!size-[72px]"/>}<div><p className="decision-eyebrow">{content.clubName}</p><p className="decision-subtitle">Recruitment correspondence</p></div></header>
-  <p className="decision-date">{content.date}</p><h1>{content.title}</h1><p>Dear {content.studentName},</p>
+  <header className="decision-masthead">
+   {logoSource&&<ClubLogo logoUrl={logoSource} marketing={marketing} text={content.clubName.slice(0,2)} color={content.accent} alt={`${content.clubName} logo`} size="lg" className="!size-[72px]"/>}
+   <p className="decision-eyebrow">{content.clubName}</p>
+   <p className="decision-subtitle">Recruitment correspondence</p>
+   <div className="decision-rule" aria-hidden="true"/>
+  </header>
+  <div className="decision-meta"><p className="decision-date">{content.date}</p><p className="decision-recipient"><span className="decision-meta-label">To</span>{content.studentName}</p></div>
+  <h1>{content.title}</h1>
+  <p className="decision-salutation">Dear {content.studentName},</p>
   <div className="decision-prose">{content.body.split(/\n\s*\n/).map((paragraph,i)=><p key={i}>{paragraph}</p>)}</div>
-  <div className="decision-signature"><p>{content.closing}</p>{content.signer&&<p className="decision-signer">{content.signer}</p>}</div>
+  <div className="decision-close">
+   <div className="decision-signature"><p>{content.closing}</p><div className="decision-signature-line" aria-hidden="true"/>{content.signer&&<p className="decision-signer">{content.signer}</p>}</div>
+   <LetterSeal clubName={content.clubName} accent={accent??'var(--primary)'}/>
+  </div>
   {content.footer&&<p className="decision-footer">{content.footer}</p>}
   <footer className="decision-seal">Delivered securely through OutClass</footer>
  </article>;
+}
+/** Shown above an acceptance: a warm headline and a control to replay the club's celebration. */
+export function AcceptanceBanner({firstName,clubName,kind,onCelebrate}:{firstName:string;clubName:string;kind:CelebrationKind;onCelebrate:()=>void}){
+ return <section className="decision-celebrate-banner" aria-label="Congratulations">
+  <PartyPopper aria-hidden="true" className="decision-celebrate-icon"/>
+  <div className="decision-celebrate-copy"><p className="decision-celebrate-title">Congratulations, {firstName}!</p><p className="decision-celebrate-text">{clubName} would love to have you. Read your letter, then respond below.</p></div>
+  {kind!=='none'&&<Button variant="outline" onClick={onCelebrate}><RotateCcw aria-hidden="true"/>Celebrate again</Button>}
+ </section>;
 }
 export function DecisionLetterView({applicationId}:{applicationId:string}) {
  const [data,setData]=useState<Awaited<ReturnType<typeof getDecisionLetter>>|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState(''),[busy,setBusy]=useState(false);
@@ -29,6 +69,7 @@ export function DecisionLetterView({applicationId}:{applicationId:string}) {
  const requestVersion=useRef(0);
  const letterId=useSearchParams().get('letterId')??undefined;
  const letter=data?.letter?.content;
+ const celebration=useCelebration(),playCelebration=celebration.play,autoPlayed=useRef<string|null>(null);
  useFocusFrame({exitHref:'/applications/status',club:letter?{name:letter.clubName,color:letter.accent}:null});
  const load=useCallback(async()=>{
   const version=++requestVersion.current;
@@ -45,11 +86,23 @@ export function DecisionLetterView({applicationId}:{applicationId:string}) {
  },[applicationId,letterId]);
  useEffect(()=>{setData(null);setLoading(true);void load();const version=requestVersion.current;return()=>{if(requestVersion.current===version)requestVersion.current=version+1}},[load,recipientId]);
  useEffect(()=>{if(!data)return;const timer=setInterval(()=>setData({...data}),60000);return()=>clearInterval(timer)},[data]);
+ const kind:CelebrationKind=data?.letter?letterCelebration(data.letter.decision,data.letter.content):'none';
+ // Celebrate only a current, live acceptance: never a historical, declined, revoked or expired offer.
+ const celebratory=!!data?.letter&&data.letter.decision==='ACCEPTED'&&data.isCurrent&&data.currentStatus==='ACCEPTED'&&!data.suspended&&!['DECLINED','REVOKED','EXPIRED'].includes(data.offer?.status??'')&&!(data.offer?.status==='PENDING'&&new Date(data.offer.expiresAt)<=new Date());
+ const celebrationLetterId=celebratory?data?.letter?.id:undefined;
+ useEffect(()=>{
+  if(!celebrationLetterId||kind==='none'||autoPlayed.current===celebrationLetterId||prefersReducedMotion())return;
+  autoPlayed.current=celebrationLetterId;
+  const key=`outclass:celebrated:${celebrationLetterId}`;
+  try{if(window.localStorage.getItem(key))return;window.localStorage.setItem(key,'1');}catch{/* Storage may be unavailable; celebrate anyway. */}
+  playCelebration();
+ },[celebrationLetterId,kind,playCelebration]);
  async function respond(response:'ACCEPT'|'DECLINE'){
   if(busy)return;setBusy(true);setError('');
   try{
    const result=await respondToOffer(applicationId,response);
    await load();
+   if(response==='ACCEPT'&&result.status!=='INACTIVE_MEMBERSHIP'&&kind!=='none')celebration.play();
    if(result.status==='INACTIVE_MEMBERSHIP')setError('Your membership is inactive. Contact the club about reinstatement.');
    else{try{await refreshUser()}catch{setError('Your response was recorded. Reload My Clubs to refresh membership access.');}}
    window.dispatchEvent(new Event('outclass:communications-changed'));
@@ -61,7 +114,9 @@ export function DecisionLetterView({applicationId}:{applicationId:string}) {
  const active=data.isCurrent&&data.currentStatus==='ACCEPTED'&&(!data.letter||data.letter.decision==='ACCEPTED')&&!data.suspended&&data.offer?.status==='PENDING'&&new Date(data.offer.expiresAt)>new Date();
  const offer=data.offer;
  return <div className="decision-layout"><nav className="decision-controls" aria-label="Letter actions"><Button variant="outline" disabled={!data.letter} onClick={()=>window.print()}>Print letter</Button></nav>
-  {data.letter ? <LetterPaper marketing={data.marketing} content={data.letter.content} logoSource={data.letter.content.logoReference?`/api/decision-letter-assets?applicationId=${encodeURIComponent(applicationId)}&letterId=${encodeURIComponent(data.letter.id)}`:undefined}/> : <article className="decision-paper"><h1>Your decision</h1><p>Your application is {data.currentStatus.toLowerCase()}. A formal letter was not issued for this decision.</p></article>}
+  {celebratory&&data.letter&&<AcceptanceBanner firstName={data.letter.content.studentName.split(/\s+/)[0]||data.letter.content.studentName} clubName={data.letter.content.clubName} kind={kind} onCelebrate={celebration.play}/>}
+  {celebratory&&data.letter&&<Celebration kind={kind} accent={data.letter.content.accent} run={celebration.run}/>}
+  {data.letter ? <LetterPaper decision={data.letter.decision} marketing={data.marketing} content={data.letter.content} logoSource={data.letter.content.logoReference?`/api/decision-letter-assets?applicationId=${encodeURIComponent(applicationId)}&letterId=${encodeURIComponent(data.letter.id)}`:undefined}/> : <article className="decision-paper"><h1>Your decision</h1><p>Your application is {data.currentStatus.toLowerCase()}. A formal letter was not issued for this decision.</p></article>}
   {((!data.letter||data.letter.decision==='ACCEPTED')||!data.isCurrent||data.suspended||offer?.status==='ACCEPTED'||error)&&<section className="decision-controls decision-response" aria-label="Decision next steps">
    {!data.isCurrent&&<p>This is a historical letter. Your current decision is {data.currentStatus.toLowerCase()}. Offer controls reflect your current record.</p>}
    {data.suspended&&<p>This club is suspended. Offer responses are currently unavailable.</p>}

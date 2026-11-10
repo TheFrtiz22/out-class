@@ -1,4 +1,4 @@
-import { useRef, type FormEvent } from "react"
+import { useRef, type FormEvent, type ReactNode } from "react"
 import { ChevronDown } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -24,6 +24,8 @@ type LoginAuthPanelProps = EmailLoginFormProps & {
   onDifferentEmail: () => void
   onBack: () => void
   onCreateAccount?: () => void
+  /** Bot check shared by password sign-in and code requests. */
+  security?: ReactNode
 }
 
 export function LoginAuthPanel(props: LoginAuthPanelProps) {
@@ -57,6 +59,7 @@ export function LoginAuthPanel(props: LoginAuthPanelProps) {
             <div className="oc-login-verify-actions"><Button type="button" variant="link" className="h-auto min-h-11 px-0 text-sm" onClick={onRequestCode} disabled={loading || resendSeconds > 0}>{resendSeconds > 0 ? `Resend in ${resendSeconds}s` : "Resend code"}</Button><Button type="button" variant="link" className="h-auto min-h-11 px-0 text-sm" disabled={loading} onClick={onDifferentEmail}>Use a different email</Button></div>
           </form>
         )}
+        {props.security}
         {error && <p id="auth-error" role="alert" className="oc-login-error">{error}</p>}
         {onCreateAccount && <p className="oc-login-create">New to OutClass? <Button type="button" variant="link" onClick={onCreateAccount} className="h-auto min-h-11 gap-1.5 px-0 text-sm font-semibold">Create your profile</Button></p>}
       </div>
