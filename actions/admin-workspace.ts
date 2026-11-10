@@ -16,6 +16,7 @@ import { studentInvitationFingerprint } from "@/lib/student-invitation";
 import { enqueueInvitationEmail } from "@/utils/invitation-delivery";
 import { scheduleInvitationDelivery } from "@/utils/invitation-background";
 import { createIdentityInvitationInTransaction } from "@/utils/club-onboarding";
+import { boundedParse } from "@/lib/bounded-input";
 const reasonSchema = z.string().trim().min(10).max(1000);
 const uuid = z.string().uuid();
 const statuses = z.enum(["OPEN", "INVESTIGATING", "RESOLVED", "DISMISSED"]);
@@ -153,7 +154,7 @@ export async function resendAdminStudentInvitation(userId: string, reason: strin
 }
 export async function createAdminClub(input: unknown) {
   await requirePlatformAdmin({ fresh: true });
-  const d = z.object({ organization: z.object({ requestId: uuid, identifierTypeId: z.string().min(1), organizationName: z.string(), presidentName: z.string(), presidentIdentifier: z.string(), presidentYear: z.string(), reason: reasonSchema }), leaderEmail: z.string().trim().toLowerCase().email(), description: z.string().trim().max(2000), category: z.string().trim().min(1).max(100), organizationInfo: z.string().trim().max(2000).default(""), additionalLeaders: z.array(z.object({ email: z.string().trim().toLowerCase().email(), name: z.string().min(1).max(200) })).max(10).default([]) }).strict().parse(input);
+  const d = boundedParse(z.object({ organization: z.object({ requestId: uuid, identifierTypeId: z.string().min(1), organizationName: z.string(), presidentName: z.string(), presidentIdentifier: z.string(), presidentYear: z.string(), reason: reasonSchema }), leaderEmail: z.string().trim().toLowerCase().email(), description: z.string().trim().max(2000), category: z.string().trim().min(1).max(100), organizationInfo: z.string().trim().max(2000).default(""), additionalLeaders: z.array(z.object({ email: z.string().trim().toLowerCase().email(), name: z.string().min(1).max(200) })).max(10).default([]) }).strict(), input);
   invitationEmailConfig();
   const mapping = await prisma.schoolIdentifierType.findUniqueOrThrow({ where: { id: d.organization.identifierTypeId } });
   const addresses = [d.leaderEmail, ...d.additionalLeaders.map(l => l.email)];

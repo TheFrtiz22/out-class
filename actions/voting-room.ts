@@ -21,6 +21,7 @@ import {votingDiscussion} from '@/utils/voting-discussion';
 import {currentEligibleVoterIds,latestBallotRule,ballotRuleResult,sessionRules} from '@/utils/voting-rules';
 import {describeVotingRules,ruleResultSummary} from '@/lib/voting-rules';
 import {lockPreparedSlides,presentedSlideHighlights} from '@/utils/voting-slide-preparation';
+import { boundedParse } from "@/lib/bounded-input";
 
 class RoomConflict extends Error { constructor(public code:string,message:string){super(message);} }
 async function domainResult<T>(work:()=>Promise<T>) { try { return {ok:true as const,result:await work()}; } catch(e) { if(e instanceof RoomConflict)return {ok:false as const,code:e.code,message:e.message}; throw e; } }
@@ -79,7 +80,7 @@ export async function listLiveVotingRooms(input:unknown) {
 
 /** Caller-generated session UUID is also creation's idempotency key. */
 export async function createLiveVotingRoom(input:unknown) {
-  const d=createRoomSchema.parse(input); [d.applicationIds,d.participantIds,d.leaderMemberIds].forEach(uniqueSelection);
+  const d=boundedParse(createRoomSchema, input); [d.applicationIds,d.participantIds,d.leaderMemberIds].forEach(uniqueSelection);
   const {user}=await requireClubPermission(d.clubId,["applications.review","decisions.manage","decisions.start"]);
   return clubWriteTransaction(async tx=>{
     const actor=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review","decisions.manage","decisions.start"]);

@@ -12,6 +12,7 @@ import { syncBookingPanel } from "@/utils/interview-scheduling-access";
 import { interviewCapabilities } from "@/lib/interview-access";
 import { anonymousApplicantLabel } from "@/lib/anonymous-review";
 import { overlaps } from "@/lib/interview-rooms";
+import { boundedParse } from "@/lib/bounded-input";
 const id=z.string().uuid();
 export async function getInterviewAccessSetup(clubId: string) {
   id.parse(clubId); const { user }=await requireAuth({verifyEmail:true});
@@ -25,7 +26,7 @@ export async function getInterviewAccessSetup(clubId: string) {
   });
 }
 export async function approveInterviewRoomPanel(input: unknown) {
-  const data=roomPanelApprovalSchema.parse(input);const {user}=await requireAuth({verifyEmail:true});
+  const data=boundedParse(roomPanelApprovalSchema, input);const {user}=await requireAuth({verifyEmail:true});
   return prisma.$transaction(async tx=>{
     await lockOperationalClub(tx, data.clubId);
     const {caps}=await interviewActor(tx,data.clubId,user.id);if(!caps.manageGrants)throw Error("Only an owner can approve panel access.");
@@ -49,7 +50,7 @@ export async function approveInterviewRoomPanel(input: unknown) {
   },{isolationLevel:"ReadCommitted"});
 }
 export async function changeInterviewRoomPanel(input: unknown) {
-  const data=roomPanelChangeSchema.parse(input);const {user}=await requireAuth();
+  const data=boundedParse(roomPanelChangeSchema, input);const {user}=await requireAuth();
   return prisma.$transaction(async tx=>{
     await lockOperationalClub(tx, data.clubId);
     const {member}=await interviewActor(tx,data.clubId,user.id);
