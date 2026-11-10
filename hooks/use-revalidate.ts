@@ -44,3 +44,31 @@ export function useRevalidate(reload: () => unknown, options: { events?: string[
     }
   }, [enabled, eventKey, scopeKey, minIntervalMs])
 }
+
+/**
+ * Runs `poll` every `intervalMs` while the tab is visible. A hidden tab stops the timer and makes no
+ * requests; on return it polls once if a full interval has passed (pass `catchUp: false` when
+ * `useRevalidate` already refreshes on return) and resumes. The caller does its own first load.
+ * `whileHidden` keeps polling in a hidden tab: presenter and projector screens are often reported
+ * hidden while covered or shared through Zoom/Meet window sharing. A function is read on every tick.
+ * Returns the cleanup for a `useEffect`.
+ */
+export function pollWhileVisible(poll: () => unknown, intervalMs: number, { catchUp = true, whileHidden = false }: { catchUp?: boolean; whileHidden?: boolean | (() => boolean) } = {}) {
+  if (whileHidden !== false) {
+    const keep = typeof whileHidden === "function" ? whileHidden : () => true
+    const always = window.setInterval(() => { if (document.visibilityState !== "hidden" || keep()) void poll() }, intervalMs)
+    return () => window.clearInterval(always)
+  }
+  let timer: number | undefined, last = Date.now()
+  const run = () => { last = Date.now(); void poll() }
+  const start = () => { if (timer === undefined) timer = window.setInterval(run, intervalMs) }
+  const stop = () => { if (timer !== undefined) { window.clearInterval(timer); timer = undefined } }
+  const changed = () => {
+    if (document.visibilityState === "hidden") { stop(); return }
+    if (catchUp && Date.now() - last >= intervalMs) run()
+    start()
+  }
+  if (document.visibilityState !== "hidden") start()
+  document.addEventListener("visibilitychange", changed)
+  return () => { stop(); document.removeEventListener("visibilitychange", changed) }
+}
