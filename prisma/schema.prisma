@@ -145,6 +145,7 @@ model Club {
   id                  String           @id @default(uuid())
   slug                String           @unique
   name                String
+  shortName           String? // Optional nickname shown in navigation; null falls back to an abbreviation.
   tagline             String
   description         String
   logoUrl             String?
@@ -255,6 +256,7 @@ model PipelineRound {
 
 model ApplicationQuestion {
   order Int @default(0)
+  showIf Json?
   options String[] @default([])
   archivedAt DateTime?
   id        String       @id @default(uuid())
@@ -275,6 +277,7 @@ enum QuestionType {
   ESSAY
   FILE_UPLOAD
   MULTIPLE_CHOICE
+  MULTI_SELECT
 }
 
 model Application {

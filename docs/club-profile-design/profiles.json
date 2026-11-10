@@ -29,7 +29,7 @@
               "title": "Selectivity",
               "kind": "recruitment",
               "visible": true,
-              "body": "VCG publishes a 3% acceptance rate for Spring 2026. This historical figure is club-reported; it is not a forecast for the next cycle.",
+              "body": "VCG publishes a 3% acceptance rate for Spring 2026.",
               "cards": []
             },
             {
@@ -40,17 +40,10 @@
               "cards": []
             },
             {
-              "title": "Documented historical engagements",
+              "title": "Engagements",
               "kind": "impact",
               "visible": true,
-              "body": "Historical clients listed for Spring 2017 include Rhoback, Tom Tom Founders Festival, Osmosis, the Darden iLab and AgroSpheres. A January 2025 client account describes a HiiBo engagement.",
-              "cards": []
-            },
-            {
-              "title": "Recruitment",
-              "kind": "recruitment",
-              "visible": true,
-              "body": "Previously documented spring recruitment. Dates for the next cycle are not yet verified.",
+              "body": "A January 2025 client account describes a HiiBo engagement.",
               "cards": []
             }
           ],
@@ -76,29 +69,20 @@
           "website": "https://vcguva.com/",
           "linkedin": "https://www.linkedin.com/company/virginia-consulting-group",
           "instagram": "",
-          "commitment": "Not publicly published in the sources reviewed.",
-          "eligibility": "Students need not be pre-commerce or major in business, per the legacy club site.",
-          "dues": "Not publicly published in the sources reviewed.",
+          "commitment": "",
+          "eligibility": "Students need not be pre-commerce or major in business.",
+          "dues": "",
           "videoUrl": "",
-          "faqs": [
-            {
-              "question": "When is the next spring application deadline?",
-              "answer": "Upcoming spring dates are not verified. Consult the official recruitment page before relying on a deadline."
-            },
-            {
-              "question": "How do I learn more?",
-              "answer": "Use the official website and links on this profile. An OutClass listing does not mean native applications are open."
-            }
-          ],
+          "faqs": [],
           "features": [],
           "gallery": [],
-          "acceptanceNote": "Spring 2026 · club-reported; official-site index",
-          "acceptanceSource": "https://vcguva.com/",
+          "acceptanceNote": "Spring 2026 · club-reported",
+          "acceptanceSource": "",
           "acceptanceApproximate": false,
-          "outcomesNote": "Club-reported member and alumni destinations; individual outcomes vary. See the official sources below.",
+          "outcomesNote": "",
           "bannerPosition": {
-            "x": 50.0,
-            "y": 50.0
+            "x": 50,
+            "y": 50
           }
         }
       },
@@ -577,13 +561,6 @@
         "marketing": {
           "sections": [
             {
-              "title": "Career outcomes",
-              "kind": "people",
-              "visible": true,
-              "body": "Selected club-reported internship and full-time destinations: McKinsey & Company, Bain & Company, Goldman Sachs, J.P. Morgan, Citadel, Amazon. These are historical destinations, not placement guarantees.",
-              "cards": []
-            },
-            {
               "title": "Programs",
               "kind": "programs",
               "visible": true,
@@ -594,14 +571,7 @@
               "title": "Selected clients / project partners",
               "kind": "impact",
               "visible": true,
-              "body": "The club displays past partnerships with Habitat for Humanity, Luce, Give Solar and UVIMCO. McKinsey and Altamont Capital are identified separately as case-competition partners, not consulting clients.",
-              "cards": []
-            },
-            {
-              "title": "Recruitment",
-              "kind": "recruitment",
-              "visible": true,
-              "body": "Previously documented spring recruitment. Dates for the next cycle are not yet verified.",
+              "body": "The club displays past partnerships with Habitat for Humanity, Luce, Give Solar and UVIMCO.",
               "cards": []
             }
           ],
@@ -625,11 +595,11 @@
           ],
           "metrics": [
             {
-              "label": "Projects completed (club website)",
+              "label": "Projects completed",
               "value": "282"
             },
             {
-              "label": "Business partners (club website)",
+              "label": "Business partners",
               "value": "35"
             },
             {
@@ -638,10 +608,6 @@
             }
           ],
           "links": [
-            {
-              "label": "Placement evidence",
-              "url": "https://www.seeduva.com/"
-            },
             {
               "label": "Recruitment",
               "url": "https://www.seeduva.com/interested-student"
@@ -657,27 +623,18 @@
           "instagram": "https://www.instagram.com/seedatuva/",
           "commitment": "Several hours weekly; varies with project and involvement.",
           "eligibility": "UVA students from all majors; no prior business, consulting or case-interview experience required.",
-          "dues": "Not publicly published in the sources reviewed.",
+          "dues": "",
           "videoUrl": "",
-          "faqs": [
-            {
-              "question": "When is the next spring application deadline?",
-              "answer": "Upcoming spring dates are not verified. Consult the official recruitment page before relying on a deadline."
-            },
-            {
-              "question": "How do I learn more?",
-              "answer": "Use the official website and links on this profile. An OutClass listing does not mean native applications are open."
-            }
-          ],
+          "faqs": [],
           "features": [],
           "gallery": [],
-          "acceptanceNote": "No verified club-published rate found",
+          "acceptanceNote": "",
           "acceptanceSource": "",
           "acceptanceApproximate": false,
-          "outcomesNote": "Club-reported member and alumni destinations; individual outcomes vary. See the official sources below.",
+          "outcomesNote": "",
           "bannerPosition": {
-            "x": 50.0,
-            "y": 75.0
+            "x": 50,
+            "y": 75
           }
         }
       },
@@ -1254,14 +1211,7 @@
               "title": "Selected clients / project partners",
               "kind": "impact",
               "visible": true,
-              "body": "The published client page includes Envisage, Promise State, CityStars Traction, Larch Network, Book a Space, Gaviti and Canditech. Current/past labels need final section mapping before individual clients are labelled current.",
-              "cards": []
-            },
-            {
-              "title": "Recruitment",
-              "kind": "recruitment",
-              "visible": true,
-              "body": "Previously documented spring recruitment. Dates for the next cycle are not yet verified.",
+              "body": "The published client page includes Envisage, Promise State, CityStars Traction, Larch Network, Book a Space, Gaviti and Canditech.",
               "cards": []
             }
           ],
@@ -1301,29 +1251,20 @@
           "website": "https://www.uvatamid.org/",
           "linkedin": "https://www.linkedin.com/company/tamid-group-at-uva/",
           "instagram": "https://www.instagram.com/tamidatuva/",
-          "commitment": "Education followed by consulting or fund participation; weekly hours not published.",
-          "eligibility": "See the chapter application page for current student eligibility; no narrower requirement verified.",
-          "dues": "Not publicly published in the sources reviewed.",
+          "commitment": "Education followed by consulting or fund participation.",
+          "eligibility": "",
+          "dues": "",
           "videoUrl": "",
-          "faqs": [
-            {
-              "question": "When is the next spring application deadline?",
-              "answer": "Upcoming spring dates are not verified. Consult the official recruitment page before relying on a deadline."
-            },
-            {
-              "question": "How do I learn more?",
-              "answer": "Use the official website and links on this profile. An OutClass listing does not mean native applications are open."
-            }
-          ],
+          "faqs": [],
           "features": [],
           "gallery": [],
-          "acceptanceNote": "No verified club-published rate found",
+          "acceptanceNote": "",
           "acceptanceSource": "",
           "acceptanceApproximate": false,
-          "outcomesNote": "Club-reported member and alumni destinations; individual outcomes vary. See the official sources below.",
+          "outcomesNote": "",
           "bannerPosition": {
-            "x": 50.0,
-            "y": 50.0
+            "x": 50,
+            "y": 50
           }
         }
       },
@@ -1807,24 +1748,10 @@
         "marketing": {
           "sections": [
             {
-              "title": "Career outcomes",
-              "kind": "people",
-              "visible": true,
-              "body": "Selected club-reported internship and full-time destinations: McKinsey & Company, Bain & Company, Goldman Sachs, J.P. Morgan, Blackstone, Boston Consulting Group. These are historical destinations, not placement guarantees.",
-              "cards": []
-            },
-            {
               "title": "Programs",
               "kind": "programs",
               "visible": true,
               "body": "Members participate in mentoring, resume reviews, mock interviews, career workshops, social traditions and service.",
-              "cards": []
-            },
-            {
-              "title": "Recruitment",
-              "kind": "recruitment",
-              "visible": true,
-              "body": "Previously documented spring recruitment. Dates for the next cycle are not yet verified.",
               "cards": []
             }
           ],
@@ -1860,15 +1787,11 @@
           ],
           "metrics": [
             {
-              "label": "Community (chapter website)",
+              "label": "Community",
               "value": "75+ active brothers"
             }
           ],
           "links": [
-            {
-              "label": "Placement evidence",
-              "url": "https://uvaakpsi.org/about.html"
-            },
             {
               "label": "Rush",
               "url": "https://uvaakpsi.org/rush.html"
@@ -1878,29 +1801,20 @@
           "website": "https://uvaakpsi.org/",
           "linkedin": "",
           "instagram": "",
-          "commitment": "Not publicly published in the sources reviewed.",
-          "eligibility": "UVA students across schools with an interest in business, per the UVA organization listing.",
-          "dues": "Not publicly published in the sources reviewed.",
+          "commitment": "",
+          "eligibility": "UVA students across schools with an interest in business.",
+          "dues": "",
           "videoUrl": "",
-          "faqs": [
-            {
-              "question": "When is the next spring application deadline?",
-              "answer": "Upcoming spring dates are not verified. Consult the official recruitment page before relying on a deadline."
-            },
-            {
-              "question": "How do I learn more?",
-              "answer": "Use the official website and links on this profile. An OutClass listing does not mean native applications are open."
-            }
-          ],
+          "faqs": [],
           "features": [],
           "gallery": [],
-          "acceptanceNote": "No verified club-published rate found",
+          "acceptanceNote": "",
           "acceptanceSource": "",
           "acceptanceApproximate": false,
-          "outcomesNote": "Club-reported member and alumni destinations; individual outcomes vary. See the official sources below.",
+          "outcomesNote": "",
           "bannerPosition": {
-            "x": 50.0,
-            "y": 29.0
+            "x": 50,
+            "y": 29
           }
         }
       },
@@ -2482,7 +2396,7 @@
               "title": "Recruitment",
               "kind": "recruitment",
               "visible": true,
-              "body": "The chapter explicitly recruits once every semester. The published Spring 2024 timeline is historical; upcoming spring dates are not confirmed.",
+              "body": "The chapter explicitly recruits once every semester.",
               "cards": []
             }
           ],
@@ -2508,29 +2422,20 @@
           "website": "https://deltasig-alphaxi.memberplanet.com/",
           "linkedin": "https://www.linkedin.com/company/delta-sigma-pi-alpha-xi",
           "instagram": "https://www.instagram.com/uva_dsp/",
-          "commitment": "Not publicly published in the sources reviewed.",
-          "eligibility": "Confirm current eligible majors and academic requirements with Alpha Xi; national and chapter rules may apply.",
-          "dues": "Not publicly published in the sources reviewed.",
+          "commitment": "",
+          "eligibility": "",
+          "dues": "",
           "videoUrl": "",
-          "faqs": [
-            {
-              "question": "When is the next spring application deadline?",
-              "answer": "Upcoming spring dates are not verified. Consult the official recruitment page before relying on a deadline."
-            },
-            {
-              "question": "How do I learn more?",
-              "answer": "Use the official website and links on this profile. An OutClass listing does not mean native applications are open."
-            }
-          ],
+          "faqs": [],
           "features": [],
           "gallery": [],
-          "acceptanceNote": "No verified club-published rate found",
+          "acceptanceNote": "",
           "acceptanceSource": "",
           "acceptanceApproximate": false,
-          "outcomesNote": "Club-reported member and alumni destinations; individual outcomes vary. See the official sources below.",
+          "outcomesNote": "",
           "bannerPosition": {
-            "x": 50.0,
-            "y": 56.0
+            "x": 50,
+            "y": 56
           }
         }
       },
@@ -2943,7 +2848,7 @@
               "title": "Recruitment",
               "kind": "recruitment",
               "visible": true,
-              "body": "GRC explicitly recruits at the beginning of every fall and spring semester. The current page gives historical Fall 2026 dates; upcoming spring dates are not confirmed.",
+              "body": "GRC explicitly recruits at the beginning of every fall and spring semester.",
               "cards": []
             }
           ],
@@ -2978,29 +2883,20 @@
           "website": "https://uvagrc.com/",
           "linkedin": "",
           "instagram": "https://www.instagram.com/grc.uva/",
-          "commitment": "Not publicly published in the sources reviewed.",
-          "eligibility": "Review chapter application requirements; analytical thinking, teamwork, innovation and commitment are emphasized.",
-          "dues": "Not publicly published in the sources reviewed.",
+          "commitment": "",
+          "eligibility": "Analytical thinking, teamwork, innovation and commitment are emphasized.",
+          "dues": "",
           "videoUrl": "",
-          "faqs": [
-            {
-              "question": "When is the next spring application deadline?",
-              "answer": "Upcoming spring dates are not verified. Consult the official recruitment page before relying on a deadline."
-            },
-            {
-              "question": "How do I learn more?",
-              "answer": "Use the official website and links on this profile. An OutClass listing does not mean native applications are open."
-            }
-          ],
+          "faqs": [],
           "features": [],
           "gallery": [],
-          "acceptanceNote": "No verified club-published rate found",
+          "acceptanceNote": "",
           "acceptanceSource": "",
           "acceptanceApproximate": false,
-          "outcomesNote": "Club-reported member and alumni destinations; individual outcomes vary. See the official sources below.",
+          "outcomesNote": "",
           "bannerPosition": {
-            "x": 50.0,
-            "y": 35.0
+            "x": 50,
+            "y": 35
           }
         }
       },
@@ -3441,13 +3337,6 @@
         "marketing": {
           "sections": [
             {
-              "title": "Career outcomes",
-              "kind": "people",
-              "visible": true,
-              "body": "Selected club-reported internship and full-time destinations: Goldman Sachs, J.P. Morgan, Bain & Company, McKinsey & Company, Morgan Stanley, Evercore. These are historical destinations, not placement guarantees.",
-              "cards": []
-            },
-            {
               "title": "Programs",
               "kind": "programs",
               "visible": true,
@@ -3458,14 +3347,7 @@
               "title": "Recruitment",
               "kind": "recruitment",
               "visible": true,
-              "body": "The education program runs every fall and spring. Upcoming spring dates have not been verified.",
-              "cards": []
-            },
-            {
-              "title": "About these figures",
-              "kind": "about",
-              "visible": true,
-              "body": "The $105K portfolio and employer board are published website claims without a recent valuation date. Destinations include historical internships and full-time roles.",
+              "body": "The education program runs every fall and spring.",
               "cards": []
             }
           ],
@@ -3504,10 +3386,6 @@
           "metrics": [],
           "links": [
             {
-              "label": "Placement evidence",
-              "url": "https://swsatuva.squarespace.com/placements"
-            },
-            {
               "label": "Education program",
               "url": "https://swsatuva.squarespace.com/education-program"
             },
@@ -3525,28 +3403,19 @@
           "linkedin": "https://www.linkedin.com/company/smart-woman-securities-at-uva/",
           "instagram": "https://www.instagram.com/swsatuva/",
           "commitment": "Weekly seminars during the ten-week education series plus an investment project.",
-          "eligibility": "The chapter’s mission focuses on undergraduate women; consult current participation requirements.",
-          "dues": "Not publicly published in the sources reviewed.",
+          "eligibility": "The chapter’s mission focuses on undergraduate women.",
+          "dues": "",
           "videoUrl": "",
-          "faqs": [
-            {
-              "question": "When is the next spring application deadline?",
-              "answer": "Upcoming spring dates are not verified. Consult the official recruitment page before relying on a deadline."
-            },
-            {
-              "question": "How do I learn more?",
-              "answer": "Use the official website and links on this profile. An OutClass listing does not mean native applications are open."
-            }
-          ],
+          "faqs": [],
           "features": [],
           "gallery": [],
-          "acceptanceNote": "No verified club-published rate found",
+          "acceptanceNote": "",
           "acceptanceSource": "",
           "acceptanceApproximate": false,
-          "outcomesNote": "Club-reported member and alumni destinations; individual outcomes vary. See the official sources below.",
+          "outcomesNote": "",
           "bannerPosition": {
-            "x": 50.0,
-            "y": 50.0
+            "x": 50,
+            "y": 50
           }
         }
       },
@@ -4313,31 +4182,10 @@
         "marketing": {
           "sections": [
             {
-              "title": "Career outcomes",
-              "kind": "people",
-              "visible": true,
-              "body": "Selected club-reported internship and full-time destinations: Goldman Sachs, J.P. Morgan, Evercore, Guggenheim Partners, Bain & Company, BlackRock. These are historical destinations, not placement guarantees.",
-              "cards": []
-            },
-            {
               "title": "Programs",
               "kind": "programs",
               "visible": true,
               "body": "A ten-week analyst program covers accounting, DCF, merger and LBO models. Wall Street Workshop adds recruiting practice, networking and mentoring.",
-              "cards": []
-            },
-            {
-              "title": "Recruitment",
-              "kind": "recruitment",
-              "visible": true,
-              "body": "Previously documented spring recruitment. Dates for the next cycle are not yet verified.",
-              "cards": []
-            },
-            {
-              "title": "About these figures",
-              "kind": "about",
-              "visible": true,
-              "body": "The website gives an approximate club acceptance figure without a specified cohort. Employer logos represent reported internship/full-time offers, not guarantees.",
               "cards": []
             }
           ],
@@ -4376,10 +4224,6 @@
           "metrics": [],
           "links": [
             {
-              "label": "Placement evidence",
-              "url": "https://www.frankbatteninvestmentfund.com/placement"
-            },
-            {
               "label": "Training",
               "url": "https://www.frankbatteninvestmentfund.com/training"
             },
@@ -4393,28 +4237,19 @@
           "linkedin": "https://www.linkedin.com/company/fbifatuva/",
           "instagram": "https://www.instagram.com/frankbatteninvestmentfund/",
           "commitment": "Weekly general-body meetings and ten-week new-member training.",
-          "eligibility": "Consult current club recruitment requirements; no all-years or all-majors restriction independently verified.",
-          "dues": "Not publicly published in the sources reviewed.",
+          "eligibility": "",
+          "dues": "",
           "videoUrl": "",
-          "faqs": [
-            {
-              "question": "When is the next spring application deadline?",
-              "answer": "Upcoming spring dates are not verified. Consult the official recruitment page before relying on a deadline."
-            },
-            {
-              "question": "How do I learn more?",
-              "answer": "Use the official website and links on this profile. An OutClass listing does not mean native applications are open."
-            }
-          ],
+          "faqs": [],
           "features": [],
           "gallery": [],
-          "acceptanceNote": "Approximate · cohort not specified",
-          "acceptanceSource": "https://www.frankbatteninvestmentfund.com/",
+          "acceptanceNote": "",
+          "acceptanceSource": "",
           "acceptanceApproximate": true,
-          "outcomesNote": "Club-reported member and alumni destinations; individual outcomes vary. See the official sources below.",
+          "outcomesNote": "",
           "bannerPosition": {
-            "x": 50.0,
-            "y": 50.0
+            "x": 50,
+            "y": 50
           }
         }
       },
@@ -5124,7 +4959,7 @@
               "title": "Recruitment",
               "kind": "recruitment",
               "visible": true,
-              "body": "Spring participation is confirmed by the supplied shortlist. The public organization announcement seeks founding members; upcoming spring application dates are not verified.",
+              "body": "The public organization announcement seeks founding members.",
               "cards": []
             }
           ],
@@ -5154,29 +4989,20 @@
           "website": "https://virginiamagroup.com/",
           "linkedin": "https://www.linkedin.com/company/virginiamag",
           "instagram": "",
-          "commitment": "Not publicly published in the sources reviewed.",
+          "commitment": "",
           "eligibility": "Motivated UVA students; the founding announcement says no prior finance experience required.",
-          "dues": "Not publicly published in the sources reviewed.",
+          "dues": "",
           "videoUrl": "",
-          "faqs": [
-            {
-              "question": "When is the next spring application deadline?",
-              "answer": "Upcoming spring dates are not verified. Consult the official recruitment page before relying on a deadline."
-            },
-            {
-              "question": "How do I learn more?",
-              "answer": "Use the official website and links on this profile. An OutClass listing does not mean native applications are open."
-            }
-          ],
+          "faqs": [],
           "features": [],
           "gallery": [],
-          "acceptanceNote": "No verified club-published rate found",
+          "acceptanceNote": "",
           "acceptanceSource": "",
           "acceptanceApproximate": false,
-          "outcomesNote": "Club-reported member and alumni destinations; individual outcomes vary. See the official sources below.",
+          "outcomesNote": "",
           "bannerPosition": {
-            "x": 50.0,
-            "y": 50.0
+            "x": 50,
+            "y": 50
           }
         }
       },
@@ -5511,7 +5337,7 @@
       "profile": {
         "name": "Profit with Purpose",
         "tagline": "ESG consulting and impact-investing education.",
-        "description": "Profit with Purpose brings students from different majors together for impact-focused consulting with mission-driven organizations. Its site describes a developing impact-investment fund rather than an established published AUM.",
+        "description": "Profit with Purpose brings students from different majors together for impact-focused consulting with mission-driven organizations.",
         "category": "Consulting & Impact Investing",
         "color": "#237B56",
         "logoUrl": null,
@@ -5520,13 +5346,6 @@
         "aumValue": null,
         "marketing": {
           "sections": [
-            {
-              "title": "Career outcomes",
-              "kind": "people",
-              "visible": true,
-              "body": "Selected club-reported internship and full-time destinations: Goldman Sachs, JPMorganChase, EY-Parthenon, Rothschild & Co, Oliver Wyman, Oaktree Capital Management. These are historical destinations, not placement guarantees.",
-              "cards": []
-            },
             {
               "title": "Programs",
               "kind": "programs",
@@ -5539,13 +5358,6 @@
               "kind": "impact",
               "visible": true,
               "body": "Published partners include Twende, UVA Student Financial Services, WePlanet, YellowRed, Muyu MilQ and Tofali Zetu. Project examples include WePlanet and Wayflowering (Spring 2025).",
-              "cards": []
-            },
-            {
-              "title": "Recruitment",
-              "kind": "recruitment",
-              "visible": true,
-              "body": "Previously documented spring recruitment. Dates for the next cycle are not yet verified.",
               "cards": []
             }
           ],
@@ -5583,19 +5395,15 @@
           ],
           "metrics": [
             {
-              "label": "Companies (club website)",
+              "label": "Companies",
               "value": "11"
             },
             {
-              "label": "Countries (club website)",
+              "label": "Countries",
               "value": "5"
             }
           ],
           "links": [
-            {
-              "label": "Placement evidence",
-              "url": "https://uvapwp.com/alumni"
-            },
             {
               "label": "Projects",
               "url": "https://uvapwp.com/portfolio"
@@ -5613,29 +5421,20 @@
           "website": "https://uvapwp.com/",
           "linkedin": "https://www.linkedin.com/company/profit-with-purpose-at-uva/",
           "instagram": "https://www.instagram.com/pwpatuva/",
-          "commitment": "Not publicly published in the sources reviewed.",
-          "eligibility": "Students from all years, majors and backgrounds, per recruitment page copy.",
-          "dues": "Not publicly published in the sources reviewed.",
+          "commitment": "",
+          "eligibility": "Students from all years, majors and backgrounds.",
+          "dues": "",
           "videoUrl": "",
-          "faqs": [
-            {
-              "question": "When is the next spring application deadline?",
-              "answer": "Upcoming spring dates are not verified. Consult the official recruitment page before relying on a deadline."
-            },
-            {
-              "question": "How do I learn more?",
-              "answer": "Use the official website and links on this profile. An OutClass listing does not mean native applications are open."
-            }
-          ],
+          "faqs": [],
           "features": [],
           "gallery": [],
-          "acceptanceNote": "No verified club-published rate found",
+          "acceptanceNote": "",
           "acceptanceSource": "",
           "acceptanceApproximate": false,
-          "outcomesNote": "Club-reported member and alumni destinations; individual outcomes vary. See the official sources below.",
+          "outcomesNote": "",
           "bannerPosition": {
-            "x": 50.0,
-            "y": 50.0
+            "x": 50,
+            "y": 50
           }
         }
       },
@@ -6500,31 +6299,10 @@
         "marketing": {
           "sections": [
             {
-              "title": "Career outcomes",
-              "kind": "people",
-              "visible": true,
-              "body": "Selected club-reported internship and full-time destinations: Goldman Sachs, Morgan Stanley, McKinsey & Company, Bain & Company, Citadel, Google. These are historical destinations, not placement guarantees.",
-              "cards": []
-            },
-            {
               "title": "Programs",
               "kind": "programs",
               "visible": true,
               "body": "Members develop investment theses and pitch long/short ideas after a probationary training semester.",
-              "cards": []
-            },
-            {
-              "title": "Recruitment",
-              "kind": "recruitment",
-              "visible": true,
-              "body": "Historical spring participation is documented in member biographies. The current recruiting page is Fall 2026; the next spring schedule remains unverified.",
-              "cards": []
-            },
-            {
-              "title": "About these figures",
-              "kind": "about",
-              "visible": true,
-              "body": "AUM is approximate and website-reported. Employer destinations are historical internships/full-time roles; they are not guaranteed outcomes.",
               "cards": []
             }
           ],
@@ -6566,39 +6344,25 @@
               "value": "Americas · EMEA · APAC"
             }
           ],
-          "links": [
-            {
-              "label": "Placement evidence",
-              "url": "https://gmgatuva.com/placement"
-            }
-          ],
+          "links": [],
           "email": "globalmarketsgroupatuva@gmail.com",
           "website": "https://gmgatuva.com/",
           "linkedin": "https://www.linkedin.com/company/globalmarketsgroup/",
           "instagram": "https://www.instagram.com/gmgatuva/",
-          "commitment": "Probationary training semester; precise weekly hours not published.",
+          "commitment": "Probationary training semester.",
           "eligibility": "No business or investing experience required; curiosity, collaboration and willingness to learn are emphasized.",
-          "dues": "Not publicly published in the sources reviewed.",
+          "dues": "",
           "videoUrl": "",
-          "faqs": [
-            {
-              "question": "When is the next spring application deadline?",
-              "answer": "Upcoming spring dates are not verified. Consult the official recruitment page before relying on a deadline."
-            },
-            {
-              "question": "How do I learn more?",
-              "answer": "Use the official website and links on this profile. An OutClass listing does not mean native applications are open."
-            }
-          ],
+          "faqs": [],
           "features": [],
           "gallery": [],
-          "acceptanceNote": "No verified club-published rate found",
+          "acceptanceNote": "",
           "acceptanceSource": "",
           "acceptanceApproximate": false,
-          "outcomesNote": "Club-reported member and alumni destinations; individual outcomes vary. See the official sources below.",
+          "outcomesNote": "",
           "bannerPosition": {
-            "x": 50.0,
-            "y": 40.0
+            "x": 50,
+            "y": 40
           }
         }
       },
@@ -7320,13 +7084,6 @@
         "marketing": {
           "sections": [
             {
-              "title": "Career outcomes",
-              "kind": "people",
-              "visible": true,
-              "body": "Selected club-reported internship and full-time destinations: Goldman Sachs, J.P. Morgan, Blackstone, McKinsey & Company, Bain & Company, Boston Consulting Group. These are historical destinations, not placement guarantees.",
-              "cards": []
-            },
-            {
               "title": "Programs",
               "kind": "programs",
               "visible": true,
@@ -7334,24 +7091,10 @@
               "cards": []
             },
             {
-              "title": "Published project partners",
+              "title": "Project partners",
               "kind": "impact",
               "visible": true,
-              "body": "The partner page displays CAV Angels, Draper Venture Network, JMI Equity, Stripes and Thomvest. These are project partners, distinct from alumni employers.",
-              "cards": []
-            },
-            {
-              "title": "Recruitment",
-              "kind": "recruitment",
-              "visible": true,
-              "body": "The application page says the club seeks new members each semester, but displays a Fall 2026 timeline. Upcoming spring intake dates remain unverified.",
-              "cards": []
-            },
-            {
-              "title": "About these figures",
-              "kind": "about",
-              "visible": true,
-              "body": "The $50K amount is website-reported. The homepage’s 97% figure concerns McIntire admission, not acceptance into VVF.",
+              "body": "The partner page displays CAV Angels, Draper Venture Network, JMI Equity, Stripes and Thomvest.",
               "cards": []
             }
           ],
@@ -7390,10 +7133,6 @@
           "metrics": [],
           "links": [
             {
-              "label": "Placement evidence",
-              "url": "https://www.virginiaventurefund.com/placements"
-            },
-            {
               "label": "Recruitment",
               "url": "https://www.virginiaventurefund.com/application"
             },
@@ -7410,29 +7149,20 @@
           "website": "https://www.virginiaventurefund.com/",
           "linkedin": "https://www.linkedin.com/company/virginia-venture-fund/",
           "instagram": "https://www.instagram.com/virginiaventurefund/",
-          "commitment": "Semester-long training and partner projects; weekly hours not published.",
-          "eligibility": "Any enrolled UVA undergraduate, per application page.",
-          "dues": "Not publicly published in the sources reviewed.",
+          "commitment": "Semester-long training and partner projects.",
+          "eligibility": "Any enrolled UVA undergraduate.",
+          "dues": "",
           "videoUrl": "",
-          "faqs": [
-            {
-              "question": "When is the next spring application deadline?",
-              "answer": "Upcoming spring dates are not verified. Consult the official recruitment page before relying on a deadline."
-            },
-            {
-              "question": "How do I learn more?",
-              "answer": "Use the official website and links on this profile. An OutClass listing does not mean native applications are open."
-            }
-          ],
+          "faqs": [],
           "features": [],
           "gallery": [],
-          "acceptanceNote": "No verified club-published rate found",
+          "acceptanceNote": "",
           "acceptanceSource": "",
           "acceptanceApproximate": false,
-          "outcomesNote": "Club-reported member and alumni destinations; individual outcomes vary. See the official sources below.",
+          "outcomesNote": "",
           "bannerPosition": {
-            "x": 50.0,
-            "y": 50.0
+            "x": 50,
+            "y": 50
           }
         }
       },
@@ -8182,7 +7912,7 @@
               "title": "Recruitment",
               "kind": "recruitment",
               "visible": true,
-              "body": "Historical UVA mailing-list records show spring intake. The current application sequence has two interviews; upcoming spring dates are unverified.",
+              "body": "The current application sequence has two interviews.",
               "cards": []
             }
           ],
@@ -8203,29 +7933,20 @@
           "website": "https://salesandtradingmcintire.org/",
           "linkedin": "",
           "instagram": "",
-          "commitment": "Weekly educational sessions; additional weekly hours not published.",
-          "eligibility": "Consult current recruiting requirements; curiosity and initiative are emphasized, with some market knowledge expected in interviews.",
-          "dues": "Not publicly published in the sources reviewed.",
+          "commitment": "Weekly educational sessions.",
+          "eligibility": "Curiosity and initiative are emphasized, with some market knowledge expected in interviews.",
+          "dues": "",
           "videoUrl": "",
-          "faqs": [
-            {
-              "question": "When is the next spring application deadline?",
-              "answer": "Upcoming spring dates are not verified. Consult the official recruitment page before relying on a deadline."
-            },
-            {
-              "question": "How do I learn more?",
-              "answer": "Use the official website and links on this profile. An OutClass listing does not mean native applications are open."
-            }
-          ],
+          "faqs": [],
           "features": [],
           "gallery": [],
-          "acceptanceNote": "No verified club-published rate found",
+          "acceptanceNote": "",
           "acceptanceSource": "",
           "acceptanceApproximate": false,
-          "outcomesNote": "Club-reported member and alumni destinations; individual outcomes vary. See the official sources below.",
+          "outcomesNote": "",
           "bannerPosition": {
-            "x": 50.0,
-            "y": 50.0
+            "x": 50,
+            "y": 50
           }
         }
       },

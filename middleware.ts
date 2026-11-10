@@ -2,7 +2,8 @@ import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
 import { DEMO_COOKIE } from '@/lib/demo/access'
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/utils/supabase/middleware'
-import { legacyStudentRedirect, STUDENT_ROUTES } from "@/lib/navigation"
+import { legacyStudentRedirect, STUDENT_ROUTES } from "@/lib/student-routes"
+import { LEGAL_PAGES_PUBLIC } from "@/lib/legal-content"
 
 export async function middleware(request: NextRequest) {
   // Protect both the presenter route and its sample assets before static-file shortcuts.
@@ -21,6 +22,11 @@ export async function middleware(request: NextRequest) {
       return response
     }
   }
+  // Privacy and Terms are not public until the owner turns them on: serve the real 404 page (an
+  // unmatched path), not a streamed 200, and never their titles.
+  if (!LEGAL_PAGES_PUBLIC && (path === "/privacy" || path === "/terms")) {
+    return NextResponse.rewrite(new URL("/__not-public", request.url), { headers: { "X-Robots-Tag": "noindex, nofollow" } })
+  }
   if (path === "/preview" || path.startsWith("/preview/") || path === "/demo" || path.startsWith("/demo/")) {
     if (!["GET", "HEAD"].includes(request.method) || request.cookies.get(DEMO_COOKIE)?.value !== "1" || request.cookies.has(PLATFORM_VIEW_COOKIE)) {
       return new NextResponse(null, { status: 404, headers: { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow" } })
@@ -31,6 +37,8 @@ export async function middleware(request: NextRequest) {
   if (["/api/internal/invitation-delivery", "/api/internal/notification-delivery"].includes(request.nextUrl.pathname)) return NextResponse.next()
   // Metadata routes contain only public content and need no session refresh.
   if (["GET", "HEAD"].includes(request.method) && ["/robots.txt", "/sitemap.xml", "/manifest.webmanifest", "/icon", "/apple-icon"].includes(request.nextUrl.pathname)) return NextResponse.next()
+  // Club link-preview cards (opengraph-image / twitter-image) are public and CDN-cached.
+  if (["GET", "HEAD"].includes(request.method) && /^\/club\/[^/]+\/(?:opengraph|twitter)-image(?:-[\w-]+)?$/.test(request.nextUrl.pathname)) return NextResponse.next()
   // Static GETs can skip auth refresh; POSTs must never bypass read-only guards by using an image-like URL.
   if (["GET", "HEAD"].includes(request.method) && /\.(svg|png|jpg|jpeg|gif|webp|ico)$/.test(request.nextUrl.pathname) && !/^\/(club|club-access|club-claims|invitations|meetings|platform|api)\//.test(request.nextUrl.pathname)) return NextResponse.next()
 

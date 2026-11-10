@@ -16,6 +16,7 @@ async function harness(options={}){
  relations.InterviewRecord.application=['Application','applicationId','id'];
  relations.User.memberships=['ClubMember','id','userId'];relations.UserNotification={club:['Club','clubId','id']};
  relations.Club={pipelineRounds:['PipelineRound','id','clubId'],members:['ClubMember','id','clubId']};
+ relations.PipelineRound.stableEvaluations=['Evaluation','id','roundId'];relations.Evaluation.interviewRecords=['InterviewRecord','id','evaluationId'];
  relations.ClubMember.club=['Club','clubId','id'];relations.ClubMember.interviewParticipation=['InterviewRoundParticipation','id','memberId'];
  relations.User.availability=['UserAvailability','id','userId'];relations.InterviewRoundParticipation={member:['ClubMember','memberId','id'],round:['PipelineRound','roundId','id']};
  const encode=(key,v)=>['bookingSlots','questions','draft','submittedQuestions','details','interviewKit','schedule','availability','document','validation','changes','payload'].includes(key)?JSON.stringify(v):Array.isArray(v)?'{'+v.join(',')+'}':v;
@@ -24,7 +25,7 @@ async function harness(options={}){
   const filter=(table,w,alias,values)=>Object.entries(w||{}).map(([key,v])=>{
    if(['OR','AND'].includes(key))return v.length?'('+v.map(item=>filter(table,item,alias,values)).join(key==='OR'?' OR ':' AND ')+')':key==='OR'?'FALSE':'TRUE';
    if(key.includes('_')&&v&&typeof v==='object')return filter(table,v,alias,values);
-   const rel=relations[table]?.[key];if(rel){const[r,local,foreign]=rel,a='r'+(++counter);return `EXISTS(SELECT 1 FROM "${r}" ${a} WHERE ${a}."${foreign}"=${alias}."${local}" AND ${filter(r,v.some||v,a,values)})`;}
+   const rel=relations[table]?.[key];if(rel){const[r,local,foreign]=rel,a='r'+(++counter);return `${v.none?'NOT ':''}EXISTS(SELECT 1 FROM "${r}" ${a} WHERE ${a}."${foreign}"=${alias}."${local}" AND ${filter(r,v.none||v.some||v,a,values)})`;}
    const column=`${alias}."${key}"`;if(v===null)return `${column} IS NULL`;
    if(v&&typeof v==='object'&&!(v instanceof Date)){return Object.entries(v).map(([op,value])=>{if(op==='not'&&value===null)return `${column} IS NOT NULL`;if(op==='startsWith'){values.push(value+'%');return `${column} LIKE $${values.length}`;}if(op==='has'){values.push(value);return `$${values.length}=ANY(${column})`;}if(op==='hasSome'){values.push(value);return `${column} && $${values.length}::text[]`;}if(op==='in'){values.push(value);return `${column}=ANY($${values.length}::text[])`;}values.push(value);return `${column} ${({not:'<>',gt:'>',gte:'>=',lt:'<',lte:'<='})[op]} $${values.length}`;}).join(' AND ');}
    values.push(v);return `${column}=$${values.length}`;

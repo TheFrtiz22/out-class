@@ -1,18 +1,11 @@
 /* Dense operational views share the campus foundations without losing precision. */
 [data-product-shell] .oc-live-pipeline { padding: 0; border: 0; background: transparent; border-radius: 0; }
-[data-product-shell] .oc-live-pipeline [aria-label="Applicant view"] { border: 0; background: var(--muted); border-radius: var(--oc-radius-md); }
-[data-product-shell] .oc-live-pipeline [aria-label="Applicant view"] [aria-pressed="true"] { background: var(--primary); color: var(--primary-foreground); }
 [data-product-shell] .oc-applicant-board { gap: 1rem; align-items: start; }
 [data-product-shell] .oc-applicant-board > section { border: 0; border-radius: var(--oc-radius-lg); background: var(--oc-content-soft); padding: .875rem; min-height: 10rem; }
 [data-product-shell] .oc-applicant-board header h3 { font-size: var(--oc-text-small); }
 [data-product-shell] .oc-applicant-board header h3 > span { min-width: 1.5rem; padding: .2rem; border-radius: var(--oc-radius-sm); text-align: center; background: var(--card); }
 [data-product-shell] .oc-applicant-board button[data-applicant-id] { border: 0; border-radius: var(--oc-radius-md); background: var(--card); box-shadow: var(--oc-shadow-surface); transition: transform var(--oc-duration-micro), box-shadow var(--oc-duration-ui); }
 [data-product-shell] .oc-applicant-board button[data-applicant-id]:hover { box-shadow: var(--oc-content-shadow-hover); }
-[data-product-shell] [data-application-status="ACCEPTED"] { --badge-accent: var(--success); }
-[data-product-shell] [data-application-status="REJECTED"] { --badge-accent: var(--destructive); }
-[data-product-shell] [data-application-status="WAITLISTED"] { --badge-accent: var(--warning); }
-[data-product-shell] [data-application-status="INTERVIEWING"] { --badge-accent: var(--interview); }
-[data-product-shell] [data-application-status="IN_REVIEW"] { --badge-accent: var(--info); }
 [data-product-shell] .ir-overview { display: flex; flex-wrap: wrap; gap: 1.25rem; padding-block: .75rem; border-block: 1px solid var(--border); }
 [data-product-shell] .ir-overview > div { padding: 0; border: 0; background: transparent; }
 [data-product-shell] .ir-room-card { border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); box-shadow: var(--oc-content-shadow); }
@@ -57,8 +50,8 @@
 [data-product-shell] .oc-interview-slot { border: 0; border-left: 3px solid var(--success); background: var(--oc-surface-sage); border-radius: var(--oc-radius-md); }
 [data-product-shell] .oc-interview-slot[data-slot-status="partial"] { background: var(--oc-surface-blue); border-color: var(--info); }
 [data-product-shell] .oc-interview-slot[data-slot-status="full"] { background: var(--muted); border-color: var(--muted-foreground); }
-[data-product-shell] .oc-member-directory > details { border: 0; border-radius: var(--oc-radius-md); background: var(--card); box-shadow: var(--oc-shadow-surface); }
-[data-product-shell] .oc-member-directory > ul > li { background: var(--card); border: 0; border-radius: var(--oc-radius-md); box-shadow: var(--oc-shadow-surface); padding-inline: 1rem; }
+[data-product-shell] .oc-member-directory > details { border: 0; border-radius: var(--oc-radius-md); background: var(--oc-content-surface); box-shadow: var(--oc-shadow-surface); }
+[data-product-shell] .oc-member-directory > ul > li { background: var(--oc-content-surface); border: 0; border-radius: var(--oc-radius-md); box-shadow: var(--oc-shadow-surface); padding-inline: 1rem; }
 [data-product-shell] .oc-member-directory > ul { display: grid; gap: .75rem; border: 0; }
 [data-product-shell] .oc-club-settings #related-club-settings + ul { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; }
 [data-product-shell] .oc-club-settings #related-club-settings + ul li { border: 0; }
@@ -68,6 +61,7 @@
 .oc-applicant-person [data-slot="avatar"] { flex-shrink: 0; width: 2rem; height: 2rem; border-radius: var(--oc-radius-md); }
 .oc-applicant-person [data-slot="avatar-fallback"] { background: var(--oc-surface-blue); color: var(--primary); font-size: var(--oc-size-11); }
 .oc-applicant-person > span:last-child { overflow-wrap: anywhere; }
+.oc-applicant-review-hidden { display: inline-flex; align-items: center; gap: .375rem; white-space: nowrap; }
 .oc-applicant-review { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: .5rem; font-size: var(--oc-text-caption); color: var(--muted-foreground); }
 .oc-applicant-review strong { display: inline-flex; align-items: baseline; gap: .15rem; padding: 0; background: transparent; color: inherit; border-radius: 0; font-size: var(--oc-text-small); font-weight: 600; font-variant-numeric: tabular-nums; }
 .oc-applicant-review strong > span { font-size: var(--oc-size-10); font-weight: 400; }
@@ -84,6 +78,6 @@
 
 [data-product-shell] .oc-interviewer-hub .oc-availability-summary { font-size: var(--oc-text-card); letter-spacing: normal; }
 [data-product-shell] .oc-interviewer-hub > :not(:last-child) { margin-bottom: var(--oc-density-gap); }
-[data-product-shell] .oc-interviewer-hub section { border-color: var(--border); border-radius: var(--oc-radius-lg); background: var(--card); }
+[data-product-shell] .oc-interviewer-hub section { border-color: var(--oc-content-edge); border-radius: var(--oc-radius-lg); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow) }
 [data-product-shell] .oc-interviewer-hub .bg-black { background: var(--primary); }
 [data-product-shell] .oc-interviewer-hub .text-amber-700 { color: var(--warning); }

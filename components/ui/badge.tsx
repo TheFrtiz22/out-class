@@ -5,22 +5,19 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
 const badgeVariants = cva(
-  'inline-flex items-center justify-center rounded-none border-0 border-l-2 border-border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,background-color,border-color,box-shadow] motion-micro overflow-hidden',
+  'inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none overflow-hidden',
   {
     variants: {
       variant: {
-        default:
-          'border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-muted',
-        secondary:
-          'border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90',
-        destructive:
-          'border-transparent bg-status-rejected text-status-rejected-foreground [a&]:hover:bg-error-subtle focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60',
-        success: 'border-transparent bg-success-subtle text-success',
-        warning: 'border-transparent bg-warning-subtle text-warning',
-        info: 'border-transparent bg-info-subtle text-info',
-        accent: 'border-transparent bg-brand-subtle text-brand-ink',
-        outline:
-          'text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground',
+        /** Glass tints from the semantic tokens: styles/product-components.css (@layer components). */
+        default: '',
+        secondary: '',
+        destructive: '',
+        success: '',
+        warning: '',
+        info: '',
+        accent: '',
+        outline: '',
       },
     },
     defaultVariants: {

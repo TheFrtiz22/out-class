@@ -17,7 +17,7 @@ test('authenticated discovery surfaces ownership requests and editable profile s
 test('failed discovery offers retry and successful empty discovery is unobtrusive',async()=>{
   let calls=0;const h=harness({getOrganizationInvitations:async()=>{if(++calls===1)throw Error('Unavailable');return[];}},'components/organization-ownership-requests.tsx',{enabled:true,includeDismissed:true});
   h.render();await h.flush();let tree=h.render();assert.ok(nodes(tree).some(node=>node.props?.role==='alert'));
-  nodes(tree).find(node=>node.type==='Button'&&node.props.children==='Retry invitations').props.onClick();h.render();await h.flush();assert.equal(h.render(),null);assert.equal(calls,2);
+  nodes(tree).find(node=>node.type==='Button'&&node.props.children==='Try again').props.onClick();h.render();await h.flush();assert.equal(h.render(),null);assert.equal(calls,2);
 });
 
 test('claim button blocks repeated clicks, sends only invitation ID, and routes to existing club workspace',async()=>{

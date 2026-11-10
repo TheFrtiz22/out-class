@@ -1,0 +1,22 @@
+home-students    200 OutClass · UVA club applications and recruit h1:1 overflow390:0 small:0 body<14:0 taps:0 axe:0/0
+home-leaders     200 OutClass · UVA club applications and recruit h1:1 overflow390:0 small:0 body<14:0 taps:0 axe:0/0
+uva              200 Club recruitment at UVA · OutClass           h1:1 overflow390:0 small:0 body<14:0 taps:0 axe:0/0
+about            200 About · OutClass                             h1:1 overflow390:0 small:0 body<14:0 taps:0 axe:0/0
+request-school   200 Request your school · OutClass               h1:1 overflow390:0 small:0 body<14:0 taps:0 axe:0/0
+club             200 Club not found · OutClass                    h1:1 overflow390:0 small:0 body<14:0 taps:1 axe:0/0
+login            500 Sign in · OutClass                           h1:0 overflow390:0 small:0 body<14:0 taps:0 axe:0/0
+signup           500 Create your profile · OutClass               h1:0 overflow390:0 small:0 body<14:0 taps:0 axe:0/0
+forgot-password  200 Forgot password · OutClass                   h1:1 overflow390:0 small:0 body<14:0 taps:0 axe:0/0
+reset-password   200 Reset password · OutClass                    h1:1 overflow390:0 small:0 body<14:0 taps:0 axe:0/0
+corkboard        200 Events · OutClass                            h1:1 overflow390:0 small:0 body<14:0 taps:1 axe:0/0
+explore          307 null                                         h1:0 overflow390:0 small:0 body<14:0 taps:0 axe:0/0
+invitation       200 Club invitation · OutClass                   h1:1 overflow390:0 small:0 body<14:0 taps:0 axe:0/0
+club-access      200 Workspace access · OutClass                  h1:1 overflow390:0 small:0 body<14:0 taps:0 axe:0/0
+club-claims      200 Claim a club · OutClass                      h1:1 overflow390:0 small:0 body<14:0 taps:0 axe:0/0
+check-in         200 Meeting check-in · OutClass                  h1:1 overflow390:0 small:0 body<14:0 taps:1 axe:0/0
+interviews-book  200 Book your interview · OutClass               h1:1 overflow390:0 small:0 body<14:0 taps:1 axe:0/0
+voting-join      200 Join live voting · OutClass                  h1:1 overflow390:0 small:0 body<14:0 taps:1 axe:0/0
+short-link       500 Check-in link · OutClass                     h1:0 overflow390:0 small:0 body<14:0 taps:1 axe:0/0
+not-found        404 Page not found · OutClass                    h1:1 overflow390:0 small:0 body<14:0 taps:0 axe:0/0
+privacy          404 Page not found · OutClass                    h1:1 overflow390:0 small:0 body<14:0 taps:0 axe:0/0
+terms            404 Page not found · OutClass                    h1:1 overflow390:0 small:0 body<14:0 taps:0 axe:0/0

@@ -1,0 +1,1946 @@
+[
+  {
+    "width": 1024,
+    "route": "/home",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Sunday, November 8",
+    "rows": 1
+  },
+  {
+    "width": 1024,
+    "route": "/explore",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Find your people",
+    "rows": 1
+  },
+  {
+    "width": 1024,
+    "route": "/explore/categories",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Find your people",
+    "rows": 1
+  },
+  {
+    "width": 1024,
+    "route": "/corkboard",
+    "headerHeight": 70,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Events",
+    "rows": 1
+  },
+  {
+    "width": 1024,
+    "route": "/saved-clubs",
+    "headerHeight": 70,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Saved clubs",
+    "rows": 1
+  },
+  {
+    "width": 1024,
+    "route": "/applications",
+    "headerHeight": 70,
+    "gap": 9.5,
+    "glyphGap": 8,
+    "text": "Applications",
+    "rows": 1
+  },
+  {
+    "width": 1024,
+    "route": "/clubs",
+    "headerHeight": 70,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "My Clubs",
+    "rows": 1
+  },
+  {
+    "width": 1024,
+    "route": "/calendar",
+    "headerHeight": 70,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Calendar",
+    "rows": 1
+  },
+  {
+    "width": 1024,
+    "route": "/inbox",
+    "headerHeight": 70,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Inbox",
+    "rows": 1
+  },
+  {
+    "width": 1024,
+    "route": "/profile",
+    "headerHeight": 70,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Profile",
+    "rows": 1
+  },
+  {
+    "width": 1024,
+    "route": "/settings",
+    "headerHeight": 70,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Settings",
+    "rows": 1
+  },
+  {
+    "width": 1024,
+    "route": "/settings/notifications",
+    "headerHeight": 70,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Notifications",
+    "rows": 1
+  },
+  {
+    "width": 1024,
+    "route": "/meetings",
+    "headerHeight": 70,
+    "gap": 9.1,
+    "glyphGap": 7,
+    "text": "Club meetings",
+    "rows": 1
+  },
+  {
+    "width": 1024,
+    "route": "/club-access/:club",
+    "headerHeight": 70,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Workspace access",
+    "rows": 1
+  },
+  {
+    "width": 1024,
+    "route": "/club/:club",
+    "headerHeight": 70,
+    "gap": 11.2,
+    "glyphGap": 11.8,
+    "text": "Explore clubs",
+    "rows": 1
+  },
+  {
+    "width": 1024,
+    "route": "/club/:club/workspace?section=overview",
+    "headerHeight": 70,
+    "gap": 9.8,
+    "glyphGap": 8,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1024,
+    "route": "/club/:club/workspace?section=recruitment&tool=overview",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1024,
+    "route": "/club/:club/workspace?section=recruitment&tool=applicants",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1024,
+    "route": "/club/:club/workspace?section=meetings",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1024,
+    "route": "/club/:club/workspace?section=tasks",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1024,
+    "route": "/club/:club/workspace?section=members",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1024,
+    "route": "/club/:club/workspace?section=announcements",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1024,
+    "route": "/club/:club/workspace?section=settings",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1024,
+    "route": "/platform",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 1024,
+    "route": "/platform/users",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 1024,
+    "route": "/platform/events",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 1024,
+    "route": "/platform/claims",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 1100,
+    "route": "/home",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Sunday, November 8",
+    "rows": 1
+  },
+  {
+    "width": 1100,
+    "route": "/explore",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Find your people",
+    "rows": 1
+  },
+  {
+    "width": 1100,
+    "route": "/explore/categories",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Find your people",
+    "rows": 1
+  },
+  {
+    "width": 1100,
+    "route": "/corkboard",
+    "headerHeight": 70,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Events",
+    "rows": 1
+  },
+  {
+    "width": 1100,
+    "route": "/saved-clubs",
+    "headerHeight": 70,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Saved clubs",
+    "rows": 1
+  },
+  {
+    "width": 1100,
+    "route": "/applications",
+    "headerHeight": 70,
+    "gap": 9.5,
+    "glyphGap": 8,
+    "text": "Applications",
+    "rows": 1
+  },
+  {
+    "width": 1100,
+    "route": "/clubs",
+    "headerHeight": 70,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "My Clubs",
+    "rows": 1
+  },
+  {
+    "width": 1100,
+    "route": "/calendar",
+    "headerHeight": 70,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Calendar",
+    "rows": 1
+  },
+  {
+    "width": 1100,
+    "route": "/inbox",
+    "headerHeight": 70,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Inbox",
+    "rows": 1
+  },
+  {
+    "width": 1100,
+    "route": "/profile",
+    "headerHeight": 70,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Profile",
+    "rows": 1
+  },
+  {
+    "width": 1100,
+    "route": "/settings",
+    "headerHeight": 70,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Settings",
+    "rows": 1
+  },
+  {
+    "width": 1100,
+    "route": "/settings/notifications",
+    "headerHeight": 70,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Notifications",
+    "rows": 1
+  },
+  {
+    "width": 1100,
+    "route": "/meetings",
+    "headerHeight": 70,
+    "gap": 9.1,
+    "glyphGap": 7,
+    "text": "Club meetings",
+    "rows": 1
+  },
+  {
+    "width": 1100,
+    "route": "/club-access/:club",
+    "headerHeight": 70,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Workspace access",
+    "rows": 1
+  },
+  {
+    "width": 1100,
+    "route": "/club/:club",
+    "headerHeight": 70,
+    "gap": 11.2,
+    "glyphGap": 11.8,
+    "text": "Explore clubs",
+    "rows": 1
+  },
+  {
+    "width": 1100,
+    "route": "/club/:club/workspace?section=overview",
+    "headerHeight": 70,
+    "gap": 9.8,
+    "glyphGap": 8,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1100,
+    "route": "/club/:club/workspace?section=recruitment&tool=overview",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1100,
+    "route": "/club/:club/workspace?section=recruitment&tool=applicants",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1100,
+    "route": "/club/:club/workspace?section=meetings",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1100,
+    "route": "/club/:club/workspace?section=tasks",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1100,
+    "route": "/club/:club/workspace?section=members",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1100,
+    "route": "/club/:club/workspace?section=announcements",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1100,
+    "route": "/club/:club/workspace?section=settings",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1100,
+    "route": "/platform",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 1100,
+    "route": "/platform/users",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 1100,
+    "route": "/platform/events",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 1100,
+    "route": "/platform/claims",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 1180,
+    "route": "/home",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Sunday, November 8",
+    "rows": 1
+  },
+  {
+    "width": 1180,
+    "route": "/explore",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Find your people",
+    "rows": 1
+  },
+  {
+    "width": 1180,
+    "route": "/explore/categories",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Find your people",
+    "rows": 1
+  },
+  {
+    "width": 1180,
+    "route": "/corkboard",
+    "headerHeight": 70,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Events",
+    "rows": 1
+  },
+  {
+    "width": 1180,
+    "route": "/saved-clubs",
+    "headerHeight": 70,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Saved clubs",
+    "rows": 1
+  },
+  {
+    "width": 1180,
+    "route": "/applications",
+    "headerHeight": 70,
+    "gap": 10,
+    "glyphGap": 8,
+    "text": "Applications",
+    "rows": 1
+  },
+  {
+    "width": 1180,
+    "route": "/clubs",
+    "headerHeight": 70,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "My Clubs",
+    "rows": 1
+  },
+  {
+    "width": 1180,
+    "route": "/calendar",
+    "headerHeight": 70,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Calendar",
+    "rows": 1
+  },
+  {
+    "width": 1180,
+    "route": "/inbox",
+    "headerHeight": 70,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Inbox",
+    "rows": 1
+  },
+  {
+    "width": 1180,
+    "route": "/profile",
+    "headerHeight": 70,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Profile",
+    "rows": 1
+  },
+  {
+    "width": 1180,
+    "route": "/settings",
+    "headerHeight": 70,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Settings",
+    "rows": 1
+  },
+  {
+    "width": 1180,
+    "route": "/settings/notifications",
+    "headerHeight": 70,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Notifications",
+    "rows": 1
+  },
+  {
+    "width": 1180,
+    "route": "/meetings",
+    "headerHeight": 70,
+    "gap": 9.1,
+    "glyphGap": 7,
+    "text": "Club meetings",
+    "rows": 1
+  },
+  {
+    "width": 1180,
+    "route": "/club-access/:club",
+    "headerHeight": 70,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Workspace access",
+    "rows": 1
+  },
+  {
+    "width": 1180,
+    "route": "/club/:club",
+    "headerHeight": 70,
+    "gap": 11.2,
+    "glyphGap": 11.8,
+    "text": "Explore clubs",
+    "rows": 1
+  },
+  {
+    "width": 1180,
+    "route": "/club/:club/workspace?section=overview",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 7,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1180,
+    "route": "/club/:club/workspace?section=recruitment&tool=overview",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1180,
+    "route": "/club/:club/workspace?section=recruitment&tool=applicants",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1180,
+    "route": "/club/:club/workspace?section=meetings",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1180,
+    "route": "/club/:club/workspace?section=tasks",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1180,
+    "route": "/club/:club/workspace?section=members",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1180,
+    "route": "/club/:club/workspace?section=announcements",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1180,
+    "route": "/club/:club/workspace?section=settings",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1180,
+    "route": "/platform",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 1180,
+    "route": "/platform/users",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 1180,
+    "route": "/platform/events",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 1180,
+    "route": "/platform/claims",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 1280,
+    "route": "/home",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Sunday, November 8",
+    "rows": 1
+  },
+  {
+    "width": 1280,
+    "route": "/explore",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Find your people",
+    "rows": 1
+  },
+  {
+    "width": 1280,
+    "route": "/explore/categories",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Find your people",
+    "rows": 1
+  },
+  {
+    "width": 1280,
+    "route": "/corkboard",
+    "headerHeight": 70,
+    "gap": 9.9,
+    "glyphGap": 9,
+    "text": "Events",
+    "rows": 1
+  },
+  {
+    "width": 1280,
+    "route": "/saved-clubs",
+    "headerHeight": 70,
+    "gap": 9.9,
+    "glyphGap": 9,
+    "text": "Saved clubs",
+    "rows": 1
+  },
+  {
+    "width": 1280,
+    "route": "/applications",
+    "headerHeight": 70,
+    "gap": 9.2,
+    "glyphGap": 7,
+    "text": "Applications",
+    "rows": 1
+  },
+  {
+    "width": 1280,
+    "route": "/clubs",
+    "headerHeight": 70,
+    "gap": 9.9,
+    "glyphGap": 9,
+    "text": "My Clubs",
+    "rows": 1
+  },
+  {
+    "width": 1280,
+    "route": "/calendar",
+    "headerHeight": 70,
+    "gap": 9.9,
+    "glyphGap": 9,
+    "text": "Calendar",
+    "rows": 1
+  },
+  {
+    "width": 1280,
+    "route": "/inbox",
+    "headerHeight": 70,
+    "gap": 9.9,
+    "glyphGap": 9,
+    "text": "Inbox",
+    "rows": 1
+  },
+  {
+    "width": 1280,
+    "route": "/profile",
+    "headerHeight": 70,
+    "gap": 9.9,
+    "glyphGap": 9,
+    "text": "Profile",
+    "rows": 1
+  },
+  {
+    "width": 1280,
+    "route": "/settings",
+    "headerHeight": 70,
+    "gap": 9.9,
+    "glyphGap": 9,
+    "text": "Settings",
+    "rows": 1
+  },
+  {
+    "width": 1280,
+    "route": "/settings/notifications",
+    "headerHeight": 70,
+    "gap": 9.9,
+    "glyphGap": 9,
+    "text": "Notifications",
+    "rows": 1
+  },
+  {
+    "width": 1280,
+    "route": "/meetings",
+    "headerHeight": 70,
+    "gap": 9.8,
+    "glyphGap": 8,
+    "text": "Club meetings",
+    "rows": 1
+  },
+  {
+    "width": 1280,
+    "route": "/club-access/:club",
+    "headerHeight": 70,
+    "gap": 9.9,
+    "glyphGap": 9,
+    "text": "Workspace access",
+    "rows": 1
+  },
+  {
+    "width": 1280,
+    "route": "/club/:club",
+    "headerHeight": 70,
+    "gap": 11.2,
+    "glyphGap": 11.8,
+    "text": "Explore clubs",
+    "rows": 1
+  },
+  {
+    "width": 1280,
+    "route": "/club/:club/workspace?section=overview",
+    "headerHeight": 70,
+    "gap": 9.6,
+    "glyphGap": 7,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1280,
+    "route": "/club/:club/workspace?section=recruitment&tool=overview",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1280,
+    "route": "/club/:club/workspace?section=recruitment&tool=applicants",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1280,
+    "route": "/club/:club/workspace?section=meetings",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1280,
+    "route": "/club/:club/workspace?section=tasks",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1280,
+    "route": "/club/:club/workspace?section=members",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1280,
+    "route": "/club/:club/workspace?section=announcements",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1280,
+    "route": "/club/:club/workspace?section=settings",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1280,
+    "route": "/platform",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 1280,
+    "route": "/platform/users",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 1280,
+    "route": "/platform/events",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 1280,
+    "route": "/platform/claims",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 1440,
+    "route": "/home",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Sunday, November 8",
+    "rows": 1
+  },
+  {
+    "width": 1440,
+    "route": "/explore",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Find your people",
+    "rows": 1
+  },
+  {
+    "width": 1440,
+    "route": "/explore/categories",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Find your people",
+    "rows": 1
+  },
+  {
+    "width": 1440,
+    "route": "/corkboard",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 8,
+    "text": "Events",
+    "rows": 1
+  },
+  {
+    "width": 1440,
+    "route": "/saved-clubs",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 8,
+    "text": "Saved clubs",
+    "rows": 1
+  },
+  {
+    "width": 1440,
+    "route": "/applications",
+    "headerHeight": 70,
+    "gap": 9.2,
+    "glyphGap": 7,
+    "text": "Applications",
+    "rows": 1
+  },
+  {
+    "width": 1440,
+    "route": "/clubs",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 8,
+    "text": "My Clubs",
+    "rows": 1
+  },
+  {
+    "width": 1440,
+    "route": "/calendar",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 8,
+    "text": "Calendar",
+    "rows": 1
+  },
+  {
+    "width": 1440,
+    "route": "/inbox",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 8,
+    "text": "Inbox",
+    "rows": 1
+  },
+  {
+    "width": 1440,
+    "route": "/profile",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 8,
+    "text": "Profile",
+    "rows": 1
+  },
+  {
+    "width": 1440,
+    "route": "/settings",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 8,
+    "text": "Settings",
+    "rows": 1
+  },
+  {
+    "width": 1440,
+    "route": "/settings/notifications",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 8,
+    "text": "Notifications",
+    "rows": 1
+  },
+  {
+    "width": 1440,
+    "route": "/meetings",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 7,
+    "text": "Club meetings",
+    "rows": 1
+  },
+  {
+    "width": 1440,
+    "route": "/club-access/:club",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 8,
+    "text": "Workspace access",
+    "rows": 1
+  },
+  {
+    "width": 1440,
+    "route": "/club/:club",
+    "headerHeight": 70,
+    "gap": 11.2,
+    "glyphGap": 11.8,
+    "text": "Explore clubs",
+    "rows": 1
+  },
+  {
+    "width": 1440,
+    "route": "/club/:club/workspace?section=overview",
+    "headerHeight": 70,
+    "gap": 9.7,
+    "glyphGap": 7,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1440,
+    "route": "/club/:club/workspace?section=recruitment&tool=overview",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1440,
+    "route": "/club/:club/workspace?section=recruitment&tool=applicants",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1440,
+    "route": "/club/:club/workspace?section=meetings",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1440,
+    "route": "/club/:club/workspace?section=tasks",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1440,
+    "route": "/club/:club/workspace?section=members",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1440,
+    "route": "/club/:club/workspace?section=announcements",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1440,
+    "route": "/club/:club/workspace?section=settings",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1440,
+    "route": "/platform",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 1440,
+    "route": "/platform/users",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 1440,
+    "route": "/platform/events",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 1440,
+    "route": "/platform/claims",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 1920,
+    "route": "/home",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Sunday, November 8",
+    "rows": 1
+  },
+  {
+    "width": 1920,
+    "route": "/explore",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Find your people",
+    "rows": 1
+  },
+  {
+    "width": 1920,
+    "route": "/explore/categories",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Find your people",
+    "rows": 1
+  },
+  {
+    "width": 1920,
+    "route": "/corkboard",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 8,
+    "text": "Events",
+    "rows": 1
+  },
+  {
+    "width": 1920,
+    "route": "/saved-clubs",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 8,
+    "text": "Saved clubs",
+    "rows": 1
+  },
+  {
+    "width": 1920,
+    "route": "/applications",
+    "headerHeight": 70,
+    "gap": 9.1,
+    "glyphGap": 7,
+    "text": "Applications",
+    "rows": 1
+  },
+  {
+    "width": 1920,
+    "route": "/clubs",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 8,
+    "text": "My Clubs",
+    "rows": 1
+  },
+  {
+    "width": 1920,
+    "route": "/calendar",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 8,
+    "text": "Calendar",
+    "rows": 1
+  },
+  {
+    "width": 1920,
+    "route": "/inbox",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 8,
+    "text": "Inbox",
+    "rows": 1
+  },
+  {
+    "width": 1920,
+    "route": "/profile",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 8,
+    "text": "Profile",
+    "rows": 1
+  },
+  {
+    "width": 1920,
+    "route": "/settings",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 8,
+    "text": "Settings",
+    "rows": 1
+  },
+  {
+    "width": 1920,
+    "route": "/settings/notifications",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 8,
+    "text": "Notifications",
+    "rows": 1
+  },
+  {
+    "width": 1920,
+    "route": "/meetings",
+    "headerHeight": 70,
+    "gap": 9.3,
+    "glyphGap": 7,
+    "text": "Club meetings",
+    "rows": 1
+  },
+  {
+    "width": 1920,
+    "route": "/club-access/:club",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 8,
+    "text": "Workspace access",
+    "rows": 1
+  },
+  {
+    "width": 1920,
+    "route": "/club/:club",
+    "headerHeight": 70,
+    "gap": 11.2,
+    "glyphGap": 11.8,
+    "text": "Explore clubs",
+    "rows": 1
+  },
+  {
+    "width": 1920,
+    "route": "/club/:club/workspace?section=overview",
+    "headerHeight": 70,
+    "gap": 9.6,
+    "glyphGap": 7,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1920,
+    "route": "/club/:club/workspace?section=recruitment&tool=overview",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1920,
+    "route": "/club/:club/workspace?section=recruitment&tool=applicants",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1920,
+    "route": "/club/:club/workspace?section=meetings",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1920,
+    "route": "/club/:club/workspace?section=tasks",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1920,
+    "route": "/club/:club/workspace?section=members",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1920,
+    "route": "/club/:club/workspace?section=announcements",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1920,
+    "route": "/club/:club/workspace?section=settings",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 1920,
+    "route": "/platform",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 1920,
+    "route": "/platform/users",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 1920,
+    "route": "/platform/events",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 1920,
+    "route": "/platform/claims",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 2560,
+    "route": "/home",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Sunday, November 8",
+    "rows": 1
+  },
+  {
+    "width": 2560,
+    "route": "/explore",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Find your people",
+    "rows": 1
+  },
+  {
+    "width": 2560,
+    "route": "/explore/categories",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Find your people",
+    "rows": 1
+  },
+  {
+    "width": 2560,
+    "route": "/corkboard",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 8,
+    "text": "Events",
+    "rows": 1
+  },
+  {
+    "width": 2560,
+    "route": "/saved-clubs",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 8,
+    "text": "Saved clubs",
+    "rows": 1
+  },
+  {
+    "width": 2560,
+    "route": "/applications",
+    "headerHeight": 70,
+    "gap": 9.1,
+    "glyphGap": 7,
+    "text": "Applications",
+    "rows": 1
+  },
+  {
+    "width": 2560,
+    "route": "/clubs",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 8,
+    "text": "My Clubs",
+    "rows": 1
+  },
+  {
+    "width": 2560,
+    "route": "/calendar",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 8,
+    "text": "Calendar",
+    "rows": 1
+  },
+  {
+    "width": 2560,
+    "route": "/inbox",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 8,
+    "text": "Inbox",
+    "rows": 1
+  },
+  {
+    "width": 2560,
+    "route": "/profile",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 8,
+    "text": "Profile",
+    "rows": 1
+  },
+  {
+    "width": 2560,
+    "route": "/settings",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 8,
+    "text": "Settings",
+    "rows": 1
+  },
+  {
+    "width": 2560,
+    "route": "/settings/notifications",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 8,
+    "text": "Notifications",
+    "rows": 1
+  },
+  {
+    "width": 2560,
+    "route": "/meetings",
+    "headerHeight": 70,
+    "gap": 9.3,
+    "glyphGap": 7,
+    "text": "Club meetings",
+    "rows": 1
+  },
+  {
+    "width": 2560,
+    "route": "/club-access/:club",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 8,
+    "text": "Workspace access",
+    "rows": 1
+  },
+  {
+    "width": 2560,
+    "route": "/club/:club",
+    "headerHeight": 70,
+    "gap": 11.2,
+    "glyphGap": 11.8,
+    "text": "Explore clubs",
+    "rows": 1
+  },
+  {
+    "width": 2560,
+    "route": "/club/:club/workspace?section=overview",
+    "headerHeight": 70,
+    "gap": 9.6,
+    "glyphGap": 7,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 2560,
+    "route": "/club/:club/workspace?section=recruitment&tool=overview",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 2560,
+    "route": "/club/:club/workspace?section=recruitment&tool=applicants",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 2560,
+    "route": "/club/:club/workspace?section=meetings",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 2560,
+    "route": "/club/:club/workspace?section=tasks",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 2560,
+    "route": "/club/:club/workspace?section=members",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 2560,
+    "route": "/club/:club/workspace?section=announcements",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 2560,
+    "route": "/club/:club/workspace?section=settings",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 2560,
+    "route": "/platform",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 2560,
+    "route": "/platform/users",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 2560,
+    "route": "/platform/events",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 2560,
+    "route": "/platform/claims",
+    "headerHeight": 70,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 390,
+    "route": "/home",
+    "headerHeight": 68,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Sunday, November 8",
+    "rows": 1
+  },
+  {
+    "width": 390,
+    "route": "/explore",
+    "headerHeight": 68,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Find your people",
+    "rows": 1
+  },
+  {
+    "width": 390,
+    "route": "/explore/categories",
+    "headerHeight": 68,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Find your people",
+    "rows": 1
+  },
+  {
+    "width": 390,
+    "route": "/corkboard",
+    "headerHeight": 68,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Events",
+    "rows": 1
+  },
+  {
+    "width": 390,
+    "route": "/saved-clubs",
+    "headerHeight": 68,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Saved clubs",
+    "rows": 1
+  },
+  {
+    "width": 390,
+    "route": "/applications",
+    "headerHeight": 68,
+    "gap": 9.5,
+    "glyphGap": 8,
+    "text": "Applications",
+    "rows": 1
+  },
+  {
+    "width": 390,
+    "route": "/clubs",
+    "headerHeight": 68,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "My Clubs",
+    "rows": 1
+  },
+  {
+    "width": 390,
+    "route": "/calendar",
+    "headerHeight": 68,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Calendar",
+    "rows": 1
+  },
+  {
+    "width": 390,
+    "route": "/inbox",
+    "headerHeight": 68,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Inbox",
+    "rows": 1
+  },
+  {
+    "width": 390,
+    "route": "/profile",
+    "headerHeight": 68,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Profile",
+    "rows": 1
+  },
+  {
+    "width": 390,
+    "route": "/settings",
+    "headerHeight": 68,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Settings",
+    "rows": 1
+  },
+  {
+    "width": 390,
+    "route": "/settings/notifications",
+    "headerHeight": 68,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Notifications",
+    "rows": 1
+  },
+  {
+    "width": 390,
+    "route": "/meetings",
+    "headerHeight": 68,
+    "gap": 9.1,
+    "glyphGap": 7,
+    "text": "Club meetings",
+    "rows": 1
+  },
+  {
+    "width": 390,
+    "route": "/club-access/:club",
+    "headerHeight": 68,
+    "gap": 9.2,
+    "glyphGap": 8,
+    "text": "Workspace access",
+    "rows": 1
+  },
+  {
+    "width": 390,
+    "route": "/club/:club",
+    "headerHeight": 68,
+    "gap": 11.2,
+    "glyphGap": 11.8,
+    "text": "Explore clubs",
+    "rows": 1
+  },
+  {
+    "width": 390,
+    "route": "/club/:club/workspace?section=overview",
+    "headerHeight": 68,
+    "gap": 9.8,
+    "glyphGap": 8,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 390,
+    "route": "/club/:club/workspace?section=recruitment&tool=overview",
+    "headerHeight": 68,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 390,
+    "route": "/club/:club/workspace?section=recruitment&tool=applicants",
+    "headerHeight": 68,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 390,
+    "route": "/club/:club/workspace?section=meetings",
+    "headerHeight": 68,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 390,
+    "route": "/club/:club/workspace?section=tasks",
+    "headerHeight": 68,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 390,
+    "route": "/club/:club/workspace?section=members",
+    "headerHeight": 68,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 390,
+    "route": "/club/:club/workspace?section=announcements",
+    "headerHeight": 68,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 390,
+    "route": "/club/:club/workspace?section=settings",
+    "headerHeight": 68,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "Navigation Audit Club 1",
+    "rows": 1
+  },
+  {
+    "width": 390,
+    "route": "/platform",
+    "headerHeight": 68,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 390,
+    "route": "/platform/users",
+    "headerHeight": 68,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 390,
+    "route": "/platform/events",
+    "headerHeight": 68,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  },
+  {
+    "width": 390,
+    "route": "/platform/claims",
+    "headerHeight": 68,
+    "gap": 9.4,
+    "glyphGap": 11,
+    "text": "OutClass · Administration",
+    "rows": 1
+  }
+]

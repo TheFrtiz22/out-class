@@ -5,21 +5,6 @@
   flex-wrap: wrap;
   margin: 8px 0;
 }
-.oc-event-periods {
-  display: flex;
-  gap: 2px;
-  flex-wrap: wrap;
-}
-.oc-event-periods button {
-  padding: 9px 10px;
-  border-radius: 5px;
-  font-size: 12px;
-  color: var(--primary);
-}
-.oc-event-periods button[aria-pressed="true"] {
-  background: var(--primary);
-  color: white;
-}
 .oc-event-search {
   display: flex;
   align-items: center;
@@ -131,7 +116,7 @@
   z-index: 2;
 }
 .oc-pinned-flyer:focus-visible {
-  outline: 3px solid var(--primary);
+  outline: 3px solid var(--ring);
   outline-offset: 5px;
 }
 .oc-pinned-flyer[data-selected="true"] {
@@ -276,9 +261,10 @@
 .oc-events-empty {
   padding: 1.5rem;
   text-align: left;
-  background: var(--card);
+  background: var(--oc-content-surface);
   border-radius: var(--oc-radius-md);
   color: var(--foreground);
+  box-shadow: var(--oc-content-shadow)
 }
 .oc-events-empty h2 {
   font-family: var(--oc-font-display);
@@ -444,9 +430,10 @@
   gap: 20px;
   align-items: center;
   padding: 16px;
-  background: var(--card);
-  border: 1px solid var(--border);
+  background: var(--oc-content-surface);
+  border: 1px solid var(--oc-content-edge);
   border-radius: 8px;
+  box-shadow: var(--oc-content-shadow)
 }
 .oc-managed-event .oc-event-paper {
   font-size: 4px;
@@ -479,19 +466,7 @@
   margin-top: 5px;
 }
 .oc-event-management-tabs {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
   margin: 20px 0;
-}
-.oc-event-management-tabs button {
-  padding: 8px 12px;
-  font-size: 13px;
-  border-bottom: 2px solid transparent;
-}
-.oc-event-management-tabs button[aria-pressed="true"] {
-  border-color: var(--primary);
-  font-weight: 600;
 }
 .oc-event-actions {
   display: flex;
@@ -705,11 +680,7 @@
 }
 
 /* Shared discovery controls; the pinned flyers retain their original layout. */
-.oc-event-view-switch.oc-segmented-control { border-radius: var(--oc-radius-sm); flex-shrink: 0; width: 184px; padding: 4px; }
-.oc-event-view-switch.oc-segmented-control button, .oc-event-view-switch.oc-segmented-control[data-sliding="true"] .oc-segmented-indicator { border-radius: var(--oc-radius-sm); }
-.oc-event-view-switch.oc-segmented-control button { min-height: 34px; }
-.oc-event-toolbar .oc-event-periods { gap: 4px; }
-.oc-event-toolbar .oc-event-periods button { min-height: 44px; border-radius: var(--oc-radius-sm); padding-inline: 15px; }
+.oc-event-view-switch.oc-segmented-control { flex-shrink: 0; width: auto; min-width: 184px; }
 .oc-event-search, .oc-event-filter summary { border-radius: var(--oc-radius-sm); min-height: 44px; }
 .oc-event-search { max-width: 300px; }
 .oc-event-filter-fields { max-width: calc(100vw - 40px); border-radius: var(--oc-content-radius); }
@@ -728,18 +699,18 @@
 .oc-smart-event-list > li { min-width: 0; content-visibility: auto; contain-intrinsic-size: auto 340px; }
 .oc-smart-event-card { position: relative; isolation: isolate; display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.5fr); min-height: 310px; overflow: hidden; border-radius: var(--oc-content-radius); border: 1px solid var(--oc-content-edge); background: var(--oc-content-surface); color: var(--foreground); box-shadow: var(--oc-content-shadow); transition: box-shadow var(--oc-content-motion); }
 .oc-smart-event-card:hover { box-shadow: var(--oc-content-shadow-hover); }
-.oc-smart-event-media { position: relative; overflow: hidden; min-height: 280px; background: #eee5d3; color: #142d45; }
+.oc-smart-event-media { position: relative; overflow: hidden; min-height: 280px; background: #eee5d3; color: var(--school-primary); }
 .oc-smart-event-media > img { object-fit: contain; padding: 14px; transition: transform 220ms ease; }
 .oc-smart-event-card:hover .oc-smart-event-media > img { transform: scale(1.025); }
-.oc-smart-event-media[data-template="navy"] { background-color: #142d45; color: #fffefa; }
+.oc-smart-event-media[data-template="navy"] { background-color: var(--school-primary); color: #fffefa; }
 .oc-smart-event-media[data-template="orange"] { background-color: #f7d7c4; }
 .oc-smart-event-media[data-template="sage"] { background-color: #dfe8d8; }
 .oc-smart-event-fallback { display: flex; flex-direction: column; justify-content: center; height: 100%; min-height: 280px; gap: 15px; padding: 104px 30px 30px; background-image: url("/images/events/paper.svg"); }
 .oc-smart-event-fallback > span { font-size: 11px; letter-spacing: .035em; }
 .oc-smart-event-fallback > strong { font-family: var(--oc-font-display); font-size: clamp(24px, 2.5vw, 36px); font-weight: 400; line-height: 1.13; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .oc-smart-event-fallback-rule { display: block; height: 2px; width: 40px; background: var(--brand-orange); }
-.oc-smart-event-date { position: absolute; top: 20px; left: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 65px; min-height: 75px; gap: 2px; border-radius: 17px; background: #fffefa; color: #142d45; box-shadow: 0 4px 16px #142d4515; }
-.oc-smart-event-date > span { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; font-weight: 600; color: #9f3d12; }
+.oc-smart-event-date { position: absolute; top: 20px; left: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 65px; min-height: 75px; gap: 2px; border-radius: 17px; background: #fffefa; color: var(--school-primary); box-shadow: 0 4px 16px color-mix(in srgb, var(--school-primary) 8%, transparent); }
+.oc-smart-event-date > span { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; font-weight: 600; color: var(--brand-ink); }
 .oc-smart-event-date > strong { font-size: 28px; line-height: 1.05; font-weight: 500; font-variant-numeric: tabular-nums; }
 .oc-smart-event-copy { min-width: 0; display: flex; flex-direction: column; padding: 26px 30px 22px; }
 .oc-smart-event-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; font-size: 11px; margin-bottom: 13px; }
@@ -749,7 +720,7 @@
 /* A stretched native link makes the card clickable, with sibling actions above it. */
 .oc-smart-event-link::after { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: var(--oc-content-radius); }
 .oc-smart-event-link:focus-visible { outline: none !important; }
-.oc-smart-event-link:focus-visible::after { outline: 3px solid var(--ring); outline-offset: -3px; }
+.oc-smart-event-link:focus-visible::after { outline: 3px solid var(--ring); outline-offset: -3px; box-shadow: var(--focus-halo-inset-5) }
 .oc-smart-event-facts { display: grid; gap: 10px; font-size: 12px; line-height: 1.6; }
 .oc-smart-event-facts > div { display: flex; align-items: flex-start; gap: 10px; }
 .oc-smart-event-facts dt { flex-shrink: 0; margin-top: 2px; color: var(--muted-foreground); }
@@ -764,8 +735,7 @@
 @media (max-width: 700px) {
   .oc-event-view-switch.oc-segmented-control { flex: 1; min-width: 168px; }
   .oc-event-toolbar { gap: 9px; }
-  .oc-event-toolbar .oc-event-periods { width: 100%; gap: 2px; }
-  .oc-event-toolbar .oc-event-periods button { padding-inline: 12px; }
+  .oc-event-toolbar .oc-event-periods { width: 100%; }
   .oc-event-toolbar .oc-event-search { width: 100%; max-width: none; flex-basis: 100%; }
   .oc-event-filter-fields { left: 0; right: auto; }
   .oc-smart-event-card { display: flex; flex-direction: column; border-radius: 20px; }
@@ -788,7 +758,7 @@
 
 @media (max-width: 359px) { .oc-flyer-grid { grid-template-columns: minmax(0, 1fr); } .oc-physical-board { padding: 1.5rem; } }
 
-/* Search, filters, view selection and saved clubs share one aligned toolbar. */
+/* One toolbar: date range, search, the Filter menu and the view switch. */
 .oc-event-toolbar-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; flex: 1 1 38rem; min-width: 0; }
 .oc-event-toolbar-actions .oc-event-search { margin-left: auto; max-width: none; min-width: min(100%, 10rem); }
 .oc-event-toolbar-actions > [data-slot="button"] { min-height: 44px; }
@@ -798,4 +768,33 @@
   .oc-event-toolbar-actions .oc-event-view-switch { width: 100%; min-width: 0; }
   .oc-event-toolbar-actions .oc-event-filter summary { justify-content: center; }
   .oc-event-toolbar-actions > [data-slot="button"] { width: 100%; }
+}
+.oc-event-filter summary { white-space: nowrap; }
+.oc-event-filter summary::-webkit-details-marker { display: none; }
+.oc-event-filter-count { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding-inline: 6px; border-radius: 999px; background: var(--primary); color: var(--primary-foreground); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
+@media (max-width: 700px) {
+  .oc-event-toolbar-actions .oc-event-view-switch { grid-column: 1 / -1; }
+  .oc-event-view-switch.oc-segmented-control button { padding-inline: .75rem; }
+}
+
+/* Phones and tablets, as in the OutClass app's Corkboard: compact event cards (list is the phone default). */
+@media (max-width: 1023px) {
+  .oc-smart-event-list { gap: 12px; }
+  .oc-smart-event-list > li { contain-intrinsic-size: auto 380px; }
+  .oc-smart-event-card { display: flex; flex-direction: column; min-height: 0; border-radius: var(--oc-content-radius); }
+  .oc-smart-event-media { height: auto; min-height: 0; aspect-ratio: 16 / 9; }
+  /* Without a flyer, a short tinted band carries the date; the title is already in the copy below. */
+  .oc-smart-event-media:has(.oc-smart-event-fallback) { aspect-ratio: auto; height: 84px; }
+  .oc-smart-event-fallback { display: none; }
+  .oc-smart-event-date { top: 14px; left: 14px; width: 52px; min-height: 58px; }
+  .oc-smart-event-date > strong { font-size: 22px; }
+  .oc-smart-event-media:has(.oc-smart-event-fallback) .oc-smart-event-date { top: 13px; }
+  .oc-smart-event-copy { padding: 14px 16px 16px; }
+  .oc-smart-event-copy h2 { margin-bottom: 6px; font-size: 20px; line-height: 1.2; }
+  .oc-smart-event-facts { gap: 4px; margin-bottom: 8px; font-size: var(--oc-text-small); }
+  .oc-smart-event-description { margin-bottom: 12px; }
+  .oc-smart-event-footer { flex-direction: column; align-items: stretch; gap: 8px; }
+  .oc-smart-event-footer > .oc-event-pill-primary { width: 100%; min-height: 46px; justify-content: center; border-radius: 999px; }
+  .oc-smart-event-actions { display: flex; width: 100%; gap: 8px; }
+  .oc-smart-event-actions > .oc-event-pill { flex: 1; min-height: 44px; padding-inline: 12px; }
 }

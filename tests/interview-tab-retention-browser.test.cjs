@@ -15,10 +15,10 @@ test('interview tabs lazily mount Scheduling, retain a dirty editor across rapid
  await new Promise(r=>server.listen(0,'127.0.0.1',r));const browser=await chromium.launch({headless:true});
  try{const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));const dialogs=[];page.on('dialog',async d=>{dialogs.push(d.message());await d.dismiss()});
   await page.goto('http://127.0.0.1:'+server.address().port);await page.getByText('Assigned rooms').waitFor();assert.equal(await page.getByLabel('Scheduler draft').count(),0);
-  const schedule=page.getByRole('tab',{name:'Scheduling',exact:true}),rooms=page.getByRole('tab',{name:'Interview rooms',exact:true});
+  const schedule=page.getByRole('tab',{name:'Scheduling',exact:true}),rooms=page.getByRole('tab',{name:'Rooms',exact:true});
   await schedule.click();await page.getByLabel('Scheduler draft').fill('Unsaved panel work');
   for(let i=0;i<6;i++){await rooms.click();await schedule.click();assert.equal(await page.getByLabel('Scheduler draft').inputValue(),'Unsaved panel work')}
-  await page.evaluate(()=>{history.replaceState(null,'','?interviewTab=rooms');dispatchEvent(new PopStateEvent('popstate'))});await rooms.waitFor();await page.waitForFunction(()=>document.querySelector('[role="tab"][data-state="active"]').textContent==='Interview rooms');
+  await page.evaluate(()=>{history.replaceState(null,'','?interviewTab=rooms');dispatchEvent(new PopStateEvent('popstate'))});await rooms.waitFor();await page.waitForFunction(()=>document.querySelector('[role="tab"][data-state="active"]').textContent==='Rooms');
   await page.evaluate(()=>{history.replaceState(null,'','?interviewTab=schedule');dispatchEvent(new PopStateEvent('popstate'))});await page.getByLabel('Scheduler draft').waitFor();assert.equal(await page.getByLabel('Scheduler draft').inputValue(),'Unsaved panel work');
   assert.deepEqual(await page.evaluate(()=>[window.schedulerMounts,window.schedulerUnmounts||0]),[1,0]);assert.deepEqual(errors,[]);assert.deepEqual(dialogs,[]);
  }finally{await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r))}
@@ -29,7 +29,7 @@ test('retained real scheduler revalidates before reveal, keeps editor state, and
  const secondRound=require('node:crypto').randomUUID();f.mutate(s=>{const club=s.clubs.find(c=>c.id===f.scope.clubId),round=club.rounds.find(r=>r.id===f.scope.roundId);club.rounds.push({...round,id:secondRound,name:'Second retained round',order:round.order+1})});
  try{const page=await browser.newPage();page.setDefaultTimeout(10000);const calls=[];page.on('request',r=>{if(r.url().endsWith('/action'))calls.push(JSON.parse(r.postData()).name)});
   await page.goto(f.url+'?interviewTab=rooms&roundId='+f.scope.roundId);await page.getByRole('heading',{name:'Your interview rooms',exact:true}).waitFor();assert.equal(calls.includes('getRoomWorkspace'),false);
-  const schedule=page.getByRole('tab',{name:'Scheduling',exact:true}),rooms=page.getByRole('tab',{name:'Interview rooms',exact:true});
+  const schedule=page.getByRole('tab',{name:'Scheduling',exact:true}),rooms=page.getByRole('tab',{name:'Rooms',exact:true});
   await schedule.click();await page.locator('.ir-manager').waitFor();await page.getByLabel('Filter interview date',{exact:true}).fill('2099-09-07');await rooms.click();
   let release,held;const barrier=new Promise(r=>release=r),arrived=new Promise(r=>held=r);
   await page.route('**/action',async route=>{if(JSON.parse(route.request().postData()).name==='getRoomWorkspace'){held();await barrier}await route.continue()});

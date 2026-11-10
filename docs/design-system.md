@@ -31,28 +31,83 @@ changing every screen's spacing in a foundations change.
 
 The intentional current font exception is documented in [the typography audit](typography-audit.md) and [Campus OS](outclass-campus-os.md). The October 2 migration replaced Horsham Serial with self-hosted Libre Caslon Text. Do not silently restore Horsham or add another downloaded family.
 
-Public marketing and authentication use Caslon throughout. Authenticated product shells, focused workspaces, and the reference page use self-hosted Source Sans 3 for operational text and Caslon for display/page/dialog headings. `styles/product-tokens.css` owns that context, including portaled overlays. `app/layout.tsx` loads actual Caslon normal/italic weights 400–700; synthetic faces remain disabled. Brand artwork keeps its original typography; invitation emails retain Arial for email compatibility.
+Public marketing and authentication pages use Source Sans 3 for body text and Libre Caslon Text for headings only, always upright (no italics); see [the public-site redesign spec](public-site/redesign/README.md). Authenticated product shells, focused workspaces, and the reference page use self-hosted Source Sans 3 for operational text and Caslon for display/page/dialog headings. `styles/product-tokens.css` owns that context, including portaled overlays. `app/layout.tsx` loads actual Caslon normal/italic weights 400–700; synthetic faces remain disabled. Brand artwork keeps its original typography; invitation emails retain Arial for email compatibility.
 
 ## Components
 
 | Need | API / guidance |
 | --- | --- |
-| Action | `Button`: existing variants/sizes retained; `accent` is a pale orange treatment. Preserve normal HTML submit semantics; specify type for non-submit form buttons. |
+| Action | `Button`: every variant is a glass pill (see "Glass surfaces"); `accent` is a pale orange pill. Preserve normal HTML submit semantics; specify type for non-submit form buttons. |
+| Choice | `SegmentedControl` (`components/ui/segmented-control.tsx`): both modes are `aria-pressed` toggle buttons in a labelled group with roving focus; single-select adds a sliding navy indicator, `multiple` makes filter chips. Use it for every toggle group and filter chip row; use segmented `Tabs` only for tab panels. |
 | Icon action | `IconButton`: required `aria-label`, defaults to `type="button"`. |
 | Form fields | `Input`, `Textarea`, Radix `Select`, native `NativeSelect`; associate visible labels and error descriptions. |
 | Search | `Search`: required accessible name, normal input props, no filtering state ownership. |
-| Label/status | `Badge` semantic variants; `StatusBadge` supports existing labels and Prisma status strings without changing stored values. |
+| Label/status | `Badge` semantic variants for general labels. Application states use `StatusPill` (`components/ui/status-pill.tsx`): one filled pill per state (Draft, Submitted, In review, Interview, Accepted, Not selected, Waitlisted) from semantic tokens; it accepts stored codes and legacy labels without changing stored values. |
 | Identity | `Avatar`, `AvatarImage`, `AvatarFallback`; provide an accessible name or adjacent identity. |
-| Grouping | Plain sections and `Divider` first; `Surface` defaults to no box. Use `Card` for a meaningful boundary. |
+| Grouping | Plain sections and `Divider` first. `Panel` (`components/ui/panel.tsx`) is the one content container (`.oc-content-panel`, `tone="subtle"` for a muted fill); semantic elements such as `form`, `li` and `fieldset` may carry the same class. |
 | Dialog | Existing `Dialog*` exports: modal semantics, focus trap/return and Escape remain Radix-owned. Always include title and description, or explicitly omit aria-describedby when appropriate. |
 | Dropdown | Existing `DropdownMenu*` exports preserve keyboard behavior. |
 | Tabs | Existing Radix exports; `TabsList variant="underline"` avoids another rounded container. Default remains compatible. |
 | Tooltip | Existing exports, 350ms delay; never use a tooltip as the only accessible name. |
 | Toast | Existing Sonner `toast` API; semantic tones centralized in the root `Toaster`. Inline feedback remains necessary for field errors. |
 | Loading | `LoadingState` reserves rows/cards or gives inline Phosphor feedback; one accessible status. `Skeleton` remains decorative. |
+| Page title | `PageHeader` (`components/ui/page-header.tsx`) renders every page's `<h1>`; `tests/primitives.test.cjs` lists the few display/document headings that are not pages. Page widths use only `--oc-content-width` or `--oc-reading-width`. |
+| Data table | `DataTable` (`components/ui/data-table.tsx`): the `.oc-data-surface` card around the shared `Table`, with a required caption. |
 | Empty state | `EmptyState`: title, description, optional icon/action; compact/roomy density, start/center alignment, plain/subtle/outlined tone; no default card. |
 | Progress | `Progress`: numeric value/max or indeterminate null; supply aria-label/aria-labelledby. Values are bounded and passed to Radix for accessible reporting. |
 | Heading | `SectionHeading`: explicit h1/h2/h3, optional eyebrow, description, action, and editorial style. |
+
+### Glass surfaces
+
+One glass language, from the navigation's own tokens. Tokens live in `styles/navigation-glass.css` beside the navigation optics; the variant rules live in `styles/interface-primitives.css`.
+
+**Defaults (Phase 2 rollout).** `--oc-content-surface`, `--oc-content-edge` and `--oc-content-shadow` resolve to `--oc-surface-glass*`, so every surface built on the content tokens (`.oc-content-panel`, `.oc-toolbar`, `.oc-form-section`, `.oc-detail-panel`, product cards) is glass without blur. The solid values stay as `--oc-content-solid`, `--oc-content-edge-solid` and `--oc-content-shadow-solid`: data tables (`.oc-data-surface` rows and cells), form fields (`--card`/`--input`), the projector theme and every fallback use them. `Card` defaults to `variant="glass"`; `variant="solid"` on `Card` or `Panel` is the explicit opaque surface for dense data (applicant tables, resumes, interview notes); `Skeleton` defaults to the glass track; `TabsList` defaults to `segmented` (`subtle` and `underline` remain); dialogs, sheets, popovers, menus and selects use the frosted navigation material with the light filter (the only content surfaces allowed to blur, also on phones); tooltips use navy frosted glass; default toasts use the frosted material; outlined and subtle `EmptyState` tones use the glass surface and track. `SegmentedControl` shares the segmented tabs' glass track and navy selection: use segmented `Tabs` for tab panels and `SegmentedControl` for toggles and filters.
+
+**Primitives are glass by default (UI redesign, Phase B).** Visuals for `Button`, `Badge`, `Input`, `Textarea`, `SelectTrigger`, `Switch`, `Checkbox` and `Command` live in `@layer components` (`styles/interface-primitives.css`, badges in `styles/product-components.css`), so a call site's Tailwind utilities still override them; the cva strings carry layout only. None of them uses `backdrop-filter`.
+
+| Token | Use | Solid default | Reduced transparency / higher contrast | Forced colors |
+| --- | --- | --- | --- | --- |
+| `--oc-surface-glass` | Light card, no blur | `--oc-content-surface` | solid surface, `#526675` edge, no depth | `Canvas` + `CanvasText` |
+| `--oc-surface-glass-raised` | Light, blur allowed | `--oc-glass-light-solid` | solid, no filter | `Canvas` |
+| `--oc-surface-glass-navy` | The rail's material | `--oc-glass-navy-solid` | solid, no filter | `Canvas` |
+| `--oc-surface-ambient` | One decorative page backdrop | `none` | `none` | `none` |
+
+Translucency (and `--oc-surface-glass-filter` / `--oc-surface-glass-navy-filter`) is only enabled inside `@supports (backdrop-filter)`; both filters are `none` below 760px so phones blur only the header, sheets and dialogs. The tokens are declared on `:root` and `[data-product-shell]` so `--oc-club-accent` resolves in the ambient gradient.
+
+| Primitive | Variant | Notes |
+| --- | --- | --- |
+| `Card`, `Panel` | `variant="glass" \| "glass-raised" \| "glass-navy"` | Glass is the material without blur. Raised and navy put blur on an isolated `::before` layer, never on text. Radius from `--oc-glass-card-radius` (default 18 / 22 / 26px). Navy uses cream text, `--oc-rail-muted` secondary text and orange focus rings. |
+| `Tabs` | `TabsList variant="segmented"` | The workspace pill's 54px track. One or two tabs share the width with a sliding navy indicator (positioned with `:has()` from the active trigger, `--oc-floating-spring`); three or more scroll horizontally inside the track and the active tab fills itself, so labels never truncate or widen the page on phones. Without `:has()` the active trigger fills itself. |
+| `Button`, `IconButton` | all variants | `default` (and its alias `glass-primary`) is the navy pill of the selected workspace segment (`--oc-glass-pill-navy*`); `outline`, `secondary` (and alias `glass`) are the light pill of the header search; `ghost` is transparent with a `--oc-glass-hover-tint` hover (`--oc-glass-navy-hover-tint` on navy glass); `destructive` is a solid `--destructive` pill with `--oc-glass-pill-highlight`; `link` stays a link. Every size is a pill (icon sizes are circles) and keeps a 44px hit area through `::after`. Hover lifts 1px with `--oc-glass-lift`. Navy focus ring on light glass, orange on navy. The projector keeps its inverted primary. |
+| `Input`, `Textarea`, `SelectTrigger`, `NativeSelect`, `DatePicker`, `Search` | — | Solid `--card` field, `--input` edge (3:1), `--oc-glass-field-depth` inset highlight, `--oc-content-radius-small`, 2px navy focus ring (orange inside navy glass). |
+| `Switch`, `Checkbox`, radios | — | Switch: light glass track with a grey thumb, navy-tinted track and navy thumb when on, 44px hit area. Checkbox: field edge, navy pill fill when checked. Native radios and checkboxes use `accent-color: var(--primary)`. Forced colors use `Highlight` when on. |
+| `Badge`, `StatusPill` | all variants | Pills tinted from the semantic `-subtle` tokens with `--oc-glass-tint-sheen` and `--oc-glass-tint-highlight`; text uses the matching semantic ink (4.5:1). |
+| `Command` | — | Frosted material with `--oc-glass-menu-depth`; transparent inside dialogs, popovers and sheets so frosting never stacks. |
+| `Skeleton`, `LoadingState` | `variant="glass"` | Light material without blur; skeleton blocks use `--oc-surface-glass-track`. |
+
+Rules: text never passes through a filter; blurred surfaces are never nested; at most six blurred surfaces on screen on desktop (the shell uses five: rail, workspace pill, search, notifications, account; the header band behind them is frosted without blur so blur is never stacked), so page content keeps `--oc-surface-glass-filter: none` in its scope, as Club home does, unless it is the one surface allowed to blur. 
+
+### Dashboards
+
+Every dashboard is built from the club home pieces in `components/product/dashboard/dashboard.tsx` (styles: `dashboard.css`, imported once from `app/globals.css`). Club home is the reference; Personal Home, Recruiting Overview, member club home and admin Overview use the same pieces.
+
+| Piece | Use |
+| --- | --- |
+| `DashboardHero` | Ambient glow behind the page title. `glow="neutral"` is the admin's navy-only glow. Hidden under reduced transparency, higher contrast and forced colors. |
+| `NeedsYouRow`, `NeedsAction` | One navy priority card, then up to three light glass cards; the whole card is the action's hit area. The quiet "You're clear for now" strip when empty. |
+| `Dashboard`, `DashboardGrid` | Container-query root (filters off, so nothing blurs) and the main/side grid; phones become one column and dashboards order cards with `order`. |
+| `DashboardCard` | Glass `Panel` with a head (title, aside, "more →" link) and optional foot. `label` keeps an existing region name. |
+| `MetricTiles` | Big serif numbers in a `<dl>`; values are text. |
+| `PipelineBars` | Stage counts with decorative bars; `compactStages` shows one segmented bar on phones. |
+| `DateChipList`, `DateChip` | Month/day chips (navy, interview or deadline tints). `timeZone` keeps the chip on the row's zone. |
+| `GlassRowList`, `GlassRow` | Whole-row buttons or links with the glass hover; static rows can carry a separate `action`. |
+| `DashboardLoading` | The same layout in glass skeletons. |
+
+New tokens for these pieces (`--oc-glass-track-inset`, `--oc-glass-fill-highlight`, `--oc-glass-navy-track`, `--oc-glass-navy-highlight`, `--oc-glass-dot-halo`, `--oc-glass-pill-sheen*`, `--oc-glass-chip-radius`, `--oc-glass-row-radius`, `--oc-surface-ambient-neutral`) live in `styles/navigation-glass.css` with solid, reduced-transparency/higher-contrast and forced-colors values. Applicant tables, speed review, the resume viewer and the interview room stay solid.
+
+### Control guard
+
+`node scripts/check-ui-controls.cjs` runs as part of `pnpm run lint`. It fails on a native `<select>` outside `components/ui` (use `NativeSelect`/`Select`), a raw `<button>` with `aria-pressed` or a group of `aria-pressed` Buttons (use `SegmentedControl`; one standalone toggle may be a `Button`), a raw `<button>` styled as a button, link or chip (use `Button`/`IconButton`; raw buttons are for whole-surface rows, cards and cells styled by an `oc-*` class), and hex, box-shadow or border-radius literals in component CSS (dashboard CSS allows none; other page CSS may not exceed its allowlisted count). Exceptions live in `scripts/ui-controls-allowlist.json`, each with a reason; `--report` prints the counts.
 
 ## Motion and stacking
 

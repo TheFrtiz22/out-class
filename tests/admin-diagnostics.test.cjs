@@ -1,6 +1,8 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs'), ts = require('typescript');
+// The platform page streams its overview inside a Suspense placeholder; render the overview itself.
+const platformOverview = mod => async () => { const outer = mod.default(); return outer.props.children.type(outer.props.children.props); };
 function harness(overrides = {}, faults = {}) {
   const logs = [], cache = {};
   function load(file) {
@@ -55,8 +57,8 @@ test('provider classification requires explicit Supabase denial semantics', () =
 });
 
 test('overview actually renders recovery instead of login when its loader throws', async () => {
-  const h = harness({ '@/actions/admin-workspace': { getAdminOverview: async () => { throw Error('private database details'); } }, '@/components/product/page-header': { PageHeader: () => null } });
-  const Page = h.load('app/platform/page.tsx').default;
+  const h = harness({ '@/actions/admin-workspace': { getAdminOverview: async () => { throw Error('private database details'); } }, '@/components/ui/page-header': { PageHeader: ({ title }) => require('react').createElement('h1', null, title) } });
+  const Page = platformOverview(h.load('app/(workspace)/platform/page.tsx'));
   const html = require('react-dom/server').renderToStaticMarkup(await Page());
   assert.match(html, /ADMIN_DATA_LOAD_FAILED:/);
   assert.ok(!html.includes('private database details'));
@@ -65,8 +67,8 @@ test('overview actually renders recovery instead of login when its loader throws
 });
 test('overview actually renders protected metrics on loader success', async () => {
   const metrics = { students: 2, clubs: 1, eventApprovals: 0, clubApprovals: 0, reports: 0, upcomingEvents: 0, supportItems: 0 };
-  const h = harness({ '@/actions/admin-workspace': { getAdminOverview: async () => metrics }, '@/components/product/page-header': { PageHeader: () => null } });
-  const html = require('react-dom/server').renderToStaticMarkup(await h.load('app/platform/page.tsx').default());
+  const h = harness({ '@/actions/admin-workspace': { getAdminOverview: async () => metrics }, '@/components/ui/page-header': { PageHeader: ({ title }) => require('react').createElement('h1', null, title) } });
+  const html = require('react-dom/server').renderToStaticMarkup(await platformOverview(h.load('app/(workspace)/platform/page.tsx'))());
   assert.match(html, /Needs Attention/);
   assert.ok(!html.includes('temporarily unavailable'));
 });
@@ -99,10 +101,10 @@ for (const faults of [{ logger: true }, { uuid: true }, { logger: true, uuid: tr
   test(`diagnostic faults ${JSON.stringify(faults)} preserve recovery, denial and API classification`, async () => {
     const h = harness({
       '@/actions/admin-workspace': { getAdminOverview: async () => { throw Error('private loader failure'); } },
-      '@/components/product/page-header': { PageHeader: () => null },
+      '@/components/ui/page-header': { PageHeader: ({ title }) => require('react').createElement('h1', null, title) },
       '@/utils/platform-admin': { requirePlatformAdminEligibility: async () => { throw Error('private provider failure'); } },
     }, faults);
-    const Page = h.load('app/platform/page.tsx').default;
+    const Page = platformOverview(h.load('app/(workspace)/platform/page.tsx'));
     const html = require('react-dom/server').renderToStaticMarkup(await Page());
     assert.match(html, /Admin temporarily unavailable/);
     assert.match(html, /ADMIN_DATA_LOAD_FAILED:/);
@@ -132,10 +134,10 @@ test('new school-request Admin route preserves denials and recovers from operati
   let failure;
   const h = harness({
     '@/utils/platform-admin': { requirePlatformAdmin: async () => { if (failure) throw failure; return { id: 'admin' }; } },
-    '@/components/product/page-header': { PageHeader: () => null },
+    '@/components/ui/page-header': { PageHeader: ({ title }) => require('react').createElement('h1', null, title) },
     '@/components/admin/school-request-review': { SchoolRequestReview: () => require('react').createElement('p', null, 'Protected school request review') },
   });
-  const Page = h.load('app/platform/school-requests/page.tsx').default;
+  const Page = h.load('app/(workspace)/platform/school-requests/page.tsx').default;
   failure = Error('private database outage');
   const html = require('react-dom/server').renderToStaticMarkup(await Page());
   assert.match(html, /Admin temporarily unavailable/);
@@ -157,7 +159,7 @@ test('signed-out Admin login uses the canonical login route and preserves its Ad
   const h = harness({
     '@/contexts/auth-context': { useAuth: () => ({ user: null, loading: false, isImpersonating: false }) },
     '@/contexts/demo-context': { useDemoMode: () => ({ isDemoEnabled: false }) },
-    '@/components/product/page-header': { PageHeader: () => null },
+    '@/components/ui/page-header': { PageHeader: ({ title }) => require('react').createElement('h1', null, title) },
     '@/components/ui/button': { Button: () => null },
     '@/components/ui/input': { Input: () => null },
   });

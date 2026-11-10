@@ -10,6 +10,7 @@ import {
 } from "@/lib/campus-events";
 import { EventFlyer } from "./event-flyer";
 import { Button } from "@/components/ui/button";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import {
   Dialog,
   DialogContent,
@@ -19,7 +20,7 @@ import {
 import "./events.css";
 export function EventApprovals() {
   const origin = useRef<HTMLButtonElement | null>(null),
-    queueTab = useRef<HTMLButtonElement | null>(null),
+    queueTabs = useRef<HTMLDivElement | null>(null),
     decided = useRef(false);
   const [status, setStatus] = useState("PENDING"),
     [events, setEvents] = useState<ManagedCampusEvent[]>([]),
@@ -74,22 +75,17 @@ export function EventApprovals() {
   }
   return (
     <section aria-label="Event approvals">
-      <div className="oc-event-management-tabs">
-        {[
-          ["PENDING", `Pending (${count})`],
-          ["PUBLISHED", "Approved"],
-          ["REJECTED", "Rejected"],
-        ].map(([id, label]) => (
-          <button
-            type="button"
-            key={id}
-            ref={id === status ? queueTab : undefined}
-            aria-pressed={status === id}
-            onClick={() => setStatus(id)}
-          >
-            {label}
-          </button>
-        ))}
+      <div className="oc-event-management-tabs" ref={queueTabs}>
+        <SegmentedControl
+          label="Approval status"
+          value={status}
+          onChange={setStatus}
+          options={[
+            { value: "PENDING", label: `Pending (${count})` },
+            { value: "PUBLISHED", label: "Approved" },
+            { value: "REJECTED", label: "Rejected" },
+          ]}
+        />
       </div>
       {error && !selected && (
         <p role="alert">
@@ -157,7 +153,7 @@ export function EventApprovals() {
             className="oc-event-detail"
             onCloseAutoFocus={(event) => {
               const target = decided.current
-                ? queueTab.current
+                ? queueTabs.current?.querySelector<HTMLButtonElement>('[aria-pressed="true"]')
                 : origin.current;
               if (target?.isConnected) {
                 event.preventDefault();

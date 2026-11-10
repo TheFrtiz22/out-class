@@ -80,7 +80,7 @@ test('rescheduling replaces only on success, and cancellation checks ownership a
  await assert.rejects(api.reserveInterview({applicationId:id(5),slotId:id(4)}),/Write failed/)
  assert.deepEqual(state.deleted,[])
  state.failCreate=false;await api.reserveInterview({applicationId:id(5),slotId:id(4)});assert.deepEqual(state.deleted,[id(8)])
- state.deleted=[];state.app.studentId=id(70);await assert.rejects(api.cancelRoomBooking(id(8)),/not found/);assert.equal(state.deleted.length,0)
+ state.deleted=[];state.app.studentId=id(70);await assert.rejects(api.cancelRoomBooking(id(8)),/couldn.t find that interview/);assert.equal(state.deleted.length,0)
  state.app.studentId=id(6);state.existing.slot.startTime=new Date(0);await assert.rejects(api.cancelRoomBooking(id(8)),/already started/)
  state.existing.slot.startTime=new Date('2099-09-08T14:00Z');await api.cancelRoomBooking(id(8));assert.deepEqual(state.deleted,[id(8)])
 })

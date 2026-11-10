@@ -1,17 +1,18 @@
 "use client"
 import { useRef, useState } from "react"
 import { schedulingDateTime } from "@/lib/scheduling-config"
-import { ShieldCheck } from "@/components/icons"
+import { Lock, ShieldCheck } from "@/components/icons"
+import { DataTable } from "@/components/ui/data-table"
+import { StatusPill } from "@/components/ui/status-pill"
 import { SortLabel } from "@/components/product/sort-label"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import type { getClubPipeline } from "@/lib/workspace-api"
 import type { ApplicantSort } from "@/lib/live-applicant-sorting"
 import { applicantLane, applicantLanes } from "@/lib/applicant-board"
-import { applicationStatusLabels } from "@/lib/student-applications"
 import { relevantInterview } from "@/lib/application-presentation"
-import { Badge } from "@/components/ui/badge"
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
-import { formatAverage } from "@/lib/interview-review-summary"
+import { TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
+import { formatAverage, scoredEvaluationsLabel } from "@/lib/interview-review-summary"
+import { NativeSelect } from "@/components/ui/native-select"
 
 type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
 type Candidate = Pipeline["applications"][number]
@@ -20,7 +21,7 @@ type Props = { votingSelection?: {ids:string[];toggle:(id:string)=>void}; applic
 export function ApplicantInterview({ app }: { app: Awaited<ReturnType<typeof import("@/lib/workspace-api").getClubPipeline>>["applications"][number] }) {
   if (app.studentId.startsWith("anonymous-")) return <span>Withheld for anonymous review</span>
   const selected = relevantInterview(app.bookings)
-  if (!selected) return <span>No booking recorded</span>
+  if (!selected) return <span>No interview scheduled</span>
   return <span>{selected.past ? "Last: " : "Next: "}{schedulingDateTime(selected.booking.slot.startTime)}</span>
 }
 function ApplicantIdentity({ label, anonymous }: { label: string; anonymous: boolean }) {
@@ -28,21 +29,22 @@ function ApplicantIdentity({ label, anonymous }: { label: string; anonymous: boo
 }
 function Review({ app }: { app: Candidate; average?: Props["average"] }) {
   const summary = app.roundScore
-  return <span className="oc-applicant-review" data-reviewed={!!summary?.submitted}>{summary ? <><strong>{formatAverage(summary.average)}{summary.average !== null && <span> / 10</span>}</strong><span>{summary.submitted} of {summary.required} reviews submitted{summary.provisional && " · Provisional"}</span></> : "Submit your own review to see round scores"}</span>
+  return <span className="oc-applicant-review" data-reviewed={!!summary?.submitted}>{summary ? <><strong>{formatAverage(summary.average)}{summary.average !== null && <span> / 10</span>}</strong><span>{summary.average === null ? `${summary.submitted} of ${summary.required} reviews submitted` : `Average of ${scoredEvaluationsLabel(summary.submitted)}`}{summary.provisional && " · Provisional"}</span></> : <span className="oc-applicant-review-hidden"><Lock aria-hidden="true" size={14} />Hidden until you review</span>}</span>
 }
-const columns: { key: ApplicantSort; label: string }[] = [{ key: "name", label: "Applicant" }, { key: "round", label: "Round" }, { key: "gpa", label: "GPA" }, { key: "sat", label: "SAT" }, { key: "act", label: "ACT" }, { key: "score", label: "Rating" }, { key: "status", label: "Status / decision" }]
+const columns: { key: ApplicantSort; label: string }[] = [{ key: "name", label: "Applicant" }, { key: "year", label: "Year" }, { key: "round", label: "Round" }, { key: "gpa", label: "GPA" }, { key: "sat", label: "SAT" }, { key: "act", label: "ACT" }, { key: "score", label: "Rating" }, { key: "status", label: "Status / decision" }]
 export function LiveApplicantList({ applicants, rounds, open, compact, name, sort = "name", descending = false, sortBy, votingSelection }: Props) {
   return <>
-    <div className="oc-data-surface hidden xl:block"><Table><TableHeader><TableRow>{votingSelection&&<TableHead><span className="sr-only">Select for voting</span></TableHead>}{columns.map(column => <TableHead key={column.key} scope="col" aria-sort={sort === column.key ? descending ? "descending" : "ascending" : "none"}>{sortBy ? <SortLabel label={column.label} active={sort === column.key} descending={descending} onClick={() => sortBy(column.key)} /> : column.label}</TableHead>)}</TableRow></TableHeader><TableBody>{applicants.map(app => <TableRow key={app.id} className="cursor-pointer hover:bg-secondary/40" onClick={() => open(app)}>
+    <DataTable className="hidden xl:block" caption="Applicants"><TableHeader><TableRow>{votingSelection&&<TableHead><span className="sr-only">Select for voting</span></TableHead>}{columns.map(column => <TableHead key={column.key} scope="col" aria-sort={sort === column.key ? descending ? "descending" : "ascending" : "none"}>{sortBy ? <SortLabel label={column.label} active={sort === column.key} descending={descending} onClick={() => sortBy(column.key)} /> : column.label}</TableHead>)}</TableRow></TableHeader><TableBody>{applicants.map(app => <TableRow key={app.id} className="cursor-pointer hover:bg-secondary/40" onClick={() => open(app)}>
       <>{votingSelection&&<TableCell onClick={e=>e.stopPropagation()}><VotingSelection app={app} name={name(app)} selection={votingSelection}/></TableCell>}</><TableCell className={compact ? "py-3" : "py-5"}><button type="button" data-applicant-id={app.id} onClick={event => { event.stopPropagation(); open(app) }} className="min-h-11 rounded text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"><ApplicantIdentity label={name(app)} anonymous={app.studentId.startsWith("anonymous-")} /><span className="text-xs text-muted-foreground">{app.studentId.startsWith("anonymous-") ? "Anonymous review" : app.student.email}</span><span className="sr-only"> · Open applicant</span></button></TableCell>
+      <TableCell className="text-xs">{app.student.studentProfile?.academicYear || "—"}</TableCell>
       <TableCell className="text-xs">{rounds.find(round => round.id === app.roundId)?.name || "Not available"}</TableCell>
       <TableCell>{app.student.studentProfile?.gpa?.toFixed(2) ?? "—"}</TableCell>
       <TableCell>{app.student.studentProfile?.satScore ?? "—"}</TableCell>
       <TableCell>{app.student.studentProfile?.actScore ?? "—"}</TableCell>
       <TableCell className="text-xs text-muted-foreground"><Review app={app} /></TableCell>
-      <TableCell><Badge data-application-status={app.status} variant="secondary">{applicationStatusLabels[app.status]}</Badge></TableCell>
-    </TableRow>)}</TableBody></Table></div>
-    <ul className="oc-applicant-mobile-list grid gap-3 xl:hidden">{applicants.map(app => <li key={app.id}>{votingSelection&&<VotingSelection app={app} name={name(app)} selection={votingSelection}/>}<button type="button" data-applicant-id={app.id} onClick={() => open(app)} className="oc-content-panel w-full space-y-3 text-left focus-visible:outline-2 focus-visible:outline-ring"><span className="flex flex-wrap items-center justify-between gap-2"><ApplicantIdentity label={name(app)} anonymous={app.studentId.startsWith("anonymous-")} /><Badge data-application-status={app.status} variant="secondary">{applicationStatusLabels[app.status]}</Badge></span><span className="block text-xs text-muted-foreground">{rounds.find(round => round.id === app.roundId)?.name || "Round unavailable"} · GPA {app.student.studentProfile?.gpa?.toFixed(2) ?? "—"} · SAT {app.student.studentProfile?.satScore ?? "—"} · ACT {app.student.studentProfile?.actScore ?? "—"}</span><Review app={app} /><span className="block text-sm font-medium text-primary">Open applicant →</span></button></li>)}</ul>
+      <TableCell><StatusPill status={app.status} /></TableCell>
+    </TableRow>)}</TableBody></DataTable>
+    <ul className="oc-applicant-mobile-list grid gap-3 xl:hidden">{applicants.map(app => <li key={app.id}>{votingSelection&&<VotingSelection app={app} name={name(app)} selection={votingSelection}/>}<button type="button" data-applicant-id={app.id} onClick={() => open(app)} className="oc-content-panel w-full space-y-3 text-left focus-visible:outline-2 focus-visible:outline-ring"><span className="flex flex-wrap items-center justify-between gap-2"><ApplicantIdentity label={name(app)} anonymous={app.studentId.startsWith("anonymous-")} /><StatusPill status={app.status} /></span><span className="block text-xs text-muted-foreground">{rounds.find(round => round.id === app.roundId)?.name || "Round unavailable"} · GPA {app.student.studentProfile?.gpa?.toFixed(2) ?? "—"} · SAT {app.student.studentProfile?.satScore ?? "—"} · ACT {app.student.studentProfile?.actScore ?? "—"}</span><Review app={app} /><span className="block text-sm font-medium text-primary">Open applicant →</span></button></li>)}</ul>
   </>
 }
 export function LiveApplicantKanban({ applicants, allApplicants = applicants, laneCounts, rounds, open, name, canMove, move, busy, votingSelection }: Props) {
@@ -53,8 +55,8 @@ export function LiveApplicantKanban({ applicants, allApplicants = applicants, la
     const total = laneCounts?.[lane.id] ?? allApplicants.filter(app => applicantLane(app.status) === lane.id).length
     return <section key={lane.id} aria-label={`${lane.title} applicants`} data-drop-active={over === lane.id} className="min-w-0 rounded-lg border bg-muted/30 p-3 data-[drop-active=true]:border-primary data-[drop-active=true]:bg-secondary" onDragOver={event => { const app = applicants.find(candidate => candidate.id === dragging.current); if (!busy && app && canMove?.(app, lane.id)) { event.preventDefault(); event.dataTransfer.dropEffect = "move"; setOver(lane.id) } }} onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOver(null) }} onDrop={event => { event.preventDefault(); const app = applicants.find(candidate => candidate.id === dragging.current); dragging.current = null; setOver(null); if (!busy && app && canMove?.(app, lane.id)) move?.(app, lane.id) }}><header className="mb-4"><h3 className="oc-card-heading flex items-center justify-between">{lane.title}<span className="text-xs font-normal text-muted-foreground">{total}</span></h3><p className="mt-1 text-xs text-muted-foreground">{lane.description}</p></header>
       <ul className="space-y-3">{cards.map(app => <li key={app.id} draggable={!busy && applicantLanes.some(target => canMove?.(app, target.id))} onDragStart={event => { dragging.current = app.id; event.dataTransfer.setData("text/plain", app.id); event.dataTransfer.effectAllowed = "move" }} onDragEnd={() => { dragging.current = null; setOver(null) }} className="rounded-md border bg-card hover:border-primary">
-        {votingSelection&&<VotingSelection app={app} name={name(app)} selection={votingSelection}/>}<button type="button" data-applicant-id={app.id} onClick={() => { if (!dragging.current) open(app) }} className="w-full space-y-3 rounded-md p-4 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"><ApplicantIdentity label={name(app)} anonymous={app.studentId.startsWith("anonymous-")} /><span className="block text-xs text-muted-foreground">{rounds.find(round => round.id === app.roundId)?.name || "Round unavailable"}</span><Badge data-application-status={app.status} variant="secondary">{applicationStatusLabels[app.status]}</Badge><span className="block text-xs text-muted-foreground"><Review app={app} /></span><span className="block border-t pt-3 text-xs">Review & actions →</span></button>
-        {applicantLanes.some(target => canMove?.(app, target.id)) && <label className="flex items-center gap-2 border-t p-3 text-xs">Move to<select aria-label={`Move ${name(app)} to lane`} disabled={busy} value="" className="min-h-11 min-w-0 flex-1 rounded border bg-background px-2" onChange={event => move?.(app, event.target.value as ApplicantLane)}><option value="">Choose lane</option>{applicantLanes.filter(target => canMove?.(app, target.id)).map(target => <option key={target.id} value={target.id}>{target.title}</option>)}</select></label>}
+        {votingSelection&&<VotingSelection app={app} name={name(app)} selection={votingSelection}/>}<button type="button" data-applicant-id={app.id} onClick={() => { if (!dragging.current) open(app) }} className="w-full space-y-3 rounded-md p-4 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"><ApplicantIdentity label={name(app)} anonymous={app.studentId.startsWith("anonymous-")} /><span className="block text-xs text-muted-foreground">{rounds.find(round => round.id === app.roundId)?.name || "Round unavailable"}</span><StatusPill status={app.status} /><span className="block text-xs text-muted-foreground"><Review app={app} /></span><span className="block border-t pt-3 text-xs">Review & actions →</span></button>
+        {applicantLanes.some(target => canMove?.(app, target.id)) && <label className="flex items-center gap-2 border-t p-3 text-xs">Move to<NativeSelect aria-label={`Move ${name(app)} to lane`} disabled={busy} value="" className="min-h-11 min-w-0 flex-1" onChange={event => move?.(app, event.target.value as ApplicantLane)}><option value="">Choose lane</option>{applicantLanes.filter(target => canMove?.(app, target.id)).map(target => <option key={target.id} value={target.id}>{target.title}</option>)}</NativeSelect></label>}
       </li>)}</ul>
       {!cards.length && <p className="py-6 text-xs text-muted-foreground">{total ? "No applicants from this lane on this page." : "No applicants in this lane with the current filters."}</p>}
     </section>
@@ -66,11 +68,11 @@ export function LiveDecisionList({ applicants, rounds, open, name, average }: Pr
     <button type="button" data-applicant-id={app.id} onClick={() => open(app)} className="grid min-h-20 w-full gap-3 rounded py-5 text-left hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-ring sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-center sm:gap-6 sm:px-3">
       <span className="min-w-0"><span className="block break-words font-medium">{name(app)}</span><span className="mt-1 block text-xs text-muted-foreground">{app.studentId.startsWith("anonymous-") ? "Anonymous review" : app.student.email}</span></span>
       <span className="space-y-1 text-xs text-muted-foreground"><span className="block">{rounds.find(round => round.id === app.roundId)?.name || "Round unavailable"}</span><span className="block"><Review app={app} average={average} /></span></span>
-      <span className="flex items-center justify-between gap-4 sm:justify-end"><Badge data-application-status={app.status} variant="secondary">{applicationStatusLabels[app.status]}</Badge><span className="text-xs">Review decision →</span></span>
+      <span className="flex items-center justify-between gap-4 sm:justify-end"><StatusPill status={app.status} /><span className="text-xs">Review decision →</span></span>
     </button>
   </li>)}</ul>
 }
 
-function VotingSelection({app,name,selection}:{app:Candidate;name:string;selection:NonNullable<Props["votingSelection"]>}){
- return <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 px-2 text-xs"><input aria-label={`Select ${name} for voting`} type="checkbox" checked={selection.ids.includes(app.id)} disabled={!["SUBMITTED","IN_REVIEW","INTERVIEWING","WAITLISTED"].includes(app.status)} onChange={()=>selection.toggle(app.id)}/><span className="xl:sr-only">Select for voting</span></label>;
+export function VotingSelection({app,name,selection}:{app:{id:string;status:string};name:string;selection:NonNullable<Props["votingSelection"]>}){
+ return <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 px-2 text-xs"><input aria-label={`Select ${name} for voting`} type="checkbox" checked={selection.ids.includes(app.id)} disabled={!["SUBMITTED","IN_REVIEW","INTERVIEWING","WAITLISTED"].includes(app.status)} onChange={()=>selection.toggle(app.id)}/></label>;
 }

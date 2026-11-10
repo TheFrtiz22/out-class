@@ -35,7 +35,7 @@ export function welcomeGreeting(now: Date | null, firstName?: string | null) {
 
 /** One deterministic choice: priority, earliest instant, then stable record ID. */
 export function welcomeSubtitle(context: WelcomeContext, now: Date | null) {
-  const fallback = context.mode === "personal" ? "Explore what's new in OutClass." : "Here's what's happening in your club."
+  const fallback = context.mode === "personal" ? "Explore what's new in OutClass." : "Nothing due this week."
   if (!now || !Number.isFinite(+now)) return fallback
   const candidates: Candidate[] = []
   const add = (id: string, priority: number, at: number, message: string) => candidates.push({ id, priority, at, message })
@@ -44,9 +44,9 @@ export function welcomeSubtitle(context: WelcomeContext, now: Date | null) {
     const urgent = at <= +now + DAY
     const overdue = at < +now
     const message = label === "task"
-      ? overdue ? "You have an overdue assignment." : tomorrow(new Date(at), now) ? "You have an assignment due tomorrow." : "You have an assignment due today."
+      ? overdue ? "You have an overdue task." : tomorrow(new Date(at), now) ? "You have a task due tomorrow." : "You have a task due today."
       : label === "recruiting"
-        ? overdue ? "Your recruiting deadline has passed. Review your intake settings." : "Your application deadline is approaching."
+        ? overdue ? "Your application deadline has passed. Review your application settings." : "Your application deadline is approaching."
         : overdue ? "An application deadline has passed. Check your draft." : tomorrow(new Date(at), now) ? "You have an application deadline tomorrow." : "You have an application deadline today."
     if (urgent) add(id, 1, at, message)
   }
@@ -64,7 +64,7 @@ export function welcomeSubtitle(context: WelcomeContext, now: Date | null) {
     if (context.applications === null) return fallback
     const tasks = new Map((context.notifications ?? []).flatMap(n => n.clubId && context.memberClubIds.includes(n.clubId) && n.taskActivity?.needsSubmission ? [[n.taskActivity.assignmentId, n.taskActivity] as const] : []))
     for (const [id, task] of tasks) deadline(`task:${id}`, instant(task.dueAt), "task")
-    if (tasks.size) add("work", 3, Math.min(...[...tasks.values()].map(t => instant(t.dueAt)).filter(Number.isFinite), Infinity), "You have assignments ready to work on.")
+    if (tasks.size) add("work", 3, Math.min(...[...tasks.values()].map(t => instant(t.dueAt)).filter(Number.isFinite), Infinity), "You have tasks ready to work on.")
     for (const app of context.applications) {
       if (app.status === "DRAFTING" && app.club.applicationOpen !== false) deadline(`deadline:${app.id}`, instant(app.club.applicationDeadline), "application")
     }
@@ -86,8 +86,8 @@ export function welcomeSubtitle(context: WelcomeContext, now: Date | null) {
     const permitted = (permission: Parameters<typeof hasPermission>[1]) => hasPermission(membership, permission) && hasPermission(data.membership, permission)
     const op = data.operations
     for (const item of data.work) deadline(`task:${item.id}`, instant(item.task.dueAt), "task")
-    if (count(op.tasks.overdue)) add("overdue", 1, -Infinity, `You have ${op.tasks.overdue} overdue ${op.tasks.overdue === 1 ? "assignment" : "assignments"}.`)
-    if (permitted("tasks.manage") && op.team && count(op.team.overdue)) add("team-overdue", 1, -Infinity, `${op.team.overdue} team ${op.team.overdue === 1 ? "assignment is" : "assignments are"} overdue.`)
+    if (count(op.tasks.overdue)) add("overdue", 1, -Infinity, `You have ${op.tasks.overdue} overdue ${op.tasks.overdue === 1 ? "task" : "tasks"}.`)
+    if (permitted("tasks.manage") && op.team && count(op.team.overdue)) add("team-overdue", 1, -Infinity, `${op.team.overdue} team ${op.team.overdue === 1 ? "task is" : "tasks are"} overdue.`)
     if ((permitted("applications.review") || permitted("applicants.identify")) && op.intake?.applicationOpen) deadline("intake", instant(op.intake.applicationDeadline), "recruiting")
     const canInterview = permitted("applicants.identify") && (permitted("interviews.manage") || interviewCapabilities(membership).participate && interviewCapabilities(data.membership).participate)
     if (canInterview) for (const booking of op.bookings) schedule(`interview:${booking.id}`, instant(booking.slot.startTime), "interview")
@@ -97,11 +97,26 @@ export function welcomeSubtitle(context: WelcomeContext, now: Date | null) {
     if (permitted("applications.review") && count(reviews)) add("reviews", 3, Infinity, `${reviews} ${reviews === 1 ? "application is" : "applications are"} ready for your review.`)
     if (permitted("interviews.manage") && count(scheduling)) add("scheduling", 3, Infinity, `${scheduling} ${scheduling === 1 ? "interview still needs" : "interviews still need"} to be scheduled.`)
     if (permitted("tasks.manage") && count(op.tasks.awaitingReview)) add("submissions", 3, Math.min(...op.reviewWork.map(r => instant(r.submittedAt)).filter(Number.isFinite), Infinity), `${op.tasks.awaitingReview} ${op.tasks.awaitingReview === 1 ? "submission is" : "submissions are"} ready for review.`)
-    if (data.work.length) add("work", 3, Math.min(...data.work.map(w => instant(w.task.dueAt)).filter(Number.isFinite), Infinity), "You have assignments ready to work on.")
+    if (data.work.length) add("work", 3, Math.min(...data.work.map(w => instant(w.task.dueAt)).filter(Number.isFinite), Infinity), "You have tasks ready to work on.")
     for (const update of op.announcements) {
       const at = instant(update.publishedAt)
       if (Number.isFinite(at) && at <= +now && sameDay(new Date(at), now)) add(`update:${update.id}`, 4, at, "There's a new update in your club today.")
     }
   }
   return candidates.sort((a, b) => a.priority - b.priority || (a.at === b.at ? 0 : a.at < b.at ? -1 : 1) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))[0]?.message ?? fallback
+}
+
+/** Club mode only: the time left until the application deadline while recruiting is open.
+ * Same access fences as welcomeSubtitle; device-local time after hydration. */
+export function welcomeDeadline(context: WelcomeContext, now: Date | null) {
+  if (context.mode !== "club" || !now || !Number.isFinite(+now)) return null
+  const { data, membership, clubId } = context
+  if (!isActiveMembership(membership) || !data || data.club.id !== clubId || data.membership.id !== membership.id || !isActiveMembership(data.membership)) return null
+  const permitted = (permission: Parameters<typeof hasPermission>[1]) => hasPermission(membership, permission) && hasPermission(data.membership, permission)
+  const intake = data.operations.intake
+  if (!(permitted("applications.review") || permitted("applicants.identify")) || !intake?.applicationOpen || !intake.applicationDeadline) return null
+  const left = instant(intake.applicationDeadline) - +now
+  if (!(left > 0)) return null
+  const hours = Math.floor(left / HOUR), days = Math.floor(left / DAY)
+  return `Applications close in ${days >= 2 ? `${days} days` : hours >= 2 ? `${hours} hours` : hours === 1 ? "1 hour" : "less than an hour"}.`
 }

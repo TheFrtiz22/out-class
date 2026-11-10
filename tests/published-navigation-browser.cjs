@@ -45,7 +45,7 @@ async function verify(config, root) {
     assert.ok(await rooms.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
     await db.interviewPanelAssignment.update({ where: { id: grant.id }, data: { revokedAt: new Date() } });
     assert.ok(!(await read()).some(row => row.applicationId === booking.applicationId));
-    await assert.rejects(reviewer.action('actions/interview-entry.ts', 'resolveInterviewRoomEntry', [{ ...scope, applicationId: booking.applicationId, bookingId: booking.id, slotId: booking.slotId, roomId: booking.slot.roomId }]));
+    assert.match((await reviewer.action('actions/interview-entry.ts', 'resolveInterviewRoomEntry', [{ ...scope, applicationId: booking.applicationId, bookingId: booking.id, slotId: booking.slotId, roomId: booking.slot.roomId }])).unavailable, /assignment|permission|unavailable|changed/);
     assert.deepEqual(errors, []);
     fs.writeFileSync(path.join(root, 'published-navigation-acceptance.json'), JSON.stringify({ passed: true, explicitBrowserApproval: true, reviewAloneDoesNotPublish: true, realAuthAndLiveSession: true, publishedVersionAuthority: true, legacyApprovalRemovalSurvives: true, mobileRoomLink: true, immediateGrantRevocation: true, exactOpeningDeniedAfterRevocation: true, browserErrors: 0 }, null, 2));
     console.log('Published panel approval → private GET → mobile room link → live revocation: PASS');

@@ -1,20 +1,19 @@
 /* Shared interactive and feedback roles. Layouts, domain state, and brand art stay with their owners. */
 .oc-native-select, select:not([data-slot]) {
   min-width: 0; max-width: 100%; min-height: var(--oc-control-height);
-  border: 1px solid var(--input); border-radius: var(--oc-radius-md);
-  background: var(--card); color: var(--foreground); box-shadow: none;
+  border: 1px solid var(--input); border-radius: var(--oc-content-radius-small);
+  background: var(--card); color: var(--foreground); box-shadow: var(--oc-glass-field-depth);
   padding: .5rem .75rem; font: inherit; font-size: var(--oc-text-small);
   line-height: var(--oc-leading-compact);
 }
 .oc-native-select[data-density="compact"] { min-height: var(--oc-control-height-compact); }
 .oc-native-select:disabled { cursor: not-allowed; opacity: .5; }
 .oc-native-select[aria-invalid="true"] { border-color: var(--destructive); }
-[data-slot="button"][data-size="default"], [data-slot="button"][data-size="icon"],
+[data-button][data-size="default"], [data-button][data-size="icon"],
 [data-slot="input"], [data-slot="select-trigger"][data-size="default"] { min-height: var(--oc-control-height); }
-[data-slot="button"][data-size="sm"], [data-slot="button"][data-size="icon-sm"],
+[data-button][data-size="sm"], [data-button][data-size="icon-sm"],
 [data-slot="select-trigger"][data-size="sm"] { min-height: var(--oc-control-height-compact); }
-[data-slot="button"][data-size="lg"], [data-slot="button"][data-size="icon-lg"] { min-height: var(--oc-control-height-large); }
-[data-slot="input"], [data-slot="textarea"], [data-slot="select-trigger"] { border-radius: var(--oc-radius-md); }
+[data-button][data-size="lg"], [data-button][data-size="icon-lg"] { min-height: var(--oc-control-height-large); }
 .oc-empty-state { padding-block: var(--oc-space-section); }
 .oc-empty-state[data-density="compact"] { padding-block: var(--oc-space-content); }
 .oc-empty-state[data-align="center"] { align-items: center; text-align: center; }
@@ -24,10 +23,14 @@
 .oc-empty-state[data-tone="outlined"] { border: 1px solid var(--border); background: var(--card); }
 @media (max-width: 767px) {
   [data-slot="input"], [data-slot="textarea"], [data-slot="native-select"][data-density], [data-slot="select-trigger"][data-size] { font-size: max(1rem, var(--oc-text-small)); }
-  [data-slot="button"][data-size], [data-slot="input"], [data-slot="native-select"][data-density], [data-slot="select-trigger"][data-size] { min-height: var(--oc-control-height-large); }
+  [data-button][data-size], [data-slot="input"], [data-slot="native-select"][data-density], [data-slot="select-trigger"][data-size] { min-height: var(--oc-control-height-large); }
   select:not([data-slot]) { min-height: var(--oc-control-height-large); font-size: 1rem; }
-  [data-slot="button"][data-size^="icon"] { min-width: var(--oc-control-height-large); }
+  [data-button][data-size^="icon"] { min-width: var(--oc-control-height-large); }
 }
+
+/* A fieldset sizes to its content by default; reset it so scrolling controls (SegmentedControl) scroll
+   instead of widening forms on phones. */
+fieldset { min-inline-size: 0; }
 
 /* Keep the arrow clear of the border without replacing the native menu. */
 .oc-native-select-field { position: relative; display: inline-grid; vertical-align: middle; min-width: 0; max-width: 100%; }
@@ -35,7 +38,7 @@
 .oc-native-select-caret { position: absolute; inset-inline-end: .75rem; top: 50%; transform: translateY(-50%); width: 1rem; height: 1rem; color: var(--muted-foreground); pointer-events: none; }
 .oc-native-select-field:has(select:disabled) .oc-native-select-caret { opacity: .5; }
 
-.oc-native-select-field > select:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.oc-native-select:focus-visible, .oc-native-select-field > select:focus-visible, select:not([data-slot]):focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; border-color: var(--primary); }
 
 /* The mobile target is 44px; the checkmark box stays square. Scope to content,
    leaving notification-center and navigation controls on their own layer. */
@@ -48,8 +51,267 @@
 }
 
 /* Keep both the resting label and its icons in layout; pending never resizes the action. */
-[data-slot="button"][data-loading], [data-slot="button"]:has(> .oc-button-content) { position: relative; }
+[data-button][data-loading], [data-button]:has(> .oc-button-content) { position: relative; }
 .oc-button-content { display: inline-flex; align-items: center; justify-content: center; gap: inherit; }
-[data-slot="button"][data-loading="true"] > .oc-button-content { opacity: 0; }
-[data-slot="button"][data-loading="true"] { opacity: 1; }
-[data-slot="button"] > .oc-button-loading { position: absolute; inset: 0; margin: auto; }
+[data-button][data-loading="true"] > .oc-button-content { opacity: 0; }
+[data-button][data-loading="true"] { opacity: 1; }
+[data-button] > .oc-button-loading { position: absolute; inset: 0; margin: auto; }
+
+/* StatusPill: one application-state pill, colored from semantic tokens only. */
+.oc-status-pill { --pill-bg: var(--muted); --pill-fg: var(--muted-foreground); display: inline-flex; flex-shrink: 0; align-items: center; gap: .375rem; width: fit-content; padding: .1875rem .625rem; border-radius: 999px; background: var(--oc-glass-tint-sheen), var(--pill-bg); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pill-fg) 16%, transparent), var(--oc-glass-tint-highlight); color: var(--pill-fg); font-size: var(--oc-text-caption); font-weight: var(--oc-weight-semibold); line-height: 1.35; white-space: nowrap; }
+.oc-status-pill::before { content: ""; width: .375rem; height: .375rem; border-radius: 999px; background: currentColor; }
+.oc-status-pill[data-status="DRAFTING"] { --pill-bg: transparent; box-shadow: inset 0 0 0 1px var(--border); }
+.oc-status-pill[data-status="SUBMITTED"] { --pill-bg: var(--secondary); --pill-fg: var(--secondary-foreground); }
+.oc-status-pill[data-status="IN_REVIEW"] { --pill-bg: var(--info-subtle); --pill-fg: var(--info); }
+.oc-status-pill[data-status="INTERVIEWING"] { --pill-bg: var(--interview-subtle); --pill-fg: var(--interview); }
+.oc-status-pill[data-status="ACCEPTED"] { --pill-bg: var(--success-subtle); --pill-fg: var(--success); }
+.oc-status-pill[data-status="REJECTED"] { --pill-bg: var(--error-subtle); --pill-fg: var(--destructive); }
+.oc-status-pill[data-status="WAITLISTED"] { --pill-bg: var(--warning-subtle); --pill-fg: var(--warning); }
+@media (forced-colors: active) { .oc-status-pill { border: 1px solid CanvasText; } }
+
+/* DatePicker: field-like trigger and a month grid, tokens only. */
+.oc-date-picker-trigger { display: inline-flex; min-height: var(--oc-control-height); align-items: center; gap: .5rem; padding: 0 .75rem; border: 1px solid var(--input); border-radius: var(--oc-content-radius-small); background: var(--card); box-shadow: var(--oc-glass-field-depth); color: var(--foreground); font-size: var(--oc-text-small); white-space: nowrap; }
+.oc-date-picker-trigger[data-empty="true"] { color: var(--muted-foreground); }
+.oc-date-picker-trigger svg { width: 1rem; height: 1rem; color: var(--muted-foreground); }
+.oc-date-picker-trigger:focus-visible, .oc-date-picker button:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.oc-date-picker-header { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: .5rem; }
+.oc-date-picker-header h2 { font-size: var(--oc-text-small); font-weight: var(--oc-weight-semibold); }
+.oc-date-picker-header button { display: inline-flex; width: 2.25rem; height: 2.25rem; align-items: center; justify-content: center; border-radius: var(--oc-radius-md); }
+.oc-date-picker-header button:hover, .oc-date-picker-grid button:hover, .oc-date-picker-footer button:hover { background: var(--accent); }
+.oc-date-picker-header svg { width: 1rem; height: 1rem; }
+.oc-date-picker-grid { border-collapse: collapse; }
+.oc-date-picker-grid th { width: 2.5rem; padding-bottom: .25rem; color: var(--muted-foreground); font-size: var(--oc-text-caption); font-weight: var(--oc-weight-medium); }
+.oc-date-picker-grid td { padding: 1px; text-align: center; }
+.oc-date-picker-grid button { position: relative; width: 2.5rem; height: 2.5rem; border-radius: var(--oc-radius-md); font-size: var(--oc-text-small); font-variant-numeric: tabular-nums; }
+.oc-date-picker-grid button[data-outside="true"] { color: var(--muted-foreground); }
+.oc-date-picker-grid button[aria-current="date"] { box-shadow: inset 0 0 0 1px var(--border); font-weight: var(--oc-weight-semibold); }
+.oc-date-picker-grid td[aria-selected="true"] button { background: var(--primary); color: var(--primary-foreground); }
+.oc-date-picker-grid button[data-marked="true"]::after { content: ""; position: absolute; bottom: .3rem; left: 50%; width: .25rem; height: .25rem; border-radius: 999px; background: currentColor; transform: translateX(-50%); }
+.oc-date-picker-footer { display: flex; justify-content: space-between; gap: .5rem; margin-top: .5rem; padding-top: .5rem; border-top: 1px solid var(--border); }
+.oc-date-picker-footer button { min-height: 2.25rem; padding: 0 .625rem; border-radius: var(--oc-radius-md); color: var(--primary); font-size: var(--oc-text-small); font-weight: var(--oc-weight-medium); }
+
+/* Glass variants of the shared primitives. Tokens: styles/navigation-glass.css. Defaults above are unchanged.
+   Blur, when allowed, sits on an isolated ::before layer behind the content, so text never passes
+   through a filter; a glass surface never contains another blurred surface. */
+:is([data-slot="card"], [data-slot="panel"])[data-variant^="glass"] {
+  position: relative; isolation: isolate;
+  border: 1px solid var(--oc-surface-glass-edge);
+  border-radius: var(--oc-glass-card-radius, var(--oc-content-radius));
+  background: var(--oc-surface-glass);
+  box-shadow: var(--oc-surface-glass-depth);
+  color: var(--foreground);
+}
+:is([data-slot="card"], [data-slot="panel"])[data-variant="glass-raised"] {
+  --oc-glass-card-radius: 1.375rem;
+  background: transparent;
+  box-shadow: var(--oc-surface-glass-raised-depth);
+}
+:is([data-slot="card"], [data-slot="panel"])[data-variant="glass-navy"] {
+  --oc-glass-card-radius: 1.625rem;
+  border-color: var(--oc-glass-navy-edge);
+  background: transparent;
+  box-shadow: var(--oc-glass-navy-depth);
+  color: var(--oc-glass-cream);
+}
+:is([data-slot="card"], [data-slot="panel"])[data-variant="glass-raised"]::before,
+:is([data-slot="card"], [data-slot="panel"])[data-variant="glass-navy"]::before {
+  content: ""; position: absolute; z-index: -1; inset: 0; border-radius: inherit; pointer-events: none;
+  background: var(--oc-surface-glass-raised);
+  -webkit-backdrop-filter: var(--oc-surface-glass-filter); backdrop-filter: var(--oc-surface-glass-filter);
+}
+:is([data-slot="card"], [data-slot="panel"])[data-variant="glass-navy"]::before {
+  background: var(--oc-surface-glass-navy);
+  -webkit-backdrop-filter: var(--oc-surface-glass-navy-filter); backdrop-filter: var(--oc-surface-glass-navy-filter);
+}
+[data-variant="glass-navy"] :is([data-slot="card-description"], .text-muted-foreground) { color: var(--oc-rail-muted); }
+[data-variant="glass-navy"] :is(a, button):focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; box-shadow: var(--focus-halo-outset) }
+
+/* Buttons (docs/design-system.md): every variant is a glass pill with no backdrop-filter. default and
+   glass-primary are the navy pill of the selected workspace segment; outline, secondary and glass are the
+   light pill of the header search; ghost is transparent with a glass hover; destructive is a solid pill.
+   Layered so call-site utilities still win; every size keeps a 44px hit area. */
+@layer components {
+  [data-button] {
+    position: relative; isolation: isolate; border: 1px solid transparent; border-radius: 999px; outline-offset: 2px;
+    transition: background-color var(--oc-glass-quick) var(--oc-glass-ease), border-color var(--oc-glass-quick) var(--oc-glass-ease), box-shadow var(--oc-glass-quick) var(--oc-glass-ease), transform var(--oc-glass-quick) var(--oc-glass-ease), opacity var(--oc-glass-quick) ease;
+  }
+  [data-button]::after { content: ""; position: absolute; inset-block: min(0px, calc((100% - 2.75rem) / 2)); inset-inline: min(0px, calc((100% - 2.75rem) / 2)); }
+  [data-button]:is([data-variant="default"], [data-variant="glass-primary"]) {
+    border-color: var(--oc-glass-pill-navy-edge); background: var(--oc-glass-pill-navy); color: var(--oc-glass-cream); box-shadow: var(--oc-glass-pill-navy-depth);
+  }
+  [data-button]:is([data-variant="outline"], [data-variant="secondary"], [data-variant="glass"]) {
+    border-color: var(--oc-glass-light-edge); background: var(--oc-glass-light-material); color: var(--primary); box-shadow: var(--oc-glass-light-depth);
+  }
+  [data-button][data-variant="ghost"] { background: transparent; color: inherit; }
+  [data-button][data-variant="destructive"] { background: var(--destructive); color: var(--destructive-foreground); box-shadow: var(--oc-glass-pill-highlight); }
+  [data-button][data-variant="accent"] { background: var(--brand-subtle); color: var(--brand-ink); }
+  [data-button][data-variant="link"] { height: auto; padding-inline: 0; color: var(--primary); text-underline-offset: 4px; }
+  [data-button]:focus-visible { outline: 2px solid var(--ring); }
+  [data-button]:is([data-variant="default"], [data-variant="glass-primary"]):focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; box-shadow: var(--focus-halo-outset) }
+  [data-variant="glass-navy"] [data-button]:is([data-variant="ghost"], [data-variant="link"]):focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; box-shadow: var(--focus-halo-outset) }
+  @media (hover: hover) and (pointer: fine) {
+    [data-button]:is([data-variant="default"], [data-variant="glass-primary"]):not(:disabled):hover { background: var(--oc-glass-pill-navy-hover); box-shadow: var(--oc-glass-pill-navy-hover-depth); transform: translateY(-1px); }
+    [data-button]:is([data-variant="outline"], [data-variant="secondary"], [data-variant="glass"]):not(:disabled):hover { border-color: var(--oc-glass-hover-edge); background: var(--oc-glass-cream); box-shadow: var(--oc-glass-lift); transform: translateY(-1px); }
+    [data-button][data-variant="ghost"]:not(:disabled):hover { background: var(--oc-glass-hover-tint); }
+    [data-variant="glass-navy"] [data-button][data-variant="ghost"]:not(:disabled):hover { background: var(--oc-glass-navy-hover-tint); }
+    [data-button][data-variant="destructive"]:not(:disabled):hover { box-shadow: var(--oc-glass-pill-highlight), var(--oc-glass-lift); transform: translateY(-1px); }
+    [data-button][data-variant="accent"]:not(:disabled):hover { box-shadow: var(--oc-glass-lift); }
+    [data-button][data-variant="link"]:not(:disabled):hover { text-decoration: underline; }
+  }
+  /* Tones: an interview action keeps the pill and swaps the navy for the interview colour. */
+  [data-button][data-tone="interview"]:is([data-variant="default"], [data-variant="glass-primary"]) { border-color: var(--oc-glass-pill-sheen-edge); background: var(--oc-glass-pill-sheen), var(--interview); }
+  @media (hover: hover) and (pointer: fine) { [data-button][data-tone="interview"]:is([data-variant="default"], [data-variant="glass-primary"]):not(:disabled):hover { background: var(--oc-glass-pill-sheen), var(--interview); } }
+  /* The projector theme inverts --primary: its primary keeps the inverted fill and light pills use its
+     secondary surface, so text never lands light on light. */
+  :is([data-theme="present"], .oc-focus-frame:has(.oc-present-surface) .oc-focus-bar) [data-button]:is([data-variant="default"], [data-variant="glass-primary"]) { border-color: transparent; background: var(--primary); color: var(--primary-foreground); box-shadow: none; }
+  :is([data-theme="present"], .oc-focus-frame:has(.oc-present-surface) .oc-focus-bar) [data-button]:is([data-variant="outline"], [data-variant="secondary"], [data-variant="glass"]) { border-color: var(--border); background: var(--secondary); color: var(--secondary-foreground); box-shadow: none; }
+  :is([data-theme="present"], .oc-focus-frame:has(.oc-present-surface) .oc-focus-bar) [data-button]:focus-visible { outline: 2px solid var(--ring); }
+  @media (hover: hover) and (pointer: fine) {
+    :is([data-theme="present"], .oc-focus-frame:has(.oc-present-surface) .oc-focus-bar) [data-button]:is([data-variant="default"], [data-variant="glass-primary"]):not(:disabled):hover { background: var(--primary); box-shadow: var(--oc-glass-lift); }
+    :is([data-theme="present"], .oc-focus-frame:has(.oc-present-surface) .oc-focus-bar) [data-button]:is([data-variant="outline"], [data-variant="secondary"], [data-variant="glass"]):not(:disabled):hover { border-color: var(--input); background: var(--muted); }
+    :is([data-theme="present"], .oc-focus-frame:has(.oc-present-surface) .oc-focus-bar) [data-button][data-variant="ghost"]:not(:disabled):hover { background: var(--muted); }
+  }
+}
+
+/* Segmented tabs: the workspace pill's 54px track and sliding navy indicator. The indicator is
+   positioned with :has() from the active trigger; without :has() the active trigger fills itself. */
+[data-slot="tabs-list"][data-variant="segmented"] {
+  --segments: 2; --segment: 0;
+  position: relative; isolation: isolate; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr);
+  gap: 4px; height: 54px; min-height: 54px; max-width: 100%; padding: 4px; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: thin;
+  border: 1px solid var(--oc-glass-light-edge); border-radius: 999px;
+  background: var(--oc-glass-light-material); box-shadow: var(--oc-glass-light-depth);
+  -webkit-backdrop-filter: var(--oc-surface-glass-filter); backdrop-filter: var(--oc-surface-glass-filter);
+}
+[data-slot="tabs-list"][data-variant="segmented"] [data-slot="tabs-trigger"] {
+  min-width: 0; min-height: 44px; height: 44px; padding-inline: .875rem; border: 0; border-radius: 999px; overflow: hidden; text-overflow: ellipsis;
+  color: var(--primary); background: transparent; font-size: 13px; font-weight: 500;
+  transition: color var(--oc-glass-quick) var(--oc-glass-ease);
+}
+[data-slot="tabs-list"][data-variant="segmented"] [data-slot="tabs-trigger"][data-state="active"] {
+  color: var(--oc-glass-cream);
+  background: var(--oc-glass-pill-navy);
+  box-shadow: var(--oc-glass-pill-navy-depth);
+}
+@supports selector(:has(*)) {
+  [data-slot="tabs-list"][data-variant="segmented"]::before {
+    content: ""; position: absolute; z-index: -1; top: 4px; bottom: 4px; left: 4px;
+    width: calc((100% - 8px - (var(--segments) - 1) * 4px) / var(--segments));
+    border: 1px solid var(--oc-glass-pill-navy-edge); border-radius: 999px;
+    background: var(--oc-glass-pill-navy);
+    box-shadow: var(--oc-glass-pill-navy-depth);
+    transform: translateX(calc(var(--segment) * (100% + 4px)));
+    transition: transform 420ms var(--oc-glass-ease), opacity var(--oc-glass-quick) ease;
+  }
+  [data-slot="tabs-list"][data-variant="segmented"]:not(:has([data-state="active"]))::before { opacity: 0; }
+  [data-slot="tabs-list"][data-variant="segmented"] [data-slot="tabs-trigger"][data-state="active"] { background: transparent; box-shadow: none; }
+  [data-slot="tabs-list"][data-variant="segmented"]:not(:has(> [data-slot="tabs-trigger"] ~ [data-slot="tabs-trigger"])) { --segments: 1; }
+  /* Three or more tabs: a scrolling track where the active tab fills itself, so labels never truncate on phones. */
+  [data-slot="tabs-list"][data-variant="segmented"]:has(> [data-slot="tabs-trigger"] ~ [data-slot="tabs-trigger"] ~ [data-slot="tabs-trigger"]) { display: flex; justify-content: flex-start; }
+  [data-slot="tabs-list"][data-variant="segmented"]:has(> [data-slot="tabs-trigger"] ~ [data-slot="tabs-trigger"] ~ [data-slot="tabs-trigger"])::before { display: none; }
+  [data-slot="tabs-list"][data-variant="segmented"]:has(> [data-slot="tabs-trigger"] ~ [data-slot="tabs-trigger"] ~ [data-slot="tabs-trigger"]) [data-slot="tabs-trigger"] { flex: 1 0 auto; min-width: max-content; }
+  [data-slot="tabs-list"][data-variant="segmented"]:has(> [data-slot="tabs-trigger"] ~ [data-slot="tabs-trigger"] ~ [data-slot="tabs-trigger"]) [data-slot="tabs-trigger"][data-state="active"] { background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); }
+  [data-slot="tabs-list"][data-variant="segmented"]:has(> [data-slot="tabs-trigger"] ~ [data-slot="tabs-trigger"][data-state="active"]) { --segment: 1; }
+}
+@supports selector(:has(*)) and (transition-timing-function: linear(0, 1)) {
+  [data-slot="tabs-list"][data-variant="segmented"]::before { transition-timing-function: var(--oc-floating-spring, var(--oc-glass-ease)), ease; }
+}
+
+/* Glass placeholders: the light material, no blur. */
+.oc-skeleton[data-variant="glass"] { background: var(--oc-surface-glass-track); }
+/* The projector is dark: placeholders use its border colour so they stay visible. */
+[data-theme="present"] .oc-skeleton[data-variant="glass"] { background: var(--border); }
+.oc-loading-state[data-variant="glass"]:not([data-layout="inline"]) {
+  padding: var(--oc-content-padding); border: 1px solid var(--oc-surface-glass-edge); border-radius: var(--oc-content-radius);
+  background: var(--oc-surface-glass); box-shadow: var(--oc-surface-glass-depth);
+}
+
+/* Measured indicator (components/ui/tabs.tsx): follows the active trigger's box at any tab count and
+   slides when the value changes. Until measured, the :has() indicator or the active trigger's own fill shows. */
+.oc-tabs-indicator { display: none; }
+[data-slot="tabs-list"][data-variant="segmented"][data-measured="true"] .oc-tabs-indicator {
+  display: block; position: absolute; z-index: -1; top: 4px; bottom: 4px; left: 0; width: var(--indicator-width, 0px);
+  border: 1px solid var(--oc-glass-pill-navy-edge); border-radius: 999px; background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth);
+  transform: translateX(var(--indicator-x, 0px)); pointer-events: none;
+  transition: transform 420ms var(--oc-glass-ease), width 420ms var(--oc-glass-ease);
+}
+@supports (transition-timing-function: linear(0, 1)) { [data-slot="tabs-list"][data-variant="segmented"][data-measured="true"] .oc-tabs-indicator { transition-timing-function: var(--oc-floating-spring, var(--oc-glass-ease)), var(--oc-floating-spring, var(--oc-glass-ease)); } }
+[data-slot="tabs-list"][data-variant="segmented"][data-measured="true"]::before { display: none; }
+[data-slot="tabs-list"][data-variant="segmented"][data-measured="true"] [data-slot="tabs-trigger"][data-state="active"],
+[data-slot="tabs-list"][data-variant="segmented"][data-measured="true"]:has(> [data-slot="tabs-trigger"] ~ [data-slot="tabs-trigger"] ~ [data-slot="tabs-trigger"]) [data-slot="tabs-trigger"][data-state="active"] { background: transparent; box-shadow: none; }
+/* Focus after the measured-indicator rules: they clear the active tab's shadow at equal specificity. */
+[data-slot="tabs-list"][data-variant="segmented"] [data-slot="tabs-trigger"]:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; box-shadow: var(--focus-halo-inset-4); }
+[data-slot="tabs-list"][data-variant="segmented"] [data-slot="tabs-trigger"][data-state="active"]:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; box-shadow: var(--focus-halo-outset) }
+@media (forced-colors: active) { [data-slot="tabs-list"][data-variant="segmented"][data-measured="true"] .oc-tabs-indicator { background: Highlight; forced-color-adjust: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .oc-tabs-indicator { transition: none !important; }
+  /* No animation, but the indicator keeps the transform that positions it on the selected tab. */
+  [data-button], [data-slot="tabs-list"][data-variant="segmented"]::before, [data-slot="tabs-list"][data-variant="segmented"] [data-slot="tabs-trigger"] { transition: none !important; }
+  [data-button] { transform: none !important; }
+}
+@media (forced-colors: active) {
+  :is([data-slot="card"], [data-slot="panel"])[data-variant^="glass"], [data-button]:not([data-variant="link"], [data-variant="ghost"]), [data-slot="tabs-list"][data-variant="segmented"] { border: 1px solid CanvasText; }
+  [data-slot="tabs-list"][data-variant="segmented"]::before { background: Highlight; forced-color-adjust: none; }
+  [data-slot="tabs-list"][data-variant="segmented"] [data-slot="tabs-trigger"][data-state="active"] { background: Highlight; color: HighlightText; forced-color-adjust: none; }
+  [data-button] { background: ButtonFace; color: ButtonText; }
+  [data-button]:focus-visible { outline: 2px solid Highlight; }
+}
+.oc-loading-state[data-variant="glass"] .oc-skeleton { background: var(--oc-surface-glass-track); }
+
+/* Glass defaults for overlays and feedback (Phase 2). Dialogs, sheets, popovers, menus and selects use the
+   frosted material in styles/product-components.css: they are the only content surfaces allowed to blur,
+   including on phones. */
+[data-slot="tooltip-content"] { border: 1px solid var(--oc-glass-navy-edge); background: var(--oc-glass-navy-frosted-material); color: var(--oc-glass-cream); box-shadow: var(--oc-glass-navy-depth); }
+[data-slot="tooltip-content"] > svg, [data-slot="tooltip-content"] [class*="fill-foreground"] { background: var(--oc-glass-navy-solid); fill: var(--oc-glass-navy-solid); }
+.toaster [data-sonner-toast][data-type="default"], .toaster [data-sonner-toast]:not([data-type]) { border-color: var(--oc-glass-light-edge); box-shadow: var(--oc-glass-menu-depth); -webkit-backdrop-filter: var(--oc-glass-light-filter); backdrop-filter: var(--oc-glass-light-filter); }
+.oc-empty-state[data-tone="outlined"] { border: 1px solid var(--oc-surface-glass-edge); background: var(--oc-surface-glass); box-shadow: var(--oc-surface-glass-depth); }
+.oc-empty-state[data-tone="subtle"] { background: var(--oc-surface-glass-track); }
+
+/* Tooltip forced colors. */
+@media (forced-colors: active) { [data-slot="tooltip-content"] { border: 1px solid CanvasText; } }
+
+/* Container surfaces written as utility classes (lists, cards, settings groups) use the content tokens, which
+   are glass. Fields, tables and the projector keep their solid backgrounds. */
+@layer components { .oc-glass-surface { background: var(--oc-content-surface); border-color: var(--oc-content-edge); box-shadow: var(--oc-content-shadow); } }
+
+/* Fields, toggles and the command list (docs/design-system.md): a solid field with a glass edge and inset
+   highlight, a navy focus ring, and navy fills when on. Layered so call-site utilities still win. */
+@layer components {
+  :is([data-slot="input"], [data-slot="textarea"], [data-slot="select-trigger"]) {
+    border: 1px solid var(--input); border-radius: var(--oc-content-radius-small); background: var(--card); color: var(--foreground); box-shadow: var(--oc-glass-field-depth);
+    outline-offset: 2px; transition: border-color var(--oc-glass-quick) var(--oc-glass-ease), outline-color var(--oc-glass-quick) var(--oc-glass-ease);
+  }
+  :is([data-slot="input"], [data-slot="textarea"], [data-slot="select-trigger"]):focus-visible { border-color: var(--primary); outline: 2px solid var(--ring); }
+  :is([data-slot="input"], [data-slot="textarea"], [data-slot="select-trigger"])[aria-invalid="true"] { border-color: var(--destructive); }
+  [data-variant="glass-navy"] :is([data-slot="input"], [data-slot="textarea"], [data-slot="select-trigger"]):focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; box-shadow: var(--focus-halo-outset) }
+
+  [data-slot="switch"] {
+    position: relative; border: 1px solid var(--input); border-radius: 999px; background: var(--oc-glass-light-material); box-shadow: var(--oc-glass-field-depth);
+    outline-offset: 2px; transition: background-color var(--oc-glass-quick) var(--oc-glass-ease), border-color var(--oc-glass-quick) var(--oc-glass-ease);
+  }
+  [data-slot="switch"]::after { content: ""; position: absolute; inset: min(0px, calc((100% - 2.75rem) / 2)); }
+  [data-slot="switch"][data-state="checked"] { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 16%, var(--card)); }
+  [data-slot="switch-thumb"] { background: var(--input); box-shadow: var(--oc-glass-tint-highlight); transition: transform var(--oc-glass-quick) var(--oc-glass-ease), background-color var(--oc-glass-quick) var(--oc-glass-ease); }
+  [data-slot="switch-thumb"][data-state="checked"] { background: var(--oc-glass-pill-navy); }
+  [data-slot="switch"]:focus-visible { outline: 2px solid var(--ring); }
+
+  [data-slot="checkbox"] { border: 1px solid var(--input); border-radius: var(--oc-radius-sm); background: var(--card); color: var(--oc-glass-cream); box-shadow: var(--oc-glass-field-depth); outline-offset: 2px; }
+  [data-slot="checkbox"]:is([data-state="checked"], [data-state="indeterminate"]) { border-color: var(--primary); background: var(--oc-glass-pill-navy); }
+  [data-slot="checkbox"]:focus-visible { outline: 2px solid var(--ring); }
+  [data-slot="checkbox"][aria-invalid="true"] { border-color: var(--destructive); }
+  :is(input[type="radio"], input[type="checkbox"]):not([data-slot]) { accent-color: var(--primary); }
+
+  [data-slot="command"] { border-radius: var(--oc-content-radius-small); background: var(--oc-glass-frosted-material); box-shadow: var(--oc-glass-menu-depth); }
+  :is([data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="sheet-content"], .oc-navigation-search) [data-slot="command"] { background: transparent; box-shadow: none; }
+
+}
+/* The explicit opaque surface for dense data (applicant tables, resumes, interview notes). Unlayered, after
+   the shell's card rule, so it wins over the glass default. */
+:is([data-slot="card"], [data-slot="panel"])[data-variant="solid"] { border-color: var(--oc-content-edge-solid); background: var(--oc-content-solid); box-shadow: var(--oc-content-shadow-solid); }
+@media (prefers-reduced-motion: reduce) { [data-slot="switch"], [data-slot="switch-thumb"], :is([data-slot="input"], [data-slot="textarea"], [data-slot="select-trigger"]) { transition: none !important; } }
+@media (forced-colors: active) {
+  [data-slot="switch"], [data-slot="checkbox"], [data-slot="command"] { border: 1px solid CanvasText; }
+  :is([data-slot="switch-thumb"], [data-slot="checkbox"])[data-state="checked"] { background: Highlight; forced-color-adjust: none; }
+  :is([data-slot="input"], [data-slot="textarea"], [data-slot="select-trigger"], [data-slot="switch"], [data-slot="checkbox"]):focus-visible { outline: 2px solid Highlight; }
+}

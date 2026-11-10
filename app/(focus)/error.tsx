@@ -2,7 +2,7 @@
 import { useEffect } from "react"
 import { reportClientError } from "@/lib/report-client-error"
 import Link from "next/link"
-import { PageHeader } from "@/components/product/page-header"
+import { PageHeader } from "@/components/ui/page-header"
 import { Button } from "@/components/ui/button"
 
 /** Errors in a focus screen stay inside the frame, so Exit remains available. */

@@ -20,7 +20,7 @@ export type InterviewRoom = { interviewersNeeded?: number; staffingRevision?: nu
 export type RoomBooking = { id: string; applicationId: string; slotId: string; roomId: string; roundId: string; candidate: string; startTime: string; endTime: string; location: string }
 export type BookingSettings = { bookingPublishedAt: string | null; bookingPaused: boolean; bookingRevision: number; bookingCycleId: string | null; bookingAllowCancellation: boolean; bookingAllowRescheduling: boolean }
 export type RoomWorkspace = { clubName: string; rounds: { id: string; name: string; configuration?: unknown; type?: string; booking?: BookingSettings }[]; cycles?: { id: string; name: string }[]; members: { id: string; name: string }[]; rooms: InterviewRoom[]; bookings: RoomBooking[] }
-export type ApplicantSchedule = { applicationId: string; clubName: string; roundName: string; rooms: InterviewRoom[]; booking: RoomBooking | null; publicationState?: "NOT_PUBLISHED" | "PAUSED" | "PUBLISHED"; allowCancellation?: boolean; allowRescheduling?: boolean }
+export type ApplicantSchedule = { applicationId: string; clubName: string; roundName: string; rooms: InterviewRoom[]; booking: RoomBooking | null; publicationState?: "NOT_PUBLISHED" | "PAUSED" | "PUBLISHED"; allowCancellation?: boolean; allowRescheduling?: boolean; conflictingTimes?: number }
 export function bookingSlotSnapshot(slot: { id: string; startTime: Date | string; endTime: Date | string; capacity: number }, room: { id: string; duration: number; buffer: number }) {
   return { id: slot.id, roomId: room.id, startTime: new Date(slot.startTime).toISOString(), endTime: new Date(slot.endTime).toISOString(), capacity: slot.capacity, duration: room.duration, buffer: room.buffer }
 }

@@ -16,7 +16,7 @@ import {
   type getStudentApplications,
 } from "@/lib/workspace-api"
 import { uploadProfileFile } from "@/lib/workspace-api"
-import { answerErrors, wordCount, applicationResponseProgress } from "@/lib/student-applications"
+import { answerErrors, wordCount, applicationResponseProgress, visibleQuestionIds } from "@/lib/student-applications"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -72,7 +72,10 @@ export function ApplicationForm({
   const missingProfile = !user?.profile
   const missingScores = !meetsTestRequirement(application.club.testRequirement, user?.profile ?? null)
   const dirty = autosave.dirty
-  const required = questions.filter((question) => question.required)
+  // Follow-up questions appear only after the answer they depend on.
+  const visible = visibleQuestionIds(questions, answers)
+  const shown = questions.filter((question) => visible.has(question.id))
+  const required = shown.filter((question) => question.required)
   const progress = applicationResponseProgress(questions, answers)
   const completed = progress.completed
   useEffect(() => {
@@ -185,7 +188,7 @@ export function ApplicationForm({
       <form onSubmit={review} noValidate className="oc-writing-questions">
         {closed && <p role="status" className="text-sm text-muted-foreground">Applications are closed. You can still save your draft.</p>}
         <fieldset disabled={busy} className="min-w-0 space-y-5">
-          {questions.map((question, index) => (
+          {shown.map((question, index) => (
             <section key={question.id} className="oc-writing-question" aria-label={`Question ${index + 1}`}>
               <div className="text-xs font-medium text-muted-foreground">
                 Question {index + 1}
@@ -245,7 +248,7 @@ export function ApplicationForm({
         <div className="oc-writing-navigation">
           <nav aria-label="Application questions" className="flex flex-wrap items-center gap-2">
             <span className="mr-1 text-xs text-muted-foreground">Questions</span>
-            {questions.map((question, index) => <Button key={question.id} type="button" size="icon" variant="outline" className="size-9" disabled={busy} aria-label={`Go to question ${index + 1}`} onClick={() => document.getElementById(`answer-${question.id}`)?.focus()}>{index + 1}</Button>)}
+            {shown.map((question, index) => <Button key={question.id} type="button" size="icon" variant="outline" className="size-9" disabled={busy} aria-label={`Go to question ${index + 1}`} onClick={() => document.getElementById(`answer-${question.id}`)?.focus()}>{index + 1}</Button>)}
           </nav>
           {progress.nextQuestionId && <Button type="button" variant="link" className="px-0" disabled={busy} onClick={() => document.getElementById(`answer-${progress.nextQuestionId}`)?.focus()}>Continue to next response</Button>}
         </div>

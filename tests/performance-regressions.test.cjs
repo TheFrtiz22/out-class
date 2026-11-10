@@ -4,6 +4,7 @@ const fs = require('node:fs'), path = require('node:path'), ts = require('typesc
 const { NextRequest } = require('next/server');
 const nodes = node => !node || typeof node !== 'object' ? [] : Array.isArray(node) ? node.flatMap(nodes) : [node, ...nodes(node.props?.children)];
 function loader(mocks = {}, globals = {}) {
+  mocks = { ...require('./helpers/shell-stubs.cjs'), ...mocks };
   const cache = {};
   function load(file) {
     file = path.resolve(file); if (cache[file]) return cache[file].exports;

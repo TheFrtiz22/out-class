@@ -4,7 +4,7 @@ import {useDemoMode} from "@/contexts/demo-context";
 import {getVotingSlidePreparation,getVotingSlidePreparationApplicant,saveVotingSlidePreparation} from "@/lib/voting-slide-preparation-api";
 import {getLiveVotingPresentation} from "@/lib/voting-room-api";
 import {maxQuoteLength,maxSlideHighlights,maxSummaryLength,slideSourceTypeLabels,slideSourceTypes,type SlideSource} from "@/lib/voting-slide-preparation";
-import {liveRoomPath} from "@/lib/voting-room";
+import {liveRoomPath,isStalePresentation} from "@/lib/voting-room";
 import {Button} from "@/components/ui/button";
 import {LoadingState} from "@/components/ui/loading-state";
 import {ArrowDown,ArrowUp,TriangleAlert,Trash2,Check,Eye} from "@/components/icons";
@@ -12,6 +12,7 @@ import {VotingBackLink} from "./room-back-link";
 import {ApplicantSlide,type VotingSlideData} from "./applicant-slide";
 import Link from "next/link";
 import "./room.css";
+import { PageHeader } from "@/components/ui/page-header";
 
 type Overview=Awaited<ReturnType<typeof import("@/actions/voting-slide-preparation").getVotingSlidePreparation>>;
 type ApplicantData=Awaited<ReturnType<typeof import("@/actions/voting-slide-preparation").getVotingSlidePreparationApplicant>>;
@@ -39,16 +40,16 @@ export function VotingSlidePreparation({clubId,sessionId}:{clubId:string;session
   const choose=(id:string)=>{setSelected(id);const url=new URL(window.location.href);url.searchParams.set("applicant",id);window.history.replaceState(null,"",url);};
   const onSaved=useCallback((applicationId:string,count:number)=>setOverview(o=>o&&o.available?{...o,applicants:o.applicants.map(a=>a.applicationId===applicationId?{...a,highlightCount:count}:a)}:o),[]);
 
-  if(demo.isDemoEnabled)return <div className="vr-page"><VotingBackLink clubId={clubId}/><h1 className="text-xl font-semibold">Prepare slides</h1><p>Slide preparation isn’t available in Demo mode. Turn Demo off to prepare a real session.</p></div>;
+  if(demo.isDemoEnabled)return <div className="vr-page"><VotingBackLink clubId={clubId}/><PageHeader title="Prepare slides" /><p>Slide preparation isn’t available in Demo mode. Turn Demo off to prepare a real session.</p></div>;
   if(error)return <div className="vr-page"><VotingBackLink clubId={clubId}/><p role="alert">{error}</p><Button variant="outline" onClick={()=>setRetry(v=>v+1)}>Retry</Button></div>;
   if(!overview)return <div className="vr-page"><LoadingState label="Loading slide preparation…" layout="rows" rows={4}/></div>;
-  if(!overview.available)return <div className="vr-page"><VotingBackLink clubId={clubId}/><h1 className="text-xl font-semibold">Prepare slides · {overview.name}</h1><p>{overview.reason}</p></div>;
+  if(!overview.available)return <div className="vr-page"><VotingBackLink clubId={clubId}/><PageHeader title={<>Prepare slides · {overview.name}</>} /><p>{overview.reason}</p></div>;
   const missing=overview.applicants.filter(a=>a.highlightCount===0).length;
   const list=missingOnly?overview.applicants.filter(a=>a.highlightCount===0):overview.applicants;
   return <div className="vr-page vr-prep">
     <header className="vr-prep-header">
       <VotingBackLink clubId={clubId} cycleId={overview.cycleId??undefined} roundId={overview.roundId}/>
-      <h1 className="text-xl font-semibold">Prepare slides · {overview.name}</h1>
+      <PageHeader title={<>Prepare slides · {overview.name}</>} />
       <p className="text-sm text-muted-foreground">{overview.finalized?"Decisions are finalized. Preparation is read only.":overview.cancelled?"This session was cancelled. Preparation is read only.":`Choose up to ${maxSlideHighlights} highlights per applicant; two or three works well when there’s material. Saved highlights lock when ${overview.appliesTo} starts. Missing highlights never block voting.`}</p>
       {overview.currentPass>0&&<p className="text-sm"><Link className="vr-link" href={liveRoomPath(clubId,sessionId,"leader")}>Return to the voting room</Link></p>}
     </header>
@@ -106,7 +107,7 @@ function ApplicantPreparation({clubId,sessionId,applicationId,name,onSaved}:{clu
   const hidden=data.hiddenCount??0,full=items.length+hidden>=maxSlideHighlights,editable=data.editable;
   const add=(source:SlideSource,mode:"QUOTE"|"SUMMARY",text:string)=>{if(full)return;change([...items,{id:crypto.randomUUID(),mode,text,source}]);if(announce.current)announce.current.textContent=`${mode==="QUOTE"?"Excerpt":"Summary"} added. ${items.length+1} of ${maxSlideHighlights} highlights.`;};
   const move=(i:number,by:number)=>{const next=[...items];[next[i],next[i+by]]=[next[i+by],next[i]];change(next);};
-  const showPreview=async()=>{setPreviewState("loading");try{setPreview(await getLiveVotingPresentation({clubId,sessionId,applicationId,preparation:true}));setPreviewState("");}catch{setPreviewState("error");}};
+  const showPreview=async()=>{setPreviewState("loading");try{const value=await getLiveVotingPresentation({clubId,sessionId,applicationId,preparation:true});if(isStalePresentation(value))throw Error("Presentation changed.");setPreview(value);setPreviewState("");}catch{setPreviewState("error");}};
 
   return <section className="vr-prep-main" aria-labelledby="prep-applicant">
     <div className="flex flex-wrap items-center justify-between gap-2"><h2 id="prep-applicant" className="text-lg font-semibold">{name}</h2><SaveStatus save={save} dirty={dirty} onRetry={()=>void persist(items,data.revision)} onReload={()=>{writeBackup(key,null);request.current=null;setSave({state:"idle"});setReload(v=>v+1);}}/></div>
@@ -130,7 +131,7 @@ function ApplicantPreparation({clubId,sessionId,applicationId,name,onSaved}:{clu
         </li>;})}</ol>}
     </section>
     <section aria-labelledby="prep-preview" className="space-y-2">
-      <div className="flex flex-wrap items-center gap-2"><h3 id="prep-preview" className="font-medium">Slide preview</h3><Button type="button" size="sm" variant="outline" disabled={dirty||save.state==="saving"} onClick={()=>void showPreview()}><Eye aria-hidden="true" size={16}/> {preview?"Refresh preview":"Preview slide"}</Button>{dirty&&<span className="text-xs text-muted-foreground">Preview uses saved highlights.</span>}</div>
+      <div className="flex flex-wrap items-center gap-2"><h3 id="prep-preview" className="font-medium">Slide preview</h3><Button type="button" size="sm" variant="outline" disabled={dirty||save.state==="saving"} onClick={()=>void showPreview()}><Eye aria-hidden="true" size={16}/> {preview?"Update preview":"Preview slide"}</Button>{dirty&&<span className="text-xs text-muted-foreground">Preview uses saved highlights.</span>}</div>
       {previewState==="loading"&&<LoadingState label="Loading preview…" layout="rows" rows={2}/>}
       {previewState==="error"&&<p role="alert" className="text-sm">The preview could not be loaded. Retry after saving.</p>}
       {preview&&previewState===""&&<div className="vr-prep-preview"><ApplicantSlide data={preview}/></div>}

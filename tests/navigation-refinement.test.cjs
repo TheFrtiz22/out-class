@@ -3,11 +3,12 @@ function load(file){const mod={exports:{}};new Function('require','module','expo
 const {managerNavigation,mobileDestinations}=load('lib/product-navigation.ts')
 test('recruiting navigation groups preserve original routes and individually gated children',()=>{
  const owner=managerNavigation({isOwner:true},'club','recruiting')
- assert.deepEqual(owner.filter(i=>i.navGroup==='applicants').map(i=>[i.id,i.label]),[['applicants','All Applicants'],['rejected','Rejected Applicants']])
+ assert.deepEqual(owner.filter(i=>i.navGroup==='applicants').map(i=>[i.id,i.label]),[['applicants','All Applicants']])
  assert.deepEqual(owner.filter(i=>i.navGroup==='decisions').map(i=>[i.id,i.label]),[['decisions','Decisions'],['scheduled-decisions','Scheduled Decisions']])
- for(const item of owner.filter(i=>i.navGroup))assert.equal(item.href,`/club/club/workspace?section=recruitment&tool=${item.id}${item.id==='decisions'?'&decisionTab=overview':''}`)
+ for(const item of owner.filter(i=>i.navGroup))assert.equal(item.href,`/club/club/workspace?section=recruitment&tool=${item.id}${item.id==='decisions'?'&decisionTab=voting':''}`)
  const reviewer=managerNavigation({permissions:['applications.review']},'club','recruiting')
- assert.ok(reviewer.some(i=>i.id==='decisions'));for(const id of ['scheduled-decisions','letters','announcements'])assert.ok(!reviewer.some(i=>i.id===id))
+ // Decision status filters live on Applicants; Decisions needs voting or letters access.
+ assert.ok(!reviewer.some(i=>i.id==='decisions'));assert.ok(managerNavigation({permissions:['applications.review','decisions.vote']},'club','recruiting').some(i=>i.id==='decisions'));assert.equal(managerNavigation({permissions:['recruitment.manage']},'club','recruiting').find(i=>i.id==='decisions').href,'/club/club/workspace?section=recruitment&tool=decisions&decisionTab=letters');for(const id of ['scheduled-decisions','letters','announcements'])assert.ok(!reviewer.some(i=>i.id===id))
  const publishing=managerNavigation({permissions:['decisions.publish']},'club','recruiting');assert.ok(!publishing.some(i=>i.id==='scheduled-decisions'))
  assert.ok(managerNavigation({permissions:['decisions.publish','applicants.identify']},'club','recruiting').some(i=>i.id==='scheduled-decisions'))
  assert.deepEqual(mobileDestinations(owner).filter(i=>i.navGroup).map(i=>i.label),['Applicants','Decisions'])

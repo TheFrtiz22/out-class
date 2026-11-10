@@ -78,13 +78,13 @@ test('booking: reserve, reschedule, cancel, selected date/time and focus after a
     const time=p.getByRole('button').filter({hasText:'10:00 AM'});await time.click();await expect(time).toHaveAttribute('aria-pressed','true');await scan(p,'booking-choice');
     await p.getByRole('button',{name:'Confirm interview',exact:true}).click();const notice=p.getByRole('status').filter({hasText:'Interview confirmed for'});await notice.waitFor();await isFocused(notice);
     await p.getByRole('button').filter({hasText:'11:00 AM'}).click();await p.getByRole('button',{name:'Confirm new time'}).click();await p.getByRole('status').filter({hasText:'Interview rescheduled for'}).waitFor();
-    await p.getByRole('button',{name:'Cancel booking',exact:true}).click();await p.getByRole('button',{name:'Yes, cancel'}).click();const cancelled=p.getByRole('status').filter({hasText:'Booking cancelled.'});await cancelled.waitFor();await isFocused(cancelled);await scan(p,'booking-cancelled');
+    await p.getByRole('button',{name:'Cancel interview',exact:true}).click();await p.getByRole('button',{name:'Yes, cancel'}).click();const cancelled=p.getByRole('status').filter({hasText:'Booking cancelled.'});await cancelled.waitFor();await isFocused(cancelled);await scan(p,'booking-cancelled');
   }finally{await f.close();}
 });
 test('events: corkboard/list, filter, empty state and dialog focus restoration',async()=>{
   const f=await pageFor(`${fixture.url}/?case=events`);const p=f.page;try{
     const flyer=p.getByRole('button',{name:/^View event: .*Community night/});await flyer.click();await p.getByRole('dialog',{name:'Community night'}).waitFor();await scan(p,'event-detail');await p.keyboard.press('Escape');await isFocused(flyer);
-    await p.getByRole('button',{name:'List View',exact:true}).click();await scan(p,'events-list');await p.getByRole('textbox',{name:'Search events'}).fill('no match');await p.getByRole('heading',{name:'No search results.'}).waitFor();await scan(p,'events-empty');
+    await p.getByRole('button',{name:'List',exact:true}).click();await scan(p,'events-list');await p.getByRole('textbox',{name:'Search events'}).fill('no match');await p.getByRole('heading',{name:'No events match “no match”.'}).waitFor();await scan(p,'events-empty');
   }finally{await f.close();}
 });
 test('leader: event creation, labelled date controls and equivalent flyer information',async()=>{
@@ -110,7 +110,7 @@ for(const [index,route] of publicRoutes.entries()){
     assert.ok(process.env.OUTCLASS_A11Y_URL,'Use pnpm test:a11y to start the isolated local app');
     const f=await pageFor(process.env.OUTCLASS_A11Y_URL+route);const p=f.page;try{
       assert.equal(await p.locator('main').count(),1);assert.ok(await p.title());await expect(p.locator('html')).toHaveAttribute('lang','en');await scan(p,`public-${index}-desktop`);
-      if(index===0){await p.screenshot({path:path.join(output,'home-after.png'),fullPage:true});assert.equal(await p.locator('.oc-demo-observation button').count(),0);await p.getByRole('button',{name:'Next feature'}).click();await scan(p,'carousel-manual');}
+      if(index===0){await p.screenshot({path:path.join(output,'home-after.png'),fullPage:true});assert.equal(await p.locator('.oc-demo-observation button').count(),0);await p.locator('.oc-hero-audience-toggle').getByRole('button',{name:'Students',exact:true}).click();await expect(p.locator('h1')).toContainText('one profile');await scan(p,'hero-students');}
       if(route==='/uva'){await p.locator('#faq summary, #faq button').first().click();await scan(p,'faq-expanded');}
       await p.setViewportSize({width:320,height:800});await reflow(p);await scan(p,`public-${index}-320`);
       await p.addStyleTag({content:'*{letter-spacing:.12em!important;word-spacing:.16em!important;line-height:1.5!important}p{margin-bottom:2em!important}'});await reflow(p);

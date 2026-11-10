@@ -3,7 +3,7 @@ import { LoadingState } from "@/components/ui/loading-state"
 import { useEffect, useState } from "react";
 import { getEarlierInterviewReviews, getInterviewRoundScore } from "@/lib/workspace-api";
 import type { InterviewScope } from "@/lib/interview-access";
-import { formatAverage, type RoundScoreSummary } from "@/lib/interview-review-summary";
+import { formatAverage, scoredEvaluationsLabel, type RoundScoreSummary } from "@/lib/interview-review-summary";
 import { Button } from "@/components/ui/button";
 export function RoundScore({ scope }: { scope: InterviewScope }) {
   const [value, setValue] = useState<RoundScoreSummary | null>(null), [error, setError] = useState(false), [retry, setRetry] = useState(0);
@@ -14,7 +14,7 @@ export function RoundScore({ scope }: { scope: InterviewScope }) {
     window.addEventListener("focus", read);
     return () => { current = false; clearInterval(interval); window.removeEventListener("focus", read); };
   }, [scope.clubId, scope.applicationId, scope.roundId, retry]); // eslint-disable-line react-hooks/exhaustive-deps
-  return <section aria-label="Round score" className="oc-round-score"><h3>Round average</h3>{error ? <p role="status">Round scores unavailable under current access. <Button type="button" variant="ghost" onClick={() => setRetry(v => v + 1)}>Retry</Button></p> : value ? <><p>{formatAverage(value.average)}{value.average !== null && " / 10"}{value.provisional && " · Provisional"}</p><p className="text-xs text-muted-foreground">{value.submitted} of {value.required} reviews submitted</p></> : <LoadingState label="Loading round scores…" layout="inline" />}</section>;
+  return <section aria-label="Round score" className="oc-round-score"><h3>Average interview score</h3>{error ? <p role="status">Round scores unavailable under current access. <Button type="button" variant="ghost" onClick={() => setRetry(v => v + 1)}>Retry</Button></p> : value ? <><p>{formatAverage(value.average)}{value.average !== null && " / 10"}{value.provisional && " · Provisional"}</p><p className="text-xs text-muted-foreground">{value.average === null ? `${value.submitted} of ${value.required} reviews submitted` : `${scoredEvaluationsLabel(value.submitted)} · ${value.submitted} of ${value.required} reviews submitted`}</p></> : <LoadingState label="Loading round scores…" layout="inline" />}</section>;
 }
 export function EarlierRounds({ scope }: { scope: InterviewScope }) {
   const [open, setOpen] = useState(false), [value, setValue] = useState<Awaited<ReturnType<typeof getEarlierInterviewReviews>> | null>(null), [error, setError] = useState(false), [retry, setRetry] = useState(0);
