@@ -14,7 +14,7 @@ async function campusEventsNative(url) {
   function load(file) {
     file = path.resolve(file); if (cache[file]) return cache[file].exports;
     const m = { exports: {} }; cache[file] = m;
-    const mocks = { '@/utils/prisma': { prisma }, '@/utils/auth': { requireAuth: async () => { if (!actor) throw Error('Sign in required'); return { user: { id: actor } }; } }, 'next/cache': { revalidatePath() {}, revalidateTag() {} }, '@/utils/platform-admin': {}, '@/lib/club-transaction-authorization': {} };
+    const mocks = { '@/utils/prisma': { prisma }, '@/utils/auth': { requireAuth: async () => { if (!actor) throw Error('Sign in required'); return { user: { id: actor } }; } }, 'next/cache': { revalidatePath() {}, revalidateTag() {} }, '@/utils/support-audit': { supportContext: async () => null, supportTransactionScope: { run: (_scope, fn) => fn() } }, '@/utils/admin-elevation': {}, '@/utils/platform-admin': {}, '@/lib/club-transaction-authorization': {} };
     new Function('require', 'module', 'exports', ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText)(name => name in mocks ? mocks[name] : name.startsWith('@/') ? load(name.slice(2) + '.ts') : require(name), m, m.exports);
     return m.exports;
   }

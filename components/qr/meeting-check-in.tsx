@@ -1,9 +1,21 @@
 "use client";
+import { PageHeader } from "@/components/ui/page-header";
 import { LoadingState } from "@/components/ui/loading-state"
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
-import { useDemoMode } from "@/contexts/demo-context";
-import { checkInMeeting, getMeeting } from "@/lib/workspace-api";
+import { useDemoMode } from "@/contexts/demo-mode";
+import { checkInMeeting as checkInLive, getMeeting as getMeetingLive } from "@/actions/meetings";
+
+// Students open this page on a phone right after scanning. Import the two live
+// Server Actions directly; the full workspace adapter (every feature plus the
+// demo store and seed data) loads only when Demo Mode is enabled.
+const demoWorkspace = () => import("@/lib/workspace-api");
+async function getMeeting(demo: boolean, id: string) {
+  return demo ? (await demoWorkspace()).getMeeting(id) : getMeetingLive(id);
+}
+async function checkInMeeting(demo: boolean, id: string, token: string) {
+  return demo ? (await demoWorkspace()).checkInMeeting(id, token) : checkInLive(id, token);
+}
 import type { CheckInResult } from "@/lib/meetings";
 import { Button } from "@/components/ui/button";
 export function MeetingCheckIn() {
@@ -31,7 +43,7 @@ export function MeetingCheckIn() {
   useEffect(() => {
     let current = true;
     if (user && id)
-      getMeeting(id)
+      getMeeting(demo.isDemoEnabled, id)
         .then((m) => {
           if (current) setTitle(m.title);
         })
@@ -43,8 +55,8 @@ export function MeetingCheckIn() {
     };
   }, [user?.id, id]);
   return (
-    <main className="mx-auto max-w-lg space-y-5 px-5 py-12">
-      <h1 className="oc-page-title ">Meeting check-in</h1>
+    <div className="space-y-5">
+      <PageHeader title="Meeting check-in" />
       {demo.isDemoEnabled && (
         <p className="text-sm text-muted-foreground">
           Demo check-in is local to this browser. It does not record real
@@ -56,15 +68,13 @@ export function MeetingCheckIn() {
       ) : !user ? (
         <>
           <p>
-            Sign in with your UVA account, then scan the current code again.
-            Codes expire quickly to protect attendance.
+            This records your attendance at a club meeting. Sign in with your
+            UVA account, then scan the current code again. Codes expire quickly
+            to protect attendance.
           </p>
-          <a
-            className="underline"
-            href={`/?next=${encodeURIComponent(`/check-in?meetingId=${id}`)}`}
-          >
-            Sign in
-          </a>
+          <Button asChild className="w-fit">
+            <a href={`/login?next=${encodeURIComponent(`/check-in${id ? `?meetingId=${encodeURIComponent(id)}` : ""}`)}`}>Sign in</a>
+          </Button>
         </>
       ) : !id || !token ? (
         <p role="alert">
@@ -94,7 +104,7 @@ export function MeetingCheckIn() {
               setBusy(true);
               setError("");
               try {
-                setResult(await checkInMeeting(id, token));
+                setResult(await checkInMeeting(demo.isDemoEnabled, id, token));
               } catch (e) {
                 setError(
                   e instanceof Error
@@ -112,11 +122,11 @@ export function MeetingCheckIn() {
       )}
       {error && <p role="alert">{error}</p>}
       <a
-        className="block text-sm underline"
+        className="inline-flex min-h-11 items-center text-sm underline"
         href={id ? `/meetings/${id}` : "/meetings"}
       >
         Meeting agenda and resources
       </a>
-    </main>
+    </div>
   );
 }

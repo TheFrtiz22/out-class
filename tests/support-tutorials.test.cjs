@@ -331,7 +331,8 @@ test('other tabs and restored pages reload on server context changes; broadcasts
     const cleanup = effect(); await new Promise(resolve => setImmediate(resolve));
     assert.equal(reloads, 0);
     server = { marker: true, sessionId: 'opaque-session-id' };
-    await listeners.pageshow(); assert.equal(reloads, 1);
+    await listeners.pageshow({ persisted: false }); assert.equal(reloads, 0, 'a normal load is already covered by the mount check');
+    await listeners.pageshow({ persisted: true }); assert.equal(reloads, 1);
     listeners.storage({ key: 'outclass-support-context-changed' }); assert.equal(reloads, 2);
     sync.notifySupportSessionChanged();
     assert.ok(messages.length >= 2);

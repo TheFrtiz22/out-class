@@ -1,7 +1,8 @@
 "use server"
 import { ownPanelAssignments } from "@/utils/official-panel-schedule"
 
-import { lockOperationalClub } from "@/lib/club-suspension";
+import { assertClubOperational } from "@/lib/club-suspension";
+import { activeRecruitmentCycle, applicationRecency, currentApplication, reapplicationUnavailable } from "@/lib/recruitment-cycle";
 import { publicMeetingVisibility } from "@/lib/campus-events";
 
 import { applicationAvailability } from "@/lib/club-settings"
@@ -17,16 +18,19 @@ async function persistApplication(input: z.infer<typeof applicationInputSchema>,
   const parsed = applicationInputSchema.parse(input)
   const { clubWriteTransaction } = await import("@/utils/club-write-transaction")
   const applicationId = await clubWriteTransaction(async (tx) => {
-    await lockOperationalClub(tx, parsed.clubId)
+    // FOR SHARE (not FOR UPDATE) on the club: leader configuration changes,
+    // decisions and suspension still serialize against this save, but different
+    // students' autosaves no longer queue behind one club-wide lock. The student
+    // row lock keeps one student's concurrent tabs ordered for the unique
+    // (studentId, clubId) application.
+    await assertClubOperational(tx, parsed.clubId)
+    await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${user.id} FOR UPDATE`
     const configuration = await tx.club.findUnique({ where: { id: parsed.clubId }, select: { applicationOpen: true, applicationDeadline: true, testRequirement: true } })
     if (!configuration || submit && !applicationAvailability(configuration)) throw new Error("Applications are closed for this club. Your saved draft is retained.")
-    if (submit && !(await tx.studentProfile.findUnique({ where: { userId: user.id } }))) {
-      throw new Error("You must complete your unified profile before applying.")
-    }
     if (submit) {
-      const club = await tx.club.findUnique({ where: { id: parsed.clubId }, select: { testRequirement: true } })
       const profile = await tx.studentProfile.findUnique({ where: { userId: user.id } })
-      if (!club || !meetsTestRequirement(club.testRequirement, profile)) throw new Error("Update your profile to meet this club's SAT/ACT requirement before submitting.")
+      if (!profile) throw new Error("You must complete your unified profile before applying.")
+      if (!meetsTestRequirement(configuration.testRequirement, profile)) throw new Error("Update your profile to meet this club's SAT/ACT requirement before submitting.")
     }
     const questions = await tx.applicationQuestion.findMany({ where: { clubId: parsed.clubId, archivedAt: null } })
     parsed.answers = normalizeApplicationAttachments(questions, parsed.answers)
@@ -38,17 +42,23 @@ async function persistApplication(input: z.infer<typeof applicationInputSchema>,
       orderBy: { order: "asc" },
     })
     if (!firstRound) throw new Error("This club has not set up their application pipeline yet.")
-    const existing = await tx.application.findUnique({
-      where: { studentId_clubId: { studentId: user.id, clubId: parsed.clubId } },
-    })
+    const existing = await currentApplication(tx, user.id, parsed.clubId)
+    // Submissions join the club's single active recruitment cycle; a new
+    // application after a rejection is only allowed in a different cycle.
+    const activeCycle = submit || !existing ? await activeRecruitmentCycle(tx, parsed.clubId) : null
+    if (!existing) {
+      const unavailable = await reapplicationUnavailable(tx, user.id, parsed.clubId, activeCycle)
+      if (unavailable) throw new Error(unavailable)
+    }
     if (existing && parsed.expectedAnswers !== undefined) {
       const current = await tx.applicationAnswer.findMany({ where: { applicationId: existing.id }, select: { questionId: true, response: true } })
       const key = applicationAnswersKey(current)
       if (key !== parsed.expectedAnswers && key !== applicationAnswersKey(parsed.answers))
         throw Error("This application changed in another tab. Your responses are retained. Reopen it to compare before saving.")
     }
+    const cycle = submit && !existing?.recruitmentCycleId && activeCycle ? { recruitmentCycleId: activeCycle.id } : {}
     const transition = submit
-      ? { status: "SUBMITTED" as const, roundId: firstRound.id, submittedAt: new Date() }
+      ? { status: "SUBMITTED" as const, roundId: firstRound.id, submittedAt: new Date(), ...cycle }
       : { status: "DRAFTING" as const }
     if (existing) {
       // The status predicate also protects against a save racing with submission.
@@ -78,7 +88,7 @@ async function persistApplication(input: z.infer<typeof applicationInputSchema>,
     })
     return application.id
   })
-  revalidatePath("/")
+  revalidatePath("/", "layout")
   revalidatePath(`/club/${parsed.clubId}`)
   return { success: true, applicationId }
 }
@@ -112,7 +122,7 @@ export async function getStudentApplications() {
           color: true,
           pipelineRounds: { where: { archivedAt: null }, select: { id: true, name: true, order: true }, orderBy: { order: "asc" } },
           questions: {
-            select: { id: true, prompt: true, type: true, required: true, wordLimit: true, options: true, archivedAt: true },
+            select: { id: true, prompt: true, type: true, required: true, wordLimit: true, options: true, showIf: true, archivedAt: true },
             orderBy: [{ order: "asc" }, { id: "asc" }],
           },
         },
@@ -124,9 +134,17 @@ export async function getStudentApplications() {
         orderBy: { slot: { startTime: "asc" } },
       },
     },
-    orderBy: [{ submittedAt: "desc" }, { id: "asc" }],
+    orderBy: applicationRecency,
   })
   return applications.map(app => ({ ...app, club: { ...app.club, questions: app.club.questions.filter(q => !q.archivedAt || app.status !== "DRAFTING" && app.answers.some(a => a.questionId === q.id)) } }))
+}
+
+// The student calendar shows upcoming meetings plus one semester of history.
+// Older meetings the student attended still appear through `attendances`.
+const STUDENT_CALENDAR_HISTORY_MS = 180 * 24 * 3600000
+function studentCalendarWindow() {
+  const since = new Date(Date.now() - STUDENT_CALENDAR_HISTORY_MS)
+  return { OR: [{ date: { gte: since } }, { endDate: { gte: since } }] }
 }
 
 export async function getStudentDashboardData() {
@@ -148,7 +166,7 @@ prisma.application.findMany({
         include: { slot: true },
       },
     },
-    orderBy: { submittedAt: "desc" },
+    orderBy: applicationRecency,
   }),
 
 prisma.eventAttendance.findMany({
@@ -160,7 +178,7 @@ prisma.eventAttendance.findMany({
     },
   }),
 
-prisma.meeting.findMany({ where: { OR: [publicMeetingVisibility, { club: { members: { some: { userId: user.id, status: "ACTIVE" } } } }] }, select: { id: true, clubId: true, title: true, date: true, endDate: true, allDay: true, location: true, description: true, audience: true, club: { select: { name: true } } }, orderBy: { date: "asc" } }),
+prisma.meeting.findMany({ where: { AND: [{ OR: [publicMeetingVisibility, { club: { members: { some: { userId: user.id, status: "ACTIVE" } } } }] }, studentCalendarWindow()] }, select: { id: true, clubId: true, title: true, date: true, endDate: true, allDay: true, location: true, description: true, audience: true, club: { select: { name: true } } }, orderBy: { date: "asc" } }),
 prisma.$transaction(tx=>ownPanelAssignments(tx,user.id))
   ])
   return { applications, attendances, meetings, panelAssignments }

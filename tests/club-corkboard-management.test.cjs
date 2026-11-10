@@ -24,7 +24,7 @@ function harness() {
   const api=load('actions/campus-events.ts',{
     '@/utils/prisma':{prisma:{$transaction:async fn=>fn(tx)}},
     '@/utils/auth':{requireClubPermission:async()=>({user:{id:'leader'}})},
-    '@/utils/platform-admin':{},'next/cache':{},
+    '@/utils/platform-admin':{},'next/cache':{},'@/utils/club-write-transaction':{},
   });
   return {state,api};
 }

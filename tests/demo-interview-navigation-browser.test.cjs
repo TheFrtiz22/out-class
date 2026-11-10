@@ -21,8 +21,10 @@ test('browser: Demo interview entry, direct links and redundant club selection r
     '@/utils/supabase/client': "exports.createClient=()=>{throw Error('Live Auth forbidden in Demo fixture')}",
     '@/components/outclass-loading-screen': "const React=require('react');exports.OutClassLoadingScreen=()=>React.createElement('p',null,'Loading Demo');",
     '@/components/workspace-loading': "const React=require('react');exports.WorkspaceLoading=()=>React.createElement('p',null,'Loading candidates');",
-    '@/components/product/page-header': "const React=require('react');exports.PageHeader=({title})=>React.createElement('h1',null,title);",
+    '@/components/ui/page-header': "const React=require('react');exports.PageHeader=({title})=>React.createElement('h1',null,title);",
     '@/lib/demo/store': `const seed={clubs:[{id:${JSON.stringify(clubId)}}],perspective:{role:'student',clubId:${JSON.stringify(clubId)}},savedWork:'keep existing demo work'};let state,active=false;const listeners=new Set();exports.demoStore={subscribe:fn=>{listeners.add(fn);return()=>listeners.delete(fn)},active:()=>active,get:()=>state,start:()=>{state=JSON.parse(localStorage.getItem('demo-navigation-fixture')||JSON.stringify(seed));active=true;listeners.forEach(fn=>fn())},stop:()=>{active=false},mutate:fn=>{fn(state);localStorage.setItem('demo-navigation-fixture',JSON.stringify(state));listeners.forEach(fn=>fn())}};exports.demoUser=()=>(${JSON.stringify(user)});`,
+    // The provider loads the store through the shared loader; serve the fixture store from it.
+    '@/lib/demo/loader': "const store=()=>require('@/lib/demo/store');exports.loadDemoStore=async()=>store();exports.loadedDemoStore=store;exports.isDemoActive=()=>store().demoStore.active();exports.demoGate=async()=>store().demoStore.active();",
     '@/lib/application-state': `const focus={clubId:${JSON.stringify(clubId)}};exports.useApplicationState=()=>({leaderFocus:focus,clearLeaderFocus(){}});`,
     '@/lib/workspace-api': `exports.resolveInterviewRoomEntry=async input=>input;exports.getInterviewWorkspace=async()=>(${JSON.stringify(workspace)});exports.openInterviewSession=async()=>{};exports.getInterviewApplicantPanel=async()=>{};exports.prepareInterviewAdvance=async()=>{};exports.confirmInterviewAdvance=async()=>{};`,
     '@/components/demo-workspace': 'exports.DemoInterviewGuide=()=>null;',
@@ -31,7 +33,7 @@ test('browser: Demo interview entry, direct links and redundant club selection r
   }
   const entry = `import React,{useEffect,useSyncExternalStore} from 'react';import{createRoot}from'react-dom/client';import{DemoDataProvider,useDemoMode}from'@/contexts/demo-context';import{AuthProvider,useAuth}from'@/contexts/auth-context';import{InterviewWorkspaceView}from'@/components/views/interview-workspace-view';
 const clubId=${JSON.stringify(clubId)};for(const method of ['pushState','replaceState']){const original=history[method].bind(history);history[method]=(...args)=>{original(...args);dispatchEvent(new Event('popstate'))}}const subscribe=fn=>{addEventListener('popstate',fn);return()=>removeEventListener('popstate',fn)};
-function Workspace(){const href=useSyncExternalStore(subscribe,()=>location.href),{selectClub}=useAuth(),demo=useDemoMode(),room=new URL(href).searchParams.get('section')==='recruitment'&&new URL(href).searchParams.get('interview')==='1';useEffect(()=>{if(demo.state?.perspective.role!=='leader')selectClub(clubId)},[demo.state?.perspective.role]);return <><button onClick={()=>selectClub(clubId)}>Reselect club</button>{room?<InterviewWorkspaceView scoped/>:<><h1>Club overview</h1><button onClick={()=>history.pushState({},'', '/club/'+clubId+'/workspace?section=recruitment&tool=interviews&interview=1')}>Interview room</button></>}</>};createRoot(document.getElementById('root')).render(<DemoDataProvider allowed enabled><AuthProvider hasSession={false}><Workspace/></AuthProvider></DemoDataProvider>);`
+function Workspace(){const href=useSyncExternalStore(subscribe,()=>location.href),{selectClub}=useAuth(),demo=useDemoMode(),room=new URL(href).pathname.endsWith('/interview');useEffect(()=>{if(demo.state?.perspective.role!=='leader')selectClub(clubId)},[demo.state?.perspective.role]);return <><button onClick={()=>selectClub(clubId)}>Reselect club</button>{room?<InterviewWorkspaceView scoped/>:<><h1>Club overview</h1><button onClick={()=>history.pushState({},'', '/club/'+clubId+'/interview')}>Interview room</button></>}</>};createRoot(document.getElementById('root')).render(<DemoDataProvider allowed enabled><AuthProvider hasSession={false}><Workspace/></AuthProvider></DemoDataProvider>);`
   const js = bundle(entry, mocks)
   const server = http.createServer((req, res) => {
     if (req.url === '/fixture.js') { res.setHeader('content-type', 'text/javascript'); res.end(js); return }
@@ -55,17 +57,17 @@ function Workspace(){const href=useSyncExternalStore(subscribe,()=>location.href
     await draft.fill('Keep this unsaved interview draft')
     await page.getByRole('button', { name: 'Reselect club', exact: true }).click()
     assert.equal(await draft.inputValue(), 'Keep this unsaved interview draft')
-    assert.equal(new URL(page.url()).searchParams.get('section'), 'recruitment')
+    assert.equal(new URL(page.url()).pathname, '/club/' + clubId + '/interview')
     assert.equal(await page.getByRole('heading', { name: 'Club overview' }).count(), 0)
     await page.reload()
     await draft.waitFor()
-    assert.equal(new URL(page.url()).searchParams.get('interview'), '1')
+    assert.equal(new URL(page.url()).pathname, '/club/' + clubId + '/interview')
     assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('demo-navigation-fixture')).savedWork), 'keep existing demo work')
     // Simulate an existing browser session saved in the student perspective.
     await page.evaluate(() => { const s = JSON.parse(localStorage.getItem('demo-navigation-fixture')); s.perspective.role = 'student'; localStorage.setItem('demo-navigation-fixture', JSON.stringify(s)) })
-    await page.goto(base + route + '?section=recruitment&tool=interviews&interview=1')
+    await page.goto(base + '/club/' + clubId + '/interview')
     await draft.waitFor()
-    assert.equal(new URL(page.url()).searchParams.get('section'), 'recruitment')
+    assert.equal(new URL(page.url()).pathname, '/club/' + clubId + '/interview')
     assert.equal(await page.getByRole('heading', { name: 'Club overview' }).count(), 0)
     assert.deepEqual(errors, [])
     assert.ok(requests.every(r => new URL(r.url).origin === base && r.method === 'GET' && !new URL(r.url).pathname.startsWith('/api/')), 'No live reads or writes')

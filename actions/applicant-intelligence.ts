@@ -9,6 +9,7 @@ import { interviewCapabilities } from "@/lib/interview-access";
 import { hasPermission } from "@/lib/permissions";
 import { votingDisplaySchema, readVotingDisplay } from "@/lib/voting-presentation";
 import { loadVotingRoom, roomAuthority } from "@/utils/voting-room";
+import { VotingPresentationChanged } from "@/lib/voting-room";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { displayConfigSchema, readDisplayConfig, projectApplicantDisplay } from "@/lib/applicant-display";
 const scope = z.object({ clubId: z.string().uuid(), applicationId: z.string().uuid(), sessionId: z.string().uuid().optional(), previewConfig: votingDisplaySchema.optional() });
@@ -42,7 +43,8 @@ export async function getApplicantDisplay(input: z.infer<typeof scope>) {
         ({app,member:reviewer}=await authorized(tx,data,member.id));
         const {s,round}=await loadVotingRoom(tx,data.clubId,voting.id);
         const role=roomAuthority(s,member,round.anonymousReview);
-        if(app.roundId!==s.roundId||app.recruitmentCycleId!==s.cycleId||(!role.leader&&s.activeApplicationId!==app.id))throw Error("Voting presentation changed. Refresh the room.");
+        if(app.roundId!==s.roundId||app.recruitmentCycleId!==s.cycleId)throw Error("Voting presentation changed. Reload the page to continue.");
+        if(!role.leader&&s.activeApplicationId!==app.id)throw new VotingPresentationChanged();
       }
       config=readVotingDisplay(voting.displayConfig);
     }

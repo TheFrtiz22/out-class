@@ -52,7 +52,7 @@ test('signup privacy on real Next, Auth, SMTP and desktop/mobile browsers',{skip
      const page=await context.newPage();page.on('pageerror',e=>errors.push({url:page.url(),message:e.message}));
      const email=exists?existingEmail:`privacy.browser.${randomUUID()}@virginia.edu`;
      await page.goto(c.appUrl+'/signup?next=%2Finvitations%2Fprivacy-fixture');
-     await page.getByRole('heading',{name:'Create your account',exact:true}).waitFor();
+     await page.getByRole('heading',{name:'Your account',exact:true}).waitFor();
      await page.getByLabel('First name',{exact:true}).fill('Synthetic');await page.getByLabel('Last name',{exact:true}).fill('Student');
      await page.getByLabel('UVA email address',{exact:true}).fill(email);await page.getByLabel('Password',{exact:true}).fill(attemptedPassword);
      const response=page.waitForResponse(r=>r.request().method()==='POST'&&r.request().headers()['next-action']===registrationId);
@@ -73,7 +73,7 @@ test('signup privacy on real Next, Auth, SMTP and desktop/mobile browsers',{skip
      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth),false);
      await page.screenshot({path:path.join(path.dirname(filename),`signup-privacy-${mobile?'mobile':'desktop'}-${exists?'existing':'new'}.png`),fullPage:true});
      await page.getByRole('button',{name:'Use a different email',exact:true}).click();
-     await page.getByRole('heading',{name:'Create your account',exact:true}).waitFor();
+     await page.getByRole('heading',{name:'Your account',exact:true}).waitFor();
      assert.equal(await page.getByLabel('Password',{exact:true}).inputValue(),'');
      await page.getByRole('button',{name:'Sign in',exact:true}).click();
      await page.waitForURL(c.appUrl+'/login?next=%2Finvitations%2Fprivacy-fixture');

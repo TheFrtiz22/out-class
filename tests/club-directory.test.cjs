@@ -132,7 +132,10 @@ test("starting an existing application never updates or deletes its answers", as
     "@/utils/prisma": {
       prisma: {
         application: {
-          findUnique: async () => ({ id: "existing" }),
+          findFirst: async () => ({ id: "existing" }),
+          create: async () => {
+            writes++
+          },
           upsert: async () => {
             writes++
           },
@@ -143,15 +146,17 @@ test("starting an existing application never updates or deletes its answers", as
   assert.deepEqual(await actions.startClubApplication("club"), { applicationId: "existing" })
   assert.equal(writes, 0)
 })
-test("concurrent starts use an empty update branch and session-derived identity", async () => {
+test("concurrent starts serialize per student and create an empty draft from session-derived identity", async () => {
   let args
+  const queries = []
   const actions = load("actions/club-directory.ts", {
     "@/utils/auth": { requireAuth: async () => ({ user: { id: "session-user" } }) },
     "@/utils/prisma": {
       prisma: {
+        $queryRaw: async (strings, ...values) => { queries.push([strings.join("?"), values]); return [] },
         application: {
-          findUnique: async () => null,
-          upsert: async (q) => {
+          findFirst: async () => null,
+          create: async (q) => {
             args = q
             return { id: "created" }
           },
@@ -160,11 +165,13 @@ test("concurrent starts use an empty update branch and session-derived identity"
       },
     },
   })
-  await actions.startClubApplication("club")
-  assert.deepEqual(args.update, {})
-  assert.equal(args.create.studentId, "session-user")
-  assert.equal(args.create.status, "DRAFTING")
-  assert.equal(args.create.answers, undefined)
+  assert.deepEqual(await actions.startClubApplication("club"), { applicationId: "created" })
+  // The student's own row lock orders concurrent starts (two tabs); the second
+  // sees the first's draft instead of creating a duplicate.
+  assert.ok(queries.some(([sql, values]) => /"User".*FOR UPDATE/.test(sql) && values[0] === "session-user"))
+  assert.equal(args.data.studentId, "session-user")
+  assert.equal(args.data.status, "DRAFTING")
+  assert.equal(args.data.answers, undefined)
 })
 
 test('category URL filters are case-insensitive without introducing a second directory',()=>{

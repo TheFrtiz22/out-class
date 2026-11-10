@@ -2,13 +2,20 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useDemoMode } from "@/contexts/demo-context"
-import { getCorkboard, setCorkboardClub } from "@/lib/workspace-api"
+// Loaded on first use so every page's root bundle does not include the full
+// workspace adapter layer (all features plus demo fallbacks).
+// After the first read (on mount) the module is cached and calls are issued
+// synchronously, so saves keep their immediate request ordering.
+let workspaceModule: typeof import("@/lib/workspace-api") | null = null
+const workspaceApi = async () => (workspaceModule ??= await import("@/lib/workspace-api"))
 import type { DirectoryClub } from "@/lib/club-directory"
 import type { CorkboardItem } from "@/lib/corkboard"
 
 type CorkboardContextValue = {
   items: CorkboardItem[]; loading: boolean; authenticated: boolean; error: string; pending: ReadonlySet<string>
   refresh: () => Promise<void>; saveClub: (club: DirectoryClub, saved: boolean) => Promise<void>
+  /** Called by useCorkboard. Saved clubs load only once a component on the page uses them. */
+  activate: () => void
 }
 const CorkboardContext = createContext<CorkboardContextValue | null>(null)
 export function CorkboardProvider({ children }: { children: ReactNode }) {
@@ -18,13 +25,17 @@ export function CorkboardProvider({ children }: { children: ReactNode }) {
   const owner = useRef(identity), revision = useRef(0), pendingWrites = useRef(new Set<string>())
   const [state, setState] = useState<{ identity: string; items: CorkboardItem[]; loading: boolean; error: string }>({ identity: "", items: [], loading: true, error: "" })
   const [pending, setPending] = useState(new Set<string>())
+  // Pages with no saved-club UI (QR check-in, focus pages) never request the Corkboard.
+  // Activation is sticky for the page load, so moving between product views does not refetch.
+  const [active, setActive] = useState(false)
+  const activate = useCallback(() => setActive(true), [])
   // Immediately hide another account's data, even before the identity-change effect runs.
   owner.current = identity
   const refresh = useCallback(async () => {
     if (!identity || pendingWrites.current.size) return
     const request = ++revision.current
     try {
-      const result = await getCorkboard()
+      const result = await (workspaceModule ?? await workspaceApi()).getCorkboard()
       if (request === revision.current && owner.current === identity) setState({ identity, items: result.items, loading: false, error: "" })
     } catch {
       if (request === revision.current && owner.current === identity) setState(previous => ({ ...previous, identity, items: [], loading: false, error: "We couldn’t load your Corkboard. Please try again." }))
@@ -35,13 +46,20 @@ export function CorkboardProvider({ children }: { children: ReactNode }) {
     requests.current++
     pendingWrites.current.clear(); setPending(new Set())
     setState({ identity, items: [], loading: !!identity, error: "" })
+    if (!active) return () => { requests.current++ }
     if (identity) void refresh()
     const onFocus = () => { if (document.visibilityState !== "hidden") void refresh() }
+    // A normal load already fetched above; only a back/forward-cache restore is stale.
+    const onRestore = (event: PageTransitionEvent) => { if (event.persisted) onFocus() }
     window.addEventListener("focus", onFocus)
-    window.addEventListener("pageshow", onFocus)
-    return () => { requests.current++; window.removeEventListener("focus", onFocus); window.removeEventListener("pageshow", onFocus) }
-  }, [identity, refresh])
-  useEffect(() => { if (demo.isDemoEnabled) void refresh() }, [demo.state, demo.isDemoEnabled, refresh])
+    window.addEventListener("pageshow", onRestore)
+    return () => { requests.current++; window.removeEventListener("focus", onFocus); window.removeEventListener("pageshow", onRestore) }
+  }, [identity, refresh, active])
+  // Demo edits refresh saved clubs. Read `active` through a ref so activation itself
+  // does not re-run this effect: the fetch effect above already loads on activation.
+  const activeRef = useRef(active)
+  activeRef.current = active
+  useEffect(() => { if (activeRef.current && demo.isDemoEnabled) void refresh() }, [demo.state, demo.isDemoEnabled, refresh])
   async function saveClub(club: DirectoryClub, saved: boolean) {
     if (!identity || state.identity !== identity || state.loading || club.source === "preview") throw new Error("Sign in and load your Corkboard before saving.")
     if (pendingWrites.current.has(club.id)) return
@@ -51,7 +69,7 @@ export function CorkboardProvider({ children }: { children: ReactNode }) {
     setState(value => ({ ...value, error: "", items: saved ? previous ? value.items : [{ club, savedAt: new Date().toISOString() }, ...value.items] : value.items.filter(item => item.club.id !== club.id) }))
     let succeeded = false
     try {
-      const result = await setCorkboardClub({ clubId: club.id, saved })
+      const result = await (workspaceModule ?? await workspaceApi()).setCorkboardClub({ clubId: club.id, saved })
       succeeded = true
       if (owner.current === identity && result.savedAt) setState(value => ({ ...value, items: value.items.map(item => item.club.id === club.id ? { ...item, savedAt: result.savedAt! } : item) }))
     } catch {
@@ -61,10 +79,12 @@ export function CorkboardProvider({ children }: { children: ReactNode }) {
       if (owner.current === identity) { pendingWrites.current.delete(club.id); setPending(new Set(pendingWrites.current)); if (succeeded && !pendingWrites.current.size) void refresh() }
     }
   }
-  return <CorkboardContext.Provider value={{ items: state.identity === identity ? state.items : [], loading: authLoading || (!!identity && (state.identity !== identity || state.loading)), authenticated: !!user, error: state.identity === identity ? state.error : "", pending, refresh, saveClub }}>{children}</CorkboardContext.Provider>
+  return <CorkboardContext.Provider value={{ items: state.identity === identity ? state.items : [], loading: authLoading || (!!identity && (state.identity !== identity || state.loading)), authenticated: !!user, error: state.identity === identity ? state.error : "", pending, refresh, saveClub, activate }}>{children}</CorkboardContext.Provider>
 }
 export function useCorkboard() {
   const context = useContext(CorkboardContext)
   if (!context) throw new Error("Corkboard requires the shared student data provider.")
+  const { activate } = context
+  useEffect(() => { activate() }, [activate])
   return context
 }

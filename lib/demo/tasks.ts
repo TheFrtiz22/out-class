@@ -75,7 +75,7 @@ export function saveTask(input: TaskInput) {
     const existing=s.tasks.find(task=>task.id===data.id && task.clubId===data.clubId);
     if(data.id&&!existing)throw new Error("Task unavailable.");
     if(data.projectId && (data.projectId===data.id || data.kind!=="TASK" || !s.tasks.some(task=>task.id===data.projectId && task.clubId===data.clubId && task.kind==="PROJECT")))throw new Error("Choose a project in this club.");
-    if(existing && (existing.revision!==data.revision || existing.kind!==data.kind))throw new Error("Task changed. Refresh before saving.");
+    if(existing && (existing.revision!==data.revision || existing.kind!==data.kind))throw new Error("Task changed. Reload the page and try again.");
     if(existing && existing.status!=="DRAFT" && data.status==="DRAFT")throw new Error("An assigned task cannot become a draft.");
     const unchangedAudience=existing && JSON.stringify(projectTaskAudience(existing.audience))===JSON.stringify(projectTaskAudience(data.audience));
     if(existing && existing.status!=="DRAFT" && !unchangedAudience)throw new Error("Audience is fixed after assignment.");
@@ -144,7 +144,7 @@ export function submitTask(
       task.kind !== "TASK"
     )
       throw new Error(
-        "Assignment closed or changed. Refresh before submitting.",
+        "Assignment closed or changed. Reload the page and try again.",
       );
     validateTaskSubmission(task.requirements, data);
     if (data.fileIds.length)

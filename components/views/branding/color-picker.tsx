@@ -4,6 +4,7 @@ import { Check } from "@/components/icons"
 import { Input } from "@/components/ui/input"
 import { brandColorPresets } from "@/lib/data"
 import { cn } from "@/lib/utils"
+import { DEFAULT_CLUB_COLOR } from "@/lib/club-colors"
 
 type ColorPickerProps = {
   value: string
@@ -24,8 +25,9 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
               key={preset.hex}
               type="button"
               onClick={() => onChange(preset.hex)}
-              className="group flex flex-col items-center gap-1.5"
+              className="group flex min-w-11 flex-col items-center gap-1.5 rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
               aria-label={`Choose ${preset.name}`}
+              aria-pressed={active}
             >
               <span
                 className={cn(
@@ -49,7 +51,7 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
         <Input
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="#232D4B"
+          placeholder={DEFAULT_CLUB_COLOR}
           className="h-8 max-w-[140px] tabular-nums text-xs uppercase"
           aria-label="Custom hex code"
         />

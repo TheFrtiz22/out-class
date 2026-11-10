@@ -1,0 +1,204 @@
+[
+  {
+    "name": "home-students",
+    "url": "/?audience=student",
+    "server": {
+      "status": 200,
+      "location": null,
+      "title": "OutClass · UVA club applications and recruitment",
+      "description": "Find and apply to participating UVA clubs with one OutClass profile. Manage applications, interviews, and recruitment decisions in one place.",
+      "ogImage": true,
+      "robots": "index, follow",
+      "h1": [
+        "Find and apply to UVA clubs with one profile."
+      ],
+      "headings": [
+        "h1 Find and apply to UVA clubs with one profile.",
+        "h2 From curiousto connected.",
+        "h2 Two sides of the same opportunity.",
+        "h2 Find your kind of curious.",
+        "h3 Get to know your next club.",
+        "h3 Jefferson Investment Society",
+        "h2 One profile. Your own answers.",
+        "h3 Application submitted.",
+        "h2 An invitation, with a plan.",
+        "h3 Interview confirmed.",
+        "h2 Know where you stand.",
+        "h3 Know your next step.",
+        "h3 Jefferson Investment Society",
+        "h2 From applicant to part of the team.",
+        "h3 Welcome to the team.",
+        "h3 Jefferson Investment Society",
+        "h2 Your next chapter starts here.",
+        "h3 Platform",
+        "h3 OutClass",
+        "h3 Account"
+      ],
+      "loadingCover": false
+    },
+    "widths": {
+      "390": {
+        "status": 200,
+        "finalUrl": "/?audience=student",
+        "smallBody": [],
+        "smallBodyCount": 0,
+        "overflowX": 0,
+        "h1": [
+          "Find and apply to UVA clubs with one profile."
+        ],
+        "loadingCover": false,
+        "smallText": [],
+        "smallTextCount": 0,
+        "smallTargets": [],
+        "smallTargetCount": 0,
+        "axe": [],
+        "errors": []
+      },
+      "1440": {
+        "status": 200,
+        "finalUrl": "/?audience=student",
+        "smallBody": [
+          "12px Free for students. Clubs join the campus pilot individually."
+        ],
+        "smallBodyCount": 1,
+        "overflowX": 0,
+        "h1": [
+          "Find and apply to UVA clubs with one profile."
+        ],
+        "loadingCover": false,
+        "smallText": [],
+        "smallTextCount": 0,
+        "smallTargets": [],
+        "smallTargetCount": 0,
+        "axe": [],
+        "errors": []
+      },
+      "reduced-motion": {
+        "status": 200,
+        "finalUrl": "/?audience=student",
+        "smallBody": [
+          "12px A shared introduction. A specific application.",
+          "12px Free for students. Clubs join the campus pilot individually."
+        ],
+        "smallBodyCount": 2,
+        "overflowX": 0,
+        "h1": [
+          "Find and apply to UVA clubs with one profile."
+        ],
+        "loadingCover": false,
+        "smallText": [],
+        "smallTextCount": 0,
+        "smallTargets": [],
+        "smallTargetCount": 0,
+        "axe": null,
+        "errors": []
+      },
+      "forced-colors": {
+        "status": 200,
+        "finalUrl": "/?audience=student",
+        "smallBody": [
+          "12px Free for students. Clubs join the campus pilot individually."
+        ],
+        "smallBodyCount": 1,
+        "overflowX": 0,
+        "h1": [
+          "Find and apply to UVA clubs with one profile."
+        ],
+        "loadingCover": false,
+        "smallText": [],
+        "smallTextCount": 0,
+        "smallTargets": [],
+        "smallTargetCount": 0,
+        "axe": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": 17,
+            "sample": "div[aria-labelledby=\"perspective-title\"] > button[data-perspective-option=\"leader\"][aria-controls=\"product-journey\"][type=\"button\"]"
+          }
+        ],
+        "errors": []
+      }
+    }
+  },
+  {
+    "name": "home-leaders",
+    "url": "/?audience=leader",
+    "server": {
+      "status": 200,
+      "location": null,
+      "title": "OutClass · UVA club applications and recruitment",
+      "description": "Find and apply to participating UVA clubs with one OutClass profile. Manage applications, interviews, and recruitment decisions in one place.",
+      "ogImage": true,
+      "robots": "index, follow",
+      "h1": [
+        "Build your next class. Bring your club together."
+      ],
+      "headings": [
+        "h1 Build your next class. Bring your club together.",
+        "h2 From first applicantto your next class.",
+        "h2 Two sides of the same opportunity.",
+        "h2 A process that fits your club.",
+        "h3 Your club, ready to discover.",
+        "h3 Jefferson Investment Society",
+        "h2 Your recruitment. All together.",
+        "h3 Ask what matters to your club.",
+        "h2 See the person behind the application.",
+        "h3 A shared point of reference.",
+        "h3 Jordan Avery",
+        "h2 A schedule your team can trust.",
+        "h3 A proposal to review.",
+        "h2 Bring the decision into focus.",
+        "h3 An offer. A new possibility.",
+        "h3 Jordan Avery",
+        "h2 Build your next class. Then keep going.",
+        "h3 A clear next step.",
+        "h4 Read the welcome brief",
+        "h3 Jordan Avery",
+        "h2 Your next class starts here.",
+        "h3 Platform",
+        "h3 OutClass",
+        "h3 Account"
+      ],
+      "loadingCover": false
+    },
+    "widths": {
+      "390": {
+        "status": 200,
+        "finalUrl": "/?audience=leader",
+        "smallBody": [],
+        "smallBodyCount": 0,
+        "overflowX": 0,
+        "h1": [
+          "Build your next class. Bring your club together."
+        ],
+        "loadingCover": false,
+        "smallText": [],
+        "smallTextCount": 0,
+        "smallTargets": [],
+        "smallTargetCount": 0,
+        "axe": [],
+        "errors": []
+      },
+      "1440": {
+        "status": 200,
+        "finalUrl": "/?audience=leader",
+        "smallBody": [
+          "12px Free for students. Clubs join the campus pilot individually."
+        ],
+        "smallBodyCount": 1,
+        "overflowX": 0,
+        "h1": [
+          "Build your next class. Bring your club together."
+        ],
+        "loadingCover": false,
+        "smallText": [],
+        "smallTextCount": 0,
+        "smallTargets": [],
+        "smallTargetCount": 0,
+        "axe": [],
+        "errors": []
+      }
+    }
+  }
+]

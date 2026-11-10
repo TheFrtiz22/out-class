@@ -16,7 +16,7 @@ export function invitationEmailConfig() {
   const config = z.object({ host: z.string().min(1), port: z.coerce.number().int().min(1).max(65535), user: z.string().min(1), password: z.string().min(1), from: z.string().email(), siteUrl: z.string().url() }).safeParse({
     host: process.env.SMTP_HOST, port: process.env.SMTP_PORT || '587', user: process.env.SMTP_USER, password: process.env.SMTP_PASSWORD, from: process.env.SMTP_FROM_EMAIL, siteUrl: process.env.OUTCLASS_SITE_URL,
   });
-  if (!config.success) throw new Error('Invitation email is not configured. Configure the existing SMTP provider before sending.');
+  if (!config.success) throw new Error('Invitation email is unavailable right now. Try again later.');
   invitationEmail({ organizationName: 'OutClass', owner: false, siteUrl: config.data.siteUrl });
   return config.data;
 }

@@ -1,4 +1,5 @@
 "use server";
+import {readVotingRules} from "@/lib/voting-rules";
 import { votingReadLimits } from "@/lib/voting-transaction-limits";
 import { z } from "zod";
 import { prisma } from "@/utils/prisma";
@@ -30,7 +31,9 @@ export async function getLiveVotingSetup(input:unknown){
     const ownReview=await tx.interviewRecord.findFirst({where:{interviewerId:m.id,completedAt:{not:null},application:{clubId:d.clubId}},select:{id:true}});
     const panel=await tx.interviewPanelAssignment.findFirst({where:{memberId:m.id,revokedAt:null,application:{clubId:d.clubId}},select:{id:true}});
     const allowedFields=liveRoomFields.filter(f=>!(round?.anonymousReview&&["name","photo","major","resumeHighlight","interviewScore","finalInterviewThoughts","additionalObservations"].includes(f))&&(f!=="resumeHighlight"||evidence.moderateResume||!!panel)&&(!["interviewScore","finalInterviewThoughts"].includes(f)||evidence.readClosing||!!ownReview));
-    return {memberId:m.id,timeZone:"America/New_York",cycles,rounds,allowedFields,applicants:apps.map(a=>({id:a.id,label:round?.anonymousReview?anonymousApplicantLabel(a.id):a.student.studentProfile?`${a.student.studentProfile.firstName} ${a.student.studentProfile.lastName}`:"Applicant"})),voters:voters.map(v=>({id:v.id,defaultSelected:!!v.interviewOffices?.some(o=>["PRESIDENT","VICE_PRESIDENT","BOARD"].includes(o)),label:v.user.studentProfile?`${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}`:"Club member"}))};
+    const ruleRows=await tx.votingRuleDefault.findMany({where:{clubId:d.clubId,OR:[{roundId:null},...(round?[{roundId:round.id}]:[])]}});
+    const ruleRow=ruleRows.find(r=>round&&r.roundId===round.id)??ruleRows.find(r=>r.roundId===null);
+    return {memberId:m.id,timeZone:"America/New_York",cycles,rounds,allowedFields,defaultRules:readVotingRules(ruleRow?.rules),defaultRulesSource:ruleRow?(ruleRow.roundId?"round" as const:"club" as const):null,applicants:apps.map(a=>({id:a.id,label:round?.anonymousReview?anonymousApplicantLabel(a.id):a.student.studentProfile?`${a.student.studentProfile.firstName} ${a.student.studentProfile.lastName}`:"Applicant"})),voters:voters.map(v=>({id:v.id,defaultSelected:!!v.interviewOffices?.some(o=>["PRESIDENT","VICE_PRESIDENT","BOARD"].includes(o)),label:v.user.studentProfile?`${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}`:"Club member"}))};
   },votingReadLimits);
 }
 

@@ -1,0 +1,67 @@
+/* Club home: only what is specific to it. The hero, Needs you row, cards, rows, pipeline, date chips and
+   metric tiles come from the shared dashboard pieces (components/product/dashboard/dashboard.css). */
+
+.oc-club-home-assignments [data-slot="tabs"] { gap: .75rem; }
+
+/* Interview rows: time, avatar, person and the room action. */
+.oc-interview-row { display: grid; grid-template-columns: 3.75rem 2.5rem minmax(0, 1fr) auto; align-items: center; gap: .75rem; min-height: 3.75rem; padding-block: .625rem; }
+.oc-interview-time { display: grid; color: var(--foreground); font-size: var(--oc-text-small); font-weight: var(--oc-weight-semibold); font-variant-numeric: tabular-nums; }
+.oc-interview-time small { color: var(--muted-foreground); font-size: var(--oc-text-caption); font-weight: var(--oc-weight-regular); }
+.oc-interview-row[data-unscheduled="true"] .oc-interview-time { color: var(--brand-ink); }
+.oc-interview-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; }
+
+/* Next meeting: date chip, title, when and where, agenda excerpt, then its actions. */
+.oc-next-meeting { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 1rem; align-items: start; }
+.oc-next-meeting .oc-date-chip { width: 3.5rem; height: 3.5rem; }
+.oc-next-meeting-title { font-family: var(--oc-font-display); font-size: 1.375rem; line-height: 1.2; color: var(--foreground); }
+.oc-next-meeting-when { margin-top: .25rem; color: var(--muted-foreground); font-size: var(--oc-text-small); }
+.oc-next-meeting-agenda { margin-top: .5rem; font-size: var(--oc-text-small); color: var(--foreground); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.oc-next-meeting-agenda[data-empty="true"] { color: var(--muted-foreground); }
+.oc-next-meeting-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+.oc-next-meetings { margin-top: 1rem; border-top: 1px solid var(--oc-surface-glass-edge); }
+.oc-club-home-tasks .oc-segmented-control { margin-bottom: .5rem; }
+
+/* The one recruiting link on Club home: a slim interview-tinted strip. */
+.oc-recruiting-strip { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; min-height: 2.75rem; margin-bottom: 1.25rem; padding: .5rem 1rem; border: 1px solid color-mix(in srgb, var(--interview) 24%, transparent); border-radius: var(--oc-radius-full); background: var(--interview-subtle); color: var(--foreground); font-size: var(--oc-text-small); text-decoration: none; }
+.oc-recruiting-strip:hover { border-color: color-mix(in srgb, var(--interview) 45%, transparent); }
+.oc-recruiting-strip:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.oc-recruiting-strip-dot { width: .5rem; height: .5rem; border-radius: 50%; background: var(--interview); flex-shrink: 0; }
+.oc-recruiting-strip-go { display: inline-flex; align-items: center; gap: .25rem; margin-left: auto; font-weight: var(--oc-weight-semibold); color: var(--interview); }
+@media (forced-colors: active) { .oc-recruiting-strip { border-color: CanvasText; } .oc-recruiting-strip-dot { background: Highlight; forced-color-adjust: none; } }
+
+/* Recruiting Overview hero actions sit beside the applications badge. */
+.oc-recruiting-actions { align-items: center; }
+.oc-recruiting-empty { padding: var(--oc-content-padding); }
+
+/* Phones and tablets inside the signed-in shell: app-style meeting actions and interview rows. */
+@media (max-width: 1023px) {
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-recruiting-strip { margin-bottom: 1rem; padding: .5rem .875rem; font-size: var(--oc-text-caption); }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-club-home-actions { flex-wrap: nowrap; gap: .5rem; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-club-home-actions > .oc-button { flex: 1 1 0; min-width: 0; height: 40px; min-height: 40px; padding-inline: .75rem; font-size: var(--oc-text-small); }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-next-meeting { gap: .75rem; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-next-meeting .oc-date-chip { width: 3rem; height: 3rem; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-next-meeting-title { font-size: 1.1875rem; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-next-meeting-actions { flex-wrap: nowrap; margin-top: .75rem; margin-inline: calc(-1 * var(--oc-content-padding, 1rem)); padding-inline: var(--oc-content-padding, 1rem); padding-bottom: 2px; overflow-x: auto; scrollbar-width: none; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-next-meeting-actions::-webkit-scrollbar { display: none; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-next-meeting-actions > .oc-button { flex: 0 0 auto; height: 36px; min-height: 36px; padding-inline: .875rem; font-size: var(--oc-text-caption); }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-next-meetings { margin-top: .5rem; }
+  /* Interviews: time, avatar and person on one line; the actions under them. */
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-interview-row { grid-template-columns: 4rem 2.25rem minmax(0, 1fr); gap: .375rem .625rem; min-height: 0; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-interview-row .oc-dashboard-avatar { width: 2.25rem; height: 2.25rem; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-interview-row > :is(.oc-interview-actions, .oc-button) { grid-column: 3; justify-self: start; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-interview-actions { justify-content: flex-start; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-interview-time { white-space: nowrap; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-interview-row :is(.oc-interview-actions > *, > .oc-button) { height: 36px; min-height: 36px; font-size: var(--oc-text-caption); }
+}
+
+/* Phones: the next meeting leads, then tasks, the week and announcements. */
+@media (max-width: 759px) {
+  .oc-club-home-meeting { order: 1; }
+  .oc-club-home-tasks { order: 2; }
+  .oc-club-home-week { order: 3; }
+  .oc-club-home-updates { order: 4; }
+  .oc-club-home-members { order: 5; }
+  .oc-club-home-pulse { order: 6; }
+  .oc-club-home-assignments { order: 7; }
+  .oc-recruiting-strip-go { margin-left: 0; }
+}

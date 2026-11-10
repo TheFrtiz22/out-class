@@ -17,7 +17,7 @@ export function invitationEmail(input: { organizationName: string; organizationL
   const href = new URL(input.legacyInvitationId ? `/invitations/${input.legacyInvitationId}` : '/?next=%2Fsettings%2Forganizations', origin).href;
   const name = input.organizationName.replace(/[\r\n\x00-\x1f\x7f]/g, ' ').slice(0, 200);
   const intro = input.owner ? `${name} has invited you to help lead its community on OutClass.` : `${name} has invited you to join its community on OutClass.`;
-  const identity = 'OutClass uses your verified university identity to securely match this invitation. Sign in or create an account with your university email, then review the invitation in Settings → Organizations. Joining is your choice.';
+  const identity = 'OutClass uses your verified university identity to securely match this invitation. Sign in or create an account with your university email, then review the invitation in My Clubs. Joining is your choice.';
   const role = input.owner ? 'Administrator invitation' : 'Community invitation';
   const logo = invitationLogoUrl(input.organizationLogoUrl, origin);
   const logoHtml = logo ? `<img src="${escapeEmailHtml(logo)}" alt="" width="48" height="48" style="display:block;width:48px;height:48px;object-fit:contain;background-color:#ffffff;border:1px solid #c7ced5;margin-bottom:18px">` : '';

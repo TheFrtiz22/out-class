@@ -24,6 +24,6 @@ export async function getAuthEntryAccount() {
     user,
     disabled: !!account?.disabledAt,
     hasProfile: !!account?.studentProfile,
-    destination: club ? `/club/${encodeURIComponent(club.clubId)}/workspace` : "/?workspace=student",
+    destination: club ? `/club/${encodeURIComponent(club.clubId)}/workspace` : "/home",
   }
 }

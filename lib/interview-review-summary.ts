@@ -20,4 +20,9 @@ export function submittedScoreSummary(reviews: { interviewerId: string; score: n
   const ordered = [...submitted].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0);
   return { average: submitted.size ? ordered.reduce((sum, [, score]) => sum + score, 0) / submitted.size : null, submitted: submitted.size, required, provisional: assignedIds.some(id => !submitted.has(id)) };
 }
-export function formatAverage(score: number | null) { return score === null ? "Not scored" : new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(score); }
+/** Averages display to one decimal; the stored/calculated value keeps full precision. No qualifying score is "Not scored", never 0. */
+export function formatAverage(score: number | null) { return score === null ? "Not scored" : new Intl.NumberFormat("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(score); }
+/** An individual submitted 1–10 score exactly as submitted (half-point steps, e.g. "9", "8.5"; legacy precision kept), never rounded. */
+export function formatScore(score: number | null) { return score === null ? "Not scored" : new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(score); }
+/** The count behind an average: scored, submitted evaluations only. */
+export function scoredEvaluationsLabel(count: number) { return `${count} scored evaluation${count === 1 ? "" : "s"}`; }

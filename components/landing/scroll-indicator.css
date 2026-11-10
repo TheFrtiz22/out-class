@@ -18,9 +18,9 @@
 .oc-scroll-indicator-motion { display: block; animation: oc-scroll-invitation 1650ms cubic-bezier(.45, 0, .3, 1) infinite; animation-play-state: paused; }
 .oc-scroll-indicator[data-running="true"] .oc-scroll-indicator-motion { animation-play-state: running; }
 .oc-scroll-indicator-arrow { display: block; transform: rotate(180deg); }
-.oc-landing .oc-scroll-indicator:focus-visible { outline: 2px solid #fff7ec; outline-offset: 3px; background: rgb(20 45 78 / 20%); }
+.oc-landing .oc-scroll-indicator:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; background: color-mix(in srgb, var(--school-primary) 20%, transparent); }
 @media (hover: hover) and (pointer: fine) {
-  .oc-scroll-indicator:hover { color: #f3a16f; background: rgb(20 45 78 / 20%); }
+  .oc-scroll-indicator:hover { color: var(--school-accent-on-dark); background: color-mix(in srgb, var(--school-primary) 20%, transparent); }
 }
 /* The final fifth of the cycle rests; only the glyph's translation animates. */
 @keyframes oc-scroll-invitation {

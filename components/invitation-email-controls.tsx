@@ -17,9 +17,9 @@ export function InvitationEmailControls({ clubId, importId, onSent }: { clubId: 
         setMessage(`${queued.queued} emails queued · ${queued.reused} already requested · ${queued.skipped} unavailable. Delivery continues in the background.`);
       } else {
         await requestInvitationDelivery(clubId);
-        setMessage('Queued invitation delivery requested. You can keep working while emails are sent. Refresh members to see delivery status.');
+        setMessage('Queued invitation delivery requested. You can keep working while emails are sent; delivery status updates in the member list.');
       }
-      try { await onSent?.(); } catch { setError('Delivery updated. Refresh members for current email statuses.'); }
+      try { await onSent?.(); } catch { setError('Delivery updated.'); }
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not queue invitations. Saved invitations are retained; retry to continue.'); }
     finally { working.current = false; setBusy(false); }
   }

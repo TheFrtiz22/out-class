@@ -31,11 +31,9 @@ export function QrCodeCard({
       setOrigin(orig);
 
       // Attempt to optimize with an OutClass short link for clean, low-density QR
-      createShortLink({
-        target: path,
-        reusable: true,
-        type: path.includes("/club/") ? "club" : "event",
-      })
+      // Server-validated and session-bound; falls back to the direct URL when
+      // signed out (e.g. demo) or when the path is not a shareable destination.
+      createShortLink({ target: path })
         .then((res) => {
           setOptimizedUrl(`${orig}${res.shortUrl}`);
         })

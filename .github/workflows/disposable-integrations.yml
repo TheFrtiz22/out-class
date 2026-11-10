@@ -3,19 +3,10 @@ name: Disposable integration verification
 # No repository secrets, hosted Auth, production database or external SMTP
 # credentials. Each job provisions its own local fixture on a fresh runner.
 on:
+  # Runs on every PR (no paths filter): its jobs are required status checks on
+  # main, and GitHub never reports a filtered-out required check, which blocks
+  # docs- and config-only PRs forever.
   pull_request:
-    paths:
-      - "actions/**"
-      - "app/**"
-      - "components/**"
-      - "lib/**"
-      - "prisma/**"
-      - "scripts/**"
-      - "supabase/**"
-      - "tests/**"
-      - "package.json"
-      - "pnpm-lock.yaml"
-      - ".github/workflows/disposable-integrations.yml"
   workflow_dispatch:
   schedule:
     - cron: "17 5 * * 1"
@@ -82,7 +73,17 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - name: Run Next.js / Supabase Auth / SMTP / settings and selected-navigation integration
+        env:
+          OUTCLASS_E2E_LOG_DIR: ${{ runner.temp }}/supabase-start-logs
         run: node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair
+      # Redacted `supabase start` output from any failed attempt (the runner retries once).
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: supabase-start-logs-settings
+          path: ${{ runner.temp }}/supabase-start-logs
+          if-no-files-found: ignore
+          retention-days: 7
 
   applicant-workflow-regressions:
     name: Applicant workflow / ${{ matrix.suite }}
@@ -91,7 +92,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [dashboards, application-writing]
+        # shell: persistent workspace shell, header height/spacing, dashboard split and overview views.
+        suite: [dashboards, application-writing, shell]
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -102,7 +104,16 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - name: Verify existing real Auth and production-build applicant journeys
+        env:
+          OUTCLASS_E2E_LOG_DIR: ${{ runner.temp }}/supabase-start-logs
         run: node scripts/run-onboarding-e2e.cjs --${{ matrix.suite }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: supabase-start-logs-${{ matrix.suite }}
+          path: ${{ runner.temp }}/supabase-start-logs
+          if-no-files-found: ignore
+          retention-days: 7
 
   local-storage:
     name: Private Storage and native PostgreSQL

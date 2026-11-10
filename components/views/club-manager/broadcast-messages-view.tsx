@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import { Check, ChevronDown, MapPinned, Megaphone, RotateCcw, Send, Trash2 } from "@/components/icons"
 import { Button } from "@/components/ui/button"
+import { SegmentedControl } from "@/components/ui/segmented-control"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -27,9 +28,10 @@ import {
   type BroadcastAudience,
   type BroadcastType,
 } from "@/lib/data"
+import { Panel } from "@/components/ui/panel"
 
 const TYPE_BADGE_STYLES: Record<BroadcastType, string> = {
-  "General Announcement": "border-slate-200 bg-slate-100 text-slate-700",
+  "General Announcement": "border-border bg-muted text-foreground",
   "Location/Time Change": "border-amber-200 bg-amber-50 text-amber-700",
   "Urgent Deadline Alert": "border-border bg-secondary text-muted-foreground",
 }
@@ -99,7 +101,7 @@ export function BroadcastMessagesView() {
   return (
     <div className="flex flex-col gap-6 bg-white pb-6 text-foreground">
       {/* Composer */}
-      <Card className="bg-white shadow-none">
+      <Card variant="default" className="bg-white shadow-none">
         <CardHeader>
           <CardTitle className="oc-card-heading flex items-center gap-2 text-foreground">
             <Megaphone className="size-4 text-muted-foreground" />
@@ -120,30 +122,31 @@ export function BroadcastMessagesView() {
                     variant="outline"
                     aria-labelledby="broadcast-audience-label broadcast-audience-value"
                     aria-expanded={audiencePopoverOpen}
-                    className="w-full justify-between border-slate-200 bg-white font-normal text-foreground hover:bg-slate-50"
+                    className="w-full justify-between border-border bg-white font-normal text-foreground hover:bg-muted"
                   >
                     <span id="broadcast-audience-value" className="truncate">{audienceLabel}</span>
-                    <ChevronDown className="size-4 shrink-0 text-slate-400" />
+                    <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-72 bg-white p-2" align="start">
                   <div className="flex flex-col gap-1">
                     {BROADCAST_AUDIENCES.map((a) => (
-                      <button
+                      <Button
                         key={a}
                         type="button"
+                        variant="ghost"
                         aria-pressed={audiences.has(a)}
                         onClick={() => toggleAudience(a)}
-                        className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-foreground hover:bg-slate-50"
+                        className="h-auto min-h-11 w-full justify-start px-2 text-left font-normal"
                       >
                         <span aria-hidden="true" className="flex size-4 items-center justify-center rounded border border-input">{audiences.has(a) ? <Check className="size-3" aria-hidden="true" /> : null}</span>
                         <span className="flex-1">{a}</span>
-                        <span className="text-xs text-slate-400">
+                        <span className="text-xs text-muted-foreground">
                           {a === "Subscribed Followers" && "Public"}
                           {a === "Active Applicants" && "In Recruitment"}
                           {a === "Accepted Members" && "Internal"}
                         </span>
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </PopoverContent>
@@ -153,24 +156,12 @@ export function BroadcastMessagesView() {
             {/* Notification Type */}
             <div className="flex flex-col gap-2">
               <p id="broadcast-type-label" className="text-sm font-medium text-foreground">Notification Type</p>
-              <div role="group" aria-labelledby="broadcast-type-label" className="flex flex-wrap gap-2">
-                {BROADCAST_TYPES.map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    aria-pressed={type === t}
-                    onClick={() => setType(t)}
-                    className={cn(
-                      "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
-                      type === t
-                        ? "border-foreground bg-primary text-white"
-                        : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50",
-                    )}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
+              <SegmentedControl
+                label="Notification Type"
+                value={type}
+                onChange={setType}
+                options={BROADCAST_TYPES.map((t) => ({ value: t, label: t }))}
+              />
             </div>
           </div>
 
@@ -184,7 +175,7 @@ export function BroadcastMessagesView() {
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="e.g. Round 2 Interview Location Changed"
-              className="border-slate-200 bg-white text-foreground focus-visible:ring-[#FF5900]"
+              className="border-border bg-card text-foreground focus-visible:ring-ring"
             />
           </div>
           <div className="flex flex-col gap-2">
@@ -197,12 +188,12 @@ export function BroadcastMessagesView() {
               onChange={(e) => setBody(e.target.value)}
               placeholder="Write the full message your recipients will see..."
               rows={5}
-              className="border-slate-200 bg-white text-foreground focus-visible:ring-[#FF5900]"
+              className="border-border bg-card text-foreground focus-visible:ring-ring"
             />
           </div>
 
           {/* Location override toggle */}
-          <div className="oc-content-panel flex flex-col gap-3 border-slate-200">
+          <Panel className="flex flex-col gap-3 border-border">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-2">
                 <MapPinned className="size-4 text-muted-foreground" />
@@ -215,7 +206,7 @@ export function BroadcastMessagesView() {
             {locationAlertOn && (
               <div className="grid gap-4 pt-1 sm:grid-cols-2">
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="old-location" className="text-xs text-slate-500">
+                  <Label htmlFor="old-location" className="text-xs text-muted-foreground">
                     Old Location / Time
                   </Label>
                   <Input
@@ -223,11 +214,11 @@ export function BroadcastMessagesView() {
                     value={oldLocation}
                     onChange={(e) => setOldLocation(e.target.value)}
                     placeholder="Shannon 318C · 3:00 PM"
-                    className="border-slate-200 bg-white text-foreground focus-visible:ring-[#FF5900]"
+                    className="border-border bg-card text-foreground focus-visible:ring-ring"
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="new-location" className="text-xs text-slate-500">
+                  <Label htmlFor="new-location" className="text-xs text-muted-foreground">
                     New Location / Time
                   </Label>
                   <Input
@@ -235,16 +226,16 @@ export function BroadcastMessagesView() {
                     value={newLocation}
                     onChange={(e) => setNewLocation(e.target.value)}
                     placeholder="Rotunda Room 142 · 3:30 PM"
-                    className="border-slate-200 bg-white text-foreground focus-visible:ring-[#FF5900]"
+                    className="border-border bg-card text-foreground focus-visible:ring-ring"
                   />
                 </div>
               </div>
             )}
-          </div>
+          </Panel>
 
           {/* Action bar */}
-          <div className="flex flex-col items-start gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs text-slate-500">
+          <div className="flex flex-col items-start gap-2 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-muted-foreground">
               Preview only. No notifications or emails will be delivered.
             </p>
             <div className="flex items-center gap-3">
@@ -267,7 +258,7 @@ export function BroadcastMessagesView() {
       </Card>
 
       {/* History */}
-      <Card className="bg-white shadow-none">
+      <Card variant="default" className="bg-white shadow-none">
         <CardHeader>
           <CardTitle className="oc-card-heading text-foreground">Broadcast preview history</CardTitle>
           <CardDescription>Example messages and previews from this session. These are not delivery records.</CardDescription>
@@ -275,19 +266,19 @@ export function BroadcastMessagesView() {
         <CardContent>
           <Table>
             <TableHeader>
-              <TableRow className="border-slate-200">
-                <TableHead className="text-slate-500">Preview date</TableHead>
-                <TableHead className="text-slate-500">Target Audience</TableHead>
-                <TableHead className="text-slate-500">Subject</TableHead>
-                <TableHead className="text-slate-500">Type</TableHead>
-                <TableHead className="text-slate-500">Delivery</TableHead>
-                <TableHead className="text-right text-slate-500">Actions</TableHead>
+              <TableRow className="border-border">
+                <TableHead className="text-muted-foreground">Preview date</TableHead>
+                <TableHead className="text-muted-foreground">Target Audience</TableHead>
+                <TableHead className="text-muted-foreground">Subject</TableHead>
+                <TableHead className="text-muted-foreground">Type</TableHead>
+                <TableHead className="text-muted-foreground">Delivery</TableHead>
+                <TableHead className="text-right text-muted-foreground">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {history.map((b) => (
-                <TableRow key={b.id} className="border-slate-100">
-                  <TableCell className="text-sm text-slate-600">{b.dateSent}</TableCell>
+                <TableRow key={b.id} className="border-border">
+                  <TableCell className="text-sm text-muted-foreground">{b.dateSent}</TableCell>
                   <TableCell className="text-sm text-foreground">
                     {b.audiences.join(", ")}
                   </TableCell>
@@ -299,7 +290,7 @@ export function BroadcastMessagesView() {
                       {b.type}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-sm text-slate-600">
+                  <TableCell className="text-sm text-muted-foreground">
                     Preview only
                   </TableCell>
                   <TableCell className="text-right">
@@ -309,7 +300,7 @@ export function BroadcastMessagesView() {
                         size="icon"
                         aria-label={`Preview again: ${b.subject}`}
                         onClick={() => handleResend(b.id)}
-                        className="size-8 text-slate-500 hover:text-foreground"
+                        className="size-8 text-muted-foreground hover:text-foreground"
                       >
                         <RotateCcw className="size-4" />
                       </Button>
@@ -318,7 +309,7 @@ export function BroadcastMessagesView() {
                         size="icon"
                         aria-label={`Delete ${b.subject}`}
                         onClick={() => handleDelete(b.id)}
-                        className="size-8 text-slate-500 hover:text-destructive"
+                        className="size-8 text-muted-foreground hover:text-destructive"
                       >
                         <Trash2 className="size-4" />
                       </Button>
@@ -328,7 +319,7 @@ export function BroadcastMessagesView() {
               ))}
               {history.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-sm text-slate-500">
+                  <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
                     No broadcasts sent yet.
                   </TableCell>
                 </TableRow>

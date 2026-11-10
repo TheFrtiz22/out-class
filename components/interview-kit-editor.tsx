@@ -40,6 +40,9 @@ export function RoundKitEditor({ clubId, roundInfo, initiallyOpen = false }: {
   useEffect(() => { if (initiallyOpen) setOpen(true); }, [initiallyOpen]);
   const { user } = useAuth();
   const version = useRef(0);
+  // IDs the server has accepted. A newly added question stays a local draft until it
+  // has a prompt; an existing question cleared to blank still fails validation visibly.
+  const savedIds = useRef(new Set<string>());
   const canEdit = interviewCapabilities(user?.memberships.find(m => m.clubId === clubId)).editKit;
   const round = roundInfo.id;
   const [questions, setQuestions] = useState<KitQuestion[]>([]),
@@ -58,6 +61,7 @@ export function RoundKitEditor({ clubId, roundInfo, initiallyOpen = false }: {
         if (current) {
           setQuestions(result.questions);
           version.current = result.version;
+          savedIds.current = new Set(result.questions.map(q => q.id));
           setLoaded(true);
         }
       })
@@ -71,7 +75,12 @@ export function RoundKitEditor({ clubId, roundInfo, initiallyOpen = false }: {
   const autosave = useAutosave({
     identity: `${user?.id}:kit:${clubId}:${round}`,
     value: questions, restore: setQuestions, enabled: loaded && canEdit && canReadKit,
-    save: async value => { const result = await saveInterviewKit(clubId, round, version.current, value); version.current = result.version; },
+    save: async value => {
+      const ready = value.filter(q => q.prompt.trim() || savedIds.current.has(q.id));
+      const result = await saveInterviewKit(clubId, round, version.current, ready);
+      version.current = result.version;
+      savedIds.current = new Set(ready.map(q => q.id));
+    },
   });
   const dirty = autosave.dirty, busy = autosave.saving;
   function edit(value: KitQuestion[]) {
@@ -233,6 +242,6 @@ export function ClubInterviewKitSettings({ clubId, initialRoundId }: { clubId: s
     return (
       <p>{member && canDiscoverInterviewSetup(member) ? "No active interview rounds. Configure an Interview or Group Interview round in Recruiting Pipeline." : "No assigned interview rounds. Ask your club owner to confirm your panel assignment."}</p>
     );
-  if (initialRoundId && !rounds.some(r => r.id === initialRoundId)) return <p role="alert">The requested round is unavailable under your current access or is no longer an active interview round. Return to Interview Setup to choose an eligible round.</p>;
+  if (initialRoundId && !rounds.some(r => r.id === initialRoundId)) return <p role="alert">That round isn’t available to you or is no longer active. Go back to Interview setup and choose another.</p>;
   return <InterviewKitEditor key={`${clubId}:${initialRoundId || ""}`} clubId={clubId} rounds={rounds} initialRoundId={initialRoundId} />;
 }

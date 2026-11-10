@@ -1,5 +1,7 @@
 /* Explicit composition recipes. Apply at the owning screen; no navigation overrides. */
 .oc-workspace-stack { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: var(--oc-content-gap); min-width: 0; }
+/* Grid gaps don't collapse with margins: the stack's gap is the space below the page title. */
+.oc-workspace-stack > .oc-page-header { margin-bottom: 0; }
 .oc-content-panel { min-width: 0; padding: var(--oc-content-padding); border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); }
 .oc-panel-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; margin-bottom: 1rem; }
 .oc-panel-heading h2, .oc-form-section h2 { font-size: var(--oc-text-card); font-weight: 600; line-height: 1.4; letter-spacing: -.015em; }
@@ -13,7 +15,9 @@
 .oc-form-section > label, .oc-field { display: grid; min-width: 0; gap: .5rem; font-size: var(--oc-text-small); font-weight: 500; }
 .oc-field > :is(p,small), .oc-form-section label > :is(p,small) { font-weight: 400; color: var(--muted-foreground); }
 .oc-form-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .75rem; padding-block: 1rem; border-top: 1px solid var(--oc-content-edge); }
-.oc-data-surface { min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); }
+.oc-data-surface { min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); background: var(--oc-content-solid); box-shadow: var(--oc-content-shadow); }
+/* Rows and cells stay solid inside the glass edge so dense data never sits on a gradient. */
+[data-theme="present"] .oc-data-surface { background: var(--oc-content-surface); }
 .oc-data-surface table { width: 100%; font-size: var(--oc-text-small); font-variant-numeric: tabular-nums; text-align: left; }
 .oc-data-surface thead { background: var(--oc-content-soft); }
 .oc-data-surface th { height: 2.75rem; color: var(--muted-foreground); font-size: var(--oc-text-caption); font-weight: 600; }
@@ -47,4 +51,4 @@
 
 .oc-workspace-stack[hidden], .oc-content-panel[hidden], .oc-form-section[hidden] { display: none; }
 
-.oc-standalone-workspace { min-width: 0; width: 100%; max-width: var(--oc-content-width); margin-inline: auto; padding: clamp(1.25rem, 3vw, 2.5rem) var(--oc-space-page); }
+.oc-content-panel[data-tone="subtle"] { border-color: transparent; background: var(--muted); box-shadow: none; }

@@ -1,8 +1,8 @@
 "use client"
 
 import { useDemoMode } from "@/contexts/demo-context"
-import { demoStore, demoDashboard, demoNotifications, demoDeadlines } from "@/lib/demo/store"
-import { createContext, useCallback, useContext, useMemo, useState, useEffect, useRef, type Dispatch, type SetStateAction, type ReactNode } from "react"
+import { isDemoActive, loadedDemoStore } from "@/lib/demo/loader"
+import { createContext, useCallback, useContext, useMemo, useState, useEffect, useLayoutEffect, useRef, type Dispatch, type SetStateAction, type ReactNode } from "react"
 import {
   managedEvents as seedManagedEvents, currentStudent, clubs, studentMemberships,
   type ManagedEvent,
@@ -20,6 +20,7 @@ import { type ScheduleBlock } from "@/lib/scheduler";
 import { getDurableNotifications, setDurableNotificationsRead, setDurableNotificationsArchived } from "@/actions/communications"
 import { communicationsChanged, inboxNotification } from "@/lib/communications-client"
 import { toast } from "sonner"
+import { DEFAULT_CLUB_COLOR } from "@/lib/club-colors"
 
 /**
  * Single source of truth for "did the student apply to this club".
@@ -46,6 +47,7 @@ type ApplicationStateValue = {
   clearLeaderFocus: () => void
   hydrated: boolean
   syncApplications: (apps: TrackedApplication[]) => void
+  seedServerData: (data: any) => void
   syncApplicationBookings: (apps: NonNullable<CalendarSource["applications"]>) => void
   trackedApps: TrackedApplication[]
   syncTaskNotifications: (items: Notification[], userId?: string) => void
@@ -84,6 +86,24 @@ type ApplicationStateValue = {
   notifyEventChange: (event: ManagedEvent, cancelled?: boolean) => void
 }
 
+// Map Prisma database models back to the UI's TrackedApplication structure
+function serverTrackedApps(initialData: any): TrackedApplication[] {
+  return initialData?.applications?.map((app: any) => ({
+    id: app.id,
+    clubId: app.clubId,
+    clubName: app.club?.name || app.clubId,
+    logoText: app.club?.logoText || "OC",
+    logoUrl: app.club?.logoUrl,
+    marketing: app.club?.marketing,
+    color: app.club?.color || DEFAULT_CLUB_COLOR,
+    status: ({ DRAFTING: "Drafting", SUBMITTED: "Submitted", IN_REVIEW: "In Review", INTERVIEWING: "Interviewing", ACCEPTED: "Accepted", REJECTED: "Rejected", WAITLISTED: "Waitlisted" } as Record<string, string>)[app.status] || app.round?.name || "In Review",
+    questionsCompleted: app.answers?.length || 0,
+    questionsTotal: app.club?._count?.questions ?? 0,
+    nextDeadline: app.status === "DRAFTING" ? "Finish draft" : "Under review",
+    dueInHours: 0
+  })) || []
+}
+
 const ApplicationStateContext = createContext<ApplicationStateValue | null>(null)
 
 // Persist the demo across navigation and reloads on this browser only.
@@ -91,22 +111,8 @@ const STORAGE_KEY = "outclass-platform-v2"
 
 export function ApplicationStateProvider({ children, initialData, persistLocalState = initialData == null }: { children: ReactNode, initialData?: any, persistLocalState?: boolean }) {
   const demo = useDemoMode()
-  if (demo.isDemoEnabled) { initialData = demoDashboard(); persistLocalState = false }
-  // Map Prisma database models back to the UI's TrackedApplication structure
-  const serverApps = initialData?.applications?.map((app: any) => ({
-    id: app.id,
-    clubId: app.clubId,
-    clubName: app.club?.name || app.clubId,
-    logoText: app.club?.logoText || "OC",
-    logoUrl: app.club?.logoUrl,
-    marketing: app.club?.marketing,
-    color: app.club?.color || "#051B3D",
-    status: ({ DRAFTING: "Drafting", SUBMITTED: "Submitted", IN_REVIEW: "In Review", INTERVIEWING: "Interviewing", ACCEPTED: "Accepted", REJECTED: "Rejected", WAITLISTED: "Waitlisted" } as Record<string, string>)[app.status] || app.round?.name || "In Review",
-    questionsCompleted: app.answers?.length || 0,
-    questionsTotal: app.club?._count?.questions ?? 0,
-    nextDeadline: app.status === "DRAFTING" ? "Finish draft" : "Under review",
-    dueInHours: 0
-  })) || []
+  if (demo.isDemoEnabled) { initialData = loadedDemoStore().demoDashboard(); persistLocalState = false }
+  const serverApps = serverTrackedApps(initialData)
 
   const [leaderFocus, focusLeader] = useState<LeaderFocus | null>(null)
   const clearLeaderFocus = useCallback(() => focusLeader(null), [])
@@ -174,6 +180,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
   }, [hydrated, persistLocalState, activeStorageKey, trackedApps, notifications, baseEvents, managedEvents, scheduleBlocks, responses])
   useEffect(() => {
     if (!demo.isDemoEnabled || !demo.state) return
+    const { demoDashboard, demoNotifications, demoDeadlines, demoStore } = loadedDemoStore()
     setTrackedApps(serverApps)
     setEvents([...studentCalendarEvents(demoDashboard()).map(event => event.type === "Other" && !event.id.startsWith("meeting-") ? { ...event, type: event.title.includes("coffee chat") ? "Coffee Chat" as const : "Interest Meeting" as const } : event), ...demoDeadlines()])
     const taskUpdates: Notification[] = demoNotifications()
@@ -185,6 +192,18 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
   const syncApplicationBookings = useCallback((applications: NonNullable<CalendarSource["applications"]>) => {
     if (demo.isDemoEnabled) return // Demo bookings already refresh from the shared demo store.
     setEvents(previous => [...previous.filter(event => !(event.readOnly && event.id.startsWith("booking-"))), ...studentCalendarEvents({ applications })])
+  }, [demo.isDemoEnabled])
+  /** The persistent workspace shell owns this store; a student page hands it the data its server render loaded. */
+  // Entries the last server payload supplied. A later payload (router.refresh, returning to a page) replaces
+  // exactly these, so removed or rescheduled records disappear while client-only entries are kept.
+  const seeded = useRef<{ apps: Set<string>; events: Set<string> }>({ apps: new Set(), events: new Set() })
+  const seedServerData = useCallback((data: any) => {
+    if (demo.isDemoEnabled || !data) return
+    const apps = serverTrackedApps(data), events = studentCalendarEvents(data), last = seeded.current
+    // Server-owned: anything the previous payload supplied, plus read-only booking events (server projections).
+    setTrackedApps(previous => [...previous.filter(app => !last.apps.has(app.id) && !apps.some(server => server.clubId === app.clubId)), ...apps])
+    setEvents(previous => [...previous.filter(event => !last.events.has(event.id) && !(event.readOnly && event.id.startsWith("booking-")) && !events.some(server => server.id === event.id)), ...events])
+    seeded.current = { apps: new Set(apps.map(app => app.id)), events: new Set(events.map(event => event.id)) }
   }, [demo.isDemoEnabled])
   const [focusApplicationClubId, setFocusApplicationClubId] = useState<string | null>(null)
 
@@ -202,12 +221,16 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
 
   const applyToClub = useCallback(
     (club: ClubRef) => {
-      if (appliedClubIds.has(club.id)) return
+      // A server application id that differs from the tracked one is a new
+      // application to the same club (re-application after a rejection): it
+      // replaces the tracked entry. Otherwise one tracked entry per club.
+      const tracked = trackedApps.find((app) => app.clubId === club.id)
+      if (tracked && (!club.applicationId || tracked.id === club.applicationId)) return
 
       const timestamp = Date.now()
 
       setTrackedApps((prev) => [
-        ...prev,
+        ...prev.filter((app) => app.clubId !== club.id),
         {
           id: club.applicationId ?? `trk-${timestamp}`,
           clubId: club.id,
@@ -250,11 +273,11 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
 
 
     },
-    [appliedClubIds, setNotifications],
+    [trackedApps, setNotifications],
   )
 
   const setNotificationsRead = useCallback(async (ids: string[], read: boolean) => {
-    if (demoStore.active()) { demoStore.mutate(s => { s.readNotifications = [...s.readNotifications.filter(id => !ids.includes(id)), ...(read ? ids : [])] }); return true }
+    if (isDemoActive()) { loadedDemoStore().demoStore.mutate(s => { s.readNotifications = [...s.readNotifications.filter(id => !ids.includes(id)), ...(read ? ids : [])] }); return true }
     const targets = new Set(ids)
     const original = notificationSnapshot.current.filter(item => targets.has(item.id))
     const durable = original.filter(item => item.durableId && item.read !== read)
@@ -291,7 +314,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
   const markNotificationRead = useCallback((id: string) => setNotificationsRead([id], true), [setNotificationsRead])
 
   const deleteNotifications = useCallback(async (ids: string[]) => {
-    if (demoStore.active()) { demoStore.mutate(s => { s.deletedNotifications.push(...ids) }); return true }
+    if (isDemoActive()) { loadedDemoStore().demoStore.mutate(s => { s.deletedNotifications.push(...ids) }); return true }
     const targets = new Set(ids), original = notificationSnapshot.current.filter(item => targets.has(item.id))
     const durable = original.filter(item => item.durableId), token = Symbol("notification-archive")
     durable.forEach(item => pendingNotifications.current.set(item.id, { token, archived: true }))
@@ -314,7 +337,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
   }, [setNotifications])
 
   const restoreNotifications = useCallback(async (items: Notification[]) => {
-    if (demoStore.active()) { demoStore.mutate(s => { s.deletedNotifications = s.deletedNotifications.filter(id => !items.some(n => n.id === id)) }); return true }
+    if (isDemoActive()) { loadedDemoStore().demoStore.mutate(s => { s.deletedNotifications = s.deletedNotifications.filter(id => !items.some(n => n.id === id)) }); return true }
     items.forEach(item => dismissedTaskNotifications.current.delete(item.id))
     const added = items.filter(item => !notificationSnapshot.current.some(existing => existing.id === item.id))
     setNotifications(previous => [...previous, ...added])
@@ -339,7 +362,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
       try {
         // Read further owned pages only for an explicit bulk action, when unread
         // records exist beyond the loaded feed. No new endpoint or subscription.
-        if (!demoStore.active() && durableUnread > notificationSnapshot.current.filter(item => item.durableId && !item.read).length) {
+        if (!isDemoActive() && durableUnread > notificationSnapshot.current.filter(item => item.durableId && !item.read).length) {
           let cursor = durableCursor
           const seen = new Set<string>()
           while (cursor) {
@@ -363,7 +386,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
   }, [durableCursor, durableUnread, setNotificationsRead, syncDurableNotifications])
 
   const respondToEvent = useCallback((id: string, response: "going" | "confirmed" | "declined") => {
-    if (demoStore.active()) { demoStore.mutate(s => { s.responses[id] = response }); return }
+    if (isDemoActive()) { loadedDemoStore().demoStore.mutate(s => { s.responses[id] = response }); return }
     if (events.find(event => event.id === id)?.readOnly) return
     setResponses((previous) => ({ ...previous, [id]: response }))
     const event = events.find((item) => item.id === id)
@@ -373,7 +396,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
     const clubId = event?.clubId ?? managed?.clubId ?? ""
     const club = clubs.find((item) => item.id === clubId)
     const body = `${title}: ${response === "declined" ? "attendance cancelled" : response === "confirmed" ? "interview confirmed" : "RSVP confirmed"}.`
-    setNotifications((previous) => [{ id: `response-${id}`, eventId: id, clubId, type: "Announcement", urgent: false, club: club?.name ?? studentMemberships.find((member) => member.clubId === clubId)?.clubName ?? event?.club ?? "Club event", color: club?.color ?? "#051B3D", logoText: club?.logoText ?? "OC", senderName: "OutClass", senderTitle: "Calendar update", title: body, preview: body, body: [body], timestamp: "Just now", fullDate: new Date().toLocaleString(), createdAt: new Date().toISOString(), read: false }, ...previous.filter((item) => item.id !== `response-${id}`)])
+    setNotifications((previous) => [{ id: `response-${id}`, eventId: id, clubId, type: "Announcement", urgent: false, club: club?.name ?? studentMemberships.find((member) => member.clubId === clubId)?.clubName ?? event?.club ?? "Club event", color: club?.color ?? DEFAULT_CLUB_COLOR, logoText: club?.logoText ?? "OC", senderName: "OutClass", senderTitle: "Calendar update", title: body, preview: body, body: [body], timestamp: "Just now", fullDate: new Date().toLocaleString(), createdAt: new Date().toISOString(), read: false }, ...previous.filter((item) => item.id !== `response-${id}`)])
   }, [events, managedEvents, setNotifications])
 
   const bookInterview = useCallback((blockId: string, slotId: string): string | null => {
@@ -391,11 +414,11 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
       return { ...entrySlot, candidates, bookedCount: candidates.length }
     }) })))
     const id = "interview-vvf-current"
-    setEvents((previous) => [...previous.filter((event) => event.id !== id), { id, date: block.date, day: Number(block.date.slice(-2)), clubId: "vvf", club: "Virginia Venture Fund", color: "#051B3D", type: "Interview", title: "Virginia Venture Fund · Round 1 interview", time: slot.time, location: block.locationName, bookingSlotId: slotId, description: "Your reserved interview slot. To change it, choose another available time.", response: "confirmed" }])
+    setEvents((previous) => [...previous.filter((event) => event.id !== id), { id, date: block.date, day: Number(block.date.slice(-2)), clubId: "vvf", club: "Virginia Venture Fund", color: DEFAULT_CLUB_COLOR, type: "Interview", title: "Virginia Venture Fund · Round 1 interview", time: slot.time, location: block.locationName, bookingSlotId: slotId, description: "Your reserved interview slot. To change it, choose another available time.", response: "confirmed" }])
     setResponses((previous) => ({ ...previous, [id]: "confirmed" }))
     setTrackedApps((previous) => previous.map((app) => app.clubId === "vvf" ? { ...app, status: "1st Round Interview", nextDeadline: `${block.date} at ${slot.time}` } : app))
     const body = `Your interview is booked for ${block.date} at ${slot.time}, ${block.locationName}.`
-    setNotifications((previous) => [{ id: "booking-vvf", eventId: id, clubId: "vvf", type: "Interview Invite", urgent: false, club: "Virginia Venture Fund", color: "#051B3D", logoText: "VVF", senderName: "Recruitment Team", senderTitle: "Interview booking", title: "Interview booking confirmed", preview: body, body: [body], timestamp: "Just now", fullDate: new Date().toLocaleString(), createdAt: new Date().toISOString(), read: false }, ...previous.filter((item) => item.id !== "booking-vvf")])
+    setNotifications((previous) => [{ id: "booking-vvf", eventId: id, clubId: "vvf", type: "Interview Invite", urgent: false, club: "Virginia Venture Fund", color: DEFAULT_CLUB_COLOR, logoText: "VVF", senderName: "Recruitment Team", senderTitle: "Interview", title: "Interview confirmed", preview: body, body: [body], timestamp: "Just now", fullDate: new Date().toLocaleString(), createdAt: new Date().toISOString(), read: false }, ...previous.filter((item) => item.id !== "booking-vvf")])
     return null
   }, [scheduleBlocks, setNotifications])
 
@@ -406,7 +429,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
     }) })))
     setEvents((previous) => previous.filter((event) => event.id !== "interview-vvf-current"))
     setTrackedApps((previous) => previous.map((app) => app.clubId === "vvf" ? { ...app, nextDeadline: "Choose a new interview time" } : app))
-    setNotifications((previous) => previous.map((item) => item.id === "booking-vvf" ? { ...item, eventId: undefined, title: "Interview booking cancelled", preview: "Your interview slot was released. Choose a new time from Calendar.", body: ["Your interview slot was released. Choose a new time from Calendar."], read: false, createdAt: new Date().toISOString(), fullDate: new Date().toLocaleString() } : item))
+    setNotifications((previous) => previous.map((item) => item.id === "booking-vvf" ? { ...item, eventId: undefined, title: "Interview cancelled", preview: "Your interview slot was released. Choose a new time from Calendar.", body: ["Your interview slot was released. Choose a new time from Calendar."], read: false, createdAt: new Date().toISOString(), fullDate: new Date().toLocaleString() } : item))
   }, [setNotifications])
 
   const notifyEventChange = useCallback((event: ManagedEvent, cancelled = false) => {
@@ -414,7 +437,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
     const club = clubs.find((item) => item.id === event.clubId)
     const body = cancelled ? `${event.title} has been cancelled.` : `${event.title} · ${event.date} at ${event.time}. Location: ${event.location}.`
     const eventId = !cancelled && !event.recurring ? `managed-${event.id}-${event.date}` : undefined
-    setNotifications((previous) => [{ id: `managed-update-${event.id}`, eventId, clubId: event.clubId, type: "Announcement", urgent: cancelled, club: club?.name ?? studentMemberships.find((member) => member.clubId === event.clubId)?.clubName ?? event.clubId, color: club?.color ?? "#051B3D", logoText: club?.logoText ?? "OC", senderName: "Club leadership", senderTitle: "Club calendar update", title: `${event.title} ${cancelled ? "cancelled" : "scheduled / updated"}`, preview: body, body: [body], timestamp: "Just now", fullDate: new Date().toLocaleString(), createdAt: new Date().toISOString(), read: false }, ...previous.filter((item) => item.id !== `managed-update-${event.id}`)])
+    setNotifications((previous) => [{ id: `managed-update-${event.id}`, eventId, clubId: event.clubId, type: "Announcement", urgent: cancelled, club: club?.name ?? studentMemberships.find((member) => member.clubId === event.clubId)?.clubName ?? event.clubId, color: club?.color ?? DEFAULT_CLUB_COLOR, logoText: club?.logoText ?? "OC", senderName: "Club leadership", senderTitle: "Club calendar update", title: `${event.title} ${cancelled ? "cancelled" : "scheduled / updated"}`, preview: body, body: [body], timestamp: "Just now", fullDate: new Date().toLocaleString(), createdAt: new Date().toISOString(), read: false }, ...previous.filter((item) => item.id !== `managed-update-${event.id}`)])
   }, [setNotifications])
 
   const submitApplication = useCallback((id: string) => {
@@ -436,6 +459,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
       hydrated,
       leaderFocus, focusLeader, clearLeaderFocus,
       syncApplications: setTrackedApps,
+      seedServerData,
       syncApplicationBookings,
       trackedApps,
       notifications, personalTaskActivities, syncTaskNotifications, durableUnread, durableCursor, syncDurableNotifications, markAllNotificationsRead,
@@ -454,7 +478,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
       managedEvents, setManagedEvents, scheduleBlocks, setScheduleBlocks, bookInterview, submitApplication, cancelInterview, notifyEventChange, calendarYear, setCalendarYear,
     }),
     [
-      leaderFocus, clearLeaderFocus, syncApplicationBookings,
+      leaderFocus, clearLeaderFocus, syncApplicationBookings, seedServerData,
       hydrated,
       trackedApps,
       notifications, personalTaskActivities, syncTaskNotifications, durableUnread, durableCursor, syncDurableNotifications, markAllNotificationsRead,
@@ -483,4 +507,11 @@ export function useApplicationState() {
     throw new Error("useApplicationState must be used within an ApplicationStateProvider")
   }
   return ctx
+}
+
+/** Applies a student page's server data to the shell-owned store once per payload, before paint. */
+const useBrowserLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect
+export function useSeedApplicationData(data: any) {
+  const { seedServerData } = useApplicationState()
+  useBrowserLayoutEffect(() => { seedServerData(data) }, [data, seedServerData])
 }

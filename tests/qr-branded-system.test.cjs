@@ -195,48 +195,69 @@ test("10. Dense QR codes dynamically adjust center badge dimensions", async () =
   assert.equal(await decodeSvg(svg, 800), densePayload);
 });
 
-test("11. Short-link generation and resolution produces valid compact links", async () => {
+// In-memory PlatformContent supporting the filters lib/short-link-store.ts uses.
+function platformStore() {
   const store = new Map();
-  const mockPrisma = {
-    platformContent: {
-      findUnique: async ({ where }) => store.get(where.key) || null,
-      create: async ({ data }) => {
-        store.set(data.key, data);
-        return data;
-      },
-      update: async ({ where, data }) => {
-        const item = store.get(where.key);
-        Object.assign(item, data);
-        return item;
-      },
-      upsert: async ({ where, update, create }) => {
-        const existing = store.get(where.key);
-        if (existing) {
-          Object.assign(existing, update);
-          return existing;
-        }
-        store.set(where.key, create);
-        return create;
+  const matches = (row, where = {}) =>
+    (!where.key?.startsWith || row.key.startsWith(where.key.startsWith)) &&
+    (!where.updatedAt?.lt || row.updatedAt < where.updatedAt.lt) &&
+    (where.AND || []).every(({ value }) => row.value?.[value.path[0]] === value.equals);
+  const platformContent = {
+    findUnique: async ({ where }) => store.get(where.key) || null,
+    findMany: async ({ where }) => [...store.values()].filter((row) => matches(row, where)),
+    create: async ({ data }) => {
+      if (store.has(data.key)) throw Object.assign(new Error("Unique constraint"), { code: "P2002" });
+      const row = { ...data, updatedAt: new Date() };
+      store.set(data.key, row);
+      return row;
+    },
+    update: async ({ where, data }) => {
+      const row = store.get(where.key);
+      Object.assign(row, data, { updatedAt: new Date() });
+      return row;
+    },
+    upsert: async ({ where, update, create }) =>
+      store.has(where.key) ? platformContent.update({ where, data: update }) : platformContent.create({ data: create }),
+    deleteMany: async ({ where }) => {
+      let count = 0;
+      for (const row of [...store.values()]) if (matches(row, where)) { store.delete(row.key); count++; }
+      return { count };
+    },
+  };
+  return { store, platformContent };
+}
+
+function loadShortLinkModules(platformContent, authenticatedUser = { id: "leader" }) {
+  const mocks = {
+    "@/utils/prisma": { prisma: { platformContent } },
+    "@/utils/auth": {
+      requireAuth: async () => {
+        if (!authenticatedUser) throw new Error("Authentication required.");
+        return { user: authenticatedUser };
       },
     },
   };
+  return { linkStore: load("lib/short-link-store.ts", mocks), shortLinksAction: load("actions/short-links.ts", mocks) };
+}
 
-  const shortLinksAction = load("actions/short-links.ts", {
-    "@/utils/prisma": { prisma: mockPrisma },
-  });
+const SESSION_ID = "00000000-0000-4000-8000-0000000000aa";
+const CLUB_ID = "00000000-0000-4000-8000-000000000001";
+const VOTING_JOIN = `/voting/${SESSION_ID}/join`;
 
-  const created = await shortLinksAction.createShortLink({
-    target: "/club/vvf",
-    type: "club",
-    reusable: true,
-  });
+test("11. Short-link generation and resolution produces valid compact links", async () => {
+  const { platformContent } = platformStore();
+  const { linkStore, shortLinksAction } = loadShortLinkModules(platformContent);
+
+  const created = await shortLinksAction.createShortLink({ target: VOTING_JOIN });
 
   assert.match(created.code, /^[a-zA-Z0-9]{6,8}$/);
   assert.equal(created.shortUrl, `/q/${created.code}`);
+  assert.deepEqual(Object.keys(created).sort(), ["code", "shortUrl"]);
 
-  const resolved = await shortLinksAction.resolveShortLink(created.code);
+  const resolved = await linkStore.resolveShortLink({ platformContent }, created.code);
   assert.equal(resolved.status, "valid");
-  assert.equal(resolved.target, "/club/vvf");
+  assert.equal(resolved.target, VOTING_JOIN);
+  assert.equal(resolved.record.type, "vote");
 });
 
 test("12. Collision handling and identifier uniqueness over multiple generations", async () => {
@@ -253,49 +274,40 @@ test("12. Collision handling and identifier uniqueness over multiple generations
   assert.equal(generated.size, iterations);
 });
 
-test("13. Expired and revoked short links fail resolution with clear status", async () => {
-  const store = new Map();
-  const mockPrisma = {
-    platformContent: {
-      findUnique: async ({ where }) => store.get(where.key) || null,
-      create: async ({ data }) => {
-        store.set(data.key, data);
-        return data;
-      },
-      update: async ({ where, data }) => {
-        const item = store.get(where.key);
-        Object.assign(item, data);
-        return item;
-      },
-    },
-  };
-
-  const shortLinksAction = load("actions/short-links.ts", {
-    "@/utils/prisma": { prisma: mockPrisma },
-  });
+test("13. Expired and closed meeting check-in links fail resolution with clear status", async () => {
+  const { store, platformContent } = platformStore();
+  const { linkStore } = loadShortLinkModules(platformContent);
+  const meetingId = "00000000-0000-4000-8000-000000000002";
+  const token = "a".repeat(64);
 
   // 1. Expired link
-  const expiredLink = await shortLinksAction.createShortLink({
-    target: "/check-in?meetingId=expired-meeting",
-    type: "meeting-check-in",
-    expiresAt: new Date(Date.now() - 60000), // 1 minute in the past
+  const expired = await linkStore.createMeetingCheckInShortLink({ platformContent }, {
+    clubId: CLUB_ID, meetingId, token, createdAt: new Date(Date.now() - 120000), expiresAt: new Date(Date.now() - 60000),
   });
-
-  const expiredResult = await shortLinksAction.resolveShortLink(expiredLink.code);
+  const expiredResult = await linkStore.resolveShortLink({ platformContent }, expired.code);
   assert.equal(expiredResult.status, "expired");
   assert.match(expiredResult.message, /expired/i);
 
-  // 2. Revoked link
-  const activeLink = await shortLinksAction.createShortLink({
-    target: "/check-in?meetingId=closed-meeting",
-    type: "meeting-check-in",
-    expiresAt: new Date(Date.now() + 60000),
+  // 2. Closing check-in revokes the live link and removes the raw token
+  const active = await linkStore.createMeetingCheckInShortLink({ platformContent }, {
+    clubId: CLUB_ID, meetingId, token, createdAt: new Date(), expiresAt: new Date(Date.now() + 60000),
   });
+  assert.equal((await linkStore.resolveShortLink({ platformContent }, active.code)).status, "valid");
+  await linkStore.closeMeetingCheckInShortLinks({ platformContent }, meetingId);
+  const closed = await linkStore.resolveShortLink({ platformContent }, active.code);
+  assert.equal(closed.status, "revoked");
+  assert.match(closed.message, /closed by the host/);
+  assert.ok(![...store.values()].some((row) => JSON.stringify(row.value).includes(token) && !row.value.revoked && row.value.expiresAt > new Date().toISOString()));
+  assert.ok(!JSON.stringify(store.get(`shortlink:${active.code}`).value).includes(token));
 
-  await shortLinksAction.revokeShortLink(activeLink.code, "Check-in closed by proctor.");
-  const revokedResult = await shortLinksAction.resolveShortLink(activeLink.code);
-  assert.equal(revokedResult.status, "revoked");
-  assert.equal(revokedResult.message, "Check-in closed by proctor.");
+  // 3. Stale links for the meeting are deleted; other meetings are untouched
+  const other = await linkStore.createMeetingCheckInShortLink({ platformContent }, {
+    clubId: CLUB_ID, meetingId: "00000000-0000-4000-8000-000000000003", token, createdAt: new Date(), expiresAt: new Date(Date.now() + 60000),
+  });
+  await linkStore.deleteStaleMeetingCheckInShortLinks({ platformContent }, meetingId, new Date(Date.now() + 1000));
+  assert.equal(store.has(`shortlink:${expired.code}`), false);
+  assert.equal(store.has(`shortlink:${active.code}`), false);
+  assert.equal(store.has(`shortlink:${other.code}`), true);
 });
 
 test("14. Authentication and authorization are strictly preserved during check-in", async () => {
@@ -398,23 +410,15 @@ test("15. Duplicate attendance scans do not duplicate credits or change timestam
 });
 
 test("16. Invalid, manipulated, or unknown QR identifiers and open redirects fail safely", async () => {
-  const store = new Map();
-  const mockPrisma = {
-    platformContent: {
-      findUnique: async ({ where }) => store.get(where.key) || null,
-    },
-  };
-
-  const shortLinksAction = load("actions/short-links.ts", {
-    "@/utils/prisma": { prisma: mockPrisma },
-  });
+  const { platformContent } = platformStore();
+  const { linkStore } = loadShortLinkModules(platformContent);
 
   // Non-existent code
-  const notFound = await shortLinksAction.resolveShortLink("unknownCode123");
+  const notFound = await linkStore.resolveShortLink({ platformContent }, "unknownCode123");
   assert.equal(notFound.status, "not-found");
 
   // Invalid characters / traversal
-  const malformed = await shortLinksAction.resolveShortLink("../../../etc/passwd");
+  const malformed = await linkStore.resolveShortLink({ platformContent }, "../../../etc/passwd");
   assert.equal(malformed.status, "not-found");
 
   // Open redirect prevention
@@ -422,54 +426,91 @@ test("16. Invalid, manipulated, or unknown QR identifiers and open redirects fai
   assert.equal(shortLinks.isValidRedirectTarget("//evil.com/fake-login"), false);
   assert.equal(shortLinks.isValidRedirectTarget("/\\evil.com"), false);
   assert.equal(shortLinks.isValidRedirectTarget("javascript:alert(1)"), false);
+  // Browsers strip tab/newline and normalize "\" to "/", turning these into //evil.com
+  for (const bypass of ["/\t/evil.com", "/\n/evil.com", "/\r/evil.com", "/ /evil.com", "/x\\..\\/evil.com", "/\u000b/evil.com", "/\u007f/evil.com"])
+    assert.equal(shortLinks.isValidRedirectTarget(bypass), false, JSON.stringify(bypass));
   assert.equal(shortLinks.isValidRedirectTarget("/club/vvf"), true);
+  assert.equal(shortLinks.isValidRedirectTarget("/check-in?meetingId=m1#token=abc"), true);
   assert.equal(shortLinks.isValidRedirectTarget("https://out-class.net/check-in"), true);
+
+  // Local development hosts are not valid destinations in production
+  const env = process.env.NODE_ENV;
+  try {
+    process.env.NODE_ENV = "production";
+    assert.equal(shortLinks.isValidRedirectTarget("http://localhost:3000/check-in"), false);
+    assert.equal(shortLinks.isValidRedirectTarget("http://127.0.0.1/check-in"), false);
+    assert.equal(shortLinks.isValidRedirectTarget("https://out-class.net/check-in"), true);
+    process.env.NODE_ENV = "development";
+    assert.equal(shortLinks.isValidRedirectTarget("http://localhost:3000/check-in"), true);
+  } finally {
+    if (env === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = env;
+  }
 });
 
-test("17. Reusable destinations share short links while temporary links are unique", async () => {
-  const store = new Map();
-  const mockPrisma = {
-    platformContent: {
-      findUnique: async ({ where }) => store.get(where.key) || null,
-      create: async ({ data }) => {
-        store.set(data.key, data);
-        return data;
-      },
-      upsert: async ({ where, update, create }) => {
-        const existing = store.get(where.key);
-        if (existing) {
-          Object.assign(existing, update);
-          return existing;
-        }
-        store.set(where.key, create);
-        return create;
-      },
-    },
-  };
+test("16b. The browser-callable short-link action requires a session and only shortens share destinations", async () => {
+  // Signed out: rejected before any database access
+  const signedOut = platformStore();
+  const anonymous = loadShortLinkModules(signedOut.platformContent, null).shortLinksAction;
+  await assert.rejects(anonymous.createShortLink({ target: VOTING_JOIN }), /Authentication required/);
+  assert.equal(signedOut.store.size, 0);
 
-  const shortLinksAction = load("actions/short-links.ts", {
-    "@/utils/prisma": { prisma: mockPrisma },
+  const { store, platformContent } = platformStore();
+  const { shortLinksAction, linkStore } = loadShortLinkModules(platformContent);
+  const rejected = [
+    "/check-in?meetingId=m1#token=" + "a".repeat(64),
+    "/settings",
+    "/?next=/q/abc",
+    "https://out-class.net/club/vvf",
+    `/voting/${SESSION_ID}/join?next=//evil.com`,
+    "/club/" + "a".repeat(200),
+    "/club/vvf?x=1",
+    "/club/\tvvf",
+    "",
+  ];
+  for (const target of rejected)
+    await assert.rejects(shortLinksAction.createShortLink({ target }), /cannot be shortened/, target);
+  await assert.rejects(shortLinksAction.createShortLink(null), /cannot be shortened/);
+  assert.equal(store.size, 0);
+
+  // Client-supplied record fields are ignored: no expiry, scope, metadata or type spoofing
+  const created = await shortLinksAction.createShortLink({
+    target: `/voting/rooms/${SESSION_ID}?clubId=${CLUB_ID}&view=member`,
+    type: "meeting-check-in",
+    expiresAt: new Date(Date.now() + 1000),
+    clubId: "spoofed",
+    eventId: "spoofed",
+    metadata: { blob: "x".repeat(100000) },
   });
+  const { record } = await linkStore.resolveShortLink({ platformContent }, created.code);
+  assert.equal(record.type, "vote");
+  assert.equal(record.expiresAt, null);
+  assert.equal(record.clubId, null);
+  assert.equal(record.eventId, null);
+  assert.deepEqual(record.metadata, {});
+  assert.ok(JSON.stringify(store.get(`shortlink:${created.code}`).value).length < 1000);
+  assert.equal((await shortLinksAction.createShortLink({ target: "/club/vvf" })).shortUrl.startsWith("/q/"), true);
+
+  // Only createShortLink is browser-callable; resolution and revocation are server-only
+  assert.deepEqual(Object.keys(shortLinksAction), ["createShortLink"]);
+  assert.match(fs.readFileSync("lib/short-link-store.ts", "utf8").split("\n").find((l) => l.trim()) || "", /^\/\*\*/);
+  assert.ok(!/^\s*["']use server["']/m.test(fs.readFileSync("lib/short-link-store.ts", "utf8")));
+  assert.match(fs.readFileSync("app/(focus)/q/[code]/page.tsx", "utf8"), /from "@\/lib\/short-link-store"/);
+});
+
+test("17. Reusable destinations share short links while check-in links are unique", async () => {
+  const { platformContent } = platformStore();
+  const { shortLinksAction, linkStore } = loadShortLinkModules(platformContent);
 
   // Permanent reusable destination: calling create twice for the same destination returns the SAME code
-  const clubLink1 = await shortLinksAction.createShortLink({
-    target: "/club/vvf",
-    reusable: true,
-  });
-  const clubLink2 = await shortLinksAction.createShortLink({
-    target: "/club/vvf",
-    reusable: true,
-  });
-  assert.equal(clubLink1.code, clubLink2.code);
+  const link1 = await shortLinksAction.createShortLink({ target: VOTING_JOIN });
+  const link2 = await shortLinksAction.createShortLink({ target: VOTING_JOIN });
+  assert.equal(link1.code, link2.code);
 
-  // Temporary check-in links: calling create for rotating tokens produces DISTINCT codes
-  const checkIn1 = await shortLinksAction.createShortLink({
-    target: "/check-in?meetingId=m1#token=" + "1".repeat(64),
-    expiresAt: new Date(Date.now() + 60000),
-  });
-  const checkIn2 = await shortLinksAction.createShortLink({
-    target: "/check-in?meetingId=m1#token=" + "2".repeat(64),
-    expiresAt: new Date(Date.now() + 60000),
-  });
+  // Rotating check-in links: every token produces a DISTINCT code
+  const meetingId = "00000000-0000-4000-8000-000000000002";
+  const window = { clubId: CLUB_ID, meetingId, createdAt: new Date(), expiresAt: new Date(Date.now() + 60000) };
+  const checkIn1 = await linkStore.createMeetingCheckInShortLink({ platformContent }, { ...window, token: "1".repeat(64) });
+  const checkIn2 = await linkStore.createMeetingCheckInShortLink({ platformContent }, { ...window, token: "2".repeat(64) });
   assert.notEqual(checkIn1.code, checkIn2.code);
 });

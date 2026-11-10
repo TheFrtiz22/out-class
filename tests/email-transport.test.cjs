@@ -6,7 +6,7 @@ test('SMTP transport reuses server configuration, requires encryption and sends 
  let options,message,closed=0;const smtp={createTransport:config=>{options=config;return{sendMail:async data=>{message=data;return{accepted:['john@virginia.edu'],messageId:data.messageId};},close:()=>closed++};}};
  try{const api=load('utils/email.ts',{nodemailer:smtp});await api.sendInvitationEmail({recipient:'john@virginia.edu',organizationName:'Madison Investment Fund',owner:false,deliveryId:'delivery-id'});
  assert.equal(options.host,vars.SMTP_HOST);assert.equal(options.requireTLS,true);assert.equal(options.disableFileAccess,true);assert.equal(options.disableUrlAccess,true);assert.deepEqual(message.to,{address:'john@virginia.edu',name:''});assert.equal(message.from.address,vars.SMTP_FROM_EMAIL);assert.equal(closed,1);assert.ok(!message.html.includes('john@virginia.edu'));assert.ok(!message.html.includes('delivery-id'));
- delete process.env.SMTP_HOST;assert.throws(()=>api.invitationEmailConfig(),/not configured/);
+ delete process.env.SMTP_HOST;assert.throws(()=>api.invitationEmailConfig(),/unavailable right now/);
  }finally{for(const[key,value]of Object.entries(previous)){if(value===undefined)delete process.env[key];else process.env[key]=value;}}
 });
 

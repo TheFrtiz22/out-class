@@ -14,7 +14,7 @@ function loader(mocks) {
     }).outputText;
     new Function('require', 'module', 'exports', code)(name => {
       if (name in mocks) return mocks[name];
-      if (name.startsWith('@/')) return load(name.slice(2) + '.ts');
+      if (name.startsWith('@/')) return load(fs.existsSync(name.slice(2) + '.ts') ? name.slice(2) + '.ts' : name.slice(2) + '.tsx');
       if (name === './prisma') return mocks['@/utils/prisma'];
       if (name === './supabase/server') return mocks['@/utils/supabase/server'];
       return require(name);
@@ -33,7 +33,7 @@ test('direct application start rejects suspension under the existing transaction
   const queries = [];
   const tx = {
     $queryRaw: async strings => { assert.equal(inTransaction, true); const sql = strings.join(''); queries.push(sql); return sql.includes('"suspendedAt"') && suspended ? [{ id: clubId }] : []; },
-    application: { findUnique: async () => existing, upsert: async ({ create }) => { created.push(create); return { id: 'draft' }; } },
+    application: { findFirst: async () => existing, create: async ({ data }) => { created.push(data); return { id: 'draft' }; } },
     club: { findUnique: async () => ({ applicationOpen: true, applicationDeadline: null }) },
     pipelineRound: { findFirst: async () => ({ id: 'round' }) },
   };
@@ -61,9 +61,12 @@ function workspaceHarness({ demo = true, allowed = true, providerError = false, 
     '@/components/auth-session-boundary': { AuthSessionBoundary: Boundary },
     '@/components/shell/authenticated-page-layout': { AuthenticatedPageLayout: SharedLayout },
     'next/link': { default: () => null },
+    '@/components/shell/workspace-route-loading': { WorkspaceRouteLoading: () => null },
   };
-  const page = loader(mocks)('app/club/[clubId]/workspace/page.tsx').default;
-  return { render: () => page({ params: Promise.resolve({ clubId }), searchParams: Promise.resolve({ section: 'members' }) }), Workspace, Boundary, SharedLayout, liveReads: () => liveReads, providerReads: () => providerReads };
+  const page = loader(mocks)('app/(workspace)/club/[clubId]/workspace/page.tsx').default;
+  // The page streams the workspace inside its own Suspense placeholder (after the legacy-URL redirect); render the inner part.
+  const render = async () => { const outer = await page({ params: Promise.resolve({ clubId }), searchParams: Promise.resolve({ section: 'members' }) }); return outer.props.children.type(outer.props.children.props); };
+  return { render, Workspace, Boundary, SharedLayout, liveReads: () => liveReads, providerReads: () => providerReads };
 }
 test('authorized Demo workspace renders its existing client boundary without live identity reads', async () => {
   const h = workspaceHarness({ liveDenied: true }); const result = await h.render();

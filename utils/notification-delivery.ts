@@ -12,19 +12,22 @@ import { applicantBookingNotificationPrefix, currentApplicantBookingNotification
 const RETRY_WINDOW_MS = 23 * 3600000;
 export async function processNotificationEmails(limit = 10) {
   const config = communicationEmailConfig();
-  if (!config) return { enabled: false, sent: 0, failed: 0, suppressed: 0 };
+  if (!config) return { enabled: false, sent: 0, failed: 0, suppressed: 0, invalid: 0 };
   const batchSize = Math.max(1, Math.min(limit, 25)), started = Date.now();
-  let sent = 0, failed = 0, suppressed = 0;
+  let sent = 0, failed = 0, suppressed = 0, invalid = 0;
   // Capture recipients with pending intent, even if instant email is disabled now.
   // Preferences are evaluated before grouping and again on every send/retry.
   const pending = await prisma.$queryRaw<{ userId: string }[]>`
     SELECT n."userId" FROM "NotificationEmailOutbox" o JOIN "UserNotification" n ON n.id=o."notificationId"
     LEFT JOIN "UserNotificationPreference" p ON p."userId"=n."userId"
-    WHERE o.status='PENDING' AND (COALESCE(p."emailFrequency",'INSTANT')<>'DAILY' OR o."createdAt"<date_trunc('day',CURRENT_TIMESTAMP AT TIME ZONE 'UTC'))
+    LEFT JOIN "Club" c ON c.id=n."clubId"
+    WHERE o.status='PENDING' AND c."suspendedAt" IS NULL AND (COALESCE(p."emailFrequency",'INSTANT')<>'DAILY' OR o."createdAt"<date_trunc('day',CURRENT_TIMESTAMP AT TIME ZONE 'UTC'))
     GROUP BY n."userId" ORDER BY MIN(o."createdAt") LIMIT ${batchSize}`;
   const users = pending.map(row => row.userId);
+  // Each recipient is isolated: one user's failure must not stop everyone else's
+  // email (the same user would otherwise head the queue on every run).
   for (const userId of users) {
-    await prisma.$transaction(async tx => {
+    try { await prisma.$transaction(async tx => {
       await tx.$queryRaw`SELECT id FROM "User" WHERE id=${userId} FOR UPDATE`;
       const user = await tx.user.findUnique({ where: { id: userId }, include: { notificationPreferences: true } });
       if (!user) return;
@@ -61,23 +64,45 @@ export async function processNotificationEmails(limit = 10) {
         eligible.push(row);
       }
       if (!eligible.length) return;
-      const groups = user.notificationPreferences?.emailFrequency === "DAILY" ? [eligible] : eligible.map(row => [row]);
+      const digest = user.notificationPreferences?.emailFrequency === "DAILY";
+      const build = (group: { notification: Parameters<typeof buildNotificationEmail>[0]["items"][number] }[]) => notificationEmailPayload.safeParse((() => {
+        try { return buildNotificationEmail({ from: config.from, to: user.email, siteUrl: config.siteUrl, digest, items: group.map(row => row.notification) }); } catch { return null; }
+      })());
+      // A row that cannot produce a valid email (e.g. a non-canonical decision
+      // link) is suppressed individually; the in-app notification remains.
+      const deliverable = [];
+      for (const row of eligible) {
+        if (build([row]).success) { deliverable.push(row); continue; }
+        await tx.notificationEmailOutbox.update({ where: { notificationId: row.notificationId }, data: { status: "SUPPRESSED" } }); invalid++;
+      }
+      if (!deliverable.length) return;
+      const groups = digest ? [deliverable] : deliverable.map(row => [row]);
       for (const group of groups.slice(0, batchSize)) {
-        const payload = buildNotificationEmail({ from: config.from, to: user.email, siteUrl: config.siteUrl, digest: user.notificationPreferences?.emailFrequency === "DAILY", items: group.map(row => row.notification) });
+        const built = build(group);
+        if (!built.success) { await tx.notificationEmailOutbox.updateMany({ where: { notificationId: { in: group.map(row => row.notificationId) }, status: "PENDING" }, data: { status: "SUPPRESSED" } }); invalid += group.length; continue; }
+        const payload = built.data;
         const delivery = await tx.notificationEmailDelivery.create({ data: { userId, payload } });
         await tx.notificationEmailOutbox.updateMany({ where: { notificationId: { in: group.map(row => row.notificationId) }, status: "PENDING" }, data: { status: "ASSIGNED", deliveryId: delivery.id } });
       }
-    }, { timeout: 15000 });
+    }, { timeout: 15000 }); } catch (error) {
+      failed++;
+      console.error("notification-email grouping failed", { userId, code: error instanceof Error ? error.name : "UNKNOWN" });
+    }
   }
   const now = new Date();
   const candidates = await prisma.notificationEmailDelivery.findMany({ where: { OR: [{ status: "QUEUED", nextAttemptAt: { lte: now } }, { status: "SENDING", leaseUntil: { lt: now } }] }, select: { id: true }, orderBy: { createdAt: "asc" }, take: batchSize });
   for (const candidate of candidates) {
     if (Date.now() - started > 35000) break;
-    const claim = await prisma.$transaction(async tx => {
+    let claim;
+    try { claim = await prisma.$transaction(async tx => {
       await tx.$queryRaw`SELECT id FROM "NotificationEmailDelivery" WHERE id=${candidate.id} FOR UPDATE`;
       const row = await tx.notificationEmailDelivery.findUniqueOrThrow({ where: { id: candidate.id }, include: { user: { include: { notificationPreferences: true } }, items: { include: { notification: { include: { club: { select: { suspendedAt: true } } } } } } } });
       if (!(row.status === "QUEUED" && row.nextAttemptAt <= new Date() || row.status === "SENDING" && row.leaseUntil && row.leaseUntil < new Date())) return null;
-      const payload = notificationEmailPayload.parse(row.payload);
+      const parsedPayload = notificationEmailPayload.safeParse(row.payload);
+      if (!parsedPayload.success) {
+        await tx.notificationEmailDelivery.update({ where: { id: row.id }, data: { status: "FAILED", failureCode: "INVALID_PAYLOAD", leaseToken: null, leaseUntil: null } }); invalid++; return null;
+      }
+      const payload = parsedPayload.data;
       let inaccessibleMessage = false;
       for (const item of row.items.filter(item => item.notification.eventKey.startsWith(applicantBookingNotificationPrefix))) {
         if (!await currentApplicantBookingNotification(tx, item.notification, row.userId)) inaccessibleMessage = true;
@@ -108,7 +133,11 @@ export async function processNotificationEmails(limit = 10) {
       const token = randomUUID();
       await tx.notificationEmailDelivery.update({ where: { id: row.id }, data: { status: "SENDING", leaseToken: token, leaseUntil: new Date(Date.now() + 60000), firstAttemptAt: row.firstAttemptAt ?? new Date(), attemptCount: { increment: 1 } } });
       return { ...row, payload, token };
-    });
+    }); } catch (error) {
+      failed++;
+      console.error("notification-email claim failed", { deliveryId: candidate.id, code: error instanceof Error ? error.name : "UNKNOWN" });
+      continue;
+    }
     if (!claim) continue;
     try {
       const receipt = await sendNotificationEmail(claim.payload, claim.id, config.key);
@@ -122,5 +151,5 @@ export async function processNotificationEmails(limit = 10) {
       failed++;
     }
   }
-  return { enabled: true, sent, failed, suppressed };
+  return { enabled: true, sent, failed, suppressed, invalid };
 }

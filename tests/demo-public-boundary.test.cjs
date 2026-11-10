@@ -72,8 +72,13 @@ test('anonymous homepage workspace and demo query URLs use the existing login re
     '@/lib/auth': load('lib/auth.ts'), '@/lib/demo/access': privateAccess,
     '@/utils/auth': { getSessionUser: async () => ({ data: { user: null }, error: null }) },
     '@/lib/platform-view-as': { PLATFORM_VIEW_COOKIE: 'support-view' },
+    '@/lib/navigation': require('./helpers/navigation-module.cjs'),
   })
-  for (const params of [{ workspace: 'student' }, { view: 'leader-dashboard' }, { demoClub: 'sample' }, { workspace: 'student', view: 'student-profile' }]) {
+  // Old student workspace URLs move to their paths first; those pages then use the same login return flow.
+  for (const [params, path] of [[{ workspace: 'student' }, '/home'], [{ workspace: 'student', view: 'student-profile' }, '/profile']]) {
+    await assert.rejects(Page({ searchParams: Promise.resolve(params) }), error => error.location === path)
+  }
+  for (const params of [{ view: 'leader-dashboard' }, { demoClub: 'sample' }]) {
     await assert.rejects(Page({ searchParams: Promise.resolve(params) }), error => {
       const destination = new URL(error.location, 'https://outclass.example')
       assert.equal(destination.pathname, '/login')

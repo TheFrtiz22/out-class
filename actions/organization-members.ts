@@ -3,7 +3,7 @@ import { memberGroupSplitSchema, planMemberGroups } from "@/lib/member-groups";
 import { revokeClubInvitations } from "@/utils/revoke-club-invitations";
 import { memberAcademicProfile } from "@/lib/recruitment-profile";
 
-import { panelPublicationLock } from "@/utils/panel-publication";
+import { lockSchedulingPeople } from "@/utils/panel-publication";
 import { assertOfficialPanelConflicts } from "@/utils/official-panel-conflicts";
 import { lockOperationalClub } from "@/lib/club-suspension";
 import { interviewCapabilities, interviewOfficesSchema, interviewScopeSchema } from "@/lib/interview-access";
@@ -39,13 +39,13 @@ export async function assignOrganizationMemberGroups(input: unknown) {
     const actor = await actorFor(tx, data.clubId, user.id);
     if (!hasPermission(actor, "members.manage")) throw new Error("Member management access denied.");
     const members = await tx.clubMember.findMany({ where: { clubId: data.clubId, id: { in: data.targets.map(target => target.id) }, status: "ACTIVE", user: { disabledAt: null } } });
-    if (members.length !== data.targets.length) throw new Error("Some members are unavailable. Refresh members and try again.");
+    if (members.length !== data.targets.length) throw new Error("Some members are no longer available. Check the list and try again.");
     for (const member of members) {
       const expected = data.targets.find(target => target.id === member.id)!;
       const groups = data.operation === "ADD" ? [...new Set([...member.groups, data.group])] : member.groups.filter(group => group !== data.group);
       if (groups.length > 20) throw new Error("A member can belong to up to 20 groups.");
       const result = await tx.clubMember.updateMany({ where: { id: member.id, clubId: data.clubId, updatedAt: expected.updatedAt }, data: { groups } });
-      if (result.count !== 1) throw new Error("A member changed. Refresh members before assigning groups.");
+      if (result.count !== 1) throw new Error("A member changed. Check the list and try again.");
     }
     await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, action: "club.member.groups.bulk", targetId: data.clubId, details: { memberIds: members.map(member => member.id), group: data.group, operation: data.operation } } });
     return { updated: members.length };
@@ -62,14 +62,14 @@ export async function createOrganizationMemberGroups(input: unknown) {
     const actor = await actorFor(tx, data.clubId, user.id);
     if (!hasPermission(actor, "members.manage")) throw new Error("Member management access denied.");
     const members = await tx.clubMember.findMany({ where: { clubId: data.clubId, id: { in: data.targets.map(target => target.id) }, status: "ACTIVE", user: { disabledAt: null } } });
-    if (members.length !== data.targets.length) throw new Error("Some members are unavailable. Refresh members before creating groups.");
+    if (members.length !== data.targets.length) throw new Error("Some members are no longer available. Check the list and try again.");
     for (const member of members) {
       const expected = data.targets.find(target => target.id === member.id)!;
       const subgroup = plan.find(group => group.memberIds.includes(member.id))!;
       const groups = [...new Set([...member.groups, data.name, subgroup.name])];
       if (groups.length > 20) throw new Error("A member can belong to up to 20 groups.");
       const saved = await tx.clubMember.updateMany({ where: { id: member.id, clubId: data.clubId, updatedAt: expected.updatedAt }, data: { groups } });
-      if (saved.count !== 1) throw new Error("A member changed. Refresh members before creating groups.");
+      if (saved.count !== 1) throw new Error("A member changed. Check the list and try again.");
     }
     await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, targetId: data.clubId, action: "club.member.groups.create", details: { name: data.name, memberIds: members.map(member => member.id), groups: plan.map(group => ({ name: group.name, count: group.memberIds.length })) } } });
     return { groups: plan, members: members.length };
@@ -95,7 +95,6 @@ export async function setInterviewPanelAssignment(input: unknown) {
   const data = interviewScopeSchema.extend({ memberId: id, assigned: z.boolean() }).strict().parse(input);
   const { user } = await requireAuth({ verifyEmail: true });
   return prisma.$transaction(async tx => {
-    await panelPublicationLock(tx);
     const actor = await actorFor(tx, data.clubId, user.id);
     // Assignment conveys private evidence access; ordinary schedulers cannot self-grant.
     if (!interviewCapabilities(actor).manageGrants) throw new Error("Only an active owner can grant panel access.");
@@ -103,6 +102,8 @@ export async function setInterviewPanelAssignment(input: unknown) {
     const app = await tx.application.findFirst({ where: { id: data.applicationId, clubId: data.clubId, status: { not: "DRAFTING" } } });
     const round = await tx.pipelineRound.findFirst({ where: { id: data.roundId, clubId: data.clubId } });
     if (!target || !app || !round || app.studentId === target.userId) throw new Error("Panel scope unavailable.");
+    // A grant adds the target's official commitments across clubs.
+    if (data.assigned) await lockSchedulingPeople(tx, { exclusive: [target.userId] });
     if (data.assigned && (target.user.disabledAt || !interviewCapabilities(target).participate || app.roundId !== round.id || round.anonymousReview)) throw new Error("Active identified reviewer and current round required.");
     const key = { applicationId: app.id, roundId: round.id, memberId: target.id };
     const old = await tx.interviewPanelAssignment.findUnique({ where: { applicationId_roundId_memberId: key } });
@@ -231,7 +232,7 @@ export async function bulkOrganizationMembers(input: unknown) {
   return prisma.$transaction(async tx => {
     const actor = await actorFor(tx, data.clubId, user.id);
     const targets = await tx.clubMember.findMany({ where: { clubId: data.clubId, id: { in: data.targets.map(t => t.id) } }, include: { user: { select: { disabledAt: true, email: true } } } });
-    if (targets.length !== data.targets.length || targets.some(t => t.status !== "ACTIVE" || t.user.disabledAt || +t.updatedAt !== +data.targets.find(x => x.id === t.id)!.updatedAt)) throw new Error("Selected memberships changed. Refresh before trying again.");
+    if (targets.length !== data.targets.length || targets.some(t => t.status !== "ACTIVE" || t.user.disabledAt || +t.updatedAt !== +data.targets.find(x => x.id === t.id)!.updatedAt)) throw new Error("Selected memberships changed. Reload the page and try again.");
     if (data.action === "ROLE" && (!data.role || targets.some(t => !canChangeOrganizationRole(actor, t, data.role!)))) throw new Error("You cannot grant this role to the complete selection.");
     if (data.action === "REMOVE" && targets.some(t => !canRemoveOrganizationMember(actor, t))) throw new Error("You cannot remove the complete selection.");
     if (data.action === "PERMISSIONS" && (!data.permissions || !hasPermission(actor, "leaders.manage") || targets.some(t => t.isOwner || !canControlOrganizationAccess(actor, t)) || data.permissions.some(p => !hasPermission(actor, p)))) throw new Error("These permissions exceed your authority, or the selection contains an owner.");

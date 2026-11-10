@@ -1,18 +1,11 @@
 /* Dense operational views share the campus foundations without losing precision. */
 [data-product-shell] .oc-live-pipeline { padding: 0; border: 0; background: transparent; border-radius: 0; }
-[data-product-shell] .oc-live-pipeline [aria-label="Applicant view"] { border: 0; background: var(--muted); border-radius: var(--oc-radius-md); }
-[data-product-shell] .oc-live-pipeline [aria-label="Applicant view"] [aria-pressed="true"] { background: var(--primary); color: var(--primary-foreground); }
 [data-product-shell] .oc-applicant-board { gap: 1rem; align-items: start; }
 [data-product-shell] .oc-applicant-board > section { border: 0; border-radius: var(--oc-radius-lg); background: var(--oc-content-soft); padding: .875rem; min-height: 10rem; }
 [data-product-shell] .oc-applicant-board header h3 { font-size: var(--oc-text-small); }
 [data-product-shell] .oc-applicant-board header h3 > span { min-width: 1.5rem; padding: .2rem; border-radius: var(--oc-radius-sm); text-align: center; background: var(--card); }
 [data-product-shell] .oc-applicant-board button[data-applicant-id] { border: 0; border-radius: var(--oc-radius-md); background: var(--card); box-shadow: var(--oc-shadow-surface); transition: transform var(--oc-duration-micro), box-shadow var(--oc-duration-ui); }
 [data-product-shell] .oc-applicant-board button[data-applicant-id]:hover { box-shadow: var(--oc-content-shadow-hover); }
-[data-product-shell] [data-application-status="ACCEPTED"] { --badge-accent: var(--success); }
-[data-product-shell] [data-application-status="REJECTED"] { --badge-accent: var(--destructive); }
-[data-product-shell] [data-application-status="WAITLISTED"] { --badge-accent: var(--warning); }
-[data-product-shell] [data-application-status="INTERVIEWING"] { --badge-accent: var(--interview); }
-[data-product-shell] [data-application-status="IN_REVIEW"] { --badge-accent: var(--info); }
 [data-product-shell] .ir-overview { display: flex; flex-wrap: wrap; gap: 1.25rem; padding-block: .75rem; border-block: 1px solid var(--border); }
 [data-product-shell] .ir-overview > div { padding: 0; border: 0; background: transparent; }
 [data-product-shell] .ir-room-card { border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); box-shadow: var(--oc-content-shadow); }
@@ -20,24 +13,23 @@
 [data-product-shell] .ir-room-slots .is-full { background: var(--muted); }
 [data-product-shell] .ir-booking { border: 0; box-shadow: var(--oc-shadow-surface); border-radius: var(--oc-radius-lg); }
 [data-product-shell] .ir-booking-intro { background: var(--oc-surface-blue); }
-[data-product-shell] .ir-calendar button[aria-pressed="true"], [data-product-shell] .ir-times button[aria-pressed="true"] { background: var(--primary); color: var(--primary-foreground); outline: 2px solid var(--brand-orange); outline-offset: 2px; }
+[data-product-shell] .ir-calendar button[aria-pressed="true"], [data-product-shell] .ir-times button[aria-pressed="true"] { background: var(--primary); color: var(--primary-foreground); outline: 2px solid var(--ring); outline-offset: 2px; }
 [data-product-shell] .ir-empty { border: 0; background: var(--oc-surface-blue); }
 [data-product-shell] .oc-scheduling-location { border: 1px solid var(--oc-content-edge); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); border-radius: var(--oc-content-radius); }
-[data-workspace-detail] { font-family: var(--oc-font-sans); }
-[data-workspace-detail] .oc-focused-interview { --oc-focus-header-height: 4rem; background: var(--background); color: var(--foreground); }
-[data-workspace-detail] .oc-focused-interview > header { background: var(--oc-rail); color: var(--oc-rail-text); border: 0; padding: .75rem 1.5rem; }
-[data-workspace-detail] .oc-focused-interview > header :is(.text-muted-foreground,.text-primary) { color: var(--oc-rail-muted); }
-[data-workspace-detail] .oc-focused-interview > header button { color: var(--oc-rail-text); }
-[data-workspace-detail] .oc-focused-interview > header button:hover { background: var(--oc-rail-selected); }
-[data-workspace-detail] .oc-focused-interview > header [data-slot="button"].border { border-color: var(--oc-rail-muted); background: transparent; }
-[data-workspace-detail] .oc-focused-interview .oc-interview-columns > [aria-label="Candidate context"] { background: var(--oc-surface-blue); border-color: transparent; }
-[data-workspace-detail] .oc-focused-interview .oc-active-question { border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); box-shadow: var(--oc-content-shadow); padding: var(--oc-density-inset); }
-[data-workspace-detail] .oc-focused-interview .oc-active-question h2 { font-family: var(--oc-font-display); font-size: clamp(1.25rem,1.8vw,1.5rem); font-weight: 400; line-height: 1.35; }
-[data-workspace-detail] .oc-focused-interview .oc-active-question textarea { background: var(--background); border-color: var(--input); border-radius: var(--oc-radius-md); padding: 1rem; line-height: 1.75; }
-[data-workspace-detail] .oc-focused-interview .oc-question-agenda { border: 0; background: transparent; padding: 0; }
-[data-workspace-detail] .oc-focused-interview .oc-question-agenda [aria-current="step"] { background: var(--brand-subtle); color: var(--brand-ink); }
-[data-workspace-detail] .oc-focused-interview #interview-library { background: var(--card); border: 0; }
-[data-workspace-detail] .oc-focused-interview #interview-library li { border: 0; background: var(--background); border-radius: var(--oc-radius-md); padding: 1rem; }
+.oc-interview-room .oc-focused-interview { --oc-focus-header-height: 4rem; background: var(--background); color: var(--foreground); }
+.oc-interview-room .oc-focused-interview > header { background: var(--oc-rail); color: var(--oc-rail-text); border: 0; padding: .75rem 1.5rem; }
+.oc-interview-room .oc-focused-interview > header :is(.text-muted-foreground,.text-primary) { color: var(--oc-rail-muted); }
+.oc-interview-room .oc-focused-interview > header button { color: var(--oc-rail-text); }
+.oc-interview-room .oc-focused-interview > header button:hover { background: var(--oc-rail-selected); }
+.oc-interview-room .oc-focused-interview > header [data-slot="button"].border { border-color: var(--oc-rail-muted); background: transparent; }
+.oc-interview-room .oc-focused-interview .oc-interview-columns > [aria-label="Candidate context"] { background: var(--oc-surface-blue); border-color: transparent; }
+.oc-interview-room .oc-focused-interview .oc-active-question { border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); box-shadow: var(--oc-content-shadow); padding: var(--oc-density-inset); }
+.oc-interview-room .oc-focused-interview .oc-active-question h2 { font-family: var(--oc-font-display); font-size: clamp(1.25rem,1.8vw,1.5rem); font-weight: 400; line-height: 1.35; }
+.oc-interview-room .oc-focused-interview .oc-active-question textarea { background: var(--background); border-color: var(--input); border-radius: var(--oc-radius-md); padding: 1rem; line-height: 1.75; }
+.oc-interview-room .oc-focused-interview .oc-question-agenda { border: 0; background: transparent; padding: 0; }
+.oc-interview-room .oc-focused-interview .oc-question-agenda [aria-current="step"] { background: var(--brand-subtle); color: var(--brand-ink); }
+.oc-interview-room .oc-focused-interview #interview-library { background: var(--card); border: 0; }
+.oc-interview-room .oc-focused-interview #interview-library li { border: 0; background: var(--background); border-radius: var(--oc-radius-md); padding: 1rem; }
 .oc-voting-stage { background: var(--background); }
 .oc-voting-stage > header { background: var(--oc-rail); color: var(--oc-rail-text); border: 0; }
 .oc-voting-stage > header :is(.text-neutral-500,.text-muted-foreground) { color: var(--oc-rail-muted); }
@@ -48,18 +40,18 @@
 .oc-voting-stage .oc-voting-candidate > div:first-child [data-slot="avatar"] { background: var(--oc-surface-blue); border: 0; }
 .oc-voting-stage progress, .oc-voting-stage [data-slot="progress"] { transition: width var(--oc-duration-ui) var(--oc-ease-out); }
 .oc-voting-pad { background: var(--background); font-family: var(--oc-font-sans); }
-.oc-voting-pad button[aria-pressed="true"] { outline: 3px solid var(--brand-orange); outline-offset: 3px; }
+.oc-voting-pad button[aria-pressed="true"] { outline: 3px solid var(--ring); outline-offset: 3px; }
 @media (max-width: 639px) {
-  [data-workspace-detail] .oc-focused-interview > header { padding: 1rem; }
-  [data-workspace-detail] .oc-focused-interview .oc-active-question, .oc-voting-stage .oc-voting-candidate { padding: 1.25rem; }
+  .oc-interview-room .oc-focused-interview > header { padding: 1rem; }
+  .oc-interview-room .oc-focused-interview .oc-active-question, .oc-voting-stage .oc-voting-candidate { padding: 1.25rem; }
   [data-product-shell] .oc-applicant-board { display: grid; grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: 88%; overflow-x: auto; padding: .25rem .25rem 1rem; scroll-snap-type: x mandatory; }
   [data-product-shell] .oc-applicant-board > section { scroll-snap-align: start; }
 }
 [data-product-shell] .oc-interview-slot { border: 0; border-left: 3px solid var(--success); background: var(--oc-surface-sage); border-radius: var(--oc-radius-md); }
 [data-product-shell] .oc-interview-slot[data-slot-status="partial"] { background: var(--oc-surface-blue); border-color: var(--info); }
 [data-product-shell] .oc-interview-slot[data-slot-status="full"] { background: var(--muted); border-color: var(--muted-foreground); }
-[data-product-shell] .oc-member-directory > details { border: 0; border-radius: var(--oc-radius-md); background: var(--card); box-shadow: var(--oc-shadow-surface); }
-[data-product-shell] .oc-member-directory > ul > li { background: var(--card); border: 0; border-radius: var(--oc-radius-md); box-shadow: var(--oc-shadow-surface); padding-inline: 1rem; }
+[data-product-shell] .oc-member-directory > details { border: 0; border-radius: var(--oc-radius-md); background: var(--oc-content-surface); box-shadow: var(--oc-shadow-surface); }
+[data-product-shell] .oc-member-directory > ul > li { background: var(--oc-content-surface); border: 0; border-radius: var(--oc-radius-md); box-shadow: var(--oc-shadow-surface); padding-inline: 1rem; }
 [data-product-shell] .oc-member-directory > ul { display: grid; gap: .75rem; border: 0; }
 [data-product-shell] .oc-club-settings #related-club-settings + ul { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; }
 [data-product-shell] .oc-club-settings #related-club-settings + ul li { border: 0; }
@@ -69,6 +61,7 @@
 .oc-applicant-person [data-slot="avatar"] { flex-shrink: 0; width: 2rem; height: 2rem; border-radius: var(--oc-radius-md); }
 .oc-applicant-person [data-slot="avatar-fallback"] { background: var(--oc-surface-blue); color: var(--primary); font-size: var(--oc-size-11); }
 .oc-applicant-person > span:last-child { overflow-wrap: anywhere; }
+.oc-applicant-review-hidden { display: inline-flex; align-items: center; gap: .375rem; white-space: nowrap; }
 .oc-applicant-review { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: .5rem; font-size: var(--oc-text-caption); color: var(--muted-foreground); }
 .oc-applicant-review strong { display: inline-flex; align-items: baseline; gap: .15rem; padding: 0; background: transparent; color: inherit; border-radius: 0; font-size: var(--oc-text-small); font-weight: 600; font-variant-numeric: tabular-nums; }
 .oc-applicant-review strong > span { font-size: var(--oc-size-10); font-weight: 400; }
@@ -78,13 +71,13 @@
 [data-product-shell] .oc-organization-checklist[data-density="compact"] > div p:last-child { margin-top: .25rem; }
 [data-product-shell] .oc-organization-checklist[data-density="compact"] > details { margin-top: .5rem; }
 [data-product-shell] .oc-organization-checklist[data-density="compact"] > a { margin-top: .5rem; padding-block: .5rem; }
-[data-workspace-detail] .oc-focused-interview .oc-interview-columns { gap: var(--oc-density-gap); }
+.oc-interview-room .oc-focused-interview .oc-interview-columns { gap: var(--oc-density-gap); }
 .oc-voting-stage > header { padding-block: .75rem; }
 .oc-voting-stage .oc-voting-candidate > :not(:last-child) { margin-bottom: 1rem; }
 .oc-voting-stage .oc-voting-candidate dl { padding-block: .75rem; }
 
 [data-product-shell] .oc-interviewer-hub .oc-availability-summary { font-size: var(--oc-text-card); letter-spacing: normal; }
 [data-product-shell] .oc-interviewer-hub > :not(:last-child) { margin-bottom: var(--oc-density-gap); }
-[data-product-shell] .oc-interviewer-hub section { border-color: var(--border); border-radius: var(--oc-radius-lg); background: var(--card); }
+[data-product-shell] .oc-interviewer-hub section { border-color: var(--oc-content-edge); border-radius: var(--oc-radius-lg); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow) }
 [data-product-shell] .oc-interviewer-hub .bg-black { background: var(--primary); }
 [data-product-shell] .oc-interviewer-hub .text-amber-700 { color: var(--warning); }

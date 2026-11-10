@@ -4,24 +4,27 @@ import { ApplicationManagementCard } from "@/components/applications/application
 import { ApplicationStatusCard } from "@/components/applications/application-status-card"
 import { ApplicationStatusDetail } from "@/components/applications/application-status-detail"
 import { useSearchParams } from "next/navigation"
-import { PageHeader } from "@/components/product/page-header"
+import { PageHeader } from "@/components/ui/page-header"
 import { MetricStrip } from "@/components/product/metric-strip"
 import { SegmentedControl } from "@/components/product/segmented-control"
 import { EmptyState } from "@/components/ui/empty-state"
 import { applicationAttachmentUrl } from "@/lib/student-applications"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { ArrowLeft, ArrowRight, RefreshCw, FilePenLine } from "@/components/icons"
+import { ArrowLeft, ArrowRight, FilePenLine } from "@/components/icons"
+import { useRevalidate } from "@/hooks/use-revalidate"
 import { getStudentApplications } from "@/lib/workspace-api"
 import { useDemoMode } from "@/contexts/demo-context"
 import { useAuth } from "@/contexts/auth-context"
 import { useApplicationState } from "@/lib/application-state"
-import { applicationMatchesStatusFilter, compareApplicationStatus, type StatusFilter } from "@/lib/application-presentation"
+import { compareApplicationStatus } from "@/lib/application-presentation"
+import { applicationStage, applicationStages, initialApplicationStage, isApplicationStage, stageCounts } from "@/lib/application-stages"
+import { pluralize } from "@/lib/copy/terms"
 import "@/components/applications/application-tracker.css"
 import type { ViewId } from "@/lib/views"
 import type { TrackerStatus } from "@/lib/data"
 import { Button } from "@/components/ui/button"
-import { StatusBadge } from "@/components/status-badge"
+import { StatusPill } from "@/components/ui/status-pill"
 import { recruitmentDate } from "@/lib/recruitment-presentation"
 import { LoadingState } from "@/components/ui/loading-state"
 import { ClubLogo } from "@/components/club-logo"
@@ -29,6 +32,7 @@ import {
   ApplicationForm,
   type StudentApplication,
 } from "@/components/applications/application-form"
+import { DEFAULT_CLUB_COLOR } from "@/lib/club-colors"
 
 const trackerLabels: Record<string, TrackerStatus> = {
   DRAFTING: "Drafting",
@@ -64,7 +68,8 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
   const [activeId, setActiveId] = useState<string | null>(null)
   const [, setDirty] = useState(false)
   const [working, setWorking] = useState(false)
-  const [filter, setFilter] = useState("All")
+  const [filter, setFilter] = useState("")
+  const requestedTab = useSearchParams().get("tab")
   const [notice, setNotice] = useState("")
   const content = useRef<HTMLDivElement>(null)
   const lastOpened = useRef<string | null>(null)
@@ -83,7 +88,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
           logoText: app.club.name.slice(0, 2),
           logoUrl: app.club.logoUrl,
           marketing: app.club.marketing,
-          color: app.club.color || "#142d4e",
+          color: app.club.color || DEFAULT_CLUB_COLOR,
           status: trackerLabels[app.status],
           questionsCompleted: app.answers.filter((answer) => answer.response.trim()).length,
           questionsTotal: app.club.questions.length,
@@ -129,6 +134,30 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
     clearApplicationFocus()
   }, [applications, pending, focusApplicationClubId, applicationId, clearApplicationFocus, scope])
   const app = applications.find((item) => item.id === activeId)
+  // No Refresh button: reload quietly (keeping the current view) when the person returns or after a change elsewhere.
+  // Conditions are re-checked when the response lands (refs), not only when the read starts:
+  // a save in flight drops it, and an open draft always keeps its own object and revision.
+  const latest = useRef({ applications, activeId, working }); latest.current = { applications, activeId, working }
+  const revalidateTicket = useRef(0)
+  const [syncNote, setSyncNote] = useState("")
+  const revalidate = useCallback(async (explicit = false) => {
+    const ticket = ++revalidateTicket.current
+    try {
+      const apps = await getStudentApplications()
+      const now = latest.current
+      if (ticket !== revalidateTicket.current || now.working) return
+      const draft = now.applications.find(item => item.id === now.activeId && item.status === "DRAFTING")
+      const next = draft ? apps.map(item => item.id === draft.id ? draft : item) : apps
+      setApplications(next)
+      sync(next)
+      setSyncNote("")
+    } catch {
+      if (ticket !== revalidateTicket.current) return
+      setSyncNote("Couldn’t update your applications. Showing what was last loaded.")
+      if (explicit) setNotice("Couldn’t refresh just now. Please try again in a moment.")
+    }
+  }, [sync])
+  useRevalidate(revalidate, { enabled: !!user && !pending && !error && !working && app?.status !== "DRAFTING", scopes: ["applications"] })
   function leave(action: () => void) {
     if (working) return
     void flushEditors().then(() => { setDirty(false); action() }).catch(() => {})
@@ -184,12 +213,12 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
     leave(() => onNavigate?.(view))
   }
   function bookingChanged() {
-    void getStudentApplications().then(apps => { setApplications(apps); sync(apps) }).catch(() => setNotice("Booking saved. Refresh status to update the application summary."))
+    void getStudentApplications().then(apps => { setApplications(apps); sync(apps) }).catch(() => setNotice("Interview saved. Your application will update shortly."))
   }
-  if (app && statusView) return <div ref={content} className="oc-application-detail mx-auto max-w-3xl space-y-5 pb-6"><ApplicationStatusDetail application={app} notice={notice} onBack={() => { setActiveId(null); setNotice("") }} onResponses={() => openRelated("tracker")} onCalendar={() => onNavigate?.("calendar")} onRefresh={() => setRetry(value => value + 1)} onBookingChanged={bookingChanged} onMyClubs={() => onNavigate?.("my-clubs")} /></div>
+  if (app && statusView) return <div ref={content} className="oc-application-detail max-w-[var(--oc-reading-width)] space-y-5 pb-6"><ApplicationStatusDetail application={app} notice={notice} onBack={() => { setActiveId(null); setNotice("") }} onResponses={() => openRelated("tracker")} onCalendar={() => onNavigate?.("calendar")} onRefresh={() => void revalidate(true)} onBookingChanged={bookingChanged} onMyClubs={() => onNavigate?.("my-clubs")} /></div>
   if (app)
     return (
-      <div ref={content} className={`oc-application-detail mx-auto pb-8 ${app.status === "DRAFTING" ? "oc-writing-workspace" : "max-w-3xl space-y-7"}`}>
+      <div ref={content} className={`oc-application-detail pb-8 ${app.status === "DRAFTING" ? "oc-writing-workspace" : "max-w-[var(--oc-reading-width)] space-y-7"}`}>
         <Button
           variant="ghost"
           size="sm"
@@ -209,7 +238,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
           <ClubLogo
             clubId={app.clubId}
             logoUrl={app.club.logoUrl} marketing={app.club.marketing}
-            color={app.club.color || "#142d4e"}
+            color={app.club.color || DEFAULT_CLUB_COLOR}
             text={app.club.name.slice(0, 2)}
             size="md"
           />
@@ -217,9 +246,9 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
             <p className="text-xs font-medium text-muted-foreground">
               Your application
             </p>
-            <h1 tabIndex={-1} className="oc-page-title break-words outline-none">{app.club.name}</h1>
+            <PageHeader title={app.club.name} focusable />
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-              <StatusBadge status={app.status} />
+              <StatusPill status={app.status} />
               <p className="text-xs text-muted-foreground">
                 {app.submittedAt
                   ? `Submitted ${date(app.submittedAt)}`
@@ -282,16 +311,6 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
               )}
             </section>
             <div className="flex flex-wrap gap-3 border-t border-border pt-6">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setActiveId(null)
-                  setRetry((value) => value + 1)
-                }}
-              >
-                <RefreshCw className="size-4" />
-                Refresh application
-              </Button>
               <Button variant="ghost" onClick={() => onNavigate?.("explore")}>
                 Explore clubs
                 <ArrowRight className="size-4" />
@@ -301,29 +320,33 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
         )}
       </div>
     )
-  const statusFilters: StatusFilter[] = ["All", "Needs attention", "Upcoming interviews", "In progress", "Decisions"]
-  const submitted = applications.filter(item => item.status !== "DRAFTING")
-  const visible = statusView ? submitted.filter(item => applicationMatchesStatusFilter(item, filter as StatusFilter, now)).sort((a, b) => compareApplicationStatus(a, b, now) || a.club.name.localeCompare(b.club.name))
-    : applications.filter(item => filter === "All" || (filter === "Drafts" ? item.status === "DRAFTING" : item.status !== "DRAFTING")).sort((a, b) => Number(b.status === "DRAFTING") - Number(a.status === "DRAFTING") || a.club.name.localeCompare(b.club.name))
+  // One page, four stages: the same tabs and counts as the Home "Your applications" card.
+  const counts = stageCounts(applications.map(item => item.status))
+  // The old Status view (scope "status") opens on the first submitted stage with applications.
+  const stage = isApplicationStage(filter) ? filter : initialApplicationStage(requestedTab, counts, { submittedOnly: scope === "status" })
+  const choose = (next: string) => {
+    setFilter(next)
+    if (typeof window === "undefined" || !window.location?.href || !window.history) return
+    const url = new URL(window.location.href); url.searchParams.set("tab", next); window.history.replaceState(window.history.state, "", url)
+  }
+  const visible = applications.filter(item => applicationStage(item.status) === stage)
+    .sort((a, b) => stage === "drafts" ? a.club.name.localeCompare(b.club.name) : compareApplicationStatus(a, b, now) || a.club.name.localeCompare(b.club.name))
   function open(item: StudentApplication) { lastOpened.current = item.id; setActiveId(item.id); setNotice("") }
   return (
-    <div ref={content} className="oc-applications mx-auto max-w-5xl space-y-5" data-application-scope={scope}>
-      <PageHeader density="expressive" title={statusView ? "Status" : "Applications"} description={statusView ? "Where things stand, and what to do next." : "Work on your drafts, check requirements, and review submitted responses."} action={<Button variant="ghost" size="sm" onClick={() => setRetry(value => value + 1)}><RefreshCw className="size-3.5" />Refresh</Button>} />
-      {applications.length > 0 && !statusView && <MetricStrip label="Application management" items={[
-        { label: "drafts", value: applications.filter(item => item.status === "DRAFTING").length },
-        { label: "submitted", value: submitted.length },
-      ]} />}
-      {!applications.length || statusView && !submitted.length ? (
-        <EmptyState icon={<FilePenLine />} title={statusView ? "No submitted applications yet." : "No applications yet."} description={statusView ? "Submitted applications will appear here with their review progress, interview details, and decisions." : "Explore clubs and start an application. Manage your drafts and submissions here."} action={<Button onClick={() => onNavigate?.(statusView && applications.length ? "tracker" : "explore")}>{statusView && applications.length ? "Continue applications" : "Discover clubs"}<ArrowRight className="size-4" /></Button>} />
+    <div ref={content} className="oc-applications max-w-[var(--oc-content-width)] space-y-5" data-application-scope={scope}>
+      <PageHeader density="expressive" title="Applications" description="Your drafts, applications in review, interviews and decisions." />
+      {!applications.length ? (
+        <EmptyState icon={<FilePenLine />} title="No applications yet." description="Explore clubs and start an application. Your drafts and submissions appear here." action={<Button onClick={() => onNavigate?.("explore")}>Explore clubs</Button>} />
       ) : (
         <>
-          <SegmentedControl animated={!statusView} label={statusView ? "Filter application status" : "Filter applications"} value={filter} onChange={setFilter} options={statusView ? statusFilters.map(value => ({ value, label: `${value} (${submitted.filter(item => applicationMatchesStatusFilter(item, value, now)).length})` })) : ["All", "Drafts", "Submitted"].map(label => ({ label, value: label }))} />
-          {statusView && <p className="text-xs text-muted-foreground">Current rounds are recorded by each club. Later rounds are shown as context, not confirmed invitations.</p>}
-          <p role="status" className="sr-only">{visible.length} {visible.length === 1 ? "application" : "applications"} shown</p>
-          <ul className={statusView ? "oc-status-list" : "oc-application-management-list"}>
-            {visible.map(item => <li key={item.id}>{statusView ? <ApplicationStatusCard application={item} now={now} onOpen={() => open(item)} /> : <ApplicationManagementCard application={item} deadline={demoDeadline(item.clubId)} sample={demo.isDemoEnabled} onOpen={() => open(item)} />}</li>)}
+          <SegmentedControl animated label="Application stage" value={stage} onChange={choose} options={applicationStages.map(item => ({ value: item.id, label: `${item.label} (${counts[item.id]})` }))} />
+          {stage !== "drafts" && <p className="text-xs text-muted-foreground">Current rounds are recorded by each club. Later rounds are shown as context, not confirmed invitations.</p>}
+          <p role="status" className="sr-only">{pluralize(visible.length, "application")} shown</p>
+          {syncNote && <p role="status" className="text-xs text-muted-foreground">{syncNote}</p>}
+          <ul className={stage === "drafts" ? "oc-application-management-list" : "oc-status-list"}>
+            {visible.map(item => <li key={item.id}>{stage === "drafts" ? <ApplicationManagementCard application={item} deadline={demoDeadline(item.clubId)} sample={demo.isDemoEnabled} onOpen={() => open(item)} /> : <ApplicationStatusCard application={item} now={now} onOpen={() => open(item)} />}</li>)}
           </ul>
-          {!visible.length && <p role="status" className="py-6 text-sm text-muted-foreground">No applications match this filter.</p>}
+          {!visible.length && <EmptyState role="status" density="compact" tone="outlined" title={`No applications in ${applicationStages.find(item => item.id === stage)!.label}.`} description={stage === "drafts" ? "You have no drafts in progress." : "None of your applications are at this stage right now."} />}
         </>
       )}
     </div>

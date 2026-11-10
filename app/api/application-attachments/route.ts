@@ -21,7 +21,8 @@ export async function GET(request: Request) {
         question: { type: "FILE_UPLOAD" },
         application: { OR: [
           { studentId: user.id },
-          { status: { not: "DRAFTING" }, round: { anonymousReview: false }, club: { members: { some: {
+          // Reviewers of a suspended club lose access like every other club workspace route.
+          { status: { not: "DRAFTING" }, round: { anonymousReview: false }, club: { suspendedAt: null, members: { some: {
             userId: user.id, status: "ACTIVE", OR: [{ isOwner: true }, { permissions: { has: "applicants.identify" } }],
           } } } },
         ] },

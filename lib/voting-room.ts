@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {meetingDetailsSchema} from "@/lib/voting-session-setup";
 import { votingDisplaySchema, defaultVotingDisplay } from "@/lib/voting-presentation";
+import { votingRulesSchema } from "@/lib/voting-rules";
 
 export const roomChoice = z.enum(["ACCEPT", "HOLD", "REJECT"]);
 export const storedChoice = { ACCEPT: "PASS", HOLD: "HOLD", REJECT: "NOT_PASS" } as const;
@@ -8,7 +9,9 @@ export function publicChoice(value: string | null):"ACCEPT"|"HOLD"|"REJECT"|"UNR
 export const roomScope = z.object({ clubId: z.string().uuid(), sessionId: z.string().uuid() }).strict();
 export const liveRoomFields=["photo","name","major","academicYear","gpa","sat","act","resumeHighlight","interviewScore","finalInterviewThoughts","additionalObservations"] as const;
 export type LiveRoomField=typeof liveRoomFields[number];
-export const roomPresentationSchema=z.object({fields:z.array(z.enum(liveRoomFields)).max(liveRoomFields.length).refine(v=>new Set(v).size===v.length),highlights:z.record(z.string().uuid(),z.string().uuid()).default({}),meeting:meetingDetailsSchema.optional()}).strict();
+export const roomPresentationSchema=z.object({fields:z.array(z.enum(liveRoomFields)).max(liveRoomFields.length).refine(v=>new Set(v).size===v.length),highlights:z.record(z.string().uuid(),z.string().uuid()).default({}),meeting:meetingDetailsSchema.optional(),
+  /** Absent means leader-confirmed voting (the original behaviour). */
+  rules:votingRulesSchema.optional()}).strict();
 export function roomDisplayConfig(fields:LiveRoomField[]){return {version:1 as const,fields:liveRoomFields.filter((f):f is Exclude<LiveRoomField,"resumeHighlight"|"interviewScore"|"finalInterviewThoughts"|"additionalObservations">=>fields.includes(f)&&!["resumeHighlight","interviewScore","finalInterviewThoughts","additionalObservations"].includes(f))};}
 export function liveRoomPath(clubId:string,sessionId:string,view:"leader"|"present"|"member"="member",demo=false){return `/voting/rooms/${encodeURIComponent(sessionId)}?clubId=${encodeURIComponent(clubId)}&view=${view}${demo?"&demo=1":""}`;}
 export const createRoomSchema = roomScope.extend({
@@ -20,13 +23,22 @@ export const createRoomSchema = roomScope.extend({
   presentationOptions:roomPresentationSchema.optional(), notifyVoters:z.boolean().optional(),
 });
 export const roomCommandSchema = roomScope.extend({ requestId: z.string().uuid(), revision: z.number().int().nonnegative(),
-  action: z.enum(["START", "OPEN_VOTING", "CLOSE_VOTING", "CONFIRM", "ACCEPT_WITHOUT_VOTE", "ADVANCE", "NEXT_PASS", "END", "FINALIZE", "CORRECT", "DECIDE_AND_ADVANCE", "PASS_WITHOUT_VOTE_AND_ADVANCE", "UNDO_DECISION"]),
+  action: z.enum(["START", "OPEN_VOTING", "CLOSE_VOTING", "CONFIRM", "ACCEPT_WITHOUT_VOTE", "ADVANCE", "NEXT_PASS", "END", "FINALIZE", "CORRECT", "DECIDE_AND_ADVANCE", "PASS_WITHOUT_VOTE_AND_ADVANCE", "DECIDE_WITHOUT_VOTE_AND_ADVANCE", "UNDO_DECISION"]),
   undoRequestId: z.string().uuid().optional(),
   confirmed: z.boolean().optional(),
   applicationId: z.string().uuid().optional(), passNumber: z.number().int().positive().optional(),
   choice: roomChoice.optional(), reason: z.string().trim().min(1).max(1000).optional(),
+  /** Threshold rooms: explicitly recount without voters who lost eligibility (reason required). */
+  resolveElectorate: z.boolean().optional(),
+  /** Database time the leader's room snapshot was read (snapshot.viewedAt); bounds the ballot-only drift check. */
+  viewedAt: z.string().datetime().optional(),
+  /** Server HMAC binding viewedAt to that snapshot's session, revision and viewer (snapshot.viewToken). */
+  viewToken: z.string().regex(/^[a-f0-9]{64}$/).optional(),
 });
 export const roomBallotSchema = roomScope.extend({ requestId: z.string().uuid(), passNumber: z.number().int().positive(), applicationId: z.string().uuid(), choice: roomChoice, ballotRevision: z.number().int().nonnegative().nullable() });
+/** The room moved to another applicant after this viewer's last snapshot: a normal race, not a failure. */
+export class VotingPresentationChanged extends Error { readonly stale=true as const; constructor(message="Voting presentation changed. Reload the page to continue."){super(message);this.name="VotingPresentationChanged";} }
+export function isStalePresentation(value:unknown):value is {stale:true}{return !!value&&typeof value==="object"&&(value as {stale?:unknown}).stale===true;}
 export function uniqueSelection(values: string[]) { if (new Set(values).size !== values.length) throw Error("Duplicate selection."); }
 export type RoomEntry = { applicationId: string; passNumber?: number; position: number; ballotState: string; confirmedDecision: string | null; ballots: { memberId: string; decision: string; revision: number }[] };
 export function roomOutcomes(s: { candidates: { applicationId: string }[]; passes: { number: number; candidates: RoomEntry[] }[] }) {

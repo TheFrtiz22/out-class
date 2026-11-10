@@ -57,8 +57,8 @@ test('standalone labels, titles, alt and caller accessibility overrides are pres
 test('individual SSR imports render without React client context', async () => {
   // The package resolves require() to its client barrel, so test the actual ESM
   // modules used by Next.js separately from the CommonJS component harness.
-  const source = fs.readFileSync('components/icons.tsx', 'utf8')
-  const imports = [...source.matchAll(/from "(@phosphor-icons\/react\/dist\/ssr\/[^\"]+)"/g)].map(match => match[1])
+  const source = fs.readdirSync('components/icons').map(file => fs.readFileSync(`components/icons/${file}`, 'utf8')).join('\n')
+  const imports = [...new Set([...source.matchAll(/from "(@phosphor-icons\/react\/dist\/ssr\/[^\"]+)"/g)].map(match => match[1]))]
   assert.ok(imports.length > 90)
   for (const specifier of imports) {
     const glyphModule = await import(specifier)
@@ -68,4 +68,18 @@ test('individual SSR imports render without React client context', async () => {
   }
   const notice = fs.readFileSync('public/licenses/phosphor-icons-MIT.txt', 'utf8')
   assert.equal(notice, fs.readFileSync('node_modules/@phosphor-icons/react/LICENSE', 'utf8'))
+})
+
+test('each icon is its own module behind the shared list so pages bundle only icons they render', () => {
+  const barrel = fs.readFileSync('components/icons.tsx', 'utf8')
+  const files = fs.readdirSync('components/icons').filter(file => file !== 'factory.tsx')
+  const exported = [...barrel.matchAll(/^export \{ (\w+) \} from "@\/components\/icons\/(\w+)"$/gm)]
+  assert.deepEqual(exported.map(([, name, file]) => [name, file]).filter(([name, file]) => name !== file), [], 'module file names match their export')
+  assert.deepEqual(exported.map(([, name]) => `${name}.tsx`).sort(), files.sort(), 'every icon module is listed and every listed icon has a module')
+  assert.equal(exported.length, Object.keys(icons).length)
+  for (const file of files) {
+    const text = fs.readFileSync(`components/icons/${file}`, 'utf8')
+    assert.match(text, /^import \{ \w+Icon as Glyph \} from "@phosphor-icons\/react\/dist\/ssr\/\w+"\nimport \{ createIcon \} from "@\/components\/icons\/factory"\n\nexport const \w+ = \/\* @__PURE__ \*\/ createIcon\("\w+", Glyph\)\n$/, file)
+  }
+  assert.match(fs.readFileSync('next.config.mjs', 'utf8'), /components\[\\\\\/\]icons.*sideEffects: false/, 'icon modules stay side-effect-free for per-page bundling')
 })

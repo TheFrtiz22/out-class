@@ -1,7 +1,8 @@
 "use client"
 import { InterviewApplicantPanel } from "@/components/interview-applicant-panel"
 import "@/components/shell/responsive-workspace.css"
-import { PageHeader } from "@/components/product/page-header"
+import { PageHeader } from "@/components/ui/page-header"
+import { useFocusFrame } from "@/components/shell/focus-frame-context"
 import { InterviewKitSession } from "@/components/interview-kit-session"
 import { hasPermission } from "@/lib/permissions"
 
@@ -17,6 +18,7 @@ import { DemoInterviewGuide } from "@/components/demo-workspace"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import "./interview/interview-mode.css"
+import { NativeSelect } from "@/components/ui/native-select"
 
 type Pipeline = Awaited<ReturnType<typeof getInterviewWorkspace>>
 const selectStyle =
@@ -42,24 +44,16 @@ export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: ()
     if (!locked || window.confirm("Leave interview mode? Unsaved evaluation changes will be lost."))
       onExit?.()
   }
+  // The focus frame's Exit goes through the same unsaved-work check.
+  useFocusFrame({ onExit: onExit ? exit : undefined, club: membership ? { name: membership.club.name, color: membership.club.color } : null })
   return (
-    <main data-workspace-detail className="oc-interview-room min-h-dvh bg-background text-foreground">
-      {!membership && <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border bg-card px-5 py-4 sm:px-8">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" disabled={saving} onClick={exit}>
-            <ArrowLeft className="size-4" />
-            Back to interviews
-          </Button>
-          <span className="hidden h-5 border-l border-border sm:block" />
-          <p className="text-sm font-semibold">Interview mode</p>
-        </div>
-      </header>}
+    <div className="oc-interview-room">
       <DemoInterviewGuide />
       <div className="oc-interview-container mx-auto max-w-[1800px]">
         {loading ? (
           <WorkspaceLoading label="Preparing the interview workspace…" layout="interview" rows={3} />
         ) : !membership ? (
-          <div className="max-w-4xl space-y-3 px-5 py-8">
+          <div className="max-w-[var(--oc-content-width)] space-y-3 px-5 py-8">
             <PageHeader title="A focused space for a better conversation." />
             <p className="text-sm leading-7 text-muted-foreground">
               {user
@@ -71,10 +65,10 @@ export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: ()
             </Button>
           </div>
         ) : (
-          <InterviewSession key={`${membership.clubId}-${membership.id}-${user?.id}`} membership={membership} onLock={handleLock} onExit={exit} clubSelector={!scoped && <select aria-label="Interview club" disabled={locked} className={selectStyle} value={membership.clubId} onChange={event => setClubId(event.target.value)}>{memberships.map(item => <option key={item.clubId} value={item.clubId}>{item.club.name}</option>)}</select>} />
+          <InterviewSession key={`${membership.clubId}-${membership.id}-${user?.id}`} membership={membership} onLock={handleLock} onExit={exit} clubSelector={!scoped && <NativeSelect aria-label="Interview club" disabled={locked} className={selectStyle} value={membership.clubId} onChange={event => setClubId(event.target.value)}>{memberships.map(item => <option key={item.clubId} value={item.clubId}>{item.club.name}</option>)}</NativeSelect>} />
         )}
       </div>
-    </main>
+    </div>
   )
 }
 
@@ -127,6 +121,7 @@ function InterviewSession({
     return () => { current = false }
   }, [arrival, activeId, arrivalRetry, rememberApplicant])
   const round = data?.rounds.find((item) => item.id === roundId)
+  useFocusFrame({ task: round ? `Interview · ${round.name}` : undefined })
   const queue = interviewQueue(data?.applications || [], roundId)
   const active = queue.find((app) => app.id === activeId)
   const [kitDirty, setKitDirty] = useState(false)
@@ -164,7 +159,7 @@ function InterviewSession({
     getInterviewWorkspace(membership.clubId)
       .then(async (result) => {
         const query = new URLSearchParams(window.location?.search || "");
-        if (query.has("applicationId") || query.has("bookingId")) await resolveInterviewRoomEntry({ clubId: membership.clubId, applicationId: query.get("applicationId") || "", roundId: query.get("roundId") || "", ...(query.get("bookingId") ? { bookingId: query.get("bookingId")! } : {}), ...(query.get("slotId") ? { slotId: query.get("slotId")! } : {}), ...(query.get("roomId") ? { roomId: query.get("roomId")! } : {}) });
+        if (query.has("applicationId") || query.has("bookingId")) { const entry = await resolveInterviewRoomEntry({ clubId: membership.clubId, applicationId: query.get("applicationId") || "", roundId: query.get("roundId") || "", ...(query.get("bookingId") ? { bookingId: query.get("bookingId")! } : {}), ...(query.get("slotId") ? { slotId: query.get("slotId")! } : {}), ...(query.get("roomId") ? { roomId: query.get("roomId")! } : {}) }); if ("unavailable" in entry) throw Error(entry.unavailable) }
         if (current) {
           setData(result)
           const recovery = recoveredApplicant()
@@ -208,7 +203,7 @@ function InterviewSession({
       const q = new URLSearchParams(window.location.search);
       if (!q.get("applicationId") || document.hidden || pending) return;
       pending = true;
-      try { await resolveInterviewRoomEntry({ clubId: membership.clubId, applicationId: q.get("applicationId")!, roundId: q.get("roundId") || "", ...(q.get("bookingId") ? { bookingId: q.get("bookingId")! } : {}), ...(q.get("slotId") ? { slotId: q.get("slotId")! } : {}), ...(q.get("roomId") ? { roomId: q.get("roomId")! } : {}) }); }
+      try { const entry = await resolveInterviewRoomEntry({ clubId: membership.clubId, applicationId: q.get("applicationId")!, roundId: q.get("roundId") || "", ...(q.get("bookingId") ? { bookingId: q.get("bookingId")! } : {}), ...(q.get("slotId") ? { slotId: q.get("slotId")! } : {}), ...(q.get("roomId") ? { roomId: q.get("roomId")! } : {}) }); if ("unavailable" in entry) throw Error(entry.unavailable); }
       catch { if (current) { setData(null); setActiveId(""); setLoadError(true); } }
       finally { pending = false; }
     };
@@ -264,7 +259,7 @@ function InterviewSession({
       const fresh = await getInterviewWorkspace(membership.clubId)
       if (epoch !== navigation.current) return false
       const next = fresh.applications.find(app => app.id === destination.scope.applicationId && app.roundId === roundId && app.assignedRoundIds.includes(roundId) && !app.completedRoundIds.includes(roundId))
-      if (!next || !fresh.rounds.some(r => r.id === roundId && !r.archived)) throw Error("Destination no longer eligible.")
+      if (!next || !fresh.rounds.some(r => r.id === roundId && !r.archived)) throw Error("That round is no longer available.")
       const scope = destination.scope
       // Both actions enforce current access. Keep the submitted candidate visible
       // until the destination's own draft, snapshot and identity are all ready.
@@ -294,7 +289,7 @@ function InterviewSession({
   if (loadError || !data)
     return (
       <div role="alert" className="space-y-4 py-12">
-        <p>We couldn’t open this interview. The booking or your access may have changed.</p><Button variant="ghost" onClick={onExit}>Back to interviews</Button>
+        <p>We couldn’t open this interview. It may have changed, or you may no longer have access. Use Exit to return to your interviews.</p>
         <Button variant="outline" onClick={() => setRetry((value) => value + 1)}>
           Try again
         </Button>
@@ -305,13 +300,12 @@ function InterviewSession({
 
       {!active && <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border px-5 py-4 sm:px-8">
         <div className="flex flex-wrap items-end gap-3">
-          {!active && <Button variant="ghost" disabled={busy} onClick={onExit}><ArrowLeft className="size-4" />Back to interviews</Button>}
           {clubSelector}
           <div className="space-y-2">
             <Label htmlFor="interview-round">Round</Label>
-            <select
+            <NativeSelect
               id="interview-round"
-              className={`${selectStyle} block`}
+              className={`${selectStyle} block min-w-48`}
               disabled={busy}
               value={roundId}
               onChange={(event) => {
@@ -324,11 +318,11 @@ function InterviewSession({
                   {item.name}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </div>
           <div className="space-y-2">
             <Label htmlFor="interview-candidate">Candidate</Label>
-            <select
+            <NativeSelect
               id="interview-candidate"
               className={`${selectStyle} block w-full sm:w-64`}
               disabled={busy || !queue.length}
@@ -341,7 +335,7 @@ function InterviewSession({
                   {app.name}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </div>
         </div>
         <p className="text-xs text-muted-foreground">
@@ -359,8 +353,8 @@ function InterviewSession({
       </p>
       <p className="sr-only" role="status" aria-live="polite">{candidateAnnouncement}</p>
       {!active ? (
-        <div className="max-w-4xl space-y-3 px-5 py-8">
-          <h1 ref={heading} tabIndex={-1} className="text-xl font-medium">Choose an interview</h1>
+        <div className="max-w-[var(--oc-content-width)] space-y-3 px-5 py-8">
+          <PageHeader title="Choose an interview" titleRef={heading} focusable />
           <p className="text-sm leading-7 text-muted-foreground">
             {queue.length
               ? "Choose an assigned candidate to open their interview and your private question notes."
@@ -377,7 +371,7 @@ function InterviewSession({
         <div key={active.id} ref={candidateRoom} className="oc-interview-candidate">
           {round && <InterviewKitSession key={`${active.id}-${round.id}`} clubId={membership.clubId} applicationId={active.id} roundId={round.id} initialSession={prepared?.applicationId === active.id ? prepared.session : undefined} advancing={advancing} formRef={form} onState={handleKitState} onNextApplicant={nextApplicant} onReturnToList={returnToList}
 
-toolbar={() => <><span className="oc-room-brand">OutClass</span><Button type="button" variant="ghost" disabled={busy} onClick={returnToList}><ArrowLeft className="size-4" />Interviews</Button><p className="oc-room-context"><span>{membership.club.name}</span><span aria-hidden="true"> / </span><span>{round.name}</span></p></>}
+toolbar={() => <><Button type="button" variant="ghost" disabled={busy} onClick={returnToList}><ArrowLeft className="size-4" />Interviews</Button></>}
 context={<InterviewApplicantPanel clubId={membership.clubId} applicationId={active.id} roundId={round.id} initialPanel={prepared?.applicationId === active.id ? prepared.panel : undefined} />}
             onComplete={() => {
               setData(previous => previous ? { ...previous, applications: previous.applications.map(app => app.id === active.id ? { ...app, completedRoundIds: [...new Set([...app.completedRoundIds, round.id])] } : app) } : previous)
