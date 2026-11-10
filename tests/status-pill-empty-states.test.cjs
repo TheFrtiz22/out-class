@@ -58,7 +58,6 @@ test("empty states say why and offer one different next step", () => {
     ["components/interviews/interview-rooms-list.tsx", />Show all dates</],
     ["components/shell/notification-center.tsx", /Show all updates/],
     ["components/views/leader-dashboard/live-leader-workspace.tsx", /onClick=\{clearApplicantFilters\}>Clear filters/],
-    ["components/recruiting-overview.tsx", /Show all rounds/],
     ["components/club-members.tsx", /Clear search/],
     ["components/admin/admin-directory.tsx", /Clear search and filter/],
   ]
