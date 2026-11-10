@@ -49,6 +49,8 @@ export function canonicalClubWorkspaceQuery(input: URLSearchParams): URLSearchPa
     // Voting and letters used to be tools; they are Decisions tabs.
     if (tool === "voting") { set("tool", "decisions"); set("decisionTab", "voting") }
     if (tool === "letters" || tool === "decision-letters") { set("tool", "decisions"); set("decisionTab", "letters") }
+    // Scheduled Decisions was its own page; scheduled sends live in Decide's Send step.
+    if (tool === "scheduled-decisions") { set("tool", "decisions"); set("decisionTab", "letters") }
     // Anonymous Review and Auto-Reject Rules were rail drawers; they are sections of the Recruiting settings drawer on Applicants.
     if (tool === "rounds" || tool === "rules") { set("tool", "applicants"); set(RECRUITING_SETTINGS_PARAM, tool === "rounds" ? "anonymous" : "rules") }
     // Rejected Applicants is the Applicants list filtered to Rejected.
