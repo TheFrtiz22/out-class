@@ -35,7 +35,9 @@ export function projectVotingRoom(s: LiveRoom, m: Member, anonymous: boolean, ro
     history:s.passes.map(p=>({number:p.number,status:p.state,candidates:p.candidates.map(c=>{
       const own=c.ballots.find(b=>b.memberId===m.id),closed=c.ballotState==="CLOSED"||c.ballotState==="CONFIRMED";
       return {applicationId:c.applicationId,position:c.position,ballotState:c.ballotState,outcome:publicChoice(c.confirmedDecision),
-        // A leader decision made without (or despite) a vote; ballot totals stay separate.
+        // A leader decision made without (or despite) a vote; ballot totals stay separate. The stored flag
+        // covers decisions with no ballot; the override fallback covers decisions made after ballots were
+        // cast (the flag stays false there) and rows confirmed before 20261109150000.
         withoutVote:c.withoutVote||(!!c.override&&c.override===c.confirmedDecision),ownBallot:own?{choice:publicChoice(own.decision),revision:own.revision}:null,
         ...(closed?{totals:roomTally(c)}:{})};
     })})),

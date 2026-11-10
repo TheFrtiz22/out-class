@@ -286,14 +286,19 @@ export async function commandLiveVotingRoom(input:unknown) {
       case "DECIDE_WITHOUT_VOTE_AND_ADVANCE": {
         // Explicit leader decision without a vote. No ballot is created; any ballots
         // already cast are kept, and the outcome is recorded as a leader override that
-        // stays distinct from their totals. Opening/closing happen in this transaction,
-        // so a late ballot finds the instance closed and is refused.
+        // stays distinct from their totals. With no ballot, the instance is confirmed
+        // directly with withoutVote (no invented open time; an open instance keeps its
+        // real openedAt). With ballots, it is closed then confirmed. Either way a late
+        // ballot finds the instance no longer open and is refused.
         if(s.state!=="OPEN"||!current||!["PENDING","OPEN"].includes(current.ballotState)||!d.choice||d.choice==="HOLD"||!d.confirmed||!d.reason)
           throw new RoomConflict("CONFIRMATION_REQUIRED","Confirm Pass or Do not pass without a vote and give a reason.");
-        const now=new Date(),previousState=current.ballotState;
-        if(previousState==="PENDING")await updateEntry({ballotState:"OPEN",openedAt:now});
-        await updateEntry({ballotState:"CLOSED",closedAt:now});
-        await updateEntry({ballotState:"CONFIRMED",confirmedDecision:storedChoice[d.choice],confirmedBy:user.id,confirmedAt:now,override:storedChoice[d.choice],overrideBy:user.id,overrideAt:now});
+        const now=new Date(),previousState=current.ballotState,confirmed={ballotState:"CONFIRMED",confirmedDecision:storedChoice[d.choice],confirmedBy:user.id,confirmedAt:now,override:storedChoice[d.choice],overrideBy:user.id,overrideAt:now};
+        if(!current.ballots.length)await updateEntry({...confirmed,withoutVote:true,...(previousState==="OPEN"?{closedAt:now}:{})});
+        else{
+          if(previousState==="PENDING")await updateEntry({ballotState:"OPEN",openedAt:now});
+          await updateEntry({ballotState:"CLOSED",closedAt:now});
+          await updateEntry(confirmed);
+        }
         overridden=true;overrideAudit={withoutVote:true,previousState,ballotsCast:current.ballots.length};break;
       }
       case "DECIDE_AND_ADVANCE":
@@ -324,7 +329,8 @@ export async function commandLiveVotingRoom(input:unknown) {
         previousDecision=old.confirmedDecision;
         await tx.auditLog.create({data:{actorId:user.id,clubId:s.clubId,targetId:s.id,action:"voting.room.undo_authorized",details:{requestId:d.requestId,applicationId:old.applicationId,passNumber:s.currentPass,revision:s.revision,previousDecision}}});
         await tx.$executeRaw`SELECT set_config('outclass.voting_undo',${d.requestId},true)`;
-        await updateEntry({ballotState:old.withoutVote?"PENDING":"CLOSED",withoutVote:false,confirmedDecision:null,confirmedBy:null,confirmedAt:null,override:null,overrideBy:null,overrideAt:null},old);
+        // Never-opened instances return to PENDING; an instance that was opened returns CLOSED with its times.
+        await updateEntry({ballotState:old.openedAt?"CLOSED":"PENDING",withoutVote:false,confirmedDecision:null,confirmedBy:null,confirmedAt:null,override:null,overrideBy:null,overrideAt:null},old);
         await tx.$executeRaw`SELECT set_config('outclass.voting_undo','',true)`;
         await tx.votingPass.update({where:{sessionId_number:{sessionId:s.id,number:s.currentPass}},data:{state:"OPEN",completedAt:null}});
         Object.assign(patch,{activeApplicationId:old.applicationId,state:"OPEN"});break;
