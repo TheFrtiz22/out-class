@@ -101,7 +101,7 @@ button.oc-dt-card-open::after { content: ""; position: absolute; inset: 0; }
 
 /* Toolbar sort: "Sort: Field" pill plus the direction arrow, visible at every width. */
 .oc-sort-control { display: inline-flex; flex: 0 0 auto; align-items: center; gap: .125rem; }
-.oc-sort-control .oc-sort-direction { width: 2.5rem; height: 2.5rem; border-radius: 999px; }
+.oc-sort-control .oc-sort-direction { width: 2.5rem; height: 2.5rem; border-radius: var(--oc-radius-full); }
 
 @media (prefers-reduced-motion: reduce) { .oc-dt * { transition: none !important; } }
 @media (forced-colors: active) {
