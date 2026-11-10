@@ -539,3 +539,21 @@ test("platform layout shows recovery, not admin content or a login redirect, whe
   assert.match(html, /Admin temporarily unavailable/); assert.match(html, /ADMIN_ACCESS_CHECK_FAILED:/);
   assert.doesNotMatch(html, /protected admin content|private database details/);
 });
+
+test("platform error boundary keeps failures inside the admin shell with retry and an overview link, and reports them", () => {
+  const React = require("react"), path = require("node:path"), reported = [];
+  const file = path.resolve("app/(workspace)/platform/error.tsx");
+  const mod = { exports: {} };
+  new Function("require", "module", "exports", ts.transpileModule(fs.readFileSync(file, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText)(
+    (n) => n === "@/lib/report-client-error" ? { reportClientError: (e) => reported.push(e) }
+      : n === "@/components/ui/page-header" ? { PageHeader: ({ title }) => React.createElement("h1", null, title) }
+      : n === "@/components/ui/button" ? { Button: ({ children, asChild, onClick, ...props }) => asChild ? children : React.createElement("button", { ...props, "data-reset": String(!!onClick) }, children) }
+      : require(n), mod, mod.exports);
+  const html = require("react-dom/server").renderToStaticMarkup(React.createElement(mod.exports.default, { error: Object.assign(Error("private stack details"), { digest: "d" }), reset: () => {} }));
+  assert.match(html, /role="alert"/); assert.match(html, /data-reset="true"[^>]*>Try again/); assert.match(html, /href="\/platform"/);
+  assert.doesNotMatch(html, /private stack details|\/platform\/login/);
+  assert.match(fs.readFileSync(file, "utf8"), /useEffect\(\(\) => reportClientError\(error\), \[error\]\)/);
+  // A platform/loading.tsx would turn /platform/view-as's redirect into a second document; loaders stay per page.
+  assert.equal(fs.existsSync("app/(workspace)/platform/loading.tsx"), false);
+  assert.equal(fs.existsSync("app/(workspace)/platform/global-error.tsx"), false);
+});

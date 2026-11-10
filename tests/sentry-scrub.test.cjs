@@ -115,7 +115,7 @@ test('no SDK is loaded or bundled unless a DSN is configured; no replay; every b
     assert.doesNotMatch(read(file), /replayIntegration|Replay\(|feedbackIntegration/, `${file} adds no session replay or feedback widget`)
     if (file !== 'lib/sentry-scrub.ts') assert.match(read(file), /sentryOptions\(/, `${file} uses the shared scrubbed options`)
   }
-  for (const file of ['app/error.tsx', 'app/(focus)/error.tsx', 'app/global-error.tsx']) assert.match(read(file), /useEffect\(\(\) => reportClientError\(error\), \[error\]\)/)
+  for (const file of ['app/error.tsx', 'app/(focus)/error.tsx', 'app/(workspace)/platform/error.tsx', 'app/global-error.tsx']) assert.match(read(file), /useEffect\(\(\) => reportClientError\(error\), \[error\]\)/)
 })
 
 function realisticTransaction() {
