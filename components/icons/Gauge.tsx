@@ -1,4 +1,3 @@
-
 import { GaugeIcon as Glyph } from "@phosphor-icons/react/dist/ssr/Gauge"
 import { createIcon } from "@/components/icons/factory"
 
