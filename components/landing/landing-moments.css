@@ -20,10 +20,10 @@
 .oc-moment-row.oc-moment-quiet .oc-moment-strong { font-size: 13px; }
 .oc-moment-person { display: flex; align-items: center; gap: 16px; min-width: 0; }
 .oc-moment-person p { line-height: 1.3; }
-.oc-moment-person img { flex-shrink: 0; border-radius: 999px; object-fit: cover; border: 1px solid var(--border); }
+.oc-moment-person img { flex-shrink: 0; border-radius: var(--oc-radius-full); object-fit: cover; border: 1px solid var(--border); }
 .oc-moment-name { font-family: var(--oc-font-display); font-size: 28px; line-height: 1.15; color: var(--primary); }
 .oc-moment-tally { display: flex; flex-direction: column; gap: 8px; }
-.oc-moment-bar { display: flex; height: 10px; overflow: hidden; border-radius: 999px; background: var(--muted); }
+.oc-moment-bar { display: flex; height: 10px; overflow: hidden; border-radius: var(--oc-radius-full); background: var(--muted); }
 .oc-moment-bar [data-vote="pass"] { background: var(--primary); }
 .oc-moment-bar [data-vote="hold"] { background: var(--info); }
 .oc-moment-bar [data-vote="not-pass"] { background: var(--input); }
@@ -31,7 +31,7 @@
 .oc-moment-message { font-family: var(--oc-font-display); font-size: 30px; line-height: 1.2; color: var(--primary); }
 .oc-moment-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 /* Text in pill shapes: an illustration of the controls, not controls. */
-.oc-moment-action { display: inline-flex; flex: 1; align-items: center; justify-content: center; min-height: 46px; padding: 0 16px; border: 1px solid var(--border); border-radius: 999px; background: var(--card); color: var(--primary); font-size: 15px; font-weight: 600; white-space: nowrap; cursor: default; user-select: none; }
+.oc-moment-action { display: inline-flex; flex: 1; align-items: center; justify-content: center; min-height: 46px; padding: 0 16px; border: 1px solid var(--border); border-radius: var(--oc-radius-full); background: var(--card); color: var(--primary); font-size: 15px; font-weight: 600; white-space: nowrap; cursor: default; user-select: none; }
 .oc-moment-action[data-primary] { border-color: var(--primary); background: var(--primary); color: var(--primary-foreground); }
 
 /* Section headings on the canvas */

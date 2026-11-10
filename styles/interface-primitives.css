@@ -58,8 +58,8 @@ fieldset { min-inline-size: 0; }
 [data-button] > .oc-button-loading { position: absolute; inset: 0; margin: auto; }
 
 /* StatusPill: one application-state pill, colored from semantic tokens only. */
-.oc-status-pill { --pill-bg: var(--muted); --pill-fg: var(--muted-foreground); display: inline-flex; flex-shrink: 0; align-items: center; gap: .375rem; width: fit-content; padding: .1875rem .625rem; border-radius: 999px; background: var(--oc-glass-tint-sheen), var(--pill-bg); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pill-fg) 16%, transparent), var(--oc-glass-tint-highlight); color: var(--pill-fg); font-size: var(--oc-text-caption); font-weight: var(--oc-weight-semibold); line-height: 1.35; white-space: nowrap; }
-.oc-status-pill::before { content: ""; width: .375rem; height: .375rem; border-radius: 999px; background: currentColor; }
+.oc-status-pill { --pill-bg: var(--muted); --pill-fg: var(--muted-foreground); display: inline-flex; flex-shrink: 0; align-items: center; gap: .375rem; width: fit-content; padding: .1875rem .625rem; border-radius: var(--oc-radius-full); background: var(--oc-glass-tint-sheen), var(--pill-bg); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pill-fg) 16%, transparent), var(--oc-glass-tint-highlight); color: var(--pill-fg); font-size: var(--oc-text-caption); font-weight: var(--oc-weight-semibold); line-height: 1.35; white-space: nowrap; }
+.oc-status-pill::before { content: ""; width: .375rem; height: .375rem; border-radius: var(--oc-radius-full); background: currentColor; }
 .oc-status-pill[data-status="DRAFTING"] { --pill-bg: transparent; box-shadow: inset 0 0 0 1px var(--border); }
 .oc-status-pill[data-status="SUBMITTED"] { --pill-bg: var(--secondary); --pill-fg: var(--secondary-foreground); }
 .oc-status-pill[data-status="IN_REVIEW"] { --pill-bg: var(--info-subtle); --pill-fg: var(--info); }
@@ -86,7 +86,7 @@ fieldset { min-inline-size: 0; }
 .oc-date-picker-grid button[data-outside="true"] { color: var(--muted-foreground); }
 .oc-date-picker-grid button[aria-current="date"] { box-shadow: inset 0 0 0 1px var(--border); font-weight: var(--oc-weight-semibold); }
 .oc-date-picker-grid td[aria-selected="true"] button { background: var(--primary); color: var(--primary-foreground); }
-.oc-date-picker-grid button[data-marked="true"]::after { content: ""; position: absolute; bottom: .3rem; left: 50%; width: .25rem; height: .25rem; border-radius: 999px; background: currentColor; transform: translateX(-50%); }
+.oc-date-picker-grid button[data-marked="true"]::after { content: ""; position: absolute; bottom: .3rem; left: 50%; width: .25rem; height: .25rem; border-radius: var(--oc-radius-full); background: currentColor; transform: translateX(-50%); }
 .oc-date-picker-footer { display: flex; justify-content: space-between; gap: .5rem; margin-top: .5rem; padding-top: .5rem; border-top: 1px solid var(--border); }
 .oc-date-picker-footer button { min-height: 2.25rem; padding: 0 .625rem; border-radius: var(--oc-radius-md); color: var(--primary); font-size: var(--oc-text-small); font-weight: var(--oc-weight-medium); }
 
@@ -132,7 +132,7 @@ fieldset { min-inline-size: 0; }
    Layered so call-site utilities still win; every size keeps a 44px hit area. */
 @layer components {
   [data-button] {
-    position: relative; isolation: isolate; border: 1px solid transparent; border-radius: 999px; outline-offset: 2px;
+    position: relative; isolation: isolate; border: 1px solid transparent; border-radius: var(--oc-radius-full); outline-offset: 2px;
     transition: background-color var(--oc-glass-quick) var(--oc-glass-ease), border-color var(--oc-glass-quick) var(--oc-glass-ease), box-shadow var(--oc-glass-quick) var(--oc-glass-ease), transform var(--oc-glass-quick) var(--oc-glass-ease), opacity var(--oc-glass-quick) ease;
   }
   [data-button]::after { content: ""; position: absolute; inset-block: min(0px, calc((100% - 2.75rem) / 2)); inset-inline: min(0px, calc((100% - 2.75rem) / 2)); }
@@ -179,12 +179,12 @@ fieldset { min-inline-size: 0; }
   --segments: 2; --segment: 0;
   position: relative; isolation: isolate; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr);
   gap: 4px; height: 54px; min-height: 54px; max-width: 100%; padding: 4px; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: thin;
-  border: 1px solid var(--oc-glass-light-edge); border-radius: 999px;
+  border: 1px solid var(--oc-glass-light-edge); border-radius: var(--oc-radius-full);
   background: var(--oc-glass-light-material); box-shadow: var(--oc-glass-light-depth);
   -webkit-backdrop-filter: var(--oc-surface-glass-filter); backdrop-filter: var(--oc-surface-glass-filter);
 }
 [data-slot="tabs-list"][data-variant="segmented"] [data-slot="tabs-trigger"] {
-  min-width: 0; min-height: 44px; height: 44px; padding-inline: .875rem; border: 0; border-radius: 999px; overflow: hidden; text-overflow: ellipsis;
+  min-width: 0; min-height: 44px; height: 44px; padding-inline: .875rem; border: 0; border-radius: var(--oc-radius-full); overflow: hidden; text-overflow: ellipsis;
   color: var(--primary); background: transparent; font-size: 13px; font-weight: 500;
   transition: color var(--oc-glass-quick) var(--oc-glass-ease);
 }
@@ -197,7 +197,7 @@ fieldset { min-inline-size: 0; }
   [data-slot="tabs-list"][data-variant="segmented"]::before {
     content: ""; position: absolute; z-index: -1; top: 4px; bottom: 4px; left: 4px;
     width: calc((100% - 8px - (var(--segments) - 1) * 4px) / var(--segments));
-    border: 1px solid var(--oc-glass-pill-navy-edge); border-radius: 999px;
+    border: 1px solid var(--oc-glass-pill-navy-edge); border-radius: var(--oc-radius-full);
     background: var(--oc-glass-pill-navy);
     box-shadow: var(--oc-glass-pill-navy-depth);
     transform: translateX(calc(var(--segment) * (100% + 4px)));
@@ -231,7 +231,7 @@ fieldset { min-inline-size: 0; }
 .oc-tabs-indicator { display: none; }
 [data-slot="tabs-list"][data-variant="segmented"][data-measured="true"] .oc-tabs-indicator {
   display: block; position: absolute; z-index: -1; top: 4px; bottom: 4px; left: 0; width: var(--indicator-width, 0px);
-  border: 1px solid var(--oc-glass-pill-navy-edge); border-radius: 999px; background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth);
+  border: 1px solid var(--oc-glass-pill-navy-edge); border-radius: var(--oc-radius-full); background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth);
   transform: translateX(var(--indicator-x, 0px)); pointer-events: none;
   transition: transform 420ms var(--oc-glass-ease), width 420ms var(--oc-glass-ease);
 }
@@ -287,7 +287,7 @@ fieldset { min-inline-size: 0; }
   [data-variant="glass-navy"] :is([data-slot="input"], [data-slot="textarea"], [data-slot="select-trigger"]):focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; box-shadow: var(--focus-halo-outset) }
 
   [data-slot="switch"] {
-    position: relative; border: 1px solid var(--input); border-radius: 999px; background: var(--oc-glass-light-material); box-shadow: var(--oc-glass-field-depth);
+    position: relative; border: 1px solid var(--input); border-radius: var(--oc-radius-full); background: var(--oc-glass-light-material); box-shadow: var(--oc-glass-field-depth);
     outline-offset: 2px; transition: background-color var(--oc-glass-quick) var(--oc-glass-ease), border-color var(--oc-glass-quick) var(--oc-glass-ease);
   }
   [data-slot="switch"]::after { content: ""; position: absolute; inset: min(0px, calc((100% - 2.75rem) / 2)); }

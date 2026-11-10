@@ -25,8 +25,7 @@
   --oc-editorial-feature: clamp(1.75rem, 3.1vw, 2.75rem);
   --oc-editorial-section: clamp(1.4rem, 2.1vw, 1.875rem);
   --oc-editorial-gap: clamp(1.5rem, 3vw, 2.75rem);
-  --oc-editorial-radius: 1.5rem;
-  --oc-editorial-shadow: 0 12px 32px color-mix(in srgb, var(--school-primary) 6%, transparent);
+  --oc-editorial-radius: var(--oc-radius-2xl);
   --oc-editorial-rule: var(--border);
 
   /* Content geometry is shared across public forms, product and focused modes.
@@ -42,14 +41,14 @@
   --oc-content-soft: #f1f4f3;
   --oc-content-soft-blue: #eaf0f2;
   --oc-content-edge: var(--oc-surface-glass-edge);
-  --oc-content-radius: 1.125rem;
-  --oc-content-radius-small: .875rem;
+  --oc-content-radius: var(--oc-radius-lg);
+  --oc-content-radius-small: var(--oc-radius-lg);
   --oc-content-padding: clamp(1rem, 1.55vw, 1.5rem);
   --oc-content-gap: clamp(1rem, 1.6vw, 1.5rem);
-  --oc-content-shadow: var(--oc-surface-glass-depth);
+  --oc-content-shadow: var(--oc-elevation-surface);
   --oc-content-shadow-hover: 0 3px 8px color-mix(in srgb, var(--school-primary) 5%, transparent), 0 16px 30px -22px color-mix(in srgb, var(--school-primary) 22%, transparent);
   --oc-content-motion: 180ms;
-  --oc-overlay-radius: 1.5rem;
+  --oc-overlay-radius: var(--oc-radius-2xl);
   --background: #f6f5f1;
   --foreground: var(--school-primary);
   --card: #fffefa;
@@ -87,11 +86,23 @@
   --chart-3: #795617;
   --chart-4: #655080;
   --chart-5: #14243a;
-  --radius: 0.625rem;
-  --oc-radius-sm: .375rem;
-  --oc-radius-md: .625rem;
-  --oc-radius-lg: 1rem;
-  --oc-radius-xl: 1.375rem;
+  /* One radius scale (FE-8, owner decision 2026-11-09: consolidate at the current glass look). Every radius in
+     component CSS is a step of this scale; content, editorial and overlay radii are aliases of it. */
+  --oc-radius-sm: .375rem;   /*  6px inputs, chips, small controls */
+  --oc-radius-md: .625rem;   /* 10px buttons, list rows */
+  --oc-radius-lg: 1rem;      /* 16px panels, cards, sheets */
+  --oc-radius-xl: 1.375rem;  /* 22px feature cards, hero surfaces */
+  --oc-radius-2xl: 1.5rem;   /* 24px dialogs, overlays, editorial blocks */
+  --oc-radius-full: 999px;   /* pills, avatars, capsules */
+  --radius: var(--oc-radius-md);
+  /* Three elevation levels: surface (panels and cards; the glass depth), popover (menus, popovers,
+     toasts), modal (dialogs, sheets). Hover is a state of the surface level, not a level. Raised controls
+     inside a surface (active tab, board cards, list rows) keep a 1px contact shadow (--oc-shadow-surface),
+     a hairline edge cue, not an elevation, and it stays visible when the glass depth is turned off. */
+  --oc-elevation-surface: var(--oc-surface-glass-depth);
+  --oc-elevation-surface-hover: var(--oc-content-shadow-hover);
+  --oc-elevation-popover: var(--oc-shadow-popover);
+  --oc-elevation-modal: var(--oc-shadow-modal);
   --oc-shadow-surface: 0 1px 3px color-mix(in srgb, var(--school-primary) 5%, transparent);
   --oc-shadow-popover: 0 6px 12px color-mix(in srgb, var(--school-primary) 6%, transparent), 0 20px 56px color-mix(in srgb, var(--school-primary) 12%, transparent);
   --oc-shadow-modal: 0 24px 100px color-mix(in srgb, var(--school-primary) 22%, transparent);
@@ -230,7 +241,9 @@
   --oc-content-soft-blue: #1b2f44;
   --oc-content-edge: #2c4257;
   /* The live voting slide stays solid: no glass highlight on the projector. */
-  --oc-content-shadow: var(--oc-content-shadow-solid);
+  --oc-elevation-surface: var(--oc-content-shadow-solid);
+  /* Aliases resolve where they are declared, so redeclare them in this scope to pick up the solid level. */
+  --oc-content-shadow: var(--oc-elevation-surface);
 }
 
 /* Another school's colours override only the school layer. Set data-school on <html>: the semantic tokens
