@@ -96,6 +96,7 @@ function entryHarness({ session = null, authError = null, cookies = {}, account 
     "@/lib/demo/access": { DEMO_COOKIE: "demo", canAccessDemo: () => demoAllowed },
     "@/lib/launch-clubs": { getLaunchClubs: async () => [] },
     "@/actions/applications": { getStudentDashboardData: async () => { calls.dashboard++; return { applications: ["private"] } } },
+    "@/actions/club-directory": { getClubDirectory: async () => { calls.directory = (calls.directory ?? 0) + 1; return { clubs: [{ id: "public-club" }] } } },
     "@/utils/prisma": { prisma: {
       user: { findUnique: async () => { calls.prisma++; return { disabledAt: account.disabledAt ?? null } } },
       studentProfile: { findUnique: async () => { calls.prisma++; return account.profile === false ? null : { id: "profile" } } },
@@ -283,4 +284,33 @@ test("FE-4: / reads the session with the cookie jar, and the dashboard with the 
     await load("app/page.tsx", mocks({})).default({ searchParams: Promise.resolve({}) })
     assert.equal(reads, 1, "signed-out visitors do not read the dashboard")
   } finally { console.error = realError }
+})
+
+test("FE-4: a direct /explore load seeds Explore with the public directory after the gates; other paths do not read it", async () => {
+  const h = entryHarness({ session: confirmed })
+  const page = await h.render("/explore")
+  assert.deepEqual(page.props.initialDirectory, { clubs: [{ id: "public-club" }] })
+  assert.equal(typeof page.props.serverNow, "number")
+  const home = await h.render("/home")
+  assert.equal(home.props.initialDirectory, undefined); assert.equal(home.props.serverNow, undefined)
+  assert.equal(h.calls.directory, 1)
+  const disabled = entryHarness({ session: confirmed, account: { disabledAt: new Date() } })
+  assert.equal((await disabled.render("/explore")).type, "main"); assert.equal(disabled.calls.directory, undefined)
+  const demo = entryHarness({ session: confirmed, cookies: { demo: "1" }, demoAllowed: true })
+  assert.equal((await demo.render("/explore")).props.initialDirectory, undefined); assert.equal(demo.calls.directory, undefined)
+  const source = fs.readFileSync("components/student-workspace-page.tsx", "utf8")
+  assert.match(source, /Promise\.all\(\[cookies\(\), getSessionUser\(\)\]\)/)
+  assert.ok(source.indexOf("disabledAt") < source.indexOf("await Promise.all([\n    getStudentDashboardData()"), "reads start after the disabled-account gate")
+})
+
+test("FE-4: Explore renders the server seed on first mount, still reads live on later mounts, retry and Demo", () => {
+  const view = fs.readFileSync("components/views/explore-view.tsx", "utf8")
+  assert.match(view, /useState<DirectoryClub\[\]>\(\(\) => initialDirectory\?\.clubs \?\? \[\]\)/)
+  assert.match(view, /useState\(!initialDirectory\)/)
+  assert.match(view, /if \(seeded\.current\) \{ seeded\.current = false; onInitialDirectoryUsed\?\.\(\); return \}/)
+  assert.match(view, /\}, \[retry, isDemoEnabled\]\)/)
+  assert.match(view, /useServerAnchoredNow\(serverNow\)/, "seeded recruitment state uses the server render time while hydrating")
+  const shell = fs.readFileSync("components/app-shell.tsx", "utf8")
+  assert.match(shell, /initialDirectory=\{demo\.isDemoEnabled \? undefined : directorySeed\}/)
+  assert.match(shell, /onInitialDirectoryUsed=\{\(\) => setDirectorySeed\(undefined\)\}/)
 })
