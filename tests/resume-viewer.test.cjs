@@ -48,6 +48,7 @@ test('the dialog uses the shared primitives, Phosphor icons, pdf.js lazily, and 
 test('the leader dossier opens résumés in the viewer instead of a new tab', () => {
   const src = fs.readFileSync('components/views/leader-dashboard/live-leader-workspace.tsx', 'utf8')
   assert.doesNotMatch(src, /Open résumé in a new tab/)
-  assert.equal((src.match(/<ResumeViewerDialog href=/g) || []).length, 2)
+  // Header icon, Full profile link and the Full profile résumé pane.
+  assert.equal((src.match(/<ResumeViewerDialog href=/g) || []).length, 3)
   assert.match(src, /resolveRecruitingResumeUrl\(url, membership\.clubId, active\.id\)/)
 })

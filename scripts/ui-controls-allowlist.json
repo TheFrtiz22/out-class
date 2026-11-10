@@ -135,12 +135,6 @@
   },
   {
    "rule": "raw-button",
-   "file": "components/club-members.tsx",
-   "max": 1,
-   "reason": "Whole-row member target (opens the member drawer); navy focus outline."
-  },
-  {
-   "rule": "raw-button",
    "file": "components/live-voting/member-voting-pad.tsx",
    "max": 2,
    "reason": "Pass / No Pass vote tiles on the solid voting pad; whole-surface choice targets."
@@ -178,7 +172,7 @@
   {
    "rule": "raw-button",
    "file": "components/views/leader-dashboard/live-applicant-views.tsx",
-   "max": 3,
+   "max": 1,
    "reason": "Applicant table name cell, mobile card and kanban card are whole-row targets in the solid applicant table."
   },
   {

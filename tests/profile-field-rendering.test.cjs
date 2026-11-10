@@ -94,16 +94,23 @@ test('applicant display and voting slides treat the club setting as a ceiling', 
 test('the leader dossier, list, filters and sorts follow the club setting', () => {
   const src = fs.readFileSync('components/views/leader-dashboard/live-leader-workspace.tsx', 'utf8')
   assert.match(src, /const profileFields = data\?\.profileFields \?\? defaultProfileFieldVisibility\(\)/)
-  assert.match(src, /<ApplicantProfileFacts profile=\{active\.student\.studentProfile\} fields=\{profileFields\}/)
-  assert.match(src, /\{profileFields\.resume && <aside className="oc-applicant-resume"/)
+  assert.match(src, /const profile = active\.student\.studentProfile/)
+  assert.match(src, /<ApplicantProfileFacts profile=\{profile\} fields=\{profileFields\}/)
+  // The quick review's header facts use the same field filter as the full profile.
+  assert.match(src, /applicantProfileFacts\(profile, profileFields\)/)
+  // Résumé and LinkedIn are only offered when the club shows them; every résumé surface keys off resumeUrl.
+  assert.match(src, /const resumeUrl = anonymousActive \|\| !profileFields\.resume \? undefined/)
+  assert.match(src, /const linkedinUrl = anonymousActive \|\| !profileFields\.linkedin \? undefined/)
+  assert.match(src, /\{resumeUrl && <aside className="oc-applicant-resume"/)
   assert.match(src, /\{profileFields\.photo && <Avatar/)
   for (const [field, control] of [['major', '<PillSelect label="Filter major"'], ['academicYear', '<PillGroup label="Filter academic year"'], ['gpa', '<RangeSlider label="GPA greater than"'], ['sat', '<RangeSlider label="SAT greater than"'], ['act', '<RangeSlider label="ACT greater than"']])
     assert.ok(src.includes(`{profileFields.${field} && ${control}`), `${field} filter follows the setting`)
-  assert.match(src, /sortOptions\.filter\(option => sortableByProfile\(option\.key, profileFields\)\)/)
+  assert.match(src, /applicantSortOptions\.filter\(option => sortableByProfile\(option\.key, profileFields\)\)/)
   assert.doesNotMatch(src, /` · GPA \$\{active/)
   const list = fs.readFileSync('components/views/leader-dashboard/live-applicant-views.tsx', 'utf8')
-  assert.match(list, /\{profileFields\.gpa && <TableCell>/)
-  assert.match(list, /shown\.map\(column => <TableHead/)
+  assert.match(list, /id === "gpa" \? fields\.gpa : id === "sat" \? fields\.sat : id === "act" \? fields\.act : id === "test" \? fields\.sat \|\| fields\.act : id === "year" \? fields\.academicYear/)
+  assert.match(list, /\.filter\(column => columnVisible\(column\.id, profileFields\)\)/)
+  assert.match(list, /profileFields\.gpa && app\.student\.studentProfile\?\.gpa != null/)
 })
 
 test('Demo Mode applies the same ceiling from the demo store', () => {

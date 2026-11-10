@@ -29,7 +29,24 @@ function useLabelledRail() {
  */
 function RailTip({ label, enabled, children }: { label: string; enabled: boolean; children: ReactElement }) {
   const [open, setOpen] = useState(false)
-  return <Tooltip open={enabled && open} onOpenChange={setOpen}><TooltipTrigger asChild>{children}</TooltipTrigger><TooltipContent side="right" sideOffset={14} className="oc-rail-tooltip">{label}</TooltipContent></Tooltip>
+  const trigger = useRef<HTMLButtonElement>(null)
+  // A modal (the applicant review) disables pointer events on the page, so the trigger never hears the
+  // pointer leave. Close on any pointer movement or focus away from the trigger instead.
+  useEffect(() => {
+    if (!open) return
+    const away = (event: Event) => {
+      // Pointer movement only matters while a modal has switched off page pointer events; otherwise Radix
+      // already closes on pointer leave, and a stray move (layout shift, resize) must not close a hovered label.
+      if (event.type === "pointermove" && getComputedStyle(document.body).pointerEvents !== "none") return
+      if (!trigger.current?.contains(event.target as Node | null)) setOpen(false)
+    }
+    document.addEventListener("pointermove", away, true)
+    document.addEventListener("pointerdown", away, true)
+    document.addEventListener("focusin", away, true)
+    return () => { document.removeEventListener("pointermove", away, true); document.removeEventListener("pointerdown", away, true); document.removeEventListener("focusin", away, true) }
+  }, [open])
+  // Rail labels sit below dialog overlays (z-index), so one can never cover a dialog.
+  return <Tooltip open={enabled && open} onOpenChange={setOpen}><TooltipTrigger ref={trigger} asChild>{children}</TooltipTrigger><TooltipContent side="right" sideOffset={14} className="oc-rail-tooltip z-[calc(var(--oc-z-overlay)_-_1)]">{label}</TooltipContent></Tooltip>
 }
 
 const useBrowserLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect
