@@ -43,6 +43,11 @@ export const saveProfileFieldVisibilityInput = z.object({
   expected: profileFieldVisibilitySchema,
 }).strict();
 
+/** A direct file route asked for a profile field the club hides; routes answer 404. */
+export class ProfileFieldHiddenError extends Error {
+  constructor() { super("Not found"); this.name = "ProfileFieldHiddenError"; }
+}
+
 export function sameProfileFieldVisibility(a: ProfileFieldVisibility, b: ProfileFieldVisibility) {
   return profileFieldKeys.every(key => a[key] === b[key]);
 }

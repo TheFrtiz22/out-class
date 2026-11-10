@@ -49,6 +49,50 @@ test('voting workspace returns no academic years when the club hides class year'
   assert.deepEqual((await h.read()).academicYears, [])
 })
 
+// ---- 4. Direct file routes ---------------------------------------------------
+const pdf = new Blob([new Uint8Array([37, 80, 68, 70, 45, 49])], { type: 'application/pdf' })
+const storage = blob => ({ createClient: () => ({ storage: { getBucket: async () => ({ data: { public: false } }), from: () => ({ download: async () => ({ data: blob }) }) } }) })
+test('/api/recruiting-resumes returns 404 when the club hides résumés', async () => {
+  const studentId = id(51), appId = id(50)
+  let visibility = null
+  const tx = { $queryRaw: async () => [], application: { findFirst: async q => { assert.deepEqual(q.include.club, { select: { profileFieldVisibility: true } }); return { id: appId, clubId, roundId, studentId, round: { anonymousReview: false }, club: { profileFieldVisibility: visibility } } } }, pipelineRound: { findFirst: async () => ({ anonymousReview: false }) }, studentProfile: { findUnique: async () => ({ resumeUrl: `${studentId}/resume.pdf` }) } }
+  const shared = { '@/lib/profile-field-visibility': lib, '@/utils/interview-access': { interviewActor: async () => ({ member: { status: 'ACTIVE', isOwner: true } }) } }
+  const route = load('app/api/recruiting-resumes/route.ts', { ...shared,
+    '@/utils/prisma': { prisma: { $transaction: fn => fn(tx) } }, '@/utils/auth': { requireAuth: async () => ({ user: { id: 'leader' } }) },
+    '@/utils/recruiting-resume': load('utils/recruiting-resume.ts', shared), '@/utils/support-audit': { auditSupportAction: async () => {} }, '@supabase/supabase-js': storage(pdf),
+  })
+  const get = () => route.GET(new Request(`https://out-class.net/api/recruiting-resumes?clubId=${clubId}&applicationId=${appId}`))
+  process.env.SUPABASE_SECRET_KEY ??= 'test-only'
+  assert.equal((await get()).status, 200, 'control: served when résumés are shown')
+  visibility = { resume: false }
+  const hidden = await get()
+  assert.equal(hidden.status, 404)
+  assert.equal(await hidden.text(), 'Not found')
+})
+
+test('/api/profile-photos returns 404 for CRM access when the club hides photos; a student’s own photo is unchanged', async () => {
+  const studentId = id(61), appId = id(60), path = `${studentId}/p.png`
+  let visibility = null
+  const tx = { application: { findFirst: async q => { assert.deepEqual(q.select.club, { select: { profileFieldVisibility: true } }); return { id: appId, clubId, status: 'IN_REVIEW', club: { profileFieldVisibility: visibility }, round: { anonymousReview: false }, student: { studentProfile: { headshotUrl: path } } } } } }
+  const shared = { '@/lib/profile-field-visibility': lib, '@/lib/club-transaction-authorization': { authorizeClubTransaction: async () => ({}) } }
+  let actor = 'leader'
+  const route = load('app/api/profile-photos/route.ts', { ...shared,
+    'next/server': { NextResponse: class extends Response {} },
+    '@/utils/auth': { requireAuth: async () => ({ user: { id: actor } }) }, '@/utils/support-audit': { auditSupportAction: async () => {} },
+    '@/utils/prisma': { prisma: { $transaction: fn => fn(tx) } }, '@/lib/crm-photo-authorization': load('lib/crm-photo-authorization.ts', shared),
+    '@/actions/applicant-intelligence': {}, '@/actions/interview-resumes': {}, '@/actions/evaluations': {},
+    '@supabase/supabase-js': storage(new Blob([new Uint8Array([1])], { type: 'image/png' })),
+  })
+  const get = query => route.GET(new Request(`https://out-class.net/api/profile-photos?${new URLSearchParams(query)}`))
+  process.env.SUPABASE_SECRET_KEY ??= 'test-only'
+  const crm = { path, clubId, applicationId: appId, mode: 'crm' }
+  assert.equal((await get(crm)).status, 200, 'control: leader sees the photo by default')
+  visibility = { photo: false }
+  assert.equal((await get(crm)).status, 404)
+  actor = studentId
+  assert.equal((await get({ path })).status, 200, 'the student’s own photo is not affected')
+})
+
 // ---- 3. Identity reveal ------------------------------------------------------
 test('identity reveal returns the identity but not profile fields the club hides', async () => {
   const appId = id(40)
