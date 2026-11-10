@@ -7,6 +7,7 @@ import { captchaFailed, turnstileMessage, turnstileRequired, TURNSTILE_PENDING, 
 import { TurnstileWidget } from "@/components/security/turnstile-widget"
 import { LoginAuthPanel } from "@/components/auth/login-auth-panel"
 import "@/components/auth/login.css"
+import { PublicPageFrame } from "@/components/landing/public-page-frame"
 import { isUvaEmail, loginReturnPath } from "@/lib/auth"
 import type { ViewId } from "@/lib/views"
 import { createClient } from "@/utils/supabase/client"
@@ -125,8 +126,8 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
   if (isImpersonating) return <main className="p-8">Exit impersonation above before changing authentication. <Link className="underline" href="/home">Return to the user’s workspace</Link></main>
 
   return (
+    <PublicPageFrame className="oc-auth-page">
     <div className="oc-login">
-      <LoginBrandPanel />
       <LoginAuthPanel
         security={<TurnstileWidget action="login" onToken={setTurnstileToken} resetKey={turnstileReset} />}
         step={step}
@@ -151,6 +152,8 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
         onBack={onBack}
         onCreateAccount={onCreateAccount}
       />
+      <LoginBrandPanel />
     </div>
+    </PublicPageFrame>
   )
 }

@@ -10,7 +10,7 @@ const { chromium, webkit } = require('playwright')
 const repo = path.resolve(__dirname, '..')
 const fixture = path.join(repo, 'tests/fixtures/floating-header')
 const engine = process.env.OUTCLASS_NAV_BROWSER === 'webkit' ? webkit : chromium
-async function build(root, { realNotificationState = false } = {}) {
+async function build(root, { realNotificationState = false, entry = path.join(fixture, 'app.jsx'), aliases = {}, keep = [], plugins = () => [] } = {}) {
   const tsLoader = path.join(root, 'typescript-loader.cjs'), cssLoader = path.join(root, 'style-loader.cjs')
   await fs.writeFile(tsLoader, `const ts=require(${JSON.stringify(require.resolve('typescript'))});module.exports=function(source){return ts.transpileModule(source,{fileName:this.resourcePath,compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText}`)
   await fs.writeFile(cssLoader, 'module.exports = ' + function(source) { return 'const style=document.createElement("style");style.textContent=' + JSON.stringify(source) + ';document.head.append(style);' }.toString())
@@ -19,30 +19,38 @@ async function build(root, { realNotificationState = false } = {}) {
   const alias = { 'next/link$': path.join(fixture, 'navigation.jsx'), 'next/navigation$': path.join(fixture, 'navigation.jsx'), 'next/image$': boundaries }
   for (const key of ['@/contexts/auth-context', '@/contexts/demo-context', '@/contexts/organization-invitations-context', '@/lib/application-state', '@/lib/workspace-api', '@/actions/communications', '@/actions/club-onboarding', '@/utils/supabase/client', '@/components/tutorial-walkthrough']) alias[`${key}$`] = boundaries
   if (realNotificationState) delete alias['@/lib/application-state$']
+  for (const key of keep) delete alias[`${key}$`]
+  Object.assign(alias, aliases)
   alias['@'] = repo
-  await new Promise((resolve, reject) => compiled.webpack({ mode: 'development', context: repo, entry: path.join(fixture, 'app.jsx'), output: { path: root, filename: 'bundle.js' }, devtool: false, resolve: { alias, extensions: ['.tsx', '.ts', '.jsx', '.js'], modules: ['node_modules'] }, module: { rules: [{ test: /\.[jt]sx?$/, exclude: /node_modules/, use: tsLoader }, { test: /\.css$/, use: cssLoader }] }, performance: { hints: false } }, (error, stats) => { if (error) reject(error); else if (stats.hasErrors()) reject(Error(stats.toString({ all: false, errors: true }))); else resolve() }))
+  await new Promise((resolve, reject) => compiled.webpack({ mode: 'development', context: repo, entry, output: { path: root, filename: 'bundle.js' }, devtool: false, resolve: { alias, extensions: ['.tsx', '.ts', '.jsx', '.js'], modules: ['node_modules'] }, module: { rules: [{ test: /\.[jt]sx?$/, exclude: /node_modules/, use: tsLoader }, { test: /\.css$/, use: cssLoader }] }, performance: { hints: false }, plugins: plugins(compiled.webpack) }, (error, stats) => { if (error) reject(error); else if (stats.hasErrors()) reject(Error(stats.toString({ all: false, errors: true }))); else resolve() }))
   const postcss = require('postcss'), plugin = require('@tailwindcss/postcss')
   const css = await fs.readFile(path.join(repo, 'app/globals.css'), 'utf8')
   const result = await postcss([plugin({ base: repo })]).process(css, { from: path.join(repo, 'app/globals.css') })
   const fonts = `@font-face{font-family:"Source Sans 3";src:url('/assets/fonts/source-sans-3/source-sans-3-upright.woff2');font-weight:200 900;font-display:swap}@font-face{font-family:"Libre Caslon Text";src:url('/assets/fonts/libre-caslon-text/libre-caslon-text-variable.woff2');font-weight:400 700;font-display:swap}`
   await fs.writeFile(path.join(root, 'styles.css'), fonts + result.css + ':root{--font-source-sans-3:"Source Sans 3";--font-libre-caslon-text:"Libre Caslon Text";}')
 }
+/** Serves a built fixture (bundle.js, styles.css, fonts, public files) on a local port. */
+async function serve(root) {
+  const server = http.createServer(async (request, response) => {
+    const url = new URL(request.url, 'http://localhost'), resource = url.pathname
+    if (resource === '/api/platform/eligibility') { response.setHeader('Content-Type', 'application/json'); response.end('{"eligible":false}'); return }
+    if (resource === '/api/communications/stream') { response.writeHead(204); response.end(); return }
+    if (resource === '/api/auth/logout') { response.setHeader('Content-Type', 'application/json'); response.end('{"ok":true}'); return }
+    const file = resource === '/bundle.js' || resource === '/styles.css' || /^\/[\w.-]+\.bundle\.js$/.test(resource) ? path.join(root, path.basename(resource)) : resource.startsWith('/assets/fonts/') ? path.join(repo, 'app/fonts', resource.slice('/assets/fonts/'.length)) : resource.startsWith('/assets/media/') ? path.join(repo, '.next/static/media', path.basename(resource)) : path.join(repo, 'public', resource)
+    try { const data = await fs.readFile(file); response.setHeader('Content-Type', resource.endsWith('.js') ? 'text/javascript' : resource.endsWith('.css') ? 'text/css' : resource.endsWith('.svg') ? 'image/svg+xml' : resource.endsWith('.woff2') ? 'font/woff2' : resource.endsWith('.jpg') ? 'image/jpeg' : 'image/png'); response.end(data) }
+    catch { response.setHeader('Content-Type', 'text/html; charset=utf-8'); response.end('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/styles.css"></head><body><div id="root"></div><script src="/bundle.js"></script></body></html>') }
+  })
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve))
+  const base = `http://127.0.0.1:${server.address().port}`
+  return { server, base }
+}
 async function check() {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'outclass-floating-header-'))
   let server, browser
   try {
     await build(root)
-    server = http.createServer(async (request, response) => {
-      const url = new URL(request.url, 'http://localhost'), resource = url.pathname
-      if (resource === '/api/platform/eligibility') { response.setHeader('Content-Type', 'application/json'); response.end('{"eligible":false}'); return }
-      if (resource === '/api/communications/stream') { response.writeHead(204); response.end(); return }
-      if (resource === '/api/auth/logout') { response.setHeader('Content-Type', 'application/json'); response.end('{"ok":true}'); return }
-      const file = resource === '/bundle.js' || resource === '/styles.css' ? path.join(root, resource.slice(1)) : resource.startsWith('/assets/fonts/') ? path.join(repo, 'app/fonts', resource.slice('/assets/fonts/'.length)) : resource.startsWith('/assets/media/') ? path.join(repo, '.next/static/media', path.basename(resource)) : path.join(repo, 'public', resource)
-      try { const data = await fs.readFile(file); response.setHeader('Content-Type', resource.endsWith('.js') ? 'text/javascript' : resource.endsWith('.css') ? 'text/css' : resource.endsWith('.svg') ? 'image/svg+xml' : resource.endsWith('.woff2') ? 'font/woff2' : resource.endsWith('.jpg') ? 'image/jpeg' : 'image/png'); response.end(data) }
-      catch { response.setHeader('Content-Type', 'text/html; charset=utf-8'); response.end('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/styles.css"></head><body><div id="root"></div><script src="/bundle.js"></script></body></html>') }
-    })
-    await new Promise(resolve => server.listen(0, '127.0.0.1', resolve))
-    const base = `http://127.0.0.1:${server.address().port}`
+    let base
+    ;({ server, base } = await serve(root))
     browser = await engine.launch({ headless: true, ...(engine === chromium && !require('node:fs').existsSync(chromium.executablePath()) ? { channel: 'chrome' } : {}) })
     const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } })
     const errors = []
@@ -157,7 +165,7 @@ async function check() {
     await header.locator('[data-tour="profile"]').click()
     assert.equal(await menu.evaluate(el => { const r = el.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight }), true)
     await page.keyboard.press('Escape')
-    await page.getByRole('button', { name: 'More navigation and workspaces', exact: true }).click()
+    await page.getByRole('button', { name: 'More sections', exact: true }).click()
     const drawer = page.getByRole('dialog', { name: 'Workspace navigation', exact: true })
     await drawer.waitFor()
     await page.setViewportSize({ width: 1280, height: 900 })
@@ -188,5 +196,5 @@ async function check() {
     console.log('PASS existing avatar, reduced motion, sign-out redirect, and no browser errors')
   } finally { await browser?.close(); if (server) await new Promise(resolve => server.close(resolve)); await fs.rm(root, { recursive: true, force: true }) }
 }
-module.exports = { build }
+module.exports = { build, serve }
 if (require.main === module) check().catch(error => { console.error(error); process.exitCode = 1 })

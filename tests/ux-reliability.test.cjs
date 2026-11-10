@@ -4,7 +4,7 @@ const fs = require('node:fs'), ts = require('typescript')
 const nodes = n => !n || typeof n !== 'object' ? [] : Array.isArray(n) ? n.flatMap(nodes) : [n, ...nodes(n.props?.children)]
 const text = n => typeof n === 'string' ? n : Array.isArray(n) ? n.map(text).join('') : n?.props ? text(n.props.children) : ''
 function load(file, mocks, globals = {}) {
-  mocks = { '@/lib/event-board-empty': require('./helpers/component-module.cjs').loadComponent('lib/event-board-empty.ts'), './use-saved-campus-events': { useSavedCampusEvents: () => ({ ids: new Set(), pending: new Set(), ready: false, error: '' }) }, ...mocks }
+  mocks = { ...require('./helpers/shell-stubs.cjs'), '@/lib/copy/terms': require('./helpers/component-module.cjs').loadComponent('lib/copy/terms.ts'), '@/lib/event-board-empty': require('./helpers/component-module.cjs').loadComponent('lib/event-board-empty.ts'), './use-saved-campus-events': { useSavedCampusEvents: () => ({ ids: new Set(), pending: new Set(), ready: false, error: '' }) }, '@/hooks/use-dismissable-details': { useDismissableDetails: () => () => {} }, ...mocks }
   const mod = { exports: {} }
   let code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } }).outputText
   if (file.endsWith('public-event-board.tsx')) code += '\nexports.MyEventRsvps = MyEventRsvps;'
@@ -24,7 +24,7 @@ const button = (tree, label) => nodes(tree).find(n => n.type === 'Button' && tex
 const deferred = () => { let resolve, reject; const promise = new Promise((res, rej) => { resolve = res; reject = rej }); return { promise, resolve, reject } }
 test('club search selection honors unsaved and in-flight guards before leaving the page', async () => {
   const h = hooks(), assigned = [], closed = []; let saving = false, consent = false, prompts = 0
-  const C = load('components/shell/navigation-search.tsx', { react: h.react, '@/contexts/auth-context': { useAuth: () => ({ user: { id: 'student' } }) }, '@/lib/application-state': { useApplicationState: () => ({}) }, '@/lib/demo/store': { demoStore: { active: () => false } }, '@/lib/workspace-api': { searchWorkspace: async () => [{ kind: 'club', id: 'club', clubId: 'club', title: 'Club', detail: '' }] } }, { window: { setTimeout: fn => { fn(); return 1 }, clearTimeout() {}, confirm: () => { prompts++; return consent }, location: { assign: path => assigned.push(path) } }, document: { querySelector: selector => selector.includes('saving') ? saving : true } }).NavigationSearch
+  const C = load('components/shell/navigation-search.tsx', { react: h.react, '@/contexts/auth-context': { useAuth: () => ({ user: { id: 'student' } }) }, '@/lib/application-state': { useApplicationState: () => ({}) }, '@/lib/demo/store': { demoStore: { active: () => false } }, '@/lib/demo/loader': { isDemoActive: () => false }, '@/lib/workspace-api': { searchWorkspace: async () => [{ kind: 'club', id: 'club', clubId: 'club', title: 'Club', detail: '' }] } }, { window: { setTimeout: fn => { fn(); return 1 }, clearTimeout() {}, confirm: () => { prompts++; return consent }, location: { assign: path => assigned.push(path) } }, document: { querySelector: selector => selector.includes('saving') ? saving : true } }).NavigationSearch
   const render = () => h.render(() => C({ open: true, items: [], onOpenChange: v => closed.push(v), onNavigate() {} }))
   nodes(render()).find(n => n.type === 'CommandInput').props.onValueChange('club'); render(); await h.flush()
   const select = () => nodes(render()).find(n => n.type === 'CommandItem').props.onSelect()
@@ -61,6 +61,20 @@ function rsvpHarness(api) {
   const C = load('components/events/public-event-board.tsx', { react: h.react, '@/lib/workspace-api': api }, { window: { addEventListener: (name, fn) => listeners[name] = fn, removeEventListener() {} } }).MyEventRsvps
   return { render: () => h.render(() => C({ onCancelled() {} })), flush: h.flush, refresh: () => listeners['outclass-event-rsvp']() }
 }
+test('the empty, unfiltered Corkboard never offers to show what it already shows', async () => {
+  const h = boardHarness({}, '')
+  h.render(); await h.flush(); const tree = h.render()
+  assert.match(text(tree), /No upcoming campus events yet/)
+  assert.equal(button(tree, 'Show all events'), undefined); assert.equal(button(tree, 'Browse all events'), undefined); assert.equal(button(tree, 'Clear filters'), undefined)
+  assert.equal(nodes(tree).some(n => n.props?.className === 'oc-event-filter-count'), false)
+  assert.equal(nodes(tree).some(n => n.type === 'SavedClubsPopover' || text(n) === 'Saved Clubs'), false)
+})
+test('Your RSVPs uses the shared Phosphor disclosure chevron, not a text triangle', () => {
+  const h = rsvpHarness({ getMyCampusEventRsvps: () => new Promise(() => {}) })
+  const summary = nodes(h.render()).find(n => n.type === 'summary')
+  assert.ok(nodes(summary).some(n => n.type === 'ChevronDown' && n.props['aria-hidden'] === 'true'))
+  assert.match(summary.props.className, /list-none/)
+})
 test('RSVP history distinguishes loading from empty and does not show a false zero', async () => {
   const pending = deferred(), h = rsvpHarness({ getMyCampusEventRsvps: () => pending.promise })
   assert.ok(nodes(h.render()).some(n => n.type === 'LoadingState'))

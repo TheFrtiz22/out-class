@@ -8,7 +8,8 @@ export function canDiscoverInterviewSetup(member: InterviewAccess) {
   return interviewCapabilities(member).editKit || hasPermission(member, "interviews.manage") || hasPermission(member, "recruitment.manage");
 }
 export function interviewSetupHref(clubId: string, roundId?: string, tab = "kits") {
-  const params = new URLSearchParams(tab === "schedule" || tab === "rooms" ? { section: "recruitment", tool: "interviews", interviewTab: tab } : { section: "settings", setting: "interviews", interviewTab: tab });
+  // Interview configuration (kits, interviewers) lives in the Interviews tool; Settings no longer repeats it.
+  const params = new URLSearchParams({ section: "recruitment", tool: "interviews", interviewTab: tab });
   if (roundId) params.set("roundId", roundId);
   return `/club/${encodeURIComponent(clubId)}/workspace?${params}`;
 }

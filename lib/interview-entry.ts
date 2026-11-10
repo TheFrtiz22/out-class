@@ -23,9 +23,16 @@ export function interviewEntryHref(entry: Pick<InterviewRoomEntry, "clubId" | "a
  * The interview room's own route. It keeps the list's filters (interviewTab, dates, round)
  * so Exit returns to the same list; section/tool/interview belong to the workspace URL.
  */
+/** The only parameters the room and the interview list understand. Anything else (for example
+ * `setting=members` from the page the user came from) is dropped, so links start from a clean URL. */
+const INTERVIEW_PARAMS = ["applicationId", "applicantId", "roundId", "cycleId", "slotId", "sessionId", "bookingId", "roomId", "reviewId", "documentId", "interviewTab", "interviewDate", "interviewDays", "interviewTiming", "schedule", "date", "dates", "week", "demo"];
+function interviewQuery(search: string) {
+  const source = new URLSearchParams(search), query = new URLSearchParams();
+  for (const [key, value] of source) if (INTERVIEW_PARAMS.includes(key)) query.append(key, value);
+  return query;
+}
 export function clubInterviewHref(clubId: string, search = "") {
-  const query = new URLSearchParams(search);
-  for (const key of ["section", "tool", "interview"]) query.delete(key);
+  const query = interviewQuery(search);
   const rest = query.toString();
   return `/club/${encodeURIComponent(clubId)}/interview${rest ? `?${rest}` : ""}`;
 }
@@ -35,7 +42,7 @@ export function legacyInterviewRoomHref(clubId: string, search: string) {
   return query.get("section") === "recruitment" && query.get("tool") === "interviews" && query.get("interview") === "1" ? clubInterviewHref(clubId, search) : null;
 }
 export function interviewListHref(clubId: string, search: string) {
-  const query = new URLSearchParams(search);
+  const query = interviewQuery(search);
   for (const key of ["interview", "applicationId", "bookingId", "roomId"]) query.delete(key);
   // Scheduling uses slotId/sessionId and roundId for its selected detail.
   if (query.get("interviewTab") !== "schedule") query.delete("slotId");
@@ -48,7 +55,7 @@ export function interviewListHref(clubId: string, search: string) {
 export function interviewEntryStatus(row: InterviewRoomEntry, now = Date.now()) {
   if (row.cancelled) return "Cancelled";
   if (row.completed) return "Review submitted";
-  if (!row.bookingId) return "Awaiting booking";
+  if (!row.bookingId) return "Needs a time";
   if (row.started) return "In progress";
   if (+new Date(row.startTime) <= now && +new Date(row.endTime) >= now) return "Scheduled now";
   if (+new Date(row.endTime) < now) return "Scheduled time has ended";

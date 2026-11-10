@@ -7,6 +7,7 @@ export const accountClubSelect = {
   id: true,
   slug: true,
   name: true,
+  shortName: true,
   tagline: true,
   description: true,
   logoUrl: true,

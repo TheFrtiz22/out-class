@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
+import { Button } from "@/components/ui/button"
 import { TURNSTILE_SITE_KEY, type TurnstileAction } from "@/lib/turnstile"
 
 type TurnstileApi = {
@@ -72,7 +73,7 @@ export function TurnstileWidget({ action, onToken, resetKey = 0, className }: {
     <div ref={container} />
     {failed && <p role="alert" className="text-sm text-destructive">
       The security check couldn’t load. Check your connection or allow challenges.cloudflare.com, then{" "}
-      <button type="button" className="underline underline-offset-4" onClick={() => { setFailed(false); setAttempt(value => value + 1) }}>try again</button>.
+      <Button type="button" variant="link" className="h-auto p-0 text-sm underline underline-offset-4" onClick={() => { setFailed(false); setAttempt(value => value + 1) }}>try again</Button>.
     </p>}
   </div>
 }

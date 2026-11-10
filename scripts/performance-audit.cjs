@@ -141,7 +141,7 @@ async function pipelineScheduling() {
 
 async function publicProfileRendering() {
   let privateReads = 0;
-  const api = load('app/club/[clubId]/page.tsx', {
+  const api = load('app/(workspace)/club/[clubId]/page.tsx', {
     '@/utils/auth': { getSessionUser: async () => ({ data: { user: { id: 'synthetic-user' } } }) },
     'next/headers': { cookies: async () => ({ get: () => undefined, has: () => false }) },
     '@/actions/club-directory': { getPublicClub: async () => ({ club: { id: 'synthetic-club', name: 'Synthetic Club' } }) },

@@ -136,7 +136,7 @@ export function MemberVotingPad({
                   type="button"
                   disabled={!connected || pending}
                   onClick={() => vote("pass")}
-                  className="flex min-h-24 w-full items-center justify-center gap-3 rounded-lg border border-primary bg-primary text-xl font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-700 disabled:opacity-40"
+                  className="flex min-h-24 w-full items-center justify-center gap-3 rounded-lg border border-primary bg-primary text-xl font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring disabled:opacity-40"
                 >
                   <Check className="size-7" />
                   Pass
@@ -145,7 +145,7 @@ export function MemberVotingPad({
                   type="button"
                   disabled={!connected || pending}
                   onClick={() => vote("no-pass")}
-                  className="flex min-h-24 w-full items-center justify-center gap-3 rounded-lg border border-border bg-card text-xl font-semibold text-foreground transition-colors hover:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-rose-700 disabled:opacity-40"
+                  className="flex min-h-24 w-full items-center justify-center gap-3 rounded-lg border border-border bg-card text-xl font-semibold text-foreground transition-colors hover:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring disabled:opacity-40"
                 >
                   <X className="size-7" />
                   No Pass

@@ -3,7 +3,7 @@ const {harness,id}=require('./helpers/interview-harness.cjs');
 const {harness:demoHarness}=require('./helpers/demo-harness.cjs');
 test('status does not invent completion or call a missed session upcoming; ongoing work precedes history',()=>{
  const api=harness().load('lib/interview-entry.ts'),now=Date.parse('2026-10-20T17:00:00Z'),base={id:'future',startTime:'2026-10-21T17:00:00Z',endTime:'2026-10-21T17:20:00Z',bookingId:'booking',started:false,completed:false,cancelled:false};
- assert.equal(api.interviewEntryStatus(base,now),'Upcoming');assert.equal(api.interviewEntryStatus({...base,bookingId:null},now),'Awaiting booking');assert.equal(api.interviewEntryStatus({...base,completed:true},now),'Review submitted');assert.equal(api.interviewEntryStatus({...base,cancelled:true},now),'Cancelled');
+ assert.equal(api.interviewEntryStatus(base,now),'Upcoming');assert.equal(api.interviewEntryStatus({...base,bookingId:null},now),'Needs a time');assert.equal(api.interviewEntryStatus({...base,completed:true},now),'Review submitted');assert.equal(api.interviewEntryStatus({...base,cancelled:true},now),'Cancelled');
  const missed={...base,id:'missed',startTime:'2026-10-19T17:00:00Z',endTime:'2026-10-19T17:20:00Z'};assert.equal(api.interviewEntryStatus(missed,now),'Scheduled time has ended');assert.equal(api.interviewEntryStatus({...missed,started:true},now),'In progress');assert.deepEqual(api.sortInterviewEntries([missed,base,{...missed,id:'ongoing',started:true}],now).map(r=>r.id),['ongoing','future','missed']);
  const q=new URL(api.interviewEntryHref({...base,clubId:id(1),applicationId:id(2),roundId:id(3),slotId:id(5),roomId:id(6),reviewId:id(7)}),'https://out-class.net').searchParams;assert.equal(q.get('tool'),'reviews');assert.equal(q.has('interviewTab'),false);assert.equal(q.get('reviewId'),id(7));assert.equal(q.has('interview'),false);
 });
@@ -18,18 +18,20 @@ test('exact destinations retain slot, booking, club and round; Back preserves or
  // Advancing inside the room keeps the same list filters.
  assert.equal(new URL(api.interviewEntryHref(entry,'https://out-class.net'+href),'https://out-class.net').searchParams.get('date'),'2026-10-20');assert.ok(!api.interviewEntryHref(entry,'https://outside.test/other?injected=1').includes('injected'));
 });
-test('server exact entry denies revoked, cross-club/round, cancelled and replaced bookings; supported manual assignments remain available',async()=>{
+test('server exact entry returns unavailable (no thrown 500) for revoked, cross-club/round, cancelled and replaced bookings; supported manual assignments remain available',async()=>{
  const h=harness(),api=h.load('actions/interview-entry.ts');assert.deepEqual(await api.resolveInterviewRoomEntry(h.scope),{applicationId:h.scope.applicationId,roundId:h.scope.roundId});
- await assert.rejects(api.resolveInterviewRoomEntry({...h.scope,bookingId:id(4),slotId:id(5)}),/changed|cancelled/);
- await assert.rejects(api.resolveInterviewRoomEntry({...h.scope,clubId:id(8)}),/access|unavailable/);
- await assert.rejects(api.resolveInterviewRoomEntry({...h.scope,roundId:id(8)}),/unavailable/);
- h.assignments[0].revokedAt=new Date();await assert.rejects(api.resolveInterviewRoomEntry(h.scope),/assignment|permission/);h.assignments[0].revokedAt=null;
+ assert.match((await api.resolveInterviewRoomEntry({...h.scope,bookingId:id(4),slotId:id(5)})).unavailable,/changed|cancelled/);
+ assert.match((await api.resolveInterviewRoomEntry({...h.scope,clubId:id(8)})).unavailable,/isn’t available with your current access/);
+ assert.match((await api.resolveInterviewRoomEntry({...h.scope,roundId:id(8)})).unavailable,/isn’t available with your current access/);
+ h.assignments[0].revokedAt=new Date();const denied=(await api.resolveInterviewRoomEntry(h.scope)).unavailable;assert.match(denied,/isn’t available with your current access/);
+ // A non-panel member cannot tell a real application from a random ID.
+ assert.equal((await api.resolveInterviewRoomEntry({...h.scope,applicationId:id(9)})).unavailable,denied);h.assignments[0].revokedAt=null;
  const room={id:id(6),clubId:h.scope.clubId,roundId:h.scope.roundId,isOpen:true,panelApprovedBy:h.members[0].userId,panelMemberIds:[h.members[0].id],approvedPanelMemberIds:[h.members[0].id]};
  const booking={id:id(4),applicationId:h.scope.applicationId,roundId:h.scope.roundId,slotId:id(5),slot:{id:id(5),roomId:room.id,room,panelScheduleVersionId:null}};
  h.tx.interviewBooking.findUnique=async()=>booking;h.tx.clubMember.findFirst=async({where})=>h.members.find(m=>m.userId===where.userId&&m.clubId===where.clubId&&m.isOwner&&m.status==='ACTIVE');
  const request={...h.scope,bookingId:booking.id,slotId:booking.slotId,roomId:room.id};await api.resolveInterviewRoomEntry(request);
- await assert.rejects(api.resolveInterviewRoomEntry({...request,slotId:id(7)}),/changed/);room.isOpen=false;await assert.rejects(api.resolveInterviewRoomEntry(request),/assignment/);room.isOpen=true;
- room.approvedPanelMemberIds=[];await assert.rejects(api.resolveInterviewRoomEntry(request),/assignment/);
+ assert.match((await api.resolveInterviewRoomEntry({...request,slotId:id(7)})).unavailable,/changed/);room.isOpen=false;assert.match((await api.resolveInterviewRoomEntry(request)).unavailable,/assignment/);room.isOpen=true;
+ room.approvedPanelMemberIds=[];assert.match((await api.resolveInterviewRoomEntry(request)).unavailable,/assignment/);
 });
 test('assignment notification projects the identical current booking destination and never adds a time gate',async()=>{
  const h=harness(),member=h.members[0];h.tx.clubMember.findFirst=async()=>member;h.tx.interviewPanelAssignment.findFirst=async()=>h.assignments[0];
@@ -104,4 +106,11 @@ test('server entry is identical for a slot far in the past: open after a later d
  room.isOpen=false;rows=await api.getAssignedInterviewRooms(h.scope.clubId);assert.equal(rows[0].cancelled,true);assert.equal(rows[0].canOpen,false);room.isOpen=true;
  h.assignments[0].revokedAt=new Date();assert.deepEqual(await api.getAssignedInterviewRooms(h.scope.clubId),[]);h.assignments[0].revokedAt=null;
  h.round.archivedAt=new Date();rows=await api.getAssignedInterviewRooms(h.scope.clubId);assert.equal(rows[0].canOpen,false,'closed/archived rounds keep their lifecycle restriction');h.round.archivedAt=null;
+});
+test('every authorizeInterview denial message is recognised as an expected access denial',()=>{
+ const {isInterviewAccessDenial}=require('./helpers/interview-harness.cjs').harness().load('utils/interview-access.ts');
+ const src=require('node:fs').readFileSync('utils/interview-access.ts','utf8');const start=src.indexOf('export async function authorizeInterview'),end=src.indexOf('export async function authorizeQuestionBank');
+ const messages=[...src.slice(src.indexOf('export async function interviewActor'),end).matchAll(/throw new Error\("([^"]+)"\)/g)].map(m=>m[1]);
+ assert.ok(messages.length>=3&&start>0);for(const m of messages)assert.ok(isInterviewAccessDenial(new Error(m)),m);
+ assert.equal(isInterviewAccessDenial(new Error('Database offline')),false);
 });

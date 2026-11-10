@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import type { ReactNode } from "react"
 
 export const metadata: Metadata = {
-  title: "Design system · OutClass",
+  title: "Design system",
   robots: { index: false, follow: false },
 }
 

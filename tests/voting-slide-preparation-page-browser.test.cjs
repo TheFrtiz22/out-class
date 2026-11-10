@@ -41,7 +41,7 @@ test('leader prepares highlights from attributed sources; drafts stay private, p
   await page.reload();await page.getByText('Selected highlights · 3 of 3').waitFor();assert.ok(await page.getByText('2 of 3 without highlights').count());
   // Preview of the resulting slide.
   await page.getByRole('button',{name:'Preview slide'}).click();const preview=page.locator('.vr-prep-preview');await preview.getByRole('region',{name:'Leader-selected highlights'}).waitFor();
-  assert.equal(await preview.getByRole('listitem').count(),3);assert.ok(await preview.getByText('Leader summary:').count());
+  assert.equal(await preview.getByRole('region',{name:'Leader-selected highlights'}).getByRole('listitem').count(),3);assert.ok(await preview.getByText('Leader summary:').count());
   const out=path.resolve('test-results/voting-slide-preparation');fs.mkdirSync(out,{recursive:true});await page.screenshot({path:path.join(out,'preparation-desktop.png'),fullPage:true});
   const axe=await new AxeBuilder({page}).include('.vr-prep').analyze();assert.deepEqual(axe.violations.map(v=>`${v.id}: ${v.nodes.length}`),[]);
   // Source edited by its author: shown for deliberate review, never silently applied.

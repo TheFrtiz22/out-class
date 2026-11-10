@@ -5,6 +5,7 @@ import { useState } from "react"
 import { MoreHorizontal, Mail, UserRound, XCircle, ChevronRight, ChevronLeft, GripVertical } from "@/components/icons"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { IconButton } from "@/components/ui/icon-button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -61,7 +62,7 @@ export function PipelineView({ columns, applicants, getScore, onMove, onViewProf
               }}
               onDrop={() => handleDrop(column.id)}
               className={cn(
-                "flex w-14 shrink-0 flex-col items-center gap-2 rounded-xl border border-dashed border-border bg-white py-4 text-muted-foreground transition-colors hover:bg-muted",
+                "flex w-14 shrink-0 flex-col items-center gap-2 rounded-xl border border-dashed border-border bg-white py-4 text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                 dragOverColumn === column.id && "border-foreground bg-muted text-muted-foreground",
               )}
               aria-label="Expand Rejected column"
@@ -144,7 +145,7 @@ export function PipelineView({ columns, applicants, getScore, onMove, onViewProf
                       isRejected && "grayscale",
                     )}
                   >
-                    <button type="button" aria-label={`Drag ${a.name}`} className="mb-1 flex touch-none items-center gap-1 rounded px-1 py-0.5 text-[length:var(--oc-size-10)] text-muted-foreground hover:bg-muted"
+                    <Button type="button" variant="ghost" size="sm" aria-label={`Drag ${a.name}`} className="mb-1 touch-none text-[length:var(--oc-size-10)] text-muted-foreground"
                       onClick={event => event.stopPropagation()}
                       onPointerDown={event => { event.preventDefault(); event.stopPropagation(); event.currentTarget.setPointerCapture(event.pointerId); setDraggedId(a.id) }}
                       onPointerMove={event => { if (!event.currentTarget.hasPointerCapture(event.pointerId)) return; const target = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>("[data-stage-column]"); setDragOverColumn(target?.dataset.stageColumn ?? null) }}
@@ -156,8 +157,8 @@ export function PipelineView({ columns, applicants, getScore, onMove, onViewProf
                         setDraggedId(null); setDragOverColumn(null)
                       }}
                       onPointerCancel={() => { setDraggedId(null); setDragOverColumn(null) }}
-                    ><GripVertical className="size-3" />Drag to move</button>
-                    <div className="flex items-start gap-2 pr-5">
+                    ><GripVertical className="size-3" />Drag to move</Button>
+                    <div className="flex items-start gap-2 pr-9">
                       <Avatar className="size-7 shrink-0">
                         <AvatarFallback
                           className={cn(
@@ -169,9 +170,9 @@ export function PipelineView({ columns, applicants, getScore, onMove, onViewProf
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1">
-                        <button type="button" onClick={() => onViewProfile(a.id)} className={cn("block max-w-full truncate text-left text-xs font-semibold hover:underline", isRejected ? "text-muted-foreground" : "text-foreground")}>
+                        <Button type="button" variant="link" onClick={() => onViewProfile(a.id)} className={cn("block h-auto max-w-full truncate p-0 text-left text-xs font-semibold", isRejected ? "text-muted-foreground" : "text-foreground")}>
                           {a.name}
-                        </button>
+                        </Button>
                         <p className={cn("truncate text-[length:var(--oc-size-11)]", isRejected ? "text-muted-foreground opacity-60" : "text-muted-foreground")}>
                           {a.major}
                         </p>
@@ -193,14 +194,14 @@ export function PipelineView({ columns, applicants, getScore, onMove, onViewProf
                     </NativeSelect>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <button
-                          type="button"
+                        <IconButton
+                          size="icon-sm"
                           onClick={(e) => e.stopPropagation()}
-                          className="absolute right-1.5 top-1.5 flex size-5 items-center justify-center rounded text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-muted-foreground group-hover:opacity-100 focus-visible:opacity-100"
+                          className="absolute right-1 top-1 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
                           aria-label={`Actions for ${a.name}`}
                         >
                           <MoreHorizontal className="size-3.5" />
-                        </button>
+                        </IconButton>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-40 rounded-xl border-border bg-white shadow-none" onClick={(e) => e.stopPropagation()}>
                         <DropdownMenuItem onClick={() => onSendEmail(a.name)}>

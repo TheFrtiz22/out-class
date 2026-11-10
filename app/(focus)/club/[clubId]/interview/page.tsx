@@ -10,6 +10,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { ClubInterviewRoom } from "@/components/interviews/club-interview-room";
 import { clubInterviewHref } from "@/lib/interview-entry";
 export const maxDuration = 60;
+// Matches the product shell's "<page> · OutClass" titles; no candidate name in the tab.
+export const metadata = { title: { absolute: "Interview room · OutClass" } };
 
 /**
  * The interview room. Same identity rules as the club workspace page: demo access

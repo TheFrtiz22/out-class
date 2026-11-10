@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 type Review = Extract<Awaited<ReturnType<typeof prepareResumeImport>>, { ok: true }>
-export function ResumeImportDialog({ profile, onSaved }: { profile: FullStudentProfile; onSaved: (profile: FullStudentProfile) => void }) {
+export function ResumeImportDialog({ profile, onSaved, label = "Import from résumé" }: { profile: FullStudentProfile; onSaved: (profile: FullStudentProfile) => void; label?: string }) {
   const demo = useDemoMode(), { refreshUser } = useAuth()
   const [open, setOpen] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState("")
   const [review, setReview] = useState<Review | null>(null), [values, setValues] = useState<Partial<Record<ResumeField, string>>>({}), [selected, setSelected] = useState<ResumeField[]>([])
@@ -45,7 +45,7 @@ export function ResumeImportDialog({ profile, onSaved }: { profile: FullStudentP
     finally { setBusy(false) }
   }
   return <Dialog open={open} onOpenChange={close}>
-    <DialogTrigger asChild><Button variant="outline" size="sm" disabled={demo.isDemoEnabled}>Import PDF into profile</Button></DialogTrigger>
+    <DialogTrigger asChild><Button variant="outline" size="sm" disabled={demo.isDemoEnabled}>{label}</Button></DialogTrigger>
     {demo.isDemoEnabled && <p className="mt-2 text-xs text-muted-foreground">PDF importing is unavailable in Demo Mode; sample profiles stay isolated.</p>}
     <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-2xl" onEscapeKeyDown={e => { if (busy) e.preventDefault() }} onPointerDownOutside={e => { if (busy) e.preventDefault() }}>
       <DialogHeader><DialogTitle>Import your résumé</DialogTitle><DialogDescription>Upload a text-based PDF, review the suggestions, then confirm. Nothing changes in your profile before confirmation.</DialogDescription></DialogHeader>

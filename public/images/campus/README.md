@@ -1,5 +1,14 @@
 # UVA campus photographs
 
+## "Built at UVA" band: project-supplied Rotunda at dusk
+
+`rotunda-dusk-{960,1206}.webp` is the close-up photograph of the Rotunda at dusk
+(pink clouds, lit windows) supplied by the project owner on November 9, 2026 to
+replace the colonnade photo in the homepage "Built at UVA" band. Converted to WebP
+(quality 86 / 84) at its native 1206 × 1604 and a 960-wide variant; no cropping,
+upscaling or generative alteration. The band crops it with CSS and anchors it to
+the right so the copy card never covers the building.
+
 ## UVA information page: project-requested Lawn photograph
 
 `lawn-aerial.jpg` is the 675 × 450 aerial Lawn photograph requested by the project

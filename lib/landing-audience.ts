@@ -1,5 +1,6 @@
 export type LandingAudience = "student" | "leader"
 export const LANDING_AUDIENCE_PREFERENCE = "outclass-landing-audience"
+// Club leaders are the default on a first visit (owner decision 2026-11-07); the query and cookie contract is unchanged.
 export const DEFAULT_LANDING_AUDIENCE: LandingAudience = "leader"
 
 export function audienceFromPreference(value: string | null | undefined): LandingAudience | null {

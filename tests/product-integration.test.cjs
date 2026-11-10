@@ -128,7 +128,7 @@ test('demo tutorials persist independently, keep old indices, reset deterministi
   assert.equal((await h.api.getTutorial('student')).step, 6)
   assert.equal((await h.api.getTutorial('leader', clubId)).status, 'COMPLETED')
   await assert.rejects(h.api.saveTutorial({ experience: 'leader', clubId, action: 'progress', step: 6 }))
-  assert.match(tutorialSteps.leader.map(s => s.text).join(' '), /Pros and Cons.*interview kits.*passes.*publish/)
+  assert.match(tutorialSteps.leader.map(s => s.text).join(' '), /Pros and Cons.*questions and rooms.*passes.*publish/)
   h.store.reset(); assert.equal((await h.api.getTutorial('student')).status, 'SKIPPED')
   assert.equal(h.calls(), 0)
 })

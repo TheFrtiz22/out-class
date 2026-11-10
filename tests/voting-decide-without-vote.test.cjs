@@ -19,7 +19,7 @@ test('Do not pass without vote: reason and confirmation required, no ballots, au
  for(const extra of [{reason:undefined},{confirmed:false},{choice:'HOLD'}]){const r=await decide(h,extra.choice??'REJECT',extra);assert.equal(r.code,'CONFIRMATION_REQUIRED');}
  assert.equal(entryOf(h,apps[0]).ballotState,'PENDING');
  const r=await decide(h,'REJECT');ok(r);
- const e=entryOf(h,apps[0]);assert.equal(e.ballotState,'CONFIRMED');assert.equal(e.confirmedDecision,'NOT_PASS');assert.equal(e.override,'NOT_PASS');assert.equal(e.overrideBy,leaderId);assert.equal(e.ballots.length,0,'no synthetic ballots');assert.equal(e.withoutVote,false);
+ const e=entryOf(h,apps[0]);assert.equal(e.ballotState,'CONFIRMED');assert.equal(e.confirmedDecision,'NOT_PASS');assert.equal(e.override,'NOT_PASS');assert.equal(e.overrideBy,leaderId);assert.equal(e.ballots.length,0,'no synthetic ballots');assert.equal(e.withoutVote,true,'stored flag records the decision without a vote');assert.deepEqual([e.openedAt,e.closedAt],[null,null],'no invented open/close times');
  assert.deepEqual({choice:r.result.decision.choice,withoutVote:r.result.decision.withoutVote,next:r.result.decision.nextApplicationId},{choice:'REJECT',withoutVote:true,next:apps[1]});
  const audit=h.state().audit.find(a=>a.action==='voting.room.decide_without_vote_and_advance');
  assert.equal(audit.actorId,leaderId);assert.equal(audit.reason,'Clear fit after discussion');assert.equal(audit.targetId,sessionId);
@@ -32,11 +32,20 @@ test('open vote: closing and the override are one operation; cast ballots are ke
  const before=entryOf(h,apps[0]);const stale={passNumber:1,applicationId:apps[0],ballotRevision:null};
  ok(await decide(h,'REJECT'));
  const e=entryOf(h,apps[0]);assert.equal(e.ballots.length,1);assert.equal(e.ballots[0].decision,'PASS','the cast ballot is preserved');assert.ok(e.closedAt);assert.equal(e.confirmedDecision,'NOT_PASS');
- const view=await h.read(),c=view.history[0].candidates[0];assert.deepEqual(c.totals,{ACCEPT:1,HOLD:0,REJECT:0});assert.equal(c.outcome,'REJECT');assert.equal(c.withoutVote,true,'override is distinguished from the ballot totals');
+ const view=await h.read(),c=view.history[0].candidates[0];assert.deepEqual(c.totals,{ACCEPT:1,HOLD:0,REJECT:0});assert.equal(c.outcome,'REJECT');assert.equal(c.withoutVote,true,'override is distinguished from the ballot totals');assert.equal(e.withoutVote,false,'a ballot was cast, so the stored flag stays false');
  assert.equal(h.state().audit.find(a=>a.action==='voting.room.decide_without_vote_and_advance').details.ballotsCast,1);
  // A ballot from the leader's device or a slow phone after the override is refused.
  const late=await h.api.castLiveVotingBallot({...h.scope,requestId:uuid(700),choice:'ACCEPT',...stale});assert.equal(late.ok,false);assert.equal(late.code,'VOTING_CLOSED');assert.equal(entryOf(h,apps[0]).ballots.length,1);
  assert.ok(before);
+});
+
+test('open vote with zero ballots: flag set, real open time kept, closed now; Undo returns it closed',async()=>{
+ const h=await started();ok(await h.command('OPEN_VOTING'));const opened=entryOf(h,apps[0]).openedAt;
+ ok(await decide(h,'REJECT'));
+ const e=entryOf(h,apps[0]);assert.deepEqual([e.ballotState,e.withoutVote,e.confirmedDecision,e.ballots.length],['CONFIRMED',true,'NOT_PASS',0]);assert.equal(e.openedAt,opened);assert.ok(e.closedAt>=e.openedAt);
+ assert.equal(h.state().audit.find(a=>a.action==='voting.room.decide_without_vote_and_advance').details.previousState,'OPEN');
+ const receipt=h.state().receipts.at(-1);ok(await h.command('UNDO_DECISION',{applicationId:apps[0],passNumber:1,undoRequestId:receipt.requestId}));
+ const undone=entryOf(h,apps[0]);assert.deepEqual([undone.ballotState,undone.withoutVote,undone.confirmedDecision,undone.override],['CLOSED',false,null,null]);assert.equal(undone.openedAt,opened);
 });
 
 test('duplicate clicks replay once, a second leader tab cannot advance twice, and a failed save changes nothing',async()=>{
@@ -56,7 +65,7 @@ test('corrections, Undo, last applicant and exceeding the target',async()=>{
  // Undo restores the applicant and clears the override (the original decision stays in the audit history).
  const receipt=h.state().receipts.at(-1);ok(await h.command('UNDO_DECISION',{applicationId:apps[0],passNumber:1,undoRequestId:receipt.requestId}));
  const undone=entryOf(h,apps[0]);assert.equal(undone.override,null);assert.equal(undone.confirmedDecision,null);assert.equal(h.state().sessions[0].activeApplicationId,apps[0]);
- assert.equal(undone.ballotState,'CLOSED','the instance it opened returns closed, with zero ballots');ok(await h.command('DECIDE_AND_ADVANCE',{applicationId:apps[0],passNumber:1,choice:'ACCEPT',reason:'Re-decided after Undo'}));
+ assert.equal(undone.ballotState,'PENDING','a never-opened instance returns pending');assert.equal(undone.withoutVote,false,'Undo clears the flag');ok(await decide(h,'ACCEPT'));
  ok(await decide(h,'ACCEPT'));ok(await decide(h,'ACCEPT'));
  const s=h.state().sessions[0];assert.equal(s.state,'PAUSED','last applicant completes the pass');assert.equal(s.passes[0].state,'COMPLETED');
  const view=await h.read();assert.equal(view.accepted,3,'target 1 is guidance only');

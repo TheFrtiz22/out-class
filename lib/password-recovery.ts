@@ -28,4 +28,4 @@ export const passwordReset = z
     path: ["confirmation"],
   });
 export const recoveryConfirmation =
-  "If an eligible account exists for that email, we’ll send a password reset link. Check your inbox and spam folder.";
+  "If an account exists for that email, we’ll send a password reset link. Check your inbox and spam folder.";

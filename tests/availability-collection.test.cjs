@@ -8,7 +8,7 @@ async function fixture(t) {
 test('round requests are eligible/club scoped, idempotent and atomically queue the existing optional email; draft edits are not responses', async t => {
   const h = await fixture(t), { api, ids, scope } = h
   h.as(ids.panel); await assert.rejects(api.requestRoundAvailability({ ...scope, memberIds: [ids.panelMember] }), /access denied/)
-  h.as(ids.owner); await assert.rejects(api.requestRoundAvailability({ ...scope, memberIds: [ids.peerMember] }), /eligible/)
+  h.as(ids.owner); await assert.rejects(api.requestRoundAvailability({ ...scope, memberIds: [ids.peerMember] }), /Choose interviewers/)
   assert.deepEqual(await api.requestRoundAvailability({ ...scope, memberIds: [ids.panelMember] }), { sent: 1 })
   assert.deepEqual(await api.requestRoundAvailability({ ...scope, memberIds: [ids.panelMember] }), { sent: 0 })
   assert.equal(await h.prisma.userNotification.count({ where: { userId: ids.panel } }), 1)
@@ -46,7 +46,7 @@ test('reminders skip responses, enforce a 24h cooldown and invalidate stale requ
   assert.equal((await api.getMyAvailability()).rounds[0].response, 'SUBMITTED')
   assert.equal(await delivery.currentAvailabilityRequest(h.prisma, note, ids.panel), null)
   h.as(ids.owner); await h.prisma.clubMember.update({ where: { id: ids.panelMember }, data: { interviewerEligible: false } })
-  await assert.rejects(api.requestRoundAvailability({ ...scope, memberIds: [ids.panelMember] }), /eligible/)
+  await assert.rejects(api.requestRoundAvailability({ ...scope, memberIds: [ids.panelMember] }), /Choose interviewers/)
 })
 test('responses across clubs are independent and coverage reuses actual requirements, buffers and official conflicts without foreign details', async t => {
   const h = await fixture(t), { api, ids, scope } = h

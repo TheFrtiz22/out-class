@@ -1,0 +1,31 @@
+/* Ranked review: compact rows; bands always carry a text label beside the color. */
+/* Design-system status tokens (light and dark themes); meaning is also carried by the text label. */
+.oc-ranked-review { --oc-band-green: var(--success); --oc-band-yellow: var(--warning); --oc-band-red: var(--destructive); }
+.oc-ranked-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.oc-ranked-group { display: grid; gap: 6px; }
+.oc-ranked-group + .oc-ranked-group { margin-top: 12px; }
+.oc-ranked-row { display: flex; align-items: center; gap: 4px; min-width: 0; border: 1px solid var(--border); border-left-width: 4px; border-radius: var(--oc-radius-md, 8px); background: var(--card, transparent); }
+.oc-ranked-row[data-band="green"] { border-left-color: var(--oc-band-green); }
+.oc-ranked-row[data-band="yellow"] { border-left-color: var(--oc-band-yellow); }
+.oc-ranked-row[data-band="red"] { border-left-color: var(--oc-band-red); }
+.oc-ranked-row[data-selected] { outline: 2px solid var(--ring); outline-offset: 1px; }
+.oc-ranked-open { display: grid; grid-template-columns: 3rem minmax(0, 1fr) auto auto; align-items: center; gap: 12px; flex: 1; min-width: 0; min-height: 56px; padding: 6px 12px 6px 8px; text-align: left; border-radius: inherit; }
+.oc-ranked-open:hover { background: color-mix(in oklab, var(--muted) 55%, transparent); }
+.oc-ranked-open:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.oc-ranked-rank { display: grid; justify-items: center; font-variant-numeric: tabular-nums; font-weight: 600; }
+.oc-ranked-tied { font-size: .6875rem; font-weight: 500; color: var(--muted-foreground); }
+.oc-ranked-score { display: grid; justify-items: end; font-variant-numeric: tabular-nums; text-align: right; }
+.oc-ranked-hidden { display: inline-flex; align-items: center; gap: 4px; font-size: .75rem; color: var(--muted-foreground); }
+.oc-ranked-band { display: inline-flex; align-items: center; gap: 6px; padding: 1px 8px; border-radius: 999px; font-size: .75rem; font-weight: 500; color: var(--foreground); border: 1px solid transparent; }
+.oc-ranked-band::before { content: ""; width: 8px; height: 8px; border-radius: 999px; }
+.oc-ranked-band[data-band="green"] { background: color-mix(in oklab, var(--oc-band-green) 16%, transparent); border-color: color-mix(in oklab, var(--oc-band-green) 45%, transparent); }
+.oc-ranked-band[data-band="green"]::before { background: var(--oc-band-green); }
+.oc-ranked-band[data-band="yellow"] { background: color-mix(in oklab, var(--oc-band-yellow) 18%, transparent); border-color: color-mix(in oklab, var(--oc-band-yellow) 45%, transparent); }
+.oc-ranked-band[data-band="yellow"]::before { background: var(--oc-band-yellow); }
+.oc-ranked-band[data-band="red"] { background: color-mix(in oklab, var(--oc-band-red) 14%, transparent); border-color: color-mix(in oklab, var(--oc-band-red) 45%, transparent); }
+.oc-ranked-band[data-band="red"]::before { background: var(--oc-band-red); }
+.oc-ranked-tie { padding-left: 8px; border-left: 2px solid var(--border); }
+@media (max-width: 640px) {
+  .oc-ranked-open { grid-template-columns: 2.25rem minmax(0, 1fr) auto; gap: 8px; }
+  .oc-ranked-open .oc-ranked-band { grid-column: 2 / -1; justify-self: start; }
+}

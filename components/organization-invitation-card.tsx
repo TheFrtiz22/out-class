@@ -42,11 +42,11 @@ export function OrganizationInvitationCard({ invitation, onChanged, allowDecline
       }
     } catch {
       setError(kind === "accepted"
-        ? "Could not accept this invitation. It may have expired or your access may have changed. Refresh requests or try again."
-        : "Could not update this request. Refresh requests or try again.");
+        ? "Could not accept this invitation. It may have expired or your access may have changed. Try again."
+        : "Could not update this request. Try again.");
     } finally { working.current = false; setBusy(null); }
   }
-  return <li className={compact ? "rounded-lg border border-brand-orange/20 bg-card px-4 py-3" : "rounded-xl border bg-card p-4 sm:p-5"} aria-busy={!!busy}>
+  return <li className={compact ? "rounded-lg border border-brand-orange/20 oc-glass-surface px-4 py-3" : "rounded-xl border oc-glass-surface p-4 sm:p-5"} aria-busy={!!busy}>
     <article className="flex flex-col gap-4 lg:flex-row lg:items-center">
       <div className="flex min-w-0 flex-1 items-start gap-3 sm:gap-4">
         <ClubLogo clubId={invitation.club.id} logoUrl={invitation.club.logoUrl} marketing={invitation.club.marketing} color={invitation.club.color || DEFAULT_CLUB_COLOR} text={invitation.club.name.slice(0, 2)} />

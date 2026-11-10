@@ -6,10 +6,11 @@ import { flushEditors } from "@/lib/autosave-navigation"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
 import { Button } from "@/components/ui/button"
 
-export function AvailabilityButton({ clubId, roundId, complete }: { clubId?: string; roundId?: string; complete?: boolean }) {
+/** The one link into `/settings/availability`. Calendar shows it as "Availability"; club Scheduling as "Set My Availability". */
+export function AvailabilityButton({ clubId, roundId, complete, label = "Set My Availability", variant = "default" }: { clubId?: string; roundId?: string; complete?: boolean; label?: string; variant?: "default" | "outline" }) {
   const router = useRouter(), params = useSearchParams()
   const href = availabilityHref(clubId ?? params.get("clubId") ?? undefined, roundId ?? params.get("roundId") ?? undefined)
-  return <div className="space-y-1"><Button type="button" className="min-h-12 gap-2 px-5" onClick={() => {
+  return <div className="space-y-1"><Button type="button" variant={variant} className="min-h-12 gap-2 px-5" onClick={() => {
     void flushEditors().then(() => { if (canLeaveWorkspace()) router.push(href) }).catch(() => {})
-  }}><CalendarDays className="size-5" aria-hidden="true" />Set My Availability</Button>{complete !== undefined && <p className="text-xs text-muted-foreground">{complete ? "Availability saved · update anytime" : "Availability not set yet"}</p>}</div>
+  }}><CalendarDays className="size-5" aria-hidden="true" />{label}</Button>{complete !== undefined && <p className="text-xs text-muted-foreground">{complete ? "Availability saved · update anytime" : "Availability not set yet"}</p>}</div>
 }

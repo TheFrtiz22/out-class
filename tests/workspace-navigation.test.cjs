@@ -5,12 +5,13 @@ function shell(routeSearch,windowSearch='') {
  const effects=[],changes=[],redirects=[],stateChanges=[],historyChanges=[]
  const demo={isDemoEnabled:true,state:{perspective:{role:'leader',clubId:'mii'}},viewAs:(...args)=>changes.push(args)}
  const router={replace:path=>redirects.push(path),push:path=>redirects.push(path)}
- const mocks={
+ const mocks={...require('./helpers/shell-stubs.cjs'),
   react:{useState:initial=>[typeof initial==='function'?initial():initial,value=>stateChanges.push(value)],useEffect:effect=>effects.push(effect),useRef:current=>({current}),useMemo:fn=>fn()},
   'next/navigation':{useRouter:()=>router,useSearchParams:()=>new URLSearchParams(routeSearch),usePathname:()=>'/'},
   '@/contexts/demo-context':{useDemoMode:()=>demo},
   '@/contexts/auth-context':{useAuth:()=>({user:{memberships:[]},selectClub(){}})},
   '@/lib/demo/store':{demoDashboard:()=>({applications:[],attendances:[]})},
+  '@/lib/demo/loader':{loadedDemoStore:()=>({demoDashboard:()=>({applications:[],attendances:[]})})},
   '@/lib/student-navigation':navigationModule.exports,
   '@/lib/navigation':require('./helpers/navigation-module.cjs'),
   '@/lib/club-workspace':{clubWorkspaceHref:id=>`/club/${id}/workspace`},

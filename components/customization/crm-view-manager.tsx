@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { LayoutGrid, Rows3, SlidersHorizontal, X } from "@/components/icons"
 import { Button } from "@/components/ui/button"
+import { SegmentedControl } from "@/components/ui/segmented-control"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -41,9 +42,7 @@ export function CRMViewManager({ clubId = "vvf" }: { clubId?: string }) {
             </label>)}
           </PopoverContent>
         </Popover>
-        <div className="flex rounded-xl border border-border" aria-label="CRM layout">
-          {(["table", "pipeline"] as const).map(layout => <Button key={layout} variant="ghost" className="shadow-none hover:bg-muted aria-pressed:bg-muted" aria-pressed={crm.layout === layout} onClick={() => update(p => ({ ...p, crm: { ...p.crm, layout } }))}>{layout === "table" ? <Rows3 className="size-4" /> : <LayoutGrid className="size-4" />}{layout === "table" ? "Table View" : "Board View"}</Button>)}
-        </div>
+        <SegmentedControl label="CRM layout" value={crm.layout} onChange={layout => update(p => ({ ...p, crm: { ...p.crm, layout } }))} options={[{ value: "table", label: <span className="inline-flex items-center gap-2"><Rows3 className="size-4" />Table View</span> }, { value: "pipeline", label: <span className="inline-flex items-center gap-2"><LayoutGrid className="size-4" />Board View</span> }]} />
         <Popover><PopoverTrigger asChild><Button variant="outline" className="shadow-none">Save view</Button></PopoverTrigger>
           <PopoverContent className="rounded-xl border-border bg-white shadow-none" align="end">
             <form className="space-y-3" onSubmit={event => { event.preventDefault(); saveView() }}>

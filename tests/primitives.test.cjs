@@ -14,7 +14,13 @@ test("PageHeader, Panel, DataTable, EmptyState and StatusPill live in components
 // Display and document headings that are not page titles keep their own typography.
 const h1Exceptions = {
   "components/landing/landing-hero.tsx": "marketing hero display headline",
-  "components/auth/login-brand-panel.tsx": "sign-in brand panel display headline",
+  "components/auth/login-auth-panel.tsx": "sign-in card serif display headline (public frame)",
+  "components/auth/signup-page-view.tsx": "sign-up card serif display headline (public frame)",
+  "components/password-recovery.tsx": "forgot/reset password card serif display headline (public frame)",
+  "components/landing/sign-in-card.tsx": "signed-out link card headline (invitation, club access, club claim)",
+  "components/landing/legal-page.tsx": "Privacy and Terms document title",
+  "app/not-found.tsx": "public 404 card headline",
+  "app/error.tsx": "error card headline (no product shell to provide PageHeader)",
   "components/interview-applicant-panel.tsx": "candidate name inside the interview room",
   "components/communications/decision-letter.tsx": "the letter's own title on the printed page",
 }

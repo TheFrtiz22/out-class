@@ -1,5 +1,6 @@
 import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
 import { createHash } from "node:crypto"
+import { withoutRankedReviewConfiguration } from "@/lib/ranked-review"
 import type { AppTransactionClient } from "@/utils/prisma"
 import { intervalAvailability, localParts } from "@/lib/availability"
 import { sessionsOverlap, MAX_PANEL_SESSIONS, type PanelBusyInterval, type PanelMember, type PanelScene, type PanelSession } from "@/lib/panel-proposals"
@@ -94,7 +95,7 @@ export async function loadPanelPlanningScene(tx: AppTransactionClient, scope: Sc
       baselineWorkloadMinutes: commitments.reduce((n, c) => n + (+new Date(c.endTime) - +new Date(c.startTime)) / 60000 + c.buffer, 0), allowedSlotIds, blocks }
   })
   const scene: PanelScene = { sessions, members }
-  const source = { round: { id: round.id, archivedAt: round.archivedAt, type: round.type, anonymousReview: round.anonymousReview, configuration: round.configuration, panelScheduleRevision: round.panelScheduleRevision }, roles: pool.club,
+  const source = { round: { id: round.id, archivedAt: round.archivedAt, type: round.type, anonymousReview: round.anonymousReview, configuration: withoutRankedReviewConfiguration(round.configuration), panelScheduleRevision: round.panelScheduleRevision }, roles: pool.club,
     rooms: rooms.map(r => ({ id:r.id,name:r.name,location:r.location,kind:r.kind,timezone:r.timezone,duration:r.duration,buffer:r.buffer,isOpen:r.isOpen,panelApprovalRevision:r.panelApprovalRevision,panelApprovedBy:r.panelApprovedBy,panelMemberIds:r.panelMemberIds,approvedPanelMemberIds:r.approvedPanelMemberIds,slots:r.slots.map(s=>({id:s.id,capacity:s.capacity,panelScheduleVersionId:s.panelScheduleVersionId,publishedPanelMemberIds:s.publishedPanelMemberIds})) })),
     sessions, overrides, candidates: pool.members, commitments: [...committed].map(([userId, rows]) => ({ userId, rows: [...rows.values()].sort((a, b) => a.startTime.localeCompare(b.startTime) || a.endTime.localeCompare(b.endTime)) })) }
   const fingerprint = createHash("sha256").update(JSON.stringify(source)).digest("hex")

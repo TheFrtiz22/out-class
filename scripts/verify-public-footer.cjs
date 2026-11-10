@@ -47,17 +47,18 @@ async function run() {
         await open(audience)
         const layout = await page.evaluate(() => {
           const f = document.querySelector('.oc-footer-field'), w = document.querySelector('.oc-footer-letters')
-          const foot = f.closest('footer'), cta = document.querySelector('.oc-final-invitation')
+          const foot = f.closest('footer'), cta = document.querySelector('.oc-footer-invitation')
           const controls = [...foot.querySelectorAll('a,button')]
-          return { ratio: w.getBoundingClientRect().width / f.getBoundingClientRect().width, overflow: document.documentElement.scrollWidth > innerWidth, ctaBackground: getComputedStyle(cta).backgroundColor, footerBackground: getComputedStyle(foot).backgroundColor, targets: controls.map(el => ({ label: el.textContent.trim() || el.getAttribute('aria-label'), height: el.getBoundingClientRect().height })), labelCount: f.querySelectorAll('.sr-only').length, hiddenLetters: w.getAttribute('aria-hidden') }
+          return { ratio: w.getBoundingClientRect().width / f.getBoundingClientRect().width, overflow: document.documentElement.scrollWidth > innerWidth, ctaInPanel: !!cta?.closest('.oc-footer-panel'), targets: controls.map(el => ({ label: el.textContent.trim() || el.getAttribute('aria-label'), height: el.getBoundingClientRect().height })), labelCount: f.querySelectorAll('.sr-only').length, hiddenLetters: w.getAttribute('aria-hidden') }
         })
         assert.ok(layout.ratio >= .90 && layout.ratio <= .95, `wordmark scale ${width}: ${layout.ratio}`)
         assert.equal(layout.overflow, false, `overflow at ${width}`)
-        assert.equal(layout.ctaBackground, layout.footerBackground)
+        assert.equal(layout.ctaInPanel, true, 'the call to action opens the footer panel')
         assert.ok(layout.targets.every(target => target.height >= 44), '44px footer targets')
         assert.equal(layout.labelCount, 1)
         assert.equal(layout.hiddenLetters, 'true')
-        const text = await footer.innerText()
+        // The homepage call to action inside the panel follows the audience; everything else is shared.
+        const text = await footer.evaluate(f => { const c = f.cloneNode(true); c.querySelector('.oc-footer-invitation')?.remove(); return c.textContent.replace(/\s+/g, ' ').trim() })
         if (audience === 'student') studentText = text
         else assert.equal(text, studentText, 'audiences share the same footer')
         layouts.push({ width, height, audience, ...layout })
@@ -68,14 +69,8 @@ async function run() {
 
     await page.setViewportSize({ width: 1440, height: 1000 })
     await open('student')
-    for (const label of ['Privacy', 'Terms', 'Contact']) {
-      await footer.getByRole('button', { name: label, exact: true }).click()
-      await page.getByRole('dialog').getByRole('heading', { name: label, exact: true }).waitFor()
-      await page.keyboard.press('Escape')
-      await page.getByRole('dialog').waitFor({ state: 'hidden' })
-      await page.waitForFunction(label => document.activeElement?.textContent.trim() === label, label)
-      assert.equal(await footer.getByRole('button', { name: label, exact: true }).evaluate(el => el === document.activeElement), true)
-    }
+    // The Privacy / Terms / Contact dialogs were removed in the public-site cleanup (legal pages are real routes,
+    // hidden while LEGAL_PAGES_PUBLIC is off), so only same-document audience navigation is checked here.
     await page.evaluate(() => { window.footerDocumentMarker = 'same-document' })
     await footer.getByRole('link', { name: 'For Club Leaders', exact: true }).click()
     await page.waitForFunction(() => document.querySelector('#product-journey')?.dataset.perspective === 'leader' && Math.abs(document.querySelector('#about').getBoundingClientRect().top - 112) < 2)
@@ -86,7 +81,7 @@ async function run() {
     await footer.getByRole('link', { name: 'For Students', exact: true }).click()
     await page.waitForFunction(() => document.querySelector('#product-journey')?.dataset.perspective === 'student')
     assert.equal(await page.evaluate(() => window.footerDocumentMarker), 'same-document')
-    console.log('PASS existing dialogs, keyboard focus restoration and same-document audience navigation')
+    console.log('PASS same-document audience navigation from the footer')
 
     await page.emulateMedia({ reducedMotion: 'no-preference' })
     await page.evaluate(() => scrollTo({ top: document.body.scrollHeight, behavior: 'instant' }))
