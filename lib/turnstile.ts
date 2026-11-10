@@ -1,20 +1,20 @@
 /**
  * Cloudflare Turnstile bot checks for signed-out forms.
  *
- * Two enforcement points, so no path can be skipped by calling a provider directly:
- * - Supabase Auth (signup, password and code sign-in, code resend, password
- *   recovery, Admin password re-check): the browser token is passed to Supabase
- *   as `captchaToken`, and Supabase's own Bot and Abuse Protection verifies it.
- *   Without that dashboard setting the token is ignored.
- *   Server paths also refuse a missing token (`turnstileTokenPresent`) without
- *   spending it, because a token can be verified only once.
- * - OutClass's own public endpoints (school requests, student invitation claims,
- *   which call no captcha-aware Auth method): verified here with siteverify.
+ * A token can be redeemed once, so each token has exactly one verifier:
+ * - Server paths (signup, password recovery, school requests, student claims):
+ *   OutClass runs siteverify, unless TURNSTILE_AUTH_ENFORCED_BY_SUPABASE is "1".
+ *   With that flag, Auth server paths only refuse a missing token and forward it
+ *   to Supabase Auth as `captchaToken` (`authTurnstile`).
+ * - Browser Auth calls (password and code sign-in, code resend) and the Admin
+ *   password re-check always forward the token; only Supabase's Bot and Abuse
+ *   Protection setting verifies them, so they are protected once that is on.
  *
  * Completely off (no script, no widget, no checks) unless BOTH
- * NEXT_PUBLIC_TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY are set. next.config.mjs
- * turns that into the build-time flag TURNSTILE_ENABLED for the browser, which
- * never sees the secret. Once configured, verification fails closed.
+ * NEXT_PUBLIC_TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY are set at build:
+ * next.config.mjs turns that into TURNSTILE_ENABLED, which the browser and the
+ * server both require, so keys added without a rebuild change nothing. The
+ * browser never sees the secret. Once configured, verification fails closed.
  */
 export type TurnstileAction = "signup" | "login" | "password-recovery" | "school-request" | "student-claim" | "admin"
 export type TurnstileResult = { ok: true } | { ok: false; reason: "missing" | "rejected" | "unavailable" }
@@ -37,8 +37,16 @@ export const TURNSTILE_TIMEOUT_MS = 2500
  */
 export const TURNSTILE_SITE_KEY = process.env.TURNSTILE_ENABLED === "1" ? process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "" : ""
 
+/** Inlined at build by next.config.mjs; the same value the browser was built with. */
+const BUILT_ENABLED = process.env.TURNSTILE_ENABLED
+
 export function turnstileConfigured(env: Env = process.env) {
-  return Boolean(env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && env.TURNSTILE_SECRET_KEY)
+  return (env.TURNSTILE_ENABLED ?? BUILT_ENABLED) === "1" && Boolean(env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && env.TURNSTILE_SECRET_KEY)
+}
+
+/** Server-only: "1" once Supabase Auth's captcha setting is on (same secret). */
+export function supabaseVerifiesCaptcha(env: Env = process.env) {
+  return env.TURNSTILE_AUTH_ENFORCED_BY_SUPABASE === "1"
 }
 
 /** Supabase Auth option. Only a well-formed token is passed; Supabase rejects missing ones when enforcing. */
@@ -106,6 +114,21 @@ export async function verifyTurnstile(token: unknown, { action, remoteIp, env = 
     console.warn("Turnstile verification unavailable")
     return { ok: false, reason: "unavailable" }
   }
+}
+
+/**
+ * Server-side Supabase Auth calls (signup, password recovery). Returns the
+ * options to spread into the Auth call: the token only when Supabase is the
+ * verifier, otherwise nothing, because siteverify has already spent it.
+ */
+export async function authTurnstile(token: unknown, opts: {
+  action: TurnstileAction; remoteIp?: string; env?: Env; fetcher?: Fetcher; timeoutMs?: number
+}): Promise<{ ok: true; captcha: { captchaToken?: string } } | { ok: false; reason: "missing" | "rejected" | "unavailable" }> {
+  const env = opts.env ?? process.env
+  if (!turnstileConfigured(env)) return { ok: true, captcha: captchaOption(token) }
+  if (supabaseVerifiesCaptcha(env)) return turnstileTokenPresent(token, env) ? { ok: true, captcha: captchaOption(token) } : { ok: false, reason: "missing" }
+  const check = await verifyTurnstile(token, { ...opts, env })
+  return check.ok ? { ok: true, captcha: {} } : check
 }
 
 export function turnstileMessage(reason: "missing" | "rejected" | "unavailable") {

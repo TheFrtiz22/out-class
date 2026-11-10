@@ -6,7 +6,7 @@ function load(file) {
   return m.exports
 }
 const t = load('lib/turnstile.ts')
-const env = { NEXT_PUBLIC_TURNSTILE_SITE_KEY: 'site', TURNSTILE_SECRET_KEY: 'secret' }
+const env = { TURNSTILE_ENABLED: '1', NEXT_PUBLIC_TURNSTILE_SITE_KEY: 'site', TURNSTILE_SECRET_KEY: 'secret' }
 const reply = (body, ok = true) => async () => ({ ok, status: ok ? 200 : 503, json: async () => body })
 const read = file => fs.readFileSync(path.resolve(file), 'utf8')
 
@@ -113,8 +113,8 @@ test('signup hands the token to Supabase Auth and reports a failed check without
 
 test('every Supabase Auth call that sends email or checks a password carries the token', () => {
   const expectations = [
-    ['actions/onboarding.ts', /auth\.signUp\(withCaptcha\(\{[\s\S]{0,200}\}, turnstileToken\)\)/],
-    ['app/api/auth/password-recovery/route.ts', /resetPasswordForEmail\(email\.data, \{[\s\S]{0,120}captchaOption\(input\.turnstileToken\)/],
+    ['actions/onboarding.ts', /auth\.signUp\(\{[\s\S]{0,200}\.\.\.check\.captcha \}/],
+    ['app/api/auth/password-recovery/route.ts', /resetPasswordForEmail\(email\.data, \{[\s\S]{0,120}\.\.\.captcha,/],
     ['components/views/auth-view.tsx', /signInWithPassword\(withCaptcha\([\s\S]{0,160}, turnstileToken\)\)/],
     ['components/views/auth-view.tsx', /signInWithOtp\(withCaptcha\([\s\S]{0,160}, turnstileToken\)\)/],
     ['components/views/student-onboarding-wizard.tsx', /auth\.resend\(withCaptcha\([\s\S]{0,160}, turnstileToken\)\)/],
@@ -187,16 +187,70 @@ test('the widget is off unless both keys were set at build; the browser never ge
   assert.match(widget, /if \(!TURNSTILE_SITE_KEY\) return null/, 'nothing renders when off')
 })
 
-test('server paths that Supabase verifies refuse a missing token without spending it', () => {
+test('Auth server paths: one verifier per token, chosen by TURNSTILE_AUTH_ENFORCED_BY_SUPABASE', async () => {
   assert.equal(t.turnstileTokenPresent(undefined, {}), true, 'unconfigured: no-op')
   assert.equal(t.turnstileTokenPresent(undefined, env), false)
   assert.equal(t.turnstileTokenPresent('x'.repeat(2049), env), false)
   assert.equal(t.turnstileTokenPresent('tok', env), true)
-  const signup = read('actions/onboarding.ts')
-  assert.ok(signup.indexOf('turnstileTokenPresent(turnstileToken)') < signup.indexOf('auth/v1/settings'))
-  const recovery = read('app/api/auth/password-recovery/route.ts')
-  assert.ok(recovery.indexOf('turnstileTokenPresent(input.turnstileToken)') < recovery.indexOf('resetPasswordForEmail'))
-  assert.doesNotMatch(signup + recovery, /verifyTurnstile/, 'never siteverify a token that Supabase will verify')
+  let calls = 0
+  const fetcher = async () => { calls++; return { ok: true, json: async () => ({ success: true, action: 'signup' }) } }
+  // Unconfigured: no check, any token passes through unchanged.
+  assert.deepEqual(await t.authTurnstile('tok', { action: 'signup', env: {}, fetcher }), { ok: true, captcha: { captchaToken: 'tok' } })
+  // Keys set, flag unset: OutClass verifies and does not forward the spent token.
+  assert.deepEqual(await t.authTurnstile('tok', { action: 'signup', env, fetcher }), { ok: true, captcha: {} })
+  assert.equal(calls, 1)
+  assert.deepEqual(await t.authTurnstile(undefined, { action: 'signup', env, fetcher }), { ok: false, reason: 'missing' })
+  // Flag "1": presence check only, token forwarded to Supabase, siteverify never called.
+  const enforced = { ...env, TURNSTILE_AUTH_ENFORCED_BY_SUPABASE: '1' }
+  assert.deepEqual(await t.authTurnstile('tok', { action: 'signup', env: enforced, fetcher }), { ok: true, captcha: { captchaToken: 'tok' } })
+  assert.deepEqual(await t.authTurnstile(undefined, { action: 'signup', env: enforced, fetcher }), { ok: false, reason: 'missing' })
+  assert.equal(calls, 1)
+  const signup = read('actions/onboarding.ts'), recovery = read('app/api/auth/password-recovery/route.ts')
+  assert.ok(signup.indexOf('authTurnstile(turnstileToken') < signup.indexOf('auth/v1/settings'))
+  assert.ok(recovery.indexOf('authTurnstile(input.turnstileToken') < recovery.indexOf('resetPasswordForEmail'))
+})
+
+test('flag unset: registerStudent runs siteverify first and never reaches signUp when it rejects', async () => {
+  const originalFetch = global.fetch, saved = { ...process.env }, urls = []
+  let signUps = 0
+  Object.assign(process.env, env)
+  delete process.env.TURNSTILE_AUTH_ENFORCED_BY_SUPABASE
+  global.fetch = async url => { urls.push(String(url)); return { ok: true, status: 200, json: async () => ({ success: false, 'error-codes': ['invalid-input-response'] }) } }
+  try {
+    const { registerStudent } = loadWith('actions/onboarding.ts', {
+      'next/headers': { cookies: async () => ({ has: () => false }) },
+      '@/lib/platform-view-as': { PLATFORM_VIEW_COOKIE: 'outclass-platform-view' },
+      '@/lib/onboarding-schemas': loadWith('lib/onboarding-schemas.ts', { '@/lib/student-profile': { gpaSchema: require('zod').z.string(), linkedinUrlSchema: require('zod').z.string() } }),
+      '@/lib/auth-email': { authEmailError: () => 'email error' },
+      '@/lib/turnstile': t,
+      '@/utils/supabase/server': { createClient: async () => ({ auth: { signUp: async () => { signUps++; return {} }, signOut: async () => {} } }) },
+    })
+    const account = { firstName: 'Test', lastName: 'Student', email: 'test@virginia.edu', password: 'a-valid-password' }
+    assert.deepEqual(await registerStudent(account, 'x'), { error: t.turnstileMessage('rejected') })
+    assert.deepEqual(urls, ['https://challenges.cloudflare.com/turnstile/v0/siteverify'])
+    assert.equal(signUps, 0)
+  } finally {
+    global.fetch = originalFetch
+    for (const k of Object.keys(process.env)) if (!(k in saved)) delete process.env[k]
+    Object.assign(process.env, saved)
+  }
+})
+
+test('server checks follow the build: keys without TURNSTILE_ENABLED (no rebuild) stay off', async () => {
+  const keysOnly = { NEXT_PUBLIC_TURNSTILE_SITE_KEY: 'site', TURNSTILE_SECRET_KEY: 'secret' }
+  assert.equal(t.turnstileConfigured(keysOnly), false)
+  assert.equal(t.turnstileConfigured({ ...keysOnly, TURNSTILE_ENABLED: '' }), false)
+  assert.equal(t.turnstileConfigured(env), true)
+  assert.equal(t.turnstileConfigured({ TURNSTILE_ENABLED: '1', NEXT_PUBLIC_TURNSTILE_SITE_KEY: 'site' }), false)
+  assert.deepEqual(await t.verifyTurnstile(undefined, { action: 'school-request', env: keysOnly, fetcher: async () => { throw new Error('not called') } }), { ok: true })
+  assert.equal(t.turnstileTokenPresent(undefined, keysOnly), true)
+  assert.match(read('lib/turnstile.ts'), /const BUILT_ENABLED = process\.env\.TURNSTILE_ENABLED\n/, 'the server reads the inlined build flag')
+})
+
+test('Admin password re-check refuses a missing token before recording an attempt or calling Supabase', () => {
+  const elevation = read('app/api/platform/elevation/route.ts')
+  const check = elevation.indexOf('turnstileTokenPresent(input.turnstileToken)')
+  assert.ok(check > 0 && check < elevation.indexOf('platform.elevation.password-attempt') && check < elevation.indexOf('signInWithPassword('))
 })
 
 test('student claims verify with siteverify before any account lookup; the token is stripped from the strict schema', () => {

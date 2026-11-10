@@ -8,7 +8,7 @@ import {
 } from "@/lib/password-recovery";
 import { DEMO_COOKIE } from "@/lib/demo/access";
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
-import { captchaFailed, captchaOption, turnstileMessage, turnstileTokenPresent } from "@/lib/turnstile";
+import { authTurnstile, captchaFailed, turnstileMessage, turnstileRemoteIp } from "@/lib/turnstile";
 
 const reply = (body: object, status = 200) =>
   NextResponse.json(body, {
@@ -52,8 +52,16 @@ export async function POST(request: NextRequest) {
     );
 
   // Same response for every address: checked before any account or provider lookup.
-  if (input.action === "request" && !turnstileTokenPresent(input.turnstileToken))
-    return reply({ error: turnstileMessage("missing") }, 400);
+  let captcha: { captchaToken?: string } = {};
+  if (input.action === "request") {
+    const check = await authTurnstile(input.turnstileToken, {
+      action: "password-recovery",
+      remoteIp: turnstileRemoteIp(request.headers.get("x-forwarded-for")),
+    });
+    if (!check.ok)
+      return reply({ error: turnstileMessage(check.reason) }, check.reason === "unavailable" ? 503 : 400);
+    captcha = check.captcha;
+  }
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -75,10 +83,10 @@ export async function POST(request: NextRequest) {
   });
   if (input.action === "request" && email.success) {
     try {
-      // Only requests send email; Supabase Bot and Abuse Protection verifies the token when enabled.
+      // Only requests send email. The token is forwarded only when Supabase verifies it.
       const { error } = await client.auth.resetPasswordForEmail(email.data, {
         redirectTo: `${request.nextUrl.origin}/reset-password`,
-        ...captchaOption(input.turnstileToken),
+        ...captcha,
       });
       // A failed security check says nothing about whether the account exists.
       if (captchaFailed(error))

@@ -5,7 +5,7 @@ import { cookies } from "next/headers"
 import { createClient } from "@/utils/supabase/server"
 import { registrationSchema } from "@/lib/onboarding-schemas"
 import { authEmailError } from "@/lib/auth-email"
-import { captchaFailed, turnstileMessage, turnstileTokenPresent, withCaptcha } from "@/lib/turnstile"
+import { authTurnstile, captchaFailed, turnstileMessage } from "@/lib/turnstile"
 
 /** Normal signup always requires Supabase email confirmation, in every environment. */
 export async function registerStudent(input: unknown, turnstileToken?: unknown) {
@@ -14,8 +14,9 @@ export async function registerStudent(input: unknown, turnstileToken?: unknown) 
   const parsed = registrationSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.issues[0].message }
   const { email, password, firstName, lastName } = parsed.data
-  // Configured deployments refuse a missing bot-check token before any provider call.
-  if (!turnstileTokenPresent(turnstileToken)) return { error: turnstileMessage("missing") }
+  // Bot check before any provider call: siteverify here, or (once Supabase enforces it) a presence check.
+  const check = await authTurnstile(turnstileToken, { action: "signup" })
+  if (!check.ok) return { error: turnstileMessage(check.reason) }
   const supabase = await createClient(cookieStore)
   try {
     // Fail closed before creating a user if this project's confirmation policy is unsafe.
@@ -28,10 +29,10 @@ export async function registerStudent(input: unknown, turnstileToken?: unknown) 
     if (settings.mailer_autoconfirm !== false || settings.external?.email !== true) {
       return { error: "Account registration is temporarily unavailable. Contact OutClass support." }
     }
-    // Supabase Bot and Abuse Protection verifies the token when enabled.
-    const { data, error } = await supabase.auth.signUp(withCaptcha({
-      email, password, options: { data: { first_name: firstName, last_name: lastName } },
-    }, turnstileToken))
+    // The token is forwarded only when Supabase Bot and Abuse Protection is its verifier.
+    const { data, error } = await supabase.auth.signUp({
+      email, password, options: { data: { first_name: firstName, last_name: lastName }, ...check.captcha },
+    })
     // Never retain an unexpected auto-authenticated signup, including malformed
     // responses that also claim an existing account.
     if (data.session) {

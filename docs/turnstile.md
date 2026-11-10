@@ -4,32 +4,33 @@ Status: implemented, completely off unless BOTH keys are set at build time. Upda
 
 ## What is protected, and where it is enforced
 
-| Form | Call | Enforced by |
-| --- | --- | --- |
-| Student signup (`/signup`) | `supabase.auth.signUp` in `actions/onboarding.ts` | Supabase Auth captcha |
-| Signup code resend | `supabase.auth.resend` (browser) | Supabase Auth captcha |
-| Password sign-in, email-code request (`/login`) | `signInWithPassword`, `signInWithOtp` (browser) | Supabase Auth captcha |
-| Forgot password and account settings reset email | `resetPasswordForEmail` in `/api/auth/password-recovery` | Supabase Auth captcha |
-| Admin password re-check (`/platform/login`) | `signInWithPassword` in `/api/platform/elevation` | Supabase Auth captcha |
-| School request (`/request-school`) | `/api/school-requests` | OutClass server, Cloudflare siteverify (`lib/turnstile.ts`) |
-| Student invitation claim (`/auth/student-claim`) | `/api/auth/student-claim` (`verifyOtp` + `updateUser`, not captcha-aware) | OutClass server, Cloudflare siteverify, before any account lookup |
+Two server-only switches: the keys (stage 1) and `TURNSTILE_AUTH_ENFORCED_BY_SUPABASE` (stage 2).
 
-One verifier per token (a Turnstile token can be redeemed once). Auth paths pass the token to
-Supabase instead of verifying it in OutClass, because the login code request, password
-sign-in and code resend go straight from the browser to Supabase, and Supabase's Auth
-endpoints accept direct calls with the public key: only Supabase's own setting closes that
-path. If OutClass also ran siteverify on the server-side Auth calls (signup, password
-recovery), the token would be spent and Supabase would reject it. Those server paths only
-refuse a missing token when configured (`turnstileTokenPresent`). Paths with no
-captcha-aware Supabase call (school requests, student claims) use siteverify. A test fails if
-a new direct Auth call is added without the token.
+| Form | Call | Stage 1: keys set, flag unset | Stage 2: flag `1` + Supabase captcha on |
+| --- | --- | --- | --- |
+| Student signup (`/signup`) | `signUp` in `actions/onboarding.ts` | OutClass siteverify; token not forwarded | Presence check; Supabase verifies |
+| Forgot password, account settings reset email | `resetPasswordForEmail` in `/api/auth/password-recovery` | OutClass siteverify; token not forwarded | Presence check; Supabase verifies |
+| Signup code resend | `auth.resend` (browser) | Not verified | Supabase verifies |
+| Password sign-in, email-code request (`/login`) | `signInWithPassword`, `signInWithOtp` (browser) | Not verified | Supabase verifies |
+| Admin password re-check (`/platform/login`) | `signInWithPassword` in `/api/platform/elevation` | Missing token refused; not verified | Presence check; Supabase verifies |
+| School request (`/request-school`) | `/api/school-requests` | OutClass siteverify | OutClass siteverify |
+| Student invitation claim (`/auth/student-claim`) | `/api/auth/student-claim` (`verifyOtp` + `updateUser`, not captcha-aware) | OutClass siteverify, before any account lookup | Same |
+
+One verifier per token: a Turnstile token can be redeemed once, so OutClass never runs
+siteverify on a token it then forwards to Supabase (`authTurnstile` in `lib/turnstile.ts`).
+Browser-side login (password, email code) and code resend go straight from the browser to
+Supabase with the public key, so they are protected **only once Supabase's captcha setting
+is on** (stage 2). A test fails if a new direct Auth call is added without the token.
+
+The server requires the build-time `TURNSTILE_ENABLED` flag as well as both keys, so keys
+added without a rebuild change nothing on either side.
 
 Siteverify has a 2.5 s timeout. A timeout or Cloudflare outage fails closed with "temporarily
-unavailable. Please try again." (HTTP 503): availability of those two forms depends on
-Cloudflare while configured. The bot-check answer never depends on whether an address has an
-account. No CSP change was needed: the only CSP is `frame-ancestors 'self'`, which does not
-restrict scripts or child frames. If a `script-src`/`frame-src` policy is added later, include
-`https://challenges.cloudflare.com` in both.
+unavailable. Please try again." (HTTP 503): while configured, the forms OutClass verifies
+depend on Cloudflare being reachable. The bot-check answer never depends on whether an
+address has an account. No CSP change was needed: the only CSP is `frame-ancestors 'self'`,
+which does not restrict scripts or child frames. If a `script-src`/`frame-src` policy is added
+later, include `https://challenges.cloudflare.com` in both.
 
 Not challenged: `verifyOtp` (code and link verification), Microsoft sign-in, signed-in actions.
 
@@ -37,16 +38,20 @@ Not challenged: `verifyOtp` (code and link verification), Microsoft sign-in, sig
 
 1. Cloudflare dashboard → Turnstile → add a widget for `www.out-class.net` (and preview
    hostnames if wanted), mode **Managed**. Copy the site key and secret key.
-2. Vercel: set `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` for Production
-   (both must be present at build; either alone keeps everything off). Redeploy (build-time). School requests are now verified; Auth calls now
-   carry tokens, which Supabase ignores until step 3.
-3. Confirm sign-in, signup and password reset still work on production.
-4. Supabase dashboard → Authentication → Bot and Abuse Protection → enable CAPTCHA,
-   provider Turnstile, paste the **same secret key**. From now on Supabase rejects Auth calls
-   without a valid token.
+   Vercel Production: set `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` (both
+   must be present at build; either alone keeps everything off), then redeploy. Signup,
+   password recovery, school requests and student claims are now verified by OutClass.
+   Confirm they still work on production.
+2. Later, in one window (to avoid a gap or a lockout):
+   - Vercel: set `TURNSTILE_AUTH_ENFORCED_BY_SUPABASE=1`, redeploy;
+   - Supabase dashboard → Authentication → Bot and Abuse Protection → enable CAPTCHA,
+     provider Turnstile, paste the **same secret key**.
+   Browser-side login and code resend are protected only from this point.
 
-Reverse order to turn it off (Supabase setting first). Enabling step 4 without step 2 locks
-everyone out of password sign-in and signup.
+To turn off, reverse: Supabase setting off first, then unset the flag and redeploy, then
+remove the keys. Supabase captcha on while the flag is unset rejects signup and password
+recovery (their tokens are spent by OutClass); flag set while Supabase captcha is off leaves
+those two forms with only a presence check.
 
 ## Behaviour
 
