@@ -409,6 +409,8 @@ export const getRoomWorkspace: Demo<"getRoomWorkspace"> = demoRoomApi.getRoomWor
 export const createInterviewRoom: Demo<"createInterviewRoom"> = demoRoomApi.createInterviewRoom
 export const setInterviewStaffingRequirement: Demo<"setInterviewStaffingRequirement"> = raw=>demoRoomApi.setInterviewStaffingRequirement(raw as Parameters<typeof demoRoomApi.setInterviewStaffingRequirement>[0])
 export const setInterviewRoomOpen: Demo<"setInterviewRoomOpen"> = demoRoomApi.setInterviewRoomOpen
+export const renameInterviewRoom: Demo<"renameInterviewRoom"> = demoRoomApi.renameInterviewRoom
+export const setInterviewRoomExternallyBooked: Demo<"setInterviewRoomExternallyBooked"> = demoRoomApi.setInterviewRoomExternallyBooked
 export const getApplicantSchedule: Demo<"getApplicantSchedule"> = demoRoomApi.getApplicantSchedule
 export const reserveInterview: Demo<"reserveInterview"> = demoRoomApi.reserveInterview
 export const cancelRoomBooking: Demo<"cancelRoomBooking"> = demoRoomApi.cancelRoomBooking

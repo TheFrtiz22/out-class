@@ -11,7 +11,7 @@ import { prisma } from "@/utils/prisma"
 import { requireAuth, requireClubPermission } from "@/utils/auth"
 import { hasPermission } from "@/lib/permissions"
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization"
-import { roomInputSchema, roomSlots, overlaps, isPublishedBookingSlot, type RoomInput, type InterviewRoom, type RoomWorkspace, type ApplicantSchedule } from "@/lib/interview-rooms";
+import { roomInputSchema, roomRenameSchema, roomExternalBookingSchema, roomSlots, overlaps, isPublishedBookingSlot, type RoomInput, type InterviewRoom, type RoomWorkspace, type ApplicantSchedule } from "@/lib/interview-rooms";
 import { revalidatePath } from "next/cache"
 
 
@@ -24,7 +24,7 @@ const roomInclude = { slots: { include: { _count: { select: { bookings: true } }
 type StoredRoom = Prisma.InterviewRoomGetPayload<{ include: typeof roomInclude }>
 function presentRoom(room: StoredRoom, applicant = false): InterviewRoom {
   return { id: room.id, clubId: room.clubId, roundId: room.roundId, name: room.name, location: room.location, kind: room.kind, timezone: room.timezone, duration: room.duration, buffer: room.buffer, isOpen: room.isOpen, panelMemberIds: applicant ? [] : room.panelMemberIds,
-    ...(!applicant ? { interviewersNeeded: room.interviewersNeeded, staffingRevision: room.staffingRevision, approvedPanelMemberIds: room.approvedPanelMemberIds } : {}),
+    ...(!applicant ? { externallyBookedAt: room.externallyBookedAt?.toISOString() ?? null, interviewersNeeded: room.interviewersNeeded, staffingRevision: room.staffingRevision, approvedPanelMemberIds: room.approvedPanelMemberIds } : {}),
     slots: room.slots.filter(s => !applicant || +s.startTime > Date.now() && (!s.panelScheduleVersionId || s.publishedPanelMemberIds.length>0)).map(s => ({ id: s.id, startTime: s.startTime.toISOString(), endTime: s.endTime.toISOString(), capacity: s.capacity, booked: s._count.bookings, ...(!applicant ? { interviewersNeeded: s.interviewersNeeded, staffingRevision: s.staffingRevision, publishedPanelMemberIds:s.publishedPanelMemberIds,panelScheduleVersionId:s.panelScheduleVersionId } : {}) })) }
 }
 async function atomic<T>(fn: (tx: AppTransactionClient) => Promise<T>, freshReads=false): Promise<T> {
@@ -109,6 +109,43 @@ export async function setInterviewRoomOpen(raw: { roomId: string; open: boolean 
     await tx.auditLog.create({ data: { actorId: user.id, clubId: room.clubId, targetId: room.id, action: input.open ? "interview.room.open" : "interview.room.close" } })
   })
   revalidatePath(`/club/${room.clubId}/workspace`)
+}
+/** Rename only. Slots keep their stored location, so confirmed reservations are unchanged. */
+export async function renameInterviewRoom(raw: unknown) {
+  const input = roomRenameSchema.parse(raw)
+  const { user } = await requireAuth()
+  const result = await atomic(async tx => {
+    await authorizeClubTransaction(tx, input.clubId, user.id, ["interviews.manage"])
+    // Room names also identify a physical room in overlap checks; serialize with room creation.
+    await lockOperationalClub(tx, input.clubId)
+    const room = await tx.interviewRoom.findFirst({ where: { id: input.roomId, clubId: input.clubId }, include: { slots: true } })
+    if (!room) throw new Error("Room unavailable.")
+    if (room.name === input.name) return { name: room.name }
+    const others = await tx.interviewRoom.findMany({ where: { clubId: input.clubId, id: { not: room.id }, name: { equals: input.name, mode: "insensitive" }, OR: [{ isOpen: true }, { slots: { some: { bookings: { some: {} } } } }] }, include: { slots: true } })
+    if (others.some(other => other.slots.some(a => room.slots.some(b => overlaps(a, b, Math.max(room.buffer, other.buffer)))))) throw new Error("Another room with this name has overlapping interview times. Choose a different name.")
+    await tx.interviewRoom.update({ where: { id: room.id }, data: { name: input.name } })
+    await tx.auditLog.create({ data: { actorId: user.id, clubId: input.clubId, targetId: room.id, action: "interview.room.rename" } })
+    return { name: input.name }
+  })
+  revalidatePath(`/club/${input.clubId}/workspace`)
+  return result
+}
+/** Tracking only: records that the leader reserved the room in the school's system (UVA: 25Live). */
+export async function setInterviewRoomExternallyBooked(raw: unknown) {
+  const input = roomExternalBookingSchema.parse(raw)
+  const { user } = await requireAuth()
+  const result = await prisma.$transaction(async tx => {
+    await authorizeClubTransaction(tx, input.clubId, user.id, ["interviews.manage"])
+    const room = await tx.interviewRoom.findFirst({ where: { id: input.roomId, clubId: input.clubId }, select: { id: true, externallyBookedAt: true } })
+    if (!room) throw new Error("Room unavailable.")
+    if (!!room.externallyBookedAt === input.booked) return { externallyBookedAt: room.externallyBookedAt?.toISOString() ?? null }
+    const externallyBookedAt = input.booked ? new Date() : null
+    await tx.interviewRoom.update({ where: { id: room.id }, data: { externallyBookedAt } })
+    await tx.auditLog.create({ data: { actorId: user.id, clubId: input.clubId, targetId: room.id, action: input.booked ? "interview.room.external_booking.mark" : "interview.room.external_booking.clear" } })
+    return { externallyBookedAt: externallyBookedAt?.toISOString() ?? null }
+  })
+  revalidatePath(`/club/${input.clubId}/workspace`)
+  return result
 }
 export async function getApplicantSchedule(applicationId: string): Promise<ApplicantSchedule> {
   uuid.parse(applicationId)
