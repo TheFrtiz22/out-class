@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { equivalentJourneyStage, journeyChapterHref, journeyChapters, journeySample, type JourneyStage, type LandingPerspective } from "./journey-content"
 import { audienceFromPreference, audienceFromQuery, LANDING_AUDIENCE_PREFERENCE } from "@/lib/landing-audience"
+import { StatusMark } from "@/components/ui/status-pill"
 
 type Selection = { perspective: LandingPerspective; index: number }
 
@@ -82,7 +83,7 @@ export function JourneyTabs({ perspective }: { perspective: LandingPerspective }
                 {sample.rows.map(row => (
                   <li key={row.name}>
                     <div><p className="oc-journey-row-name">{row.name}</p><p className="oc-journey-row-meta">{row.meta}</p></div>
-                    <span className="oc-journey-chip" data-tone={row.tone}>{row.chip}</span>
+                    <StatusMark className="oc-journey-chip" label={row.chip} tone={row.tone === "navy" ? "strong" : row.tone} />
                   </li>
                 ))}
               </ul>

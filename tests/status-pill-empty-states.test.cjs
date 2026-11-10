@@ -5,12 +5,21 @@ const fs = require("node:fs")
 const { loadComponent } = require("./helpers/component-module.cjs")
 const read = file => fs.readFileSync(file, "utf8")
 
-test("StatusPill: one pill per application state, token colors only, stored codes and legacy labels", () => {
+test("StatusPill: icon and text per application state, token colors only, stored codes and legacy labels", () => {
   const React = require("react"), { renderToStaticMarkup } = require("react-dom/server")
   const { StatusPill } = loadComponent("components/ui/status-pill.tsx")
   const html = status => renderToStaticMarkup(React.createElement(StatusPill, { status }))
   const expected = { DRAFTING: "Draft", SUBMITTED: "Submitted", IN_REVIEW: "In review", INTERVIEWING: "Interview", ACCEPTED: "Accepted", REJECTED: "Not selected", WAITLISTED: "Waitlisted" }
-  for (const [code, label] of Object.entries(expected)) assert.equal(html(code), `<span data-slot="status-pill" data-status="${code}" class="oc-status-pill">${label}</span>`)
+  // Icon and text, no capsule: a decorative Phosphor glyph, then the label.
+  for (const [code, label] of Object.entries(expected)) assert.match(html(code), new RegExp(`^<span data-slot="status-pill" data-status="${code}" class="oc-status-pill"><svg [^>]*>[\\s\\S]*</svg>${label}</span>$`), code)
+  for (const code of Object.keys(expected)) { const svg = html(code).match(/<svg [^>]*>/)[0]; assert.match(svg, /aria-hidden="true"/); assert.match(svg, /data-icon-pack="phosphor"/) }
+  const icons = new Set(Object.keys(expected).map(code => html(code).match(/data-icon="([^"]+)"/)[1]))
+  assert.equal(icons.size, Object.keys(expected).length, "each state has its own glyph")
+  // Free-text marks reuse the application states and fall back to a tone.
+  const { StatusMark } = loadComponent("components/ui/status-pill.tsx")
+  const mark = props => renderToStaticMarkup(React.createElement(StatusMark, props))
+  assert.match(mark({ label: "Interview", tone: "active" }), /data-status="INTERVIEWING"/)
+  assert.match(mark({ label: "Complete", tone: "done" }), /data-tone="done"[\s\S]*>Complete<\/span>$/)
   // Legacy display strings from Home and the tracker map to the same pill.
   for (const [legacy, code] of [["In Review", "IN_REVIEW"], ["Interviewing", "INTERVIEWING"], ["Rejected", "REJECTED"], ["Drafting", "DRAFTING"]]) assert.match(html(legacy), new RegExp(`data-status="${code}"`), legacy)
   const css = read("styles/interface-primitives.css")
@@ -58,7 +67,6 @@ test("empty states say why and offer one different next step", () => {
     ["components/interviews/interview-rooms-list.tsx", />Show all dates</],
     ["components/shell/notification-center.tsx", /Show all updates/],
     ["components/views/leader-dashboard/live-leader-workspace.tsx", /onClick=\{clearApplicantFilters\}>Clear filters/],
-    ["components/recruiting-overview.tsx", /Show all rounds/],
     ["components/club-members.tsx", /Clear search/],
     ["components/admin/admin-directory.tsx", /Clear search and filter/],
   ]

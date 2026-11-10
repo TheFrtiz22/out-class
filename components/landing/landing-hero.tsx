@@ -1,6 +1,7 @@
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { SegmentedControl } from "@/components/ui/segmented-control"
+import { StatusMark, type StatusTone } from "@/components/ui/status-pill"
 import type { LandingPerspective } from "./journey-content"
 import "./hero.css"
 
@@ -21,7 +22,8 @@ const copy = {
 const clubTypes = ["Consulting", "Investing", "A cappella", "Dance", "Business fraternities", "Service", "Pre-professional", "Media"] as const
 
 type Tone = "neutral" | "done" | "attention" | "navy"
-const Chip = ({ tone, children }: { tone: Tone; children: string }) => <span className="oc-hero-chip" data-tone={tone}>{children}</span>
+const toneOf: Record<Tone, StatusTone> = { neutral: "neutral", done: "done", attention: "active", navy: "strong" }
+const Chip = ({ tone, children }: { tone: Tone; children: string }) => <StatusMark className="oc-hero-chip" label={children} tone={toneOf[tone]} />
 
 const Avatar = ({ src, size }: { src: string; size: 30 | 34 | 36 | 44 }) =>
   <Image className="oc-hero-avatar" src={src} alt="" width={size} height={size} loading="lazy" />
