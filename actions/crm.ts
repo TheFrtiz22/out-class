@@ -5,6 +5,7 @@ import { readPipelinePage } from "@/lib/pipeline-page-read";
 import { pipelineSummarySelect, pipelineSummaryProjection } from "@/lib/pipeline-summary";
 import { pipelineDetailInclude, pipelineDetailProjection } from "@/lib/pipeline-detail";
 import { rankedReviewSelect, rankedReviewProjection } from "@/lib/ranked-review-read";
+import { loadPriorApplications } from "@/lib/prior-applications";
 import { readPipelineSelection } from "@/lib/pipeline-selection-read";
 import { pipelinePageQuery, pipelineSelectionKey, type PipelinePageQuery } from "@/lib/pipeline-page";
 import {decisionPublicationGuard} from "@/lib/decision-publication-guard";
@@ -73,10 +74,13 @@ export async function getClubPipelineSelection(clubId: string, input: PipelinePa
 
 async function loadPipelineDetails(tx: AppTransactionClient, where: Prisma.ApplicationWhereInput, membership: PipelineMembership) {
   const applications = await tx.application.findMany({ where, include: pipelineDetailInclude });
+  // History links two applications, so it is read only for identified viewers.
+  const identified = applications.filter(raw => hasPermission(membership, "applicants.identify") && !raw.round.anonymousReview);
+  const prior = identified.length ? await loadPriorApplications(tx, identified[0].clubId, identified) : new Map();
   // A member who stepped out of an applicant cannot evaluate them; the server also refuses.
   const recused = new Set((applications.length ? await tx.applicantRecusal.findMany({ where: { memberId: membership.id, liftedAt: null, applicationId: { in: applications.map(app => app.id) } }, select: { applicationId: true } }) : []).map(r => r.applicationId));
   return applications.map(raw => {
-    const projected = pipelineDetailProjection(raw, membership);
+    const projected = pipelineDetailProjection(raw, membership, prior.get(raw.id) ?? []);
     return recused.has(raw.id) ? { ...projected, canEvaluate: false, recused: true } : projected;
   });
 }
