@@ -93,10 +93,8 @@ test("board uses original flyer in accessible modal, keyboard button activation 
       "@/contexts/auth-context": { useAuth: () => ({ user: null }) },
       "@/lib/workspace-api": {},
       "./use-saved-campus-events": { useSavedCampusEvents: () => ({ ids: new Set(), pending: new Set(), ready: false, error: "" }) },
-      "@/hooks/use-dismissable-details": { useDismissableDetails: () => filterMenu },
     },
   );
-  function filterMenu() {}
   const render = () => {
     cursor = 0;
     refCursor = 0;
@@ -107,8 +105,10 @@ test("board uses original flyer in accessible modal, keyboard button activation 
   slots[3] = 1;
   slots[5] = false;
   let tree = render();
-  const filterDetails = all(tree).find((n) => n.type === "details" && n.props.className === "oc-event-filter");
-  assert.equal(filterDetails.props.ref, filterMenu, "Corkboard Filter closes on Escape and outside press");
+  const filterPanel = all(tree).find((n) => n.type === "FilterPopover");
+  assert.equal(filterPanel.props.label, "Filter", "Corkboard filters sit in the viewport-safe FilterPopover (Escape and outside press close it)");
+  assert.equal(filterPanel.props.count, 0);
+  assert.ok(all(tree).some((n) => n.type === "SearchField" && n.props["aria-label"] === "Search events"));
   const trigger = all(tree).find(
     (n) =>
       n.type === "button" && n.props.className === "oc-pinned-flyer",
@@ -153,10 +153,11 @@ test("board uses original flyer in accessible modal, keyboard button activation 
   });
   assert.equal(focused, true);
   assert.equal(prevented, true);
-  const filter = all(tree).find((n) => n.type === "details");
+  const filter = all(tree).find((n) => n.type === "FilterPopover");
   assert.ok(filter);
   assert.ok(
-    all(filter).some((n) => n.type === "Input" && n.props.type === "date"),
+    all(filter).some((n) => n.type === "DateField" && n.props.label === "Date (Eastern Time)"),
+    "the date filter is the pill DateField, not a native date input",
   );
 });
 test("reduced motion removes pull and overlay animation; Escape and focus trapping use the existing Radix primitive", () => {

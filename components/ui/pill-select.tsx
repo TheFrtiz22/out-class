@@ -12,7 +12,7 @@ export type PillSelectOption = { value: string; label: string; disabled?: boolea
  * segmented track's material, a card-style menu, listbox keyboard and typeahead from Radix.
  * `value` "" means the `allLabel` choice when one is given. Callers keep their own string state.
  */
-export function PillSelect({ label, options, value, onChange, allLabel, placeholder, className, disabled, id, size = "default" }: {
+export function PillSelect({ label, options, value, onChange, allLabel, placeholder, className, disabled, id, size = "default", describedBy, active, prefix }: {
   /** Accessible name, e.g. "Filter major". */
   label: string
   options: PillSelectOption[]
@@ -25,12 +25,19 @@ export function PillSelect({ label, options, value, onChange, allLabel, placehol
   disabled?: boolean
   id?: string
   size?: "default" | "compact"
+  /** id of a note that explains the choices (aria-describedby on the trigger). */
+  describedBy?: string
+  /** Whether the choice narrows the view (navy fill). Defaults to `value !== ""`; pass it when the default isn't "". */
+  active?: boolean
+  /** Short visible label inside the pill before the value ("Sort"); the accessible name starts with it. */
+  prefix?: string
 }) {
   const items = allLabel ? [{ value: EMPTY, label: allLabel }, ...options.filter(option => option.value !== "")] : options.map(option => option.value === "" ? { ...option, value: EMPTY } : option)
   const current = value === "" ? (items.some(item => item.value === EMPTY) ? EMPTY : undefined) : value
   return <Select value={current} onValueChange={next => onChange(next === EMPTY ? "" : next)} disabled={disabled}>
-    <SelectTrigger id={id} aria-label={label} data-pill="" data-pill-size={size} data-active={value !== "" || undefined}
+    <SelectTrigger id={id} aria-label={label} aria-describedby={describedBy} data-pill="" data-pill-size={size} data-active={(active ?? value !== "") || undefined}
       className={cn("oc-pill-select-trigger", className)}>
+      {prefix && <span className="oc-pill-select-prefix" aria-hidden="true">{prefix}</span>}
       <SelectValue placeholder={placeholder ?? allLabel ?? label} />
     </SelectTrigger>
     <SelectContent className="oc-pill-select-content" collisionPadding={16}>

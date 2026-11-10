@@ -8,9 +8,11 @@ import { cn } from "@/lib/utils"
 
 /** The "Filters" pill with an active-filter count badge. The count is also part of the accessible name. */
 export function FilterButton({ count = 0, label = "Filters", className, children, ...props }: ComponentProps<typeof Button> & { count?: number; label?: string }) {
-  return <Button type="button" variant="outline" data-filter-button="" className={cn("oc-filter-button", className)} data-active={count > 0 || undefined} {...props}>
+  // The name starts with the visible label (WCAG 2.5.3); a visually hidden span would add a stray space before the comma.
+  const name = count > 0 && typeof (children ?? label) === "string" ? `${children ?? label}, ${count} active` : undefined
+  return <Button type="button" variant="outline" data-filter-button="" aria-label={name} className={cn("oc-filter-button", className)} data-active={count > 0 || undefined} {...props}>
     <SlidersHorizontal aria-hidden="true" />{children ?? label}
-    {count > 0 && <><span className="sr-only">, {count} active</span><span className="oc-filter-button-count" aria-hidden="true">{count}</span></>}
+    {count > 0 && <span className="oc-filter-button-count" aria-hidden="true">{count}</span>}
   </Button>
 }
 

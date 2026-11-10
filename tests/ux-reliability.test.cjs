@@ -4,7 +4,7 @@ const fs = require('node:fs'), ts = require('typescript')
 const nodes = n => !n || typeof n !== 'object' ? [] : Array.isArray(n) ? n.flatMap(nodes) : [n, ...nodes(n.props?.children)]
 const text = n => typeof n === 'string' ? n : Array.isArray(n) ? n.map(text).join('') : n?.props ? text(n.props.children) : ''
 function load(file, mocks, globals = {}) {
-  mocks = { ...require('./helpers/shell-stubs.cjs'), '@/lib/copy/terms': require('./helpers/component-module.cjs').loadComponent('lib/copy/terms.ts'), '@/lib/event-board-empty': require('./helpers/component-module.cjs').loadComponent('lib/event-board-empty.ts'), './use-saved-campus-events': { useSavedCampusEvents: () => ({ ids: new Set(), pending: new Set(), ready: false, error: '' }) }, '@/hooks/use-dismissable-details': { useDismissableDetails: () => () => {} }, ...mocks }
+  mocks = { ...require('./helpers/shell-stubs.cjs'), '@/lib/copy/terms': require('./helpers/component-module.cjs').loadComponent('lib/copy/terms.ts'), '@/lib/event-board-empty': require('./helpers/component-module.cjs').loadComponent('lib/event-board-empty.ts'), './use-saved-campus-events': { useSavedCampusEvents: () => ({ ids: new Set(), pending: new Set(), ready: false, error: '' }) }, ...mocks }
   const mod = { exports: {} }
   let code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } }).outputText
   if (file.endsWith('public-event-board.tsx')) code += '\nexports.MyEventRsvps = MyEventRsvps;'
@@ -66,7 +66,7 @@ test('the empty, unfiltered Corkboard never offers to show what it already shows
   h.render(); await h.flush(); const tree = h.render()
   assert.match(text(tree), /No upcoming campus events yet/)
   assert.equal(button(tree, 'Show all events'), undefined); assert.equal(button(tree, 'Browse all events'), undefined); assert.equal(button(tree, 'Clear filters'), undefined)
-  assert.equal(nodes(tree).some(n => n.props?.className === 'oc-event-filter-count'), false)
+  assert.equal(nodes(tree).find(n => n.type === 'FilterPopover')?.props.count, 0, 'no active-filter count')
   assert.equal(nodes(tree).some(n => n.type === 'SavedClubsPopover' || text(n) === 'Saved Clubs'), false)
 })
 test('Your RSVPs uses the shared Phosphor disclosure chevron, not a text triangle', () => {

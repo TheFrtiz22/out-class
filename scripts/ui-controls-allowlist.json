@@ -28,7 +28,7 @@
   {
    "rule": "css-hex",
    "file": "components/events/events.css",
-   "max": 30,
+   "max": 29,
    "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
   },
   {
@@ -76,7 +76,7 @@
   {
    "rule": "css-radius",
    "file": "components/clubs/club-discovery.css",
-   "max": 5,
+   "max": 4,
    "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
   },
   {
@@ -94,7 +94,7 @@
   {
    "rule": "css-radius",
    "file": "components/events/events.css",
-   "max": 15,
+   "max": 12,
    "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
   },
   {
@@ -154,7 +154,7 @@
   {
    "rule": "css-shadow",
    "file": "components/events/events.css",
-   "max": 10,
+   "max": 9,
    "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
   },
   {

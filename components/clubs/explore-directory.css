@@ -4,25 +4,18 @@
 .oc-explore-heading .oc-page-header { margin: 0; }
 .oc-explore-heading h1 { font-family: var(--oc-font-display); font-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.25rem); font-weight: var(--oc-weight-title); line-height: var(--oc-leading-heading); letter-spacing: var(--oc-tracking-heading); }
 .oc-explore-heading .oc-directory-intro { margin: .5rem 0 0; max-width: 42rem; font-size: var(--oc-text-body); color: var(--muted-foreground); }
-.oc-discovery .oc-directory-search { min-height: 3.25rem; padding: .375rem 1rem; border: 1px solid var(--input); border-radius: var(--oc-content-radius-small); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); }
-.oc-discovery .oc-directory-search input { min-width: 0; min-height: 2.75rem; font-size: 1rem; }
-.oc-discovery .oc-directory-search > button { flex-shrink: 0; }
+/* Search pill (SearchField) and, on phones, the Filter toggle beside it. */
+.oc-discovery .oc-directory-search { display: flex; align-items: center; gap: .5rem; min-width: 0; }
+.oc-discovery .oc-directory-search-field { flex: 1 1 auto; }
 .oc-discovery .oc-directory-category-row { display: flex; align-items: center; gap: .5rem; min-width: 0; margin: .75rem 0 1rem; }
 .oc-discovery .oc-directory-categories { flex: 0 1 auto; min-width: 0; margin: 0; overflow-x: auto; scrollbar-width: none; }
 .oc-discovery .oc-directory-categories::-webkit-scrollbar { display: none; }
-.oc-discovery .oc-directory-categories button { white-space: nowrap; }
-.oc-discovery .oc-directory-more-categories { flex: 0 0 auto; width: auto; max-width: 15rem; border-radius: 999px; }
-.oc-discovery .oc-directory-categories button { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; }
-.oc-discovery .oc-directory-categories button svg { flex-shrink: 0; }
-.oc-discovery .oc-directory-categories button span { margin: 0; opacity: .72; font-size: var(--oc-text-caption); font-variant-numeric: tabular-nums; }
+.oc-discovery .oc-directory-categories .oc-segment-count { font-size: var(--oc-text-caption); }
 .oc-directory-recruitment { display: flex; flex-wrap: wrap; gap: .5rem; margin: .75rem 0 .25rem; }
 .oc-directory-recruitment button { display: inline-flex; align-items: center; gap: .5rem; min-height: 2.75rem; padding: .5rem .875rem; border: 1px solid var(--oc-content-edge); border-radius: var(--oc-radius-md); color: var(--muted-foreground); background: var(--oc-content-surface); font-size: var(--oc-text-caption); }
 .oc-directory-recruitment button[aria-pressed="true"] { background: var(--primary); color: var(--primary-foreground); border-color: var(--primary); }
 .oc-directory-recruitment button span { font-variant-numeric: tabular-nums; }
 .oc-discovery .oc-directory-tools { margin: 1rem 0; align-items: center; gap: .75rem; }
-.oc-discovery .oc-directory-tools :is(summary,select) { min-height: 2.75rem; }
-.oc-discovery .oc-directory-tools summary { font-size: var(--oc-text-small); }
-.oc-discovery .oc-directory-tools details[open] .oc-directory-filters { padding: 1rem; margin-top: .5rem; border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius-small); background: var(--oc-content-surface); }
 .oc-explore-section { margin: var(--oc-content-gap) 0; }
 .oc-explore-section-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .75rem; margin-bottom: 1rem; }
 .oc-explore-section-heading h2, .oc-explore-available h2, .oc-discovery .oc-directory-results-heading h2 { font-family: var(--oc-font-sans); font-size: var(--oc-text-section); font-weight: 600; line-height: var(--oc-leading-heading); letter-spacing: var(--oc-tracking-heading); }
@@ -70,24 +63,20 @@
 @container (max-width: 850px) { .oc-explore-grid, .oc-explore-available ul { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 @container (max-width: 520px) {
  .oc-explore-grid, .oc-explore-available ul { grid-template-columns: minmax(0,1fr); }
- .oc-discovery .oc-directory-categories button span { display: none; }
+ .oc-discovery .oc-directory-categories .oc-segment-count { display: none; }
  .oc-directory-recruitment { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
  .oc-directory-recruitment button { justify-content: space-between; padding-inline: .625rem; }
  .oc-discovery .oc-directory-tools { flex-direction: column; align-items: stretch; gap: .625rem; }
- .oc-discovery .oc-directory-tools details, .oc-discovery .oc-directory-filters { width: 100%; }
- .oc-discovery .oc-directory-filters label { min-width: 0; }
- .oc-discovery .oc-directory-sort { width: 100%; justify-content: space-between; }
+ .oc-discovery .oc-directory-tools > * { width: 100%; }
+ .oc-discovery .oc-directory-sort { justify-content: space-between; }
 }
 @media (prefers-reduced-motion: reduce) { .oc-explore-card article { transition: none; } }
 
 /* One compact toolbar on desktop: search grows, Refine / Availability / Sort sit inline with quiet labels. */
 @media (min-width: 1024px) {
   .oc-discovery .oc-directory-bar { display: flex; align-items: center; gap: .75rem; min-width: 0; }
-  .oc-discovery .oc-directory-bar > .oc-directory-search { flex: 1 1 22rem; min-width: 0; min-height: 2.75rem; padding-block: 0; }
+  .oc-discovery .oc-directory-bar > .oc-directory-search { flex: 1 1 22rem; min-width: 0; }
   .oc-discovery .oc-directory-bar > .oc-directory-tools { flex: 0 0 auto; flex-wrap: nowrap; margin: 0; padding: 0; border: 0; background: none; box-shadow: none; gap: .5rem; }
-  .oc-discovery .oc-directory-bar .oc-directory-sort { display: flex; align-items: center; gap: .375rem; color: var(--muted-foreground); font-size: var(--oc-text-caption); font-weight: 500; }
-  .oc-discovery .oc-directory-bar .oc-directory-tools details { position: relative; flex: 0 0 auto; }
-  .oc-discovery .oc-directory-bar .oc-directory-tools details[open] .oc-directory-filters { position: absolute; z-index: 20; top: 100%; left: 0; width: max-content; max-width: 22rem; box-shadow: var(--oc-content-shadow-hover); }
 }
 
 /* Suggested for you: compact tiles in the Applications open footprint, with the reason in place of status. */
@@ -108,14 +97,11 @@
 /* Phones and tablets, as in the OutClass app: compact club cards, filters behind a Filter button. */
 .oc-directory-filter-toggle { display: none; }
 @media (max-width: 1023px) {
-  .oc-discovery .oc-directory-search { min-height: 2.75rem; padding: .125rem .25rem .125rem .875rem; border-radius: 999px; }
-  .oc-discovery .oc-directory-search input { min-height: 2.5rem; font-size: 1rem; }
   .oc-directory-filter-toggle { position: relative; display: inline-grid; flex-shrink: 0; }
   .oc-directory-filter-toggle[aria-expanded="true"] { background: var(--oc-glass-pill-navy, var(--primary)); color: var(--oc-glass-cream); }
   .oc-directory-filter-count { position: absolute; top: 2px; right: 2px; display: grid; place-items: center; min-width: 1rem; height: 1rem; padding: 0 .25rem; border-radius: 999px; background: var(--brand-orange); color: var(--oc-glass-cream); font-size: 10px; font-weight: 700; line-height: 1; }
   .oc-discovery .oc-directory-tools:not([data-phone-open]) { display: none; }
   .oc-discovery .oc-directory-tools[data-phone-open] { margin: .75rem 0 0; }
-  .oc-discovery .oc-directory-more-categories { max-width: 11rem; }
   .oc-discovery .oc-directory-tools[data-phone-open] { padding: .875rem; border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius-small); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); }
 
   .oc-explore-card-cover { height: 5.25rem; }

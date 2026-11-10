@@ -5,72 +5,18 @@
   flex-wrap: wrap;
   margin: 8px 0;
 }
-.oc-event-search {
-  display: flex;
-  align-items: center;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding-left: 10px;
-  margin-left: auto;
-  max-width: 250px;
-  min-width: min(100%, 13rem);
-  flex: 1;
-}
-.oc-event-search input {
-  border: 0;
-  background: transparent !important;
-  box-shadow: none;
-}
-.oc-event-filter {
-  position: relative;
-  font-size: 13px;
-}
-.oc-event-filter summary {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  cursor: pointer;
-  list-style: none;
-}
-.oc-event-filter-fields {
-  position: absolute;
-  right: 0;
-  top: 48px;
-  z-index: 20;
-  width: 290px;
-  display: grid;
-  gap: 12px;
-  background: var(--background);
-  padding: 18px;
-  border: 1px solid var(--border);
-  box-shadow: 0 12px 30px #08243c22;
-  border-radius: 8px;
-}
-.oc-event-filter-fields label,
+.oc-event-search { margin-left: auto; min-width: min(100%, 13rem); flex: 1; }
 .oc-event-editor label {
   display: grid;
   gap: 6px;
   font-size: 13px;
 }
-.oc-event-filter-fields select,
 .oc-event-editor select {
   padding: 9px;
   border: 1px solid var(--border);
   border-radius: 5px;
   background: var(--background);
   width: 100%;
-}
-.oc-event-check {
-  display: flex !important;
-  align-items: center;
-  gap: 8px !important;
-}
-.oc-event-check input {
-  width: 16px;
-  height: 16px;
 }
 .oc-event-result {
   font-size: 12px;
@@ -681,9 +627,7 @@
 
 /* Shared discovery controls; the pinned flyers retain their original layout. */
 .oc-event-view-switch.oc-segmented-control { flex-shrink: 0; width: auto; min-width: 184px; }
-.oc-event-search, .oc-event-filter summary { border-radius: var(--oc-radius-sm); min-height: 44px; }
 .oc-event-search { max-width: 300px; }
-.oc-event-filter-fields { max-width: calc(100vw - 40px); border-radius: var(--oc-content-radius); }
 .oc-event-pill { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 9px 15px; border-radius: var(--oc-radius-sm); font-size: 12px; font-weight: 500; line-height: 1.4; color: var(--primary); background: var(--muted); cursor: pointer; text-decoration: none; transition: background 160ms ease, color 160ms ease, transform 160ms ease; }
 .oc-event-pill:hover { background: var(--accent); }
 .oc-event-pill[aria-pressed="true"] { color: var(--brand-ink); background: var(--brand-subtle); }
@@ -737,7 +681,6 @@
   .oc-event-toolbar { gap: 9px; }
   .oc-event-toolbar .oc-event-periods { width: 100%; }
   .oc-event-toolbar .oc-event-search { width: 100%; max-width: none; flex-basis: 100%; }
-  .oc-event-filter-fields { left: 0; right: auto; }
   .oc-smart-event-card { display: flex; flex-direction: column; border-radius: 20px; }
   .oc-smart-event-media { height: 220px; min-height: 220px; }
   .oc-smart-event-fallback { min-height: 220px; padding: 28px 25px 25px 108px; }
@@ -766,12 +709,8 @@
   .oc-event-toolbar-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; flex-basis: 100%; }
   .oc-event-toolbar-actions .oc-event-search { margin: 0; min-width: 0; width: 100%; }
   .oc-event-toolbar-actions .oc-event-view-switch { width: 100%; min-width: 0; }
-  .oc-event-toolbar-actions .oc-event-filter summary { justify-content: center; }
   .oc-event-toolbar-actions > [data-slot="button"] { width: 100%; }
 }
-.oc-event-filter summary { white-space: nowrap; }
-.oc-event-filter summary::-webkit-details-marker { display: none; }
-.oc-event-filter-count { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding-inline: 6px; border-radius: 999px; background: var(--primary); color: var(--primary-foreground); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
 @media (max-width: 700px) {
   .oc-event-toolbar-actions .oc-event-view-switch { grid-column: 1 / -1; }
   .oc-event-view-switch.oc-segmented-control button { padding-inline: .75rem; }

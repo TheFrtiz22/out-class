@@ -37,6 +37,8 @@
 [data-slot="select-trigger"].oc-pill-select-trigger[data-active] svg { color: var(--oc-glass-cream); opacity: .8; }
 [data-slot="select-trigger"].oc-pill-select-trigger:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 [data-slot="select-trigger"].oc-pill-select-trigger[data-active]:focus-visible { outline-color: var(--brand-orange); }
+.oc-pill-select-trigger .oc-pill-select-prefix { color: var(--muted-foreground); font-weight: var(--oc-weight-medium); }
+[data-active] > .oc-pill-select-prefix { color: inherit; opacity: .78; }
 .oc-pill-select-content { max-height: min(22rem, var(--radix-select-content-available-height)); border-radius: var(--oc-radius-lg); }
 
 /* Toggle: the whole pill is the target; the switch inside is the navy pill when on. */
@@ -144,3 +146,8 @@
   .oc-range-slider-thumb { background: CanvasText; border-color: Canvas; forced-color-adjust: none; }
   input[type="checkbox"].oc-checkbox { appearance: auto; }
 }
+
+/* A free-text filter field (e.g. Location) on the pill track. Unlayered: Input carries Tailwind utilities. */
+[data-slot="input"].oc-pill-input { min-height: 46px; padding-inline: 1.125rem; border-color: var(--oc-glass-light-edge); border-radius: 999px; background: var(--oc-glass-light-material); box-shadow: var(--oc-glass-light-depth); }
+[data-slot="input"].oc-pill-input:focus-visible { border-color: var(--primary); outline: 2px solid var(--ring); outline-offset: 2px; }
+@media (forced-colors: active) { [data-slot="input"].oc-pill-input { border: 1px solid CanvasText; } }

@@ -108,7 +108,7 @@ test('browser: filter primitives keep keyboard, names and values; the popover st
     await panel.getByRole('button', { name: /^Minimum GPA: 3\.5/ }).click(); await exact.fill(''); await exact.press('Enter')
     assert.equal((await state(page)).gpa, null)
     await gpa.focus(); await page.keyboard.press('End'); await shot(page, 'filters-1126.png'); await page.keyboard.press('Home')
-    assert.match(await trigger.innerText(), /2/)
+    assert.match(await trigger.innerText(), /2/); assert.equal(await page.getByRole('button', { name: 'Filters, 2 active', exact: true }).count(), 1)
     await page.keyboard.press('Escape'); await panel.waitFor({ state: 'detached' })
     assert.equal(await trigger.evaluate(el => el === document.activeElement), true)
 
