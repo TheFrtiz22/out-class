@@ -1,4 +1,5 @@
 "use server"
+import { recusedVoterCounts } from "@/utils/voting-rules"
 import { assertNotRecused } from "@/lib/recusal"
 import { clubWriteTransaction, votingWriteLimits } from "@/utils/club-write-transaction";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
@@ -50,6 +51,7 @@ export async function getVotingWorkspace(clubId: string, sessionId?: string, sel
     if (s && !leadershipView && !s.participants.some(p=>p.memberId===m.id)) throw Error("You are not a session participant.")
     const sessions = await tx.votingSession.findMany({where:{clubId,mode:{not:"LIVE"},...(!leadershipView?{participants:{some:{memberId:m.id}}}:{})},select:{id:true,state:true,currentPass:true,createdAt:true},orderBy:{createdAt:"desc"}})
     const eligible = hasPermission(m,"decisions.manage") ? (await tx.clubMember.findMany({where:{clubId,status:"ACTIVE"},include:{user:{select:{email:true}}}})).filter(v=>hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")) : []
+    const recused = s ? await recusedVoterCounts(tx, s.participants.map(p=>p.memberId), s.candidates.map(c=>c.applicationId)) : new Map<string,number>()
     const joinedParticipants = hasPermission(m,"decisions.manage") && s ? await tx.clubMember.findMany({where:{clubId,id:{in:s.participants.map(p=>p.memberId)}},include:{user:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}}) : []
     const allRounds = await tx.pipelineRound.findMany({where:{clubId},orderBy:{order:"asc"}})
     const rounds = allRounds.filter(round => round.archivedAt == null)
@@ -57,7 +59,7 @@ export async function getVotingWorkspace(clubId: string, sessionId?: string, sel
     // separate pipeline read before it. Session/ballot reads and post-snapshot
     // live authority remain unchanged.
     const candidateSelection = await readVotingCandidateSelection(tx, clubId, m, rounds, query, new Map(allRounds.map(round => [round.id, round.anonymousReview])));
-    return { candidateSelection, sessions, joinedParticipants:joinedParticipants.map(v=>({id:v.id,label:v.user.studentProfile ? `${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}` : "Club member", joinedAt:s!.participants.find(p=>p.memberId===v.id)?.joinedAt??null})), ...(s?(({session,summary})=>({session,summary}))(projectLegacyVoting(s,m.id,summarizeVoting(s))):{session:null,summary:null}), memberId:m.id, canManage:hasPermission(m,"decisions.manage"), canStart:hasPermission(m,"decisions.start"), canReopen:hasPermission(m,"decisions.reopen"), canFinish:hasPermission(m,"decisions.finish"), canPublish:hasPermission(m,"decisions.publish")&&hasPermission(m,"applicants.identify"), canVote:hasPermission(m,"decisions.vote") && !!s?.participants.some(p=>p.memberId===m.id), eligible:eligible.map(v=>({id:v.id,label:v.user.email})), rounds:rounds.map(r=>({id:r.id,name:r.name})), academicYears: s ? (await tx.application.findMany({where:{id:{in:s.candidates.map(c=>c.applicationId)},clubId},select:{id:true,student:{select:{studentProfile:{select:{gradYear:true,transferStudent:true}}}}}})).map(a => ({ id:a.id, academicYear:a.student.studentProfile ? academicYear(a.student.studentProfile) : "Year unavailable" })):[] }
+    return { candidateSelection, sessions, joinedParticipants:joinedParticipants.map(v=>({id:v.id,label:v.user.studentProfile ? `${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}` : "Club member", joinedAt:s!.participants.find(p=>p.memberId===v.id)?.joinedAt??null})), ...(s?(({session,summary})=>({session,summary}))(projectLegacyVoting(s,m.id,summarizeVoting(s,recused))):{session:null,summary:null}), memberId:m.id, canManage:hasPermission(m,"decisions.manage"), canStart:hasPermission(m,"decisions.start"), canReopen:hasPermission(m,"decisions.reopen"), canFinish:hasPermission(m,"decisions.finish"), canPublish:hasPermission(m,"decisions.publish")&&hasPermission(m,"applicants.identify"), canVote:hasPermission(m,"decisions.vote") && !!s?.participants.some(p=>p.memberId===m.id), eligible:eligible.map(v=>({id:v.id,label:v.user.email})), rounds:rounds.map(r=>({id:r.id,name:r.name})), academicYears: s ? (await tx.application.findMany({where:{id:{in:s.candidates.map(c=>c.applicationId)},clubId},select:{id:true,student:{select:{studentProfile:{select:{gradYear:true,transferStudent:true}}}}}})).map(a => ({ id:a.id, academicYear:a.student.studentProfile ? academicYear(a.student.studentProfile) : "Year unavailable" })):[] }
   },{isolationLevel:"RepeatableRead"})
   // Revalidate after releasing the snapshot: suspension, account disablement,
   // support-session expiry, and membership/role revocation must deny its payload.
@@ -102,8 +104,10 @@ export async function submitVotingBallot(input: unknown) {
     if(s.activeApplicationId && d.applicationId!==s.activeApplicationId && !hasPermission(voter,"decisions.start")&&!hasPermission(voter,"decisions.manage"))throw Error("Active candidate changed. Reload the page and try again.")
     if(c.ballots.some(b=>b.memberId===membership.id)) throw Error("Your ballot is already recorded. Ballots are immutable.")
     await assertNotRecused(tx,d.applicationId,membership.id)
-    const before=ballotOutcome(c.ballots,s.participants.length,s.autoAdvance,s.threshold)
-    const after=ballotOutcome([...c.ballots,{decision:d.decision}],s.participants.length,s.autoAdvance,s.threshold)
+    // Participants who stepped out of this applicant don't count toward its threshold.
+    const voters=s.participants.length-((await recusedVoterCounts(tx,s.participants.map(p=>p.memberId),[d.applicationId])).get(d.applicationId)??0)
+    const before=ballotOutcome(c.ballots,voters,s.autoAdvance,s.threshold)
+    const after=ballotOutcome([...c.ballots,{decision:d.decision}],voters,s.autoAdvance,s.threshold)
     await tx.votingBallot.create({data:{sessionId:s.id,passNumber:d.passNumber,applicationId:d.applicationId,memberId:membership.id,decision:d.decision}})
     await tx.votingSession.update({where:{id:s.id},data:{revision:{increment:1}}})
     await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:"voting.ballot.submitted",details:{applicationId:d.applicationId,pass:d.passNumber}}})
@@ -129,7 +133,7 @@ export async function commandVotingSession(input: unknown) {
     if(s.revision!==d.revision) throw Error("Session changed. Reload the page, check the latest, and try again.")
     if(s.publishedAt) throw Error("Published sessions are sealed. Create a new session to review again.")
     const active=s.passes.find(p=>p.number===s.currentPass)
-    const summary=summarizeVoting(s)
+    const summary=summarizeVoting(s,await recusedVoterCounts(tx,s.participants.map(p=>p.memberId),s.candidates.map(c=>c.applicationId)))
     let state=s.state
     const extra:{startedAt?:Date;endedAt?:Date|null;currentPass?:number;targetSize?:number;publishedAt?:Date;publishedBy?:string;displayConfig?:Prisma.InputJsonValue;joinOpenedAt?:Date;activeApplicationId?:string|null}={}
     switch(d.action){

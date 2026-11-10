@@ -51,7 +51,7 @@ export async function respondToDiscussionRequest(input:unknown):Promise<Result>{
     const key={sessionId:s.id,passNumber:d.passNumber,applicationId:d.applicationId,memberId:d.memberId};
     const row=await tx.votingHandRaise.findUnique({where:{sessionId_passNumber_applicationId_memberId:key}});
     // Only requests from members who are still eligible voters can be acted on.
-    if(!row||row.withdrawnAt||row.clearedAt||!(await currentEligibleVoterIds(tx,s.clubId,[d.memberId],round.anonymousReview)).includes(d.memberId))return {ok:true,raised:false,acknowledged:false};
+    if(!row||row.withdrawnAt||row.clearedAt||!(await currentEligibleVoterIds(tx,s.clubId,[d.memberId],round.anonymousReview,d.applicationId)).includes(d.memberId))return {ok:true,raised:false,acknowledged:false};
     const now=new Date();
     if(d.action==="ACKNOWLEDGE"){if(!row.acknowledgedAt)await tx.votingHandRaise.update({where:{sessionId_passNumber_applicationId_memberId:key},data:{acknowledgedAt:now,acknowledgedBy:user.id,updatedAt:now}});return {ok:true,raised:true,acknowledged:true};}
     await tx.votingHandRaise.update({where:{sessionId_passNumber_applicationId_memberId:key},data:{clearedAt:now,clearedBy:user.id,updatedAt:now}});

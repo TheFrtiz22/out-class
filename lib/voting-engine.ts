@@ -12,11 +12,11 @@ export function ballotOutcome(ballots: { decision: string }[], participants: num
   for (const outcome of ["PASS", "HOLD", "NOT_PASS"] as const) if (count(outcome) > participants / 2) return { outcome, automatic: false }
   return { outcome: "HOLD", automatic: false }
 }
-export function summarizeVoting(session: { participants: unknown[]; targetSize: number; autoAdvance: string; threshold: number; candidates: { applicationId: string }[]; passes: { number: number; candidates: { applicationId: string; override: string | null; ballots: { decision: string }[] }[] }[] }) {
+export function summarizeVoting(session: { participants: unknown[]; targetSize: number; autoAdvance: string; threshold: number; candidates: { applicationId: string }[]; passes: { number: number; candidates: { applicationId: string; override: string | null; ballots: { decision: string }[] }[] }[] }, recused: ReadonlyMap<string, number> = new Map()) {
   const outcomes = session.candidates.map(c => {
     const pass = [...session.passes].sort((a,b) => b.number-a.number).find(p => p.candidates.some(v => v.applicationId === c.applicationId))
     const entry = pass?.candidates.find(v => v.applicationId === c.applicationId)
-    const result = entry ? ballotOutcome(entry.ballots, session.participants.length, session.autoAdvance, session.threshold) : { outcome: "UNRESOLVED" as Outcome, automatic: false }
+    const result = entry ? ballotOutcome(entry.ballots, session.participants.length - (recused.get(c.applicationId) ?? 0), session.autoAdvance, session.threshold) : { outcome: "UNRESOLVED" as Outcome, automatic: false }
     return { applicationId: c.applicationId, passNumber: pass?.number ?? 0, outcome: (entry?.override ?? result.outcome) as Outcome, automatic: !entry?.override && result.automatic }
   })
   return summaryCounts(outcomes, session.targetSize)

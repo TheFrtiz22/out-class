@@ -185,7 +185,7 @@ export async function castLiveVotingBallot(input:unknown) {
     // A threshold ballot is paused while a captured voter has lost eligibility, until the leader resolves it.
     const rule=sessionRules(s.presentationOptions).mode==="THRESHOLD"?await latestBallotRule(tx,{sessionId:s.id,passNumber:d.passNumber,applicationId:d.applicationId}):null;
     if(rule?.rules.mode==="THRESHOLD"){
-      const eligible=await currentEligibleVoterIds(tx,s.clubId,s.participants.map(p=>p.memberId),round.anonymousReview);
+      const eligible=await currentEligibleVoterIds(tx,s.clubId,s.participants.map(p=>p.memberId),round.anonymousReview,d.applicationId);
       if(rule.electorate.some(id=>!eligible.includes(id)))throw new RoomConflict("VOTING_PAUSED","Voting is paused while the leader reviews a change in who can vote. Your vote was not recorded.");
     }
     if(await isRecused(tx,d.applicationId,m.id))throw new RoomConflict("RECUSED","You stepped out of voting on this applicant because you know them. Your vote was not recorded.");
@@ -252,7 +252,7 @@ export async function commandLiveVotingRoom(input:unknown) {
         // Threshold rooms capture the rule and current eligible electorate for this ballot instance.
         const rules=sessionRules(s.presentationOptions);
         if(rules.mode==="THRESHOLD"){
-          const electorate=await currentEligibleVoterIds(tx,s.clubId,s.participants.map(p=>p.memberId),round.anonymousReview);
+          const electorate=await currentEligibleVoterIds(tx,s.clubId,s.participants.map(p=>p.memberId),round.anonymousReview,current.applicationId);
           await tx.votingBallotRule.create({data:{sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId,version:1,rules,electorate,createdBy:user.id}});
           ruleAudit={mode:rules.mode,electorate:electorate.length};
         }
@@ -263,7 +263,7 @@ export async function commandLiveVotingRoom(input:unknown) {
         const key={sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId},snapshot=await latestBallotRule(tx,key);
         if(snapshot?.rules.mode==="THRESHOLD"){
           // Eligibility changes pause automatic counting until the leader resolves them explicitly.
-          const eligible=await currentEligibleVoterIds(tx,s.clubId,s.participants.map(p=>p.memberId),round.anonymousReview);
+          const eligible=await currentEligibleVoterIds(tx,s.clubId,s.participants.map(p=>p.memberId),round.anonymousReview,current.applicationId);
           const removed=snapshot.electorate.filter(id=>!eligible.includes(id));
           if(removed.length){
             if(!d.resolveElectorate||!d.reason)throw new RoomConflict("ELECTORATE_CHANGED",electorateChangedMessage(removed.length));

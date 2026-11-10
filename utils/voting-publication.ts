@@ -3,11 +3,13 @@ import type { AppTransactionClient } from "@/utils/prisma";
 import type { FrozenLetterSettings } from "@/lib/decision-schedule";
 import { publishRecruitmentDecision } from "@/utils/recruitment-offers";
 import { summarizeVoting } from "@/lib/voting-engine";
+import { recusedVoterCounts } from "@/utils/voting-rules";
 export const votingPublicationInclude={participants:true,candidates:{orderBy:{position:"asc" as const}},passes:{orderBy:{number:"asc" as const},include:{candidates:{orderBy:{position:"asc" as const},include:{ballots:true}}}}};
 type Session=Prisma.VotingSessionGetPayload<{include:typeof votingPublicationInclude}>;
 /** Caller holds Club then VotingSession locks and live publication authority. */
 export async function publishVotingCandidates(tx:AppTransactionClient,s:Session,applicationIds:string[],actorId:string,settings?:FrozenLetterSettings){
- return publishReviewedVotingCandidates(tx,s,applicationIds,summarizeVoting(s).outcomes,actorId,settings);
+ const recused=await recusedVoterCounts(tx,s.participants.map(p=>p.memberId),s.candidates.map(c=>c.applicationId));
+ return publishReviewedVotingCandidates(tx,s,applicationIds,summarizeVoting(s,recused).outcomes,actorId,settings);
 }
 /** Frozen outcomes are valid only while the caller verifies the session revision. */
 export async function publishReviewedVotingCandidates(tx:AppTransactionClient,s:Pick<Session,"id"|"clubId"|"roundId"|"state"|"publishedAt"|"candidates"> & {mode?:string},applicationIds:string[],outcomes:ReturnType<typeof summarizeVoting>["outcomes"],actorId:string,settings?:FrozenLetterSettings,names?:Record<string,{firstName:string;fullName:string}>){

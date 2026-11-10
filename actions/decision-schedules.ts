@@ -8,6 +8,7 @@ import {letterTemplatesSchema,defaultLetters} from "@/lib/decision-letters";
 import {resolveScheduleTime,requireFutureSchedule} from "@/lib/communication-schedule";
 import {assertRecruitmentTransition} from "@/lib/recruitment-lifecycle";
 import {ballotOutcome} from "@/lib/voting-engine";
+import {recusedVoterCounts} from "@/utils/voting-rules";
 import {requireClubPermission} from "@/utils/auth";
 import {supportContext} from "@/utils/support-audit";
 import {clubWriteTransaction} from "@/utils/club-write-transaction";
@@ -38,10 +39,12 @@ export async function scheduleDecisionPublication(input:unknown){
    // Fetch only selected candidates and their latest pass. Historical ballot
    // volume and unrelated applicants cannot make a queued intent unbounded.
    const candidates=await tx.votingCandidate.findMany({where:{sessionId:session.id,applicationId:{in:selection.applicationIds}},take:50,include:{passes:{orderBy:{passNumber:"desc"},take:1,include:{ballots:{select:{decision:true},take:501}}}}});
+   const participantIds=(await tx.votingParticipant.findMany({where:{sessionId:session.id},select:{memberId:true}})).map(p=>p.memberId);
+   const recused=await recusedVoterCounts(tx,participantIds,selection.applicationIds);
    decisions=selection.applicationIds.map(id=>{
     const candidate=candidates.find(c=>c.applicationId===id),entry=candidate?.passes[0];
     if(!candidate||!entry||entry.ballots.length>500)throw Error("Candidate outcome unavailable.");
-    const outcome=entry.override??ballotOutcome(entry.ballots,session._count.participants,session.autoAdvance,session.threshold).outcome;
+    const outcome=entry.override??ballotOutcome(entry.ballots,session._count.participants-(recused.get(id)??0),session.autoAdvance,session.threshold).outcome;
     if(!["PASS","HOLD","NOT_PASS"].includes(outcome))throw Error("Select resolved candidates.");
     return {id,passNumber:entry.passNumber,decision:outcome==="PASS"?"ACCEPTED":outcome==="HOLD"?"WAITLISTED":"REJECTED"};
    });
