@@ -159,12 +159,6 @@
   },
   {
    "rule": "raw-button",
-   "file": "components/shell/navigation.tsx",
-   "max": 1,
-   "reason": "Navigation is fixed for this redesign (owner rule)."
-  },
-  {
-   "rule": "raw-button",
    "file": "components/shell/workspace-navigation.tsx",
    "max": 1,
    "reason": "Navigation is fixed for this redesign (owner rule)."
