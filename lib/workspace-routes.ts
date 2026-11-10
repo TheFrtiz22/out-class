@@ -46,6 +46,8 @@ export function canonicalClubWorkspaceQuery(input: URLSearchParams): URLSearchPa
     const type = section === "events" || q.get("meetingTab") === "events" ? "events" : "meetings"
     set("section", "calendar"); set("type", type); set("meetingTab", null)
   }
+  // Announcements moved into Home as its own section; `compose=1` still opens the composer there.
+  if (section === "announcements") { set("section", "overview"); set("focus", "announcements"); set("mode", null) }
   if (section === "recruitment") {
     // Configuration moved to Settings.
     if (tool === "cycles") { set("section", "settings"); set("setting", "cycles"); set("tool", null) }

@@ -19,7 +19,9 @@ export function railHrefs(member: ClubAccess, clubId: string) {
   return {
     applicants: href("applicants"), interviews: href("interviews"), decisions: href("decisions"),
     // Calendar filtered to meetings (New meeting adds `&new=1`).
-    meetings: href("calendar") ? `${href("calendar")}&type=meetings` : null, tasks: href("tasks"), announcements: href("announcements"), members: href("members"),
+    meetings: href("calendar") ? `${href("calendar")}&type=meetings` : null, tasks: href("tasks"), members: href("members"),
+    // Announcements live on Home (its own section, scrolled to by `focus=announcements`); posting needs meetings.manage.
+    announcements: hasPermission(member, "meetings.manage") && href("club-home") ? `${href("club-home")}&focus=announcements` : null,
     // The Recruiting Overview; only members with a recruiting tool have one.
     recruiting: items.find(item => item.id === "overview" && item.mode === "recruiting")?.href ?? null,
   }

@@ -14,7 +14,7 @@ import { ShellState } from "@/components/shell/shell-state";
 import { useShellBindings } from "@/components/shell/workspace-shell-context";
 import { canLeaveWorkspace, managerNavigation, mobileDestinations } from "@/lib/product-navigation";
 const ScreeningDashboardView = dynamic(() => import("@/components/views/screening-dashboard-view").then(m => m.ScreeningDashboardView), { loading: () => <WorkspaceLoading label="Loading recruiting rules…" layout="form" rows={3} /> });
-const ClubAnnouncements = dynamic(() => import("@/components/club-announcements").then(m => m.ClubAnnouncements), { loading: () => <WorkspaceLoading label="Loading announcements…" layout="feed" rows={3} /> });
+import { HomeAnnouncements } from "@/components/club-home/home-announcements";
 import type { ViewId } from "@/lib/views";
 import { useEffect, useRef, useState } from "react";
 import { useRevalidate } from "@/hooks/use-revalidate";
@@ -172,8 +172,8 @@ export function ClubWorkspace({
   const current = data?.scope === scope && data.value.club.id === clubId ? data.value : null;
   // Overview has no Refresh button: it reloads after mutations elsewhere and when the person returns.
   useRevalidate(() => setRetry(n => n + 1), { enabled: needsOverview && !!current, events: OVERVIEW_EVENTS, scopes: OVERVIEW_SCOPES });
-  const mode = section === "recruitment" || section === "announcements" && params.get("mode") === "recruiting" ? "recruiting" : "club";
-  const active = section === "announcements" ? "announcements" : mode === "recruiting" ? tool || "applicants" : section;
+  const mode = section === "recruitment" ? "recruiting" : "club";
+  const active = mode === "recruiting" ? tool || "applicants" : section;
   const nav = manager ? managerNavigation(membership, clubId, mode, params.toString()) : [
     { id: "overview", label: "Overview", href: clubWorkspaceHref(clubId, "overview") },
     { id: "calendar", label: "Meetings", href: `${clubWorkspaceHref(clubId, "calendar")}&type=meetings` },
@@ -197,11 +197,11 @@ export function ClubWorkspace({
   const recruitingSettingsGear = manager && canOpenRecruitingSettings(membership) && <IconButton variant="outline" aria-label="Recruiting settings" title="Recruiting settings" aria-haspopup="dialog" onClick={event => { if (canLeaveWorkspace()) openRecruitingSettings("anonymous", event.currentTarget) }}><SettingsIcon aria-hidden="true" /></IconButton>;
   if (suspended) return <div className="max-w-[var(--oc-reading-width)] space-y-4"><PageHeader title="This club is suspended" /><p className="mt-3">Club operations are unavailable until an administrator restores it. Your membership and existing records are preserved.</p><Link href="/" className="mt-6 inline-block underline">Return to Personal</Link></div>;
   if (resolvingEntry || moved || legacyRoom) return <WorkspaceLoading label="Opening club workspace…" />;
-  const allowed = mode === "recruiting" ? manager && (active === "announcements" || recruitmentTools(membership!).length > 0) && nav.some(n => n.id === active) : nav.some(n => n.id === active);
+  const allowed = mode === "recruiting" ? manager && recruitmentTools(membership!).length > 0 && nav.some(n => n.id === active) : nav.some(n => n.id === active);
   function navigate(view: ViewId) {
     if (view === "interview-workspace") { openInterviewRoom(); return }
     if (["leader-dashboard", "interview-scheduler", "club-manager", "broadcast-messages"].includes(view)) {
-      const href = view === "club-manager" ? clubWorkspaceHref(clubId, "settings") : view === "broadcast-messages" ? `/club/${clubId}/workspace?section=announcements${mode === "recruiting" ? "&mode=recruiting" : ""}` : `${clubWorkspaceHref(clubId, "recruitment")}&tool=${view === "interview-scheduler" ? "interviews" : "applicants"}`;
+      const href = view === "club-manager" ? clubWorkspaceHref(clubId, "settings") : view === "broadcast-messages" ? `${clubWorkspaceHref(clubId, "overview")}&focus=announcements` : `${clubWorkspaceHref(clubId, "recruitment")}&tool=${view === "interview-scheduler" ? "interviews" : "applicants"}`;
       if (!navigateWithinClub(href)) router.push(href); return;
     }
     router.push(view === "landing" ? "/" : studentPath(view, view === "calendar" ? "clubs" : null));
@@ -226,11 +226,11 @@ export function ClubWorkspace({
           {needsOverview && error ? <Card variant="glass" role="alert" className="oc-dashboard-error"><div className="oc-dashboard-state px-[var(--oc-content-padding)]"><p>{error}</p><Button variant="outline" onClick={() => setRetry(n => n + 1)}>Retry</Button></div></Card> : needsOverview && !current ? <DashboardLoading mode={mode === "recruiting" ? "recruiting" : "club"} /> : !allowed ? <p role="alert">This section isn’t available with your current access.</p> : <section key={`${section === "settings" ? authorizationScope : scope}:${section}:${active}`} className="shell-content-enter" aria-label={nav.find(n => n.id === active)?.label}>
             {/* Club home: the same page for leaders and members, gated by the overview's permission-scoped data. */}
             {section === "overview" && current && <ManagerOverview data={current} refreshing={overviewPending} onChanged={() => setRetry(n => n + 1)} />}
+            {section === "overview" && current && manager && hasPermission(membership, "meetings.manage") && <HomeAnnouncements clubId={clubId} privacyScope={scope} />}
             {section === "tasks" && (demo.isDemoEnabled ? <ClubTasks clubId={clubId} embedded personalOnly={!manager} initialScope={taskView === "mine" ? "mine" : manager ? "team" : "mine"} /> : <SelectedClubWorkspace kind="tasks" clubId={clubId} privacyScope={scope} personalOnly={!manager} initialScope={taskView === "mine" ? "mine" : manager ? "team" : "mine"} />)}
             {section === "calendar" && <ClubCalendar key={clubId} clubId={clubId} clubName={membership.club.name} canManage={hasPermission(membership, "meetings.manage")} canSeeAttendees={hasPermission(membership, "meetings.attendance")} personalOnly={!manager} />}
             {section === "members" && (demo.isDemoEnabled ? <ClubMembers key={clubId} clubId={clubId} /> : <SelectedClubWorkspace kind="members" clubId={clubId} privacyScope={scope} />)}
             {section === "settings" && <ClubSettingsWorkspace key={clubId} clubId={clubId} onSaved={() => { setRetry(n => n + 1); setPrivacyRevision(n => n + 1) }} />}
-            {section === "announcements" && (demo.isDemoEnabled ? <ClubAnnouncements key={clubId} clubId={clubId} /> : <SelectedClubWorkspace kind="announcements" clubId={clubId} privacyScope={scope} />)}
             {section === "recruitment" && (active === "decisions" ? <DecidePage clubId={clubId} member={membership} /> : active === "resumes" || active === "reviews" ? <ApplicantInterviewReviews clubId={clubId} tool={active} /> : active === "overview" && current ? <RecruitingOverview data={current} refreshing={overviewPending} onChanged={() => setRetry(n => n + 1)} /> : active === "interviews" ? <div className="space-y-3">{(hasPermission(membership, "interviews.manage") || interviewCapabilities(membership).editKit || interviewCapabilities(membership).participate || interviewCapabilities(membership).readClosing) && <RecruitmentWorkspace clubId={clubId} member={membership} onInterview={openInterviewRoom} initialTool="kits" />}</div> : <>{(demo.isDemoEnabled ? <LiveLeaderWorkspace key={privacyRevision} scoped initialDecision={decisionFilter(params.get("decision"))} /> : <SelectedClubWorkspace kind="pipeline" clubId={clubId} privacyScope={scope} decision={decisionFilter(params.get("decision"))} />)}</>)}
           </section>}
         </>}
