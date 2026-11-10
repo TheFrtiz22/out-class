@@ -9,11 +9,13 @@ export async function setPasswordAfterConfirmation(client: PasswordClient, passw
   if (!password) return { saved: false as const }
   try {
     const { error } = await client.auth.updateUser({ password })
-    return error ? { saved: false as const } : { saved: true as const }
+    // Until the confirmation step clears the stored password, it still equals the typed one.
+    if (!error || error.code === "same_password") return { saved: true as const }
+    return { saved: false as const }
   } catch {
     return { saved: false as const }
   }
 }
 
 export const passwordNotSavedNotice =
-  "Your email is confirmed. We couldn't save your password, so sign in with an email code or reset your password."
+  "Email confirmed. Your password wasn't saved, so sign in with an email code or reset it."
