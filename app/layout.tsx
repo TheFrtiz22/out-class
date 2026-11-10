@@ -8,6 +8,7 @@ import localFont from "next/font/local"
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Toaster } from "@/components/ui/sonner"
+import { ConfirmProvider } from "@/components/ui/confirm-dialog"
 import "./globals.css"
 import { RouteContent } from "@/components/route-content"
 import { SITE_URL, SITE_TITLE, SITE_DESCRIPTION, LEGAL_ORGANIZATION_NAME, privateRobots, socialDefaults } from "@/lib/seo"
@@ -99,7 +100,9 @@ export default async function RootLayout({
           <AuthProvider initialUser={initialUser} isImpersonating={cookieStore.has(PLATFORM_VIEW_COOKIE)} hasSession={!!initialUser || cookieStore.has(PLATFORM_VIEW_COOKIE)}>
             <OrganizationInvitationsProvider>
             <CorkboardProvider>
+              <ConfirmProvider>
               <RouteContent style={cookieStore.has(PLATFORM_VIEW_COOKIE) ? { paddingTop: "var(--support-banner-height, 120px)" } : undefined}>{children}</RouteContent>
+              </ConfirmProvider>
             </CorkboardProvider>
             </OrganizationInvitationsProvider>
           </AuthProvider>
