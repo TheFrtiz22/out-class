@@ -6,12 +6,17 @@
  *   recovery, Admin password re-check): the browser token is passed to Supabase
  *   as `captchaToken`, and Supabase's own Bot and Abuse Protection verifies it.
  *   Without that dashboard setting the token is ignored.
- * - OutClass's own public endpoint (school requests): verified here with siteverify.
+ *   Server paths also refuse a missing token (`turnstileTokenPresent`) without
+ *   spending it, because a token can be verified only once.
+ * - OutClass's own public endpoints (school requests, student invitation claims,
+ *   which call no captcha-aware Auth method): verified here with siteverify.
  *
- * Off unless the site key is set (widget) and, for siteverify, the secret key.
- * Once configured, verification fails closed.
+ * Completely off (no script, no widget, no checks) unless BOTH
+ * NEXT_PUBLIC_TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY are set. next.config.mjs
+ * turns that into the build-time flag TURNSTILE_ENABLED for the browser, which
+ * never sees the secret. Once configured, verification fails closed.
  */
-export type TurnstileAction = "signup" | "login" | "password-recovery" | "school-request" | "admin"
+export type TurnstileAction = "signup" | "login" | "password-recovery" | "school-request" | "student-claim" | "admin"
 export type TurnstileResult = { ok: true } | { ok: false; reason: "missing" | "rejected" | "unavailable" }
 
 type Env = Record<string, string | undefined>
@@ -23,8 +28,14 @@ const MAX_TOKEN_LENGTH = 2048
 /** These mean OutClass is misconfigured or Cloudflare failed, not that the visitor is a bot. */
 const OPERATOR_ERRORS = new Set(["missing-input-secret", "invalid-input-secret", "internal-error"])
 
-/** NEXT_PUBLIC_ values are fixed at build time. */
-export const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""
+/** Upper bound on one siteverify call. An outage fails closed with a "try again" message. */
+export const TURNSTILE_TIMEOUT_MS = 2500
+
+/**
+ * Fixed at build time. TURNSTILE_ENABLED is "1" only when both keys were set at
+ * build (next.config.mjs), so a site key alone never loads the widget.
+ */
+export const TURNSTILE_SITE_KEY = process.env.TURNSTILE_ENABLED === "1" ? process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "" : ""
 
 export function turnstileConfigured(env: Env = process.env) {
   return Boolean(env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && env.TURNSTILE_SECRET_KEY)
@@ -33,6 +44,15 @@ export function turnstileConfigured(env: Env = process.env) {
 /** Supabase Auth option. Only a well-formed token is passed; Supabase rejects missing ones when enforcing. */
 export function captchaOption(token: unknown): { captchaToken?: string } {
   return typeof token === "string" && token && token.length <= MAX_TOKEN_LENGTH ? { captchaToken: token } : {}
+}
+
+/**
+ * For server paths where Supabase Auth verifies the token: refuse a missing one
+ * when configured, without calling siteverify (that would spend the single-use
+ * token before Supabase sees it).
+ */
+export function turnstileTokenPresent(token: unknown, env: Env = process.env) {
+  return !turnstileConfigured(env) || Boolean(captchaOption(token).captchaToken)
 }
 
 /** Adds the token to Supabase Auth call options; unchanged parameters when there is none. */
@@ -58,8 +78,8 @@ export function turnstileRemoteIp(forwardedFor: string | null | undefined) {
   return first && first.length <= 64 ? first : undefined
 }
 
-export async function verifyTurnstile(token: unknown, { action, remoteIp, env = process.env, fetcher = fetch }: {
-  action: TurnstileAction; remoteIp?: string; env?: Env; fetcher?: Fetcher
+export async function verifyTurnstile(token: unknown, { action, remoteIp, env = process.env, fetcher = fetch, timeoutMs = TURNSTILE_TIMEOUT_MS }: {
+  action: TurnstileAction; remoteIp?: string; env?: Env; fetcher?: Fetcher; timeoutMs?: number
 }): Promise<TurnstileResult> {
   if (!turnstileConfigured(env)) return { ok: true }
   if (typeof token !== "string" || !token || token.length > MAX_TOKEN_LENGTH) return { ok: false, reason: "missing" }
@@ -67,7 +87,7 @@ export async function verifyTurnstile(token: unknown, { action, remoteIp, env = 
   if (remoteIp) body.set("remoteip", remoteIp)
   try {
     const response = await fetcher(VERIFY_URL, {
-      method: "POST", body, cache: "no-store", signal: AbortSignal.timeout(5000),
+      method: "POST", body, cache: "no-store", signal: AbortSignal.timeout(timeoutMs),
     })
     if (!response.ok) {
       console.warn("Turnstile verification unavailable", { status: response.status })

@@ -8,7 +8,7 @@ import {
 } from "@/lib/password-recovery";
 import { DEMO_COOKIE } from "@/lib/demo/access";
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
-import { captchaFailed, captchaOption, turnstileMessage } from "@/lib/turnstile";
+import { captchaFailed, captchaOption, turnstileMessage, turnstileTokenPresent } from "@/lib/turnstile";
 
 const reply = (body: object, status = 200) =>
   NextResponse.json(body, {
@@ -50,6 +50,10 @@ export async function POST(request: NextRequest) {
       },
       400,
     );
+
+  // Same response for every address: checked before any account or provider lookup.
+  if (input.action === "request" && !turnstileTokenPresent(input.turnstileToken))
+    return reply({ error: turnstileMessage("missing") }, 400);
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;

@@ -5,7 +5,7 @@ import { cookies } from "next/headers"
 import { createClient } from "@/utils/supabase/server"
 import { registrationSchema } from "@/lib/onboarding-schemas"
 import { authEmailError } from "@/lib/auth-email"
-import { captchaFailed, turnstileMessage, withCaptcha } from "@/lib/turnstile"
+import { captchaFailed, turnstileMessage, turnstileTokenPresent, withCaptcha } from "@/lib/turnstile"
 
 /** Normal signup always requires Supabase email confirmation, in every environment. */
 export async function registerStudent(input: unknown, turnstileToken?: unknown) {
@@ -14,6 +14,8 @@ export async function registerStudent(input: unknown, turnstileToken?: unknown) 
   const parsed = registrationSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.issues[0].message }
   const { email, password, firstName, lastName } = parsed.data
+  // Configured deployments refuse a missing bot-check token before any provider call.
+  if (!turnstileTokenPresent(turnstileToken)) return { error: turnstileMessage("missing") }
   const supabase = await createClient(cookieStore)
   try {
     // Fail closed before creating a user if this project's confirmation policy is unsafe.

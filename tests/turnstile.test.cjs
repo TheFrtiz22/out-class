@@ -148,3 +148,65 @@ test('every form renders its widget, refreshes single-use tokens after each subm
   assert.match(widget, /role="alert"[\s\S]*try again/, 'a blocked script offers a retry instead of a dead end')
   assert.match(widget, /cancelled = true\n      \/\/ A token[^\n]*\n      callback\.current\(null\)/, 'unmounting forgets a possibly spent token')
 })
+
+test('Siteverify that hangs past the 2–3 s budget fails closed as unavailable', async () => {
+  assert.ok(t.TURNSTILE_TIMEOUT_MS >= 2000 && t.TURNSTILE_TIMEOUT_MS <= 3000)
+  const hanging = (url, init) => new Promise((_, reject) => init.signal.addEventListener('abort', () => reject(init.signal.reason)))
+  const started = Date.now(), keepAlive = setTimeout(() => {}, 2000) // AbortSignal.timeout timers do not hold the event loop open
+  try {
+    assert.deepEqual(await t.verifyTurnstile('tok', { action: 'student-claim', env, fetcher: hanging, timeoutMs: 50 }), { ok: false, reason: 'unavailable' })
+  } finally { clearTimeout(keepAlive) }
+  assert.ok(Date.now() - started < 1000)
+  assert.match(t.turnstileMessage('unavailable'), /try again/)
+})
+
+test('the widget is off unless both keys were set at build; the browser never gets the secret', async () => {
+  const withEnv = envVars => {
+    const m = { exports: {} }
+    const code = ts.transpileModule(read('lib/turnstile.ts'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
+    new Function('require', 'module', 'exports', 'process', code)(require, m, m.exports, { env: envVars })
+    return m.exports
+  }
+  assert.equal(withEnv({ NEXT_PUBLIC_TURNSTILE_SITE_KEY: 'site' }).TURNSTILE_SITE_KEY, '')
+  assert.equal(withEnv({ NEXT_PUBLIC_TURNSTILE_SITE_KEY: 'site' }).turnstileRequired, false)
+  assert.equal(withEnv({ NEXT_PUBLIC_TURNSTILE_SITE_KEY: 'site', TURNSTILE_ENABLED: '1' }).TURNSTILE_SITE_KEY, 'site')
+  const { pathToFileURL } = require('node:url'), saved = { ...process.env }
+  const flag = async (site, secret, n) => {
+    for (const [k, v] of [['NEXT_PUBLIC_TURNSTILE_SITE_KEY', site], ['TURNSTILE_SECRET_KEY', secret]]) v ? process.env[k] = v : delete process.env[k]
+    delete process.env.SENTRY_AUTH_TOKEN
+    return (await import(`${pathToFileURL(path.resolve('next.config.mjs')).href}?case=${n}`)).default.env
+  }
+  try {
+    assert.deepEqual(await flag('', '', 1), { TURNSTILE_ENABLED: '' })
+    assert.deepEqual(await flag('site', '', 2), { TURNSTILE_ENABLED: '' })
+    assert.deepEqual(await flag('', 'secret', 3), { TURNSTILE_ENABLED: '' })
+    assert.deepEqual(await flag('site', 'secret', 4), { TURNSTILE_ENABLED: '1' })
+  } finally { for (const k of Object.keys(process.env)) if (!(k in saved)) delete process.env[k]; Object.assign(process.env, saved) }
+  const widget = read('components/security/turnstile-widget.tsx')
+  assert.match(widget, /if \(!TURNSTILE_SITE_KEY \|\| !container\.current\) return/, 'no script is loaded when off')
+  assert.match(widget, /if \(!TURNSTILE_SITE_KEY\) return null/, 'nothing renders when off')
+})
+
+test('server paths that Supabase verifies refuse a missing token without spending it', () => {
+  assert.equal(t.turnstileTokenPresent(undefined, {}), true, 'unconfigured: no-op')
+  assert.equal(t.turnstileTokenPresent(undefined, env), false)
+  assert.equal(t.turnstileTokenPresent('x'.repeat(2049), env), false)
+  assert.equal(t.turnstileTokenPresent('tok', env), true)
+  const signup = read('actions/onboarding.ts')
+  assert.ok(signup.indexOf('turnstileTokenPresent(turnstileToken)') < signup.indexOf('auth/v1/settings'))
+  const recovery = read('app/api/auth/password-recovery/route.ts')
+  assert.ok(recovery.indexOf('turnstileTokenPresent(input.turnstileToken)') < recovery.indexOf('resetPasswordForEmail'))
+  assert.doesNotMatch(signup + recovery, /verifyTurnstile/, 'never siteverify a token that Supabase will verify')
+})
+
+test('student claims verify with siteverify before any account lookup; the token is stripped from the strict schema', () => {
+  const claim = read('app/api/auth/student-claim/route.ts')
+  const verify = claim.indexOf('action: "student-claim"')
+  assert.ok(verify > 0 && verify < claim.indexOf('prisma.user.findFirst') && verify < claim.indexOf('await cookies()'))
+  assert.match(claim, /const \{ turnstileToken, \.\.\.fields \} =/)
+  assert.match(claim, /schema\.parse\(fields\)/)
+  const page = read('app/(focus)/auth/student-claim/page.tsx')
+  assert.match(page, /<TurnstileWidget[^>]*action="student-claim"/)
+  assert.match(page, /setTurnstileReset\(/)
+  assert.match(page, /turnstileRequired && !turnstileToken/)
+})

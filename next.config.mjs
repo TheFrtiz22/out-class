@@ -4,6 +4,9 @@ const nextConfig = {
   distDir: process.env.OUTCLASS_PUBLISH_BUILD
     ? ".next-publish"
     : process.env.NODE_ENV === "development" ? ".next-dev" : ".next",
+  // Turnstile bot checks are completely off (no script, no widget) unless BOTH keys are
+  // set at build time. Only this on/off flag reaches the browser, never the secret.
+  env: { TURNSTILE_ENABLED: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && process.env.TURNSTILE_SECRET_KEY ? "1" : "" },
   experimental: { serverActions: { bodySizeLimit: "12mb" } },
   poweredByHeader: false,
   // Interface icons are one module each (components/icons/<Name>.tsx) behind the
