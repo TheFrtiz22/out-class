@@ -24,15 +24,14 @@ test('leader phone rules apply only below 1024px and never to the personal shell
   }
 })
 
+// Time-boxed: on 2026-11-09 this test stalled CI's validate job silently three times (PR #190); a limit turns a hang into a named failure.
 test('browser: leader pages at 390px use the app switch, grouped lists and the five-tab bar', { timeout: 180000 }, async t => {
-  const step = label => console.error(`[leader-parity ${new Date().toISOString()}] ${label}`) // TEMP diagnostic for PR #190 CI hang
-  step('start'); const fixture = await startLeaderScreens(); step('fixture built'); t.after(() => { step('after: fixture.close'); return fixture.close().then(() => step('after: fixture closed')) })
+  const fixture = await startLeaderScreens(); t.after(() => fixture.close())
   const browser = await chromium.launch({ headless: true, ...(!fs.existsSync(chromium.executablePath()) ? { channel: 'chrome' } : {}) }); t.after(() => browser.close())
   const open = async (query, width = 390) => {
-    step(`open ${query} @${width}`); const context = await browser.newContext({ viewport: { width, height: width < 500 ? 844 : 900 }, isMobile: width < 500, hasTouch: width < 500 }); t.after(() => context.close())
+    const context = await browser.newContext({ viewport: { width, height: width < 500 ? 844 : 900 }, isMobile: width < 500, hasTouch: width < 500 }); t.after(() => context.close())
     const page = await context.newPage(), errors = []; page.on('pageerror', error => errors.push(error.message))
-    page.on('console', m => m.type() === 'error' && step(`console ${m.text().slice(0, 300)}`)); page.on('pageerror', e => step(`pageerror ${e.message.slice(0, 300)}`))
-    await page.goto(fixture.url(query)); step('goto done'); await page.locator('main h1').first().waitFor(); step('h1 visible'); await page.waitForTimeout(600)
+    await page.goto(fixture.url(query)); await page.locator('main h1').first().waitFor(); await page.waitForTimeout(600)
     assert.deepEqual(errors, [], `${query}: no page errors`)
     return page
   }
@@ -50,12 +49,12 @@ test('browser: leader pages at 390px use the app switch, grouped lists and the f
   const target = await list.locator('li > button').first().boundingBox()
   assert.ok(target.height >= 44, 'each applicant row stays a 44px target')
 
-  step('applicants checks done'); const members = await open('section=members')
+  const members = await open('section=members')
   const row = members.locator('.oc-member-row').first()
   const [nameBox, roleBox] = await Promise.all([row.locator('> :nth-child(1)').boundingBox(), row.locator('> :nth-child(2)').boundingBox()])
   assert.ok(Math.abs(nameBox.y - roleBox.y) < 4 && roleBox.x > nameBox.x, 'role sits beside the name')
 
-  step('members checks done'); const desktop = await open('section=recruitment&tool=applicants', 1440)
+  const desktop = await open('section=recruitment&tool=applicants', 1440)
   assert.equal(await desktop.locator('.oc-recruiting-switch').evaluate(el => getComputedStyle(el).display), 'none', 'desktop keeps the rail')
   assert.equal(await desktop.locator('.oc-applicant-mobile-list').evaluate(el => getComputedStyle(el).display), 'none', 'desktop keeps the table')
 })
