@@ -1,4 +1,5 @@
 "use client"
+import { answerText } from "@/lib/student-applications"
 import "@/components/product/operational-dashboard.css"
 import { completePipelineSelection, type PipelinePageQuery, type PipelineCursor } from "@/lib/pipeline-page"
 import { usePipelinePage } from "@/hooks/use-pipeline-page"
@@ -21,6 +22,7 @@ import { type ApplicantSort } from "@/lib/live-applicant-sorting"
 import { applicantLane } from "@/lib/applicant-board"
 import { LiveApplicantList, LiveApplicantKanban, LiveDecisionList, type ApplicantLane } from "./live-applicant-views"
 import { useDemoMode } from "@/contexts/demo-context"
+import { ClubExportLink } from "@/components/club-export-link"
 import { RecruitmentAttendanceSummary } from "@/components/recruitment-attendance-summary"
 import { RevealApplicant } from "@/components/reveal-applicant"
 import { hasPermission } from "@/lib/permissions"
@@ -587,6 +589,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       })()}
       <div className="oc-toolbar">
         {!decisionsOnly && <SegmentedControl label="Applicant view" value={view} onChange={setView} options={[{ value: "list", label: "List" }, { value: "kanban", label: "Kanban" }, { value: "ranked", label: "Ranked" }]} />}
+        {!decisionsOnly && <ClubExportLink clubId={membership.clubId} kind="applicants" membership={membership} label="Export CSV" />}
         {view !== "ranked" && <><div className="relative min-w-0 flex-1 basis-60">
           <Search className="absolute left-3 top-3 size-4 text-muted-foreground" />
           <Input
@@ -849,7 +852,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                       </a>
                     ) : (
                       <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-7 text-muted-foreground">
-                        {answer.response || "No response"}
+                        {answerText(answer.question, answer.response) || "No response"}
                       </p>
                     )}
                   </div>

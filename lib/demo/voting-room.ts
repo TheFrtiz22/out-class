@@ -14,9 +14,8 @@ import { hasPermission } from "@/lib/permissions";
 import { anonymousApplicantLabel,type ReviewApplication } from "@/lib/anonymous-review";
 import {selectedVotingDisplay} from "@/lib/voting-slide-fields";
 import { projectApplicantDisplay } from "@/lib/applicant-display";
-import { votingScoreEvidence, type VotingInterviewThought } from "@/lib/voting-interview-evidence";
 import { interviewCapabilities } from "@/lib/interview-access";
-import { demoAuthorizedInterviewRounds,demoInterviewFeedback,demoSubmittedReviews } from "./interview-feedback";
+import { demoRoundScopedEvidence } from "./interview-feedback";
 import { z } from "zod";
 import type * as Final from "@/actions/voting-room-finalization";
 import {votingRecruitmentChange} from "@/lib/voting-finalization";
@@ -75,14 +74,14 @@ async function perform<K extends keyof typeof Live>(method:K,input:unknown,membe
       case "OPEN_VOTING":if(entry?.ballotState!=="PENDING")throw Error("Demo state changed.");entry.ballotState="OPEN";entry.openedAt=now;break;
       case "CLOSE_VOTING":if(entry?.ballotState!=="OPEN")throw Error("Demo state changed.");if(entry.ballots.length<s.participants.length&&!b.confirmed)throw new DemoConflict({ok:false,code:"EARLY_CLOSE_CONFIRMATION",message:"Confirm early closure with missing ballots."});entry.ballotState="CLOSED";entry.closedAt=now;break;
       case "PASS_WITHOUT_VOTE_AND_ADVANCE":case "ACCEPT_WITHOUT_VOTE":if(entry?.ballotState!=="PENDING"||!b.confirmed||!b.reason)throw Error("Confirm and give a reason.");Object.assign(entry,{ballotState:"CONFIRMED",withoutVote:true,confirmedDecision:"PASS",confirmedAt:now,confirmedBy:c.m.userId});break;
-      case "DECIDE_WITHOUT_VOTE_AND_ADVANCE":if(s.state!=="OPEN"||!entry||!["PENDING","OPEN"].includes(entry.ballotState)||!b.choice||b.choice==="HOLD"||!b.confirmed||!b.reason)throw new DemoConflict({ok:false,code:"CONFIRMATION_REQUIRED",message:"Confirm Pass or Do not pass without a vote and give a reason."});Object.assign(entry,{openedAt:entry.openedAt??now,closedAt:now,ballotState:"CONFIRMED",confirmedDecision:storedChoice[b.choice],confirmedAt:now,confirmedBy:c.m.userId,override:storedChoice[b.choice],overrideBy:c.m.userId,overrideAt:now});break;
+      case "DECIDE_WITHOUT_VOTE_AND_ADVANCE":if(s.state!=="OPEN"||!entry||!["PENDING","OPEN"].includes(entry.ballotState)||!b.choice||b.choice==="HOLD"||!b.confirmed||!b.reason)throw new DemoConflict({ok:false,code:"CONFIRMATION_REQUIRED",message:"Confirm Pass or Do not pass without a vote and give a reason."});{const none=!entry.ballots.length;Object.assign(entry,{openedAt:none?entry.openedAt:entry.openedAt??now,closedAt:none&&!entry.openedAt?null:now,withoutVote:none,ballotState:"CONFIRMED",confirmedDecision:storedChoice[b.choice],confirmedAt:now,confirmedBy:c.m.userId,override:storedChoice[b.choice],overrideBy:c.m.userId,overrideAt:now});break;}
       case "DECIDE_AND_ADVANCE":case "CONFIRM":if(entry?.ballotState!=="CLOSED"||!b.choice)throw Error("Demo confirmation unavailable.");if(recommendedOutcome(entry,s.participants.length)!==storedChoice[b.choice]&&!b.reason)throw new DemoConflict({ok:false,code:"REASON_REQUIRED",message:"Provide a reason for an override or incomplete ballot."});Object.assign(entry,{ballotState:"CONFIRMED",confirmedDecision:storedChoice[b.choice],confirmedAt:now,confirmedBy:c.m.userId});break;
       case "UNDO_DECISION":{
        const receipt=b.undoRequestId?(state as State&Receipts).liveVotingReceipts?.[`${s.id}:${b.undoRequestId}`]:null;
        const saved=roomCommandResultSchema.safeParse((receipt?.result as {result?:unknown})?.result),prev=saved.success?saved.data.decision:null,old=pass?.candidates.find(c=>c.applicationId===b.applicationId);
        if(!prev||saved.data!.revision!==s.revision||prev.applicationId!==b.applicationId||prev.passNumber!==b.passNumber||s.currentPass!==b.passNumber||s.activeApplicationId!==prev.nextApplicationId||old?.ballotState!=="CONFIRMED"||!["OPEN","PAUSED"].includes(s.state)||entry&&(entry.ballots.length>0||entry.ballotState!=="PENDING"))throw new DemoConflict({ok:false,code:"UNDO_UNSAFE",message:"Newer activity prevents Undo. Use Correct an outcome to return the applicant to Hold."});
        const applicant=state.applications.find(a=>a.id===old.applicationId&&a.clubId===s.clubId&&a.roundId===s.roundId&&a.status===s.candidates.find(c=>c.applicationId===old.applicationId)!.expectedStatus);if(!applicant)throw new DemoConflict({ok:false,code:"APPLICANT_CHANGED",message:"Applicant recruitment state changed. Review it before correcting this outcome."});
-       previousDecision=old.confirmedDecision;Object.assign(old,{ballotState:old.withoutVote?"PENDING":"CLOSED",withoutVote:false,confirmedDecision:null,confirmedAt:null,confirmedBy:null,override:null,overrideBy:null,overrideAt:null});pass!.state="OPEN";pass!.completedAt=null;s.activeApplicationId=old.applicationId;s.state="OPEN";break;
+       previousDecision=old.confirmedDecision;Object.assign(old,{ballotState:old.openedAt?"CLOSED":"PENDING",withoutVote:false,confirmedDecision:null,confirmedAt:null,confirmedBy:null,override:null,overrideBy:null,overrideAt:null});pass!.state="OPEN";pass!.completedAt=null;s.activeApplicationId=old.applicationId;s.state="OPEN";break;
       }
       case "ADVANCE":if(entry?.ballotState!=="CONFIRMED")throw Error("Confirm first.");s.activeApplicationId=pass!.candidates.find(v=>v.position>entry.position)?.applicationId??null;if(!s.activeApplicationId){pass!.state="COMPLETED";pass!.completedAt=now;s.state="PAUSED";}break;
       case "CORRECT":{const latest=[...s.passes].reverse().find(p=>p.candidates.some(v=>v.applicationId===b.applicationId)),old=latest?.candidates.find(v=>v.applicationId===b.applicationId);if(entry?.ballotState==="OPEN"||old?.ballotState!=="CONFIRMED"||latest?.number!==b.passNumber||b.choice!=="HOLD"||!b.reason)throw Error("Close voting and return a confirmed outcome to Hold with a reason.");previousDecision=old.confirmedDecision;Object.assign(old,{confirmedDecision:"HOLD",confirmedBy:c.m.userId,confirmedAt:now,override:null,overrideBy:null,overrideAt:null});break;}
@@ -134,20 +133,11 @@ function demoPresentation(c:Pick<ReturnType<typeof find>,"state"|"m"|"round"|"cl
    const person=c.state.students.find(p=>p.id===a.studentId)!,app={...a,student:{...person,studentProfile:person.profile},answers:[],evaluations:[],bookings:[]} as unknown as ReviewApplication;
    const opts=roomPresentationSchema.safeParse(c.s.presentationOptions),config=opts.success?roomDisplayConfig(opts.data.fields):{version:1 as const,fields:[]};const base=selectedVotingDisplay(projectApplicantDisplay(app,{...c.round,applicantDisplay:{}},config,[]),opts.success?opts.data.fields:[]);
    const fields=opts.success?opts.data.fields:[],caps=interviewCapabilities(c.m);
-   const allowed=!base.anonymous?demoAuthorizedInterviewRounds(c.state,c.club,c.m,a,a.roundId):[];
-   const reviews=demoSubmittedReviews(c.state,c.club,a,allowed);
-   const thoughts:VotingInterviewThought[]=fields.includes('finalInterviewThoughts')?[...c.state.interviews].sort((a,b)=>+(new Date(b.completedAt||0))-+(new Date(a.completedAt||0))||b.id.localeCompare(a.id)).flatMap(r=>{
-     const round=allowed.find(old=>old.id===r.roundId),evaluation=reviews.find(e=>e.interviewerId===r.interviewerId&&e.roundId===r.roundId),member=c.state.memberships.find(m=>m.id===r.interviewerId&&m.clubId===c.club.id);
-     if(r.applicationId!==a.id||r.clubId!==c.club.id||!r.completedAt||r.anonymousReview||!round||!evaluation||!member||!r.draft.finalInterviewThoughts?.trim())return [];
-     const profile=c.state.students.find(p=>p.id===member.userId)?.profile;
-     return [{id:r.id,roundId:round.id,roundName:round.name,interviewer:profile?`${profile.firstName} ${profile.lastName}`:'Interviewer',text:r.draft.finalInterviewThoughts}];
-   }):[];
    const quote=fields.includes('resumeHighlight')&&!base.anonymous?excerptChoices(c.state,c.m,applicationId).find(q=>q.id===opts.data?.highlights[applicationId]):undefined;
    const canReadResume=!base.anonymous&&(!!quote||caps.moderateResume||c.state.interviewFoundation.assignments.some(g=>g.applicationId===a.id&&g.roundId===a.roundId&&g.memberId===c.m.id&&!g.revokedAt&&caps.participate));
    const highlight=fields.includes('resumeHighlight')&&canReadResume?{resumeHighlight:quote??null}:{};
-   // Same contract as votingSelectedEvidence: the round-scoped section carries its round; the thoughts field keeps only other rounds.
-   const feedback=allowed.length&&fields.includes('finalInterviewThoughts')?demoInterviewFeedback(c.state,c.club,a,allowed,a.roundId,fields.includes('interviewScore')&&interviewCapabilities(demoMember()).readClosing):null;
-   const evidence={...(allowed.length&&fields.includes('interviewScore')?{interviewScore:votingScoreEvidence(allowed,reviews)}:{}),...(allowed.length&&fields.includes('finalInterviewThoughts')?{finalInterviewThoughts:feedback?thoughts.filter(t=>t.roundId!==feedback.roundId):thoughts}:{}),...(feedback?{interviewFeedback:feedback}:{})};
+   // Same contract as votingSelectedEvidence for a voting round: this round only, earlier rounds labelled separately.
+   const evidence=!base.anonymous?demoRoundScopedEvidence(c.state,c.club,c.m,a,fields):{};
    const observations=demoVotingObservations(c.state,{id:c.s.id??'',clubId:c.club.id,startedAt:c.s.startedAt??null},applicationId,c.m.userId,fields.includes('additionalObservations'),base.anonymous);
    return {...base,...observations,photo:base.visible.includes('photo')?person.profile.headshotUrl??null:null,...evidence,...highlight,requestedFields:[...base.visible,...('resumeHighlight'in highlight?['resumeHighlight' as const]:[]),...(evidence.interviewScore?['interviewScore' as const]:[]),...(evidence.finalInterviewThoughts?['finalInterviewThoughts' as const]:[]),...(observations.additionalObservations?['additionalObservations' as const]:[])]};
 }
