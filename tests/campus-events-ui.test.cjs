@@ -197,7 +197,12 @@ test("leader Meetings and Events are separate sections; Demo still isolates unav
 
 test("the workspace renders the Events section for meeting managers (FE-12)", () => {
   const workspace=fs.readFileSync('components/club-workspace.tsx','utf8');
-  assert.match(workspace,/section === "events" && \(hasPermission\(membership, "meetings\.manage"\) \? <ClubMeetingsWorkspace [^>]*\bevents \/>/);
+  assert.match(workspace,/section === "events" && hasPermission\(membership, "meetings\.manage"\) && <ClubMeetingsWorkspace [^>]*\bevents \/>/);
+  // Members without meetings.manage who follow an old Events link land on Meetings, never a "not available" page
+  // (verified in a production build: both old link forms -> ?section=meetings, title Meetings, no alert).
+  assert.match(workspace,/const eventsFallback = section === "events" && membership && !hasPermission\(membership, "meetings\.manage"\)/);
+  assert.match(workspace,/next\.set\("section", "meetings"\); next\.delete\("meetingTab"\)/);
+  assert.match(workspace,/\|\| eventsFallback\) return <WorkspaceLoading/);
   assert.doesNotMatch(workspace,/legacyEvents/);
 });
 

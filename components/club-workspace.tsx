@@ -173,12 +173,18 @@ export function ClubWorkspace({
     { id: "meetings", label: "Meetings", href: clubWorkspaceHref(clubId, "meetings") },
     { id: "tasks", label: "Tasks", href: clubWorkspaceHref(clubId, "tasks") },
   ];
+  // Club events need meetings.manage. A member following an old Events link lands on Meetings, as before FE-12,
+  // instead of a "not available" page (other parameters kept; meetingTab is dropped).
+  const eventsFallback = section === "events" && membership && !hasPermission(membership, "meetings.manage")
+    ? (() => { const next = new URLSearchParams(params.toString()); next.set("section", "meetings"); next.delete("meetingTab"); return `/club/${encodeURIComponent(clubId)}/workspace?${next}` })()
+    : null;
+  useEffect(() => { if (eventsFallback && !navigateWithinClub(eventsFallback, true)) router.replace(eventsFallback); }, [eventsFallback, router]);
   // The persistent shell (app/(workspace)/layout.tsx) draws the rail from the URL; this page adds its title and drawers.
   useShellBindings({ title: nav.find(n => n.id === active)?.label || "Club workspace", onSelect: () => {}, onNavigate: navigate,
     onModeSelect: id => { if (manager) saveClubWorkspacePreference(preferenceKey, id) },
     onReviewTool: id => { reviewTrigger.current = document.activeElement as HTMLElement; setReviewTool(id) } });
   if (suspended) return <div className="max-w-[var(--oc-reading-width)] space-y-4"><PageHeader title="This club is suspended" /><p className="mt-3">Club operations are unavailable until an administrator restores it. Your membership and existing records are preserved.</p><Link href="/" className="mt-6 inline-block underline">Return to Personal</Link></div>;
-  if (resolvingEntry || moved || legacyRoom) return <WorkspaceLoading label="Opening club workspace…" />;
+  if (resolvingEntry || moved || legacyRoom || eventsFallback) return <WorkspaceLoading label="Opening club workspace…" />;
   const allowed = mode === "recruiting" ? manager && (active === "announcements" || recruitmentTools(membership!).length > 0) && nav.some(n => n.id === active) : nav.some(n => n.id === active);
   function navigate(view: ViewId) {
     if (view === "interview-workspace") { openInterviewRoom(); return }
@@ -211,7 +217,7 @@ export function ClubWorkspace({
             {section === "overview" && current && <ManagerOverview data={current} refreshing={overviewPending} onChanged={() => setRetry(n => n + 1)} />}
             {section === "tasks" && (demo.isDemoEnabled ? <ClubTasks clubId={clubId} embedded personalOnly={!manager} initialScope={taskView === "mine" ? "mine" : manager ? "team" : "mine"} /> : <SelectedClubWorkspace kind="tasks" clubId={clubId} privacyScope={scope} personalOnly={!manager} initialScope={taskView === "mine" ? "mine" : manager ? "team" : "mine"} />)}
             {section === "meetings" && (hasPermission(membership, "meetings.manage") ? <ClubMeetingsWorkspace key={clubId} clubId={clubId} clubName={membership.club.name} canSeeAttendees={hasPermission(membership, "meetings.attendance")} /> : <MeetingList clubId={clubId} embedded personalOnly={!manager} initialAudience="MEMBERS" />)}
-            {section === "events" && (hasPermission(membership, "meetings.manage") ? <ClubMeetingsWorkspace key={`${clubId}:events`} clubId={clubId} clubName={membership.club.name} canSeeAttendees={hasPermission(membership, "meetings.attendance")} events /> : <MeetingList clubId={clubId} embedded personalOnly={!manager} initialAudience="MEMBERS" />)}
+            {section === "events" && hasPermission(membership, "meetings.manage") && <ClubMeetingsWorkspace key={`${clubId}:events`} clubId={clubId} clubName={membership.club.name} canSeeAttendees={hasPermission(membership, "meetings.attendance")} events />}
             {section === "members" && (demo.isDemoEnabled ? <ClubMembers key={clubId} clubId={clubId} /> : <SelectedClubWorkspace kind="members" clubId={clubId} privacyScope={scope} />)}
             {section === "settings" && <ClubSettingsWorkspace key={clubId} clubId={clubId} onSaved={() => { setRetry(n => n + 1); setPrivacyRevision(n => n + 1) }} />}
             {section === "announcements" && (demo.isDemoEnabled ? <ClubAnnouncements key={clubId} clubId={clubId} /> : <SelectedClubWorkspace kind="announcements" clubId={clubId} privacyScope={scope} />)}
