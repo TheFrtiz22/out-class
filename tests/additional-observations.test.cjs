@@ -19,14 +19,14 @@ test('revision checks, lost-response retries, concurrent stale edits and locked 
  const two=lib.observationChange(old,{...update,reason:'Corrected interaction context.'},other,true,true);assert.equal(two.revision,2);assert.deepEqual(two.history[0],one.history[0]);
  assert.throws(()=>lib.observationChange({...old,...two},update,author,false,false),/different text|changed/);
 });
-function harness(){let actor=author,allow=true,anonymous=false,own=false,cycle=uuid(9),rows=[],pins=[],audit=[],offline=false;
+function harness(){let actor=author,allow=true,anonymous=false,own=false,cycle=uuid(9),rows=[],pins=[],audit=[],offline=false,recusals=[];
  const member={id:uuid(10),clubId,status:'ACTIVE',permissions:['applications.review','applicants.identify'],interviewOffices:[]};
  const app={id:applicationId,clubId,recruitmentCycleId:cycle,roundId:uuid(11),studentId:uuid(12),round:{anonymousReview:false}};
- const tx={application:{findFirst:async({where})=>where.clubId===clubId&&where.id===applicationId?{...app,studentId:own?actor:app.studentId,round:{anonymousReview:anonymous}}:null},pipelineRound:{findMany:async()=>anonymous?[]:[{id:app.roundId,name:'Current review'}]},applicantObservation:{findUnique:async({where})=>rows.find(r=>r.id===where.id)??null,create:async({data})=>{if(offline)throw Error('Offline');const now=new Date();rows.push({...data,createdAt:now,updatedAt:now,author:{studentProfile:{firstName:'QA',lastName:'Reviewer'}},presentationReferences:[]});},update:async({where,data})=>{if(offline)throw Error('Offline');Object.assign(rows.find(r=>r.id===where.id),data,{updatedAt:new Date()});},findMany:async({where})=>rows.filter(r=>r.applicationId===where.applicationId&&r.clubId===where.clubId&&r.cycleId===where.cycleId&&!r.deletedAt).map(r=>({...r,presentationReferences:pins.filter(p=>p.observationId===r.id)}))},votingObservationReference:{findFirst:async({where})=>pins.find(p=>p.observationId===where.observationId),createMany:async({data})=>pins.push(...structuredClone(data)),findMany:async({where})=>pins.filter(p=>p.sessionId===where.sessionId&&p.applicationId===where.applicationId)},auditLog:{create:async({data})=>audit.push(data)}};
+ const tx={applicantRecusal:{findFirst:async({where})=>recusals.find(r=>r.applicationId===where.applicationId&&r.memberId===where.memberId&&where.liftedAt===null)??null},application:{findFirst:async({where})=>where.clubId===clubId&&where.id===applicationId?{...app,studentId:own?actor:app.studentId,round:{anonymousReview:anonymous}}:null},pipelineRound:{findMany:async()=>anonymous?[]:[{id:app.roundId,name:'Current review'}]},applicantObservation:{findUnique:async({where})=>rows.find(r=>r.id===where.id)??null,create:async({data})=>{if(offline)throw Error('Offline');const now=new Date();rows.push({...data,createdAt:now,updatedAt:now,author:{studentProfile:{firstName:'QA',lastName:'Reviewer'}},presentationReferences:[]});},update:async({where,data})=>{if(offline)throw Error('Offline');Object.assign(rows.find(r=>r.id===where.id),data,{updatedAt:new Date()});},findMany:async({where})=>rows.filter(r=>r.applicationId===where.applicationId&&r.clubId===where.clubId&&r.cycleId===where.cycleId&&!r.deletedAt).map(r=>({...r,presentationReferences:pins.filter(p=>p.observationId===r.id)}))},votingObservationReference:{findFirst:async({where})=>pins.find(p=>p.observationId===where.observationId),createMany:async({data})=>pins.push(...structuredClone(data)),findMany:async({where})=>pins.filter(p=>p.sessionId===where.sessionId&&p.applicationId===where.applicationId)},auditLog:{create:async({data})=>audit.push(data)}};
  const authorize=async(_tx,c)=>{if(!allow||c!==clubId)throw Error('Review access denied');return member;};
  const mocks={'@/utils/prisma':{prisma:{$transaction:fn=>fn(tx)}},'@/utils/auth':{requireClubPermission:async()=>({user:{id:actor}})},'@/lib/club-transaction-authorization':{authorizeClubTransaction:authorize},'@/utils/club-write-transaction':{clubWriteTransaction:fn=>fn(tx)}};
  const api=load('actions/additional-observations.ts',mocks),helper=load('utils/additional-observations.ts',mocks);
- return {api,helper,tx,rows,pins,audit,member,app,deny:()=>allow=false,anonymous:()=>anonymous=true,self:()=>own=true,as:v=>actor=v,offline:v=>offline=v};
+ return {api,helper,tx,rows,pins,audit,member,app,recuse:()=>recusals.push({applicationId,memberId:member.id}),deny:()=>allow=false,anonymous:()=>anonymous=true,self:()=>own=true,as:v=>actor=v,offline:v=>offline=v};
 }
 test('create/edit/retry persists once, failures preserve input, author attribution and scoped reads',async()=>{
  const h=harness(),d=command();await h.api.saveAdditionalObservation(d);await h.api.saveAdditionalObservation(d);assert.equal(h.rows.length,1);assert.equal(h.audit.length,1);
@@ -44,6 +44,15 @@ test('locking copies exact version; later moderation cannot rewrite it; deselect
 });
 test('anonymous current review and revoked membership deny reads/writes',async()=>{
  const h=harness();h.anonymous();await assert.rejects(h.api.saveAdditionalObservation(command()),/unavailable/);await assert.rejects(h.api.getAdditionalObservations({clubId,applicationId}),/unavailable/);h.deny();await assert.rejects(h.api.saveAdditionalObservation(command()),/denied/);
+});
+test('a recused member cannot read, share, edit or remove additional observations; others are unaffected',async()=>{
+ const h=harness();await h.api.saveAdditionalObservation(command());assert.equal((await h.api.getAdditionalObservations({clubId,applicationId})).length,1);
+ h.recuse();
+ await assert.rejects(h.api.getAdditionalObservations({clubId,applicationId}),/stepped out/);
+ await assert.rejects(h.api.saveAdditionalObservation(command({id:uuid(30),requestId:uuid(31)})),/stepped out/);
+ await assert.rejects(h.api.saveAdditionalObservation(command({requestId:uuid(7),revision:1,body:'Edited after stepping out.'})),/stepped out/);
+ await assert.rejects(h.api.saveAdditionalObservation(command({requestId:uuid(8),revision:1,remove:true})),/stepped out/);
+ assert.equal(h.rows.length,1);assert.equal(h.rows[0].revision,1);assert.equal(h.rows[0].deletedAt,null);
 });
 test('Demo keeps observation revisions and frozen copies across refresh with zero live calls and read-only reads',async()=>{
  const {harness}=require('./helpers/demo-harness.cjs'),h=harness(),{demoStore}=h.load('lib/demo/store.ts');demoStore.start();try{
