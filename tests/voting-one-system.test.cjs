@@ -72,18 +72,18 @@ test('printed board join QR codes and short links redirect; Demo join links neve
 });
 
 // The history view, rendered with the real server read and close command over the fake database.
-function historyView(h,{demoScoped=false}={}){
+function historyView(h,{demoScoped=false,api,clubId:club=clubId,sessionId:session=sessionId}={}){
  const slots=[],effects=[];let cursor=0;
  const react={useState(initial){const i=cursor++;if(!(i in slots))slots[i]=initial;return[slots[i],v=>slots[i]=typeof v==='function'?v(slots[i]):v]},useCallback(fn,deps){const i=cursor++,prev=slots[i];if(!prev||deps.some((v,j)=>v!==prev.deps[j]))slots[i]={fn,deps};return slots[i].fn},useEffect(fn,deps){const i=cursor++,prev=slots[i];if(!prev||deps.some((v,j)=>v!==prev[j])){slots[i]=deps;effects.push(fn)}}};
  const named=name=>({[name]:function(){}})[name];
  const ui=names=>Object.fromEntries(names.map(n=>[n,named(n)]));
  const mocks={react,'react/jsx-runtime':{jsx:(type,props)=>({type,props}),jsxs:(type,props)=>({type,props}),Fragment:'Fragment'},'next/link':{default:named('Link')},'@/contexts/auth-context':{useAuth:()=>({loading:false,user:{id:'viewer'}})},
-  '@/lib/workspace-api':{getVotingWorkspace:(c,s)=>h.api.getVotingWorkspace(c,s),commandVotingSession:input=>h.api.commandVotingSession(input)},
+  '@/lib/workspace-api':api??{getVotingWorkspace:(c,s)=>h.api.getVotingWorkspace(c,s),commandVotingSession:input=>h.api.commandVotingSession(input)},
   '@/lib/voting-navigation':load('lib/voting-navigation.ts'),'@/lib/voting-presentation':{votingSessionStage:s=>s.state},'@/lib/copy/terms':{formatDateTime:v=>String(v)},
   '@/components/ui/page-header':ui(['PageHeader']),'@/components/ui/button':ui(['Button']),'@/components/ui/loading-state':ui(['LoadingState']),'@/components/ui/alert-dialog':ui(['AlertDialog','AlertDialogCancel','AlertDialogContent','AlertDialogDescription','AlertDialogFooter','AlertDialogHeader','AlertDialogTitle'])};
  const mod={exports:{}};new Function('require','module','exports',ts.transpileModule(fs.readFileSync('components/live-voting/legacy-voting-history.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText)(n=>n in mocks?mocks[n]:require(n),mod,mod.exports);
  const flush=()=>new Promise(r=>setImmediate(r));
- return{async render(){for(let i=0;i<4;i++){cursor=0;var tree=mod.exports.LegacyVotingHistory({clubId,sessionId,demoScoped});const run=effects.splice(0);for(const fn of run)fn();await flush();await flush()}cursor=0;return mod.exports.LegacyVotingHistory({clubId,sessionId,demoScoped})}};
+ return{async render(){for(let i=0;i<4;i++){cursor=0;var tree=mod.exports.LegacyVotingHistory({clubId:club,sessionId:session,demoScoped});const run=effects.splice(0);for(const fn of run)fn();await flush();await flush()}cursor=0;return mod.exports.LegacyVotingHistory({clubId:club,sessionId:session,demoScoped})}};
 }
 const nodes=n=>!n||typeof n!=='object'?[]:Array.isArray(n)?n.flatMap(nodes):[n,...nodes(n.props?.children)],text=n=>typeof n==='string'||typeof n==='number'?String(n):Array.isArray(n)?n.map(text).join(''):n?.props?text(n.props.children):'';
 const find=(tree,type,label)=>nodes(tree).find(n=>n.type?.name===type&&(!label||text(n).includes(label)));
@@ -150,4 +150,83 @@ test('Demo keeps its own isolated history and the same close-only command',()=>{
  assert.doesNotMatch(demo,/export async function (createVotingSession|submitVotingBallot|seedVotingDemo|joinVotingSession|getVotingJoinInfo|getJoinedVotingWorkspace)/);
  assert.doesNotMatch(demo,/^import (?!type )[^\n]*@\/actions\/voting"/m);assert.match(demo,/import type \* as Live from "@\/actions\/voting"/,'Demo imports only types from the server module');
  const history=fs.readFileSync('components/live-voting/legacy-voting-history.tsx','utf8');assert.match(history,/from "@\/lib\/workspace-api"/,'reads and the close command go through the Demo-aware adapter');
+});
+
+const anonymousLabel=/^Applicant [0-9A-F]{10}$/;
+test('server labels: an anonymous round, a viewer without applicants.identify and a display without names all fall back; only the identified case shows names',async()=>{
+ const named=harness();named.seed();assert.deepEqual((await named.read()).candidateLabels.map(c=>c.label),['Avery Applicant','Avery Applicant','Avery Applicant'],'positive case');
+ const anon=harness({anonymous:true});anon.seed();assert.ok(anon.members[0].permissions.includes('applicants.identify'),'the viewer can identify applicants elsewhere');
+ const anonLabels=(await anon.read()).candidateLabels;assert.ok(anonLabels.every(c=>anonymousLabel.test(c.label)),'an anonymous round never shows names, even to an identifying viewer');
+ const page=text(await historyView(anon).render());assert.doesNotMatch(page,/Avery/);for(const c of anonLabels)assert.ok(page.includes(c.label),'the rendered history uses the anonymous labels');
+ const noIdentify=harness();noIdentify.seed();noIdentify.members[0].permissions=noIdentify.members[0].permissions.filter(p=>p!=='applicants.identify');
+ assert.ok((await noIdentify.read()).candidateLabels.every(c=>anonymousLabel.test(c.label)));
+ const hidden=harness();hidden.seed().displayConfig={version:1,fields:['major','gpa']};
+ assert.ok((await hidden.read()).candidateLabels.every(c=>anonymousLabel.test(c.label)));
+});
+
+test('closing is refused without applications.review, and on an archived round the button is hidden and the server refuses',async()=>{
+ const h=harness();h.seed();h.members[0].permissions=h.members[0].permissions.filter(p=>p!=='applications.review');
+ for(const action of ['COMPLETE_PASS','FINISH'])await assert.rejects(h.api.commandVotingSession({clubId,sessionId,revision:3,action}),/Denied/,action);
+ assert.equal(h.state().sessions[0].state,'OPEN');assert.deepEqual(h.state().audit,[]);
+ const archived=harness({archived:true});archived.seed();const tree=await historyView(archived).render();
+ assert.equal(find(tree,'Button','Close session'),undefined);assert.match(text(tree),/round is archived/);
+ await assert.rejects(archived.api.commandVotingSession({clubId,sessionId,revision:3,action:'COMPLETE_PASS'}),/Archived voting rounds are read-only/);
+ assert.equal(archived.state().sessions[0].state,'OPEN');
+});
+
+test('if FINISH fails after the pass was completed, the view reloads and a retry sends FINISH only',async()=>{
+ const h=harness();h.seed();const sent=[];let failFinish=true;
+ const api={getVotingWorkspace:(c,s)=>h.api.getVotingWorkspace(c,s),commandVotingSession:async input=>{sent.push(input.action);if(input.action==='FINISH'&&failFinish){failFinish=false;throw Error('Temporary database error.')}return h.api.commandVotingSession(input)}};
+ const view=historyView(h,{api});let tree=await view.render();
+ const retry=()=>nodes(tree).find(n=>n.type?.name==='Button'&&String(n.props.onClick).includes('close()'));
+ retry().props.onClick();for(let i=0;i<50&&!sent.includes('FINISH');i++)await new Promise(r=>setImmediate(r));
+ tree=await view.render();
+ assert.deepEqual(sent,['COMPLETE_PASS','FINISH']);assert.equal(h.state().sessions[0].state,'PAUSED');assert.equal(h.state().sessions[0].passes[0].state,'COMPLETED');
+ assert.match(text(tree),/open pass was completed, but the session was not closed\. Temporary database error\. Try again\./);
+ retry().props.onClick();for(let i=0;i<50&&h.state().sessions[0].state!=='COMPLETED';i++)await new Promise(r=>setImmediate(r));
+ assert.deepEqual(sent,['COMPLETE_PASS','FINISH','FINISH'],'the retry sends FINISH only, with the reloaded revision');
+ assert.equal(h.state().sessions[0].state,'COMPLETED');assert.deepEqual(h.state().audit.map(a=>a.action),['voting.complete_pass','voting.finish']);
+ // A failure before anything changed asks for a reload.
+ const g=harness();g.seed();const failing={getVotingWorkspace:(c,s)=>g.api.getVotingWorkspace(c,s),commandVotingSession:async()=>{throw Error('Session changed.')}};
+ const other=historyView(g,{api:failing});let t=await other.render();nodes(t).find(n=>n.type?.name==='Button'&&String(n.props.onClick).includes('close()')).props.onClick();
+ for(let i=0;i<20;i++)await new Promise(r=>setImmediate(r));t=await other.render();assert.match(text(t),/Session changed\. Reload to continue\./);
+});
+
+function demoWorkspace(){
+ const d=require('./helpers/demo-harness.cjs').harness(),{demoStore}=d.load('lib/demo/store.ts');let fetches=0;const fetch=global.fetch;global.fetch=async()=>{fetches++;throw Error('network used')};
+ demoStore.start();const club=demoStore.get().clubs[0].id;demoStore.mutate(s=>{s.perspective={role:'leader',clubId:club}});
+ const session=demoStore.get().votingSessions.find(s=>s.clubId===club&&s.mode==='LEGACY'&&s.state==='OPEN');
+ return{d,demoStore,club,session,fetches:()=>fetches,restore:()=>{global.fetch=fetch}};
+}
+
+test('Demo history labels follow the server rule: identify capability, a non-anonymous round and a name display',async()=>{
+ const w=demoWorkspace();try{
+  const demo=w.d.load('lib/demo/voting.ts'),{hasPermission}=w.d.load('lib/permissions.ts'),state=w.demoStore.get();
+  const leader=(await demo.getVotingWorkspace(w.club,w.session.id)).memberId;
+  assert.ok(hasPermission(state.memberships.find(m=>m.id===leader),'applicants.identify'));
+  const names=(await demo.getVotingWorkspace(w.club,w.session.id)).candidateLabels;assert.ok(names.every(c=>!anonymousLabel.test(c.label)),'positive case shows names');
+  const plain=state.memberships.find(m=>m.clubId===w.club&&m.id!==leader&&!m.isOwner);plain.permissions=plain.permissions.filter(p=>p!=='applicants.identify');assert.equal(hasPermission(plain,'applicants.identify'),false);
+  assert.ok((await demo.getVotingWorkspace(w.club,w.session.id,true,plain.id)).candidateLabels.every(c=>anonymousLabel.test(c.label)),'no identify: anonymous');
+  w.session.displayConfig={version:1,fields:['major']};
+  assert.ok((await demo.getVotingWorkspace(w.club,w.session.id)).candidateLabels.every(c=>anonymousLabel.test(c.label)),'no name display: anonymous');
+  w.session.displayConfig={};const round=state.clubs[0].rounds.find(r=>r.id===w.session.roundId);round.anonymousReview=true;
+  assert.ok((await demo.getVotingWorkspace(w.club,w.session.id)).candidateLabels.every(c=>anonymousLabel.test(c.label)),'anonymous round: anonymous');
+  assert.equal(w.d.calls(),0);assert.equal(w.fetches(),0);
+ }finally{w.restore()}
+});
+
+test('with demo=1 the history page and its close command never reach the server or the database',async()=>{
+ const w=demoWorkspace();try{
+  const api=w.d.load('lib/workspace-api.ts');
+  // The route page itself only validates the IDs and renders the client view.
+  const pageMod={exports:{}};new Function('require','module','exports',ts.transpileModule(fs.readFileSync('app/(focus)/voting/rooms/[sessionId]/history/page.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText)(n=>n==='@/utils/prisma'?(()=>{throw Error('prisma imported')})():n==='react/jsx-runtime'?{jsx:(type,props)=>({type,props}),jsxs:(type,props)=>({type,props})}:n.endsWith('.css')?{}:n==='zod'?require('zod'):{PageHeader:function PageHeader(){},LegacyVotingHistory:function LegacyVotingHistory(){}},pageMod,pageMod.exports);
+  const element=await pageMod.exports.default({params:Promise.resolve({sessionId:w.session.id}),searchParams:Promise.resolve({clubId:w.club,demo:'1'})});
+  assert.equal(element.type.name,'LegacyVotingHistory');assert.equal(element.props.demoScoped,true);
+  assert.doesNotMatch(fs.readFileSync('app/(focus)/voting/rooms/[sessionId]/history/page.tsx','utf8'),/utils\/prisma|actions\//);
+  const tree=await historyView(null,{api,demoScoped:true,clubId:w.club,sessionId:w.session.id}).render();
+  assert.match(text(tree),/This session was not closed/);const button=nodes(tree).find(n=>n.type?.name==='Button'&&String(n.props.onClick).includes('close()'));assert.ok(button);
+  button.props.onClick();for(let i=0;i<50&&w.session.state!=='COMPLETED';i++)await new Promise(r=>setImmediate(r));
+  assert.equal(w.demoStore.get().votingSessions.find(s=>s.id===w.session.id).state,'COMPLETED','Demo closes in the Demo store');
+  assert.equal(w.d.calls(),0,'no server action was invoked');assert.equal(w.fetches(),0,'no workspace read reached the server');
+ }finally{w.restore()}
 });

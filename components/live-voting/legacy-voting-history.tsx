@@ -38,18 +38,26 @@ export function LegacyVotingHistory({ clubId, sessionId, demoScoped }: { clubId:
   if (!data || !s || !summary) return data ? <div className="vr-page vr-member space-y-4"><PageHeader title="Voting history" /><p role="status">This voting session is unavailable.</p><Link className="vr-link" href={back}>Back to the Voting room</Link></div> : <LoadingState label="Loading voting history…" layout="rows" rows={4} />
   const current = s.passes.find(p => p.number === s.currentPass)
   const unfinished = !s.publishedAt && (s.state === "OPEN" || s.state === "PAUSED")
-  const canClose = unfinished && data.canStart && data.canFinish
+  // The read lists only the club's active rounds; an archived round is read-only on the server too.
+  const roundArchived = !data.rounds.some(r => r.id === s.roundId)
+  const canClose = unfinished && !roundArchived && data.canStart && data.canFinish
   const round = data.rounds.find(r => r.id === s.roundId)?.name ?? "Recruitment round"
   const label = (id: string) => data.candidateLabels.find(c => c.id === id)?.label ?? "Applicant"
   async function close() {
     if (busy || !s) return
     setBusy(true); setCloseError("")
+    let completed = false
     try {
       let revision = s.revision
-      if (current?.state === "OPEN") revision = (await commandVotingSession({ clubId, sessionId: s.id, revision, action: "COMPLETE_PASS" })).revision
+      if (current?.state === "OPEN") { revision = (await commandVotingSession({ clubId, sessionId: s.id, revision, action: "COMPLETE_PASS" })).revision; completed = true }
       await commandVotingSession({ clubId, sessionId: s.id, revision, action: "FINISH" })
       setConfirm(false); await load()
-    } catch (reason) { setCloseError(reason instanceof Error ? reason.message : "The session could not be closed. Reload and try again.") }
+    } catch (reason) {
+      const message = reason instanceof Error ? reason.message : "The session could not be closed."
+      // The pass is already complete: reload so a retry sends FINISH only, against the current revision.
+      if (completed) { await load(); setCloseError(`The open pass was completed, but the session was not closed. ${message} Try again.`) }
+      else setCloseError(`${message} Reload to continue.`)
+    }
     finally { setBusy(false) }
   }
   return <div className="vr-page space-y-5">
@@ -58,7 +66,7 @@ export function LegacyVotingHistory({ clubId, sessionId, demoScoped }: { clubId:
     {s.state === "DRAFT" && <p role="status">This session was set up but never started. No ballots were cast.</p>}
     {unfinished && <section aria-label="Unfinished session" className="space-y-3 border-y py-3">
       <p>This session was not closed. Voting can no longer continue here{current?.state === "OPEN" ? "; closing it completes the open pass and keeps every ballot already cast" : ""}.</p>
-      {canClose ? <Button variant="outline" disabled={busy} onClick={() => { setCloseError(""); setConfirm(true) }}>Close session</Button> : <p className="text-sm text-muted-foreground">A club leader who can start and finish voting can close it.</p>}
+      {canClose ? <Button variant="outline" disabled={busy} onClick={() => { setCloseError(""); setConfirm(true) }}>Close session</Button> : <p className="text-sm text-muted-foreground">{roundArchived ? "Its recruitment round is archived, so it stays as it is." : "A club leader who can start and finish voting can close it."}</p>}
     </section>}
     <dl className="vr-stats">{[["Passed", summary.passed], ["Hold", summary.held], ["Not passed", summary.notPassed], ["Unresolved", summary.unresolved], ["Target", summary.target]].map(([name, value]) => <div key={name}><dt className="text-xs text-muted-foreground">{name}</dt><dd className="font-medium tabular-nums">{value}</dd></div>)}</dl>
     <section aria-labelledby="legacy-voting-outcomes"><h2 id="legacy-voting-outcomes" className="mb-2">Outcomes</h2>
