@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { authEmailError, confirmedEmailSession } from "@/lib/auth-email"
+import { passwordNotSavedNotice, setPasswordAfterConfirmation } from "@/lib/signup-password"
 import { InvitationProfileSuggestions } from "@/components/invitation-profile-suggestions"
 import type { InvitationProfileDefaults } from "@/lib/organization-claiming"
 import { useAuth } from "@/contexts/auth-context"
@@ -237,6 +238,8 @@ export function StudentOnboardingWizard({
   })
 
   const supabase = createClient()
+  // Held only until the email code is verified, then cleared.
+  const pendingPassword = useRef<string | undefined>(undefined)
 
   // ── Step 1: Account Basics ────────────────────────────────────────────────
 
@@ -252,8 +255,10 @@ export function StudentOnboardingWizard({
     if (accountCreated) { setStep(3); return }
     setLoading(true)
     try {
-      const result = await registerStudent(step1Form.getValues())
+      const values = step1Form.getValues()
+      const result = await registerStudent(values)
       if (result.error) { setGlobalError(result.error); return }
+      pendingPassword.current = values.password
       setCodeSent(true)
       setResendSeconds(60)
       setNotice("")
@@ -294,6 +299,10 @@ export function StudentOnboardingWizard({
         setGlobalError("Unable to confirm your email. Please verify again.")
         return
       }
+      // The signup password was stored while the address was unconfirmed; set it again as the verified owner.
+      const password = await setPasswordAfterConfirmation(supabase, pendingPassword.current)
+      pendingPassword.current = undefined
+      if (!password.saved) setGlobalError(passwordNotSavedNotice)
       setAccountCreated(true)
       step1Form.setValue("password", "")
       setStep(3)
