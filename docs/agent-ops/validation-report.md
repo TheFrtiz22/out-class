@@ -148,8 +148,3 @@ not run: browser/E2E suites, next build, test:migrations (no linux chromium/nati
 2026-11-09 VOTING-WITHOUT-VOTE-1 (Windows, PGlite): new voting-without-vote-flag-migration 1/1 | test:migrations exit 0, 75 migrations | voting-decide-without-vote 7/7, voting-decide-without-vote-sql 1/1, voting-room-migration 1/1, all other non-browser tests/voting-* and tests/live-* pass one file at a time; native suites skipped (no OUTCLASS_SECURITY_TEST_DATABASE_URL) | tsc scoped to changed files 0 errors (full tsc exceeded the 2-minute command limit) | eslint changed files 0 | ui-controls OK
 not run: *-browser suites (each >2 min), next build, full pnpm run test
 ```
-
-## 2026-11-06 SEC-TURNSTILE security/turnstile (8a25f81)
-- test 1733: 1673 pass, 0 fail, 60 skipped (env-gated; same 60 as main 00840ee, which ran 1662/0/60). Browser suites ran against a local Chromium 1243 aliased for Playwright 1.64.
-- test:migrations: 71 applied on fresh and legacy, RLS on 85 tables. typecheck ok. lint 0 errors / 401 warnings (unchanged). build ok, 76 pages; /login 209 kB, /signup 281 kB first load.
-- Not run: disposable E2E stack, real Cloudflare or Supabase captcha enforcement.
