@@ -2,9 +2,9 @@
 .decision-layout{max-width:860px;margin:0 auto}
 .decision-controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;margin:0 0 24px;font-size:14px}
 .decision-controls a{text-decoration:underline;text-underline-offset:4px}
-.decision-controls :focus-visible,.decision-celebrate-banner :focus-visible{outline:3px solid #cf521d;outline-offset:4px}
+.decision-controls :focus-visible,.decision-celebrate-banner :focus-visible{outline:3px solid var(--ring);outline-offset:4px}
 
-.decision-paper{--letter-accent:#142d4e;--letter-ink:#1f2a3a;--letter-muted:#5b6676;--letter-rule:#e4ded2;position:relative;padding:68px 76px 44px;background:var(--oc-content-solid);color:var(--letter-ink);border:1px solid var(--oc-content-edge-solid);border-top:4px solid var(--letter-accent);box-shadow:var(--oc-content-shadow-solid);overflow-wrap:anywhere;font-family:var(--oc-font-display);font-size:16.5px;line-height:1.8}
+.decision-paper{--letter-accent:var(--school-primary);--letter-ink:#1f2a3a;--letter-muted:#5b6676;--letter-rule:#e4ded2;position:relative;padding:68px 76px 44px;background:var(--oc-content-solid);color:var(--letter-ink);border:1px solid var(--oc-content-edge-solid);border-top:4px solid var(--letter-accent);box-shadow:var(--oc-content-shadow-solid);overflow-wrap:anywhere;font-family:var(--oc-font-display);font-size:16.5px;line-height:1.8}
 .decision-paper::before{content:"";position:absolute;inset:14px;border:1px solid color-mix(in srgb,var(--letter-accent) 20%,transparent);pointer-events:none}
 .decision-preview{position:relative;font-family:var(--oc-font-sans);font-size:11px;font-weight:600;letter-spacing:.08em;padding:10px;background:var(--oc-content-soft);margin:0 0 28px;text-align:center}
 

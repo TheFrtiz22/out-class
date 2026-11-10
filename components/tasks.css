@@ -32,7 +32,7 @@
 .oc-task-deadline { display: flex; align-items: center; gap: .35rem; color: var(--muted-foreground); font-size: var(--oc-text-caption); white-space: nowrap; }
 .oc-task-missing .oc-task-deadline, .oc-task-missing .oc-task-row-copy small { color: var(--destructive); }
 .oc-task-deadline svg { width: .875rem; height: .875rem; flex-shrink: 0; }
-.oc-task-total:focus-visible, .oc-task-row:focus-visible, .oc-manager-task-metrics button:focus-visible, .oc-task-members > li > button:focus-visible { outline: 2px solid var(--primary); outline-offset: -3px; }
+.oc-task-total:focus-visible, .oc-task-row:focus-visible, .oc-manager-task-metrics button:focus-visible, .oc-task-members > li > button:focus-visible { outline: 2px solid var(--ring); outline-offset: -3px; box-shadow: var(--focus-halo-inset-5) }
 .oc-task-detail-icon { display: grid; place-items: center; background: var(--muted); color: var(--primary); width: 2rem; height: 2rem; border-radius: var(--oc-radius-md); margin-bottom: .75rem; }
 .oc-task-detail-icon svg { width: 1.125rem; height: 1.125rem; }
 .oc-task-drawer .oc-task-detail-title { font-size: var(--oc-text-modal); line-height: var(--oc-leading-heading); color: var(--foreground); padding-right: 1.5rem; }

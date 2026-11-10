@@ -60,7 +60,7 @@
   .oc-dock-chevron { margin-left: auto; margin-right: 14px; flex-shrink: 0; transition: transform 220ms var(--oc-floating-ease); }
   .oc-dock-group-trigger[aria-expanded="true"] .oc-dock-chevron { transform: translateX(3px); color: var(--oc-rail-text); }
   .oc-dock-rail nav :is(a,button):hover { background: rgb(212 232 252 / 9%); }
-  .oc-expanding-dock :is(a,button):focus-visible { outline: 2px solid var(--brand-orange); outline-offset: -2px; }
+  .oc-expanding-dock :is(a,button):focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; box-shadow: var(--focus-halo-inset-4) }
 }
 /* Icon-only rail: labels stay in the accessibility tree (clipped, not hidden) and show as tooltips. */
 @media (min-width: 1024px) and (max-width: 1279px) {
@@ -95,7 +95,7 @@
 .oc-dock-flyout nav :is(a,button) { position: relative; display: flex; align-items: center; width: 100%; min-height: 44px; padding: 10px 12px; gap: 10px; border-radius: 10px; color: var(--oc-rail-text); background: transparent; font-size: 14px; text-align: left; text-decoration: none; }
 .oc-dock-flyout nav :is(a,button):is(:hover,:focus-visible) { background: var(--oc-rail-selected); outline: 2px solid transparent; outline-offset: -2px; }
 .oc-dock-flyout nav [aria-current="page"]::before { content: ""; position: absolute; left: 0; top: 15px; bottom: 15px; width: 3px; border-radius: 3px; background: var(--brand-orange); }
-.oc-dock-flyout nav :is(a,button):focus-visible { outline-color: var(--brand-orange); }
+.oc-dock-flyout nav :is(a,button):focus-visible { outline-color: var(--ring); outline-offset: 2px; box-shadow: var(--focus-halo-outset) }
 @keyframes oc-dock-flyout-in { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; transform: translateX(0); } }
 @media (prefers-reduced-motion: reduce) {
   [data-product-shell] > div > aside.oc-expanding-dock, .oc-expanding-dock *, .oc-dock-flyout, .oc-dock-flyout * { transition: none !important; animation: none !important; }

@@ -7,7 +7,7 @@ import { z } from "zod"
 import { cookies } from "next/headers"
 import { DEMO_COOKIE } from "@/lib/demo/access"
 import { getDashboardReviewQueue, getClubWorkspaceOverview, getWorkspaceRounds } from "@/actions/club-overview"
-import { getClubPipeline, getClubPipelineList, getClubPipelinePage, getClubPipelineSelection } from "@/actions/crm"
+import { getClubPipeline, getClubPipelineList, getClubPipelinePage, getClubPipelineSelection, getRankedReviewRound } from "@/actions/crm"
 import { pipelinePageQuery } from "@/lib/pipeline-page"
 import { getOrganizationMemberManagement } from "@/actions/organization-members"
 import { getOrganizationInvitations } from "@/actions/club-onboarding"
@@ -31,7 +31,7 @@ const votingArgs = z.preprocess(args => Array.isArray(args) && args.length === 1
   z.tuple([z.string().uuid(), z.string().uuid().nullish().transform(value => value ?? undefined)]))
 
 // Every `case` below, so logs carry only a known constant, never a raw query value.
-const workspaceReadKinds = new Set(["myAvailability", "roundAvailability", "availabilityOverview", "staffingCoverage", "panelWorkspace", "assignedRooms", "interviewWorkspace", "interviewRounds", "roomWorkspace", "bookingPublication", "tasks", "meetings", "announcements", "notifications", "dashboardReviews", "overview", "members", "pipeline", "pipelineList", "pipelinePage", "pipelineSelection", "rankedReviewSettings", "rounds", "applicationSettings", "pipelineSettings", "directory", "publicClub", "corkboard", "taskNotifications", "studentDashboard", "voting", "votingJoin", "invitations", "tutorial", "applicantDisplay", "attendance"])
+const workspaceReadKinds = new Set(["myAvailability", "roundAvailability", "availabilityOverview", "staffingCoverage", "panelWorkspace", "assignedRooms", "interviewWorkspace", "interviewRounds", "roomWorkspace", "bookingPublication", "tasks", "meetings", "announcements", "notifications", "dashboardReviews", "overview", "members", "pipeline", "pipelineList", "pipelinePage", "pipelineSelection", "rankedReviewSettings", "rankedReviewRound", "rounds", "applicationSettings", "pipelineSettings", "directory", "publicClub", "corkboard", "taskNotifications", "studentDashboard", "voting", "votingJoin", "invitations", "tutorial", "applicantDisplay", "attendance"])
 const loggedReadKind = (kind: string | null) => kind && workspaceReadKinds.has(kind) ? kind : "unknown"
 
 // An explicit read allowlist. Each private loader still runs its original live
@@ -69,6 +69,7 @@ export async function GET(request: Request) {
       case "pipelineList": data = await getClubPipelineList(...z.tuple([z.string().uuid(), z.object({ applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), gender: z.enum(genderValues).optional(), genderCounts: z.boolean().optional() }).strict().optional()]).parse(Array.isArray(args) && args.length === 1 ? [args[0], {}] : args)); break
       case "pipelinePage": data = await getClubPipelinePage(...z.tuple([z.string().uuid(), pipelinePageQuery]).parse(Array.isArray(args) && args.length === 1 ? [args[0], {}] : args)); break
       case "pipelineSelection": data = await getClubPipelineSelection(...z.tuple([z.string().uuid(), pipelinePageQuery.omit({ cursor: true })]).parse(Array.isArray(args) && args.length === 1 ? [args[0], {}] : args)); break
+      case "rankedReviewRound": data = await getRankedReviewRound(...z.tuple([z.string().uuid(), z.string().uuid()]).parse(args)); break
       case "rankedReviewSettings": data = await (await import("@/actions/ranked-review")).getRankedReviewSettings(...z.tuple([z.string().uuid(), z.string().uuid()]).parse(args)); break
       case "rounds": data = await getWorkspaceRounds(...clubArgs.parse(args)); break
       case "applicationSettings": data = await getApplicationSettings(...clubArgs.parse(args)); break
