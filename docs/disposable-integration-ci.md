@@ -15,7 +15,7 @@ Requirements: Node 22, pnpm 10, Docker with Linux containers, OpenSSL (for onboa
 | Runner | Command | Bound disposable environment |
 | --- | --- | --- |
 | Auth, MFA, settings, navigation, PDF import | \`node scripts/run-onboarding-e2e.cjs --club-integration\` | Dedicated local Supabase Auth/Postgres/Mailpit, Next server 3107 |
-| Native security/concurrency | \`node scripts/run-disposable-postgres.cjs security\` | DB \`outclass_security_test\` on loopback 58454 |
+| Native security/concurrency, starting the next recruitment cycle | \`node scripts/run-disposable-postgres.cjs security\` | DB \`outclass_security_test\` on loopback 58454 |
 | Native Events and browser Events | \`node scripts/run-disposable-postgres.cjs events\` | DB \`postgres\` on loopback 55442 |
 | Native announcements, recipient audiences, invitations and decision publication | \`node scripts/test-decision-publication-local.cjs\` | DB \`outclass_audiences_test\` on 58453 |
 | Native decision transactions, offers, recruitment races | \`node scripts/test-decision-transactions-local.cjs\` | DB \`outclass_recruitment_test\` on 58452 |

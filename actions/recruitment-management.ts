@@ -4,7 +4,7 @@ import {decisionPublicationGuard} from "@/lib/decision-publication-guard";
 import {requireClubPermission} from "@/utils/auth";
 import {clubWriteTransaction} from "@/utils/club-write-transaction";
 import {authorizeClubTransaction} from "@/lib/club-transaction-authorization";
-import {START_NEXT_CYCLE_ACTION,nextCycleDeadline,undecidedApplicationStatuses} from "@/lib/recruitment-cycle";
+import {START_NEXT_CYCLE_ACTION,cycleDecisionBlocker,cycleVotingBlocker,nextCycleDeadline} from "@/lib/recruitment-cycle";
 const uuid=z.string().uuid();
 export async function getRecruitmentCycles(clubId:string){
  uuid.parse(clubId);const {user}=await requireClubPermission(clubId,["recruitment.manage"]);
@@ -20,6 +20,8 @@ export async function saveRecruitmentCycle(input:unknown){
   await authorizeClubTransaction(tx,d.clubId,user.id,["recruitment.manage"]);
   const existing=await tx.recruitmentCycle.findUnique({where:{id:d.id}});
   if(existing&&existing.clubId!==d.clubId)throw Error("Cycle unavailable.");
+  // Archiving freezes the cycle's votes; refuse while any are live or unfinalized.
+  if(existing&&d.archived&&!existing.archivedAt){const blocker=await cycleVotingBlocker(tx,d.clubId,existing);if(blocker)throw Error(blocker);}
   await tx.recruitmentCycle.upsert({where:{id:d.id},create:{id:d.id,clubId:d.clubId,name:d.name,archivedAt:d.archived?new Date():null},update:{name:d.name,archivedAt:d.archived?existing?.archivedAt??new Date():null}});
   await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:d.id,action:"recruitment.cycle.saved",details:{name:d.name,archived:d.archived}}});
   return {success:true};
@@ -72,7 +74,8 @@ export async function startRecruitmentCycleFromPrevious(input:unknown){
   const existing=await tx.recruitmentCycle.findUnique({where:{id:d.id}});
   if(existing){
    const prior=existing.clubId===d.clubId?await tx.auditLog.findFirst({where:{clubId:d.clubId,targetId:d.id,action:START_NEXT_CYCLE_ACTION},select:{details:true}}):null;
-   if((prior?.details as {sourceCycleId?:unknown}|null|undefined)?.sourceCycleId!==d.sourceCycleId)throw Error("Cycle unavailable.");
+   // A replay must be the same command: same source and same name.
+   if(existing.name!==d.name||(prior?.details as {sourceCycleId?:unknown}|null|undefined)?.sourceCycleId!==d.sourceCycleId)throw Error("Cycle unavailable.");
    return {success:true as const,id:d.id,replayed:true};
   }
   const source=await tx.recruitmentCycle.findFirst({where:{id:d.sourceCycleId,clubId:d.clubId}});
@@ -82,8 +85,8 @@ export async function startRecruitmentCycleFromPrevious(input:unknown){
   if(await tx.recruitmentCycle.findFirst({where:{clubId:d.clubId,name:d.name},select:{id:true}}))throw Error("A cycle with this name already exists.");
   const archiveSource=!source.archivedAt;
   if(archiveSource){
-   if(await tx.application.count({where:{clubId:d.clubId,recruitmentCycleId:source.id,status:{in:[...undecidedApplicationStatuses]}}}))
-    throw Error(`${source.name} still has undecided applications. Record their decisions before starting the next cycle.`);
+   const blocker=await cycleVotingBlocker(tx,d.clubId,source)??await cycleDecisionBlocker(tx,d.clubId,source);
+   if(blocker)throw Error(blocker);
    const archived=await tx.recruitmentCycle.updateMany({where:{id:source.id,clubId:d.clubId,archivedAt:null},data:{archivedAt:new Date()}});
    if(archived.count!==1)throw Error("Cycle changed. Reload and try again.");
   }

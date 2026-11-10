@@ -1,6 +1,6 @@
 // Starting the next recruitment cycle from the last one on isolated native
 // PostgreSQL: real Prisma, the club row lock, unique constraints and rollback.
-// Only request authentication is synthetic. Run: node scripts/run-contention-benchmark.cjs
+// Only request authentication is synthetic. Run: node scripts/run-disposable-postgres.cjs security
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { randomUUID } = require('node:crypto');
@@ -8,7 +8,7 @@ const { AsyncLocalStorage } = require('node:async_hooks');
 const fs = require('node:fs'), path = require('node:path'), ts = require('typescript');
 const { PrismaClient } = require('@prisma/client');
 
-const databaseUrl = process.env.OUTCLASS_CONTENTION_TEST_DATABASE_URL;
+const databaseUrl = process.env.OUTCLASS_SECURITY_TEST_DATABASE_URL;
 
 function loader(mocks) {
   const cache = new Map();
@@ -29,9 +29,10 @@ const configTables = ['ApplicationQuestion', 'PipelineRound', 'RecruitingRule', 
 
 test('starting the next cycle from the last one on native PostgreSQL', { skip: !databaseUrl, timeout: 240000 }, async t => {
   const url = new URL(databaseUrl);
-  assert.equal(url.hostname, '127.0.0.1'); assert.equal(url.port, '58455'); assert.equal(url.pathname, '/outclass_contention_test');
+  assert.equal(url.hostname, '127.0.0.1'); assert.equal(url.pathname, '/outclass_security_test');
   const operator = new PrismaClient({ datasourceUrl: databaseUrl });
-  const base = new PrismaClient({ datasourceUrl: databaseUrl.replace('fixture_superuser@', 'outclass_production_app@') });
+  const runtime = new URL(databaseUrl); runtime.username = 'outclass_production_app';
+  const base = new PrismaClient({ datasourceUrl: runtime.toString() });
   t.after(async () => { await base.$disconnect(); await operator.$disconnect(); });
   class Client { constructor() { return base; } }
   const request = new AsyncLocalStorage();
@@ -44,7 +45,8 @@ test('starting the next cycle from the last one on native PostgreSQL', { skip: !
       requireClubPermission: async () => ({ user: request.getStore(), membership: {} }),
     },
   };
-  const recruitment = loader(mocks)('actions/recruitment-management.ts');
+  const load = loader(mocks);
+  const recruitment = load('actions/recruitment-management.ts'), offerActions = load('actions/recruitment-offers.ts'), offers = load('utils/recruitment-offers.ts');
   const as = (user, fn) => request.run(user, fn);
   const counts = async (tables, clubIds) => Object.fromEntries(await Promise.all(tables.map(async table => {
     const where = ['Application', 'ApplicantObservation', 'InterviewRoom', 'InterviewSlot', 'VotingSession', 'DecisionLetter', 'ClubInvitation', 'ApplicationQuestion', 'PipelineRound', 'VotingRuleDefault'].includes(table) ? `WHERE "clubId" = ANY($1::text[])` : '';
@@ -52,7 +54,7 @@ test('starting the next cycle from the last one on native PostgreSQL', { skip: !
     return [table, rows[0].n];
   })));
 
-  async function fixture() {
+  async function fixture({ letter = true } = {}) {
     const past = new Date(Date.now() - 30 * 86400000);
     const club = await operator.club.create({ data: { slug: `cycle-start-${randomUUID()}`, name: 'Cycle Club', tagline: '', description: '', color: '#142d4e', category: 'Academic', applicationOpen: true, applicationDeadline: past, decisionLetterTemplates: { ACCEPTED: { subject: 'Welcome' } } } });
     const other = await operator.club.create({ data: { slug: `cycle-other-${randomUUID()}`, name: 'Other Club', tagline: '', description: '', color: '#142d4e', category: 'Academic' } });
@@ -70,8 +72,8 @@ test('starting the next cycle from the last one on native PostgreSQL', { skip: !
     await operator.votingRuleDefault.create({ data: { clubId: club.id, rules: { threshold: 0.5 }, updatedBy: leader.id } });
     const app = await operator.application.create({ data: { studentId: student.id, clubId: club.id, roundId: applied.id, recruitmentCycleId: fall.id, status: 'ACCEPTED', submittedAt: past } });
     await operator.applicationAnswer.create({ data: { applicationId: app.id, questionId: question.id, response: 'Fall answer' } });
-    await operator.decisionLetter.create({ data: { applicationId: app.id, clubId: club.id, version: 1, decision: 'ACCEPTED', content: { body: 'Welcome' } } });
-    return { club, other, fall, otherFall, leader, reviewer, app };
+    if (letter) await operator.decisionLetter.create({ data: { applicationId: app.id, clubId: club.id, version: 1, decision: 'ACCEPTED', content: { body: 'Welcome' } } });
+    return { club, other, fall, otherFall, leader, reviewer, student, app, round: applied };
   }
   const input = (f, extra = {}) => ({ id: randomUUID(), clubId: f.club.id, sourceCycleId: f.fall.id, name: 'Spring 2027', ...extra });
 
@@ -109,5 +111,36 @@ test('starting the next cycle from the last one on native PostgreSQL', { skip: !
     assert.equal(await operator.recruitmentCycle.count({ where: { clubId: f.club.id } }), 1);
     assert.equal((await operator.recruitmentCycle.findUniqueOrThrow({ where: { id: f.fall.id } })).archivedAt, null);
     assert.notEqual((await operator.club.findUniqueOrThrow({ where: { id: f.club.id } })).applicationDeadline, null);
+  });
+  await t.test('an OPEN voting session or a waitlisted application in the source refuses with nothing written', async () => {
+    const f = await fixture();
+    const session = await operator.votingSession.create({ data: { clubId: f.club.id, roundId: f.round.id, cycleId: f.fall.id, state: 'OPEN', targetSize: 1, createdBy: f.leader.id } });
+    await assert.rejects(as(f.leader, () => recruitment.startRecruitmentCycleFromPrevious(input(f))), /1 voting session in progress/);
+    await assert.rejects(as(f.leader, () => recruitment.saveRecruitmentCycle({ id: f.fall.id, clubId: f.club.id, name: 'Fall 2026', archived: true })), /voting session in progress/);
+    await operator.votingSession.update({ where: { id: session.id }, data: { state: 'COMPLETED', finalizedAt: new Date() } });
+    const waiting = await operator.user.create({ data: { email: `${randomUUID()}@virginia.edu` } });
+    await operator.application.create({ data: { studentId: waiting.id, clubId: f.club.id, roundId: f.round.id, recruitmentCycleId: f.fall.id, status: 'WAITLISTED', submittedAt: new Date() } });
+    await assert.rejects(as(f.leader, () => recruitment.startRecruitmentCycleFromPrevious(input(f))), /1 waitlisted application\./);
+    assert.equal(await operator.recruitmentCycle.count({ where: { clubId: f.club.id } }), 1);
+    assert.equal((await operator.recruitmentCycle.findUniqueOrThrow({ where: { id: f.fall.id } })).archivedAt, null);
+    assert.equal(await operator.auditLog.count({ where: { clubId: f.club.id, action: 'recruitment.cycle.started_from_previous' } }), 0);
+  });
+
+  await t.test('replaying an id with a different name is refused', async () => {
+    const f = await fixture(), d = input(f);
+    await as(f.leader, () => recruitment.startRecruitmentCycleFromPrevious(d));
+    await assert.rejects(as(f.leader, () => recruitment.startRecruitmentCycleFromPrevious({ ...d, name: 'Spring 2027 renamed' })), /Cycle unavailable/);
+    assert.equal((await operator.recruitmentCycle.findUniqueOrThrow({ where: { id: d.id } })).name, 'Spring 2027');
+  });
+
+  await t.test('an accepted application from the archived cycle can still be published and accepted', async () => {
+    const f = await fixture({ letter: false });
+    await as(f.leader, () => recruitment.startRecruitmentCycleFromPrevious(input(f)));
+    assert.ok((await operator.recruitmentCycle.findUniqueOrThrow({ where: { id: f.fall.id } })).archivedAt);
+    await base.$transaction(tx => offers.publishRecruitmentDecision(tx, { applicationId: f.app.id, clubId: f.club.id, status: 'ACCEPTED' }, f.leader.id));
+    assert.equal(await operator.decisionLetter.count({ where: { applicationId: f.app.id } }), 1);
+    await as(f.student, () => offerActions.respondToOffer(f.app.id, 'ACCEPT'));
+    assert.equal((await operator.clubInvitation.findUniqueOrThrow({ where: { applicationId: f.app.id } })).status, 'ACCEPTED');
+    assert.equal((await operator.clubMember.findUniqueOrThrow({ where: { userId_clubId: { userId: f.student.id, clubId: f.club.id } } })).status, 'ACTIVE');
   });
 });
