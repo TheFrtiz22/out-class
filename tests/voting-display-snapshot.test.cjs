@@ -4,7 +4,8 @@ const clubId=uuid(1),applicationId=uuid(2),memberId=uuid(3),sessionId=uuid(4);
 function harness(live=false){
  let caps=['applications.review','applicants.identify','decisions.vote','decisions.manage'],participant=true;
  const round={id:uuid(5),name:'Interview',anonymousReview:false,applicantDisplay:{version:1,fields:['name','major','resume']}};
- const app={id:applicationId,clubId,roundId:round.id,round,status:'INTERVIEWING',student:{id:uuid(6),studentProfile:{firstName:'Jordan',lastName:'Avery',major:'Math',gradYear:2028,gpa:3.9,actScore:33,actEnglish:35,bio:'Historical',headshotUrl:`${uuid(6)}/photo.png`,resumeUrl:`${uuid(6)}/resume.pdf`,linkedinUrl:'https://linkedin.com/in/example',experiences:[]}},evaluations:[],answers:[]};
+ // A club that has turned GPA and LinkedIn on; the default ceiling is covered in profile-field-visibility tests.
+ const app={id:applicationId,clubId,club:{profileFieldVisibility:{gpa:true,linkedin:true}},roundId:round.id,round,status:'INTERVIEWING',student:{id:uuid(6),studentProfile:{firstName:'Jordan',lastName:'Avery',major:'Math',gradYear:2028,gpa:3.9,actScore:33,actEnglish:35,bio:'Historical',headshotUrl:`${uuid(6)}/photo.png`,resumeUrl:`${uuid(6)}/resume.pdf`,linkedinUrl:'https://linkedin.com/in/example',experiences:[]}},evaluations:[],answers:[]};
  const session={displayConfig:{version:1,fields:['name','photo','gpa','act','resume','linkedin']},participants:[{memberId}],candidates:[{applicationId}]};
  const tx={applicantRecusal:{findFirst:async()=>null},clubMember:{findFirst:async()=>({id:memberId,status:'ACTIVE',permissions:caps})},application:{findFirst:async()=>app},applicantObservation:{findMany:async()=>[]},votingSession:{findFirst:async({where})=>where.id===sessionId&&where.clubId===clubId?{...session,participants:participant?session.participants:[]}:null}};
  if(live){

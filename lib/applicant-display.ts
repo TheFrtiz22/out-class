@@ -3,6 +3,7 @@ import { academicYear, genderVisibility } from "@/lib/recruitment-profile";
 import { z } from "zod";
 import { supportedGpa, storagePathSchema, safeProfileUrl, resolveRecruitingResumeUrl } from "@/lib/student-profile";
 import { anonymousApplication, type ReviewApplication, type LeaderReviewApplication } from "@/lib/anonymous-review";
+import { allowedByProfileCeiling, type ProfileFieldVisibility } from "@/lib/profile-field-visibility";
 
 /** One versioned contract for review, interview and persisted voting. */
 export const applicantFields = ["name", "photo", "major", "academicYear", "gender", "gpa", "sat", "act", "experiences", "answers", "applicationContext", "pros", "cons", "score", "feedback", "resume", "linkedin"] as const;
@@ -27,7 +28,9 @@ export type DisplaySection = { field: ApplicantField; label: string; items: stri
 export type ApplicantDisplay = { applicationId: string; roundId: string; anonymous: boolean; configured: ApplicantField[]; visible: ApplicantField[]; withheld: ApplicantField[]; sections: DisplaySection[]; photo: string | null; observations: ObservationView[]; links: { field: "resume" | "linkedin"; label: string; href: string }[] };
 const anonymousFields = new Set<ApplicantField>(["academicYear", "gpa", "sat", "act", "applicationContext", "score"]);
 /** Call only after authorizing the application. Config removes fields; it never grants access. */
-export function projectApplicantDisplay(app: ReviewApplication | LeaderReviewApplication, round: { id: string; name: string; anonymousReview: boolean; applicantDisplay?: unknown }, config: ApplicantDisplayConfig, observations: ObservationView[], feedback: { items: string[]; withheld: boolean } = { items: [], withheld: true }): ApplicantDisplay {
+export function projectApplicantDisplay(app: ReviewApplication | LeaderReviewApplication, round: { id: string; name: string; anonymousReview: boolean; applicantDisplay?: unknown }, config: ApplicantDisplayConfig, observations: ObservationView[], feedback: { items: string[]; withheld: boolean } = { items: [], withheld: true }, profileFields?: ProfileFieldVisibility): ApplicantDisplay {
+  // The club profile field setting is a ceiling: a hidden field behaves as if it was never selected.
+  if (profileFields) config = { ...config, fields: config.fields.filter(f => allowedByProfileCeiling(f, profileFields)) };
   const anonymous = round.anonymousReview;
   const safe = anonymous ? anonymousApplication(app, genderVisibility(round.applicantDisplay)) : app;
   const profile = safe.student.studentProfile;

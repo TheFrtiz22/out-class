@@ -9,7 +9,8 @@ function load(file, mocks = {}) {
 const { defaultDisplayConfig, projectApplicantDisplay, displayConfigSchema } = load('lib/applicant-display.ts');
 const clubId='00000000-0000-4000-8000-000000000001', applicationId='00000000-0000-4000-8000-000000000002', roundId='00000000-0000-4000-8000-000000000003', observationId='00000000-0000-4000-8000-000000000004';
 function application() {
-  return { id:applicationId, clubId, roundId, studentId:'student', status:'IN_REVIEW', submittedAt:new Date(), anonymousReviewText:null,
+  // A club that has turned GPA and LinkedIn on; the default ceiling is covered in profile-field-visibility tests.
+  return { id:applicationId, clubId, roundId, studentId:'student', status:'IN_REVIEW', submittedAt:new Date(), anonymousReviewText:null, club:{profileFieldVisibility:{gpa:true,linkedin:true}},
     round:{id:roundId,name:'Interview',anonymousReview:false,applicantDisplay:defaultDisplayConfig,displayVersion:0},
     student:{id:'student',email:'private@virginia.edu',studentProfile:{id:'profile',userId:'student',firstName:'HiddenFirst',lastName:'HiddenLast',computingId:'secretid',major:'HiddenMajor',gradYear:2028,gpa:3.8,satScore:1500,actScore:32,headshotUrl:'https://example.com/secret-photo',resumeUrl:'secret-resume',linkedinUrl:'secret-link',bio:'Hidden biography',experiences:[{title:'Hidden experience',subtitle:'Private employer',period:'2025'}]}},
     answers:[{id:'answer',question:{type:'ESSAY',prompt:'Why?'},response:'Secret essay'}],bookings:[],evaluations:[{id:'evaluation',applicationId,interviewerId:'reviewer',round:'Interview',score:8,notes:'Secret feedback',createdAt:new Date()}] };

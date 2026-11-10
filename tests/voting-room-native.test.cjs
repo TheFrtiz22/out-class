@@ -10,7 +10,7 @@ test('native LIVE voting: locked races, changed ballots, scope/revocation, held 
  try{
   const id=await db.$queryRaw`SELECT current_user AS role,inet_server_addr()='127.0.0.1'::inet AS loopback`;assert.equal(id[0].role,'outclass_production_app');assert.equal(id[0].loopback,true);
   const users=await Promise.all(Array.from({length:6},()=>db.user.create({data:{email:`voting-${randomUUID()}@demo.invalid`}})));
-  const club=await db.club.create({data:{name:'Synthetic native voting',slug:randomUUID(),tagline:'',description:'',color:'#142d45',category:'Other'}});
+  const club=await db.club.create({data:{name:'Synthetic native voting',slug:randomUUID(),tagline:'',description:'',color:'#142d45',category:'Other',profileFieldVisibility:{gpa:true}}});
   const cycle=await db.recruitmentCycle.create({data:{clubId:club.id,name:'Synthetic cycle'}}),round=await db.pipelineRound.create({data:{clubId:club.id,name:'Interview',type:'INTERVIEW',order:0}}),next=await db.pipelineRound.create({data:{clubId:club.id,name:'Next interview',type:'INTERVIEW',order:1}});
   const caps=['applications.review','applicants.identify','decisions.vote','decisions.start','decisions.manage','decisions.finish','decisions.publish','recruitment.manage'];
   const members=await Promise.all(users.slice(0,3).map((user,i)=>db.clubMember.create({data:{clubId:club.id,userId:user.id,permissions:i===0?caps:i===1?['applications.review','applicants.identify','decisions.vote']:['applications.review','applicants.identify']}})));

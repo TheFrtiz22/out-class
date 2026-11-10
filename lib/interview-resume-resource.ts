@@ -1,6 +1,8 @@
 import type { PDFDocumentLoadingTask, PDFDocumentProxy } from "pdfjs-dist";
 import type { InterviewScope } from "@/lib/interview-access";
 
+// Mirrors lib/resume-preview-kind.ts; kept local so this module has no runtime imports.
+const isSameOriginResumePath = (path: string) => path.startsWith("/") && !path.startsWith("//") && !path.includes("\\");
 export type ResumeFrame = { page: number; zoom: number; width: number; height: number; canvas: HTMLCanvasElement; textNodes: Node[]; text: string };
 export type ResumePdfLibraryLoader = () => Promise<typeof import("pdfjs-dist")>;
 export class ResumeAccessError extends Error {}
@@ -19,9 +21,10 @@ export class InterviewResumeResource {
   private frame?: ResumeFrame;
   objectUrl = "";
 
-  constructor(actorId: string, scope: InterviewScope, documentId: string, isDemo: boolean, demoSource = "/demo/sample-resume.pdf") {
-    this.key = JSON.stringify([actorId, isDemo, scope.clubId, scope.applicationId, scope.roundId, documentId]);
-    this.path = isDemo ? (demoSource === "/demo/sample-scanned-resume.pdf" ? demoSource : "/demo/sample-resume.pdf") : `/api/interview-resumes?${new URLSearchParams({ ...scope, documentId })}`;
+  /** `sourcePath` is an already server-authorized same-origin route (the recruiting résumé proxy), never a Storage URL. */
+  constructor(actorId: string, scope: InterviewScope, documentId: string, isDemo: boolean, demoSource = "/demo/sample-resume.pdf", sourcePath?: string) {
+    this.key = JSON.stringify([actorId, isDemo, scope.clubId, scope.applicationId, scope.roundId, documentId, sourcePath ?? null]);
+    this.path = sourcePath && isSameOriginResumePath(sourcePath) ? sourcePath : isDemo ? (demoSource === "/demo/sample-scanned-resume.pdf" ? demoSource : "/demo/sample-resume.pdf") : `/api/interview-resumes?${new URLSearchParams({ ...scope, documentId })}`;
   }
   subscribe(listener: (event: "loaded" | "invalidated") => void) { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; }
   getBlob(): Promise<Blob> {

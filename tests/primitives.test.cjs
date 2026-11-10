@@ -53,7 +53,7 @@ test("Panel and DataTable render the shared surfaces", () => {
   assert.match(list, /<div data-slot="data-table" data-density="default" class="oc-dt">/)
   assert.match(list, /<th scope="col" data-primary="true" aria-sort="ascending">/); assert.match(list, /<th scope="col" aria-sort="none" class="oc-dt-from-md">/)
   assert.match(list, /<button type="button" class="oc-dt-open" aria-label="Open Ada">Ada<\/button>/)
-  assert.match(list, /<li data-list-card=""><button type="button" class="oc-dt-card-open" aria-label="Open Ada"><span class="oc-dt-card-title">Ada<\/span><span class="oc-dt-card-meta">First Year<\/span><\/button><\/li>/)
+  assert.match(list, /<li data-list-card=""><span class="oc-dt-card-body"><button type="button" class="oc-dt-card-open" aria-label="Open Ada"><span class="oc-dt-card-title">Ada<\/span><\/button><span class="oc-dt-card-meta">First Year<\/span><\/span><\/li>/)
   assert.doesNotMatch(list, /Year:|data-label/, "cards carry no field labels")
   const header = renderToStaticMarkup(React.createElement(PageHeader, { title: "Interviews", focusable: true, titleId: "t" }))
   assert.match(header, /^<div data-slot="page-header" class="oc-page-header"/); assert.match(header, /<h1 id="t" tabindex="-1" class="outline-none">Interviews<\/h1>/)

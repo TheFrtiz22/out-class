@@ -75,7 +75,9 @@
 .oc-dt-cards > li + li { border-top: 1px solid var(--oc-content-edge); }
 .oc-dt-cards > li[data-state="selected"] { background: var(--oc-content-soft-blue); }
 .oc-dt-card-select { position: relative; z-index: 1; display: flex; align-self: start; margin-block: -.75rem; }
-.oc-dt-card-open { display: grid; gap: .125rem; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.oc-dt-card-body { display: grid; gap: .125rem; min-width: 0; }
+.oc-dt-cards .oc-dt-card-open { min-height: 0; }
+.oc-dt-card-open { display: block; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 button.oc-dt-card-open::after { content: ""; position: absolute; inset: 0; }
 .oc-dt-card-open:focus-visible { outline: none; }
 .oc-dt-cards > li:has(.oc-dt-card-open:focus-visible) { outline: 2px solid var(--ring); outline-offset: -2px; background: var(--oc-content-soft-blue); }
@@ -84,8 +86,8 @@ button.oc-dt-card-open::after { content: ""; position: absolute; inset: 0; }
 .oc-dt-card-title { font-size: var(--oc-text-small); font-weight: var(--oc-weight-semibold); line-height: 1.25rem; }
 /* Three-line cards (title, preview, facts) stay near 64px. */
 .oc-dt-cards > li:has(.oc-dt-card-preview) { padding-block: .375rem; }
-.oc-dt-cards > li:has(.oc-dt-card-preview) .oc-dt-card-open { gap: 0; }
-.oc-dt-card-open:has(.oc-dt-card-preview) .oc-dt-card-title { line-height: 1.125rem; }
+.oc-dt-cards > li:has(.oc-dt-card-preview) .oc-dt-card-body { gap: 0; }
+.oc-dt-card-body:has(.oc-dt-card-preview) .oc-dt-card-title { line-height: 1.125rem; }
 .oc-dt-card-preview { font-size: var(--oc-text-small); line-height: 1.125rem; color: color-mix(in srgb, var(--foreground) 82%, transparent); }
 .oc-dt-card-meta { color: var(--muted-foreground); font-size: var(--oc-text-caption); line-height: 1rem; font-variant-numeric: tabular-nums; }
 .oc-dt-card-trailing { display: flex; align-items: center; min-height: 1.25rem; pointer-events: none; }
@@ -101,10 +103,13 @@ button.oc-dt-card-open::after { content: ""; position: absolute; inset: 0; }
 
 /* Toolbar sort: "Sort: Field" pill plus the direction arrow, visible at every width. */
 .oc-sort-control { display: inline-flex; flex: 0 0 auto; align-items: center; gap: .125rem; }
-.oc-sort-control .oc-sort-direction { width: 2.5rem; height: 2.5rem; border-radius: 999px; }
+.oc-sort-control .oc-sort-direction { width: 2.5rem; height: 2.5rem; border-radius: var(--oc-radius-full); }
 
 @media (prefers-reduced-motion: reduce) { .oc-dt * { transition: none !important; } }
 @media (forced-colors: active) {
   .oc-dt tbody tr:has(.oc-dt-open:focus-visible) > td { outline: 2px solid CanvasText; }
   .oc-dt-cards > li:has(.oc-dt-card-open:focus-visible) { outline-color: CanvasText; }
 }
+/* The name button and its secondary text share one line; the secondary sits outside the button (accessible name). */
+.oc-dt-primary { display: flex; align-items: center; gap: .5rem; min-width: 0; max-width: 100%; }
+.oc-dt-primary > .oc-dt-open { flex: 0 1 auto; }

@@ -1,4 +1,5 @@
 "use server";
+import {allowedByProfileCeiling,normalizeProfileFieldVisibility} from "@/lib/profile-field-visibility";
 import {isRecused} from "@/lib/recusal";
 import {validateVotingSetup,notifyVotingVoters} from "@/utils/voting-room-setup";
 import {meetingDetails,resolveVotingMeeting} from "@/lib/voting-session-setup";
@@ -89,7 +90,7 @@ export async function createLiveVotingRoom(input:unknown) {
       if(prior.clubId!==d.clubId||receipt?.actorId!==user.id||receipt.fingerprint!==fingerprint)throw Error("Session ID already used.");
       const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId);roomAuthority(s,actor,round.anonymousReview);return {sessionId:s.id};
     }
-    const {apps,members}=await validateVotingSetup(tx,d,user);
+    const {apps,members}=await validateVotingSetup(tx,d,user,{rejectHiddenProfileFields:true});
     const meeting=d.presentationOptions?.meeting?resolveVotingMeeting(d.presentationOptions.meeting):null;
     if(d.notifyVoters&&(!meeting||meeting.timing!=="LATER"))throw Error("Notify selected voters is available when scheduling a session.");
     const presentationOptions=d.presentationOptions?{...d.presentationOptions,...(meeting?{meeting:{...meeting,announcedUserIds:d.notifyVoters?members.filter(m=>d.participantIds.includes(m.id)).map(m=>m.userId):[]}}:{})}:{};
@@ -149,11 +150,11 @@ async function readLivePresentation(input:unknown) {
   const result=await prisma.$transaction(async tx=>{
     const m=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review"],{readOnly:true});
     const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId);const role=roomAuthority(s,m,round.anonymousReview);
-    const app=await tx.application.findFirst({where:{id:d.applicationId,clubId:d.clubId,roundId:s.roundId,recruitmentCycleId:s.cycleId,status:{not:"DRAFTING"}}});
+    const app=await tx.application.findFirst({where:{id:d.applicationId,clubId:d.clubId,roundId:s.roundId,recruitmentCycleId:s.cycleId,status:{not:"DRAFTING"}},include:{club:{select:{profileFieldVisibility:true}}}});
     if(app&&s.candidates.some(c=>c.applicationId===app.id)&&!role.leader&&s.activeApplicationId!==app.id)throw new VotingPresentationChanged();
     if(!app||!s.candidates.some(c=>c.applicationId===app.id)||display.anonymous!==round.anonymousReview)throw Error("Presentation changed. Reload the page to continue.");
     const parsed=roomPresentationSchema.safeParse(s.presentationOptions),options=parsed.success?parsed.data:null;
-    const highlight=await votingSelectedHighlight(tx,{clubId:d.clubId,applicationId:d.applicationId,roundId:s.roundId},user.id,!!options?.fields.includes("resumeHighlight"),display.anonymous,options?.highlights[d.applicationId]);
+    const highlight=await votingSelectedHighlight(tx,{clubId:d.clubId,applicationId:d.applicationId,roundId:s.roundId},user.id,!!options?.fields.includes("resumeHighlight")&&allowedByProfileCeiling("resumeHighlight",normalizeProfileFieldVisibility(app.club?.profileFieldVisibility)),display.anonymous,options?.highlights[d.applicationId]);
     const evidence=await votingSelectedEvidence(tx,d.clubId,d.applicationId,user.id,options?.fields??[],display.anonymous,s.roundId);
     const selectedDisplay=selectedVotingDisplay(display,options?.fields);
     const observations=await votingObservations(tx,s,app.id,user.id,!!options?.fields.includes('additionalObservations'),display.anonymous);

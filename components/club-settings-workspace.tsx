@@ -18,6 +18,7 @@ import { hasPermission, permissionLabels } from "@/lib/permissions";
 import { organizationRoleLabels, organizationRolePermissions, organizationRoles } from "@/lib/organization-authorization";
 import { saveClubPreferences } from "@/actions/club-settings";
 import { ClubProfileSettings } from "@/components/club-profile-settings";
+import { ProfileFieldSettings } from "@/components/profile-field-settings";
 
 import "@/components/clubs/club-settings.css";
 import { VotingRuleDefaults } from "@/components/live-voting/voting-rule-defaults";
@@ -173,7 +174,8 @@ export function ClubSettingsWorkspace({
             {hasPermission(member, "applications.review") && hasPermission(member, "decisions.manage") && hasPermission(member, "decisions.start") && !demo.isDemoEnabled && <section id="voting-rules" aria-label="Default voting rules" className="mt-8 border-t pt-5"><VotingRuleDefaults clubId={clubId} /></section>}
           </div>
         )}
-        {visible("cycles") && <div hidden={active !== "cycles"}><Cycles clubId={clubId} /></div>}
+        {visible("profiles") && <div hidden={active !== "profiles"}><ProfileFieldSettings clubId={clubId} /></div>}
+        {visible("cycles") &&<div hidden={active !== "cycles"}><Cycles clubId={clubId} /></div>}
         {visible("pipeline") && (
           <div hidden={active !== "pipeline"}>
             <PipelineBuilder

@@ -5,7 +5,7 @@ const ts = require('typescript')
 function compile(file, mocks = {}, extra = '') {
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8') + extra, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText
-  new Function('require', 'module', 'exports', 'window', 'requestAnimationFrame', 'cancelAnimationFrame', code)(name => mocks[name] || (name==='@/hooks/use-editor-draft'?require('./helpers/autosave-ui-harness.cjs').draftStub:name==='@/hooks/use-pipeline-page'?compile('hooks/use-pipeline-page.ts',mocks):name==='@/hooks/use-list-sort'?compile('hooks/use-list-sort.ts',mocks):name.startsWith('@/lib/') ? compile(name.replace('@/', '') + '.ts') : name.startsWith('@/') || name.startsWith('./') ? new Proxy({}, { get: (_, key) => String(key) }) : require(name)), mod, mod.exports, { addEventListener(){}, removeEventListener(){}, confirm(){ return true } }, () => {}, () => {})
+  new Function('require', 'module', 'exports', 'window', 'requestAnimationFrame', 'cancelAnimationFrame', code)(name => mocks[name] || (name==='@/hooks/use-editor-draft'?require('./helpers/autosave-ui-harness.cjs').draftStub:name==='@/hooks/use-pipeline-page'?compile('hooks/use-pipeline-page.ts',mocks):name==='@/hooks/use-list-sort'?compile('hooks/use-list-sort.ts',mocks):name.startsWith('@/lib/') ? compile(name.replace('@/', '') + '.ts') : name === './live-applicant-views' ? new Proxy({ applicantSortOptions: ['name','year','round','gpa','sat','act','score','status'].map(key => ({ key, label: key })) }, { get: (target, key) => key in target ? target[key] : String(key) }) : name.startsWith('@/') || name.startsWith('./') ? new Proxy({}, { get: (_, key) => String(key) }) : require(name)), mod, mod.exports, { addEventListener(){}, removeEventListener(){}, confirm(){ return true } }, () => {}, () => {})
   return mod.exports
 }
 const { applicantLane } = compile('lib/applicant-board.ts')
@@ -183,7 +183,7 @@ test('recruitment review actions sit in one header row before the toolbar, witho
 });
 test('quick review saves expected-status decisions and advances only after success', async () => {
  const h=harness();h.addCandidate({id:'second',studentId:'student-two',student:{email:'second@demo.invalid',studentProfile:null}});h.render();await flush();let tree=h.render();
- button(tree,'Quick decisions').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.match(text(tree),/publishes the decision immediately/i);
+ button(tree,'Quick decisions').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.match(text(tree),/decisions publish immediately/i);
  button(tree,'Accept & next').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.deepEqual(h.calls.find(c=>c[0]==='status')[1],{clubId:'club',applicationId:'candidate',status:'ACCEPTED',expectedStatus:'IN_REVIEW'});assert.match(text(nodes(tree).find(n=>n.type==='SheetTitle')),/second@demo.invalid/);
  button(tree,'Deny & next').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.equal(h.calls.filter(c=>c[0]==='status').length,2);assert.match(text(tree),/Quick decisions complete/);
 });

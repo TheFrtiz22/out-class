@@ -6,7 +6,7 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "build": "next build",
+    "build": "next build && node scripts/check-no-public-sourcemaps.cjs",
     "dev": "next dev",
     "lint": "eslint . && node scripts/check-ui-controls.cjs",
     "start": "next start",

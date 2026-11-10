@@ -32,6 +32,9 @@ export type DataTableColumn<T> = {
   sortKey?: string
   /** The record's name: sticky, and the keyboard target that opens the record. Exactly one column. */
   primary?: boolean
+  /** Primary column only: muted text after the name (a DataTableSecondary). It sits beside the open button, not
+   * inside it, so the button's visible text stays the name its accessible label already contains. */
+  secondary?: (row: T) => ReactNode
   /** Shown only when the list is at least this wide. */
   showFrom?: DataTableWidth
   /** Hidden once the list is at least this wide (a combined column that wider lists split up). */
@@ -134,18 +137,20 @@ export function DataTable<T>({ caption, rows, rowKey, columns, card, onOpen, isO
           onClick={openable(row) ? event => { if (!ignoreRowClick(event)) open(row, event.currentTarget.querySelector<HTMLElement>(".oc-dt-open")) } : undefined}>
           {selection && <td className="oc-dt-select">{checkbox(row)}</td>}
           {columns.map(column => <td key={column.id} data-align={column.align} data-primary={column.primary || undefined} className={cn(widthClass(column), column.className) || undefined}>
-            {column === primary ? openControl(row, column.cell(row)) : column.cell(row)}
+            {column === primary ? column.secondary ? <span className="oc-dt-primary">{openControl(row, column.cell(row))}{column.secondary(row)}</span> : openControl(row, column.cell(row)) : column.cell(row)}
           </td>)}
         </tr>)}</tbody>
       </table>
     </div>
     <ul className="oc-dt-cards" aria-label={caption}>{rows.map(row => <li key={rowKey(row)} data-list-card="" data-state={rowState?.(row)} data-selectable={selection ? "" : undefined}>
       {selection && <span className="oc-dt-card-select">{checkbox(row)}</span>}
-      {openControl(row, <>
-        <span className="oc-dt-card-title">{card.title(row)}</span>
+      {/* Only the title is inside the button (its overlay still covers the card), so the button's visible text is
+          the name its accessible label already contains. */}
+      <span className="oc-dt-card-body">
+        {openControl(row, <span className="oc-dt-card-title">{card.title(row)}</span>, true)}
         {card.preview && <span className="oc-dt-card-preview">{card.preview(row)}</span>}
         {card.meta && <span className="oc-dt-card-meta">{card.meta(row)}</span>}
-      </>, true)}
+      </span>
       {card.trailing && <span className="oc-dt-card-trailing">{card.trailing(row)}</span>}
       {card.actions && <span className="oc-dt-card-actions">{card.actions(row)}</span>}
     </li>)}</ul>

@@ -50,10 +50,11 @@ test('browser: every list keeps a visible sort, one-line rows or two-line cards,
     // Filters stays inside the viewport (a bottom sheet below 640px).
     await page.goto(fixtures.leader.url('section=recruitment&tool=applicants')); await page.locator('main h1').first().waitFor()
     await page.getByRole('button', { name: /^Filters/ }).first().click()
-    // Measure once the sheet has settled (it can still be moving on the first frame after the click).
-    const onScreen = async () => { const panel = await page.locator('.oc-filter-popover, .oc-filter-sheet').first().boundingBox(); return !!panel && panel.x >= 0 && panel.x + panel.width <= width + 0.5 && panel.y + panel.height <= 764.5 }
-    let fits = false; for (let i = 0; i < 20 && !(fits = await onScreen()); i++) await page.waitForTimeout(100)
-    assert.ok(fits, `Filters is fully on screen at ${width}px`)
+    // The popover is placed after it mounts (and the sheet slides in), so wait for it to settle before measuring.
+    const fits = box => !!box && box.x >= 0 && box.x + box.width <= width + 0.5 && box.y + box.height <= 764.5
+    let panel = null
+    for (let tries = 0; tries < 20 && !fits(panel); tries++) { if (tries) await page.waitForTimeout(100); panel = await page.locator('.oc-filter-popover, .oc-filter-sheet').first().boundingBox() }
+    assert.ok(fits(panel), `Filters is fully on screen at ${width}px (${JSON.stringify(panel)})`)
     await page.keyboard.press('Escape')
     assert.deepEqual(errors, [], `no page errors at ${width}px`)
     await context.close()
@@ -77,9 +78,9 @@ test('browser: every list keeps a visible sort, one-line rows or two-line cards,
   await page.keyboard.press('Escape'); await dialog.waitFor({ state: 'hidden' })
   // The sort chosen in the URL is still applied after a reload.
   assert.match(page.url(), /sort=name&order=asc|tool=applicants$/)
-  await page.goto(fixtures.leader.url('section=recruitment&tool=applicants&sort=gpa&order=desc')); await page.locator('main h1').first().waitFor()
-  assert.equal(await page.getByRole('columnheader', { name: /^Sort by GPA/ }).getAttribute('aria-sort'), 'descending')
-  assert.match(await page.getByRole('combobox', { name: 'Sort applicants by' }).innerText(), /GPA/)
+  await page.goto(fixtures.leader.url('section=recruitment&tool=applicants&sort=score&order=desc')); await page.locator('main h1').first().waitFor()
+  assert.equal(await page.getByRole('columnheader', { name: /^Sort by Rating/ }).getAttribute('aria-sort'), 'descending')
+  assert.match(await page.getByRole('combobox', { name: 'Sort applicants by' }).innerText(), /Rating/)
 
   // A rail tooltip that is open when the review opens closes and never sits above the dialog.
   await page.locator('aside.oc-expanding-dock a, aside.oc-expanding-dock button').filter({ visible: true }).nth(2).hover(); await page.waitForTimeout(600)

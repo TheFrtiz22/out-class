@@ -57,7 +57,11 @@ import { submitEvaluation } from "@/lib/workspace-api"
 import { useApplicationState } from "@/lib/application-state"
 import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
 import { DemoRoundTarget } from "@/components/demo-workspace"
-import { safeProfileUrl, resolveRecruitingResumeUrl } from "@/lib/student-profile"
+import { resolveRecruitingResumeUrl, safeProfileUrl } from "@/lib/student-profile"
+import { defaultProfileFieldVisibility, type ProfileFieldVisibility } from "@/lib/profile-field-visibility"
+import { anonymousApplicantLabel } from "@/lib/anonymous-review"
+import { ApplicantProfileFacts, applicantProfileFacts } from "./applicant-profile-facts"
+import { ResumeViewerDialog } from "@/components/resume-viewer-dialog"
 import { applicationStatusLabels } from "@/lib/student-applications"
 import { Button } from "@/components/ui/button"
 import { SegmentedControl } from "@/components/ui/segmented-control"
@@ -111,6 +115,8 @@ const PAGE_HEADER_ACTIONS_ID = "workspace-page-actions"
 const applicantSortKeys: readonly ApplicantSort[] = ["name", "year", "status", "gpa", "sat", "act", "round", "score"]
 /** Numbers and class year read best from the top. */
 const applicantSortsDescending = (key: ApplicantSort) => ["score", "gpa", "sat", "act", "year"].includes(key)
+/** Sorting by a hidden profile field is not offered; its values are withheld by the server. */
+const sortableByProfile = (key: ApplicantSort, fields: ProfileFieldVisibility) => key === "gpa" ? fields.gpa : key === "sat" ? fields.sat : key === "act" ? fields.act : key === "year" ? fields.academicYear : true
 
 export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, rejectedOnly = false, initialDecision = "all", initialData, onData, validatedInitialData = false }: { validatedInitialData?: boolean; scoped?: boolean; decisionsOnly?: boolean; rejectedOnly?: boolean; initialDecision?: DecisionFilter; initialData?: { clubId: string; pipeline: Pipeline }; onData?: (clubId: string, data: Pipeline | null) => void }) {
   const { user, activeClubId, selectClub } = useAuth()
@@ -231,8 +237,8 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   // Quick review (default) or the full profile layout; collapsed sections and their counts.
   const [fullProfile, setFullProfile] = useState(false)
   const [openSections, setOpenSections] = useState<string[]>([])
-  const [notesCount, setNotesCount] = useState<number | null>(null)
-  const [prosSummary, setProsSummary] = useState<{ count: number; canAdd: boolean } | null>(null)
+  const [notesCount, setNotesCount] = useState<number | "error" | null>(null)
+  const [prosSummary, setProsSummary] = useState<{ count: number; canAdd: boolean } | "error" | null>(null)
   const [observationCount, setObservationCount] = useState<number | null>(null)
   const [panel, setPanel] = useState<"round" | "cycle" | "reconsider" | null>(null)
   const [quickQueue, setQuickQueue] = useState<string[] | null>(null)
@@ -356,6 +362,10 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     if (target) { previewOpened.current = true; previewOpen.current(target) }
   }, [previewId, data, loading])
   const active = activeId ? previewId ? detail.application : pageReady ? listData?.applications.find(app => app.id === activeId) ?? null : null : null
+  // The club's profile field choice. Hidden values are already removed on the server; this hides their labels.
+  const profileFields = data?.profileFields ?? defaultProfileFieldVisibility()
+  const dossierName = (app: Candidate) => profileFields.name || app.studentId.startsWith("anonymous-") ? name(app) : anonymousApplicantLabel(app.id)
+  const resumeHref = (url: string | null | undefined) => active ? resolveRecruitingResumeUrl(url, membership.clubId, active.id) : undefined
   const canEvaluate = active?.canEvaluate === true
   const dirty = canEvaluate && JSON.stringify([score, notes]) !== baseline
   const draftSave = useEditorDraft({
@@ -668,7 +678,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
             containerClassName="min-w-0 flex-1 basis-60"
           />
         {/* Sort at every width; the table's column headers drive the same state. */}
-        <SortControl label="Sort applicants" options={applicantSortOptions} value={sort} descending={descending} descendingByDefault={applicantSortsDescending} onChange={listSort.set} />
+        <SortControl label="Sort applicants" options={applicantSortOptions.filter(option => sortableByProfile(option.key, profileFields))} value={sort} descending={descending} descendingByDefault={applicantSortsDescending} onChange={listSort.set} />
         <FilterPopover count={menuFilters} title="Applicant filters"
           footer={<><Button variant="ghost" size="sm" disabled={!menuFilters} onClick={clearMenuFilters}>Clear filters</Button>{view === "list" && <Button size="sm" variant="ghost" aria-pressed={compact} onClick={() => setCompact((value) => !value)}>Compact rows</Button>}</>}>
         <div className="oc-filter-field"><span className="oc-filter-field-label">Round</span>
@@ -685,12 +695,12 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         {showGenderCounts && data?.genderCounts && <dl className="flex flex-wrap gap-3 text-sm">{data.genderCounts.map(c => <div key={c.gender ?? "unset"}><dt className="inline">{c.gender ?? "Not provided"}: </dt><dd className="inline">{c.count}</dd></div>)}</dl>}
       </div>}
       {!decisionsOnly && <section className="oc-filter-field" aria-labelledby="leader-academic-filters"><h3 id="leader-academic-filters" className="oc-filter-field-label">Academic & review filters</h3>
-          <PillSelect label="Filter major" allLabel="All majors" value={major} onChange={setMajor} options={(listData?.facets.majors ?? []).map(value => ({ value, label: value }))} />
-          <PillGroup label="Filter academic year" size="compact" value={year} onChange={setYear}
-            options={[{ value: "", label: "All years" }, ...(listData?.facets.years ?? []).map(value => ({ value, label: value }))]} />
-          <RangeSlider label="GPA greater than" min={0} max={4} step={0.01} value={numberFilter(gpa)} onChange={value => setGpa(filterText(value))} />
-          <RangeSlider label="SAT greater than" min={400} max={1600} step={10} value={numberFilter(sat)} onChange={value => setSat(filterText(value))} />
-          <RangeSlider label="ACT greater than" min={1} max={36} step={1} value={numberFilter(act)} onChange={value => setAct(filterText(value))} />
+          {profileFields.major && <PillSelect label="Filter major" allLabel="All majors" value={major} onChange={setMajor} options={(listData?.facets.majors ?? []).map(value => ({ value, label: value }))} />}
+          {profileFields.academicYear && <PillGroup label="Filter academic year" size="compact" value={year} onChange={setYear}
+            options={[{ value: "", label: "All years" }, ...(listData?.facets.years ?? []).map(value => ({ value, label: value }))]} />}
+          {profileFields.gpa && <RangeSlider label="GPA greater than" min={0} max={4} step={0.01} value={numberFilter(gpa)} onChange={value => setGpa(filterText(value))} />}
+          {profileFields.sat && <RangeSlider label="SAT greater than" min={400} max={1600} step={10} value={numberFilter(sat)} onChange={value => setSat(filterText(value))} />}
+          {profileFields.act && <RangeSlider label="ACT greater than" min={1} max={36} step={1} value={numberFilter(act)} onChange={value => setAct(filterText(value))} />}
           <RangeSlider label="Minimum rating (out of 10)" min={0} max={10} step={0.1} value={numberFilter(rating)} onChange={value => setRating(filterText(value))} />
       </section>}
         </FilterPopover></>}
@@ -714,7 +724,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       </div>
       {view === "kanban" && <p className="text-xs leading-6 text-muted-foreground">Drag a candidate to another column or use Move to. Review the change before it is saved. Interview moves require an interview round.</p>}
       {decisionGroup==="rejected"&&<p className="text-sm text-muted-foreground">Rejected applications keep their reviews and decision history. Open one to reconsider it; that returns it to review and does not change the student’s account or membership.</p>}
-      {invalidFilter ? <p role="alert">Enter filters within the displayed numeric ranges.</p> : updating ? <p role="status" aria-live="polite">Updating applicants…</p> : !filtered.length ? <div role="status" className="space-y-3 border-y py-10 text-sm text-muted-foreground"><p>{baseTotal ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No applications have been rejected. Published rejections appear here with their history preserved." : decisionsOnly ? "No applications are waiting for a decision." : "No one has submitted an application yet. Student drafts stay private until they submit."}</p>{baseTotal ? <Button variant="outline" size="sm" onClick={clearApplicantFilters}>Clear filters</Button> : <Button variant="outline" size="sm" asChild><Link href={rejectedOnly || decisionsOnly ? `/club/${encodeURIComponent(membership.clubId)}/workspace?section=recruitment&tool=applicants` : `/club/${encodeURIComponent(membership.clubId)}/workspace?section=settings&setting=application`}>{rejectedOnly || decisionsOnly ? "View all applicants" : "Review your application form"}</Link></Button>}</div> : decisionsOnly ? <LiveDecisionList sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban votingSelection={votingChoice} canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} laneCounts={listData?.facets.lanes} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList votingSelection={votingChoice} sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
+      {invalidFilter ? <p role="alert">Enter filters within the displayed numeric ranges.</p> : updating ? <p role="status" aria-live="polite">Updating applicants…</p> : !filtered.length ? <div role="status" className="space-y-3 border-y py-10 text-sm text-muted-foreground"><p>{baseTotal ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No applications have been rejected. Published rejections appear here with their history preserved." : decisionsOnly ? "No applications are waiting for a decision." : "No one has submitted an application yet. Student drafts stay private until they submit."}</p>{baseTotal ? <Button variant="outline" size="sm" onClick={clearApplicantFilters}>Clear filters</Button> : <Button variant="outline" size="sm" asChild><Link href={rejectedOnly || decisionsOnly ? `/club/${encodeURIComponent(membership.clubId)}/workspace?section=recruitment&tool=applicants` : `/club/${encodeURIComponent(membership.clubId)}/workspace?section=settings&setting=application`}>{rejectedOnly || decisionsOnly ? "View all applicants" : "Review your application form"}</Link></Button>}</div> : decisionsOnly ? <LiveDecisionList sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban votingSelection={votingChoice} canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} laneCounts={listData?.facets.lanes} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList profileFields={profileFields} votingSelection={votingChoice} sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
       {displayed.count > 1 && <nav aria-label="Applicant pages" className="flex flex-wrap items-center justify-between gap-3">
         <Button variant="outline" aria-label="Previous applicant page" disabled={busy || !pageInfo?.previous} onClick={() => changePage(pageInfo?.previous ?? null)}>Previous page</Button>
         <p role="status" className="text-sm">Page {displayed.page + 1} of {displayed.count} · Showing {displayed.start + 1}–{displayed.start + displayed.items.length} of {total}</p>
@@ -738,7 +748,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         <SheetContent
           data-layout={fullProfile ? "full" : "quick"}
           className="oc-workspace-drawer oc-applicant-drawer w-full p-0"
-          onCloseAutoFocus={event => { if (previewId) { event.preventDefault(); requestAnimationFrame(() => (document.querySelector<HTMLElement>(`[data-applicant-id="${CSS.escape(previewId)}"]`) ?? document.getElementById("dashboard-reviews"))?.focus({ preventScroll: true })) } }}
+          onCloseAutoFocus={event => { if (previewId) { event.preventDefault(); requestAnimationFrame(() => (Array.from(document.querySelectorAll<HTMLElement>(`[data-applicant-id="${CSS.escape(previewId)}"]`)).find(element => element.getClientRects().length > 0) ?? document.getElementById("dashboard-reviews"))?.focus({ preventScroll: true })) } }}
           onInteractOutside={(event) => {
             if (dirty || busy) event.preventDefault()
           }}
@@ -751,8 +761,8 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
             const anonymousActive = active.studentId.startsWith("anonymous-")
             const profile = active.student.studentProfile
             const activeRound = data.rounds.find(item => item.id === active.roundId)
-            const resumeUrl = anonymousActive ? undefined : resolveRecruitingResumeUrl(profile?.resumeUrl, membership.clubId, active.id)
-            const linkedinUrl = anonymousActive ? undefined : safeProfileUrl(profile?.linkedinUrl)
+            const resumeUrl = anonymousActive || !profileFields.resume ? undefined : resolveRecruitingResumeUrl(profile?.resumeUrl, membership.clubId, active.id)
+            const linkedinUrl = anonymousActive || !profileFields.linkedin ? undefined : safeProfileUrl(profile?.linkedinUrl)
             const canReview = hasPermission(membership, "applications.review")
             const canManageRecruitment = hasPermission(membership, "recruitment.manage") && hasPermission(membership, "applicants.identify")
             const finalStatus = ["ACCEPTED", "REJECTED", "WAITLISTED"].includes(active.status)
@@ -767,25 +777,25 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
             return <>
               <div className="oc-applicant-drawer-scroll">
                 <header className="oc-quick-header">
-                  <Avatar className="size-10 shrink-0">
+                  {profileFields.photo && <Avatar className="size-10 shrink-0">
                     <AvatarImage src={profilePhotoSource(profile?.headshotUrl)} alt="" />
-                    <AvatarFallback>{name(active).split(" ").map((part) => part[0]).slice(0, 2).join("")}</AvatarFallback>
-                  </Avatar>
+                    <AvatarFallback>{dossierName(active).split(" ").map((part) => part[0]).slice(0, 2).join("")}</AvatarFallback>
+                  </Avatar>}
                   <div className="oc-quick-identity">
                     <div className="oc-quick-title-row">
-                      <SheetTitle ref={heading} tabIndex={-1} className="oc-quick-name" title={anonymousActive ? undefined : active.student.email}>{name(active)}</SheetTitle>
+                      <SheetTitle ref={heading} tabIndex={-1} className="oc-quick-name" title={anonymousActive || !profileFields.email ? undefined : active.student.email}>{dossierName(active)}</SheetTitle>
                       <StatusPill status={active.status} />
-                      {quickQueue && <span className="oc-quick-fact">Quick decisions · {quickQueue.length} left</span>}
+                      {quickQueue && <span className="oc-quick-fact">Quick decisions · {quickQueue.length} remaining</span>}
                     </div>
                     <SheetDescription className="oc-quick-facts">
-                      {anonymousActive ? "Anonymous review · identity and appointments withheld" : joinFacts(profile?.major, profile?.academicYear, profile?.gpa != null && `GPA ${profile.gpa.toFixed(2)}`, profile?.actScore != null && `ACT ${profile.actScore}`, profile?.satScore != null && `SAT ${profile.satScore}`) || "Academic profile not provided"}
+                      {anonymousActive ? "Anonymous review · identity and appointments withheld" : joinFacts(profileFields.major && profile?.major, ...(profile ? applicantProfileFacts(profile, profileFields) : [])) || "Academic profile not provided"}
                       {!anonymousActive && profile && <> · <RecruitmentAttendanceSummary compact clubId={membership.clubId} applicationId={active.id} /></>}
                     </SheetDescription>
                     {"priorApplications" in active && !!active.priorApplications?.length && <p data-testid="prior-applications" className="oc-quick-facts">Applied before: {active.priorApplications.map(prior => `${prior.cycleName ?? "earlier cycle"} (${applicationStatusLabel(prior.status).toLowerCase()})`).join(", ")}</p>}
                     <ApplicantRecusal key={active.id} clubId={membership.clubId} applicationId={active.id} anonymous={anonymousActive} onChanged={() => setRevision(v => v + 1)} />
                   </div>
                   <div className="oc-quick-tools">
-                    {resumeUrl && <a className="oc-quick-icon-action" href={resumeUrl} target="_blank" rel="noopener noreferrer" aria-label="Résumé (opens in a new tab)" title="Résumé"><FileText size={16} aria-hidden="true" /></a>}
+                    {resumeUrl && <ResumeViewerDialog href={resumeUrl} name={dossierName(active)} clubId={membership.clubId} applicationId={active.id} trigger={<span className="sr-only">Résumé</span>} triggerClassName="size-9 border-0 bg-transparent p-0 text-muted-foreground shadow-none hover:bg-[var(--oc-content-soft)] hover:text-foreground" />}
                     {linkedinUrl && <a className="oc-quick-icon-action" href={linkedinUrl} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn (opens in a new tab)" title="LinkedIn"><Linkedin size={16} aria-hidden="true" /></a>}
                     {anonymousActive && hasPermission(membership, "applicants.identify") && <RevealApplicant canPrepare={hasPermission(membership, "recruitment.manage")} key={active.id} clubId={membership.clubId} applicationId={active.id} />}
                     <nav aria-label="Applicant navigation" className="oc-quick-pager">
@@ -809,12 +819,12 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                   </section>
                   <div className="oc-quick-sections">
                     {resumeUrl && <ReviewSection id={`resume-${active.id}`} title="Résumé preview" open={openSections.includes("resume")} onOpenChange={toggleSection("resume")} lazy>
-                      <iframe key={active.id} title={`Résumé for ${name(active)}`} src={resumeUrl} referrerPolicy="no-referrer" className="h-[60dvh] min-h-80 w-full rounded-lg border bg-muted" />
+                      <iframe key={active.id} title={`Résumé for ${dossierName(active)}`} src={resumeUrl} referrerPolicy="no-referrer" className="h-[60dvh] min-h-80 w-full rounded-lg border bg-muted" />
                     </ReviewSection>}
-                    {canReview && !anonymousActive && <div hidden={!notesCount}><ReviewSection id={`notes-${active.id}`} title="Interview notes" count={notesCount} open={openSections.includes("notes")} onOpenChange={toggleSection("notes")}>
+                    {canReview && !anonymousActive && <div hidden={!notesCount}><ReviewSection id={`notes-${active.id}`} title="Interview notes" count={typeof notesCount === "number" ? notesCount : null} open={openSections.includes("notes")} onOpenChange={toggleSection("notes")}>
                       <InterviewFeedbackPanel key={active.id} embedded clubId={membership.clubId} applicationId={active.id} roundId={active.roundId} refreshKey={JSON.stringify(active.evaluations)} onCount={setNotesCount} />
                     </ReviewSection></div>}
-                    {canReview && <div hidden={!prosSummary || !prosSummary.count && !prosSummary.canAdd}><ReviewSection id={`pros-${active.id}`} title="Pros/cons" count={prosSummary?.count} open={openSections.includes("pros")} onOpenChange={toggleSection("pros")}>
+                    {canReview && <div hidden={!prosSummary || prosSummary !== "error" && !prosSummary.count && !prosSummary.canAdd}><ReviewSection id={`pros-${active.id}`} title="Pros/cons" count={prosSummary === "error" ? null : prosSummary?.count} open={openSections.includes("pros")} onOpenChange={toggleSection("pros")}>
                       <ApplicantDisplayPanel key={active.id} embedded additionalObservations={false} clubId={membership.clubId} applicationId={active.id} refreshKey={JSON.stringify(active.evaluations)} onSummary={setProsSummary} />
                     </ReviewSection></div>}
                     {observationsEligible && <ReviewSection id={`observations-${active.id}`} title="Additional observations" count={observationCount} open={openSections.includes("observations")} onOpenChange={toggleSection("observations")}>{observationsPanel}</ReviewSection>}
@@ -839,11 +849,9 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                   </section>
                   <section className="space-y-3 border-b border-border pb-6">
                     <h3 className="oc-card-heading">Profile</h3>
-                    {profile ? <>
-                      <p className="text-xs text-muted-foreground">{profile.academicYear}{profile.gpa != null && ` · GPA ${profile.gpa}`}{profile.actScore != null && ` · ACT ${profile.actScore}`}{profile.satScore != null && ` · SAT ${profile.satScore}`}</p>
+                    {profile ? <ApplicantProfileFacts profile={profile} fields={profileFields} resume={resumeUrl && <ResumeViewerDialog href={resumeUrl} name={dossierName(active)} clubId={membership.clubId} applicationId={active.id} trigger="Résumé" />}>
                       <RecruitmentAttendanceSummary clubId={membership.clubId} applicationId={active.id} />
-                      {profile.experiences.map((item) => <div key={item.id} className="text-sm"><p className="font-medium">{item.title}</p><p className="text-muted-foreground">{item.subtitle} · {item.period}</p></div>)}
-                    </> : <p className="text-sm text-muted-foreground">No profile provided.</p>}
+                    </ApplicantProfileFacts> : <p className="text-sm text-muted-foreground">No profile provided.</p>}
                   </section>
                   <section className="space-y-3 border-b pb-6" aria-label="Interview information"><h3 className="oc-card-heading">Interviews</h3>{anonymousActive ? <p className="text-sm text-muted-foreground">Appointments are withheld during anonymous review.</p> : active.bookings.length ? <ul className="divide-y">{active.bookings.map(booking => <li key={booking.id} className="py-3 text-sm"><p>{schedulingDateTime(booking.slot.startTime)} – {slotTime(booking.slot.endTime, SCHEDULING_TIMEZONE)}</p><p className="mt-1 text-muted-foreground">{booking.slot.location || "Location not provided"}</p></li>)}</ul> : <p className="text-sm text-muted-foreground">No interview scheduled.</p>}</section>
                   {canReview && <ApplicantDisplayPanel key={active.id} additionalObservations={false} clubId={membership.clubId} applicationId={active.id} refreshKey={JSON.stringify(active.evaluations)} />}
@@ -856,12 +864,13 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                     {!active.evaluations.length && <p className="text-sm text-muted-foreground">No evaluations yet.</p>}
                   </section>
                 </div>{resumeUrl && <aside className="oc-applicant-resume" aria-label="Applicant résumé">
-                  <iframe key={active.id} title={`Résumé for ${name(active)}`} src={resumeUrl} referrerPolicy="no-referrer" className="h-[70dvh] min-h-96 w-full rounded-lg border bg-muted" />
+                  <ResumeViewerDialog href={resumeUrl} name={dossierName(active)} clubId={membership.clubId} applicationId={active.id} trigger="Open résumé" triggerClassName="self-start" />
+                  <iframe key={active.id} title={`Résumé for ${dossierName(active)}`} src={resumeUrl} referrerPolicy="no-referrer" className="h-[70dvh] min-h-96 w-full rounded-lg border bg-muted" />
                 </aside>}</div>}
               </div>
               <footer className="oc-applicant-review-footer oc-quick-footer" aria-label="Review and decide">
                 <form data-autosave-editor="true" className="oc-quick-evaluation" onBlur={canEvaluate ? draftSave.onBlur : undefined} onSubmit={(event) => { event.preventDefault(); if (canEvaluate) void mutate("review") }}>
-                  <Label htmlFor="review-score" className="sr-only">Score (1–10){activeRound ? ` · ${activeRound.name}` : ""}</Label>
+                  <Label htmlFor="review-score" className="sr-only">Score (1–10)</Label>
                   <DisabledReason field reason={evaluateReason}>
                     <Input id="review-score" type="number" required min={1} max={10} step="any" placeholder="Score" className="oc-quick-score" value={score} disabled={!canEvaluate || busy || !draftSave.ready || draftSave.recovery != null} onChange={(event) => setScore(event.target.value)} />
                   </DisabledReason>
@@ -877,7 +886,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                     <Button variant="ghost" disabled={busy} onClick={() => void skipQuickReview()}>Skip</Button>
                     <Button variant="outline" aria-describedby="quick-review-publishes" disabled={busy || !canDecide || !pendingCandidate(active) || !draftSave.ready || draftSave.recovery != null} onClick={() => void quickDecision("REJECTED")}>Deny & next</Button>
                     <Button aria-describedby="quick-review-publishes" disabled={busy || !canDecide || !pendingCandidate(active) || !draftSave.ready || draftSave.recovery != null} onClick={() => void quickDecision("ACCEPTED")}>{busy ? "Saving…" : "Accept & next"}</Button>
-                    <span id="quick-review-publishes" className="sr-only">Publishes the decision immediately. Skip leaves the candidate unchanged.</span>
+                    <span id="quick-review-publishes" className="oc-quick-publishes text-xs text-muted-foreground">Decisions publish immediately<span className="sr-only">. Skip leaves the candidate unchanged.</span></span>
                   </> : decisionOptions.map((value) => <DisabledReason key={value} reason={!busy && dirty && "Save your review before changing the status."}>
                     <Button variant={value === "ACCEPTED" ? "default" : "outline"} size="sm" disabled={busy || dirty} onClick={() => setDecision(value)}>{decisionActionLabels[value]}</Button>
                   </DisabledReason>)}
@@ -897,7 +906,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
               </footer>
               <Dialog open={panel !== null} onOpenChange={value => { if (!value && !busy) setPanel(null) }}>
                 <DialogContent>
-                  {panel === "round" && <><DialogHeader><DialogTitle>Move round</DialogTitle><DialogDescription>{name(active)} · currently in {activeRound?.name ?? "an unavailable round"}.</DialogDescription></DialogHeader>
+                  {panel === "round" && <><DialogHeader><DialogTitle>Move round</DialogTitle><DialogDescription>{dossierName(active)} · currently in {activeRound?.name ?? "an unavailable round"}.</DialogDescription></DialogHeader>
                     <Label htmlFor="move-round">Round</Label>
                     <NativeSelect id="move-round" className={selectStyle} disabled={busy} value={targetRound} onChange={(event) => setTargetRound(event.target.value)}>{data.rounds.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</NativeSelect>
                     <div className="flex justify-end gap-2"><Button variant="ghost" disabled={busy} onClick={() => setPanel(null)}>Cancel</Button>
@@ -905,9 +914,9 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                         <Button disabled={busy || dirty || finalStatus || targetRound === active.roundId} onClick={() => { setMessage(""); void mutate("round") }}>Move round</Button>
                       </DisabledReason></div>
                     {message && <p role="status" className="text-sm">{message}</p>}</>}
-                  {panel === "cycle" && <><DialogHeader><DialogTitle>Recruitment cycle assignment</DialogTitle><DialogDescription>{name(active)}</DialogDescription></DialogHeader>
+                  {panel === "cycle" && <><DialogHeader><DialogTitle>Recruitment cycle assignment</DialogTitle><DialogDescription>{dossierName(active)}</DialogDescription></DialogHeader>
                     <ApplicationCycleAssignment key={active.id + active.recruitmentCycleId} clubId={membership.clubId} applicationId={active.id} cycleId={active.recruitmentCycleId} onSaved={() => { setPanel(null); setRevision(v => v + 1) }} /></>}
-                  {panel === "reconsider" && <><DialogHeader><DialogTitle>Reconsider application</DialogTitle><DialogDescription>Returns {name(active)} to review. Earlier decisions stay in the history.</DialogDescription></DialogHeader>
+                  {panel === "reconsider" && <><DialogHeader><DialogTitle>Reconsider application</DialogTitle><DialogDescription>Returns {dossierName(active)} to review. Earlier decisions stay in the history.</DialogDescription></DialogHeader>
                     <Label htmlFor="reconsider-reason">Reason (at least 10 characters)</Label>
                     <Textarea id="reconsider-reason" maxLength={1000} value={reconsiderReason} onChange={e => setReconsiderReason(e.target.value)} />
                     <div className="flex justify-end gap-2"><Button variant="ghost" disabled={busy} onClick={() => setPanel(null)}>Cancel</Button>
@@ -932,7 +941,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
           <DialogHeader>
             <DialogTitle>Update application status?</DialogTitle>
             <DialogDescription>
-              {active && name(active)} will see their application marked{" "}
+              {active && dossierName(active)} will see their application marked{" "}
               {applicationStatusLabels[decision]}. The applicant will see this status in OutClass.
               {["ACCEPTED","WAITLISTED","REJECTED"].includes(decision) && (demo.isDemoEnabled ? " A fictional letter and notification will be saved in Demo. No email is sent." : " Status and a notification publish with an optional formal letter according to club settings. Decision-availability email follows separate student preferences.")}
             </DialogDescription>

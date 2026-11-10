@@ -9,12 +9,13 @@ import { InterviewFeedbackSection, EarlierFeedbackRounds } from "@/components/in
 /** Leader review dialog loader. Renders nothing when the viewer is not authorized. */
 export function InterviewFeedbackPanel({ clubId, applicationId, roundId, refreshKey = "", onCount, embedded = false }: { clubId: string; applicationId: string; roundId?: string; refreshKey?: string;
   /** Reports how many interviewer notes the viewer may read (null while loading or when unauthorized). */
-  onCount?: (count: number | null) => void;
+  onCount?: (count: number | "error") => void;
   /** Inside a collapsible section that already names it: no outer rule. */
   embedded?: boolean }) {
   const [value, setValue] = useState<InterviewFeedbackResult | null>(null), [error, setError] = useState(false), [retry, setRetry] = useState(0);
   const report = useRef(onCount); report.current = onCount;
-  useEffect(() => { report.current?.(value?.status === "ready" ? value.feedback?.entries.length ?? 0 : null); }, [value]);
+  // Reports only settled states, so a reload after Finalize keeps the last count instead of hiding the section.
+  useEffect(() => { if (error) report.current?.("error"); else if (value) report.current?.(value.status === "ready" ? value.feedback?.entries.length ?? 0 : 0); }, [value, error]);
   useEffect(() => {
     let current = true; setValue(null); setError(false);
     Promise.resolve(getInterviewFeedback({ clubId, applicationId, ...(roundId ? { roundId } : {}) })).then(v => { if (current) setValue(v); }).catch(() => { if (current) setError(true); });

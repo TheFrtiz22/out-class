@@ -1,6 +1,7 @@
 "use client"
 import { SearchField } from "@/components/ui/search-field"
 import { memberAcademicProfile } from "@/lib/recruitment-profile"
+import { normalizeProfileFieldVisibility, restrictProfileFields } from "@/lib/profile-field-visibility"
 import { organizationCapabilities } from "@/lib/organization-authorization"
 import { OrganizationMemberManagement } from "@/components/organization-member-management"
 import { useEffect, useRef, useState } from "react"
@@ -48,12 +49,16 @@ export function ClubMembers({ clubId, initialDirectory, onDirectory, validatedIn
     return () => { current = false }
   }, [clubId,canAccess,canMembers,demo.ready,demo.isDemoEnabled,retry])
   useEffect(() => { if (!dirty && !busy) return; const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = "" }; window.addEventListener("beforeunload",warn); return () => window.removeEventListener("beforeunload",warn) }, [dirty,busy])
-  const demoMembers: Member[] = demo.isDemoEnabled ? (demo.state?.memberships.filter(m => m.clubId === clubId) || []).flatMap(m => { const student = demo.state?.students.find(s => s.id === m.userId); return student ? [{...m,interviewerEligible:null,title:null,isOwner:m.userId === user?.id && !!actor?.isOwner,permissions:m.userId === user?.id ? [...(actor?.permissions || [])] : [],user:{email:student.email,studentProfile:memberAcademicProfile({ firstName:student.profile.firstName,lastName:student.profile.lastName,major:student.profile.major,gradYear:student.profile.gradYear,transferStudent:student.profile.transferStudent })}}] : [] }) : []
+  // Demo roster follows the Demo club's profile field setting, as the live roster read does on the server.
+  const profileFields = normalizeProfileFieldVisibility(demo.state?.profileFieldVisibility?.[clubId])
+  const demoMembers: Member[] = demo.isDemoEnabled ? (demo.state?.memberships.filter(m => m.clubId === clubId) || []).flatMap(m => { const student = demo.state?.students.find(s => s.id === m.userId); return student ? [{...m,interviewerEligible:null,title:null,isOwner:m.userId === user?.id && !!actor?.isOwner,permissions:m.userId === user?.id ? [...(actor?.permissions || [])] : [],user:{email:student.email,studentProfile:restrictProfileFields(memberAcademicProfile({ firstName:student.profile.firstName,lastName:student.profile.lastName,major:student.profile.major,gradYear:student.profile.gradYear,transferStudent:student.profile.transferStudent }), profileFields)}}] : [] }) : []
   const members = demo.isDemoEnabled ? demoMembers : data?.clubId === clubId ? data.members : []
   const active = members.find(m => m.id === activeId)
   const year = (m: Member) => m.user.studentProfile?.academicYear || ""
   const visible = members.filter(m => `${name(m)} ${m.user.email} ${role(m)} ${year(m)} ${m.cohort || ""} ${m.groups.join(" ")}`.toLowerCase().includes(query.trim().toLowerCase())).sort((a, b) => {
-    const compared = listSort.key === "year" ? (!year(a) || !year(b) ? Number(!year(a)) - Number(!year(b)) : compareAcademicYears(year(a), year(b))) : listSort.key === "role" ? role(a).localeCompare(role(b)) : listSort.key === "status" ? access(a).localeCompare(access(b)) : 0
+    // Members without a class year stay last in either direction; Name is a real sort key, not only the tie-break.
+    if (listSort.key === "year" && !year(a) !== !year(b)) return Number(!year(a)) - Number(!year(b))
+    const compared = listSort.key === "year" ? (year(a) ? compareAcademicYears(year(a), year(b)) : 0) : listSort.key === "role" ? role(a).localeCompare(role(b)) : listSort.key === "status" ? access(a).localeCompare(access(b)) : listSort.key === "name" ? name(a).localeCompare(name(b)) : 0
     return (listSort.descending ? -compared : compared) || name(a).localeCompare(name(b)) || a.id.localeCompare(b.id)
   })
   async function reload() {
@@ -77,7 +82,7 @@ export function ClubMembers({ clubId, initialDirectory, onDirectory, validatedIn
       openLabel={m => `Member details · ${name(m)}`}
       onOpen={(m, origin) => { trigger.current = origin; setActiveId(m.id); setDirty(false) }}
       columns={[
-        { id: "name", header: "Member", sortKey: "name", primary: true, cell: m => <><span className="oc-dt-name">{name(m)}</span><DataTableSecondary from="lg">{m.user.email}</DataTableSecondary></> },
+        { id: "name", header: "Member", sortKey: "name", primary: true, cell: m => <span className="oc-dt-name">{name(m)}</span>, secondary: m => <DataTableSecondary from="lg">{m.user.email}</DataTableSecondary> },
         { id: "role", header: "Role / title", sortKey: "role", cell: m => <span className="capitalize">{role(m)}</span> },
         { id: "year", header: "Year", sortKey: "year", showFrom: "md", cell: m => year(m) || "—" },
         { id: "groups", header: "Groups", showFrom: "xl", cell: m => <span className="oc-dt-muted">{[m.cohort, ...m.groups].filter(Boolean).join(" · ") || "—"}</span> },
@@ -85,7 +90,7 @@ export function ClubMembers({ clubId, initialDirectory, onDirectory, validatedIn
       ]}
       card={{ title: m => name(m), meta: m => joinFacts(year(m), access(m) === "Member" ? role(m).replace(/^./, c => c.toUpperCase()) : access(m)) }} />}{!visible.length && <div role="status" className="space-y-3 py-8 text-sm text-muted-foreground"><p>{members.length ? `No members match “${query}”.` : "This club has no active members yet. Members are added when they accept an invitation."}</p>{members.length ? <Button type="button" variant="outline" size="sm" onClick={() => setQuery("")}>Clear search</Button> : null}</div>}</>}
     <Sheet open={!!active} onOpenChange={open=>{if(!open){if(busy || document.querySelector('[data-saving="true"]'))return;if(dirty&&!window.confirm("Discard unsaved member changes?"))return;setActiveId(null);setDirty(false)}}}><SheetContent className="oc-workspace-drawer w-full overflow-y-auto sm:max-w-2xl" onCloseAutoFocus={e=>{e.preventDefault();if(trigger.current?.isConnected)trigger.current.focus();else document.getElementById("workspace-content")?.focus()}}><SheetTitle>{active ? name(active) : "Member"}</SheetTitle><SheetDescription>{active?.user.email}</SheetDescription>{active && <div className="mt-6 space-y-7" onChangeCapture={e=>{if((e.target as HTMLElement).closest("form, fieldset"))setDirty(true)}}>
-      <section className="space-y-2"><h3 className="oc-card-heading capitalize">{role(active)}</h3><p className="text-sm text-muted-foreground">{[active.user.studentProfile?.major,active.user.studentProfile?.academicYear ? active.user.studentProfile.academicYear : ""].filter(Boolean).join(" · ") || "Academic summary not provided."}</p><p className="text-sm">Groups: {active.groups.join(", ") || "None"}</p><p className="text-sm">Cohort: {active.cohort || "Not set"}</p></section>
+      <section className="space-y-2"><h3 className="oc-card-heading capitalize">{role(active)}</h3>{(profileFields.major || profileFields.academicYear) && <p className="text-sm text-muted-foreground">{[profileFields.major ? active.user.studentProfile?.major : "",profileFields.academicYear ? active.user.studentProfile?.academicYear : ""].filter(Boolean).join(" · ") || "Academic summary not provided."}</p>}<p className="text-sm">Groups: {active.groups.join(", ") || "None"}</p><p className="text-sm">Cohort: {active.cohort || "Not set"}</p></section>
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
       {!demo.isDemoEnabled && canMembers && <details className="border-t pt-4"><summary className="cursor-pointer text-sm font-medium">Edit groups & cohort</summary><form key={`${active.id}:${active.groups.join(",")}:${active.cohort}`} className="mt-4 space-y-3" onSubmit={e=>{e.preventDefault();const form=new FormData(e.currentTarget);void run(()=>updateTaskMember({clubId,memberId:active.id,groups:String(form.get("groups")).split(",").map(s=>s.trim()).filter(Boolean),cohort:String(form.get("cohort")).trim()||null}))}}><label className="block text-sm">Groups (comma-separated)<Input name="groups" defaultValue={active.groups.join(", ")} /></label><label className="block text-sm">Cohort<Input name="cohort" maxLength={80} defaultValue={active.cohort || ""} /></label><Button disabled={busy}>Save groups & cohort</Button></form></details>}
       <section className="space-y-4 border-t pt-5"><h3 className="oc-card-heading ">Management access</h3>{!demo.isDemoEnabled && canAccess && data?.access ? <ClubAccessEditor key={active.id} clubId={clubId} initial={data.access} selectedMemberId={active.id} onSaved={reload} /> : <p className="text-sm leading-7 text-muted-foreground">{active.isOwner ? "Owner · all club capabilities" : active.permissions.map(p=>permissionLabels[p as ClubPermission] || p).join(", ") || "No management capabilities."}</p>}</section>

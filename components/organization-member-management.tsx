@@ -202,6 +202,9 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
     }
   }
   const needle = query.trim().toLowerCase();
+  // Class year is a profile field: members' years follow the club setting (cleared by the server when hidden).
+  // Invitations carry an admin-entered year, so that tab keeps the column.
+  const showYear = invitesOpen || data?.profileFields?.academicYear !== false;
   const rows = data
     ? [
         ...data.members.map((member) => ({
@@ -465,7 +468,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 onClear={() => { setQuery(""); resetPaging() }}
               />
               <PillSelect label="Filter members by role" allLabel="All roles" value={roleFilter} onChange={value => { setRoleFilter(value); resetPaging() }} options={organizationRoles.map(role => ({ value: role, label: organizationRoleLabels[role] }))} />
-              <PillGroup label="Filter members by year" size="compact" value={yearFilter} onChange={value => { setYearFilter(value); resetPaging() }} options={[{ value: "", label: "All years" }, ...memberYears.map(year => ({ value: year, label: year }))]} />
+              {showYear && <PillGroup label="Filter members by year" size="compact" value={yearFilter} onChange={value => { setYearFilter(value); resetPaging() }} options={[{ value: "", label: "All years" }, ...memberYears.map(year => ({ value: year, label: year }))]} />}
               {!invitesOpen && caps.canManageMembers && <PillSelect label="Filter members by group" allLabel="All groups" value={groupFilter} onChange={value => { setGroupFilter(value); resetPaging() }} options={memberGroups.map(group => ({ value: group, label: group }))} />}
               {invitesOpen && <Toggle label="Show invitation history" checked={history} onCheckedChange={value => { setHistory(value); setPage(0) }} />}
             </div>
@@ -628,8 +631,8 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 /></label>,
               }}
               columns={[
-                { id: "name", header: "Member", sortKey: "name", primary: true, cell: row => <><span className="oc-dt-name">{row.name}</span><DataTableSecondary from="lg" title={row.member?.groups.length ? `Groups: ${row.member.groups.join(", ")}` : undefined}>{joinFacts(row.detail, row.member?.groups.join(" · "))}</DataTableSecondary></> },
-                { id: "year", header: "Year", sortKey: "year", showFrom: "md", cell: row => row.year || "—" },
+                { id: "name", header: "Member", sortKey: "name", primary: true, cell: row => <span className="oc-dt-name">{row.name}</span>, secondary: row => <DataTableSecondary from="lg" title={row.member?.groups.length ? `Groups: ${row.member.groups.join(", ")}` : undefined}>{joinFacts(row.detail, row.member?.groups.join(" · "))}</DataTableSecondary> },
+                ...(showYear ? [{ id: "year", header: "Year", sortKey: "year", showFrom: "md" as const, cell: (row: (typeof rows)[number]) => row.year || "—" }] : []),
                 { id: "role", header: "Role", sortKey: "role", cell: row => organizationRoleLabels[row.role] },
                 { id: "status", header: "Status", sortKey: "status", cell: row => <>{row.status}{row.invitation && <span className="oc-dt-muted"> · {invitationDelivery(row.invitation)}</span>}</> },
                 ...(invitesOpen ? [{ id: "actions", header: <span className="sr-only">Actions</span>, align: "end" as const, cell: (row: (typeof rows)[number]) => invitationActions(row) }] : []),
@@ -928,8 +931,8 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                     active.isOwner ? "OWNER" : active.accessRole
                   ]
                 }{" "}
-                · {statusLabel(active.status)} ·{" "}
-                {active.user.studentProfile?.academicYear || "Year not provided"}
+                · {statusLabel(active.status)}
+                {data?.profileFields?.academicYear !== false && <> · {active.user.studentProfile?.academicYear || "Year not provided"}</>}
               </p>
               <p className="text-sm text-muted-foreground">
                 {active.title || active.role.replaceAll("_", " ")} · Groups:{" "}

@@ -53,4 +53,31 @@ const nextConfig = {
   },
 }
 
-export default nextConfig
+// Readable stack traces without public source maps: on Vercel builds that have an upload
+// token, maps are generated hidden (no sourceMappingURL comment), uploaded to Sentry and
+// deleted before deploy; scripts/check-no-public-sourcemaps.cjs then fails the build if
+// any map is left in the public static folder. Without a token (local builds, CI,
+// previews without the secret) the config is exactly the one above.
+const uploadSourceMaps = Boolean(process.env.SENTRY_AUTH_TOKEN) && process.env.VERCEL === "1"
+
+export default uploadSourceMaps
+  ? (await import("@sentry/nextjs/config")).withSentryConfig(nextConfig, {
+      org: "outclass-ot",
+      project: "out-class",
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      // Upload output stays in the Vercel log, so a failed upload (which then fails the
+      // public source map check) shows its cause.
+      silent: false,
+      telemetry: false,
+      widenClientFileUpload: true,
+      sourcemaps: { deleteSourcemapsAfterUpload: true },
+      // Upload and release tagging only. Server code is not wrapped at build time:
+      // errors already come from onRequestError and timings from Next.js's own spans.
+      webpack: {
+        autoInstrumentServerFunctions: false,
+        autoInstrumentMiddleware: false,
+        autoInstrumentAppDirectory: false,
+        treeshake: { removeDebugLogging: true },
+      },
+    })
+  : nextConfig
