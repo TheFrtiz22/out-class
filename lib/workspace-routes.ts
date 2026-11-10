@@ -12,13 +12,13 @@ function read(query: Query, key: string) {
 }
 
 const sectionTitles: Record<string, string> = {
-  overview: TERMS.clubHome, meetings: "Meetings", events: "Events", tasks: TERMS.tasks, members: "Members",
-  announcements: TERMS.announcements, settings: "Settings",
+  overview: "Home", calendar: "Calendar", meetings: "Calendar", events: "Calendar", tasks: TERMS.tasks, members: "Members",
+  announcements: "Home", settings: "Settings",
 }
 const toolTitles: Record<string, string> = {
-  overview: TERMS.recruiting, applicants: TERMS.applicants, rejected: TERMS.applicants, interviews: "Interviews", decisions: "Decisions",
-  "scheduled-decisions": "Scheduled Decisions", resumes: "Résumé moderation", reviews: "Submitted reviews",
-  rounds: "Anonymous Review", rules: "Auto-Reject Rules",
+  overview: TERMS.recruiting, applicants: TERMS.applicants, rejected: TERMS.applicants, interviews: "Interviews", decisions: "Decide",
+  "scheduled-decisions": "Decide", resumes: "Résumé moderation", reviews: "Submitted reviews",
+  rounds: TERMS.applicants, rules: TERMS.applicants,
 }
 
 /** The `<title>` text (before " · OutClass") for a club workspace URL. */
@@ -26,8 +26,6 @@ export function clubWorkspaceTitle(query: Query) {
   const section = read(query, "section") || "overview"
   if (section !== "recruitment") return sectionTitles[section] ?? "Club workspace"
   const tool = read(query, "tool") || "applicants"
-  if (tool === "decisions" && read(query, "decisionTab") === "letters") return "Decision letters"
-  if (tool === "decisions" && read(query, "decisionTab") !== "overview") return TERMS.votingRoom
   return toolTitles[tool] ?? TERMS.recruiting
 }
 

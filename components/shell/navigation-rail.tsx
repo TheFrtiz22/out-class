@@ -1,15 +1,12 @@
 "use client"
 
-import { useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent, type ReactElement } from "react"
-import { CheckCircle2, ChevronRight, Users2 } from "@/components/icons"
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactElement } from "react"
 import { DockBrand } from "./dock-brand"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { navigationGroupLabels, type ProductNavItem } from "@/lib/product-navigation"
+import type { ProductNavItem } from "@/lib/product-navigation"
 import type { RailSection } from "@/lib/navigation"
 
-type Group = NonNullable<ProductNavItem["navGroup"]>
-type RenderItem = (item: ProductNavItem, surface: "rail" | "flyout") => ReactElement
+type RenderItem = (item: ProductNavItem, surface: "rail") => ReactElement
 
 /** Labels are permanent from this width; below it the rail shows icons with tooltips. */
 export const RAIL_LABEL_QUERY = "(min-width: 1280px)"
@@ -85,72 +82,12 @@ export function NavigationRail({ sections, active, renderItem, onHome }: {
       <RailTip label="OutClass home" enabled={!labelled}><button type="button" className="oc-dock-brand" aria-label="OutClass home" onClick={onHome}><DockBrand /></button></RailTip>
       <div className="oc-dock-navigation"><div className="oc-dock-navigation-content" ref={content}>
         <span className="oc-dock-marker" aria-hidden="true" />
-        {sections.filter(section => section.items.length).map(section => {
-          const rendered = new Set<Group>()
-          return <section key={section.id} className="oc-dock-section" data-tour={section.tour}>
-            {section.label && <p className="oc-dock-section-heading" aria-hidden="true">{section.label}</p>}
-            <nav aria-label={section.label ?? section.name}>{section.items.map(item => {
-              if (!item.navGroup) return <RailTip key={item.id} label={item.label} enabled={!labelled}>{renderItem(item, "rail")}</RailTip>
-              if (rendered.has(item.navGroup)) return null
-              const group = item.navGroup; rendered.add(group)
-              return <RailGroup key={group} group={group} items={section.items.filter(child => child.navGroup === group)} active={active} tooltip={!labelled} renderItem={renderItem} />
-            })}</nav>
-          </section>
-        })}
+        {/* Every rail item is a page link: no flyouts. A pinned section (Settings) sits at the bottom of the rail. */}
+        {sections.filter(section => section.items.length).map(section => <section key={section.id} className="oc-dock-section" data-tour={section.tour} data-pinned={section.pinned || undefined}>
+          {section.label && <p className="oc-dock-section-heading" aria-hidden="true">{section.label}</p>}
+          <nav aria-label={section.label ?? section.name}>{section.items.map(item => <RailTip key={item.id} label={item.label} enabled={!labelled}>{renderItem(item, "rail")}</RailTip>)}</nav>
+        </section>)}
       </div></div>
     </div>
   </aside>
-}
-
-/** Applicants and Decisions open a menu of their destinations on click or with the arrow keys. */
-function RailGroup({ group, items, active, tooltip, renderItem }: { group: Group; items: ProductNavItem[]; active: string | null; tooltip: boolean; renderItem: RenderItem }) {
-  const [open, setOpen] = useState(false)
-  const keyboardOpen = useRef(false), trigger = useRef<HTMLButtonElement>(null), content = useRef<HTMLDivElement>(null)
-  const selected = items.some(item => item.id === active), Icon = group === "applicants" ? Users2 : CheckCircle2
-  const label = navigationGroupLabels[group], id = useId()
-  useEffect(() => { setOpen(false) }, [active])
-  function focusDestination(last = false) {
-    const links = content.current?.querySelectorAll<HTMLElement>("a[href],button:not([disabled])")
-    if (links?.length) links[last ? links.length - 1 : 0].focus()
-  }
-  useEffect(() => {
-    if (open && keyboardOpen.current && content.current) { focusDestination(); keyboardOpen.current = false }
-  }, [open])
-  function contentKeys(event: KeyboardEvent<HTMLDivElement>) {
-    const links = Array.from(content.current?.querySelectorAll<HTMLElement>("a[href],button:not([disabled])") ?? [])
-    const index = links.indexOf(document.activeElement as HTMLElement)
-    if (event.key === "Tab" && index !== -1) {
-      // Consistent with Safari's restricted Tab-to-links preference; focus can leave at either end.
-      event.preventDefault()
-      const next = links[index + (event.shiftKey ? -1 : 1)]
-      if (next) next.focus()
-      else {
-        setOpen(false)
-        if (event.shiftKey) trigger.current?.focus()
-        else {
-          const targets = Array.from(trigger.current?.closest(".oc-dock-navigation-content")?.querySelectorAll<HTMLElement>("a[href],button") ?? [])
-          targets[targets.indexOf(trigger.current!) + 1]?.focus()
-        }
-      }
-    } else if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
-      event.preventDefault()
-      const next = event.key === "Home" ? 0 : event.key === "End" ? links.length - 1 : (index + (event.key === "ArrowDown" ? 1 : -1) + links.length) % links.length
-      links[next]?.focus()
-    } else if (event.key === "ArrowLeft") { event.preventDefault(); setOpen(false); trigger.current?.focus() }
-  }
-  const button = <button ref={trigger} type="button" className="oc-dock-group-trigger" data-dock-group={group} data-navigation-toggle data-active={selected || undefined} aria-controls={id} aria-label={label}
-    onClick={event => { keyboardOpen.current = event.detail === 0 && !open }}
-    onKeyDown={event => { if (["ArrowRight", "ArrowDown", "ArrowUp"].includes(event.key)) { event.preventDefault(); keyboardOpen.current = true; if (open) focusDestination(event.key === "ArrowUp"); else setOpen(true) } }}>
-    <span className="oc-dock-icon"><Icon weight={selected ? "fill" : "regular"} size={22} aria-hidden="true" /></span><span className="oc-dock-item-label">{label}</span><ChevronRight className="oc-dock-chevron" size={16} aria-hidden="true" />
-  </button>
-  // The tooltip stays closed while the menu is open, so the two never overlap.
-  return <Popover open={open} onOpenChange={setOpen}>
-    <RailTip label={label} enabled={tooltip && !open}><PopoverTrigger asChild>{button}</PopoverTrigger></RailTip>
-    <PopoverContent ref={content} id={id} className="oc-dock-flyout" side="right" align="start" sideOffset={20} collisionPadding={12} aria-label={`${label} navigation`}
-      onOpenAutoFocus={event => { event.preventDefault(); if (keyboardOpen.current) focusDestination(); keyboardOpen.current = false }}
-      onCloseAutoFocus={event => event.preventDefault()}
-      onEscapeKeyDown={event => { event.preventDefault(); setOpen(false); trigger.current?.focus() }} onKeyDown={contentKeys}>
-      <p className="oc-dock-flyout-heading">{label}</p><nav aria-label={`${label} destinations`}>{items.map(item => renderItem(item, "flyout"))}</nav>
-    </PopoverContent>
-  </Popover>
 }
