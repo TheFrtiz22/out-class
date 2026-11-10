@@ -41,38 +41,114 @@ function isPlainObject(value: object) {
   return proto === Object.prototype || proto === null
 }
 
-/** Returns the first limit the raw value exceeds, or null. Never throws. */
-export function boundedInputIssue(value: unknown, limits: BoundedInputLimits = {}): z.ZodIssue | null {
+type Def = { typeName?: string; [key: string]: unknown }
+const defOf = (schema: z.ZodTypeAny) => schema._def as Def
+type Step = { parent: Step | null; key: string | number } | null
+const pathOf = (step: Step): Path => { const path: Path = []; for (let at = step; at; at = at.parent) path.unshift(at.key); return path }
+/**
+ * How the schema treats a value: a schema node to follow, `undefined` when the
+ * shape is not known here (unions, `z.any()`, preprocessing) and generic
+ * limits apply, or "extra" for keys a stripping object drops without visiting.
+ */
+type Guide = z.ZodTypeAny | undefined | "extra"
+type Frame = { value: unknown; guide: Guide; depth: number; at: Step } | { exit: object }
+
+/** Follows wrappers to the schema that will see `value`; `undefined` when unknown. */
+function resolveGuide(schema: z.ZodTypeAny | undefined, value: unknown): z.ZodTypeAny | undefined {
+  for (let hops = 0; schema && hops < 32; hops++) {
+    const def = defOf(schema)
+    switch (def.typeName) {
+      case "ZodOptional": case "ZodNullable": case "ZodDefault": case "ZodCatch": case "ZodReadonly": schema = def.innerType as z.ZodTypeAny; break
+      case "ZodBranded": schema = def.type as z.ZodTypeAny; break
+      case "ZodEffects": if ((def.effect as { type?: string } | undefined)?.type === "preprocess") return undefined; schema = def.schema as z.ZodTypeAny; break
+      case "ZodPipeline": schema = def.in as z.ZodTypeAny; break
+      case "ZodLazy": schema = (def.getter as () => z.ZodTypeAny)(); break
+      case "ZodDiscriminatedUnion": {
+        if (value === null || typeof value !== "object" || Array.isArray(value)) return undefined
+        schema = (def.optionsMap as Map<unknown, z.ZodTypeAny>).get((value as Record<string, unknown>)[def.discriminator as string])
+        break
+      }
+      case "ZodArray": case "ZodTuple": case "ZodSet": case "ZodMap": case "ZodObject": case "ZodRecord": return schema
+      default: return undefined
+    }
+  }
+  return undefined
+}
+
+/** Schema for a key the object schema does not declare. */
+function undeclaredKey(def: Def): Guide {
+  const catchall = def.catchall as z.ZodTypeAny | undefined
+  if (catchall && defOf(catchall).typeName !== "ZodNever") return catchall
+  // Stripped keys are never visited by the schema; strict and passthrough keep generic limits.
+  return def.unknownKeys === "strip" ? "extra" : undefined
+}
+
+/**
+ * Returns the first limit the raw value exceeds, or null. Never throws.
+ *
+ * Every visit is charged, so a subtree referenced from several places costs
+ * what the schema will spend visiting it at each place. With `schema`, keys a
+ * stripping object drops are walked only against the byte and depth caps.
+ */
+export function boundedInputIssue(value: unknown, limits: BoundedInputLimits = {}, schema?: z.ZodTypeAny): z.ZodIssue | null {
   const max = { ...defaults, ...limits }
-  const stack: [unknown, Path, number][] = [[value, [], 0]]
-  const seen = new Set<object>()
+  const stack: Frame[] = [{ value, guide: schema, depth: 0, at: null }]
+  // Objects on the current path; reaching one again is a cycle.
+  const ancestors = new Set<object>()
+  // Stripped subtrees are measured once per object; the schema never visits them.
+  const seenExtra = new Set<object>()
   let elements = 0
   let bytes = 0
   while (stack.length) {
-    const [current, path, depth] = stack.pop()!
+    const frame = stack.pop()!
+    if ("exit" in frame) { ancestors.delete(frame.exit); continue }
+    const { value: current, depth, at } = frame
+    const extra = frame.guide === "extra"
     if (typeof current === "string") bytes += current.length + 2
     else if (current === null || typeof current !== "object") bytes += 8
-    else if (!seen.has(current)) {
-      seen.add(current)
-      if (depth >= max.maxDepth) return issue(path, "Input is nested too deeply.")
-      const size = Array.isArray(current) ? current.length : current instanceof Set || current instanceof Map ? current.size : -1
+    else if (extra && seenExtra.has(current)) bytes += 8
+    else {
+      if (extra) seenExtra.add(current)
+      else if (ancestors.has(current)) return issue(pathOf(at), "Input contains a circular reference.")
+      if (depth >= max.maxDepth) return issue(pathOf(at), "Input is nested too deeply.")
+      const guide = extra ? undefined : resolveGuide(frame.guide as z.ZodTypeAny | undefined, current)
+      const def = guide ? defOf(guide) : undefined
+      const child = (guideFor: Guide, item: unknown, key: string | number) => stack.push({ value: item, guide: extra ? "extra" : guideFor, depth: depth + 1, at: { parent: at, key } })
+      const isSet = current instanceof Set, isMap = current instanceof Map
+      const size = Array.isArray(current) ? current.length : isSet || isMap ? current.size : -1
       if (size >= 0) {
-        // Length is checked before any element is visited.
-        // Same shape as the schema's own `.max()` issue, so callers see a familiar error.
-        if (size > max.maxArrayLength) return { code: z.ZodIssueCode.too_big, type: "array", maximum: max.maxArrayLength, inclusive: true, exact: false, path, message: `Array must contain at most ${max.maxArrayLength} element(s)` }
-        elements += size
-        if (elements > max.maxTotalElements) return issue(path, "Too many items.")
+        if (!extra) {
+          // Length is checked before any element is visited.
+          // Same shape as the schema's own `.max()` issue, so callers see a familiar error.
+          if (size > max.maxArrayLength) {
+            if (isMap) return { code: z.ZodIssueCode.custom, path: pathOf(at), params: { type: "map", maximum: max.maxArrayLength }, message: `Map must contain at most ${max.maxArrayLength} entries` }
+            return { code: z.ZodIssueCode.too_big, type: isSet ? "set" : "array", maximum: max.maxArrayLength, inclusive: true, exact: false, path: pathOf(at), message: `${isSet ? "Set" : "Array"} must contain at most ${max.maxArrayLength} element(s)` }
+          }
+          elements += size
+          if (elements > max.maxTotalElements) return issue(pathOf(at), "Too many items.")
+          ancestors.add(current)
+          stack.push({ exit: current })
+        }
         bytes += 2 + size
-        if (Array.isArray(current)) for (let i = 0; i < size; i++) stack.push([current[i], [...path, i], depth + 1])
-        else if (current instanceof Set) { let i = 0; for (const item of current) stack.push([item, [...path, i++], depth + 1]) }
-        else { let i = 0; for (const [key, item] of current as Map<unknown, unknown>) { stack.push([key, [...path, i], depth + 1]); stack.push([item, [...path, i++], depth + 1]) } }
+        if (Array.isArray(current)) {
+          const items = def?.typeName === "ZodTuple" ? def.items as z.ZodTypeAny[] : null
+          const element = def?.typeName === "ZodArray" ? def.type as z.ZodTypeAny : undefined
+          for (let i = 0; i < size; i++) child(items ? items[i] ?? (def!.rest as z.ZodTypeAny | null) ?? undefined : element, current[i], i)
+        } else if (isSet) { const item = def?.typeName === "ZodSet" ? def.valueType as z.ZodTypeAny : undefined; let i = 0; for (const entry of current) child(item, entry, i++) }
+        else {
+          const [keyType, valueType] = def?.typeName === "ZodMap" ? [def.keyType as z.ZodTypeAny, def.valueType as z.ZodTypeAny] : [undefined, undefined]
+          let i = 0; for (const [key, item] of current as Map<unknown, unknown>) { child(keyType, key, i); child(valueType, item, i++) }
+        }
       } else if (isPlainObject(current)) {
+        if (!extra) { ancestors.add(current); stack.push({ exit: current }) }
         bytes += 2
+        const shape = def?.typeName === "ZodObject" ? (guide as z.AnyZodObject).shape as Record<string, z.ZodTypeAny> : null
+        const record = def?.typeName === "ZodRecord" ? def.valueType as z.ZodTypeAny : undefined
         for (const key in current) {
           if (!Object.prototype.hasOwnProperty.call(current, key)) continue
           bytes += key.length + 4
-          if (bytes > max.maxBytes) return issue(path, "Input is too large.")
-          stack.push([(current as Record<string, unknown>)[key], [...path, key], depth + 1])
+          if (bytes > max.maxBytes) return issue(pathOf(at), "Input is too large.")
+          child(shape ? Object.prototype.hasOwnProperty.call(shape, key) ? shape[key] : undeclaredKey(def!) : record, (current as Record<string, unknown>)[key], key)
         }
       } else bytes += 8 // Date, File, Blob and other opaque values are leaves.
     }
@@ -82,12 +158,11 @@ export function boundedInputIssue(value: unknown, limits: BoundedInputLimits = {
 }
 
 /** Throws a `z.ZodError` when the raw value exceeds the limits. */
-export function assertBoundedInput(value: unknown, limits: BoundedInputLimits = {}): void {
-  const found = boundedInputIssue(value, limits)
+export function assertBoundedInput(value: unknown, limits: BoundedInputLimits = {}, schema?: z.ZodTypeAny): void {
+  const found = boundedInputIssue(value, limits, schema)
   if (found) throw new z.ZodError([found])
 }
 
-type Def = { typeName?: string; [key: string]: unknown }
 const derived = new WeakMap<z.ZodTypeAny, Limits>()
 
 /**
@@ -160,13 +235,13 @@ export function inputLimitsFor(schema: z.ZodTypeAny): Limits {
 
 /** `schema.parse(value)` after checking the raw value against the schema's limits (or explicit overrides). */
 export function boundedParse<T extends z.ZodTypeAny>(schema: T, value: unknown, limits: BoundedInputLimits = {}): z.output<T> {
-  assertBoundedInput(value, { ...inputLimitsFor(schema), ...limits })
+  assertBoundedInput(value, { ...inputLimitsFor(schema), ...limits }, schema)
   return schema.parse(value)
 }
 
 /** `schema.safeParse(value)` with the same pre-check; an oversized value yields `{ success: false }`. */
 export function boundedSafeParse<T extends z.ZodTypeAny>(schema: T, value: unknown, limits: BoundedInputLimits = {}): z.SafeParseReturnType<z.input<T>, z.output<T>> {
-  const found = boundedInputIssue(value, { ...inputLimitsFor(schema), ...limits })
+  const found = boundedInputIssue(value, { ...inputLimitsFor(schema), ...limits }, schema)
   if (found) return { success: false, error: new z.ZodError([found]) }
   return schema.safeParse(value)
 }

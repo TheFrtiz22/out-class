@@ -155,3 +155,41 @@ test("server actions parse array-accepting parameters only through the bounded h
   }
   assert.deepEqual(offenders, [], "Use boundedParse/boundedSafeParse from @/lib/bounded-input for these parses")
 })
+
+test("a subtree referenced from several places is charged at every reference", () => {
+  const a = Array(1000).fill("x")
+  const schema = z.object({ r: z.array(z.array(z.string()).max(1000)).max(1000) })
+  assert.throws(() => boundedParse(schema, { r: Array(1000).fill(a) }), (e) => e instanceof z.ZodError && /Too many items/.test(e.issues[0].message))
+  // Ordinary sharing still passes: one small array or Date used in several places.
+  const shared = z.object({ a: z.array(z.string()).max(3), b: z.array(z.string()).max(3), at: z.date(), until: z.date() })
+  const tags = ["x", "y"], when = new Date(0)
+  assert.deepEqual(boundedParse(shared, { a: tags, b: tags, at: when, until: when }), { a: tags, b: tags, at: when, until: when })
+  // Cycles stop at the first repeated ancestor.
+  const loop = { items: [] }; loop.items.push(loop)
+  assert.match(boundedInputIssue(loop).message, /circular reference/)
+  assert.deepEqual(boundedInputIssue(loop).path, ["items", 0])
+})
+
+test("keys a non-strict object strips are not held to array limits", () => {
+  const schema = z.object({ ids: z.array(z.string()).max(100) })
+  const parsed = boundedParse(schema, { ids: ["a"], junk: Array(150).fill("x") })
+  assert.deepEqual(parsed, { ids: ["a"] })
+  // Declared fields keep their limits; strict schemas still check every key.
+  assert.throws(() => boundedParse(schema, { ids: Array(101).fill("a"), junk: [] }), z.ZodError)
+  assert.throws(() => boundedParse(schema.strict(), { ids: ["a"], junk: Array(150).fill("x") }), z.ZodError)
+  // Stripped keys still count toward the byte and depth caps.
+  let nested = []
+  for (let i = 0; i < 100; i++) nested = [nested]
+  assert.throws(() => boundedParse(schema, { ids: [], junk: nested }), (e) => /nested too deeply/.test(e.issues[0].message))
+  assert.throws(() => boundedParse(schema, { ids: [], junk: "x".repeat(2000) }, { maxBytes: 1000 }), (e) => /too large/.test(e.issues[0].message))
+  // Discriminated unions follow the selected option.
+  const union = z.discriminatedUnion("kind", [z.object({ kind: z.literal("a"), ids: z.array(z.string()).max(2) }), z.object({ kind: z.literal("b") })])
+  assert.deepEqual(boundedParse(union, { kind: "a", ids: ["x"], junk: Array(50).fill(0) }), { kind: "a", ids: ["x"] })
+})
+
+test("oversized Sets and Maps report their own type", () => {
+  const set = boundedInputIssue({ s: new Set([1, 2, 3]) }, { maxArrayLength: 2 })
+  assert.equal(set.code, "too_big"); assert.equal(set.type, "set"); assert.match(set.message, /^Set must contain at most 2/)
+  const map = boundedInputIssue({ m: new Map([[1, 1], [2, 2], [3, 3]]) }, { maxArrayLength: 2 })
+  assert.equal(map.params.type, "map"); assert.match(map.message, /^Map must contain at most 2/)
+})
