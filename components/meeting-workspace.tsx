@@ -28,6 +28,7 @@ import {
 } from "@/lib/workspace-api";
 import { meetingInputSchema, resourceSchema } from "@/lib/meetings";
 import { OutClassQRCode } from "@/components/qr/outclass-qr-code";
+import { QrPresenterDialog } from "@/components/qr/qr-presenter-dialog";
 import { Button } from "@/components/ui/button";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Input } from "@/components/ui/input";
@@ -492,6 +493,9 @@ function MeetingAttendance({ meeting }: { meeting: Meeting }) {
     };
   }, [open, meeting.clubId, meeting.id]);
   const valid = code && new Date(code.expiresAt).getTime() > now;
+  // Same link as before the presenter dialog: the rotating /q short link, or the direct fallback.
+  const checkInUrl = valid ? (code.shortUrl ? `${window.location.origin}${code.shortUrl}` : `${window.location.origin}/check-in?meetingId=${meeting.id}#token=${code.token}`) : "";
+  const checkInFilename = valid ? `check-in-${meeting.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}` : "";
   return (
     <section className="space-y-4 border-t pt-5">
       <h2 className="oc-section-heading ">Attendance</h2>
@@ -530,16 +534,24 @@ function MeetingAttendance({ meeting }: { meeting: Meeting }) {
       {open && valid && (
         <div className="space-y-4">
           <OutClassQRCode
-            value={code.shortUrl ? `${window.location.origin}${code.shortUrl}` : `${window.location.origin}/check-in?meetingId=${meeting.id}#token=${code.token}`}
+            value={checkInUrl}
             size={220}
             variant="default"
             showLogo={true}
             downloadable={true}
-            presenterMode={true}
             title={meeting.title}
             description="Scan with your smartphone camera to confirm attendance."
-            filename={`check-in-${meeting.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+            filename={checkInFilename}
             ariaLabel={`Check in to ${meeting.title}`}
+            actions={
+              <QrPresenterDialog
+                value={checkInUrl}
+                title={meeting.title}
+                description="Scan with your smartphone camera to confirm attendance."
+                filename={checkInFilename}
+                ariaLabel={`Check in to ${meeting.title}`}
+              />
+            }
           />
           <p role="status" className="text-sm text-muted-foreground">
             Current code expires in{" "}
