@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { authEmailError, confirmedEmailSession } from "@/lib/auth-email"
+import { passwordNotSavedNotice, setPasswordAfterConfirmation } from "@/lib/signup-password"
 import { InvitationProfileSuggestions } from "@/components/invitation-profile-suggestions"
 import type { InvitationProfileDefaults } from "@/lib/organization-claiming"
 import { useAuth } from "@/contexts/auth-context"
@@ -240,6 +241,10 @@ export function StudentOnboardingWizard({
   })
 
   const supabase = createClient()
+  // Held only until the email code is verified, then cleared.
+  const pendingPassword = useRef<string | undefined>(undefined)
+  useEffect(() => () => { pendingPassword.current = undefined }, [])
+  const [confirmNotice, setConfirmNotice] = useState("")
 
   // ── Step 1: Account Basics ────────────────────────────────────────────────
 
@@ -256,8 +261,10 @@ export function StudentOnboardingWizard({
     if (turnstileRequired && !turnstileToken) { setGlobalError(TURNSTILE_PENDING); return }
     setLoading(true)
     try {
-      const result = await registerStudent(step1Form.getValues(), turnstileToken)
+      const values = step1Form.getValues()
+      const result = await registerStudent(values, turnstileToken)
       if (result.error) { setGlobalError(result.error); return }
+      pendingPassword.current = values.password
       setCodeSent(true)
       setResendSeconds(60)
       setNotice("")
@@ -298,6 +305,10 @@ export function StudentOnboardingWizard({
         setGlobalError("Unable to confirm your email. Please verify again.")
         return
       }
+      // The signup password was stored while the address was unconfirmed; set it again as the verified owner.
+      const password = await setPasswordAfterConfirmation(supabase, pendingPassword.current)
+      pendingPassword.current = undefined
+      setConfirmNotice(password.saved ? "" : passwordNotSavedNotice)
       setAccountCreated(true)
       step1Form.setValue("password", "")
       setStep(3)
@@ -344,6 +355,7 @@ export function StudentOnboardingWizard({
   }
 
   function onStep3Submit(data: AcademicProfileData) {
+    setConfirmNotice("")
     wizardData.current.academic = data
     setStep(4)
   }
@@ -619,6 +631,7 @@ export function StudentOnboardingWizard({
                     onClick={() => {
                       setStep(1)
                       setCodeSent(false)
+                      pendingPassword.current = undefined
                       setNotice("")
                       step2Form.reset()
                       setGlobalError("")
@@ -643,6 +656,7 @@ export function StudentOnboardingWizard({
                   Clubs use this to understand your background. GPA and test
                   scores are optional.
                 </p>
+                {confirmNotice && <p role="status" className="mt-3 text-sm text-muted-foreground">{confirmNotice}</p>}
               </div>
 
               <form
