@@ -39,11 +39,7 @@ test('Club home and the Recruiting Overview do different jobs, accessibly', { sk
       assert.equal(await page.locator('.oc-recruiting-hero').last().getAttribute('data-glow'), 'recruiting')
       assert.ok(views.includes('recruiting') && !views.includes('club'), `Recruiting reads ${views.join(', ')}`)
       for (const name of ['Next meeting', 'Team tasks', 'Your tasks']) assert.equal(await page.getByRole('heading', { name, exact: true }).count(), 0, name)
-      // Keyboard: the round filter is one tab stop; arrows move, Enter chooses.
-      const filter = page.getByRole('group', { name: 'Filter review queue by round' })
-      await filter.locator('button[aria-pressed="true"]').focus()
-      await page.keyboard.press('ArrowRight'); await page.keyboard.press('Enter')
-      await page.waitForFunction(() => document.activeElement?.getAttribute('aria-pressed') === 'true' && document.activeElement.textContent !== 'All rounds')
+      assert.equal(await page.getByRole('group', { name: 'Filter review queue by round' }).count(), 0, 'no round filter')
       const recruiting = await new AxeBuilder({ page }).include('#workspace-content').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()
       assert.deepEqual(recruiting.violations.map(v => `${v.id}: ${v.nodes.map(n => n.target).join(', ')}`), [], `Recruiting axe at ${width}`)
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'no horizontal scroll')
