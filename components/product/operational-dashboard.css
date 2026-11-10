@@ -94,6 +94,7 @@ body:has(.oc-voting-bar) [data-sonner-toaster][data-y-position="bottom"] { --off
 .oc-quick-evaluation .oc-quick-score { width: 5.5rem; }
 .oc-quick-evaluation .oc-quick-note { flex: 1 1 14rem; width: auto; max-height: 6rem; }
 .oc-quick-save-state { display: inline-flex; align-items: center; gap: .5rem; color: var(--muted-foreground); font-size: var(--oc-text-caption); }
+.oc-quick-actions .oc-quick-publishes { order: -1; }
 .oc-quick-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .5rem; }
 .oc-applicant-drawer p.oc-quick-message[role=status]:not(:empty) { padding: .375rem .625rem; font-size: var(--oc-text-small); }
 .oc-applicant-drawer [data-blocked] { opacity: .55; cursor: not-allowed; }

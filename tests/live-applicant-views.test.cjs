@@ -183,7 +183,7 @@ test('recruitment review actions sit in one header row before the toolbar, witho
 });
 test('quick review saves expected-status decisions and advances only after success', async () => {
  const h=harness();h.addCandidate({id:'second',studentId:'student-two',student:{email:'second@demo.invalid',studentProfile:null}});h.render();await flush();let tree=h.render();
- button(tree,'Quick review').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.match(text(tree),/publishes the decision immediately/i);
+ button(tree,'Quick review').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.match(text(tree),/decisions publish immediately/i);
  button(tree,'Accept & next').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.deepEqual(h.calls.find(c=>c[0]==='status')[1],{clubId:'club',applicationId:'candidate',status:'ACCEPTED',expectedStatus:'IN_REVIEW'});assert.match(text(nodes(tree).find(n=>n.type==='SheetTitle')),/second@demo.invalid/);
  button(tree,'Deny & next').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.equal(h.calls.filter(c=>c[0]==='status').length,2);assert.match(text(tree),/Quick review complete/);
 });

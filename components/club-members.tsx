@@ -53,7 +53,9 @@ export function ClubMembers({ clubId, initialDirectory, onDirectory, validatedIn
   const active = members.find(m => m.id === activeId)
   const year = (m: Member) => m.user.studentProfile?.academicYear || ""
   const visible = members.filter(m => `${name(m)} ${m.user.email} ${role(m)} ${year(m)} ${m.cohort || ""} ${m.groups.join(" ")}`.toLowerCase().includes(query.trim().toLowerCase())).sort((a, b) => {
-    const compared = listSort.key === "year" ? (!year(a) || !year(b) ? Number(!year(a)) - Number(!year(b)) : compareAcademicYears(year(a), year(b))) : listSort.key === "role" ? role(a).localeCompare(role(b)) : listSort.key === "status" ? access(a).localeCompare(access(b)) : 0
+    // Members without a class year stay last in either direction; Name is a real sort key, not only the tie-break.
+    if (listSort.key === "year" && !year(a) !== !year(b)) return Number(!year(a)) - Number(!year(b))
+    const compared = listSort.key === "year" ? (year(a) ? compareAcademicYears(year(a), year(b)) : 0) : listSort.key === "role" ? role(a).localeCompare(role(b)) : listSort.key === "status" ? access(a).localeCompare(access(b)) : listSort.key === "name" ? name(a).localeCompare(name(b)) : 0
     return (listSort.descending ? -compared : compared) || name(a).localeCompare(name(b)) || a.id.localeCompare(b.id)
   })
   async function reload() {

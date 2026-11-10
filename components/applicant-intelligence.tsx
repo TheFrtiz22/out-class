@@ -16,11 +16,12 @@ export function ApplicantDisplayPanel({ clubId, applicationId, refreshKey = "", 
   /** Inside a collapsible section that already names it: no card chrome or heading. */
   embedded?: boolean;
   /** Review mode: pros and cons count, and whether this viewer may add one (null while loading or on error). */
-  onSummary?: (summary: { count: number; canAdd: boolean } | null) => void }) {
+  onSummary?: (summary: { count: number; canAdd: boolean } | "error") => void }) {
   const [data, setData] = useState<ApplicantDisplay | null>(null), [error, setError] = useState(""), [revision, setRevision] = useState(0);
   const slideRef=useRef<HTMLElement|null>(null)
   const summarize=useRef(onSummary);summarize.current=onSummary
-  useEffect(()=>{summarize.current?.(data?{count:data.observations.filter(o=>o.kind==="PRO"||o.kind==="CON").length,canAdd:!data.anonymous}:null)},[data])
+  // Settled states only: a failed load reports "error" so the caller keeps the section (and its retry) visible.
+  useEffect(()=>{if(data)summarize.current?.({count:data.observations.filter(o=>o.kind==="PRO"||o.kind==="CON").length,canAdd:!data.anonymous});else if(error)summarize.current?.("error")},[data,error])
   const previewKey=JSON.stringify(previewConfig)
   const [body, setBody] = useState(""), [kind, setKind] = useState<"PRO" | "CON">("PRO"), [editing, setEditing] = useState<string | undefined>(), [editorOpen, setEditorOpen] = useState(false), [busy, setBusy] = useState(false);
   useEffect(() => {

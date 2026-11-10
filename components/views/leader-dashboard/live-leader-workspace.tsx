@@ -228,8 +228,8 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   // Quick review (default) or the full profile layout; collapsed sections and their counts.
   const [fullProfile, setFullProfile] = useState(false)
   const [openSections, setOpenSections] = useState<string[]>([])
-  const [notesCount, setNotesCount] = useState<number | null>(null)
-  const [prosSummary, setProsSummary] = useState<{ count: number; canAdd: boolean } | null>(null)
+  const [notesCount, setNotesCount] = useState<number | "error" | null>(null)
+  const [prosSummary, setProsSummary] = useState<{ count: number; canAdd: boolean } | "error" | null>(null)
   const [observationCount, setObservationCount] = useState<number | null>(null)
   const [panel, setPanel] = useState<"round" | "cycle" | "reconsider" | null>(null)
   const [quickQueue, setQuickQueue] = useState<string[] | null>(null)
@@ -709,7 +709,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         <SheetContent
           data-layout={fullProfile ? "full" : "quick"}
           className="oc-workspace-drawer oc-applicant-drawer w-full p-0"
-          onCloseAutoFocus={event => { if (previewId) { event.preventDefault(); requestAnimationFrame(() => (document.querySelector<HTMLElement>(`[data-applicant-id="${CSS.escape(previewId)}"]`) ?? document.getElementById("dashboard-reviews"))?.focus({ preventScroll: true })) } }}
+          onCloseAutoFocus={event => { if (previewId) { event.preventDefault(); requestAnimationFrame(() => (Array.from(document.querySelectorAll<HTMLElement>(`[data-applicant-id="${CSS.escape(previewId)}"]`)).find(element => element.getClientRects().length > 0) ?? document.getElementById("dashboard-reviews"))?.focus({ preventScroll: true })) } }}
           onInteractOutside={(event) => {
             if (dirty || busy) event.preventDefault()
           }}
@@ -782,10 +782,10 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                     {resumeUrl && <ReviewSection id={`resume-${active.id}`} title="Résumé preview" open={openSections.includes("resume")} onOpenChange={toggleSection("resume")} lazy>
                       <iframe key={active.id} title={`Résumé for ${name(active)}`} src={resumeUrl} referrerPolicy="no-referrer" className="h-[60dvh] min-h-80 w-full rounded-lg border bg-muted" />
                     </ReviewSection>}
-                    {canReview && !anonymousActive && <div hidden={!notesCount}><ReviewSection id={`notes-${active.id}`} title="Interview notes" count={notesCount} open={openSections.includes("notes")} onOpenChange={toggleSection("notes")}>
+                    {canReview && !anonymousActive && <div hidden={!notesCount}><ReviewSection id={`notes-${active.id}`} title="Interview notes" count={typeof notesCount === "number" ? notesCount : null} open={openSections.includes("notes")} onOpenChange={toggleSection("notes")}>
                       <InterviewFeedbackPanel key={active.id} embedded clubId={membership.clubId} applicationId={active.id} roundId={active.roundId} refreshKey={JSON.stringify(active.evaluations)} onCount={setNotesCount} />
                     </ReviewSection></div>}
-                    {canReview && <div hidden={!prosSummary || !prosSummary.count && !prosSummary.canAdd}><ReviewSection id={`pros-${active.id}`} title="Pros/cons" count={prosSummary?.count} open={openSections.includes("pros")} onOpenChange={toggleSection("pros")}>
+                    {canReview && <div hidden={!prosSummary || prosSummary !== "error" && !prosSummary.count && !prosSummary.canAdd}><ReviewSection id={`pros-${active.id}`} title="Pros/cons" count={prosSummary === "error" ? null : prosSummary?.count} open={openSections.includes("pros")} onOpenChange={toggleSection("pros")}>
                       <ApplicantDisplayPanel key={active.id} embedded additionalObservations={false} clubId={membership.clubId} applicationId={active.id} refreshKey={JSON.stringify(active.evaluations)} onSummary={setProsSummary} />
                     </ReviewSection></div>}
                     {observationsEligible && <ReviewSection id={`observations-${active.id}`} title="Additional observations" count={observationCount} open={openSections.includes("observations")} onOpenChange={toggleSection("observations")}>{observationsPanel}</ReviewSection>}
@@ -848,7 +848,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                     <Button variant="ghost" disabled={busy} onClick={() => void skipQuickReview()}>Skip</Button>
                     <Button variant="outline" aria-describedby="quick-review-publishes" disabled={busy || !canDecide || !pendingCandidate(active) || !draftSave.ready || draftSave.recovery != null} onClick={() => void quickDecision("REJECTED")}>Deny & next</Button>
                     <Button aria-describedby="quick-review-publishes" disabled={busy || !canDecide || !pendingCandidate(active) || !draftSave.ready || draftSave.recovery != null} onClick={() => void quickDecision("ACCEPTED")}>{busy ? "Saving…" : "Accept & next"}</Button>
-                    <span id="quick-review-publishes" className="sr-only">Publishes the decision immediately. Skip leaves the candidate unchanged.</span>
+                    <span id="quick-review-publishes" className="oc-quick-publishes text-xs text-muted-foreground">Decisions publish immediately<span className="sr-only">. Skip leaves the candidate unchanged.</span></span>
                   </> : decisionOptions.map((value) => <DisabledReason key={value} reason={!busy && dirty && "Save your review before changing the status."}>
                     <Button variant={value === "ACCEPTED" ? "default" : "outline"} size="sm" disabled={busy || dirty} onClick={() => setDecision(value)}>{decisionActionLabels[value]}</Button>
                   </DisabledReason>)}
