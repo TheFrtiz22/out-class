@@ -6,6 +6,7 @@ const os = require('node:os');
 const { chromium } = require('playwright');
 const { PrismaClient } = require('@prisma/client');
 const { Actor, readConfig, randomUUID, totp } = require('./helpers/onboarding-e2e.cjs');
+const { captureHydration } = require('./helpers/hydration-capture.cjs');
 
 const configFile = process.env.OUTCLASS_ONBOARDING_E2E_CONFIG;
 test('settings and authenticated navigation across roles, saves, history and responsive layouts', { skip: !configFile, timeout: 240000 }, async t => {
@@ -38,7 +39,7 @@ test('settings and authenticated navigation across roles, saves, history and res
   async function session(actor, viewport = { width: 1440, height: 1000 }) {
     const context = await browser.newContext({ viewport });
     await context.addCookies([...actor.cookies].map(([name, value]) => ({ name, value, url: config.appUrl })));
-    const page = await context.newPage(); page.setDefaultTimeout(15000); page.on("pageerror", error => { const entry = { path: new URL(page.url()).pathname, message: error.message }; browserErrors.push(entry); console.log("Browser exception:", JSON.stringify(entry)); });
+    const page = await context.newPage(); captureHydration(page, 'settings'); page.setDefaultTimeout(15000); page.on("pageerror", error => { const entry = { path: new URL(page.url()).pathname, message: error.message }; browserErrors.push(entry); console.log("Browser exception:", JSON.stringify(entry)); });
     return page;
   }
   async function open(page, route) {
