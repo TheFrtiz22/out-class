@@ -4,7 +4,7 @@ import type { Prisma } from "@prisma/client"
 import type { AppTransactionClient } from "@/utils/prisma"
 import type { pipelineDetailProjection } from "@/lib/pipeline-detail"
 import type { ClubAccess } from "@/lib/permissions"
-import { restrictApplicationProfile, type ProfileFieldVisibility } from "@/lib/profile-field-visibility"
+import { restrictApplicationProfile, withoutHiddenProfileFilters, type ProfileFieldVisibility } from "@/lib/profile-field-visibility"
 
 // Ranking does not need review/assignment collections unless the requested
 // filter or sort observes them. Keep canonical JS collation/privacy semantics.
@@ -42,7 +42,7 @@ export async function readPipelinePage(tx: AppTransactionClient, where: Prisma.A
   hydrate: (ids: string[]) => Promise<ReturnType<typeof pipelineDetailProjection>[]>,
   roundPrivacy: ReadonlyMap<string, boolean>, profileFields?: ProfileFieldVisibility) {
   const ranked = await readPipelineMetadata(tx, where, member, query, roundPrivacy, profileFields)
-  const page = pagePipeline({ rounds, genderCounts: null, applications: ranked }, query, member.id, member.userId, scope)
+  const page = pagePipeline({ rounds, genderCounts: null, applications: ranked }, profileFields ? withoutHiddenProfileFilters(query, profileFields) : query, member.id, member.userId, scope)
   const ids = page.applications.map(app => app.id)
   // The visible page is the unit of hydration. Reuse its canonical detail
   // fields on opening; do not add a second detail request after this guard.

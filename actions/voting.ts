@@ -4,6 +4,7 @@ import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { publishVotingCandidates } from "@/utils/voting-publication";
 import { pipelinePageQuery, type PipelinePageQuery } from "@/lib/pipeline-page";
 import { readVotingCandidateSelection } from "@/lib/voting-candidate-selection";
+import { normalizeProfileFieldVisibility } from "@/lib/profile-field-visibility";
 import { academicYear } from "@/lib/recruitment-profile";
 
 import { CLUB_SUSPENDED_MESSAGE, assertClubOperational, lockOperationalClub } from "@/lib/club-suspension";
@@ -38,7 +39,8 @@ export async function getVotingWorkspace(clubId: string, sessionId?: string, sel
   // any work for this club. Mutations still use member() and its locking gates.
   const result = await prisma.$transaction(async tx => {
     await tx.$executeRaw`SET TRANSACTION READ ONLY`;
-    const club = await tx.club.findUnique({ where: { id: clubId }, select: { suspendedAt: true } });
+    const club = await tx.club.findUnique({ where: { id: clubId }, select: { suspendedAt: true, profileFieldVisibility: true } });
+    const profileFields = normalizeProfileFieldVisibility(club?.profileFieldVisibility);
     if (!club || club.suspendedAt) throw Error(CLUB_SUSPENDED_MESSAGE);
     const m = await tx.clubMember.findFirst({ where: { id: membership.id, clubId } });
     if (!m || !hasPermission(m,"applications.review")) throw Error("Voting permission required.");
@@ -55,7 +57,7 @@ export async function getVotingWorkspace(clubId: string, sessionId?: string, sel
     // Setup's canonical candidate IDs belong to this voting snapshot, not a
     // separate pipeline read before it. Session/ballot reads and post-snapshot
     // live authority remain unchanged.
-    const candidateSelection = await readVotingCandidateSelection(tx, clubId, m, rounds, query, new Map(allRounds.map(round => [round.id, round.anonymousReview])));
+    const candidateSelection = await readVotingCandidateSelection(tx, clubId, m, rounds, query, new Map(allRounds.map(round => [round.id, round.anonymousReview])), profileFields);
     return { candidateSelection, sessions, joinedParticipants:joinedParticipants.map(v=>({id:v.id,label:v.user.studentProfile ? `${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}` : "Club member", joinedAt:s!.participants.find(p=>p.memberId===v.id)?.joinedAt??null})), ...(s?(({session,summary})=>({session,summary}))(projectLegacyVoting(s,m.id,summarizeVoting(s))):{session:null,summary:null}), memberId:m.id, canManage:hasPermission(m,"decisions.manage"), canStart:hasPermission(m,"decisions.start"), canReopen:hasPermission(m,"decisions.reopen"), canFinish:hasPermission(m,"decisions.finish"), canPublish:hasPermission(m,"decisions.publish")&&hasPermission(m,"applicants.identify"), canVote:hasPermission(m,"decisions.vote") && !!s?.participants.some(p=>p.memberId===m.id), eligible:eligible.map(v=>({id:v.id,label:v.user.email})), rounds:rounds.map(r=>({id:r.id,name:r.name})), academicYears: s ? (await tx.application.findMany({where:{id:{in:s.candidates.map(c=>c.applicationId)},clubId},select:{id:true,student:{select:{studentProfile:{select:{gradYear:true,transferStudent:true}}}}}})).map(a => ({ id:a.id, academicYear:a.student.studentProfile ? academicYear(a.student.studentProfile) : "Year unavailable" })):[] }
   },{isolationLevel:"RepeatableRead"})
   // Revalidate after releasing the snapshot: suspension, account disablement,

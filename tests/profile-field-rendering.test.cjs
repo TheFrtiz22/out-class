@@ -58,9 +58,9 @@ test('pipeline summaries omit hidden fields on the server, so filters cannot inf
   const [shown] = await pageRead.readPipelineMetadata(tx, {}, leader, {}, privacy, all(true))
   assert.equal(shown.student.studentProfile.gpa, 3.9)
   const page = async (fields, query) => pageRead.readPipelinePage(tx, {}, leader, rounds, query, 'scope', async ids => ids.map(id => ({ id })), privacy, fields)
-  assert.equal((await page(lib.defaultProfileFieldVisibility(), { gpa: 3 })).page.total, 0, 'a GPA filter cannot reveal a hidden GPA')
+  assert.equal((await page(lib.defaultProfileFieldVisibility(), { gpa: 5 })).page.total, 1, 'a filter on a hidden GPA is ignored, so it cannot reveal who passes')
   assert.equal((await page(all(true), { gpa: 3 })).page.total, 1)
-  assert.equal((await page({ ...all(true), major: false }, { major: 'Math' })).page.total, 0)
+  assert.equal((await page({ ...all(true), major: false }, { major: 'Physics' })).page.total, 1)
   assert.deepEqual((await page({ ...all(true), major: false }, {})).facets.majors.filter(Boolean), [])
 })
 
