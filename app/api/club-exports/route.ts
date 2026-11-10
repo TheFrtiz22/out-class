@@ -5,6 +5,7 @@ import { authorizeClubTransaction } from "@/lib/club-transaction-authorization"
 import { applicantExport, attendanceExport, rosterExport } from "@/lib/club-exports"
 import { clubExportKinds, clubExportPermissions } from "@/lib/club-exports-access"
 import { csvFilename, toCsv } from "@/lib/csv"
+import { normalizeProfileFieldVisibility } from "@/lib/profile-field-visibility"
 
 const query = z.object({ clubId: z.string().uuid(), kind: z.enum(clubExportKinds) }).strict()
 const privateHeaders = { "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer" }
@@ -19,9 +20,11 @@ export async function GET(request: Request) {
     const { table, clubName } = await prisma.$transaction(async tx => {
       // Re-check inside the snapshot so a revoked leader cannot export.
       const member = await authorizeClubTransaction(tx, clubId, user.id, clubExportPermissions[kind], { readOnly: true, allowSuspendedRead: true })
-      const club = await tx.club.findUniqueOrThrow({ where: { id: clubId }, select: { name: true } })
-      const table = kind === "applicants" ? await applicantExport(tx, clubId, member)
-        : kind === "roster" ? await rosterExport(tx, clubId) : await attendanceExport(tx, clubId)
+      const club = await tx.club.findUniqueOrThrow({ where: { id: clubId }, select: { name: true, profileFieldVisibility: true } })
+      // The club's profile field choice decides which profile columns exist at all.
+      const profileFields = normalizeProfileFieldVisibility(club.profileFieldVisibility)
+      const table = kind === "applicants" ? await applicantExport(tx, clubId, member, profileFields)
+        : kind === "roster" ? await rosterExport(tx, clubId, profileFields) : await attendanceExport(tx, clubId)
       await tx.auditLog.create({ data: { actorId: user.id, action: `club.export.${kind}`, targetId: clubId, clubId, details: { rows: table.rows.length } } })
       return { table, clubName: club.name }
     }, { isolationLevel: "RepeatableRead", timeout: 20000 })

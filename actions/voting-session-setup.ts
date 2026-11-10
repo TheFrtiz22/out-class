@@ -67,7 +67,7 @@ export async function updateVotingSessionSetup(input:unknown){
   if(s.revision!==d.revision)throw Error('This session changed in another tab. Your input is retained. Reload current setup to compare.');
   if(s.state!=='DRAFT'||s.startedAt||s.joinOpenedAt||s.finalizedAt)throw Error('Voting has started or ended. Setup is locked; ballots and outcomes are unchanged.');
   if(d.roundId!==s.roundId||d.cycleId!==s.cycleId||JSON.stringify(d.leaderMemberIds)!==JSON.stringify(s.leaderMemberIds))throw Error('The saved recruitment scope and leaders cannot be changed.');
-  const {members,apps}=await validateVotingSetup(tx,d,user),old=meetingDetails((s.presentationOptions as {meeting?:unknown})?.meeting),meeting=resolveVotingMeeting(d.presentationOptions?.meeting,{announcedUserIds:old?.announcedUserIds??[]});
+  const {members,apps}=await validateVotingSetup(tx,d,user,{rejectHiddenProfileFields:true}),old=meetingDetails((s.presentationOptions as {meeting?:unknown})?.meeting),meeting=resolveVotingMeeting(d.presentationOptions?.meeting,{announcedUserIds:old?.announcedUserIds??[]});
   // Delete/recreate only before any pass exists, under the same session/club lock.
   if(s.passes.length)throw Error('A voting pass already exists. Setup is locked.');
   await tx.$queryRaw`SELECT set_config('outclass.voting_setup_edit','confirmed',true)`;

@@ -27,7 +27,8 @@ export const pipelinePageQuery = z.object({
 }).strict()
 export type PipelinePageQuery = z.input<typeof pipelinePageQuery>
 export type PipelineCursor = z.infer<typeof cursorSchema>
-type List = ReturnType<typeof pipelineListProjection>
+// Paging observes already-restricted rows; the profile field choice travels beside the page.
+type List = Omit<ReturnType<typeof pipelineListProjection>, "profileFields">
 type Candidate = List["applications"][number]
 export type PipelineSelection = Pick<Candidate, "id" | "roundId" | "status"> & { canQuickReview: boolean }
 const applicantName = (app: Candidate) => app.student.studentProfile ? `${app.student.studentProfile.firstName} ${app.student.studentProfile.lastName}` : app.student.email

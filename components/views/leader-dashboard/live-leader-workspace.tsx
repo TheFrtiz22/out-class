@@ -49,7 +49,11 @@ import { submitEvaluation } from "@/lib/workspace-api"
 import { useApplicationState } from "@/lib/application-state"
 import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
 import { DemoRoundTarget } from "@/components/demo-workspace"
-import { safeProfileUrl, resolveRecruitingResumeUrl } from "@/lib/student-profile"
+import { resolveRecruitingResumeUrl } from "@/lib/student-profile"
+import { defaultProfileFieldVisibility, type ProfileFieldVisibility } from "@/lib/profile-field-visibility"
+import { anonymousApplicantLabel } from "@/lib/anonymous-review"
+import { ApplicantProfileFacts } from "./applicant-profile-facts"
+import { ResumeViewerDialog } from "@/components/resume-viewer-dialog"
 import { applicationStatusLabels } from "@/lib/student-applications"
 import { Button } from "@/components/ui/button"
 import { SegmentedControl } from "@/components/ui/segmented-control"
@@ -98,6 +102,8 @@ const average = (app: Candidate) =>
   app.roundScore?.average ?? null
 /** The club workspace page header renders an element with this id in its action slot; page actions portal into it. */
 const PAGE_HEADER_ACTIONS_ID = "workspace-page-actions"
+/** Sorting by a hidden profile field is not offered; its values are withheld by the server. */
+const sortableByProfile = (key: ApplicantSort, fields: ProfileFieldVisibility) => key === "gpa" ? fields.gpa : key === "sat" ? fields.sat : key === "act" ? fields.act : key === "year" ? fields.academicYear : true
 const sortOptions: { key: ApplicantSort; label: string }[] = [{ key: "name", label: "Name / anonymous ID" }, { key: "year", label: "Class year" }, { key: "status", label: "Status" }, { key: "gpa", label: "GPA" }, { key: "sat", label: "SAT" }, { key: "act", label: "ACT" }, { key: "round", label: "Round" }, { key: "score", label: "Rating" }]
 
 export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, rejectedOnly = false, initialDecision = "all", initialData, onData, validatedInitialData = false }: { validatedInitialData?: boolean; scoped?: boolean; decisionsOnly?: boolean; rejectedOnly?: boolean; initialDecision?: DecisionFilter; initialData?: { clubId: string; pipeline: Pipeline }; onData?: (clubId: string, data: Pipeline | null) => void }) {
@@ -333,6 +339,10 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     if (target) { previewOpened.current = true; previewOpen.current(target) }
   }, [previewId, data, loading])
   const active = activeId ? previewId ? detail.application : pageReady ? listData?.applications.find(app => app.id === activeId) ?? null : null : null
+  // The club's profile field choice. Hidden values are already removed on the server; this hides their labels.
+  const profileFields = data?.profileFields ?? defaultProfileFieldVisibility()
+  const dossierName = (app: Candidate) => profileFields.name || app.studentId.startsWith("anonymous-") ? name(app) : anonymousApplicantLabel(app.id)
+  const resumeHref = (url: string | null | undefined) => active ? resolveRecruitingResumeUrl(url, membership.clubId, active.id) : undefined
   const canEvaluate = active?.canEvaluate === true
   const dirty = canEvaluate && JSON.stringify([score, notes]) !== baseline
   const draftSave = useEditorDraft({
@@ -613,7 +623,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         <div className={`oc-filter-field ${!decisionsOnly && view === "list" ? "xl:hidden" : ""}`}>
           <span className="oc-filter-field-label">Sort</span>
           <div className="flex flex-wrap items-center gap-2">
-            <PillSelect label="Sort applicants" value={sort} active={sort !== "name"} onChange={value => sortBy(value as ApplicantSort)} options={sortOptions.map(option => ({ value: option.key, label: option.label }))} />
+            <PillSelect label="Sort applicants" value={sort} active={sort !== "name"} onChange={value => sortBy(value as ApplicantSort)} options={sortOptions.filter(option => sortableByProfile(option.key, profileFields)).map(option => ({ value: option.key, label: option.label }))} />
             <Button size="sm" variant="ghost" onClick={() => setDescending(value => !value)}>{descending ? "Descending ↓" : "Ascending ↑"}</Button>
           </div>
         </div>
@@ -631,12 +641,12 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         {showGenderCounts && data?.genderCounts && <dl className="flex flex-wrap gap-3 text-sm">{data.genderCounts.map(c => <div key={c.gender ?? "unset"}><dt className="inline">{c.gender ?? "Not provided"}: </dt><dd className="inline">{c.count}</dd></div>)}</dl>}
       </div>}
       {!decisionsOnly && <section className="oc-filter-field" aria-labelledby="leader-academic-filters"><h3 id="leader-academic-filters" className="oc-filter-field-label">Academic & review filters</h3>
-          <PillSelect label="Filter major" allLabel="All majors" value={major} onChange={setMajor} options={(listData?.facets.majors ?? []).map(value => ({ value, label: value }))} />
-          <PillGroup label="Filter academic year" size="compact" value={year} onChange={setYear}
-            options={[{ value: "", label: "All years" }, ...(listData?.facets.years ?? []).map(value => ({ value, label: value }))]} />
-          <RangeSlider label="GPA greater than" min={0} max={4} step={0.01} value={numberFilter(gpa)} onChange={value => setGpa(filterText(value))} />
-          <RangeSlider label="SAT greater than" min={400} max={1600} step={10} value={numberFilter(sat)} onChange={value => setSat(filterText(value))} />
-          <RangeSlider label="ACT greater than" min={1} max={36} step={1} value={numberFilter(act)} onChange={value => setAct(filterText(value))} />
+          {profileFields.major && <PillSelect label="Filter major" allLabel="All majors" value={major} onChange={setMajor} options={(listData?.facets.majors ?? []).map(value => ({ value, label: value }))} />}
+          {profileFields.academicYear && <PillGroup label="Filter academic year" size="compact" value={year} onChange={setYear}
+            options={[{ value: "", label: "All years" }, ...(listData?.facets.years ?? []).map(value => ({ value, label: value }))]} />}
+          {profileFields.gpa && <RangeSlider label="GPA greater than" min={0} max={4} step={0.01} value={numberFilter(gpa)} onChange={value => setGpa(filterText(value))} />}
+          {profileFields.sat && <RangeSlider label="SAT greater than" min={400} max={1600} step={10} value={numberFilter(sat)} onChange={value => setSat(filterText(value))} />}
+          {profileFields.act && <RangeSlider label="ACT greater than" min={1} max={36} step={1} value={numberFilter(act)} onChange={value => setAct(filterText(value))} />}
           <RangeSlider label="Minimum rating (out of 10)" min={0} max={10} step={0.1} value={numberFilter(rating)} onChange={value => setRating(filterText(value))} />
       </section>}
         </FilterPopover></>}
@@ -660,7 +670,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       </div>
       {view === "kanban" && <p className="text-xs leading-6 text-muted-foreground">Drag a candidate to another column or use Move to. Review the change before it is saved. Interview moves require an interview round.</p>}
       {decisionGroup==="rejected"&&<p className="text-sm text-muted-foreground">Rejected applications keep their reviews and decision history. Open one to reconsider it; that returns it to review and does not change the student’s account or membership.</p>}
-      {invalidFilter ? <p role="alert">Enter filters within the displayed numeric ranges.</p> : updating ? <p role="status" aria-live="polite">Updating applicants…</p> : !filtered.length ? <div role="status" className="space-y-3 border-y py-10 text-sm text-muted-foreground"><p>{baseTotal ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No applications have been rejected. Published rejections appear here with their history preserved." : decisionsOnly ? "No applications are waiting for a decision." : "No one has submitted an application yet. Student drafts stay private until they submit."}</p>{baseTotal ? <Button variant="outline" size="sm" onClick={clearApplicantFilters}>Clear filters</Button> : <Button variant="outline" size="sm" asChild><Link href={rejectedOnly || decisionsOnly ? `/club/${encodeURIComponent(membership.clubId)}/workspace?section=recruitment&tool=applicants` : `/club/${encodeURIComponent(membership.clubId)}/workspace?section=settings&setting=application`}>{rejectedOnly || decisionsOnly ? "View all applicants" : "Review your application form"}</Link></Button>}</div> : decisionsOnly ? <LiveDecisionList applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban votingSelection={votingChoice} canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} laneCounts={listData?.facets.lanes} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList votingSelection={votingChoice} sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
+      {invalidFilter ? <p role="alert">Enter filters within the displayed numeric ranges.</p> : updating ? <p role="status" aria-live="polite">Updating applicants…</p> : !filtered.length ? <div role="status" className="space-y-3 border-y py-10 text-sm text-muted-foreground"><p>{baseTotal ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No applications have been rejected. Published rejections appear here with their history preserved." : decisionsOnly ? "No applications are waiting for a decision." : "No one has submitted an application yet. Student drafts stay private until they submit."}</p>{baseTotal ? <Button variant="outline" size="sm" onClick={clearApplicantFilters}>Clear filters</Button> : <Button variant="outline" size="sm" asChild><Link href={rejectedOnly || decisionsOnly ? `/club/${encodeURIComponent(membership.clubId)}/workspace?section=recruitment&tool=applicants` : `/club/${encodeURIComponent(membership.clubId)}/workspace?section=settings&setting=application`}>{rejectedOnly || decisionsOnly ? "View all applicants" : "Review your application form"}</Link></Button>}</div> : decisionsOnly ? <LiveDecisionList applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban votingSelection={votingChoice} canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} laneCounts={listData?.facets.lanes} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList profileFields={profileFields} votingSelection={votingChoice} sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
       {displayed.count > 1 && <nav aria-label="Applicant pages" className="flex flex-wrap items-center justify-between gap-3">
         <Button variant="outline" aria-label="Previous applicant page" disabled={busy || !pageInfo?.previous} onClick={() => changePage(pageInfo?.previous ?? null)}>Previous page</Button>
         <p role="status" className="text-sm">Page {displayed.page + 1} of {displayed.count} · Showing {displayed.start + 1}–{displayed.start + displayed.items.length} of {total}</p>
@@ -701,29 +711,29 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
               <div className="oc-applicant-profile-layout"><div className="oc-dossier-document min-w-0 space-y-6">
               <SheetHeader className="oc-dossier-header px-0 pr-10">
                 <p className="oc-editorial-label">Recruitment / Applicant dossier</p>
-                <Avatar className="size-12">
+                {profileFields.photo && <Avatar className="size-12">
                   <AvatarImage
                     src={profilePhotoSource(active.student.studentProfile?.headshotUrl)}
                     alt=""
                   />
                   <AvatarFallback>
-                    {name(active)
+                    {dossierName(active)
                       .split(" ")
                       .map((part) => part[0])
                       .slice(0, 2)
                       .join("")}
                   </AvatarFallback>
-                </Avatar>
+                </Avatar>}
                 <SheetTitle
                   ref={heading}
                   tabIndex={-1}
                   className="oc-modal-title focus-visible:outline-2 focus-visible:outline-ring"
                 >
-                  {name(active)}
+                  {dossierName(active)}
                 </SheetTitle>
                 {active.studentId.startsWith("anonymous-") && hasPermission(membership, "applicants.identify") && <RevealApplicant canPrepare={hasPermission(membership, "recruitment.manage")} key={active.id} clubId={membership.clubId} applicationId={active.id} />}
-                <SheetDescription>
-                  {active.studentId.startsWith("anonymous-") ? "Anonymous review · identity and appointments withheld" : [active.student.studentProfile?.major || "Academic profile not provided", active.student.email].filter(Boolean).join(" · ")}
+                <SheetDescription className={active.studentId.startsWith("anonymous-") || profileFields.major || profileFields.email ? undefined : "sr-only"}>
+                  {active.studentId.startsWith("anonymous-") ? "Anonymous review · identity and appointments withheld" : [profileFields.major ? active.student.studentProfile?.major || "Academic profile not provided" : "", profileFields.email ? active.student.email : ""].filter(Boolean).join(" · ") || "Applicant profile"}
                 </SheetDescription>
                 {"priorApplications" in active && !!active.priorApplications?.length && <p data-testid="prior-applications" className="text-sm text-muted-foreground">Applied before: {active.priorApplications.map(prior => `${prior.cycleName ?? "earlier cycle"} (${applicationStatusLabel(prior.status).toLowerCase()})`).join(", ")}</p>}
                 <ApplicantRecusal key={active.id} clubId={membership.clubId} applicationId={active.id} anonymous={active.studentId.startsWith("anonymous-")} onChanged={() => setRevision(v => v + 1)} />
@@ -789,45 +799,12 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
               <section className="space-y-3 border-b border-border pb-6">
                 <h3 className="oc-card-heading ">Profile</h3>
                 {active.student.studentProfile ? (
-                  <>
-                    <p className="text-xs text-muted-foreground">
-                      {active.student.studentProfile.academicYear}
-                      {active.student.studentProfile.gpa != null &&
-                        ` · GPA ${active.student.studentProfile.gpa}`}
-                      {active.student.studentProfile.actScore != null && ` · ACT ${active.student.studentProfile.actScore}`}
-                      {active.student.studentProfile.satScore != null &&
-                        ` · SAT ${active.student.studentProfile.satScore}`}
-                    </p>
+                  <ApplicantProfileFacts profile={active.student.studentProfile} fields={profileFields} resume={(() => {
+                    const href = resumeHref(active.student.studentProfile.resumeUrl)
+                    return href && <ResumeViewerDialog href={href} name={dossierName(active)} clubId={membership.clubId} applicationId={active.id} trigger="Résumé" />
+                  })()}>
                     <RecruitmentAttendanceSummary clubId={membership.clubId} applicationId={active.id} />
-                    {active.student.studentProfile.experiences.map((item) => (
-                      <div key={item.id} className="text-sm">
-                        <p className="font-medium">{item.title}</p>
-                        <p className="text-muted-foreground">
-                          {item.subtitle} · {item.period}
-                        </p>
-                      </div>
-                    ))}
-                    <div className="flex gap-4 text-sm">
-                      {[
-                        { label: "Résumé", url: active.student.studentProfile.resumeUrl, resolver: (url: string | null | undefined) => resolveRecruitingResumeUrl(url, membership.clubId, active.id) },
-                        { label: "LinkedIn", url: active.student.studentProfile.linkedinUrl, resolver: safeProfileUrl },
-                      ].map(
-                        ({ label, url, resolver }) =>
-                          resolver(url) && (
-                            <a
-                              key={label}
-                              href={resolver(url)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="underline underline-offset-4"
-                            >
-                              {label}
-                              <span className="sr-only"> (opens in a new tab)</span>
-                            </a>
-                          ),
-                      )}
-                    </div>
-                  </>
+                  </ApplicantProfileFacts>
                 ) : (
                   <p className="text-sm text-muted-foreground">No profile provided.</p>
                 )}
@@ -950,13 +927,13 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
               </section>
               <p role="status" className="text-sm leading-6">{message}</p>
               <Button variant="ghost" disabled={busy} onClick={() => { if (dirty && !window.confirm("Discard your unsaved review and reload applicant data?")) return; setActiveId(null); setDecision(""); setRevision(v => v + 1) }}>Reload applicant data</Button>
-              </div><aside className="oc-applicant-resume" aria-label="Applicant résumé">
+              </div>{profileFields.resume && <aside className="oc-applicant-resume" aria-label="Applicant résumé">
                 <h3 className="oc-card-heading">Résumé</h3>
                 {active.studentId.startsWith("anonymous-") ? <p className="text-sm text-muted-foreground">Résumé withheld during anonymous review.</p> : resolveRecruitingResumeUrl(active.student.studentProfile?.resumeUrl, membership.clubId, active.id) ? <>
-                  <a className="inline-flex min-h-11 items-center text-sm underline" href={resolveRecruitingResumeUrl(active.student.studentProfile?.resumeUrl, membership.clubId, active.id)} target="_blank" rel="noopener noreferrer">Open résumé in a new tab</a>
+                  <ResumeViewerDialog href={resolveRecruitingResumeUrl(active.student.studentProfile?.resumeUrl, membership.clubId, active.id)!} name={dossierName(active)} clubId={membership.clubId} applicationId={active.id} trigger="Open résumé" triggerClassName="self-start" />
                   <iframe key={active.id} title={`Résumé for ${name(active)}`} src={resolveRecruitingResumeUrl(active.student.studentProfile?.resumeUrl, membership.clubId, active.id)} referrerPolicy="no-referrer" className="h-[70dvh] min-h-96 w-full rounded-lg border bg-muted" />
                 </> : <p className="text-sm text-muted-foreground">No résumé provided.</p>}
-              </aside></div>
+              </aside>}</div>
               </div>
               {quickQueue && <div className="oc-applicant-review-footer flex flex-wrap items-center justify-end gap-3" role="group" aria-label="Quick review decisions">
                 <Button variant="ghost" disabled={busy} onClick={() => void skipQuickReview()}>Skip</Button>

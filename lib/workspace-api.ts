@@ -263,6 +263,8 @@ export const cancelAvailabilitySchedule = adapt(availabilitySchedules.cancelAvai
 
 export const getPipelineSettings = adapt(pipelineActions.getPipelineSettings, "getPipelineSettings");
 export const savePipelineSettings = adapt(pipelineActions.savePipelineSettings, "savePipelineSettings");
+export const getProfileFieldVisibility = adapt(pipelineActions.getProfileFieldVisibility, "getProfileFieldVisibility");
+export const saveProfileFieldVisibility = adapt(pipelineActions.saveProfileFieldVisibility, "saveProfileFieldVisibility");
 export const getPipelineInterviewStatus = adapt(pipelineInterviewActions.getPipelineInterviewStatus, "getPipelineInterviewStatus");
 export const getInterviewFeedback = adapt(interviewFeedbackApi.getInterviewFeedback, "getInterviewFeedback")
 export const getRankedReviewSettings = adapt((...args: Parameters<typeof rankedReview.getRankedReviewSettings>) => readWorkspace<Awaited<ReturnType<typeof rankedReview.getRankedReviewSettings>>>("rankedReviewSettings", args), "getRankedReviewSettings")
