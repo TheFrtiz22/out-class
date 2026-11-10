@@ -75,9 +75,11 @@ test('groups are behind a focused creation action rather than a permanent assign
 test('roster Year column, filter and detail follow the club profile setting; identity, role and access stay',async()=>{
  const restore=setupWindow();try{
   const render=async profileFields=>{const h=harness({getOrganizationMemberManagement:async()=>({...fixture(),...(profileFields?{profileFields}:{})})});h.render();await h.flush();return h.render();};
-  const yearShown=tree=>nodes(tree).some(n=>n.props?.['aria-label']==='Filter members by year')||nodes(tree).some(n=>n.props?.['data-label']==='Year');
+  const yearFilter=tree=>nodes(tree).some(n=>n.props?.label==='Filter members by year'||n.props?.['aria-label']==='Filter members by year');
+  const yearShown=tree=>yearFilter(tree)||nodes(tree).some(n=>n.props?.['data-label']==='Year');
   assert.equal(yearShown(await render()),true,'older payloads without the setting keep the column');
   assert.equal(yearShown(await render({academicYear:true,major:true})),true);
+  assert.equal(yearFilter(await render({academicYear:true,major:true})),true,'control: the year PillGroup renders when class year is shown');
   const hidden=await render({academicYear:false,major:false});
   assert.equal(yearShown(hidden),false,'no Year column or filter when the club hides class year');
   const text=JSON.stringify(hidden);
