@@ -144,7 +144,7 @@ function confirmRoute(respond) {
 test("email-code flow preserves existing-account restriction, resend cooldown, token validation and confirmed identity redirect", async () => {
   const calls = []
   const user = { id: "student-id", email: "student@virginia.edu", email_confirmed_at: "2026-01-01" }
-  const route = confirmRoute(() => ({ success: true, firstConfirmation: false, passwordSaved: false }))
+  const route = confirmRoute(() => ({ success: true, passwordUpdated: false, passwordSaved: false }))
   try {
     const { render, window } = setup({
       signInWithOtp: async input => { calls.push(input); return { error: null } },
@@ -173,7 +173,7 @@ test("email-code flow preserves existing-account restriction, resend cooldown, t
 
 test("a password typed before the code is sent with it and then cleared", async () => {
   const user = { id: "student-id", email: "student@virginia.edu", email_confirmed_at: "2026-11-10" }
-  const route = confirmRoute(() => ({ success: true, firstConfirmation: true, passwordSaved: true }))
+  const route = confirmRoute(() => ({ success: true, passwordUpdated: true, passwordSaved: true }))
   try {
     const { render } = setup({
       signInWithOtp: async () => ({ error: null }),
@@ -192,7 +192,7 @@ test("a password typed before the code is sent with it and then cleared", async 
 
 test("expired OTP and identity mismatch cannot redirect, and mismatched sessions sign out", async () => {
   let mismatch = false, signedOut = false
-  const route = confirmRoute(() => mismatch ? { success: true, firstConfirmation: false, passwordSaved: false } : { error: "That code isn't valid or has expired. Check it or send yourself a new one." })
+  const route = confirmRoute(() => mismatch ? { success: true, passwordUpdated: false, passwordSaved: false } : { error: "That code isn't valid or has expired. Check it or send yourself a new one." })
   try {
     const { render, window } = setup({
       signInWithOtp: async () => ({ error: null }),

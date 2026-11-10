@@ -47,7 +47,7 @@ test("the signup wizard confirms through the server with the signup password, th
   const step1 = source.slice(source.indexOf("const result = await registerStudent("), source.indexOf("async function onStep2Submit"))
   assert.ok(step1.indexOf("if (result.error)") < step1.indexOf("pendingPassword.current = values.password"), "kept only after registration succeeds")
   assert.ok(!/useState[^\n]*pendingPassword|pendingPassword[^\n]*useState/.test(source), "never in rendered state")
-  assert.match(step2, /setConfirmNotice\(!confirmed\.firstConfirmation \|\| confirmed\.passwordSaved \? "" : passwordNotSavedNotice\)/, "a calm status, not the global alert")
+  assert.match(step2, /setConfirmNotice\(!confirmed\.passwordUpdated \|\| confirmed\.passwordSaved \? "" : passwordNotSavedNotice\)/, "a calm status, not the global alert")
   assert.match(source, /\{confirmNotice && <p role="status"/, "rendered as a status on step 3")
   assert.match(source.slice(source.indexOf("function onStep3Submit")), /^function onStep3Submit\([^)]*\) \{\n\s*setConfirmNotice\(""\)/, "cleared on step 3 submit")
   assert.match(source, /setCodeSent\(false\)\n\s*pendingPassword\.current = undefined/, "cleared on Use a different email")

@@ -104,7 +104,7 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
     setLoading(true)
     setError("")
     try {
-      // A password typed on this screen is kept only if this code is the account's first confirmation.
+      // A password typed on this screen is used only while the account's password is not yet recorded as set.
       const confirmed = await confirmEmailCode(email, code, password || undefined)
       setPassword("")
       if (!confirmed.ok) { setError(confirmed.error); return }

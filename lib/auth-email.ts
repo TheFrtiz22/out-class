@@ -30,7 +30,7 @@ export function confirmedEmailSession(data: {
 }
 
 export type EmailCodeResult =
-  | { ok: true; firstConfirmation: boolean; passwordSaved: boolean }
+  | { ok: true; passwordUpdated: boolean; passwordSaved: boolean }
   | { ok: false; error: string }
 
 /** Verifies an email code through /api/auth/confirm-email, which attaches the session to this browser. */
@@ -46,7 +46,7 @@ export async function confirmEmailCode(email: string, code: string, password?: s
     if (!response.ok || body.success !== true) {
       return { ok: false, error: typeof body.error === "string" ? body.error : "Unable to verify this code. Please try again." }
     }
-    return { ok: true, firstConfirmation: body.firstConfirmation === true, passwordSaved: body.passwordSaved === true }
+    return { ok: true, passwordUpdated: body.passwordUpdated === true, passwordSaved: body.passwordSaved === true }
   } catch {
     return { ok: false, error: "Unable to verify this code. Check your connection and try again." }
   }

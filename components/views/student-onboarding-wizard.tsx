@@ -290,7 +290,7 @@ export function StudentOnboardingWizard({
     setLoading(true)
     try {
       const email = wizardData.current.accountBasics!.email
-      // The server verifies the code and, on first confirmation, sets the signup password again.
+      // The server verifies the code and, until the password is recorded as set, sets the signup password again.
       const confirmed = await confirmEmailCode(email, data.code, pendingPassword.current)
       if (!confirmed.ok) {
         setGlobalError(confirmed.error)
@@ -304,7 +304,7 @@ export function StudentOnboardingWizard({
         return
       }
       pendingPassword.current = undefined
-      setConfirmNotice(!confirmed.firstConfirmation || confirmed.passwordSaved ? "" : passwordNotSavedNotice)
+      setConfirmNotice(!confirmed.passwordUpdated || confirmed.passwordSaved ? "" : passwordNotSavedNotice)
       setAccountCreated(true)
       step1Form.setValue("password", "")
       setStep(3)
