@@ -2,15 +2,15 @@ import { sameOriginRequest } from "@/lib/request-origin";
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { z } from "zod";
-import { createClient as providerClient } from "@supabase/supabase-js";
 import { isUvaEmail } from "@/lib/auth";
 import { confirmedEmailSession } from "@/lib/auth-email";
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
 import { DEMO_COOKIE } from "@/lib/demo/access";
 import { registrationSchema } from "@/lib/onboarding-schemas";
 import { turnstileRemoteIp } from "@/lib/turnstile";
-import { EMAIL_CODE_REJECTED, passwordAlreadySecured, recordEmailCodeAttempt, secureVerifiedAccount } from "@/lib/email-confirmation";
-import { forwardedAuthClient } from "@/utils/admin-elevation";
+import { isIP } from "node:net";
+import { EMAIL_CODE_LIMITED, EMAIL_CODE_REJECTED, passwordAlreadySecured, recordEmailCodeAttempt, recordEmailCodeSuccess, secureVerifiedAccount } from "@/lib/email-confirmation";
+import { forwardedAuthClient, serviceAuthClient } from "@/utils/admin-elevation";
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/utils/prisma";
 
@@ -26,10 +26,9 @@ const schema = z.object({
 const reply = (body: object, status = 200) =>
   NextResponse.json(body, { status, headers: { "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" } });
 
-function adminClient() {
-  const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!secret) return null;
-  return providerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, secret, { auth: { persistSession: false, autoRefreshToken: false } });
+function clientAddress(request: NextRequest) {
+  const address = turnstileRemoteIp(request.headers.get("x-forwarded-for"));
+  return address && isIP(address) ? address : undefined;
 }
 
 export async function POST(request: NextRequest) {
@@ -43,7 +42,7 @@ export async function POST(request: NextRequest) {
   const { email, code } = input.data;
   // A password that does not meet the signup rules is treated as not supplied.
   const password = registrationSchema.shape.password.safeParse(input.data.password).success ? input.data.password : undefined;
-  const admin = adminClient();
+  const admin = serviceAuthClient();
   if (!admin) {
     console.error("Email code verification needs the Supabase secret key");
     return reply({ error: "Email sign-in is temporarily unavailable. Please try again later." }, 503);
@@ -53,18 +52,20 @@ export async function POST(request: NextRequest) {
     const current = await normal.auth.getUser();
     if (current.data.user && current.data.user.email?.toLowerCase() !== email)
       return reply({ error: "Sign out of the other account before using this code." }, 409);
-    const clientIp = turnstileRemoteIp(request.headers.get("x-forwarded-for"));
+    const clientIp = clientAddress(request);
     if (!(await recordEmailCodeAttempt(prisma, email, clientIp)))
-      return reply({ error: EMAIL_CODE_REJECTED }, 400);
+      return reply({ error: EMAIL_CODE_LIMITED }, 429);
     const client = forwardedAuthClient(clientIp);
     const verified = await client.auth.verifyOtp({ email, token: code, type: "email" });
     if (verified.error) return reply({ error: EMAIL_CODE_REJECTED }, 400);
+    await recordEmailCodeSuccess(prisma, email).catch(() => undefined);
     const user = verified.data.user;
     if (!verified.data.session || !user || !confirmedEmailSession({ session: verified.data.session, user }, email)) {
       await client.auth.signOut({ scope: "local" }).catch(() => undefined);
       return reply({ error: "Unable to confirm your email. Please verify again." }, 400);
     }
     let passwordUpdated = false, passwordSaved = false;
+    let session: { access_token: string; refresh_token: string } = verified.data.session;
     if (!passwordAlreadySecured(user)) {
       passwordUpdated = true;
       const result = await secureVerifiedAccount(client, admin, user, password);
@@ -74,8 +75,9 @@ export async function POST(request: NextRequest) {
         await client.auth.signOut({ scope: "local" }).catch(() => undefined);
         return reply({ error: "Email confirmed, but sign-in could not be completed. Request a new code and try again." }, 503);
       }
+      session = result.session!;
     }
-    const attached = await normal.auth.setSession(verified.data.session);
+    const attached = await normal.auth.setSession(session);
     if (attached.error) return reply({ error: "Email confirmed. Sign in with an email code to continue." }, 400);
     return reply({ success: true, passwordUpdated, passwordSaved });
   } catch {

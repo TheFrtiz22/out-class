@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { isUvaEmail, loginReturnPath, authFailurePath } from '@/lib/auth'
 import { MICROSOFT_AUTH_ENABLED } from '@/lib/auth-features'
-import { passwordAlreadySecured } from '@/lib/email-confirmation'
+import { passwordAlreadySecured, secureVerifiedAccount } from '@/lib/email-confirmation'
 
 export async function GET(request: Request) {
   if ((await cookies()).has(PLATFORM_VIEW_COOKIE)) return NextResponse.json({ error: "Exit impersonation before changing authentication." }, { status: 403 })
@@ -31,11 +31,18 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${origin}${authFailurePath(next, "uva_only")}`)
       }
 
-      // An email-and-password account finishes its first verified sign-in through the email-code flow,
-      // which sets its password and signs out other sessions.
+      // A provider sign-in proves the address. For an email-and-password account whose password is not yet
+      // recorded as set by a verified session, set an unusable password, sign out other sessions and record
+      // it, as the email-code flow does; the user can choose a password through password reset.
       if (user.identities?.some(identity => identity.provider === 'email') && !passwordAlreadySecured(user)) {
-        await supabase.auth.signOut()
-        return NextResponse.redirect(`${origin}${authFailurePath(next, "email-code-required")}`)
+        const { serviceAuthClient } = await import('@/utils/admin-elevation')
+        const admin = serviceAuthClient()
+        const result = admin ? await secureVerifiedAccount(supabase, admin, user, undefined) : null
+        if (!result?.secured || !result.recorded) {
+          console.error(admin ? "Provider sign-in verified; password or session update incomplete" : "Provider sign-in needs the Supabase secret key")
+          await supabase.auth.signOut()
+          return NextResponse.redirect(`${origin}${authFailurePath(next, "email-code-required")}`)
+        }
       }
 
       // Ensure user exists in the public Prisma database
