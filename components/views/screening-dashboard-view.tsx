@@ -81,7 +81,7 @@ function RuleEditor({ clubId, round, data, onSaved, onReload, onReview }: { club
     <p className="text-sm">{testRequirementLabels[data.testRequirement as keyof typeof testRequirementLabels]}</p>
     <form onSubmit={event => { event.preventDefault(); void run(async () => { const saved = await saveRecruitingRule({ ...scope, expectedRevision: round.screeningRule?.revision ?? 0, thresholds }); onSaved(saved) }) }} className="space-y-4">
       <fieldset disabled={busy} className="space-y-3"><legend className="mb-3 font-medium">Minimum scores</legend>
-        {fields.map(field => <RangeSlider key={field.key} label={`Minimum ${field.label}`} min={field.min} max={field.max} step={field.step} noneLabel="No threshold" nullAtMin={false}
+        {fields.map(field => <RangeSlider key={field.key} label={`Minimum ${field.label}`} min={field.min} max={field.max} step={field.step} noneLabel="No threshold" nullAtMin={false} disabled={busy}
           value={thresholds[field.key]} onChange={value => { setThresholds(current => ({ ...current, [field.key]: value })); setPreview(null) }} />)}
       </fieldset>
       <p className="text-xs text-muted-foreground">No threshold until you move a slider; to remove one, select its value and clear it. Missing or invalid scores require manual review, never automatic failure. GPA is evaluated independently. SAT-only and ACT-only clubs use that test; Both evaluates each threshold you set. For SAT-or-ACT, set both test thresholds or neither. When both optional test thresholds are set, either qualifying score also suffices.</p>

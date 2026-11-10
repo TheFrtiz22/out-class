@@ -33,7 +33,8 @@ export function PillSelect({ label, options, value, onChange, allLabel, placehol
   prefix?: string
 }) {
   const items = allLabel ? [{ value: EMPTY, label: allLabel }, ...options.filter(option => option.value !== "")] : options.map(option => option.value === "" ? { ...option, value: EMPTY } : option)
-  const current = value === "" ? (items.some(item => item.value === EMPTY) ? EMPTY : undefined) : value
+  // "" without an "all" option stays controlled: Radix shows the placeholder for "" (undefined would make it uncontrolled).
+  const current = value === "" && items.some(item => item.value === EMPTY) ? EMPTY : value
   return <Select value={current} onValueChange={next => onChange(next === EMPTY ? "" : next)} disabled={disabled}>
     <SelectTrigger id={id} aria-label={label} aria-describedby={describedBy} data-value={value} data-pill="" data-pill-size={size} data-active={(active ?? value !== "") || undefined}
       className={cn("oc-pill-select-trigger", className)}>

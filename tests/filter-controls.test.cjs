@@ -49,3 +49,16 @@ test('filter styles use tokens: no colour literals and only the 999px pill radiu
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/); assert.match(css, /@media \(forced-colors: active\)/)
   assert.match(fs.readFileSync('app/globals.css', 'utf8'), /@import "\.\.\/styles\/filter-controls\.css";/)
 })
+
+test('pill select stays controlled for an empty value, with or without an "all" option', () => {
+  const { PillSelect } = loadComponent('components/ui/pill-select.tsx')
+  const options = [{ value: 'a', label: 'Ada' }]
+  assert.equal(PillSelect({ label: 'Candidate', value: '', onChange() {}, options }).props.value, '', 'placeholder state is controlled, not undefined')
+  assert.equal(PillSelect({ label: 'Major', allLabel: 'All majors', value: '', onChange() {}, options }).props.value, '__oc_all__')
+  let picked = null; PillSelect({ label: 'Major', allLabel: 'All majors', value: 'a', onChange: v => picked = v, options }).props.onValueChange('__oc_all__')
+  assert.equal(picked, '', 'the "all" choice maps back to ""')
+})
+
+test('rule threshold sliders are disabled while a save or preview is pending (a fieldset cannot disable Radix sliders)', () => {
+  assert.match(fs.readFileSync('components/views/screening-dashboard-view.tsx', 'utf8'), /<RangeSlider [^>]*disabled=\{busy\}/)
+})
