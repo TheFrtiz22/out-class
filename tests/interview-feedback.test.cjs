@@ -39,9 +39,11 @@ test('two interviewers: names, finalized summaries and separate scores for the l
  assert.equal(fb.roundId,f.ids.round);assert.equal(fb.roundName,'Final interview');
  assert.deepEqual(fb.entries.map(e=>[e.interviewer,e.score,e.summary]),[['Avery Panel',8,'Avery final summary.'],['Blake Peer',6.5,'Blake final summary.']]);
  assert.equal(fb.pending,1,'assigned-but-incomplete review is counted');assert.equal(fb.scoresIncluded,true);
- assert.deepEqual(fb.earlierRounds,[{roundId:f.earlier,roundName:'First interview',submitted:1}]);
+ // Earlier rounds: their own labelled group (round, interviewer, source), never in this round's entries or average.
+ assert.deepEqual(fb.earlierRounds.map(r=>[r.roundId,r.roundName,r.submitted,r.average,r.entries.map(e=>[e.interviewer,e.score,e.summary,e.source])]),[[f.earlier,'First interview',1,3,[['Avery Panel',3,'EARLIER ROUND THOUGHT','kit']]]]);
+ assert.equal(fb.average,7.25,'current average excludes the earlier round');
  const json=JSON.stringify(result);
- assert.doesNotMatch(json,PRIVATE);assert.doesNotMatch(json,/EARLIER ROUND THOUGHT/,'earlier-round evaluation never appears in the section');
+ assert.doesNotMatch(json,PRIVATE);assert.doesNotMatch(JSON.stringify(fb.entries),/EARLIER ROUND THOUGHT/,'earlier-round evaluation never appears in the section');
  assert.ok(!json.includes(f.lateMember),'pending interviewer is not identified');
  // The earlier round is readable only as its own labelled section.
  const old=await f.read({roundId:f.earlier});
@@ -59,8 +61,9 @@ test('no submitted reviews: neutral empty state labelled with the round; earlier
  await f.review_(f.ids.panelMember,f.earlier,9,'EARLIER ROUND THOUGHT');
  result=await f.read();
  assert.equal(result.feedback.roundId,f.ids.round,'current authorized round is kept even when only an earlier round has submissions');
- assert.deepEqual(result.feedback.entries,[]);assert.deepEqual(result.feedback.earlierRounds,[{roundId:f.earlier,roundName:'First interview',submitted:1}]);
- assert.doesNotMatch(JSON.stringify(result),/EARLIER ROUND THOUGHT|Avery/);
+ assert.deepEqual(result.feedback.entries,[]);assert.equal(result.feedback.average,null,'no current score is null, never the earlier round');
+ assert.deepEqual(result.feedback.earlierRounds.map(r=>[r.roundId,r.roundName,r.submitted,r.average]),[[f.earlier,'First interview',1,9]]);
+ assert.doesNotMatch(JSON.stringify(result.feedback.entries),/EARLIER ROUND THOUGHT|Avery/);
  const {interviewFeedbackEmpty,interviewFeedbackPending}=f.h.load('lib/interview-feedback.ts');
  assert.equal(interviewFeedbackEmpty('Final interview'),'No interview feedback has been submitted for Final interview yet.');assert.equal(interviewFeedbackPending(1),'1 review not yet submitted');
 });
@@ -85,13 +88,18 @@ test('Voting slide: section requires finalInterviewThoughts, scores require inte
  let r=await f.voting(['finalInterviewThoughts']);
  assert.equal('interviewScore'in r,false);assert.equal(r.interviewFeedback.roundName,'Final interview');assert.equal(r.interviewFeedback.scoresIncluded,false);
  assert.deepEqual(r.interviewFeedback.entries.map(e=>[e.interviewer,e.score]),[['Avery Panel',null],['Blake Peer',null]],'deselected scores are omitted');
- assert.deepEqual(r.finalInterviewThoughts.map(t=>[t.roundName,t.text]),[['First interview','EARLIER ROUND THOUGHT']]);
+ // Earlier-round thoughts now live only in the labelled Earlier rounds group (never in the current section).
+ assert.deepEqual(r.finalInterviewThoughts,[]);
+ assert.deepEqual(r.earlierInterviewRounds.map(g=>[g.roundName,g.average,g.entries.map(e=>[e.interviewer,e.summary,e.score])]),[['First interview',null,[['Avery Panel','EARLIER ROUND THOUGHT',null]]]]);
  assert.doesNotMatch(JSON.stringify(r.interviewFeedback),/EARLIER ROUND THOUGHT/);assert.doesNotMatch(JSON.stringify(r),PRIVATE);
  r=await f.voting(['interviewScore','finalInterviewThoughts']);
- assert.deepEqual(r.interviewFeedback.entries.map(e=>e.score),[8,6.5]);assert.equal(r.interviewScore.submitted,3);
- r=await f.voting(['interviewScore']);assert.equal('interviewFeedback'in r,false);assert.equal('finalInterviewThoughts'in r,false);
- // A later non-interview voting round uses the latest authorized interview round with submissions.
- r=await f.voting(['finalInterviewThoughts'],f.review);assert.equal(r.interviewFeedback.roundId,f.ids.round);
+ assert.deepEqual(r.interviewFeedback.entries.map(e=>e.score),[8,6.5]);
+ assert.equal(r.interviewScore.submitted,2,'current-round count only');assert.equal(r.interviewScore.average,7.25,'earlier round never in the current average');
+ assert.deepEqual(r.interviewScore.byRound.map(b=>b.roundName),['Final interview']);assert.equal(r.earlierInterviewRounds[0].average,3);
+ r=await f.voting(['interviewScore']);assert.equal('interviewFeedback'in r,false);assert.deepEqual(r.earlierInterviewRounds.map(g=>[g.roundName,g.average,g.entries.map(e=>e.score)]),[['First interview',3,[3]]]);
+ // A voting round before the interview rounds shows none of their (later) evidence and no score: never a fallback.
+ r=await f.voting(['interviewScore','finalInterviewThoughts'],f.review);assert.equal('interviewFeedback'in r,false);assert.deepEqual(r.earlierInterviewRounds,[]);
+ assert.equal(r.interviewScore.current.status,'none');assert.equal(r.interviewScore.average,null);assert.doesNotMatch(JSON.stringify(r),/Avery|Blake|EARLIER/);
 });
 test('leader dialog: a submitted panelist sees finalized summaries but not peer scores; leaders see scores; non-members get unavailable without throwing',async()=>{
  const {h,ids,review_,read}=await fixture();try{

@@ -122,7 +122,7 @@ export async function getStudentApplications() {
           color: true,
           pipelineRounds: { where: { archivedAt: null }, select: { id: true, name: true, order: true }, orderBy: { order: "asc" } },
           questions: {
-            select: { id: true, prompt: true, type: true, required: true, wordLimit: true, options: true, archivedAt: true },
+            select: { id: true, prompt: true, type: true, required: true, wordLimit: true, options: true, showIf: true, archivedAt: true },
             orderBy: [{ order: "asc" }, { id: "asc" }],
           },
         },
