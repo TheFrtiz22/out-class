@@ -40,7 +40,7 @@ import { useDismissableDetails } from "@/hooks/use-dismissable-details"
 import { createPortal } from "react-dom"
 import { useRevalidate } from "@/hooks/use-revalidate"
 import { BoardDecisionMode } from "@/components/live-voting/board-decision-mode"
-import { getClubPipeline, getRankedReviewSettings, getRoundTargetSummary, saveRankedReviewBands } from "@/lib/workspace-api"
+import { getRankedReviewRound, getRankedReviewSettings, getRoundTargetSummary, saveRankedReviewBands } from "@/lib/workspace-api"
 import { getClubPipelinePage, getClubPipelineSelection, moveApplicantRound, setApplicationStatus, reconsiderRejectedApplication, revokeRecruitmentOffer } from "@/lib/workspace-api"
 import { submitEvaluation } from "@/lib/workspace-api"
 import { useApplicationState } from "@/lib/application-state"
@@ -188,7 +188,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   const [rankedOpen, setRankedOpen] = useState<string | null>(null)
   const [rankedChanged, setRankedChanged] = useState(0)
   const rankedApi = useMemo<RankedReviewApi>(() => ({
-    loadRound: roundId => getClubPipeline(membership.clubId, { roundId }),
+    loadRound: roundId => getRankedReviewRound(membership.clubId, roundId),
     loadSettings: roundId => getRankedReviewSettings(membership.clubId, roundId),
     saveBands: input => saveRankedReviewBands(input),
     loadRoundSummary: input => getRoundTargetSummary({ clubId: membership.clubId, ...input }),
