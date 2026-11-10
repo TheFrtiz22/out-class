@@ -2,10 +2,12 @@
 
 Appended by `outclass-release-check`. Newest first.
 
-## 2026-11-10 DB-RESUME-1 db/resume-storage-guard (base main 318b5e3)
-- Targeted: tests/storage-policy.test.cjs 4/4 (PGlite, stub storage schema): before the guard an unqualified DELETE or column-free UPDATE as `authenticated` changes the owner's resume rows; after it none change; owner INSERT to a new path and BYPASSRLS service access still work; no-op without Storage. test:migrations 75 applied, RLS 85; lint 0 errors.
-- Not run locally: full unit suite, typecheck and build (SQL and one test file only; CI `validate` covers them), and the real Supabase Storage API (no Docker). CI's Local Auth and Private Storage jobs exercise real uploads.
-- authz-reviewer: no high/medium. Low: not proven against the real Storage API; separate existing gap noted (browser can INSERT to own folder without server-side file validation; bucket has no size or MIME limit).
+## 2026-11-09 DB-RECON-1 db/migration-reconciliation (base main 5cbaeb60)
+- Gates: test 1975 total, 1909 pass, 0 fail, 66 skipped (env-gated); test:migrations 73 applied on fresh and legacy, RLS 85 tables, new assertion that `InterviewSlot_clubId_fkey` is validated (fails without the migration); lint 0 errors / 21 warnings; typecheck ok; build ok.
+- Disposable PostgreSQL 16 (loopback, in-container): 72 then 73 migrations from zero on CI-style and Supabase-shaped databases; new migration applied once, repeated as a no-op, and fails cleanly on an orphaned slot (P3009 on the next deploy, documented); production-like ledger (CRLF checksums, zero-step rows) accepted by `migrate status` and `migrate deploy`.
+- Production, read-only catalog queries: 72/72 ledger rows finished, none rolled back; differences listed in `migration-reconciliation-2026-11-09.md`. Nothing written.
+- migration-reviewer: no critical/high; 1 medium fixed (rollback text was wrong about the failed ledger row), 2 low (test assertion added; silent skip when the constraint is absent kept, noted).
+- Environment notes: browser suites ran against the container's Chromium 1243 through a symlink (repo pins 1248). No Docker daemon, so `run-disposable-postgres.cjs`, the pinned Supabase 17 image and the authenticated E2E stack were not run. No PostgreSQL 17 restore rehearsal.
 
 
 2026-11-05 backend/booking-throughput (merge on bd3e12d3) app gates: test 1588/0/58 migrations 67 ok (80 tables RLS) lint ok types ok build ok | integration skips 58 (env-gated e2e/native suites; security suite run separately 11/11, booking+ballot contention 14/0) | agent-hook tests 29/0 | authz-reviewer: no high/medium, LOW-1/LOW-2 fixed before merge
