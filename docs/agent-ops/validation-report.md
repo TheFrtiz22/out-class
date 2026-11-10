@@ -16,6 +16,10 @@ deploy dpl_9TMorBuQ8uqQtjhk4KdZZK9L38jh READY yes | new runtime error classes 0 
 deploy dpl_CnLJCeMS23sFu8hDhc1wSwmXNFeC READY yes | new runtime error classes 0 | advisor delta 0 | rollback target dpl_Ech7R1kGKSJLN5Xckkzwfn6W2uWY | verdict OK after #127
 2026-11-05 #121 / b872cafa (voting in every round; no migration) app gates: CI 16/16; local every-round tests 4/0/0 | authz n/a beyond #125 review
 deploy dpl_CKY6uFSoom6tKMBa37QYEhZTiLwt READY yes | new runtime error classes 0 (24h groups all pre-existing) | advisor delta 0 (0/54/43 = baseline) | rollback target dpl_9E2uRkPbZkvtR7sgB8TDgWx7oTmM | verdict OK
+## 2026-11-10 DB-RESUME-1 db/resume-storage-guard (base main 318b5e3)
+- Targeted: tests/storage-policy.test.cjs 4/4 (PGlite, stub storage schema): before the guard an unqualified DELETE or column-free UPDATE as `authenticated` changes the owner's resume rows; after it none change; owner INSERT to a new path and BYPASSRLS service access still work; no-op without Storage. test:migrations 75 applied, RLS 85; lint 0 errors.
+- Not run locally: full unit suite, typecheck and build (SQL and one test file only; CI `validate` covers them), and the real Supabase Storage API (no Docker). CI's Local Auth and Private Storage jobs exercise real uploads.
+- authz-reviewer: no high/medium. Low: not proven against the real Storage API; separate existing gap noted (browser can INSERT to own folder without server-side file validation; bucket has no size or MIME limit).
 
 
 2026-11-05 backend/booking-throughput (merge on bd3e12d3) app gates: test 1588/0/58 migrations 67 ok (80 tables RLS) lint ok types ok build ok | integration skips 58 (env-gated e2e/native suites; security suite run separately 11/11, booking+ballot contention 14/0) | agent-hook tests 29/0 | authz-reviewer: no high/medium, LOW-1/LOW-2 fixed before merge
@@ -189,4 +193,16 @@ cause: halo box-shadows with px literals in page CSS counted as css-shadow by sc
 fix: --focus-halo-outset / --focus-halo-inset-4/5/6 tokens in styles/tokens.css, 22 rules use them; allowlist ratcheted down (10 entries shrunk, 3 removed); merged origin/main 928dcb27 (one new focus rule converted to var(--ring); active segmented-tab focus rules moved after main's measured-indicator rule, which cleared the halo)
 app gates: test 1920/1854/0/66 lint ok (0 errors, 23 baseline warnings; ui-controls OK) types ok build ok
 first full run: 2 fails (focus-ring active-tab halo, fixed; club-home-browser hover transform under load, then 3/3 in isolation, flake)
+2026-11-09 DEPS-NEXT-15528 (security/next-15-5-28 from main 318b5e31): test 1988/1921/0 fail/67 skipped (gated suites) migrations 74 ok (RLS 85) lint ok types ok build ok (Next.js 15.5.28)
+pnpm audit --prod after: no Next.js advisories; 1 high (zod) and 3 moderate (nodemailer) tracked separately
+note: one earlier full run under machine load average ~23 had 9 Playwright click timeouts; those files pass alone and the full suite passes at normal load
 ```
+## 2026-11-06 SEC-TURNSTILE security/turnstile (8a25f81)
+- test 1733: 1673 pass, 0 fail, 60 skipped (env-gated; same 60 as main 00840ee, which ran 1662/0/60). Browser suites ran against a local Chromium 1243 aliased for Playwright 1.64.
+- test:migrations: 71 applied on fresh and legacy, RLS on 85 tables. typecheck ok. lint 0 errors / 401 warnings (unchanged). build ok, 76 pages; /login 209 kB, /signup 281 kB first load.
+- Not run: disposable E2E stack, real Cloudflare or Supabase captcha enforcement.
+## 2026-11-06 OPS-SENTRY ops/sentry
+- a24dac4: test 1728: 1668 pass, 0 fail, 60 skipped (= main's 60). test:migrations 71, RLS 85. typecheck ok. lint 0 errors / 401 warnings. build ok, 76 pages.
+- Bundle check without a DSN: shared first-load JS 107 kB vs 105 kB on a branch without Sentry; cause: scrub module statically imported by instrumentation-client. Fixed in 2b437ea (SDK and filter load only inside the DSN branch). SDK code exists only in lazily loaded chunks.
+- 2b437ea rebuild without a DSN: shared first-load JS 105 kB (= main 00840ee); /home 186 kB, /login 209 kB vs 208 kB on main. tests/sentry-scrub 6/6, typecheck ok after the change.
+- First-load deltas vs main on the other branches (no keys set): security/turnstile /login +1 kB, /signup +1 kB, /platform/login +1 kB, /request-school +1 kB; scheduling/outlook-busy /settings/availability +2 kB.
