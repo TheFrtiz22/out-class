@@ -61,7 +61,7 @@
   .oc-applicant-assessment, .oc-dossier-answer { padding: 1.25rem; }
 }
 
-.oc-review-workspace-heading [data-slot="badge"] { background: var(--brand-subtle); color: var(--primary); border: 0; border-radius: 999px; padding: .5rem .9rem; }
+.oc-review-workspace-heading [data-slot="badge"] { background: var(--brand-subtle); color: var(--primary); border: 0; border-radius: var(--oc-radius-full); padding: .5rem .9rem; }
 
 .oc-dossier-jump { width: fit-content; padding-inline: 0; color: var(--brand-ink); }
 #dossier-evaluation:focus { outline: 2px solid var(--ring); outline-offset: 6px; border-radius: var(--oc-radius-sm); }
