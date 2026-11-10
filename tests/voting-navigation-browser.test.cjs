@@ -5,9 +5,12 @@ test('leader landing, selected setup, dedicated room, return/resume and member e
  const f=await fixture(),browser=await chromium.launch({headless:true}),leader=await browser.newPage({viewport:{width:1280,height:800}}),member=await browser.newPage({viewport:{width:390,height:844}}),errors=[];
  for(const page of [leader,member])page.on('pageerror',e=>errors.push(e.message));
  try{
-  await leader.goto(f.url+'/landing?actor=leader&decisionTab=voting');await leader.getByRole('link',{name:'Start voting session',exact:true}).waitFor();await leader.getByText('No voting sessions available.',{exact:true}).waitFor();
+  // Decide (components/live-voting/decide-page.tsx) replaced the Voting room / Decision letters tab links with its Vote and Send steps.
+  await leader.goto(f.url+'/decide?actor=leader&decisionTab=voting');await leader.getByRole('link',{name:'Start voting session',exact:true}).waitFor();await leader.getByText('No voting sessions available.',{exact:true}).waitFor();
   await leader.evaluate(()=>{const form=document.createElement('form');form.id='pending-letter';form.dataset.saving='true';document.body.append(form)});
-  await leader.getByRole('link',{name:'Decision letters',exact:true}).click();assert.equal(new URL(leader.url()).searchParams.get('decisionTab'),'voting');
+  const steps=leader.getByRole('tablist',{name:'Decide steps',exact:true});
+  await steps.getByRole('tab',{name:/^Step 2: Send(,|$)/}).click();assert.equal(new URL(leader.url()).searchParams.get('decisionTab'),'voting');
+  assert.equal(await steps.getByRole('tab',{name:/^Step 1: Vote(,|$)/}).getAttribute('aria-selected'),'true','a pending save keeps the Vote step selected');
   await leader.evaluate(()=>document.getElementById('pending-letter').remove());
   assert.equal(f.h.state().sessions.length,0);
   await leader.evaluate(({clubId,ids})=>sessionStorage.setItem('outclass:voting-selection:selection-fixture',JSON.stringify({userId:window.initial.user.id,clubId,demo:false,applicationIds:ids})),{clubId:f.clubId,ids:[apps[1]]});

@@ -2,7 +2,8 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {chromium}=require('playwright'),{Actor,readConfig}=require('./helpers/onboarding-e2e.cjs');
 const configFile=process.env.OUTCLASS_ONBOARDING_E2E_CONFIG;
-async function select(page,id){let target=page.locator('[data-tour="nav-'+id+'"]').filter({visible:true}).first();if(!await target.count()&&id==='applicants'){await page.getByRole('button',{name:'Applicants',exact:true}).filter({visible:true}).first().focus();await page.keyboard.press('ArrowRight');target=page.locator('[data-tour="nav-'+id+'"]').filter({visible:true}).first()}await target.focus();await page.keyboard.press('Enter')}
+// Every rail item is a page link (no flyouts), so each one is focused and activated directly.
+async function select(page,id){const target=page.locator('[data-tour="nav-'+id+'"]').filter({visible:true}).first();await target.focus();await page.keyboard.press('Enter')}
 test('constrained startup fences an already-notified Auth epoch, revisits read fresh, and revoked cookies reveal no old applicants',{skip:!configFile,timeout:120000},async()=>{
  const config=readConfig(configFile),fixture=JSON.parse(fs.readFileSync(path.join(path.dirname(configFile),'navigation-fixture.json'))),browser=await chromium.launch({headless:true});
  try{for(let iteration=0;iteration<3;iteration++){

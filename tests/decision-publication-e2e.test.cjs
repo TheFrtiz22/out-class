@@ -45,5 +45,5 @@ test('decision lifecycle through local Auth/Storage and production server action
   await assert.rejects(demo.action('actions/decision-schedules.ts','scheduleDecisionPublication',[{id:randomUUID(),clubId:club.id,localTime:new Date(Date.now()+86400000).toISOString().slice(0,16),timeZone:'UTC',occurrence:'EARLIER',selection:{kind:'DIRECT',applicationId:app.id,expectedGuard:guard(current),status:'REJECTED'}}]));
   assert.equal(await db.recruitmentCycle.count({where:{clubId:club.id,name:'Blocked Demo cycle'}}),0);assert.equal((await db.club.findUniqueOrThrow({where:{id:club.id}})).sendFormalDecisionLetters,true);
  });
- fs.writeFileSync(path.join(os.tmpdir(),'outclass-decision-browser.json'),JSON.stringify({clubId:club.id,applicationId:app.id,urls,statusUrl:`${c.appUrl}/applications/${app.id}/decision`,workspace:`${c.appUrl}/club/${club.id}/workspace?section=recruitment&tool=letters`}));
+ fs.writeFileSync(path.join(os.tmpdir(),'outclass-decision-browser.json'),JSON.stringify({clubId:club.id,applicationId:app.id,urls,statusUrl:`${c.appUrl}/applications/${app.id}/decision`,workspace:`${c.appUrl}/club/${club.id}/workspace?section=recruitment&tool=decisions&decisionTab=letters`}));
 });

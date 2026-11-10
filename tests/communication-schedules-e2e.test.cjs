@@ -30,6 +30,6 @@ test('scheduling through local Auth, production actions and authenticated cron',
   await actor.action('actions/recipient-groups.ts','saveRecipientGroup',[{clubId:club.id,id:randomUUID(),revision:null,name:'Consulting',kind:'RULES',rules:{include:[{source:'MEMBERS'}],exclude:[{source:'OFFICERS'}]}}]);
   const failed=input();await action('saveCommunicationSchedule',{...failed,title:'Failed local send'});await db.scheduledCommunication.update({where:{id:failed.id},data:{status:'FAILED',failureCode:'PUBLICATION_UNAVAILABLE'}}); // Rendering fixture; real failures are verified in native tests.
   const empty=await db.club.create({data:{slug:randomUUID(),name:'Empty scheduling QA',tagline:'',description:'Local empty/error states',category:'Other',color:'#142d45'}});await db.clubMember.create({data:{clubId:empty.id,userId:c.identities.leader.id,isOwner:true}});await db.clubMember.create({data:{clubId:empty.id,userId:c.identities.student.id,isOwner:true}});
-  fs.writeFileSync(path.join(os.tmpdir(),'outclass-scheduling-browser.json'),JSON.stringify({clubId:club.id,url:c.appUrl+`/club/${club.id}/workspace?section=announcements`,emptyClubId:empty.id,emptyUrl:c.appUrl+`/club/${empty.id}/workspace?section=announcements`}));
+  fs.writeFileSync(path.join(os.tmpdir(),'outclass-scheduling-browser.json'),JSON.stringify({clubId:club.id,url:c.appUrl+`/club/${club.id}/workspace?section=overview&focus=announcements`,emptyClubId:empty.id,emptyUrl:c.appUrl+`/club/${empty.id}/workspace?section=overview&focus=announcements`}));
  });
 });

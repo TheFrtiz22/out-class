@@ -149,8 +149,15 @@ test('settings and authenticated navigation across roles, saves, history and res
     await leaderPage.waitForURL('**/workspace?section=settings&setting=cycles');
     await open(leaderPage, `/club/${first.id}/workspace?section=recruitment&tool=letters`);
     await leaderPage.waitForURL('**/workspace?section=recruitment&tool=decisions&decisionTab=letters');
-    await leaderPage.getByRole('navigation', {name:'Decisions navigation'}).waitFor();
-    await leaderPage.getByRole('link', { name: 'Review decisions and send letters', exact: true }).waitFor();
+    // Decide (components/live-voting/decide-page.tsx): the old letters tab is the selected Send step, and individual
+    // decisions are still sent from Applicants' pending filter.
+    const decideSteps = leaderPage.getByRole('tablist', { name: 'Decide steps', exact: true });
+    await decideSteps.waitFor();
+    assert.equal(await decideSteps.getByRole('tab', { name: /^Step \d: Send(,|$)/ }).getAttribute('aria-selected'), 'true');
+    const sendIndividually = leaderPage.getByRole('link', { name: 'Send individual decisions', exact: true });
+    await sendIndividually.waitFor();
+    const individual = new URL(await sendIndividually.getAttribute('href'), config.appUrl).searchParams;
+    assert.equal(individual.get('tool'), 'applicants'); assert.equal(individual.get('decision'), 'pending');
     await open(leaderPage, `/club/${first.id}/tasks?taskView=mine`);
     assert.ok(new URL(leaderPage.url()).searchParams.get('section') === 'tasks');
     assert.equal(new URL(leaderPage.url()).searchParams.get('taskView'), 'mine');

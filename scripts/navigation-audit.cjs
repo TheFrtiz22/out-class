@@ -83,15 +83,18 @@ async function seed(config) {
 function routes(f) {
   const base='/club/'+f.clubIds[0]+'/workspace';
   return {
-    overview:{href:base+'?section=overview',selector:'.oc-manager-overview, section[aria-label="Overview"]',text:'Audit Weekly Meeting',tour:'nav-overview'},
+    // Club workspace rail (lib/navigation.ts leaderRailSections): Recruiting (Overview · Applicants · Interviews · Decide),
+    // Club (Home · Calendar · Tasks · Members), Settings. Meetings is Calendar's Meetings filter; Announcements is a
+    // section of Home (components/club-home/home-announcements.tsx); scheduled sends are in Decide → Send.
+    overview:{href:base+'?section=overview',selector:'.oc-manager-overview, section[aria-label="Home"]',text:'Audit Weekly Meeting',tour:'nav-club-home'},
     members:{href:base+'?section=members',selector:'section[aria-label="Members"]',text:'Audit Student 000',tour:'nav-members'},
-    meetings:{href:base+'?section=meetings',selector:'section[aria-label="Meetings"]',text:'Audit Weekly Meeting',tour:'nav-meetings'},
+    meetings:{href:base+'?section=calendar&type=meetings',selector:'section[aria-label="Calendar"]',text:'Audit Weekly Meeting',tour:'nav-calendar'},
     tasks:{href:base+'?section=tasks',selector:'section[aria-label="Tasks"]',text:'Audit Task',tour:'nav-tasks'},
-    announcements:{href:base+'?section=announcements',selector:'section[aria-label="Announcements"]',text:'Audit Announcement',tour:'nav-announcements'},
+    announcements:{href:base+'?section=overview&focus=announcements',selector:'section[aria-labelledby="home-announcements-heading"]',text:'Audit Announcement',tour:'nav-club-home'},
     recruiting:{href:base+'?section=recruitment&tool=overview',selector:'.oc-recruiting-overview',text:'Submitted',clubLabel:'Navigation Audit Club 1',tour:'nav-overview'},
     applicants:{href:base+'?section=recruitment&tool=applicants',selector:'.oc-live-pipeline',text:'Audit Student 000',tour:'nav-applicants'},
     interviews:{href:base+'?section=recruitment&tool=interviews',selector:'section[aria-label="Interview rooms"]',text:'You aren’t assigned to any interview rooms yet. Club leaders add you to a panel when they schedule interviews.',tour:'nav-interviews'},
-    decisions:{href:base+'?section=recruitment&tool=decisions',selector:'.oc-live-pipeline',text:'Audit Student 000',tour:'nav-decisions'},
+    decisions:{href:base+'?section=recruitment&tool=decisions',selector:'[role="tablist"][aria-label="Decide steps"]',text:'Vote',tour:'nav-decisions'},
     settings:{href:base+'?section=settings',selector:'.oc-settings-workspace',text:'Organization settings',tour:'nav-settings'},
     club2:{href:'/club/'+f.clubIds[1]+'/workspace?section=recruitment&tool=overview',selector:'.oc-recruiting-overview',text:'Submitted',clubLabel:'Navigation Audit Club 2'},
     personal:{href:'/home',selector:'.oc-student-home:not([role="status"])',text:'Needs you'},
@@ -174,8 +177,8 @@ async function main() {
   if(process.argv.includes('--deferred-screens')) {
     const base='/club/'+fixture.clubIds[0]+'/workspace';
     descriptors.settingsProfile={href:base+'?section=settings',selector:'.oc-club-settings fieldset:not([disabled])',text:'One-line pitch',tour:'nav-settings'};
-    descriptors.settingsApplication={href:base+'?section=settings&setting=application',selector:'.oc-settings-workspace details',text:'Review settings'};
-    descriptors.scheduledDecisions={href:base+'?section=recruitment&tool=scheduled-decisions',selector:'section[aria-label="Scheduled Decisions"]',text:'No scheduled decisions.',tour:'nav-scheduled-decisions'};
+    descriptors.settingsApplication={href:base+'?section=settings&setting=application',selector:'section[aria-labelledby="settings-recruiting-heading"]',text:'Anonymous review'};
+    descriptors.scheduledDecisions={href:base+'?section=recruitment&tool=decisions&decisionTab=letters',selector:'.oc-decide',text:'No scheduled decisions.'};
     descriptors.rounds={href:base+'?section=recruitment&tool=rounds',selector:'[data-slot="sheet-content"]',text:'Previously viewed information cannot be recalled'};
   }
   if(active)descriptors.interviews.text=active.readyText;
@@ -271,22 +274,17 @@ async function main() {
   }
   async function clickTarget(s,from,to) {
     const {page}=s;
-    if(process.argv.includes('--deferred-screens') && to==='rounds') {
-      const details=page.locator('.oc-settings-workspace details').filter({has:page.locator('summary',{hasText:'Review settings'})});
-      if(!await details.evaluate(e=>e.open))await details.locator('summary').click();
-      return page.getByRole('link',{name:'Anonymous review',exact:true}).click();
-    }
+    // Settings → Application → Recruiting opens the Recruiting settings drawer (components/club-settings-workspace.tsx).
+    if(process.argv.includes('--deferred-screens') && to==='rounds')return page.locator('section[aria-labelledby="settings-recruiting-heading"]').getByRole('button',{name:'Anonymous review',exact:true}).click();
+    // Scheduled decisions live in Decide's Send step (components/live-voting/decide-page.tsx).
+    if(process.argv.includes('--deferred-screens') && to==='scheduledDecisions')return page.getByRole('tablist',{name:'Decide steps',exact:true}).getByRole('tab',{name:/^Step \d: Send(,|$)/}).click();
     if(process.argv.includes('--deferred-screens') && from==='rounds' && to==='settingsApplication')return page.goBack({waitUntil:'domcontentloaded'});
     if(to==='applicantDetail')return page.locator('[data-applicant-id]').filter({visible:true}).first().click();
     if(from==='applicantDetail')return page.locator('[data-slot="sheet-content"]').getByRole('button',{name:'Close',exact:true}).click();
     if(process.argv.includes('--phase2') && descriptors[to].tour) {
       const tour=descriptors[to].tour;
-      let item=page.locator('[data-tour="'+tour+'"]').filter({visible:true}).first();
-      if(!await item.count() && (to==='applicants'||to==='scheduledDecisions')) {
-        const group=page.getByRole('button',{name:to==='scheduledDecisions'?'Decisions':'Applicants',exact:true}).filter({visible:true}).first();
-        await group.focus();await page.keyboard.press('ArrowRight');
-        item=page.locator('[data-tour="'+tour+'"]').filter({visible:true}).first();
-      }
+      // Every rail item is a page link (no flyouts).
+      const item=page.locator('[data-tour="'+tour+'"]').filter({visible:true}).first();
       await item.focus();return page.keyboard.press('Enter');
     }
     if(to==='applicantDetail')return page.locator('[data-applicant-id]').first().click();
@@ -302,36 +300,19 @@ async function main() {
       await page.getByRole('button',{name:/Switch workspace:/}).first().click();
       return page.getByRole('menuitem',{name:to==='personal'?'Personal workspace':to==='club2'?/Navigation Audit Club 2/:/Navigation Audit Club 1/}).click();
     }
-    if(from==='settings'&&to==='overview')return page.locator('[data-tour="nav-overview"]').first().click();
+    if(from==='settings'&&to==='overview')return page.locator('[data-tour="nav-club-home"]').first().click();
     if((to==='recruiting'&&from==='overview')||(to==='overview'&&['recruiting','applicants'].includes(from)))return page.locator('[data-tour="mode-'+(to==='recruiting'?'recruiting':'club')+'"]').first().click();
     const tour=descriptors[to].tour;
-    const item=page.locator('[data-tour="'+tour+'"]').first();
-    // Applicant/decision groups collapse when another group is selected.
-    if(!await item.isVisible()) {
-      const label=to==='decisions'?'Decisions':'Applicants';
-      await page.getByRole('button',{name:label,exact:true}).first().click();
-    }
-    return item.click();
+    return page.locator('[data-tour="'+tour+'"]').filter({visible:true}).first().click();
   }
   async function sample(s,from,to,condition,index,gate) {
-    // Open any switcher or grouped rail before timing the destination click.
+    // Open any switcher before timing the destination click.
     const page=s.page;
-    if(process.argv.includes('--deferred-screens') && to==='rounds') {
-      const details=page.locator('.oc-settings-workspace details').filter({has:page.locator('summary',{hasText:'Review settings'})});
-      if(!await details.evaluate(e=>e.open))await details.locator('summary').click();
-    }
-    if(process.argv.includes('--deferred-screens') && to==='scheduledDecisions' && !await page.locator('[data-tour="nav-scheduled-decisions"]').filter({visible:true}).count()) {
-      await page.getByRole('button',{name:'Decisions',exact:true}).filter({visible:true}).first().focus();await page.keyboard.press('ArrowRight');
-    }
     if(from==='voting'){
       const setup=page.getByRole('dialog',{name:'New voting session',exact:true});
       if(await setup.isVisible()){await setup.getByRole('button',{name:'Close',exact:true}).click();await setup.waitFor({state:'hidden'});}
     }
     if(to==='personal'||to==='club2'||from==='personal'||from==='club2')await page.getByRole('button',{name:/Switch workspace:/}).first().click();
-    else if(!['voting'].includes(from)&&to!=='voting'&&descriptors[to].tour){
-      const item=page.locator('[data-tour="'+descriptors[to].tour+'"]').first();
-      if(!process.argv.includes('--phase2')&&!await item.isVisible()&&['applicants','decisions'].includes(to))await page.getByRole('button',{name:to==='decisions'?'Decisions':'Applicants',exact:true}).first().click();
-    }
     const beforeMetrics=Object.fromEntries((await s.cdp.send('Performance.getMetrics')).metrics.map(x=>[x.name,x.value]));
     const startIndex=s.requests.length;
     s.sampleStartIndex=startIndex;
@@ -419,8 +400,8 @@ async function main() {
     }finally{checkpoint();await monitor.$disconnect();await browser.close();}
     return;
   }
-  const pairs=[['overview','members'],['members','meetings'],['meetings','tasks'],['tasks','announcements'],['announcements','overview'],['recruiting','applicants'],['applicants','interviews'],['interviews','decisions'],['decisions','recruiting'],['applicants','voting'],['voting','applicants'],['overview','settings'],['settings','overview'],['overview','recruiting'],['recruiting','overview'],['overview','club2'],['personal','overview'],['overview','personal']];
-  const selected=process.argv.includes('--deferred-screens')?[['overview','settingsProfile'],['overview','meetings'],['recruiting','scheduledDecisions'],['settingsApplication','rounds']]:process.argv.includes('--phase3')?[['recruiting','applicants'],['applicants','applicantDetail']]:process.argv.includes('--phase2')?[['overview','members'],['recruiting','applicants'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--only-interviews')?[['applicants','interviews']]:process.argv.includes('--phase1')?[['applicants','interviews'],['members','meetings'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--smoke')?pairs.slice(0,1):process.argv.includes('--member-details')?[['members','memberDetail']]:process.argv.includes('--cross-club')?[['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]:process.argv.includes('--details')?[['applicants','applicantDetail'],['members','memberDetail']]:process.argv.includes('--only-voting')?pairs.filter(p=>p.includes('voting')):process.argv.includes('--waterfalls')?pairs.filter(([f,t])=>f==='overview'&&t==='members'||f==='recruiting'&&t==='applicants'||f==='applicants'&&t==='interviews'):pairs.filter(p=>!p.includes('club2')&&!p.includes('personal')).concat([['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]);
+  const pairs=[['overview','members'],['members','meetings'],['meetings','tasks'],['tasks','announcements'],['recruiting','applicants'],['applicants','interviews'],['interviews','decisions'],['decisions','recruiting'],['applicants','voting'],['voting','applicants'],['overview','settings'],['settings','overview'],['overview','recruiting'],['recruiting','overview'],['overview','club2'],['personal','overview'],['overview','personal']];
+  const selected=process.argv.includes('--deferred-screens')?[['overview','settingsProfile'],['overview','meetings'],['decisions','scheduledDecisions'],['settingsApplication','rounds']]:process.argv.includes('--phase3')?[['recruiting','applicants'],['applicants','applicantDetail']]:process.argv.includes('--phase2')?[['overview','members'],['recruiting','applicants'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--only-interviews')?[['applicants','interviews']]:process.argv.includes('--phase1')?[['applicants','interviews'],['members','meetings'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--smoke')?pairs.slice(0,1):process.argv.includes('--member-details')?[['members','memberDetail']]:process.argv.includes('--cross-club')?[['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]:process.argv.includes('--details')?[['applicants','applicantDetail'],['members','memberDetail']]:process.argv.includes('--only-voting')?pairs.filter(p=>p.includes('voting')):process.argv.includes('--waterfalls')?pairs.filter(([f,t])=>f==='overview'&&t==='members'||f==='recruiting'&&t==='applicants'||f==='applicants'&&t==='interviews'):pairs.filter(p=>!p.includes('club2')&&!p.includes('personal')).concat([['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]);
   const outputStem=process.argv.includes('--member-details')?'member-detail':process.argv.includes('--cross-club')?'cross-club':process.argv.includes('--details')?'detail':process.argv.includes('--only-voting')?'voting':process.argv.includes('--waterfalls')?'waterfall':'browser';
   try {
     for(const [from,to] of selected)for(const condition of (process.argv.includes('--cold-warm')?['cold','warm']:['cold','warm','repeated'])){

@@ -12,7 +12,9 @@ test('recipient groups through real local Auth and production Next server action
  const action=(name,...args)=>leader.action('actions/recipient-groups.ts',name,args);
  let group,notice;
  await t.test('workspace and discoverable management load; group create/edit and preview work over HTTP',async()=>{
-  const page=await leader.request(`/club/${club.id}/workspace?section=announcements`);assert.equal(page.status,200);
+  // Announcements is a section of Home now: the old page URL redirects there (lib/workspace-routes.ts), and Home loads.
+  const moved=await leader.request(`/club/${club.id}/workspace?section=announcements`);assert.equal(moved.status,307);assert.equal(moved.headers.get('location'),`/club/${club.id}/workspace?section=overview&focus=announcements`);
+  const page=await leader.request(moved.headers.get('location'));assert.equal(page.status,200);
   group=await action('saveRecipientGroup',{clubId:club.id,id:randomUUID(),revision:null,name:'Consulting',kind:'MANUAL',userIds:[c.identities.student.id]});
   assert.equal((await action('getRecipientGroups',club.id)).groups[0].name,'Consulting');
   const preview=await action('previewRecipientAudience',club.id,{include:[{source:'GROUP',groupId:group.id},{source:'MEMBERS'}],exclude:[{source:'OFFICERS'}]});assert.equal(preview.count,1);assert.equal(preview.recipients[0].id,c.identities.student.id);
