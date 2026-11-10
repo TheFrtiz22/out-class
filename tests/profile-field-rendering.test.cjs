@@ -68,7 +68,7 @@ test('the CRM read applies the club setting to every pipeline payload, read in t
   const crm = fs.readFileSync('actions/crm.ts', 'utf8')
   assert.match(crm, /archivedAt: true, club: \{ select: \{ profileFieldVisibility: true \} \}/)
   assert.match(crm, /const profileFields = normalizeProfileFieldVisibility\(allRounds\[0\]\?\.club\?\.profileFieldVisibility\)/)
-  assert.match(crm, /restrictApplicationProfile\(pipelineDetailProjection\(raw, membership\), profileFields\)/)
+  assert.match(crm, /restrictApplicationProfile\(pipelineDetailProjection\(raw, membership, prior\.get\(raw\.id\) \?\? \[\]\), profileFields\)/)
   assert.match(crm, /restrictApplicationProfile\(pipelineSummaryProjection\(app, membership\), profileFields\)/)
   assert.match(crm, /restrictApplicationProfile\(rankedReviewProjection\(app, membership\), profileFields\)/)
   assert.match(crm, /readPipelineSelection\(tx, where, membership, query, rounds, roundPrivacy, profileFields\)/)
