@@ -631,7 +631,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 /></label>,
               }}
               columns={[
-                { id: "name", header: "Member", sortKey: "name", primary: true, cell: row => <><span className="oc-dt-name">{row.name}</span><DataTableSecondary from="lg" title={row.member?.groups.length ? `Groups: ${row.member.groups.join(", ")}` : undefined}>{joinFacts(row.detail, row.member?.groups.join(" · "))}</DataTableSecondary></> },
+                { id: "name", header: "Member", sortKey: "name", primary: true, cell: row => <span className="oc-dt-name">{row.name}</span>, secondary: row => <DataTableSecondary from="lg" title={row.member?.groups.length ? `Groups: ${row.member.groups.join(", ")}` : undefined}>{joinFacts(row.detail, row.member?.groups.join(" · "))}</DataTableSecondary> },
                 ...(showYear ? [{ id: "year", header: "Year", sortKey: "year", showFrom: "md" as const, cell: (row: (typeof rows)[number]) => row.year || "—" }] : []),
                 { id: "role", header: "Role", sortKey: "role", cell: row => organizationRoleLabels[row.role] },
                 { id: "status", header: "Status", sortKey: "status", cell: row => <>{row.status}{row.invitation && <span className="oc-dt-muted"> · {invitationDelivery(row.invitation)}</span>}</> },

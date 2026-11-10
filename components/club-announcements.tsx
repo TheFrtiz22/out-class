@@ -113,7 +113,7 @@ export function ClubAnnouncements({ clubId, initialItems }: { clubId: string; in
    openLabel={item => `Read ${item.title}`}
    onOpen={(item, origin) => { readingOrigin.current = origin; setReading(item); }}
    columns={[
-    { id: "title", header: "Announcement", sortKey: "title", primary: true, className: "oc-dt-fill", cell: item => <><span className="oc-dt-name">{item.title}</span><DataTableSecondary from="md">{item.body}</DataTableSecondary></> },
+    { id: "title", header: "Announcement", sortKey: "title", primary: true, className: "oc-dt-fill", cell: item => <span className="oc-dt-name">{item.title}</span>, secondary: item => <DataTableSecondary from="md">{item.body}</DataTableSecondary> },
     { id: "audience", header: "Audience", showFrom: "md", cell: audienceLabel },
     { id: "notified", header: "Notified", sortKey: "notified", align: "end", cell: item => item._count.notifications },
     { id: "published", header: "Published", sortKey: "published", cell: item => <time dateTime={new Date(item.publishedAt).toISOString()} title={formatDateTime(item.publishedAt, { timeZone: SCHEDULING_TIMEZONE })}>{formatShortDate(item.publishedAt, { timeZone: SCHEDULING_TIMEZONE })}</time> },

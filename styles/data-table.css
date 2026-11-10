@@ -108,3 +108,6 @@ button.oc-dt-card-open::after { content: ""; position: absolute; inset: 0; }
   .oc-dt tbody tr:has(.oc-dt-open:focus-visible) > td { outline: 2px solid CanvasText; }
   .oc-dt-cards > li:has(.oc-dt-card-open:focus-visible) { outline-color: CanvasText; }
 }
+/* The name button and its secondary text share one line; the secondary sits outside the button (accessible name). */
+.oc-dt-primary { display: flex; align-items: center; gap: .5rem; min-width: 0; max-width: 100%; }
+.oc-dt-primary > .oc-dt-open { flex: 0 1 auto; }

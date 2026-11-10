@@ -77,7 +77,7 @@ export function InterviewRoomsList({ clubId }: { clubId: string }) {
         sort={{ key: listSort.key, descending: listSort.descending, toggle: key => listSort.toggle(key as RoomSort) }}
         isOpenable={openable} openLabel={row => `${interviewEntryAction(row)} · ${row.candidate || row.roomName}`} onOpen={(_row, origin) => origin?.closest("tr, li")?.querySelector<HTMLAnchorElement>("a[data-entry-link]")?.click()}
         columns={[
-          { id: "candidate", header: "Candidate", sortKey: "candidate", primary: true, cell: row => <><span className="oc-dt-name" title={row.interviewers.length ? `With ${row.interviewers.join(", ")}` : undefined}>{row.candidate || row.roomName}</span><DataTableSecondary>{interviewEntryStatus(row)}</DataTableSecondary></> },
+          { id: "candidate", header: "Candidate", sortKey: "candidate", primary: true, cell: row => <span className="oc-dt-name" title={row.interviewers.length ? `With ${row.interviewers.join(", ")}` : undefined}>{row.candidate || row.roomName}</span>, secondary: row => <DataTableSecondary>{interviewEntryStatus(row)}</DataTableSecondary> },
           { id: "time", header: "Time", sortKey: "time", cell: row => interviewTimingContext(row) },
           { id: "round", header: "Round", sortKey: "round", showFrom: "md", cell: row => row.roundName },
           { id: "room", header: "Room", showFrom: "xl", cell: row => <span className="oc-dt-muted" title={row.interviewers.length ? `With ${row.interviewers.join(", ")}` : undefined}>{joinFacts(row.roomName, row.location)}</span> },

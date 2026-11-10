@@ -32,6 +32,9 @@ export type DataTableColumn<T> = {
   sortKey?: string
   /** The record's name: sticky, and the keyboard target that opens the record. Exactly one column. */
   primary?: boolean
+  /** Primary column only: muted text after the name (a DataTableSecondary). It sits beside the open button, not
+   * inside it, so the button's visible text stays the name its accessible label already contains. */
+  secondary?: (row: T) => ReactNode
   /** Shown only when the list is at least this wide. */
   showFrom?: DataTableWidth
   /** Hidden once the list is at least this wide (a combined column that wider lists split up). */
@@ -134,7 +137,7 @@ export function DataTable<T>({ caption, rows, rowKey, columns, card, onOpen, isO
           onClick={openable(row) ? event => { if (!ignoreRowClick(event)) open(row, event.currentTarget.querySelector<HTMLElement>(".oc-dt-open")) } : undefined}>
           {selection && <td className="oc-dt-select">{checkbox(row)}</td>}
           {columns.map(column => <td key={column.id} data-align={column.align} data-primary={column.primary || undefined} className={cn(widthClass(column), column.className) || undefined}>
-            {column === primary ? openControl(row, column.cell(row)) : column.cell(row)}
+            {column === primary ? column.secondary ? <span className="oc-dt-primary">{openControl(row, column.cell(row))}{column.secondary(row)}</span> : openControl(row, column.cell(row)) : column.cell(row)}
           </td>)}
         </tr>)}</tbody>
       </table>

@@ -47,7 +47,7 @@ const columnVisible = (id: string, fields: ProfileFieldVisibility) => id === "gp
 /** Applicants: email drops first, then SAT and ACT combine into Test, then Year drops. Cards below 640px. */
 export function LiveApplicantList({ applicants, rounds, open, compact, name, sort = "name", descending = false, sortBy, votingSelection, profileFields = defaultProfileFieldVisibility() }: Props) {
   const columns = ([
-    { id: "name", header: "Applicant", sortKey: "name", primary: true, cell: app => <><ApplicantIdentity label={name(app)} anonymous={anonymous(app)} /><DataTableSecondary from="xl">{anonymous(app) ? "Anonymous review" : app.student.email}</DataTableSecondary></> },
+    { id: "name", header: "Applicant", sortKey: "name", primary: true, cell: app => <ApplicantIdentity label={name(app)} anonymous={anonymous(app)} />, secondary: app => <DataTableSecondary from="xl">{anonymous(app) ? "Anonymous review" : app.student.email}</DataTableSecondary> },
     { id: "year", header: "Year", sortKey: "year", showFrom: "md", cell: app => app.student.studentProfile?.academicYear || "—" },
     { id: "round", header: "Round", sortKey: "round", cell: app => roundName(rounds, app) || "Not available" },
     { id: "gpa", header: "GPA", sortKey: "gpa", align: "end", cell: app => app.student.studentProfile?.gpa?.toFixed(2) ?? "—" },
@@ -86,7 +86,7 @@ export function LiveApplicantKanban({ applicants, allApplicants = applicants, la
 
 export function LiveDecisionList({ applicants, rounds, open, compact, name, sort = "name", descending = false, sortBy }: Props) {
   const columns: DataTableColumn<Candidate>[] = [
-    { id: "name", header: "Applicant", sortKey: "name", primary: true, cell: app => <><span className="oc-dt-name">{name(app)}</span><DataTableSecondary from="lg">{anonymous(app) ? "Anonymous review" : app.student.email}</DataTableSecondary></> },
+    { id: "name", header: "Applicant", sortKey: "name", primary: true, cell: app => <span className="oc-dt-name">{name(app)}</span>, secondary: app => <DataTableSecondary from="lg">{anonymous(app) ? "Anonymous review" : app.student.email}</DataTableSecondary> },
     { id: "round", header: "Round", sortKey: "round", cell: app => roundName(rounds, app) || "Round unavailable" },
     { id: "score", header: "Rating", sortKey: "score", cell: app => <Rating app={app} /> },
     { id: "status", header: "Decision", sortKey: "status", cell: app => <StatusPill status={app.status} /> },

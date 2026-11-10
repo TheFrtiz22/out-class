@@ -82,7 +82,7 @@ export function ClubMembers({ clubId, initialDirectory, onDirectory, validatedIn
       openLabel={m => `Member details · ${name(m)}`}
       onOpen={(m, origin) => { trigger.current = origin; setActiveId(m.id); setDirty(false) }}
       columns={[
-        { id: "name", header: "Member", sortKey: "name", primary: true, cell: m => <><span className="oc-dt-name">{name(m)}</span><DataTableSecondary from="lg">{m.user.email}</DataTableSecondary></> },
+        { id: "name", header: "Member", sortKey: "name", primary: true, cell: m => <span className="oc-dt-name">{name(m)}</span>, secondary: m => <DataTableSecondary from="lg">{m.user.email}</DataTableSecondary> },
         { id: "role", header: "Role / title", sortKey: "role", cell: m => <span className="capitalize">{role(m)}</span> },
         { id: "year", header: "Year", sortKey: "year", showFrom: "md", cell: m => year(m) || "—" },
         { id: "groups", header: "Groups", showFrom: "xl", cell: m => <span className="oc-dt-muted">{[m.cohort, ...m.groups].filter(Boolean).join(" · ") || "—"}</span> },
