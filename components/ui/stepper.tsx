@@ -7,7 +7,7 @@ export type Step<T extends string> = { id: T; label: ReactNode; complete?: boole
 
 /**
  * Numbered steps in the pill language: each step is a pill with its number; the current one is the navy
- * pill with cream text, completed steps show a check. Steps are buttons (aria-current="step") when
+ * pill with cream text, completed steps show a check. The ordered list announces each step's position. Steps are buttons (aria-current="step") when
  * `onSelect` is given, otherwise a plain ordered list.
  */
 export function Stepper<T extends string>({ label, steps, current, onSelect, className }: {
@@ -21,9 +21,9 @@ export function Stepper<T extends string>({ label, steps, current, onSelect, cla
         return <li key={step.id} data-active={active || undefined} data-complete={step.complete || undefined}>
           {onSelect
             ? <button type="button" className="oc-stepper-step" aria-current={active ? "step" : undefined} disabled={step.disabled} onClick={() => onSelect(step.id)}>
-              {marker}<span className="sr-only">Step {index + 1}: </span>{step.label}{step.complete && <span className="sr-only"> (done)</span>}
+              {marker}{step.label}{step.complete && <span className="sr-only"> (done)</span>}
             </button>
-            : <span className="oc-stepper-step" aria-current={active ? "step" : undefined}>{marker}<span className="sr-only">Step {index + 1}: </span>{step.label}</span>}
+            : <span className="oc-stepper-step" aria-current={active ? "step" : undefined}>{marker}{step.label}</span>}
         </li>
       })}
     </ol>

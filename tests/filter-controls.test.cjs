@@ -29,7 +29,7 @@ test('stepper numbers steps and marks the current one', () => {
   const { Stepper } = loadComponent('components/ui/stepper.tsx')
   const html = renderToStaticMarkup(h(Stepper, { label: 'Scheduling workflow', current: 'rooms', onSelect() {}, steps: [{ id: 'availability', label: 'Availability', complete: true }, { id: 'rooms', label: 'Set interview times' }] }))
   assert.match(html, /<nav aria-label="Scheduling workflow"[^>]*><ol>/)
-  assert.match(html, /aria-current="step"><span class="oc-stepper-marker" aria-hidden="true">2<\/span><span class="sr-only">Step 2: <\/span>Set interview times/)
+  assert.match(html, /aria-current="step"><span class="oc-stepper-marker" aria-hidden="true">2<\/span>Set interview times/)
   assert.match(html, /Availability<span class="sr-only"> \(done\)<\/span>/)
 })
 

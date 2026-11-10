@@ -1,6 +1,7 @@
 'use client'
 
 import { DesignPatterns } from "@/components/product/design-patterns"
+import { FilterControlsReference } from "@/components/product/filter-controls-reference"
 import { PageHeader } from "@/components/ui/page-header"
 import { useState } from "react"
 import { ArrowRight, Bell, FileText, Plus } from "@/components/icons"
@@ -57,6 +58,8 @@ export default function DesignSystemPage() {
         <div className="space-y-2 sm:col-span-2"><Label htmlFor="ds-bio">Introduction</Label><Textarea id="ds-bio" placeholder="A little about your interests…" /></div>
       </div>
     </section>
+    <Divider />
+    <FilterControlsReference />
     <Divider />
     <section aria-labelledby="structure" className="space-y-6">
       <SectionHeading headingId="structure" title="Room to focus" editorial description="Start with whitespace and a divider. Add a container only when grouping helps." />

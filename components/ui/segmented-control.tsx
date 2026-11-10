@@ -69,7 +69,7 @@ export function SegmentedControl<T extends string>(props: Single<T> | Multiple<T
     data-sliding={sliding || undefined} data-has-active={!props.multiple && index >= 0}
     style={sliding ? { "--segment-count": options.length, "--segment-index": Math.max(0, index) } as CSSProperties : undefined}>
     {sliding && <span className="oc-segmented-indicator" aria-hidden="true" />}
-    {options.map((option, i) => <button type="button" key={option.value} data-segment="" disabled={option.disabled}
+    {options.map((option, i) => <button type="button" key={option.value} data-segment="" data-value={option.value} disabled={option.disabled}
       aria-pressed={selected(option.value)} aria-label={option.ariaLabel}
       data-selected={selected(option.value) || undefined} tabIndex={i === stop ? 0 : -1}
       onClick={() => choose(option.value)} onKeyDown={event => onKeyDown(event, i)}>

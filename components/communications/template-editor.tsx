@@ -9,7 +9,8 @@ import { defaultLetters,decisionTypes,letterVariables,resolveLetter,type LetterD
 import { LetterPaper } from './decision-letter';
 import { clubAssetSource } from '@/lib/club-assets';
 import { Button } from '@/components/ui/button';
-import { NativeSelect } from "@/components/ui/native-select"
+import { Toggle } from "@/components/ui/toggle"
+import { PillGroup } from "@/components/ui/segmented-control"
 /** `inline` shows the editor directly (Decisions → Decision letters); Settings keeps the disclosure. */
 export function DecisionTemplateEditor({clubId,inline=false}:{clubId:string;inline?:boolean}){
  const {user}=useAuth(),expected=useRef("{}");
@@ -24,9 +25,9 @@ export function DecisionTemplateEditor({clubId,inline=false}:{clubId:string;inli
  const body=<>
  <p className="text-sm text-muted-foreground">Customize future letters. Published letters keep their original wording. Preview uses a fictional student and reveals no applicant information.</p>
  {!club?message ? <div role="alert"><p>{message}</p><Button type="button" variant="outline" onClick={()=>setLoadAttempt(v=>v+1)}>Retry letter settings</Button></div> : <LoadingState label="Loading letter settings…" layout="form" rows={3} />:<>
- <label className="flex gap-3 items-start"><input type="checkbox" checked={club.sendFormalDecisionLetters} disabled={busy} onChange={async e=>{const enabled=e.target.checked;setBusy(true);try{await setFormalDecisionLetters(clubId,enabled);setClub({...club,sendFormalDecisionLetters:enabled});setMessage('Formal-letter setting saved. Historical letters are unchanged.');}catch{setMessage('Could not save the formal-letter setting.');}finally{setBusy(false)}}}/>Send formal decision letters</label>
+ <Toggle label="Send formal decision letters" checked={club.sendFormalDecisionLetters} disabled={busy} onCheckedChange={async enabled=>{setBusy(true);try{await setFormalDecisionLetters(clubId,enabled);setClub({...club,sendFormalDecisionLetters:enabled});setMessage('Formal-letter setting saved. Historical letters are unchanged.');}catch{setMessage('Could not save the formal-letter setting.');}finally{setBusy(false)}}}/>
  <p className="text-sm text-muted-foreground">When off, decisions and inbox notifications still publish, without creating a new letter. This does not enable or disable decision-availability email; student preferences and the shared delivery service control email.</p>
- <label className="block text-sm">Letter type<NativeSelect className="block mt-2" value={selected} onChange={e=>{setSelected(e.target.value as LetterDecision);setPreview(false)}}>{decisionTypes.map(type=><option key={type}>{type}</option>)}</NativeSelect></label>
+ <div className="space-y-2 text-sm"><span className="block">Letter type</span><PillGroup label="Letter type" size="compact" value={selected} onChange={value=>{setSelected(value);setPreview(false)}} options={decisionTypes.map(type=>({value:type,label:type.charAt(0)+type.slice(1).toLowerCase()}))}/></div>
  {(['title','body','closing','signer','footer'] as const).map(field=><label key={selected+field} className="block text-sm capitalize">{field==='signer'?'Signer / title (optional)':field}<textarea rows={field==='body'?9:2} value={template[field]} disabled={busy || autosave.recovery != null} onChange={e=>setTemplates({...templates,[selected]:{...template,[field]:e.target.value}})} className="mt-2 block w-full rounded border bg-background p-3 normal-case" maxLength={field==='body'?6000:field==='footer'?1000:field==='closing'?300:160}/></label>)}
  <p className="break-words text-xs text-muted-foreground">Available variables: {letterVariables.map(v=>'{{'+v+'}}').join(', ')}</p>
  <div className="flex flex-wrap gap-3"><AutosaveStatus save={autosave} /><Button variant="outline" disabled={busy} onClick={()=>setPreview(!preview)}>Preview letter</Button><Button variant="ghost" disabled={busy} onClick={()=>{const next={...templates};delete next[selected];setTemplates(next)}}>Reset to Default</Button></div>
