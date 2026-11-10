@@ -4,8 +4,10 @@ import type { CSSProperties, ReactNode } from "react"
 
 // Flight children can suspend while React reconciles them. Give that work a
 // component fiber so React 19 does not replay an already claimed host div with
-// its hydration cursor still inside the div (react/react#35494).
-function RouteChildren({ children }: { children: ReactNode }) {
+// its hydration cursor still inside the div (react/react#35494). Any host
+// element that directly contains streamed route children needs this, including
+// the persistent shell's <main>.
+export function RouteChildren({ children }: { children: ReactNode }) {
   return children
 }
 
