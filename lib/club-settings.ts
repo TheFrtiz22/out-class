@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { questionConditionSchema } from "@/lib/student-applications";
 import { hasPermission, type ClubAccess } from "@/lib/permissions";
 import { interviewCapabilities } from "@/lib/interview-access";
 export const roundTypes = [
@@ -27,14 +28,15 @@ export const questionDraftSchema = z
   .object({
     id: z.string().uuid(),
     prompt: z.string().trim().min(1).max(3000),
-    type: z.enum(["ESSAY", "MULTIPLE_CHOICE", "FILE_UPLOAD"]),
+    type: z.enum(["ESSAY", "MULTIPLE_CHOICE", "MULTI_SELECT", "FILE_UPLOAD"]),
+    showIf: questionConditionSchema.nullable().default(null),
     required: z.boolean(),
     wordLimit: z.number().int().min(1).max(10000).nullable(),
     options: z.array(z.string().trim().min(1).max(300)).max(30),
   })
   .superRefine((q, ctx) => {
     if (
-      q.type === "MULTIPLE_CHOICE" &&
+      (q.type === "MULTIPLE_CHOICE" || q.type === "MULTI_SELECT") &&
       (q.options.length === 1 || new Set(q.options).size !== q.options.length)
     )
       ctx.addIssue({
@@ -45,6 +47,19 @@ export const questionDraftSchema = z
       });
   });
 export type QuestionDraft = z.infer<typeof questionDraftSchema>;
+export const isChoiceQuestion = (q: Pick<QuestionDraft, "type">) => q.type === "MULTIPLE_CHOICE" || q.type === "MULTI_SELECT"
+
+/** Drops conditions that no longer point at an earlier choice question or its options
+ * (after a move, delete or edit), so the builder never saves an impossible rule. */
+export function withValidConditions(items: QuestionDraft[]): QuestionDraft[] {
+  return items.map((q, index) => {
+    if (!q.showIf) return q
+    const parent = items.slice(0, index).find(p => p.id === q.showIf!.questionId)
+    const anyOf = parent && isChoiceQuestion(parent) ? q.showIf.anyOf.filter(option => parent.options.includes(option)) : []
+    return { ...q, showIf: anyOf.length ? { questionId: q.showIf.questionId, anyOf } : null }
+  })
+}
+
 export const applicationSettingsSchema = z
   .object({
     clubId: z.string().uuid(),
@@ -56,7 +71,16 @@ export const applicationSettingsSchema = z
   .refine(
     (x) => new Set(x.questions.map((q) => q.id)).size === x.questions.length,
     "Duplicate question IDs.",
-  );
+  )
+  .superRefine((x, ctx) => {
+    // A condition points at an earlier choice question and only at its own options.
+    x.questions.forEach((q, index) => {
+      if (!q.showIf) return
+      const parent = x.questions.slice(0, index).find(p => p.id === q.showIf!.questionId)
+      if (!parent || !(parent.type === "MULTIPLE_CHOICE" || parent.type === "MULTI_SELECT") || q.showIf.anyOf.some(option => !parent.options.includes(option)))
+        ctx.addIssue({ code: "custom", path: ["questions", index, "showIf"], message: "A follow-up question must depend on an earlier multiple-choice question and its options." })
+    })
+  });
 export const pipelineSettingsSchema = z
   .object({
     clubId: z.string().uuid(),
