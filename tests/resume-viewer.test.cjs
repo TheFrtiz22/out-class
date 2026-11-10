@@ -12,8 +12,8 @@ const { resumePreviewKind, resumeDownloadName, isSameOriginResumePath } = load('
 test('uploaded résumés (PDF-only, served by the authorized route) preview as PDFs; other types are classified', () => {
   assert.equal(resumePreviewKind('/api/recruiting-resumes?clubId=a&applicationId=b'), 'pdf')
   assert.equal(resumePreviewKind('/demo/sample-resume.pdf'), 'pdf')
-  assert.equal(resumePreviewKind('https://x.edu/r.png'), 'image')
-  assert.equal(resumePreviewKind('https://x.edu/r.JPEG?dl=1'), 'image')
+  assert.equal(resumePreviewKind('https://x.edu/r.png'), 'external', 'external images are links, not fetched')
+  assert.equal(resumePreviewKind('https://x.edu/r.JPEG?dl=1'), 'external')
   for (const doc of ['https://x.edu/r.docx', 'https://x.edu/r.doc', 'https://x.edu/r.rtf', 'https://x.edu/r.odt', 'https://x.edu/r.pages']) assert.equal(resumePreviewKind(doc), 'unsupported', doc)
   assert.equal(resumePreviewKind('https://x.edu/r.pdf'), 'external', 'a cross-origin PDF cannot be fetched for pdf.js')
   assert.equal(resumePreviewKind('https://drive.example.com/view/1'), 'external')

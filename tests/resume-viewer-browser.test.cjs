@@ -66,13 +66,15 @@ test('browser: the résumé viewer opens in-page and closes on X, Esc and backdr
 
     await trigger.click(); await dialog.waitFor(); await inside()
     assert.equal(await page.evaluate(() => document.elementFromPoint(8, 8)?.getAttribute('data-slot')), 'dialog-overlay', 'the backdrop is under the pointer')
+    // Radix arms its outside-pointer listener on a timer after mounting; let it register first.
+    await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 100)))
     await page.mouse.click(8, 8) // the backdrop, outside the dialog
     await dialog.waitFor({ state: 'detached' })
     await page.waitForFunction(() => document.activeElement?.textContent === 'Open résumé', null, { timeout: 3000 }) // focus returns after a backdrop click
   })
 })
 
-test('browser: non-PDF résumés show an image, a clear unavailable message, or an external link', { timeout: 120000 }, async () => {
+test('browser: non-PDF résumés show a clear unavailable message with Download or an external link', { timeout: 120000 }, async () => {
   await withPage({ width: 1280, height: 900 }, async page => {
     await page.getByRole('button', { name: 'Word résumé' }).click()
     let dialog = page.getByRole('dialog', { name: 'Résumé · Ada Doc' })
@@ -82,8 +84,10 @@ test('browser: non-PDF résumés show an image, a clear unavailable message, or 
 
     await page.getByRole('button', { name: 'Image résumé' }).click()
     dialog = page.getByRole('dialog', { name: 'Résumé · Ada Image' })
-    assert.equal(await dialog.getByRole('img', { name: 'Résumé · Ada Image' }).getAttribute('src'), 'https://files.example.edu/ada/resume.png')
-    assert.equal(await dialog.getByRole('link', { name: 'Download' }).count(), 1)
+    // An external image is offered as a link; nothing is requested from the third party on open.
+    await dialog.getByText('Preview isn’t available for linked résumés.').waitFor()
+    assert.equal(await dialog.locator('img').count(), 0)
+    assert.equal(await dialog.getByRole('link', { name: /Open link/ }).getAttribute('href'), 'https://files.example.edu/ada/resume.png')
     await page.keyboard.press('Escape'); await dialog.waitFor({ state: 'detached' })
 
     await page.getByRole('button', { name: 'Linked résumé' }).click()

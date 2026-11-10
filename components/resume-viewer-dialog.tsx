@@ -56,10 +56,7 @@ export function ResumeViewerDialog({ href, name, clubId, applicationId, trigger 
         <div className="oc-resume-viewer-body">
           {resource
             ? <ResumePdfPages resource={resource} name={name} unavailableText="This résumé couldn’t be displayed. Use Download to open it." />
-            : kind === "image"
-              // eslint-disable-next-line @next/next/no-img-element -- A private, per-viewer document; never optimized or cached by Next.
-              ? <img className="oc-resume-viewer-image" src={href} alt={title} referrerPolicy="no-referrer" />
-              : kind !== "pdf" && <div className="oc-resume-viewer-empty" role="status">
+            : kind !== "pdf" && <div className="oc-resume-viewer-empty" role="status">
                 <FileText aria-hidden="true" size={32} />
                 <p className="font-medium">{external ? "Preview isn’t available for linked résumés." : "Preview isn’t available for this file type."}</p>
                 <p className="text-sm text-muted-foreground">{external ? "Use Open link to view it on the site where it’s hosted." : "Use Download to open it."}</p>
