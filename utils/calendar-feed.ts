@@ -1,6 +1,7 @@
 import type { AppTransactionClient } from "@/utils/prisma"
 import type { FeedEvent } from "@/lib/ical"
 import { ownPanelAssignments } from "@/utils/official-panel-schedule"
+import { publicMeetingVisibility } from "@/lib/campus-events"
 
 const HISTORY_MS = 30 * 24 * 3600000
 
@@ -15,7 +16,8 @@ export async function calendarFeedEvents(tx: AppTransactionClient, userId: strin
       select: { id: true, slot: { select: { startTime: true, endTime: true, location: true } }, application: { select: { club: { select: { name: true } } } } } }),
     memberClubs.length ? tx.meeting.findMany({ where: { clubId: { in: memberClubs }, OR: [{ date: { gte: since } }, { endDate: { gte: since } }] },
       select: { id: true, title: true, date: true, endDate: true, allDay: true, location: true, description: true, club: { select: { name: true } } } }) : [],
-    tx.eventRsvp.findMany({ where: { userId, event: { club: { is: { suspendedAt: null } }, OR: [{ date: { gte: since } }, { endDate: { gte: since } }] } },
+    // Same rule as the in-app calendar: a published public event, or any event of a club the subscriber is an active member of.
+    tx.eventRsvp.findMany({ where: { userId, event: { AND: [{ OR: [publicMeetingVisibility, { club: { is: { suspendedAt: null, members: { some: { userId, status: "ACTIVE" } } } } }] }, { OR: [{ date: { gte: since } }, { endDate: { gte: since } }] }] } },
       select: { event: { select: { id: true, clubId: true, title: true, date: true, endDate: true, allDay: true, location: true, description: true, club: { select: { name: true } } } } } }),
     ownPanelAssignments(tx, userId),
   ])

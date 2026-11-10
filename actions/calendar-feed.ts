@@ -10,6 +10,9 @@ async function origin() {
   return host && /^(localhost(:\d+)?|[a-z0-9.-]+\.(out-class\.net|vercel\.app))$/i.test(host) ? `${host.startsWith("localhost") ? "http" : "https"}://${host}` : SITE_URL
 }
 
+const SUPPORT_REFUSAL = "Exit support impersonation before changing this student's calendar link."
+
+/** Read-only and token-free, so support view-as may show whether a link exists. */
 export async function getCalendarFeedStatus() {
   const { user } = await requireAuth()
   const feed = await prisma.calendarFeedToken.findUnique({ where: { userId: user.id }, select: { createdAt: true, lastUsedAt: true } })
@@ -19,7 +22,9 @@ export async function getCalendarFeedStatus() {
 /** Creates a new private link and invalidates any earlier one. The link is shown
  * once; it is not stored and cannot be read back. */
 export async function createCalendarFeedLink() {
-  const { user } = await requireAuth({ verifyEmail: true })
+  const { user, impersonation } = await requireAuth({ verifyEmail: true })
+  // A link minted during support view-as would outlive the session and replace the student's own.
+  if (impersonation) throw new Error(SUPPORT_REFUSAL)
   const token = newCalendarFeedToken(), tokenHash = calendarFeedTokenHash(token)
   await prisma.$transaction(async tx => {
     await tx.calendarFeedToken.upsert({ where: { userId: user.id }, create: { userId: user.id, tokenHash }, update: { tokenHash, createdAt: new Date(), lastUsedAt: null } })
@@ -29,7 +34,8 @@ export async function createCalendarFeedLink() {
 }
 
 export async function disableCalendarFeed() {
-  const { user } = await requireAuth()
+  const { user, impersonation } = await requireAuth()
+  if (impersonation) throw new Error(SUPPORT_REFUSAL)
   await prisma.$transaction(async tx => {
     const { count } = await tx.calendarFeedToken.deleteMany({ where: { userId: user.id } })
     if (count) await tx.auditLog.create({ data: { actorId: user.id, action: "calendar.feed.disable", targetId: user.id } })

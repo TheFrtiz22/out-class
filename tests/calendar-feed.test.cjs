@@ -111,3 +111,73 @@ test('migration: hash-only storage, one link per user, runtime-only access', { t
     assert.equal((await db.query(`SELECT count(*)::int n FROM "CalendarFeedToken"`)).rows[0].n, 0)
   } finally { await db.close() }
 })
+
+// Minimal evaluator for the Prisma where-shapes the feed uses, so the RSVP
+// filter is checked against concrete events rather than by its literal shape.
+function matches(row, where) {
+  if (row === null || row === undefined) return false
+  return Object.entries(where).every(([k, v]) => {
+    if (k === 'AND') return v.every(w => matches(row, w))
+    if (k === 'OR') return v.some(w => matches(row, w))
+    const x = row[k]
+    if (v === null) return x === null || x === undefined
+    if (v instanceof Date || typeof v !== 'object') return x === v
+    if ('gte' in v) return x !== null && x !== undefined && +x >= +v.gte
+    if ('is' in v) return v.is === null ? x === null || x === undefined : matches(x, v.is)
+    if ('some' in v) return (x || []).some(r => matches(r, v.some))
+    if ('in' in v) return v.in.includes(x)
+    return matches(x, v)
+  })
+}
+
+test('feed contents: RSVP\'d events follow event visibility (public+published, or active member)', async () => {
+  const { calendarFeedEvents } = load('utils/calendar-feed.ts', { '@/utils/official-panel-schedule': { ownPanelAssignments: async () => [] } })
+  const club = members => ({ name: 'TAMID', suspendedAt: null, members })
+  const base = { title: 'Mixer', date: at('2026-11-12T23:00:00Z'), endDate: null, allDay: false, location: 'Rice', description: 'Bring friends', audience: 'RECRUITMENT', isPublic: true, publication: { status: 'PUBLISHED' } }
+  const rows = [
+    { ...base, id: 'published' },
+    { ...base, id: 'withdrawn', publication: { status: 'CANCELLED' } },
+    { ...base, id: 'members-only', audience: 'MEMBERS' },
+    { ...base, id: 'private', isPublic: false },
+    { ...base, id: 'suspended', clubSuspended: true },
+  ]
+  for (const [memberStatus, expected] of [[null, ['meeting-published']], ['INACTIVE', ['meeting-published']], ['ACTIVE', ['meeting-members-only', 'meeting-private', 'meeting-published', 'meeting-withdrawn']]]) {
+    const membership = memberStatus ? [{ userId: 'u1', status: memberStatus }] : []
+    const events = rows.map(r => ({ ...r, club: { ...club(membership), suspendedAt: r.clubSuspended ? new Date() : null } }))
+    const tx = {
+      clubMember: { findMany: async () => [] },
+      interviewBooking: { findMany: async () => [] },
+      meeting: { findMany: async () => [] },
+      eventRsvp: { findMany: async q => { assert.equal(q.where.userId, 'u1'); return events.filter(e => matches(e, q.where.event)).map(event => ({ event })) } },
+    }
+    const ids = (await calendarFeedEvents(tx, 'u1', at('2026-11-09T12:00:00Z'))).map(e => e.id).sort()
+    assert.deepEqual(ids, expected, `membership ${memberStatus}`)
+  }
+})
+
+function actions({ impersonating = false } = {}) {
+  const writes = []
+  const tx = {
+    calendarFeedToken: { upsert: async q => { writes.push(['upsert', q]) }, deleteMany: async q => { writes.push(['deleteMany', q]); return { count: 1 } } },
+    auditLog: { create: async q => { writes.push(['audit', q]) } },
+  }
+  const mod = load('actions/calendar-feed.ts', {
+    'next/headers': { headers: async () => new Headers({ host: 'www.out-class.net' }) },
+    '@/utils/prisma': { prisma: { $transaction: async fn => fn(tx), calendarFeedToken: { findUnique: async () => ({ createdAt: new Date(), lastUsedAt: null }) } } },
+    '@/utils/auth': { requireAuth: async () => ({ user: { id: 'student' }, impersonation: impersonating ? { actorId: 'admin', targetUserId: 'student' } : undefined }) },
+    '@/lib/seo': { SITE_URL: 'https://www.out-class.net' },
+  })
+  return { mod, writes }
+}
+
+test('actions: support view-as cannot create or disable the student\'s link and writes nothing', async () => {
+  const s = actions({ impersonating: true })
+  await assert.rejects(s.mod.createCalendarFeedLink(), /Exit support impersonation/)
+  await assert.rejects(s.mod.disableCalendarFeed(), /Exit support impersonation/)
+  assert.deepEqual(s.writes, [])
+  assert.equal((await s.mod.getCalendarFeedStatus()).active, true, 'read-only status stays visible to support')
+  const own = actions()
+  assert.match((await own.mod.createCalendarFeedLink()).https, /^https:\/\/www\.out-class\.net\/api\/calendar-feed\//)
+  await own.mod.disableCalendarFeed()
+  assert.deepEqual(own.writes.map(w => w[0]), ['upsert', 'audit', 'deleteMany', 'audit'])
+})
