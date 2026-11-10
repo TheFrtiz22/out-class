@@ -17,7 +17,7 @@ test('header height and the gap above page content are the same everywhere', { s
   // signed-in pages that used to carry a link above their title. (Old Meetings/Announcements URLs redirect to Calendar and to
   // Home scrolled to its announcements, so their new homes are measured instead.)
   const routes = ['/home', '/explore', '/explore/categories', '/corkboard', '/saved-clubs', '/applications', '/clubs', '/calendar', '/inbox', '/profile',
-    '/settings', '/settings/notifications', '/meetings', `/club-access/${account.clubId}`, `/club/${account.clubId}`,
+    '/settings', '/settings/account', '/meetings', `/club-access/${account.clubId}`, `/club/${account.clubId}`,
     `${club}?section=overview`, `${club}?section=recruitment&tool=overview`, `${club}?section=recruitment&tool=applicants`, `${club}?section=calendar`,
     `${club}?section=recruitment&tool=decisions`, `${club}?section=tasks`, `${club}?section=members`, `${club}?section=settings`,
     '/platform', '/platform/users', '/platform/events', '/platform/claims']

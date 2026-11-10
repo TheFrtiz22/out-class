@@ -61,10 +61,12 @@ test('settings and authenticated navigation across roles, saves, history and res
   });
   const studentPage = await session(student);
   await t.test('desktop settings keeps one shell, active navigation and state across personal sections', async () => {
-    // Settings → Profile redirects to Profile; Settings keeps Account & Security, Notifications and Availability.
+    // Settings → Profile redirects to Profile; Settings → Notifications redirects to the Inbox's notification settings.
     await studentPage.goto(config.appUrl + '/settings/profile'); await studentPage.waitForURL(url => url.pathname === '/profile');
-    await open(studentPage, '/settings/notifications');
-    await studentPage.getByRole('heading', { name: 'Notifications', exact: true }).waitFor();
+    await studentPage.goto(config.appUrl + '/settings/notifications'); await studentPage.waitForURL(url => url.pathname + url.search === '/inbox?tab=preferences');
+    await studentPage.getByRole('dialog', { name: 'Notification settings', exact: true }).waitFor();
+    await open(studentPage, '/settings/availability');
+    await studentPage.getByRole('heading', { name: 'Availability', exact: true }).waitFor();
     const nav = studentPage.getByRole('navigation', { name: 'Personal settings', exact: true });
     assert.ok(await nav.isVisible());
     assert.ok(!(await nav.textContent()).includes('Organization settings'));
@@ -78,18 +80,27 @@ test('settings and authenticated navigation across roles, saves, history and res
     await noOverflow(studentPage);
     await studentPage.screenshot({ path: path.join(artifacts, 'desktop-account.png'), fullPage: true });
   });
-  await t.test('notification preferences save through the existing action and survive refresh/history', async () => {
-    await studentPage.getByRole('navigation', { name: 'Personal settings', exact: true }).getByRole('link', { name: 'Notifications', exact: true }).click();
-    const checkbox = studentPage.getByRole('checkbox', { name: 'Club announcements', exact: true });
+  await t.test('notification preferences open from the Inbox, save through the existing action and survive refresh/history', async () => {
+    // The Inbox header's gear opens the same preferences form in a sheet; Escape returns focus to the gear.
+    await open(studentPage, '/inbox');
+    const gear = studentPage.getByRole('button', { name: 'Notification settings', exact: true });
+    await gear.click(); await studentPage.waitForURL(url => url.pathname + url.search === '/inbox?tab=preferences');
+    const sheet = studentPage.getByRole('dialog', { name: 'Notification settings', exact: true });
+    const checkbox = sheet.getByRole('checkbox', { name: 'Club announcements', exact: true });
     await checkbox.uncheck();
-    await studentPage.getByRole('button', { name: 'Save preferences', exact: true }).click();
-    await studentPage.getByText('Preferences saved.', { exact: true }).waitFor();
+    await sheet.getByRole('button', { name: 'Save preferences', exact: true }).click();
+    await sheet.getByText('Preferences saved.', { exact: true }).waitFor();
     assert.equal((await db.userNotificationPreference.findUniqueOrThrow({ where: { userId: student.user.id } })).emailAnnouncements, false);
     await studentPage.reload(); await checkbox.waitFor(); assert.equal(await checkbox.isChecked(), false);
-    await studentPage.getByRole('navigation', { name: 'Personal settings', exact: true }).getByRole('link', { name: 'Availability', exact: true }).click();
-    await studentPage.getByRole('heading', { name: 'Availability', exact: true }).waitFor();
-    await studentPage.goBack(); await studentPage.getByRole('heading', { name: 'Notifications', exact: true }).waitFor();
-    await studentPage.goForward(); await studentPage.getByRole('heading', { name: 'Availability', exact: true }).waitFor();
+    await studentPage.keyboard.press('Escape'); await sheet.waitFor({ state: 'hidden' });
+    assert.equal(new URL(studentPage.url()).search, '');
+    assert.equal(await gear.evaluate(node => node === document.activeElement), true, 'focus returns to the gear');
+    // Settings keeps a Notifications entry that leads to the same place; history moves between them.
+    await open(studentPage, '/settings/account');
+    await studentPage.getByRole('navigation', { name: 'Personal settings', exact: true }).getByRole('link', { name: 'Notifications', exact: true }).click();
+    await sheet.waitFor();
+    await studentPage.goBack(); await studentPage.getByRole('heading', { name: 'Account & Security', exact: true }).waitFor();
+    await studentPage.goForward(); await sheet.waitFor();
     // Profile has one Edit profile entry point with sections.
     await open(studentPage, '/profile');
     await studentPage.getByRole('button', { name: 'Edit profile', exact: true }).click();
@@ -188,9 +199,12 @@ test('settings and authenticated navigation across roles, saves, history and res
       // Phones and tablets use the Settings list and drill in; a section links back to the list.
       await open(studentPage, '/settings');
       await studentPage.getByRole('region', { name: 'Settings overview', exact: true }).getByRole('link', { name: /^Notifications/ }).click();
-      await studentPage.getByRole('heading', { name: 'Notifications', exact: true }).waitFor();
+      const sheet = studentPage.getByRole('dialog', { name: 'Notification settings', exact: true });
+      await sheet.waitFor();
       assert.equal(await studentPage.locator('#personal-settings-section').count(), 0);
       await noOverflow(studentPage);
+      await studentPage.screenshot({ path: path.join(artifacts, `${width === 390 ? 'mobile' : 'tablet'}-notification-settings.png`), fullPage: true });
+      await studentPage.keyboard.press('Escape'); await sheet.waitFor({ state: 'hidden' });
       // The personal phone bar holds the app's five tabs (no More), Profile among them.
       const bar = studentPage.getByRole('navigation', { name: 'Sections', exact: true });
       assert.ok(await bar.getByRole('link', { name: 'Profile', exact: true }).isVisible());
