@@ -8,14 +8,14 @@
 .oc-profile-statistics-compact { grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin:0 0 20px; padding:16px 0; border-bottom:1px solid var(--border); }
 .oc-profile-statistics-compact dd { font-size:22px; }
 
-.oc-club-category { display:inline-flex; align-items:center; min-height:28px; padding:2px 12px; border-radius:999px; font-size:13px; color:var(--foreground); background:var(--oc-glass-hover-tint, var(--muted)); border:1px solid var(--oc-glass-light-edge, var(--border)); }
+.oc-club-category { display:inline-flex; align-items:center; min-height:28px; padding:2px 12px; border-radius:var(--oc-radius-full); font-size:13px; color:var(--foreground); background:var(--oc-glass-hover-tint, var(--muted)); border:1px solid var(--oc-glass-light-edge, var(--border)); }
 
 /* Member destinations: firm names as text, labelled club-reported. */
 .oc-member-outcomes { margin:20px 0; }
 .oc-member-outcomes-title { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 10px; margin-bottom:12px; }
 .oc-member-outcomes-title span { font-size:12px; font-weight:400; font-family:var(--oc-font-sans); letter-spacing:0; color:var(--muted-foreground); }
 .oc-member-outcomes ul { display:flex; flex-wrap:wrap; gap:8px; list-style:none; padding:0; }
-.oc-member-outcomes li { min-width:0; padding:6px 12px; border:1px solid var(--oc-content-edge, var(--border)); border-radius:999px; font-size:14px; line-height:1.4; background:var(--oc-content-surface, var(--card)); overflow-wrap:anywhere; }
+.oc-member-outcomes li { min-width:0; padding:6px 12px; border:1px solid var(--oc-content-edge, var(--border)); border-radius:var(--oc-radius-full); font-size:14px; line-height:1.4; background:var(--oc-content-surface, var(--card)); overflow-wrap:anywhere; }
 .oc-explore-card .oc-member-outcomes { margin:0 0 20px; }
 .oc-explore-card .oc-member-outcomes-title { font-size:12px; font-weight:600; color:var(--muted-foreground); margin-bottom:8px; }
 .oc-explore-card .oc-member-outcomes li { font-size:12px; padding:4px 10px; }
@@ -28,7 +28,7 @@
 .oc-club-subsection > h3 { font-size:17px; line-height:1.35; font-weight:600; }
 .oc-club-prose { margin-top:8px; white-space:pre-line; overflow-wrap:anywhere; font-size:16px; line-height:1.7; color:var(--muted-foreground); }
 .oc-club-section > .oc-club-prose:first-of-type { margin-top:0; }
-.oc-club-card { min-width:0; padding:20px; border-radius:16px; border:1px solid var(--oc-content-edge, var(--border)); background:var(--oc-content-surface, var(--card)); }
+.oc-club-card { min-width:0; padding:20px; border-radius:var(--oc-radius-lg); border:1px solid var(--oc-content-edge, var(--border)); background:var(--oc-content-surface, var(--card)); }
 .oc-club-card :is(h3, h4), .oc-club-feature-list h4 { font-size:16px; font-weight:600; overflow-wrap:anywhere; }
 .oc-club-card p, .oc-club-feature-list p { margin-top:8px; white-space:pre-line; font-size:15px; line-height:1.7; color:var(--muted-foreground); overflow-wrap:anywhere; }
 .oc-club-feature-list { list-style:none; display:grid; gap:20px; margin-top:12px; }
@@ -44,7 +44,7 @@
 .oc-club-faq { border-top:1px solid var(--border); }
 .oc-club-faq details { border-bottom:1px solid var(--border); }
 .oc-club-faq summary { display:flex; align-items:center; min-height:52px; padding:8px 0; cursor:pointer; font-size:16px; font-weight:500; }
-.oc-club-faq summary:focus-visible { outline:2px solid var(--ring); outline-offset:2px; border-radius:6px; }
+.oc-club-faq summary:focus-visible { outline:2px solid var(--ring); outline-offset:2px; border-radius:var(--oc-radius-sm); }
 .oc-club-faq p { padding:0 0 16px; white-space:pre-line; font-size:16px; line-height:1.7; color:var(--muted-foreground); }
 @media (max-width:639px) { .oc-club-hero-actions { flex-direction:column; align-items:stretch; } }
 .oc-member-outcomes .oc-member-outcome-mark { display:inline-block; vertical-align:middle; margin-right:8px; height:20px; width:auto; object-fit:contain; }

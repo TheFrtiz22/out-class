@@ -24,9 +24,11 @@ test('leader phone rules apply only below 1024px and never to the personal shell
   }
 })
 
-test('browser: leader pages at 390px use the app switch, grouped lists and the five-tab bar', async t => {
-  const fixture = await startLeaderScreens(); t.after(() => fixture.close())
-  const browser = await chromium.launch({ headless: true, ...(!fs.existsSync(chromium.executablePath()) ? { channel: 'chrome' } : {}) }); t.after(() => browser.close())
+// Time-boxed: this test stalled CI's validate job silently (PR #190, 2026-11-09/10). The stall was in cleanup: the
+// fixture's http.close() waited on Chrome's keep-alive sockets. The fixture now drops those sockets, and cleanup is time-boxed too.
+test('browser: leader pages at 390px use the app switch, grouped lists and the five-tab bar', { timeout: 180000 }, async t => {
+  const fixture = await startLeaderScreens(); t.after(() => fixture.close(), { timeout: 30000 })
+  const browser = await chromium.launch({ headless: true, ...(!fs.existsSync(chromium.executablePath()) ? { channel: 'chrome' } : {}) }); t.after(() => browser.close(), { timeout: 30000 })
   const open = async (query, width = 390) => {
     const context = await browser.newContext({ viewport: { width, height: width < 500 ? 844 : 900 }, isMobile: width < 500, hasTouch: width < 500 }); t.after(() => context.close())
     const page = await context.newPage(), errors = []; page.on('pageerror', error => errors.push(error.message))
