@@ -10,7 +10,7 @@ import { readPlatformResource, inspectPlatformRecord, changePlatformResource, ty
 import { inspectAdminStudent, inspectAdminClub, setAdminClubSuspended, resendAdminStudentInvitation, resendAdminClubInvitation } from "@/actions/admin-workspace";
 import { platformStatuses } from "@/lib/platform-console";
 import { Button } from "@/components/ui/button";
-import { DataTable } from "@/components/ui/data-table";
+import { DataTableFrame as DataTable } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";

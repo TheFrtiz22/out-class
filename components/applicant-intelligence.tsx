@@ -10,9 +10,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Panel } from "@/components/ui/panel";
 import { NativeSelect } from "@/components/ui/native-select"
 
-export function ApplicantDisplayPanel({ clubId, applicationId, refreshKey = "", mode = "review", sessionId, previewConfig, layout = "detail", onFitChange }: { clubId: string; applicationId: string; refreshKey?: string; mode?: "review" | "interview" | "voting"; sessionId?: string; previewConfig?: ApplicantDisplayConfig; layout?: "detail" | "slide"; onFitChange?: (fits: boolean|null)=>void }) {
+export function ApplicantDisplayPanel({ clubId, applicationId, refreshKey = "", mode = "review", sessionId, previewConfig, layout = "detail", onFitChange, additionalObservations = true, embedded = false, onSummary }: { clubId: string; applicationId: string; refreshKey?: string; mode?: "review" | "interview" | "voting"; sessionId?: string; previewConfig?: ApplicantDisplayConfig; layout?: "detail" | "slide"; onFitChange?: (fits: boolean|null)=>void;
+  /** Review mode: also render Additional observations (callers that gate eligibility render their own). */
+  additionalObservations?: boolean;
+  /** Inside a collapsible section that already names it: no card chrome or heading. */
+  embedded?: boolean;
+  /** Review mode: pros and cons count, and whether this viewer may add one (null while loading or on error). */
+  onSummary?: (summary: { count: number; canAdd: boolean } | null) => void }) {
   const [data, setData] = useState<ApplicantDisplay | null>(null), [error, setError] = useState(""), [revision, setRevision] = useState(0);
   const slideRef=useRef<HTMLElement|null>(null)
+  const summarize=useRef(onSummary);summarize.current=onSummary
+  useEffect(()=>{summarize.current?.(data?{count:data.observations.filter(o=>o.kind==="PRO"||o.kind==="CON").length,canAdd:!data.anonymous}:null)},[data])
   const previewKey=JSON.stringify(previewConfig)
   const [body, setBody] = useState(""), [kind, setKind] = useState<"PRO" | "CON">("PRO"), [editing, setEditing] = useState<string | undefined>(), [editorOpen, setEditorOpen] = useState(false), [busy, setBusy] = useState(false);
   useEffect(() => {
@@ -46,8 +54,8 @@ export function ApplicantDisplayPanel({ clubId, applicationId, refreshKey = "", 
       <ApplicantSlide data={data}/>
     </>}
   </section>;
-  return <><section aria-label={`${mode} applicant information`} className={mode === "review" ? "oc-review-observations space-y-3 rounded-lg border bg-card p-4" : "space-y-5 rounded-lg border bg-card p-5"}>
-    <header><h3 className="oc-card-heading">{mode === "review" ? "Pros & cons" : "Applicant information"}</h3>{mode !== "review" && <p className="text-xs text-muted-foreground">Shared Interview and Voting display · filtered for your current review access.</p>}</header>
+  return <><section aria-label={`${mode} applicant information`} className={embedded ? "space-y-3" : mode === "review" ? "oc-review-observations space-y-3 rounded-lg border bg-card p-4" : "space-y-5 rounded-lg border bg-card p-5"}>
+    <header className={embedded ? "sr-only" : undefined}><h3 className="oc-card-heading">{mode === "review" ? "Pros & cons" : "Applicant information"}</h3>{mode !== "review" && <p className="text-xs text-muted-foreground">Shared Interview and Voting display · filtered for your current review access.</p>}</header>
     {error && <p role="alert" className="text-sm text-destructive">{error} <Button type="button" variant="ghost" onClick={() => setRevision(v => v + 1)}>Reload</Button></p>}
     {!data && !error && <LoadingState label="Loading authorized review information…" layout="form" rows={2} />}
     {data && <>
@@ -78,7 +86,7 @@ export function ApplicantDisplayPanel({ clubId, applicationId, refreshKey = "", 
       </form>}
     </>}
   </section>
-    {mode==='review'&&data&&!data.anonymous&&<AdditionalObservations key={applicationId} clubId={clubId} applicationId={applicationId}/>}
+    {additionalObservations&&mode==='review'&&data&&!data.anonymous&&<AdditionalObservations key={applicationId} clubId={clubId} applicationId={applicationId}/>}
   </>;
 }
 
