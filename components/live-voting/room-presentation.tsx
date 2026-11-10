@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 
 type Data=VotingSlideData;
 export function RoomPresentation({clubId,sessionId,applicationId,identity,refreshKey,member,onReady,onStale,paused=false}:{clubId:string;sessionId:string;applicationId:string;identity:string;refreshKey:number;member?:string;onReady?:()=>void;onStale?:()=>unknown;paused?:boolean}){
-  const key=`${identity}:${applicationId}`, [state,setState]=useState<{key:string;data:Data|null;error:boolean}>({key,data:null,error:false}),[retry,setRetry]=useState(0);
+  // Keyed by club, session (and so cycle and round) and applicant: another room's slide never shows, and late responses are ignored.
+  const key=`${identity}:${clubId}:${sessionId}:${applicationId}`, [state,setState]=useState<{key:string;data:Data|null;error:boolean}>({key,data:null,error:false}),[retry,setRetry]=useState(0);
   const stale=useRef(onStale);useEffect(()=>{stale.current=onStale;});
   useEffect(()=>{if(paused)return;let current=true,busy=false;setState({key,data:null,error:false});const refresh=async()=>{if(busy)return;busy=true;try{const data=await read({clubId,sessionId,applicationId},member);if(!current)return;
     // The room moved on before this viewer's snapshot did: keep loading and fetch the current room, not an error.
