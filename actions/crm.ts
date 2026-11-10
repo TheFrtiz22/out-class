@@ -5,6 +5,7 @@ import { readPipelinePage } from "@/lib/pipeline-page-read";
 import { pipelineSummarySelect, pipelineSummaryProjection } from "@/lib/pipeline-summary";
 import { pipelineDetailInclude, pipelineDetailProjection } from "@/lib/pipeline-detail";
 import { rankedReviewSelect, rankedReviewProjection } from "@/lib/ranked-review-read";
+import { loadPriorApplications } from "@/lib/prior-applications";
 import { readPipelineSelection } from "@/lib/pipeline-selection-read";
 import { pipelinePageQuery, pipelineSelectionKey, type PipelinePageQuery } from "@/lib/pipeline-page";
 import {decisionPublicationGuard} from "@/lib/decision-publication-guard";
@@ -74,8 +75,11 @@ export async function getClubPipelineSelection(clubId: string, input: PipelinePa
 
 async function loadPipelineDetails(tx: AppTransactionClient, where: Prisma.ApplicationWhereInput, membership: PipelineMembership, profileFields: ProfileFieldVisibility) {
   const applications = await tx.application.findMany({ where, include: pipelineDetailInclude });
+  // History links two applications, so it is read only for identified viewers.
+  const identified = applications.filter(raw => hasPermission(membership, "applicants.identify") && !raw.round.anonymousReview);
+  const prior = identified.length ? await loadPriorApplications(tx, identified[0].clubId, identified) : new Map();
   // The club's profile field choice is applied on the server: hidden values never leave it.
-  return applications.map(raw => restrictApplicationProfile(pipelineDetailProjection(raw, membership), profileFields));
+  return applications.map(raw => restrictApplicationProfile(pipelineDetailProjection(raw, membership, prior.get(raw.id) ?? []), profileFields));
 }
 
 async function readClubPipeline(clubId: string, input: z.infer<typeof pipelineFilter>) {

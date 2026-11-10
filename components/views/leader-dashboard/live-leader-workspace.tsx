@@ -1,4 +1,5 @@
 "use client"
+import { applicationStatusLabel } from "@/lib/application-status"
 import { answerText } from "@/lib/student-applications"
 import "@/components/product/operational-dashboard.css"
 import { completePipelineSelection, type PipelinePageQuery, type PipelineCursor } from "@/lib/pipeline-page"
@@ -812,6 +813,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                 <SheetDescription className={active.studentId.startsWith("anonymous-") || profileFields.major || profileFields.email ? undefined : "sr-only"}>
                   {active.studentId.startsWith("anonymous-") ? "Anonymous review · identity and appointments withheld" : [profileFields.major ? active.student.studentProfile?.major || "Academic profile not provided" : "", profileFields.email ? active.student.email : ""].filter(Boolean).join(" · ") || "Applicant profile"}
                 </SheetDescription>
+                {"priorApplications" in active && !!active.priorApplications?.length && <p data-testid="prior-applications" className="text-sm text-muted-foreground">Applied before: {active.priorApplications.map(prior => `${prior.cycleName ?? "earlier cycle"} (${applicationStatusLabel(prior.status).toLowerCase()})`).join(", ")}</p>}
                 <Button variant="ghost" className="oc-dossier-jump" onClick={() => document.getElementById("dossier-evaluation")?.focus()}>Jump to review workspace <ArrowRight size={15} aria-hidden="true" /></Button>
               </SheetHeader>
               {(interviewCapabilities(membership).readClosing || interviewCapabilities(membership).moderateResume) && <nav aria-label="Applicant interview records" className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
