@@ -15,9 +15,10 @@ import { Input } from "@/components/ui/input";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import "./events.css";
+import type { ClubAccess } from "@/lib/permissions";
 import { NativeSelect } from "@/components/ui/native-select"
 const tabs = ["Upcoming", "Past", "Pending Approval", "Rejected", "Drafts", "Closed"];
-export function ClubEvents({ clubId, clubName, canSeeAttendees }: { clubId: string; clubName: string; canSeeAttendees: boolean }) {
+export function ClubEvents({ clubId, clubName, canSeeAttendees, membership }: { clubId: string; clubName: string; canSeeAttendees: boolean; membership?: ClubAccess | null }) {
   const [rows, setRows] = useState<ManagedCampusEvent[]>([]), [loading, setLoading] = useState(true), [error, setError] = useState(""),
     [tab, setTab] = useState("Upcoming"), [editing, setEditing] = useState<ManagedCampusEvent | null | undefined>(),
     [selected, setSelected] = useState<string | null>(null), [busy, setBusy] = useState(false), [retry, setRetry] = useState(0),
@@ -66,7 +67,7 @@ export function ClubEvents({ clubId, clubName, canSeeAttendees }: { clubId: stri
         {event.rejectionReason && <p className="rounded-lg border p-3 text-sm">Review feedback: {event.rejectionReason}</p>}
         <dl className="text-sm text-muted-foreground">{event.submittedAt && <><dt>Last submitted</dt><dd>{eventDateLabel(event.submittedAt)}</dd></>}{event.reviewedAt && <><dt>Last reviewed</dt><dd>{eventDateLabel(event.reviewedAt)}</dd></>}</dl>
         {actions(event)}
-        {canSeeAttendees ? <RsvpDashboard key={event.id} event={event} /> : <p className="text-sm">{eventRsvpSummary(event.rsvpCount, event.capacity)}. Attendee access requires attendance-management permission.</p>}
+        {canSeeAttendees ? <RsvpDashboard key={event.id} event={event} membership={membership} /> : <p className="text-sm">{eventRsvpSummary(event.rsvpCount, event.capacity)}. Attendee access requires attendance-management permission.</p>}
       </div>
     </div> : <>
       <SegmentedControl label="Event filter" className="oc-event-management-tabs" value={tab} onChange={setTab} options={tabs.map(t => ({ value: t, label: `${t}${t === "Pending Approval" ? ` (${rows.filter(e => e.status === "PENDING").length})` : ""}` }))} />
@@ -77,11 +78,11 @@ export function ClubEvents({ clubId, clubName, canSeeAttendees }: { clubId: stri
     <Dialog open={!!confirm} onOpenChange={open => { if (!open && !busy) setConfirm(null) }}><DialogContent onCloseAutoFocus={e => { e.preventDefault(); const target = removed.current ? detailHeading.current || overviewHeading.current : removeOrigin.current; if (target?.isConnected) target.focus(); }}><DialogTitle>Remove from Corkboard?</DialogTitle><DialogDescription>{confirm?.title} will leave the public Corkboard. Its event history and RSVP records will remain. Publishing again requires approval.</DialogDescription>{error && <p role="alert">{error}</p>}<div className="flex flex-wrap gap-2"><Button variant="outline" disabled={busy} onClick={() => setConfirm(null)}>Keep event</Button><Button disabled={busy} onClick={() => confirm && void command(confirm, "WITHDRAW")}>Remove from Corkboard</Button></div></DialogContent></Dialog>
   </section>;
 }
-function RsvpDashboard({ event }: { event: ManagedCampusEvent }) {
+function RsvpDashboard({ event, membership }: { event: ManagedCampusEvent; membership?: ClubAccess | null }) {
   const [data, setData] = useState<Awaited<ReturnType<typeof getCampusEventRsvpDashboard>> | null>(null), [error, setError] = useState(""), [loading, setLoading] = useState(false), [open, setOpen] = useState(false), [revision, setRevision] = useState(0);
   useEffect(() => { if (!open) return; let active = true; setLoading(true); setError(""); getCampusEventRsvpDashboard(event.clubId, event.id).then(value => { if (active) setData(value) }).catch(() => { if (active) { setData(null); setError("RSVPs could not be loaded.") } }).finally(() => { if (active) setLoading(false) }); return () => { active = false } }, [open, event.clubId, event.id, revision]);
   useRevalidate(() => setRevision(n => n + 1), { enabled: open, scopes: ["events"] });
-  return <section className="min-w-0 space-y-3 rounded-lg border p-4" aria-label="Event RSVPs"><h3 className="font-semibold">RSVPs</h3><p role="status">{eventRsvpSummary(data?.count ?? event.rsvpCount, data ? data.capacity : event.capacity)}</p><p className="text-xs text-muted-foreground">RSVP intent is separate from recorded check-in attendance.</p><div className="flex flex-wrap items-center gap-2">{!open && <Button variant="outline" onClick={() => setOpen(true)}>View RSVPs</Button>}{/* Rendered only behind canSeeAttendees (meetings.attendance); the server re-checks. */}<ClubExportLink clubId={event.clubId} kind="rsvps" membership={{ permissions: ["meetings.attendance"] }} filter={event.id} label="Export CSV" /></div>{open && loading && !data && <LoadingState label="Loading RSVPs…" layout="rows" rows={2} />}{error && <p role="alert">{error} <Button variant="outline" size="sm" disabled={loading} onClick={() => setRevision(n => n + 1)}>Try again</Button></p>}{open && data && (!data.attendees.length ? <p>No RSVPs yet.</p> : <ul className="divide-y">{data.attendees.map((a, i) => <li key={i} className="min-w-0 break-words py-3"><p className="font-medium">{a.name}</p><p className="text-sm">{a.email || "Identity withheld during anonymous review"}</p><p className="text-xs text-muted-foreground">RSVP · {eventDateLabel(a.createdAt)}</p></li>)}</ul>)}</section>;
+  return <section className="min-w-0 space-y-3 rounded-lg border p-4" aria-label="Event RSVPs"><h3 className="font-semibold">RSVPs</h3><p role="status">{eventRsvpSummary(data?.count ?? event.rsvpCount, data ? data.capacity : event.capacity)}</p><p className="text-xs text-muted-foreground">RSVP intent is separate from recorded check-in attendance.</p><div className="flex flex-wrap items-center gap-2">{!open && <Button variant="outline" onClick={() => setOpen(true)}>View RSVPs</Button>}<ClubExportLink clubId={event.clubId} kind="rsvps" membership={membership} filter={event.id} label="Export CSV" /></div>{open && loading && !data && <LoadingState label="Loading RSVPs…" layout="rows" rows={2} />}{error && <p role="alert">{error} <Button variant="outline" size="sm" disabled={loading} onClick={() => setRevision(n => n + 1)}>Try again</Button></p>}{open && data && (!data.attendees.length ? <p>No RSVPs yet.</p> : <ul className="divide-y">{data.attendees.map((a, i) => <li key={i} className="min-w-0 break-words py-3"><p className="font-medium">{a.name}</p><p className="text-sm">{a.email || "Identity withheld during anonymous review"}</p><p className="text-xs text-muted-foreground">RSVP · {eventDateLabel(a.createdAt)}</p></li>)}</ul>)}</section>;
 }
 function EventEditor({
   clubId,

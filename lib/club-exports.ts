@@ -10,10 +10,11 @@ type Member = ClubAccess & { id: string; userId: string }
 export type ExportTable = { header: string[]; rows: CsvCell[][] }
 
 /** Pilot-club column set (owner decision 2026-11-10), shared by the roster and
- * the leading applicant columns. No schema field holds "exec" or a member's
- * cycle, so both are derived (see memberRoleCells and memberCycleSelect). */
+ * the leading applicant columns, then Email and Computing ID (StudentProfile.computingId).
+ * No schema field holds "exec" or a member's cycle, so both are derived
+ * (see memberRoleCells and memberCycleSelect). */
 const personHeader = (profileFields: ProfileFieldVisibility) =>
-  ["First name", "Last name", ...(profileFields.academicYear ? ["Grad year"] : []), "Role within org", "Exec", "Recruitment cycle"]
+  ["First name", "Last name", ...(profileFields.academicYear ? ["Grad year"] : []), "Role within org", "Exec", "Recruitment cycle", "Email", "Computing ID"]
 
 const execAccessRoles = new Set(["OWNER", "ADMIN", "RECRUITING_ADMIN"])
 const execClubRoles = new Set(["PRESIDENT", "RECRUITMENT_LEAD"])
@@ -26,7 +27,8 @@ export const memberRoleSelect = { title: true, isOwner: true, accessRole: true, 
  * club role, or an explicit President/Vice-president/Board office. Interviewer and
  * Member access alone are not exec. */
 export function memberRoleCells(member: RoleFields | null | undefined): CsvCell[] {
-  if (!member) return ["", "false"]
+  // Not a member of this club (an applicant only): no role, and Exec is left blank.
+  if (!member) return ["", ""]
   const exec = member.isOwner || execAccessRoles.has(member.accessRole) || execClubRoles.has(member.role)
     || member.interviewOffices.some(office => execOffices.has(office))
   return [member.title?.trim() || membershipRoleLabel(member), exec ? "true" : "false"]
@@ -41,7 +43,7 @@ const memberCycleSelect = (clubId: string) => ({
 })
 
 /** Applicants through the same privacy projection the pipeline uses: anonymous
- * rounds stay anonymous (no name, grad year, role or exec) and only scores this
+ * rounds stay anonymous (no name, grad year, role, exec, email or computing ID) and only scores this
  * member may already see are included. No email, GPA, test score, LinkedIn,
  * résumé, note or vote columns. */
 export async function applicantExport(tx: AppTransactionClient, clubId: string, member: Member, profileFields: ProfileFieldVisibility = defaultProfileFieldVisibility(), roundId?: string | null): Promise<ExportTable> {
@@ -49,13 +51,22 @@ export async function applicantExport(tx: AppTransactionClient, clubId: string, 
     tx.application.findMany({
       // A round filter only narrows: the club id stays in the where clause, so another club's round returns nothing.
       where: { clubId, status: { not: "DRAFTING" }, ...(roundId ? { roundId } : {}) },
-      select: { ...pipelineSummarySelect, submittedAt: true, recruitmentCycle: { select: { name: true } } },
+      select: { ...pipelineSummarySelect, submittedAt: true, recruitmentCycle: { select: { name: true } },
+        // computingId is read here only; it is written to identified rows alone.
+        student: { select: { ...pipelineSummarySelect.student.select, studentProfile: { select: { ...pipelineSummarySelect.student.select.studentProfile.select, computingId: true } } } } },
       orderBy: [{ submittedAt: "asc" }, { id: "asc" }],
     }),
     tx.pipelineRound.findMany({ where: { clubId }, select: { id: true, name: true } }),
   ])
   const roundName = new Map(rounds.map(round => [round.id, round.name]))
-  const views = apps.map(app => ({ app, view: restrictApplicationProfile(pipelineSummaryProjection(app, member), profileFields) }))
+  // Same rule as the pipeline (actions/crm.ts loadPipelineDetails): a member recused from an
+  // applicant stops seeing that applicant's scores; the row and name stay.
+  const recused = new Set((apps.length ? await tx.applicantRecusal.findMany({
+    where: { clubId, memberId: member.id, liftedAt: null, applicationId: { in: apps.map(app => app.id) } }, select: { applicationId: true } }) : []).map(r => r.applicationId))
+  const views = apps.map(app => {
+    const view = restrictApplicationProfile(pipelineSummaryProjection(app, member), profileFields)
+    return { app, view: recused.has(app.id) ? { ...view, roundScore: null } : view }
+  })
   // Only identified applicants are looked up as members of this club.
   const identifiedIds = [...new Set(views.filter(({ app, view }) => view.studentId === app.studentId).map(({ app }) => app.studentId))]
   const memberships = identifiedIds.length ? await tx.clubMember.findMany({ where: { clubId, userId: { in: identifiedIds } }, select: { userId: true, ...memberRoleSelect } }) : []
@@ -69,6 +80,7 @@ export async function applicantExport(tx: AppTransactionClient, clubId: string, 
       ...(profileFields.academicYear ? [identified ? app.student.studentProfile?.gradYear ?? "" : ""] : []),
       ...(identified ? memberRoleCells(memberOf.get(app.studentId)) : ["", ""]),
       app.recruitmentCycle?.name ?? "",
+      identified ? view.student.email : "", identified ? app.student.studentProfile?.computingId ?? "" : "",
       applicationStatusLabel(view.status), roundName.get(view.roundId) ?? "",
       app.submittedAt ? app.submittedAt.toISOString().slice(0, 10) : "",
       view.roundScore?.average == null ? "" : Math.round(view.roundScore.average * 10) / 10,
@@ -83,7 +95,7 @@ export async function rosterExport(tx: AppTransactionClient, clubId: string, pro
   const members = await tx.clubMember.findMany({
     where: { clubId, status: "ACTIVE" },
     select: { ...memberRoleSelect, cohort: true,
-      user: { select: { studentProfile: { select: { firstName: true, lastName: true, gradYear: true } }, applications: memberCycleSelect(clubId) } } },
+      user: { select: { email: true, studentProfile: { select: { firstName: true, lastName: true, gradYear: true, computingId: true } }, applications: memberCycleSelect(clubId) } } },
     orderBy: [{ joinedAt: "asc" }, { id: "asc" }],
   })
   return {
@@ -93,6 +105,7 @@ export async function rosterExport(tx: AppTransactionClient, clubId: string, pro
       m.user.studentProfile?.firstName ?? "", m.user.studentProfile?.lastName ?? "",
       ...(profileFields.academicYear ? [m.user.studentProfile?.gradYear ?? ""] : []),
       ...memberRoleCells(m), m.user.applications[0]?.recruitmentCycle?.name ?? m.cohort ?? "",
+      m.user.email, m.user.studentProfile?.computingId ?? "",
     ]),
   }
 }

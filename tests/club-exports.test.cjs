@@ -40,11 +40,12 @@ function route({ deny = false, denyInTx = false } = {}) {
   const member = { id: 'm1', userId: 'u1', isOwner: true, status: 'ACTIVE' }
   const tx = {
     club: { findUniqueOrThrow: async () => ({ name: 'Test Club' }) },
-    clubMember: { findMany: async q => { assert.deepEqual(q.where, { clubId, status: 'ACTIVE' }); return [{ title: '=evil', cohort: null, isOwner: false, accessRole: 'MEMBER', role: 'GENERAL_MEMBER', interviewOffices: [], user: { studentProfile: { firstName: 'Ada', lastName: 'Lee', gradYear: 2028 }, applications: [] } }] } },
+    clubMember: { findMany: async q => { assert.deepEqual(q.where, { clubId, status: 'ACTIVE' }); return [{ title: '=evil', cohort: null, isOwner: false, accessRole: 'MEMBER', role: 'GENERAL_MEMBER', interviewOffices: [], user: { email: 'ada@virginia.edu', studentProfile: { firstName: 'Ada', lastName: 'Lee', gradYear: 2028, computingId: 'al1x' }, applications: [] } }] } },
     eventAttendance: { findMany: async q => { assert.deepEqual(q.where, { event: { clubId } }); return [] } },
     auditLog: { create: async q => { state.audits.push(q.data) } },
   }
   const mod = load('app/api/club-exports/route.ts', {
+    '@/utils/support-audit': { auditSupportAction: async () => {} },
     '@/utils/prisma': { prisma: { $transaction: async fn => fn(tx) } },
     '@/utils/auth': { requireClubPermission: async (id, perms) => { state.checks.push(['request', id, perms]); if (deny) throw new Error('denied'); return { user: { id: 'u1' }, membership: member } } },
     '@/lib/club-transaction-authorization': { authorizeClubTransaction: async (_tx, id, user, perms, opts) => { state.checks.push(['tx', id, user, perms, opts]); if (denyInTx) throw new Error('changed'); return member } },
@@ -60,7 +61,7 @@ test('roster export: authorized twice, audited, private headers, injection-safe'
   assert.equal(res.headers.get('cache-control'), 'private, no-store')
   assert.match(res.headers.get('content-disposition'), /attachment; filename="test-club-roster-\d{4}-\d{2}-\d{2}\.csv"/)
   const body = await res.text()
-  assert.match(body, /^First name,Last name,Grad year,Role within org,Exec,Recruitment cycle\r\nAda,Lee,2028,'=evil,false,\r\n$/)
+  assert.match(body, /^First name,Last name,Grad year,Role within org,Exec,Recruitment cycle,Email,Computing ID\r\nAda,Lee,2028,'=evil,false,,ada@virginia\.edu,al1x\r\n$/)
   assert.deepEqual(s.checks.map(c => c[0]), ['request', 'tx'])
   assert.deepEqual(s.checks[1][4], { readOnly: true, allowSuspendedRead: true })
   assert.deepEqual(s.audits, [{ actorId: 'u1', action: 'club.export.roster', targetId: clubId, clubId, details: { rows: 1 } }])
@@ -109,13 +110,14 @@ const otherClub = '00000000-0000-4000-8000-000000000009'
 const roundA = '00000000-0000-4000-8000-0000000000a1'
 const eventA = '00000000-0000-4000-8000-0000000000e1'
 const { hasPermission } = load('lib/permissions.ts')
-function harness(memberships, data = {}) {
-  const state = { audits: [], queries: {} }
+function harness(memberships, data = {}, { support = null, profileFieldVisibility = null } = {}) {
+  const state = { audits: [], supportAudits: [], queries: {} }
   const access = id => { const m = memberships[id]; return m ? { id: 'm1', userId: 'u1', status: 'ACTIVE', ...m } : null }
   const check = (id, perms) => { const m = access(id); if (!m || !perms.every(p => hasPermission(m, p))) throw new Error('You do not have permission for this club action.'); return m }
   const record = (name, rows) => async q => { state.queries[name] = q; return rows }
   const tx = {
-    club: { findUniqueOrThrow: async () => ({ name: 'Test Club', profileFieldVisibility: null }) },
+    club: { findUniqueOrThrow: async () => ({ name: 'Test Club', profileFieldVisibility }) },
+    applicantRecusal: { findMany: async q => { state.queries.applicantRecusal = q; return (data.recusals || []).filter(id => q.where.applicationId.in.includes(id)).map(applicationId => ({ applicationId })) } },
     application: { findMany: record('application', data.applications || []) },
     pipelineRound: { findMany: record('pipelineRound', data.rounds || []) },
     clubMember: { findMany: record('clubMember', data.members || []) },
@@ -123,7 +125,14 @@ function harness(memberships, data = {}) {
     eventRsvp: { findMany: record('eventRsvp', data.rsvps || []) },
     auditLog: { create: async q => { state.audits.push(q.data) } },
   }
+  // The real support-audit module, with the view-as session and cookie stubbed.
+  const supportAudit = load('utils/support-audit.ts', {
+    'next/headers': { cookies: async () => ({ has: name => !!support && name === 'outclass-platform-view' }) },
+    '@/utils/platform-view-as': { platformViewSession: async () => support },
+    '@/utils/prisma': { prisma: { auditLog: { create: async q => { state.supportAudits.push(q.data) } } } },
+  })
   const mod = load('app/api/club-exports/route.ts', {
+    '@/utils/support-audit': supportAudit,
     '@/utils/prisma': { prisma: { $transaction: async fn => fn(tx) } },
     '@/utils/auth': { requireClubPermission: async (id, perms) => { check(id, perms); return { user: { id: 'u1' } } } },
     '@/lib/club-transaction-authorization': { authorizeClubTransaction: async (_tx, id, _user, perms) => check(id, perms) },
@@ -197,7 +206,7 @@ test('attendance export masks applicants in anonymous review, like the attendanc
 function application(id, { anonymous = false, studentId = 's-' + id, evaluations = [] } = {}) {
   return { id, roundId: roundA, status: 'SUBMITTED', studentId, submittedAt: new Date('2026-10-01T12:00:00Z'), recruitmentCycle: { name: 'Fall 2026' },
     round: { anonymousReview: anonymous },
-    student: { email: `${id}@virginia.edu`, studentProfile: { firstName: 'Real' + id, lastName: 'Name', major: 'Economics', gradYear: 2028, transferStudent: false, gpa: 3.9, satScore: 1500, actScore: null } },
+    student: { email: `${id}@virginia.edu`, studentProfile: { firstName: 'Real' + id, lastName: 'Name', computingId: 'cid' + id, major: 'Economics', gradYear: 2028, transferStudent: false, gpa: 3.9, satScore: 1500, actScore: null } },
     evaluations, interviewAssignments: [] }
 }
 
@@ -210,10 +219,11 @@ test('applicant export: per round, anonymous round hides names, no notes/votes/r
   assert.equal(res.status, 200)
   const body = await res.text()
   const [header, identified, anonymous] = body.replace(/^\uFEFF/, '').trim().split('\r\n')
-  assert.equal(header, 'First name,Last name,Grad year,Role within org,Exec,Recruitment cycle,Status,Round,Submitted,Average score,Reviews submitted')
+  assert.equal(header, 'First name,Last name,Grad year,Role within org,Exec,Recruitment cycle,Email,Computing ID,Status,Round,Submitted,Average score,Reviews submitted')
   assert.doesNotMatch(header, /note|vote|ballot|resume|résumé|gpa|sat|act\b|linkedin/i)
-  assert.match(identified, /^Realx1,Name,2028,Admin,true,Fall 2026,/)
-  assert.match(anonymous, /^Applicant,[^,]+,,,,Fall 2026,/)
+  assert.match(identified, /^Realx1,Name,2028,Admin,true,Fall 2026,x1@virginia\.edu,cidx1,Submitted,/)
+  assert.match(anonymous, /^Applicant,[^,]+,,,,Fall 2026,,,Submitted,/)
+  assert.doesNotMatch(body, /cidx2/)
   // Only the identified applicant is looked up as a club member.
   assert.deepEqual(s.queries.clubMember.where, { clubId, userId: { in: ['s-x1'] } })
   assert.doesNotMatch(body, /Realx2|x2@virginia\.edu/)
@@ -226,9 +236,9 @@ test('applicant export: per round, anonymous round hides names, no notes/votes/r
 
 test('roster: pilot column order, exec derived from role data, cycle from accepted application else cohort', async () => {
   const m = (over) => ({ title: null, cohort: null, isOwner: false, accessRole: 'MEMBER', role: 'GENERAL_MEMBER', interviewOffices: [],
-    user: { studentProfile: { firstName: 'F', lastName: 'L', gradYear: 2027 }, applications: [] }, ...over })
+    user: { email: 'f@virginia.edu', studentProfile: { firstName: 'F', lastName: 'L', gradYear: 2027, computingId: 'fl1' }, applications: [] }, ...over })
   const s = harness({ [clubId]: { permissions: ['members.manage'] } }, { members: [
-    m({ title: 'VP of Recruitment', accessRole: 'RECRUITING_ADMIN', user: { studentProfile: { firstName: 'Vee', lastName: 'Pee', gradYear: 2027 }, applications: [{ recruitmentCycle: { name: 'Spring 2026' } }] } }),
+    m({ title: 'VP of Recruitment', accessRole: 'RECRUITING_ADMIN', user: { email: 'vp@virginia.edu', studentProfile: { firstName: 'Vee', lastName: 'Pee', gradYear: 2027, computingId: 'vp9' }, applications: [{ recruitmentCycle: { name: 'Spring 2026' } }] } }),
     m({ isOwner: true, accessRole: 'OWNER' }),
     m({ interviewOffices: ['BOARD'] }),
     m({ role: 'PRESIDENT' }),
@@ -237,16 +247,79 @@ test('roster: pilot column order, exec derived from role data, cycle from accept
   ] })
   const body = (await (await s.get(`clubId=${clubId}&kind=roster`)).text()).replace(/^﻿/, '')
   assert.deepEqual(body.trim().split('\r\n'), [
-    'First name,Last name,Grad year,Role within org,Exec,Recruitment cycle',
-    'Vee,Pee,2027,VP of Recruitment,true,Spring 2026',
-    'F,L,2027,Owner,true,',
-    'F,L,2027,Member,true,',
-    'F,L,2027,Member,true,',
-    'F,L,2027,Interviewer,false,Fall 2025',
-    'F,L,2027,Member,false,',
+    'First name,Last name,Grad year,Role within org,Exec,Recruitment cycle,Email,Computing ID',
+    'Vee,Pee,2027,VP of Recruitment,true,Spring 2026,vp@virginia.edu,vp9',
+    'F,L,2027,Owner,true,,f@virginia.edu,fl1',
+    'F,L,2027,Member,true,,f@virginia.edu,fl1',
+    'F,L,2027,Member,true,,f@virginia.edu,fl1',
+    'F,L,2027,Interviewer,false,Fall 2025,f@virginia.edu,fl1',
+    'F,L,2027,Member,false,,f@virginia.edu,fl1',
   ])
   const sel = s.queries.clubMember.select.user.select.applications
   assert.deepEqual(sel.where, { clubId, status: 'ACCEPTED', recruitmentCycleId: { not: null } })
   assert.equal(sel.take, 1)
-  assert.doesNotMatch(body, /@/)
+})
+
+const csvLines = async res => (await res.text()).replace(/^﻿/, '').trim().split('\r\n')
+const closingReader = { permissions: ['recruitment.manage', 'applicants.identify'], interviewOffices: ['BOARD'] }
+const scored = [{ interviewerId: 'm2', roundId: roundA, submittedAt: new Date(), score: 4 }, { interviewerId: 'm3', roundId: roundA, submittedAt: new Date(), score: 2 }]
+
+test('recusal blanks score cells for that applicant only; the row and name stay', async () => {
+  const s = harness({ [clubId]: closingReader }, { rounds: [{ id: roundA, name: 'R1' }], recusals: ['x1'],
+    applications: [application('x1', { evaluations: scored }), application('x2', { evaluations: scored })] })
+  const [, x1, x2] = await csvLines(await s.get(`clubId=${clubId}&kind=applicants`))
+  assert.match(x1, /^Realx1,Name,.*,R1,2026-10-01,,$/)
+  assert.match(x2, /^Realx2,Name,.*,R1,2026-10-01,3,2$/)
+  assert.deepEqual(s.queries.applicantRecusal.where, { clubId, memberId: 'm1', liftedAt: null, applicationId: { in: ['x1', 'x2'] } })
+})
+
+test('anonymous round with score visibility: scores shown, identity still masked', async () => {
+  const s = harness({ [clubId]: closingReader }, { rounds: [{ id: roundA, name: 'R1' }], members: [{ userId: 's-x2', title: 'Treasurer', isOwner: false, accessRole: 'ADMIN', role: 'GENERAL_MEMBER', interviewOffices: [] }],
+    applications: [application('x2', { anonymous: true, evaluations: scored })] })
+  const body = await (await s.get(`clubId=${clubId}&kind=applicants`)).text()
+  const [, row] = body.replace(/^﻿/, '').trim().split('\r\n')
+  assert.match(row, /^Applicant,[^,]+,,,,Fall 2026,,,.*,3,2$/)
+  assert.doesNotMatch(body, /Realx2|x2@|cidx2|Treasurer|2028/)
+  assert.equal(s.queries.clubMember, undefined)
+})
+
+test('identified non-member applicant has blank Role and Exec', async () => {
+  const s = harness({ [clubId]: closingReader }, { rounds: [{ id: roundA, name: 'R1' }], applications: [application('x3')] })
+  const [, row] = await csvLines(await s.get(`clubId=${clubId}&kind=applicants`))
+  assert.match(row, /^Realx3,Name,2028,,,Fall 2026,x3@virginia\.edu,cidx3,/)
+})
+
+test('clubs that hide class year get no Grad year column in roster or applicants', async () => {
+  const hidden = { profileFieldVisibility: { academicYear: false } }
+  const roster = harness({ [clubId]: { isOwner: true } }, { members: [{ title: null, cohort: null, isOwner: false, accessRole: 'MEMBER', role: 'GENERAL_MEMBER', interviewOffices: [], user: { email: 'f@virginia.edu', studentProfile: { firstName: 'F', lastName: 'L', gradYear: 2027, computingId: 'fl1' }, applications: [] } }] }, hidden)
+  assert.deepEqual(await csvLines(await roster.get(`clubId=${clubId}&kind=roster`)), ['First name,Last name,Role within org,Exec,Recruitment cycle,Email,Computing ID', 'F,L,Member,false,,f@virginia.edu,fl1'])
+  const apps = harness({ [clubId]: closingReader }, { rounds: [{ id: roundA, name: 'R1' }], applications: [application('x1')] }, hidden)
+  const [header, row] = await csvLines(await apps.get(`clubId=${clubId}&kind=applicants`))
+  assert.equal(header, 'First name,Last name,Role within org,Exec,Recruitment cycle,Email,Computing ID,Status,Round,Submitted,Average score,Reviews submitted')
+  assert.doesNotMatch(row, /2028/)
+})
+
+test('attendance export with an event filter scopes the query and records the event in the audit', async () => {
+  const s = harness({ [clubId]: { permissions: ['meetings.attendance'] } }, { attendance: [] })
+  assert.deepEqual(await csvLines(await s.get(`clubId=${clubId}&kind=attendance&eventId=${eventA}`)), ['Meeting,Meeting date,First name,Last name,Email,Checked in'])
+  assert.deepEqual(s.queries.eventAttendance.where, { event: { clubId }, eventId: eventA })
+  assert.deepEqual(s.audits, [{ actorId: 'u1', action: 'club.export.attendance', targetId: clubId, clubId, details: { rows: 0, eventId: eventA } }])
+})
+
+test('RECRUITMENT_LEAD club role with no title is Exec', async () => {
+  const s = harness({ [clubId]: { isOwner: true } }, { members: [{ title: '  ', cohort: null, isOwner: false, accessRole: 'MEMBER', role: 'RECRUITMENT_LEAD', interviewOffices: [], user: { email: 'r@virginia.edu', studentProfile: { firstName: 'R', lastName: 'L', gradYear: 2027, computingId: 'rl2' }, applications: [] } }] })
+  assert.deepEqual((await csvLines(await s.get(`clubId=${clubId}&kind=roster`)))[1], 'R,L,2027,Member,true,,r@virginia.edu,rl2')
+})
+
+test('support view-as export writes a support audit with admin actor, target user and session id', async () => {
+  const support = { id: 'support-session-1', actorId: 'admin-1', targetUserId: 'u1', reason: 'Pilot support ticket' }
+  const s = harness({ [clubId]: { isOwner: true } }, { members: [] }, { support })
+  const res = await s.get(`clubId=${clubId}&kind=roster`)
+  assert.equal(res.status, 200)
+  assert.deepEqual(s.supportAudits, [{ actorId: 'admin-1', effectiveUserId: 'u1', supportSessionId: 'support-session-1',
+    action: 'platform.impersonation.club-export.roster', targetId: clubId, details: { outcome: 'attempt', reason: 'Pilot support ticket' } }])
+  assert.equal(s.audits.length, 1)
+  const plain = harness({ [clubId]: { isOwner: true } }, { members: [] })
+  await plain.get(`clubId=${clubId}&kind=roster`)
+  assert.deepEqual(plain.supportAudits, [])
 })

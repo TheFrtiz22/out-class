@@ -6,6 +6,7 @@ import { applicantExport, attendanceExport, rosterExport, rsvpExport } from "@/l
 import { clubExportFilter, clubExportKinds, clubExportPermissions } from "@/lib/club-exports-access"
 import { csvFilename, toCsv } from "@/lib/csv"
 import { normalizeProfileFieldVisibility } from "@/lib/profile-field-visibility"
+import { auditSupportAction } from "@/utils/support-audit"
 
 const query = z.object({ clubId: z.string().uuid(), kind: z.enum(clubExportKinds), roundId: z.string().uuid().optional(), eventId: z.string().uuid().optional() }).strict()
   // A filter is accepted only for the kind it narrows (round → applicants, event → attendance/RSVPs).
@@ -34,6 +35,8 @@ export async function GET(request: Request) {
         details: { rows: table.rows.length, ...(roundId ? { roundId } : {}), ...(eventId ? { eventId } : {}) } } })
       return { table, clubName: club.name }
     }, { isolationLevel: "RepeatableRead", timeout: 20000 })
+    // Under support view-as, also record the real administrator, as the résumé route does.
+    await auditSupportAction(`platform.impersonation.club-export.${kind}`, clubId)
     return new Response(toCsv(table.header, table.rows), { headers: { ...privateHeaders,
       "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="${csvFilename(clubName, kind)}"` } })
   } catch (error) {

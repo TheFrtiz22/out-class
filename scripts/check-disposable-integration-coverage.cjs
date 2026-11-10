@@ -7,7 +7,7 @@ const assert = require("node:assert/strict");
 
 const expected = [
   "account-data-e2e", "admin-session-e2e", "admin-workspace-e2e",
-  "availability-schedules-native", "campus-event-discovery-browser",
+  "availability-schedules-native", "campus-event-discovery-browser", "club-exports-native",
   "campus-event-discovery", "club-assets-e2e", "communication-schedules-e2e",
   "communication-schedules-native", "communications-e2e", "communications-native",
   "corkboard-e2e", "decision-communications-e2e", "decision-publication-e2e",
@@ -38,7 +38,7 @@ const runners = {
     "recipient-audiences-native",
   ],
   "scripts/test-decision-transactions-local.cjs": [
-    "communications-native", "decision-transactions-native",
+    "club-exports-native", "communications-native", "decision-transactions-native",
     "recruitment-native", "recruitment-offers-native",
   ],
   "scripts/test-scheduler-polling-local.cjs": [
@@ -49,8 +49,8 @@ const runners = {
   ],
 };
 const expectedSet = new Set(expected);
-assert.equal(expected.length, 36, "The inventory must track all 36 environment-gated top-level suites");
-assert.equal(expectedSet.size, expected.length, "Duplicate suite in the 36-test inventory");
+assert.equal(expected.length, 37, "The inventory must track all 37 environment-gated top-level suites");
+assert.equal(expectedSet.size, expected.length, "Duplicate suite in the 37-test inventory");
 const covered = new Set();
 for (const [runner, suites] of Object.entries(runners)) {
   const source = fs.readFileSync(runner, "utf8");
