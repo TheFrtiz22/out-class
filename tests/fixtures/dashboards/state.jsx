@@ -37,6 +37,8 @@ export function useApplicationState() {
   return { events: events(), trackedApps: [], notifications: notifications(), personalTaskActivities: { userId: 'fixture-user', items }, hydrated: true,
     focusApplication: noop, focusEvent: noop, focusNotification: noop, markNotificationRead: async () => true, syncTaskNotifications: noop, syncDurableNotifications: noop, durableUnread: 1 }
 }
+// Self-loading controls that call server actions are outside these fixtures.
+export function CalendarSubscribe() { return null }
 export function useDemoMode() { return { isDemoEnabled: true, allowed: false } }
 // Home's Suggested clubs: one saved club and a small public directory (the app's root layout provides CorkboardProvider).
 const directory = [
