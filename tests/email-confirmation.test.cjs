@@ -30,13 +30,15 @@ const schemas = load("lib/onboarding-schemas.ts", { "@/lib/student-profile": { g
 // `skewMs` sets the Auth server's clock relative to this process.
 function authServer({ confirmedAt = null, password = null, appMetadata = {}, skewMs = 0 } = {}) {
   const account = { id: "user-1", email: EMAIL, password, email_confirmed_at: confirmedAt, app_metadata: { provider: "email", ...appMetadata } }
-  const sessions = new Set(), code = "123456", failures = {}
+  const sessions = new Set(), code = "123456", failures = {}, forwardedIps = []
   let next = 0
   const authNow = () => new Date(Date.now() + skewMs).toISOString()
   const user = () => ({ id: account.id, email: account.email, email_confirmed_at: account.email_confirmed_at, app_metadata: { ...account.app_metadata } })
   const open = () => { const id = `s${++next}`; sessions.add(id); return { access_token: id, user: user() } }
   const server = {
-    account, sessions, code, failures,
+    account, sessions, code, failures, forwardedIps, verifies: 0,
+    // Called before each server step so a test can act as another party between steps.
+    beforeStep: async () => {},
     signUp(chosen) {
       // Supabase Auth keeps the first password for an address that is still unconfirmed.
       if (account.password === null) account.password = chosen
@@ -51,6 +53,7 @@ function authServer({ confirmedAt = null, password = null, appMetadata = {}, ske
         auth: {
           verifyOtp: async ({ email, token, type }) => {
             assert.equal(type, "email")
+            server.verifies++
             if (email !== account.email || token !== code) return { data: { session: null, user: null }, error: { code: "otp_expired", status: 403 } }
             if (!account.email_confirmed_at) account.email_confirmed_at = authNow()
             current = open()
@@ -64,6 +67,7 @@ function authServer({ confirmedAt = null, password = null, appMetadata = {}, ske
             return { error: null }
           },
           signOut: async ({ scope }) => {
+            if (scope === "others") await server.beforeStep("signOut")
             if (scope === "others" && failures.signOut) return { error: { status: 500 } }
             if (scope === "others") for (const id of [...sessions]) { if (id !== current.access_token) sessions.delete(id) }
             if (scope === "local") sessions.delete(current?.access_token)
@@ -75,6 +79,8 @@ function authServer({ confirmedAt = null, password = null, appMetadata = {}, ske
     admin: {
       auth: { admin: { updateUserById: async (id, input) => {
         assert.equal(id, account.id)
+        await server.beforeStep(input.password ? "adminPassword" : "adminRecord")
+        if (input.app_metadata && failures.record) return { error: { status: 500 } }
         if (input.password) account.password = input.password
         if (input.app_metadata) account.app_metadata = { ...account.app_metadata, ...input.app_metadata }
         return { error: null }
@@ -84,13 +90,32 @@ function authServer({ confirmedAt = null, password = null, appMetadata = {}, ske
   return server
 }
 
+// Stand-in for prisma: AuditLog rows plus transaction-scoped advisory locks, with a yield between
+// statements so concurrent requests interleave.
 function attemptStore() {
-  const rows = []
+  const rows = [], locks = new Map()
+  const tick = () => new Promise(resolve => setImmediate(resolve))
+  const auditLog = {
+    count: async ({ where }) => { await tick(); return rows.filter(r => r.targetId === where.targetId && r.action === where.action && r.createdAt > where.createdAt.gt).length },
+    create: async ({ data }) => { await tick(); rows.push({ ...data, createdAt: new Date() }); return data },
+  }
   return {
     rows,
-    auditLog: {
-      count: async ({ where }) => rows.filter(r => r.targetId === where.targetId && r.action === where.action && r.createdAt > where.createdAt.gt).length,
-      create: async ({ data }) => { rows.push({ ...data, createdAt: new Date() }); return data },
+    $transaction: async run => {
+      const held = []
+      const tx = {
+        auditLog,
+        $queryRaw: async (strings, key) => {
+          assert.match(strings.join("?"), /pg_advisory_xact_lock/)
+          while (locks.has(key)) await locks.get(key).promise
+          let release
+          const promise = new Promise(resolve => { release = resolve })
+          locks.set(key, { promise, release })
+          held.push(key)
+          await tick()
+        },
+      }
+      try { return await run(tx) } finally { for (const key of held) { const lock = locks.get(key); locks.delete(key); lock.release() } }
     },
   }
 }
@@ -98,7 +123,7 @@ function attemptStore() {
 function route(server, { cookies = [], signedIn = null, db = attemptStore() } = {}) {
   const attached = []
   const { POST } = load("app/api/auth/confirm-email/route.ts", {
-    "@/utils/admin-elevation": { freshAuthClient: () => server.client() },
+    "@/utils/admin-elevation": { forwardedAuthClient: ip => { server.forwardedIps.push(ip); return server.client() } },
     "@supabase/supabase-js": { createClient: (_url, key) => { assert.equal(key, "server-test-key"); return server.admin } },
     "@/utils/supabase/server": { createClient: async () => ({ auth: {
       getUser: async () => ({ data: { user: signedIn }, error: null }),
@@ -172,7 +197,7 @@ test("an incomplete update leaves the earlier password unusable and a later code
   const failed = await first.send({ email: EMAIL, code: server.code, password: "Owner-Pass-22!" })
   assert.equal(failed.status, 503)
   assert.deepEqual(first.attached, [])
-  assert.equal(server.signInWithPassword("Earlier-Pass-1!").error?.message, "Invalid login credentials", "the server replaces the password when the session cannot")
+  assert.equal(server.signInWithPassword("Earlier-Pass-1!").error?.message, "Invalid login credentials", "the server sets the password when the session cannot")
   assert.equal(server.account.app_metadata.outclass_password_secured, undefined, "nothing is recorded until every step succeeds")
   server.sessions.add("left-over")
   // 61 seconds later, with the same code still valid in this stand-in.
@@ -187,6 +212,59 @@ test("an incomplete update leaves the earlier password unusable and a later code
   assert.ok(!server.sessions.has("left-over"))
   assert.ok(server.signInWithPassword("Owner-Pass-22!").session)
   assert.equal(server.account.app_metadata.outclass_password_secured.email, EMAIL)
+})
+
+test("a password change from another session between the server steps does not remain", async () => {
+  const server = authServer()
+  server.signUp("Earlier-Pass-1!")
+  server.sessions.add("other")
+  const events = []
+  server.beforeStep = async step => {
+    events.push(step)
+    // Before other sessions end, the other session changes the password; after they end, it signs in again with it.
+    if (step === "signOut" && server.sessions.has("other")) server.account.password = "Other-Pass-33!"
+    if (step === "adminPassword") { const again = server.signInWithPassword("Other-Pass-33!"); if (again.session) events.push("other signed in") }
+  }
+  const response = await route(server).send({ email: EMAIL, code: server.code, password: "Owner-Pass-22!" })
+  assert.deepEqual(await response.json(), { success: true, passwordUpdated: true, passwordSaved: true })
+  assert.deepEqual(events, ["signOut", "adminPassword", "other signed in", "signOut", "adminRecord"], "server password after sign-out, sign-out again, record last")
+  assert.equal(server.account.password, "Owner-Pass-22!", "the owner's password wins")
+  assert.equal(server.signInWithPassword("Other-Pass-33!").error?.message, "Invalid login credentials")
+  assert.equal(server.sessions.size, 1, "only the confirming session remains")
+})
+
+test("without the Supabase secret key the route refuses before using the code", async () => {
+  const server = authServer()
+  server.signUp("Earlier-Pass-1!")
+  const saved = process.env.SUPABASE_SECRET_KEY
+  delete process.env.SUPABASE_SECRET_KEY
+  const errors = [], realError = console.error
+  console.error = message => errors.push(message)
+  try {
+    const response = await route(server).send({ email: EMAIL, code: server.code, password: "Owner-Pass-22!" })
+    assert.equal(response.status, 503)
+  } finally { process.env.SUPABASE_SECRET_KEY = saved; console.error = realError }
+  assert.equal(server.verifies, 0)
+  assert.equal(server.account.email_confirmed_at, null)
+  assert.equal(errors.length, 1)
+})
+
+test("a failed record write returns 503 and logs an error; the next code tries again", async () => {
+  const server = authServer()
+  server.signUp("Earlier-Pass-1!")
+  server.failures.record = true
+  const errors = [], realError = console.error
+  console.error = message => errors.push(message)
+  let failed
+  try { failed = await route(server).send({ email: EMAIL, code: server.code, password: "Owner-Pass-22!" }) } finally { console.error = realError }
+  assert.equal(failed.status, 503)
+  assert.deepEqual(errors, ["Email code verified; password state not recorded"])
+  server.failures.record = false
+  const retry = await route(server).send({ email: EMAIL, code: server.code, password: "Owner-Pass-22!" })
+  assert.deepEqual(await retry.json(), { success: true, passwordUpdated: true, passwordSaved: true })
+  const later = await route(server).send({ email: EMAIL, code: server.code })
+  assert.deepEqual(await later.json(), { success: true, passwordUpdated: false, passwordSaved: false }, "no further password change once recorded")
+  assert.ok(server.signInWithPassword("Owner-Pass-22!").session)
 })
 
 test("once recorded, a code sign-in changes no password and keeps other sessions", async () => {
@@ -302,11 +380,65 @@ test("code attempts are limited per client network", async () => {
   assert.equal(elsewhere.status, 200, "another network is not limited")
 })
 
+test("concurrent wrong codes for one address reach Supabase Auth at most the limit", async () => {
+  const { EMAIL_CODE_LIMIT_PER_EMAIL } = load("lib/email-confirmation.ts")
+  const server = authServer()
+  server.signUp("Earlier-Pass-1!")
+  const db = attemptStore()
+  const responses = await Promise.all(Array.from({ length: 30 }, (_, i) => route(server, { db }).send({ email: EMAIL, code: "000000" }, `203.0.113.${i}`)))
+  for (const response of responses) assert.deepEqual(await response.json(), { error: REJECTED })
+  assert.ok(server.verifies <= EMAIL_CODE_LIMIT_PER_EMAIL, `${server.verifies} verifications`)
+  assert.equal(server.verifies, EMAIL_CODE_LIMIT_PER_EMAIL)
+  assert.equal(db.rows.filter(r => r.targetId.startsWith("email:")).length, EMAIL_CODE_LIMIT_PER_EMAIL, "attempts over the limit are not recorded")
+})
+
+test("attempt digests are keyed with the server secret", () => {
+  const { attemptKey } = load("lib/email-confirmation.ts")
+  const saved = process.env.SUPABASE_SECRET_KEY
+  try {
+    const keyed = attemptKey("email", EMAIL)
+    process.env.SUPABASE_SECRET_KEY = "another-server-key"
+    assert.notEqual(attemptKey("email", EMAIL), keyed)
+    assert.equal(attemptKey("email", " Student@Virginia.edu "), attemptKey("email", EMAIL))
+    assert.notEqual(attemptKey("ip", EMAIL).slice(3), attemptKey("email", EMAIL).slice(6))
+    delete process.env.SUPABASE_SECRET_KEY
+    assert.match(attemptKey("email", EMAIL), /^email:[0-9a-f]{64}$/, "without a secret, a plain digest")
+    assert.ok(!keyed.includes(EMAIL))
+  } finally { process.env.SUPABASE_SECRET_KEY = saved }
+})
+
+test("the end-user address is forwarded to Supabase Auth with a secret key", async () => {
+  const server = authServer()
+  server.signUp("Earlier-Pass-1!")
+  await route(server).send({ email: EMAIL, code: server.code, password: "Owner-Pass-22!" }, "192.0.2.44")
+  assert.deepEqual(server.forwardedIps, ["192.0.2.44"], "the first x-forwarded-for hop")
+  const made = []
+  const mocks = {
+    "@supabase/supabase-js": { createClient: (url, key, options) => { made.push({ key, headers: options.global?.headers }); return {} } },
+    "@/lib/admin-failure": {}, "@/lib/admin-elevation": {}, "@/utils/supabase/server": {}, "@/utils/prisma": {}, "next/headers": {},
+  }
+  const { forwardedAuthClient } = load("utils/admin-elevation.ts", mocks)
+  const saved = process.env.SUPABASE_SECRET_KEY
+  try {
+    process.env.SUPABASE_SECRET_KEY = "sb_secret_example"
+    forwardedAuthClient("192.0.2.44")
+    forwardedAuthClient(undefined)
+    process.env.SUPABASE_SECRET_KEY = "legacy-service-role-jwt"
+    forwardedAuthClient("192.0.2.44")
+  } finally { process.env.SUPABASE_SECRET_KEY = saved }
+  assert.deepEqual(made, [
+    { key: "sb_secret_example", headers: { "sb-forwarded-for": "192.0.2.44" } },
+    { key: "public-test-key", headers: undefined },
+    { key: "public-test-key", headers: undefined },
+  ])
+})
+
 test("attempts older than the window no longer count", async () => {
   const { recordEmailCodeAttempt, EMAIL_CODE_LIMIT_PER_EMAIL, EMAIL_CODE_WINDOW_MS } = load("lib/email-confirmation.ts")
   const db = attemptStore()
   for (let i = 0; i < EMAIL_CODE_LIMIT_PER_EMAIL; i++) assert.equal(await recordEmailCodeAttempt(db, EMAIL, undefined), true)
   assert.equal(await recordEmailCodeAttempt(db, EMAIL, undefined), false)
+  assert.equal(db.rows.length, EMAIL_CODE_LIMIT_PER_EMAIL, "a refused attempt adds no row")
   assert.equal(await recordEmailCodeAttempt(db, EMAIL, undefined, Date.now() + EMAIL_CODE_WINDOW_MS + 1000), true)
 })
 
@@ -327,4 +459,32 @@ test("in-app code verification goes through the server route", async () => {
   assert.deepEqual(calls, [["/api/auth/confirm-email", { email: EMAIL, code: "123456" }]])
   const failed = await confirmEmailCode(EMAIL, "123456", "x", async () => ({ ok: false, json: async () => ({ error: REJECTED }) }))
   assert.deepEqual(failed, { ok: false, error: REJECTED })
+})
+
+test("a link sign-in to an email-and-password account without a recorded password goes to the code flow", async () => {
+  const run = async user => {
+    const calls = []
+    const { GET } = load("app/auth/callback/route.ts", {
+      "next/headers": { cookies: async () => ({ has: () => false }) },
+      "@/lib/auth-features": { MICROSOFT_AUTH_ENABLED: true },
+      "@/utils/supabase/server": { createClient: async () => ({ auth: {
+        exchangeCodeForSession: async () => { calls.push("exchange"); return { data: { user }, error: null } },
+        signOut: async () => { calls.push("signOut"); return { error: null } },
+      } }) },
+      "@/utils/prisma": { prisma: { user: { upsert: async () => { calls.push("upsert") } } } },
+    })
+    const response = await GET(new Request("https://outclass.test/auth/callback?code=valid&next=%2Fhome"))
+    return { location: response.headers.get("location"), calls }
+  }
+  const base = { id: "user-1", email: EMAIL, email_confirmed_at: "2026-11-20T12:00:00.000Z", app_metadata: {} }
+  const pending = await run({ ...base, identities: [{ provider: "email" }, { provider: "azure" }] })
+  assert.deepEqual(pending.calls, ["exchange", "signOut"], "signed out before any account record is written")
+  assert.equal(pending.location, "https://outclass.test/login?error=email-code-required&next=%2Fhome")
+  const recorded = await run({ ...base, identities: [{ provider: "email" }], app_metadata: { outclass_password_secured: { userId: "user-1", email: EMAIL } } })
+  assert.deepEqual(recorded.calls, ["exchange", "upsert"])
+  assert.equal(recorded.location, "https://outclass.test/home")
+  const microsoftOnly = await run({ ...base, identities: [{ provider: "azure" }] })
+  assert.deepEqual(microsoftOnly.calls, ["exchange", "upsert"], "an account without a password is unaffected")
+  const { authenticationError } = load("lib/auth.ts")
+  assert.match(authenticationError("email-code-required"), /code sent to your UVA email/)
 })

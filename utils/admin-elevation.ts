@@ -42,3 +42,17 @@ export function decryptChallenge(value: string): { access_token: string; refresh
 export function freshAuthClient() {
   return providerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
 }
+/**
+ * Like freshAuthClient, but tells Supabase Auth which end-user address the request is for, so its
+ * per-address limits count each visitor rather than this server. Supabase Auth honours the
+ * Sb-Forwarded-For header only with a secret API key (sb_secret_…) and only when IP address forwarding is
+ * enabled for the project; otherwise this is an ordinary isolated client.
+ */
+export function forwardedAuthClient(clientIp: string | undefined) {
+  const secret = process.env.SUPABASE_SECRET_KEY;
+  if (!clientIp || !secret?.startsWith("sb_secret_")) return freshAuthClient();
+  return providerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, secret, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    global: { headers: { "sb-forwarded-for": clientIp } },
+  });
+}

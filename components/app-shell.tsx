@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { clubWorkspaceHref } from "@/lib/club-workspace"
 import type { PersonalSection } from "@/lib/product-navigation"
 import { useDemoMode } from "@/contexts/demo-context"
-import { signInReturnPath, authEntryHref } from "@/lib/auth"
+import { signInReturnPath, authEntryHref, EMAIL_CODE_REQUIRED_MESSAGE } from "@/lib/auth"
 import { useAuth } from "@/contexts/auth-context"
 import { loadedDemoStore } from "@/lib/demo/loader"
 import { useState, useEffect, useMemo, useRef } from "react"
@@ -60,6 +60,7 @@ const adminViewIds: ViewId[] = [
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
   "uva_only": "Please sign in using your UVA email (@virginia.edu).",
   "auth-code-expired": "Your sign-in link has expired. Please try again.",
+  "email-code-required": EMAIL_CODE_REQUIRED_MESSAGE,
 }
 
 export type AppShellProps = { launchClubs?: import("@/lib/launch-clubs").LaunchClub[]; initialView?: ViewId; embedded?: boolean; initialSession?: any; initialData?: any; hasProfile?: boolean; initialAuthRole?: "student" | "leader" }

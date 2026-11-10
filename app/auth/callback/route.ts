@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { isUvaEmail, loginReturnPath, authFailurePath } from '@/lib/auth'
 import { MICROSOFT_AUTH_ENABLED } from '@/lib/auth-features'
+import { passwordAlreadySecured } from '@/lib/email-confirmation'
 
 export async function GET(request: Request) {
   if ((await cookies()).has(PLATFORM_VIEW_COOKIE)) return NextResponse.json({ error: "Exit impersonation before changing authentication." }, { status: 403 })
@@ -28,6 +29,13 @@ export async function GET(request: Request) {
       if (!user.email || !isUvaEmail(user.email)) {
         await supabase.auth.signOut()
         return NextResponse.redirect(`${origin}${authFailurePath(next, "uva_only")}`)
+      }
+
+      // An email-and-password account finishes its first verified sign-in through the email-code flow,
+      // which sets its password and signs out other sessions.
+      if (user.identities?.some(identity => identity.provider === 'email') && !passwordAlreadySecured(user)) {
+        await supabase.auth.signOut()
+        return NextResponse.redirect(`${origin}${authFailurePath(next, "email-code-required")}`)
       }
 
       // Ensure user exists in the public Prisma database

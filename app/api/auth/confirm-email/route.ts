@@ -10,7 +10,7 @@ import { DEMO_COOKIE } from "@/lib/demo/access";
 import { registrationSchema } from "@/lib/onboarding-schemas";
 import { turnstileRemoteIp } from "@/lib/turnstile";
 import { EMAIL_CODE_REJECTED, passwordAlreadySecured, recordEmailCodeAttempt, secureVerifiedAccount } from "@/lib/email-confirmation";
-import { freshAuthClient } from "@/utils/admin-elevation";
+import { forwardedAuthClient } from "@/utils/admin-elevation";
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/utils/prisma";
 
@@ -43,14 +43,20 @@ export async function POST(request: NextRequest) {
   const { email, code } = input.data;
   // A password that does not meet the signup rules is treated as not supplied.
   const password = registrationSchema.shape.password.safeParse(input.data.password).success ? input.data.password : undefined;
+  const admin = adminClient();
+  if (!admin) {
+    console.error("Email code verification needs the Supabase secret key");
+    return reply({ error: "Email sign-in is temporarily unavailable. Please try again later." }, 503);
+  }
   try {
     const normal = await createClient(jar);
     const current = await normal.auth.getUser();
     if (current.data.user && current.data.user.email?.toLowerCase() !== email)
       return reply({ error: "Sign out of the other account before using this code." }, 409);
-    if (!(await recordEmailCodeAttempt(prisma, email, turnstileRemoteIp(request.headers.get("x-forwarded-for")))))
+    const clientIp = turnstileRemoteIp(request.headers.get("x-forwarded-for"));
+    if (!(await recordEmailCodeAttempt(prisma, email, clientIp)))
       return reply({ error: EMAIL_CODE_REJECTED }, 400);
-    const client = freshAuthClient();
+    const client = forwardedAuthClient(clientIp);
     const verified = await client.auth.verifyOtp({ email, token: code, type: "email" });
     if (verified.error) return reply({ error: EMAIL_CODE_REJECTED }, 400);
     const user = verified.data.user;
@@ -61,14 +67,13 @@ export async function POST(request: NextRequest) {
     let passwordUpdated = false, passwordSaved = false;
     if (!passwordAlreadySecured(user)) {
       passwordUpdated = true;
-      const result = await secureVerifiedAccount(client, adminClient(), user, password);
+      const result = await secureVerifiedAccount(client, admin, user, password);
       passwordSaved = result.passwordSaved;
-      if (!result.secured) {
-        console.warn("Email code verified; password or session update incomplete");
+      if (!result.secured || !result.recorded) {
+        console.error(result.secured ? "Email code verified; password state not recorded" : "Email code verified; password or session update incomplete");
         await client.auth.signOut({ scope: "local" }).catch(() => undefined);
         return reply({ error: "Email confirmed, but sign-in could not be completed. Request a new code and try again." }, 503);
       }
-      if (!result.recorded) console.warn("Email code verified; password state not recorded");
     }
     const attached = await normal.auth.setSession(verified.data.session);
     if (attached.error) return reply({ error: "Email confirmed. Sign in with an email code to continue." }, 400);
