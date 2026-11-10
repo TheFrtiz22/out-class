@@ -127,18 +127,7 @@ export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, rej
           <h2 className="oc-section-heading mt-2">{club.club.name}</h2>
         </div>
         {!scoped && clubs.length > 1 && (
-          <NativeSelect
-            aria-label="Recruiting club"
-            className={selectStyle}
-            value={club.clubId}
-            onChange={(event) => setClubId(event.target.value)}
-          >
-            {clubs.map((item) => (
-              <option key={item.clubId} value={item.clubId}>
-                {item.club.name}
-              </option>
-            ))}
-          </NativeSelect>
+          <PillSelect label="Recruiting club" active={false} value={club.clubId} onChange={(value) => setClubId(value)} options={clubs.map((item) => ({ value: item.clubId, label: item.club.name }))} />
         )}
       </div>}
       <ClubWorkspace key={club.clubId} membership={club} decisionsOnly={decisionsOnly} rejectedOnly={rejectedOnly} initialDecision={initialDecision} validatedInitialData={validatedInitialData} initialData={initialData?.clubId === club.clubId ? initialData.pipeline : null} onData={data => onData?.(club.clubId, data)} />
@@ -618,7 +607,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         <div className={`oc-filter-field ${!decisionsOnly && view === "list" ? "xl:hidden" : ""}`}>
           <span className="oc-filter-field-label">Sort</span>
           <div className="flex flex-wrap items-center gap-2">
-            <PillSelect label="Sort applicants" value={sort} onChange={value => sortBy(value as ApplicantSort)} options={sortOptions.map(option => ({ value: option.key, label: option.label }))} />
+            <PillSelect label="Sort applicants" value={sort} active={sort !== "name"} onChange={value => sortBy(value as ApplicantSort)} options={sortOptions.map(option => ({ value: option.key, label: option.label }))} />
             <Button size="sm" variant="ghost" onClick={() => setDescending(value => !value)}>{descending ? "Descending ↓" : "Ascending ↑"}</Button>
           </div>
         </div>

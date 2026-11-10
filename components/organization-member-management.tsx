@@ -504,7 +504,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                   <tr>
                     <th className="p-3" scope="col">
                       <input
-                        type="checkbox"
+                        type="checkbox" className="oc-checkbox"
                         aria-label="Select all members and invitations on this page"
                         disabled={busy || !selectablePage.length}
                         checked={
@@ -560,7 +560,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                     >
                       <td data-label="Select" className={onboardingTable.cell}>
                         <input
-                          type="checkbox"
+                          type="checkbox" className="oc-checkbox"
                           aria-label={`Select ${row.name}`}
                           checked={selection.includes(row.id)}
                           disabled={

@@ -1,4 +1,5 @@
 "use client"
+import { PillSelect } from "@/components/ui/pill-select"
 import { ClubMeetingsWorkspace } from "@/components/events/club-meetings-workspace";
 import dynamic from "next/dynamic";
 import { PageHeader } from "@/components/ui/page-header"
@@ -58,7 +59,6 @@ import { clubWorkspaceEntryHref, clubWorkspacePreferenceKey, readClubWorkspacePr
 import { studentPath } from "@/lib/navigation"
 import { RecruitmentFocus } from "@/components/recruitment-focus"
 import { SectionTabs } from "@/components/ui/section-tabs";
-import { NativeSelect } from "@/components/ui/native-select"
 type Overview = Awaited<ReturnType<typeof getClubWorkspaceOverview>>;
 const OVERVIEW_EVENTS = ["outclass:tasks-changed", "outclass:panels-changed", "outclass:interview-rounds-changed", "outclass:staffing-changed", "outclass:decision-schedules"];
 const OVERVIEW_SCOPES = ["overview", "tasks", "meetings", "recruiting"];
@@ -202,9 +202,9 @@ export function ClubWorkspace({
           {/* URL-driven tabs live outside the keyed section below, so changing a tab slides its indicator instead of remounting it. */}
           {allowed && !(needsOverview && (error || !current)) && <>
           {/* Phones reach recruiting through one bottom-bar item, so its pages show here as tabs. The rail covers wide screens. */}
-          {section === "recruitment" && manager && <SectionTabs label="Recruiting sections" className="oc-recruiting-switch mb-5 lg:hidden" current={nav.find(n => n.id === active)?.navGroup === "applicants" ? "applicants" : nav.find(n => n.id === active)?.navGroup === "decisions" ? "decisions" : active}
+          {section === "recruitment" && manager && <div className="mb-5 lg:hidden"><SectionTabs label="Recruiting sections" className="oc-recruiting-switch" current={nav.find(n => n.id === active)?.navGroup === "applicants" ? "applicants" : nav.find(n => n.id === active)?.navGroup === "decisions" ? "decisions" : active}
               items={mobileDestinations(nav.filter(n => n.mode !== "club" && !["announcements", "settings"].includes(n.id))).map(n => ({ id: n.navGroup ?? n.id, label: n.navGroup ? n.label : n.id === "overview" ? TERMS.recruiting : n.label, href: n.href! }))}
-              onNavigate={(event, href) => { if (!canLeaveWorkspace()) { event.preventDefault(); return } handleClubLink(event, href) }} />}
+              onNavigate={(event, href) => { if (!canLeaveWorkspace()) { event.preventDefault(); return } handleClubLink(event, href) }} /></div>}
           {section === "recruitment" && active === "decisions" && <DecisionsNavigation clubId={clubId} member={membership}/>}
           </>}
           {needsOverview && error ? <Card variant="glass" role="alert" className="oc-dashboard-error"><div className="oc-dashboard-state px-[var(--oc-content-padding)]"><p>{error}</p><Button variant="outline" onClick={() => setRetry(n => n + 1)}>Retry</Button></div></Card> : needsOverview && !current ? <DashboardLoading mode={mode === "recruiting" ? "recruiting" : "club"} /> : !allowed ? <p role="alert">This section isn’t available with your current access.</p> : <section key={`${section === "settings" ? authorizationScope : scope}:${section}:${active}`} className="shell-content-enter" aria-label={nav.find(n => n.id === active)?.label}>
@@ -259,25 +259,9 @@ function RecruitmentWorkspace({
             remain in the applicant workflow.
           </p>
         </div>
-        <label className="text-sm">
-          Recruitment tool
-          <NativeSelect
-            aria-label="Recruitment tool"
-            className="mt-1 block min-h-11 max-w-full"
-            value={active}
-            onChange={(e) =>
-              e.target.value === "interviews"
-                ? onInterview()
-                : setTool(e.target.value as typeof tool)
-            }
-          >
-            {tools.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.label}
-              </option>
-            ))}
-          </NativeSelect>
-        </label>
+        <PillSelect label="Recruitment tool" prefix="Tool" active={false} value={active}
+            onChange={(value) => value === "interviews" ? onInterview() : setTool(value as typeof tool)}
+            options={tools.map((t) => ({ value: t.id, label: t.label }))} />
       </div>
       {active === "applicants" && <LiveLeaderWorkspace scoped />}
       {active === "rounds" && <RoundSettings clubId={clubId} />}

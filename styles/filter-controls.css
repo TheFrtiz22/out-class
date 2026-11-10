@@ -12,8 +12,8 @@
 .oc-section-tabs > a[data-segment] { position: relative; z-index: 1; display: inline-flex; flex: 1 0 auto; align-items: center; justify-content: center; min-width: max-content; min-height: 36px; padding: .375rem 1rem; border-radius: 999px; color: var(--primary); font-size: var(--oc-text-small); font-weight: var(--oc-weight-medium); white-space: nowrap; text-decoration: none; transition: color var(--oc-glass-quick) var(--oc-glass-ease), background-color var(--oc-glass-quick) var(--oc-glass-ease); }
 .oc-section-tabs > a[data-selected] { color: var(--oc-glass-cream); background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); }
 .oc-section-tabs[data-measured="true"] > a[data-selected] { background: transparent; box-shadow: none; }
-.oc-section-tabs > a:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
-.oc-section-tabs > a[data-selected]:focus-visible { outline-color: var(--brand-orange); }
+.oc-section-tabs > a:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; box-shadow: var(--focus-halo-inset-4); }
+.oc-section-tabs > a[data-selected]:focus-visible { outline-color: var(--ring); outline-offset: 2px; box-shadow: var(--focus-halo-outset); }
 @media (hover: hover) and (pointer: fine) { .oc-section-tabs > a:not([data-selected]):hover { background: var(--oc-glass-hover-tint); } }
 @media (max-width: 767px) { .oc-section-tabs { width: 100%; } }
 
@@ -21,7 +21,7 @@
 .oc-segmented-control .oc-filter-chips-more { position: relative; z-index: 1; flex: 0 0 auto; min-height: 36px; padding: .375rem .875rem; border: 1px dashed var(--oc-glass-light-edge); border-radius: 999px; color: var(--primary); font-size: var(--oc-text-small); font-weight: var(--oc-weight-semibold); white-space: nowrap; }
 .oc-segmented-control:not([data-size="compact"]) .oc-filter-chips-more { min-height: 44px; }
 .oc-segmented-control .oc-filter-chips-more:hover { background: var(--oc-glass-hover-tint); }
-.oc-segmented-control .oc-filter-chips-more:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+.oc-segmented-control .oc-filter-chips-more:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; box-shadow: var(--focus-halo-inset-4); }
 
 /* A single row of pill filters that scrolls sideways on narrow screens instead of wrapping. */
 .oc-filter-bar { display: flex; flex-wrap: nowrap; align-items: center; gap: .5rem; max-width: 100%; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; padding-block: 2px; }
@@ -36,7 +36,7 @@
 [data-slot="select-trigger"].oc-pill-select-trigger[data-active] { border-color: var(--oc-glass-pill-navy-edge); background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); color: var(--oc-glass-cream); }
 [data-slot="select-trigger"].oc-pill-select-trigger[data-active] svg { color: var(--oc-glass-cream); opacity: .8; }
 [data-slot="select-trigger"].oc-pill-select-trigger:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
-[data-slot="select-trigger"].oc-pill-select-trigger[data-active]:focus-visible { outline-color: var(--brand-orange); }
+[data-slot="select-trigger"].oc-pill-select-trigger[data-active]:focus-visible { outline-color: var(--ring); box-shadow: var(--focus-halo-outset); }
 .oc-pill-select-trigger .oc-pill-select-prefix { color: var(--muted-foreground); font-weight: var(--oc-weight-medium); }
 [data-active] > .oc-pill-select-prefix { color: inherit; opacity: .78; }
 .oc-pill-select-content { max-height: min(22rem, var(--radix-select-content-available-height)); border-radius: var(--oc-radius-lg); }
@@ -48,6 +48,9 @@
 .oc-toggle-description { color: var(--muted-foreground); font-size: var(--oc-text-caption); }
 .oc-toggle[data-disabled] { opacity: .5; }
 [data-slot="switch"].oc-toggle-switch { position: relative; width: 2.75rem; height: 1.625rem; padding: 2px; border-radius: 999px; }
+/* The phone rule that gives every product button a 44px minimum would turn these into circles; the Toggle pill
+   and the clear button's ::after already give each a 44px target. */
+[data-slot="switch"].oc-toggle-switch, .oc-search-field .oc-search-field-clear { min-width: 0; min-height: 0; }
 .oc-toggle-switch [data-slot="switch-thumb"] { width: 1.25rem; height: 1.25rem; translate: 0 0; transition: translate var(--oc-glass-quick) var(--oc-glass-ease), background-color var(--oc-glass-quick) var(--oc-glass-ease); }
 .oc-toggle-switch [data-slot="switch-thumb"][data-state="checked"] { translate: 1.125rem 0; background: var(--oc-glass-cream); }
 [data-slot="switch"].oc-toggle-switch[data-state="checked"] { border-color: var(--oc-glass-pill-navy-edge); background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); }
@@ -69,7 +72,7 @@
 .oc-date-picker-trigger[data-variant="pill"] { min-height: 46px; padding-inline: 1rem 1.125rem; border-color: var(--oc-glass-light-edge); border-radius: 999px; background: var(--oc-glass-light-material); box-shadow: var(--oc-glass-light-depth); color: var(--primary); font-size: var(--oc-text-small); font-weight: var(--oc-weight-medium); }
 .oc-date-picker-trigger[data-variant="pill"][data-empty="false"] { border-color: var(--oc-glass-pill-navy-edge); background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); color: var(--oc-glass-cream); }
 .oc-date-picker-trigger[data-variant="pill"][data-empty="false"] svg { color: var(--oc-glass-cream); }
-.oc-date-picker-trigger[data-variant="pill"][data-empty="false"]:focus-visible { outline-color: var(--brand-orange); }
+.oc-date-picker-trigger[data-variant="pill"][data-empty="false"]:focus-visible { outline-color: var(--ring); box-shadow: var(--focus-halo-outset); }
 
 @layer components {
   /* SearchField: the segmented track's material and height, fully rounded. */
@@ -94,8 +97,8 @@
   .oc-range-slider-value, .oc-range-slider-input { min-width: 4.5rem; min-height: 2rem; padding: .25rem .75rem; border-radius: 999px; font-size: var(--oc-text-small); font-variant-numeric: tabular-nums; text-align: center; }
   .oc-range-slider-value { border: 1px solid var(--oc-glass-pill-navy-edge); background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); color: var(--oc-glass-cream); font-weight: var(--oc-weight-semibold); cursor: text; }
   .oc-range-slider[data-empty] .oc-range-slider-value { border-color: var(--oc-glass-light-edge); background: var(--oc-glass-light-material); box-shadow: var(--oc-glass-light-depth); color: var(--muted-foreground); font-weight: var(--oc-weight-medium); }
-  .oc-range-slider-value:focus-visible { outline: 2px solid var(--brand-orange); outline-offset: 2px; }
-  .oc-range-slider[data-empty] .oc-range-slider-value:focus-visible { outline-color: var(--ring); }
+  .oc-range-slider-value:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; box-shadow: var(--focus-halo-outset); }
+  .oc-range-slider[data-empty] .oc-range-slider-value:focus-visible { outline-color: var(--ring); box-shadow: var(--focus-halo-outset); }
   .oc-range-slider-input { width: 6.5rem; border: 1px solid var(--primary); background: var(--card); color: var(--foreground); box-shadow: var(--oc-glass-field-depth); outline: 2px solid var(--ring); outline-offset: 2px; }
   .oc-range-slider-root { position: relative; display: flex; align-items: center; height: 44px; touch-action: none; user-select: none; }
   .oc-range-slider-track { position: relative; flex: 1; height: .5rem; overflow: hidden; border-radius: 999px; background: var(--oc-surface-glass-track); box-shadow: var(--oc-glass-track-inset); }
@@ -103,7 +106,7 @@
   .oc-range-slider[data-empty] .oc-range-slider-range { opacity: 0; }
   .oc-range-slider-thumb { position: relative; display: block; width: 1.375rem; height: 1.375rem; border: 3px solid var(--oc-glass-cream); border-radius: 999px; background: var(--primary); box-shadow: var(--oc-glass-pill-navy-depth); cursor: grab; transition: transform var(--oc-glass-quick) var(--oc-glass-ease); }
   .oc-range-slider-thumb::after { content: ""; position: absolute; inset: -.75rem; }
-  .oc-range-slider-thumb:focus-visible { outline: 2px solid var(--brand-orange); outline-offset: 2px; }
+  .oc-range-slider-thumb:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; box-shadow: var(--focus-halo-outset); }
   .oc-range-slider[data-empty] .oc-range-slider-thumb { background: var(--muted-foreground); }
   .oc-range-slider[data-disabled] { opacity: .5; }
 
@@ -117,8 +120,8 @@
   .oc-stepper-step { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; padding: .375rem 1rem .375rem .375rem; border-radius: 999px; color: var(--primary); font-size: var(--oc-text-small); font-weight: var(--oc-weight-medium); white-space: nowrap; }
   button.oc-stepper-step:hover:not([aria-current]) { background: var(--oc-glass-hover-tint); }
   .oc-stepper-step[aria-current="step"] { border: 1px solid var(--oc-glass-pill-navy-edge); background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); color: var(--oc-glass-cream); }
-  .oc-stepper-step:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
-  .oc-stepper-step[aria-current="step"]:focus-visible { outline-color: var(--brand-orange); }
+  .oc-stepper-step:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; box-shadow: var(--focus-halo-inset-4); }
+  .oc-stepper-step[aria-current="step"]:focus-visible { outline-color: var(--ring); outline-offset: 2px; box-shadow: var(--focus-halo-outset); }
   .oc-stepper-step:disabled { cursor: not-allowed; opacity: .5; }
   .oc-stepper-marker { display: inline-grid; place-items: center; width: 2rem; height: 2rem; border-radius: 999px; background: var(--oc-surface-glass-track); box-shadow: var(--oc-glass-track-inset); font-variant-numeric: tabular-nums; }
   .oc-stepper-marker svg { width: 1rem; height: 1rem; }

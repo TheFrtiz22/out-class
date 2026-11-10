@@ -35,13 +35,13 @@ export function PillSelect({ label, options, value, onChange, allLabel, placehol
   const items = allLabel ? [{ value: EMPTY, label: allLabel }, ...options.filter(option => option.value !== "")] : options.map(option => option.value === "" ? { ...option, value: EMPTY } : option)
   const current = value === "" ? (items.some(item => item.value === EMPTY) ? EMPTY : undefined) : value
   return <Select value={current} onValueChange={next => onChange(next === EMPTY ? "" : next)} disabled={disabled}>
-    <SelectTrigger id={id} aria-label={label} aria-describedby={describedBy} data-pill="" data-pill-size={size} data-active={(active ?? value !== "") || undefined}
+    <SelectTrigger id={id} aria-label={label} aria-describedby={describedBy} data-value={value} data-pill="" data-pill-size={size} data-active={(active ?? value !== "") || undefined}
       className={cn("oc-pill-select-trigger", className)}>
       {prefix && <span className="oc-pill-select-prefix" aria-hidden="true">{prefix}</span>}
       <SelectValue placeholder={placeholder ?? allLabel ?? label} />
     </SelectTrigger>
     <SelectContent className="oc-pill-select-content" collisionPadding={16}>
-      {items.map(item => <SelectItem key={item.value} value={item.value} disabled={item.disabled}>{item.label}</SelectItem>)}
+      {items.map(item => <SelectItem key={item.value} value={item.value} data-value={item.value === EMPTY ? "" : item.value} disabled={item.disabled}>{item.label}</SelectItem>)}
     </SelectContent>
   </Select>
 }

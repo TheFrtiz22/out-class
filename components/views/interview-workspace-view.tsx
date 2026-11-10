@@ -1,4 +1,6 @@
 "use client"
+import { PillSelect } from "@/components/ui/pill-select"
+import { PillGroup } from "@/components/ui/segmented-control"
 import { InterviewApplicantPanel } from "@/components/interview-applicant-panel"
 import "@/components/shell/responsive-workspace.css"
 import { PageHeader } from "@/components/ui/page-header"
@@ -18,11 +20,8 @@ import { DemoInterviewGuide } from "@/components/demo-workspace"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import "./interview/interview-mode.css"
-import { NativeSelect } from "@/components/ui/native-select"
 
 type Pipeline = Awaited<ReturnType<typeof getInterviewWorkspace>>
-const selectStyle =
-  "h-10 max-w-full rounded-md border border-border bg-card px-3 text-sm focus-visible:outline-2 focus-visible:outline-ring"
 export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: () => void; scoped?: boolean }) {
   const { user, loading, activeClubId, selectClub } = useAuth()
   const { leaderFocus } = useApplicationState()
@@ -65,7 +64,7 @@ export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: ()
             </Button>
           </div>
         ) : (
-          <InterviewSession key={`${membership.clubId}-${membership.id}-${user?.id}`} membership={membership} onLock={handleLock} onExit={exit} clubSelector={!scoped && <NativeSelect aria-label="Interview club" disabled={locked} className={selectStyle} value={membership.clubId} onChange={event => setClubId(event.target.value)}>{memberships.map(item => <option key={item.clubId} value={item.clubId}>{item.club.name}</option>)}</NativeSelect>} />
+          <InterviewSession key={`${membership.clubId}-${membership.id}-${user?.id}`} membership={membership} onLock={handleLock} onExit={exit} clubSelector={!scoped && <PillSelect label="Interview club" disabled={locked} active={false} value={membership.clubId} onChange={value => setClubId(value)} options={memberships.map(item => ({ value: item.clubId, label: item.club.name }))} />} />
         )}
       </div>
     </div>
@@ -302,40 +301,16 @@ function InterviewSession({
         <div className="flex flex-wrap items-end gap-3">
           {clubSelector}
           <div className="space-y-2">
-            <Label htmlFor="interview-round">Round</Label>
-            <NativeSelect
-              id="interview-round"
-              className={`${selectStyle} block min-w-48`}
-              disabled={busy}
-              value={roundId}
-              onChange={(event) => {
-                if (!dirty || window.confirm("Discard your unsaved evaluation changes?"))
-                  setRoundId(event.target.value)
-              }}
-            >
-              {data.rounds.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name}
-                </option>
-              ))}
-            </NativeSelect>
+            <span className="text-sm font-medium">Round</span>
+            <PillGroup id="interview-round" label="Round" size="compact" value={roundId} onChange={(value) => {
+                if (busy) return
+                if (!dirty || window.confirm("Discard your unsaved evaluation changes?")) setRoundId(value)
+              }} options={data.rounds.map((item) => ({ value: item.id, label: item.name, disabled: busy }))} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="interview-candidate">Candidate</Label>
-            <NativeSelect
-              id="interview-candidate"
-              className={`${selectStyle} block w-full sm:w-64`}
-              disabled={busy || !queue.length}
-              value={activeId}
-              onChange={(event) => choose(event.target.value)}
-            >
-              <option value="">Choose a candidate</option>
-              {queue.map((app) => (
-                <option key={app.id} value={app.id}>
-                  {app.name}
-                </option>
-              ))}
-            </NativeSelect>
+            <span className="text-sm font-medium">Candidate</span>
+            <PillSelect id="interview-candidate" label="Candidate" className="w-full sm:w-64" disabled={busy || !queue.length} active={false} value={activeId} placeholder="Choose a candidate"
+              onChange={(value) => choose(value)} options={queue.map((app) => ({ value: app.id, label: app.name }))} />
           </div>
         </div>
         <p className="text-xs text-muted-foreground">
