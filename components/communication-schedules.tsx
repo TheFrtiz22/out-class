@@ -5,7 +5,7 @@ import { getCommunicationSchedules, cancelCommunicationSchedule } from "@/action
 import { resolveScheduleTime } from "@/lib/communication-schedule";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useRevalidate } from "@/hooks/use-revalidate";
+import { pollWhileVisible, useRevalidate } from "@/hooks/use-revalidate";
 import { Panel } from "@/components/ui/panel";
 import { NativeSelect } from "@/components/ui/native-select"
 export type ScheduledItem=Awaited<ReturnType<typeof getCommunicationSchedules>>[number];
@@ -26,7 +26,7 @@ export function ScheduleFields({value,onChange,disabled,fixedOnly=false,fixedDes
 export function ScheduledCommunications({clubId,refresh,onEdit}:{clubId:string;refresh:number;onEdit:(row:ScheduledItem)=>void}) {
  const [rows,setRows]=useState<ScheduledItem[]>([]),[error,setError]=useState(""),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false);
  const load=useCallback(async()=>{try{setRows(await getCommunicationSchedules(clubId));setError("");}catch{setError("Scheduled sends could not load.");}finally{setLoading(false);}},[clubId]);
- useEffect(()=>{void load();const timer=setInterval(()=>void load(),30000);return()=>clearInterval(timer);},[load,refresh]);
+ useEffect(()=>{void load();return pollWhileVisible(load,30000,{catchUp:false});},[load,refresh]);
  useRevalidate(load,{scopes:["communications"],enabled:!busy});
  return <Panel as="section" aria-labelledby="scheduled-heading" data-saving={busy} className="space-y-3"><div className="oc-panel-heading"><h3 id="scheduled-heading" className="font-semibold">Scheduled sends</h3></div>
  <p className="text-sm text-muted-foreground">Inbox messages and email are separate. Sent in the app does not mean emailed. Shows all waiting sends and the last 50 completed.</p>
