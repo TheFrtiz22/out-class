@@ -40,10 +40,10 @@ test('tokens: 256-bit URL-safe secret, only the hash is stored, webcal and Googl
 })
 
 function route({ feed, events = [] } = {}) {
-  const state = { lookups: [], updates: [] }
-  const tx = { calendarFeedToken: { findUnique: async q => { state.lookups.push(q.where); return feed ?? null }, update: async q => { state.updates.push(q) } } }
+  const state = { lookups: [], updates: [], transactions: 0 }
+  const calendarFeedToken = { findUnique: async q => { state.lookups.push(q.where); return feed ?? null }, updateMany: async q => { state.updates.push(q); return { count: 1 } } }
   const mod = load('app/api/calendar-feed/[token]/route.ts', {
-    '@/utils/prisma': { prisma: { $transaction: async fn => fn(tx) } },
+    '@/utils/prisma': { prisma: { calendarFeedToken, $transaction: async fn => { state.transactions++; return fn({}) } } },
     '@/utils/calendar-feed': { calendarFeedEvents: async (_tx, userId) => { state.userId = userId; return events } },
   })
   state.get = token => mod.GET(new Request('https://out-class.net/x'), { params: Promise.resolve({ token }) })
@@ -63,6 +63,8 @@ test('route: valid token returns the owner\'s calendar; lookups use the hash, ne
   assert.equal(s.updates.length, 1, 'first use recorded')
   const recent = route({ feed: { userId: 'u1', lastUsedAt: new Date(), user: { disabledAt: null } } })
   await recent.get(token); assert.equal(recent.updates.length, 0, 'not rewritten on every poll')
+  // An unknown token costs one indexed lookup and never opens a transaction.
+  const unknown = route({}); assert.equal((await unknown.get(newCalendarFeedToken())).status, 404); assert.equal(unknown.transactions, 0)
 })
 
 test('route: unknown, malformed, or disabled-account tokens look the same (404) and leak nothing', async () => {
@@ -91,6 +93,10 @@ test('feed contents: own bookings, member-club meetings, RSVPs and own panels; d
   assert.deepEqual(queries.members, { userId: 'u1', status: 'ACTIVE', club: { suspendedAt: null } })
   assert.equal(queries.bookings.application.studentId, 'u1')
   assert.deepEqual(queries.meetings.clubId, { in: ['c1'] })
+  // Bounded: nothing more than 180 days ahead, and capped row counts.
+  const horizon = at('2026-11-09T12:00:00Z').getTime() + 180 * 24 * 3600000
+  assert.equal(+queries.meetings.date.lte, horizon)
+  assert.equal(+queries.bookings.slot.startTime.lte, horizon)
   assert.equal(queries.rsvps.userId, 'u1')
 })
 
@@ -107,6 +113,9 @@ test('migration: hash-only storage, one link per user, runtime-only access', { t
     await assert.rejects(db.query(`UPDATE "CalendarFeedToken" SET "tokenHash"='plain-token'`), /tokenHash_format/)
     for (const role of ['anon', 'authenticated']) for (const p of ['SELECT', 'INSERT', 'UPDATE', 'DELETE']) assert.equal((await db.query(`SELECT has_table_privilege($1,'"CalendarFeedToken"',$2) ok`, [role, p])).rows[0].ok, false)
     assert.equal((await db.query(`SELECT relrowsecurity FROM pg_class WHERE relname='CalendarFeedToken'`)).rows[0].relrowsecurity, true)
+    // The runtime role must be able to read, create, rotate and delete links, or the feed route turns every request into a 503.
+    for (const p of ['SELECT', 'INSERT', 'UPDATE', 'DELETE']) assert.equal((await db.query(`SELECT has_table_privilege('outclass_production_app','"CalendarFeedToken"',$1) ok`, [p])).rows[0].ok, true, `runtime ${p}`)
+    assert.deepEqual((await db.query(`SELECT cmd FROM pg_policies WHERE tablename='CalendarFeedToken' AND 'outclass_production_app'=ANY(roles) ORDER BY cmd`)).rows.map(r => r.cmd), ['DELETE', 'INSERT', 'SELECT', 'UPDATE'])
     await db.exec(`DELETE FROM "User" WHERE id='u1'`)
     assert.equal((await db.query(`SELECT count(*)::int n FROM "CalendarFeedToken"`)).rows[0].n, 0)
   } finally { await db.close() }
@@ -123,6 +132,7 @@ function matches(row, where) {
     if (v === null) return x === null || x === undefined
     if (v instanceof Date || typeof v !== 'object') return x === v
     if ('gte' in v) return x !== null && x !== undefined && +x >= +v.gte
+    if ('lte' in v) return x !== null && x !== undefined && +x <= +v.lte
     if ('is' in v) return v.is === null ? x === null || x === undefined : matches(x, v.is)
     if ('some' in v) return (x || []).some(r => matches(r, v.some))
     if ('in' in v) return v.in.includes(x)
