@@ -46,7 +46,7 @@ test('starting the next cycle from the last one on native PostgreSQL', { skip: !
     },
   };
   const load = loader(mocks);
-  const recruitment = load('actions/recruitment-management.ts'), offerActions = load('actions/recruitment-offers.ts'), offers = load('utils/recruitment-offers.ts');
+  const recruitment = load('actions/recruitment-management.ts'), offerActions = load('actions/recruitment-offers.ts'), offers = load('utils/recruitment-offers.ts'), communications = load('utils/decision-communications.ts');
   const as = (user, fn) => request.run(user, fn);
   const counts = async (tables, clubIds) => Object.fromEntries(await Promise.all(tables.map(async table => {
     const where = ['Application', 'ApplicantObservation', 'InterviewRoom', 'InterviewSlot', 'VotingSession', 'DecisionLetter', 'ClubInvitation', 'ApplicationQuestion', 'PipelineRound', 'VotingRuleDefault'].includes(table) ? `WHERE "clubId" = ANY($1::text[])` : '';
@@ -117,7 +117,7 @@ test('starting the next cycle from the last one on native PostgreSQL', { skip: !
     const session = await operator.votingSession.create({ data: { clubId: f.club.id, roundId: f.round.id, cycleId: f.fall.id, state: 'OPEN', targetSize: 1, createdBy: f.leader.id } });
     await assert.rejects(as(f.leader, () => recruitment.startRecruitmentCycleFromPrevious(input(f))), /1 voting session in progress/);
     await assert.rejects(as(f.leader, () => recruitment.saveRecruitmentCycle({ id: f.fall.id, clubId: f.club.id, name: 'Fall 2026', archived: true })), /voting session in progress/);
-    await operator.votingSession.update({ where: { id: session.id }, data: { state: 'COMPLETED', finalizedAt: new Date() } });
+    await operator.votingSession.update({ where: { id: session.id }, data: { state: 'COMPLETED', publishedAt: new Date() } });
     const waiting = await operator.user.create({ data: { email: `${randomUUID()}@virginia.edu` } });
     await operator.application.create({ data: { studentId: waiting.id, clubId: f.club.id, roundId: f.round.id, recruitmentCycleId: f.fall.id, status: 'WAITLISTED', submittedAt: new Date() } });
     await assert.rejects(as(f.leader, () => recruitment.startRecruitmentCycleFromPrevious(input(f))), /1 waitlisted application\./);
@@ -137,7 +137,11 @@ test('starting the next cycle from the last one on native PostgreSQL', { skip: !
     const f = await fixture({ letter: false });
     await as(f.leader, () => recruitment.startRecruitmentCycleFromPrevious(input(f)));
     assert.ok((await operator.recruitmentCycle.findUniqueOrThrow({ where: { id: f.fall.id } })).archivedAt);
-    await base.$transaction(tx => offers.publishRecruitmentDecision(tx, { applicationId: f.app.id, clubId: f.club.id, status: 'ACCEPTED' }, f.leader.id));
+    // The fixture's decision is recorded but its communication deferred, as after a voting room finalizes.
+    await base.$transaction(async tx => {
+      await offers.publishRecruitmentDecision(tx, { applicationId: f.app.id, clubId: f.club.id, status: 'ACCEPTED' }, f.leader.id);
+      await communications.publishDecisionCommunication(tx, f.app.id, f.leader.id);
+    });
     assert.equal(await operator.decisionLetter.count({ where: { applicationId: f.app.id } }), 1);
     await as(f.student, () => offerActions.respondToOffer(f.app.id, 'ACCEPT'));
     assert.equal((await operator.clubInvitation.findUniqueOrThrow({ where: { applicationId: f.app.id } })).status, 'ACCEPTED');
