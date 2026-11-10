@@ -13,6 +13,7 @@ function load(file) {
   return mod.exports
 }
 const nav = load("lib/settings-navigation.ts")
+const sheet = load("lib/notification-settings-sheet.ts")
 
 test("one address for notification settings: the Inbox, with the preferences sheet open", () => {
   assert.equal(nav.notificationSettingsHref, "/inbox?tab=preferences")
@@ -34,12 +35,19 @@ test("the Inbox header shows the Notification settings entry point", () => {
   assert.match(control, /<SheetTitle>Notification settings<\/SheetTitle>/)
   // Reuses the existing form (no copy), loaded only when opened; Demo Mode never touches real preferences.
   assert.match(control, /import\("@\/components\/communications-preferences"\)/)
-  assert.match(control, /\{open && <CommunicationsPreferences embedded \/>\}/)
   assert.match(control, /if \(demo\.isDemoEnabled\) return null/)
-  // Closing guards an in-flight save and unsaved edits, and focus returns to the gear.
-  assert.match(control, /\[data-saving="true"\]/)
-  assert.match(control, /\[data-unsaved="true"\][^\n]*window\.confirm/)
+  // Unsaved edits get an inline confirm (no window.confirm); focus moves to Keep editing. Focus returns to the gear.
+  assert.doesNotMatch(control, /window\.confirm/)
+  assert.match(control, />Discard changes\?</)
+  assert.match(control, /<Button ref=\{keep\} size="sm" variant="ghost" onClick=\{keepEditing\}>Keep editing<\/Button>/)
+  assert.match(control, /onClick=\{\(\) => requestClose\(true\)\}>Discard<\/Button>/)
+  assert.match(control, /if \(confirming\) keep\.current\?\.focus\(\)/)
   assert.match(control, /onCloseAutoFocus=[^\n]*target\.focus\(\)/)
+  // Close stays enabled during a save: "Saving…" shows, and a save still in flight on close finishes with a toast.
+  assert.match(control, /\{saving && <p role="status"[^>]*>Saving…<\/p>\}/)
+  assert.match(control, /toast\.loading\("Saving notification settings…"/)
+  assert.match(control, /<CommunicationsPreferences embedded onSave=\{onSave\} \/>/)
+  assert.match(control, /addEventListener\("beforeunload", warn\)/)
   // The Inbox page no longer redirects preferences away, and the old in-page Settings link is gone.
   assert.doesNotMatch(read("app/(workspace)/inbox/page.tsx"), /redirect\(/)
   assert.doesNotMatch(read("components/views/inbox-view.tsx"), /settings\/notifications|are in Settings/)
@@ -47,7 +55,9 @@ test("the Inbox header shows the Notification settings entry point", () => {
 
 test("the preferences form keeps its saving logic; embedding only drops the duplicate heading", () => {
   const form = read("components/communications-preferences.tsx")
-  assert.match(form, /export function CommunicationsPreferences\(\{embedded=false\}:\{embedded\?:boolean\}=\{\}\)/)
+  assert.match(form, /export function CommunicationsPreferences\(\{embedded=false,onSave\}/)
+  assert.match(form, /setMessage\("Preferences saved."\);onSave\?\.\("saved"\)/)
+  assert.match(form, /setMessage\("Could not save preferences."\);onSave\?\.\("failed"\)/)
   assert.match(form, /\{!embedded&&<h2 className="oc-section-heading">Email notification preferences<\/h2>\}/)
   assert.match(form, /await saveNotificationPreferences\(\{/)
   assert.match(form, /data-unsaved=\{dirty\} data-saving=\{saving\}/)
@@ -64,4 +74,33 @@ test("the old Settings URL, Settings navigation, Cmd-K and the notification cent
   assert.match(read("components/shell/notification-center.tsx"), /href=\{notificationSettingsHref\}/)
   for (const file of ["components/shell/notification-center.tsx", "components/views/inbox-view.tsx", "components/shell/product-shell.tsx", "components/settings/personal-settings-layout.tsx", "app/(workspace)/settings/page.tsx"])
     assert.doesNotMatch(read(file), /"\/settings\/notifications"/, file)
+})
+
+test("history: the gear's push closes with Back, a deep link closes in place, unsaved edits ask first", () => {
+  const state = (over = {}) => ({ openedInApp: false, dirty: false, saving: false, ...over })
+  assert.equal(sheet.closeStep(state({ openedInApp: true })), "back")
+  assert.equal(sheet.closeStep(state()), "replace")
+  assert.equal(sheet.closeStep(state({ openedInApp: true, dirty: true })), "confirm")
+  assert.equal(sheet.closeStep(state({ dirty: true })), "confirm")
+  assert.equal(sheet.closeStep(state({ openedInApp: true, dirty: true }), true), "back", "Discard")
+  assert.equal(sheet.closeStep(state({ dirty: true }), true), "replace", "Discard after a deep link")
+  // A save in flight never blocks closing; it finishes in the background.
+  assert.equal(sheet.closeStep(state({ openedInApp: true, dirty: true, saving: true })), "back")
+  // Browser Back/Forward removed the param: restore and ask only when edits would be lost.
+  assert.equal(sheet.urlClosedStep({ dirty: true, saving: false }), "restore")
+  assert.equal(sheet.urlClosedStep({ dirty: false, saving: false }), "close")
+  assert.equal(sheet.urlClosedStep({ dirty: true, saving: true }), "close")
+})
+
+test("Settings: Notifications is never the active Settings page, and Demo Mode hides it", () => {
+  assert.equal(nav.personalSettingsSectionFor("/settings/account").id, "account")
+  assert.equal(nav.personalSettingsSectionFor("/settings/availability").id, "availability")
+  assert.equal(nav.personalSettingsSectionFor("/inbox"), undefined)
+  assert.equal(nav.personalSettingsSectionFor("/settings/notifications"), undefined)
+  assert.deepEqual(nav.visiblePersonalSettingsSections(false).map(item => item.id), ["account", "notifications", "availability"])
+  assert.deepEqual(nav.visiblePersonalSettingsSections(true).map(item => item.id), ["account", "availability"])
+  assert.match(read("components/settings/personal-settings-layout.tsx"), /visiblePersonalSettingsSections\(demo\.isDemoEnabled\)/)
+  assert.match(read("components/settings/personal-settings-overview.tsx"), /visiblePersonalSettingsSections\(demo\.isDemoEnabled\)/)
+  assert.match(read("app/(workspace)/settings/page.tsx"), /<PersonalSettingsOverview \/>/)
+  assert.match(read("components/shell/workspace-shell.tsx"), /personalSettingsSectionFor\(pathname\)\?\.label/)
 })

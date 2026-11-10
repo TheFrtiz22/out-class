@@ -10,3 +10,9 @@ export const personalSettingsSections = [
   { id: "notifications", label: "Notifications", href: notificationSettingsHref, description: "Choose which club updates and reminders reach your email." },
   { id: "availability", label: "Availability", href: "/settings/availability", description: "Keep one availability schedule across all your clubs." },
 ] as const
+
+/** The Settings page a pathname shows. Notifications lives in the Inbox, so it is never the active Settings page. */
+export const personalSettingsSectionFor = (pathname: string) => personalSettingsSections.find(section => section.href.startsWith("/settings/") && section.href === pathname)
+
+/** Demo Mode never reads or writes real notification preferences (like Cmd-K and the Inbox gear), so it hides that entry. */
+export const visiblePersonalSettingsSections = (demo: boolean) => personalSettingsSections.filter(section => !demo || section.id !== "notifications")

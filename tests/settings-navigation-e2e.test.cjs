@@ -101,6 +101,19 @@ test('settings and authenticated navigation across roles, saves, history and res
     await sheet.waitFor();
     await studentPage.goBack(); await studentPage.getByRole('heading', { name: 'Account & Security', exact: true }).waitFor();
     await studentPage.goForward(); await sheet.waitFor();
+    // Unsaved edits: closing asks inline (focus on Keep editing); browser Back keeps the edits and asks too.
+    await open(studentPage, '/inbox'); await gear.click(); await sheet.waitFor();
+    await checkbox.check();
+    await studentPage.keyboard.press('Escape');
+    const keep = sheet.getByRole('button', { name: 'Keep editing', exact: true });
+    await sheet.getByText('Discard changes?', { exact: true }).waitFor();
+    assert.equal(await keep.evaluate(node => node === document.activeElement), true, 'focus moves to Keep editing');
+    await keep.click(); assert.equal(await checkbox.isChecked(), true);
+    await studentPage.goBack(); await sheet.getByText('Discard changes?', { exact: true }).waitFor();
+    assert.equal(await checkbox.isChecked(), true, 'Back does not drop unsaved edits');
+    await sheet.getByRole('button', { name: 'Discard', exact: true }).click(); await sheet.waitFor({ state: 'hidden' });
+    assert.equal(new URL(studentPage.url()).search, '', 'Discard steps back to the Inbox entry');
+    assert.equal((await db.userNotificationPreference.findUniqueOrThrow({ where: { userId: student.user.id } })).emailAnnouncements, false, 'discarded edits are not saved');
     // Profile has one Edit profile entry point with sections.
     await open(studentPage, '/profile');
     await studentPage.getByRole('button', { name: 'Edit profile', exact: true }).click();
