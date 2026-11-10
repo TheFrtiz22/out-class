@@ -10,6 +10,8 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
 import { RouteContent } from "@/components/route-content"
+import { ServiceWorkerRegistration } from "@/components/service-worker-registration"
+import { PWA_THEME_COLOR } from "@/lib/pwa"
 import { SITE_URL, SITE_TITLE, SITE_DESCRIPTION, LEGAL_ORGANIZATION_NAME, privateRobots, socialDefaults } from "@/lib/seo"
 
 // One Caslon family, with real variable weights and a real italic face.
@@ -38,7 +40,7 @@ const sourceSans = localFont({
   fallback: ["Arial", "sans-serif"],
 })
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", interactiveWidget: "resizes-content" }
+export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", interactiveWidget: "resizes-content", themeColor: PWA_THEME_COLOR }
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -51,6 +53,9 @@ export const metadata: Metadata = {
   // Public pages opt in explicitly; new product routes stay out of search by default.
   robots: privateRobots,
   manifest: "/manifest.webmanifest",
+  // Home-screen launch on iOS. The apple-touch-icon link comes from app/apple-icon.tsx (180x180 PNG).
+  appleWebApp: { capable: true, title: "OutClass", statusBarStyle: "default" },
+  formatDetection: { telephone: false },
   verification: {
     google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
     other: process.env.BING_SITE_VERIFICATION ? { "msvalidate.01": process.env.BING_SITE_VERIFICATION } : undefined,
@@ -105,6 +110,7 @@ export default async function RootLayout({
           </AuthProvider>
           <Toaster />
           {process.env.VERCEL && <><Analytics /><SpeedInsights /></>}
+          {process.env.NODE_ENV === "production" && !demoEnabled && !cookieStore.has(PLATFORM_VIEW_COOKIE) && <ServiceWorkerRegistration />}
         </DemoDataProvider>
       </body>
     </html>
