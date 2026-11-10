@@ -48,11 +48,10 @@ function invitationPage(preview) {
   return load('app/(workspace)/invitations/[id]/page.tsx', {
     ...signedOut,
     '@/lib/public-link-preview': { invitationPreview: async () => preview },
-    '@/utils/auth': { requireAuth: forbidden },
+    '@/utils/auth': { getSessionUser: async () => ({ data: { user: null } }), requireAuth: forbidden },
     '@/utils/prisma': { prisma: new Proxy({}, { get: forbidden }) },
     '@/utils/profile-onboarding': { requireCompletedStudentProfile: forbidden },
-    '@/utils/club-write-transaction': { clubWriteTransaction: forbidden },
-    '@/utils/school-identity': { verifiedSchoolIdentities: forbidden, prepareVerifiedSchoolAccount: forbidden },
+    '@/utils/school-identity': { previewVerifiedSchoolIdentities: forbidden, prepareVerifiedSchoolAccount: forbidden },
     '@/utils/verified-email-policy': { UniversityVerificationError: class extends Error {} },
     '@/components/invitation-response': { InvitationResponse: () => null },
   }).default
@@ -71,6 +70,60 @@ test('signed-out invitation: an invalid or expired link gets a clear message, no
   assert.match(html, /This invitation link isn’t valid/)
   assert.match(html, /href="\/"/); assert.match(html, new RegExp(`href="/login\\?next=${encodeURIComponent(`/invitations/${id}`)}"`))
   assert.doesNotMatch(html, /\/signup/)
+})
+
+// Signed-in GET render of an invitation: the real read-only identity preview runs against a
+// recording Prisma double. Any create/update/upsert/delete/$transaction call fails the test.
+function signedInInvitationPage({ email = 'recipient@virginia.edu', userId = 'recipient', identities, invitation, configs }) {
+  const calls = [], authCalls = []
+  const read = (model, impl) => ({ [model]: new Proxy(impl, { get: (target, op) => { calls.push(`${model}.${String(op)}`); if (!(op in target)) throw Error(`write during GET render: ${model}.${String(op)}`); return target[op] } }) })
+  const evaluate = where => where.id === invitation?.id && where.OR.some(c => c.schoolIdentityId === null ? !invitation.schoolIdentityId && invitation.email === c.email : c.schoolIdentityId.in.includes(invitation.schoolIdentityId))
+  const prisma = new Proxy({
+    ...read('user', { findUnique: async () => ({ email, disabledAt: null }) }),
+    ...read('schoolIdentifierType', { findMany: async ({ where }) => configs.filter(c => c.emailDomain === where.emailDomain) }),
+    ...read('schoolIdentity', { findMany: async ({ where }) => identities.filter(i => where.OR.some(c => c.schoolId === i.schoolId && c.identifierTypeId === i.identifierTypeId && c.normalizedIdentifier === i.normalizedIdentifier)) }),
+    ...read('clubInvitation', { findFirst: async ({ where }) => evaluate(where) ? { ...invitation, club: { name: 'Virginia Venture Fund' } } : null }),
+  }, { get: (target, key) => { if (!(key in target)) throw Error(`write during GET render: ${String(key)}`); return target[key] } })
+  const account = { user: { id: userId, email }, supabaseUser: { id: userId, email, confirmation_sent_at: '2026-09-01', email_confirmed_at: '2026-10-01' }, impersonation: null }
+  const page = load('app/(workspace)/invitations/[id]/page.tsx', {
+    '@/utils/auth': { getSessionUser: async () => { authCalls.push('session'); return { data: { user: { id: userId } } } }, requireAuth: async () => { authCalls.push('require'); return account } },
+    '@/utils/prisma': { prisma },
+    '@/utils/profile-onboarding': { requireCompletedStudentProfile: async () => {} },
+    '@/utils/verified-email-policy': { ...load('utils/verified-email-policy.ts'), requireVerifiedEmailPolicy: async () => {} },
+    '@/utils/club-write-transaction': { clubWriteTransaction: () => { throw Error('write transaction during GET render') } },
+    '@/lib/public-link-preview': { invitationPreview: forbidden },
+    '@/components/invitation-response': { InvitationResponse: props => React.createElement('invitation-response', { 'data-id': props.id, 'data-owner': String(props.owner) }) },
+  }).default
+  return { page, calls, authCalls }
+}
+const uvaComputing = { id: 'computing', schoolId: 'school-uva', emailDomain: 'virginia.edu', normalization: 'TRIM_LOWERCASE', validationRegex: '^[a-z0-9]+$' }
+const otherComputing = { id: 'other-computing', schoolId: 'school-other', emailDomain: 'other.edu', normalization: 'TRIM_LOWERCASE', validationRegex: '^[a-z0-9]+$' }
+const ownerInvite = { id, schoolIdentityId: 'identity', requestedRole: 'OWNER', permissions: [], email: 'recipient@virginia.edu' }
+
+test('signed-in invitation GET performs no write, even for a not-yet-bound identity, and verifies the session once', async () => {
+  const h = signedInInvitationPage({ configs: [uvaComputing], invitation: ownerInvite, identities: [{ id: 'identity', schoolId: 'school-uva', identifierTypeId: 'computing', normalizedIdentifier: 'recipient', userId: null, verifiedAt: null }] })
+  const html = renderToStaticMarkup(await h.page({ params: Promise.resolve({ id }) }))
+  assert.match(html, /Claim Virginia Venture Fund/); assert.match(html, /data-owner="true"/)
+  assert.deepEqual(h.calls.filter(c => /\.(create|update|upsert|delete)|\$transaction|\$queryRaw/.test(c)), [])
+  assert.deepEqual(h.authCalls, ['session', 'require'])
+  const source = fs.readFileSync('app/(workspace)/invitations/[id]/page.tsx', 'utf8')
+  assert.doesNotMatch(source, /clubWriteTransaction|verifiedSchoolIdentities\(|auth\.getUser\(/)
+})
+
+test('signed-in invitation GET keeps identity binding: another account or another school sees no invitation', async () => {
+  // The university identifier is already bound to a different account: fail closed, nothing written.
+  let h = signedInInvitationPage({ configs: [uvaComputing], invitation: ownerInvite, identities: [{ id: 'identity', schoolId: 'school-uva', identifierTypeId: 'computing', normalizedIdentifier: 'recipient', userId: 'someone-else', verifiedAt: new Date() }] })
+  await assert.rejects(h.page({ params: Promise.resolve({ id }) }), /manual review/)
+  assert.deepEqual(h.calls.filter(c => /\.(create|update|upsert|delete)/.test(c)), [])
+  // A different user at the same school: their identity differs, so the invitation is not found.
+  h = signedInInvitationPage({ userId: 'intruder', email: 'intruder@virginia.edu', configs: [uvaComputing], invitation: ownerInvite, identities: [{ id: 'identity', schoolId: 'school-uva', identifierTypeId: 'computing', normalizedIdentifier: 'recipient', userId: null, verifiedAt: null }, { id: 'intruder-identity', schoolId: 'school-uva', identifierTypeId: 'computing', normalizedIdentifier: 'intruder', userId: 'intruder', verifiedAt: new Date() }] })
+  let html = renderToStaticMarkup(await h.page({ params: Promise.resolve({ id }) }))
+  assert.match(html, /Invitation unavailable/); assert.doesNotMatch(html, /invitation-response|Virginia Venture Fund/)
+  // Same local part at another school: only that school's identity is considered.
+  h = signedInInvitationPage({ userId: 'recipient-other', email: 'recipient@other.edu', configs: [uvaComputing, otherComputing], invitation: ownerInvite, identities: [{ id: 'identity', schoolId: 'school-uva', identifierTypeId: 'computing', normalizedIdentifier: 'recipient', userId: null, verifiedAt: null }, { id: 'other-identity', schoolId: 'school-other', identifierTypeId: 'other-computing', normalizedIdentifier: 'recipient', userId: null, verifiedAt: null }] })
+  html = renderToStaticMarkup(await h.page({ params: Promise.resolve({ id }) }))
+  assert.match(html, /Invitation unavailable/); assert.doesNotMatch(html, /invitation-response/)
+  assert.deepEqual(h.calls.filter(c => /\.(create|update|upsert|delete)/.test(c)), [])
 })
 
 test('signed-out club access and club claim links show sign-in cards; access editor data is never read', async () => {
