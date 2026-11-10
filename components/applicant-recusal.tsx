@@ -17,7 +17,8 @@ export function ApplicantRecusal({ clubId, applicationId, anonymous, onChanged }
   useEffect(() => {
     if (demo.isDemoEnabled) return
     let current = true
-    getApplicantRecusals({ clubId, applicationId }).then(next => { if (current) setState(next) }).catch(() => { if (current) setState(null) })
+    // Never let this optional line break the dossier: any failure just hides it.
+    Promise.resolve().then(() => getApplicantRecusals({ clubId, applicationId })).then(next => { if (current) setState(next ?? null) }).catch(() => { if (current) setState(null) })
     return () => { current = false }
   }, [clubId, applicationId, reload, demo.isDemoEnabled])
   if (demo.isDemoEnabled || !state) return null
