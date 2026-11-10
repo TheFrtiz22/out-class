@@ -50,7 +50,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { DisabledReason, ReviewSection } from "./applicant-quick-review"
 import { createPortal } from "react-dom"
 import { useRevalidate } from "@/hooks/use-revalidate"
-import { BoardDecisionMode } from "@/components/live-voting/board-decision-mode"
 import { getRankedReviewRound, getRankedReviewSettings, getRoundTargetSummary, saveRankedReviewBands } from "@/lib/workspace-api"
 import { getClubPipelinePage, getClubPipelineSelection, moveApplicantRound, setApplicationStatus, reconsiderRejectedApplication, revokeRecruitmentOffer } from "@/lib/workspace-api"
 import { submitEvaluation } from "@/lib/workspace-api"

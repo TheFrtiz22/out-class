@@ -314,29 +314,6 @@ test('decision/invitation transaction repair on isolated native PostgreSQL', { s
       await assert.rejects(profile(f, api, { logoUrl: `club-assets/${other.club.id}/${randomUUID()}.webp` }), /ownership mismatch/);
       await assert.rejects(f.run(() => api('actions/club-workspace.ts').updateClubSettings({ clubId: other.club.id, name: 'Forbidden', tagline: '', description: '' })), /Permission denied/);
     });
-    await t.test(`persisted voting draft reload, joining, ballots, retries and publication (support=${support})`, async () => {
-      const f = await fixture(support), voting = api('actions/voting.ts');
-      const id = await f.run(() => voting.createVotingSession({ clubId: f.club.id, roundId: f.round.id, applicationIds: [f.app.id], participantIds: [f.member.id], targetSize: 1, displayConfig: { version: 1, fields: ['name'] } }));
-      let view = await f.run(() => voting.getVotingWorkspace(f.club.id));
-      assert.equal(view.session.id, id); assert.equal(view.session.state, 'DRAFT');
-      const command = async (action, extra = {}) => {
-        view = await f.run(() => voting.getVotingWorkspace(f.club.id, id));
-        return f.run(() => voting.commandVotingSession({ clubId: f.club.id, sessionId: id, revision: view.session.revision, action, ...extra }));
-      };
-      await command('OPEN_JOIN');
-      await Promise.all([f.run(() => voting.joinVotingSession(id)), f.run(() => voting.joinVotingSession(id))]);
-      await command('START_PASS');
-      const ballot = () => f.run(() => voting.submitVotingBallot({ clubId: f.club.id, sessionId: id, passNumber: 1, applicationId: f.app.id, decision: 'PASS' }));
-      const results = await Promise.allSettled([ballot(), ballot()]);
-      assert.equal(results.filter(r => r.status === 'fulfilled').length, 1);
-      assert.equal(await base.votingBallot.count({ where: { sessionId: id } }), 1);
-      await command('COMPLETE_PASS'); await command('FINISH'); await command('PUBLISH', { applicationIds: [f.app.id] });
-      await assertPublished(f, 'ACCEPTED');
-      await operator.clubMember.create({ data: { userId: admin.id, clubId: f.club.id, isOwner: true } });
-      await operator.clubMember.update({ where: { id: f.member.id }, data: { isOwner: false, permissions: [] } });
-      await assert.rejects(f.run(() => voting.getVotingWorkspace(f.club.id, id)), /Permission denied/);
-      await assert.rejects(ballot(), /Permission denied/);
-    });
   }
   async function recipient(f, support) {
     const context = { ...f.context, user: f.student, session: null };

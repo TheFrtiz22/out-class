@@ -41,7 +41,6 @@ test('native offers: publication, student authority, membership, retries and rac
  const o=await offer(apps[0]);const data={applicationId:o.applicationId,clubId:club.id,schoolId:o.schoolId,email:o.email,invitedBy:leader.id,purpose:'MEMBERSHIP',requestedRole:'MEMBER',permissions:[],expiresAt:new Date(Date.now()+86400000)};
  await assert.rejects(db.clubInvitation.create({data}),e=>e.code==='P2002');await assert.rejects(db.clubInvitation.update({where:{id:o.id},data:{permissions:['members.manage']}}));assert.deepEqual((await offer(apps[0])).permissions,[]);
  });
- await t.test('concurrent voting publication retries share the canonical offer path',async()=>{const selected=apps.slice(8,11);const id=await l.voting.createVotingSession({clubId:club.id,roundId:round.id,applicationIds:selected.map(a=>a.id),participantIds:[member.id],targetSize:1});let s=()=>db.votingSession.findUniqueOrThrow({where:{id}});const command=async(action,extra={})=>l.voting.commandVotingSession({clubId:club.id,sessionId:id,revision:(await s()).revision,action,...extra});await command('START_PASS');for(const [i,a]of selected.entries())await l.voting.submitVotingBallot({clubId:club.id,sessionId:id,passNumber:1,applicationId:a.id,decision:['PASS','HOLD','NOT_PASS'][i]});await command('COMPLETE_PASS');await command('FINISH');const input={clubId:club.id,sessionId:id,revision:(await s()).revision,action:'PUBLISH',applicationIds:selected.map(a=>a.id)};await Promise.all([l.voting.commandVotingSession(input),l.voting.commandVotingSession(input)]);await assert.rejects(l.voting.commandVotingSession({...input,applicationIds:[selected[0].id]}),/changed|sealed/i);assert.equal((await offer(selected[0])).status,'PENDING');for(const a of selected){const letters=await db.decisionLetter.findMany({where:{applicationId:a.id}});assert.equal(letters.length,1);assert.equal(await db.userNotification.count({where:{eventKey:`decision:${a.id}:1`}}),1);assert.equal(await db.notificationEmailOutbox.count({where:{notification:{eventKey:`decision:${a.id}:1`}}}),1);}assert.equal(await db.clubInvitation.count({where:{applicationId:{in:selected.slice(1).map(a=>a.id)}}}),0);assert.equal(await db.auditLog.count({where:{action:'offer.created',targetId:(await offer(selected[0])).id}}),1)});
  async function fresh() {
   const u=await db.user.create({data:{email:`hardening-${randomUUID()}@demo.invalid`}});
   return db.application.create({data:{clubId:club.id,studentId:u.id,roundId:round.id,status:'IN_REVIEW'}});
@@ -67,23 +66,6 @@ test('native offers: publication, student authority, membership, retries and rac
   const version=(await db.club.findUnique({where:{id:club.id}})).pipelineVersion;
   await assert.rejects(l.settings.savePipelineSettings({clubId:club.id,version,rounds:[{id:interview.id,name:'First review',type:'APPLICATION_REVIEW',configuration:{}}]}),/Move active/);
   assert.equal((await db.club.findUnique({where:{id:club.id}})).pipelineVersion,version);
- });
- await t.test('voting publication rechecks disabled account, revoked capability and membership after actual lock wait',async()=>{
-  for(const denial of ['disabled','capability','membership']){
-   const a=await fresh(),sessionId=await l.voting.createVotingSession({clubId:club.id,roundId:round.id,applicationIds:[a.id],participantIds:[member.id],targetSize:1});
-   const command=async(action)=>l.voting.commandVotingSession({clubId:club.id,sessionId,revision:(await db.votingSession.findUnique({where:{id:sessionId}})).revision,action,...(action==='PUBLISH'?{applicationIds:[a.id]}:{})});
-   await command('START_PASS');await l.voting.submitVotingBallot({clubId:club.id,sessionId,passNumber:1,applicationId:a.id,decision:'PASS'});await command('COMPLETE_PASS');await command('FINISH');
-   let authorized=false;const publisher=api(db,leader.id,()=>authorized=true),revision=(await db.votingSession.findUnique({where:{id:sessionId}})).revision;
-   const result=await waitingRace(()=>publisher.voting.commandVotingSession({clubId:club.id,sessionId,revision,action:'PUBLISH',applicationIds:[a.id]}),async tx=>{
-    assert.ok(authorized,'pre-transaction authorization completed');
-    if(denial==='disabled')await tx.user.update({where:{id:leader.id},data:{disabledAt:new Date()}});
-    else await tx.clubMember.update({where:{id:member.id},data:{isOwner:false,status:denial==='membership'?'LEFT':'ACTIVE',permissions:[]}});
-   });
-   assert.match(result.error?.message??'',/denied/i);assert.equal((await db.application.findUnique({where:{id:a.id}})).status,'IN_REVIEW');
-   assert.equal(await db.clubInvitation.count({where:{applicationId:a.id}}),0);assert.equal((await db.votingSession.findUnique({where:{id:sessionId}})).publishedAt,null);
-   assert.equal(await db.auditLog.count({where:{targetId:a.id,action:{in:['recruitment.decision.published','voting.decision.published','offer.created']}}}),0);
-   await db.user.update({where:{id:leader.id},data:{disabledAt:null}});await db.clubMember.update({where:{id:member.id},data:{status:'ACTIVE',isOwner:true}});
-  }
  });
  await t.test('accept racing decision reversal has coherent database state in either ordering',async()=>{
   for(const reversalFirst of [true,false]){

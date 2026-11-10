@@ -76,7 +76,7 @@ test('every scoring and voting path checks recusal inside its transaction', () =
   const read = f => fs.readFileSync(f, 'utf8')
   assert.match(read('utils/interview-access.ts'), /await assertNotRecused\(tx, app\.id, actor\.member\.id\)/)
   assert.match(read('actions/evaluations.ts'), /await assertNotRecused\(tx, app\.id, member\.id\)/)
-  assert.match(read('actions/voting.ts'), /await assertNotRecused\(tx,d\.applicationId,membership\.id\)/)
+  assert.doesNotMatch(read('actions/voting.ts'), /votingBallot\.create/, 'board ballots were retired, so no unchecked ballot path remains')
   assert.match(read('actions/voting-room.ts'), /isRecused\(tx,d\.applicationId,m\.id\)/)
   assert.match(read('actions/crm.ts'), /canEvaluate: false, recused: true/)
 })
