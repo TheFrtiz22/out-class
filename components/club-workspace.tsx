@@ -48,8 +48,6 @@ import { DecidePage } from "@/components/live-voting/decide-page";
 import { RecruitmentReviewSettings } from "@/components/recruitment-review-settings";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { IconButton } from "@/components/ui/icon-button";
-import { Settings as SettingsIcon } from "@/components/icons";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RECRUITING_SETTINGS_PARAM, canOpenRecruitingSettings, recruitingSettingsSection, recruitingSettingsSections, withRecruitingSettings, type RecruitingSettingsSection } from "@/lib/recruiting-settings";
 import { handleClubLink, navigateWithinClub } from "@/lib/workspace-navigation";
@@ -194,7 +192,6 @@ export function ClubWorkspace({
     if (document.querySelector('[data-rule-dirty="true"]') && !window.confirm("Discard unsaved rule changes?")) return;
     router.replace(`/club/${encodeURIComponent(clubId)}/workspace?${withRecruitingSettings(params.toString(), null)}`, { scroll: false });
   }
-  const recruitingSettingsGear = manager && canOpenRecruitingSettings(membership) && <IconButton variant="outline" aria-label="Recruiting settings" title="Recruiting settings" aria-haspopup="dialog" onClick={event => { if (canLeaveWorkspace()) openRecruitingSettings("anonymous", event.currentTarget) }}><SettingsIcon aria-hidden="true" /></IconButton>;
   if (suspended) return <div className="max-w-[var(--oc-reading-width)] space-y-4"><PageHeader title="This club is suspended" /><p className="mt-3">Club operations are unavailable until an administrator restores it. Your membership and existing records are preserved.</p><Link href="/" className="mt-6 inline-block underline">Return to Personal</Link></div>;
   if (resolvingEntry || moved || legacyRoom) return <WorkspaceLoading label="Opening club workspace…" />;
   const allowed = mode === "recruiting" ? manager && recruitmentTools(membership!).length > 0 && nav.some(n => n.id === active) : nav.some(n => n.id === active);
@@ -215,7 +212,7 @@ export function ClubWorkspace({
             ? <DashboardHero className="oc-club-home-hero" ambientClassName="oc-club-home-ambient"><ClubOverviewHeader className="oc-club-home-greeting" density="expressive" clubName={current?.club.name || membership.club.name} context={{ mode: "club", clubId, membership, data: error ? null : current }} action={manager ? <ClubHomeActions clubId={clubId} membership={membership} /> : allClubs} /></DashboardHero>
             : active === "overview" && allowed
             ? <RecruitingHero clubId={clubId} clubName={current?.club.name || membership.club.name} membership={membership} data={error ? null : current} />
-            : <PageHeader density={section === "overview" ? "expressive" : "compact"} eyebrow={membership.club.name} title={nav.find(n => n.id === active)?.label || "Workspace"} action={active === "applicants" ? <><div id="workspace-page-actions" data-page-header-slot className="contents" />{recruitingSettingsGear}</> : manager ? undefined : allClubs} />}
+            : <PageHeader density={section === "overview" ? "expressive" : "compact"} eyebrow={membership.club.name} title={nav.find(n => n.id === active)?.label || "Workspace"} action={active === "applicants" ? <div id="workspace-page-actions" data-page-header-slot className="contents" /> : manager ? undefined : allClubs} />}
           {/* URL-driven tabs live outside the keyed section below, so changing a tab slides its indicator instead of remounting it. */}
           {allowed && !(needsOverview && (error || !current)) && <>
           {/* Phones reach recruiting through one bottom-bar item, so its pages show here as tabs. The rail covers wide screens. */}

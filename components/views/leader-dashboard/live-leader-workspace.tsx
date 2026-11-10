@@ -41,7 +41,10 @@ import { canLeaveWorkspace } from "@/lib/product-navigation"
 
 import { WorkspaceLoading } from "@/components/workspace-loading"
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
-import { ChevronLeft, ChevronRight, FileText, Linkedin, MoreHorizontal } from "@/components/icons"
+import { ChevronLeft, ChevronRight, FileText, Linkedin, MoreHorizontal, Settings as SettingsIcon } from "@/components/icons"
+import { IconButton } from "@/components/ui/icon-button"
+import { canOpenRecruitingSettings, withRecruitingSettings } from "@/lib/recruiting-settings"
+import { navigateWithinClub } from "@/lib/workspace-navigation"
 import { StatusPill } from "@/components/ui/status-pill"
 import { joinFacts } from "@/lib/join-facts"
 import { SectionErrorBoundary } from "@/components/ui/section-error-boundary"
@@ -666,6 +669,12 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       <div className="oc-toolbar">
         {!decisionsOnly && <SegmentedControl label="Applicant view" value={view} onChange={setView} options={[{ value: "list", label: "List" }, { value: "kanban", label: "Kanban" }, { value: "ranked", label: "Ranked" }]} />}
         {!decisionsOnly && <ClubExportLink clubId={membership.clubId} kind="applicants" membership={membership} label="Export CSV" />}
+        {/* Recruiting settings (Anonymous review, Auto-reject rules): the drawer opens from the URL, so Back closes it. */}
+        {!decisionsOnly && !preview && canOpenRecruitingSettings(membership) && <IconButton variant="outline" aria-label="Recruiting settings" title="Recruiting settings" aria-haspopup="dialog" onClick={() => {
+          if (!canLeaveWorkspace() || typeof window === "undefined") return
+          const href = `${window.location.pathname}?${withRecruitingSettings(window.location.search, "anonymous")}`
+          if (!navigateWithinClub(href)) router.push(href, { scroll: false })
+        }}><SettingsIcon aria-hidden="true" /></IconButton>}
         {view !== "ranked" && <><SearchField
             ref={search}
             aria-label="Search applicants"
