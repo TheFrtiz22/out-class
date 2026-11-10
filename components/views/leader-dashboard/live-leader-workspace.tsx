@@ -51,6 +51,7 @@ import { resolveRecruitingResumeUrl } from "@/lib/student-profile"
 import { defaultProfileFieldVisibility, type ProfileFieldVisibility } from "@/lib/profile-field-visibility"
 import { anonymousApplicantLabel } from "@/lib/anonymous-review"
 import { ApplicantProfileFacts } from "./applicant-profile-facts"
+import { ResumeViewerDialog } from "@/components/resume-viewer-dialog"
 import { applicationStatusLabels } from "@/lib/student-applications"
 import { Button } from "@/components/ui/button"
 import { SegmentedControl } from "@/components/ui/segmented-control"
@@ -875,7 +876,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                 {active.student.studentProfile ? (
                   <ApplicantProfileFacts profile={active.student.studentProfile} fields={profileFields} resume={(() => {
                     const href = resumeHref(active.student.studentProfile.resumeUrl)
-                    return href && <a href={href} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">Résumé<span className="sr-only"> (opens in a new tab)</span></a>
+                    return href && <ResumeViewerDialog href={href} name={dossierName(active)} clubId={membership.clubId} applicationId={active.id} trigger="Résumé" />
                   })()}>
                     <RecruitmentAttendanceSummary clubId={membership.clubId} applicationId={active.id} />
                   </ApplicantProfileFacts>
@@ -1004,7 +1005,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
               </div>{profileFields.resume && <aside className="oc-applicant-resume" aria-label="Applicant résumé">
                 <h3 className="oc-card-heading">Résumé</h3>
                 {active.studentId.startsWith("anonymous-") ? <p className="text-sm text-muted-foreground">Résumé withheld during anonymous review.</p> : resolveRecruitingResumeUrl(active.student.studentProfile?.resumeUrl, membership.clubId, active.id) ? <>
-                  <a className="inline-flex min-h-11 items-center text-sm underline" href={resolveRecruitingResumeUrl(active.student.studentProfile?.resumeUrl, membership.clubId, active.id)} target="_blank" rel="noopener noreferrer">Open résumé in a new tab</a>
+                  <ResumeViewerDialog href={resolveRecruitingResumeUrl(active.student.studentProfile?.resumeUrl, membership.clubId, active.id)!} name={dossierName(active)} clubId={membership.clubId} applicationId={active.id} trigger="Open résumé" triggerClassName="self-start" />
                   <iframe key={active.id} title={`Résumé for ${name(active)}`} src={resolveRecruitingResumeUrl(active.student.studentProfile?.resumeUrl, membership.clubId, active.id)} referrerPolicy="no-referrer" className="h-[70dvh] min-h-96 w-full rounded-lg border bg-muted" />
                 </> : <p className="text-sm text-muted-foreground">No résumé provided.</p>}
               </aside>}</div>

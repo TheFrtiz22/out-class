@@ -1,0 +1,35 @@
+/* In-page résumé viewer (components/resume-viewer-dialog.tsx). Tokens only. */
+.oc-resume-viewer[data-slot="dialog-content"] {
+  display: flex; flex-direction: column; gap: 0; padding: 0; overflow: hidden;
+  width: min(64rem, calc(100vw - 2rem)); max-width: none; height: calc(100dvh - 2rem); max-height: none;
+}
+.oc-resume-viewer-header {
+  display: flex; align-items: center; justify-content: space-between; gap: .75rem;
+  padding: .625rem .625rem .625rem 1.25rem; border-bottom: 1px solid var(--border);
+}
+.oc-resume-viewer-title.oc-modal-title { min-width: 0; font-size: 1rem; line-height: 1.4; overflow-wrap: anywhere; }
+.oc-resume-viewer-actions { display: flex; align-items: center; gap: .5rem; flex-shrink: 0; }
+.oc-resume-viewer-body { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; background: var(--muted); }
+.oc-resume-viewer-body .oc-resume-mini { display: flex; flex-direction: column; height: 100%; }
+.oc-resume-viewer-body .oc-resume-mini > [role="status"] { padding: 1rem 1.25rem; font-size: .875rem; color: var(--muted-foreground); }
+.oc-resume-viewer-body .oc-resume-preview {
+  flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; touch-action: pan-y pinch-zoom;
+  padding: 1rem; border: 0; border-radius: 0; background: var(--muted);
+}
+.oc-resume-viewer-body .oc-resume-preview:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+.oc-resume-viewer-body .oc-resume-sheet { width: min(100%, 52rem); margin-inline: auto; background: var(--card); }
+.oc-resume-viewer-body .oc-resume-sheet + .oc-resume-sheet { margin-top: .75rem; }
+.oc-resume-viewer-body .oc-resume-sheet canvas { display: block; width: 100%; height: 100%; }
+.oc-resume-viewer-image { display: block; max-width: min(100%, 52rem); height: auto; margin: 1rem auto; background: var(--card); }
+.oc-resume-viewer-empty { display: grid; justify-items: center; align-content: center; gap: .5rem; min-height: 100%; padding: 2rem 1.25rem; text-align: center; }
+@media (max-width: 639.98px) {
+  .oc-resume-viewer[data-slot="dialog-content"] {
+    inset: 0; top: 0; left: 0; transform: none; translate: none;
+    width: 100vw; height: 100dvh; border: 0; border-radius: 0;
+  }
+  .oc-resume-viewer-header { padding-left: 1rem; }
+  .oc-resume-viewer-body .oc-resume-preview { padding: .5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .oc-resume-viewer, [data-slot="dialog-overlay"]:has(+ .oc-resume-viewer) { animation: none !important; transition: none !important; }
+}
