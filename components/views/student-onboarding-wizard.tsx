@@ -40,6 +40,8 @@ import {
 import { OutClassLogo } from "@/components/outclass-logo"
 import { createClient } from "@/utils/supabase/client"
 import { registerStudent } from "@/actions/onboarding"
+import { TurnstileWidget } from "@/components/security/turnstile-widget"
+import { captchaFailed, turnstileMessage, turnstileRequired, TURNSTILE_PENDING, withCaptcha } from "@/lib/turnstile"
 import { upsertStudentProfile } from "@/actions/profile"
 import { uploadProfileFile } from "@/actions/storage"
 import {
@@ -217,6 +219,7 @@ export function StudentOnboardingWizard({
   const [step, setStep] = useState(1)
   const [globalError, setGlobalError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null), [turnstileReset, setTurnstileReset] = useState(0)
   const [codeSent, setCodeSent] = useState(false)
   const [accountCreated, setAccountCreated] = useState(!!initialUser?.email_confirmed_at)
   const [resendSeconds, setResendSeconds] = useState(0)
@@ -250,9 +253,10 @@ export function StudentOnboardingWizard({
     setGlobalError("")
     wizardData.current.accountBasics = { firstName: data.firstName, lastName: data.lastName, email: data.email }
     if (accountCreated) { setStep(3); return }
+    if (turnstileRequired && !turnstileToken) { setGlobalError(TURNSTILE_PENDING); return }
     setLoading(true)
     try {
-      const result = await registerStudent(step1Form.getValues())
+      const result = await registerStudent(step1Form.getValues(), turnstileToken)
       if (result.error) { setGlobalError(result.error); return }
       setCodeSent(true)
       setResendSeconds(60)
@@ -262,7 +266,7 @@ export function StudentOnboardingWizard({
       setStep(2)
     } catch {
       setGlobalError("Unable to create your account. Please try again.")
-    } finally { setLoading(false) }
+    } finally { setLoading(false); setTurnstileReset(value => value + 1) /* tokens are single use */ }
   }
 
   // ── Step 2: OTP Verification ──────────────────────────────────────────────
@@ -307,16 +311,18 @@ export function StudentOnboardingWizard({
   async function resendCode() {
     if (loading || resendSeconds > 0) return
     if (isImpersonating) { setGlobalError("Exit impersonation before changing authentication."); return }
+    if (turnstileRequired && !turnstileToken) { setGlobalError(TURNSTILE_PENDING); return }
     setLoading(true)
     setGlobalError("")
     try {
-      const { error } = await supabase.auth.resend({ type: "signup", email: wizardData.current.accountBasics!.email })
-      if (error) {
+      const { error } = await supabase.auth.resend(withCaptcha({ type: "signup" as const, email: wizardData.current.accountBasics!.email }, turnstileToken))
+      if (captchaFailed(error)) setGlobalError(turnstileMessage("rejected"))
+      else if (error) {
         setGlobalError(authEmailError(error, "send"))
         if (error.status === 429) setResendSeconds(60)
       } else { setNotice("Code sent"); setResendSeconds(60) }
     } catch { setGlobalError("Unable to resend the code. Please try again.") }
-    finally { setLoading(false) }
+    finally { setLoading(false); setTurnstileReset(value => value + 1) }
   }
 
   // ── Step 3: Academic Profile ──────────────────────────────────────────────
@@ -520,6 +526,7 @@ export function StudentOnboardingWizard({
                   <p className="text-xs text-muted-foreground">At least 8 characters. Use this password to sign in again.</p>
                   {step1Form.formState.errors.password && <p className="text-xs text-red-600">{step1Form.formState.errors.password.message}</p>}
                 </div>}
+                {!accountCreated && <TurnstileWidget action="signup" onToken={setTurnstileToken} resetKey={turnstileReset} />}
                 <Button
                   type="submit"
                   loading={loading}
@@ -592,6 +599,7 @@ export function StudentOnboardingWizard({
                 </Button>
 
                 {notice && <p role="status" className="text-center text-sm">{notice}</p>}
+                <TurnstileWidget action="signup" onToken={setTurnstileToken} resetKey={turnstileReset} />
                 <div className="flex justify-between text-xs">
                   <Button
                     type="button"
