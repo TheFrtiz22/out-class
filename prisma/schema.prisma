@@ -126,6 +126,7 @@ model Club {
   pipelineVersion Int @default(0)
   isDiscoverable Boolean @default(true)
   invitationEmailEnabled Boolean @default(true)
+  features Json? // Pilot feature switches set by platform admins; NULL or unknown keys read as off. See lib/club-features.ts.
   profileFieldVisibility Json? // Leader-facing applicant profile fields; NULL uses defaults (GPA and LinkedIn off). See lib/profile-field-visibility.ts.
   corkboardSaves CorkboardClub[]
   votingSessions VotingSession[]
