@@ -295,6 +295,7 @@ export async function revealApplicantIdentity(
     const application = await tx.application.findFirst({
       where: { id: applicationId, clubId, status: { not: "DRAFTING" } },
       include: {
+        club: { select: { profileFieldVisibility: true } },
         round: true,
         student: {
           include: { studentProfile: { include: { experiences: true } } },
@@ -305,6 +306,7 @@ export async function revealApplicantIdentity(
       },
     });
     if (!application) throw new Error("Application unavailable.");
+    const { club, ...revealed } = application;
     await tx.auditLog.create({
       data: {
         actorId: user.id,
@@ -314,7 +316,8 @@ export async function revealApplicantIdentity(
         reason: justification,
       },
     });
-    return identifiedApplication({ ...application, evaluations: application.evaluations.map(e => ({ ...e, notes: null, applicantQuestions: null })) }, hasPermission(membership, "applications.review") && genderVisibility(application.round?.applicantDisplay));
+    // Revealing identity does not bypass the club's profile field choice.
+    return restrictApplicationProfile(identifiedApplication({ ...revealed, evaluations: revealed.evaluations.map(e => ({ ...e, notes: null, applicantQuestions: null })) }, hasPermission(membership, "applications.review") && genderVisibility(revealed.round?.applicantDisplay)), normalizeProfileFieldVisibility(club?.profileFieldVisibility));
   });
 }
 export async function setRoundAnonymousReview(

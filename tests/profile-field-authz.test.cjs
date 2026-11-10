@@ -48,3 +48,29 @@ test('voting workspace returns no academic years when the club hides class year'
   h.tx.club.findUnique = async () => ({ suspendedAt: null, profileFieldVisibility: { academicYear: false } })
   assert.deepEqual((await h.read()).academicYears, [])
 })
+
+// ---- 3. Identity reveal ------------------------------------------------------
+test('identity reveal returns the identity but not profile fields the club hides', async () => {
+  const appId = id(40)
+  const application = club => ({ id: appId, clubId, roundId, status: 'SUBMITTED', studentId: id(41), submittedAt: new Date(), club, round: { anonymousReview: true, applicantDisplay: {} }, student: { id: id(41), email: 'ada@virginia.edu', createdAt: new Date(), studentProfile: { id: 'p', userId: id(41), firstName: 'Ada', lastName: 'Lee', major: 'Math', computingId: 'al1', gradYear: 2028, gpa: 3.6, satScore: 1500, actScore: 32, actMath: 33, resumeUrl: 'https://example.com/r.pdf', headshotUrl: null, linkedinUrl: 'https://www.linkedin.com/in/ada', bio: null, experiences: [] } }, answers: [], bookings: [], evaluations: [] })
+  let row
+  const tx = { user: { findUnique: async () => ({ disabledAt: null }) }, clubMember: { findUnique: async () => ({ status: 'ACTIVE', isOwner: true }) }, $queryRaw: async () => [], application: { findFirst: async q => { assert.deepEqual(q.include.club, { select: { profileFieldVisibility: true } }); return row } }, auditLog: { create: async () => {} } }
+  const api = load('actions/crm.ts', {
+    '@/utils/auth': { requireClubPermission: async () => ({ user: { id: 'manager' } }) },
+    '@/utils/prisma': { prisma: { $transaction: fn => fn(tx) } },
+    '@/utils/club-write-transaction': {}, '@/utils/recruitment-offers': {}, 'next/cache': { revalidatePath() {} },
+  })
+  row = application(null)
+  let result = await api.revealApplicantIdentity(clubId, appId, 'Resolve an application issue')
+  assert.equal(result.student.email, 'ada@virginia.edu')
+  assert.equal(result.student.studentProfile.firstName, 'Ada')
+  assert.equal(result.student.studentProfile.gpa, null, 'GPA hidden by default')
+  assert.equal(result.student.studentProfile.linkedinUrl, null, 'LinkedIn hidden by default')
+  assert.equal(result.student.studentProfile.major, 'Math')
+  assert.equal('club' in result, false)
+  row = application({ profileFieldVisibility: { gpa: true, linkedin: true, major: false, resume: false } })
+  result = await api.revealApplicantIdentity(clubId, appId, 'Resolve an application issue')
+  assert.equal(result.student.studentProfile.gpa, 3.6)
+  assert.equal(result.student.studentProfile.major, '')
+  assert.equal(result.student.studentProfile.resumeUrl, null)
+})
