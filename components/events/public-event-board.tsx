@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
-import { z } from "zod";
+import { isUuid } from "@/lib/uuid";
 import { useSearchParams } from "next/navigation";
 import { LoadingState } from "@/components/ui/loading-state";
 import { Check, ChevronDown } from "@/components/icons";
@@ -135,7 +135,7 @@ export function PublicEventBoard() {
     setSelected(null);
     setLinkedLoading(!!eventId);
     if (!eventId) return;
-    if (!z.string().uuid().safeParse(eventId).success) {
+    if (!isUuid(eventId)) {
       setLinkedLoading(false);
       setLinkedMissing(true);
       return;
