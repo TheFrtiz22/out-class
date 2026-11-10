@@ -61,6 +61,8 @@ test('automatic slide layout: short facts as chips, longest evidence leads, list
   assert.ok(await fits(page),'projector fits 1366×768');
   assert.deepEqual((await new AxeBuilder({page}).include('.vr-applicant').withTags(['wcag2a','wcag2aa','wcag21aa']).analyze()).violations.map(v=>v.id),[]);
   const large=await open('present',1920,1080);assert.ok(await fits(large),'projector fits 1920×1080');
+  // Known gap (tracked as FE-VS-2): at 1280×720, the smallest projector target in
+  // docs/voting-room-implementation.md, this ten-field slide currently scrolls. Assert it once the layout is fixed.
   const leader=await open('leader',1366,768);assert.equal(await leader.locator('[data-slide-field="interviewFeedback"] .vr-text li').count()>=1,true);assert.ok(await leader.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
 
   // Phones: the facts strip wraps above the evidence, without horizontal scroll.
