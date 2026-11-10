@@ -21,6 +21,7 @@ const h1Exceptions = {
   "components/landing/legal-page.tsx": "Privacy and Terms document title",
   "app/not-found.tsx": "public 404 card headline",
   "app/error.tsx": "error card headline (no product shell to provide PageHeader)",
+  "app/global-error.tsx": "root error fallback headline (renders its own <html>, no product shell or PageHeader)",
   "components/interview-applicant-panel.tsx": "candidate name inside the interview room",
   "components/communications/decision-letter.tsx": "the letter's own title on the printed page",
 }

@@ -42,7 +42,9 @@ export function managerNavigation(member: ClubAccess, clubId: string, mode: stri
       ...(hasPermission(member, "meetings.manage") ? [{ ...item("announcements", "Announcements"), href: `${href("announcements")}&mode=recruiting` }] : []),
       ...(availableSettings(member).length ? [item("settings", "Settings")] : [])]
   }
-  return [item("overview", "Overview"), item("meetings", "Meetings"), item("tasks", "Tasks"),
+  return [item("overview", "Overview"), item("meetings", "Meetings"),
+    ...(hasPermission(member, "meetings.manage") ? [item("events", "Events")] : []),
+    item("tasks", "Tasks"),
     ...(hasPermission(member, "members.manage") || hasPermission(member, "leaders.manage") ? [item("members", "Members")] : []),
     ...(hasPermission(member, "meetings.manage") ? [item("announcements", "Announcements", "announcements")] : []),
     ...(availableSettings(member).length ? [item("settings", "Settings")] : [])]

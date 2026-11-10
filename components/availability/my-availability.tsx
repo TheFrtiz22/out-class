@@ -6,7 +6,6 @@ import { LoadingState } from "@/components/ui/loading-state"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { CalendarDays, Check, ChevronLeft, ChevronRight, Copy } from "@/components/icons"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
 import { declineRoundParticipation, saveMyAvailability, saveMyRoundAvailability } from "@/actions/availability"
 import { availabilityHref, responseLabels, addDays, availabilityEditorDays, availabilityEditorKnownDays, editAvailabilityDays, restoreVisibleRecurring, monday, today, WEEK_DAYS, type AvailabilityDocument, type AvailabilityRound, type AvailabilitySchedule } from "@/lib/availability"
@@ -15,6 +14,8 @@ import { saveAvailabilityWithRecovery } from "@/lib/availability-save-recovery"
 import { AvailabilitySaveQueue } from "@/lib/availability-save-queue"
 import { SCHEDULING_TIMEZONE, SCHEDULING_TIMEZONE_LABEL } from "@/lib/scheduling-config"
 import { WeeklyCalendar } from "./weekly-calendar"
+import { OutlookBusyImport } from "./outlook-busy-import"
+import { OUTLOOK_BUSY_ENABLED } from "@/lib/outlook-busy"
 import { Panel } from "@/components/ui/panel"
 import { SegmentedControl } from "@/components/ui/segmented-control"
 import { NativeSelect } from "@/components/ui/native-select"
@@ -63,6 +64,7 @@ export function AvailabilityEditor({ initial, scope, initialConfirmed = false, i
       <p className="text-xs text-muted-foreground">8:00 AM–9:00 PM · {SCHEDULING_TIMEZONE_LABEL}. Daylight saving changes are automatic. Previously saved hours outside this window are retained.</p>
       {!scope && schedule.timezone === SCHEDULING_TIMEZONE && <SegmentedControl label="Availability editing mode" value={mode} onChange={setMode} options={[{ value: "recurring", label: <span className="inline-flex items-center gap-2"><CalendarDays className="size-4" aria-hidden="true" />Recurring week</span> }, { value: "week", label: "Specific dates" }]} />}
       {mode === "week" && <div className="flex flex-wrap items-center gap-2"><Button variant="outline" aria-label="Previous week" onClick={() => setWeek(addDays(week, -7))}><ChevronLeft className="size-4" /></Button><div className="text-sm"><span className="block">Week of</span><DateField label="Week of" className="mt-1" value={week} onChange={value => { if (value) setWeek(monday(value)) }} /></div><Button variant="outline" aria-label="Next week" onClick={() => setWeek(addDays(week, 7))}><ChevronRight className="size-4" /></Button><Button variant="outline" onClick={copyPrevious}><Copy className="size-4" />Copy previous week</Button></div>}
+      {mode === "week" && OUTLOOK_BUSY_ENABLED && <OutlookBusyImport week={week} days={days} disabled={confirming} onApply={editDays} afterApply={scope ? "Submit your round availability again to share the change." : ""} />}
       <div className="flex flex-wrap items-center gap-4 text-xs"><span className="flex items-center gap-2"><span className="size-3 rounded-sm bg-primary" />Available</span><span className="flex items-center gap-2"><span className="size-3 rounded-sm border bg-card" />Unavailable</span><span className="flex items-center gap-2"><span className="oc-av-cell is-unknown !size-3 rounded-sm border" />Unknown</span><span className="text-muted-foreground">Unmarked times on submitted days are unavailable. Striped days are unknown.{mode === "week" && " Date changes replace the editable hours on that day."}</span></div>
       {scope && <div className="space-y-3 border-t pt-4"><p role="status" className="text-sm font-medium">{confirmed ? "Submitted · Participation confirmed. Your club can use this availability for staffing." : declined ? "Declined participation. You are excluded from confirmed staffing counts." : "Not submitted for this round. Saved edits are excluded from confirmed staffing counts until you submit."}</p><div className="flex flex-wrap gap-2"><Button disabled={confirming} onClick={async () => {
         setConfirming(true); setNotice("")

@@ -51,3 +51,56 @@ test('streamed route children hydrate without replacing server content when thei
     }
   } finally { await browser.close(); server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); }
 });
+
+// The persistent workspace shell renders route children directly inside <main>, behind a
+// condition and a fragment (components/shell/product-shell.tsx). That is a second host element
+// that can be replayed while a streamed child is pending, so it needs the same component fiber.
+test('the workspace shell <main> hydrates streamed route children without a replay error', async () => {
+  const entry = `
+    import React, {lazy, startTransition, useEffect} from 'react';
+    import {hydrateRoot} from 'react-dom/client';
+    import {RouteChildren} from '@/components/route-content';
+    const chunk = {status:'pending', then(done) {
+      queueMicrotask(() => {chunk.status='fulfilled'; chunk.value={default:<section data-route-body>Ready</section>}; done(chunk.value)});
+    }};
+    const streamed = lazy(() => chunk);
+    const allowed = true, demo = false;
+    function App() {
+      useEffect(() => {window.hydrated=true}, []);
+      const guarded = !location.pathname.endsWith('/control');
+      return <main id="workspace-content">{!allowed ? <p>Checking</p> : <>{demo && <p>Demo</p>}{guarded ? <RouteChildren>{streamed}</RouteChildren> : streamed}</>}</main>;
+    }
+    window.originalBody = document.querySelector('[data-route-body]'); window.errors=[];
+    startTransition(() => hydrateRoot(document.getElementById('root'), <App/>, {onRecoverableError(e){window.errors.push(e.message)}}));
+  `;
+  const code = { react: bundle(entry), next: bundle(entry, {
+    react: "module.exports=require('next/dist/compiled/react')",
+    'react/jsx-runtime': "module.exports=require('next/dist/compiled/react/jsx-runtime')",
+    'react-dom/client': "module.exports=require('next/dist/compiled/react-dom/client')",
+  }) };
+  const server = http.createServer((req, res) => {
+    const runtime = req.url.split('/')[1].replace('.js', '');
+    res.setHeader('Content-Type', req.url.endsWith('.js') ? 'application/javascript' : 'text/html');
+    res.end(req.url.endsWith('.js') ? code[runtime] : '<div id="root"><main id="workspace-content"><section data-route-body>Ready</section></main></div><script src="/' + runtime + '.js"></script>');
+  });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const browser = await chromium.launch({ headless: true });
+  try {
+    for (const runtime of ['react', 'next']) for (const route of ['control', 'guarded']) {
+      const page = await browser.newPage();
+      try {
+        await page.goto('http://127.0.0.1:' + server.address().port + '/' + runtime + '/' + route);
+        await page.waitForFunction(() => window.hydrated);
+        const result = await page.evaluate(() => ({errors:window.errors, retained:window.originalBody === document.querySelector('[data-route-body]'), mains:document.querySelectorAll('main').length}));
+        assert.equal(result.mains, 1);
+        if (route === 'control') {
+          assert.ok(result.errors.some(error => error.includes('#418')), runtime + ': the unguarded shell shape must reproduce the hydration replay error');
+          assert.equal(result.retained, false);
+        } else {
+          assert.deepEqual(result.errors, [], runtime + ': guarded shell');
+          assert.equal(result.retained, true, 'Hydration must preserve the original server-rendered node');
+        }
+      } finally { await page.close(); }
+    }
+  } finally { await browser.close(); server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); }
+});

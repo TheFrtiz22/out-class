@@ -87,7 +87,7 @@ export function PanelPreviewWorkspace({ visible = true, clubId, roundId, autoSta
         if (value.suggestedWindow) { const window = value.suggestedWindow; setStart(previous => previous || dayKey(window.start, SCHEDULING_TIMEZONE)); setEnd(previous => previous || dayKey(new Date(+new Date(window.end) - 1), SCHEDULING_TIMEZONE)) }
       }).catch(() => setRecheckError("Could not refresh availability. Your assignments are retained; retry the availability check."))
     }
-    const events = ["outclass:staffing-changed", "outclass:availability-changed"]
+    const events = ["outclass:staffing-changed", "outclass:availability-changed", "outclass:interview-room-renamed"]
     events.forEach(event => window.addEventListener(event, changed))
     return () => events.forEach(event => window.removeEventListener(event, changed))
   }, [clubId, roundId])

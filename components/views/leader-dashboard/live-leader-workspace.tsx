@@ -3,6 +3,7 @@ import { applicationStatusLabel } from "@/lib/application-status"
 import { answerText } from "@/lib/student-applications"
 import "@/components/product/operational-dashboard.css"
 import { completePipelineSelection, type PipelinePageQuery, type PipelineCursor } from "@/lib/pipeline-page"
+import { nextQuickReviewApplicant } from "@/lib/quick-review-queue"
 import { usePipelinePage } from "@/hooks/use-pipeline-page"
 import { usePipelineApplicant } from "@/hooks/use-pipeline-applicant"
 import { useEditorDraft } from "@/hooks/use-editor-draft"
@@ -25,6 +26,7 @@ import { LiveApplicantList, LiveApplicantKanban, LiveDecisionList, applicantSort
 import { useListSort } from "@/hooks/use-list-sort"
 import { SortControl } from "@/components/ui/sort-control"
 import { useDemoMode } from "@/contexts/demo-context"
+import { ApplicantRecusal } from "@/components/applicant-recusal"
 import { ClubExportLink } from "@/components/club-export-link"
 import { RecruitmentAttendanceSummary } from "@/components/recruitment-attendance-summary"
 import { RevealApplicant } from "@/components/reveal-applicant"
@@ -531,7 +533,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       const refreshed = await writeStatus(active, status)
       const remaining = quickQueue.filter(id => id !== active.id)
       const selection = await loadSelection(refreshed)
-      const next = remaining.map(id => selection.find(app => app.id === id)).find(app => app?.canQuickReview)
+      const next = nextQuickReviewApplicant(remaining, selection)
       setQuickQueue(remaining)
       // Release the guard before opening the next profile; identity comes from the refreshed projection.
       mutating.current = false; setBusy(false)
@@ -561,7 +563,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       const remaining = quickQueue.filter(id => id !== active.id)
       const selection = await loadSelection()
       if (!isCurrent() || latestAuthority.current !== owner || latestRequest.current !== key) return
-      const next = remaining.map(id => selection.find(app => app.id === id)).find(app => app?.canQuickReview)
+      const next = nextQuickReviewApplicant(remaining, selection)
       setQuickQueue(remaining)
       if (next) open(next)
       else open()
@@ -751,6 +753,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                       {!anonymousActive && profile && <> · <RecruitmentAttendanceSummary compact clubId={membership.clubId} applicationId={active.id} /></>}
                     </SheetDescription>
                     {"priorApplications" in active && !!active.priorApplications?.length && <p data-testid="prior-applications" className="oc-quick-facts">Applied before: {active.priorApplications.map(prior => `${prior.cycleName ?? "earlier cycle"} (${applicationStatusLabel(prior.status).toLowerCase()})`).join(", ")}</p>}
+                    <ApplicantRecusal key={active.id} clubId={membership.clubId} applicationId={active.id} anonymous={anonymousActive} onChanged={() => setRevision(v => v + 1)} />
                   </div>
                   <div className="oc-quick-tools">
                     {resumeUrl && <a className="oc-quick-icon-action" href={resumeUrl} target="_blank" rel="noopener noreferrer" aria-label="Résumé (opens in a new tab)" title="Résumé"><FileText size={16} aria-hidden="true" /></a>}

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect } from "react";
+import { pollWhileVisible } from "@/hooks/use-revalidate";
 const key = "outclass-support-context-changed";
 let pageId: string | undefined;
 const source = () => pageId ??= crypto.randomUUID();
@@ -24,7 +25,7 @@ export function SupportSessionSync({ marker, sessionId }: { marker: boolean; ses
     const reload = () => { if (!disposed) window.location.reload(); };
     const storage = (event: StorageEvent) => { if (event.key === key) reload(); };
     let channel: BroadcastChannel | null = null;
-    try { if (typeof BroadcastChannel !== "undefined") channel = new BroadcastChannel(key); } catch { /* Focus checks remain available. */ }
+    try { if (typeof BroadcastChannel !== "undefined") channel = new BroadcastChannel(key); } catch { /* Storage events and focus checks remain. */ }
     if (channel) channel.onmessage = event => { if (event.data?.source !== page) reload(); };
     const check = async () => {
       if (checking || document.visibilityState === "hidden") return;
@@ -37,21 +38,34 @@ export function SupportSessionSync({ marker, sessionId }: { marker: boolean; ses
       } catch { /* The server still rejects stale/expired context on every protected action. */ }
       finally { checking = false; }
     };
-    // The mount check covers a normal load; pageshow matters for back/forward-cache restores.
+    // A back/forward-cache restore can have missed the storage event and channel while it was cached.
     const restored = (event: PageTransitionEvent) => event.persisted ? check() : undefined;
     window.addEventListener("storage", storage);
-    window.addEventListener("focus", check);
     window.addEventListener("pageshow", restored);
-    document.addEventListener("visibilitychange", check);
-    const interval = window.setInterval(check, 30000);
-    void check();
-    return () => {
+    const detach = () => {
       disposed = true;
       channel?.close();
-      window.clearInterval(interval);
       window.removeEventListener("storage", storage);
-      window.removeEventListener("focus", check);
       window.removeEventListener("pageshow", restored);
+    };
+    // Without a support marker this browser holds no view-as cookie, and only a tab in this browser can
+    // set one; starting and ending a session both call notifySupportSessionChanged, so the storage event
+    // and channel report it and no check runs. Without BroadcastChannel, focus still checks once. The
+    // server reads the cookie on every request regardless; this only keeps the visible identity honest.
+    if (!marker) {
+      if (channel) return detach;
+      window.addEventListener("focus", check);
+      return () => { detach(); window.removeEventListener("focus", check); };
+    }
+    window.addEventListener("focus", check);
+    document.addEventListener("visibilitychange", check);
+    const stopPolling = pollWhileVisible(check, 30000, { catchUp: false });
+    // The mount check covers a normal load.
+    void check();
+    return () => {
+      detach();
+      stopPolling();
+      window.removeEventListener("focus", check);
       document.removeEventListener("visibilitychange", check);
     };
   }, [marker, sessionId]);

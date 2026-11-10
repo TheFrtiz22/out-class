@@ -14,6 +14,11 @@ This builds and starts the real Next application, provisions the reserved local
 `outclass-onboarding-e2e` Supabase project, applies the project's **Prisma**
 migration history, and runs all eight scenarios. Ports are reserved for this test:
 application 3107, Supabase API 55321, PostgreSQL 55322, Mailpit 55324/55325.
+If those ports are taken, set `OUTCLASS_ONBOARDING_E2E_PORT_PREFIX` to another
+three-digit prefix (for example `563` for ports 56321–56327). The project name
+`outclass-onboarding-e2e` stays fixed because other scripts read its temp
+directory, so a stale stack with that name still needs
+`node node_modules/supabase/dist/supabase.js stop --project-id outclass-onboarding-e2e --no-backup`.
 The normal `out-class` local project is untouched. All database, Auth, and SMTP
 configuration is explicitly overridden with local test values. No production
 commands or email delivery occur.

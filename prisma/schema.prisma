@@ -126,6 +126,7 @@ model Club {
   pipelineVersion Int @default(0)
   isDiscoverable Boolean @default(true)
   invitationEmailEnabled Boolean @default(true)
+  profileFieldVisibility Json? // Leader-facing applicant profile fields; NULL uses defaults (GPA and LinkedIn off). See lib/profile-field-visibility.ts.
   corkboardSaves CorkboardClub[]
   votingSessions VotingSession[]
   schoolId            String           @default("school-uva")
@@ -167,6 +168,7 @@ model Club {
 }
 
 model ClubMember {
+  recusals ApplicantRecusal[]
   availabilityOverrides InterviewAvailabilityOverride[]
   interviewerEligible Boolean?
   interviewParticipation InterviewRoundParticipation[]
@@ -281,6 +283,7 @@ enum QuestionType {
 }
 
 model Application {
+  recusals ApplicantRecusal[]
   decisionStateRevision Int @default(0)
   recruitmentCycleId String?
   recruitmentCycle RecruitmentCycle? @relation(fields: [recruitmentCycleId, clubId], references: [id, clubId], onDelete: Restrict, onUpdate: NoAction)
@@ -523,6 +526,8 @@ model InterviewRoom {
   panelApprovedBy String?
   panelApprover User? @relation("RoomPanelApprover", fields: [panelApprovedBy], references: [id], onDelete: Restrict)
   panelApprovalRevision Int @default(0)
+  /// Leader-confirmed: the physical room was also reserved through the school's system (UVA: 25Live).
+  externallyBookedAt DateTime?
   createdAt      DateTime        @default(now())
   slots          InterviewSlot[]
 
@@ -1741,4 +1746,22 @@ model EditorDraft {
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, key])
+}
+
+// A member who knows an applicant steps out of reviewing, interviewing and
+// voting on that applicant. Retained when lifted (liftedAt) for the audit trail.
+model ApplicantRecusal {
+  id            String      @id @default(uuid())
+  clubId        String
+  applicationId String
+  application   Application @relation(fields: [applicationId, clubId], references: [id, clubId], onDelete: Cascade)
+  memberId      String
+  member        ClubMember  @relation(fields: [memberId, clubId], references: [id, clubId], onDelete: Cascade)
+  createdById   String
+  createdAt     DateTime    @default(now())
+  liftedAt      DateTime?
+  liftedById    String?
+
+  @@unique([applicationId, memberId])
+  @@index([clubId, memberId])
 }
