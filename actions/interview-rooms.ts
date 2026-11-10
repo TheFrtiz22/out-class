@@ -123,7 +123,16 @@ export async function getApplicantSchedule(applicationId: string): Promise<Appli
     const coverage = publicationState === "PUBLISHED" ? await interviewBookingCoverage(tx, application.clubId, round.id, application) : []
     const available = new Set(coverage.filter(s => s.bookable).map(s => s.slotId))
     const rooms = publicationState === "PUBLISHED" ? await tx.interviewRoom.findMany({ where: { clubId: application.clubId, roundId: round.id, isOpen: true }, include: roomInclude, orderBy: { createdAt: "asc" } }) : []
-    return { applicationId, clubName: application.club.name, roundName: round.name, publicationState, allowCancellation: round.bookingAllowCancellation, allowRescheduling: round.bookingAllowRescheduling, rooms: rooms.map(r => presentRoom(r, true)).map(r => ({ ...r, slots: r.slots.filter(s => available.has(s.id) && isPublishedBookingSlot(round.bookingSlots, s, r)) })).filter(r => r.slots.length), booking: booking ? { id: booking.id, applicationId, slotId: booking.slotId, roomId: booking.slot.roomId!, roundId: booking.roundId!, candidate: "You", startTime: booking.slot.startTime.toISOString(), endTime: booking.slot.endTime.toISOString(), location: booking.slot.location } : null }
+    // The student's interviews with other clubs (or other rounds). reserveInterview refuses an
+    // overlapping time, so those times are left out up front instead of failing on submit.
+    const elsewhere = publicationState === "PUBLISHED" ? await tx.interviewBooking.findMany({ where: { application: { studentId: user.id }, ...(booking ? { id: { not: booking.id } } : {}), slot: { endTime: { gt: new Date() } } }, select: { slot: { select: { startTime: true, endTime: true } } } }) : []
+    let conflictingTimes = 0
+    const bookable = rooms.map(r => presentRoom(r, true)).map(r => ({ ...r, slots: r.slots.filter(s => {
+      if (!available.has(s.id) || !isPublishedBookingSlot(round.bookingSlots, s, r)) return false
+      if (elsewhere.some(other => overlaps(s, other.slot))) { conflictingTimes++; return false }
+      return true
+    }) })).filter(r => r.slots.length)
+    return { applicationId, clubName: application.club.name, roundName: round.name, publicationState, allowCancellation: round.bookingAllowCancellation, allowRescheduling: round.bookingAllowRescheduling, conflictingTimes, rooms: bookable, booking: booking ? { id: booking.id, applicationId, slotId: booking.slotId, roomId: booking.slot.roomId!, roundId: booking.roundId!, candidate: "You", startTime: booking.slot.startTime.toISOString(), endTime: booking.slot.endTime.toISOString(), location: booking.slot.location } : null }
   }, { timeout: 60000 })
 }
 export async function reserveInterview(raw: { applicationId: string; slotId: string }) {
