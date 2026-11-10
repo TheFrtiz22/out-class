@@ -136,7 +136,7 @@ function demoPresentation(c:Pick<ReturnType<typeof find>,"state"|"m"|"round"|"cl
    const person=c.state.students.find(p=>p.id===a.studentId)!,app={...a,student:{...person,studentProfile:person.profile},answers:[],evaluations:[],bookings:[]} as unknown as ReviewApplication;
    const opts=roomPresentationSchema.safeParse(c.s.presentationOptions),config=opts.success?roomDisplayConfig(opts.data.fields):{version:1 as const,fields:[]};const base=selectedVotingDisplay(projectApplicantDisplay(app,{...c.round,applicantDisplay:{}},config,[],undefined,normalizeProfileFieldVisibility(c.state.profileFieldVisibility?.[c.club.id])),opts.success?opts.data.fields:[]);
    const fields=opts.success?opts.data.fields:[],caps=interviewCapabilities(c.m);
-   const quote=fields.includes('resumeHighlight')&&!base.anonymous?excerptChoices(c.state,c.m,applicationId).find(q=>q.id===opts.data?.highlights[applicationId]):undefined;
+   const quote=fields.includes('resumeHighlight')&&!base.anonymous&&allowedByProfileCeiling('resumeHighlight',normalizeProfileFieldVisibility(c.state.profileFieldVisibility?.[c.club.id]))?excerptChoices(c.state,c.m,applicationId).find(q=>q.id===opts.data?.highlights[applicationId]):undefined;
    const canReadResume=!base.anonymous&&(!!quote||caps.moderateResume||c.state.interviewFoundation.assignments.some(g=>g.applicationId===a.id&&g.roundId===a.roundId&&g.memberId===c.m.id&&!g.revokedAt&&caps.participate));
    const highlight=fields.includes('resumeHighlight')&&canReadResume?{resumeHighlight:quote??null}:{};
    // Same contract as votingSelectedEvidence for a voting round: this round only, earlier rounds labelled separately.

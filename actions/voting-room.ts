@@ -1,4 +1,5 @@
 "use server";
+import {allowedByProfileCeiling,normalizeProfileFieldVisibility} from "@/lib/profile-field-visibility";
 import {validateVotingSetup,notifyVotingVoters} from "@/utils/voting-room-setup";
 import {meetingDetails,resolveVotingMeeting} from "@/lib/voting-session-setup";
 import { votingReadLimits } from "@/lib/voting-transaction-limits";
@@ -148,11 +149,11 @@ async function readLivePresentation(input:unknown) {
   const result=await prisma.$transaction(async tx=>{
     const m=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review"],{readOnly:true});
     const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId);const role=roomAuthority(s,m,round.anonymousReview);
-    const app=await tx.application.findFirst({where:{id:d.applicationId,clubId:d.clubId,roundId:s.roundId,recruitmentCycleId:s.cycleId,status:{not:"DRAFTING"}}});
+    const app=await tx.application.findFirst({where:{id:d.applicationId,clubId:d.clubId,roundId:s.roundId,recruitmentCycleId:s.cycleId,status:{not:"DRAFTING"}},include:{club:{select:{profileFieldVisibility:true}}}});
     if(app&&s.candidates.some(c=>c.applicationId===app.id)&&!role.leader&&s.activeApplicationId!==app.id)throw new VotingPresentationChanged();
     if(!app||!s.candidates.some(c=>c.applicationId===app.id)||display.anonymous!==round.anonymousReview)throw Error("Presentation changed. Reload the page to continue.");
     const parsed=roomPresentationSchema.safeParse(s.presentationOptions),options=parsed.success?parsed.data:null;
-    const highlight=await votingSelectedHighlight(tx,{clubId:d.clubId,applicationId:d.applicationId,roundId:s.roundId},user.id,!!options?.fields.includes("resumeHighlight"),display.anonymous,options?.highlights[d.applicationId]);
+    const highlight=await votingSelectedHighlight(tx,{clubId:d.clubId,applicationId:d.applicationId,roundId:s.roundId},user.id,!!options?.fields.includes("resumeHighlight")&&allowedByProfileCeiling("resumeHighlight",normalizeProfileFieldVisibility(app.club?.profileFieldVisibility)),display.anonymous,options?.highlights[d.applicationId]);
     const evidence=await votingSelectedEvidence(tx,d.clubId,d.applicationId,user.id,options?.fields??[],display.anonymous,s.roundId);
     const selectedDisplay=selectedVotingDisplay(display,options?.fields);
     const observations=await votingObservations(tx,s,app.id,user.id,!!options?.fields.includes('additionalObservations'),display.anonymous);

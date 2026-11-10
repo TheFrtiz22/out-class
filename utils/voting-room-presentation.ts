@@ -1,3 +1,4 @@
+import {normalizeProfileFieldVisibility} from "@/lib/profile-field-visibility";
 import type { AppTransactionClient } from "@/utils/prisma";
 import { authorizeInterview } from "@/utils/interview-access";
 import { votingScoreEvidence, roundScopedEvidence, type RoundScopedEvidence, type VotingInterviewScore, type VotingInterviewThought } from "@/lib/voting-interview-evidence";
@@ -10,7 +11,9 @@ function denied(e:unknown){return e instanceof Error&&[/^Interview access unavai
 /** Only verified saved anchors from the preserved document, never annotation comments. */
 export async function votingHighlightChoices(tx:AppTransactionClient,clubId:string,applicationId:string,userId:string) {
   const rows=await tx.interviewResumeAnnotation.findMany({where:{kind:"TEXT_HIGHLIGHT",deletedAt:null,document:{applicationId,round:{clubId,anonymousReview:false}}},
-    select:{id:true,anchor:true,document:{select:{id:true,roundId:true}}},orderBy:[{createdAt:"asc"},{id:"asc"}],take:100});
+    select:{id:true,anchor:true,document:{select:{id:true,roundId:true,round:{select:{club:{select:{profileFieldVisibility:true}}}}}}},orderBy:[{createdAt:"asc"},{id:"asc"}],take:100});
+  // Résumé highlights are résumé content: none are offered or shown when the club hides résumés.
+  if(rows.length&&!normalizeProfileFieldVisibility(rows[0].document.round?.club?.profileFieldVisibility).resume)return [];
   const allowed=new Map<string,boolean>();
   const choices:{id:string;documentId:string;page:number;quote:string}[]=[];
   for(const row of rows){

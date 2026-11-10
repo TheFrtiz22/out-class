@@ -93,6 +93,34 @@ test('/api/profile-photos returns 404 for CRM access when the club hides photos;
   assert.equal((await get({ path })).status, 200, 'the student’s own photo is not affected')
 })
 
+// ---- 5. Résumé highlights ----------------------------------------------------
+test('résumé highlights follow the résumé setting: not offered, cited or shown, and setup refuses them', async () => {
+  assert.equal(lib.allowedByProfileCeiling('resumeHighlight', all(true)), true)
+  assert.equal(lib.allowedByProfileCeiling('resumeHighlight', { ...all(true), resume: false }), false)
+  const { votingHighlightChoices } = load('utils/voting-room-presentation.ts', { '@/utils/interview-access': { authorizeInterview: async () => {} }, '@/utils/additional-observations': {} })
+  let visibility = null
+  const tx = { interviewResumeAnnotation: { findMany: async q => { assert.deepEqual(q.select.document.select.round, { select: { club: { select: { profileFieldVisibility: true } } } }); return [{ id: 'h1', anchor: { page: 1, quote: 'Led a fund' }, document: { id: 'd', roundId, round: { club: { profileFieldVisibility: visibility } } } }] } } }
+  assert.equal((await votingHighlightChoices(tx, clubId, id(70), 'u')).length, 1, 'control: offered when résumés are shown')
+  visibility = { resume: false }
+  assert.deepEqual(await votingHighlightChoices(tx, clubId, id(70), 'u'), [], 'no choices, so setup, preparation and prepared slides have nothing to cite')
+  // Setup refuses resumeHighlight when résumés are hidden.
+  const { validateVotingSetup } = load('utils/voting-room-setup.ts', { '@/utils/voting-room-presentation': { votingHighlightChoices: async () => [] } })
+  const setupTx = { pipelineRound: { findFirst: async () => ({ id: roundId, clubId, anonymousReview: false, club: { profileFieldVisibility: { resume: false } } }) }, recruitmentCycle: { findFirst: async () => ({ id: id(3) }) }, application: { findMany: async () => { throw new Error('past field validation') } } }
+  const input = { clubId, sessionId: id(71), cycleId: id(3), roundId, leaderMemberIds: [id(72)], participantIds: [id(72)], applicationIds: [id(73)], targetSize: null, presentationOptions: { fields: ['name', 'resumeHighlight'], highlights: {} } }
+  await assert.rejects(validateVotingSetup(setupTx, input, { id: 'u' }, { rejectHiddenProfileFields: true }), /hidden by the club/)
+  // The live slide only asks for a highlight when the club shows résumés.
+  assert.match(fs.readFileSync('actions/voting-room.ts', 'utf8'), /options\?\.fields\.includes\("resumeHighlight"\)&&allowedByProfileCeiling\("resumeHighlight",normalizeProfileFieldVisibility\(app\.club\?\.profileFieldVisibility\)\)/)
+})
+
+// ---- 6. Résumé viewer --------------------------------------------------------
+test('external image résumé links are not fetched when the viewer opens', () => {
+  const { resumePreviewKind } = load('lib/resume-preview-kind.ts')
+  assert.equal(resumePreviewKind('https://files.example.edu/r.png'), 'external')
+  assert.equal(resumePreviewKind('https://files.example.edu/r.JPG?x=1'), 'external')
+  const src = fs.readFileSync('components/resume-viewer-dialog.tsx', 'utf8')
+  assert.doesNotMatch(src, /<img\b/, 'no third-party image request')
+})
+
 // ---- 3. Identity reveal ------------------------------------------------------
 test('identity reveal returns the identity but not profile fields the club hides', async () => {
   const appId = id(40)

@@ -113,5 +113,7 @@ export function withoutHiddenProfileFilters<Q extends ProfileQuery>(query: Q, vi
 /** Applicant Display and voting-slide fields that the club setting caps. Other fields are unaffected. */
 const cappedDisplayFields = new Set<string>(["name", "photo", "major", "academicYear", "gpa", "sat", "act", "experiences", "resume", "linkedin"]);
 export function allowedByProfileCeiling(field: string, visibility: ProfileFieldVisibility) {
+  // A leader-selected résumé excerpt is résumé content: it follows the résumé setting.
+  if (field === "resumeHighlight") return visibility.resume !== false;
   return !cappedDisplayFields.has(field) || visibility[field as ProfileFieldKey] !== false;
 }
