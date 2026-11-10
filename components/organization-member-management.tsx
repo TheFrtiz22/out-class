@@ -2,7 +2,10 @@
 import { LoadingState } from "@/components/ui/loading-state"
 import { getOrganizationMemberManagement } from "@/lib/workspace-read";
 import { MemberGroupBuilder } from "@/components/member-group-builder";
-import { SortLabel } from "@/components/product/sort-label";
+import { DataTable, DataTableSecondary, type DataTableColumn } from "@/components/ui/data-table";
+import { joinFacts } from "@/lib/join-facts";
+import { SortControl } from "@/components/ui/sort-control";
+import { useListSort } from "@/hooks/use-list-sort";
 import { compareAcademicYears } from "@/lib/recruitment-profile";
 import { InterviewerEligibilityControls } from "@/components/availability/interviewer-eligibility";
 
@@ -49,10 +52,7 @@ import { ClubAccessEditor } from "@/components/club-access-editor";
 import { RosterCsvImporter } from "@/components/roster-csv-importer";
 import { Button } from "@/components/ui/button";
 import { ClubExportLink } from "@/components/club-export-link";
-import {
-  onboardingTable,
-  onboardingFocus,
-} from "@/lib/onboarding-presentation";
+import { onboardingFocus } from "@/lib/onboarding-presentation";
 import { Input } from "@/components/ui/input";
 import {
   Sheet,
@@ -73,6 +73,11 @@ const memberName = (member: Member) =>
   member.user.studentProfile
     ? `${member.user.studentProfile.firstName} ${member.user.studentProfile.lastName}`
     : member.user.email;
+const memberSortKeys = ["name", "year", "role", "status"] as const;
+type MemberSort = (typeof memberSortKeys)[number];
+const memberSortOptions: { key: MemberSort; label: string }[] = [{ key: "name", label: "Name" }, { key: "year", label: "Year" }, { key: "role", label: "Role" }, { key: "status", label: "Status" }];
+/** Class year reads newest first; the rest alphabetically. */
+const memberSortsDescending = (key: MemberSort) => key === "year";
 const statusLabel = (status: string) =>
   status === "LEFT"
     ? "Removed"
@@ -94,13 +99,12 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
   const [invitesOpen, setInvitesOpen] = useState(false), [inviteTab, setInviteTab] = useState("pending");
   const [roleFilter, setRoleFilter] = useState(""), [yearFilter, setYearFilter] = useState("");
   const [addOpen, setAddOpen] = useState(false), [importOpen, setImportOpen] = useState(false), [groupsOpen, setGroupsOpen] = useState(false);
-  const [sort, setSort] = useState("Member"), [descending, setDescending] = useState(false);
+  // Headers and the toolbar Sort share one state, kept in the URL (?sort=&order=).
+  const listSort = useListSort(memberSortKeys, "name", memberSortsDescending);
+  const { key: sort, descending } = listSort;
   const [groupFilter, setGroupFilter] = useState("");
-  function sortBy(label: string) {
-    if (sort === label) setDescending(value => !value);
-    else { setSort(label); setDescending(label === "Year"); }
-    setPage(0);
-  }
+  const sortBy = (key: string) => { listSort.toggle(key as MemberSort); setPage(0); };
+  const setSort = (key: MemberSort, descending: boolean) => { listSort.set(key, descending); setPage(0); };
   const [scheduledInviteId,setScheduledInviteId] = useState<string|null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selection, setSelection] = useState<string[]>([]),
@@ -241,11 +245,11 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
           .includes(needle),
       ).sort((a, b) => {
         let compared = 0;
-        if (sort === "Year") {
+        if (sort === "year") {
           if (!a.year || !b.year) return a.year === b.year ? a.name.localeCompare(b.name) : !a.year ? 1 : -1;
           compared = compareAcademicYears(a.year, b.year);
-        } else if (sort === "Role") compared = organizationRoleLabels[a.role].localeCompare(organizationRoleLabels[b.role]);
-        else if (sort === "Status") compared = a.status.localeCompare(b.status);
+        } else if (sort === "role") compared = organizationRoleLabels[a.role].localeCompare(organizationRoleLabels[b.role]);
+        else if (sort === "status") compared = a.status.localeCompare(b.status);
         else compared = a.name.localeCompare(b.name);
         return (descending ? -compared : compared) || a.name.localeCompare(b.name) || a.id.localeCompare(b.id);
       })
@@ -350,9 +354,109 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
   const resetPaging = () => { setPage(0); setSelection([]) }
   const memberYears = data ? [...new Set([...data.members.map(m => m.user.studentProfile?.academicYear), ...data.invitations.map(i => i.invitedYear && /^\d{4}$/.test(i.invitedYear) ? academicYear({ gradYear: Number(i.invitedYear) }) : i.invitedYear)].filter((year): year is string => !!year))].sort(compareAcademicYears) : []
   const memberGroups = data ? [...new Set(data.members.flatMap(member => member.groups))].sort() : []
+  const invitationDelivery = (invitation: NonNullable<(typeof rows)[number]["invitation"]>) => invitation.deliveries[0]
+    ? invitation.deliveries[0].failureCode === "DELIVERY_UNCERTAIN" ? "Email delivery needs review" : `Email ${statusLabel(invitation.deliveries[0].status).toLowerCase()}`
+    : "Email not requested";
+  const invitationActions = (row: (typeof rows)[number]) => data && (row.invitation &&
+                          row.invitation.status === "PENDING" &&
+                          canManageOrganizationInvitation(
+                            data.actor,
+                            row.invitation,
+                          ) && (
+                            <div className="flex items-center gap-1">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                aria-label={`Copy invitation link for ${row.name}`}
+                                disabled={busy}
+                                onClick={() =>
+                                  void navigator.clipboard
+                                    .writeText(
+                                      `${window.location.origin}/invitations/${row.id}`,
+                                    )
+                                    .then(() =>
+                                      setNotice("Invitation link copied."),
+                                    )
+                                    .catch(() =>
+                                      setError(
+                                        "Could not copy the invitation link.",
+                                      ),
+                                    )
+                                }
+                              >
+                                <Copy size={15} />
+                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    aria-label={`Invitation actions for ${row.name}`}
+                                    disabled={busy}
+                                  >
+                                    <MoreHorizontal size={18} />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    disabled={
+                                      busy ||
+                                      row.status !== "Invited" ||
+                                      row.invitation.deliveries.some((d) =>
+                                        ["QUEUED", "SENDING"].includes(
+                                          d.status,
+                                        ),
+                                      )
+                                    }
+                                    onSelect={() =>
+                                      void run(
+                                        () =>
+                                          manageOrganizationInvitation({
+                                            clubId,
+                                            invitationId: row.id,
+                                            action: "RESEND",
+                                          }),
+                                        "Invitation email queued. Delivery continues in the background.",
+                                        undefined,
+                                        false,
+                                      )
+                                    }
+                                  >
+                                    Resend invitation
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem disabled={busy||row.status!=="Invited"||row.invitation.deliveries.some(d=>["QUEUED","SENDING"].includes(d.status))} onSelect={()=>setScheduledInviteId(row.id)}>Schedule invitation email</DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-destructive"
+                                    disabled={busy}
+                                    onSelect={() => {
+                                      if (
+                                        window.confirm(
+                                          `Revoke the invitation for ${row.name}?`,
+                                        )
+                                      )
+                                        void run(
+                                          () =>
+                                            manageOrganizationInvitation({
+                                              clubId,
+                                              invitationId: row.id,
+                                              action: "REVOKE",
+                                            }),
+                                          "Invitation revoked.",
+                                          undefined,
+                                          false,
+                                        );
+                                    }}
+                                  >
+                                    Revoke invitation
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          ));
   const directory = data && <div className="space-y-5">
             {/* One line of pill filters; it scrolls sideways on narrow screens instead of wrapping. */}
-            <div className="oc-filter-bar" role="toolbar" aria-label="Member filters">
+            <div className="oc-list-toolbar">
+            <div className="oc-filter-bar min-w-0 flex-1" role="toolbar" aria-label="Member filters">
               <SearchField
                 aria-label="Search members and invitations"
                 placeholder={invitesOpen ? "Search invitations…" : "Search members…"}
@@ -367,6 +471,8 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
               {showYear && <PillGroup label="Filter members by year" size="compact" value={yearFilter} onChange={value => { setYearFilter(value); resetPaging() }} options={[{ value: "", label: "All years" }, ...memberYears.map(year => ({ value: year, label: year }))]} />}
               {!invitesOpen && caps.canManageMembers && <PillSelect label="Filter members by group" allLabel="All groups" value={groupFilter} onChange={value => { setGroupFilter(value); resetPaging() }} options={memberGroups.map(group => ({ value: group, label: group }))} />}
               {invitesOpen && <Toggle label="Show invitation history" checked={history} onCheckedChange={value => { setHistory(value); setPage(0) }} />}
+            </div>
+            <SortControl label="Sort members" options={memberSortOptions} value={sort} descending={descending} descendingByDefault={memberSortsDescending} onChange={setSort} />
             </div>
             {!invitesOpen && caps.canManageMembers && <div className="flex flex-wrap items-center gap-3"><ClubExportLink clubId={clubId} kind="roster" membership={data.actor} label="Export roster" /><ClubExportLink clubId={clubId} kind="attendance" membership={data.actor} label="Export attendance" /></div>}
             {selection.length > 0 && (
@@ -499,239 +605,45 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 </span>
               </div>
             )}
-            {/* Stacked cards on phones (onboardingTable), so this table keeps its own markup instead of DataTable. */}
-            <div className="oc-data-surface">
-              <table className={onboardingTable.table}>
-                <caption className="sr-only">
-                  Organization members and invitations
-                </caption>
-                <thead className={onboardingTable.head}>
-                  <tr>
-                    <th className="p-3" scope="col">
-                      <input
-                        type="checkbox" className="oc-checkbox"
-                        aria-label="Select all members and invitations on this page"
-                        disabled={busy || !selectablePage.length}
-                        checked={
-                          selectablePage.length > 0 &&
-                          selectablePage.every((row) =>
-                            selection.includes(row.id),
-                          )
-                        }
-                        ref={(node) => {
-                          if (node)
-                            node.indeterminate =
-                              selectablePage.some((row) =>
-                                selection.includes(row.id),
-                              ) &&
-                              !selectablePage.every((row) =>
-                                selection.includes(row.id),
-                              );
-                        }}
-                        onChange={(e) =>
-                          setSelection((ids) =>
-                            e.target.checked
-                              ? [
-                                  ...new Set([
-                                    ...ids,
-                                    ...selectablePage.map((row) => row.id),
-                                  ]),
-                                ].slice(0, 100)
-                              : ids.filter(
-                                  (id) =>
-                                    !selectablePage.some(
-                                      (row) => row.id === id,
-                                    ),
-                                ),
-                          )
-                        }
-                      />
-                    </th>
-                    {["Member", ...(showYear ? ["Year"] : []), "Role", "Status", ...(invitesOpen ? ["Actions"] : [])].map(
-                      (label) => (
-                        <th key={label} scope="col" className="px-3" aria-sort={label === "Actions" ? undefined : sort === label ? descending ? "descending" : "ascending" : "none"}>
-                          {label === "Actions" ? label : <SortLabel label={label} active={sort === label} descending={descending} onClick={() => sortBy(label)} />}
-                        </th>
-                      ),
-                    )}
-                  </tr>
-                </thead>
-                <tbody className={onboardingTable.body}>
-                  {pageRows.map((row) => (
-                    <tr
-                      key={row.id}
-                      className={onboardingTable.row}
-                      data-selected={selection.includes(row.id)}
-                    >
-                      <td data-label="Select" className={onboardingTable.cell}>
-                        <input
-                          type="checkbox" className="oc-checkbox"
-                          aria-label={`Select ${row.name}`}
-                          checked={selection.includes(row.id)}
-                          disabled={
-                            busy ||
-                            !selectable(row) ||
-                            (selection.length >= 100 &&
-                              !selection.includes(row.id))
-                          }
-                          onChange={(e) => toggle(row.id, e.target.checked)}
-                        />
-                      </td>
-                      <td
-                        data-label="Member"
-                        className={`${onboardingTable.cell} ${onboardingTable.wideCell}`}
-                      >
-                        {row.member ? (
-                          <Button
-                            type="button"
-                            variant="link"
-                            className="h-auto min-h-11 whitespace-normal px-0 text-left font-medium"
-                            aria-label={`Member details · ${row.name}`}
-                            disabled={busy}
-                            onClick={(event) => {
-                              trigger.current = event.currentTarget;
-                              setSelectedId(row.member!.id);
-                              setDirty(false);
-                            }}
-                          >
-                            {row.name}
-                          </Button>
-                        ) : (
-                          <span className="font-medium">{row.name}</span>
-                        )}
-                        <p className="mt-1 break-all text-xs text-muted-foreground">
-                          {row.detail}
-                        </p>
-                        {!!row.member?.groups.length && <p className="mt-1 text-xs text-muted-foreground">{row.member.groups.join(" · ")}</p>}
-                      </td>
-                      {showYear && <td data-label="Year" className={onboardingTable.cell}>
-                        {row.year || "—"}
-                      </td>}
-                      <td data-label="Role" className={onboardingTable.cell}>
-                        {organizationRoleLabels[row.role]}
-                      </td>
-                      <td
-                        data-label="Status"
-                        className={`${onboardingTable.cell} ${onboardingTable.wideCell}`}
-                      >
-                        {row.status}
-                        {row.invitation && (
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {row.invitation.deliveries[0]
-                              ? row.invitation.deliveries[0].failureCode ===
-                                "DELIVERY_UNCERTAIN"
-                                ? "Email delivery needs review"
-                                : `Email ${statusLabel(row.invitation.deliveries[0].status).toLowerCase()}`
-                              : "Email not requested"}
-                          </p>
-                        )}
-                      </td>
-                      {invitesOpen && (<td
-                        data-label="Actions"
-                        className={`${onboardingTable.cell} ${onboardingTable.wideCell}`}
-                      >
-                        {row.invitation &&
-                          row.invitation.status === "PENDING" &&
-                          canManageOrganizationInvitation(
-                            data.actor,
-                            row.invitation,
-                          ) && (
-                            <div className="flex items-center gap-1">
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                aria-label={`Copy invitation link for ${row.name}`}
-                                disabled={busy}
-                                onClick={() =>
-                                  void navigator.clipboard
-                                    .writeText(
-                                      `${window.location.origin}/invitations/${row.id}`,
-                                    )
-                                    .then(() =>
-                                      setNotice("Invitation link copied."),
-                                    )
-                                    .catch(() =>
-                                      setError(
-                                        "Could not copy the invitation link.",
-                                      ),
-                                    )
-                                }
-                              >
-                                <Copy size={15} />
-                              </Button>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    aria-label={`Invitation actions for ${row.name}`}
-                                    disabled={busy}
-                                  >
-                                    <MoreHorizontal size={18} />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem
-                                    disabled={
-                                      busy ||
-                                      row.status !== "Invited" ||
-                                      row.invitation.deliveries.some((d) =>
-                                        ["QUEUED", "SENDING"].includes(
-                                          d.status,
-                                        ),
-                                      )
-                                    }
-                                    onSelect={() =>
-                                      void run(
-                                        () =>
-                                          manageOrganizationInvitation({
-                                            clubId,
-                                            invitationId: row.id,
-                                            action: "RESEND",
-                                          }),
-                                        "Invitation email queued. Delivery continues in the background.",
-                                        undefined,
-                                        false,
-                                      )
-                                    }
-                                  >
-                                    Resend invitation
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem disabled={busy||row.status!=="Invited"||row.invitation.deliveries.some(d=>["QUEUED","SENDING"].includes(d.status))} onSelect={()=>setScheduledInviteId(row.id)}>Schedule invitation email</DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    className="text-destructive"
-                                    disabled={busy}
-                                    onSelect={() => {
-                                      if (
-                                        window.confirm(
-                                          `Revoke the invitation for ${row.name}?`,
-                                        )
-                                      )
-                                        void run(
-                                          () =>
-                                            manageOrganizationInvitation({
-                                              clubId,
-                                              invitationId: row.id,
-                                              action: "REVOKE",
-                                            }),
-                                          "Invitation revoked.",
-                                          undefined,
-                                          false,
-                                        );
-                                    }}
-                                  >
-                                    Revoke invitation
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
-                          )}
-                      </td>)}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            {rows.length > 0 && <DataTable
+              caption={invitesOpen ? "Club invitations" : "Club members"}
+              rows={pageRows}
+              rowKey={row => row.id}
+              rowState={row => selection.includes(row.id) ? "selected" : undefined}
+              disabled={busy}
+              sort={{ key: sort, descending, toggle: sortBy }}
+              isOpenable={row => !!row.member}
+              openLabel={row => `Member details · ${row.name}`}
+              onOpen={(row, origin) => { if (!row.member) return; trigger.current = origin; setSelectedId(row.member.id); setDirty(false) }}
+              selection={{
+                label: "Select",
+                rowLabel: row => `Select ${row.name}`,
+                isSelected: row => selection.includes(row.id),
+                toggle: row => toggle(row.id, !selection.includes(row.id)),
+                disabled: row => !selectable(row) || (selection.length >= 100 && !selection.includes(row.id)),
+                header: <label className="oc-dt-check"><input
+                  type="checkbox" className="oc-checkbox"
+                  aria-label="Select all members and invitations on this page"
+                  disabled={busy || !selectablePage.length}
+                  checked={selectablePage.length > 0 && selectablePage.every((row) => selection.includes(row.id))}
+                  ref={(node) => { if (node) node.indeterminate = selectablePage.some((row) => selection.includes(row.id)) && !selectablePage.every((row) => selection.includes(row.id)) }}
+                  onChange={(e) => setSelection((ids) => e.target.checked ? [...new Set([...ids, ...selectablePage.map((row) => row.id)])].slice(0, 100) : ids.filter((id) => !selectablePage.some((row) => row.id === id)))}
+                /></label>,
+              }}
+              columns={[
+                { id: "name", header: "Member", sortKey: "name", primary: true, cell: row => <span className="oc-dt-name">{row.name}</span>, secondary: row => <DataTableSecondary from="lg" title={row.member?.groups.length ? `Groups: ${row.member.groups.join(", ")}` : undefined}>{joinFacts(row.detail, row.member?.groups.join(" · "))}</DataTableSecondary> },
+                ...(showYear ? [{ id: "year", header: "Year", sortKey: "year", showFrom: "md" as const, cell: (row: (typeof rows)[number]) => row.year || "—" }] : []),
+                { id: "role", header: "Role", sortKey: "role", cell: row => organizationRoleLabels[row.role] },
+                { id: "status", header: "Status", sortKey: "status", cell: row => <>{row.status}{row.invitation && <span className="oc-dt-muted"> · {invitationDelivery(row.invitation)}</span>}</> },
+                ...(invitesOpen ? [{ id: "actions", header: <span className="sr-only">Actions</span>, align: "end" as const, cell: (row: (typeof rows)[number]) => invitationActions(row) }] : []),
+              ] satisfies DataTableColumn<(typeof rows)[number]>[]}
+              card={{
+                title: row => row.name,
+                meta: row => joinFacts(row.year, organizationRoleLabels[row.role], row.invitation && invitationDelivery(row.invitation)),
+                trailing: row => row.status === "Active" ? undefined : <span className="oc-dt-muted">{row.status}</span>,
+                actions: invitesOpen ? row => invitationActions(row) : undefined,
+              }}
+            />}
             {!rows.length && (
               <p
                 role="status"

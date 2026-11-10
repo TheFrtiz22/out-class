@@ -5,7 +5,7 @@ const ts = require('typescript')
 function compile(file, mocks = {}, extra = '') {
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8') + extra, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText
-  new Function('require', 'module', 'exports', 'window', 'requestAnimationFrame', 'cancelAnimationFrame', code)(name => mocks[name] || (name==='@/hooks/use-editor-draft'?require('./helpers/autosave-ui-harness.cjs').draftStub:name==='@/hooks/use-pipeline-page'?compile('hooks/use-pipeline-page.ts',mocks):name.startsWith('@/lib/') ? compile(name.replace('@/', '') + '.ts') : name.startsWith('@/') || name.startsWith('./') ? new Proxy({}, { get: (_, key) => String(key) }) : require(name)), mod, mod.exports, { addEventListener(){}, removeEventListener(){}, confirm(){ return true } }, () => {}, () => {})
+  new Function('require', 'module', 'exports', 'window', 'requestAnimationFrame', 'cancelAnimationFrame', code)(name => mocks[name] || (name==='@/hooks/use-editor-draft'?require('./helpers/autosave-ui-harness.cjs').draftStub:name==='@/hooks/use-pipeline-page'?compile('hooks/use-pipeline-page.ts',mocks):name==='@/hooks/use-list-sort'?compile('hooks/use-list-sort.ts',mocks):name.startsWith('@/lib/') ? compile(name.replace('@/', '') + '.ts') : name === './live-applicant-views' ? new Proxy({ applicantSortOptions: ['name','year','round','gpa','sat','act','score','status'].map(key => ({ key, label: key })) }, { get: (target, key) => key in target ? target[key] : String(key) }) : name.startsWith('@/') || name.startsWith('./') ? new Proxy({}, { get: (_, key) => String(key) }) : require(name)), mod, mod.exports, { addEventListener(){}, removeEventListener(){}, confirm(){ return true } }, () => {}, () => {})
   return mod.exports
 }
 const { applicantLane } = compile('lib/applicant-board.ts')
@@ -30,13 +30,16 @@ function harness(permissions = ['applications.review','applicants.identify','dec
   api.getClubPipelinePage=async(club,q={})=>{const data=await api.getClubPipelineList();const page=compile('lib/pipeline-page.ts').pagePipeline(data,q,'member','reviewer','fixture');return {...page,coverage:{complete:page.page.baseTotal===page.applications.length,mode:q.mode??'applicants'}}};
   api.getClubPipelineSelection=async(club,q={})=>compile('lib/pipeline-page.ts').completePipelineSelection(await api.getClubPipelineList(),q,'member','reviewer');
   let detailKey='',detail=null,revalidation=null;
-  const C = compile('components/views/leader-dashboard/live-leader-workspace.tsx', {react,'next/navigation':{useRouter:()=>({push:url=>calls.push(['navigate',url])})},'@/hooks/use-revalidate':{useRevalidate:(reload,options)=>{revalidation={reload,options}},announceDataChanged(){}},'@/contexts/auth-context':{useAuth:()=>auth},'@/hooks/use-pipeline-applicant':{usePipelineApplicant(club,id,revision){const key=`${club}:${id}:${revision}`;if(key!==detailKey){detailKey=key;detail=id?structuredClone(pipeline.applications.find(app=>app.id===id)):null}return{application:detail,error:false,retry(){}}}},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false,ready:true})},'@/lib/reviewer-evaluation':{findReviewerEvaluation(...args){const result=compile('lib/reviewer-evaluation.ts').findReviewerEvaluation(...args);lookups.push({round:args[2],result});return result}},'@/lib/workspace-api':api,'@/lib/application-state':{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus(){}})}}, '\nexports.TestWorkspace = ClubWorkspace;').TestWorkspace
+  const C = compile('components/views/leader-dashboard/live-leader-workspace.tsx', {react,'next/navigation':{useRouter:()=>({push:url=>calls.push(['navigate',url])}),useSearchParams:()=>null},'@/hooks/use-revalidate':{useRevalidate:(reload,options)=>{revalidation={reload,options}},announceDataChanged(){}},'@/contexts/auth-context':{useAuth:()=>auth},'@/hooks/use-pipeline-applicant':{usePipelineApplicant(club,id,revision){const key=`${club}:${id}:${revision}`;if(key!==detailKey){detailKey=key;detail=id?structuredClone(pipeline.applications.find(app=>app.id===id)):null}return{application:detail,error:false,retry(){}}}},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false,ready:true})},'@/lib/reviewer-evaluation':{findReviewerEvaluation(...args){const result=compile('lib/reviewer-evaluation.ts').findReviewerEvaluation(...args);lookups.push({round:args[2],result});return result}},'@/lib/workspace-api':api,'@/lib/application-state':{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus(){}})}}, '\nexports.TestWorkspace = ClubWorkspace;').TestWorkspace
   const membership = {id:'member',clubId:'club',permissions,club:{name:'Test club'}}
   return {calls,api,lookups,revalidation:()=>revalidation,notifyEpoch(){currentEpoch={}},commitEpoch(){auth.readAuthority=currentEpoch},setViewer(id){auth.user={id};membership.id=id;membership.userId=id},replayEffects(){for(const cleanup of cleanups.values())cleanup?.();cleanups.clear();for(const [slot,setup]of setups)cleanups.set(slot,setup())},addCandidate(app){pipeline.applications.push({...structuredClone(pipeline.applications[0]),...app})},setCanEvaluate(value){pipeline.applications[0].canEvaluate=value},addRound(round){pipeline.rounds.push(round)},setEvaluations(evaluations){pipeline.applications[0].evaluations=evaluations},renameRound(name){pipeline.rounds[0].name=name},setServerRound(roundId){pipeline.applications[0].roundId=roundId},setServerStatus(status){pipeline.applications[0].status=status},render(){for(let step=0;step<20;step++){changed=false;index=0;const tree=C({membership,decisionsOnly,rejectedOnly});while(effects.length){const [slot,setup]=effects.shift();cleanups.get(slot)?.();cleanups.set(slot,setup())}if(!changed)return tree}throw Error('Component failed to settle')}}
 }
 // List/Kanban and the decision groups are SegmentedControl options: return an onClick that chooses the option.
 const segment = (tree,group,match) => { const control=nodes(tree).find(n=>n.type==='SegmentedControl'&&n.props.label===group); const option=control?.props.options.find(o=>match(text(o.label))); return option && {props:{onClick:()=>control.props.onChange(option.value)}} }
 const button = (tree,label) => label==='List'||label==='Kanban' ? segment(tree,'Applicant view',t=>t===label) : nodes(tree).find(n=>n.type==='Button'&&text(n)===label)
+// Dossier actions behind the ⋯ menu are DropdownMenuItems; Move round opens its own dialog.
+const menuItem = (tree,label) => nodes(tree).find(n=>n.type==='DropdownMenuItem'&&text(n)===label)
+const roundSelect = (h,tree) => { if(!nodes(tree).some(n=>n.props?.id==='move-round')){menuItem(tree,'Move round…').props.onSelect();tree=h.render()} return nodes(tree).find(n=>n.props?.id==='move-round') }
 const view = tree => nodes(tree).find(n=>['LiveApplicantList','LiveApplicantKanban'].includes(n.type))
 test('complete-selection reads reject a notified obsolete authority before dispatch',async()=>{
   const h=harness();h.render();await flush();const tree=h.render();
@@ -62,19 +65,19 @@ test('List/Kanban toggle preserves the same filtered server data and does not mu
 })
 test('drawer status writes send expectedStatus, reject stale outcomes, and refresh canonical offer state', async () => {
   const h=harness();h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render()
-  button(tree,'Accepted').props.onClick();tree=h.render();h.setServerStatus('WAITLISTED');button(tree,'Send now').props.onClick();await flush();tree=h.render();await flush();tree=h.render()
+  button(tree,'Accept').props.onClick();tree=h.render();h.setServerStatus('WAITLISTED');button(tree,'Send now').props.onClick();await flush();tree=h.render();await flush();tree=h.render()
   assert.equal(h.calls.find(c=>c[0]==='status')[1].expectedStatus,'IN_REVIEW');assert.equal(view(tree).props.applicants[0].status,'IN_REVIEW');assert.match(text(tree),/could not be saved/)
-  h.setServerStatus('IN_REVIEW');button(tree,'Send now').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED');assert.equal(h.calls.filter(c=>c[0]==='load').length,2);await flush();tree=h.render();await flush();tree=h.render();assert.ok(button(tree,'Rescind pending offer'))
+  h.setServerStatus('IN_REVIEW');button(tree,'Send now').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED');assert.equal(h.calls.filter(c=>c[0]==='load').length,2);await flush();tree=h.render();await flush();tree=h.render();assert.ok(menuItem(tree,'Rescind pending offer'))
 })
 test('read/review access alone never exposes enabled round moves or decision buttons', async () => {
   const h=harness(['applications.review']);h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render()
-  assert.equal(button(tree,'Accepted'),undefined);assert.equal(button(tree,'Move round').props.disabled,true);assert.equal(button(tree,'Finalize evaluation').props.disabled,false)
+  assert.equal(button(tree,'Accept'),undefined);assert.equal(menuItem(tree,'Move round…'),undefined,'no round move without recruitment management');assert.equal(button(tree,'Finalize evaluation').props.disabled,false)
 })
 test('evaluation save updates both presentations and explicit round movement reloads anonymous identity', async () => {
   const h=harness();h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render()
   nodes(tree).find(n=>n.props?.id==='review-score').props.onChange({target:{value:'8'}});tree=h.render()
   nodes(tree).find(n=>n.type==='form').props.onSubmit({preventDefault(){}});await flush();tree=h.render();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].evaluations[0].score,8);assert.equal(view(tree).props.applicants[0].evaluations[0].interviewerId,'member')
-  nodes(tree).find(n=>n.props?.id==='move-round').props.onChange({target:{value:'anonymous-round'}});tree=h.render();button(tree,'Move round').props.onClick();await flush();h.render();await flush();tree=h.render();await flush();tree=h.render()
+  roundSelect(h,tree).props.onChange({target:{value:'anonymous-round'}});tree=h.render();button(tree,'Move round').props.onClick();await flush();h.render();await flush();tree=h.render();await flush();tree=h.render()
   assert.equal(view(tree).props.applicants[0].studentId,'anonymous-candidate');assert.equal(view(tree).props.applicants[0].student.email,'');assert.equal(nodes(tree).find(n=>n.type==='Sheet').props.open,false)
   button(tree,'Kanban').props.onClick();tree=h.render();assert.equal(view(tree).props.applicants[0].studentId,'anonymous-candidate')
 })
@@ -83,10 +86,11 @@ test('an identified applicant without current panel authority has no review edit
   const h=harness();h.setCanEvaluate(false);h.render();await flush();let tree=h.render()
   view(tree).props.open(view(tree).props.applicants[0]);tree=h.render()
   assert.equal(button(tree,'Finalize evaluation'),undefined)
-  assert.equal(nodes(tree).find(n=>n.props?.id==='review-score'),undefined)
-  assert.match(text(tree),/current panel assignment/)
+  assert.equal(nodes(tree).find(n=>n.props?.id==='review-score').props.disabled,true,'the score is shown read-only')
+  assert.match(nodes(tree).find(n=>n.type==='DisabledReason'&&n.props.field).props.reason,/current panel assignment/,'the reason is the control’s tooltip')
+  roundSelect(h,tree);tree=h.render()
   assert.equal(button(tree,'Move round').props.disabled,true,'unchanged round is still disabled')
-  assert.ok(button(tree,'Accepted'),'recruitment actions remain available')
+  assert.ok(button(tree,'Accept'),'recruitment actions remain available')
   assert.equal(h.calls.some(c=>c[0]==='review'),false)
 })
 
@@ -105,7 +109,7 @@ test('Decisions reuses expected-status mutations and moves saved outcomes betwee
   assert.equal(button(tree,'Kanban'),undefined)
   decisionGroupButton(tree,'Pending').props.onClick();tree=h.render();await flush();tree=h.render()
   decisionList(tree).props.open(decisionList(tree).props.applicants[0]);tree=h.render()
-  decisionAction(tree,'Accepted').props.onClick();tree=h.render();button(tree,'Send now').props.onClick();await flush();tree=h.render();await flush();tree=h.render()
+  decisionAction(tree,'Accept').props.onClick();tree=h.render();button(tree,'Send now').props.onClick();await flush();tree=h.render();await flush();tree=h.render()
   assert.equal(h.calls.find(c=>c[0]==='status')[1].expectedStatus,'IN_REVIEW')
   assert.equal(decisionList(tree),undefined)
   decisionGroupButton(tree,'Accepted').props.onClick();tree=h.render();await flush();tree=h.render()
@@ -113,16 +117,16 @@ test('Decisions reuses expected-status mutations and moves saved outcomes betwee
 })
 test('Decisions preserves stale failures and hides mutation controls from anonymous reviewers', async () => {
   const h=harness(undefined,true);h.render();await flush();let tree=h.render();decisionList(tree).props.open(decisionList(tree).props.applicants[0]);tree=h.render()
-  decisionAction(tree,'Accepted').props.onClick();tree=h.render();h.setServerStatus('REJECTED');button(tree,'Send now').props.onClick();await flush();tree=h.render();await flush();tree=h.render()
+  decisionAction(tree,'Accept').props.onClick();tree=h.render();h.setServerStatus('REJECTED');button(tree,'Send now').props.onClick();await flush();tree=h.render();await flush();tree=h.render()
   assert.equal(decisionList(tree).props.applicants[0].status,'IN_REVIEW');assert.match(text(tree),/could not be saved/)
-  const limited=harness(['applications.review'],true);limited.render();await flush();tree=limited.render();decisionList(tree).props.open(decisionList(tree).props.applicants[0]);tree=limited.render();assert.equal(decisionAction(tree,'Accepted'),undefined)
+  const limited=harness(['applications.review'],true);limited.render();await flush();tree=limited.render();decisionList(tree).props.open(decisionList(tree).props.applicants[0]);tree=limited.render();assert.equal(decisionAction(tree,'Accept'),undefined)
 })
 
 test('Kanban round moves reject stale data and share the refreshed anonymous projection with List', async () => {
   const h=harness();h.render();await flush();let tree=h.render()
   button(tree,'Kanban').props.onClick();tree=h.render()
   view(tree).props.open(view(tree).props.applicants[0]);tree=h.render()
-  nodes(tree).find(n=>n.props?.id==='move-round').props.onChange({target:{value:'anonymous-round'}});tree=h.render()
+  roundSelect(h,tree).props.onChange({target:{value:'anonymous-round'}});tree=h.render()
   h.setServerRound('concurrent-round')
   button(tree,'Move round').props.onClick();await flush();tree=h.render();await flush();tree=h.render()
   assert.equal(h.calls.find(c=>c[0]==='round')[1].expectedRoundId,'round')
@@ -141,7 +145,7 @@ test('Kanban decisions use expected status and appear in List after server reloa
   const h=harness();h.render();await flush();let tree=h.render()
   button(tree,'Kanban').props.onClick();tree=h.render()
   view(tree).props.open(view(tree).props.applicants[0]);tree=h.render()
-  button(tree,'Accepted').props.onClick();tree=h.render()
+  button(tree,'Accept').props.onClick();tree=h.render()
   button(tree,'Send now').props.onClick();await flush();tree=h.render();await flush();tree=h.render()
   assert.equal(h.calls.find(c=>c[0]==='status')[1].expectedStatus,'IN_REVIEW')
   assert.equal(applicantLane(view(tree).props.applicants[0].status),'closed')
@@ -158,7 +162,7 @@ for(const roundId of [null,undefined,'different-round'])test(`drawer legacy labe
 });
 
 test('moving from the drawer locates the target-round review by stable ID despite an old label',async()=>{
- const h=harness();h.addRound({id:'target',name:'Panel',order:1});h.setEvaluations([{id:'submitted',interviewerId:'member',roundId:'target',round:'Interview',score:8.5,notes:null}]);h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render();nodes(tree).find(n=>n.props?.id==='move-round').props.onChange({target:{value:'target'}});tree=h.render();button(tree,'Move round').props.onClick();await flush();assert.equal(h.lookups.at(-1).round.id,'target');assert.equal(h.lookups.at(-1).result.id,'submitted');
+ const h=harness();h.addRound({id:'target',name:'Panel',order:1});h.setEvaluations([{id:'submitted',interviewerId:'member',roundId:'target',round:'Interview',score:8.5,notes:null}]);h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render();roundSelect(h,tree).props.onChange({target:{value:'target'}});tree=h.render();button(tree,'Move round').props.onClick();await flush();assert.equal(h.lookups.at(-1).round.id,'target');assert.equal(h.lookups.at(-1).result.id,'submitted');
 });
 
 test('rejected applicants leave active queues and remain in the deliberate retained-history tab',async()=>{
@@ -179,7 +183,7 @@ test('recruitment review actions sit in one header row before the toolbar, witho
 });
 test('quick review saves expected-status decisions and advances only after success', async () => {
  const h=harness();h.addCandidate({id:'second',studentId:'student-two',student:{email:'second@demo.invalid',studentProfile:null}});h.render();await flush();let tree=h.render();
- button(tree,'Quick review').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.match(text(tree),/publish the decision immediately/);
+ button(tree,'Quick review').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.match(text(tree),/decisions publish immediately/i);
  button(tree,'Accept & next').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.deepEqual(h.calls.find(c=>c[0]==='status')[1],{clubId:'club',applicationId:'candidate',status:'ACCEPTED',expectedStatus:'IN_REVIEW'});assert.match(text(nodes(tree).find(n=>n.type==='SheetTitle')),/second@demo.invalid/);
  button(tree,'Deny & next').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.equal(h.calls.filter(c=>c[0]==='status').length,2);assert.match(text(tree),/Quick review complete/);
 });
@@ -196,7 +200,7 @@ test('board drops require an explicit outcome and preserve expected status',asyn
 });
 
 test('decision status stays unchanged until the server acknowledges publication',async()=>{
- const h=harness();h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render();button(tree,'Accepted').props.onClick();tree=h.render()
+ const h=harness();h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render();button(tree,'Accept').props.onClick();tree=h.render()
  const write=h.api.setApplicationStatus;let release;h.api.setApplicationStatus=async input=>{await new Promise(resolve=>{release=resolve});return write(input)}
  button(tree,'Send now').props.onClick();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'IN_REVIEW');assert.equal(h.calls.some(c=>c[0]==='status'),false)
  release();await flush();tree=h.render();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED')
@@ -213,19 +217,21 @@ test('the list stays current without a Refresh button: revalidation re-reads in 
  view(tree).props.open(view(tree).props.applicants[0]);tree=h.render();assert.equal(h.revalidation().options.enabled,false,'no background reload replaces an open review');
 });
 
-test('sorting lives in the column headers; header-less views keep an in-filter sort; the voting bar appears only with a selection',async()=>{
+test('one sort drives the column headers and the toolbar Sort control at every width; the voting bar appears only with a selection',async()=>{
  const source=fs.readFileSync('components/views/leader-dashboard/live-applicant-views.tsx','utf8');
- for(const key of ['name','year','round','gpa','sat','act','score','status'])assert.match(source,new RegExp(`key: "${key}"`),`column header sorts by ${key}`);
- assert.match(source,/aria-sort=\{sort === column.key \? descending \? "descending" : "ascending" : "none"\}/);
+ for(const key of ['name','year','round','gpa','sat','act','score','status'])assert.match(source,new RegExp(`sortKey: "${key}"`),`column header sorts by ${key}`);
+ assert.doesNotMatch(source,/xl:(hidden|block)/,'layout follows the list width (container queries), not viewport breakpoints');
  const h=harness(['applications.review','applicants.identify','decisions.manage','decisions.start']);h.render();await flush();let tree=h.render();
- const sortSelect=nodes(tree).find(n=>n.type==='PillSelect'&&n.props.label==='Sort applicants');assert.ok(nodes(tree).find(n=>n.type==='FilterPopover'&&nodes(n).includes(sortSelect)),'fallback sort sits inside Filters');
- const sortRow=t=>{const select=nodes(t).find(n=>n.type==='PillSelect'&&n.props.label==='Sort applicants');return nodes(t).find(n=>/oc-filter-field/.test(n.props?.className||'')&&nodes(n).includes(select))};
- assert.match(sortRow(tree).props.className,/xl:hidden/,'wide list sorts from headers');
- view(tree).props.sortBy('sat');tree=h.render();assert.equal(view(tree).props.sort,'sat');assert.equal(view(tree).props.descending,true);view(tree).props.sortBy('sat');tree=h.render();assert.equal(view(tree).props.descending,false);
+ const control=t=>nodes(t).find(n=>n.type==='SortControl'&&n.props.label==='Sort applicants');
+ assert.ok(control(tree),'the toolbar has a Sort control');assert.match(String(control(tree).props.className||''),/^$/,'never hidden by a breakpoint');
+ assert.equal(nodes(tree).find(n=>n.type==='FilterPopover'&&nodes(n).some(c=>c.type==='SortControl'||c.type==='PillSelect'&&/^Sort/.test(c.props.label))),undefined,'Filters holds no duplicate sort');
+ view(tree).props.sortBy('sat');tree=h.render();assert.equal(view(tree).props.sort,'sat');assert.equal(view(tree).props.descending,true);assert.equal(control(tree).props.value,'sat','headers and the dropdown share one state');assert.equal(control(tree).props.descending,true);
+ view(tree).props.sortBy('sat');tree=h.render();assert.equal(view(tree).props.descending,false);
+ control(tree).props.onChange('gpa',true);tree=h.render();assert.equal(view(tree).props.sort,'gpa');assert.equal(view(tree).props.descending,true);
  assert.doesNotMatch(text(tree),/\d selected/);assert.equal(button(tree,'Start voting with selected applicants'),undefined);
  view(tree).props.votingSelection.toggle('candidate');tree=h.render();const bar=nodes(tree).find(n=>n.props?.['aria-label']==='Voting selection');assert.match(bar.props.className,/fixed/,'overlay bar does not shift the table');assert.match(text(bar),/selected/);assert.ok(button(tree,'Start voting with selected applicants'));assert.ok(nodes(bar).some(n=>n.type==='span'&&[].concat(n.props.children)[0]===1),'shows the selection count');
  button(tree,'Clear selection').props.onClick();tree=h.render();assert.equal(nodes(tree).find(n=>n.props?.['aria-label']==='Voting selection'),undefined);
- button(tree,'Kanban').props.onClick();tree=h.render();assert.doesNotMatch(sortRow(tree).props.className,/xl:hidden/,'Kanban keeps the sort control at every width');
+ button(tree,'Kanban').props.onClick();tree=h.render();assert.ok(control(tree),'Kanban keeps the Sort control');
 });
 
 test('a different membership identity resets the page cursor before fresh summaries render',async()=>{

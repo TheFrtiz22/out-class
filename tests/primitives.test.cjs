@@ -43,9 +43,18 @@ test("page wrappers use only --oc-content-width or --oc-reading-width", () => {
 
 test("Panel and DataTable render the shared surfaces", () => {
   const React = require("react"), { renderToStaticMarkup } = require("react-dom/server"), { loadComponent } = require("./helpers/component-module.cjs")
-  const { Panel } = loadComponent("components/ui/panel.tsx"), { DataTable } = loadComponent("components/ui/data-table.tsx"), { PageHeader } = loadComponent("components/ui/page-header.tsx")
+  const { Panel } = loadComponent("components/ui/panel.tsx"), { DataTableFrame, DataTable } = loadComponent("components/ui/data-table.tsx"), { PageHeader } = loadComponent("components/ui/page-header.tsx")
   assert.equal(renderToStaticMarkup(React.createElement(Panel, { as: "section", className: "space-y-2" }, "x")), '<section data-slot="panel" data-tone="card" class="oc-content-panel space-y-2">x</section>')
-  assert.match(renderToStaticMarkup(React.createElement(DataTable, { caption: "Applicants" }, React.createElement("tbody"))), /^<div data-slot="data-table" class="oc-data-surface">.*<caption class="sr-only">Applicants<\/caption><tbody><\/tbody><\/table>/)
+  assert.match(renderToStaticMarkup(React.createElement(DataTableFrame, { caption: "Applicants" }, React.createElement("tbody"))), /^<div data-slot="data-table" class="oc-data-surface">.*<caption class="sr-only">Applicants<\/caption><tbody><\/tbody><\/table>/)
+  // The shared list: one table (sortable headers, priority columns, open control) and label-free cards from the same rows.
+  const list = renderToStaticMarkup(React.createElement(DataTable, { caption: "Members", rows: [{ id: "a", name: "Ada", year: "First Year" }], rowKey: r => r.id, onOpen() {}, openLabel: r => `Open ${r.name}`, sort: { key: "name", descending: false, toggle() {} },
+    columns: [{ id: "name", header: "Member", sortKey: "name", primary: true, cell: r => r.name }, { id: "year", header: "Year", sortKey: "year", showFrom: "md", cell: r => r.year }],
+    card: { title: r => r.name, meta: r => r.year } }))
+  assert.match(list, /<div data-slot="data-table" data-density="default" class="oc-dt">/)
+  assert.match(list, /<th scope="col" data-primary="true" aria-sort="ascending">/); assert.match(list, /<th scope="col" aria-sort="none" class="oc-dt-from-md">/)
+  assert.match(list, /<button type="button" class="oc-dt-open" aria-label="Open Ada">Ada<\/button>/)
+  assert.match(list, /<li data-list-card=""><span class="oc-dt-card-body"><button type="button" class="oc-dt-card-open" aria-label="Open Ada"><span class="oc-dt-card-title">Ada<\/span><\/button><span class="oc-dt-card-meta">First Year<\/span><\/span><\/li>/)
+  assert.doesNotMatch(list, /Year:|data-label/, "cards carry no field labels")
   const header = renderToStaticMarkup(React.createElement(PageHeader, { title: "Interviews", focusable: true, titleId: "t" }))
   assert.match(header, /^<div data-slot="page-header" class="oc-page-header"/); assert.match(header, /<h1 id="t" tabindex="-1" class="outline-none">Interviews<\/h1>/)
 })
