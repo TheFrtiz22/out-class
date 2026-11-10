@@ -52,8 +52,19 @@ test('native leader CSV exports: cross-club filters return headers only; anonymo
     // Club A: an anonymous-review round with one submitted application, a meeting and a published event.
     const anonRound = await prisma.pipelineRound.create({ data: { clubId: clubA.id, name: 'Blind', type: 'APPLICATION_REVIEW', order: 0, anonymousReview: true } });
     await prisma.application.create({ data: { clubId: clubA.id, studentId: hidden.id, roundId: anonRound.id, status: 'SUBMITTED', submittedAt: new Date() } });
-    const meetingA = await prisma.meeting.create({ data: { clubId: clubA.id, title: 'GBM', date: new Date('2026-11-03T22:00:00Z'), location: 'Rotunda' } });
-    const eventA = await prisma.meeting.create({ data: { clubId: clubA.id, title: 'Info night', date: new Date('2026-11-05T22:00:00Z'), location: 'Newcomb', publication: { create: { status: 'PUBLISHED' } } } });
+    // A private member meeting (attendance) and a published campus event (RSVPs). Publication follows the
+    // moderation workflow the database triggers enforce (as tests/helpers/campus-events-native.cjs does):
+    // public RECRUITMENT event, DRAFT -> PENDING -> PUBLISHED at the current revision, future date for RSVPs.
+    const publishedEvent = async (clubId, title, date) => {
+      const event = await prisma.meeting.create({ data: { clubId, title, date, endDate: new Date(+date + 7200000), location: 'Newcomb Hall', isPublic: true, audience: 'RECRUITMENT' } });
+      await prisma.eventPublication.create({ data: { eventId: event.id, rsvpEnabled: true, submittedBy: leader.id } });
+      await prisma.eventPublication.update({ where: { eventId: event.id }, data: { status: 'PENDING', submittedAt: new Date() } });
+      await prisma.eventPublication.update({ where: { eventId: event.id }, data: { status: 'PUBLISHED', approvedRevision: event.revision, reviewedBy: other.id, reviewedAt: new Date(), publishedAt: new Date() } });
+      return event;
+    };
+    const day = n => { const d = new Date(Date.now() + n * 86400000); d.setUTCHours(22, 0, 0, 0); return d; };
+    const meetingA = await prisma.meeting.create({ data: { clubId: clubA.id, title: 'GBM', date: day(-3), location: 'Rotunda' } });
+    const eventA = await publishedEvent(clubA.id, 'Info night', day(5));
     for (const s of [hidden, plain]) {
       await prisma.eventAttendance.create({ data: { eventId: meetingA.id, studentId: s.id } });
       await prisma.eventRsvp.create({ data: { eventId: eventA.id, userId: s.id } });
@@ -62,8 +73,8 @@ test('native leader CSV exports: cross-club filters return headers only; anonymo
     // Club B has rows behind every id a club-A leader might pass in.
     const roundB = await prisma.pipelineRound.create({ data: { clubId: clubB.id, name: 'Open', type: 'APPLICATION_REVIEW', order: 0 } });
     await prisma.application.create({ data: { clubId: clubB.id, studentId: plain.id, roundId: roundB.id, status: 'SUBMITTED', submittedAt: new Date() } });
-    const meetingB = await prisma.meeting.create({ data: { clubId: clubB.id, title: 'B meeting', date: new Date(), location: 'B' } });
-    const eventB = await prisma.meeting.create({ data: { clubId: clubB.id, title: 'B event', date: new Date(), location: 'B', publication: { create: { status: 'PUBLISHED' } } } });
+    const meetingB = await prisma.meeting.create({ data: { clubId: clubB.id, title: 'B meeting', date: day(-2), location: 'B' } });
+    const eventB = await publishedEvent(clubB.id, 'B event', day(6));
     await prisma.eventAttendance.create({ data: { eventId: meetingB.id, studentId: plain.id } });
     await prisma.eventRsvp.create({ data: { eventId: eventB.id, userId: plain.id } });
 
@@ -80,11 +91,11 @@ test('native leader CSV exports: cross-club filters return headers only; anonymo
     // Anonymous-review applicant is masked in attendance and RSVPs; the plain student is not.
     const attendance = await get(`clubId=${clubA.id}&kind=attendance&eventId=${meetingA.id}`);
     assert.equal(attendance.lines.length, 3);
-    assert.ok(attendance.lines.some(line => /^GBM,2026-11-03,Anonymous applicant,,,/.test(line)));
+    assert.ok(attendance.lines.some(line => line.startsWith(`GBM,${meetingA.date.toISOString().slice(0, 10)},Anonymous applicant,,,`)));
     assert.ok(attendance.lines.some(line => line.includes(`Plain,Student,${plain.email}`)));
     const rsvps = await get(`clubId=${clubA.id}&kind=rsvps&eventId=${eventA.id}`);
     assert.equal(rsvps.lines.length, 3);
-    assert.ok(rsvps.lines.some(line => /^Info night,2026-11-05,Anonymous applicant,,,/.test(line)));
+    assert.ok(rsvps.lines.some(line => line.startsWith(`Info night,${eventA.date.toISOString().slice(0, 10)},Anonymous applicant,,,`)));
     for (const res of [attendance, rsvps]) assert.ok(!res.lines.join('\n').includes('Hidden') && !res.lines.join('\n').includes(hidden.email));
 
     // The applicant export resolves round.anonymousReview and masks identity, email and computing ID.
