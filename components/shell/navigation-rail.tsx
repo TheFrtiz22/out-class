@@ -34,7 +34,12 @@ function RailTip({ label, enabled, children }: { label: string; enabled: boolean
   // pointer leave. Close on any pointer movement or focus away from the trigger instead.
   useEffect(() => {
     if (!open) return
-    const away = (event: Event) => { if (!trigger.current?.contains(event.target as Node | null)) setOpen(false) }
+    const away = (event: Event) => {
+      // Pointer movement only matters while a modal has switched off page pointer events; otherwise Radix
+      // already closes on pointer leave, and a stray move (layout shift, resize) must not close a hovered label.
+      if (event.type === "pointermove" && getComputedStyle(document.body).pointerEvents !== "none") return
+      if (!trigger.current?.contains(event.target as Node | null)) setOpen(false)
+    }
     document.addEventListener("pointermove", away, true)
     document.addEventListener("pointerdown", away, true)
     document.addEventListener("focusin", away, true)
