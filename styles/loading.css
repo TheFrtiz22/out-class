@@ -68,7 +68,7 @@ body > .oc-loading-screen {
   inline-size: 96px;
   block-size: 3px;
   overflow: hidden;
-  border-radius: 999px;
+  border-radius: var(--oc-radius-full);
   background: rgb(232 91 25 / 18%);
   contain: paint;
 }
