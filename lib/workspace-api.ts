@@ -244,6 +244,7 @@ export const setFormalDecisionLetters = adapt(decisionCommunications.setFormalDe
 export const getRecruitmentCycles = adapt(recruitmentManagement.getRecruitmentCycles, "getRecruitmentCycles");
 export const saveRecruitmentCycle = adapt(recruitmentManagement.saveRecruitmentCycle, "saveRecruitmentCycle");
 export const assignApplicationCycle = adapt(recruitmentManagement.assignApplicationCycle, "assignApplicationCycle");
+export const startRecruitmentCycleFromPrevious = adapt(recruitmentManagement.startRecruitmentCycleFromPrevious, "startRecruitmentCycleFromPrevious");
 export const reconsiderRejectedApplication = adapt(recruitmentManagement.reconsiderRejectedApplication, "reconsiderRejectedApplication");
 
 export const scheduleDecisionPublication = adapt(decisionSchedules.scheduleDecisionPublication, "scheduleDecisionPublication");

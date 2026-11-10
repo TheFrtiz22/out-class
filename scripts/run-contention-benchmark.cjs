@@ -36,7 +36,7 @@ try {
   run('docker', ['exec', '-i', name, 'psql', '-U', 'fixture_superuser', '-d', 'outclass_contention_test', '-v', 'ON_ERROR_STOP=1'], {
     input: `DO $$ DECLARE t text; BEGIN FOR t IN SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename<>'_prisma_migrations' LOOP EXECUTE format('ALTER TABLE public.%I OWNER TO outclass_production_app',t); END LOOP; END $$; REVOKE CREATE ON SCHEMA public FROM PUBLIC;`,
   });
-  run(process.execPath, ['--test', '--test-concurrency=1', 'tests/club-write-contention-native.test.cjs', 'tests/application-reapplication-native.test.cjs', 'tests/voting-ballot-contention-native.test.cjs', 'tests/interview-booking-contention-native.test.cjs'], { env });
+  run(process.execPath, ['--test', '--test-concurrency=1', 'tests/club-write-contention-native.test.cjs', 'tests/application-reapplication-native.test.cjs', 'tests/recruitment-cycle-start-native.test.cjs', 'tests/voting-ballot-contention-native.test.cjs', 'tests/interview-booking-contention-native.test.cjs'], { env });
 } finally {
   spawnSync('docker', ['rm', '-f', name], { stdio: 'ignore' });
 }

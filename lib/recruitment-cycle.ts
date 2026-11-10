@@ -49,3 +49,39 @@ export async function reapplicationUnavailable(tx: CycleClient, studentId: strin
   });
   return sameCycle ? "You can apply to this club again in its next recruitment cycle." : null;
 }
+
+/**
+ * Starting the next cycle from the last one. Recruitment configuration
+ * (application questions and form settings, rounds and their order, rubric and
+ * screening rules, interview kits, voting rule defaults, decision-letter
+ * templates) is club-scoped and shared by every cycle, so the next cycle keeps
+ * it in place rather than duplicating rows. Applicant-side and dated records
+ * stay with the previous cycle. Shared by the server action and the leader UI.
+ */
+export const nextCycleCarriesForward = [
+  "Application questions and form settings",
+  "Rounds and their order",
+  "Rubrics, scoring and screening rules",
+  "Interview kits",
+  "Voting rule defaults",
+  "Decision-letter templates",
+] as const;
+
+export const nextCycleLeavesBehind = [
+  "Applicants, applications, evaluations and notes",
+  "Interview records, bookings and published interview times",
+  "Voting sessions, ballots and decisions",
+  "Letters already sent and audit history",
+  "An application deadline that has already passed (left unset)",
+] as const;
+
+/** Audit action that links a new cycle to the cycle it started from (no schema column). */
+export const START_NEXT_CYCLE_ACTION = "recruitment.cycle.started_from_previous";
+
+/** Applications whose decision is still open; archiving their cycle would stop voting and booking for them. */
+export const undecidedApplicationStatuses = ["SUBMITTED", "IN_REVIEW", "INTERVIEWING"] as const;
+
+/** A passed deadline is not carried into the next cycle: it is left unset for the leader to choose. */
+export function nextCycleDeadline(deadline: Date | null, now: Date): Date | null {
+  return deadline && deadline.getTime() > now.getTime() ? deadline : null;
+}
