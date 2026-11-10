@@ -228,7 +228,7 @@
 .oc-request-field :is(input, textarea, select)[aria-invalid="true"] { border-color: var(--destructive); }
 .oc-request-field-error { color: var(--destructive); font-size: 12px; margin-top: 6px; }
 .oc-request-form #request-contact-note { margin-top: 24px; font-size: 14px; line-height: 1.75; }
-.oc-request-form .oc-request-submit { width: 100%; min-height: 50px; margin-top: 24px; border-radius: 999px; background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); color: var(--oc-glass-cream); }
+.oc-request-form .oc-request-submit { width: 100%; min-height: 50px; margin-top: 24px; border-radius: var(--oc-radius-full); background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); color: var(--oc-glass-cream); }
 .oc-request-form > .oc-public-note { margin-top: 12px; text-align: center; font-size: 12px; }
 .oc-request-error { background: var(--error-subtle); color: var(--destructive); padding: 16px; margin-top: 20px; font-size: 13px; border-radius: var(--oc-glass-row-radius); }
 .oc-request-error > span { display: block; font-size: 12px; margin-top: 6px; }

@@ -2,6 +2,13 @@
 
 Appended by `outclass-release-check`. Newest first.
 
+## 2026-11-09 DB-RECON-1 db/migration-reconciliation (base main 5cbaeb60)
+- Gates: test 1975 total, 1909 pass, 0 fail, 66 skipped (env-gated); test:migrations 73 applied on fresh and legacy, RLS 85 tables, new assertion that `InterviewSlot_clubId_fkey` is validated (fails without the migration); lint 0 errors / 21 warnings; typecheck ok; build ok.
+- Disposable PostgreSQL 16 (loopback, in-container): 72 then 73 migrations from zero on CI-style and Supabase-shaped databases; new migration applied once, repeated as a no-op, and fails cleanly on an orphaned slot (P3009 on the next deploy, documented); production-like ledger (CRLF checksums, zero-step rows) accepted by `migrate status` and `migrate deploy`.
+- Production, read-only catalog queries: 72/72 ledger rows finished, none rolled back; differences listed in `migration-reconciliation-2026-11-09.md`. Nothing written.
+- migration-reviewer: no critical/high; 1 medium fixed (rollback text was wrong about the failed ledger row), 2 low (test assertion added; silent skip when the constraint is absent kept, noted).
+- Environment notes: browser suites ran against the container's Chromium 1243 through a symlink (repo pins 1248). No Docker daemon, so `run-disposable-postgres.cjs`, the pinned Supabase 17 image and the authenticated E2E stack were not run. No PostgreSQL 17 restore rehearsal.
+
 
 2026-11-05 backend/booking-throughput (merge on bd3e12d3) app gates: test 1588/0/58 migrations 67 ok (80 tables RLS) lint ok types ok build ok | integration skips 58 (env-gated e2e/native suites; security suite run separately 11/11, booking+ballot contention 14/0) | agent-hook tests 29/0 | authz-reviewer: no high/medium, LOW-1/LOW-2 fixed before merge
 deploy <pending> | runtime errors <pending> | advisor delta <n/a, no migration> | rollback target: production deploy of bd3e12d3 | verdict <pending>
@@ -153,4 +160,8 @@ deploy dpl_GAbgrcXkPkMfwCRmmJv4QWH6U7yt READY yes | new runtime error classes 0 
 targeted: filter-controls 5/5, filter-controls-browser 1/1 (axe 0), live-applicant-views 35/35, campus-event-discovery + -browser 5/5 on disposable local Postgres 16 (port 55442, migrate deploy, same role setup as run-disposable-postgres.cjs, no Docker)
 real browser (leader/student screen fixtures, Chromium 1243 aliased as 1248): 13 surfaces x 1280/375, filter panels open: 0 viewport overflow, 0 page errors; filter exercise 25/27 (Events fixture does not filter server-side)
 not run: stack-gated e2e (availability-browser, scheduling-quality-browser, operational-dashboards-e2e, demo-browser-e2e) need the Supabase stack; their selectors were updated blind
+```
+2026-11-09 SEC-HEADERS-1 (security/frame-ancestors from main 318b5e31): app gates: test 1990/1923/0 fail/67 skipped (env-gated) lint ok types ok build ok | targeted: frame-ancestors-headers 2/2
+next start (local, no Supabase env): both headers present on / 200, /explore 307, /privacy 404 (rewrite), /preview 404 (middleware), /robots.txt 200, /api/recruiting-resumes 400, /api/club-assets 404, unknown path 404, malformed path 400, /login and /signup 500 (no env)
+not verified: a 200 from club-assets/decision-letter-assets, which set their own Content-Security-Policy
 ```

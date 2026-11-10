@@ -41,6 +41,10 @@ const nextConfig = {
       { source: "/:path*", headers: [
         { key: "X-Content-Type-Options", value: "nosniff" },
         { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        // Pages may be framed only by this origin (the leader workspace frames /api/recruiting-resumes).
+        // X-Frame-Options covers browsers without CSP frame-ancestors support.
+        { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+        { key: "X-Frame-Options", value: "SAMEORIGIN" },
       ] },
       ...privateRoutes.map(route => ({ source: `/${route}/:path*`, headers: noindex })),
       ...["workspace", "tasks"].map(route => ({ source: `/club/:clubId/${route}/:path*`, headers: noindex })),
