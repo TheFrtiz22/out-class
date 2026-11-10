@@ -126,6 +126,7 @@ model Club {
   pipelineVersion Int @default(0)
   isDiscoverable Boolean @default(true)
   invitationEmailEnabled Boolean @default(true)
+  profileFieldVisibility Json? // Leader-facing applicant profile fields; NULL uses defaults (GPA and LinkedIn off). See lib/profile-field-visibility.ts.
   corkboardSaves CorkboardClub[]
   votingSessions VotingSession[]
   schoolId            String           @default("school-uva")

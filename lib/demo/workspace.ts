@@ -38,6 +38,7 @@ import type * as evaluation from "@/actions/evaluations"
 import type * as profile from "@/actions/profile"
 import { demoStore, demoMember, demoUser, joinedApplication, studentApplications, demoDirectory, demoDashboard, demoNotifications, presentDemoMeeting, } from "./store"
 import { readVotingDisplay } from "@/lib/voting-presentation"
+import { normalizeProfileFieldVisibility, sameProfileFieldVisibility, saveProfileFieldVisibilityInput } from "@/lib/profile-field-visibility"
 import { applicationInputSchema, applicationAnswersKey, answerErrors, normalizeApplicationAttachments, assertApplicationAttachmentOwnership } from "@/lib/student-applications"
 import { genderValues, profileSectionSchema } from "@/lib/student-profile"
 import * as api from "@/lib/workspace-api"
@@ -555,6 +556,29 @@ export const cancelInvitationSchedule: Demo<"cancelInvitationSchedule"> = async(
 export const saveAvailabilitySchedule: Demo<"saveAvailabilitySchedule"> = async()=>{throw Error("Availability scheduling is unavailable in Demo.")}
 export const getAvailabilitySchedules: Demo<"getAvailabilitySchedules"> = async()=>{throw Error("Availability scheduling is unavailable in Demo.")}
 export const cancelAvailabilitySchedule: Demo<"cancelAvailabilitySchedule"> = async()=>{throw Error("Availability scheduling is unavailable in Demo.")}
+function demoProfileFieldManager(clubId: string) {
+  const member = demoMember()
+  if (demoStore.get().perspective.role !== "leader" || clubId !== demoStore.get().clubs[0].id || !hasPermission(member, "club.settings")) throw new Error("Settings access changed. Reload before editing.")
+}
+/** The Demo club's profile field choice; same normalization and defaults as live. */
+export function demoProfileFieldVisibility(clubId: string) {
+  return normalizeProfileFieldVisibility(demoStore.get().profileFieldVisibility?.[clubId])
+}
+export const getProfileFieldVisibility: Demo<"getProfileFieldVisibility"> = clubId => {
+  demoProfileFieldManager(clubId)
+  return { fields: demoProfileFieldVisibility(clubId) }
+}
+export const saveProfileFieldVisibility: Demo<"saveProfileFieldVisibility"> = input => {
+  const data = saveProfileFieldVisibilityInput.parse(input)
+  demoProfileFieldManager(data.clubId)
+  const fields = normalizeProfileFieldVisibility(data.fields)
+  demoStore.mutate(s => {
+    const current = normalizeProfileFieldVisibility(s.profileFieldVisibility?.[data.clubId])
+    if (!sameProfileFieldVisibility(current, normalizeProfileFieldVisibility(data.expected)) && !sameProfileFieldVisibility(current, fields)) throw new Error("Profile field settings changed. Reload before editing.")
+    s.profileFieldVisibility = { ...(s.profileFieldVisibility ?? {}), [data.clubId]: fields }
+  })
+  return { fields }
+}
 export const getPipelineSettings: Demo<"getPipelineSettings"> = demoPipeline.getPipelineSettings
 export const savePipelineSettings: Demo<"savePipelineSettings"> = demoPipeline.savePipelineSettings
 export const getPipelineInterviewStatus: Demo<"getPipelineInterviewStatus"> = demoPipeline.getPipelineInterviewStatus
