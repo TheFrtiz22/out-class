@@ -1,5 +1,8 @@
 const fs=require('node:fs'),path=require('node:path'),ts=require('typescript')
 function bundle(entry,mocks={}){
+ // pdf.js is loaded on demand (dynamic import) by résumé previews and pulls in Node-only
+ // canvas bindings; these fixtures never render a PDF, so bundle it as an empty module.
+ mocks={'pdfjs-dist':'module.exports={}',...mocks}
  // Match the QR package's browser entry, as Next's client bundler does. The
  // Node entry imports fs/PNG streams and cannot run inside these browser fixtures.
  const modules=[],ids=new Map()
