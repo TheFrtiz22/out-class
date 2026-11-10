@@ -110,3 +110,10 @@ test("no Tailwind focus utility in source picks a colour other than the ring", (
     if (!/-(ring)(\/\d+)?$/.test(utility)) offenders.push(`${file}: ${utility}`)
   assert.deepEqual(offenders, [], "use outline-ring / ring-ring / border-ring")
 })
+
+test("the interview-kit editor's tabs take their colours from theme tokens, not literals (FE-10)", () => {
+  const css = fs.readFileSync("components/clubs/interview-kit-editor.css", "utf8").replace(/\/\*[\s\S]*?\*\//g, "")
+  assert.deepEqual(css.match(/#[0-9a-fA-F]{3,8}\b|rgba?\(/g) ?? [], [], "no literal colours, so the editor follows the school theme and any dark theme")
+  assert.match(css, /\[data-slot="tabs-trigger"\] \{[^}]*color: var\(--primary\)/)
+  assert.match(css, /\[data-state="active"\] \{ background: var\(--card\); box-shadow: var\(--oc-shadow-surface\); \}/)
+})

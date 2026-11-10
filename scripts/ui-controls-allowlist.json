@@ -15,12 +15,6 @@
   },
   {
    "rule": "css-hex",
-   "file": "components/clubs/interview-kit-editor.css",
-   "max": 4,
-   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
-  },
-  {
-   "rule": "css-hex",
    "file": "components/communications/decision-letter.css",
    "max": 8,
    "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
@@ -142,12 +136,6 @@
   {
    "rule": "css-shadow",
    "file": "components/clubs/club-settings.css",
-   "max": 1,
-   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
-  },
-  {
-   "rule": "css-shadow",
-   "file": "components/clubs/interview-kit-editor.css",
    "max": 1,
    "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
   },
