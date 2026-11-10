@@ -14,9 +14,8 @@ import { hasPermission } from "@/lib/permissions";
 import { anonymousApplicantLabel,type ReviewApplication } from "@/lib/anonymous-review";
 import {selectedVotingDisplay} from "@/lib/voting-slide-fields";
 import { projectApplicantDisplay } from "@/lib/applicant-display";
-import { votingScoreEvidence, type VotingInterviewThought } from "@/lib/voting-interview-evidence";
 import { interviewCapabilities } from "@/lib/interview-access";
-import { demoAuthorizedInterviewRounds,demoInterviewFeedback,demoSubmittedReviews } from "./interview-feedback";
+import { demoRoundScopedEvidence } from "./interview-feedback";
 import { z } from "zod";
 import type * as Final from "@/actions/voting-room-finalization";
 import {votingRecruitmentChange} from "@/lib/voting-finalization";
@@ -134,20 +133,11 @@ function demoPresentation(c:Pick<ReturnType<typeof find>,"state"|"m"|"round"|"cl
    const person=c.state.students.find(p=>p.id===a.studentId)!,app={...a,student:{...person,studentProfile:person.profile},answers:[],evaluations:[],bookings:[]} as unknown as ReviewApplication;
    const opts=roomPresentationSchema.safeParse(c.s.presentationOptions),config=opts.success?roomDisplayConfig(opts.data.fields):{version:1 as const,fields:[]};const base=selectedVotingDisplay(projectApplicantDisplay(app,{...c.round,applicantDisplay:{}},config,[]),opts.success?opts.data.fields:[]);
    const fields=opts.success?opts.data.fields:[],caps=interviewCapabilities(c.m);
-   const allowed=!base.anonymous?demoAuthorizedInterviewRounds(c.state,c.club,c.m,a,a.roundId):[];
-   const reviews=demoSubmittedReviews(c.state,c.club,a,allowed);
-   const thoughts:VotingInterviewThought[]=fields.includes('finalInterviewThoughts')?[...c.state.interviews].sort((a,b)=>+(new Date(b.completedAt||0))-+(new Date(a.completedAt||0))||b.id.localeCompare(a.id)).flatMap(r=>{
-     const round=allowed.find(old=>old.id===r.roundId),evaluation=reviews.find(e=>e.interviewerId===r.interviewerId&&e.roundId===r.roundId),member=c.state.memberships.find(m=>m.id===r.interviewerId&&m.clubId===c.club.id);
-     if(r.applicationId!==a.id||r.clubId!==c.club.id||!r.completedAt||r.anonymousReview||!round||!evaluation||!member||!r.draft.finalInterviewThoughts?.trim())return [];
-     const profile=c.state.students.find(p=>p.id===member.userId)?.profile;
-     return [{id:r.id,roundId:round.id,roundName:round.name,interviewer:profile?`${profile.firstName} ${profile.lastName}`:'Interviewer',text:r.draft.finalInterviewThoughts}];
-   }):[];
    const quote=fields.includes('resumeHighlight')&&!base.anonymous?excerptChoices(c.state,c.m,applicationId).find(q=>q.id===opts.data?.highlights[applicationId]):undefined;
    const canReadResume=!base.anonymous&&(!!quote||caps.moderateResume||c.state.interviewFoundation.assignments.some(g=>g.applicationId===a.id&&g.roundId===a.roundId&&g.memberId===c.m.id&&!g.revokedAt&&caps.participate));
    const highlight=fields.includes('resumeHighlight')&&canReadResume?{resumeHighlight:quote??null}:{};
-   // Same contract as votingSelectedEvidence: the round-scoped section carries its round; the thoughts field keeps only other rounds.
-   const feedback=allowed.length&&fields.includes('finalInterviewThoughts')?demoInterviewFeedback(c.state,c.club,a,allowed,a.roundId,fields.includes('interviewScore')&&interviewCapabilities(demoMember()).readClosing):null;
-   const evidence={...(allowed.length&&fields.includes('interviewScore')?{interviewScore:votingScoreEvidence(allowed,reviews)}:{}),...(allowed.length&&fields.includes('finalInterviewThoughts')?{finalInterviewThoughts:feedback?thoughts.filter(t=>t.roundId!==feedback.roundId):thoughts}:{}),...(feedback?{interviewFeedback:feedback}:{})};
+   // Same contract as votingSelectedEvidence for a voting round: this round only, earlier rounds labelled separately.
+   const evidence=!base.anonymous?demoRoundScopedEvidence(c.state,c.club,c.m,a,fields):{};
    const observations=demoVotingObservations(c.state,{id:c.s.id??'',clubId:c.club.id,startedAt:c.s.startedAt??null},applicationId,c.m.userId,fields.includes('additionalObservations'),base.anonymous);
    return {...base,...observations,photo:base.visible.includes('photo')?person.profile.headshotUrl??null:null,...evidence,...highlight,requestedFields:[...base.visible,...('resumeHighlight'in highlight?['resumeHighlight' as const]:[]),...(evidence.interviewScore?['interviewScore' as const]:[]),...(evidence.finalInterviewThoughts?['finalInterviewThoughts' as const]:[]),...(observations.additionalObservations?['additionalObservations' as const]:[])]};
 }
