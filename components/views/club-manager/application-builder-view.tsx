@@ -15,6 +15,9 @@ import {
   type QuestionDraft,
 } from "@/lib/club-settings";
 import { QuestionField } from "@/components/applications/question-field";
+import { ConditionEditor } from "@/components/applications/condition-editor";
+import { withValidConditions } from "@/lib/club-settings";
+import { questionCondition, visibleQuestionIds } from "@/lib/student-applications";
 import { useAuth } from "@/contexts/auth-context";
 import { useDemoMode } from "@/contexts/demo-context";
 import { Button } from "@/components/ui/button";
@@ -59,6 +62,7 @@ export function ApplicationBuilderView({
     working = useRef(false);
   const snapshot = JSON.stringify({ questions, open, deadline }),
     dirty = loaded && snapshot !== baseline;
+  const previewVisible = visibleQuestionIds(questions, questions.map((q) => ({ questionId: q.id, response: responses[q.id] || "" })));
   useEffect(() => {
     if (!demo.ready || demo.isDemoEnabled || !clubId) return;
     let current = true;
@@ -68,14 +72,15 @@ export function ApplicationBuilderView({
       .then((data) => {
         if (current) {
           const date = localDate(data.applicationDeadline);
+          const loadedQuestions = data.questions.map((q) => ({ ...q, showIf: questionCondition(q.showIf) }));
           setName(data.name);
-          setQuestions(data.questions);
+          setQuestions(loadedQuestions);
           setOpen(data.applicationOpen);
           setDeadline(date);
           setVersion(data.applicationVersion);
           setBaseline(
             JSON.stringify({
-              questions: data.questions,
+              questions: loadedQuestions,
               open: data.applicationOpen,
               deadline: date,
             }),
@@ -111,7 +116,7 @@ export function ApplicationBuilderView({
         next[index + direction],
         next[index],
       ];
-      return next;
+      return withValidConditions(next);
     });
   }
   async function save() {
@@ -269,7 +274,7 @@ export function ApplicationBuilderView({
                             )
                           )
                             setQuestions((items) =>
-                              items.filter((x) => x.id !== q.id),
+                              withValidConditions(items.filter((x) => x.id !== q.id)),
                             );
                         }}
                       >
@@ -296,7 +301,7 @@ export function ApplicationBuilderView({
                           edit(q.id, {
                             type: e.target.value as QuestionDraft["type"],
                             options:
-                              e.target.value === "MULTIPLE_CHOICE" &&
+                              (e.target.value === "MULTIPLE_CHOICE" || e.target.value === "MULTI_SELECT") &&
                               !q.options.length
                                 ? ["Option 1", "Option 2"]
                                 : q.options,
@@ -305,6 +310,7 @@ export function ApplicationBuilderView({
                       >
                         <option value="ESSAY">Written response</option>
                         <option value="MULTIPLE_CHOICE">Multiple choice</option>
+                        <option value="MULTI_SELECT">Select all that apply</option>
                         <option value="FILE_UPLOAD">PDF / document link</option>
                       </NativeSelect>
                     </label>
@@ -338,7 +344,7 @@ export function ApplicationBuilderView({
                       </label>
                     )}
                   </div>
-                  {q.type === "MULTIPLE_CHOICE" && (
+                  {(q.type === "MULTIPLE_CHOICE" || q.type === "MULTI_SELECT") && (
                     <div className="space-y-2">
                       <p className="text-sm">Answer choices</p>
                       {q.options.map((option, i) => (
@@ -389,6 +395,7 @@ export function ApplicationBuilderView({
                       document link. Use their shared profile for a résumé.
                     </p>
                   )}
+                  <ConditionEditor question={q} earlier={questions.slice(0, index)} onChange={(showIf) => edit(q.id, { showIf })} />
                 </fieldset>
               </li>
             ))}
@@ -412,6 +419,7 @@ export function ApplicationBuilderView({
                     required: true,
                     wordLimit: null,
                     options: [],
+                    showIf: null,
                   },
                 ])
               }
@@ -447,7 +455,7 @@ export function ApplicationBuilderView({
             profile.
           </p>
           <div className="space-y-6">
-            {questions.map((q, i) => (
+            {questions.filter((q) => previewVisible.has(q.id)).map((q, i) => (
               <div key={q.id} className="space-y-2">
                 <label
                   className="block text-sm font-medium"
