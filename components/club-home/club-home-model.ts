@@ -18,7 +18,8 @@ export function railHrefs(member: ClubAccess, clubId: string) {
   const href = (id: string) => items.find(item => item.id === id)?.href ?? null
   return {
     applicants: href("applicants"), interviews: href("interviews"), decisions: href("decisions"),
-    meetings: href("meetings"), tasks: href("tasks"), announcements: href("announcements"), members: href("members"),
+    // Calendar filtered to meetings (New meeting adds `&new=1`).
+    meetings: href("calendar") ? `${href("calendar")}&type=meetings` : null, tasks: href("tasks"), announcements: href("announcements"), members: href("members"),
     // The Recruiting Overview; only members with a recruiting tool have one.
     recruiting: items.find(item => item.id === "overview" && item.mode === "recruiting")?.href ?? null,
   }

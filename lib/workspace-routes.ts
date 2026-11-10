@@ -41,8 +41,11 @@ export function canonicalClubWorkspaceQuery(input: URLSearchParams): URLSearchPa
   const section = q.get("section"), tool = q.get("tool")
   let changed = false
   const set = (key: string, value: string | null) => { if (value === null) q.delete(key); else q.set(key, value); changed = true }
-  // Club events have their own section (owner decision 2026-11-05, FE-12); the old Meetings tab redirects there.
-  if (section === "meetings" && q.get("meetingTab") === "events") { set("section", "events"); set("meetingTab", null) }
+  // Meetings and Events are one Calendar with a type filter. The old Meetings → Events tab maps to the Events filter.
+  if (section === "meetings" || section === "events") {
+    const type = section === "events" || q.get("meetingTab") === "events" ? "events" : "meetings"
+    set("section", "calendar"); set("type", type); set("meetingTab", null)
+  }
   if (section === "recruitment") {
     // Configuration moved to Settings.
     if (tool === "cycles") { set("section", "settings"); set("setting", "cycles"); set("tool", null) }
