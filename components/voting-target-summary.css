@@ -5,7 +5,7 @@
 .oc-target-value { font-weight: 600; font-variant-numeric: tabular-nums; }
 .oc-target-progress { font-variant-numeric: tabular-nums; }
 .oc-target-line[data-over] .oc-target-progress strong { color: var(--warning); }
-.oc-target-bar { display: block; flex: 1 1 120px; max-width: 220px; height: 6px; border-radius: 999px; background: var(--muted); overflow: hidden; align-self: center; }
+.oc-target-bar { display: block; flex: 1 1 120px; max-width: 220px; height: 6px; border-radius: var(--oc-radius-full); background: var(--muted); overflow: hidden; align-self: center; }
 .oc-target-bar > span { display: block; height: 100%; background: var(--primary); }
 .oc-target-line[data-over] .oc-target-bar > span { background: var(--warning); }
 .oc-target-note { margin: 0; font-size: .75rem; color: var(--muted-foreground); }
@@ -18,7 +18,7 @@
 .oc-target-figure { display: flex; align-items: baseline; gap: 6px; }
 .oc-target-figure dt { color: var(--muted-foreground); }
 .oc-target-figure dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
-.oc-target-figure[data-band] dt::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 999px; }
+.oc-target-figure[data-band] dt::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: var(--oc-radius-full); }
 .oc-target-figure[data-band="green"] dt::before { background: var(--oc-band-green); }
 .oc-target-figure[data-band="yellow"] dt::before { background: var(--oc-band-yellow); }
 .oc-target-figure[data-band="red"] dt::before { background: var(--oc-band-red); }
