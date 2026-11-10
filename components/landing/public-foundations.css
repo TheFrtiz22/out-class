@@ -20,7 +20,7 @@
 .oc-public-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 16px 28px; margin-top: 32px; }
 .oc-public-actions [data-slot="button"] { min-height: 48px; padding-inline: 24px; }
 /* Primary public CTA (shared Button, size lg): a navy pill that lifts on hover/focus to invite the click. */
-.oc-public-cta { min-height: 52px !important; height: auto; padding-inline: 30px !important; font-size: 16px; font-weight: 600; border-radius: 999px; box-shadow: var(--oc-shadow-surface-hover); transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease; }
+.oc-public-cta { min-height: 52px !important; height: auto; padding-inline: 30px !important; font-size: 16px; font-weight: 600; border-radius: var(--oc-radius-full); box-shadow: var(--oc-shadow-surface-hover); transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease; }
 .oc-public-cta:is(:hover, :focus-visible) { transform: translateY(-2px); box-shadow: var(--oc-shadow-popover); }
 /* Never wider than its column: on very narrow screens (320px, text spacing) the label wraps instead of overflowing. */
 .oc-public-cta { max-width: 100%; white-space: normal; text-align: center; }
