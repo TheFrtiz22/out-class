@@ -22,7 +22,7 @@
 :root :is([data-slot="dialog-title"], [data-slot="sheet-title"]) { font-family: var(--oc-font-display); font-weight: var(--oc-weight-title); font-size: var(--oc-text-modal); }
 [data-product-shell] [data-slot="card"] { border-color: var(--oc-content-edge); border-radius: var(--oc-content-radius); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); }
 [data-product-shell] [data-button] { font-weight: var(--oc-weight-semibold); }
-[data-product-shell] [data-slot="tabs-list"]:not([data-variant="underline"]) { background: var(--oc-content-soft); border-radius: 999px; border: 1px solid var(--oc-content-edge); }
+[data-product-shell] [data-slot="tabs-list"]:not([data-variant="underline"]) { background: var(--oc-content-soft); border-radius: var(--oc-radius-full); border: 1px solid var(--oc-content-edge); }
 [data-product-shell] [data-slot="tabs-trigger"][data-state="active"] { box-shadow: var(--oc-shadow-surface); }
 [data-product-shell] [data-slot="empty-state"][data-tone="subtle"] { background: var(--oc-content-soft); }
 [data-product-shell] table { font-variant-numeric: tabular-nums; }
@@ -96,9 +96,9 @@
 .oc-metric-strip[data-density="roomy"] { padding-block: 1.5rem; margin-block: 1.5rem 2rem; }
 /* SegmentedControl (components/ui/segmented-control.tsx): the workspace pill's 54px glass track. Single-select
    slides a navy indicator (up to four options); more options, or filter chips, fill the selected segment. */
-.oc-segmented-control { --segment-gap: 4px; position: relative; isolation: isolate; display: inline-flex; flex-wrap: nowrap; align-items: stretch; width: fit-content; max-width: 100%; min-height: 54px; gap: var(--segment-gap); padding: 4px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; border: 1px solid var(--oc-glass-light-edge); border-radius: 999px; background: var(--oc-glass-light-material); box-shadow: var(--oc-glass-light-depth); }
+.oc-segmented-control { --segment-gap: 4px; position: relative; isolation: isolate; display: inline-flex; flex-wrap: nowrap; align-items: stretch; width: fit-content; max-width: 100%; min-height: 54px; gap: var(--segment-gap); padding: 4px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; border: 1px solid var(--oc-glass-light-edge); border-radius: var(--oc-radius-full); background: var(--oc-glass-light-material); box-shadow: var(--oc-glass-light-depth); }
 .oc-segmented-control[data-size="compact"] { min-height: 46px; }
-.oc-segmented-control button { position: relative; z-index: 1; flex: 1 0 auto; min-width: max-content; min-height: 44px; padding: .5rem 1rem; border: 0; border-radius: 999px; background: transparent; color: var(--primary); font-size: var(--oc-text-small); font-weight: var(--oc-weight-medium); white-space: nowrap; cursor: pointer; transition: color var(--oc-glass-quick) var(--oc-glass-ease), background-color var(--oc-glass-quick) var(--oc-glass-ease); }
+.oc-segmented-control button { position: relative; z-index: 1; flex: 1 0 auto; min-width: max-content; min-height: 44px; padding: .5rem 1rem; border: 0; border-radius: var(--oc-radius-full); background: transparent; color: var(--primary); font-size: var(--oc-text-small); font-weight: var(--oc-weight-medium); white-space: nowrap; cursor: pointer; transition: color var(--oc-glass-quick) var(--oc-glass-ease), background-color var(--oc-glass-quick) var(--oc-glass-ease); }
 .oc-segmented-control[data-size="compact"] button { min-height: 36px; padding-block: .375rem; }
 .oc-segmented-control button:disabled { cursor: not-allowed; opacity: .5; }
 @media (hover: hover) and (pointer: fine) { .oc-segmented-control button:not([data-selected]):not(:disabled):hover { background: var(--oc-glass-hover-tint); } }
@@ -109,7 +109,7 @@
    aligned when long labels make segments unequal or the track scrolls. Until measured, the selected segment
    paints its own pill. */
 .oc-segmented-control[data-sliding="true"][data-measured="true"] button[data-selected] { background: transparent; box-shadow: none; }
-.oc-segmented-control[data-sliding="true"] .oc-segmented-indicator { position: absolute; z-index: 0; top: 4px; bottom: 4px; left: 0; width: var(--indicator-width, 0px); border: 1px solid var(--oc-glass-pill-navy-edge); border-radius: 999px; background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); transform: translateX(var(--indicator-x, 0px)); transition: transform 420ms var(--oc-glass-ease), width 420ms var(--oc-glass-ease), opacity var(--oc-glass-quick) ease; pointer-events: none; }
+.oc-segmented-control[data-sliding="true"] .oc-segmented-indicator { position: absolute; z-index: 0; top: 4px; bottom: 4px; left: 0; width: var(--indicator-width, 0px); border: 1px solid var(--oc-glass-pill-navy-edge); border-radius: var(--oc-radius-full); background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); transform: translateX(var(--indicator-x, 0px)); transition: transform 420ms var(--oc-glass-ease), width 420ms var(--oc-glass-ease), opacity var(--oc-glass-quick) ease; pointer-events: none; }
 .oc-segmented-control[data-sliding="true"]:not([data-measured="true"]) .oc-segmented-indicator, .oc-segmented-control[data-sliding="true"][data-has-active="false"] .oc-segmented-indicator { opacity: 0; }
 @supports (transition-timing-function: linear(0, 1)) { .oc-segmented-control[data-sliding="true"] .oc-segmented-indicator { transition-timing-function: var(--oc-floating-spring, var(--oc-glass-ease)), var(--oc-floating-spring, var(--oc-glass-ease)), ease; } }
 @media (max-width: 767px) { .oc-segmented-control { width: 100%; } }
@@ -137,7 +137,7 @@
 .oc-status-label { display: inline-flex; align-items: center; gap: .375rem; border: 0; border-inline-start: 2px solid var(--badge-accent, var(--border)); border-radius: 0; background: transparent; color: inherit; padding: .125rem .5rem; font-size: var(--oc-text-caption); font-weight: 500; line-height: 1.4; }
 /* Badges: glass tints from the semantic tokens (docs/design-system.md). Layered so utilities still win. */
 @layer components {
-  [data-slot="badge"] { --badge-tint: var(--secondary); --badge-ink: var(--secondary-foreground); gap: .375rem; border: 1px solid color-mix(in srgb, var(--badge-ink) 16%, transparent); border-radius: 999px; background: var(--oc-glass-tint-sheen), var(--badge-tint); color: var(--badge-ink); padding: .125rem .5rem; font-size: var(--oc-text-caption); font-weight: var(--oc-weight-semibold); line-height: 1.4; box-shadow: var(--oc-glass-tint-highlight); }
+  [data-slot="badge"] { --badge-tint: var(--secondary); --badge-ink: var(--secondary-foreground); gap: .375rem; border: 1px solid color-mix(in srgb, var(--badge-ink) 16%, transparent); border-radius: var(--oc-radius-full); background: var(--oc-glass-tint-sheen), var(--badge-tint); color: var(--badge-ink); padding: .125rem .5rem; font-size: var(--oc-text-caption); font-weight: var(--oc-weight-semibold); line-height: 1.4; box-shadow: var(--oc-glass-tint-highlight); }
   [data-slot="badge"][data-variant="success"] { --badge-tint: var(--success-subtle); --badge-ink: var(--success); }
   [data-slot="badge"][data-variant="destructive"] { --badge-tint: var(--error-subtle); --badge-ink: var(--destructive); }
   [data-slot="badge"][data-variant="warning"] { --badge-tint: var(--warning-subtle); --badge-ink: var(--warning); }
@@ -156,7 +156,7 @@
   [data-product-shell] .oc-inbox-workspace [aria-label="Notification list"] section h3 { color: var(--foreground); font-family: var(--oc-font-sans); font-size: 1rem; font-weight: var(--oc-weight-semibold); letter-spacing: 0; text-transform: none; }
 
   /* Calendar: a Filter button opens search, type and the past/declined toggles. */
-  .oc-calendar-filter-toggle { display: inline-flex !important; align-self: flex-start; min-height: 44px; border-radius: 999px; }
+  .oc-calendar-filter-toggle { display: inline-flex !important; align-self: flex-start; min-height: 44px; border-radius: var(--oc-radius-full); }
   .oc-calendar-filter-toggle[aria-expanded="true"] { background: var(--oc-glass-pill-navy, var(--primary)); color: var(--oc-glass-cream); }
   .oc-calendar-tools:not([data-phone-open]) { display: none; }
 

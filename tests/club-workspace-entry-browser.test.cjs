@@ -18,6 +18,8 @@ test('browser: workspace entry, explicit choices, club changes and history stay 
   // The persistent shell (as app/(workspace)/layout.tsx mounts it) wraps the workspace page.
   for (const real of ['workspace-shell', 'workspace-shell-context', 'shell-state']) delete mocks['@/components/shell/' + real];
   delete mocks['@/components/auth-session-boundary'];
+  // The shell renders route children through the real pass-through guard (react#35494); a stub would drop the page.
+  delete mocks['@/components/route-content'];
   delete mocks['@/components/shell/use-workspace-access'];
   delete mocks['@/components/shell/workspace-selector'];
   // The real rail: Recruiting and Club are its sections, and the active item follows the URL.
