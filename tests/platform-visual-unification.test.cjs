@@ -16,7 +16,7 @@ test("authenticated surfaces share a restrained material vocabulary distinct fro
   }
   assert.match(primitives, /\[data-product-shell\] \[data-slot="card"\][^\n]+--oc-content-radius/)
   assert.match(primitives, /\.oc-metric-strip > div \{[^\n]+--oc-content-surface/)
-  assert.match(primitives, /\.oc-segmented-control \{[^\n]+border-radius: 999px/)
+  assert.match(primitives, /\.oc-segmented-control \{[^\n]+border-radius: (?:999px|var\(--oc-radius-full\))/)
   assert.match(navigation, /--oc-glass-light-material/)
   assert.doesNotMatch(tokens, /backdrop-filter\s*:/, "scrolling content tokens must not add glass blur")
 })

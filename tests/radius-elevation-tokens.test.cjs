@@ -48,3 +48,18 @@ test("component CSS uses the scale: no literal radius outside it except document
   // makes the bar taller (a full radius would turn it into an oval).
   assert.deepEqual(literals, ["components/landing/public-navigation.css: 34px", "components/landing/public-navigation.css: 34px"])
 })
+
+test("browser: the projector theme resolves every surface-shadow alias to the solid level, the app to the glass depth", async () => {
+  const { chromium } = require("playwright")
+  const css = ["styles/navigation-glass.css", "styles/tokens.css"].map(file => fs.readFileSync(file, "utf8")).join("\n")
+  const browser = await chromium.launch({ headless: true, ...(fs.existsSync(chromium.executablePath()) ? {} : { channel: "chrome" }) })
+  try {
+    const page = await browser.newPage()
+    await page.setContent(`<style>${css}</style><div id="app"></div><div data-theme="present"><div id="projector"></div></div>`)
+    const read = id => page.evaluate(id => { const s = getComputedStyle(document.getElementById(id)); return ["--oc-elevation-surface", "--oc-content-shadow", "--oc-shadow-surface", "--oc-content-shadow-solid", "--oc-surface-glass-depth"].map(name => s.getPropertyValue(name).trim()) }, id)
+    const [app, projector] = [await read("app"), await read("projector")]
+    assert.ok(app[0] && app[0] === app[1] && app[1] === app[2], "app: surface level and both aliases agree")
+    assert.equal(app[0], app[4], "app: the surface level is the glass depth")
+    assert.deepEqual(projector.slice(0, 3), [projector[3], projector[3], projector[3]], "projector: the level and both aliases are the solid shadow")
+  } finally { await browser.close() }
+})

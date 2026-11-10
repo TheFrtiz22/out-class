@@ -240,6 +240,9 @@
   --oc-content-edge: #2c4257;
   /* The live voting slide stays solid: no glass highlight on the projector. */
   --oc-elevation-surface: var(--oc-content-shadow-solid);
+  /* Aliases resolve where they are declared, so redeclare them in this scope to pick up the solid level. */
+  --oc-content-shadow: var(--oc-elevation-surface);
+  --oc-shadow-surface: var(--oc-elevation-surface);
 }
 
 /* Another school's colours override only the school layer. Set data-school on <html>: the semantic tokens
