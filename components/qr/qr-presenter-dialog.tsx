@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { Check, Copy, Download, Maximize2, Minimize2 } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,11 +26,38 @@ export interface QrPresenterDialogProps {
   filename?: string;
   /** Accessible label for the QR image itself. */
   ariaLabel?: string;
-  /** Custom trigger element (rendered with asChild). Defaults to a "Present" button. */
-  trigger?: ReactNode;
+  /**
+   * Custom trigger element (rendered with asChild). Defaults to a "Present" button.
+   * Pass `false` for a controlled dialog opened from elsewhere (e.g. `QrPresentButton`)
+   * that must stay mounted while that button unmounts; focus still returns to it.
+   */
+  trigger?: ReactNode | false;
   /** Controlled open state (optional). */
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /** The current code is not valid yet: keep the dialog open and show a calm waiting state. */
+  refreshing?: boolean;
+  /** Why the last refresh failed, shown with a retry while `refreshing`. */
+  error?: string;
+  onRetry?: () => void;
+}
+
+const DEFAULT_SCAN_LINE = "Scan with your phone camera.";
+const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
+
+/** The standard "Present" trigger, for callers that open a controlled QrPresenterDialog. */
+export function QrPresentButton({ className, ...props }: ComponentProps<typeof Button>) {
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      className={`h-9 gap-1.5 border-border text-xs text-foreground shadow-none hover:bg-muted ${className ?? ""}`}
+      {...props}
+    >
+      <Maximize2 className="size-3.5" />
+      Present
+    </Button>
+  );
 }
 
 /** Readable form of a link for a projector: no scheme, no trailing slash. */
@@ -69,6 +96,9 @@ export function QrPresenterDialog({
   trigger,
   open: openProp,
   onOpenChange,
+  refreshing = false,
+  error,
+  onRetry,
 }: QrPresenterDialogProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const open = openProp ?? uncontrolledOpen;
@@ -78,6 +108,8 @@ export function QrPresenterDialog({
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const returnFocus = useRef<HTMLElement | null>(null);
   const size = useViewportQrSize(open);
   const label = ariaLabel || `QR code for ${title}`;
 
@@ -96,6 +128,16 @@ export function QrPresenterDialog({
       return "";
     }
   }, [value, title, label]);
+
+  useEffect(() => () => {
+    if (copiedTimer.current) clearTimeout(copiedTimer.current);
+  }, []);
+
+  // Remember what opened the dialog before Radix moves focus into it, so focus
+  // returns there even when the dialog has no DialogTrigger (trigger={false}).
+  useIsomorphicLayoutEffect(() => {
+    if (open && typeof document !== "undefined") returnFocus.current = document.activeElement as HTMLElement | null;
+  }, [open]);
 
   const exitFullscreen = useCallback(() => {
     if (typeof document !== "undefined" && document.fullscreenElement) {
@@ -141,7 +183,8 @@ export function QrPresenterDialog({
       await navigator.clipboard.writeText(value);
       setCopied(true);
       setMessage("Link copied.");
-      setTimeout(() => setCopied(false), 2000);
+      if (copiedTimer.current) clearTimeout(copiedTimer.current);
+      copiedTimer.current = setTimeout(() => setCopied(false), 2000);
     } catch {
       setMessage("Could not copy automatically. Copy the link shown above.");
     }
@@ -166,33 +209,51 @@ export function QrPresenterDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger ?? (
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={!value}
-            className="h-9 gap-1.5 border-border text-xs text-foreground shadow-none hover:bg-muted"
-          >
-            <Maximize2 className="size-3.5" />
-            Present
-          </Button>
-        )}
-      </DialogTrigger>
+      {trigger !== false && (
+        <DialogTrigger asChild>{trigger ?? <QrPresentButton disabled={!value} />}</DialogTrigger>
+      )}
       <DialogContent
         ref={contentRef}
         data-qr-presenter=""
-        className="flex h-[calc(100dvh-1rem)] max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] flex-col items-center justify-center gap-4 overflow-y-auto border-border bg-white p-4 text-center text-foreground sm:max-w-[calc(100vw-1rem)] sm:p-8 motion-reduce:animate-none [&:fullscreen]:h-screen [&:fullscreen]:max-h-none [&:fullscreen]:w-screen [&:fullscreen]:max-w-none [&:fullscreen]:rounded-none [&:fullscreen]:border-0"
+        overlayClassName="oc-qr-presenter-overlay"
+        onCloseAutoFocus={(event) => {
+          const target = returnFocus.current;
+          if (target && target !== document.body && target.isConnected) {
+            event.preventDefault();
+            target.focus();
+          }
+        }}
+        className="oc-qr-presenter flex h-[calc(100dvh-1rem)] max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] flex-col items-center justify-center gap-4 overflow-y-auto border-border bg-white p-4 text-center text-foreground sm:max-w-[calc(100vw-1rem)] sm:p-8 [&:fullscreen]:h-screen [&:fullscreen]:max-h-none [&:fullscreen]:w-screen [&:fullscreen]:max-w-none [&:fullscreen]:rounded-none [&:fullscreen]:border-0"
       >
         <div className="min-w-0 max-w-4xl">
           <DialogTitle className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-4xl">
             {title}
           </DialogTitle>
-          <DialogDescription className={description ? "mt-2 text-base text-muted-foreground" : "sr-only"}>
-            {description || "Scan the QR code with a phone camera."}
+          <DialogDescription className="mt-2 text-base text-muted-foreground">
+            {description || DEFAULT_SCAN_LINE}
           </DialogDescription>
         </div>
 
+        {refreshing ? (
+          <div
+            data-qr-refreshing=""
+            className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-white p-8"
+            style={{ width: size, height: size }}
+          >
+            <p role="status" className="text-lg font-medium text-foreground">Refreshing code…</p>
+            {error && (
+              <>
+                <p role="alert" className="max-w-sm text-sm text-muted-foreground">{error}</p>
+                {onRetry && (
+                  <Button variant="outline" size="sm" onClick={onRetry} className={actionClass}>
+                    Try again
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
+        ) : (
+        <>
         <OutClassQRCode
           value={value}
           size={size}
@@ -243,7 +304,6 @@ export function QrPresenterDialog({
             <Button
               variant="outline"
               size="sm"
-              aria-pressed={isFullscreen}
               onClick={toggleFullscreen}
               className={actionClass}
             >
@@ -252,6 +312,8 @@ export function QrPresenterDialog({
             </Button>
           )}
         </div>
+        </>
+        )}
 
         <p role="status" aria-live="polite" className="min-h-5 text-sm text-muted-foreground">
           {message}
