@@ -110,7 +110,10 @@ export default async function RootLayout({
           </AuthProvider>
           <Toaster />
           {process.env.VERCEL && <><Analytics /><SpeedInsights /></>}
-          {process.env.NODE_ENV === "production" && !demoEnabled && !cookieStore.has(PLATFORM_VIEW_COOKIE) && <ServiceWorkerRegistration />}
+          {/* Kill switch (docs/service-worker.md): OUTCLASS_SERVICE_WORKER=off unregisters instead of registering. */}
+          {process.env.NODE_ENV === "production" && (process.env.OUTCLASS_SERVICE_WORKER === "off"
+            ? <ServiceWorkerRegistration disabled />
+            : !demoEnabled && !cookieStore.has(PLATFORM_VIEW_COOKIE) && <ServiceWorkerRegistration />)}
         </DemoDataProvider>
       </body>
     </html>

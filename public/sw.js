@@ -37,26 +37,36 @@ self.addEventListener("fetch", event => {
   if (url.origin !== self.location.origin) return
 
   if (url.pathname.startsWith("/_next/static/")) {
-    event.respondWith(cacheFirst(request))
+    event.respondWith(cacheFirst(event))
     return
   }
 
-  // Page navigations go to the network as usual and are never cached; only a network failure
-  // shows the static offline page. A path with a file extension is a download (.ics, .csv, …).
+  // Page navigations go to the network as usual and are never cached. Only a real network failure
+  // (offline, or fetch's TypeError) shows the static offline page; an aborted navigation is a
+  // DOMException and passes through. A path with a file extension is a download (.ics, .csv, …).
   if (request.mode === "navigate" && !BYPASS_NAVIGATION.test(url.pathname) && !/\.[a-z0-9]+$/i.test(url.pathname)) {
-    event.respondWith(fetch(request).catch(() => caches.match(OFFLINE_URL, { cacheName: OFFLINE_CACHE }).then(response => response || Response.error())))
+    event.respondWith(fetch(request).catch(error => {
+      if (self.navigator.onLine !== false && !(error instanceof TypeError)) throw error
+      return caches.match(OFFLINE_URL, { cacheName: OFFLINE_CACHE }).then(response => response || Response.error())
+    }))
   }
 })
 
-async function cacheFirst(request) {
-  const cache = await caches.open(STATIC_CACHE)
-  const cached = await cache.match(request)
-  if (cached) return cached
+// The network response is always returned: a cache that fails to open, match or store never
+// breaks the asset. Only full 200 responses are stored (never a 206 range response).
+async function cacheFirst(event) {
+  const request = event.request
+  let cache = null
+  try {
+    cache = await caches.open(STATIC_CACHE)
+    const cached = await cache.match(request)
+    if (cached) return cached
+  } catch { cache = null }
   const response = await fetch(request)
   const cacheControl = response.headers.get("cache-control") || ""
-  if (response.ok && response.type === "basic" && !/no-store|private/i.test(cacheControl)) {
-    await cache.put(request, response.clone())
-    trim(cache)
+  if (cache && response.status === 200 && response.type === "basic" && !/no-store|private/i.test(cacheControl)) {
+    const copy = response.clone()
+    event.waitUntil(Promise.resolve().then(() => cache.put(request, copy)).then(() => trim(cache)).catch(() => {}))
   }
   return response
 }
