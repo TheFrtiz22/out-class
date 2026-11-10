@@ -36,6 +36,7 @@ function ensureCurrentWorkflows(value: DemoState) {
   value.interviewRooms ??= []
   value.roomBookings ??= []
   value.applicantDisplay ??= {}
+  value.profileFieldVisibility ??= {}
   value.corkboard ??= value.clubs.slice(1, 3).map(club => ({ clubId: club.id, savedAt: new Date(`${value.anchor}T12:00:00Z`) }))
   value.votingSessions ??= []
   value.votingAudit ??= []

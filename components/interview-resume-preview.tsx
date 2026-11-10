@@ -5,7 +5,7 @@ import type { InterviewResumeResource } from "@/lib/interview-resume-resource";
 import { resumePreviewGesture } from "@/lib/resume-preview-gesture";
 
 /** Shares the current authorized document's PDF; never obtains a caller-supplied URL. */
-export default function InterviewResumePreview({ resource, name, onExpand, focusRef }: { resource: InterviewResumeResource; name: string; onExpand?: (page: number) => void; focusRef?: React.RefObject<HTMLDivElement | null> }) {
+export default function InterviewResumePreview({ resource, name, onExpand, focusRef, unavailableText = "Preview unavailable. Use Expand résumé to view or download the document." }: { resource: InterviewResumeResource; name: string; onExpand?: (page: number) => void; focusRef?: React.RefObject<HTMLDivElement | null>; unavailableText?: string }) {
   const host = useRef<HTMLDivElement>(null), gesture = useMemo(resumePreviewGesture, []);
   const [error, setError] = useState(false), [ready, setReady] = useState(false), [revision, setRevision] = useState(0);
   useEffect(() => resource.subscribe(event => { if (event === "invalidated") { setReady(false); setRevision(v => v + 1); } }), [resource]);
@@ -68,7 +68,7 @@ export default function InterviewResumePreview({ resource, name, onExpand, focus
   }, [resource, revision]);
   return <div className="oc-resume-mini">
     {!ready && !error && <LoadingState label="Loading résumé…" layout="inline" rows={3} />}
-    {error && <p role="status">Preview unavailable. Use Expand résumé to view or download the document.</p>}
+    {error && <p role="status">{unavailableText}</p>}
     {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- The read-only region scrolls; the button variant handles Enter/Space. */}
     <div ref={element => { host.current = element; if (focusRef) focusRef.current = element; }} className="oc-resume-preview" role={onExpand ? "button" : "region"} aria-label={`${name} résumé preview. Scroll to read all pages.${onExpand ? " Press Enter to expand." : ""}`} tabIndex={0}
       onKeyDown={event => { if (onExpand && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); onExpand(1) } }}

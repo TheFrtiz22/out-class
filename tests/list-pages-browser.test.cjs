@@ -78,9 +78,9 @@ test('browser: every list keeps a visible sort, one-line rows or two-line cards,
   await page.keyboard.press('Escape'); await dialog.waitFor({ state: 'hidden' })
   // The sort chosen in the URL is still applied after a reload.
   assert.match(page.url(), /sort=name&order=asc|tool=applicants$/)
-  await page.goto(fixtures.leader.url('section=recruitment&tool=applicants&sort=gpa&order=desc')); await page.locator('main h1').first().waitFor()
-  assert.equal(await page.getByRole('columnheader', { name: /^Sort by GPA/ }).getAttribute('aria-sort'), 'descending')
-  assert.match(await page.getByRole('combobox', { name: 'Sort applicants by' }).innerText(), /GPA/)
+  await page.goto(fixtures.leader.url('section=recruitment&tool=applicants&sort=score&order=desc')); await page.locator('main h1').first().waitFor()
+  assert.equal(await page.getByRole('columnheader', { name: /^Sort by Rating/ }).getAttribute('aria-sort'), 'descending')
+  assert.match(await page.getByRole('combobox', { name: 'Sort applicants by' }).innerText(), /Rating/)
 
   // A rail tooltip that is open when the review opens closes and never sits above the dialog.
   await page.locator('aside.oc-expanding-dock a, aside.oc-expanding-dock button').filter({ visible: true }).nth(2).hover(); await page.waitForTimeout(600)

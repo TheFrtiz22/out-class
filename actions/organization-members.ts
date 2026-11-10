@@ -2,6 +2,7 @@
 import { memberGroupSplitSchema, planMemberGroups } from "@/lib/member-groups";
 import { revokeClubInvitations } from "@/utils/revoke-club-invitations";
 import { memberAcademicProfile } from "@/lib/recruitment-profile";
+import { normalizeProfileFieldVisibility, restrictProfileFields } from "@/lib/profile-field-visibility";
 
 import { lockSchedulingPeople } from "@/utils/panel-publication";
 import { assertOfficialPanelConflicts } from "@/utils/official-panel-conflicts";
@@ -148,13 +149,15 @@ export async function getOrganizationMemberManagement(clubId: string) {
   const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
     const actor = await actorFor(tx, clubId, user.id, false);
-    const club = await tx.club.findUniqueOrThrow({ where: { id: clubId }, select: { schoolId: true } });
+    const club = await tx.club.findUniqueOrThrow({ where: { id: clubId }, select: { schoolId: true, profileFieldVisibility: true } });
+    // Roster identity (name, email), roles and permissions stay; academic fields follow the club's profile setting.
+    const profileFields = normalizeProfileFieldVisibility(club.profileFieldVisibility);
     const [members, invitations, identifierTypes] = await Promise.all([
       tx.clubMember.findMany({ where: { clubId }, include: { user: { select: { email: true, disabledAt: true, studentProfile: { select: { firstName: true, lastName: true, major: true, gradYear: true, transferStudent: true } } } } }, orderBy: { joinedAt: "asc" } }),
       tx.clubInvitation.findMany({ where: { clubId }, select: { id: true, email: true, invitedName: true, invitedYear: true, requestedRole: true, permissions: true, status: true, expiresAt: true, schoolIdentity: { select: { normalizedIdentifier: true } }, deliveries: { select: { status: true, createdAt: true, failureCode: true }, orderBy: { createdAt: "desc" }, take: 1 } }, orderBy: { createdAt: "desc" } }),
       tx.schoolIdentifierType.findMany({ where: { schoolId: club.schoolId, school: { active: true }, verification: "EMAIL_LOCAL_PART" }, select: { id: true, label: true }, orderBy: { id: "asc" } }),
     ]);
-    return { actor, members: members.map(m => ({ ...m, user: { ...m.user, studentProfile: m.user.studentProfile ? memberAcademicProfile(m.user.studentProfile) : null } })), invitations, identifierTypes };
+    return { actor, profileFields, members: members.map(m => ({ ...m, user: { ...m.user, studentProfile: m.user.studentProfile ? restrictProfileFields(memberAcademicProfile(m.user.studentProfile), profileFields) : null } })), invitations, identifierTypes };
   });
 }
 

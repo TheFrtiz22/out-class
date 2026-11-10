@@ -4,6 +4,7 @@ import { prepareVerifiedSchoolAccount } from "@/utils/school-identity";
 import { revokeClubInvitations } from "@/utils/revoke-club-invitations";
 import { respondToRecruitmentOffer } from "@/utils/recruitment-offers";
 import { memberAcademicProfile } from "@/lib/recruitment-profile";
+import { rosterMembers } from "@/lib/profile-field-visibility";
 
 import { lockOperationalClub } from "@/lib/club-suspension";
 
@@ -30,10 +31,10 @@ const invitationSchema = z.object({
 export async function getClubAccess(clubId: string) {
   await requireClubPermission(clubId, ["leaders.manage"]);
   return {
-    members: (await prisma.clubMember.findMany({
+    members: rosterMembers((await prisma.clubMember.findMany({
       where: { clubId },
-      include: { user: { select: { email: true, studentProfile: { select: { firstName: true, lastName: true, major: true, gradYear: true, transferStudent: true } } } } },
-    })).map(m => ({ ...m, user: { ...m.user, studentProfile: m.user.studentProfile ? memberAcademicProfile(m.user.studentProfile) : null } })),
+      include: { club: { select: { profileFieldVisibility: true } }, user: { select: { email: true, studentProfile: { select: { firstName: true, lastName: true, major: true, gradYear: true, transferStudent: true } } } } },
+    })).map(m => ({ ...m, user: { ...m.user, studentProfile: m.user.studentProfile ? memberAcademicProfile(m.user.studentProfile) : null } }))),
     invitations: await prisma.clubInvitation.findMany({
       where: {
         clubId,
@@ -267,11 +268,11 @@ export async function revokeClubInvitation(
 
 export async function getClubMembers(clubId: string) {
   await requireClubPermission(clubId, ["members.manage"]);
-  return (await prisma.clubMember.findMany({
+  return rosterMembers((await prisma.clubMember.findMany({
     where: { clubId },
-    include: { user: { select: { email: true, studentProfile: { select: { firstName: true, lastName: true, major: true, gradYear: true, transferStudent: true } } } } },
+    include: { club: { select: { profileFieldVisibility: true } }, user: { select: { email: true, studentProfile: { select: { firstName: true, lastName: true, major: true, gradYear: true, transferStudent: true } } } } },
     orderBy: { id: "asc" },
-  })).map(m => ({ ...m, user: { ...m.user, studentProfile: m.user.studentProfile ? memberAcademicProfile(m.user.studentProfile) : null } }));
+  })).map(m => ({ ...m, user: { ...m.user, studentProfile: m.user.studentProfile ? memberAcademicProfile(m.user.studentProfile) : null } })));
 }
 export async function addClubMember(clubId: string, email: string) {
   const parsed = z

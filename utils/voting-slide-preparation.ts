@@ -6,6 +6,7 @@ import {formatAverage} from "@/lib/interview-review-summary";
 import {votingInterviewEvidence,votingHighlightChoices} from "@/utils/voting-room-presentation";
 import {authorizeObservation,listObservations} from "@/utils/additional-observations";
 import {storedHighlights,type SlideSource,type StoredSlideHighlight} from "@/lib/voting-slide-preparation";
+import {allowedByProfileCeiling,normalizeProfileFieldVisibility} from "@/lib/profile-field-visibility";
 
 /** Profile/application fields that may be quoted. Gender and legacy reviewer
  * pros/cons/feedback/score are deliberately excluded. */
@@ -15,12 +16,14 @@ export function sourceVersion(text:string){return createHash("sha256").update(te
 function source(s:Omit<SlideSource,"version">):SlideSource{return {...s,version:sourceVersion(s.text)};}
 
 /** Profile fields a slide may cite: the preparation set limited to the round's
- * own applicant display configuration (defaults include every listed field). */
+ * own applicant display configuration (defaults include every listed field) and
+ * the club's applicant profile setting, which is the ceiling. */
 export async function roundProfileFields(tx:AppTransactionClient,clubId:string,roundId:string):Promise<string[]>{
-  const round=await tx.pipelineRound.findFirst({where:{id:roundId,clubId},select:{applicantDisplay:true}});
+  const round=await tx.pipelineRound.findFirst({where:{id:roundId,clubId},select:{applicantDisplay:true,club:{select:{profileFieldVisibility:true}}}});
+  const ceiling=normalizeProfileFieldVisibility(round?.club?.profileFieldVisibility);
   let fields:readonly string[]=defaultDisplayConfig.fields;
   try{fields=readDisplayConfig(round?.applicantDisplay??{}).fields;}catch{fields=defaultDisplayConfig.fields;}
-  return preparationProfileFields.filter(f=>fields.includes(f));
+  return preparationProfileFields.filter(f=>fields.includes(f)&&allowedByProfileCeiling(f,ceiling));
 }
 function denied(e:unknown){return e instanceof Error&&/unavailable|required|denied/i.test(e.message);}
 

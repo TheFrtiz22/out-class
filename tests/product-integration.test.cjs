@@ -203,7 +203,7 @@ test('browser-origin Demo projection has one résumé link and a working photo U
 
 test('Demo voting setup → QR-scoped member join → synchronized voting → multiple passes → publish → reset stays isolated',async()=>{
  const h=setup(),state=h.store.get(),clubId=state.clubs[0].id,leader=state.memberships.find(m=>m.clubId===clubId&&m.role==='PRESIDENT'),member=state.memberships.find(m=>m.clubId===clubId&&m.id!==leader.id);
- h.store.mutate(s=>{s.perspective.role='leader'});
+ h.store.mutate(s=>{s.perspective.role='leader';s.profileFieldVisibility={...s.profileFieldVisibility,[clubId]:{...s.profileFieldVisibility?.[clubId],gpa:true}}});
  const pool=state.applications.filter(a=>a.clubId===clubId&&a.status==='INTERVIEWING'),roundId=pool[0].roundId,candidates=pool.filter(a=>a.roundId===roundId).slice(0,2);
  const initial=structuredClone(state),config={version:1,fields:['name','photo','gpa','act','resume']};
  const id=await h.api.createVotingSession({clubId,roundId,applicationIds:candidates.map(a=>a.id),participantIds:[leader.id],targetSize:1,displayConfig:config});

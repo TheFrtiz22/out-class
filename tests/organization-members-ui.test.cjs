@@ -73,3 +73,18 @@ test('groups are behind a focused creation action rather than a permanent assign
  const restore=setupWindow();try{const directory=fixture();const h=harness({getOrganizationMemberManagement:async()=>directory});h.render();await h.flush();const tree=h.render(),builder=nodes(tree).find(n=>n.type==='MemberGroupBuilder');assert.ok(builder);assert.equal(builder.props.clubId,'club');assert.deepEqual(builder.props.members,directory.members);assert.equal(nodes(tree).some(n=>n.props?.['aria-label']==='Assign member groups'),false);assert.equal(button(tree,'Select matching members'),undefined);
  }finally{restore()}
 });
+
+test('roster Year column, filter and detail follow the club profile setting; identity, role and access stay',async()=>{
+ const restore=setupWindow();try{
+  const render=async profileFields=>{const h=harness({getOrganizationMemberManagement:async()=>({...fixture(),...(profileFields?{profileFields}:{})})});h.render();await h.flush();return h.render();};
+  const yearFilter=tree=>nodes(tree).some(n=>n.props?.label==='Filter members by year'||n.props?.['aria-label']==='Filter members by year');
+  const yearShown=tree=>yearFilter(tree)||nodes(tree).some(n=>n.props?.['data-label']==='Year');
+  assert.equal(yearShown(await render()),true,'older payloads without the setting keep the column');
+  assert.equal(yearShown(await render({academicYear:true,major:true})),true);
+  assert.equal(yearFilter(await render({academicYear:true,major:true})),true,'control: the year PillGroup renders when class year is shown');
+  const hidden=await render({academicYear:false,major:false});
+  assert.equal(yearShown(hidden),false,'no Year column or filter when the club hides class year');
+  const text=JSON.stringify(hidden);
+  for(const kept of ['owner@virginia.edu','Role','Status','Owner'])assert.ok(text.includes(kept),kept);
+ }finally{restore();}
+});

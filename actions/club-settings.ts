@@ -11,6 +11,7 @@ import {
   applicationSettingsSchema,
   pipelineSettingsSchema,
 } from "@/lib/club-settings";
+import { normalizeProfileFieldVisibility, sameProfileFieldVisibility, saveProfileFieldVisibilityInput } from "@/lib/profile-field-visibility";
 import { revalidatePath, revalidateTag } from "next/cache";
 async function authorize(
   tx: AppTransactionClient,
@@ -379,4 +380,32 @@ export async function saveClubPreferences(input: unknown) {
     });
   });
   invalidate(data.clubId);
+}
+
+/** The club's leader-facing applicant profile fields, normalized to the shared defaults. */
+export async function getProfileFieldVisibility(clubId: string) {
+  z.string().uuid().parse(clubId);
+  await requireClubPermission(clubId, ["club.settings"]);
+  const club = await prisma.club.findUniqueOrThrow({ where: { id: clubId }, select: { profileFieldVisibility: true } });
+  return { fields: normalizeProfileFieldVisibility(club.profileFieldVisibility) };
+}
+
+export async function saveProfileFieldVisibility(input: unknown) {
+  const data = saveProfileFieldVisibilityInput.parse(input);
+  const { user } = await requireClubPermission(data.clubId, ["club.settings"]);
+  const fields = normalizeProfileFieldVisibility(data.fields);
+  await prisma.$transaction(async (tx) => {
+    await authorize(tx, data.clubId, user.id, "club.settings");
+    const club = await tx.club.findUniqueOrThrow({ where: { id: data.clubId }, select: { profileFieldVisibility: true } });
+    const current = normalizeProfileFieldVisibility(club.profileFieldVisibility);
+    // An identical retry is accepted; a change made by another leader since loading is not.
+    if (!sameProfileFieldVisibility(current, normalizeProfileFieldVisibility(data.expected)) && !sameProfileFieldVisibility(current, fields))
+      throw new Error("Profile field settings changed. Reload before editing.");
+    await tx.club.update({ where: { id: data.clubId }, data: { profileFieldVisibility: fields } });
+    await tx.auditLog.create({
+      data: { actorId: user.id, action: "club.profile_fields.configure", targetId: data.clubId, clubId: data.clubId, details: fields },
+    });
+  });
+  invalidate(data.clubId);
+  return { fields };
 }

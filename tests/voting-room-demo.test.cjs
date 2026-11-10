@@ -14,7 +14,7 @@ test('isolated live-room Demo prepares, joins, votes, changes, refreshes and ret
  const leader=s.memberships.find(m=>m.clubId===clubId&&m.isOwner),voter=s.memberships.find(m=>m.clubId===clubId&&!m.isOwner);
  demoStore.mutate(s=>s.memberships.find(m=>m.id===voter.id).permissions.push('decisions.vote'));
  const api=h.load('lib/voting-room-api.ts'),setup=await api.getLiveVotingSetup({clubId,roundId,cycleId:clubId});assert.ok(setup.applicants.length);
- const sessionId=crypto.randomUUID(),scope={clubId,sessionId};await api.createLiveVotingRoom({...scope,cycleId:clubId,roundId,targetSize:null,applicationIds:setup.applicants.slice(0,2).map(a=>a.id),leaderMemberIds:[leader.id],participantIds:[leader.id,voter.id],presentationOptions:{fields:['name','gpa','interviewScore'],highlights:{}}});
+ const sessionId=crypto.randomUUID(),scope={clubId,sessionId};await api.createLiveVotingRoom({...scope,cycleId:clubId,roundId,targetSize:null,applicationIds:setup.applicants.slice(0,2).map(a=>a.id),leaderMemberIds:[leader.id],participantIds:[leader.id,voter.id],presentationOptions:{fields:['name','sat','interviewScore'],highlights:{}}});
  assert.equal((await api.getLiveVotingJoinInfo({...scope,sessionId:crypto.randomUUID()},voter.id)).status,'EXPIRED');
  let writes=0,save=localStorage.setItem.bind(localStorage);localStorage.setItem=(...args)=>{writes++;save(...args)};
  for(let i=0;i<4;i++){await api.getLiveVotingRoom(scope);await api.getLiveVotingJoinInfo(scope,voter.id);await api.getLiveVotingSetup({clubId,roundId,cycleId:clubId});}assert.equal(writes,0);
