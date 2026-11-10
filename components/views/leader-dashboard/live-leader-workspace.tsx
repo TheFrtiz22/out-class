@@ -3,6 +3,7 @@ import { applicationStatusLabel } from "@/lib/application-status"
 import { answerText } from "@/lib/student-applications"
 import "@/components/product/operational-dashboard.css"
 import { completePipelineSelection, type PipelinePageQuery, type PipelineCursor } from "@/lib/pipeline-page"
+import { nextQuickReviewApplicant } from "@/lib/quick-review-queue"
 import { usePipelinePage } from "@/hooks/use-pipeline-page"
 import { usePipelineApplicant } from "@/hooks/use-pipeline-applicant"
 import { useEditorDraft } from "@/hooks/use-editor-draft"
@@ -511,7 +512,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       const refreshed = await writeStatus(active, status)
       const remaining = quickQueue.filter(id => id !== active.id)
       const selection = await loadSelection(refreshed)
-      const next = remaining.map(id => selection.find(app => app.id === id)).find(app => app?.canQuickReview)
+      const next = nextQuickReviewApplicant(remaining, selection)
       setQuickQueue(remaining)
       // Release the guard before opening the next profile; identity comes from the refreshed projection.
       mutating.current = false; setBusy(false)
@@ -541,7 +542,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       const remaining = quickQueue.filter(id => id !== active.id)
       const selection = await loadSelection()
       if (!isCurrent() || latestAuthority.current !== owner || latestRequest.current !== key) return
-      const next = remaining.map(id => selection.find(app => app.id === id)).find(app => app?.canQuickReview)
+      const next = nextQuickReviewApplicant(remaining, selection)
       setQuickQueue(remaining)
       if (next) open(next)
       else open()

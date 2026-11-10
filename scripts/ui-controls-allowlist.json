@@ -16,7 +16,7 @@
   {
    "rule": "css-hex",
    "file": "components/communications/decision-letter.css",
-   "max": 8,
+   "max": 3,
    "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
   },
   {

@@ -16,8 +16,10 @@ export function PublicClubPage({
   initialData,
   authenticated = false,
   embedded = false,
+  serverNow,
 }: {
   club: DirectoryClub
+  serverNow?: number
   initialData?: Awaited<ReturnType<typeof getStudentDashboardData>> | null
   authenticated?: boolean
   embedded?: boolean
@@ -68,6 +70,7 @@ export function PublicClubPage({
               window.location.href = embedded ? "/explore" : "/"
             }}
             onNavigate={navigate}
+            serverNow={serverNow}
           />
         )}
       </div>

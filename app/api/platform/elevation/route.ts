@@ -11,8 +11,9 @@ import { createClient } from "@/utils/supabase/server";
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
 import { authSessionId, freshAuthClient, elevationHash, encryptChallenge, decryptChallenge } from "@/utils/admin-elevation";
 import { ADMIN_CHALLENGE_COOKIE, ADMIN_ELEVATION_COOKIE, ADMIN_CHALLENGE_LIFETIME, adminCookieOptions } from "@/lib/admin-elevation";
+import { captchaFailed, turnstileMessage, withCaptcha } from "@/lib/turnstile";
 const inputSchema = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("password"), password: z.string().min(1).max(200) }).strict(),
+  z.object({ action: z.literal("password"), password: z.string().min(1).max(200), turnstileToken: z.string().max(2048).optional() }).strict(),
   z.object({ action: z.literal("verify"), code: z.string().regex(/^\d{6}$/) }).strict(),
   z.object({ action: z.literal("end") }).strict(),
 ]);
@@ -52,7 +53,8 @@ export async function POST(request: NextRequest) {
         await tx.auditLog.create({ data: { actorId: actor.id, action: "platform.elevation.password-attempt", targetId: actor.id, details: { result: "attempt" } } });
       });
       const client = freshAuthClient();
-      const signed = await client.auth.signInWithPassword({ email: actor.email, password: input.password });
+      const signed = await client.auth.signInWithPassword(withCaptcha({ email: actor.email, password: input.password }, input.turnstileToken));
+      if (captchaFailed(signed.error)) throw new AdminAccessError("ADMIN_ELEVATION_REQUIRED", turnstileMessage("rejected"));
       if (signed.error && !providerAuthFailure(signed.error)) throw signed.error;
       if (signed.error || !signed.data.session || signed.data.user?.id !== actor.id) throw new AdminAccessError("ADMIN_ELEVATION_REQUIRED", "Password verification failed.");
       const passwordVerifiedAt = new Date();
