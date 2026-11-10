@@ -1,7 +1,7 @@
 /* Universal shell. Screen-specific compositions consume the same foundations. */
 [data-product-shell] { min-height: 100dvh; background: var(--background); color: var(--foreground); }
 [data-product-shell] > div:has(> aside) { display: block; margin-left: var(--oc-shell-rail-width); }
-[data-product-shell] > div > aside { position: fixed; inset: var(--support-banner-height, 0px) auto 0 0; width: var(--oc-shell-rail-width); height: calc(100dvh - var(--support-banner-height, 0px)); border: 0; z-index: 30; }
+[data-product-shell] > div > aside { position: fixed; inset: calc(var(--support-banner-height, 0px) + var(--oc-site-notice-offset, 0px)) auto 0 0; width: var(--oc-shell-rail-width); height: calc(100dvh - var(--support-banner-height, 0px) - var(--oc-site-notice-offset, 0px)); border: 0; z-index: 30; }
 .oc-context-sidebar { background: var(--oc-rail); color: var(--oc-rail-text); padding: 1rem; }
 .oc-rail-brand { padding: 0 .75rem 1.25rem; text-align: left; }
 .oc-rail-brand img { height: 2.75rem; width: auto; }

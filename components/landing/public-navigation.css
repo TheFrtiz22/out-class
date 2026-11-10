@@ -24,7 +24,8 @@
 .oc-public-nav[data-open="true"] { --nav-surface: var(--oc-glass-frosted-material); }
 /* Over the photo the open menu stays navy, so the cream ink and ivory wordmark stay legible. */
 .oc-public-nav[data-hero="true"][data-open="true"] { --nav-surface: var(--oc-glass-navy-frosted-material); }
-.oc-landing > .oc-public-nav[data-hero] { position: fixed; inset-inline: 0; }
+/* Fixed over the hero; starts below any visible site notice (components/site-notice-offset.tsx). */
+.oc-landing > .oc-public-nav[data-hero] { position: fixed; inset-inline: 0; top: calc(var(--support-banner-height, 0px) + var(--oc-site-notice-offset, 0px)); }
 .oc-information > .oc-public-nav[data-hero] { position: sticky; }
 .oc-public-nav-surface {
   position: relative;

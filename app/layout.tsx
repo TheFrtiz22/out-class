@@ -10,6 +10,9 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
 import { RouteContent } from "@/components/route-content"
+import { SiteNotices } from "@/components/site-notices"
+import { getSiteNotices } from "@/utils/site-settings"
+import { DEFAULT_MAINTENANCE_NOTICE } from "@/lib/site-settings"
 import { SITE_URL, SITE_TITLE, SITE_DESCRIPTION, LEGAL_ORGANIZATION_NAME, privateRobots, socialDefaults } from "@/lib/seo"
 
 // One Caslon family, with real variable weights and a real italic face.
@@ -74,6 +77,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  // Cached (60 s + Admin-save tag); started first so it overlaps the identity reads below.
+  const noticesRead = getSiteNotices()
   const cookieStore = await cookies()
   const viewSession = cookieStore.has(PLATFORM_VIEW_COOKIE) ? await platformViewSession().catch(() => null) : null
   const { data: { user }, error: authError } = await getSessionUser()
@@ -90,6 +95,9 @@ export default async function RootLayout({
     } catch { /* Demo stays available with its bundled fictional dataset. */ }
   }
 
+  const notices = await noticesRead
+  const maintenanceNotice = notices.maintenanceNotice || (notices.maintenanceMode ? DEFAULT_MAINTENANCE_NOTICE : "")
+
   return (
     <html lang="en" className={`${libreCaslonText.variable} ${sourceSans.variable}`}>
       <body className="font-sans antialiased">
@@ -99,6 +107,8 @@ export default async function RootLayout({
           <AuthProvider initialUser={initialUser} isImpersonating={cookieStore.has(PLATFORM_VIEW_COOKIE)} hasSession={!!initialUser || cookieStore.has(PLATFORM_VIEW_COOKIE)}>
             <OrganizationInvitationsProvider>
             <CorkboardProvider>
+              {/* Site-wide notices sit in flow above every page. Support sessions already carry the fixed view-as banner. */}
+              {!cookieStore.has(PLATFORM_VIEW_COOKIE) && <SiteNotices notices={{ campusNotice: notices.campusNotice, maintenanceNotice }} />}
               <RouteContent style={cookieStore.has(PLATFORM_VIEW_COOKIE) ? { paddingTop: "var(--support-banner-height, 120px)" } : undefined}>{children}</RouteContent>
             </CorkboardProvider>
             </OrganizationInvitationsProvider>
