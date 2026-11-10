@@ -1,7 +1,5 @@
 /* Public pages share a reading rhythm; product workspaces keep their own tokens. */
 .oc-landing {
-  /* Navy focus rings on public pages (the app-wide --ring is orange; spec rule 4). Navy surfaces set cream. */
-  --ring: var(--primary);
   --oc-public-paper: #fff7ec;
   --oc-public-linen: #eee7da;
   --oc-public-width: 1120px;

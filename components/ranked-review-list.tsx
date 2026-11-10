@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Lock } from "@/components/icons"
 import { useRevalidate } from "@/hooks/use-revalidate"
 import { formatAverage, scoredEvaluationsLabel } from "@/lib/interview-review-summary"
+import { NO_INTERVIEW_SCORES } from "@/lib/interview-feedback"
 import { profilePhotoSource } from "@/lib/profile-photo"
 import { applicationStatusLabels } from "@/lib/application-status"
 import { RANKED_REVIEW_NO_CYCLE, bandsFromBoundaries, rankedBandLabels, rankedBandOrder, rankedCycleKey, rankedReviewView, rankingSignature, validateBands, type RankedBand, type RankedBands } from "@/lib/ranked-review"
@@ -68,12 +69,17 @@ export function RankedReviewList({ clubId, rounds, initialRoundId, api, onOpen, 
   changeSignal?: number
 }) {
   const [roundId, setRoundId] = useState(initialRoundId && rounds.some(r => r.id === initialRoundId) ? initialRoundId : rounds[0]?.id ?? "")
-  const [shown, setShown] = useState<Snapshot | null>(null)
-  const [pending, setPending] = useState<Snapshot | null>(null)
+  const [loaded, setShown] = useState<Snapshot | null>(null)
+  // Only the selected round's snapshot is ever rendered: while another round loads, nothing from the previous one shows.
+  const shown = loaded?.roundId === roundId ? loaded : null
+  const [pendingSnapshot, setPending] = useState<Snapshot | null>(null)
+  const pending = pendingSnapshot?.roundId === roundId ? pendingSnapshot : null
   const [error, setError] = useState("")
   const [checkFailed, setCheckFailed] = useState(false)
   const [chosenCycle, setChosenCycle] = useState<string | null>(null)
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  // Selection, cycle and pending results belong to one club + round; switching rounds clears them.
+  const [selection, setSelection] = useState<{ key: string; id: string } | null>(null)
+  const selectedId = selection?.key === `${clubId}:${roundId}` ? selection.id : null
   const ticket = useRef(0)
   const [roundSummary, setRoundSummary] = useState<{ key: string; value: ScopedTargetSummary | null; failed: boolean } | null>(null)
   const [summaryTick, setSummaryTick] = useState(0)
@@ -157,7 +163,8 @@ export function RankedReviewList({ clubId, rounds, initialRoundId, api, onOpen, 
   // Stable handlers so unchanged rows skip re-rendering; the host's toggle may change identity every render.
   const onOpenRef = useRef(onOpen), toggleRef = useRef(votingSelection?.toggle)
   useEffect(() => { onOpenRef.current = onOpen; toggleRef.current = votingSelection?.toggle })
-  const select = useCallback((id: string) => { setSelectedId(id); onOpenRef.current(id) }, [])
+  // Selection is keyed by club + round, so it never carries into another round.
+  const select = useCallback((id: string) => { setSelection({ key: `${clubId}:${roundId}`, id }); onOpenRef.current(id) }, [clubId, roundId])
   const toggle = useCallback((id: string) => toggleRef.current?.(id), [])
   const votingIds = votingSelection?.ids
   const chosen = useMemo(() => new Set(votingIds), [votingIds])
@@ -181,7 +188,7 @@ export function RankedReviewList({ clubId, rounds, initialRoundId, api, onOpen, 
   let budget = visibleCount
   const take = <T,>(items: readonly T[]) => { const part = items.slice(0, Math.max(0, budget)); budget -= part.length; return part }
   const renderRow = (r: ShownRow) => <RankedRow key={r.id} row={r} tied={r.rank !== undefined && tiedRanks.has(r.rank)} selected={selectedId === r.id} voting={voting} checked={chosen.has(r.id)} onSelect={select} onToggle={toggle} />
-  const rankedSection = !ranked.length ? <p className="text-sm text-muted-foreground">No applicants in this round have a submitted interview score yet.</p>
+  const rankedSection = !ranked.length ? <p className="text-sm text-muted-foreground">{NO_INTERVIEW_SCORES}</p>
     : settingBands ? rankedBandOrder.map(band => {
       const members = byBand[band]
       const visible = take(members)

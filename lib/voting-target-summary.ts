@@ -33,6 +33,13 @@ export function targetLabel(round: { name: string; final: boolean } | null | und
   return name ? `Advancement target for ${name}` : "Advancement target";
 }
 
+/** What Pass means in this round, from the same "later non-archived round" rule as the target label.
+ * A ballot or Pass outcome never moves anyone by itself: only explicit finalization does. */
+export type PassMeaning = { kind: "advance" | "final"; label: string };
+export function passMeaning(round: { name: string; final: boolean } | null | undefined): PassMeaning {
+  return round?.final ? { kind: "final", label: "Pass means a final acceptance recommendation." } : { kind: "advance", label: "Pass means advance to a later round." };
+}
+
 function normalizeOutcome(value: string | null | undefined): SummaryOutcome {
   return value === "ACCEPT" || value === "HOLD" || value === "REJECT" ? value : "UNREVIEWED";
 }
@@ -69,6 +76,7 @@ export type TargetSummary = {
   /** Monotonic ordering key (room revision, or the sum of session revisions for a round). */
   revision: number;
   target: { label: string; value: number | null; note?: string };
+  pass: PassMeaning;
   decisions: DecisionCounts;
   progress: TargetProgress;
 };
@@ -76,7 +84,7 @@ export type TargetSummary = {
 /** Session scope: canonical room outcomes (one per roster applicant) and the session's own target. */
 export function sessionTargetSummary(input: { revision: number; targetSize: number | null | undefined; targetUnset?: boolean; outcomes: readonly { applicationId: string; outcome: string | null }[]; round: { name: string; final: boolean } | null }): TargetSummary {
   const value = normalizeTarget(input.targetSize, input.targetUnset), decisions = decisionCounts(input.outcomes);
-  return { scope: "session", revision: input.revision, target: { label: targetLabel(input.round), value }, decisions, progress: targetProgress(decisions.pass, value) };
+  return { scope: "session", revision: input.revision, target: { label: targetLabel(input.round), value }, pass: passMeaning(input.round), decisions, progress: targetProgress(decisions.pass, value) };
 }
 
 export type RoundSessionInput = { id: string; createdAt: Date | string; revision: number; targetSize: number | null | undefined; targetUnset?: boolean; outcomes: readonly { applicationId: string; outcome: string | null }[] };
@@ -107,7 +115,7 @@ export function roundTarget(sessions: readonly Pick<RoundSessionInput, "targetSi
 export function roundTargetSummary(input: { sessions: readonly RoundSessionInput[]; round: { name: string; final: boolean } | null }): TargetSummary {
   const decisions = decisionCounts(roundOutcomes(input.sessions)), target = roundTarget(input.sessions);
   return { scope: "round", revision: input.sessions.reduce((sum, s) => sum + s.revision, 0),
-    target: { label: targetLabel(input.round), value: target.value, ...(target.note ? { note: target.note } : {}) },
+    target: { label: targetLabel(input.round), value: target.value, ...(target.note ? { note: target.note } : {}) }, pass: passMeaning(input.round),
     decisions, progress: targetProgress(decisions.pass, target.value) };
 }
 
