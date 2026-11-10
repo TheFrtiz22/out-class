@@ -9,7 +9,7 @@
   display: flex;
   align-items: center;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--oc-radius-sm);
   padding-left: 10px;
   margin-left: auto;
   max-width: 250px;
@@ -31,7 +31,7 @@
   gap: 8px;
   padding: 10px 12px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--oc-radius-sm);
   cursor: pointer;
   list-style: none;
 }
@@ -47,7 +47,7 @@
   padding: 18px;
   border: 1px solid var(--border);
   box-shadow: 0 12px 30px #08243c22;
-  border-radius: 8px;
+  border-radius: var(--oc-radius-sm);
 }
 .oc-event-filter-fields label,
 .oc-event-editor label {
@@ -59,7 +59,7 @@
 .oc-event-editor select {
   padding: 9px;
   border: 1px solid var(--border);
-  border-radius: 5px;
+  border-radius: var(--oc-radius-sm);
   background: var(--background);
   width: 100%;
 }
@@ -81,7 +81,7 @@
   padding: 28px 24px 32px;
   min-height: 430px;
   border: 1px solid #aa7449;
-  border-radius: 6px;
+  border-radius: var(--oc-radius-sm);
   overflow: clip;
   background-color: #be8e61;
   background-image: url("/images/events/cork.svg");
@@ -285,7 +285,7 @@
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 0 !important;
   background: var(--background) !important;
-  border-radius: 8px !important;
+  border-radius: var(--oc-radius-sm) !important;
   max-height: 88dvh;
   overflow: visible !important;
   animation: none !important;
@@ -411,7 +411,7 @@
   min-height: 100px;
   padding: 10px;
   border: 1px solid var(--border);
-  border-radius: 5px;
+  border-radius: var(--oc-radius-sm);
   background: var(--background);
 }
 .oc-event-editor-preview {
@@ -432,7 +432,7 @@
   padding: 16px;
   background: var(--oc-content-surface);
   border: 1px solid var(--oc-content-edge);
-  border-radius: 8px;
+  border-radius: var(--oc-radius-sm);
   box-shadow: var(--oc-content-shadow)
 }
 .oc-managed-event .oc-event-paper {
@@ -462,7 +462,7 @@
   font-size: 11px;
   padding: 3px 7px;
   background: var(--muted);
-  border-radius: 4px;
+  border-radius: var(--oc-radius-sm);
   margin-top: 5px;
 }
 .oc-event-management-tabs {
@@ -616,20 +616,20 @@
 .oc-event-capacity {
   appearance: none;
   overflow: hidden;
-  border-radius: 8px;
+  border-radius: var(--oc-radius-sm);
   background: var(--muted);
 }
 .oc-event-capacity::-webkit-progress-bar {
   background: var(--muted);
-  border-radius: 8px;
+  border-radius: var(--oc-radius-sm);
 }
 .oc-event-capacity::-webkit-progress-value {
   background: var(--brand-orange);
-  border-radius: 8px;
+  border-radius: var(--oc-radius-sm);
 }
 .oc-event-capacity::-moz-progress-bar {
   background: var(--brand-orange);
-  border-radius: 8px;
+  border-radius: var(--oc-radius-sm);
 }
 @media (max-width: 700px) {
   .oc-pinned-flyer .oc-event-paper {
@@ -709,7 +709,7 @@
 .oc-smart-event-fallback > span { font-size: 11px; letter-spacing: .035em; }
 .oc-smart-event-fallback > strong { font-family: var(--oc-font-display); font-size: clamp(24px, 2.5vw, 36px); font-weight: 400; line-height: 1.13; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .oc-smart-event-fallback-rule { display: block; height: 2px; width: 40px; background: var(--brand-orange); }
-.oc-smart-event-date { position: absolute; top: 20px; left: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 65px; min-height: 75px; gap: 2px; border-radius: 17px; background: #fffefa; color: var(--school-primary); box-shadow: 0 4px 16px color-mix(in srgb, var(--school-primary) 8%, transparent); }
+.oc-smart-event-date { position: absolute; top: 20px; left: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 65px; min-height: 75px; gap: 2px; border-radius: var(--oc-radius-lg); background: #fffefa; color: var(--school-primary); box-shadow: 0 4px 16px color-mix(in srgb, var(--school-primary) 8%, transparent); }
 .oc-smart-event-date > span { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; font-weight: 600; color: var(--brand-ink); }
 .oc-smart-event-date > strong { font-size: 28px; line-height: 1.05; font-weight: 500; font-variant-numeric: tabular-nums; }
 .oc-smart-event-copy { min-width: 0; display: flex; flex-direction: column; padding: 26px 30px 22px; }
@@ -738,7 +738,7 @@
   .oc-event-toolbar .oc-event-periods { width: 100%; }
   .oc-event-toolbar .oc-event-search { width: 100%; max-width: none; flex-basis: 100%; }
   .oc-event-filter-fields { left: 0; right: auto; }
-  .oc-smart-event-card { display: flex; flex-direction: column; border-radius: 20px; }
+  .oc-smart-event-card { display: flex; flex-direction: column; border-radius: var(--oc-radius-xl); }
   .oc-smart-event-media { height: 220px; min-height: 220px; }
   .oc-smart-event-fallback { min-height: 220px; padding: 28px 25px 25px 108px; }
   .oc-smart-event-fallback > strong { font-size: 26px; }
@@ -771,7 +771,7 @@
 }
 .oc-event-filter summary { white-space: nowrap; }
 .oc-event-filter summary::-webkit-details-marker { display: none; }
-.oc-event-filter-count { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding-inline: 6px; border-radius: 999px; background: var(--primary); color: var(--primary-foreground); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.oc-event-filter-count { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding-inline: 6px; border-radius: var(--oc-radius-full); background: var(--primary); color: var(--primary-foreground); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
 @media (max-width: 700px) {
   .oc-event-toolbar-actions .oc-event-view-switch { grid-column: 1 / -1; }
   .oc-event-view-switch.oc-segmented-control button { padding-inline: .75rem; }
@@ -794,7 +794,7 @@
   .oc-smart-event-facts { gap: 4px; margin-bottom: 8px; font-size: var(--oc-text-small); }
   .oc-smart-event-description { margin-bottom: 12px; }
   .oc-smart-event-footer { flex-direction: column; align-items: stretch; gap: 8px; }
-  .oc-smart-event-footer > .oc-event-pill-primary { width: 100%; min-height: 46px; justify-content: center; border-radius: 999px; }
+  .oc-smart-event-footer > .oc-event-pill-primary { width: 100%; min-height: 46px; justify-content: center; border-radius: var(--oc-radius-full); }
   .oc-smart-event-actions { display: flex; width: 100%; gap: 8px; }
   .oc-smart-event-actions > .oc-event-pill { flex: 1; min-height: 44px; padding-inline: 12px; }
 }

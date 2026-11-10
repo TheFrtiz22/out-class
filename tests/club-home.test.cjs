@@ -183,7 +183,7 @@ test('glass defaults: Card, Panel, Skeleton and Tabs default to glass; variant="
   assert.match(fs.readFileSync('styles/workspace-composition.css', 'utf8'), /\.oc-data-surface \{[^}]*background: var\(--oc-content-solid\)/)
   const tokens = fs.readFileSync('styles/tokens.css', 'utf8')
   assert.match(tokens, /--oc-content-surface: var\(--oc-surface-glass\);/)
-  assert.match(tokens.slice(tokens.indexOf('[data-theme="present"]')), /--oc-content-surface: #162638;[\s\S]*--oc-content-shadow: var\(--oc-content-shadow-solid\);/)
+  assert.match(tokens.slice(tokens.indexOf('[data-theme="present"]')), /--oc-content-surface: #162638;[\s\S]*--oc-elevation-surface: var\(--oc-content-shadow-solid\);[\s\S]*--oc-content-shadow: var\(--oc-elevation-surface\);/)
 })
 
 test('glass tokens: solid default, backdrop-filter enhancement, reduced-transparency and forced-colors overrides', () => {
