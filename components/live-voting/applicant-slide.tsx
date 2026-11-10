@@ -12,9 +12,40 @@ import {Dialog,DialogContent,DialogTitle} from "@/components/ui/dialog";
 import {Button} from "@/components/ui/button";
 import {InterviewFeedbackSection,EarlierFeedbackRounds} from "@/components/interview-feedback-section";
 
-export type VotingSlideData=Exclude<Awaited<ReturnType<typeof getLiveVotingPresentation>>,StalePresentation>;const excerpt=(text:string)=>text.length>150?`${text.slice(0,147)}…`:text;
+export type VotingSlideData=Exclude<Awaited<ReturnType<typeof getLiveVotingPresentation>>,StalePresentation>;
 // Highlights share the header row on projectors; full text stays in Applicant details.
 const highlightPreview=(text:string)=>text.length>110?`${text.slice(0,107)}…`:text;
+
+/* Automatic layout. Values that fit on one short line become compact facts; anything longer, or with
+   line breaks, joins the evidence area, where the field with the most text gets the most room.
+   Evidence shows more before truncating, bounded by characters and lines so the projector never scrolls;
+   anything cut keeps "Read full …" and the full text stays in Applicant details. */
+const SLIDE_FACT_MAX=60,SLIDE_EVIDENCE_CHARS=400,SLIDE_EVIDENCE_LINES=8,SLIDE_FEEDBACK_CHARS=560,SLIDE_FEEDBACK_LINES=10,SLIDE_NOTE_CHARS=150;
+/** Cuts at a word boundary within `chars` and after `lines` lines; returns the text unchanged when it fits. */
+function slideExcerpt(text:string,chars=SLIDE_EVIDENCE_CHARS,lines=SLIDE_EVIDENCE_LINES){
+  const all=text.split(/\r?\n/);let out=all.slice(0,lines).join("\n").trimEnd();
+  if(out.length<=chars&&all.length<=lines)return text;
+  if(out.length>chars){const cut=out.slice(0,chars-1),space=cut.lastIndexOf(" ");out=space>chars*.8?cut.slice(0,space):cut;}
+  return `${out.replace(/[\s,;:.–-]+$/,"")}…`;
+}
+// Several interviewers share one budget, so each keeps a readable excerpt and the section stays one size.
+const feedbackExcerpt=(text:string,entries:number)=>entries>1?slideExcerpt(text,Math.max(160,Math.floor(SLIDE_FEEDBACK_CHARS/entries)),Math.max(3,Math.floor(SLIDE_FEEDBACK_LINES/entries))):slideExcerpt(text);
+const isFact=(text:string)=>text.length<=SLIDE_FACT_MAX&&!/\n/.test(text);
+/** Visual weight of an excerpt: its characters, where each line (a bullet, a break) costs at least half a line. */
+const weigh=(text:string)=>text.split("\n").reduce((n,line)=>n+Math.max(line.length,30),0);
+const bullet=/^\s*(?:[-*•‣◦–]|\d{1,2}[.)])\s+/;
+type Block={kind:"p"|"ul"|"ol";lines:string[]};
+/** Preserves line breaks and renders "-", "*", "•" or "1." lines as real lists. */
+function SlideText({text}:{text:string}){
+  const blocks:Block[]=[];let gap=true;
+  for(const line of text.split(/\r?\n/)){
+    if(!line.trim()){gap=true;continue;}
+    const m=line.match(bullet),kind:Block["kind"]=m?(/\d/.test(m[0])?"ol":"ul"):"p",body=m?line.slice(m[0].length):line,last=blocks[blocks.length-1];
+    if(!gap&&last?.kind===kind)last.lines.push(body);else blocks.push({kind,lines:[body]});gap=false;
+  }
+  return <div className="vr-text">{blocks.map((b,i)=>b.kind==="p"?<p key={i}>{b.lines.join("\n")}</p>:b.kind==="ul"?<ul key={i}>{b.lines.map((l,j)=><li key={j}>{l}</li>)}</ul>:<ol key={i}>{b.lines.map((l,j)=><li key={j}>{l}</li>)}</ol>)}</div>;
+}
+const renderSlideText=(text:string)=><SlideText text={text}/>;
 
 /** One renderer for setup, leader, audience and member views. Only the
  * server-projected fields enter this component, including its details dialog. */
@@ -58,20 +89,33 @@ export function ApplicantSlide({data}:{data:VotingSlideData}){
   const prepared="preparedHighlights"in data?data.preparedHighlights??[]:[];
   const order=(f:string)=>{const i=(liveRoomFields as readonly string[]).indexOf(f);return i<0?100:i;};
   fields.sort((a,b)=>order(a.field)-order(b.field)||a.field.localeCompare(b.field));
-  const feedbackAt=fields.findIndex(f=>order(f.field)>order("finalInterviewThoughts"));
   // Earlier rounds: one labelled line under this round's score on the projector (never in its average);
   // each round's attributed entries and sources are in Applicant details.
   const earlierLine=earlier.length?`Earlier rounds · ${earlier.map(r=>`${r.roundName} ${r.average!==null?`${formatAverage(r.average)} / 10`:`${r.submitted} review${r.submitted===1?"":"s"}`}`).join("; ")}`:"";
   const earlierInScore=!!earlierLine&&fields.some(f=>f.field==="interviewScore");
-  const slideFields=fields.map(f=><section className="vr-field" key={f.field} data-slide-field={f.field}><h3>{f.label}</h3><p>{excerpt(f.preview)}</p>{f.note&&<p className="vr-field-meta">{excerpt(f.note)}</p>}{f.field==="interviewScore"&&earlierInScore&&<p className="vr-field-meta" data-slide-field="earlierRounds">{excerpt(earlierLine)}</p>}{(f.full!==f.preview||f.preview.length>150||f.note.length>150||f.field==="interviewScore"&&earlierInScore)&&<Button type="button" variant="link" className="h-auto min-h-11 p-0" onClick={open}>Read full {f.label.toLowerCase()}</Button>}</section>);
-  if(feedback)slideFields.splice(feedbackAt<0?slideFields.length:feedbackAt,0,<div className="vr-field vr-field-feedback" key="interviewFeedback" data-slide-field="interviewFeedback"><InterviewFeedbackSection compact feedback={feedback} onReadFull={open}/></div>);
-  if(earlierLine&&!earlierInScore)slideFields.push(<div className="vr-field vr-field-feedback" key="earlierRounds" data-slide-field="earlierRounds"><EarlierFeedbackRounds compact rounds={earlier} onReadFull={open}/></div>);
-  return <section aria-label="Current applicant presentation" className="vr-applicant">
+  const readFull=(label:string,className="h-auto min-h-11 p-0")=><Button type="button" variant="link" className={className} onClick={open}>Read full {label.toLowerCase()}</Button>;
+  // Facts strip: the score is always a fact (a number), and so is any short single-line value, in liveRoomFields order.
+  const facts=fields.filter(f=>f.field==="interviewScore"||isFact(f.preview)&&f.full===f.preview);
+  const evidence:{key:string;weight:number;node:React.ReactNode}[]=fields.filter(f=>!facts.includes(f)).map(f=>{
+    const shown=slideExcerpt(f.preview),cut=shown!==f.preview||f.full!==f.preview||f.note.length>SLIDE_NOTE_CHARS;
+    return {key:f.field,weight:weigh(shown),node:<section className="vr-field" data-slide-field={f.field}><h3>{f.label}</h3><SlideText text={shown}/>{f.note&&<p className="vr-field-meta">{slideExcerpt(f.note,SLIDE_NOTE_CHARS,1)}</p>}{cut&&readFull(f.label)}</section>};
+  });
+  if(feedback)evidence.push({key:"interviewFeedback",weight:feedback.entries.reduce((n,e)=>n+30+(e.summary?weigh(feedbackExcerpt(e.summary,feedback.entries.length)):30),0),
+    node:<div className="vr-field vr-field-feedback" data-slide-field="interviewFeedback"><InterviewFeedbackSection compact feedback={feedback} onReadFull={open} excerpt={feedbackExcerpt} renderText={renderSlideText}/></div>});
+  if(earlierLine&&!earlierInScore)evidence.push({key:"earlierRounds",weight:30*(earlier.length+1),node:<div className="vr-field vr-field-feedback" data-slide-field="earlierRounds"><EarlierFeedbackRounds compact rounds={earlier} onReadFull={open}/></div>});
+  // Most text first and widest (visual order = reading and focus order); ties keep liveRoomFields order.
+  evidence.sort((a,b)=>b.weight-a.weight||order(a.key==="interviewFeedback"?"finalInterviewThoughts":a.key)-order(b.key==="interviewFeedback"?"finalInterviewThoughts":b.key));
+  const balanced=evidence.length>1&&evidence[1].weight>=evidence[0].weight*.85;
+  return <section aria-label="Current applicant presentation" className="vr-applicant" data-evidence-count={evidence.length} data-evidence-balance={balanced?"even":"lead"}>
     <header className="vr-person"><ApplicantIdentity size="lg" announcePhoto name={name} photo={data.visible.includes("photo")?data.photo:null} anonymous={data.anonymous} heading={<h2 tabIndex={-1} data-applicant-heading>{name}</h2>}/>
     {prepared.length>0&&<section className="vr-highlights" aria-label="Leader-selected highlights"><ul>{prepared.map(h=><li key={h.id} className="vr-highlight" data-highlight-mode={h.mode}>
       <p>{h.mode==="QUOTE"?<q>{highlightPreview(h.text)}</q>:<><span className="vr-highlight-kind">Leader summary:</span> {highlightPreview(h.text)}</>}</p>
       <p className="vr-field-meta">{highlightAttribution(h)}</p></li>)}</ul></section>}</header>
-    <div className="vr-fields">{slideFields}</div>
+    {facts.length>0&&<dl className="vr-facts">{facts.map(f=><div key={f.field} className={f.field==="interviewScore"?"vr-fact vr-fact-score":"vr-fact"} data-slide-field={f.field}>
+      <dt>{f.label}</dt><dd className="vr-fact-value">{f.preview}</dd>{f.note&&<dd className="vr-fact-meta">{slideExcerpt(f.note,SLIDE_NOTE_CHARS,1)}</dd>}
+      {f.field==="interviewScore"&&earlierInScore&&<dd className="vr-fact-meta" data-slide-field="earlierRounds">{slideExcerpt(earlierLine,SLIDE_NOTE_CHARS,1)}</dd>}
+      {(f.full!==f.preview||f.note.length>SLIDE_NOTE_CHARS)&&<dd>{readFull(f.label,"vr-fact-link h-auto p-0")}</dd>}</div>)}</dl>}
+    {evidence.length>0&&<div className="vr-evidence">{evidence.map((e,i)=><div key={e.key} className="vr-evidence-item" data-evidence-rank={i+1}>{e.node}</div>)}</div>}
     <footer className="flex flex-wrap gap-2"><Button type="button" variant="outline" size="sm" onClick={open}>{prepared.length?"Applicant details and highlight sources":"Applicant details"}</Button>{observations&&<Button type="button" variant="ghost" size="sm" onClick={open}>Additional observations · {observations.length}</Button>}</footer>
     <Dialog open={details} onOpenChange={setDetails}><DialogContent onCloseAutoFocus={e=>{e.preventDefault();origin.current?.focus();}} className="max-h-[85dvh] overflow-y-auto" aria-describedby={undefined}><DialogTitle>{name} · Details</DialogTitle>{prepared.length>0&&<section className="space-y-3 border-b pb-3"><h3 className="font-medium">Highlights and their full sources</h3>{prepared.map(h=><article key={h.id} className="space-y-1"><p className="whitespace-pre-wrap break-words">{h.mode==="QUOTE"?<q>{h.text}</q>:<><span className="font-medium">Leader summary{h.writtenBy?` by ${h.writtenBy}`:""}:</span> {h.text}</>}</p><p className="text-xs text-muted-foreground">{h.mode==="QUOTE"?"Excerpt from":"Based on"} {highlightAttribution(h)}{h.source.revision?` · Version ${h.source.revision}`:""}</p><details><summary className="cursor-pointer text-sm">Full original source</summary><p className="whitespace-pre-wrap break-words text-sm">{h.source.text}</p></details></article>)}</section>}{feedback&&<div className="space-y-2 border-b pb-3"><InterviewFeedbackSection feedback={feedback}/><EarlierFeedbackRounds feedback={feedback}/>{otherThoughts.length>0&&<section aria-label="Interview thoughts from other rounds" className="space-y-2 border-t pt-3"><h3 className="font-medium">Interview thoughts from other rounds</h3>{otherThoughts.map(t=><article key={t.id}><p className="text-sm font-medium">{t.interviewer} · {t.roundName}</p><p className="whitespace-pre-wrap break-words">{t.text}</p></article>)}</section>}</div>}{earlier.length>0&&<div className="border-b pb-3"><EarlierFeedbackRounds rounds={earlier}/></div>}{fields.map(f=><section key={f.field}><h3 className="font-medium">{f.label}</h3><p className="whitespace-pre-wrap break-words">{f.full}</p></section>)}{observations&&<section className="space-y-3 border-t pt-3"><h3 className="font-medium">Additional observations</h3>{observations.length?observations.map(row=><article key={row.id} className="space-y-1"><p className="whitespace-pre-wrap break-words">{row.body}</p>{row.interactionContext&&<p className="text-sm">{row.interactionContext}</p>}<p className="text-xs text-muted-foreground">{row.author} · {row.roundName} · {new Date(row.createdAt).toLocaleString()} · Version {row.revision}</p></article>):<p>No shared additional observations.</p>}</section>}{data.interviewScore&&<p className="text-sm text-muted-foreground">{data.interviewScore.scope}. Missing scores are excluded.</p>}</DialogContent></Dialog>
   </section>;
