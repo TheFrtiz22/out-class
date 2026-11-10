@@ -149,7 +149,7 @@ not run: browser/E2E suites, next build, test:migrations (no linux chromium/nati
 not run: *-browser suites (each >2 min), next build, full pnpm run test
 ```
 ```
-2026-11-09 DEPS-NEXT-15528 (security/next-15-5-28 from main 318b5e31): test 1988/1921/0 fail/67 skipped (gated suites) migrations 74 ok (RLS 85) lint ok types ok build ok (Next.js 15.5.28)
-pnpm audit --prod after: no Next.js advisories; 1 high (zod) and 3 moderate (nodemailer) tracked separately
-note: one earlier full run under machine load average ~23 had 9 Playwright click timeouts; those files pass alone and the full suite passes at normal load
+2026-11-09 SEC-HEADERS-1 (security/frame-ancestors from main 318b5e31): app gates: test 1990/1923/0 fail/67 skipped (env-gated) lint ok types ok build ok | targeted: frame-ancestors-headers 2/2
+next start (local, no Supabase env): both headers present on / 200, /explore 307, /privacy 404 (rewrite), /preview 404 (middleware), /robots.txt 200, /api/recruiting-resumes 400, /api/club-assets 404, unknown path 404, malformed path 400, /login and /signup 500 (no env)
+not verified: a 200 from club-assets/decision-letter-assets, which set their own Content-Security-Policy
 ```
