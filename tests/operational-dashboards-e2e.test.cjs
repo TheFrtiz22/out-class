@@ -71,6 +71,7 @@ test('operational dashboards authorize summaries and persist inline work with re
  const laterRound=await db.pipelineRound.create({data:{clubId:club.id,name:'Late review',type:'CUSTOM',anonymousReview:true,order:2}})
  const extra=await Promise.all(Array.from({length:19},(_,i)=>db.user.create({data:{email:`dashbusy${suffix}${i}@virginia.edu`}})))
  await db.application.createMany({data:extra.map((u,i)=>({clubId:club.id,studentId:u.id,roundId:i===18?laterRound.id:anon.id,status:'SUBMITTED',submittedAt:new Date(now+i*1000)}))})
+ const lateApplication=await db.application.findFirst({where:{studentId:extra[18].id,clubId:club.id,status:{not:'REJECTED'}}})
  await page.evaluate(()=>window.dispatchEvent(new CustomEvent('outclass:data-changed',{detail:{scope:'overview'}})));await page.getByRole('heading',{name:'Review queue',exact:true}).waitFor()
  await page.screenshot({path:path.join(out,'busy-filtered-round.png'),fullPage:true})
  await page.goto(clubUrl);await page.getByRole('heading',{name:'Needs you',exact:true}).waitFor()
