@@ -2,6 +2,10 @@
    Only what is specific to it lives here. */
 .oc-student-home { display: grid; gap: var(--oc-content-gap); color: var(--foreground); font-family: var(--oc-font-sans); }
 .oc-home-hero .oc-page-header { margin-bottom: 0; }
+/* Compact greeting so "Needs you" sits close to the top: smaller title, and the subtitle reserves one
+   line (not the shared two) so a one-line subtitle leaves no empty band below it. */
+.oc-student-home .oc-home-hero h1 { font-size: clamp(1.75rem, 1.25rem + 1vw, 2.125rem); line-height: 1.15; }
+.oc-student-home .oc-home-hero .oc-page-description { min-block-size: 1lh; margin-top: .25rem; }
 .oc-home-loading { display: grid; gap: var(--oc-content-gap); }
 .oc-home-availability-slot:empty { display: none; }
 
