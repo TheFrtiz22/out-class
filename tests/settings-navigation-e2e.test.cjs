@@ -149,8 +149,10 @@ test('settings and authenticated navigation across roles, saves, history and res
     await leaderPage.waitForURL('**/workspace?section=settings&setting=cycles');
     await open(leaderPage, `/club/${first.id}/workspace?section=recruitment&tool=letters`);
     await leaderPage.waitForURL('**/workspace?section=recruitment&tool=decisions&decisionTab=letters');
-    await leaderPage.getByRole('navigation', {name:'Decisions navigation'}).waitFor();
-    await leaderPage.getByRole('link', { name: 'Review decisions and send letters', exact: true }).waitFor();
+    // Decide: Vote and Send are tabs; the old letters link lands on Send, which links to individual decisions.
+    await leaderPage.getByRole('tablist', { name: 'Decide steps' }).waitFor();
+    assert.equal(await leaderPage.getByRole('tab', { name: /^Step 2: Send/ }).getAttribute('aria-selected'), 'true');
+    await leaderPage.getByRole('link', { name: 'Send individual decisions', exact: true }).waitFor();
     await open(leaderPage, `/club/${first.id}/tasks?taskView=mine`);
     assert.ok(new URL(leaderPage.url()).searchParams.get('section') === 'tasks');
     assert.equal(new URL(leaderPage.url()).searchParams.get('taskView'), 'mine');
