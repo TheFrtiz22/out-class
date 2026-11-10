@@ -13,6 +13,7 @@ import { RouteContent } from "@/components/route-content"
 import { SiteNotices } from "@/components/site-notices"
 import { getSiteNotices } from "@/utils/site-settings"
 import { DEFAULT_MAINTENANCE_NOTICE } from "@/lib/site-settings"
+import { campusNoticeDismissKey } from "@/lib/campus-notice-dismiss"
 import { SITE_URL, SITE_TITLE, SITE_DESCRIPTION, LEGAL_ORGANIZATION_NAME, privateRobots, socialDefaults } from "@/lib/seo"
 
 // One Caslon family, with real variable weights and a real italic face.
@@ -97,6 +98,8 @@ export default async function RootLayout({
 
   const notices = await noticesRead
   const maintenanceNotice = notices.maintenanceNotice || (notices.maintenanceMode ? DEFAULT_MAINTENANCE_NOTICE : "")
+  // A campus notice dismissed this browser session (session cookie) is skipped here, so it never flashes.
+  const campusNotice = notices.campusNotice && cookieStore.get(campusNoticeDismissKey(notices.campusNotice))?.value !== "1" ? notices.campusNotice : ""
 
   return (
     <html lang="en" className={`${libreCaslonText.variable} ${sourceSans.variable}`}>
@@ -107,8 +110,9 @@ export default async function RootLayout({
           <AuthProvider initialUser={initialUser} isImpersonating={cookieStore.has(PLATFORM_VIEW_COOKIE)} hasSession={!!initialUser || cookieStore.has(PLATFORM_VIEW_COOKIE)}>
             <OrganizationInvitationsProvider>
             <CorkboardProvider>
-              {/* Site-wide notices sit in flow above every page. Support sessions already carry the fixed view-as banner. */}
-              {!cookieStore.has(PLATFORM_VIEW_COOKIE) && <SiteNotices notices={{ campusNotice: notices.campusNotice, maintenanceNotice }} />}
+              {/* Site-wide notices sit in flow above every page. Only a verified support session (already
+                  under the fixed view-as banner) omits them; a bare or stale view-as cookie does not. */}
+              {!viewSession && <SiteNotices notices={{ campusNotice, maintenanceNotice }} offsetForSupportBanner={cookieStore.has(PLATFORM_VIEW_COOKIE)} />}
               <RouteContent style={cookieStore.has(PLATFORM_VIEW_COOKIE) ? { paddingTop: "var(--support-banner-height, 120px)" } : undefined}>{children}</RouteContent>
             </CorkboardProvider>
             </OrganizationInvitationsProvider>

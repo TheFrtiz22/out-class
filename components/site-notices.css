@@ -1,0 +1,23 @@
+/* Site-wide notice strip (components/site-notices.tsx). It sits in normal flow above the page.
+   Pinned chrome is kept clear of it with CSS alone, so the server-rendered page is already
+   laid out correctly: nothing is measured or moved after hydration. */
+
+/* Landing hero header: normally position: fixed over the photograph. While a notice strip is
+   on the page it becomes a zero-height sticky bar instead, so it starts below the strip, still
+   overlays the hero (takes no flow space) and still pins to the top once the strip scrolls away. */
+body:has([data-site-notices]) .oc-landing > .oc-public-nav[data-hero] {
+  position: sticky;
+  top: var(--support-banner-height, 0px);
+  height: 0;
+  padding-block: 0;
+}
+body:has([data-site-notices]) .oc-landing > .oc-public-nav[data-hero] > .oc-public-nav-surface { margin-top: 16px; }
+
+/* Desktop product dock (components/shell/floating-dock.css) floats over the left edge from the
+   top of the viewport. Start the strip's text after it; the dock widths are mirrored here. */
+@media (min-width: 1024px) {
+  body:has([data-product-shell]:not([data-shell-chrome="hidden"])) [data-site-notices] > * { padding-inline-start: 108px; }
+}
+@media (min-width: 1280px) {
+  body:has([data-product-shell]:not([data-shell-chrome="hidden"])) [data-site-notices] > * { padding-inline-start: 264px; }
+}

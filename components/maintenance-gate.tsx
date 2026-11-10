@@ -1,7 +1,5 @@
 import type { ReactNode } from "react"
-import { cookies } from "next/headers"
 import { TriangleAlert } from "@/components/icons"
-import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
 import { getSessionUser } from "@/utils/auth"
 import { getSiteNotices, isMaintenanceExempt } from "@/utils/site-settings"
 
@@ -21,13 +19,15 @@ export function MaintenancePage() {
  * Wraps product route groups. With maintenance mode OFF (the default) it costs one cached
  * settings read. When ON, signed-in non-admins see the maintenance page. Signed-out visitors
  * pass through (public pages and sign-in, including /platform/login, stay reachable), as do
- * platform administrators and their audited support sessions.
+ * platform administrators, including while they run a verified support session.
  */
 export async function MaintenanceGate({ children }: { children: ReactNode }) {
   const notices = await getSiteNotices()
   if (!notices.maintenanceMode) return children
-  const [jar, { data: { user }, error }] = await Promise.all([cookies(), getSessionUser()])
-  if (jar.has(PLATFORM_VIEW_COOKIE)) return children
+  // No shortcut for the view-as cookie: a real support session keeps the administrator's own
+  // login (getSessionUser is the admin), so it passes the admin check below, while a bare or
+  // forged cookie from anyone else does not.
+  const { data: { user }, error } = await getSessionUser()
   if (error || !user) return children
   if (await isMaintenanceExempt(user.id)) return children
   return <MaintenancePage />

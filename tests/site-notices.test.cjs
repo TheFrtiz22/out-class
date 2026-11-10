@@ -9,7 +9,7 @@ const { sessionFor } = require('./helpers/auth-session.cjs')
 function load(file, mocks = {}) {
   const m = { exports: {} }
   const source = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText
-  const resolve = n => n in mocks ? mocks[n] : n.startsWith('@/') ? load(fs.existsSync(n.slice(2) + '.tsx') ? n.slice(2) + '.tsx' : n.slice(2) + '.ts', mocks) : require(n)
+  const resolve = n => n in mocks ? mocks[n] : n.endsWith('.css') ? {} : n.startsWith('@/') ? load(fs.existsSync(n.slice(2) + '.tsx') ? n.slice(2) + '.tsx' : n.slice(2) + '.ts', mocks) : require(n)
   new Function('require', 'module', 'exports', source)(resolve, m, m.exports)
   return m.exports
 }
@@ -72,12 +72,15 @@ test('empty notices render nothing; notice text is escaped, never HTML', () => {
   const html = renderToStaticMarkup(React.createElement(SiteNotices, { notices: { campusNotice: hostile, maintenanceNotice: hostile } }))
   assert.ok(!html.includes('<script>') && !html.includes('<img'), 'no markup from notice text')
   assert.equal(html.split('&lt;script&gt;alert(1)&lt;/script&gt;&lt;img src=x onerror=alert(2)&gt; &amp; &quot;quotes&quot;').length, 3)
-  assert.match(html, /role="alert"[^>]*aria-label="Maintenance notice"/)
+  assert.match(html, /role="status"[^>]*aria-label="Maintenance notice"/, 'persistent strip is polite, not assertive')
+  assert.ok(!html.includes('role="alert"'))
   assert.match(html, /role="status"[^>]*aria-label="Campus notice"/)
   assert.match(html, /<button[^>]*aria-label="Dismiss campus notice"/, 'campus notice is dismissible by keyboard button')
   assert.equal((html.match(/<button/g) || []).length, 1, 'maintenance notice has no dismiss control')
-  assert.notEqual(CampusNoticeKey('A'), CampusNoticeKey('B'))
-  function CampusNoticeKey(t) { return load('components/campus-notice.tsx', uiMocks).noticeDismissKey(t) }
+  const { campusNoticeDismissKey, campusNoticeDismissCookie } = load('lib/campus-notice-dismiss.ts')
+  assert.notEqual(campusNoticeDismissKey('A'), campusNoticeDismissKey('B'))
+  assert.match(campusNoticeDismissKey(hostile), /^oc-campus-notice-[a-z0-9]+$/, 'cookie-safe name')
+  assert.equal(campusNoticeDismissCookie('A'), `${campusNoticeDismissKey('A')}=1; path=/; SameSite=Lax`, 'session cookie: no Max-Age or Expires')
 })
 
 const clubId = '00000000-0000-4000-8000-000000000001'
@@ -134,23 +137,113 @@ test('maintenance mode leaves page reads and admin entry points (/platform) usab
   assert.equal((await h.auth.requireAuth({ allowPlatformView: true, adminDiagnostics: true })).user.id, 'leader')
 })
 
-test('the maintenance gate shows the maintenance page only to signed-in non-admins', async () => {
+test('the maintenance gate shows the maintenance page only to signed-in non-admins, whatever cookies they send', async () => {
   process.env.OUTCLASS_PLATFORM_ADMIN_IDS = 'admin'
   const s = settingsHarness({ stored: { maintenanceMode: true }, admins: ['admin'] })
-  let user = null, support = false
-  const gateMocks = { ...uiMocks, ...s.mocks, '@/utils/site-settings': s.settings, 'next/headers': { cookies: async () => ({ has: () => support }) }, '@/utils/auth': { getSessionUser: async () => ({ data: { user }, error: null }) } }
+  let user = null
+  const gateMocks = { ...uiMocks, ...s.mocks, '@/utils/site-settings': s.settings, 'next/headers': { cookies: async () => ({ has: () => true, get: () => ({ value: 'f'.repeat(64) }) }) }, '@/utils/auth': { getSessionUser: async () => ({ data: { user }, error: null }) } }
   const { MaintenanceGate } = load('components/maintenance-gate.tsx', gateMocks)
   const render = async () => renderToStaticMarkup(await MaintenanceGate({ children: React.createElement('p', null, 'product') }))
   assert.equal(await render(), '<p>product</p>', 'signed-out visitors and sign-in pages, including /platform/login, pass through')
   user = { id: 'admin' }; s.newRequest()
-  assert.equal(await render(), '<p>product</p>', '/platform stays reachable for platform admins')
+  assert.equal(await render(), '<p>product</p>', '/platform and verified support sessions (the admin login is retained) stay reachable')
   user = { id: 'student' }; s.newRequest()
-  assert.match(await render(), /OutClass is undergoing maintenance/)
-  support = true
-  assert.equal(await render(), '<p>product</p>', 'audited support sessions keep the product view')
+  assert.match(await render(), /OutClass is undergoing maintenance/, 'a bogus view-as cookie does not bypass the gate')
   const off = settingsHarness()
   const offGate = load('components/maintenance-gate.tsx', { ...gateMocks, ...off.mocks, '@/utils/site-settings': off.settings }).MaintenanceGate
   assert.equal(renderToStaticMarkup(await offGate({ children: 'product' })), 'product')
+})
+
+function renderRootLayout({ stored, cookies = {}, viewSession = null }) {
+  const s = settingsHarness({ stored })
+  const pass = ({ children }) => React.createElement(React.Fragment, null, children)
+  const mocks = {
+    ...uiMocks, ...s.mocks, '@/utils/site-settings': s.settings,
+    'next/font/local': () => ({ variable: 'font' }),
+    '@vercel/analytics/next': { Analytics: () => null }, '@vercel/speed-insights/next': { SpeedInsights: () => null },
+    '@/components/ui/sonner': { Toaster: () => null }, '@/components/support-session-sync': { SupportSessionSync: () => null },
+    '@/components/platform-view-banner': { PlatformViewBanner: ({ label }) => React.createElement('aside', { 'data-view-as': label }) },
+    '@/components/route-content': { RouteContent: ({ children }) => React.createElement('div', { className: 'oc-route-content' }, children) },
+    '@/utils/platform-view-as': { platformViewSession: async () => viewSession },
+    '@/lib/seo': { SITE_URL: 'https://example.test', SITE_TITLE: 'OutClass', SITE_DESCRIPTION: '', LEGAL_ORGANIZATION_NAME: '', privateRobots: {}, socialDefaults: () => ({}) },
+    '@/utils/auth': { getSessionUser: async () => ({ data: { user: null }, error: null }) }, '@/utils/current-user': { getCurrentUser: async () => null },
+    '@/lib/auth': { isUvaEmail: () => true }, '@/lib/demo/access': { canAccessDemo: () => false, DEMO_COOKIE: 'outclass-demo-session' },
+    '@/utils/prisma': { prisma: { ...s.prisma, user: { findUnique: async () => null } } }, '@/lib/demo/validate': { readDemoTemplate: v => v },
+    '@/contexts/corkboard-context': { CorkboardProvider: pass }, '@/contexts/auth-context': { AuthProvider: pass },
+    '@/contexts/organization-invitations-context': { OrganizationInvitationsProvider: pass }, '@/contexts/demo-context': { DemoDataProvider: pass },
+    'next/headers': { cookies: async () => ({ has: n => n in cookies, get: n => n in cookies ? { value: cookies[n] } : undefined, getAll: () => [] }) },
+  }
+  const { default: RootLayout } = load('app/layout.tsx', mocks)
+  return RootLayout({ children: React.createElement('p', null, 'page') }).then(renderToStaticMarkup)
+}
+
+test('root layout: a bogus view-as cookie still sees the notices; only a verified support session omits them', async () => {
+  const stored = { campusNotice: 'Fair Friday', maintenanceNotice: 'Upgrade tonight', maintenanceMode: false }
+  const bogus = await renderRootLayout({ stored, cookies: { 'outclass-platform-view': 'forged' } })
+  assert.match(bogus, /Upgrade tonight/); assert.match(bogus, /Fair Friday/)
+  assert.match(bogus, /data-site-notices="" style="padding-top:var\(--support-banner-height, 120px\)"/, 'starts below the stale view-as banner')
+  const support = await renderRootLayout({ stored, cookies: { 'outclass-platform-view': 'a'.repeat(64) }, viewSession: { id: 's', targetUserId: 't', expiresAt: new Date(Date.now() + 60000) } })
+  assert.ok(!support.includes('data-site-notices'))
+  const plain = await renderRootLayout({ stored })
+  assert.match(plain, /<div data-site-notices="">/)
+})
+
+test('root layout skips a campus notice dismissed this session (cookie) but never the maintenance notice', async () => {
+  const { campusNoticeDismissKey } = load('lib/campus-notice-dismiss.ts')
+  const stored = { campusNotice: 'Fair Friday', maintenanceNotice: 'Upgrade tonight' }
+  const html = await renderRootLayout({ stored, cookies: { [campusNoticeDismissKey('Fair Friday')]: '1' } })
+  assert.ok(!html.includes('Fair Friday')); assert.match(html, /Upgrade tonight/)
+  const changed = await renderRootLayout({ stored: { ...stored, campusNotice: 'New notice' }, cookies: { [campusNoticeDismissKey('Fair Friday')]: '1' } })
+  assert.match(changed, /New notice/, 'a new campus notice shows again')
+  const modeOnly = await renderRootLayout({ stored: { maintenanceMode: true } })
+  assert.match(modeOnly, /OutClass is undergoing maintenance/, 'maintenance mode without text still shows a banner')
+})
+
+test('a hanging settings read times out after 1.5 s and the outage is not retried for 10 s', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'] })
+  const h = settingsHarness()
+  let calls = 0
+  h.prisma.platformContent.findUnique = () => { calls++; return new Promise(() => {}) }
+  const error = console.error; console.error = () => {}
+  try {
+    const pending = h.settings.getSiteNotices()
+    t.mock.timers.tick(1500)
+    assert.deepEqual(await pending, { campusNotice: '', maintenanceNotice: '', maintenanceMode: false })
+    h.newRequest(); await h.settings.getSiteNotices()
+    t.mock.timers.tick(9000); h.newRequest(); await h.settings.getSiteNotices()
+    assert.equal(calls, 1, 'no database retry inside the 10 s backoff')
+    t.mock.timers.tick(1001); h.newRequest()
+    h.prisma.platformContent.findUnique = async () => { calls++; return { value: { campusNotice: 'Back' } } }
+    assert.equal((await h.settings.getSiteNotices()).campusNotice, 'Back')
+    assert.equal(calls, 2)
+  } finally { console.error = error }
+})
+
+test('route handlers: every app/api write handler is guarded by the maintenance check or explicitly exempted', () => {
+  // Server Actions are refused in requireAuth. Route handlers cannot be detected there, so any
+  // handler that writes must call assertSiteWritable itself or be listed here with its reason.
+  const exempt = {
+    'app/api/auth/logout/route.ts': 'sign-out must always work',
+    'app/api/auth/student-claim/route.ts': 'account claim is an auth flow',
+    'app/api/auth/password-recovery/route.ts': 'password recovery is an auth flow',
+    'app/api/demo/route.ts': 'demo mode toggle; demo never writes production data',
+    'app/api/school-requests/route.ts': 'unauthenticated public marketing form',
+    'app/api/platform/view-as/route.ts': 'platform admin only (requirePlatformAdmin)',
+    'app/api/platform/elevation/route.ts': 'platform admin only (requirePlatformAdmin)',
+    'app/api/internal/scheduled-communications/route.ts': 'cron, bearer secret',
+    'app/api/internal/notification-delivery/route.ts': 'cron, bearer secret',
+    'app/api/internal/invitation-delivery/route.ts': 'cron, bearer secret',
+  }
+  const routes = []
+  const walk = dir => { for (const e of fs.readdirSync(dir, { withFileTypes: true })) { const f = `${dir}/${e.name}`; if (e.isDirectory()) walk(f); else if (/^route\.tsx?$/.test(e.name)) routes.push(f) } }
+  walk('app/api')
+  const writers = routes.filter(f => /export\s+(async\s+)?(function|const)\s+(POST|PUT|PATCH|DELETE)\b/.test(fs.readFileSync(f, 'utf8')))
+  assert.ok(writers.length >= Object.keys(exempt).length - 1, 'inventory found the write handlers')
+  for (const f of writers) {
+    const source = fs.readFileSync(f, 'utf8')
+    assert.ok(f in exempt || /assertSiteWritable\(/.test(source), `${f} writes: call assertSiteWritable (utils/site-settings) after authentication, or add it to the reviewed exemptions`)
+  }
+  for (const f of Object.keys(exempt)) assert.ok(fs.existsSync(f), `${f} listed as exempt but missing`)
 })
 
 test('admin settings expose the maintenance switch, site-wide copy, and revalidate the notice cache on save', () => {

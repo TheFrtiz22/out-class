@@ -10,12 +10,28 @@ const readStoredNotices = unstable_cache(async (): Promise<SiteNotices> => {
   return siteNoticesFrom(row?.value)
 }, ["platform-settings:notices"], { revalidate: SITE_SETTINGS_REVALIDATE_SECONDS, tags: [SITE_SETTINGS_TAG] })
 
-/** Site-wide Campus/Maintenance notices and maintenance mode, deduplicated per request. */
+export const SITE_NOTICES_TIMEOUT_MS = 1_500
+export const SITE_NOTICES_FAILURE_BACKOFF_MS = 10_000
+// Process-wide outage backoff: platform state only, never per-user data.
+let unavailableUntil = 0
+
+function withTimeout<T>(promise: Promise<T>, ms: number) {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error(`settings read exceeded ${ms} ms`)), ms) })
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
+}
+
+/**
+ * Site-wide Campus/Maintenance notices and maintenance mode, deduplicated per request.
+ * Fails open: a slow (> 1.5 s) or failing read shows no notices with maintenance mode OFF,
+ * and further reads skip the database for 10 s so an outage is not retried on every render.
+ */
 export const getSiteNotices = cache(async (): Promise<SiteNotices> => {
+  if (Date.now() < unavailableUntil) return EMPTY_SITE_NOTICES
   try {
-    return await readStoredNotices()
+    return await withTimeout(readStoredNotices(), SITE_NOTICES_TIMEOUT_MS)
   } catch (error) {
-    // A notice read must never take a page down; maintenance mode stays OFF on failure.
+    unavailableUntil = Date.now() + SITE_NOTICES_FAILURE_BACKOFF_MS
     console.error("site notices unavailable", error instanceof Error ? error.message : error)
     return EMPTY_SITE_NOTICES
   }
