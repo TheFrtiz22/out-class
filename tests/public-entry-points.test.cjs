@@ -95,15 +95,15 @@ test('Explore stays private: signed-out visitors are sent to sign-in and the pag
   assert.doesNotMatch(fs.readFileSync('components/landing/public-footer.tsx', 'utf8'), /\/explore/)
 })
 
-test('unknown short links are a real 404 with sentence-case copy and Home / Sign in', async () => {
+test('unknown and expired short links share one unavailable 404 with sentence-case copy and Home / Sign in', async () => {
   const notFound = () => { throw Object.assign(Error('NEXT_NOT_FOUND'), { digest: 'NEXT_HTTP_ERROR_FALLBACK;404' }) }
-  for (const status of ['not-found', 'invalid-target']) {
+  for (const status of ['not-found', 'invalid-target', 'expired']) {
     const page = load('app/(focus)/q/[code]/page.tsx', { 'next/navigation': { notFound, redirect: forbidden }, '@/lib/short-link-store': { resolveShortLink: async () => ({ status }) }, '@/utils/prisma': { prisma: {} } }).default
     await assert.rejects(page({ params: Promise.resolve({ code: 'NOPE' }) }), /NEXT_NOT_FOUND/)
   }
   const NotFound = load('app/(focus)/q/[code]/not-found.tsx').default
   const html = renderToStaticMarkup(React.createElement(NotFound))
-  assert.match(html, /This link isn’t recognized/); assert.match(html, /href="\/"/); assert.match(html, /href="\/login"/)
+  assert.match(html, /This link is unavailable/); assert.doesNotMatch(html, /expired code|isn’t recognized/i); assert.match(html, /href="\/"/); assert.match(html, /href="\/login"/)
   assert.equal(fs.existsSync('app/loading.tsx'), false)
 })
 
