@@ -1,6 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { ArrowLeft } from "@/components/icons"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { personalSettingsSections } from "@/lib/settings-navigation"
@@ -20,7 +21,7 @@ export function PersonalSettingsLayout({ children }: { children: ReactNode }) {
     <PageHeader title={section?.label ?? "Settings"} description={section?.description ?? "Your account, notifications and availability."} />
     <div className="oc-settings-workspace">
       <aside className="oc-settings-menu">
-        {section && <Link className="oc-settings-mobile-selector inline-flex min-h-11 items-center text-sm underline underline-offset-4" href="/settings" onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>← All settings</Link>}
+        {section && <Link className="oc-settings-mobile-selector inline-flex min-h-11 items-center gap-1 text-sm underline underline-offset-4" href="/settings" onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}><ArrowLeft size={16} aria-hidden="true" />All settings</Link>}
         <nav className="oc-settings-navigation oc-settings-desktop-navigation" aria-label="Personal settings">
           <p className="px-3 pb-2 text-xs font-medium text-muted-foreground">Personal settings</p>
           {personalSettingsSections.map(item => <Link key={item.id} href={item.href} aria-current={value === item.href ? "page" : undefined} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>{item.label}</Link>)}

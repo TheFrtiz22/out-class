@@ -14,6 +14,7 @@ function harness(api,props={}) {
       if(name==='react')return{useState:initial=>{const i=cursor++;if(!(i in state))state[i]=initial;return[state[i],value=>state[i]=typeof value==='function'?value(state[i]):value];},useRef:initial=>{const i=cursor++;if(!(i in state))state[i]={current:initial};return state[i];}};
       if(name==='@/actions/roster-import')return api;
       if(name.startsWith('@/components/ui/'))return new Proxy({},{get:(_,key)=>key});
+      if(name==='@/components/icons')return new Proxy({},{get:(_,key)=>key});
       if(name.startsWith('@/'))return load(name.slice(2)+'.ts');return require(name);
     },mod,mod.exports);return mod.exports;
   }
