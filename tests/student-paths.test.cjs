@@ -265,3 +265,22 @@ test("old URLs: middleware 307s on real hosts; loopback IPs fall through to the 
   await deniedTo(page({ workspace: "student", view: "tracker", applicationClubId: "fund" }), "/applications?applicationClubId=fund")
   await deniedTo(page({ workspace: "student", view: "calendar", section: "tasks" }), "/calendar?section=tasks")
 })
+
+test("FE-4: / reads the session with the cookie jar, and the dashboard with the launch clubs, in parallel after the auth gates", async () => {
+  const source = fs.readFileSync("app/page.tsx", "utf8")
+  assert.match(source, /Promise\.all\(\[cookies\(\), getSessionUser\(\)\]\)/)
+  assert.match(source, /Promise\.all\(\[\s*user \? getStudentDashboardData\(\)\.catch\(/)
+  assert.ok(source.indexOf("disabledAt") < source.indexOf("getStudentDashboardData()"), "disabled-account check precedes the dashboard read")
+  assert.ok(source.lastIndexOf("redirect(next !== \"/\"") < source.indexOf("getStudentDashboardData()"), "signed-in redirect precedes the dashboard read")
+  // Behaviour: a dashboard failure still renders Home with no dashboard; signed-out visitors never read it.
+  const nodes = node => !node || typeof node !== "object" ? [] : [node, ...[node.props?.children].flat(Infinity).flatMap(nodes)]
+  let reads = 0
+  const mocks = opts => ({ ...pageMocks(opts), "@/actions/applications": { getStudentDashboardData: async () => { reads++; throw Error("db down") } } })
+  const realError = console.error; console.error = () => {}
+  try {
+    const failed = nodes(await load("app/page.tsx", mocks({ session: confirmed })).default({ searchParams: Promise.resolve({ workspace: "leader" }) })).find(node => node.type === "HomeEntry")
+    assert.equal(failed.props.initialData, null); assert.equal(reads, 1)
+    await load("app/page.tsx", mocks({})).default({ searchParams: Promise.resolve({}) })
+    assert.equal(reads, 1, "signed-out visitors do not read the dashboard")
+  } finally { console.error = realError }
+})
