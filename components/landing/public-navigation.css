@@ -31,7 +31,7 @@
   max-width: 1200px;
   margin-inline: auto;
   border: 1px solid var(--nav-border);
-  border-radius: 999px;
+  border-radius: var(--oc-radius-full);
   background: var(--nav-surface);
   box-shadow: var(--oc-glass-light-depth);
   -webkit-backdrop-filter: var(--oc-glass-light-filter);
@@ -46,7 +46,7 @@
 .oc-public-nav[data-hero="true"] .oc-public-mobile-links::before { background: var(--oc-glass-navy-edge); }
 .oc-public-nav-surface::before { content: ""; position: absolute; inset: 1px; border: 1px solid rgb(255 255 255 / 32%); border-bottom-color: color-mix(in srgb, var(--school-primary) 6%, transparent); border-radius: inherit; pointer-events: none; }
 .oc-public-nav-row { position: relative; display: flex; align-items: center; gap: 20px; min-height: 68px; padding: 10px 12px 10px 24px; }
-.oc-public-logo { position: relative; display: flex; align-items: center; flex: 0 0 132px; height: 44px; border-radius: 8px; }
+.oc-public-logo { position: relative; display: flex; align-items: center; flex: 0 0 132px; height: 44px; border-radius: var(--oc-radius-sm); }
 .oc-public-logo > span { position: absolute; inset: 0; display: flex; align-items: center; transition: opacity 240ms var(--nav-ease); }
 .oc-public-logo img { display: block; width: 100%; height: auto; }
 .oc-public-logo-ivory { opacity: 0; }
@@ -66,7 +66,7 @@
   justify-content: center;
   min-height: 44px;
   padding: 12px 14px;
-  border-radius: 999px;
+  border-radius: var(--oc-radius-full);
   color: inherit;
   font-size: 13px;
   font-weight: 500;
@@ -80,7 +80,7 @@
   height: auto;
   padding: 12px 20px;
   border: 1px solid rgb(255 255 255 / 16%);
-  border-radius: 999px;
+  border-radius: var(--oc-radius-full);
   color: #fff7ec;
   background: linear-gradient(165deg, rgb(141 178 209 / 18%), transparent 65%), var(--primary);
   box-shadow: var(--oc-glass-pill-navy-depth);
@@ -175,10 +175,10 @@
 }
 .oc-public-nav[data-journey="true"] .oc-public-journey-desktop { opacity: 1; visibility: visible; transform: translateY(-50%); transition-delay: 60ms, 0s, 0s; }
 /* The app's glass slider (SegmentedControl): light glass track, navy pill under the selected audience. */
-.oc-public-nav .oc-perspective-switcher[data-compact="true"] { position: relative; isolation: isolate; display: grid; grid-template-columns: 1fr 1fr; width: 100%; padding: 3px; border: 1px solid var(--oc-glass-light-edge); border-radius: 999px; background: var(--oc-glass-light-material); box-shadow: var(--oc-glass-field-depth); }
-.oc-public-nav .oc-perspective-switcher .oc-perspective-indicator { position: absolute; z-index: -1; top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / 2); border: 1px solid var(--oc-glass-pill-navy-edge); border-radius: 999px; background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); transition: transform 420ms var(--oc-glass-ease); }
+.oc-public-nav .oc-perspective-switcher[data-compact="true"] { position: relative; isolation: isolate; display: grid; grid-template-columns: 1fr 1fr; width: 100%; padding: 3px; border: 1px solid var(--oc-glass-light-edge); border-radius: var(--oc-radius-full); background: var(--oc-glass-light-material); box-shadow: var(--oc-glass-field-depth); }
+.oc-public-nav .oc-perspective-switcher .oc-perspective-indicator { position: absolute; z-index: -1; top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / 2); border: 1px solid var(--oc-glass-pill-navy-edge); border-radius: var(--oc-radius-full); background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); transition: transform 420ms var(--oc-glass-ease); }
 .oc-public-nav .oc-perspective-switcher[data-perspective="leader"] .oc-perspective-indicator { transform: translateX(100%); }
-.oc-public-nav .oc-perspective-switcher button { min-height: 44px; padding: 8px 6px; border-radius: 999px; background: transparent; color: var(--primary); font-size: 12px; font-weight: 600; line-height: 20px; white-space: nowrap; transition: color var(--oc-glass-quick) var(--oc-glass-ease), background-color var(--oc-glass-quick) var(--oc-glass-ease); }
+.oc-public-nav .oc-perspective-switcher button { min-height: 44px; padding: 8px 6px; border-radius: var(--oc-radius-full); background: transparent; color: var(--primary); font-size: 12px; font-weight: 600; line-height: 20px; white-space: nowrap; transition: color var(--oc-glass-quick) var(--oc-glass-ease), background-color var(--oc-glass-quick) var(--oc-glass-ease); }
 @media (hover: hover) and (pointer: fine) { .oc-public-nav .oc-perspective-switcher button[aria-pressed="false"]:hover { background: var(--oc-glass-hover-tint); } }
 .oc-public-nav .oc-perspective-switcher button[aria-pressed="true"] { color: var(--oc-glass-cream); }
 .oc-landing .oc-public-nav .oc-perspective-switcher button:focus-visible { outline: 2px solid var(--ring); outline-offset: -3px; box-shadow: var(--focus-halo-inset-5); }

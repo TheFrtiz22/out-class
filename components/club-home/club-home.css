@@ -22,7 +22,7 @@
 .oc-club-home-tasks .oc-segmented-control { margin-bottom: .5rem; }
 
 /* The one recruiting link on Club home: a slim interview-tinted strip. */
-.oc-recruiting-strip { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; min-height: 2.75rem; margin-bottom: 1.25rem; padding: .5rem 1rem; border: 1px solid color-mix(in srgb, var(--interview) 24%, transparent); border-radius: 999px; background: var(--interview-subtle); color: var(--foreground); font-size: var(--oc-text-small); text-decoration: none; }
+.oc-recruiting-strip { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; min-height: 2.75rem; margin-bottom: 1.25rem; padding: .5rem 1rem; border: 1px solid color-mix(in srgb, var(--interview) 24%, transparent); border-radius: var(--oc-radius-full); background: var(--interview-subtle); color: var(--foreground); font-size: var(--oc-text-small); text-decoration: none; }
 .oc-recruiting-strip:hover { border-color: color-mix(in srgb, var(--interview) 45%, transparent); }
 .oc-recruiting-strip:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 .oc-recruiting-strip-dot { width: .5rem; height: .5rem; border-radius: 50%; background: var(--interview); flex-shrink: 0; }

@@ -11,7 +11,7 @@
 .oc-discovery .oc-directory-categories { flex: 0 1 auto; min-width: 0; margin: 0; overflow-x: auto; scrollbar-width: none; }
 .oc-discovery .oc-directory-categories::-webkit-scrollbar { display: none; }
 .oc-discovery .oc-directory-categories button { white-space: nowrap; }
-.oc-discovery .oc-directory-more-categories { flex: 0 0 auto; width: auto; max-width: 15rem; border-radius: 999px; }
+.oc-discovery .oc-directory-more-categories { flex: 0 0 auto; width: auto; max-width: 15rem; border-radius: var(--oc-radius-full); }
 .oc-discovery .oc-directory-categories button { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; }
 .oc-discovery .oc-directory-categories button svg { flex-shrink: 0; }
 .oc-discovery .oc-directory-categories button span { margin: 0; opacity: .72; font-size: var(--oc-text-caption); font-variant-numeric: tabular-nums; }
@@ -108,11 +108,11 @@
 /* Phones and tablets, as in the OutClass app: compact club cards, filters behind a Filter button. */
 .oc-directory-filter-toggle { display: none; }
 @media (max-width: 1023px) {
-  .oc-discovery .oc-directory-search { min-height: 2.75rem; padding: .125rem .25rem .125rem .875rem; border-radius: 999px; }
+  .oc-discovery .oc-directory-search { min-height: 2.75rem; padding: .125rem .25rem .125rem .875rem; border-radius: var(--oc-radius-full); }
   .oc-discovery .oc-directory-search input { min-height: 2.5rem; font-size: 1rem; }
   .oc-directory-filter-toggle { position: relative; display: inline-grid; flex-shrink: 0; }
   .oc-directory-filter-toggle[aria-expanded="true"] { background: var(--oc-glass-pill-navy, var(--primary)); color: var(--oc-glass-cream); }
-  .oc-directory-filter-count { position: absolute; top: 2px; right: 2px; display: grid; place-items: center; min-width: 1rem; height: 1rem; padding: 0 .25rem; border-radius: 999px; background: var(--brand-orange); color: var(--oc-glass-cream); font-size: 10px; font-weight: 700; line-height: 1; }
+  .oc-directory-filter-count { position: absolute; top: 2px; right: 2px; display: grid; place-items: center; min-width: 1rem; height: 1rem; padding: 0 .25rem; border-radius: var(--oc-radius-full); background: var(--brand-orange); color: var(--oc-glass-cream); font-size: 10px; font-weight: 700; line-height: 1; }
   .oc-discovery .oc-directory-tools:not([data-phone-open]) { display: none; }
   .oc-discovery .oc-directory-tools[data-phone-open] { margin: .75rem 0 0; }
   .oc-discovery .oc-directory-more-categories { max-width: 11rem; }

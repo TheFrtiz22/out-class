@@ -41,7 +41,7 @@
 .oc-hero-screen-title p:first-child { font-size: 15px; font-weight: 600; }
 .oc-hero-screen-title p + p, .oc-hero-sample, .oc-hero-meta { font-size: 13px; color: var(--muted-foreground); }
 .oc-hero-sample { font-size: 12px; white-space: nowrap; }
-.oc-hero-avatar { flex-shrink: 0; border-radius: 999px; object-fit: cover; border: 1px solid var(--border); }
+.oc-hero-avatar { flex-shrink: 0; border-radius: var(--oc-radius-full); object-fit: cover; border: 1px solid var(--border); }
 .oc-hero-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 18px; background: var(--background); }
 .oc-hero-columns:focus-visible { outline: 2px solid var(--ring); outline-offset: -3px; }
 .oc-hero-column { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
@@ -58,7 +58,7 @@
 .oc-hero-row-text { flex: 1; min-width: 0; }
 .oc-hero-row .oc-hero-name { font-size: 15px; }
 .oc-hero-row .oc-hero-meta { font-size: 13px; line-height: 1.4; }
-.oc-hero-chip { flex-shrink: 0; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; background: var(--muted); color: var(--secondary-foreground); }
+.oc-hero-chip { flex-shrink: 0; padding: 2px 9px; border-radius: var(--oc-radius-full); font-size: 12px; font-weight: 600; white-space: nowrap; background: var(--muted); color: var(--secondary-foreground); }
 .oc-hero-chip[data-tone="done"] { background: var(--success-subtle); color: var(--success); }
 .oc-hero-chip[data-tone="attention"] { background: var(--info-subtle); color: var(--info); }
 .oc-hero-chip[data-tone="navy"] { background: var(--primary); color: var(--primary-foreground); }
