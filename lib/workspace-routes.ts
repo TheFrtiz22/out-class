@@ -60,6 +60,9 @@ export function canonicalClubWorkspaceQuery(input: URLSearchParams): URLSearchPa
     if (tool === "rounds" || tool === "rules") { set("tool", "applicants"); set(RECRUITING_SETTINGS_PARAM, tool === "rounds" ? "anonymous" : "rules") }
     // Rejected Applicants is the Applicants list filtered to Rejected.
     if (tool === "rejected") { set("tool", "applicants"); set("decision", "rejected") }
+    // Decide's step names, if typed or linked, map to the internal tab values.
+    if (q.get("tool") === "decisions" && q.get("decisionTab") === "vote") set("decisionTab", "voting")
+    if (q.get("tool") === "decisions" && q.get("decisionTab") === "send") set("decisionTab", "letters")
     // Decisions → Overview is the Applicants decision filter.
     if (q.get("tool") === "decisions" && q.get("decisionTab") === "overview") { set("tool", "applicants"); set("decisionTab", null) }
     // The board ballot opens from the Voting room, not from Applicants.
