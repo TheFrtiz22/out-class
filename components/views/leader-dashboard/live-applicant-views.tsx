@@ -2,14 +2,15 @@
 import { useRef, useState } from "react"
 import { schedulingDateTime } from "@/lib/scheduling-config"
 import { Lock, ShieldCheck } from "@/components/icons"
-import { DataTable, DataTableSecondary, type DataTableColumn } from "@/components/ui/data-table"
-import { joinFacts } from "@/lib/join-facts"
+import { DataTable } from "@/components/ui/data-table"
 import { StatusPill } from "@/components/ui/status-pill"
+import { SortLabel } from "@/components/product/sort-label"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import type { getClubPipeline } from "@/lib/workspace-api"
 import type { ApplicantSort } from "@/lib/live-applicant-sorting"
 import { applicantLane, applicantLanes } from "@/lib/applicant-board"
 import { relevantInterview } from "@/lib/application-presentation"
+import { TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
 import { formatAverage, scoredEvaluationsLabel } from "@/lib/interview-review-summary"
 import { NativeSelect } from "@/components/ui/native-select"
 
@@ -30,41 +31,22 @@ function Review({ app }: { app: Candidate; average?: Props["average"] }) {
   const summary = app.roundScore
   return <span className="oc-applicant-review" data-reviewed={!!summary?.submitted}>{summary ? <><strong>{formatAverage(summary.average)}{summary.average !== null && <span> / 10</span>}</strong><span>{summary.average === null ? `${summary.submitted} of ${summary.required} reviews submitted` : `Average of ${scoredEvaluationsLabel(summary.submitted)}`}{summary.provisional && " · Provisional"}</span></> : <span className="oc-applicant-review-hidden"><Lock aria-hidden="true" size={14} />Hidden until you review</span>}</span>
 }
-/** The rating on one line: the average (or the submitted count) with the detail in a tooltip and for screen readers. */
-function Rating({ app }: { app: Candidate }) {
-  const summary = app.roundScore
-  if (!summary) return <span className="oc-applicant-review-hidden oc-dt-muted" title="Hidden until you review"><Lock aria-hidden="true" size={13} />Hidden<span className="sr-only"> until you review</span></span>
-  const detail = `${summary.average === null ? `${summary.submitted} of ${summary.required} reviews submitted` : `Average of ${scoredEvaluationsLabel(summary.submitted)}`}${summary.provisional ? " · Provisional" : ""}`
-  return <span title={detail}>{summary.average === null ? <span className="oc-dt-muted">{summary.submitted}/{summary.required} reviews</span> : <><strong className="font-semibold">{formatAverage(summary.average)}</strong><span className="oc-dt-muted"> /10{summary.provisional ? "*" : ""}</span></>}<span className="sr-only"> · {detail}</span></span>
-}
-export const applicantSortOptions: { key: ApplicantSort; label: string }[] = [{ key: "name", label: "Name" }, { key: "year", label: "Class year" }, { key: "round", label: "Round" }, { key: "gpa", label: "GPA" }, { key: "sat", label: "SAT" }, { key: "act", label: "ACT" }, { key: "score", label: "Rating" }, { key: "status", label: "Status" }]
-const anonymous = (app: Candidate) => app.studentId.startsWith("anonymous-")
-const roundName = (rounds: Pipeline["rounds"], app: Candidate) => rounds.find(round => round.id === app.roundId)?.name
-const testScores = (app: Candidate) => joinFacts(app.student.studentProfile?.satScore != null && `SAT ${app.student.studentProfile.satScore}`, app.student.studentProfile?.actScore != null && `ACT ${app.student.studentProfile.actScore}`)
-/** Applicants: email drops first, then SAT and ACT combine into Test, then Year drops. Cards below 640px. */
+const columns: { key: ApplicantSort; label: string }[] = [{ key: "name", label: "Applicant" }, { key: "year", label: "Year" }, { key: "round", label: "Round" }, { key: "gpa", label: "GPA" }, { key: "sat", label: "SAT" }, { key: "act", label: "ACT" }, { key: "score", label: "Rating" }, { key: "status", label: "Status / decision" }]
 export function LiveApplicantList({ applicants, rounds, open, compact, name, sort = "name", descending = false, sortBy, votingSelection }: Props) {
-  const columns: DataTableColumn<Candidate>[] = [
-    { id: "name", header: "Applicant", sortKey: "name", primary: true, cell: app => <><ApplicantIdentity label={name(app)} anonymous={anonymous(app)} /><DataTableSecondary from="xl">{anonymous(app) ? "Anonymous review" : app.student.email}</DataTableSecondary></> },
-    { id: "year", header: "Year", sortKey: "year", showFrom: "md", cell: app => app.student.studentProfile?.academicYear || "—" },
-    { id: "round", header: "Round", sortKey: "round", cell: app => roundName(rounds, app) || "Not available" },
-    { id: "gpa", header: "GPA", sortKey: "gpa", align: "end", cell: app => app.student.studentProfile?.gpa?.toFixed(2) ?? "—" },
-    { id: "test", header: "Test", hideFrom: "lg", cell: app => testScores(app) || "—" },
-    { id: "sat", header: "SAT", sortKey: "sat", align: "end", showFrom: "lg", cell: app => app.student.studentProfile?.satScore ?? "—" },
-    { id: "act", header: "ACT", sortKey: "act", align: "end", showFrom: "lg", cell: app => app.student.studentProfile?.actScore ?? "—" },
-    { id: "score", header: "Rating", sortKey: "score", cell: app => <Rating app={app} /> },
-    { id: "status", header: "Status", sortKey: "status", cell: app => <StatusPill status={app.status} /> },
-  ]
-  return <DataTable caption="Applicants" rows={applicants} rowKey={app => app.id} columns={columns} density={compact ? "compact" : "default"}
-    onOpen={app => open(app)} openLabel={app => `Open ${name(app)}`} openAttributes={app => ({ "data-applicant-id": app.id })}
-    sort={sortBy ? { key: sort, descending, toggle: key => sortBy(key as ApplicantSort) } : undefined}
-    selection={votingSelection ? { label: "Select for voting", rowLabel: app => `Select ${name(app)} for voting`, isSelected: app => votingSelection.ids.includes(app.id), toggle: app => votingSelection.toggle(app.id), disabled: app => !votingEligible(app.status) } : undefined}
-    card={{
-      title: app => <span className="oc-dt-name">{name(app)}</span>,
-      trailing: app => <StatusPill status={app.status} />,
-      meta: app => joinFacts(app.student.studentProfile?.academicYear, roundName(rounds, app), app.student.studentProfile?.gpa != null && `GPA ${app.student.studentProfile.gpa.toFixed(2)}`, testScores(app), app.roundScore?.average != null && `Rating ${formatAverage(app.roundScore.average)}`),
-    }} />
+  return <>
+    <DataTable className="hidden xl:block" caption="Applicants"><TableHeader><TableRow>{votingSelection&&<TableHead><span className="sr-only">Select for voting</span></TableHead>}{columns.map(column => <TableHead key={column.key} scope="col" aria-sort={sort === column.key ? descending ? "descending" : "ascending" : "none"}>{sortBy ? <SortLabel label={column.label} active={sort === column.key} descending={descending} onClick={() => sortBy(column.key)} /> : column.label}</TableHead>)}</TableRow></TableHeader><TableBody>{applicants.map(app => <TableRow key={app.id} className="cursor-pointer hover:bg-secondary/40" onClick={() => open(app)}>
+      <>{votingSelection&&<TableCell onClick={e=>e.stopPropagation()}><VotingSelection app={app} name={name(app)} selection={votingSelection}/></TableCell>}</><TableCell className={compact ? "py-3" : "py-5"}><button type="button" data-applicant-id={app.id} onClick={event => { event.stopPropagation(); open(app) }} className="min-h-11 rounded text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"><ApplicantIdentity label={name(app)} anonymous={app.studentId.startsWith("anonymous-")} /><span className="text-xs text-muted-foreground">{app.studentId.startsWith("anonymous-") ? "Anonymous review" : app.student.email}</span><span className="sr-only"> · Open applicant</span></button></TableCell>
+      <TableCell className="text-xs">{app.student.studentProfile?.academicYear || "—"}</TableCell>
+      <TableCell className="text-xs">{rounds.find(round => round.id === app.roundId)?.name || "Not available"}</TableCell>
+      <TableCell>{app.student.studentProfile?.gpa?.toFixed(2) ?? "—"}</TableCell>
+      <TableCell>{app.student.studentProfile?.satScore ?? "—"}</TableCell>
+      <TableCell>{app.student.studentProfile?.actScore ?? "—"}</TableCell>
+      <TableCell className="text-xs text-muted-foreground"><Review app={app} /></TableCell>
+      <TableCell><StatusPill status={app.status} /></TableCell>
+    </TableRow>)}</TableBody></DataTable>
+    <ul className="oc-applicant-mobile-list grid gap-3 xl:hidden">{applicants.map(app => <li key={app.id}>{votingSelection&&<VotingSelection app={app} name={name(app)} selection={votingSelection}/>}<button type="button" data-applicant-id={app.id} onClick={() => open(app)} className="oc-content-panel w-full space-y-3 text-left focus-visible:outline-2 focus-visible:outline-ring"><span className="flex flex-wrap items-center justify-between gap-2"><ApplicantIdentity label={name(app)} anonymous={app.studentId.startsWith("anonymous-")} /><StatusPill status={app.status} /></span><span className="block text-xs text-muted-foreground">{rounds.find(round => round.id === app.roundId)?.name || "Round unavailable"} · GPA {app.student.studentProfile?.gpa?.toFixed(2) ?? "—"} · SAT {app.student.studentProfile?.satScore ?? "—"} · ACT {app.student.studentProfile?.actScore ?? "—"}</span><Review app={app} /><span className="block text-sm font-medium text-primary">Open applicant →</span></button></li>)}</ul>
+  </>
 }
-const votingEligible = (status: string) => ["SUBMITTED", "IN_REVIEW", "INTERVIEWING", "WAITLISTED"].includes(status)
 export function LiveApplicantKanban({ applicants, allApplicants = applicants, laneCounts, rounds, open, name, canMove, move, busy, votingSelection }: Props) {
   const dragging = useRef<string | null>(null)
   const [over, setOver] = useState<ApplicantLane | null>(null)
@@ -81,19 +63,16 @@ export function LiveApplicantKanban({ applicants, allApplicants = applicants, la
   })}</div>
 }
 
-export function LiveDecisionList({ applicants, rounds, open, compact, name, sort = "name", descending = false, sortBy }: Props) {
-  const columns: DataTableColumn<Candidate>[] = [
-    { id: "name", header: "Applicant", sortKey: "name", primary: true, cell: app => <><span className="oc-dt-name">{name(app)}</span><DataTableSecondary from="lg">{anonymous(app) ? "Anonymous review" : app.student.email}</DataTableSecondary></> },
-    { id: "round", header: "Round", sortKey: "round", cell: app => roundName(rounds, app) || "Round unavailable" },
-    { id: "score", header: "Rating", sortKey: "score", cell: app => <Rating app={app} /> },
-    { id: "status", header: "Decision", sortKey: "status", cell: app => <StatusPill status={app.status} /> },
-  ]
-  return <DataTable caption="Applications awaiting a decision" rows={applicants} rowKey={app => app.id} columns={columns} density={compact ? "compact" : "default"}
-    onOpen={app => open(app)} openLabel={app => `Review decision for ${name(app)}`} openAttributes={app => ({ "data-applicant-id": app.id })}
-    sort={sortBy ? { key: sort, descending, toggle: key => sortBy(key as ApplicantSort) } : undefined}
-    card={{ title: app => name(app), trailing: app => <StatusPill status={app.status} />, meta: app => joinFacts(roundName(rounds, app) || "Round unavailable", app.roundScore?.average != null ? `Rating ${formatAverage(app.roundScore.average)}` : app.roundScore ? `${app.roundScore.submitted}/${app.roundScore.required} reviews` : "Rating hidden until you review") }} />
+export function LiveDecisionList({ applicants, rounds, open, name, average }: Props) {
+  return <ul className="divide-y border-y">{applicants.map(app => <li key={app.id}>
+    <button type="button" data-applicant-id={app.id} onClick={() => open(app)} className="grid min-h-20 w-full gap-3 rounded py-5 text-left hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-ring sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-center sm:gap-6 sm:px-3">
+      <span className="min-w-0"><span className="block break-words font-medium">{name(app)}</span><span className="mt-1 block text-xs text-muted-foreground">{app.studentId.startsWith("anonymous-") ? "Anonymous review" : app.student.email}</span></span>
+      <span className="space-y-1 text-xs text-muted-foreground"><span className="block">{rounds.find(round => round.id === app.roundId)?.name || "Round unavailable"}</span><span className="block"><Review app={app} average={average} /></span></span>
+      <span className="flex items-center justify-between gap-4 sm:justify-end"><StatusPill status={app.status} /><span className="text-xs">Review decision →</span></span>
+    </button>
+  </li>)}</ul>
 }
 
 export function VotingSelection({app,name,selection}:{app:{id:string;status:string};name:string;selection:NonNullable<Props["votingSelection"]>}){
- return <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 px-2 text-xs"><input aria-label={`Select ${name} for voting`} type="checkbox" className="oc-checkbox" checked={selection.ids.includes(app.id)} disabled={!votingEligible(app.status)} onChange={()=>selection.toggle(app.id)}/></label>;
+ return <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 px-2 text-xs"><input aria-label={`Select ${name} for voting`} type="checkbox" className="oc-checkbox" checked={selection.ids.includes(app.id)} disabled={!["SUBMITTED","IN_REVIEW","INTERVIEWING","WAITLISTED"].includes(app.status)} onChange={()=>selection.toggle(app.id)}/></label>;
 }

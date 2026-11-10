@@ -15,6 +15,7 @@
 .oc-applicant-drawer [data-slot=sheet-header] { padding-bottom: 1.25rem; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border); }
 .oc-applicant-drawer form[data-autosave-editor] { padding: 1rem; border: 1px solid var(--border); border-top: 2px solid var(--primary); border-radius: var(--oc-radius-md); background: var(--card); }
 .oc-applicant-drawer .oc-applicant-resume { border-radius: var(--oc-radius-md); }
+.oc-applicant-drawer > button:not(:last-child) { align-self: start; margin: .75rem 1.5rem 0; }
 @media (prefers-reduced-motion: no-preference) {
   .oc-dashboard-drawer, .oc-applicant-drawer { animation-duration: 220ms; transition-duration: 220ms; }
   .oc-dashboard-detail > [data-confirmed=true] { animation: oc-dashboard-confirmed 200ms ease-out; }
@@ -25,6 +26,8 @@
 }
 
 /* Refinement pass 2: avoid calendar row allocation stretching the personal task area. */
+.oc-applicant-drawer:has(> button:not(:last-child)) > .oc-applicant-drawer-scroll { padding-top: 1.25rem; }
+.oc-applicant-drawer [data-slot=sheet-header] > button { align-self: flex-start; width: auto; }
 .oc-applicant-profile-layout:has(.oc-applicant-assessment) > .oc-applicant-resume { position: static; }
 .oc-applicant-assessment { padding: 1.5rem; border: 0; border-radius: var(--oc-editorial-radius); background: var(--oc-rail); color: var(--oc-rail-text); --muted-foreground: var(--oc-rail-muted); --border: var(--oc-rail-rule); }
 .oc-applicant-assessment > section:last-of-type { border-bottom: 0; }
@@ -35,20 +38,32 @@
 }
 
 /* Review dossier: permission-filtered document on the left, working review on the right. */
+.oc-applicant-drawer .oc-dossier-header { gap: .75rem; padding-bottom: 1.75rem; }
+.oc-dossier-header .oc-editorial-label { order: -1; }
+:root .oc-applicant-drawer .oc-dossier-header [data-slot="sheet-title"] { font-family: var(--oc-font-display); font-size: clamp(2rem,4vw,3.5rem); font-weight: 400; line-height: 1.12; overflow-wrap: anywhere; }
 .oc-dossier-document { overflow-wrap: anywhere; }
 .oc-dossier-document .oc-card-heading { font-family: var(--oc-font-display); font-size: var(--oc-editorial-section); font-weight: 400; }
 .oc-dossier-answer { padding: 1.25rem 1.5rem; border: 1px solid var(--border); border-radius: var(--oc-radius-lg); background: var(--card); }
 .oc-dossier-answer h4 { margin-top: .65rem; font-family: var(--oc-font-display); font-size: 1.25rem; line-height: 1.5; font-weight: 400; }
 .oc-dossier-answer > p:last-child { font-size: .9375rem; line-height: 1.85; color: var(--foreground); }
+.oc-review-workspace-heading { padding-bottom: 1.25rem; border-bottom: 1px solid var(--border); }
+.oc-review-workspace-heading .oc-editorial-label { color: var(--oc-rail-muted); }
+.oc-review-workspace-heading h3 { margin: 1rem 0 1.25rem; font-family: var(--oc-font-display); font-size: clamp(1.5rem,2.3vw,2rem); font-weight: 400; line-height: 1.2; }
+.oc-review-workspace-heading h3 em { color: var(--brand-subtle); }
 .oc-applicant-assessment :is(input,textarea,select) { --muted-foreground: var(--oc-field-muted); --border: var(--oc-field-rule); color: var(--foreground); background: var(--card); }
 .oc-applicant-assessment [data-slot="button"] { white-space: normal; height: auto; min-height: 40px; }
 .oc-applicant-drawer .oc-applicant-assessment form[data-autosave-editor] { padding: 0; border: 0; background: transparent; }
 .oc-applicant-assessment form [type="submit"] { background: var(--brand-subtle); color: var(--brand-ink); }
+.oc-applicant-assessment > p[role="status"]:not(:empty) { background: var(--oc-rail-selected); }
+.oc-applicant-assessment > button { color: var(--oc-rail-text); }
+.oc-applicant-assessment > button:hover { color: var(--foreground); }
 @media (max-width: 700px) {
   .oc-applicant-assessment, .oc-dossier-answer { padding: 1.25rem; }
 }
 
+.oc-review-workspace-heading [data-slot="badge"] { background: var(--brand-subtle); color: var(--primary); border: 0; border-radius: 999px; padding: .5rem .9rem; }
 
+.oc-dossier-jump { width: fit-content; padding-inline: 0; color: var(--brand-ink); }
 #dossier-evaluation:focus { outline: 2px solid var(--ring); outline-offset: 6px; border-radius: var(--oc-radius-sm); }
 
 /* Operational details stay beside their refresh action, above the pipeline. */
@@ -57,52 +72,3 @@
 /* Bar height (measured) + its bottom offset + breathing room. */
 .oc-voting-bar-clearance { padding-bottom: calc(var(--oc-voting-bar-height, 5rem) + var(--oc-toast-offset, 1.5rem) + 1.5rem); }
 body:has(.oc-voting-bar) [data-sonner-toaster][data-y-position="bottom"] { --offset-bottom: calc(var(--oc-toast-offset, 24px) + var(--oc-voting-bar-height, 4.5rem) + 0.75rem) !important; --mobile-offset-bottom: calc(var(--oc-toast-offset, 24px) + var(--oc-voting-bar-height, 10.5rem) + 0.75rem) !important; }
-
-/* Applicant quick review: one column that fits a typical applicant on one laptop screen. Header, responses,
-   collapsed sections with counts, and a footer that stays on screen for the score, note and decision. */
-.oc-workspace-drawer.oc-applicant-drawer[data-layout="quick"] { width: min(100vw, 46rem); max-width: 100vw; }
-.oc-applicant-drawer > .oc-applicant-drawer-scroll { padding: 1.125rem 1.5rem 1rem; }
-.oc-quick-header { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .375rem .875rem; padding: 0 2.25rem .875rem 0; border-bottom: 1px solid var(--border); }
-.oc-quick-identity { min-width: 0; }
-.oc-quick-title-row { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .625rem; }
-:root .oc-applicant-drawer .oc-quick-name { font-family: var(--oc-font-display); font-size: 1.375rem; font-weight: 400; line-height: 1.25; overflow-wrap: anywhere; }
-.oc-quick-name:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; border-radius: var(--oc-radius-sm); }
-.oc-quick-facts { margin-top: .125rem; color: var(--muted-foreground); font-size: var(--oc-text-caption); line-height: 1.45; }
-.oc-quick-fact { color: var(--muted-foreground); font-size: var(--oc-text-caption); }
-.oc-quick-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .25rem; }
-.oc-quick-icon-action { display: inline-grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: var(--oc-radius-sm); color: var(--muted-foreground); }
-.oc-quick-icon-action:hover { background: var(--oc-content-soft); color: var(--foreground); }
-.oc-quick-icon-action:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
-.oc-quick-pager { display: flex; align-items: center; gap: .125rem; }
-.oc-quick-pager [data-slot="button"] { width: 2.25rem; height: 2.25rem; }
-.oc-quick-layout-toggle { padding-inline: .5rem; }
-.oc-quick-body { display: grid; gap: 1.25rem; padding-top: 1rem; }
-.oc-quick-responses { display: grid; gap: 1rem; }
-.oc-quick-answer h3 { font-size: var(--oc-text-body); font-weight: var(--oc-weight-semibold); line-height: 1.45; }
-.oc-quick-answer p { margin-top: .25rem; font-size: var(--oc-text-body); line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
-.oc-quick-sections { border-top: 1px solid var(--border); }
-.oc-review-section { border-bottom: 1px solid var(--border); }
-.oc-review-section-toggle { display: flex; align-items: center; gap: .5rem; width: 100%; min-height: 2.5rem; padding: .375rem 0; border: 0; background: none; color: inherit; font: inherit; font-size: var(--oc-text-small); font-weight: var(--oc-weight-semibold); text-align: left; cursor: pointer; }
-.oc-review-section-toggle:hover { color: var(--primary); }
-.oc-review-section-toggle:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; border-radius: var(--oc-radius-sm); }
-.oc-review-section-count { color: var(--muted-foreground); font-weight: 400; }
-.oc-review-section-chevron { flex: none; transform: rotate(-90deg); transition: transform 120ms ease-out; }
-.oc-review-section[data-open] .oc-review-section-chevron { transform: none; }
-.oc-review-section-body { padding: 0 0 1rem 1.375rem; }
-.oc-applicant-review-footer.oc-quick-footer { display: grid; gap: .5rem; padding-block: .75rem calc(.75rem + env(safe-area-inset-bottom)); }
-.oc-quick-evaluation { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
-.oc-quick-evaluation .oc-quick-score { width: 5.5rem; }
-.oc-quick-evaluation .oc-quick-note { flex: 1 1 14rem; width: auto; max-height: 6rem; }
-.oc-quick-save-state { display: inline-flex; align-items: center; gap: .5rem; color: var(--muted-foreground); font-size: var(--oc-text-caption); }
-.oc-quick-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .5rem; }
-.oc-applicant-drawer p.oc-quick-message[role=status]:not(:empty) { padding: .375rem .625rem; font-size: var(--oc-text-small); }
-.oc-applicant-drawer [data-blocked] { opacity: .55; cursor: not-allowed; }
-@media (max-width: 639px) {
-  .oc-quick-header { grid-template-columns: auto minmax(0, 1fr); padding-right: 2.25rem; }
-  .oc-quick-tools { grid-column: 1 / -1; justify-content: flex-start; }
-  .oc-applicant-drawer > .oc-applicant-drawer-scroll { padding-inline: 1rem; }
-}
-@media (prefers-reduced-motion: reduce) { .oc-review-section-chevron { transition: none; } }
-.oc-applicant-drawer form.oc-quick-evaluation[data-autosave-editor] { padding: 0; border: 0; border-radius: 0; background: transparent; }
-/* Panels inside a titled quick-review section keep their own headings small. */
-.oc-review-section-body .oc-card-heading { font-family: inherit; font-size: var(--oc-text-small); font-weight: var(--oc-weight-semibold); }

@@ -23,7 +23,7 @@ test("StatusPill: one pill per application state, token colors only, stored code
 test("Applications, Home and the leader Applicants table all show StatusPill; the thin left bar is gone", () => {
   for (const file of ["components/applications/application-management-card.tsx", "components/applications/application-status-card.tsx", "components/views/student-dashboard-view.tsx", "components/views/leader-dashboard/live-applicant-views.tsx"]) assert.match(read(file), /<StatusPill status=\{app\.status\}/, file)
   const leader = read("components/views/leader-dashboard/live-applicant-views.tsx")
-  assert.equal((leader.match(/<StatusPill status=\{app\.status\}/g) || []).length, 5, "applicant table and card, board, decision table and card")
+  assert.equal((leader.match(/<StatusPill status=\{app\.status\}/g) || []).length, 4, "table, mobile list, board and decisions")
   assert.doesNotMatch(leader, /data-application-status|<Badge /)
   assert.ok(!fs.existsSync("components/status-badge.tsx"))
   const css = read("styles/product-components.css") + read("styles/product-workflows.css") + read("components/applications/application-tracker.css")

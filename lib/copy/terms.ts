@@ -69,13 +69,6 @@ export function formatDateTime(value: string | number | Date, options: { timeZon
   return new Date(value).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", ...(options.timeZone ? { timeZone: options.timeZone } : {}) })
 }
 
-/** "Oct 21" for list rows ("Oct 21, 2025" outside the current year), in the given zone. */
-export function formatShortDate(value: string | number | Date, options: { timeZone?: string } = {}) {
-  const date = new Date(value), zone = options.timeZone ? { timeZone: options.timeZone } : {}
-  const year = (d: Date) => d.toLocaleString("en-US", { year: "numeric", ...zone })
-  return date.toLocaleString("en-US", { month: "short", day: "numeric", ...(year(date) === year(new Date()) ? {} : { year: "numeric" }), ...zone })
-}
-
 /** `<title>` text for a page: "Inbox · OutClass". The root layout's template adds the suffix. */
 export const TITLE_SUFFIX = " · OutClass"
 export function documentTitle(title: string) {
