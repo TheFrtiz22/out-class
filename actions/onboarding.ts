@@ -5,9 +5,10 @@ import { cookies } from "next/headers"
 import { createClient } from "@/utils/supabase/server"
 import { registrationSchema } from "@/lib/onboarding-schemas"
 import { authEmailError } from "@/lib/auth-email"
+import { captchaFailed, turnstileMessage, withCaptcha } from "@/lib/turnstile"
 
 /** Normal signup always requires Supabase email confirmation, in every environment. */
-export async function registerStudent(input: unknown) {
+export async function registerStudent(input: unknown, turnstileToken?: unknown) {
   const cookieStore = await cookies()
   if (cookieStore.has(PLATFORM_VIEW_COOKIE)) return { error: "Exit impersonation before registering an account." }
   const parsed = registrationSchema.safeParse(input)
@@ -25,15 +26,17 @@ export async function registerStudent(input: unknown) {
     if (settings.mailer_autoconfirm !== false || settings.external?.email !== true) {
       return { error: "Account registration is temporarily unavailable. Contact OutClass support." }
     }
-    const { data, error } = await supabase.auth.signUp({
+    // Supabase Bot and Abuse Protection verifies the token when enabled.
+    const { data, error } = await supabase.auth.signUp(withCaptcha({
       email, password, options: { data: { first_name: firstName, last_name: lastName } },
-    })
+    }, turnstileToken))
     // Never retain an unexpected auto-authenticated signup, including malformed
     // responses that also claim an existing account.
     if (data.session) {
       await supabase.auth.signOut()
       return { error: "Account registration is temporarily unavailable. Contact OutClass support." }
     }
+    if (captchaFailed(error)) return { error: turnstileMessage("rejected") }
     if (error) {
       // Provider versions/settings can use either this documented error or an
       // obfuscated user. Neither is an account-existence signal for the caller.
