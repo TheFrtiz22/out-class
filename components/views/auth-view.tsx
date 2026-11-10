@@ -3,6 +3,8 @@
 import { useAuth } from "@/contexts/auth-context"
 import { useState, useEffect, type FormEvent } from "react"
 import { LoginBrandPanel } from "@/components/auth/login-brand-panel"
+import { captchaFailed, turnstileMessage, turnstileRequired, TURNSTILE_PENDING, withCaptcha } from "@/lib/turnstile"
+import { TurnstileWidget } from "@/components/security/turnstile-widget"
 import { LoginAuthPanel } from "@/components/auth/login-auth-panel"
 import "@/components/auth/login.css"
 import { PublicPageFrame } from "@/components/landing/public-page-frame"
@@ -26,6 +28,7 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
   const [password, setPassword] = useState("")
   const [emailExpanded, setEmailExpanded] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null), [turnstileReset, setTurnstileReset] = useState(0)
   const [microsoftLoading, setMicrosoftLoading] = useState(false)
   const [code, setCode] = useState("")
   const [step, setStep] = useState<"email" | "verify">("email")
@@ -64,30 +67,33 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
     event.preventDefault()
     if (isImpersonating || loading) return
     if (!isUvaEmail(email)) { setError("Use your UVA email ending in @virginia.edu."); return }
+    if (turnstileRequired && !turnstileToken) { setError(TURNSTILE_PENDING); return }
     setLoading(true)
     setError("")
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password })
-      if (error) { setError(error.message); return }
+      const { error } = await supabase.auth.signInWithPassword(withCaptcha({ email: email.trim().toLowerCase(), password }, turnstileToken))
+      if (error) { setError(captchaFailed(error) ? turnstileMessage("rejected") : error.message); return }
       window.location.href = loginReturnPath(new URLSearchParams(window.location.search).get("next"))
     } catch { setError("Unable to sign in. Please try again.") }
-    finally { setLoading(false) }
+    finally { setLoading(false); setTurnstileReset(value => value + 1) }
   }
 
   async function requestCode() {
     if (isImpersonating || loading || resendSeconds > 0) return
     if (!isUvaEmail(email)) { setError("Enter your UVA email first."); return }
+    if (turnstileRequired && !turnstileToken) { setError(TURNSTILE_PENDING); return }
     setLoading(true)
     setError("")
     try {
-      const { error } = await supabase.auth.signInWithOtp({ email: email.trim().toLowerCase(), options: { shouldCreateUser: false } })
+      const { error } = await supabase.auth.signInWithOtp(withCaptcha({ email: email.trim().toLowerCase(), options: { shouldCreateUser: false } }, turnstileToken))
+      if (captchaFailed(error)) { setError(turnstileMessage("rejected")); return }
       if (error) { setError(authEmailError(error, "send")); if (error.status === 429) setResendSeconds(60); return }
       setEmail(email.trim().toLowerCase())
       setResendSeconds(60)
       setStep("verify")
       setNotice(`Code sent. We sent a 6-digit code to ${email}.`)
     } catch { setError("Unable to send a code. Try signing in with your password.") }
-    finally { setLoading(false) }
+    finally { setLoading(false); setTurnstileReset(value => value + 1) }
   }
 
   async function verifyCode(event: FormEvent) {
@@ -123,6 +129,7 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
     <PublicPageFrame className="oc-auth-page">
     <div className="oc-login">
       <LoginAuthPanel
+        security={<TurnstileWidget action="login" onToken={setTurnstileToken} resetKey={turnstileReset} />}
         step={step}
         emailExpanded={emailExpanded}
         email={email}
