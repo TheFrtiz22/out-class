@@ -139,3 +139,8 @@ reviewers: migration-reviewer nothing blocking; L1 verify advisor after apply, L
 2026-11-09 EXPLORE-SUGGEST-1 (device Linux VM, macOS node_modules): club-suggestions 4/4 | related unit suites 129/129 (welcome mock added for new hook) | all non-browser unit files 1799 pass / 8 fail env-only (sharp, Prisma query engine, lightningcss native binaries) / 24 skipped | typecheck: only pre-existing lib/account-data.ts shortName (shared Prisma client generated from older schema) | eslint changed files 0 | ui-controls OK
 not run: browser/E2E suites, next build, test:migrations (no linux chromium/native binaries in this shell) — run `pnpm run validate` on the Mac before PR
 ```
+```
+2026-11-09 DEPS-NEXT-15528 (security/next-15-5-28 from main 318b5e31): test 1988/1921/0 fail/67 skipped (gated suites) migrations 74 ok (RLS 85) lint ok types ok build ok (Next.js 15.5.28)
+pnpm audit --prod after: no Next.js advisories; 1 high (zod) and 3 moderate (nodemailer) tracked separately
+note: one earlier full run under machine load average ~23 had 9 Playwright click timeouts; those files pass alone and the full suite passes at normal load
+```
