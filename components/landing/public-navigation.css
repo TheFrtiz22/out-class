@@ -5,8 +5,8 @@
   --nav-ink: var(--primary);
   --nav-surface: var(--oc-glass-light-material);
   --nav-border: var(--oc-glass-light-edge);
-  --nav-hover: rgb(20 45 78 / 7%);
-  --nav-accent: var(--brand-orange);
+  --nav-hover: color-mix(in srgb, var(--school-primary) 7%, transparent);
+  --nav-accent: currentColor;
   position: sticky;
   top: var(--support-banner-height, 0px);
   z-index: 40;
@@ -14,10 +14,16 @@
   color: var(--nav-ink);
   pointer-events: none;
 }
+/* Over the hero photograph the header is navy glass with the ivory wordmark (docs/public-site/redesign). */
 .oc-public-nav[data-hero="true"] {
-  --nav-hover: rgb(20 45 78 / 9%);
+  --nav-ink: var(--oc-glass-cream);
+  --nav-surface: var(--oc-glass-navy-material);
+  --nav-border: var(--oc-glass-navy-edge);
+  --nav-hover: var(--oc-glass-navy-hover-tint);
 }
 .oc-public-nav[data-open="true"] { --nav-surface: var(--oc-glass-frosted-material); }
+/* Over the photo the open menu stays navy, so the cream ink and ivory wordmark stay legible. */
+.oc-public-nav[data-hero="true"][data-open="true"] { --nav-surface: var(--oc-glass-navy-frosted-material); }
 .oc-landing > .oc-public-nav[data-hero] { position: fixed; inset-inline: 0; }
 .oc-information > .oc-public-nav[data-hero] { position: sticky; }
 .oc-public-nav-surface {
@@ -25,7 +31,7 @@
   max-width: 1200px;
   margin-inline: auto;
   border: 1px solid var(--nav-border);
-  border-radius: 999px;
+  border-radius: var(--oc-radius-full);
   background: var(--nav-surface);
   box-shadow: var(--oc-glass-light-depth);
   -webkit-backdrop-filter: var(--oc-glass-light-filter);
@@ -33,15 +39,22 @@
   pointer-events: auto;
   transition: background-color var(--nav-duration) var(--nav-ease), border-color var(--nav-duration) var(--nav-ease), border-radius var(--nav-duration) var(--nav-ease), box-shadow var(--nav-duration) var(--nav-ease), color var(--nav-duration) var(--nav-ease);
 }
-.oc-public-nav[data-hero="true"] .oc-public-nav-surface { box-shadow: var(--oc-glass-light-depth), 0 18px 40px -24px rgb(0 0 0 / 40%); }
-.oc-public-nav-surface::before { content: ""; position: absolute; inset: 1px; border: 1px solid rgb(255 255 255 / 32%); border-bottom-color: rgb(20 45 69 / 6%); border-radius: inherit; pointer-events: none; }
+.oc-public-nav[data-hero="true"] .oc-public-nav-surface { box-shadow: var(--oc-glass-navy-depth); -webkit-backdrop-filter: var(--oc-glass-navy-filter); backdrop-filter: var(--oc-glass-navy-filter); }
+.oc-public-nav[data-hero="true"] .oc-public-nav-surface::before { border-color: rgb(255 255 255 / 10%); }
+.oc-public-nav[data-hero="true"] .oc-public-link[aria-current] { box-shadow: var(--oc-glass-navy-highlight); }
+.oc-public-nav[data-hero="true"] .oc-public-primary { border-color: transparent; background: var(--oc-glass-cream); color: var(--primary); box-shadow: var(--oc-glass-pill-highlight); }
+.oc-public-nav[data-hero="true"] .oc-public-mobile-links::before { background: var(--oc-glass-navy-edge); }
+.oc-public-nav-surface::before { content: ""; position: absolute; inset: 1px; border: 1px solid rgb(255 255 255 / 32%); border-bottom-color: color-mix(in srgb, var(--school-primary) 6%, transparent); border-radius: inherit; pointer-events: none; }
 .oc-public-nav-row { position: relative; display: flex; align-items: center; gap: 20px; min-height: 68px; padding: 10px 12px 10px 24px; }
-.oc-public-logo { position: relative; display: flex; align-items: center; flex: 0 0 132px; height: 44px; border-radius: 8px; }
+.oc-public-logo { position: relative; display: flex; align-items: center; flex: 0 0 132px; height: 44px; border-radius: var(--oc-radius-sm); }
 .oc-public-logo > span { position: absolute; inset: 0; display: flex; align-items: center; transition: opacity 240ms var(--nav-ease); }
 .oc-public-logo img { display: block; width: 100%; height: auto; }
-.oc-public-logo-dark { opacity: 0; }
-.oc-public-nav[data-hero="true"] .oc-public-logo-light { opacity: 1; }
-.oc-public-nav[data-hero="true"] .oc-public-logo-dark { opacity: 0; }
+.oc-public-logo-ivory { opacity: 0; }
+.oc-public-nav[data-hero="true"] .oc-public-logo-light { opacity: 0; }
+.oc-public-nav[data-hero="true"] .oc-public-logo-ivory { opacity: 1; }
+/* The navy-background sword lockup is wider than the light lockup at the same height, so the slot grows over the photo. */
+.oc-public-nav[data-hero="true"] .oc-public-logo { flex-basis: 172px; }
+@media (max-width: 540px) { .oc-public-nav[data-hero="true"] .oc-public-logo { flex-basis: clamp(120px, 34vw, 150px); } }
 .oc-public-desktop, .oc-public-account { display: flex; align-items: center; gap: 4px; }
 .oc-public-desktop { margin-left: auto; }
 .oc-public-account { gap: 8px; }
@@ -53,33 +66,32 @@
   justify-content: center;
   min-height: 44px;
   padding: 12px 14px;
-  border-radius: 999px;
+  border-radius: var(--oc-radius-full);
   color: inherit;
   font-size: 13px;
   font-weight: 500;
   line-height: 20px;
   letter-spacing: -.01em;
 }
-.oc-public-nav .oc-public-link[aria-current] { background: var(--nav-hover); box-shadow: inset 0 1px 0 rgb(255 255 255 / 70%), inset 0 -1px 0 rgb(20 45 69 / 8%); }
+.oc-public-nav .oc-public-link[aria-current] { background: var(--nav-hover); box-shadow: inset 0 1px 0 rgb(255 255 255 / 70%), inset 0 -1px 0 color-mix(in srgb, var(--school-primary) 8%, transparent); }
 .oc-public-link[aria-current]::after { content: ""; position: absolute; bottom: 5px; left: calc(50% - 2px); width: 4px; height: 4px; border-radius: 50%; background: var(--nav-accent); }
 .oc-public-nav .oc-public-primary {
   min-height: 44px;
   height: auto;
   padding: 12px 20px;
   border: 1px solid rgb(255 255 255 / 16%);
-  border-radius: 999px;
+  border-radius: var(--oc-radius-full);
   color: #fff7ec;
   background: linear-gradient(165deg, rgb(141 178 209 / 18%), transparent 65%), var(--primary);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 20%), inset 0 -2px 0 rgb(242 101 34 / 80%), 0 3px 8px rgb(12 25 43 / 16%);
+  box-shadow: var(--oc-glass-pill-navy-depth);
   font-size: 13px;
   font-weight: 600;
   line-height: 20px;
 }
-.oc-public-nav[data-hero="true"] .oc-public-primary { color: #fff7ec; }
 .oc-landing .oc-public-nav :is(a, button) {
   transition: background-color 220ms var(--nav-ease), color 220ms var(--nav-ease), box-shadow 220ms var(--nav-ease), transform 220ms var(--nav-ease);
 }
-.oc-public-nav :is(a, button):focus-visible { outline: 2px solid var(--nav-ink); outline-offset: 3px; }
+.oc-public-nav :is(a, button):focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
 .oc-public-nav :is(.oc-public-link, .oc-public-login):focus-visible { background: var(--nav-hover); }
 .oc-public-nav .oc-public-primary:focus-visible { box-shadow: 0 0 0 4px var(--nav-hover); }
 .oc-public-nav .oc-public-primary:active { transform: scale(.97); }
@@ -94,8 +106,9 @@
 .oc-public-nav :is(a, button):focus-visible .oc-public-letter-track { transform: translateY(-100%); }
 @media (hover: hover) and (pointer: fine) {
   .oc-public-nav :is(.oc-public-link, .oc-public-login):hover { background: var(--nav-hover); box-shadow: inset 0 1px 0 rgb(255 255 255 / 65%); }
-  .oc-public-nav .oc-public-primary:hover { background-color: #24445f; box-shadow: inset 0 1px 0 rgb(255 255 255 / 25%), inset 0 -2px 0 var(--brand-orange), 0 5px 14px rgb(12 25 43 / 18%); }
+  .oc-public-nav .oc-public-primary:hover { background-color: #24445f; box-shadow: var(--oc-glass-pill-navy-hover-depth); }
   .oc-public-nav a:hover .oc-public-letter-track { transform: translateY(-100%); }
+  .oc-public-nav[data-hero="true"] .oc-public-primary:hover { background: white; box-shadow: var(--oc-glass-lift); }
 }
 .oc-public-menu-toggle { display: none; align-items: center; justify-content: center; flex: 0 0 44px; width: 44px; height: 44px; padding: 0; color: inherit; background: var(--nav-hover); border: 1px solid var(--nav-border); border-radius: 50%; cursor: pointer; }
 .oc-public-menu-icon { position: relative; width: 18px; height: 18px; }
@@ -125,7 +138,7 @@
   .oc-public-nav[data-open="true"] .oc-public-mobile { grid-template-rows: 1fr; visibility: visible; opacity: 1; transition-delay: 0s; }
   .oc-public-mobile-clip { min-height: 0; overflow: hidden; }
   .oc-public-mobile-links { display: flex; flex-direction: column; gap: 6px; max-height: calc(100dvh - var(--support-banner-height, 0px) - 112px); overflow-y: auto; overscroll-behavior: contain; padding: 12px 14px 18px; }
-  .oc-public-mobile-links::before { content: ""; height: 1px; background: rgb(20 45 69 / 12%); margin: 0 10px 8px; flex-shrink: 0; }
+  .oc-public-mobile-links::before { content: ""; height: 1px; background: color-mix(in srgb, var(--school-primary) 12%, transparent); margin: 0 10px 8px; flex-shrink: 0; }
   .oc-public-mobile .oc-public-link { justify-content: flex-start; min-height: 48px; flex-shrink: 0; padding-inline: 16px; font-size: 15px; }
   .oc-public-mobile .oc-public-link[aria-current]::after { bottom: calc(50% - 2px); left: auto; right: 18px; }
   .oc-public-mobile .oc-public-mobile-login { display: none; }
@@ -154,29 +167,35 @@
   position: absolute;
   top: 50%;
   left: 168px;
-  width: 196px;
+  width: 224px;
   opacity: 0;
   visibility: hidden;
   transform: translateY(calc(-50% + 8px));
   transition: opacity 280ms var(--nav-ease), transform 320ms var(--nav-ease), visibility 0s 320ms;
 }
 .oc-public-nav[data-journey="true"] .oc-public-journey-desktop { opacity: 1; visibility: visible; transform: translateY(-50%); transition-delay: 60ms, 0s, 0s; }
-.oc-public-nav .oc-perspective-switcher[data-compact="true"] { position: relative; isolation: isolate; display: grid; grid-template-columns: 1fr 1fr; width: 100%; padding: 3px; border: 1px solid var(--primary); border-radius: 999px; background: var(--primary); }
-.oc-public-nav .oc-perspective-switcher .oc-perspective-indicator { position: absolute; z-index: -1; top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / 2); border-radius: 999px; background: #fff7ec; border-bottom: 2px solid var(--brand-orange); box-shadow: 0 2px 8px rgb(7 21 41 / 15%); transition: transform 280ms var(--nav-ease); }
+/* The app's glass slider (SegmentedControl): light glass track, navy pill under the selected audience. */
+.oc-public-nav .oc-perspective-switcher[data-compact="true"] { position: relative; isolation: isolate; display: grid; grid-template-columns: 1fr 1fr; width: 100%; padding: 3px; border: 1px solid var(--oc-glass-light-edge); border-radius: var(--oc-radius-full); background: var(--oc-glass-light-material); box-shadow: var(--oc-glass-field-depth); }
+.oc-public-nav .oc-perspective-switcher .oc-perspective-indicator { position: absolute; z-index: -1; top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / 2); border: 1px solid var(--oc-glass-pill-navy-edge); border-radius: var(--oc-radius-full); background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); transition: transform 420ms var(--oc-glass-ease); }
 .oc-public-nav .oc-perspective-switcher[data-perspective="leader"] .oc-perspective-indicator { transform: translateX(100%); }
-.oc-public-nav .oc-perspective-switcher button { min-height: 44px; padding: 8px 6px; border-radius: 999px; background: transparent; color: #fff7ec; font-size: 12px; font-weight: 500; line-height: 20px; white-space: nowrap; }
-.oc-public-nav .oc-perspective-switcher button[aria-pressed="true"] { color: var(--primary); font-weight: 600; }
-.oc-landing .oc-public-nav .oc-perspective-switcher button:focus-visible { outline: 2px solid var(--brand-orange); outline-offset: -3px; }
+.oc-public-nav .oc-perspective-switcher button { min-height: 44px; padding: 8px 6px; border-radius: var(--oc-radius-full); background: transparent; color: var(--primary); font-size: 12px; font-weight: 600; line-height: 20px; white-space: nowrap; transition: color var(--oc-glass-quick) var(--oc-glass-ease), background-color var(--oc-glass-quick) var(--oc-glass-ease); }
+@media (hover: hover) and (pointer: fine) { .oc-public-nav .oc-perspective-switcher button[aria-pressed="false"]:hover { background: var(--oc-glass-hover-tint); } }
+.oc-public-nav .oc-perspective-switcher button[aria-pressed="true"] { color: var(--oc-glass-cream); }
+.oc-landing .oc-public-nav .oc-perspective-switcher button:focus-visible { outline: 2px solid var(--ring); outline-offset: -3px; box-shadow: var(--focus-halo-inset-5); }
+.oc-landing .oc-public-nav .oc-perspective-switcher button[aria-pressed="true"]:focus-visible { outline-color: var(--ring); outline-offset: -3px; }
 .oc-public-journey-mobile { display: none; }
 @media (max-width: 1099px) { .oc-public-journey-desktop { left: 164px; } }
 @media (max-width: 767px) {
   .oc-public-journey-desktop { display: none; }
   .oc-public-journey-mobile { display: block; margin: 0 10px 8px; }
   .oc-public-nav .oc-public-journey-mobile .oc-perspective-switcher button { font-size: 14px; min-height: 48px; }
-  .oc-public-nav[data-journey="true"] .oc-public-menu-toggle::after { content: ""; position: absolute; top: 4px; right: 4px; width: 5px; height: 5px; background: var(--brand-orange); border-radius: 50%; }
+  .oc-public-nav[data-journey="true"] .oc-public-menu-toggle::after { content: ""; position: absolute; top: 4px; right: 4px; width: 5px; height: 5px; background: currentColor; border-radius: 50%; }
   .oc-public-menu-toggle { position: relative; }
 }
 @media (prefers-reduced-motion: reduce) {
   .oc-public-journey-desktop, .oc-public-nav .oc-perspective-indicator { transition: none !important; }
   .oc-public-journey-desktop { transform: translateY(-50%); }
 }
+
+/* Every header link is at least 44px tall and 44px wide (short labels such as "FAQ" included). */
+.oc-public-desktop .oc-public-link, .oc-public-nav .oc-public-login { min-height: 44px; min-width: 44px; justify-content: center; }

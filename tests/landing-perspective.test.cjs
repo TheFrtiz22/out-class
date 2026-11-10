@@ -26,14 +26,17 @@ function perspectiveHarness(hash, search = "", preference = null, storageBlocked
   const content = compile("components/landing/journey-content.ts", {}, window)
   const audience = compile("lib/landing-audience.ts", {}, window)
   const document = { querySelectorAll: () => [], querySelector: () => null, documentElement: { dataset: {} }, cookie: "" }
+  // Refs persist across renders by call order, as in React.
+  const refs = []; let refCursor = 0
   const hook = compile("hooks/use-landing-perspective.ts", {
-    react: { useState: initial => { selected ??= initial; return [selected, next => { selected = next }] }, useRef: value => ({ current: value }), useLayoutEffect: effect => effects.push(effect), useCallback: callback => callback, useEffect: effect => effects.push(effect) },
+    react: { useState: initial => { selected ??= initial; return [selected, next => { selected = next }] }, useRef: value => { const i = refCursor++; refs[i] ??= { current: value }; return refs[i] }, useLayoutEffect: effect => effects.push(effect), useCallback: callback => callback, useEffect: effect => effects.push(effect), startTransition: fn => fn() },
     "@/components/landing/journey-content": content,
     "@/lib/landing-audience": audience,
   }, window, document)
-  const result = hook.useLandingPerspective()
+  const renderHook = () => { refCursor = 0; return hook.useLandingPerspective() }
+  renderHook()
   const cleanup = effects.map(effect => effect()).filter(value => typeof value === "function")
-  return { get selected() { return selected }, storage, document, navigation, listeners, cleanup, switch: next => hook.useLandingPerspective().switchPerspective(next), visit(hash, event = "hashchange") { window.location.hash = hash; listeners.get(event)?.() } }
+  return { get selected() { return selected }, storage, document, navigation, listeners, cleanup, switch: next => renderHook().switchPerspective(next), visit(hash, event = "hashchange") { window.location.hash = hash; listeners.get(event)?.() } }
 }
 
 test("refreshing either perspective and legacy club links selects the correct walkthrough", () => {
@@ -69,7 +72,7 @@ test("direct numbered chapter links retain their audience, while legacy hashes t
   assert.equal(perspectiveHarness("#journey-3", "?audience=invalid").selected, "leader")
 })
 
-test("first visits default to leaders, manual choices persist, and explicit navigation wins", () => {
+test("first visits default to club leaders, manual choices persist, and explicit navigation wins", () => {
   assert.equal(perspectiveHarness("").selected,"leader")
   assert.equal(perspectiveHarness("","","students").selected,"student")
   assert.equal(perspectiveHarness("","","club-leaders").selected,"leader")
@@ -120,4 +123,53 @@ test("hero-to-paper boundary stays crisp with a readable scroll cue", () => {
   assert.match(atmosphere, /\.oc-landing:has\(\.oc-product-stories\) main\s*\{\s*background: var\(--oc-journey-linen\);/)
   assert.match(intro, /\.oc-intro-scroll\s*\{[^}]*z-index: 1;[^}]*safe-area-inset-bottom/)
   assert.match(introMarkup, /<ScrollIndicator[^>]*targetId="about"/)
+})
+
+// Transition-aware harness: separate state slots per useState call and a startTransition that waits
+// until flush(), so a second tap can land while the first content switch is still pending.
+function transitionHarness(hash = "", search = "") {
+  const slots = [], effects = [], pending = []
+  let cursor = 0
+  const window = {
+    location: { hash, search, protocol: "https:" }, innerHeight: 1000,
+    localStorage: { getItem: () => null, setItem: () => {} },
+    history: { replaceState: (_s, _t, url) => { const u = new URL(url, "https://x.test/"); window.location.search = u.search; window.location.hash = u.hash } },
+    addEventListener: () => {}, removeEventListener: () => {}, scrollTo: () => {},
+  }
+  const document = { querySelectorAll: () => [], querySelector: () => null, documentElement: { dataset: {} }, cookie: "", getElementById: () => null }
+  const refs = []
+  const react = {
+    useState: initial => { const i = cursor++; if (!(i in slots)) slots[i] = initial; return [slots[i], next => { slots[i] = next }] },
+    useRef: value => { const i = cursor++; refs[i] ??= { current: value }; return refs[i] },
+    useLayoutEffect: () => { cursor++ }, useEffect: () => { cursor++ }, useCallback: fn => { cursor++; return fn },
+    startTransition: fn => pending.push(fn),
+  }
+  const content = compile("components/landing/journey-content.ts", {}, window)
+  const audience = compile("lib/landing-audience.ts", {}, window, document)
+  const hook = compile("hooks/use-landing-perspective.ts", { react, "@/components/landing/journey-content": content, "@/lib/landing-audience": audience }, window, document)
+  const render = () => { cursor = 0; return hook.useLandingPerspective("leader") }
+  render()
+  return { render, flush: () => { while (pending.length) pending.shift()() }, refs }
+}
+
+test("a second tap during a pending content transition wins: toggle, content and URL agree", () => {
+  const h = transitionHarness()
+  h.render().switchPerspective("student")
+  let state = h.render()
+  assert.equal(state.selected, "student"); assert.equal(state.perspective, "leader", "content waits for the transition")
+  state.switchPerspective("leader")   // before the first transition commits
+  h.flush()
+  state = h.render()
+  assert.equal(state.selected, "leader"); assert.equal(state.perspective, "leader")
+  h.render().switchPerspective("student"); h.flush()
+  state = h.render()
+  assert.equal(state.selected, "student"); assert.equal(state.perspective, "student")
+})
+
+test("a toggle with nothing to anchor clears any stored scroll position instead of reusing a stale one", () => {
+  const h = transitionHarness()
+  const position = h.refs.find(ref => ref && ref.current === null)
+  position.current = { selector: "#journey-3", fraction: 0, line: 112 }
+  h.render().switchPerspective("student")
+  assert.equal(position.current, null)
 })

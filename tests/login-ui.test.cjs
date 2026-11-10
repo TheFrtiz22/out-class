@@ -167,7 +167,7 @@ test("auth presentation keeps collapsed controls inert and callback errors annou
   assert.equal(reveal.props.inert, true)
   assert.equal(reveal.props["aria-hidden"], true)
   assert.equal(tree.find(n => n.props?.role === "alert").props.children, "Microsoft sign-in failed.")
-  const uva = tree.find(n => n.type === "Button")
+  const uva = tree.find(n => n.type === "Button" && n.props.className === "oc-login-uva")
   assert.equal(uva.props.onClick, p.onMicrosoftLogin)
   const form = load("components/auth/email-login-form.tsx").EmailLoginForm(p)
   assert.equal(form.props.onSubmit, p.onSignIn)

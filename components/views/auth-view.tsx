@@ -5,6 +5,7 @@ import { useState, useEffect, type FormEvent } from "react"
 import { LoginBrandPanel } from "@/components/auth/login-brand-panel"
 import { LoginAuthPanel } from "@/components/auth/login-auth-panel"
 import "@/components/auth/login.css"
+import { PublicPageFrame } from "@/components/landing/public-page-frame"
 import { isUvaEmail, loginReturnPath } from "@/lib/auth"
 import type { ViewId } from "@/lib/views"
 import { createClient } from "@/utils/supabase/client"
@@ -116,11 +117,11 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
     }
   }
 
-  if (isImpersonating) return <main className="p-8">Exit impersonation above before changing authentication. <Link className="underline" href="/?workspace=student">Return to the user’s workspace</Link></main>
+  if (isImpersonating) return <main className="p-8">Exit impersonation above before changing authentication. <Link className="underline" href="/home">Return to the user’s workspace</Link></main>
 
   return (
+    <PublicPageFrame className="oc-auth-page">
     <div className="oc-login">
-      <LoginBrandPanel />
       <LoginAuthPanel
         step={step}
         emailExpanded={emailExpanded}
@@ -144,6 +145,8 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
         onBack={onBack}
         onCreateAccount={onCreateAccount}
       />
+      <LoginBrandPanel />
     </div>
+    </PublicPageFrame>
   )
 }

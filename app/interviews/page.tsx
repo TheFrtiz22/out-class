@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
-import { applicantStatusHref } from "@/lib/student-navigation"
+import { applicantStatusHref } from "@/lib/navigation"
 
 export default async function Page({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const params = new URLSearchParams()

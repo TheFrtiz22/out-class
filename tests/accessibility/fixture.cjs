@@ -44,7 +44,7 @@ exports.getPublicCampusEvent=async()=>window.fixtureEvent;
 exports.getSavedCampusEventIds=exports.getMyCampusEventRsvps=exports.listClubCampusEvents=async()=>[];
 exports.setSavedCampusEvent=async()=>{};
 exports.getCampusEventRsvp=async()=>({status:null,going:false,canRsvp:true});
-exports.setCampusEventRsvp=async()=>({rsvpCount:1});
+exports.setCampusEventRsvp=async()=>({ok:true,going:true,count:1});
 exports.saveCampusEvent=async input=>({...window.fixtureEvent,...input,revision:1,status:'DRAFT'});
 exports.uploadEventFlyer=async()=>{throw Error('Fixture upload failure. Choose another file.')};
 exports.getVotingJoinInfo=async()=>({status:'READY',clubName:'Accessibility Club',clubId:'club1'});

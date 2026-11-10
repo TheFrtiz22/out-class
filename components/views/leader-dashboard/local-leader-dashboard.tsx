@@ -12,6 +12,7 @@ import { ChevronUp, ChevronDown, Search, SlidersHorizontal, Play, ChevronLeft, C
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { SegmentedControl } from "@/components/ui/segmented-control"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { Label } from "@/components/ui/label"
@@ -25,12 +26,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import { StatusBadge } from "@/components/status-badge"
+import { StatusPill } from "@/components/ui/status-pill"
 import { SpeedReviewMode } from "@/components/views/leader-dashboard/speed-review-mode"
 import { PipelineView } from "@/components/views/leader-dashboard/pipeline-view"
 import { type Applicant, workspaceRounds } from "@/lib/data"
 
 import { averageApplicantScore, nextApplicantSort, sortApplicants, type ApplicantSortKey, type SortConfig } from "@/lib/applicant-sorting"
+import { NativeSelect } from "@/components/ui/native-select"
 
 const SORT_COLUMNS: { key: ApplicantSortKey; label: string; className?: string }[] = [
   { key: "name", label: "Applicant" },
@@ -266,15 +268,12 @@ export default function LocalLeaderDashboardView() {
 
   return (
     <div className="space-y-4 font-sans">
-      <div className="flex gap-2" role="group" aria-label="CRM pipeline">
-        <Button variant="outline" aria-pressed={pipeline === "applicants"} className={cn("shadow-none", pipeline === "applicants" && "bg-black text-white hover:bg-neutral-800 hover:text-white")} onClick={() => setPipeline("applicants")}>Active Applicants</Button>
-        <Button variant="outline" aria-pressed={pipeline === "leads"} className={cn("shadow-none", pipeline === "leads" && "bg-black text-white hover:bg-neutral-800 hover:text-white")} onClick={() => setPipeline("leads")}>Interested Leads</Button>
-      </div>
+      <SegmentedControl label="CRM pipeline" value={pipeline} onChange={setPipeline} options={[{ value: "applicants", label: "Active Applicants" }, { value: "leads", label: "Interested Leads" }]} />
       {pipeline === "leads" ? <LeadsTable attendance={attendance} applicantIds={applicantIds} clubId="vvf" /> : <>
       <CRMViewManager />
       <fieldset disabled={!ready} className="min-w-0 space-y-4">
       {/* Filter command bar */}
-      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-neutral-200 bg-white p-2.5">
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-white p-2.5">
         <div className="relative w-full sm:w-64">
           <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -289,7 +288,7 @@ export default function LocalLeaderDashboardView() {
           <SelectTrigger className="h-8 w-36 text-xs" size="sm">
             <SelectValue placeholder="Stage" />
           </SelectTrigger>
-          <SelectContent className="rounded-xl border-neutral-200 bg-white shadow-none">
+          <SelectContent className="rounded-xl border-border bg-white shadow-none">
             {STAGES.map((s) => (
               <SelectItem key={s} value={s} className="text-xs">
                 {stageName(s)}
@@ -309,7 +308,7 @@ export default function LocalLeaderDashboardView() {
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent align="start" className="w-56 rounded-xl border-neutral-200 bg-white p-3 shadow-none">
+          <PopoverContent align="start" className="w-56 rounded-xl border-border bg-white p-3 shadow-none">
             <div className="space-y-3">
               <div>
                 <p className="mb-1.5 text-[length:var(--oc-size-11)] font-medium uppercase tracking-wide text-muted-foreground">Major</p>
@@ -349,7 +348,7 @@ export default function LocalLeaderDashboardView() {
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent align="start" className="w-64 space-y-3 rounded-xl border-neutral-200 bg-white p-3 shadow-none">
+          <PopoverContent align="start" className="w-64 space-y-3 rounded-xl border-border bg-white p-3 shadow-none">
             <div className="space-y-1.5">
               <Label htmlFor="crm-min-sat" className="text-xs font-medium">SAT Score greater than</Label>
               <Input
@@ -427,10 +426,10 @@ export default function LocalLeaderDashboardView() {
 
       {/* CRM data table */}
       {viewMode === "table" && (
-      <Card className="overflow-hidden rounded-xl border-neutral-200 bg-white py-0 shadow-none">
+      <Card variant="default" className="overflow-hidden rounded-xl border-border bg-white py-0 shadow-none">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            {crmColumns.every(column => !visible(column.id)) ? <p className="p-8 text-center text-sm text-neutral-500">All columns are hidden. Open View Settings to show columns.</p> : <Table>
+            {crmColumns.every(column => !visible(column.id)) ? <p className="p-8 text-center text-sm text-muted-foreground">All columns are hidden. Open View Settings to show columns.</p> : <Table>
               <TableHeader>
                 <TableRow className="bg-white [&_th]:h-12 [&_th]:text-[length:var(--oc-size-11)] [&_th]:font-medium [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-muted-foreground">
                   {visible("selection") && <TableHead className="w-10 pl-4">
@@ -443,14 +442,14 @@ export default function LocalLeaderDashboardView() {
                   {SORT_COLUMNS.filter(column => visible(column.key)).map((column) => (
                     <TableHead key={column.key} scope="col" className={column.className}
                       aria-sort={sortConfig.key === column.key ? sortConfig.direction : "none"}>
-                      <button type="button" onClick={() => requestSort(column.key)}
+                      <Button type="button" variant="ghost" size="sm" onClick={() => requestSort(column.key)}
                         aria-label={`Sort by ${column.label} ${sortConfig.key === column.key && sortConfig.direction === "descending" ? "ascending" : "descending"}`}
-                        className={cn("flex min-h-10 w-full cursor-pointer select-none items-center gap-1 whitespace-nowrap rounded px-1 text-left text-[length:var(--oc-size-11)] font-medium uppercase tracking-wide transition-colors hover:bg-neutral-50 hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400", column.key === "score" && "justify-end", sortConfig.key === column.key && "text-neutral-900")}>
+                        className={cn("w-full select-none justify-start gap-1 px-1 text-left text-[length:var(--oc-size-11)] font-medium uppercase tracking-wide", column.key === "score" && "justify-end", sortConfig.key === column.key && "text-foreground")}>
                         {column.label}
                         <span className="inline-flex size-3 shrink-0" aria-hidden="true">
                           {sortConfig.key === column.key && (sortConfig.direction === "ascending" ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />)}
                         </span>
-                      </button>
+                      </Button>
                     </TableHead>
                   ))}
                   {visible("events") && <TableHead>Events Attended</TableHead>}
@@ -465,7 +464,7 @@ export default function LocalLeaderDashboardView() {
                     aria-label={`Open applicant ${a.name}`}
                     onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); setActiveId(a.id) } }}
                     data-state={selected.has(a.id) ? "selected" : undefined}
-                    className="cursor-pointer text-xs transition-colors hover:bg-neutral-50 [&_td]:h-16 [&_td]:py-4"
+                    className="cursor-pointer text-xs transition-colors hover:bg-muted [&_td]:h-16 [&_td]:py-4"
                   >
                     {visible("selection") && <TableCell className="pl-4" onClick={(e) => e.stopPropagation()}>
                       <Checkbox checked={selected.has(a.id)} onCheckedChange={() => toggleRow(a.id)} aria-label={`Select ${a.name}`} />
@@ -485,7 +484,7 @@ export default function LocalLeaderDashboardView() {
                     {visible("gpa") && <TableCell className="font-sans tabular-nums">{a.gpa}</TableCell>}
                     {visible("satScore") && <TableCell className="font-sans tabular-nums">{a.satScore}</TableCell>}
                     {visible("status") && <TableCell>
-                      <select aria-label={`Recruitment stage for ${a.name}`} value={a.status} onClick={event => event.stopPropagation()} onChange={event => movePipelineCandidate(a.id, event.target.value)} className="max-w-44 rounded-md border border-neutral-200 bg-white p-1.5 text-xs">{stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select>
+                      <NativeSelect aria-label={`Recruitment stage for ${a.name}`} value={a.status} onClick={event => event.stopPropagation()} onChange={event => movePipelineCandidate(a.id, event.target.value)} className="max-w-44 rounded-md border border-border bg-white p-1.5 text-xs">{stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</NativeSelect>
                     </TableCell>}
                     {visible("score") && <TableCell className="pr-4 text-right font-sans font-medium">
                       {averageScore(a.id, a.score) > 0 ? averageScore(a.id, a.score).toFixed(1) : "—"}
@@ -572,7 +571,7 @@ export default function LocalLeaderDashboardView() {
                     <SheetTitle className="oc-modal-title truncate">{active.name}</SheetTitle>
                     <SheetDescription className="truncate text-xs text-muted-foreground">{active.major} · {active.year}</SheetDescription>
                   </div>
-                  <StatusBadge status={stageName(active.status)} />
+                  <StatusPill status={stageName(active.status)} />
                 </div>
               </SheetHeader>
 
@@ -601,7 +600,7 @@ export default function LocalLeaderDashboardView() {
 
               <Tabs defaultValue="application" className="flex flex-1 flex-col gap-0 overflow-hidden">
                 <div className="border-b px-4">
-                  <TabsList className="h-auto bg-transparent p-0">
+                  <TabsList variant="subtle" className="h-auto bg-transparent p-0">
                     <TabsTrigger
                       value="application"
                       className="rounded-none border-b-2 border-transparent px-3 py-2.5 text-xs data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none"
@@ -726,30 +725,30 @@ export default function LocalLeaderDashboardView() {
                                 className={cn(
                                   "flex size-7 shrink-0 items-center justify-center rounded-full border-2 text-xs font-semibold",
                                   stage.locked
-                                    ? "border-gray-200 bg-gray-100 text-gray-400"
+                                    ? "border-border bg-muted text-muted-foreground"
                                     : "border-foreground bg-foreground text-white",
                                 )}
                               >
                                 {stage.locked ? <Lock className="size-3" /> : i + 1}
                               </div>
                               {i < stages.length - 1 && (
-                                <div className={cn("mt-1 w-px flex-1", stage.locked ? "bg-gray-200" : "bg-foreground/20")} />
+                                <div className={cn("mt-1 w-px flex-1", stage.locked ? "bg-secondary" : "bg-foreground/20")} />
                               )}
                             </div>
 
                             <div className={cn("flex-1 pb-2", stage.locked && "opacity-60")}>
                               {stage.locked ? (
-                                <div className="rounded-lg border border-dashed border-gray-200 bg-white p-3.5">
+                                <div className="rounded-lg border border-dashed border-border bg-white p-3.5">
                                   <div className="flex items-center gap-2">
-                                    <Lock className="size-3.5 text-gray-400" />
-                                    <p className="text-sm font-semibold text-gray-500">{stage.title}</p>
+                                    <Lock className="size-3.5 text-muted-foreground" />
+                                    <p className="text-sm font-semibold text-muted-foreground">{stage.title}</p>
                                   </div>
-                                  <p className="mt-1 text-xs text-gray-400">
+                                  <p className="mt-1 text-xs text-muted-foreground">
                                     Locked — candidate has not reached this stage yet.
                                   </p>
                                 </div>
                               ) : (
-                                <div className="rounded-lg border border-gray-200 bg-white p-3.5">
+                                <div className="rounded-lg border border-border bg-white p-3.5">
                                   <div className="flex items-center justify-between gap-2">
                                     <div>
                                       <p className="text-sm font-semibold text-foreground">{stage.title}</p>

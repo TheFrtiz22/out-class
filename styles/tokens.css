@@ -1,48 +1,71 @@
-/* OutClass foundations. Semantic variables are the source of truth; Tailwind
+/* OutClass foundations: the single palette for every surface. Semantic variables are the source of truth; Tailwind
    and the existing shadcn APIs consume them through app/globals.css. */
 :root {
+  /* School theme layer. UVA is the default school. Values from brand.virginia.edu/design-assets/colors
+     and its accessible type-colour combinations (verified 2026-11-08). Another school overrides only these
+     four under [data-school="<id>"] (template at the end of this file); everything else reads them through
+     the semantic tokens below. lib/qr keeps its own constants. */
+  --school-primary: #232d4b;     /* UVA Blue */
+  --school-accent: #e57200;      /* UVA Orange: accents, large text (24px, or 18.66px bold) and UI parts only (3.1:1 on white) */
+  --school-accent-text: #a04d00; /* OutClass-derived UVA-hue orange for small text: >= 4.5:1 on every light surface, tinted ones included */
+  --school-ring: #c86400;        /* the one focus ring: >= 3:1 on canvas, cards, soft panels, UVA Blue and the projector theme */
+  --school-accent-on-dark: #f3a274; /* accent text on navy and dark surfaces (footer, hero, projector): >= 4.5:1 on UVA Blue */
+  /* Two-colour focus indicator (WCAG C40): where the ring sits on or inside a filled element, a cream halo
+     separates it from the fill (ring vs halo 3.94:1; halo vs the darkest navy pill 9:1+). Owner decision 2026-11-08. */
+  --focus-halo: #fffefa;
+  /* The halo as a shadow: outset fills the 2px gap inside an outset ring; inset-N fills from the edge to an
+     inset ring (N = |outline-offset| + outline width). Page CSS uses these instead of raw shadow literals. */
+  --focus-halo-outset: 0 0 0 2px var(--focus-halo);
+  --focus-halo-inset-4: inset 0 0 0 4px var(--focus-halo);
+  --focus-halo-inset-5: inset 0 0 0 5px var(--focus-halo);
+  --focus-halo-inset-6: inset 0 0 0 6px var(--focus-halo);
+
   /* Editorial composition: display scale is independent of operational controls. */
   --oc-editorial-display: clamp(2.75rem, 5.1vw, 4.5rem);
   --oc-editorial-feature: clamp(1.75rem, 3.1vw, 2.75rem);
   --oc-editorial-section: clamp(1.4rem, 2.1vw, 1.875rem);
   --oc-editorial-gap: clamp(1.5rem, 3vw, 2.75rem);
-  --oc-editorial-radius: 1.5rem;
-  --oc-editorial-shadow: 0 12px 32px rgb(20 45 69 / 6%);
+  --oc-editorial-radius: var(--oc-radius-2xl);
   --oc-editorial-rule: var(--border);
 
   /* Content geometry is shared across public forms, product and focused modes.
      Navigation owns its separate optical materials and geometry. */
-  --oc-content-width: 80rem;
+  --oc-content-width: 96rem;
   --oc-reading-width: 48rem;
-  --oc-content-surface: var(--card);
-  --oc-content-soft: var(--muted);
-  --oc-content-soft-blue: var(--info-subtle);
-  --oc-content-edge: var(--border);
-  --oc-content-radius: 1.125rem;
-  --oc-content-radius-small: .875rem;
+  /* Content surfaces are glass (styles/navigation-glass.css). The solid values remain for data tables,
+     form fields and every fallback; --oc-surface-glass* resolve to them when glass is unavailable. */
+  --oc-content-solid: #fffefa;
+  --oc-content-edge-solid: #e0e5e3;
+  --oc-content-shadow-solid: 0 1px 2px color-mix(in srgb, var(--school-primary) 4%, transparent), 0 10px 24px -20px color-mix(in srgb, var(--school-primary) 18%, transparent);
+  --oc-content-surface: var(--oc-surface-glass);
+  --oc-content-soft: #f1f4f3;
+  --oc-content-soft-blue: #eaf0f2;
+  --oc-content-edge: var(--oc-surface-glass-edge);
+  --oc-content-radius: var(--oc-radius-lg);
+  --oc-content-radius-small: var(--oc-radius-lg);
   --oc-content-padding: clamp(1rem, 1.55vw, 1.5rem);
   --oc-content-gap: clamp(1rem, 1.6vw, 1.5rem);
-  --oc-content-shadow: 0 1px 2px rgb(20 45 69 / 4%), 0 10px 24px -20px rgb(20 45 69 / 18%);
-  --oc-content-shadow-hover: 0 3px 8px rgb(20 45 69 / 5%), 0 16px 30px -22px rgb(20 45 69 / 22%);
+  --oc-content-shadow: var(--oc-elevation-surface);
+  --oc-content-shadow-hover: 0 3px 8px color-mix(in srgb, var(--school-primary) 5%, transparent), 0 16px 30px -22px color-mix(in srgb, var(--school-primary) 22%, transparent);
   --oc-content-motion: 180ms;
-  --oc-overlay-radius: 1.5rem;
-  --background: #f8f7f4;
-  --foreground: #14243a;
-  --card: #ffffff;
+  --oc-overlay-radius: var(--oc-radius-2xl);
+  --background: #f6f5f1;
+  --foreground: var(--school-primary);
+  --card: #fffefa;
   --card-foreground: var(--foreground);
-  --popover: #ffffff;
+  --popover: #fffefa;
   --popover-foreground: var(--foreground);
-  --primary: #142d4e;
+  --primary: var(--school-primary);
   --primary-foreground: #ffffff;
-  --secondary: #eeefed;
-  --secondary-foreground: #344256;
-  --muted: #f1f2f1;
-  --muted-foreground: #586473;
-  --accent: #edf0f3;
-  --accent-foreground: var(--foreground);
-  --brand-orange: #e85b19;
-  --brand-subtle: #fff1e8;
-  --brand-ink: #a63b0b;
+  --secondary: #eaece8;
+  --secondary-foreground: #34485a;
+  --muted: #edeee9;
+  --muted-foreground: #52606d;
+  --accent: #e7ebe7;
+  --accent-foreground: var(--school-primary);
+  --brand-orange: var(--school-accent);
+  --brand-subtle: #fceadd;
+  --brand-ink: var(--school-accent-text);
   --destructive: #ac3544;
   --destructive-foreground: #ffffff;
   --error-subtle: #fbeef0;
@@ -54,58 +77,70 @@
   --info-subtle: #edf3fa;
   --interview: #655080;
   --interview-subtle: #f1eef7;
-  --border: #dce0e3;
+  --border: #dfe3dd;
   --input: #8793a0;
-  --ring: #295c88;
+  --ring: var(--school-ring);
   --overlay: rgb(12 25 43 / 42%);
   --chart-1: #295c88;
   --chart-2: #296448;
   --chart-3: #795617;
   --chart-4: #655080;
   --chart-5: #14243a;
-  --radius: 0.625rem;
-  --oc-radius-sm: 0.25rem;
-  --oc-radius-md: 0.375rem;
-  --oc-radius-lg: 0.625rem;
-  --oc-radius-xl: 0.75rem;
-  --oc-shadow-surface: 0 1px 2px rgb(20 36 58 / 4%);
-  --oc-shadow-popover: 0 4px 20px rgb(20 36 58 / 10%);
-  --oc-shadow-modal: 0 16px 64px rgb(20 36 58 / 16%);
-  --oc-shadow-surface-hover: 0 4px 12px rgb(20 45 69 / 9%);
+  /* One radius scale (FE-8, owner decision 2026-11-09: consolidate at the current glass look). Every radius in
+     component CSS is a step of this scale; content, editorial and overlay radii are aliases of it. */
+  --oc-radius-sm: .375rem;   /*  6px inputs, chips, small controls */
+  --oc-radius-md: .625rem;   /* 10px buttons, list rows */
+  --oc-radius-lg: 1rem;      /* 16px panels, cards, sheets */
+  --oc-radius-xl: 1.375rem;  /* 22px feature cards, hero surfaces */
+  --oc-radius-2xl: 1.5rem;   /* 24px dialogs, overlays, editorial blocks */
+  --oc-radius-full: 999px;   /* pills, avatars, capsules */
+  --radius: var(--oc-radius-md);
+  /* Three elevation levels: surface (panels and cards; the glass depth), popover (menus, popovers,
+     toasts), modal (dialogs, sheets). Hover is a state of the surface level, not a level. Raised controls
+     inside a surface (active tab, board cards, list rows) keep a 1px contact shadow (--oc-shadow-surface),
+     a hairline edge cue, not an elevation, and it stays visible when the glass depth is turned off. */
+  --oc-elevation-surface: var(--oc-surface-glass-depth);
+  --oc-elevation-surface-hover: var(--oc-content-shadow-hover);
+  --oc-elevation-popover: var(--oc-shadow-popover);
+  --oc-elevation-modal: var(--oc-shadow-modal);
+  --oc-shadow-surface: 0 1px 3px color-mix(in srgb, var(--school-primary) 5%, transparent);
+  --oc-shadow-popover: 0 6px 12px color-mix(in srgb, var(--school-primary) 6%, transparent), 0 20px 56px color-mix(in srgb, var(--school-primary) 12%, transparent);
+  --oc-shadow-modal: 0 24px 100px color-mix(in srgb, var(--school-primary) 22%, transparent);
+  --oc-shadow-surface-hover: 0 4px 12px color-mix(in srgb, var(--school-primary) 9%, transparent);
   --oc-control-height: 2.5rem;
   --oc-control-height-compact: 2.25rem;
   --oc-control-height-large: 2.75rem;
-  --oc-density-gap: 1.5rem;
-  --oc-density-inset: 1.5rem;
+  --oc-density-gap: 1.25rem;
+  --oc-density-inset: 1.25rem;
   --oc-density-header-gap: .375rem;
   --oc-density-row: .75rem;
   --oc-space-unit: 0.25rem;
   --oc-space-control: 0.75rem;
-  --oc-space-content: 1.5rem;
-  --oc-space-section: clamp(2rem, 5vw, 4rem);
-  --oc-space-page: clamp(1.25rem, 4vw, 3rem);
+  --oc-space-content: 1.25rem;
+  --oc-space-section: 1.5rem;
+  --oc-space-page: clamp(1rem, 2.5vw, 2rem);
   /* Sans for controls and body copy; Caslon for the editorial display voice. */
   --oc-font-sans: var(--font-source-sans-3), Arial, sans-serif;
   --oc-font-display: var(--font-libre-caslon-text), Georgia, serif;
   --oc-weight-regular: 400;
   --oc-weight-medium: 500;
-  --oc-weight-semibold: 700; /* Compatibility alias for existing components. */
-  --oc-weight-bold: 700;
-  --oc-weight-title: 700;
-  --oc-weight-display: 700;
-  --oc-leading-heading: 1.25;
-  --oc-leading-compact: 1.5;
-  --oc-tracking-heading: -0.025em;
-  --oc-text-section: clamp(1.375rem, 2vw, 1.75rem);
-  --oc-text-card: 1.125rem;
+  --oc-weight-semibold: 600; /* Compatibility alias for existing components. */
+  --oc-weight-bold: 650;
+  --oc-weight-title: 500;
+  --oc-weight-display: 500;
+  --oc-leading-heading: 1.14;
+  --oc-leading-compact: 1.45;
+  --oc-tracking-heading: -.03em;
+  --oc-text-section: clamp(1.25rem, 1.6vw, 1.5rem);
+  --oc-text-card: 1.0625rem;
   --oc-text-modal: 1.375rem;
   --oc-text-small: 0.875rem;
-  --oc-text-metric: clamp(1.875rem, 4vw, 2.875rem);
+  --oc-text-metric: 1.75rem;
   --oc-text-hero: clamp(3rem, 5.7vw, 4.75rem);
   --oc-text-hero-mobile: clamp(2.375rem, 10.7vw, 3.5rem);
   --oc-text-caption: 0.75rem;
-  --oc-text-body: 1rem;
-  --oc-text-title: clamp(1.75rem, 2.5vw, 2.25rem);
+  --oc-text-body: .9375rem;
+  --oc-text-title: clamp(1.625rem, 2.2vw, 1.875rem);
   --oc-text-display: clamp(2rem, 4vw, 3.5rem);
   --oc-leading-body: 1.6;
   --oc-leading-display: 1.15;
@@ -135,9 +170,9 @@
   --oc-z-popover: 60;
   --oc-z-tooltip: 70;
   --oc-z-toast: 80;
-  --oc-duration-micro: 180ms;
-  --oc-duration-ui: 300ms;
-  --oc-duration-entrance: 650ms;
+  --oc-duration-micro: 140ms;
+  --oc-duration-ui: 220ms;
+  --oc-duration-entrance: 360ms;
   --oc-duration-signature: 900ms;
   --oc-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --oc-ease-ui: cubic-bezier(0.2, 0, 0, 1);
@@ -149,4 +184,74 @@
   --sidebar-accent-foreground: var(--foreground);
   --sidebar-border: var(--border);
   --sidebar-ring: var(--ring);
+  /* Former product-only tokens (rail, surfaces, field, shell geometry). */
+  --oc-rail: var(--school-primary);
+  --oc-rail-text: #f6f5f1;
+  --oc-rail-muted: #b0c1cc;
+  --oc-rail-selected: #2a4156;
+  --oc-rail-rule: #3c5365;
+  --oc-field-muted: var(--muted-foreground);
+  --oc-field-rule: var(--border);
+  --oc-surface-blue: #eaf0f2;
+  --oc-surface-sage: #e9efe8;
+  --oc-surface-lilac: #efedf3;
+  --oc-surface-warm: #f4ede1;
+  --oc-shell-rail-width: 15.5rem;
+  --oc-shell-header-height: 4rem;
+  --oc-shell-mobile-height: 4.75rem;
 }
+
+/* Projector theme: only the live-voting presentation sets data-theme="present" (its page wrapper; the
+   focus frame bar follows it with :has, so the bar shown over the slide is dark too).
+   Same semantic names, dark values, so every component keeps reading tokens. */
+[data-theme="present"], .oc-focus-frame:has(.oc-present-surface) .oc-focus-bar {
+  color-scheme: dark;
+  --background: #0f1c2b;
+  --foreground: #f6f5f1;
+  --card: #162638;
+  --card-foreground: var(--foreground);
+  --popover: #162638;
+  --popover-foreground: var(--foreground);
+  --primary: #f6f5f1;
+  --primary-foreground: var(--school-primary);
+  --secondary: #22364b;
+  --secondary-foreground: #e3e8ec;
+  --muted: #1d3045;
+  --muted-foreground: #b0c1cc;
+  --accent: #22364b;
+  --accent-foreground: #f6f5f1;
+  --brand-subtle: #3a2618;
+  --brand-ink: var(--school-accent-on-dark);
+  --destructive: #e07a86;
+  --destructive-foreground: #0f1c2b;
+  --error-subtle: #3a1e24;
+  --success: #7fc6a0;
+  --success-subtle: #173327;
+  --warning: #e8c36f;
+  --warning-subtle: #352a14;
+  --info: #8ab8e0;
+  --info-subtle: #172b40;
+  --interview: #bba7d6;
+  --interview-subtle: #2a2338;
+  --border: #2c4257;
+  --input: #5d7286;
+  --ring: var(--school-ring);
+  --oc-content-surface: #162638;
+  --oc-content-soft: #1d3045;
+  --oc-content-soft-blue: #1b2f44;
+  --oc-content-edge: #2c4257;
+  /* The live voting slide stays solid: no glass highlight on the projector. */
+  --oc-elevation-surface: var(--oc-content-shadow-solid);
+  /* Aliases resolve where they are declared, so redeclare them in this scope to pick up the solid level. */
+  --oc-content-shadow: var(--oc-elevation-surface);
+}
+
+/* Another school's colours override only the school layer. Set data-school on <html>: the semantic tokens
+   are declared on :root and resolve there, so the attribute on a lower element would change nothing. For example:
+   [data-school="example"] {
+     --school-primary: #...;      text and primary actions; >= 4.5:1 on the light canvas
+     --school-accent: #...;       accents, large text and UI parts; >= 3:1
+     --school-accent-text: #...;  small accent text; >= 4.5:1 on every light surface
+     --school-ring: #...;         >= 3:1 on canvas, cards, --school-primary and the projector theme
+   }
+   tests/school-theme-tokens.test.cjs checks these ratios for every school defined here. */

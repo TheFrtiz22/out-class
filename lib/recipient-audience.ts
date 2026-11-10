@@ -39,5 +39,5 @@ export const audienceCapabilities = {
   recruitmentCycle: "Recorded application cycle only; unknown legacy cycles are never inferred.",
   cohort: "Recorded membership cohort only; missing values are not inferred.",
   leads: "Recorded RSVP/attendance at selected club events, excluding active members and submitted applicants. Private saves are never used.",
-  eligibility: "Audience membership is separate from email consent, channel preferences and delivery eligibility.",
+  eligibility: "Being in the audience does not mean the person will get an email.",
 };

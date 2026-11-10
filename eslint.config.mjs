@@ -2,6 +2,7 @@ import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import { FlatCompat } from "@eslint/eslintrc";
+import outclass from "./eslint-rules/no-raw-colors.mjs";
 
 const require = createRequire(import.meta.url);
 const compat = new FlatCompat({ baseDirectory: dirname(fileURLToPath(import.meta.url)), resolvePluginsRelativeTo: dirname(require.resolve("eslint-config-next")) });
@@ -17,6 +18,12 @@ const config = [
       // Scrollable document regions need keyboard focus to scroll independently.
       "jsx-a11y/no-noninteractive-tabindex": ["error", { roles: ["tabpanel", "region", "document"] }],
     },
+  },
+  {
+    // One palette: styles/tokens.css. Raw neutral ramps and hex colors bypass it.
+    files: ["**/*.tsx"],
+    plugins: { outclass },
+    rules: { "outclass/no-raw-colors": "error" },
   },
 ];
 

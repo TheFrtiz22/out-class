@@ -23,7 +23,7 @@ test('browser: hydrates safely, follows local time and workspace changes, and fi
   const headerProps = { context: personal, now: null, firstName: 'Alex', eyebrow: 'OutClass', density: 'compact' }
   const ssr = renderToString(React.createElement(React.Fragment, null, React.createElement('main', null, React.createElement(WelcomeHeader, headerProps)), React.createElement('nav', { 'aria-label': 'Test controls' }, controls.map(mode => React.createElement('button', { key: mode }, mode)))))
   const js = bundle(`import React,{useState}from'react';import{hydrateRoot}from'react-dom/client';import{LocalWelcomeHeader as WelcomeHeader}from'@/components/product/welcome-header';const personal=${JSON.stringify(personal)},club=${JSON.stringify(club)},controls=${JSON.stringify(controls)};function App(){const[mode,setMode]=useState('personal');let context=personal;if(mode==='club')context=club;if(mode==='other')context={...club,clubId:'two'};if(mode==='revoked')context={...club,membership:{...club.membership,permissions:[]}};if(mode==='loading')context={...personal,applications:null};if(mode==='deadline')context={...personal,applications:[{...personal.applications[0],status:'DRAFTING',club:{name:'One',applicationDeadline:'2026-11-02T01:00:00Z'}}]};return <><main>{mode !== 'unmount' && <WelcomeHeader context={context} firstName={mode==='long name'?'Alexandria-Christina': 'Alex'} eyebrow="OutClass" density="compact"/>}</main><nav aria-label="Test controls">{controls.map(value=><button key={value} onClick={()=>setMode(value)}>{value}</button>)}</nav></>};hydrateRoot(document.getElementById('root'),<App/>,{onRecoverableError:error=>window.hydrationErrors.push(error.message)});`)
-  const css = ['styles/tokens.css', 'styles/typography.css', 'styles/product-tokens.css', 'styles/product-components.css', 'styles/editorial.css', 'components/product/welcome-header.css'].map(file => fs.readFileSync(file, 'utf8')).join('\n')
+  const css = ['styles/tokens.css', 'styles/typography.css', 'styles/product-components.css', 'styles/editorial.css', 'components/product/welcome-header.css'].map(file => fs.readFileSync(file, 'utf8')).join('\n')
   const server = http.createServer((req, res) => {
     if (req.url === '/fixture.js') { res.setHeader('content-type', 'text/javascript'); return res.end(js) }
     if (req.url === '/display.woff2') { res.setHeader('content-type', 'font/woff2'); return res.end(fs.readFileSync('app/fonts/libre-caslon-text/libre-caslon-text-variable.woff2')) }
@@ -50,11 +50,11 @@ test('browser: hydrates safely, follows local time and workspace changes, and fi
       assert.equal(await subtitle.textContent(), 'You have 1 application in progress.')
       await page.clock.fastForward(1000)
       assert.equal(await heading.textContent(), 'Good afternoon, Alex.')
-      const initialHeight = await page.locator('header').evaluate(node => node.getBoundingClientRect().height)
+      const initialHeight = await page.locator('[data-slot="page-header"]').evaluate(node => node.getBoundingClientRect().height)
       const choose = name => page.getByRole('button', { name, exact: true }).click()
       await choose('club'); assert.equal(await subtitle.textContent(), '12 applications are ready for your review.')
-      await choose('other'); assert.equal(await subtitle.textContent(), "Here's what's happening in your club.")
-      await choose('revoked'); assert.equal(await subtitle.textContent(), "Here's what's happening in your club.")
+      await choose('other'); assert.equal(await subtitle.textContent(), "Nothing due this week.")
+      await choose('revoked'); assert.equal(await subtitle.textContent(), "Nothing due this week.")
       await choose('loading'); assert.equal(await subtitle.textContent(), "Explore what's new in OutClass.")
       await choose('personal'); assert.equal(await subtitle.textContent(), 'You have 1 application in progress.')
       await cdp.send('Emulation.setTimezoneOverride', { timezoneId: 'Asia/Tokyo' })
@@ -70,9 +70,9 @@ test('browser: hydrates safely, follows local time and workspace changes, and fi
       assert.equal(await heading.textContent(), 'Still up, Alexandria-Christina?')
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'no horizontal scrolling')
       await choose('personal')
-      assert.equal(await page.locator('header').evaluate(node => node.getBoundingClientRect().height), initialHeight, 'stable welcome geometry')
+      assert.equal(await page.locator('[data-slot="page-header"]').evaluate(node => node.getBoundingClientRect().height), initialHeight, 'stable welcome geometry')
       assert.equal(await heading.locator('span').evaluate(node => getComputedStyle(node).animationName), 'none')
-      assert.equal(await page.locator('header [aria-live],header[aria-live],header [role="status"]').count(), 0)
+      assert.equal(await page.locator('[data-slot="page-header"] [aria-live],[data-slot="page-header"][aria-live],[data-slot="page-header"] [role="status"]').count(), 0)
       assert.deepEqual(await page.evaluate(() => window.hydrationErrors), [])
       assert.deepEqual(errors, [])
       assert.ok(requests.every(url => !url.includes('/api/') && !url.includes('/workspace')), 'welcome makes no data requests')

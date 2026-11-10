@@ -38,8 +38,9 @@ import {
   type ClubPublicPageDetails,
 } from "@/lib/data"
 
-const NAVY = "#051B3D"
-const ORANGE = "#FF5900"
+// Interface colors come from tokens: navy is --primary, the drag accent is --brand-orange.
+const NAVY = "var(--primary)"
+const ORANGE = "var(--brand-orange)"
 
 type PortalTab = "public" | "roster" | "directory"
 
@@ -53,25 +54,22 @@ export function ClubManagementPortalView() {
   const [activeTab, setActiveTab] = useState<PortalTab>("public")
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white lg:flex-row">
-      <aside className="shrink-0 border-b border-gray-200 bg-white p-3 lg:w-64 lg:border-b-0 lg:border-r">
+    <div className="flex flex-col overflow-hidden rounded-xl border border-border bg-white lg:flex-row">
+      <aside className="shrink-0 border-b border-border bg-white p-3 lg:w-64 lg:border-b-0 lg:border-r">
         <nav className="flex gap-1 overflow-x-auto lg:flex-col lg:overflow-visible">
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id
             return (
-              <button
+              <Button
                 key={tab.id}
                 type="button"
+                variant={isActive ? "default" : "ghost"}
                 onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  "flex shrink-0 items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium whitespace-nowrap transition-colors",
-                  isActive ? "text-white" : "text-gray-600 hover:bg-gray-100",
-                )}
-                style={isActive ? { backgroundColor: NAVY } : undefined}
+                className={cn("min-h-11 shrink-0 justify-start gap-2.5 text-left", !isActive && "text-muted-foreground")}
               >
                 <tab.icon className="size-4 shrink-0" />
                 {tab.label}
-              </button>
+              </Button>
             )
           })}
         </nav>
@@ -118,7 +116,7 @@ function PublicPageDetailsPanel() {
           <h2 className="oc-section-heading " style={{ color: NAVY }}>
             Public Page Details
           </h2>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Edit the information prospective applicants see on your club&#39;s public profile.
           </p>
         </div>
@@ -138,7 +136,7 @@ function PublicPageDetailsPanel() {
               onDragLeave={() => setIsDragging(false)}
               onDrop={handleDrop}
               className={cn(
-                "group relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-gray-300 bg-white text-gray-400 transition-colors hover:border-gray-400",
+                "group relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-border bg-white text-muted-foreground transition-colors hover:border-input focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                 isDragging && "border-solid bg-orange-50",
               )}
               style={isDragging ? { borderColor: ORANGE, color: ORANGE } : undefined}
@@ -164,23 +162,25 @@ function PublicPageDetailsPanel() {
               )}
             </button>
             <div className="min-w-0 flex-1 space-y-1.5">
-              <p className="text-xs text-gray-500">Square image recommended, at least 200×200px.</p>
+              <p className="text-xs text-muted-foreground">Square image recommended, at least 200×200px.</p>
               <div className="flex gap-2">
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="sm"
                   onClick={() => inputRef.current?.click()}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
                 >
                   <Upload className="size-3.5" /> {details.logoUrl ? "Replace" : "Upload"}
-                </button>
+                </Button>
                 {details.logoUrl && (
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={() => set("logoUrl", null)}
-                    className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-500 hover:bg-gray-50 hover:text-red-600"
                   >
                     <X className="size-3.5" /> Remove
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -204,7 +204,7 @@ function PublicPageDetailsPanel() {
               value={details.name}
               onChange={(e) => set("name", e.target.value)}
               placeholder="Virginia Venture Fund"
-              className="border-gray-200 bg-white text-gray-900"
+              className="border-border bg-white text-foreground"
             />
           </div>
           <div className="space-y-1.5">
@@ -216,7 +216,7 @@ function PublicPageDetailsPanel() {
               value={details.tagline}
               onChange={(e) => set("tagline", e.target.value)}
               placeholder="UVA's student-run venture capital fund"
-              className="border-gray-200 bg-white text-gray-900"
+              className="border-border bg-white text-foreground"
             />
           </div>
         </div>
@@ -231,12 +231,12 @@ function PublicPageDetailsPanel() {
             onChange={(e) => set("aboutUs", e.target.value)}
             rows={8}
             placeholder="Tell applicants what your club does and what makes it distinctive."
-            className="resize-none border-gray-200 bg-white text-gray-900"
+            className="resize-none border-border bg-white text-foreground"
           />
         </div>
       </div>
 
-      <div className="sticky bottom-0 z-10 flex justify-end gap-3 border-t border-gray-200 bg-white px-6 py-4">
+      <div className="sticky bottom-0 z-10 flex justify-end gap-3 border-t border-border bg-white px-6 py-4">
         <Button onClick={handleSave} className="text-white hover:opacity-90" style={{ backgroundColor: ORANGE }}>
           Save Changes
         </Button>
@@ -288,19 +288,19 @@ function ExecutiveRosterPanel() {
           <h2 className="oc-section-heading " style={{ color: NAVY }}>
             Executive Roster
           </h2>
-          <p className="text-sm text-gray-500">Manage your club&#39;s executive team and their titles.</p>
+          <p className="text-sm text-muted-foreground">Manage your club&#39;s executive team and their titles.</p>
         </div>
         <Button
           variant="outline"
           size="sm"
           onClick={() => setInviteOpen(true)}
-          className="shrink-0 border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+          className="shrink-0 border-border bg-white text-foreground hover:bg-muted"
         >
           <UserPlus className="size-4" /> Invite New Executive
         </Button>
       </div>
 
-      <div className="mt-5 overflow-hidden rounded-lg border border-gray-200">
+      <div className="mt-5 overflow-hidden rounded-lg border border-border">
         {executives.map((exec, i) => {
           const isEditing = editingId === exec.id
           return (
@@ -308,7 +308,7 @@ function ExecutiveRosterPanel() {
               key={exec.id}
               className={cn(
                 "flex items-center gap-3 bg-white px-4 py-3",
-                i !== executives.length - 1 && "border-b border-gray-200",
+                i !== executives.length - 1 && "border-b border-border",
               )}
             >
               <Avatar className="size-9 shrink-0">
@@ -317,7 +317,7 @@ function ExecutiveRosterPanel() {
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-gray-900">{exec.name}</p>
+                <p className="truncate text-sm font-medium text-foreground">{exec.name}</p>
                 {isEditing ? (
                   <div className="mt-1 flex items-center gap-1.5">
                     <Input
@@ -326,7 +326,7 @@ function ExecutiveRosterPanel() {
                       value={editingTitle}
                       onChange={(e) => setEditingTitle(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && saveEdit()}
-                      className="h-7 max-w-64 border-gray-200 bg-white text-xs text-gray-900"
+                      className="h-7 max-w-64 border-border bg-white text-xs text-foreground"
                     />
                     <Button
                       size="icon"
@@ -340,7 +340,7 @@ function ExecutiveRosterPanel() {
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="size-7 shrink-0 text-gray-500 hover:bg-gray-100"
+                      className="size-7 shrink-0 text-muted-foreground hover:bg-muted"
                       onClick={() => setEditingId(null)}
                       aria-label="Cancel edit"
                     >
@@ -348,7 +348,7 @@ function ExecutiveRosterPanel() {
                     </Button>
                   </div>
                 ) : (
-                  <p className="truncate text-xs text-gray-500">{exec.title}</p>
+                  <p className="truncate text-xs text-muted-foreground">{exec.title}</p>
                 )}
               </div>
               {!isEditing && (
@@ -356,7 +356,7 @@ function ExecutiveRosterPanel() {
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="size-8 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                    className="size-8 text-muted-foreground hover:bg-muted hover:text-foreground"
                     onClick={() => startEdit(exec)}
                     aria-label={`Edit title for ${exec.name}`}
                   >
@@ -377,15 +377,15 @@ function ExecutiveRosterPanel() {
           )
         })}
         {executives.length === 0 && (
-          <p className="px-4 py-6 text-center text-sm text-gray-500">No executives on the roster.</p>
+          <p className="px-4 py-6 text-center text-sm text-muted-foreground">No executives on the roster.</p>
         )}
       </div>
 
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-        <DialogContent className="bg-white text-gray-900">
+        <DialogContent className="bg-white text-foreground">
           <DialogHeader>
             <DialogTitle style={{ color: NAVY }}>Invite a new executive</DialogTitle>
-            <DialogDescription className="text-gray-500">
+            <DialogDescription className="text-muted-foreground">
               Send an admin invite to a student. Only @virginia.edu email addresses can be invited.
             </DialogDescription>
           </DialogHeader>
@@ -394,13 +394,13 @@ function ExecutiveRosterPanel() {
               Student email
             </Label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
+              <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 id="exec-invite-email"
                 placeholder="abc1de@virginia.edu"
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
-                className="border-gray-200 bg-white pl-9 text-gray-900"
+                className="border-border bg-white pl-9 text-foreground"
               />
             </div>
           </div>
@@ -408,7 +408,7 @@ function ExecutiveRosterPanel() {
             <Button
               variant="outline"
               onClick={() => setInviteOpen(false)}
-              className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+              className="border-border bg-white text-foreground hover:bg-muted"
             >
               Cancel
             </Button>
@@ -434,26 +434,26 @@ function MemberDirectoryPanel() {
         <h2 className="oc-section-heading " style={{ color: NAVY }}>
           Member Directory
         </h2>
-        <p className="text-sm text-gray-500">Browse every member currently on your club&#39;s roster.</p>
+        <p className="text-sm text-muted-foreground">Browse every member currently on your club&#39;s roster.</p>
       </div>
 
       <div className="relative mt-4 max-w-sm">
-        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search members by name or email…"
-          className="border-gray-200 bg-white pl-9 text-gray-900"
+          className="border-border bg-white pl-9 text-foreground"
         />
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-lg border border-gray-200">
+      <div className="mt-4 overflow-hidden rounded-lg border border-border">
         {filtered.map((m, i) => (
           <div
             key={m.id}
             className={cn(
               "flex items-center gap-3 bg-white px-4 py-3",
-              i !== filtered.length - 1 && "border-b border-gray-200",
+              i !== filtered.length - 1 && "border-b border-border",
             )}
           >
             <Avatar className="size-9 shrink-0">
@@ -462,18 +462,18 @@ function MemberDirectoryPanel() {
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-gray-900">{m.name}</p>
-              <p className="truncate text-xs text-gray-500">{m.email}</p>
+              <p className="truncate text-sm font-medium text-foreground">{m.name}</p>
+              <p className="truncate text-xs text-muted-foreground">{m.email}</p>
             </div>
             <span
-              className="shrink-0 oc-status-label border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600"
+              className="shrink-0 oc-status-label border border-border bg-white px-2.5 py-1 text-xs font-medium text-muted-foreground"
             >
               {m.role}
             </span>
           </div>
         ))}
         {filtered.length === 0 && (
-          <p className="px-4 py-6 text-center text-sm text-gray-500">No members match your search.</p>
+          <p className="px-4 py-6 text-center text-sm text-muted-foreground">No members match your search.</p>
         )}
       </div>
     </div>

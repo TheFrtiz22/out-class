@@ -35,7 +35,7 @@ async function main() {
       if (new URL(route.request().url()).searchParams.get('kind') !== 'members') return route.continue()
       reads++; return fail ? route.abort('connectionfailed') : route.continue()
     })
-    const members = page.getByRole('navigation', { name: 'Primary mobile navigation' }).getByRole('link', { name: 'Members', exact: true })
+    const members = page.getByRole('navigation', { name: 'Sections' }).getByRole('link', { name: 'Members', exact: true })
     await members.focus(); await page.keyboard.press('Enter')
     const retry = page.getByRole('button', { name: 'Retry workspace', exact: true })
     await retry.waitFor()

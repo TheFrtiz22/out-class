@@ -73,6 +73,7 @@ test('Demo fresh and saved fixtures discover by stable type/ID and persist kits 
 test('both setup entry points admit explicit kit editors and pipeline managers without granting scheduling or kit-edit privileges',()=>{
  const h=harness(),{availableSettings}=h.load('lib/club-settings.ts'),{hasPermission}=h.load('lib/permissions.ts'),{interviewCapabilities}=h.load('lib/interview-access.ts');
  const board={status:'ACTIVE',permissions:[],interviewOffices:['BOARD']},manager={status:'ACTIVE',permissions:['recruitment.manage'],interviewOffices:[]};
- for(const m of [board,manager])assert.ok(availableSettings(m).some(s=>s.id==='interviews'));
+ const {managerNavigation}=h.load('lib/product-navigation.ts');
+ for(const m of [board,manager]){assert.ok(!availableSettings(m).some(s=>s.id==='interviews'));assert.ok(managerNavigation(m,'club','recruiting').some(i=>i.id==='interviews'),'kit editors and pipeline managers reach kits in Interviews')}
  assert.equal(hasPermission(board,'interviews.manage'),false);assert.equal(interviewCapabilities(manager).editKit,false);assert.equal(availableSettings({...board,status:'INACTIVE'}).length,0);
 });

@@ -1,0 +1,36 @@
+/* Focus frame: one calm bar over the shared content tokens. Widths come only from the content tokens. */
+.oc-focus-frame { --oc-focus-bar-height: 3.5rem; display: flex; min-height: 100dvh; flex-direction: column; background: var(--background); color: var(--foreground); font-family: var(--oc-font-sans); }
+.oc-focus-frame[data-focus-frame="overlay"] { position: fixed; inset: 0; z-index: var(--oc-z-modal); overflow-y: auto; }
+.oc-focus-bar { position: sticky; top: 0; z-index: var(--oc-z-sticky); display: flex; min-height: var(--oc-focus-bar-height); align-items: center; gap: .75rem; padding: .5rem var(--oc-space-page); border-bottom: 1px solid var(--border); background: var(--card); }
+.oc-focus-mark { display: inline-flex; flex-shrink: 0; }
+.oc-focus-mark img { width: 1.75rem; height: 1.75rem; }
+.oc-focus-context { display: flex; min-width: 0; flex: 1; align-items: center; gap: .75rem; font-size: var(--oc-text-small); }
+.oc-focus-club { display: inline-flex; min-width: 0; align-items: center; gap: .5rem; color: var(--muted-foreground); font-weight: var(--oc-weight-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.oc-focus-accent { width: .5rem; height: .5rem; flex-shrink: 0; border-radius: 999px; background: var(--oc-club-accent, var(--brand-orange)); }
+.oc-focus-club + .oc-focus-task { padding-left: .75rem; border-left: 1px solid var(--border); }
+.oc-focus-task { min-width: 0; overflow: hidden; color: var(--foreground); font-weight: var(--oc-weight-semibold); text-overflow: ellipsis; white-space: nowrap; }
+.oc-focus-exit { display: inline-flex; min-height: 2.75rem; flex-shrink: 0; align-items: center; gap: .375rem; padding: 0 .875rem; border: 1px solid var(--border); border-radius: 999px; background: transparent; color: var(--foreground); font-size: var(--oc-text-small); font-weight: var(--oc-weight-medium); }
+.oc-focus-exit svg { width: 1rem; height: 1rem; }
+.oc-focus-exit:hover { background: var(--accent); }
+.oc-focus-exit:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.oc-focus-content { width: 100%; min-width: 0; flex: 1; margin-inline: auto; padding: .625rem var(--oc-space-page) var(--oc-space-page); overflow-wrap: anywhere; }
+.oc-focus-content:focus { outline: none; }
+.oc-focus-frame[data-width="reading"] .oc-focus-content { max-width: calc(var(--oc-reading-width) + 2 * var(--oc-space-page)); }
+.oc-focus-frame[data-width="content"] .oc-focus-content { max-width: calc(var(--oc-content-width) + 2 * var(--oc-space-page)); }
+.oc-focus-frame[data-width="full"] .oc-focus-content { padding: 0; }
+@media (max-width: 640px) { .oc-focus-club { display: none; } .oc-focus-club + .oc-focus-task { padding-left: 0; border-left: 0; } }
+@media print { .oc-focus-bar, .oc-focus-frame > a[href="#focus-content"] { display: none !important; } .oc-focus-frame, .oc-focus-content { min-height: 0; padding: 0; background: white; } }
+/* Whole-page loaders render inside the frame, under its bar. */
+.oc-focus-content .oc-loading-screen { min-block-size: 50dvh; background: none; }
+/* Full-bleed task screens (interview room, speed review, projector) fill the height below the bar. */
+.oc-focus-frame[data-width="full"] .oc-focus-content { display: flex; flex-direction: column; }
+/* Projector: the page renders [data-theme="present"] (server-side); the frame follows it here, so the first
+   paint is already dark and full width. The slide keeps the whole screen (a 1280×720 slide has no spare rows):
+   the hidden bar takes no clicks, a thin strip at the top edge or keyboard focus reveals it, and Exit stays one Tab away. */
+.oc-focus-reveal { display: none; }
+.oc-focus-frame:has(.oc-present-surface) { color-scheme: dark; }
+.oc-focus-frame:has(.oc-present-surface) .oc-focus-content { max-width: none; padding: 0; display: flex; flex-direction: column; }
+.oc-focus-frame:has(.oc-present-surface) .oc-focus-reveal { display: block; position: fixed; inset: 0 0 auto; z-index: calc(var(--oc-z-sticky) + 1); height: .5rem; }
+.oc-focus-frame:has(.oc-present-surface) .oc-focus-bar { position: fixed; inset: 0 0 auto; z-index: calc(var(--oc-z-sticky) + 2); opacity: 0; pointer-events: none; }
+.oc-focus-frame:has(.oc-present-surface) :is(.oc-focus-reveal:hover + .oc-focus-bar, .oc-focus-bar:hover, .oc-focus-bar:focus-within) { opacity: 1; pointer-events: auto; }
+@media (prefers-reduced-motion: no-preference) { .oc-focus-frame:has(.oc-present-surface) .oc-focus-bar { transition: opacity var(--oc-duration-ui) var(--oc-ease-ui); } }

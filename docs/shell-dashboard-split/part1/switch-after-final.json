@@ -1,0 +1,367 @@
+{
+  "label": "after",
+  "switches": [
+    {
+      "round": 0,
+      "from": "personal",
+      "to": "club club workspace",
+      "ms": 633,
+      "sameHeader": true,
+      "loader": false
+    },
+    {
+      "round": 0,
+      "from": "club",
+      "to": "Admin workspace",
+      "ms": 416,
+      "sameHeader": true,
+      "loader": false
+    },
+    {
+      "round": 0,
+      "from": "admin",
+      "to": "Personal workspace",
+      "ms": 364,
+      "sameHeader": true,
+      "loader": false
+    },
+    {
+      "round": 1,
+      "from": "personal",
+      "to": "club club workspace",
+      "ms": 241,
+      "sameHeader": true,
+      "loader": false
+    },
+    {
+      "round": 1,
+      "from": "club",
+      "to": "Admin workspace",
+      "ms": 85,
+      "sameHeader": true,
+      "loader": false
+    },
+    {
+      "round": 1,
+      "from": "admin",
+      "to": "Personal workspace",
+      "ms": 373,
+      "sameHeader": true,
+      "loader": false
+    },
+    {
+      "round": 2,
+      "from": "personal",
+      "to": "club club workspace",
+      "ms": 252,
+      "sameHeader": true,
+      "loader": false
+    },
+    {
+      "round": 2,
+      "from": "club",
+      "to": "Admin workspace",
+      "ms": 73,
+      "sameHeader": true,
+      "loader": false
+    },
+    {
+      "round": 2,
+      "from": "admin",
+      "to": "Personal workspace",
+      "ms": 380,
+      "sameHeader": true,
+      "loader": false
+    }
+  ],
+  "header": [
+    {
+      "width": 1024,
+      "route": "/home",
+      "headerHeight": 70,
+      "gap": 9.4,
+      "glyphGap": 11,
+      "text": "Sunday, November 8",
+      "rows": 1
+    },
+    {
+      "width": 1024,
+      "route": "/saved-clubs",
+      "headerHeight": 70,
+      "gap": 9.2,
+      "glyphGap": 8,
+      "text": "Saved clubs",
+      "rows": 1
+    },
+    {
+      "width": 1024,
+      "route": "/club/:club/workspace?section=overview",
+      "headerHeight": 70,
+      "gap": 9.8,
+      "glyphGap": 8,
+      "text": "Navigation Audit Club 1",
+      "rows": 1
+    },
+    {
+      "width": 1024,
+      "route": "/platform",
+      "headerHeight": 70,
+      "gap": 9.4,
+      "glyphGap": 11,
+      "text": "OutClass · Administration",
+      "rows": 1
+    },
+    {
+      "width": 1100,
+      "route": "/home",
+      "headerHeight": 70,
+      "gap": 9.4,
+      "glyphGap": 11,
+      "text": "Sunday, November 8",
+      "rows": 1
+    },
+    {
+      "width": 1100,
+      "route": "/saved-clubs",
+      "headerHeight": 70,
+      "gap": 9.2,
+      "glyphGap": 8,
+      "text": "Saved clubs",
+      "rows": 1
+    },
+    {
+      "width": 1100,
+      "route": "/club/:club/workspace?section=overview",
+      "headerHeight": 70,
+      "gap": 9.8,
+      "glyphGap": 8,
+      "text": "Navigation Audit Club 1",
+      "rows": 1
+    },
+    {
+      "width": 1100,
+      "route": "/platform",
+      "headerHeight": 70,
+      "gap": 9.4,
+      "glyphGap": 11,
+      "text": "OutClass · Administration",
+      "rows": 1
+    },
+    {
+      "width": 1180,
+      "route": "/home",
+      "headerHeight": 70,
+      "gap": 9.4,
+      "glyphGap": 11,
+      "text": "Sunday, November 8",
+      "rows": 1
+    },
+    {
+      "width": 1180,
+      "route": "/saved-clubs",
+      "headerHeight": 70,
+      "gap": 9.2,
+      "glyphGap": 8,
+      "text": "Saved clubs",
+      "rows": 1
+    },
+    {
+      "width": 1180,
+      "route": "/club/:club/workspace?section=overview",
+      "headerHeight": 70,
+      "gap": 9.4,
+      "glyphGap": 7,
+      "text": "Navigation Audit Club 1",
+      "rows": 1
+    },
+    {
+      "width": 1180,
+      "route": "/platform",
+      "headerHeight": 70,
+      "gap": 9.4,
+      "glyphGap": 11,
+      "text": "OutClass · Administration",
+      "rows": 1
+    },
+    {
+      "width": 1280,
+      "route": "/home",
+      "headerHeight": 70,
+      "gap": 9.4,
+      "glyphGap": 11,
+      "text": "Sunday, November 8",
+      "rows": 1
+    },
+    {
+      "width": 1280,
+      "route": "/saved-clubs",
+      "headerHeight": 70,
+      "gap": 9.9,
+      "glyphGap": 9,
+      "text": "Saved clubs",
+      "rows": 1
+    },
+    {
+      "width": 1280,
+      "route": "/club/:club/workspace?section=overview",
+      "headerHeight": 70,
+      "gap": 9.6,
+      "glyphGap": 7,
+      "text": "Navigation Audit Club 1",
+      "rows": 1
+    },
+    {
+      "width": 1280,
+      "route": "/platform",
+      "headerHeight": 70,
+      "gap": 9.4,
+      "glyphGap": 11,
+      "text": "OutClass · Administration",
+      "rows": 1
+    },
+    {
+      "width": 1440,
+      "route": "/home",
+      "headerHeight": 70,
+      "gap": 9.4,
+      "glyphGap": 11,
+      "text": "Sunday, November 8",
+      "rows": 1
+    },
+    {
+      "width": 1440,
+      "route": "/saved-clubs",
+      "headerHeight": 70,
+      "gap": 9.4,
+      "glyphGap": 8,
+      "text": "Saved clubs",
+      "rows": 1
+    },
+    {
+      "width": 1440,
+      "route": "/club/:club/workspace?section=overview",
+      "headerHeight": 70,
+      "gap": 9.7,
+      "glyphGap": 7,
+      "text": "Navigation Audit Club 1",
+      "rows": 1
+    },
+    {
+      "width": 1440,
+      "route": "/platform",
+      "headerHeight": 70,
+      "gap": 9.4,
+      "glyphGap": 11,
+      "text": "OutClass · Administration",
+      "rows": 1
+    },
+    {
+      "width": 1920,
+      "route": "/home",
+      "headerHeight": 70,
+      "gap": 9.4,
+      "glyphGap": 11,
+      "text": "Sunday, November 8",
+      "rows": 1
+    },
+    {
+      "width": 1920,
+      "route": "/saved-clubs",
+      "headerHeight": 70,
+      "gap": 9.4,
+      "glyphGap": 8,
+      "text": "Saved clubs",
+      "rows": 1
+    },
+    {
+      "width": 1920,
+      "route": "/club/:club/workspace?section=overview",
+      "headerHeight": 70,
+      "gap": 9.6,
+      "glyphGap": 7,
+      "text": "Navigation Audit Club 1",
+      "rows": 1
+    },
+    {
+      "width": 1920,
+      "route": "/platform",
+      "headerHeight": 70,
+      "gap": 9.4,
+      "glyphGap": 11,
+      "text": "OutClass · Administration",
+      "rows": 1
+    },
+    {
+      "width": 2560,
+      "route": "/home",
+      "headerHeight": 70,
+      "gap": 9.4,
+      "glyphGap": 11,
+      "text": "Sunday, November 8",
+      "rows": 1
+    },
+    {
+      "width": 2560,
+      "route": "/saved-clubs",
+      "headerHeight": 70,
+      "gap": 9.4,
+      "glyphGap": 8,
+      "text": "Saved clubs",
+      "rows": 1
+    },
+    {
+      "width": 2560,
+      "route": "/club/:club/workspace?section=overview",
+      "headerHeight": 70,
+      "gap": 9.6,
+      "glyphGap": 7,
+      "text": "Navigation Audit Club 1",
+      "rows": 1
+    },
+    {
+      "width": 2560,
+      "route": "/platform",
+      "headerHeight": 70,
+      "gap": 9.4,
+      "glyphGap": 11,
+      "text": "OutClass · Administration",
+      "rows": 1
+    },
+    {
+      "width": 390,
+      "route": "/home",
+      "headerHeight": 68,
+      "gap": 9.4,
+      "glyphGap": 11,
+      "text": "Sunday, November 8",
+      "rows": 1
+    },
+    {
+      "width": 390,
+      "route": "/saved-clubs",
+      "headerHeight": 68,
+      "gap": 9.2,
+      "glyphGap": 8,
+      "text": "Saved clubs",
+      "rows": 1
+    },
+    {
+      "width": 390,
+      "route": "/club/:club/workspace?section=overview",
+      "headerHeight": 68,
+      "gap": 9.8,
+      "glyphGap": 8,
+      "text": "Navigation Audit Club 1",
+      "rows": 1
+    },
+    {
+      "width": 390,
+      "route": "/platform",
+      "headerHeight": 68,
+      "gap": 9.4,
+      "glyphGap": 11,
+      "text": "OutClass · Administration",
+      "rows": 1
+    }
+  ]
+}

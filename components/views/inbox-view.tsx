@@ -8,9 +8,11 @@ import { canLeaveWorkspace } from "@/lib/product-navigation"
 import { CommunicationsInbox } from "@/components/communications-inbox"
 import { CommunicationsPreferences } from "@/components/communications-preferences"
 import { useEffect, useMemo, useState, useRef } from "react"
-import { Search, Bell, Trash2, Mail, MailOpen, ArrowLeft, MapPin, CalendarDays } from "@/components/icons"
+import { Search, Bell, Trash2, Mail, MailOpen, ArrowLeft, MapPin, CalendarDays, SlidersHorizontal } from "@/components/icons"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { ClubLogo } from "@/components/club-logo"
 import { Button } from "@/components/ui/button"
+import { SegmentedControl } from "@/components/ui/segmented-control"
 import { Input } from "@/components/ui/input"
 import { NativeSelectField } from "@/components/ui/native-select"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -21,6 +23,8 @@ import { notificationGroups, notificationPriority } from "@/lib/student-agenda"
 import { toast } from "sonner"
 import { OrganizationOwnershipRequests } from "@/components/organization-ownership-requests"
 import { useOrganizationInvitations } from "@/contexts/organization-invitations-context"
+import { Panel } from "@/components/ui/panel"
+import { pluralize } from "@/lib/copy/terms"
 
 const filters = ["All", "Announcements", "Interviews", "Urgent"] as const
 
@@ -113,82 +117,47 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
     setClub("all")
   }
 
-  const tabs = <nav aria-label="Communications center" className="flex gap-1 overflow-x-auto border-b pb-3">{[["notifications", "Updates"], ["preferences", "Email preferences"]].map(([id, label]) => <Button key={id} variant={tab === id ? "secondary" : "ghost"} aria-current={tab === id ? "page" : undefined} onClick={() => { if (canLeaveWorkspace()) setTab(id) }}>{label}</Button>)}</nav>
-  if (tab !== "notifications") return <div className="mx-auto max-w-6xl space-y-6">{tabs}{demo.isDemoEnabled ? <p className="text-sm text-muted-foreground">Email preferences are available in your live account.</p> : <CommunicationsPreferences />}</div>
+  // Email preferences live in Settings → Notifications; filters show only once the list is long enough to need them.
+  const filtering = !!query || filter !== "All" || club !== "all" || readFilter !== "all" || sort !== "priority"
+  const showFilters = items.length >= 5 || filtering
   return (
-    <div className="oc-inbox-workspace mx-auto max-w-6xl space-y-6 text-foreground">
-      {tabs}
+    <div className="oc-inbox-workspace max-w-[var(--oc-content-width)] space-y-6 text-foreground">
+      <p className="text-sm text-muted-foreground"><Link className="underline underline-offset-4" href="/settings/notifications">Email preferences</Link> are in Settings.</p>
       {invitations.length > 0 && <OrganizationOwnershipRequests enabled includeDismissed />}
-      <div className="oc-content-panel space-y-4">
+      {showFilters && <Panel className="space-y-4">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="relative min-w-0 basis-52 flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              aria-label="Search notifications"
-              placeholder="Search notifications, clubs, or keywords"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <NativeSelectField
-            aria-label="Filter by read status"
-            value={readFilter}
-            onChange={(event) => setReadFilter(event.target.value)}
-          >
-            <option value="all">All read statuses</option>
-            <option value="unread">Unread</option>
-            <option value="read">Read</option>
-          </NativeSelectField>
-          <NativeSelectField
-            aria-label="Filter by club"
-            className="max-w-full sm:max-w-60"
-            value={club}
-            onChange={(event) => setClub(event.target.value)}
-          >
+          <SegmentedControl label="Read status" size="compact" value={readFilter === "unread" ? "unread" : "all"} onChange={value => setReadFilter(value)} options={[{ value: "all", label: "All" }, { value: "unread", label: unread ? `Unread · ${unread}` : "Unread" }]} />
+          <NativeSelectField aria-label="Filter by club" className="max-w-full sm:max-w-60" value={club} onChange={(event) => setClub(event.target.value)}>
             <option value="all">All clubs</option>
-            {clubs.map((name) => (
-              <option key={name}>{name}</option>
-            ))}
+            {clubs.map((name) => (<option key={name}>{name}</option>))}
             {club !== "all" && !clubs.includes(club) && <option>{club}</option>}
           </NativeSelectField>
-          <NativeSelectField
-            aria-label="Sort notifications"
-            value={sort}
-            onChange={(event) => setSort(event.target.value)}
-          >
-            <option value="priority">Recruiting priority</option>
-            <option value="newest">Newest first</option>
-            <option value="oldest">Oldest first</option>
-            <option value="unread">Unread first</option>
-            <option value="urgent">Urgent first</option>
-            <option value="club">Club A–Z</option>
-          </NativeSelectField>
+          <Popover>
+            <PopoverTrigger asChild><Button variant="outline" size="sm"><SlidersHorizontal className="size-4" aria-hidden="true" />Filter{filter !== "All" || readFilter === "read" || sort !== "priority" || query ? " · on" : ""}</Button></PopoverTrigger>
+            <PopoverContent align="start" className="w-[min(22rem,calc(100vw-2rem))] space-y-3">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input aria-label="Search notifications" placeholder="Search notifications, clubs, or keywords" value={query} onChange={(event) => setQuery(event.target.value)} className="pl-9" />
+              </div>
+              <SegmentedControl label="Notification type" size="compact" value={filter} onChange={setFilter} options={filters.map((value) => ({ value, label: value }))} />
+              <NativeSelectField aria-label="Filter by read status" value={readFilter} onChange={(event) => setReadFilter(event.target.value)}>
+                <option value="all">All read statuses</option>
+                <option value="unread">Unread</option>
+                <option value="read">Read</option>
+              </NativeSelectField>
+              <NativeSelectField aria-label="Sort notifications" value={sort} onChange={(event) => setSort(event.target.value)}>
+                <option value="priority">Recruiting priority</option>
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+                <option value="unread">Unread first</option>
+                <option value="urgent">Urgent first</option>
+                <option value="club">Club A–Z</option>
+              </NativeSelectField>
+            </PopoverContent>
+          </Popover>
+          {filtering && (<Button variant="ghost" size="sm" onClick={() => { resetFilters(); setSort("priority") }}>Clear filters</Button>)}
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {filters.map((value) => (
-            <button
-              key={value}
-              type="button"
-              aria-pressed={filter === value}
-              onClick={() => setFilter(value)}
-              className={cn(
-                "min-h-11 rounded-full px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-                filter === value
-                  ? "bg-secondary text-foreground"
-                  : "text-muted-foreground hover:bg-secondary/60",
-              )}
-            >
-              {value}
-            </button>
-          ))}
-          {(query || filter !== "All" || club !== "all" || readFilter !== "all") && (
-            <Button variant="ghost" size="sm" onClick={resetFilters}>
-              Clear filters
-            </Button>
-          )}
-        </div>
-      </div>
+      </Panel>}
       <div
         className={cn(
           "grid items-start gap-8",
@@ -209,7 +178,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
               }
             />
             <span className="text-xs text-muted-foreground" role="status">
-              {checkedIds.length ? `${checkedIds.length} selected` : `${filtered.length} results`}
+              {checkedIds.length ? `${checkedIds.length} selected` : pluralize(filtered.length, "result")}
             </span>
             {checkedIds.length > 0 && (
               <div className="ml-auto flex flex-wrap gap-1">
@@ -289,7 +258,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                           setSelectedId(item.id)
                           markNotificationRead(item.id)
                         }}
-                        className="min-w-0 flex-1 space-y-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+                        className="min-w-0 flex-1 space-y-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                       >
                         <div className="flex items-center gap-2">
                           <ClubLogo
@@ -352,20 +321,18 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
             ))}
             {!filtered.length && (
               <div className="space-y-3 p-10 text-center">
-                <Bell className="mx-auto size-7 text-neutral-300" />
+                <Bell className="mx-auto size-7 text-muted-foreground" />
                 <p className="text-sm font-medium">
-                  {items.length ? "No matching notifications" : "No notifications here yet"}
+                  {items.length ? "No matching notifications" : "No notifications yet"}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {items.length
-                    ? "Try another keyword or clear your filters."
-                    : "New task assignments and review updates will appear here."}
+                    ? "Your keyword or filters hide every notification."
+                    : "Nothing has been sent to you yet. Choose which updates you want by email."}
                 </p>
-                {!!items.length && (
-                  <Button size="sm" variant="outline" onClick={resetFilters}>
-                    Clear filters
-                  </Button>
-                )}
+                {items.length
+                  ? <Button size="sm" variant="outline" onClick={resetFilters}>Clear filters</Button>
+                  : <Button size="sm" variant="outline" asChild><Link href="/settings/notifications">Email preferences</Link></Button>}
               </div>
             )}
           </div>
@@ -376,7 +343,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
         >
           {!selected ? (
             <div className="flex min-h-96 flex-col items-center justify-center gap-3 p-8 text-center text-muted-foreground">
-              <Bell className="size-8 text-neutral-300" />
+              <Bell className="size-8 text-muted-foreground" />
               <p className="text-sm">Choose a notification to read the full update.</p>
             </div>
           ) : (

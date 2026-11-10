@@ -12,7 +12,7 @@ import { Prisma } from "@prisma/client"
 import { prisma, type AppTransactionClient } from "@/utils/prisma"
 import { requireAuth, requireClubPermission } from "@/utils/auth"
 import { hasPermission, type ClubPermission } from "@/lib/permissions"
-import { ballotOutcome, summarizeVoting, createVotingSchema, votingScope, votingCommandSchema, decisionSchema } from "@/lib/voting-engine"
+import { ballotOutcome, summarizeVoting, projectLegacyVoting, createVotingSchema, votingScope, votingCommandSchema, decisionSchema } from "@/lib/voting-engine"
 import { readVotingDisplay } from "@/lib/voting-presentation"
 const include = { participants: true, candidates: { orderBy: { position: "asc" as const } }, passes: { orderBy: { number: "asc" as const }, include: { candidates: { orderBy: { position: "asc" as const }, include: { ballots: true } } } } }
 async function member(tx: AppTransactionClient, clubId: string, id: string, caps: ClubPermission[]) {
@@ -42,7 +42,7 @@ export async function getVotingWorkspace(clubId: string, sessionId?: string, sel
     if (!club || club.suspendedAt) throw Error(CLUB_SUSPENDED_MESSAGE);
     const m = await tx.clubMember.findFirst({ where: { id: membership.id, clubId } });
     if (!m || !hasPermission(m,"applications.review")) throw Error("Voting permission required.");
-    if (JSON.stringify(m) !== JSON.stringify(membership)) throw Error("Voting access changed. Refresh and try again.");
+    if (JSON.stringify(m) !== JSON.stringify(membership)) throw Error("Voting access changed. Reload the page and try again.");
     const leadershipView = hasPermission(m,"decisions.view") || hasPermission(m,"decisions.manage")
     if (!hasPermission(m,"decisions.vote") && !leadershipView) throw Error("Voting access required.")
     const s = await tx.votingSession.findFirst({ where: { clubId, mode: {not:"LIVE"}, ...(sessionId ? {id:sessionId} : !leadershipView ? {participants:{some:{memberId:m.id}}} : {}) }, orderBy: {createdAt:"desc"}, include })
@@ -56,15 +56,15 @@ export async function getVotingWorkspace(clubId: string, sessionId?: string, sel
     // separate pipeline read before it. Session/ballot reads and post-snapshot
     // live authority remain unchanged.
     const candidateSelection = await readVotingCandidateSelection(tx, clubId, m, rounds, query, new Map(allRounds.map(round => [round.id, round.anonymousReview])));
-    return { candidateSelection, sessions, joinedParticipants:joinedParticipants.map(v=>({id:v.id,label:v.user.studentProfile ? `${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}` : "Club member", joinedAt:s!.participants.find(p=>p.memberId===v.id)?.joinedAt??null})), session:s, summary:s ? summarizeVoting(s):null, memberId:m.id, canManage:hasPermission(m,"decisions.manage"), canStart:hasPermission(m,"decisions.start"), canReopen:hasPermission(m,"decisions.reopen"), canFinish:hasPermission(m,"decisions.finish"), canPublish:hasPermission(m,"decisions.publish")&&hasPermission(m,"applicants.identify"), canVote:hasPermission(m,"decisions.vote") && !!s?.participants.some(p=>p.memberId===m.id), eligible:eligible.map(v=>({id:v.id,label:v.user.email})), rounds:rounds.map(r=>({id:r.id,name:r.name})), academicYears: s ? (await tx.application.findMany({where:{id:{in:s.candidates.map(c=>c.applicationId)},clubId},select:{id:true,student:{select:{studentProfile:{select:{gradYear:true,transferStudent:true}}}}}})).map(a => ({ id:a.id, academicYear:a.student.studentProfile ? academicYear(a.student.studentProfile) : "Year unavailable" })):[] }
+    return { candidateSelection, sessions, joinedParticipants:joinedParticipants.map(v=>({id:v.id,label:v.user.studentProfile ? `${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}` : "Club member", joinedAt:s!.participants.find(p=>p.memberId===v.id)?.joinedAt??null})), ...(s?(({session,summary})=>({session,summary}))(projectLegacyVoting(s,m.id,summarizeVoting(s))):{session:null,summary:null}), memberId:m.id, canManage:hasPermission(m,"decisions.manage"), canStart:hasPermission(m,"decisions.start"), canReopen:hasPermission(m,"decisions.reopen"), canFinish:hasPermission(m,"decisions.finish"), canPublish:hasPermission(m,"decisions.publish")&&hasPermission(m,"applicants.identify"), canVote:hasPermission(m,"decisions.vote") && !!s?.participants.some(p=>p.memberId===m.id), eligible:eligible.map(v=>({id:v.id,label:v.user.email})), rounds:rounds.map(r=>({id:r.id,name:r.name})), academicYears: s ? (await tx.application.findMany({where:{id:{in:s.candidates.map(c=>c.applicationId)},clubId},select:{id:true,student:{select:{studentProfile:{select:{gradYear:true,transferStudent:true}}}}}})).map(a => ({ id:a.id, academicYear:a.student.studentProfile ? academicYear(a.student.studentProfile) : "Year unavailable" })):[] }
   },{isolationLevel:"RepeatableRead"})
   // Revalidate after releasing the snapshot: suspension, account disablement,
   // support-session expiry, and membership/role revocation must deny its payload.
   const current = await requireClubPermission(clubId, ["applications.review"]);
-  if (JSON.stringify(current.membership) !== JSON.stringify(membership)) throw Error("Voting access changed. Refresh and try again.");
+  if (JSON.stringify(current.membership) !== JSON.stringify(membership)) throw Error("Voting access changed. Reload the page and try again.");
   if (result.session && !hasPermission(current.membership,"decisions.view") && !hasPermission(current.membership,"decisions.manage")) {
     const participant = await prisma.votingParticipant.findUnique({ where: { sessionId_memberId: { sessionId: result.session.id, memberId: current.membership.id } } });
-    if (!participant) throw Error("Voting access changed. Refresh and try again.");
+    if (!participant) throw Error("Voting access changed. Reload the page and try again.");
   }
   return result;
 }
@@ -98,13 +98,13 @@ export async function submitVotingBallot(input: unknown) {
     const round=await tx.pipelineRound.findFirst({where:{id:s.roundId,clubId:s.clubId}})
     const voter=await tx.clubMember.findFirst({where:{id:membership.id,clubId:s.clubId}})
     if(!round || (!round.anonymousReview&&!hasPermission(voter,"applicants.identify")))throw Error("Participant identification access required.")
-    if(s.activeApplicationId && d.applicationId!==s.activeApplicationId && !hasPermission(voter,"decisions.start")&&!hasPermission(voter,"decisions.manage"))throw Error("Active candidate changed. Refresh before voting.")
+    if(s.activeApplicationId && d.applicationId!==s.activeApplicationId && !hasPermission(voter,"decisions.start")&&!hasPermission(voter,"decisions.manage"))throw Error("Active candidate changed. Reload the page and try again.")
     if(c.ballots.some(b=>b.memberId===membership.id)) throw Error("Your ballot is already recorded. Ballots are immutable.")
     const before=ballotOutcome(c.ballots,s.participants.length,s.autoAdvance,s.threshold)
     const after=ballotOutcome([...c.ballots,{decision:d.decision}],s.participants.length,s.autoAdvance,s.threshold)
     await tx.votingBallot.create({data:{sessionId:s.id,passNumber:d.passNumber,applicationId:d.applicationId,memberId:membership.id,decision:d.decision}})
     await tx.votingSession.update({where:{id:s.id},data:{revision:{increment:1}}})
-    await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:"voting.ballot.submitted",details:{applicationId:d.applicationId,pass:d.passNumber,decision:d.decision}}})
+    await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:"voting.ballot.submitted",details:{applicationId:d.applicationId,pass:d.passNumber}}})
     if(after.automatic&&!before.automatic) await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:"voting.candidate.auto-advanced",details:{applicationId:d.applicationId,pass:d.passNumber,rule:s.autoAdvance,threshold:s.threshold}}})
     return {success:true}
   }, votingWriteLimits)
@@ -124,7 +124,7 @@ export async function commandVotingSession(input: unknown) {
       const published = s.candidates.filter(c=>c.publishedStatus).map(c=>c.applicationId);
       if(published.length === d.applicationIds.length && published.every(id=>d.applicationIds!.includes(id))) return {success:true};
     }
-    if(s.revision!==d.revision) throw Error("Session changed. Refresh and review before trying again.")
+    if(s.revision!==d.revision) throw Error("Session changed. Reload the page, check the latest, and try again.")
     if(s.publishedAt) throw Error("Published sessions are sealed. Create a new session to review again.")
     const active=s.passes.find(p=>p.number===s.currentPass)
     const summary=summarizeVoting(s)

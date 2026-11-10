@@ -1,7 +1,6 @@
 "use client"
 import { recordWorkspaceRead } from "@/lib/workspace-read-diagnostics";
 
-import { createClient } from "@/utils/supabase/client";
 import { hasWorkspace } from "@/lib/permissions";
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { User, StudentProfile, Application, ClubMember } from '@prisma/client';
@@ -36,19 +35,22 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-import { demoUser } from "@/lib/demo/store";
 import { useDemoMode } from "@/contexts/demo-context";
 
 export function AuthProvider({ children, initialUser = null, isImpersonating = false, hasSession = true }: { children: React.ReactNode; initialUser?: PopulatedUser | null; isImpersonating?: boolean; hasSession?: boolean }) {
   const [user, setUser] = useState<PopulatedUser | null>(initialUser);
   const [loading, setLoading] = useState(!initialUser && hasSession);
-  const { isDemoEnabled, state, viewAs } = useDemoMode();
+  const { isDemoEnabled, state, viewAs, demoIdentity } = useDemoMode();
   const [readAuthority, setReadAuthority] = useState<object>({});
   const currentReadAuthority = React.useRef(readAuthority);
   const isReadAuthorityCurrent = React.useCallback((authority: object | undefined) => currentReadAuthority.current === authority, []);
   useEffect(() => {
     if (isDemoEnabled || !hasSession) return;
-    let token: string | undefined;
+    let token: string | undefined, cancelled = false, unsubscribe = () => {};
+    // The Supabase browser client loads only for signed-in sessions, keeping it
+    // out of every page's root bundle (signed-out visitors never subscribe).
+    void import("@/utils/supabase/client").then(({ createClient }) => {
+    if (cancelled) return;
     const { data: { subscription } } = createClient().auth.onAuthStateChange((event, session) => {
       const next = session?.access_token ?? "";
       if (token !== undefined ? next !== token : event !== "INITIAL_SESSION") {
@@ -61,7 +63,9 @@ export function AuthProvider({ children, initialUser = null, isImpersonating = f
       }
       token = next;
     });
-    return () => subscription.unsubscribe();
+    unsubscribe = () => subscription.unsubscribe();
+    });
+    return () => { cancelled = true; unsubscribe(); };
   }, [isDemoEnabled, hasSession]);
   const [selectedClubId, setSelectedClubId] = useState("");
   const generation = React.useRef(0), bootstrap = React.useRef({ user: initialUser, demo: isDemoEnabled });
@@ -104,7 +108,7 @@ export function AuthProvider({ children, initialUser = null, isImpersonating = f
     setUser(newUser);
   };
 
-  const identity = isDemoEnabled && state ? demoUser() as unknown as PopulatedUser : !hasSession ? null : bootstrapChanged ? initialUser : user;
+  const identity = isDemoEnabled && state && demoIdentity ? demoIdentity as unknown as PopulatedUser : !hasSession ? null : bootstrapChanged ? initialUser : user;
   const workspaces = identity?.memberships.filter(hasWorkspace) || [];
   const activeClubId = workspaces.find(m => m.clubId === (isDemoEnabled ? state?.perspective.clubId : selectedClubId))?.clubId || workspaces[0]?.clubId || "";
   const selectClub = (clubId: string) => {

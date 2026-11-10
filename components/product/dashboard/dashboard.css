@@ -1,0 +1,243 @@
+/* Shared dashboard pieces (components/product/dashboard). Club home is the reference design; every
+   dashboard uses these classes. Surfaces come only from the glass variants (styles/interface-primitives.css)
+   and the tokens in styles/navigation-glass.css. Blur budget: the shell already uses five blurred surfaces
+   on desktop, so nothing in a dashboard blurs; raised and navy cards keep their material without a filter. */
+
+/* Hero: one decorative ambient layer behind the title and the "Needs you" row. Later content is
+   positioned so it paints above the layer in document order. */
+.oc-dashboard-hero { --oc-surface-glass-filter: none; --oc-surface-glass-navy-filter: none; position: relative; }
+.oc-dashboard-ambient {
+  position: absolute; inset-inline: 0; top: calc(-1 * (var(--oc-shell-header-height) + 2rem)); height: 38rem;
+  background: var(--oc-surface-ambient); pointer-events: none;
+  -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent), linear-gradient(to right, transparent, black 14%, black 86%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to bottom, black 40%, transparent), linear-gradient(to right, transparent, black 14%, black 86%, transparent);
+  mask-composite: intersect;
+}
+/* The admin glow is neutral navy: no club accent. */
+.oc-dashboard-hero[data-glow="neutral"] .oc-dashboard-ambient { background: var(--oc-surface-ambient-neutral); }
+.oc-dashboard-hero[data-glow="recruiting"] .oc-dashboard-ambient { background: var(--oc-surface-ambient-recruiting, var(--oc-surface-ambient-neutral)); }
+.oc-dashboard-hero > :not(.oc-dashboard-ambient) { position: relative; }
+.oc-dashboard-hero h1 { font-family: var(--oc-font-display); font-size: clamp(2rem, 1.25rem + 2vw, 2.75rem); line-height: 1.12; letter-spacing: -.02em; }
+.oc-dashboard-hero .oc-eyebrow { color: var(--muted-foreground); }
+.oc-welcome-deadline { color: var(--foreground); font-weight: var(--oc-weight-medium); }
+.oc-dashboard-actions { display: flex; flex-wrap: wrap; gap: .625rem; }
+
+.oc-dashboard {
+  --oc-surface-glass-filter: none; --oc-surface-glass-navy-filter: none;
+  position: relative; container: dashboard / inline-size; display: grid; gap: var(--oc-content-gap);
+}
+.oc-dashboard h2 { font-family: var(--oc-font-sans); font-size: var(--oc-text-card); font-weight: var(--oc-weight-semibold); line-height: 1.3; color: var(--foreground); }
+.oc-dashboard-number { font-family: var(--oc-font-display); font-weight: 400; font-variant-numeric: lining-nums tabular-nums; line-height: 1; color: var(--foreground); }
+
+/* Needs you */
+.oc-dashboard-section-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .75rem; }
+.oc-dashboard-section-head h2 { font-size: 1.1875rem; }
+.oc-needs-grid { display: grid; gap: .875rem; grid-template-columns: minmax(0, 1fr); }
+.oc-needs-grid[data-count="2"] { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }
+.oc-needs-grid[data-count="3"] { grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr); }
+.oc-needs-grid[data-count="4"] { grid-template-columns: minmax(0, 1.2fr) minmax(0, 3fr); }
+.oc-needs-rest { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: .875rem; margin: 0; padding: 0; list-style: none; }
+.oc-needs-rest > li { display: grid; min-width: 0; }
+.oc-needs-card[data-slot="card"] { gap: .5rem; min-height: 10rem; padding: 1.125rem 1.25rem 1rem; }
+.oc-needs-title { display: flex; align-items: center; gap: .5rem; margin: 0; font-size: 1.0625rem; font-weight: var(--oc-weight-semibold); line-height: 1.3; }
+.oc-needs-dot { flex-shrink: 0; width: .5rem; height: .5rem; border-radius: var(--oc-radius-full); background: var(--brand-orange); box-shadow: var(--oc-glass-dot-halo); }
+.oc-needs-detail { margin: 0; color: var(--muted-foreground); font-size: var(--oc-text-small); line-height: var(--oc-leading-compact); overflow-wrap: anywhere; }
+.oc-needs-card[data-variant="glass-navy"] .oc-needs-detail { color: var(--oc-rail-muted); }
+.oc-needs-action { display: inline-flex; align-items: center; gap: .375rem; align-self: flex-start; min-height: 44px; margin-top: auto; padding: 0; border: 0; background: none; color: var(--primary); font-size: var(--oc-text-small); font-weight: var(--oc-weight-semibold); text-decoration: none; cursor: pointer; }
+.oc-needs-action::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.oc-needs-card[data-variant="glass-navy"] .oc-needs-action { color: var(--oc-glass-cream); }
+.oc-needs-action:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; border-radius: var(--oc-radius-sm); box-shadow: var(--focus-halo-outset) }
+.oc-needs-card[data-variant="glass-navy"] .oc-needs-action:focus-visible { outline-color: var(--ring); outline-offset: 2px; box-shadow: var(--focus-halo-outset) }
+.oc-needs-progress { display: grid; gap: .375rem; color: var(--muted-foreground); font-size: var(--oc-text-caption); }
+.oc-needs-card[data-variant="glass-navy"] .oc-needs-progress { color: var(--oc-rail-muted); }
+.oc-needs-progress-track, .oc-pipeline-track { display: block; height: .5rem; overflow: hidden; border-radius: var(--oc-radius-full); background: var(--oc-surface-glass-track); box-shadow: var(--oc-glass-track-inset); }
+.oc-needs-card[data-variant="glass-navy"] .oc-needs-progress-track { background: var(--oc-glass-navy-track); box-shadow: none; }
+.oc-needs-progress-track > span, .oc-pipeline-track > span { display: block; width: var(--value); height: 100%; border-radius: inherit; background: var(--primary); box-shadow: var(--oc-glass-fill-highlight); animation: oc-dashboard-bar var(--oc-glass-move) var(--oc-glass-ease) 120ms backwards; }
+.oc-needs-card[data-variant="glass-navy"] .oc-needs-progress-track > span { background: var(--oc-glass-cream); }
+.oc-needs-clear[data-slot="card"] { padding: 1rem 1.25rem; }
+.oc-needs-clear p { margin: 0; color: var(--muted-foreground); font-size: var(--oc-text-small); }
+.oc-needs-clear strong { color: var(--foreground); font-weight: var(--oc-weight-semibold); }
+
+/* Main column and sidebar */
+.oc-dashboard-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(17rem, 1fr); gap: var(--oc-content-gap); align-items: start; }
+.oc-dashboard-main, .oc-dashboard-side { display: grid; gap: var(--oc-content-gap); align-content: start; min-width: 0; }
+.oc-dashboard-card[data-slot="panel"] { --oc-glass-card-radius: 1.25rem; display: grid; gap: .875rem; min-width: 0; }
+.oc-dashboard-card-head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; min-height: 2.75rem; }
+.oc-dashboard-card-head > span { color: var(--muted-foreground); font-size: var(--oc-text-caption); text-align: right; }
+.oc-dashboard-more { display: inline-flex; align-items: center; justify-self: start; gap: .375rem; min-height: 44px; padding: 0; border: 0; background: none; color: var(--primary); font: inherit; font-size: var(--oc-text-small); font-weight: var(--oc-weight-semibold); text-decoration: none; cursor: pointer; }
+.oc-dashboard-more:hover { text-decoration: underline; text-underline-offset: 3px; }
+.oc-dashboard :is(.oc-dashboard-more, .oc-dashboard-row):focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; border-radius: var(--oc-radius-sm); }
+.oc-dashboard-count { display: inline-grid; place-items: center; min-width: 1.75rem; height: 1.5rem; margin-inline-start: .375rem; padding-inline: .5rem; border-radius: var(--oc-radius-full); background: var(--oc-glass-tint-sheen), var(--secondary); color: var(--secondary-foreground); box-shadow: var(--oc-glass-tint-highlight); font-size: var(--oc-text-caption); font-weight: var(--oc-weight-semibold); font-variant-numeric: tabular-nums; vertical-align: middle; }
+.oc-dashboard-foot { margin: 0; color: var(--muted-foreground); font-size: var(--oc-text-caption); line-height: var(--oc-leading-compact); }
+.oc-dashboard-quiet { margin: 0; color: var(--muted-foreground); font-size: var(--oc-text-small); }
+
+/* Metric tiles: big serif numbers, labels as text. */
+.oc-metric-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr)); gap: 1rem .75rem; margin: 0; }
+.oc-metric-tiles > div { display: grid; gap: .375rem; min-width: 0; }
+.oc-metric-tiles dt { color: var(--muted-foreground); font-size: var(--oc-text-caption); }
+.oc-metric-tiles dd { margin: 0; font-size: 1.75rem; }
+.oc-metric-tiles dd small { font-family: var(--oc-font-sans); font-size: var(--oc-text-caption); color: var(--muted-foreground); }
+.oc-metric-tiles dd[data-urgent="true"] { color: var(--brand-ink); }
+.oc-metric-tiles[data-size="large"] dd { font-size: clamp(1.75rem, 1.2rem + 1.4vw, 2.5rem); }
+
+/* Pipeline: one stage per column; the number is the content, the bar is decoration. */
+.oc-pipeline-bars { display: grid; gap: .875rem; min-width: 0; }
+.oc-pipeline-stages { display: grid; grid-template-columns: repeat(var(--stages, 4), minmax(0, 1fr)); gap: 1rem; margin: 0; padding: 0; list-style: none; }
+.oc-pipeline-stages > li { display: grid; gap: .5rem; min-width: 0; }
+.oc-pipeline-stage-label { color: var(--muted-foreground); font-size: var(--oc-text-caption); font-weight: var(--oc-weight-medium); }
+.oc-pipeline-stages .oc-dashboard-number { font-size: clamp(1.75rem, 1.2rem + 1.4vw, 2.5rem); }
+.oc-pipeline-track { height: .625rem; }
+[data-tone="info"] > .oc-pipeline-track > span, .oc-pipeline-compact-bar > [data-tone="info"] { background: var(--info); }
+[data-tone="interview"] > .oc-pipeline-track > span, .oc-pipeline-compact-bar > [data-tone="interview"] { background: var(--interview); }
+[data-tone="success"] > .oc-pipeline-track > span, .oc-pipeline-compact-bar > [data-tone="success"] { background: var(--success); }
+[data-tone="warning"] > .oc-pipeline-track > span, .oc-pipeline-compact-bar > [data-tone="warning"] { background: var(--warning); }
+.oc-pipeline-compact, .oc-pipeline-compact-counts { display: none; }
+.oc-pipeline-compact-bar { display: flex; gap: 3px; height: .875rem; overflow: hidden; border-radius: var(--oc-radius-full); background: var(--oc-surface-glass-track); }
+.oc-pipeline-compact-bar > span { flex: 0 0 auto; width: var(--value); min-width: 3px; background: var(--primary); box-shadow: var(--oc-glass-fill-highlight); animation: oc-dashboard-bar var(--oc-glass-move) var(--oc-glass-ease) 120ms backwards; }
+.oc-pipeline-compact-counts { grid-template-columns: repeat(var(--compact-stages, 3), minmax(0, 1fr)); gap: .5rem; margin: 0; padding: 0; list-style: none; }
+.oc-pipeline-compact-counts > li { display: grid; gap: .25rem; }
+.oc-pipeline-compact-counts .oc-dashboard-number { font-size: 1.625rem; }
+.oc-pipeline-compact-counts span { color: var(--muted-foreground); font-size: var(--oc-text-caption); }
+
+/* Rows: interviews, updates, week, queues */
+.oc-dashboard-rows { display: grid; margin: 0; padding: 0; list-style: none; }
+.oc-dashboard-rows > li + li { border-top: 1px solid var(--oc-surface-glass-edge); }
+.oc-dashboard-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .75rem; width: calc(100% + 1rem); min-height: 3.5rem; margin-inline: -.5rem; padding: .625rem .5rem; border: 0; border-radius: var(--oc-glass-row-radius); background: transparent; color: inherit; text-align: left; font: inherit; text-decoration: none; cursor: pointer; transition: background-color var(--oc-glass-quick) var(--oc-glass-ease); }
+.oc-dashboard-row[data-static="true"] { grid-template-columns: auto minmax(0, 1fr); cursor: default; }
+.oc-dashboard-row[data-lead="none"] { grid-template-columns: minmax(0, 1fr) auto; }
+.oc-dashboard-row[data-static="true"][data-lead="none"] { grid-template-columns: minmax(0, 1fr); }
+.oc-dashboard-row[data-action="true"] { grid-template-columns: auto minmax(0, 1fr) auto; }
+.oc-dashboard-row[data-action="true"][data-lead="none"] { grid-template-columns: minmax(0, 1fr) auto; }
+.oc-dashboard-row > svg { color: var(--muted-foreground); }
+.oc-dashboard-row > time { min-width: 3.25rem; color: var(--muted-foreground); font-size: var(--oc-text-caption); font-weight: var(--oc-weight-medium); }
+@media (hover: hover) and (pointer: fine) { :is(button, a).oc-dashboard-row:hover { background: var(--oc-glass-hover-tint); } }
+.oc-dashboard-row-copy { display: grid; gap: .125rem; min-width: 0; }
+.oc-dashboard-row-copy strong { font-size: var(--oc-text-small); font-weight: var(--oc-weight-semibold); line-height: 1.35; overflow-wrap: anywhere; }
+.oc-dashboard-row-note { display: -webkit-box; overflow: hidden; color: var(--muted-foreground); font-size: var(--oc-text-small); line-height: 1.5; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.oc-dashboard-row-copy small { overflow: hidden; color: var(--muted-foreground); font-size: var(--oc-text-caption); line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
+.oc-dashboard-dot { width: .5rem; height: .5rem; border-radius: var(--oc-radius-full); background: color-mix(in srgb, var(--primary) 30%, transparent); }
+.oc-dashboard-dot[data-urgent="true"] { background: var(--brand-orange); }
+.oc-dashboard-avatar { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border: 1px solid color-mix(in srgb, var(--interview) 22%, transparent); border-radius: var(--oc-radius-full); background: var(--interview-subtle); color: var(--interview); font-size: var(--oc-text-caption); font-weight: var(--oc-weight-semibold); }
+.oc-dashboard-avatar[data-unscheduled="true"] { border: 1.5px dashed var(--brand-orange); background: transparent; }
+
+/* Date chips (This week). */
+.oc-date-chip { display: grid; place-content: center; justify-items: center; width: 2.75rem; height: 3rem; border-radius: var(--oc-glass-chip-radius); background: var(--oc-surface-glass-navy); color: var(--oc-glass-cream); box-shadow: var(--oc-glass-navy-highlight); line-height: 1; }
+.oc-date-chip span { font-size: .6875rem; font-weight: var(--oc-weight-semibold); text-transform: uppercase; letter-spacing: .04em; }
+.oc-date-chip strong { margin-top: .125rem; font-family: var(--oc-font-display); font-size: 1.125rem; font-weight: 400; }
+.oc-date-chip:is([data-kind="interview"], [data-kind="deadline"]) { box-shadow: none; outline: 1px solid var(--chip-ring); outline-offset: -1px; }
+.oc-date-chip[data-kind="interview"] { --chip-ring: color-mix(in srgb, var(--interview) 18%, transparent); background: var(--interview-subtle); color: var(--interview); }
+.oc-date-chip[data-kind="deadline"] { --chip-ring: color-mix(in srgb, var(--brand-orange) 22%, transparent); background: var(--brand-subtle); color: var(--brand-ink); }
+
+/* Row ends: a status pill and arrow together. */
+.oc-dashboard-row-end { display: inline-flex; align-items: center; gap: .5rem; color: var(--muted-foreground); }
+
+/* Progress: a native <progress> drawn as the glass track. */
+.oc-dashboard-progress { width: 100%; height: .625rem; overflow: hidden; border: 0; border-radius: var(--oc-radius-full); background: var(--oc-surface-glass-track); box-shadow: var(--oc-glass-track-inset); -webkit-appearance: none; appearance: none; }
+.oc-dashboard-progress::-webkit-progress-bar { border-radius: var(--oc-radius-full); background: var(--oc-surface-glass-track); }
+.oc-dashboard-progress::-webkit-progress-value { border-radius: var(--oc-radius-full); background: var(--primary); box-shadow: var(--oc-glass-fill-highlight); }
+.oc-dashboard-progress::-moz-progress-bar { border-radius: var(--oc-radius-full); background: var(--primary); }
+.oc-dashboard-note { margin: 0; color: var(--muted-foreground); font-size: var(--oc-text-caption); line-height: var(--oc-leading-compact); }
+
+/* States: loading placeholders and errors in the same glass. */
+.oc-dashboard-loading-needs { display: grid; grid-template-columns: minmax(0, 1.2fr) repeat(2, minmax(0, 1fr)); gap: .875rem; }
+.oc-dashboard-loading [data-slot="skeleton"] { border-radius: var(--oc-content-radius); }
+@container dashboard (max-width: 760px) { .oc-dashboard-loading-needs { grid-template-columns: minmax(0, 1fr); } }
+.oc-dashboard-state { display: grid; gap: .75rem; justify-items: start; }
+.oc-dashboard-state[role="alert"] p { margin: 0; color: var(--foreground); font-size: var(--oc-text-small); }
+
+/* Motion: fade and rise 6px, staggered 40ms; hover lift on cards that act as links. */
+.oc-dashboard :is(.oc-needs-card, .oc-needs-clear, .oc-dashboard-card) { animation: oc-dashboard-rise var(--oc-glass-move) var(--oc-glass-ease) backwards; animation-delay: calc(var(--i, 0) * 40ms); }
+@keyframes oc-dashboard-rise { from { opacity: 0; transform: translateY(6px); } }
+@keyframes oc-dashboard-bar { from { width: 0; } }
+@media (hover: hover) and (pointer: fine) {
+  .oc-needs-card { transition: transform var(--oc-glass-quick) var(--oc-glass-ease), box-shadow var(--oc-glass-quick) var(--oc-glass-ease); }
+  .oc-needs-card:hover { transform: translateY(-2px); }
+  .oc-needs-card[data-variant="glass-raised"]:hover { box-shadow: var(--oc-glass-light-depth), var(--oc-glass-lift); }
+}
+
+/* Narrow content area (rail plus a small window, tablets): one column. */
+@container dashboard (max-width: 980px) {
+  .oc-needs-grid[data-count] { grid-template-columns: minmax(0, 1fr); }
+  .oc-needs-card[data-slot="card"] { min-height: 0; }
+  .oc-needs-rest { grid-auto-flow: row; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); }
+}
+@container dashboard (max-width: 860px) {
+  .oc-dashboard-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@container dashboard (max-width: 520px) {
+  .oc-pipeline-stages { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Phones: one column. The top card stays navy; the rest become one glass list. Pipelines become one
+   segmented bar with counts. Dashboards order their cards with `order` on their own classes. */
+@media (max-width: 759px) {
+  .oc-dashboard-ambient { height: 30rem; }
+  .oc-dashboard-hero h1 { font-size: 2rem; }
+  .oc-needs-card[data-slot="card"] { min-height: 0; }
+  .oc-needs-rest { display: block; overflow: hidden; border: 1px solid var(--oc-surface-glass-edge); border-radius: var(--oc-radius-xl); background: var(--oc-surface-glass-raised); box-shadow: var(--oc-surface-glass-raised-depth); }
+  .oc-needs-rest > li { display: block; }
+  .oc-needs-rest > li + li { border-top: 1px solid var(--oc-surface-glass-edge); }
+  .oc-needs-rest .oc-needs-card[data-slot="card"] { border: 0; border-radius: 0; box-shadow: none; padding-block: .875rem .5rem; animation: none; }
+  .oc-needs-rest .oc-needs-card::before { display: none; }
+  .oc-dashboard-grid { display: flex; flex-direction: column; align-items: stretch; }
+  .oc-dashboard-main, .oc-dashboard-side { display: contents; }
+  .oc-pipeline-bars[data-compact="true"] .oc-pipeline-stages { display: none; }
+  .oc-pipeline-bars[data-compact="true"] .oc-pipeline-compact { display: block; }
+  .oc-pipeline-bars[data-compact="true"] .oc-pipeline-compact-counts { display: grid; }
+}
+
+/* Phones and tablets inside the signed-in shell: the OutClass app's look for club dashboards (Club home,
+   Recruiting, Admin), matching the personal Home (components/views/student-home.css). Desktop is unchanged. */
+@media (max-width: 1023px) {
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-dashboard { gap: 1.125rem; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-welcome-header h1 { font-size: 1.875rem; line-height: 1.15; min-block-size: 0; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-welcome-header .oc-page-description { min-block-size: 0; font-size: var(--oc-text-small); }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-dashboard-section-head { margin-bottom: .5rem; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-dashboard-section-head h2 { font-size: 1.0625rem; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-dashboard-card[data-slot="panel"] { gap: .625rem; padding-block: .875rem 1rem; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-dashboard-card-head { min-height: 2.25rem; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-dashboard h2 { font-size: 1.0625rem; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-dashboard-more { min-height: 40px; }
+  /* Needs you: the top card stays navy, the rest one checklist card. */
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-needs-card[data-slot="card"] { gap: .25rem; min-height: 0; padding: .875rem 1rem .25rem; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-needs-title { font-size: var(--oc-text-small); }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-needs-detail { font-size: var(--oc-text-caption); }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-needs-action { min-height: 40px; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-needs-grid { gap: .625rem; }
+  /* Tablets get the phone stack too: one column, the rest of Needs you as one list card. */
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-needs-grid[data-count] { grid-template-columns: minmax(0, 1fr); }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-needs-rest { display: block; overflow: hidden; border: 1px solid var(--oc-surface-glass-edge); border-radius: var(--oc-radius-xl); background: var(--oc-surface-glass-raised); box-shadow: var(--oc-surface-glass-raised-depth); }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-needs-rest > li { display: block; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-needs-rest > li + li { border-top: 1px solid var(--oc-surface-glass-edge); }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-needs-rest .oc-needs-card[data-slot="card"] { border: 0; border-radius: 0; box-shadow: none; animation: none; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-needs-rest .oc-needs-card::before { display: none; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-needs-rest .oc-needs-card[data-slot="card"] { padding-block: .75rem .25rem; }
+  /* Rows and chips: tighter, like the app's lists. */
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-dashboard-row { min-height: 3rem; padding-block: .5rem; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-date-chip { width: 2.5rem; height: 2.625rem; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-date-chip strong { font-size: 1rem; }
+  /* Metric tiles: three across, smaller numbers. */
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-metric-tiles { grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr)); gap: .75rem .5rem; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-metric-tiles dd, [data-product-shell]:not([data-product-shell="personal"]) .oc-metric-tiles[data-size="large"] dd { font-size: 1.5rem; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-pipeline-stages .oc-dashboard-number { font-size: 1.625rem; }
+  /* Segmented filters scroll sideways instead of clipping. */
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-dashboard .oc-segmented-control { min-height: 44px; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-dashboard .oc-segmented-control button { min-height: 36px; padding: .375rem .875rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .oc-dashboard *, .oc-dashboard-hero * { animation: none !important; transition: none !important; }
+  .oc-needs-card:hover { transform: none; }
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .oc-dashboard-ambient { display: none; }
+}
+@media (forced-colors: active) {
+  .oc-dashboard-ambient { display: none; }
+  .oc-date-chip, .oc-dashboard-avatar, .oc-pipeline-track, .oc-needs-progress-track, .oc-pipeline-compact-bar { border: 1px solid CanvasText; }
+  .oc-date-chip, .oc-date-chip[data-kind] { background: Canvas; color: CanvasText; box-shadow: none; outline: 0; }
+  .oc-pipeline-track > span, .oc-needs-progress-track > span, .oc-pipeline-compact-bar > span { background: Highlight; forced-color-adjust: none; }
+  .oc-needs-dot, .oc-dashboard-dot[data-urgent="true"] { background: Highlight; forced-color-adjust: none; }
+  .oc-needs-rest { border: 1px solid CanvasText; }
+}

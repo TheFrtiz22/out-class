@@ -36,7 +36,7 @@ export async function finalizeLiveVotingRoom(input:unknown){
   if(prior){if(prior.actorId!==user.id||prior.fingerprint!==fingerprint)throw Error("Request ID reused with different content.");return {revision:s.revision};}
   if(meetingDetails((s.presentationOptions as {meeting?:unknown})?.meeting)?.status==='CANCELLED'||s.state!=="COMPLETED"||s.finalizedAt||s.revision!==d.revision)throw Error("Session changed. Preview decisions again.");
   await tx.$queryRaw(Prisma.sql`SELECT id FROM "Application" WHERE "clubId"=${d.clubId} AND id IN (${Prisma.join(s.candidates.map(c=>c.applicationId))}) ORDER BY id FOR UPDATE`);
-  const plan=await votingFinalizationPlan(tx,s,d.mapping);if(plan.guard!==d.guard)throw Error("Applicant or pipeline state changed. Preview decisions again.");
+  const plan=await votingFinalizationPlan(tx,s,d.mapping);if(plan.stale.length)throw Error(`Application changed since voting began: ${plan.stale.map(a=>`${a.label} (${a.reason})`).join("; ")}. Nothing was finalized; review these applicants first.`);if(plan.guard!==d.guard)throw Error("Applicant or pipeline state changed. Preview decisions again.");
   await tx.$queryRaw`SELECT set_config('outclass.voting_finalization',${s.id},true)`;
   for(const c of plan.changes){
    if(c.outcome==="HOLD"||c.outcome==="UNREVIEWED")continue;
@@ -47,7 +47,7 @@ export async function finalizeLiveVotingRoom(input:unknown){
   await tx.$queryRaw`SELECT set_config('outclass.voting_finalization','',true)`;
   const finalRows=await tx.application.findMany({where:{clubId:d.clubId,id:{in:plan.changes.filter(c=>c.outcome==="ACCEPT"||c.outcome==="REJECT").map(c=>c.applicationId)}}});
   await tx.auditLog.create({data:{clubId:d.clubId,actorId:user.id,targetId:s.id,action:"voting.room.finalized",details:{mapping:d.mapping,changes:plan.changes.map(({label:_label,...change})=>change),finalGuards:finalRows.map(a=>({applicationId:a.id,guard:decisionPublicationGuard(a)})),notifications:"DEFERRED"}}});await tx.votingRoomCommand.create({data:{...key,actorId:user.id,fingerprint,result}});return result;
- },votingWriteLimits)};}catch(e){if(e instanceof Error&&/^(Session changed|Applicant or pipeline|Application changed since|Choose an active)/.test(e.message))return {ok:false as const,message:e.message};throw e;}
+ },votingWriteLimits)};}catch(e){if(e instanceof Error&&/^(Session changed|Applicant or pipeline|Application changed since|An application changed since voting started|Choose an active)/.test(e.message))return {ok:false as const,message:e.message};throw e;}
 }
 /** Separately confirmed delivery uses the existing decision/notification outbox;
  * finalization never calls this action. Exact current decisions are rechecked. */
@@ -67,7 +67,7 @@ export async function sendLiveVotingNotifications(input:unknown){
    const final=["ACCEPTED","REJECTED"].includes(a.status),eventKey=final?`decision:${a.id}:${a.decisionVersion}`:`voting-round:${s.id}:${a.id}`;
    if(await tx.userNotification.findUnique({where:{userId_eventKey:{userId:a.studentId,eventKey}}}))continue;
    if(final)await publishDecisionCommunication(tx,a.id,user.id);
-   else await tx.$queryRaw`SELECT outclass_notify(${a.studentId},${d.clubId},${eventKey},'APPLICATION','Application update','Your application has advanced. Open OutClass for your current round.','/?workspace=student&view=tracker')`;
+   else await tx.$queryRaw`SELECT outclass_notify(${a.studentId},${d.clubId},${eventKey},'APPLICATION','Application update','Your application has advanced. Open OutClass for your current round.','/applications')`;
    sent++;
   }
   const result={sent};await tx.auditLog.create({data:{clubId:d.clubId,actorId:user.id,targetId:s.id,action:"voting.room.notifications.requested",details:{count:sent}}});await tx.votingRoomCommand.create({data:{...key,actorId:user.id,fingerprint,result}});return result;

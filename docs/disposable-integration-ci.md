@@ -4,7 +4,7 @@
 
 The normal \`pnpm test\` suite intentionally does not boot Auth, Storage, Next.js, SMTP, or PostgreSQL. Environment-gated tests therefore report **skipped** unless their guarded configuration is provisioned. Migration fixtures and mocked-browser tests cannot replace the real service boundary.
 
-This branch introduces a separate GitHub Actions workflow: **Disposable integration verification** (\`.github/workflows/disposable-integrations.yml\`). It runs on relevant pull requests, Mondays at 05:17 UTC, and through manual workflow dispatch. Every job runs on a fresh Ubuntu runner; no production secrets are supplied.
+This branch introduces a separate GitHub Actions workflow: **Disposable integration verification** (\`.github/workflows/disposable-integrations.yml\`). It runs on every pull request, Mondays at 05:17 UTC, and through manual workflow dispatch. Every job runs on a fresh Ubuntu runner; no production secrets are supplied.
 
 **A successful static coverage report does not imply all 34 tests were executed.** The coverage script lists unwired suites explicitly. Each integration job must pass independently.
 

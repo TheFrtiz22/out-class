@@ -34,8 +34,3 @@ export function canonicalStudentParams(input: URLSearchParams) {
   else params.delete("section")
   return { ...route, params }
 }
-export function applicantStatusHref(input = new URLSearchParams()) {
-  const params = new URLSearchParams(input)
-  params.set("workspace", "student"); params.set("view", "status"); params.set("section", "status")
-  return `/?${params}`
-}

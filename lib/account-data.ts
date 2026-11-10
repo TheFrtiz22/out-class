@@ -7,6 +7,7 @@ export const accountClubSelect = {
   id: true,
   slug: true,
   name: true,
+  shortName: true,
   tagline: true,
   description: true,
   logoUrl: true,
@@ -41,6 +42,9 @@ export const accountUserInclude = {
   applications: {
     omit: { anonymousReviewText: true },
     include: { club: { select: accountClubSelect } },
+    // A student can have several applications to one club after re-applying;
+    // the first per club is the current one (drafts first, then newest).
+    orderBy: [{ submittedAt: { sort: "desc", nulls: "first" } }, { id: "asc" }],
   },
   memberships: {
     where: { status: "ACTIVE" },

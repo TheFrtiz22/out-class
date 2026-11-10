@@ -1,22 +1,27 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import { useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { clubWorkspaceHref } from "@/lib/club-workspace"
 import type { PersonalSection } from "@/lib/product-navigation"
 import { useDemoMode } from "@/contexts/demo-context"
 import { signInReturnPath, authEntryHref } from "@/lib/auth"
 import { useAuth } from "@/contexts/auth-context"
-import { demoDashboard } from "@/lib/demo/store"
-import { useState, useEffect } from "react"
+import { loadedDemoStore } from "@/lib/demo/loader"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { type AppMode, type ViewId } from "@/lib/views"
-import { ApplicationStateProvider } from "@/lib/application-state"
+import { ApplicationStateProvider, useSeedApplicationData } from "@/lib/application-state"
+import { useInWorkspaceShell, useShellBindings } from "@/components/shell/workspace-shell-context"
+import type { ReactNode } from "react"
 import { AuthSessionBoundary } from "@/components/auth-session-boundary"
 import { OutClassLoadingScreen } from "@/components/outclass-loading-screen"
 import { WorkspaceLoading } from "@/components/workspace-loading"
 import { LandingPageView } from "@/components/views/landing-page-view"
 import { resolveStudentView, sectionForStudentView, canonicalStudentParams } from "@/lib/student-navigation"
+import { STUDENT_HOME, studentPath, studentRouteForPath } from "@/lib/navigation"
+import { FocusFrame } from "@/components/shell/focus-frame"
+import { Button } from "@/components/ui/button"
 
 const renderDestinationLoading = () => <OutClassLoadingScreen />
 
@@ -63,11 +68,15 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
   const demo = useDemoMode()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [personalSection, setPersonalSection] = useState<PersonalSection>(() => canonicalStudentParams(new URLSearchParams(searchParams.toString()))?.section ?? "explore")
+  const pathname = usePathname()
+  // Personal workspace views have real paths (/home, /explore, …); the homepage only serves landing and sign-in.
+  const searchKey = searchParams.toString()
+  const pathRoute = useMemo(() => embedded ? null : studentRouteForPath(pathname, new URLSearchParams(searchKey)), [embedded, pathname, searchKey])
+  const [personalSection, setPersonalSection] = useState<PersonalSection>(() => pathRoute?.section ?? canonicalStudentParams(new URLSearchParams(searchParams.toString()))?.section ?? "explore")
   const showLanding = !embedded && initialView === "landing" && !searchParams.has("workspace") && !searchParams.has("view") && !searchParams.has("demoClub") && !searchParams.has("next")
-  const wantsStudent = searchParams.get("workspace") === "student"
+  const wantsStudent = !!pathRoute || searchParams.get("workspace") === "student"
   const { selectClub, user, isImpersonating } = useAuth()
-  const initialData = demo.isDemoEnabled ? demoDashboard() : realInitialData
+  const initialData = demo.isDemoEnabled ? loadedDemoStore().demoDashboard() : realInitialData
   // ── Read auth error from URL query params (e.g. /?error=uva_only) ──
   const [authError, setAuthError] = useState("")
 
@@ -84,9 +93,9 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
   }, [])
 
   const [view, setView] = useState<ViewId>(
-    initialAuthRole ? "auth" : showLanding ? "landing" : demo.isDemoEnabled ? (searchParams.has("demoClub") ? "explore" : !wantsStudent && demo.state?.perspective.role === "leader" ? "leader-dashboard" : "student-dashboard") : initialSession
+    initialAuthRole ? "auth" : showLanding ? "landing" : demo.isDemoEnabled ? pathRoute ? pathRoute.view : (searchParams.has("demoClub") ? "explore" : !wantsStudent && demo.state?.perspective.role === "leader" ? "leader-dashboard" : "student-dashboard") : initialSession
       ? hasProfile
-        ? "student-dashboard"
+        ? pathRoute?.view ?? "student-dashboard"
         : "student-onboarding"
       : initialView
   )
@@ -99,7 +108,7 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
       setPersonalSection(nextSection)
       const params = new URLSearchParams({ workspace: "student", view: next })
       if (!["explore", "corkboard"].includes(nextSection)) params.set("section", nextSection)
-      const href = `${embedded ? "/preview" : "/"}?${params}`
+      const href = embedded ? `/preview?${params}` : studentPath(next, nextSection)
       // Already-open student workspaces share a persistent client shell. Native
       // history keeps URL/back navigation in sync without reloading homepage data.
       if (user && resolveStudentView(view)) window.history.pushState(null, "", href)
@@ -124,6 +133,22 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
       if (route.params.toString() !== searchParams.toString()) router.replace(`${embedded ? "/preview" : "/"}?${route.params}`)
     }
   }, [searchParams, showLanding, embedded, router, initialAuthRole])
+
+  // Back/forward between student paths, and direct entry to a specific path.
+  // /home mirrors the old `/?workspace=student`: it does not skip onboarding.
+  const syncedPath = useRef<string | null>(null)
+  useEffect(() => {
+    if (!pathRoute) return
+    const key = `${pathname}?${searchKey}`
+    const first = syncedPath.current === null
+    if (syncedPath.current === key) return
+    syncedPath.current = key
+    setPersonalSection(pathRoute.section)
+    if (!first || pathname !== STUDENT_HOME) setView(pathRoute.view)
+  }, [pathRoute, pathname, searchKey])
+
+  // Full-page steps hide the persistent shell's chrome (it stays mounted underneath).
+  useShellBindings({ bare: true }, view === "student-onboarding" || view === "interview-workspace" || view === "auth" || view === "landing")
 
   function handleEnter(next: ViewId) {
     if (!adminViewIds.includes(next)) {
@@ -158,7 +183,7 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
     )
   }
 
-  if (view === "auth" && isImpersonating) return <main className="p-8">Your administrator login is preserved. Exit impersonation above before changing authentication. <button className="underline" onClick={() => setView("student-dashboard")}>Return to the user’s workspace</button></main>
+  if (view === "auth" && isImpersonating) return <main className="p-8">Your administrator login is preserved. Exit impersonation above before changing authentication. <Button variant="link" className="h-auto px-0" onClick={() => setView("student-dashboard")}>Return to the user’s workspace</Button></main>
 
   if (view === "auth") {
     return <AuthView onCreateAccount={() => { window.location.href = authEntryHref("/signup", window.location.search) }} onEnter={handleEnter} onBack={() => setView("landing")} initialRole={appMode === "admin" ? "leader" : "student"} initialError={authError} />
@@ -180,16 +205,16 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
 
 
   return (
-    <ApplicationStateProvider initialData={initialData ?? (initialSession ? { applications: [], attendances: [] } : null)} persistLocalState={!demo.isDemoEnabled && !initialSession && initialData == null}>
-      {view === "interview-workspace" ? <AuthSessionBoundary><InterviewWorkspaceView onExit={() => navigate("leader-dashboard")} /></AuthSessionBoundary> : <DashboardLayout view={view} appMode={appMode} onNavigate={navigate} onModeChange={switchMode} personalSection={personalSection} onPersonalSection={setPersonalSection}>
+    <StudentState serverData={initialData} initialData={initialData ?? (initialSession ? { applications: [], attendances: [] } : null)} persistLocalState={!demo.isDemoEnabled && !initialSession && initialData == null}>
+      {view === "interview-workspace" ? <FocusFrame task="Interview" width="full"><AuthSessionBoundary><InterviewWorkspaceView onExit={() => navigate("leader-dashboard")} /></AuthSessionBoundary></FocusFrame> : <DashboardLayout view={view} appMode={appMode} onNavigate={navigate} onModeChange={switchMode} personalSection={personalSection} onPersonalSection={setPersonalSection}>
             {view === "student-dashboard" && <><OrganizationOwnershipRequests enabled={!!initialSession && !demo.isDemoEnabled} /><StudentDashboardView onNavigate={navigate} initialData={initialData} authenticated={!!initialSession} /></>}
             {view === "student-profile" && <UnifiedStudentProfileView />}
             {view === "inbox" && <InboxView onNavigate={navigate} />}
             {view === "my-clubs" && <PersonalClubs section={personalSection} />}
             {view === "explore" && <ExploreView onNavigate={navigate} section={personalSection === "categories" ? "categories" : "explore"} />}
             {view === "corkboard" && <CorkboardView onNavigate={navigate} />}
-            {view === "tracker" && <ApplicationTrackerView onNavigate={navigate} scope="all" />}
-            {view === "status" && <ApplicationTrackerView onNavigate={navigate} scope="status" />}
+            {/* One instance for both scopes: its stage control slides instead of remounting. */}
+            {(view === "tracker" || view === "status") && <ApplicationTrackerView onNavigate={navigate} scope={view === "status" ? "status" : "all"} />}
             {view === "calendar" && <CalendarView onNavigate={navigate} />}
             {view === "leader-dashboard" && <LeaderDashboardView />}
             {view === "screening-dashboard" && <ScreeningDashboardView />}
@@ -198,6 +223,17 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
             {view === "club-manager" && (demo.isDemoEnabled ? <DemoClubSettings /> : <ClubWorkspaceSettings />)}
             {view === "club-management-portal" && <ClubManagementPortalView />}
       </DashboardLayout>}
-    </ApplicationStateProvider>
+    </StudentState>
   )
+}
+
+/** Inside `app/(workspace)` the shell owns the store, so the student app seeds it; elsewhere (`/`, `/preview`) it keeps its own. */
+function StudentState({ serverData, initialData, persistLocalState, children }: { serverData: any; initialData: any; persistLocalState: boolean; children: ReactNode }) {
+  // `serverData` is the page's server payload (stable identity), so the store is seeded once per page load.
+  if (useInWorkspaceShell()) return <SeededState initialData={serverData}>{children}</SeededState>
+  return <ApplicationStateProvider initialData={initialData} persistLocalState={persistLocalState}>{children}</ApplicationStateProvider>
+}
+function SeededState({ initialData, children }: { initialData: any; children: ReactNode }) {
+  useSeedApplicationData(initialData)
+  return children
 }

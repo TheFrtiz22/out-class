@@ -1,11 +1,10 @@
 import type { MembershipAccessRole } from "@prisma/client";
+import { membershipRoleLabels } from "@/lib/copy/terms";
 import { canGrantOnboardingRole, onboardingRolePermissions } from "@/lib/club-onboarding";
 import { hasPermission, isActiveMembership, type ClubAccess, type ClubPermission } from "@/lib/permissions";
 
 export const organizationRoles = ["OWNER", "ADMIN", "RECRUITING_ADMIN", "INTERVIEWER", "MEMBER"] as const;
-export const organizationRoleLabels: Record<MembershipAccessRole, string> = {
-  OWNER: "Owner", ADMIN: "Admin", RECRUITING_ADMIN: "Recruiting Lead", INTERVIEWER: "Interviewer", MEMBER: "Member",
-};
+export const organizationRoleLabels: Record<MembershipAccessRole, string> = membershipRoleLabels;
 export const organizationRolePermissions = onboardingRolePermissions;
 
 /** Stored capabilities, not global User roles or role labels, authorize operations. */

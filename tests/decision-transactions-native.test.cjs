@@ -439,7 +439,13 @@ test('decision/invitation transaction repair on isolated native PostgreSQL', { s
     assert.equal(await base.decisionLetter.count({ where: { applicationId: app.id } }), 0);
   }
   await t.test('application submission: serving five-second transaction fails under repeated Auth latency; bounded path preserves atomic answers and attribution', async () => {
-    const legacy = load({ 'actions/applications.ts': execFileSync('git', ['show', '59df658:actions/applications.ts'], { encoding: 'utf8' }) });
+    // Historical source; its one compound-key lookup is translated to the current
+    // schema (no (studentId, clubId) unique key since re-application) so it still
+    // exercises its original slow-Auth transaction path.
+    const legacySource = execFileSync('git', ['show', '59df658:actions/applications.ts'], { encoding: 'utf8' })
+      .replace('tx.application.findUnique({\n      where: { studentId_clubId: { studentId: user.id, clubId: parsed.clubId } },', 'tx.application.findFirst({\n      where: { studentId: user.id, clubId: parsed.clubId, status: { not: "REJECTED" } },');
+    assert.ok(!legacySource.includes('studentId_clubId'), 'legacy compatibility shim applied');
+    const legacy = load({ 'actions/applications.ts': legacySource });
     const f = await submissionFixture();
     providerDelay = 1800;
     try {

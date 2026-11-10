@@ -8,7 +8,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
+import { FocusFrame } from "@/components/shell/focus-frame"
 import type { Applicant } from "@/lib/data"
+import { Panel } from "@/components/ui/panel"
 
 type Decision = "advance" | "waitlist" | "reject"
 
@@ -74,20 +76,10 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
   }, [candidate, autoLoadNext, total])
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-white text-foreground">
-      {/* Top header bar */}
-      <header className="relative flex h-14 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4 sm:px-6">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onClose}
-          className="gap-1.5 text-sm font-medium text-foreground hover:bg-slate-100 hover:text-foreground"
-        >
-          <ArrowLeft className="size-4" />
-          Back to CRM
-        </Button>
-
-        <p className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm font-semibold text-foreground">
+    <FocusFrame overlay task="Speed review" width="full" onExit={onClose}>
+      {/* Queue position and shortcuts; the frame bar carries Exit. */}
+      <div className="flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border bg-card px-4 sm:px-6">
+        <p className="text-sm font-semibold text-foreground">
           {total === 0
             ? "No candidates in queue"
             : `Reviewing Candidate ${Math.min(index + 1, total)} of ${total}`}
@@ -95,24 +87,24 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
 
         <div className="hidden items-center gap-3 sm:flex">
           {SHORTCUTS.map((s) => (
-            <span key={s.label} className="flex items-center gap-1.5 text-xs text-gray-500">
-              <kbd className="rounded border border-gray-300 bg-white px-1.5 py-0.5 tabular-nums text-[length:var(--oc-size-10)] font-medium text-foreground">
+            <span key={s.label} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <kbd className="rounded border border-border bg-white px-1.5 py-0.5 tabular-nums text-[length:var(--oc-size-10)] font-medium text-foreground">
                 {s.key}
               </kbd>
               {s.label}
             </span>
           ))}
         </div>
-      </header>
+      </div>
 
       {/* Split-screen workspace */}
       {candidate ? (
         <div className="flex flex-1 overflow-hidden">
           {/* Left panel — The Application (70%) */}
-          <div className="w-[70%] overflow-y-auto border-r border-neutral-200 bg-white p-6 shadow-none">
-            <div className="mx-auto max-w-2xl space-y-6">
+          <div className="w-[70%] overflow-y-auto border-r border-border bg-white p-6 shadow-none">
+            <div className="mx-auto max-w-[var(--oc-reading-width)] space-y-6">
               {/* Base profile header */}
-              <div className="oc-content-panel flex items-center gap-4 border-gray-200 shadow-none">
+              <Panel className="flex items-center gap-4 border-border shadow-none">
                 <Avatar className="size-14">
                   <AvatarFallback className="bg-foreground/10 text-lg font-semibold text-foreground">
                     {candidate.initials}
@@ -120,27 +112,27 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
                 </Avatar>
                 <div className="min-w-0 flex-1">
                   <h2 className="oc-section-heading truncate text-foreground">{candidate.name}</h2>
-                  <p className="truncate text-sm text-gray-500">
+                  <p className="truncate text-sm text-muted-foreground">
                     {candidate.year} · {candidate.major} · GPA {candidate.gpa}
                   </p>
                 </div>
                 <div className="shrink-0 rounded-md bg-white px-3 py-1.5 text-center">
-                  <p className="text-[length:var(--oc-size-10)] font-medium uppercase tracking-wide text-gray-400">SAT</p>
+                  <p className="text-[length:var(--oc-size-10)] font-medium uppercase tracking-wide text-muted-foreground">SAT</p>
                   <p className="tabular-nums text-sm font-semibold text-foreground">{candidate.satScore}</p>
                 </div>
-              </div>
+              </Panel>
 
               {/* Essays */}
               <div className="space-y-3">
                 <h3 className="oc-card-heading text-foreground">Essay Responses</h3>
                 {candidate.essays.map((essay, i) => (
-                  <div key={i} className="oc-content-panel border-gray-200 shadow-none">
-                    <p className="text-xs font-medium text-gray-500">{essay.question}</p>
+                  <Panel key={i} className="border-border shadow-none">
+                    <p className="text-xs font-medium text-muted-foreground">{essay.question}</p>
                     <p className="mt-1.5 text-pretty text-sm leading-relaxed text-foreground">{essay.answer}</p>
-                  </div>
+                  </Panel>
                 ))}
                 {candidate.essays.length === 0 && (
-                  <p className="text-sm text-gray-400">No essay responses submitted.</p>
+                  <p className="text-sm text-muted-foreground">No essay responses submitted.</p>
                 )}
               </div>
 
@@ -151,7 +143,7 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
                     {candidate.links.map((link) => (
                       <span
                         key={link.url}
-                        className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs text-gray-500"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-2.5 py-1 text-xs text-muted-foreground"
                       >
                         <LinkIcon className="size-3" />
                         {link.label}
@@ -164,11 +156,11 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
               {/* Simulated resume / PDF embed */}
               <div className="space-y-2">
                 <h3 className="oc-card-heading text-foreground">Resume</h3>
-                <div className="rounded-lg border border-gray-200 bg-white shadow-none">
-                  <div className="flex items-center gap-2 border-b border-gray-200 bg-white px-3 py-2">
+                <div className="rounded-lg border border-border bg-white shadow-none">
+                  <div className="flex items-center gap-2 border-b border-border bg-white px-3 py-2">
                     <FileText className="size-4 text-muted-foreground" />
                     <span className="text-xs font-medium text-foreground">{candidate.resumeFileName}</span>
-                    <span className="ml-auto rounded bg-white px-1.5 py-0.5 text-[length:var(--oc-size-10)] font-medium text-gray-400">
+                    <span className="ml-auto rounded bg-white px-1.5 py-0.5 text-[length:var(--oc-size-10)] font-medium text-muted-foreground">
                       PDF
                     </span>
                   </div>
@@ -176,7 +168,7 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
                     {[100, 92, 96, 60, 88, 84, 70, 90, 95, 55].map((width, i) => (
                       <div
                         key={i}
-                        className={cn("h-2 rounded-full bg-gray-100", i === 3 || i === 9 ? "bg-white" : "")}
+                        className={cn("h-2 rounded-full bg-muted", i === 3 || i === 9 ? "bg-white" : "")}
                         style={{ width: `${width}%` }}
                       />
                     ))}
@@ -197,11 +189,11 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
                 value={notes[candidate.id] ?? ""}
                 onChange={(e) => setNotes((prev) => ({ ...prev, [candidate.id]: e.target.value }))}
                 placeholder="Jot down rapid impressions…"
-                className="min-h-32 border-gray-200 bg-white text-sm text-foreground placeholder:text-gray-400"
+                className="min-h-32 border-border bg-white text-sm text-foreground placeholder:text-muted-foreground"
               />
             </div>
 
-            <div className="flex items-center justify-between gap-2 rounded-md border border-gray-200 bg-white p-3">
+            <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-white p-3">
               <Label htmlFor="auto-load-toggle" className="text-xs font-medium leading-snug text-foreground">
                 Auto-load next candidate on decision
               </Label>
@@ -227,19 +219,19 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
               <Button
                 size="lg"
                 onClick={() => decide("reject")}
-                className="h-14 w-full justify-center bg-gray-200 text-base font-semibold text-gray-700 hover:bg-gray-300"
+                className="h-14 w-full justify-center bg-secondary text-base font-semibold text-foreground hover:bg-secondary"
               >
                 Reject
               </Button>
             </div>
 
-            <div className="mt-auto flex items-center justify-between border-t border-gray-200 pt-3">
+            <div className="mt-auto flex items-center justify-between border-t border-border pt-3">
               <Button
                 variant="ghost"
                 size="sm"
                 disabled={index === 0}
                 onClick={goPrevious}
-                className="gap-1 text-xs text-foreground hover:bg-slate-100 hover:text-foreground disabled:opacity-40"
+                className="gap-1 text-xs text-foreground hover:bg-muted hover:text-foreground disabled:opacity-40"
               >
                 <ArrowLeft className="size-3.5" />
                 Previous
@@ -248,7 +240,7 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
                 variant="ghost"
                 size="sm"
                 onClick={goNext}
-                className="gap-1 text-xs text-foreground hover:bg-slate-100 hover:text-foreground"
+                className="gap-1 text-xs text-foreground hover:bg-muted hover:text-foreground"
               >
                 Skip
                 <ArrowRight className="size-3.5" />
@@ -263,7 +255,7 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
               <PartyPopper className="size-6 text-muted-foreground" />
             </div>
             <h2 className="oc-section-heading text-foreground">Queue complete</h2>
-            <p className="max-w-sm text-sm text-gray-500">
+            <p className="max-w-sm text-sm text-muted-foreground">
               You&apos;ve reviewed every candidate in this Speed Review queue. Decisions have been synced to the CRM.
             </p>
             <Button onClick={onClose} className="mt-2 bg-primary text-white hover:bg-primary/90">
@@ -272,6 +264,6 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
           </div>
         </div>
       )}
-    </div>
+    </FocusFrame>
   )
 }

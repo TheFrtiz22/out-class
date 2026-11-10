@@ -22,7 +22,7 @@ test('Applicants submenu and mobile grouping retain explicit office permissions,
   assert.equal(nav.mobileDestinations(items).find(i=>i.navGroup==='applicants').id,'applicants');
  }
  const tabs=fs.readFileSync('components/interview-management-tabs.tsx','utf8');assert.doesNotMatch(tabs,/Résumé moderation|Submitted reviews|InterviewResumeModeration|InterviewSubmittedReviews/);
- assert.match(fs.readFileSync('components/club-workspace.tsx','utf8'),/legacyApplicantInterviewHref/);assert.match(fs.readFileSync('app/club/[clubId]/workspace/page.tsx','utf8'),/if \(moved\) redirect\(moved\)/);
+ assert.match(fs.readFileSync('components/club-workspace.tsx','utf8'),/legacyApplicantInterviewHref/);assert.match(fs.readFileSync('app/(workspace)/club/[clubId]/workspace/page.tsx','utf8'),/if \(moved\) redirect\(moved\)/);
 });
 test('Demo existing review/document discovery filters applicant and historical round before limits, retaining privacy and no live calls',()=>{
  const h=demoHarness(),s=h.load('lib/demo/seed.ts').createDemoSeed('2026-10-18'),store=h.load('lib/demo/store.ts').demoStore;s.perspective={role:'leader',clubId:s.clubs[0].id};store.start(s);

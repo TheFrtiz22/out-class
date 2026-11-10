@@ -2,7 +2,6 @@
 @import "tw-animate-css";
 @import "../styles/tokens.css";
 @import "../styles/typography.css";
-@import "../styles/product-tokens.css";
 @import "../styles/product-components.css";
 @import "../styles/product-workflows.css";
 @import "../styles/loading.css";
@@ -10,6 +9,10 @@
 @import "../styles/workspace-composition.css";
 @import "../styles/editorial.css";
 @import "../styles/navigation-glass.css";
+/* Shared dashboard pieces (components/product/dashboard), global like the other primitives. */
+@import "../components/product/dashboard/dashboard.css";
+/* Club workspace pages at phone width: the OutClass app's look (after the primitives it adjusts). */
+@import "../styles/leader-phone.css";
 @config "../tailwind.config.js";
 
 @custom-variant dark (&:is(.dark *));
@@ -77,6 +80,8 @@
   --radius-md: var(--oc-radius-md);
   --radius-lg: var(--oc-radius-lg);
   --radius-xl: var(--oc-radius-xl);
+  --radius-2xl: var(--oc-radius-xl);
+  --radius-3xl: var(--oc-radius-2xl);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);

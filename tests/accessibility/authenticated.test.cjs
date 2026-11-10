@@ -55,12 +55,12 @@ test('authenticated accessibility against isolated real Auth, MFA, Next actions 
     assert.deepEqual(r.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>({target:n.target,summary:n.failureSummary}))})),[],name);
   }
   for(const [name,page,route]of [
-    ['student-home',studentPage,'/?workspace=student'],
-    ['student-profile',studentPage,'/settings/profile'],
-    ['student-discovery',studentPage,'/?workspace=student&view=explore'],
+    ['student-home',studentPage,'/home'],
+    ['student-profile',studentPage,'/profile'],
+    ['student-discovery',studentPage,'/explore'],
     ['student-saved',studentPage,'/saved-clubs'],
     ['student-availability',studentPage,'/settings/availability'],
-    ['student-notifications',studentPage,'/?workspace=student&view=inbox'],
+    ['student-notifications',studentPage,'/inbox'],
     ['leader-overview',leaderPage,`/club/${club.id}/workspace`],
     ['leader-members',leaderPage,`/club/${club.id}/workspace?section=members`],
     ['leader-applicants',leaderPage,`/club/${club.id}/workspace?section=recruitment&tool=applicants`],
@@ -69,7 +69,7 @@ test('authenticated accessibility against isolated real Auth, MFA, Next actions 
     ['admin-overview',adminPage,'/platform'],['admin-users',adminPage,'/platform/users'],['admin-school-requests',adminPage,'/platform/school-requests'],['admin-claims',adminPage,'/platform/claims'],['admin-events',adminPage,'/platform/events'],
   ])await t.test(name,async()=>{await open(page,route);await scan(page,name);await page.setViewportSize({width:320,height:800});await page.waitForFunction(()=>document.documentElement.scrollWidth<=innerWidth+1,{},{timeout:3000});await scan(page,name+'-320');await page.setViewportSize({width:1280,height:900});});
   await t.test('student submits actual application and server persistence is verified',async()=>{
-    await open(studentPage,`/?workspace=student&view=tracker&applicationId=${draft.applicationId}`);
+    await open(studentPage,`/applications?applicationId=${draft.applicationId}`);
     const essay=studentPage.getByLabel(question.prompt,{exact:true});await essay.waitFor();
     await studentPage.getByRole('button',{name:'Review & submit'}).click();await expect(essay).toHaveAttribute('aria-invalid','true');await scan(studentPage,'real-application-errors');
     await essay.fill('I would like to contribute to this fictional test club.');await studentPage.getByRole('button',{name:'Review & submit'}).click();await studentPage.getByRole('dialog').waitFor();await scan(studentPage,'real-application-review');

@@ -1,0 +1,107 @@
+{
+  "phase": "final",
+  "screenshots": [
+    "design-system-1440",
+    "pattern-Explore-1440",
+    "pattern-Club profile-1440",
+    "pattern-Applications-1440",
+    "pattern-Club overview-1440",
+    "pattern-Recruitment-1440",
+    "pattern-Scheduling-1440",
+    "overlay-dialog-1440",
+    "overlay-menu-1440",
+    "overlay-tooltip-1440",
+    "home-1440",
+    "login-1440",
+    "signup-1440",
+    "forgot-password-1440",
+    "uva-1440",
+    "request-school-1440",
+    "explore-1440",
+    "design-system-390",
+    "pattern-Explore-390",
+    "pattern-Club profile-390",
+    "pattern-Applications-390",
+    "pattern-Club overview-390",
+    "pattern-Recruitment-390",
+    "pattern-Scheduling-390",
+    "home-390",
+    "login-390",
+    "signup-390",
+    "forgot-password-390",
+    "uva-390",
+    "request-school-390",
+    "explore-390",
+    "design-system-1440-reduced-transparency",
+    "login-1440-reduced-transparency",
+    "design-system-1440-forced-colors",
+    "login-1440-forced-colors",
+    "design-system-1440-higher-contrast",
+    "login-1440-higher-contrast"
+  ],
+  "accessibility": [
+    {
+      "name": "design-system",
+      "violations": []
+    },
+    {
+      "name": "dialog",
+      "violations": []
+    },
+    {
+      "name": "home",
+      "violations": []
+    },
+    {
+      "name": "login",
+      "violations": []
+    },
+    {
+      "name": "signup",
+      "violations": []
+    },
+    {
+      "name": "forgot-password",
+      "violations": []
+    },
+    {
+      "name": "uva",
+      "violations": []
+    },
+    {
+      "name": "request-school",
+      "violations": []
+    },
+    {
+      "name": "explore",
+      "violations": []
+    },
+    {
+      "name": "design-system-reduced-transparency",
+      "violations": []
+    },
+    {
+      "name": "login-reduced-transparency",
+      "violations": []
+    },
+    {
+      "name": "design-system-forced-colors",
+      "violations": []
+    },
+    {
+      "name": "login-forced-colors",
+      "violations": []
+    },
+    {
+      "name": "design-system-higher-contrast",
+      "violations": []
+    },
+    {
+      "name": "login-higher-contrast",
+      "violations": []
+    }
+  ],
+  "errors": [
+    "http://127.0.0.1:3311/signup: Minified React error #419; visit https://react.dev/errors/419 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+  ]
+}

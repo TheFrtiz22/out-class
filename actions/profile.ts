@@ -141,7 +141,7 @@ export async function updateStudentProfileSection(input: unknown, expected?: str
       }
       return update(tx);
     });
-    revalidatePath("/");
+    revalidatePath("/", "layout");
     return { profile };
   } catch (error) {
     return { error: error instanceof Error && error.message.includes("changed in another tab") ? error.message : "Your changes could not be saved. Please try again." };

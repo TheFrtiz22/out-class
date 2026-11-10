@@ -1,0 +1,251 @@
+{
+ "about": "Justified exceptions for scripts/check-ui-controls.cjs. A file may not exceed max for a rule. Shrink entries as code is converted.",
+ "entries": [
+  {
+   "rule": "css-hex",
+   "file": "components/clubs/club-settings.css",
+   "max": 1,
+   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
+  },
+  {
+   "rule": "css-hex",
+   "file": "components/clubs/explore-directory.css",
+   "max": 1,
+   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
+  },
+  {
+   "rule": "css-hex",
+   "file": "components/clubs/interview-kit-editor.css",
+   "max": 4,
+   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
+  },
+  {
+   "rule": "css-hex",
+   "file": "components/communications/decision-letter.css",
+   "max": 8,
+   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
+  },
+  {
+   "rule": "css-hex",
+   "file": "components/events/events.css",
+   "max": 30,
+   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
+  },
+  {
+   "rule": "css-hex",
+   "file": "components/landing/journey-atmosphere.css",
+   "max": 2,
+   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
+  },
+  {
+   "rule": "css-hex",
+   "file": "components/landing/journey.css",
+   "max": 2,
+   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
+  },
+  {
+   "rule": "css-hex",
+   "file": "components/landing/public-foundations.css",
+   "max": 3,
+   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
+  },
+  {
+   "rule": "css-hex",
+   "file": "components/landing/public-information.css",
+   "max": 1,
+   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
+  },
+  {
+   "rule": "css-hex",
+   "file": "components/landing/public-navigation.css",
+   "max": 2,
+   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
+  },
+  {
+   "rule": "css-hex",
+   "file": "components/landing/scroll-indicator.css",
+   "max": 1,
+   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
+  },
+  {
+   "rule": "css-radius",
+   "file": "components/clubs/explore-directory.css",
+   "max": 1,
+   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
+  },
+  {
+   "rule": "css-radius",
+   "file": "components/events/events.css",
+   "max": 1,
+   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
+  },
+  {
+   "rule": "css-radius",
+   "file": "components/landing/public-navigation.css",
+   "max": 2,
+   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
+  },
+  {
+   "rule": "css-shadow",
+   "file": "components/applications/application-tracker.css",
+   "max": 2,
+   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
+  },
+  {
+   "rule": "css-shadow",
+   "file": "components/auth/login.css",
+   "max": 1,
+   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
+  },
+  {
+   "rule": "css-shadow",
+   "file": "components/availability/availability.css",
+   "max": 1,
+   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
+  },
+  {
+   "rule": "css-shadow",
+   "file": "components/clubs/club-settings.css",
+   "max": 1,
+   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
+  },
+  {
+   "rule": "css-shadow",
+   "file": "components/clubs/interview-kit-editor.css",
+   "max": 1,
+   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
+  },
+  {
+   "rule": "css-shadow",
+   "file": "components/events/events.css",
+   "max": 10,
+   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
+  },
+  {
+   "rule": "css-shadow",
+   "file": "components/landing/public-information.css",
+   "max": 1,
+   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
+  },
+  {
+   "rule": "css-shadow",
+   "file": "components/landing/public-navigation.css",
+   "max": 3,
+   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
+  },
+  {
+   "rule": "css-shadow",
+   "file": "components/live-voting/room.css",
+   "max": 1,
+   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
+  },
+  {
+   "rule": "css-shadow",
+   "file": "components/views/interview/interview-mode.css",
+   "max": 1,
+   "reason": "Pre-existing literal in page CSS before the glass redesign; ratchet only, do not add more (use navigation-glass.css tokens)."
+  },
+  {
+   "rule": "raw-button",
+   "file": "components/club-members.tsx",
+   "max": 1,
+   "reason": "Whole-row member target (opens the member drawer); navy focus outline."
+  },
+  {
+   "rule": "raw-button",
+   "file": "components/live-voting/member-voting-pad.tsx",
+   "max": 2,
+   "reason": "Pass / No Pass vote tiles on the solid voting pad; whole-surface choice targets."
+  },
+  {
+   "rule": "raw-button",
+   "file": "components/meeting-workspace.tsx",
+   "max": 1,
+   "reason": "Whole meeting card is the target (oc-content-panel); navy focus outline."
+  },
+  {
+   "rule": "raw-button",
+   "file": "components/qr/outclass-qr-code.tsx",
+   "max": 2,
+   "reason": "QR export controls stay with the canonical QR component (CLAUDE.md: QR is owned by @/components/qr)."
+  },
+  {
+   "rule": "raw-button",
+   "file": "components/shell/workspace-navigation.tsx",
+   "max": 1,
+   "reason": "Navigation is fixed for this redesign (owner rule)."
+  },
+  {
+   "rule": "raw-button",
+   "file": "components/views/calendar-view.tsx",
+   "max": 5,
+   "reason": "Calendar cells, agenda rows, event chips and booking cards are whole-surface targets; navy focus outline."
+  },
+  {
+   "rule": "raw-button",
+   "file": "components/views/club-management-portal-view.tsx",
+   "max": 1,
+   "reason": "Logo dropzone is a whole-surface upload target."
+  },
+  {
+   "rule": "raw-button",
+   "file": "components/views/leader-dashboard/live-applicant-views.tsx",
+   "max": 3,
+   "reason": "Applicant table name cell, mobile card and kanban card are whole-row targets in the solid applicant table."
+  },
+  {
+   "rule": "raw-button",
+   "file": "components/views/leader-dashboard/pipeline-view.tsx",
+   "max": 1,
+   "reason": "Collapsed pipeline column is a whole-column target."
+  },
+  {
+   "rule": "raw-toggle",
+   "file": "components/interviews/booking-picker.tsx",
+   "max": 2,
+   "reason": "Booking date grid cells and two-line slot cards keep their grid; a segmented track would change the layout. Listed as skipped."
+  },
+  {
+   "rule": "raw-toggle",
+   "file": "components/landing/perspective-switcher.tsx",
+   "max": 2,
+   "reason": "Public landing art (perspective demo); scripts read data-perspective-option aria-pressed."
+  },
+  {
+   "rule": "raw-toggle",
+   "file": "components/shell/notification-center.tsx",
+   "max": 1,
+   "reason": "Navigation is fixed for this redesign (owner rule)."
+  },
+  {
+   "rule": "raw-toggle",
+   "file": "components/views/branding/color-picker.tsx",
+   "max": 1,
+   "reason": "Colour swatches are whole-surface targets with aria-pressed."
+  },
+  {
+   "rule": "toggle-group",
+   "file": "components/customization/crm-view-manager.tsx",
+   "max": 2,
+   "reason": "Saved CRM views each carry a delete button beside the toggle; SegmentedControl cannot hold it. Listed as skipped."
+  },
+  {
+   "rule": "toggle-group",
+   "file": "components/interview-submitted-reviews.tsx",
+   "max": 1,
+   "reason": "Review picker is a list of long selectable rows, not a short option set. Listed as skipped."
+  },
+  {
+   "rule": "toggle-group",
+   "file": "components/live-voting/room-view.tsx",
+   "max": 1,
+   "reason": "Accept / Hold / Reject ballot grid on the solid voting surface (room.css .vr-votes). Listed as skipped."
+  },
+  {
+   "rule": "toggle-group",
+   "file": "components/views/club-manager/broadcast-messages-view.tsx",
+   "max": 1,
+   "reason": "Audience checklist inside a popover (multi-select list rows). Listed as skipped."
+  }
+ ]
+}

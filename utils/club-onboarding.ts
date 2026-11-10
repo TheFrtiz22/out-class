@@ -88,7 +88,7 @@ export async function createIdentityInvitationInTransaction(tx: AppTransactionCl
     const normalized = normalizeSchoolIdentifier(data.identifier, config);
     const email = config.verification === "EMAIL_LOCAL_PART" && config.emailDomain
       ? `${normalized}@${config.emailDomain}` : data.deliveryEmail;
-    if (!email || !z.string().email().safeParse(email).success) throw new Error("A delivery address or configured school email mapping is required.");
+    if (!email || !z.string().email().safeParse(email).success) throw new Error("Enter an email address, or choose a school that has a default email format.");
     const identity = await tx.schoolIdentity.upsert({
       where: { schoolId_identifierTypeId_normalizedIdentifier: { schoolId: config.schoolId, identifierTypeId: config.id, normalizedIdentifier: normalized } },
       create: { schoolId: config.schoolId, identifierTypeId: config.id, identifier: data.identifier, normalizedIdentifier: normalized }, update: {},

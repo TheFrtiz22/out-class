@@ -117,7 +117,7 @@ test('scheduled publication on bounded native PostgreSQL',{skip:!url,timeout:120
   await assert.rejects(actions.saveCommunicationSchedule(input({audience:{include:[{source:'GROUP',groupId:randomUUID()}]}})));
   const foreign=await db.club.create({data:{slug:randomUUID(),name:'Foreign scheduling',tagline:'',description:'',category:'Other',color:'#142d45'}});const foreignGroup=await db.recipientGroup.create({data:{clubId:foreign.id,name:'Private foreign group',kind:'MANUAL'}});
   await assert.rejects(actions.saveCommunicationSchedule(input({audience:{include:[{source:'GROUP',groupId:foreignGroup.id}]}})));
-  support={id:randomUUID()};await assert.rejects(actions.saveCommunicationSchedule(input()),/Exit support/);support=null;
+  support={id:randomUUID()};await assert.rejects(actions.saveCommunicationSchedule(input()),/Leave support mode/);support=null;
  });
  await t.test('another authorized manager may cancel but cannot rewrite the original sender intent',async()=>{
   const data=input();await actions.saveCommunicationSchedule(data);actingUser=recipient;

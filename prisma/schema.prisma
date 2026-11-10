@@ -145,6 +145,7 @@ model Club {
   id                  String           @id @default(uuid())
   slug                String           @unique
   name                String
+  shortName           String? // Optional nickname shown in navigation; null falls back to an abbreviation.
   tagline             String
   description         String
   logoUrl             String?
@@ -255,6 +256,7 @@ model PipelineRound {
 
 model ApplicationQuestion {
   order Int @default(0)
+  showIf Json?
   options String[] @default([])
   archivedAt DateTime?
   id        String       @id @default(uuid())
@@ -275,6 +277,7 @@ enum QuestionType {
   ESSAY
   FILE_UPLOAD
   MULTIPLE_CHOICE
+  MULTI_SELECT
 }
 
 model Application {
@@ -306,7 +309,10 @@ model Application {
   evaluations Evaluation[]
   bookings    InterviewBooking[]
 
-  @@unique([studentId, clubId])
+  // At most one non-REJECTED application per student and club: partial unique
+  // index "Application_one_open_per_student_club" (migration SQL; Prisma
+  // cannot express partial indexes). Rejected students may re-apply.
+  @@index([studentId, clubId])
   @@unique([id, clubId])
   @@index([clubId], map: "Application_clubId_idx")
   @@index([roundId], map: "Application_roundId_idx")
@@ -1107,6 +1113,75 @@ model VotingObservationReference {
   @@index([sessionId, applicationId])
 }
 
+// Club default (roundId null) or per-round override for live voting rules.
+// Unique per (clubId, COALESCE(roundId,'')) in SQL.
+model VotingRuleDefault {
+  id String @id @default(uuid())
+  clubId String
+  roundId String?
+  rules Json
+  revision Int @default(1)
+  updatedBy String
+  updatedAt DateTime @default(now())
+}
+
+// Rule and eligible electorate captured for one ballot instance; insert-only.
+model VotingBallotRule {
+  sessionId String
+  passNumber Int
+  applicationId String
+  candidate VotingPassCandidate @relation(fields: [sessionId, passNumber, applicationId], references: [sessionId, passNumber, applicationId], onDelete: Restrict)
+  version Int
+  rules Json
+  electorate String[]
+  reason String?
+  createdBy String
+  createdAt DateTime @default(now())
+  @@id([sessionId, passNumber, applicationId, version])
+}
+
+// Leader-prepared applicant highlights (editable) and their per-pass immutable copies.
+model VotingSlidePreparation {
+  sessionId String
+  applicationId String
+  candidate VotingCandidate @relation(fields: [sessionId, applicationId], references: [sessionId, applicationId], onDelete: Restrict)
+  highlights Json @default("[]")
+  revision Int @default(1)
+  updatedBy String
+  updatedAt DateTime @default(now())
+  @@id([sessionId, applicationId])
+}
+
+model VotingSlideLock {
+  sessionId String
+  passNumber Int
+  applicationId String
+  candidate VotingPassCandidate @relation(fields: [sessionId, passNumber, applicationId], references: [sessionId, passNumber, applicationId], onDelete: Restrict)
+  highlights Json
+  preparationRevision Int
+  createdAt DateTime @default(now())
+  @@id([sessionId, passNumber, applicationId])
+}
+
+// "Something to add" discussion requests: one per participant per applicant per pass.
+// Never a ballot, outcome or observation.
+model VotingHandRaise {
+  sessionId String
+  passNumber Int
+  applicationId String
+  memberId String
+  candidate VotingPassCandidate @relation(fields: [sessionId, passNumber, applicationId], references: [sessionId, passNumber, applicationId], onDelete: Restrict)
+  participant VotingParticipant @relation(fields: [sessionId, memberId], references: [sessionId, memberId], onDelete: Restrict)
+  raisedAt DateTime @default(now())
+  withdrawnAt DateTime?
+  acknowledgedAt DateTime?
+  acknowledgedBy String?
+  clearedAt DateTime?
+  clearedBy String?
+  updatedAt DateTime @default(now())
+  @@id([sessionId, passNumber, applicationId, memberId])
+}
+
 // Durable decisions are separate from published application statuses.
 model VotingSession {
   observationReferences VotingObservationReference[]
@@ -1151,6 +1226,7 @@ model VotingParticipant {
   member ClubMember @relation(fields: [memberId], references: [id], onDelete: Restrict)
   joinedAt DateTime?
   ballots VotingBallot[]
+  handRaises VotingHandRaise[]
   @@id([sessionId, memberId])
 }
 model VotingCandidate {
@@ -1162,6 +1238,7 @@ model VotingCandidate {
   expectedStatus AppStatus
   publishedStatus AppStatus?
   passes VotingPassCandidate[]
+  slidePreparation VotingSlidePreparation?
   @@id([sessionId, applicationId])
   @@unique([sessionId, position])
 }
@@ -1193,6 +1270,9 @@ model VotingPassCandidate {
   overrideBy String?
   overrideAt DateTime?
   ballots VotingBallot[]
+  ballotRules VotingBallotRule[]
+  handRaises VotingHandRaise[]
+  slideLock VotingSlideLock?
   @@id([sessionId, passNumber, applicationId])
   @@unique([sessionId, passNumber, position])
 }

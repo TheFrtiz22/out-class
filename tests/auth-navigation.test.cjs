@@ -71,11 +71,11 @@ test('new visitors get normal signup and login; only confirmed UVA sessions reac
 })
 test('completed students, club leaders, ordinary members and platform operators get permission-based public destinations', async () => {
   for (const [memberships, expected] of [
-    [[], '/?workspace=student'],
+    [[], '/home'],
     [[{ clubId: 'club-a', status: 'ACTIVE', isOwner: true }], '/club/club-a/workspace'],
     [[{ clubId: 'club-b', status: 'ACTIVE', permissions: ['applications.review'] }], '/club/club-b/workspace'],
-    [[{ clubId: 'club-c', status: 'ACTIVE', permissions: [], role: 'PRESIDENT' }], '/?workspace=student'],
-    [[{ clubId: 'club-d', status: 'REMOVED', isOwner: true }], '/?workspace=student'],
+    [[{ clubId: 'club-c', status: 'ACTIVE', permissions: [], role: 'PRESIDENT' }], '/home'],
+    [[{ clubId: 'club-d', status: 'REMOVED', isOwner: true }], '/home'],
   ]) {
     const h = entry({ account: { studentProfile: { id: 'p' }, memberships, role: 'SUPERADMIN' } })
     await destination(h.page('signup'), expected)
@@ -94,7 +94,7 @@ test('disabled accounts cannot enter either flow and signup excludes platform de
   const h = entry({ account: { disabledAt: new Date(), memberships: [] } })
   for (const route of ['login', 'signup']) assert.equal((await h.page(route)).type, 'main')
   for (const next of ['/platform', '/platform/login', '/%70latform', '//evil.invalid', '/a/../platform', '/signup']) {
-    await destination(entry().page('signup', { next }), '/?workspace=student')
+    await destination(entry().page('signup', { next }), '/home')
   }
   await destination(entry().page('login', { next: '/platform' }), '/platform')
 })

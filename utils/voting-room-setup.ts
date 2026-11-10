@@ -14,7 +14,7 @@ export async function validateVotingSetup(tx:AppTransactionClient,d:z.output<typ
       if(Object.keys(d.presentationOptions.highlights).some(id=>!d.applicationIds.includes(id)))throw Error("Highlight applicant scope mismatch.");
     }
     const apps=await tx.application.findMany({where:{id:{in:d.applicationIds},clubId:d.clubId,roundId:d.roundId,recruitmentCycleId:d.cycleId,status:{in:["SUBMITTED","IN_REVIEW","INTERVIEWING","WAITLISTED"]}}});
-    if(apps.length!==d.applicationIds.length)throw Error("Select eligible applicants from this cycle and round.");
+    if(apps.length!==d.applicationIds.length)throw Error("Select applicants from this cycle and round.");
     const memberIds=[...new Set([...d.participantIds,...d.leaderMemberIds])].sort();
     await tx.$queryRaw(Prisma.sql`SELECT id FROM "ClubMember" WHERE "clubId"=${d.clubId} AND id IN (${Prisma.join(memberIds)}) ORDER BY id FOR SHARE`);
     const members=await tx.clubMember.findMany({where:{clubId:d.clubId,id:{in:memberIds}},include:{user:{select:{disabledAt:true}}}});

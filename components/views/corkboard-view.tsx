@@ -1,16 +1,19 @@
 "use client";
-import { SavedClubsPopover } from "@/components/clubs/saved-clubs-popover";
-import { PageHeader } from "@/components/product/page-header";
+import { PageHeader } from "@/components/ui/page-header";
 import { PublicEventBoard } from "@/components/events/public-event-board";
+import { ExploreSwitch } from "@/components/explore-switch";
 import type { ViewId } from "@/lib/views";
-export function CorkboardView({ onNavigate }: { onNavigate?: (view: ViewId) => void }) {
+// Saved Clubs lives on Explore's header; the Corkboard toolbar is events only.
+// onNavigate stays in the signature because the app shell passes it to every view.
+export function CorkboardView(_props: { onNavigate?: (view: ViewId) => void }) {
   return (
     <div className="oc-corkboard-events">
+      <ExploreSwitch current="events" />
       <PageHeader
-        title="Virtual Corkboard"
-        description="Check out events on Grounds."
+        title="Events"
+        description="Events on Grounds"
       />
-      <PublicEventBoard toolbarAction={<SavedClubsPopover onNavigate={onNavigate} />} />
+      <PublicEventBoard />
     </div>
   );
 }
