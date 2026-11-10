@@ -29,7 +29,7 @@ try {
   });
   run(process.execPath, ['node_modules/prisma/build/index.js', 'migrate', 'deploy'], { env });
   run('docker', ['exec', '-i', name, 'psql', '-U', 'fixture_superuser', '-d', 'outclass_recruitment_test', '-v', 'ON_ERROR_STOP=1'], {
-    input: `DO $$ DECLARE t text; BEGIN FOR t IN SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename<>'_prisma_migrations' LOOP EXECUTE format('ALTER TABLE public.%I OWNER TO outclass_production_app',t); END LOOP; END $$; REVOKE CREATE ON SCHEMA public FROM PUBLIC;`,
+    input: `REVOKE CREATE ON SCHEMA public FROM PUBLIC;`,
   });
   run(process.execPath, ['--test', 'tests/decision-transactions-native.test.cjs'], { env });
   // Also rerun the existing native offer and canonical communications producers.
