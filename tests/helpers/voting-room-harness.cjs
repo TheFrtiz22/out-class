@@ -3,7 +3,8 @@ const clubId=uuid(1),roundId=uuid(2),cycleId=uuid(3),sessionId=uuid(4),leaderId=
 function harness(){
  let actor=leaderId,sequence=100,state={hands:[],interviewRecords:[],ballotRules:[],sessions:[],receipts:[],audit:[],drafts:[],offers:[],notifications:[],apps:apps.map(id=>({id,clubId,roundId,recruitmentCycleId:cycleId,status:'IN_REVIEW',decisionVersion:0,decisionStateRevision:0,studentId:uuid(90),student:{studentProfile:{firstName:'Synthetic',lastName:id.slice(-2)}}}))};
  const members=[leaderId,voterId,uuid(7)].map((id,i)=>({id,userId:id,clubId,status:'ACTIVE',interviewOffices:[],permissions:['applications.review','applicants.identify','decisions.vote',...(i===0?['decisions.manage','decisions.start','decisions.finish','decisions.publish']:[])],user:{disabledAt:null}}));
- const round={id:roundId,clubId,name:'Interview',type:'INTERVIEW',order:0,archivedAt:null,anonymousReview:false},cycle={id:cycleId,clubId,archivedAt:null},rounds=[round];
+ // The club has turned GPA and LinkedIn on; the default ceiling is covered in profile-field-voting tests.
+ const round={id:roundId,clubId,name:'Interview',type:'INTERVIEW',order:0,archivedAt:null,anonymousReview:false,club:{profileFieldVisibility:{gpa:true,linkedin:true}}},cycle={id:cycleId,clubId,archivedAt:null},rounds=[round];
  const draftData=d=>({...d,content:d.content===require('@prisma/client').Prisma.DbNull?null:d.content});
  const copy=x=>x==null?x:structuredClone(x),matches=(o,w)=>Object.entries(w??{}).every(([k,v])=>k==='OR'?v.some(x=>matches(o,x)):v&&typeof v==='object'?('in'in v?v.in.includes(o[k]):'not'in v?o[k]!==v.not:'has'in v?o[k]?.includes(v.has):'some'in v?o[k]?.some(x=>matches(x,v.some)):matches(o[k]??{},v)):o[k]===v);
  const sess=id=>state.sessions.find(s=>s.id===id),entry=w=>sess(w.sessionId).passes.find(p=>p.number===w.passNumber).candidates.find(c=>c.applicationId===w.applicationId);

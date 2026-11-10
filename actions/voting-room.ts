@@ -88,7 +88,7 @@ export async function createLiveVotingRoom(input:unknown) {
       if(prior.clubId!==d.clubId||receipt?.actorId!==user.id||receipt.fingerprint!==fingerprint)throw Error("Session ID already used.");
       const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId);roomAuthority(s,actor,round.anonymousReview);return {sessionId:s.id};
     }
-    const {apps,members}=await validateVotingSetup(tx,d,user);
+    const {apps,members}=await validateVotingSetup(tx,d,user,{rejectHiddenProfileFields:true});
     const meeting=d.presentationOptions?.meeting?resolveVotingMeeting(d.presentationOptions.meeting):null;
     if(d.notifyVoters&&(!meeting||meeting.timing!=="LATER"))throw Error("Notify selected voters is available when scheduling a session.");
     const presentationOptions=d.presentationOptions?{...d.presentationOptions,...(meeting?{meeting:{...meeting,announcedUserIds:d.notifyVoters?members.filter(m=>d.participantIds.includes(m.id)).map(m=>m.userId):[]}}:{})}:{};
