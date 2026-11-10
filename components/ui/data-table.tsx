@@ -144,11 +144,13 @@ export function DataTable<T>({ caption, rows, rowKey, columns, card, onOpen, isO
     </div>
     <ul className="oc-dt-cards" aria-label={caption}>{rows.map(row => <li key={rowKey(row)} data-list-card="" data-state={rowState?.(row)} data-selectable={selection ? "" : undefined}>
       {selection && <span className="oc-dt-card-select">{checkbox(row)}</span>}
-      {openControl(row, <>
-        <span className="oc-dt-card-title">{card.title(row)}</span>
+      {/* Only the title is inside the button (its overlay still covers the card), so the button's visible text is
+          the name its accessible label already contains. */}
+      <span className="oc-dt-card-body">
+        {openControl(row, <span className="oc-dt-card-title">{card.title(row)}</span>, true)}
         {card.preview && <span className="oc-dt-card-preview">{card.preview(row)}</span>}
         {card.meta && <span className="oc-dt-card-meta">{card.meta(row)}</span>}
-      </>, true)}
+      </span>
       {card.trailing && <span className="oc-dt-card-trailing">{card.trailing(row)}</span>}
       {card.actions && <span className="oc-dt-card-actions">{card.actions(row)}</span>}
     </li>)}</ul>

@@ -45,7 +45,7 @@ test('browser: leader pages at 390px use the app switch, grouped lists and the f
   assert.equal(await sw.evaluate(el => getComputedStyle(el).display), 'grid', 'recruiting sections are the pill switch')
   assert.equal(await sw.locator('a[aria-current="page"]').textContent(), 'Applicants')
   const list = applicants.locator('.oc-dt-cards')
-  const shape = await list.evaluate(el => ({ gap: getComputedStyle(el).rowGap, radius: parseFloat(getComputedStyle(el).borderTopLeftRadius), cardBorder: getComputedStyle(el.querySelector('li > button')).borderTopWidth, divider: getComputedStyle(el.children[1]).borderTopWidth }))
+  const shape = await list.evaluate(el => ({ gap: getComputedStyle(el).rowGap, radius: parseFloat(getComputedStyle(el).borderTopLeftRadius), cardBorder: getComputedStyle(el.querySelector('li .oc-dt-card-open')).borderTopWidth, divider: getComputedStyle(el.children[1]).borderTopWidth }))
   assert.deepEqual([shape.gap, shape.radius > 0, shape.cardBorder, shape.divider], ['0px', true, '0px', '1px'], 'applicants are rows in one card')
   const card = await list.locator('li').first().boundingBox()
   assert.ok(card.height >= 44 && card.height <= 72, `each applicant card is a 44–72px target (${card.height})`)
