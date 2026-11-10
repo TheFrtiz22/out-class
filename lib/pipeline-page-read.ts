@@ -4,6 +4,7 @@ import type { Prisma } from "@prisma/client"
 import type { AppTransactionClient } from "@/utils/prisma"
 import type { pipelineDetailProjection } from "@/lib/pipeline-detail"
 import type { ClubAccess } from "@/lib/permissions"
+import { restrictApplicationProfile, type ProfileFieldVisibility } from "@/lib/profile-field-visibility"
 
 // Ranking does not need review/assignment collections unless the requested
 // filter or sort observes them. Keep canonical JS collation/privacy semantics.
@@ -19,7 +20,7 @@ type Member = ClubAccess & { id: string; userId: string }
 type Rounds = ReturnType<typeof pagePipeline>["rounds"]
 /** The caller supplies all club rounds from this same guarded snapshot. */
 export async function readPipelineMetadata(tx: AppTransactionClient, where: Prisma.ApplicationWhereInput,
-  member: Member, query: PipelinePageQuery, roundPrivacy: ReadonlyMap<string, boolean>) {
+  member: Member, query: PipelinePageQuery, roundPrivacy: ReadonlyMap<string, boolean>, profileFields?: ProfileFieldVisibility) {
   const completeReviews = requiresCompleteReviewMetadata(query)
   const metadata = completeReviews
     ? await tx.application.findMany({ where, select: pipelinePageReviewMetadataSelect })
@@ -30,15 +31,17 @@ export async function readPipelineMetadata(tx: AppTransactionClient, where: Pris
     // rounds. An absent round must never make anonymous applicants identified.
     const anonymousReview = roundPrivacy.get(app.roundId)
     if (anonymousReview === undefined) throw new Error("Applicant round unavailable. Reload applicants.")
-    return pipelineSummaryProjection({ ...app, round: { anonymousReview } }, member)
+    // Hidden profile fields are removed before filtering, sorting and facets observe them.
+    const view = pipelineSummaryProjection({ ...app, round: { anonymousReview } }, member)
+    return profileFields ? restrictApplicationProfile(view, profileFields) : view
   })
 }
 
 export async function readPipelinePage(tx: AppTransactionClient, where: Prisma.ApplicationWhereInput,
   member: Member, rounds: Rounds, query: PipelinePageQuery, scope: string,
   hydrate: (ids: string[]) => Promise<ReturnType<typeof pipelineDetailProjection>[]>,
-  roundPrivacy: ReadonlyMap<string, boolean>) {
-  const ranked = await readPipelineMetadata(tx, where, member, query, roundPrivacy)
+  roundPrivacy: ReadonlyMap<string, boolean>, profileFields?: ProfileFieldVisibility) {
+  const ranked = await readPipelineMetadata(tx, where, member, query, roundPrivacy, profileFields)
   const page = pagePipeline({ rounds, genderCounts: null, applications: ranked }, query, member.id, member.userId, scope)
   const ids = page.applications.map(app => app.id)
   // The visible page is the unit of hydration. Reuse its canonical detail

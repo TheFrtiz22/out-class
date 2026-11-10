@@ -38,7 +38,7 @@ import type * as evaluation from "@/actions/evaluations"
 import type * as profile from "@/actions/profile"
 import { demoStore, demoMember, demoUser, joinedApplication, studentApplications, demoDirectory, demoDashboard, demoNotifications, presentDemoMeeting, } from "./store"
 import { readVotingDisplay } from "@/lib/voting-presentation"
-import { normalizeProfileFieldVisibility, sameProfileFieldVisibility, saveProfileFieldVisibilityInput } from "@/lib/profile-field-visibility"
+import { normalizeProfileFieldVisibility, restrictApplicationProfile, sameProfileFieldVisibility, saveProfileFieldVisibilityInput } from "@/lib/profile-field-visibility"
 import { applicationInputSchema, applicationAnswersKey, answerErrors, normalizeApplicationAttachments, assertApplicationAttachmentOwnership } from "@/lib/student-applications"
 import { genderValues, profileSectionSchema } from "@/lib/student-profile"
 import * as api from "@/lib/workspace-api"
@@ -125,12 +125,14 @@ export const getClubPipeline: Demo<"getClubPipeline"> = (clubId, filter = {}) =>
   const selectedRound = rounds.find(r => r.id === filter.roundId);
   if ((filter.gender || filter.genderCounts) && (!selectedRound || !genderVisibility(s.applicantDisplay[selectedRound.id]?.config))) throw Error("Gender visibility must be explicitly enabled for this round.");
   const scoped = s.applications.filter(a => a.clubId === clubId && a.status !== "DRAFTING" && (!filter.applicationId || a.id === filter.applicationId) && (!filter.roundId || a.roundId === filter.roundId));
+  const profileFields = demoProfileFieldVisibility(clubId)
   return {
+    profileFields,
     genderCounts: filter.genderCounts ? genderValues.map(gender => ({ gender, count: scoped.filter(a => s.students.find(u => u.id === a.studentId)?.profile.gender === gender).length })) : null,
     rounds: rounds.map(r => ({ ...r, type: /interview/i.test(r.name) ? "INTERVIEW" : "CUSTOM", genderVisible: genderVisibility(s.applicantDisplay[r.id]?.config) })),
     applications: s.applications
       .filter((a) => a.clubId === clubId && a.status !== "DRAFTING" && (!filter.applicationId || a.id === filter.applicationId) && (!filter.roundId || a.roundId === filter.roundId) && (!filter.gender || s.students.find(u => u.id === a.studentId)?.profile.gender === filter.gender))
-      .map((a) => { const app = joinedApplication(a.id); const projected = s.clubs.find(c => c.id === clubId)?.rounds.find(r => r.id === a.roundId)?.anonymousReview ? anonymousApplication(app as unknown as ReviewApplication, genderVisibility(s.applicantDisplay[a.roundId]?.config)) : identifiedApplication(app as unknown as ReviewApplication, genderVisibility(s.applicantDisplay[a.roundId]?.config)); const ownSubmitted = a.evaluations.some(e=>e.interviewerId===demoMember().id&&e.roundId===a.roundId&&e.submittedAt); const assigned=s.interviewFoundation.assignments.some(g=>g.applicationId===a.id&&g.roundId===a.roundId&&g.memberId===demoMember().id&&!g.revokedAt);const caps=interviewCapabilities(demoMember());const self=a.studentId===demoMember().userId;const allowed=!self&&((caps.readClosing&&!assigned)||caps.participate&&assigned&&ownSubmitted); const roundScore=allowed?demoInterviews.getInterviewRoundScore({clubId,applicationId:a.id,roundId:a.roundId}):null;return { ...projected, evaluations: projected.evaluations.filter(e=>!self&&e.submittedAt&&(caps.participate&&e.interviewerId===demoMember().id&&s.interviewFoundation.assignments.some(g=>g.applicationId===a.id&&g.roundId===e.roundId&&g.memberId===demoMember().id&&!g.revokedAt)||allowed&&e.roundId===a.roundId)), roundScore, canEvaluate: !self && !ownSubmitted && (s.clubs.find(c=>c.id===clubId)?.rounds.find(r=>r.id===a.roundId)?.anonymousReview ? caps.participate : caps.participate && assigned), recruitmentOffer: s.recruitmentOffers.find(o=>o.applicationId===a.id) ?? null } }),
+      .map((a) => { const app = joinedApplication(a.id); const projected = restrictApplicationProfile(s.clubs.find(c => c.id === clubId)?.rounds.find(r => r.id === a.roundId)?.anonymousReview ? anonymousApplication(app as unknown as ReviewApplication, genderVisibility(s.applicantDisplay[a.roundId]?.config)) : identifiedApplication(app as unknown as ReviewApplication, genderVisibility(s.applicantDisplay[a.roundId]?.config)), profileFields); const ownSubmitted = a.evaluations.some(e=>e.interviewerId===demoMember().id&&e.roundId===a.roundId&&e.submittedAt); const assigned=s.interviewFoundation.assignments.some(g=>g.applicationId===a.id&&g.roundId===a.roundId&&g.memberId===demoMember().id&&!g.revokedAt);const caps=interviewCapabilities(demoMember());const self=a.studentId===demoMember().userId;const allowed=!self&&((caps.readClosing&&!assigned)||caps.participate&&assigned&&ownSubmitted); const roundScore=allowed?demoInterviews.getInterviewRoundScore({clubId,applicationId:a.id,roundId:a.roundId}):null;return { ...projected, evaluations: projected.evaluations.filter(e=>!self&&e.submittedAt&&(caps.participate&&e.interviewerId===demoMember().id&&s.interviewFoundation.assignments.some(g=>g.applicationId===a.id&&g.roundId===e.roundId&&g.memberId===demoMember().id&&!g.revokedAt)||allowed&&e.roundId===a.roundId)), roundScore, canEvaluate: !self && !ownSubmitted && (s.clubs.find(c=>c.id===clubId)?.rounds.find(r=>r.id===a.roundId)?.anonymousReview ? caps.participate : caps.participate && assigned), recruitmentOffer: s.recruitmentOffers.find(o=>o.applicationId===a.id) ?? null } }),
   }
 }
 export const getRankedReviewRound: Demo<"getRankedReviewRound"> = async (clubId, roundId) => ({ applications: (await api.getClubPipeline(clubId, { roundId })).applications.map(rankedReviewCandidate) })
@@ -139,7 +141,7 @@ export const getClubPipelinePage: Demo<"getClubPipelinePage"> = async (clubId, i
     const query = pipelinePageQuery.parse(input), member = demoMember()
     const list = await api.getClubPipeline(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: query.genderCounts })
     const page = pagePipeline(list, query, member.id, member.userId, `demo:${clubId}:${member.id}:${pipelineSelectionKey(query)}`)
-    return { ...page, coverage: { mode: query.mode, complete: !query.roundId && !query.gender && !query.genderCounts && page.page.start === 0 && page.applications.length === page.page.baseTotal } }
+    return { ...page, profileFields: list.profileFields, coverage: { mode: query.mode, complete: !query.roundId && !query.gender && !query.genderCounts && page.page.start === 0 && page.applications.length === page.page.baseTotal } }
   }
 export const getClubPipelineSelection: Demo<"getClubPipelineSelection"> = async (clubId, input = {}) => {
     const query = pipelinePageQuery.omit({ cursor: true }).parse(input), member = demoMember()
@@ -439,7 +441,7 @@ export const getApplicantDisplay: Demo<"getApplicantDisplay"> = input => {
       else if (evaluation.notes) feedback.items.push(`${evaluation.round} · Reviewer ${evaluation.interviewerId}\n${evaluation.notes}`);
     }
   }
-  const display = projectApplicantDisplay(joinedApplication(app.id) as unknown as ReviewApplication, { ...round, applicantDisplay: s.applicantDisplay[round.id]?.config }, config, (s.observations || []).filter(o => o.applicationId === app.id), feedback);
+  const display = projectApplicantDisplay(joinedApplication(app.id) as unknown as ReviewApplication, { ...round, applicantDisplay: s.applicantDisplay[round.id]?.config }, config, (s.observations || []).filter(o => o.applicationId === app.id), feedback, demoProfileFieldVisibility(input.clubId));
   // The bundled fictional résumé is a demo asset, never a live private-download request.
   if (!display.anonymous && display.visible.includes("resume") && s.students.find(u => u.id === app.studentId)?.profile.resumeUrl === "/demo/sample-resume.pdf") {
     display.links = display.links.filter(link => link.field !== "resume")

@@ -12,13 +12,15 @@ import { loadVotingRoom, roomAuthority } from "@/utils/voting-room";
 import { VotingPresentationChanged } from "@/lib/voting-room";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { displayConfigSchema, readDisplayConfig, projectApplicantDisplay } from "@/lib/applicant-display";
+import { normalizeProfileFieldVisibility } from "@/lib/profile-field-visibility";
 const scope = z.object({ clubId: z.string().uuid(), applicationId: z.string().uuid(), sessionId: z.string().uuid().optional(), previewConfig: votingDisplaySchema.optional() });
 async function authorized(tx: AppTransactionClient, input: z.infer<typeof scope>, membershipId: string) {
   const member = await tx.clubMember.findFirst({ where: { id: membershipId, clubId: input.clubId } });
   if (!hasPermission(member, "applications.review")) throw new Error("Review access required.");
   const app = await tx.application.findFirst({
     where: { id: input.applicationId, clubId: input.clubId, status: { not: "DRAFTING" } },
-    include: { round: true, student: { include: { studentProfile: { include: { experiences: true } } } }, evaluations: { omit: { notes: true, applicantQuestions: true } }, answers: { include: { question: true } }, bookings: { include: { slot: true } } },
+    // The club's profile field choice is read with the application, in the same snapshot.
+    include: { club: { select: { profileFieldVisibility: true } }, round: true, student: { include: { studentProfile: { include: { experiences: true } } } }, evaluations: { omit: { notes: true, applicantQuestions: true } }, answers: { include: { question: true } }, bookings: { include: { slot: true } } },
   });
   if (!app || (!app.round.anonymousReview && !hasPermission(member, "applicants.identify"))) throw new Error("Applicant unavailable for this reviewer.");
   return { app: { ...app, evaluations: app.evaluations.map(e => ({ ...e, notes: null, applicantQuestions: null })) }, member };
@@ -72,7 +74,7 @@ export async function getApplicantDisplay(input: z.infer<typeof scope>) {
     }
     const display = projectApplicantDisplay(app, app.round, config, observations.map(o => ({
       id: o.id, kind: o.kind, body: o.body, author: o.author.studentProfile ? `${o.author.studentProfile.firstName} ${o.author.studentProfile.lastName}` : "Club reviewer", own: o.authorId === user.id, createdAt: o.createdAt.toISOString(), updatedAt: o.updatedAt.toISOString(),
-    })), feedback);
+    })), feedback, normalizeProfileFieldVisibility(app.club?.profileFieldVisibility));
     return { ...display, photo: display.photo ? profilePhotoSource(app.student.studentProfile?.headshotUrl, { clubId: data.clubId, applicationId: data.applicationId, ...(data.sessionId ? { sessionId: data.sessionId } : data.previewConfig ? { mode: "preview" as const } : {}) }) ?? null : null };
   }, { isolationLevel: "RepeatableRead", ...(data.sessionId ? votingReadLimits : {}) });
 }

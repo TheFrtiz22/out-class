@@ -14,6 +14,7 @@ import { hasPermission } from "@/lib/permissions";
 import { anonymousApplicantLabel,type ReviewApplication } from "@/lib/anonymous-review";
 import {selectedVotingDisplay} from "@/lib/voting-slide-fields";
 import { projectApplicantDisplay } from "@/lib/applicant-display";
+import { normalizeProfileFieldVisibility } from "@/lib/profile-field-visibility";
 import { interviewCapabilities } from "@/lib/interview-access";
 import { demoRoundScopedEvidence } from "./interview-feedback";
 import { z } from "zod";
@@ -131,7 +132,7 @@ export async function resolveSelection(input:unknown):Promise<Awaited<ReturnType
 
 function demoPresentation(c:Pick<ReturnType<typeof find>,"state"|"m"|"round"|"club">&{s:Pick<LiveRoom,"presentationOptions">&Partial<Pick<LiveRoom,"id"|"clubId"|"startedAt">>},applicationId:string){const a=c.state.applications.find(a=>a.id===applicationId)!;
    const person=c.state.students.find(p=>p.id===a.studentId)!,app={...a,student:{...person,studentProfile:person.profile},answers:[],evaluations:[],bookings:[]} as unknown as ReviewApplication;
-   const opts=roomPresentationSchema.safeParse(c.s.presentationOptions),config=opts.success?roomDisplayConfig(opts.data.fields):{version:1 as const,fields:[]};const base=selectedVotingDisplay(projectApplicantDisplay(app,{...c.round,applicantDisplay:{}},config,[]),opts.success?opts.data.fields:[]);
+   const opts=roomPresentationSchema.safeParse(c.s.presentationOptions),config=opts.success?roomDisplayConfig(opts.data.fields):{version:1 as const,fields:[]};const base=selectedVotingDisplay(projectApplicantDisplay(app,{...c.round,applicantDisplay:{}},config,[],undefined,normalizeProfileFieldVisibility(c.state.profileFieldVisibility?.[c.club.id])),opts.success?opts.data.fields:[]);
    const fields=opts.success?opts.data.fields:[],caps=interviewCapabilities(c.m);
    const quote=fields.includes('resumeHighlight')&&!base.anonymous?excerptChoices(c.state,c.m,applicationId).find(q=>q.id===opts.data?.highlights[applicationId]):undefined;
    const canReadResume=!base.anonymous&&(!!quote||caps.moderateResume||c.state.interviewFoundation.assignments.some(g=>g.applicationId===a.id&&g.roundId===a.roundId&&g.memberId===c.m.id&&!g.revokedAt&&caps.participate));
