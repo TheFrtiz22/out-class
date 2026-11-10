@@ -180,7 +180,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   const [position, setPosition] = useState<{ key: string; cursor: PipelineCursor } | null>(null)
   // `roundId` and `quickReview=1` arrive from the Overview review card and Decide; read once, then the filters own them.
   const initialParams = useRef(preview || typeof window === "undefined" || !window.location?.href ? new URLSearchParams() : new URL(window.location.href).searchParams)
-  const [round, setRound] = useState(() => initialParams.current.get("roundId") ?? "")
+  const [round, setRound] = useState(initialParams.current.get("roundId") ?? "")
   const quickReviewRequested = useRef(initialParams.current.get("quickReview") === "1")
   const [decisionGroup, setDecisionGroupState] = useState<DecisionFilter>(rejectedOnly ? "rejected" : initialDecision)
   // The decision filter lives in the URL (`decision=`), so Rejected and other groups are linkable.
@@ -627,7 +627,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     if (data.rounds.length && round && !data.rounds.some(item => item.id === round)) setRound("")
     if (typeof window !== "undefined" && window.history) { const url = new URL(window.location.href); url.searchParams.delete("quickReview"); window.history.replaceState(window.history.state, "", url) }
     if (hasPermission(membership, "applications.review")) void startReview()
-  })
+  }, [data, loading, pageReady]) // eslint-disable-line react-hooks/exhaustive-deps -- runs once, when the first page is ready
   if (loading) return <WorkspaceLoading label="Preparing your applicant pipeline…" layout="applicants" rows={5} />
   if (!data || error || readError)
     return (

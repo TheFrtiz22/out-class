@@ -76,7 +76,8 @@ test('every dashboard destination is a rail item for the same member', () => {
   const nav = load('lib/navigation.ts')
   for (const access of [owner, member(['applications.review']), member([]), member(['meetings.manage'])]) {
     const rail = nav.railItems(nav.leaderRailSections(access, club.id)).map(item => item.href)
-    for (const href of Object.values(model.railHrefs(access, club.id))) if (href) assert.ok(rail.includes(href), href)
+    // A dashboard link is a rail destination, optionally narrowed (Calendar's type filter, Home's announcements).
+    for (const href of Object.values(model.railHrefs(access, club.id))) if (href) assert.ok(rail.some(item => href === item || href.startsWith(`${item}&`)), href)
   }
   const plain = model.railHrefs(member([]), club.id)
   assert.equal(plain.applicants, null); assert.equal(plain.interviews, null); assert.equal(plain.announcements, null)

@@ -50,8 +50,10 @@ test('browser: every list keeps a visible sort, one-line rows or two-line cards,
     // Filters stays inside the viewport (a bottom sheet below 640px).
     await page.goto(fixtures.leader.url('section=recruitment&tool=applicants')); await page.locator('main h1').first().waitFor()
     await page.getByRole('button', { name: /^Filters/ }).first().click()
-    const panel = await page.locator('.oc-filter-popover, .oc-filter-sheet').first().boundingBox()
-    assert.ok(panel.x >= 0 && panel.x + panel.width <= width + 0.5 && panel.y + panel.height <= 764.5, `Filters is fully on screen at ${width}px`)
+    // Measure once the sheet has settled (it can still be moving on the first frame after the click).
+    const onScreen = async () => { const panel = await page.locator('.oc-filter-popover, .oc-filter-sheet').first().boundingBox(); return !!panel && panel.x >= 0 && panel.x + panel.width <= width + 0.5 && panel.y + panel.height <= 764.5 }
+    let fits = false; for (let i = 0; i < 20 && !(fits = await onScreen()); i++) await page.waitForTimeout(100)
+    assert.ok(fits, `Filters is fully on screen at ${width}px`)
     await page.keyboard.press('Escape')
     assert.deepEqual(errors, [], `no page errors at ${width}px`)
     await context.close()

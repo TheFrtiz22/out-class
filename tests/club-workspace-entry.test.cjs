@@ -83,7 +83,7 @@ test('only explicit mode choices persist and general entries restore either save
 });
 
 test('specific Club and Recruiting links keep their page and query parameters despite a saved opposite preference', () => {
-  for (const search of ['section=overview', 'section=tasks&taskView=mine', 'section=settings', 'section=meetings&eventId=meeting', 'section=announcements', 'section=recruitment&tool=applicants&applicantId=app']) {
+  for (const search of ['section=overview', 'section=tasks&taskView=mine', 'section=settings', 'section=calendar&type=meetings&eventId=meeting', 'section=overview&focus=announcements', 'section=recruitment&tool=applicants&applicantId=app']) {
     const h = harness({ search });
     h.storage.set(h.key, search.includes('recruitment') ? 'club' : 'recruiting');
     const screen = shell(h.render());

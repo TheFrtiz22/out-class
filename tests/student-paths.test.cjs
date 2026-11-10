@@ -211,8 +211,8 @@ test("old leader views on / open the matching club workspace section for the lea
   const cases = [
     [{ view: "leader-dashboard" }, "/club/club-x/workspace?section=recruitment&tool=applicants"],
     [{ view: "interview-scheduler", applicantId: "a", roundId: "r" }, "/club/club-x/workspace?section=recruitment&tool=interviews&applicantId=a&roundId=r"],
-    [{ view: "screening-dashboard" }, "/club/club-x/workspace?section=recruitment&tool=rules"],
-    [{ view: "broadcast-messages" }, "/club/club-x/workspace?section=announcements"],
+    [{ view: "screening-dashboard" }, "/club/club-x/workspace?section=recruitment&tool=applicants&recruitingSettings=rules"],
+    [{ view: "broadcast-messages" }, "/club/club-x/workspace?section=overview&focus=announcements"],
     [{ view: "club-manager" }, "/club/club-x/workspace?section=settings"],
     [{ view: "club-management-portal" }, "/club/club-x/workspace?section=settings"],
   ]
@@ -222,7 +222,7 @@ test("old leader views on / open the matching club workspace section for the lea
   // Signed out: sign in first, then come back to the same URL.
   assert.equal(await pageFor({}, { view: "leader-dashboard" }), "/login?next=" + encodeURIComponent("/?view=leader-dashboard"))
   // Library helper and the client redirect share one mapping.
-  assert.equal(nav.leaderWorkspaceHref("broadcast-messages", "c 1"), "/club/c%201/workspace?section=announcements")
+  assert.equal(nav.leaderWorkspaceHref("broadcast-messages", "c 1"), "/club/c%201/workspace?section=overview&focus=announcements")
 })
 
 test("old URLs: middleware 307s on real hosts; loopback IPs fall through to the homepage redirect", async () => {

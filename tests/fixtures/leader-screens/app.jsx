@@ -10,6 +10,12 @@ import { createDemoSeed } from '@/lib/demo/seed'
 // Only the invitations count comes from the shared fixture boundary; identity is Demo Mode's.
 import { FixtureBoundary } from '../floating-header/boundaries'
 
+// As in Next.js (and the floating-header fixture), history changes update useSearchParams, so client-side
+// redirects (old club workspace links) and query-only navigation re-render the page.
+for (const name of ['pushState', 'replaceState']) {
+  const original = history[name].bind(history)
+  history[name] = (...args) => { original(...args); window.dispatchEvent(new Event('fixture:navigation')) }
+}
 const seed = createDemoSeed('2026-11-09')
 seed.perspective = { role: 'leader', clubId: seed.clubs[0].id }
 window.__leaderClubId = seed.clubs[0].id
