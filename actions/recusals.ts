@@ -18,6 +18,9 @@ export async function getApplicantRecusals(input: unknown) {
   const { user } = await requireClubPermission(d.clubId, [], { allowSuspendedRead: true })
   return prisma.$transaction(async tx => {
     const member = await authorizeClubTransaction(tx, d.clubId, user.id, [], { readOnly: true, allowSuspendedRead: true })
+    // Same roles that can step out; other members learn nothing, not even whether the application exists.
+    if (!hasPermission(member, "recruitment.manage") && !hasPermission(member, "applications.review") && !member.interviewOffices.length && !member.interviewerEligible)
+      throw new Error("Application unavailable.")
     const app = await tx.application.findFirst({ where: { id: d.applicationId, clubId: d.clubId, status: { not: "DRAFTING" } }, select: { studentId: true } })
     if (!app || app.studentId === user.id) throw new Error("Application unavailable.")
     const lead = hasPermission(member, "recruitment.manage")

@@ -59,6 +59,7 @@ test('a recruitment lead can recuse others and lift a recusal, keeping the row',
 test('members with no review role cannot recuse themselves; unknown applications are refused', async () => {
   await assert.rejects(harness(plain).actions.setApplicantRecusal({ clubId, applicationId, recused: true }), /reviewers and interviewers/)
   await assert.rejects(harness(reviewer).actions.setApplicantRecusal({ clubId, applicationId: otherId, recused: true }), /unavailable/)
+  await assert.rejects(harness(plain).actions.getApplicantRecusals({ clubId, applicationId }), /unavailable/)
 })
 
 test('assertNotRecused refuses only active recusals', async () => {
@@ -78,4 +79,26 @@ test('every scoring and voting path checks recusal inside its transaction', () =
   assert.match(read('actions/voting.ts'), /await assertNotRecused\(tx,d\.applicationId,membership\.id\)/)
   assert.match(read('actions/voting-room.ts'), /isRecused\(tx,d\.applicationId,m\.id\)/)
   assert.match(read('actions/crm.ts'), /canEvaluate: false, recused: true/)
+})
+
+test('a recused member keeps the pipeline row and marker but gets no scores, round score or answers', async () => {
+  const viewer = { id: 'm-lead', userId: 'u-lead', status: 'ACTIVE', permissions: ['applications.review', 'applicants.identify'], interviewOffices: ['PRESIDENT'] }
+  const app = { id: applicationId, clubId, roundId: 'round', status: 'SUBMITTED', studentId: 'student', submittedAt: new Date(), recruitmentOffer: null, interviewAssignments: [], bookings: [],
+    round: { id: 'round', name: 'Review', anonymousReview: false, applicantDisplay: null },
+    student: { id: 'student', email: 'e@example.com', studentProfile: { id: 'p', firstName: 'A', lastName: 'B', gradYear: 2028, gpa: 3.5, experiences: [] } },
+    answers: [{ id: 'ans', questionId: 'q', response: 'SECRET-answer', question: { id: 'q', type: 'ESSAY', prompt: 'Why?', order: 0 } }],
+    evaluations: [{ id: 'ev', applicationId, interviewerId: 'm-other', roundId: 'round', round: 'Review', score: 9, submittedAt: new Date(), createdAt: new Date() }] }
+  let recusals = []
+  const tx = { applicantRecusal: { findMany: async q => recusals.filter(r => r.memberId === q.where.memberId && q.where.applicationId.in.includes(r.applicationId)) },
+    pipelineRound: { findMany: async () => [{ id: 'round', name: 'Review', order: 0, type: 'REVIEW', anonymousReview: false, applicantDisplay: null, archivedAt: null }] },
+    application: { findMany: async () => [structuredClone(app)] } }
+  const loadAny = (file, mocks) => { const mod = { exports: {} }; new Function('require', 'module', 'exports', ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText)(n => n in mocks ? mocks[n] : n.startsWith('@/') ? loadAny(n.replace('@/', '') + '.ts', mocks) : require(n), mod, mod.exports); return mod.exports }
+  const crm = loadAny('actions/crm.ts', { '@/utils/auth': { requireClubPermission: async () => ({ membership: viewer }) }, '@/utils/prisma': { prisma: { $transaction: async fn => fn(tx) } }, 'next/cache': { revalidatePath: () => {} } })
+  const before = (await crm.getClubPipeline(clubId)).applications[0]
+  assert.equal(before.evaluations.length, 1, 'non-recused behaviour unchanged'); assert.equal(before.roundScore.average, 9); assert.match(JSON.stringify(before.answers), /SECRET-answer/); assert.equal(before.recused, undefined)
+  recusals = [{ applicationId, memberId: 'm-lead' }]
+  const after = (await crm.getClubPipeline(clubId)).applications[0]
+  assert.equal(after.id, applicationId); assert.equal(after.recused, true); assert.equal(after.canEvaluate, false)
+  assert.deepEqual(after.evaluations, []); assert.equal(after.roundScore, null); assert.deepEqual(after.answers, [])
+  assert.doesNotMatch(JSON.stringify(after), /SECRET-answer|"score":9/)
 })

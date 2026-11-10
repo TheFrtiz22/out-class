@@ -78,10 +78,11 @@ async function loadPipelineDetails(tx: AppTransactionClient, where: Prisma.Appli
   const identified = applications.filter(raw => hasPermission(membership, "applicants.identify") && !raw.round.anonymousReview);
   const prior = identified.length ? await loadPriorApplications(tx, identified[0].clubId, identified) : new Map();
   // A member who stepped out of an applicant cannot evaluate them; the server also refuses.
+  // They also stop seeing other reviewers' scores and the applicant's answers; the row and marker stay.
   const recused = new Set((applications.length ? await tx.applicantRecusal.findMany({ where: { memberId: membership.id, liftedAt: null, applicationId: { in: applications.map(app => app.id) } }, select: { applicationId: true } }) : []).map(r => r.applicationId));
   return applications.map(raw => {
     const projected = pipelineDetailProjection(raw, membership, prior.get(raw.id) ?? []);
-    return recused.has(raw.id) ? { ...projected, canEvaluate: false, recused: true } : projected;
+    return recused.has(raw.id) ? { ...projected, evaluations: [], answers: [], roundScore: null, canEvaluate: false, recused: true } : projected;
   });
 }
 
