@@ -35,7 +35,6 @@ import { canLeaveWorkspace } from "@/lib/product-navigation"
 import { WorkspaceLoading } from "@/components/workspace-loading"
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { ArrowRight, ChevronDown, ChevronLeft, ChevronRight, Search } from "@/components/icons"
-import { useDismissableDetails } from "@/hooks/use-dismissable-details"
 import { createPortal } from "react-dom"
 import { useRevalidate } from "@/hooks/use-revalidate"
 import { BoardDecisionMode } from "@/components/live-voting/board-decision-mode"
@@ -69,10 +68,21 @@ import {
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { NativeSelect } from "@/components/ui/native-select"
+import { SearchField } from "@/components/ui/search-field"
+import { FilterPopover } from "@/components/ui/filter-popover"
+import { PillSelect } from "@/components/ui/pill-select"
+import { PillGroup } from "@/components/ui/segmented-control"
+import { RangeSlider } from "@/components/ui/range-slider"
+import { Toggle } from "@/components/ui/toggle"
 import { pluralize } from "@/lib/copy/terms"
 
 type Pipeline = Awaited<ReturnType<typeof getClubPipelinePage>>
 type Candidate = Pipeline["applications"][number]
+/** Pending decisions split into these stages (the old Status dropdown's remaining distinct choices). */
+const pendingStatuses = ["SUBMITTED", "IN_REVIEW", "INTERVIEWING"] as const
+/** Range filters keep their string state ("" = no minimum); sliders speak numbers. */
+const numberFilter = (value: string) => value === "" || !Number.isFinite(Number(value)) ? null : Number(value)
+const filterText = (value: number | null) => value === null ? "" : String(value)
 const selectStyle =
   "h-9 max-w-full rounded-md border border-border bg-background px-2 text-sm focus-visible:outline-2 focus-visible:outline-ring"
 const name = (app: Candidate) =>
@@ -167,6 +177,8 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   // The decision filter lives in the URL (`decision=`), so Rejected and other groups are linkable.
   const setDecisionGroup = useCallback((value: DecisionFilter) => {
     setDecisionGroupState(value)
+    // Stage pills subdivide Pending; another decision group leaves no stage to filter by.
+    if (value !== "all" && value !== "pending") setStatus("")
     if (preview || typeof window === "undefined" || !window.location?.href || !window.history) return
     const url = new URL(window.location.href)
     if (value === "all") url.searchParams.delete("decision"); else url.searchParams.set("decision", value)
@@ -270,9 +282,9 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   const roundsForReview = useRef(data?.rounds)
   roundsForReview.current = data?.rounds
   const heading = useRef<HTMLHeadingElement>(null)
-  const filterMenu = useDismissableDetails()
   // Everything inside the Filters menu, so its summary can show how many apply.
-  const menuFilters = [round, status, review, gender, major, year, gpa, sat, act, rating].filter(Boolean).length
+  const menuFilters = [round, review, gender, major, year, gpa, sat, act, rating].filter(Boolean).length
+  const clearMenuFilters = () => { setRound(""); setReview(""); setGender(""); setShowGenderCounts(false); setMajor(""); setYear(""); setGpa(""); setSat(""); setAct(""); setRating("") }
   const search = useRef<HTMLInputElement>(null)
   useEffect(() => { setError(""); setRevalidateFailures(0) }, [authority, revision, pageQuery])
   const selectionRequestKey = JSON.stringify([selectionKey, revision])
@@ -578,7 +590,9 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     <div ref={workspaceElement} className="oc-live-pipeline oc-workspace-stack" data-unsaved={draftSave.dirty} data-saving={busy}>
       <div hidden={!!preview} className={votingBarShown ? "oc-voting-bar-clearance" : undefined}>
       {!active && message && <p role="status" className="text-sm">{message}</p>}
-      {!preview && view !== "ranked" && <SegmentedControl label="Decision" value={decisionGroup} onChange={value => setDecisionGroup(value as DecisionFilter)} options={decisionFilters.map(group => ({ value: group.id, label: <>{group.label}<span className="ml-2 text-xs font-normal text-muted-foreground">{group.id === "all" ? listData?.page.baseTotal ?? 0 : listData?.facets.decisions[group.id] ?? 0}</span></> }))} />}
+      {!preview && view !== "ranked" && <SegmentedControl label="Decision" value={decisionGroup} onChange={value => setDecisionGroup(value as DecisionFilter)} options={decisionFilters.map(group => ({ value: group.id, label: group.label, count: group.id === "all" ? listData?.page.baseTotal ?? 0 : listData?.facets.decisions[group.id] ?? 0 }))} />}
+      {!preview && view !== "ranked" && !decisionsOnly && (decisionGroup === "all" || decisionGroup === "pending") && <SegmentedControl label="Pending stage" size="compact" value={status} onChange={setStatus}
+        options={[{ value: "", label: decisionGroup === "pending" ? "All pending" : "All stages" }, ...pendingStatuses.map(key => ({ value: key, label: applicationStatusLabels[key] }))]} />}
 {!rejectedOnly && !preview && actionSlot !== undefined && (() => {
         const actions = <div role="group" aria-label="Recruitment review" className="flex flex-wrap items-center justify-end gap-2">
           {!decisionsOnly && canDecide && <Button variant="outline" disabled={busy || !listData?.facets.quickReview} onClick={() => void startQuickReview()}>Quick review</Button>}
@@ -587,133 +601,50 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       })()}
       <div className="oc-toolbar">
         {!decisionsOnly && <SegmentedControl label="Applicant view" value={view} onChange={setView} options={[{ value: "list", label: "List" }, { value: "kanban", label: "Kanban" }, { value: "ranked", label: "Ranked" }]} />}
-        {view !== "ranked" && <><div className="relative min-w-0 flex-1 basis-60">
-          <Search className="absolute left-3 top-3 size-4 text-muted-foreground" />
-          <Input
+        {view !== "ranked" && <><SearchField
             ref={search}
             aria-label="Search applicants"
-            placeholder="Name, anonymous ID, or major · /"
+            placeholder="Name, anonymous ID, or major"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            className="pl-9"
+            onClear={() => setQuery("")}
+            shortcut="/"
+            shortcutListener={false}
+            containerClassName="min-w-0 flex-1 basis-60"
           />
-        </div>
-        <details ref={filterMenu} className="oc-pipeline-filters group"><summary><ChevronDown aria-hidden="true" className="size-4 shrink-0 -rotate-90 transition-transform duration-150 group-open:rotate-0 motion-reduce:transition-none" />Filters{menuFilters > 0 && <span className="oc-pipeline-filter-count"><span aria-hidden="true">{menuFilters}</span><span className="sr-only">, {menuFilters} active</span></span>}</summary><div className="oc-pipeline-filter-fields">
+        <FilterPopover count={menuFilters} title="Applicant filters"
+          footer={<><Button variant="ghost" size="sm" disabled={!menuFilters} onClick={clearMenuFilters}>Clear filters</Button>{!decisionsOnly && <Button size="sm" variant="ghost" className="hidden xl:inline-flex" aria-pressed={compact} onClick={() => setCompact((value) => !value)}>{compact ? "Compact rows" : "Comfortable rows"}</Button>}</>}>
         {/* Column headers sort the wide list; views without headers (cards, Kanban, Decisions) sort here. */}
-        <div className={`flex w-full flex-wrap items-center gap-2 ${!decisionsOnly && view === "list" ? "xl:hidden" : ""}`}>
-          <NativeSelect aria-label="Sort applicants" className={selectStyle} value={sort} onChange={event => sortBy(event.target.value as ApplicantSort)}>{sortOptions.map(option => <option key={option.key} value={option.key}>{option.label}</option>)}</NativeSelect>
-          <Button size="sm" variant="ghost" onClick={() => setDescending(value => !value)}>{descending ? "Descending ↓" : "Ascending ↑"}</Button>
+        <div className={`oc-filter-field ${!decisionsOnly && view === "list" ? "xl:hidden" : ""}`}>
+          <span className="oc-filter-field-label">Sort</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <PillSelect label="Sort applicants" value={sort} onChange={value => sortBy(value as ApplicantSort)} options={sortOptions.map(option => ({ value: option.key, label: option.label }))} />
+            <Button size="sm" variant="ghost" onClick={() => setDescending(value => !value)}>{descending ? "Descending ↓" : "Ascending ↑"}</Button>
+          </div>
         </div>
-        <NativeSelect
-          aria-label="Filter round"
-          className={selectStyle}
-          value={round}
-          onChange={(event) => { setRound(event.target.value); setGender(""); setShowGenderCounts(false) }}
-        >
-          <option value="">All rounds</option>
-          {data.rounds.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.name}
-            </option>
-          ))}
-        </NativeSelect>
-        {!decisionsOnly && <>
-        <NativeSelect
-          aria-label="Filter status"
-          className={selectStyle}
-          value={status}
-          onChange={(event) => setStatus(event.target.value)}
-        >
-          <option value="">All statuses</option>
-          {Object.entries(applicationStatusLabels)
-            .filter(([key]) => key !== "DRAFTING")
-            .map(([key, label]) => (
-              <option key={key} value={key}>
-                {label}
-              </option>
-            ))}
-        </NativeSelect>
-        <NativeSelect
-          aria-label="Filter review state"
-          className={selectStyle}
-          value={review}
-          onChange={(event) => setReview(event.target.value)}
-        >
-          <option value="">All review states</option>
-          <option value="unreviewed">No evaluations</option>
-          <option value="mine">Reviewed by me</option>
-        </NativeSelect>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="hidden xl:inline-flex"
-          aria-pressed={compact}
-          onClick={() => setCompact((value) => !value)}
-        >
-          {compact ? "Compact rows" : "Comfortable rows"}
-        </Button>
-        </>}
-      {round && data?.rounds.find(r => r.id === round)?.genderVisible && <div className="flex flex-wrap items-center gap-3 text-sm">
-        <label>Gender <NativeSelect aria-label="Filter gender" className={selectStyle} value={gender} onChange={e => setGender(e.target.value)}><option value="">All</option>{genderValues.map(v => <option key={v}>{v}</option>)}</NativeSelect></label>
-        <label className="flex gap-2"><input type="checkbox" checked={showGenderCounts} onChange={e => setShowGenderCounts(e.target.checked)} />Show round gender composition</label>
-        {showGenderCounts && data?.genderCounts && <dl className="flex flex-wrap gap-3">{data.genderCounts.map(c => <div key={c.gender ?? "unset"}><dt className="inline">{c.gender ?? "Not provided"}: </dt><dd className="inline">{c.count}</dd></div>)}</dl>}
+        <div className="oc-filter-field"><span className="oc-filter-field-label">Round</span>
+          <PillGroup label="Filter round" size="compact" value={round} onChange={value => { setRound(value); setGender(""); setShowGenderCounts(false) }}
+            options={[{ value: "", label: "All rounds" }, ...data.rounds.map(item => ({ value: item.id, label: item.name }))]} />
+        </div>
+        {!decisionsOnly && <div className="oc-filter-field"><span className="oc-filter-field-label">Review state</span>
+          <PillGroup label="Filter review state" size="compact" value={review} onChange={setReview}
+            options={[{ value: "", label: "All review states" }, { value: "unreviewed", label: "No evaluations" }, { value: "mine", label: "Reviewed by me" }]} />
+        </div>}
+      {round && data?.rounds.find(r => r.id === round)?.genderVisible && <div className="oc-filter-field"><span className="oc-filter-field-label">Gender</span>
+        <PillGroup label="Filter gender" size="compact" value={gender} onChange={setGender} options={[{ value: "", label: "All" }, ...genderValues.map(v => ({ value: v, label: v }))]} />
+        <Toggle label="Show round gender composition" checked={showGenderCounts} onCheckedChange={setShowGenderCounts} />
+        {showGenderCounts && data?.genderCounts && <dl className="flex flex-wrap gap-3 text-sm">{data.genderCounts.map(c => <div key={c.gender ?? "unset"}><dt className="inline">{c.gender ?? "Not provided"}: </dt><dd className="inline">{c.count}</dd></div>)}</dl>}
       </div>}
-      {!decisionsOnly && <section className="w-full text-sm"><h3 className="font-medium">Academic & review filters</h3>
-        <div className="mt-3 flex flex-wrap items-end gap-3">
-          <NativeSelect
-            aria-label="Filter major"
-            className={selectStyle}
-            value={major}
-            onChange={(event) => setMajor(event.target.value)}
-          >
-            <option value="">All majors</option>
-            {(listData?.facets.majors ?? [])
-              .map((value) => (
-                <option key={value}>{value}</option>
-              ))}
-          </NativeSelect>
-          <NativeSelect
-            aria-label="Filter academic year"
-            className={selectStyle}
-            value={year}
-            onChange={(event) => setYear(event.target.value)}
-          >
-            <option value="">All years</option>
-            {(listData?.facets.years ?? [])
-              .map((value) => (
-                <option key={value}>{value}</option>
-              ))}
-          </NativeSelect>
-          <div>
-            <Label htmlFor="leader-gpa">GPA greater than</Label>
-            <Input
-              id="leader-gpa"
-              className="mt-2 w-36"
-              type="number"
-              min={0}
-              max={4}
-              step="0.01"
-              value={gpa}
-              onChange={(event) => setGpa(event.target.value)}
-            />
-          </div>
-          <div>
-            <Label htmlFor="leader-sat">SAT greater than</Label>
-            <Input
-              id="leader-sat"
-              className="mt-2 w-36"
-              type="number"
-              min={0}
-              max={1600}
-              value={sat}
-              onChange={(event) => setSat(event.target.value)}
-            />
-          </div>
-        </div>
-          <div className="mt-3"><Label htmlFor="leader-act">ACT greater than</Label><Input id="leader-act" type="number" min={1} max={36} className="mt-2 w-36" value={act} onChange={e => setAct(e.target.value)} /></div>
-          <div className="mt-3"><Label htmlFor="leader-rating">Minimum rating (out of 10)</Label><Input id="leader-rating" type="number" min={0} max={10} step="0.1" className="mt-2 w-36" value={rating} onChange={event => setRating(event.target.value)} /></div>
+      {!decisionsOnly && <section className="oc-filter-field" aria-labelledby="leader-academic-filters"><h3 id="leader-academic-filters" className="oc-filter-field-label">Academic & review filters</h3>
+          <PillSelect label="Filter major" allLabel="All majors" value={major} onChange={setMajor} options={(listData?.facets.majors ?? []).map(value => ({ value, label: value }))} />
+          <PillGroup label="Filter academic year" size="compact" value={year} onChange={setYear}
+            options={[{ value: "", label: "All years" }, ...(listData?.facets.years ?? []).map(value => ({ value, label: value }))]} />
+          <RangeSlider label="GPA greater than" min={0} max={4} step={0.01} value={numberFilter(gpa)} onChange={value => setGpa(filterText(value))} />
+          <RangeSlider label="SAT greater than" min={400} max={1600} step={10} value={numberFilter(sat)} onChange={value => setSat(filterText(value))} />
+          <RangeSlider label="ACT greater than" min={1} max={36} step={1} value={numberFilter(act)} onChange={value => setAct(filterText(value))} />
+          <RangeSlider label="Minimum rating (out of 10)" min={0} max={10} step={0.1} value={numberFilter(rating)} onChange={value => setRating(filterText(value))} />
       </section>}
-        </div></details></>}
+        </FilterPopover></>}
       </div>
       {view === "ranked" ? <RankedReviewList clubId={membership.clubId} rounds={data.rounds} initialRoundId={round || data.rounds.find(item => isInterviewRecruitmentRound(item.type))?.id} api={rankedApi} onOpen={setRankedOpen} votingSelection={votingChoice} changeSignal={rankedChanged}
         votingLink={hasPermission(membership, "applications.review") ? <Button variant="outline" size="sm" asChild><Link href={decisionsHref(membership.clubId, "voting", demo.isDemoEnabled ? "demo=1" : "")}>Open Voting room</Link></Button> : undefined} /> : <>

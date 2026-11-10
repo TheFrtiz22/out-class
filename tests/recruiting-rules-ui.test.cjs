@@ -12,7 +12,7 @@ function harness(options={}){
  const react={useState(initial){const i=index++;if(!(i in slots))slots[i]=initial;return[slots[i],value=>slots[i]=typeof value==='function'?value(slots[i]):value]},useEffect(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;effects.push(fn)}}}
  const preview={revision:1,fingerprint:'a'.repeat(64),results:[{id:'candidate',label:'Applicant CANDIDATE',status:'IN_REVIEW',outcome:'flag',reasons:['GPA below 3.5'],missing:[]}]}
  const api={getRecruitingRuleFlags:async()=>flags,previewRecruitingRule:async()=>{calls.push('preview');return preview},applyRecruitingRuleFlags:async(input)=>{calls.push(['apply',input]);if(options.stale)throw Error('Changed');flags=[{applicationId:'candidate',label:'Applicant CANDIDATE',reasons:['GPA below 3.5'],ruleRevision:1,flaggedAt:new Date(0)}];return{flagged:1}},clearRecruitingRuleFlags:async()=>{calls.push('clear');flags=[]},saveRecruitingRule:async(input)=>{calls.push(['save',input]);return input}}
- const mocks={react,'@/components/ui/button':{Button:'Button'},'@/components/ui/native-select':{NativeSelect:'NativeSelect'},'@/components/ui/loading-state':{LoadingState:'LoadingState'},'@/lib/workspace-api':api,'@/lib/application-state':{useApplicationState:()=>({focusLeader:value=>calls.push(['focus',value])})},'@/lib/recruiting-rules':{emptyRuleThresholds:{minGpa:null,minSat:null,minAct:null}},'@/lib/test-scores':{testRequirementLabels:{OPTIONAL:'Optional'}}}
+ const mocks={react,'@/components/ui/button':{Button:'Button'},'@/components/ui/segmented-control':{PillGroup:'PillGroup'},'@/components/ui/range-slider':{RangeSlider:'RangeSlider'},'@/components/ui/loading-state':{LoadingState:'LoadingState'},'@/lib/workspace-api':api,'@/lib/application-state':{useApplicationState:()=>({focusLeader:value=>calls.push(['focus',value])})},'@/lib/recruiting-rules':{emptyRuleThresholds:{minGpa:null,minSat:null,minAct:null}},'@/lib/test-scores':{testRequirementLabels:{OPTIONAL:'Optional'}}}
  const mod={exports:{}}
  const code=ts.transpileModule(fs.readFileSync('components/views/screening-dashboard-view.tsx','utf8')+'\nexports.RuleEditor = RuleEditor;',{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText
  new Function('require','module','exports','window',code)(name=>mocks[name]||require(name),mod,mod.exports,{addEventListener(){},removeEventListener(){}})
@@ -31,7 +31,7 @@ test('rule UI saves configuration independently; preview never applies flags wit
  assert.deepEqual(h.calls.at(-2),['focus',{clubId:'club',applicantId:'candidate',roundId:'round'}])
  button(tree,'Clear saved flags').props.onClick();await flush();tree=h.render()
  assert.match(text(tree),/No active flags/)
- nodes(tree).find(n=>n.props?.['aria-label']==='Minimum GPA').props.onChange({target:{value:'3.7',valueAsNumber:3.7}});tree=h.render()
+ nodes(tree).find(n=>n.type==='RangeSlider'&&n.props.label==='Minimum GPA').props.onChange(3.7);tree=h.render()
  assert.equal(button(tree,'Preview saved rules').props.disabled,true)
  nodes(tree).find(n=>n.type==='form').props.onSubmit({preventDefault(){}});await flush()
  const save=h.calls.find(c=>Array.isArray(c)&&c[0]==='save')[1]

@@ -2,9 +2,16 @@
 import { useEffect, useLayoutEffect, useRef, type CSSProperties, type KeyboardEvent, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
 
-/** `label` may hold a count or icon; give `ariaLabel` when the visible label is not the full name. */
-type Option<T extends string> = { value: T; label: ReactNode; ariaLabel?: string; disabled?: boolean }
-type Common<T extends string> = { label: string; options: Option<T>[]; className?: string; animated?: boolean; size?: "default" | "compact"; id?: string }
+/** `count` renders as a quiet number after the label ("Pending 1"); `icon` before it. Give `ariaLabel`
+ * when the visible label is not the full name. */
+export type SegmentOption<T extends string> = { value: T; label: ReactNode; ariaLabel?: string; disabled?: boolean; count?: number; icon?: ReactNode }
+type Option<T extends string> = SegmentOption<T>
+type Common<T extends string> = {
+  label: string; options: Option<T>[]; className?: string; animated?: boolean; size?: "default" | "compact"; id?: string
+  /** Rendered inside the track after the segments (FilterChips' "+N more"). It is its own tab stop. */
+  after?: ReactNode
+}
+export type SegmentedControlProps<T extends string> = Single<T> | Multiple<T>
 type Single<T extends string> = Common<T> & { multiple?: false; value: T; onChange: (value: T) => void }
 type Multiple<T extends string> = Common<T> & { multiple: true; value: T[]; onChange: (value: T[]) => void }
 
@@ -18,7 +25,7 @@ type Multiple<T extends string> = Common<T> & { multiple: true; value: T[]; onCh
 const useBrowserLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect
 
 export function SegmentedControl<T extends string>(props: Single<T> | Multiple<T>) {
-  const { label, options, className, animated = true, size = "default", id } = props
+  const { label, options, className, animated = true, size = "default", id, after } = props
   const group = useRef<HTMLDivElement>(null)
   const selected = (value: T) => props.multiple ? props.value.includes(value) : props.value === value
   const index = props.multiple ? -1 : options.findIndex(option => option.value === props.value)
@@ -65,6 +72,13 @@ export function SegmentedControl<T extends string>(props: Single<T> | Multiple<T
     {options.map((option, i) => <button type="button" key={option.value} data-segment="" disabled={option.disabled}
       aria-pressed={selected(option.value)} aria-label={option.ariaLabel}
       data-selected={selected(option.value) || undefined} tabIndex={i === stop ? 0 : -1}
-      onClick={() => choose(option.value)} onKeyDown={event => onKeyDown(event, i)}>{option.label}</button>)}
+      onClick={() => choose(option.value)} onKeyDown={event => onKeyDown(event, i)}>
+      {option.icon && <span className="oc-segment-icon" aria-hidden="true">{option.icon}</span>}{option.label}
+      {option.count != null && <span className="oc-segment-count">{" "}{option.count}</span>}
+    </button>)}
+    {after}
   </div>
 }
+
+/** The same control under the name the filter docs use for a single-select pill row. */
+export const PillGroup = SegmentedControl
