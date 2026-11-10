@@ -13,6 +13,7 @@ import { useDemoMode } from "@/contexts/demo-context";
 import { resolveSettingsTab, settingsSections } from "@/lib/club-settings";
 import { navigateWithinClub } from "@/lib/workspace-navigation";
 import { canLeaveWorkspace } from "@/lib/product-navigation";
+import { canOpenRecruitingSettings, recruitingSettingsSections, withRecruitingSettings } from "@/lib/recruiting-settings";
 import { hasPermission, permissionLabels } from "@/lib/permissions";
 import { organizationRoleLabels, organizationRolePermissions, organizationRoles } from "@/lib/organization-authorization";
 import { saveClubPreferences } from "@/actions/club-settings";
@@ -21,6 +22,7 @@ import { ClubProfileSettings } from "@/components/club-profile-settings";
 import "@/components/clubs/club-settings.css";
 import { VotingRuleDefaults } from "@/components/live-voting/voting-rule-defaults";
 import { NativeSelect } from "@/components/ui/native-select"
+import { Button } from "@/components/ui/button"
 const ApplicationBuilder = dynamic(() =>
   import("@/components/views/club-manager/application-builder-view").then(
     (m) => m.ApplicationBuilderView,
@@ -164,7 +166,8 @@ export function ClubSettingsWorkspace({
         {visible("application") && (
           <div hidden={active !== "application"}>
             {hasPermission(member, "recruitment.manage") && <div className="mb-5 flex flex-wrap gap-4 border-b pb-4 text-sm"><Link className="underline underline-offset-4" href={`/club/${clubId}/workspace?section=settings&setting=pipeline`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Configure recruitment rounds</Link><Link className="underline underline-offset-4" href={`/club/${clubId}/workspace?section=settings&setting=cycles`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Manage application cycles</Link></div>}
-            {hasPermission(member, "recruitment.manage") && <details className="mb-5 border-b pb-3"><summary className="min-h-11 cursor-pointer py-3 text-sm font-medium">Review settings</summary><div className="flex flex-wrap gap-4 py-2 text-sm"><Link className="underline underline-offset-4" href={`/club/${clubId}/workspace?section=recruitment&tool=rounds`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Anonymous review</Link><Link className="underline underline-offset-4" href={`/club/${clubId}/workspace?section=recruitment&tool=rules`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Screening rules</Link></div></details>}
+            {/* Recruiting: opens the Recruiting settings drawer in place (the same drawer as the Applicants gear). */}
+            {canOpenRecruitingSettings(member) && <section aria-labelledby="settings-recruiting-heading" className="mb-5 space-y-2 border-b pb-4"><h2 id="settings-recruiting-heading" className="oc-section-heading">Recruiting</h2><div className="flex flex-wrap gap-2">{recruitingSettingsSections.map(item => <Button key={item.id} type="button" variant="outline" size="sm" aria-haspopup="dialog" onClick={() => { if (canLeaveWorkspace()) router.push(`/club/${encodeURIComponent(clubId)}/workspace?${withRecruitingSettings(params.toString(), item.id)}`, { scroll: false }) }}>{item.label}</Button>)}</div></section>}
             <ApplicationBuilder clubId={clubId} />
             {/* Voting defaults are configuration, so they live here; the Voting room links to this section. */}
             {hasPermission(member, "applications.review") && hasPermission(member, "decisions.manage") && hasPermission(member, "decisions.start") && !demo.isDemoEnabled && <section id="voting-rules" aria-label="Default voting rules" className="mt-8 border-t pt-5"><VotingRuleDefaults clubId={clubId} /></section>}

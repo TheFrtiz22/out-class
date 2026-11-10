@@ -1,4 +1,5 @@
 import { TERMS } from "@/lib/copy/terms"
+import { RECRUITING_SETTINGS_PARAM } from "@/lib/recruiting-settings"
 
 /**
  * Club workspace URL helpers that need no UI imports, so the server page,
@@ -48,6 +49,8 @@ export function canonicalClubWorkspaceQuery(input: URLSearchParams): URLSearchPa
     // Voting and letters used to be tools; they are Decisions tabs.
     if (tool === "voting") { set("tool", "decisions"); set("decisionTab", "voting") }
     if (tool === "letters" || tool === "decision-letters") { set("tool", "decisions"); set("decisionTab", "letters") }
+    // Anonymous Review and Auto-Reject Rules were rail drawers; they are sections of the Recruiting settings drawer on Applicants.
+    if (tool === "rounds" || tool === "rules") { set("tool", "applicants"); set(RECRUITING_SETTINGS_PARAM, tool === "rounds" ? "anonymous" : "rules") }
     // Rejected Applicants is the Applicants list filtered to Rejected.
     if (tool === "rejected") { set("tool", "applicants"); set("decision", "rejected") }
     // Decisions → Overview is the Applicants decision filter.
