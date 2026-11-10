@@ -756,7 +756,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                     <div className="oc-quick-title-row">
                       <SheetTitle ref={heading} tabIndex={-1} className="oc-quick-name" title={anonymousActive || !profileFields.email ? undefined : active.student.email}>{dossierName(active)}</SheetTitle>
                       <StatusPill status={active.status} />
-                      {quickQueue && <span className="oc-quick-fact">Quick review · {quickQueue.length} left</span>}
+                      {quickQueue && <span className="oc-quick-fact">Quick review · {quickQueue.length} remaining</span>}
                     </div>
                     <SheetDescription className="oc-quick-facts">
                       {anonymousActive ? "Anonymous review · identity and appointments withheld" : joinFacts(profileFields.major && profile?.major, ...(profile ? applicantProfileFacts(profile, profileFields) : [])) || "Academic profile not provided"}
@@ -877,7 +877,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
               </footer>
               <Dialog open={panel !== null} onOpenChange={value => { if (!value && !busy) setPanel(null) }}>
                 <DialogContent>
-                  {panel === "round" && <><DialogHeader><DialogTitle>Move round</DialogTitle><DialogDescription>{name(active)} · currently in {activeRound?.name ?? "an unavailable round"}.</DialogDescription></DialogHeader>
+                  {panel === "round" && <><DialogHeader><DialogTitle>Move round</DialogTitle><DialogDescription>{dossierName(active)} · currently in {activeRound?.name ?? "an unavailable round"}.</DialogDescription></DialogHeader>
                     <Label htmlFor="move-round">Round</Label>
                     <NativeSelect id="move-round" className={selectStyle} disabled={busy} value={targetRound} onChange={(event) => setTargetRound(event.target.value)}>{data.rounds.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</NativeSelect>
                     <div className="flex justify-end gap-2"><Button variant="ghost" disabled={busy} onClick={() => setPanel(null)}>Cancel</Button>
@@ -885,9 +885,9 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                         <Button disabled={busy || dirty || finalStatus || targetRound === active.roundId} onClick={() => { setMessage(""); void mutate("round") }}>Move round</Button>
                       </DisabledReason></div>
                     {message && <p role="status" className="text-sm">{message}</p>}</>}
-                  {panel === "cycle" && <><DialogHeader><DialogTitle>Recruitment cycle assignment</DialogTitle><DialogDescription>{name(active)}</DialogDescription></DialogHeader>
+                  {panel === "cycle" && <><DialogHeader><DialogTitle>Recruitment cycle assignment</DialogTitle><DialogDescription>{dossierName(active)}</DialogDescription></DialogHeader>
                     <ApplicationCycleAssignment key={active.id + active.recruitmentCycleId} clubId={membership.clubId} applicationId={active.id} cycleId={active.recruitmentCycleId} onSaved={() => { setPanel(null); setRevision(v => v + 1) }} /></>}
-                  {panel === "reconsider" && <><DialogHeader><DialogTitle>Reconsider application</DialogTitle><DialogDescription>Returns {name(active)} to review. Earlier decisions stay in the history.</DialogDescription></DialogHeader>
+                  {panel === "reconsider" && <><DialogHeader><DialogTitle>Reconsider application</DialogTitle><DialogDescription>Returns {dossierName(active)} to review. Earlier decisions stay in the history.</DialogDescription></DialogHeader>
                     <Label htmlFor="reconsider-reason">Reason (at least 10 characters)</Label>
                     <Textarea id="reconsider-reason" maxLength={1000} value={reconsiderReason} onChange={e => setReconsiderReason(e.target.value)} />
                     <div className="flex justify-end gap-2"><Button variant="ghost" disabled={busy} onClick={() => setPanel(null)}>Cancel</Button>
@@ -912,7 +912,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
           <DialogHeader>
             <DialogTitle>Update application status?</DialogTitle>
             <DialogDescription>
-              {active && name(active)} will see their application marked{" "}
+              {active && dossierName(active)} will see their application marked{" "}
               {applicationStatusLabels[decision]}. The applicant will see this status in OutClass.
               {["ACCEPTED","WAITLISTED","REJECTED"].includes(decision) && (demo.isDemoEnabled ? " A fictional letter and notification will be saved in Demo. No email is sent." : " Status and a notification publish with an optional formal letter according to club settings. Decision-availability email follows separate student preferences.")}
             </DialogDescription>
