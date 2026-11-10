@@ -117,15 +117,46 @@ test('the chip reuses StatusMark with a Phosphor icon and short copy', () => {
   const list = render({ priors: [{ cycleName: 'Spring 2026', submittedAt: null, status: null }] })
   assert.match(list, /data-slot="status-pill"/)
   assert.match(list, /data-icon-pack="phosphor"/)
+  assert.doesNotMatch(list, /title=/, 'the sr-only text carries the summary')
   assert.match(list, /Previously applied<span class="sr-only">: Spring 2026<\/span>/)
   assert.doesNotMatch(list, /selected/i, 'no outcome when the server withheld it')
   const detail = render({ priors: [{ cycleName: 'Spring 2026', submittedAt: '2026-02-01T12:00:00Z', status: 'REJECTED' }, { cycleName: null, submittedAt: '2025-09-10T12:00:00Z', status: null }], detail: true })
   assert.match(detail, / · Spring 2026 \(not selected\), Sep 2025/)
 })
 
-test('students never receive history: the badge only renders inside reviewer pipeline views', () => {
-  const users = require('node:child_process').execFileSync('git', ['grep', '--untracked', '-l', 'PreviouslyAppliedBadge', '--', 'app', 'components'], { encoding: 'utf8' }).trim().split('\n').sort()
-  assert.deepEqual(users, ['components/previously-applied-badge.tsx', 'components/views/leader-dashboard/live-applicant-views.tsx', 'components/views/leader-dashboard/live-leader-workspace.tsx'])
-  const prior = require('node:child_process').execFileSync('git', ['grep', '--untracked', '-l', 'loadPriorApplications', '--', 'actions', 'app', 'lib', 'utils'], { encoding: 'utf8' }).trim().split('\n').sort()
-  assert.deepEqual(prior, ['actions/crm.ts', 'lib/prior-applications.ts'])
+test('StatusMark keeps the custom icon and children for "Previously applied" instead of falling back to StatusPill', () => {
+  const { StatusMark } = loadAny('components/ui/status-pill.tsx', { '@/components/icons': icons, '@/lib/utils': { cn: (...c) => c.filter(Boolean).join(' ') } })
+  const html = renderToStaticMarkup(React.createElement(StatusMark, { label: 'Previously applied', icon: icons.History }, React.createElement('span', { className: 'sr-only' }, ': Spring 2026')))
+  const historyGlyph = renderToStaticMarkup(React.createElement(icons.History, { size: 15 }))
+  const circleGlyph = renderToStaticMarkup(React.createElement(icons.Circle, { size: 15 }))
+  assert.ok(html.includes(historyGlyph), 'renders the History glyph')
+  assert.ok(!html.includes(circleGlyph), 'not the default tone glyph')
+  assert.match(html, /data-tone="neutral"/, 'StatusMark path, not StatusPill (which has data-status)')
+  assert.doesNotMatch(html, /data-status=/)
+  assert.match(html, /Previously applied<span class="sr-only">: Spring 2026<\/span>/)
+  assert.doesNotMatch(html, /title=/)
+})
+
+// Student-facing surfaces: the student routes and the components they render.
+const studentSurfaces = [
+  'app/(workspace)/applications', 'app/(workspace)/explore', 'app/(workspace)/home', 'app/(workspace)/profile', 'app/(workspace)/saved-clubs',
+  'app/(focus)/applications', 'components/applications',
+  'components/views/student-dashboard-view.tsx', 'components/views/student-onboarding-wizard.tsx', 'components/views/application-tracker-view.tsx',
+  'components/views/explore-view.tsx', 'components/views/saved-clubs-view.tsx', 'components/views/club-profile-view.tsx',
+  'components/views/unified-student-profile-view.tsx', 'components/student-workspace-page.tsx', 'components/edit-student-profile-dialog.tsx',
+]
+function walk(entry) {
+  const full = path.resolve(__dirname, '..', entry)
+  if (!fs.existsSync(full)) return []
+  if (fs.statSync(full).isFile()) return /\.(tsx?|jsx?)$/.test(entry) ? [entry] : []
+  return fs.readdirSync(full).flatMap(name => walk(path.join(entry, name)))
+}
+
+test('students never receive history: no student-facing surface imports the badge or the history loader', () => {
+  const files = studentSurfaces.flatMap(walk)
+  assert.ok(files.length > 10, 'student surfaces were found')
+  for (const file of files) assert.doesNotMatch(fs.readFileSync(path.resolve(__dirname, '..', file), 'utf8'), /previously-applied-badge|PreviouslyAppliedBadge|prior-applications|loadPriorApplications/, file)
+  const users = ['components', 'app'].flatMap(walk).filter(file => /from "@\/components\/previously-applied-badge"/.test(fs.readFileSync(path.resolve(__dirname, '..', file), 'utf8')))
+  assert.ok(users.length, 'the badge is rendered somewhere (the scan sees real imports)')
+  assert.ok(users.every(file => !files.includes(file)))
 })

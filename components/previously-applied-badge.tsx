@@ -20,7 +20,7 @@ export function priorApplicationsSummary(priors: readonly Prior[]) {
 export function PreviouslyAppliedBadge({ priors, detail = false }: { priors?: readonly Prior[] | null; detail?: boolean }) {
   if (!priors?.length) return null
   const summary = priorApplicationsSummary(priors)
-  return <StatusMark label="Previously applied" icon={History} title={summary} className="oc-previously-applied">
+  return <StatusMark label="Previously applied" icon={History} className="oc-previously-applied">
     {detail ? <span className="text-muted-foreground"> · {summary}</span> : <span className="sr-only">: {summary}</span>}
   </StatusMark>
 }

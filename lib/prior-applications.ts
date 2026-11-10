@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client"
 import type { AppTransactionClient } from "@/utils/prisma"
 import { hasPermission, type ClubAccess } from "@/lib/permissions"
 
@@ -18,6 +19,10 @@ export function mayShowPriorOutcome(viewer: ClubAccess) {
   return hasPermission(viewer, "decisions.manage") || hasPermission(viewer, "decisions.publish") || hasPermission(viewer, "decisions.view")
 }
 
+/** Ids, cycle name and dates only; the status is added only when the outcome may be shown. */
+const priorHistorySelect = { id: true, studentId: true, submittedAt: true, recruitmentCycle: { select: { name: true } } } satisfies Prisma.ApplicationSelect
+const priorHistoryWithOutcomeSelect = { ...priorHistorySelect, status: true } satisfies Prisma.ApplicationSelect
+
 /** Earlier submitted applications by the same students to the same club, in one
  * query for the whole list. Selects only ids, cycle names and dates; the status
  * only when `outcome` is true. Callers filter with mayShowPriorApplications first. */
@@ -29,10 +34,10 @@ export async function loadPriorApplications(
 ): Promise<Map<string, PriorApplication[]>> {
   const result = new Map<string, PriorApplication[]>()
   if (!apps.length) return result
-  const history = await tx.application.findMany({
-    where: { clubId, studentId: { in: [...new Set(apps.map(app => app.studentId))] }, status: { not: "DRAFTING" } },
-    select: { id: true, studentId: true, submittedAt: true, recruitmentCycle: { select: { name: true } }, ...(outcome ? { status: true } : {}) },
-  }) as { id: string; studentId: string; submittedAt: Date | null; recruitmentCycle: { name: string } | null; status?: string }[]
+  const where = { clubId, studentId: { in: [...new Set(apps.map(app => app.studentId))] }, status: { not: "DRAFTING" as const } } satisfies Prisma.ApplicationWhereInput
+  const history = outcome
+    ? await tx.application.findMany({ where, select: priorHistoryWithOutcomeSelect })
+    : await tx.application.findMany({ where, select: priorHistorySelect })
   for (const app of apps) result.set(app.id, priorApplicationsFor(app, history))
   return result
 }
