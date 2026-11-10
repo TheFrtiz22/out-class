@@ -50,7 +50,9 @@ test("club workspace: canonical URLs are left alone", () => {
   for (const query of ["", "section=overview", "section=recruitment&tool=applicants", "section=recruitment&tool=applicants&decision=rejected",
     "section=recruitment&tool=decisions&decisionTab=voting", "section=recruitment&tool=decisions&decisionTab=voting&sessionId=s1",
     "section=recruitment&tool=decisions&decisionTab=letters", "section=recruitment&tool=interviews&interviewTab=schedule",
-    "section=events", "section=meetings", "section=meetings&meetingTab=members"]) {
+    "section=events", "section=events&new=1", "section=meetings", "section=meetings&meetingTab=members",
+    // meetingTab was only ever read inside Meetings, so it redirects only there
+    "section=overview&meetingTab=events", "section=tasks&meetingTab=events"]) {
     assert.equal(workspace(query), null, query || "(empty)")
   }
 })
