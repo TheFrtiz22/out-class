@@ -23,7 +23,7 @@ function harness(){
  const create=(participants=[memberId])=>api.createVotingSession({clubId,roundId,applicationIds:ids,participantIds:participants,targetSize:1});
  const command=(action,extra={})=>api.commandVotingSession({clubId,sessionId,revision:state.sessions[0]?.revision??0,action,...extra});
  const vote=(id,decision,passNumber=state.sessions[0].currentPass)=>api.submitVotingBallot({clubId,sessionId,passNumber,applicationId:id,decision});
- return{api,create,command,vote,members,as:id=>actor=id,state:()=>state,read:()=>api.getVotingWorkspace(clubId,sessionId)};
+ return{api,tx,create,command,vote,members,as:id=>actor=id,state:()=>state,read:()=>api.getVotingWorkspace(clubId,sessionId)};
 }
 
 module.exports={harness,load,engine,uuid,clubId,roundId,ids,sessionId,memberId,otherId};
