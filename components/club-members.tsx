@@ -1,4 +1,5 @@
 "use client"
+import { SearchField } from "@/components/ui/search-field"
 import { memberAcademicProfile } from "@/lib/recruitment-profile"
 import { normalizeProfileFieldVisibility, restrictProfileFields } from "@/lib/profile-field-visibility"
 import { organizationCapabilities } from "@/lib/organization-authorization"
@@ -55,7 +56,7 @@ export function ClubMembers({ clubId, initialDirectory, onDirectory, validatedIn
     <p className="text-sm leading-7 text-muted-foreground">Club roles describe responsibilities. Management access is granted separately, capability by capability.</p>
     {demo.isDemoEnabled && <p className="text-sm text-muted-foreground">Fictional demo directory. Membership and access changes are available outside Demo Mode.</p>}
     {!demo.isDemoEnabled && canMembers && <RosterCsvImporter key={clubId} clubId={clubId} />}
-    <Input type="search" aria-label="Search members" placeholder="Search name, role, year, or group" value={query} onChange={e=>setQuery(e.target.value)} className="max-w-md" />
+    <SearchField aria-label="Search members" placeholder="Search name, role, year, or group" value={query} onChange={e=>setQuery(e.target.value)} onClear={()=>setQuery("")} containerClassName="max-w-md" />
     {!demo.isDemoEnabled && canAccess && data?.access && <details className="rounded-lg border p-4"><summary className="cursor-pointer text-sm font-medium">Invite & pending invitations</summary><div className="mt-5"><ClubAccessEditor clubId={clubId} initial={data.access} inviteOnly onSaved={reload} /></div></details>}
     {!demo.isDemoEnabled && canMembers && <details className="border-b pb-4"><summary className="cursor-pointer text-sm">Add an existing member</summary><form className="mt-4 flex flex-wrap gap-3" onSubmit={e=>{e.preventDefault();const email=String(new FormData(e.currentTarget).get("email"));void run(()=>addClubMember(clubId,email))}}><Input name="email" type="email" required aria-label="Existing member UVA email" placeholder="UVA email" className="max-w-sm" /><Button disabled={busy}>Add member</Button></form></details>}
     {error && <div role="alert" className="text-sm text-destructive">{error} <Button variant="outline" disabled={busy} onClick={()=>setRetry(n=>n+1)}>Reload members</Button></div>}

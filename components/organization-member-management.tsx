@@ -62,7 +62,10 @@ import {
 } from "@/components/ui/sheet";
 import { NativeSelect } from "@/components/ui/native-select"
 import { academicYear } from "@/lib/recruitment-profile"
-import { SegmentedControl } from "@/components/ui/segmented-control"
+import { PillGroup, SegmentedControl } from "@/components/ui/segmented-control"
+import { SearchField } from "@/components/ui/search-field"
+import { PillSelect } from "@/components/ui/pill-select"
+import { Toggle } from "@/components/ui/toggle"
 
 type Directory = Awaited<ReturnType<typeof getOrganizationMemberManagement>>;
 type Member = Directory["members"][number];
@@ -344,35 +347,28 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
       false,
     );
   }
-  const directory = data && <div className="space-y-5">            <div className="flex flex-wrap items-center gap-3">
-              <Input
-                type="search"
+  const resetPaging = () => { setPage(0); setSelection([]) }
+  const memberYears = data ? [...new Set([...data.members.map(m => m.user.studentProfile?.academicYear), ...data.invitations.map(i => i.invitedYear && /^\d{4}$/.test(i.invitedYear) ? academicYear({ gradYear: Number(i.invitedYear) }) : i.invitedYear)].filter((year): year is string => !!year))].sort(compareAcademicYears) : []
+  const memberGroups = data ? [...new Set(data.members.flatMap(member => member.groups))].sort() : []
+  const directory = data && <div className="space-y-5">
+            {/* One line of pill filters; it scrolls sideways on narrow screens instead of wrapping. */}
+            <div className="oc-filter-bar" role="toolbar" aria-label="Member filters">
+              <SearchField
                 aria-label="Search members and invitations"
                 placeholder={invitesOpen ? "Search invitations…" : "Search members…"}
-                className="max-w-md"
                 value={query}
                 onChange={(event) => {
                   setQuery(event.target.value);
-                  setPage(0);
-                  setSelection([]);
+                  resetPaging();
                 }}
+                onClear={() => { setQuery(""); resetPaging() }}
               />
-              <label className="text-sm"><span className="sr-only">Role</span><NativeSelect aria-label="Filter members by role" className="min-h-11" value={roleFilter} onChange={e => { setRoleFilter(e.target.value); setPage(0); setSelection([]) }}><option value="">All roles</option>{organizationRoles.map(role => <option key={role} value={role}>{organizationRoleLabels[role]}</option>)}</NativeSelect></label>
-              {showYear && <label className="text-sm"><span className="sr-only">Year</span><NativeSelect aria-label="Filter members by year" className="min-h-11" value={yearFilter} onChange={e => { setYearFilter(e.target.value); setPage(0); setSelection([]) }}><option value="">All years</option>{[...new Set([...data.members.map(m => m.user.studentProfile?.academicYear), ...data.invitations.map(i => i.invitedYear && /^\d{4}$/.test(i.invitedYear) ? academicYear({ gradYear: Number(i.invitedYear) }) : i.invitedYear)].filter((year): year is string => !!year))].sort(compareAcademicYears).map(year => <option key={year}>{year}</option>)}</NativeSelect></label>}
-              {invitesOpen && <>              <label className="inline-flex min-h-11 items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={history}
-                  onChange={(event) => {
-                    setHistory(event.target.checked);
-                    setPage(0);
-                  }}
-                />
-                Show invitation history
-              </label>
-</>}
+              <PillSelect label="Filter members by role" allLabel="All roles" value={roleFilter} onChange={value => { setRoleFilter(value); resetPaging() }} options={organizationRoles.map(role => ({ value: role, label: organizationRoleLabels[role] }))} />
+              {showYear && <PillGroup label="Filter members by year" size="compact" value={yearFilter} onChange={value => { setYearFilter(value); resetPaging() }} options={[{ value: "", label: "All years" }, ...memberYears.map(year => ({ value: year, label: year }))]} />}
+              {!invitesOpen && caps.canManageMembers && <PillSelect label="Filter members by group" allLabel="All groups" value={groupFilter} onChange={value => { setGroupFilter(value); resetPaging() }} options={memberGroups.map(group => ({ value: group, label: group }))} />}
+              {invitesOpen && <Toggle label="Show invitation history" checked={history} onCheckedChange={value => { setHistory(value); setPage(0) }} />}
             </div>
-            {!invitesOpen && caps.canManageMembers && <div className="flex flex-wrap items-center gap-3"><NativeSelect aria-label="Filter members by group" className="min-h-11" value={groupFilter} onChange={event => { setGroupFilter(event.target.value); setPage(0); setSelection([]); }}><option value="">All groups</option>{[...new Set(data.members.flatMap(member => member.groups))].sort().map(group => <option key={group}>{group}</option>)}</NativeSelect><ClubExportLink clubId={clubId} kind="roster" membership={data.actor} label="Export roster" /><ClubExportLink clubId={clubId} kind="attendance" membership={data.actor} label="Export attendance" /></div>}
+            {!invitesOpen && caps.canManageMembers && <div className="flex flex-wrap items-center gap-3"><ClubExportLink clubId={clubId} kind="roster" membership={data.actor} label="Export roster" /><ClubExportLink clubId={clubId} kind="attendance" membership={data.actor} label="Export attendance" /></div>}
             {selection.length > 0 && (
               <div
                 role="toolbar"
@@ -513,7 +509,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                   <tr>
                     <th className="p-3" scope="col">
                       <input
-                        type="checkbox"
+                        type="checkbox" className="oc-checkbox"
                         aria-label="Select all members and invitations on this page"
                         disabled={busy || !selectablePage.length}
                         checked={
@@ -569,7 +565,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                     >
                       <td data-label="Select" className={onboardingTable.cell}>
                         <input
-                          type="checkbox"
+                          type="checkbox" className="oc-checkbox"
                           aria-label={`Select ${row.name}`}
                           checked={selection.includes(row.id)}
                           disabled={

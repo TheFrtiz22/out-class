@@ -25,7 +25,7 @@ const kit=t=>nodes(t).find(n=>n.type==='InterviewKitSession');
 test('selection controls exist only on the interview list; active and post-interview room has no strip or candidate navigation',async()=>{
  const h=harness();h.render();await flush();let t=h.render();t=h.render();
  assert.ok(nodes(t).find(n=>n.props?.id==='interview-round'));
- nodes(t).find(n=>n.props?.id==='interview-candidate').props.onChange({target:{value:'a'}});t=h.render();
+ nodes(t).find(n=>n.props?.id==='interview-candidate').props.onChange('a');t=h.render();
  assert.equal(nodes(t).find(n=>['select','NativeSelect'].includes(n.type?.name??n.type)),undefined);assert.equal(kit(t).props.applicationId,'a');
  assert.doesNotMatch(text(t),/evaluated by you|Previous candidate|Next candidate/);
  const toolbar=kit(t).props.toolbar(false);assert.equal(text(toolbar),'Interviews','the focus frame bar carries the club and round');assert.equal(h.frames.at(-1).task,'Interview · Round 1');assert.doesNotMatch(text(toolbar),/timer/i);
@@ -33,24 +33,24 @@ test('selection controls exist only on the interview list; active and post-inter
  nodes(toolbar).find(n=>n.type==='Button').props.onClick();t=h.render();assert.equal(h.exits(),1);assert.equal(h.storage.size,0);
 });
 test('a destination response after leaving the room cannot change selection or recovery state',async()=>{
- const h=harness();h.render();await flush();let t=h.render();t=h.render();nodes(t).find(n=>n.props?.id==='interview-candidate').props.onChange({target:{value:'a'}});t=h.render();
+ const h=harness();h.render();await flush();let t=h.render();t=h.render();nodes(t).find(n=>n.props?.id==='interview-candidate').props.onChange('a');t=h.render();
  let release;h.defer(new Promise(r=>release=r));const pending=kit(t).props.onNextApplicant();await flush();h.unmount();release();assert.equal(await pending,false);assert.match(h.storage.get('outclass-interview:club:member'),/"applicationId":"a"/);
 });
 test('advancement waits for destination authorization/data, guards duplicate clicks and preserves current screen on denial',async()=>{
- const h=harness();h.render();await flush();let t=h.render();t=h.render();nodes(t).find(n=>n.props?.id==='interview-candidate').props.onChange({target:{value:'a'}});t=h.render();
+ const h=harness();h.render();await flush();let t=h.render();t=h.render();nodes(t).find(n=>n.props?.id==='interview-candidate').props.onChange('a');t=h.render();
  let release;h.defer(new Promise(r=>release=r));const next=kit(t).props.onNextApplicant;const pending=next();assert.equal(await next(),false);await flush();t=h.render();assert.equal(kit(t).props.applicationId,'a');assert.ok(kit(t).props.advancing);
  h.denySession(true);release();await assert.rejects(pending,/panel revoked/);t=h.render();assert.equal(kit(t).props.applicationId,'a');assert.equal(kit(t).props.advancing,false);assert.equal(h.storage.get('outclass-interview:club:member'),'\{"roundId":"r","applicationId":"a"\}');
  h.defer(null);h.denySession(false);assert.equal(await kit(t).props.onNextApplicant(),true);t=h.render();t=h.render();assert.equal(kit(t).props.applicationId,'b');assert.equal(kit(t).props.initialSession.draft.score,null);assert.equal(kit(t).props.initialSession.draft.postInterview,undefined);assert.equal(kit(t).props.context.props.initialPanel.name,'b');
 });
 test('next applicant refreshes assignments, skips completed/revoked rows and changes the keyed session together',async()=>{
- const h=harness();h.render();await flush();let t=h.render();t=h.render();nodes(t).find(n=>n.props?.id==='interview-candidate').props.onChange({target:{value:'a'}});t=h.render();
+ const h=harness();h.render();await flush();let t=h.render();t=h.render();nodes(t).find(n=>n.props?.id==='interview-candidate').props.onChange('a');t=h.render();
  const old=kit(t);old.props.onComplete();t=h.render();t=h.render();assert.equal(kit(t).props.applicationId,'a');
  h.fresh({rounds:[{id:'r',name:'Round 1',archived:false}],applications:[{...h.rows[0],completedRoundIds:['r']},{...h.rows[1],assignedRoundIds:[]},h.rows[2]]});
  assert.equal(await kit(t).props.onNextApplicant(),true);t=h.render();t=h.render();assert.equal(kit(t).props.applicationId,'c');assert.notEqual(kit(t).key,old.key);assert.equal(h.calls(),2);
  h.deny();await assert.rejects(kit(t).props.onNextApplicant(),/revoked/);assert.equal(kit(h.render()).props.applicationId,'c');
 });
 test('failed arrival confirmation retains only its receipt and resumes after refresh',async()=>{
- const h=harness();h.render();await flush();let t=h.render();t=h.render();nodes(t).find(n=>n.props?.id==='interview-candidate').props.onChange({target:{value:'a'}});t=h.render();
+ const h=harness();h.render();await flush();let t=h.render();t=h.render();nodes(t).find(n=>n.props?.id==='interview-candidate').props.onChange('a');t=h.render();
  h.denyConfirmation(true);await kit(t).props.onNextApplicant('tab');h.render();h.render();await flush();t=h.render();assert.match(text(t),/Retry confirmation/);
  const saved=h.storage.get('outclass-interview:club:member');assert.deepEqual(JSON.parse(saved),{roundId:'r',applicationId:'b',moveId:'move',clientId:'tab'});h.unmount();
  const restored=harness();restored.storage.set('outclass-interview:club:member',saved);restored.render();await flush();restored.render();restored.render();await flush();t=restored.render();

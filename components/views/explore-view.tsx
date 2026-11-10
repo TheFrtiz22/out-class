@@ -1,15 +1,17 @@
 "use client"
-import { NativeSelect } from "@/components/ui/native-select"
+import { SearchField } from "@/components/ui/search-field"
+import { FilterPopover } from "@/components/ui/filter-popover"
+import { FilterChips } from "@/components/ui/filter-chips"
+import { PillSelect } from "@/components/ui/pill-select"
 import { useSearchParams } from "next/navigation"
 import { SavedClubsPopover } from "@/components/clubs/saved-clubs-popover"
 import { PageHeader } from "@/components/ui/page-header"
 import { ExploreSwitch } from "@/components/explore-switch"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { ArrowRight, ChevronDown, Search, SlidersHorizontal, X, Compass, BookOpen, BriefcaseBusiness, Globe2, Heart, Mountain, Lightbulb, ChartNoAxesCombined, MessageSquare, Users } from "@/components/icons"
+import { ArrowRight, ChevronDown, SlidersHorizontal, X, Compass, BookOpen, BriefcaseBusiness, Globe2, Heart, Mountain, Lightbulb, ChartNoAxesCombined, MessageSquare, Users } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { IconButton } from "@/components/ui/icon-button"
-import { SegmentedControl } from "@/components/ui/segmented-control"
-import { Input } from "@/components/ui/input"
+import { PillGroup } from "@/components/ui/segmented-control"
 import { LoadingState } from "@/components/ui/loading-state"
 import { EmptyState } from "@/components/ui/empty-state"
 import { CorkboardButton } from "@/components/clubs/corkboard-button"
@@ -191,104 +193,55 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
       {/* Desktop: search, Refine, Availability and Sort share one row. Phones keep them behind Filter. */}
       <div className="oc-directory-bar">
       <div className="oc-directory-search">
-        <Search size={20} aria-hidden="true" />
-        <Input
+        <SearchField
           aria-label="Search clubs"
           placeholder="Search clubs, interests, or keywords"
           value={filters.query}
           onChange={(event) => change("query", event.target.value)}
+          onClear={() => change("query", "")}
+          containerClassName="oc-directory-search-field"
         />
-        {filters.query && (
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Clear search"
-            onClick={() => change("query", "")}
-          >
-            <X size={16} />
-          </Button>
-        )}
         <IconButton className="oc-directory-filter-toggle" aria-label={phoneActive ? `Filter clubs (${phoneActive} active)` : "Filter clubs"} aria-expanded={phoneFilters} aria-controls="directory-tools" onClick={() => setPhoneFilters(open => !open)}>
           <SlidersHorizontal size={18} aria-hidden="true" />{phoneActive > 0 && <span className="oc-directory-filter-count" aria-hidden="true">{phoneActive}</span>}
         </IconButton>
       </div>
       <div id="directory-tools" className="oc-directory-tools oc-toolbar" data-phone-open={phoneFilters || undefined}>
         {/* Filters with fewer than two real options are hidden; acceptance needs at least three clubs reporting a rate. */}
-        {(timeOptions.length >= 2 || acceptanceReported) && <details>
-          <summary>
-            <SlidersHorizontal size={15} />
-            Refine search{refined > 0 && <span>({refined})</span>}
-          </summary>
-          <div className="oc-directory-filters">
-            {timeOptions.length >= 2 && <label>
-              Time commitment
-              <NativeSelect value={filters.time} onChange={(event) => change("time", event.target.value)}>
-                <option value="all">Any commitment</option>
-                {timeOptions.map((time) => (
-                    <option key={time} value={time}>
-                      {time} hours / week
-                    </option>
-                  ))}
-              </NativeSelect>
-            </label>}
-            {acceptanceReported && <label>
-              Club-reported acceptance
-              <NativeSelect
-                value={filters.acceptance}
-                onChange={(event) => change("acceptance", event.target.value)}
-              >
-                <option value="all">Any / not reported</option>
-                {[5, 10, 25, 50, 100].map((value) => (
-                  <option key={value} value={value}>
-                    Up to {value}%
-                  </option>
-                ))}
-              </NativeSelect>
-            </label>}
-          </div>
-        </details>}
-        <label className="oc-directory-sort">
-          Availability
-          <NativeSelect aria-describedby="directory-availability-note" value={filters.recruitment} onChange={event => change("recruitment", event.target.value)}>
-            {recruitmentOptions.map(option => <option key={option.value} value={option.value}>{option.label} ({recruitmentCounts[option.value]})</option>)}
-          </NativeSelect>
-        </label>
-        <label className="oc-directory-sort">
-          Sort
-          <NativeSelect value={filters.sort} onChange={(event) => change("sort", event.target.value)}>
-            <option value="name">Name A–Z</option>
-            <option value="deadline">Next deadline</option>
-            {acceptanceReported && <option value="acceptance">Reported acceptance rate</option>}
-          </NativeSelect>
-        </label>
+        {(timeOptions.length >= 2 || acceptanceReported) && <FilterPopover label="Refine search" title="Refine search" count={refined} align="start">
+            {timeOptions.length >= 2 && <div className="oc-filter-field"><span className="oc-filter-field-label">Time commitment</span>
+              <PillGroup label="Time commitment" size="compact" value={filters.time} onChange={(value) => change("time", value)}
+                options={[{ value: "all", label: "Any commitment" }, ...timeOptions.map((time) => ({ value: time, label: `${time} hours / week` }))]} />
+            </div>}
+            {acceptanceReported && <div className="oc-filter-field"><span className="oc-filter-field-label">Club-reported acceptance</span>
+              <PillGroup label="Club-reported acceptance" size="compact" value={filters.acceptance} onChange={(value) => change("acceptance", value)}
+                options={[{ value: "all", label: "Any / not reported" }, ...[5, 10, 25, 50, 100].map((value) => ({ value: String(value), label: `Up to ${value}%` }))]} />
+            </div>}
+        </FilterPopover>}
+        <PillSelect label="Availability" prefix="Availability" active={filters.recruitment !== emptyDirectoryFilters.recruitment} describedBy="directory-availability-note" className="oc-directory-sort" value={filters.recruitment} onChange={(value) => change("recruitment", value)}
+          options={recruitmentOptions.map(option => ({ value: option.value, label: `${option.label} (${recruitmentCounts[option.value]})` }))} />
+        <PillSelect label="Sort" prefix="Sort" active={filters.sort !== emptyDirectoryFilters.sort} className="oc-directory-sort" value={filters.sort} onChange={(value) => change("sort", value)}
+          options={[{ value: "name", label: "Name A–Z" }, { value: "deadline", label: "Next deadline" }, ...(acceptanceReported ? [{ value: "acceptance", label: "Reported acceptance rate" }] : [])]} />
       </div>
       </div>
       {!loading && !error && categories.length > 0 && (
         <div className="oc-directory-category-row">
-          <SegmentedControl
+          {/* Interests beyond the ranked first few sit behind an inline "+N" chip (formerly the More interests menu). */}
+          <FilterChips
             label="Browse categories"
-            size="compact"
             className="oc-directory-categories"
-            value={primaryCategories.includes(selectedCategory) || selectedCategory === "all" ? selectedCategory : "all"}
+            visible={primaryCategories.length + 1}
+            moreLabel={(n) => `+${n} more interests`}
+            value={selectedCategory}
             // Choosing the selected category again returns to all interests, as before.
             onChange={(value) => change("category", value !== "all" && value.toLowerCase() === filters.category.toLowerCase() ? "all" : value)}
             options={[
-              { value: "all", label: <><Users size={16} weight={filters.category === "all" ? "fill" : "regular"} aria-hidden="true" />All <span>{clubs.length}</span></> },
-              ...primaryCategories.map((category) => {
+              { value: "all", label: "All", count: clubs.length, icon: <Users size={16} weight={filters.category === "all" ? "fill" : "regular"} /> },
+              ...[...primaryCategories, ...moreCategories].map((category) => {
                 const CategoryIcon = categoryIcon(category)
-                return {
-                  value: category,
-                  label: <><CategoryIcon size={16} weight={filters.category.toLowerCase() === category.toLowerCase() ? "fill" : "regular"} aria-hidden="true" />{category}<span>{categoryCount(category)}</span></>,
-                }
+                return { value: category, label: category, count: categoryCount(category), icon: <CategoryIcon size={16} weight={filters.category.toLowerCase() === category.toLowerCase() ? "fill" : "regular"} /> }
               }),
             ]}
           />
-          {moreCategories.length > 0 && (
-            <NativeSelect className="oc-directory-more-categories" aria-label="More interests" value={moreCategories.includes(selectedCategory) ? selectedCategory : ""} onChange={(event) => change("category", event.target.value || "all")}>
-              <option value="">More interests ({moreCategories.length})</option>
-              {moreCategories.map((category) => <option key={category} value={category}>{category} ({categoryCount(category)})</option>)}
-            </NativeSelect>
-          )}
         </div>
       )}
       {active.length > 0 && (

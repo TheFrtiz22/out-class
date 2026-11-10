@@ -1,8 +1,9 @@
 "use client"
+import { SearchField } from "@/components/ui/search-field"
 import { NativeSelect } from "@/components/ui/native-select"
 import { compareAcademicYears } from "@/lib/recruitment-profile"
 import { useState } from "react"
-import { Search, Shuffle, Users, UserRound, GraduationCap, Shield, Layers, SlidersHorizontal } from "@/components/icons"
+import { Shuffle, Users, UserRound, GraduationCap, Shield, Layers, SlidersHorizontal } from "@/components/icons"
 import { taskAudienceSchema, resolveTaskRecipients, type TaskAudience } from "@/lib/tasks"
 import { taskAudienceMode, taskMemberName, taskRoleLabels, type TaskWorkspace, type TaskMember } from "@/lib/task-presentation"
 import { Button } from "@/components/ui/button"
@@ -13,7 +14,7 @@ export function TaskMemberList({members,selected,onChange,label="Choose members"
   const [query,setQuery]=useState("")
   const visible=members.filter(member=>`${taskMemberName(member)} ${member.user.email} ${member.user.studentProfile?.academicYear ?? ""} ${member.groups.join(" ")}`.toLowerCase().includes(query.toLowerCase()))
   return <section className="oc-recipient-selector" aria-label={label}>
-    <label className="oc-task-search"><Search size={16} aria-hidden="true"/><Input aria-label={`Search ${label.toLowerCase()}`} type="search" placeholder="Search members, years, or groups" value={query} onChange={event=>setQuery(event.target.value)}/></label>
+    <SearchField aria-label={`Search ${label.toLowerCase()}`} placeholder="Search members, years, or groups" value={query} onChange={event=>setQuery(event.target.value)} onClear={()=>setQuery("")}/>
     <div className="flex flex-wrap items-center justify-between gap-2 text-xs"><span role="status">{selected.length} members selected</span><div><Button type="button" size="sm" variant="ghost" onClick={()=>onChange([...new Set([...selected,...visible.map(member=>member.id)])])}>Select all{query ? " results" : ""}</Button><Button type="button" size="sm" variant="ghost" onClick={()=>onChange([])}>Clear</Button></div></div>
     <div className="oc-recipient-scroll">{visible.map(member=><label className="oc-recipient-person" key={member.id}><input type="checkbox" checked={selected.includes(member.id)} onChange={event=>onChange(event.target.checked?[...selected,member.id]:selected.filter(id=>id!==member.id))}/><span className="oc-task-avatar" aria-hidden="true">{taskMemberName(member).split(/\s+/).map(word=>word[0]).slice(0,2).join("")}</span><span><strong>{taskMemberName(member)}</strong><small>{member.user.studentProfile?.academicYear ? member.user.studentProfile.academicYear : "Year not provided"} · {taskRoleLabels[member.role]}{member.groups.length ? ` · ${member.groups.join(", ")}` : ""}</small></span></label>)}{!visible.length && <p className="py-3 text-sm text-muted-foreground">No matching members.</p>}</div>
   </section>

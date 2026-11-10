@@ -70,7 +70,7 @@ test('real desktop pointer and mobile touch support detail switching, global sea
    if(size>1){await activate(page.getByRole('button',{name:'Next applicant',exact:true}));await page.getByRole('heading',{name:'Audit Student 001',exact:true}).waitFor();}
    await activate(page.locator('[data-slot=sheet-content]').getByRole('button',{name:'Close',exact:true}));await page.locator('[data-slot=sheet-content]').waitFor({state:'hidden'});
    const last=size<=100?'Audit Student '+String(size-1).padStart(3,'0'):'Scale Student '+String(size-1).padStart(5,'0');
-   await page.getByRole('textbox',{name:'Search applicants',exact:true}).fill(last);await page.getByText(last,{exact:true}).filter({visible:true}).first().waitFor();assert.equal(await rows().count(),1);
+   await page.getByRole('searchbox',{name:'Search applicants',exact:true}).fill(last);await page.getByText(last,{exact:true}).filter({visible:true}).first().waitFor();assert.equal(await rows().count(),1);
    await page.goBack();await page.locator('.oc-command-recruiting').waitFor();await page.goForward();await rows().first().waitFor();assert.equal(await rows().count(),Math.min(100,size));
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);assert.deepEqual(errors,[]);console.log('cohort '+size+' '+(touch?'mobile touch':'desktop pointer')+' complete');
   }finally{await context.close();await actor.client.auth.signOut({scope:'local'});}

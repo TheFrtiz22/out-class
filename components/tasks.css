@@ -11,9 +11,7 @@
 .oc-task-filters { flex: 1; min-width: min(100%, 24rem); gap: .5rem; }
 .oc-task-filter { min-width: 0; flex: 0 1 11rem; }
 .oc-task-filter select { min-height: 2.75rem; background: var(--card); }
-.oc-task-search-control { display: block; position: relative; min-width: 0; flex: 1; }
-.oc-task-search-control > svg { position: absolute; left: .75rem; top: 50%; transform: translateY(-50%); color: var(--muted-foreground); pointer-events: none; }
-.oc-task-search-control input { min-height: 2.75rem; padding-left: 2.25rem; background: var(--card); }
+.oc-task-search-control { min-width: 0; flex: 1; }
 .oc-task-search-line .oc-task-search-control { flex-basis: 15rem; }
 .oc-task-empty { display: grid; justify-items: start; gap: .5rem; padding: 1.5rem 0; border-top: 1px solid var(--border); }
 .oc-task-empty p { max-width: 34rem; font-size: var(--oc-text-small); color: var(--muted-foreground); }
@@ -54,7 +52,7 @@
   .oc-task-icon svg { width: 1rem; height: 1rem; }
   .oc-task-deadline { grid-column: 2; white-space: normal; }
 }
-@media (max-width: 359px) { .oc-task-filter { flex-basis: 8rem; } .oc-task-search-control input { padding-left: 2rem; } }
+@media (max-width: 359px) { .oc-task-filter { flex-basis: 8rem; } }
 @media (prefers-reduced-motion: reduce) { .oc-task-row { transition: none; } }
 
 /* Tasks follow the product's compact, actionable workspace patterns. */
@@ -104,9 +102,6 @@
 .oc-audience-dimensions { display:grid; gap:1rem; }
 .oc-recipient-selector { display:grid; gap:.6rem; }
 .oc-recipient-scroll { max-height:17rem; overflow-y:auto; }
-.oc-task-search { position:relative; }
-.oc-task-search > svg { position:absolute; left:.75rem; top:50%; transform:translateY(-50%); color:var(--muted-foreground); }
-.oc-task-search > input { padding-left:2.25rem; }
 .oc-recipient-person { display:flex; align-items:center; gap:.65rem; min-height:3.5rem; padding:.6rem .25rem; border-bottom:1px solid var(--border); font-size:var(--oc-text-small); }
 .oc-recipient-person > span:last-child { min-width:0; }
 .oc-recipient-person strong { display:block; font-weight:500; overflow-wrap:anywhere; }

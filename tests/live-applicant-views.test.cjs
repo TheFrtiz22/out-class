@@ -29,8 +29,8 @@ function harness(permissions = ['applications.review','applicants.identify','dec
   let currentEpoch={};const auth={user:{id:'reviewer'},readAuthority:currentEpoch,isReadAuthorityCurrent:value=>value===currentEpoch};
   api.getClubPipelinePage=async(club,q={})=>{const data=await api.getClubPipelineList();const page=compile('lib/pipeline-page.ts').pagePipeline(data,q,'member','reviewer','fixture');return {...page,coverage:{complete:page.page.baseTotal===page.applications.length,mode:q.mode??'applicants'}}};
   api.getClubPipelineSelection=async(club,q={})=>compile('lib/pipeline-page.ts').completePipelineSelection(await api.getClubPipelineList(),q,'member','reviewer');
-  let detailKey='',detail=null,revalidation=null;const filterMenu=()=>{};
-  const C = compile('components/views/leader-dashboard/live-leader-workspace.tsx', {react,'next/navigation':{useRouter:()=>({push:url=>calls.push(['navigate',url])})},'@/hooks/use-revalidate':{useRevalidate:(reload,options)=>{revalidation={reload,options}},announceDataChanged(){}},'@/hooks/use-dismissable-details':{useDismissableDetails:()=>filterMenu},'@/contexts/auth-context':{useAuth:()=>auth},'@/hooks/use-pipeline-applicant':{usePipelineApplicant(club,id,revision){const key=`${club}:${id}:${revision}`;if(key!==detailKey){detailKey=key;detail=id?structuredClone(pipeline.applications.find(app=>app.id===id)):null}return{application:detail,error:false,retry(){}}}},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false,ready:true})},'@/lib/reviewer-evaluation':{findReviewerEvaluation(...args){const result=compile('lib/reviewer-evaluation.ts').findReviewerEvaluation(...args);lookups.push({round:args[2],result});return result}},'@/lib/workspace-api':api,'@/lib/application-state':{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus(){}})}}, '\nexports.TestWorkspace = ClubWorkspace;').TestWorkspace
+  let detailKey='',detail=null,revalidation=null;
+  const C = compile('components/views/leader-dashboard/live-leader-workspace.tsx', {react,'next/navigation':{useRouter:()=>({push:url=>calls.push(['navigate',url])})},'@/hooks/use-revalidate':{useRevalidate:(reload,options)=>{revalidation={reload,options}},announceDataChanged(){}},'@/contexts/auth-context':{useAuth:()=>auth},'@/hooks/use-pipeline-applicant':{usePipelineApplicant(club,id,revision){const key=`${club}:${id}:${revision}`;if(key!==detailKey){detailKey=key;detail=id?structuredClone(pipeline.applications.find(app=>app.id===id)):null}return{application:detail,error:false,retry(){}}}},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false,ready:true})},'@/lib/reviewer-evaluation':{findReviewerEvaluation(...args){const result=compile('lib/reviewer-evaluation.ts').findReviewerEvaluation(...args);lookups.push({round:args[2],result});return result}},'@/lib/workspace-api':api,'@/lib/application-state':{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus(){}})}}, '\nexports.TestWorkspace = ClubWorkspace;').TestWorkspace
   const membership = {id:'member',clubId:'club',permissions,club:{name:'Test club'}}
   return {calls,api,lookups,revalidation:()=>revalidation,notifyEpoch(){currentEpoch={}},commitEpoch(){auth.readAuthority=currentEpoch},setViewer(id){auth.user={id};membership.id=id;membership.userId=id},replayEffects(){for(const cleanup of cleanups.values())cleanup?.();cleanups.clear();for(const [slot,setup]of setups)cleanups.set(slot,setup())},addCandidate(app){pipeline.applications.push({...structuredClone(pipeline.applications[0]),...app})},setCanEvaluate(value){pipeline.applications[0].canEvaluate=value},addRound(round){pipeline.rounds.push(round)},setEvaluations(evaluations){pipeline.applications[0].evaluations=evaluations},renameRound(name){pipeline.rounds[0].name=name},setServerRound(roundId){pipeline.applications[0].roundId=roundId},setServerStatus(status){pipeline.applications[0].status=status},render(){for(let step=0;step<20;step++){changed=false;index=0;const tree=C({membership,decisionsOnly,rejectedOnly});while(effects.length){const [slot,setup]=effects.shift();cleanups.get(slot)?.();cleanups.set(slot,setup())}if(!changed)return tree}throw Error('Component failed to settle')}}
 }
@@ -218,8 +218,8 @@ test('sorting lives in the column headers; header-less views keep an in-filter s
  for(const key of ['name','year','round','gpa','sat','act','score','status'])assert.match(source,new RegExp(`key: "${key}"`),`column header sorts by ${key}`);
  assert.match(source,/aria-sort=\{sort === column.key \? descending \? "descending" : "ascending" : "none"\}/);
  const h=harness(['applications.review','applicants.identify','decisions.manage','decisions.start']);h.render();await flush();let tree=h.render();
- const sortSelect=nodes(tree).find(n=>n.props?.['aria-label']==='Sort applicants');assert.ok(nodes(tree).find(n=>n.type==='details'&&nodes(n).includes(sortSelect)),'fallback sort sits inside Filters');
- const sortRow=t=>{const select=nodes(t).find(n=>n.props?.['aria-label']==='Sort applicants');return nodes(t).find(n=>[].concat(n.props?.children).includes(select))};
+ const sortSelect=nodes(tree).find(n=>n.type==='PillSelect'&&n.props.label==='Sort applicants');assert.ok(nodes(tree).find(n=>n.type==='FilterPopover'&&nodes(n).includes(sortSelect)),'fallback sort sits inside Filters');
+ const sortRow=t=>{const select=nodes(t).find(n=>n.type==='PillSelect'&&n.props.label==='Sort applicants');return nodes(t).find(n=>/oc-filter-field/.test(n.props?.className||'')&&nodes(n).includes(select))};
  assert.match(sortRow(tree).props.className,/xl:hidden/,'wide list sorts from headers');
  view(tree).props.sortBy('sat');tree=h.render();assert.equal(view(tree).props.sort,'sat');assert.equal(view(tree).props.descending,true);view(tree).props.sortBy('sat');tree=h.render();assert.equal(view(tree).props.descending,false);
  assert.doesNotMatch(text(tree),/\d selected/);assert.equal(button(tree,'Start voting with selected applicants'),undefined);
@@ -274,14 +274,27 @@ test('header actions re-resolve a remounted page-header slot instead of portalin
 });
 test('Filters shows its active count, and the voting bar follows the list and pager with clearance below them',async()=>{
  const h=harness(['applications.review','applicants.identify','decisions.manage','decisions.start']);h.render();await flush();let tree=h.render();
- const summary=t=>nodes(nodes(t).find(n=>n.type==='details'&&n.props.className?.includes('oc-pipeline-filters'))).find(n=>n.type==='summary');
- assert.equal(text(summary(tree)),'Filters');assert.ok(nodes(summary(tree)).some(n=>n.type==='ChevronDown'),'Phosphor chevron, not a text triangle');
- nodes(tree).find(n=>n.props?.['aria-label']==='Filter round').props.onChange({target:{value:'round'}});tree=h.render();
- const count=nodes(summary(tree)).find(n=>n.props?.className==='oc-pipeline-filter-count');assert.ok(nodes(count).some(n=>n.props?.['aria-hidden']==='true'&&n.props.children===1));assert.deepEqual(nodes(count).find(n=>n.props?.className==='sr-only').props.children,[', ',1,' active']);
- assert.equal(typeof nodes(tree).find(n=>n.type==='details'&&n.props.className?.includes('oc-pipeline-filters')).props.ref,'function','Escape and outside press close the menu');
- nodes(tree).find(n=>n.props?.['aria-label']==='Filter round').props.onChange({target:{value:''}});tree=h.render();
+ const panel=t=>nodes(t).find(n=>n.type==='FilterPopover');const round=t=>nodes(t).find(n=>n.type==='PillGroup'&&n.props.label==='Filter round');
+ assert.equal(panel(tree).props.count,0);assert.ok(nodes(panel(tree)).includes(round(tree)),'round filter sits inside Filters');
+ round(tree).props.onChange('round');tree=h.render();
+ assert.equal(panel(tree).props.count,1,'the Filters pill counts active menu filters');
+ const clear=nodes(panel(tree).props.footer).find(n=>n.type==='Button'&&text(n)==='Clear filters');assert.equal(clear.props.disabled,false);
+ clear.props.onClick();tree=h.render();assert.equal(panel(tree).props.count,0,'Clear filters in the panel resets the menu filters');assert.equal(round(tree).props.value,'');
  view(tree).props.votingSelection.toggle('candidate');tree=h.render();const all=nodes(tree);
  const bar=all.find(n=>n.props?.['aria-label']==='Voting selection');assert.ok(all.indexOf(bar)>all.indexOf(view(tree)),'keyboard order reaches Start voting after the rows');
  assert.match(bar.props.className,/oc-voting-bar/);assert.ok(all.find(n=>n.props?.className==='oc-voting-bar-clearance'&&nodes(n).includes(bar)),'list and pager keep clear of the bar');
  const css=fs.readFileSync('components/product/operational-dashboard.css','utf8');assert.match(css,/body:has\(\.oc-voting-bar\) \[data-sonner-toaster\]/,'toasts rise above the bar');
+});
+
+test('Pending stage pills replace the Status dropdown: they filter by stage and clear when the decision group has no stages',async()=>{
+ const h=harness();h.render();await flush();let tree=h.render();
+ const stage=t=>nodes(t).find(n=>n.type==='SegmentedControl'&&n.props.label==='Pending stage');
+ assert.equal(nodes(tree).find(n=>n.props?.['aria-label']==='Filter status'),undefined,'no duplicate Status dropdown');
+ assert.deepEqual(stage(tree).props.options.map(o=>o.value),['','SUBMITTED','IN_REVIEW','INTERVIEWING']);
+ stage(tree).props.onChange('INTERVIEWING');tree=h.render();await flush();tree=h.render();
+ assert.equal(stage(tree).props.value,'INTERVIEWING');assert.ok(!view(tree)||view(tree).props.applicants.length===0,'the IN_REVIEW candidate is filtered out by the Interview stage');
+ stage(tree).props.onChange('IN_REVIEW');tree=h.render();await flush();tree=h.render();assert.equal(view(tree).props.applicants.length,1,'In review keeps it');
+ segment(tree,'Decision',t=>t.startsWith('Pending')).props.onClick();tree=h.render();assert.equal(stage(tree).props.value,'IN_REVIEW','Pending keeps its stage');
+ segment(tree,'Decision',t=>t.startsWith('Accepted')).props.onClick();tree=h.render();assert.equal(stage(tree),undefined,'Accepted has no stages');
+ segment(tree,'Decision',t=>t.startsWith('All')).props.onClick();tree=h.render();assert.equal(stage(tree).props.value,'','leaving Pending cleared the stage');
 });
