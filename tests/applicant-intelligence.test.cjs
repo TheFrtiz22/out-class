@@ -16,11 +16,12 @@ function application() {
     answers:[{id:'answer',question:{type:'ESSAY',prompt:'Why?'},response:'Secret essay'}],bookings:[],evaluations:[{id:'evaluation',applicationId,interviewerId:'reviewer',round:'Interview',score:8,notes:'Secret feedback',createdAt:new Date()}] };
 }
 function harness() {
-  let app=application(), permission=true, actor='author'; let observations=[];
+  let app=application(), permission=true, actor='author'; let observations=[]; const recusals=[];
   const member={id:'membership',permissions:['applications.review','applicants.identify','interviews.manage'],status:'ACTIVE'};
   const tx={
     evaluation:{findMany:async()=>app.evaluations.filter(e=>e.submittedAt)},
     $queryRaw:async()=>[],
+    applicantRecusal:{findFirst:async({where})=>recusals.find(r=>r.applicationId===where.applicationId&&r.memberId===where.memberId&&where.liftedAt===null)??null},
     clubMember:{findFirst:async({where})=>permission&&where.clubId===clubId?member:null},
     application:{findFirst:async({where})=>where.id===applicationId&&where.clubId===clubId&&app.status!=='DRAFTING'?app:null},
     applicantObservation:{
@@ -33,7 +34,7 @@ function harness() {
     auditLog:{create:async()=>({})},
   };
   const api=load('actions/applicant-intelligence.ts',{'@/utils/auth':{requireClubPermission:async(id,caps)=>{if(!permission||id!==clubId||!caps.every(c=>member.permissions.includes(c)))throw Error('Denied');return{user:{id:actor},membership:member}}},'@/utils/prisma':{prisma:{...tx,$transaction:async f=>f(tx)}}});
-  return {api,app,member,observations:()=>observations,deny(){permission=false},otherAuthor(){actor='other'},scope:{clubId,applicationId}};
+  return {api,app,member,observations:()=>observations,recuse(){recusals.push({applicationId,memberId:member.id})},deny(){permission=false},otherAuthor(){actor='other'},scope:{clubId,applicationId}};
 }
 for(const kind of ['PRO','CON']) test(`${kind} creation, attribution, own edit/delete and other-author denial`,async()=>{
  const h=harness();await h.api.saveApplicantObservation({...h.scope,kind,body:'Thoughtful evidence'});
@@ -123,4 +124,13 @@ test('configuration cannot override feedback disclosure in voting or preview',as
  const h=harness();h.member.permissions.push('decisions.manage');
  const view=await h.api.getApplicantDisplay({...h.scope,previewConfig:{version:1,fields:['feedback']}});assert.equal(view.sections[0].withheld,true);assert.deepEqual(view.sections[0].items,[]);
  h.deny();await assert.rejects(h.api.getApplicantDisplay(h.scope),/Denied/);
+});
+test('a recused member cannot read, add, edit or delete Pros and Cons; others are unaffected',async()=>{
+ const h=harness();await h.api.saveApplicantObservation({...h.scope,kind:'PRO',body:'Before stepping out'});assert.equal((await h.api.getApplicantDisplay(h.scope)).observations.length,1);
+ h.recuse();
+ await assert.rejects(h.api.getApplicantDisplay(h.scope),/stepped out/);
+ await assert.rejects(h.api.saveApplicantObservation({...h.scope,kind:'CON',body:'New'}),/stepped out/);
+ await assert.rejects(h.api.saveApplicantObservation({...h.scope,id:observationId,kind:'PRO',body:'Edited'}),/stepped out/);
+ await assert.rejects(h.api.deleteApplicantObservation({...h.scope,id:observationId}),/stepped out/);
+ assert.deepEqual(h.observations().map(o=>o.body),['Before stepping out']);
 });

@@ -62,7 +62,7 @@ Evidence: `tests/voting-ballot-privacy.test.cjs`. It walks each payload for any 
 
 ## Club voting rules (leader confirms / threshold decides) — November 5, 2026
 
-**Implemented on branch `feature/voting-rules`; not yet released. Requires migration `20261105170000_voting_rules` (owner approval before production).**
+**Released:** PR #125 merged as `0a9a34f0`; Vercel production `dpl_9TMorBuQ8uqQtjhk4KdZZK9L38jh` READY. Migration `20261105170000_voting_rules` applied to production with owner approval (ledger 69; checksum = SHA-256 of the committed file). Post-merge: no new runtime error classes, advisor delta 0. Not yet exercised in an authenticated hosted walkthrough.
 
 - **Modes.** *Leader confirms* is the existing behaviour and the default. Any session without explicit `presentationOptions.rules`, including every existing session, behaves exactly as before and creates no rule rows. *Threshold decides* is opt-in per session. The legacy durable-voting `threshold`/`autoAdvance` columns and recruiting screening rules are untouched.
 - **Threshold rule** (`lib/voting-rules.ts`) has:
@@ -103,7 +103,7 @@ Evidence (local, synthetic, mocked Auth/database):
 Limitations: Demo mode keeps leader-confirmed voting only (no defaults editor). Anonymous rounds follow the same rule logic. A threshold ballot opened before this release has no snapshot and is handled as leader-confirmed.
 ## Slide preparation — November 5, 2026
 
-**Implemented on branch `feature/voting-slide-preparation`; not yet released.** Release requires required CI, owner approval of the production migration, then protected merge and Vercel deployment.
+**Released** (see the release note below); not yet exercised in an authenticated hosted walkthrough.
 
 What it does:
 - Session leaders (current session leader plus `decisions.manage`) open **Prepare slides** from the Voting room landing page or the room's *Session options* menu (`/voting/rooms/{sessionId}/prepare?clubId=…`). It is not offered in Demo mode or in anonymous review rounds.
@@ -123,10 +123,12 @@ Evidence (local, synthetic, mocked Auth/database; not hosted acceptance):
 - `tests/voting-slide-preparation-page-browser.test.cjs`: leader selects an excerpt inside a long submitted thought, quotes a profile field and writes a summary; private draft notes never appear; autosave; refresh restores; preview; source edit shown and deliberately applied; concurrent-leader conflict keeps input without overwriting; phone width; Axe clean; voting member denied.
 - Shared test harness mocks gained empty `votingSlidePreparation`/`votingSlideLock` stubs; no assertions changed.
 
+**Released:** PR #120 (`3a1be040`) with migration applied (owner-approved, ledger 68). Authorization review follow-up PR #127 (`2427d3b8`): the preparation page withholds highlights whose source the current leader cannot view (count only; preserved unchanged on save), and profile highlights are limited to fields the round applicant display shows.
+
 Limitations: Demo mode has no preparation (explicit message). Anonymous rounds have no preparation. Sessions started before this release have no locks and show no highlights. A session created with **Start now** goes straight to voting, so highlights prepared afterwards apply from the next Hold pass; schedule the session to prepare before the first pass.
 ## Voting in every recruitment round — November 5, 2026
 
-**Implemented on branch `feature/voting-every-round`; not yet released. No migration.**
+**Released:** PR #121 merged as `b872cafa`; Vercel production `dpl_CKY6uFSoom6tKMBa37QYEhZTiLwt` READY. No migration. Post-merge: no new runtime error classes, advisors unchanged (0/54/43).
 
 Audit result: live voting already had no interview-only assumption in setup, joining, ballots, results or finalization. Setup lists every active round in the selected cycle. Eligibility uses submitted statuses (SUBMITTED, IN_REVIEW, INTERVIEWING, WAITLISTED), and the stable cycle, round and application IDs are stored on the session and candidates. Interview scores and final thoughts come only from authorized interview rounds. When there are none (application review before interviews), those fields are omitted, never shown as zero. Later rounds show earlier finalized interview evidence labelled by round name. Hold passes create new ballot instances within the same session and round, never a recruitment round. Finalization already offered **Advance to {later round}** (stage move; not admission; status kept except INTERVIEWING→IN_REVIEW when leaving interview rounds) or **Final club admission**, using the existing recruitment transition rules, guard fingerprint, receipt idempotency and deferred notifications. Threshold mode and privacy rules are unchanged.
 

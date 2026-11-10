@@ -11,10 +11,13 @@ import { votingDisplaySchema, readVotingDisplay } from "@/lib/voting-presentatio
 import { loadVotingRoom, roomAuthority } from "@/utils/voting-room";
 import { VotingPresentationChanged } from "@/lib/voting-room";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
+import { assertNotRecused } from "@/lib/recusal";
 import { displayConfigSchema, readDisplayConfig, projectApplicantDisplay } from "@/lib/applicant-display";
 import { normalizeProfileFieldVisibility } from "@/lib/profile-field-visibility";
 const scope = z.object({ clubId: z.string().uuid(), applicationId: z.string().uuid(), sessionId: z.string().uuid().optional(), previewConfig: votingDisplaySchema.optional() });
-async function authorized(tx: AppTransactionClient, input: z.infer<typeof scope>, membershipId: string) {
+// refuseRecused: Pros/Cons feed voting, so a member who stepped out of this applicant can't read or write them.
+// The live voting room's shared presentation (sessionId) keeps its own room rules.
+async function authorized(tx: AppTransactionClient, input: z.infer<typeof scope>, membershipId: string, refuseRecused = true) {
   const member = await tx.clubMember.findFirst({ where: { id: membershipId, clubId: input.clubId } });
   if (!hasPermission(member, "applications.review")) throw new Error("Review access required.");
   const app = await tx.application.findFirst({
@@ -23,13 +26,14 @@ async function authorized(tx: AppTransactionClient, input: z.infer<typeof scope>
     include: { club: { select: { profileFieldVisibility: true } }, round: true, student: { include: { studentProfile: { include: { experiences: true } } } }, evaluations: { omit: { notes: true, applicantQuestions: true } }, answers: { include: { question: true } }, bookings: { include: { slot: true } } },
   });
   if (!app || (!app.round.anonymousReview && !hasPermission(member, "applicants.identify"))) throw new Error("Applicant unavailable for this reviewer.");
+  if (refuseRecused) await assertNotRecused(tx, app.id, membershipId);
   return { app: { ...app, evaluations: app.evaluations.map(e => ({ ...e, notes: null, applicantQuestions: null })) }, member };
 }
 export async function getApplicantDisplay(input: z.infer<typeof scope>) {
   const data = scope.parse(input);
   const { user, membership } = await requireClubPermission(data.clubId, ["applications.review"]);
   return prisma.$transaction(async tx => {
-    let { app, member: reviewer } = await authorized(tx, data, membership.id);
+    let { app, member: reviewer } = await authorized(tx, data, membership.id, !data.sessionId);
     let config=readDisplayConfig(app.round.applicantDisplay);
     if(data.previewConfig){
       if(!hasPermission(reviewer,"decisions.manage"))throw Error("Voting setup permission required.");
@@ -42,7 +46,7 @@ export async function getApplicantDisplay(input: z.infer<typeof scope>) {
         const member=await authorizeClubTransaction(tx,data.clubId,user.id,["applications.review"],{readOnly:true});
         // The initial general-display lookup preceded the club lock. Reload its
         // privacy/field context under that lock before returning LIVE content.
-        ({app,member:reviewer}=await authorized(tx,data,member.id));
+        ({app,member:reviewer}=await authorized(tx,data,member.id,false));
         const {s,round}=await loadVotingRoom(tx,data.clubId,voting.id);
         const role=roomAuthority(s,member,round.anonymousReview);
         if(app.roundId!==s.roundId||app.recruitmentCycleId!==s.cycleId)throw Error("Voting presentation changed. Reload the page to continue.");

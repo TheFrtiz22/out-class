@@ -1,4 +1,5 @@
 "use server"
+import { assertNotRecused } from "@/lib/recusal"
 import { clubWriteTransaction, votingWriteLimits } from "@/utils/club-write-transaction";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { publishVotingCandidates } from "@/utils/voting-publication";
@@ -102,6 +103,7 @@ export async function submitVotingBallot(input: unknown) {
     if(!round || (!round.anonymousReview&&!hasPermission(voter,"applicants.identify")))throw Error("Participant identification access required.")
     if(s.activeApplicationId && d.applicationId!==s.activeApplicationId && !hasPermission(voter,"decisions.start")&&!hasPermission(voter,"decisions.manage"))throw Error("Active candidate changed. Reload the page and try again.")
     if(c.ballots.some(b=>b.memberId===membership.id)) throw Error("Your ballot is already recorded. Ballots are immutable.")
+    await assertNotRecused(tx,d.applicationId,membership.id)
     const before=ballotOutcome(c.ballots,s.participants.length,s.autoAdvance,s.threshold)
     const after=ballotOutcome([...c.ballots,{decision:d.decision}],s.participants.length,s.autoAdvance,s.threshold)
     await tx.votingBallot.create({data:{sessionId:s.id,passNumber:d.passNumber,applicationId:d.applicationId,memberId:membership.id,decision:d.decision}})

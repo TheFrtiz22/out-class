@@ -26,7 +26,7 @@ async function fixture() {
     '@/components/ui/autosave-status': empty,
     '@/lib/workspace-api': api, '@/lib/workspace-read': api,
     '@/actions/organization-members': api, '@/actions/recipient-groups': api, '@/actions/communications': api, '@/actions/organization-onboarding': api,
-    '@/actions/club-access': empty, '@/actions/invitation-emails': empty,
+    '@/actions/club-access': empty, '@/actions/invitation-emails': empty, '@/actions/recusals': empty,
   }
   for (const name of ['recruitment-cycles','decision-schedules','recruitment-attendance-summary','reveal-applicant','live-voting/board-decision-mode','demo-workspace','availability/interviewer-eligibility','invitation-schedules','invitation-email-controls','club-access-editor','roster-csv-importer']) mocks['@/components/'+name] = empty
   const overview = { operations:{offers:[],team:null,asOf:new Date(),intake:null,cycles:[],rounds:[],queue:[],meetings:[],announcements:[],tasks:{assigned:0,completed:0,overdue:0,awaitingReview:0},reviewWork:[],bookings:[],votes:[],scheduled:[],teamTasks:[]}, club: { id: 'club', name: 'Sample Club' }, membership: owner, meeting: null, work: [], awaitingReview: 0, recruitment: [{ status: 'IN_REVIEW', count: 2 }] }

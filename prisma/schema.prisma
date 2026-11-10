@@ -168,6 +168,7 @@ model Club {
 }
 
 model ClubMember {
+  recusals ApplicantRecusal[]
   availabilityOverrides InterviewAvailabilityOverride[]
   interviewerEligible Boolean?
   interviewParticipation InterviewRoundParticipation[]
@@ -282,6 +283,7 @@ enum QuestionType {
 }
 
 model Application {
+  recusals ApplicantRecusal[]
   decisionStateRevision Int @default(0)
   recruitmentCycleId String?
   recruitmentCycle RecruitmentCycle? @relation(fields: [recruitmentCycleId, clubId], references: [id, clubId], onDelete: Restrict, onUpdate: NoAction)
@@ -1742,4 +1744,22 @@ model EditorDraft {
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, key])
+}
+
+// A member who knows an applicant steps out of reviewing, interviewing and
+// voting on that applicant. Retained when lifted (liftedAt) for the audit trail.
+model ApplicantRecusal {
+  id            String      @id @default(uuid())
+  clubId        String
+  applicationId String
+  application   Application @relation(fields: [applicationId, clubId], references: [id, clubId], onDelete: Cascade)
+  memberId      String
+  member        ClubMember  @relation(fields: [memberId, clubId], references: [id, clubId], onDelete: Cascade)
+  createdById   String
+  createdAt     DateTime    @default(now())
+  liftedAt      DateTime?
+  liftedById    String?
+
+  @@unique([applicationId, memberId])
+  @@index([clubId, memberId])
 }

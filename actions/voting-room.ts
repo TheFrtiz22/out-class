@@ -1,5 +1,6 @@
 "use server";
 import {allowedByProfileCeiling,normalizeProfileFieldVisibility} from "@/lib/profile-field-visibility";
+import {isRecused} from "@/lib/recusal";
 import {validateVotingSetup,notifyVotingVoters} from "@/utils/voting-room-setup";
 import {meetingDetails,resolveVotingMeeting} from "@/lib/voting-session-setup";
 import { votingReadLimits } from "@/lib/voting-transaction-limits";
@@ -188,6 +189,7 @@ export async function castLiveVotingBallot(input:unknown) {
       const eligible=await currentEligibleVoterIds(tx,s.clubId,s.participants.map(p=>p.memberId),round.anonymousReview);
       if(rule.electorate.some(id=>!eligible.includes(id)))throw new RoomConflict("VOTING_PAUSED","Voting is paused while the leader reviews a change in who can vote. Your vote was not recorded.");
     }
+    if(await isRecused(tx,d.applicationId,m.id))throw new RoomConflict("RECUSED","You stepped out of voting on this applicant because you know them. Your vote was not recorded.");
     const own=entry.ballots.find(b=>b.memberId===m.id);
     if((own?.revision??null)!==d.ballotRevision)throw new RoomConflict("STALE_BALLOT","Your ballot changed on another device. Reload the page and try again.");
     const decision=storedChoice[d.choice],revision=own?own.revision+1:0;

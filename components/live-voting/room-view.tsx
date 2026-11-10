@@ -6,6 +6,7 @@ import { VotingBackLink } from "./room-back-link";
 import { LoadingState } from "@/components/ui/loading-state"
 import Link from "next/link";
 import { useEffect,useRef,useState } from "react";
+import { pollWhileVisible } from "@/hooks/use-revalidate";
 import { useAuth } from "@/contexts/auth-context";
 import { useDemoMode } from "@/contexts/demo-context";
 import { useLiveVotingRoom } from "@/hooks/use-live-voting-room";
@@ -40,7 +41,7 @@ export function LiveVotingEntry({clubId,sessionId,view,demoScoped}:{clubId:strin
 type RoomProps={clubId:string;sessionId:string;view:View;demoScoped:boolean;identity:string;member?:string};
 function MemberJoin(props:RoomProps){
  const [info,setInfo]=useState<Awaited<ReturnType<typeof getLiveVotingJoinInfo>>|null>(null),[error,setError]=useState(""),[busy,setBusy]=useState(false),[retry,setRetry]=useState(0),lock=useRef(false);
- useEffect(()=>{let current=true,pending=false;const read=async()=>{if(pending)return;pending=true;try{const v=await getLiveVotingJoinInfo({clubId:props.clubId,sessionId:props.sessionId},props.member);if(current){setInfo(v);setError("");}}catch{if(current){setInfo(null);setError("Couldn't check this session. Retry when connected.");}}finally{pending=false;}};void read();const timer=setInterval(()=>void read(),5000);return()=>{current=false;clearInterval(timer);};},[props.clubId,props.sessionId,props.member,retry]);
+ useEffect(()=>{let current=true,pending=false;const read=async()=>{if(pending)return;pending=true;try{const v=await getLiveVotingJoinInfo({clubId:props.clubId,sessionId:props.sessionId},props.member);if(current){setInfo(v);setError("");}}catch{if(current){setInfo(null);setError("Couldn't check this session. Retry when connected.");}}finally{pending=false;}};void read();const stopPolling=pollWhileVisible(read,5000);return()=>{current=false;stopPolling();};},[props.clubId,props.sessionId,props.member,retry]);
  async function join(){if(lock.current)return;lock.current=true;setBusy(true);setError("");try{await joinLiveVotingRoom({clubId:props.clubId,sessionId:props.sessionId},props.member);setRetry(v=>v+1);}catch{setError("Couldn't join. Your eligibility will be checked again on retry.");}finally{lock.current=false;setBusy(false);}}
  if(info?.status==="JOINED"||info?.status==="ENDED")return <VotingRoom {...props}/>;
  return <div className="vr-page vr-member"><PageHeader title="Join live voting" />{error&&<div role="alert" className="vr-error">{error}<Button variant="outline" onClick={()=>setRetry(v=>v+1)}>Retry</Button></div>}
@@ -73,7 +74,7 @@ export function VotingRoom(props:RoomProps){
  {view==="leader"?<OutcomeCounts room={room}/>:view==="present"&&<section className="vr-stats" aria-label="Passed and target"><span>Passed {room.targetSummary.decisions.pass}</span><span>{room.targetSummary.target.value===null?"No target set":`${room.targetSummary.target.label} ${room.targetSummary.target.value} · Guidance`}</span>{room.targetSummary.progress.over>0&&<span>{room.targetSummary.progress.detail}</span>}</section>}
  {room.status==="DRAFT"&&<section aria-label="Waiting room"><h2>Ready when your leader is</h2><p>Voting has not started.</p>{view!=="member"&&qrCard}</section>}
  {view==="leader"&&room.status==="DRAFT"&&<label className="block my-4">Preview applicant<NativeSelect className="ml-2" aria-label="Preview applicant" value={appId??""} onChange={e=>setPreview(e.target.value)}>{room.outcomes.map((a,i)=><option key={a.applicationId} value={a.applicationId}>Applicant {i+1}</option>)}</NativeSelect></label>}
- <ApplicantTransition key={`${identity}:${room.accessVersion}`} applicantId={appId} passNumber={room.passNumber} onReady={setReadyApplicant} summary={room.status!=="OPEN"&&room.status!=="DRAFT"}><RoomPresentation clubId={clubId} sessionId={sessionId} applicationId={appId??""} identity={`${identity}:${room.accessVersion}`} refreshKey={0} member={member} onStale={refresh}/></ApplicantTransition>
+ <ApplicantTransition key={`${identity}:${room.accessVersion}`} applicantId={appId} passNumber={room.passNumber} onReady={setReadyApplicant} summary={room.status!=="OPEN"&&room.status!=="DRAFT"}><RoomPresentation clubId={clubId} sessionId={sessionId} applicationId={appId??""} identity={`${identity}:${room.accessVersion}`} refreshKey={0} member={member} onStale={refresh} presenting={view!=="member"}/></ApplicantTransition>
 
  {room.status==="COMPLETED"&&<p role="status">Session ended. Unresolved applicants and saved votes are preserved. No applicant notifications were sent.</p>}
  {view==="member"&&room.discussion&&!demoScoped&&room.permissions.voter&&<DiscussionMember clubId={clubId} sessionId={sessionId} discussion={room.discussion} anonymous={room.discussion.anonymous} refresh={refresh}/>}
