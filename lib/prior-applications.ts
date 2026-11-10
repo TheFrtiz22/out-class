@@ -1,32 +1,49 @@
 import type { AppTransactionClient } from "@/utils/prisma"
+import { hasPermission, type ClubAccess } from "@/lib/permissions"
 
-export type PriorApplication = { cycleName: string | null; status: string }
+/** One earlier application. `status` is null unless the viewer may already see decisions. */
+export type PriorApplication = { cycleName: string | null; submittedAt: Date | null; status: string | null }
 
-/** Earlier submitted applications by the same student to the same club.
- * Only call for identified applicants: the link between two applications is
- * itself identifying, so anonymous review never receives it. */
+type Viewer = ClubAccess & { id: string; userId: string }
+
+/** The link between two applications is itself identifying, so history follows
+ * the anonymous-review rule exactly: identified viewers on identified rounds only.
+ * It is never shown about the viewer's own application or to a recused reviewer. */
+export function mayShowPriorApplications(viewer: Viewer, app: { studentId: string; round: { anonymousReview: boolean } }, recused: boolean) {
+  return !recused && app.studentId !== viewer.userId && !app.round.anonymousReview && hasPermission(viewer, "applicants.identify")
+}
+
+/** An earlier outcome is a decision: shown only to members who already see decisions. */
+export function mayShowPriorOutcome(viewer: ClubAccess) {
+  return hasPermission(viewer, "decisions.manage") || hasPermission(viewer, "decisions.publish") || hasPermission(viewer, "decisions.view")
+}
+
+/** Earlier submitted applications by the same students to the same club, in one
+ * query for the whole list. Selects only ids, cycle names and dates; the status
+ * only when `outcome` is true. Callers filter with mayShowPriorApplications first. */
 export async function loadPriorApplications(
-  tx: AppTransactionClient,
+  tx: Pick<AppTransactionClient, "application">,
   clubId: string,
   apps: readonly { id: string; studentId: string; submittedAt: Date | null }[],
+  { outcome = false }: { outcome?: boolean } = {},
 ): Promise<Map<string, PriorApplication[]>> {
   const result = new Map<string, PriorApplication[]>()
   if (!apps.length) return result
   const history = await tx.application.findMany({
     where: { clubId, studentId: { in: [...new Set(apps.map(app => app.studentId))] }, status: { not: "DRAFTING" } },
-    select: { id: true, studentId: true, status: true, submittedAt: true, recruitmentCycle: { select: { name: true } } },
-  })
+    select: { id: true, studentId: true, submittedAt: true, recruitmentCycle: { select: { name: true } }, ...(outcome ? { status: true } : {}) },
+  }) as { id: string; studentId: string; submittedAt: Date | null; recruitmentCycle: { name: string } | null; status?: string }[]
   for (const app of apps) result.set(app.id, priorApplicationsFor(app, history))
   return result
 }
 
 export function priorApplicationsFor(
   app: { id: string; studentId: string; submittedAt: Date | null },
-  history: readonly { id: string; studentId: string; status: string; submittedAt: Date | null; recruitmentCycle: { name: string } | null }[],
+  history: readonly { id: string; studentId: string; status?: string | null; submittedAt: Date | null; recruitmentCycle: { name: string } | null }[],
 ): PriorApplication[] {
   return history
     .filter(other => other.id !== app.id && other.studentId === app.studentId &&
       (app.submittedAt == null || (other.submittedAt != null && other.submittedAt < app.submittedAt)))
     .sort((a, b) => (b.submittedAt?.getTime() ?? 0) - (a.submittedAt?.getTime() ?? 0))
-    .map(other => ({ cycleName: other.recruitmentCycle?.name ?? null, status: other.status }))
+    .map(other => ({ cycleName: other.recruitmentCycle?.name ?? null, submittedAt: other.submittedAt, status: other.status ?? null }))
 }
