@@ -134,50 +134,83 @@ test("email-code request looks identical for an address with and without an acco
   assert.equal(failed.error, "Unable to send a code. Please try again in a moment.")
 })
 
+// In-app code verification goes to /api/auth/confirm-email, which attaches the session to the browser.
+function confirmRoute(respond) {
+  const requests = [], original = globalThis.fetch
+  globalThis.fetch = async (url, init) => { requests.push([url, JSON.parse(init.body)]); const body = await respond(); return { ok: !body.error, json: async () => body } }
+  return { requests, restore: () => { globalThis.fetch = original } }
+}
+
 test("email-code flow preserves existing-account restriction, resend cooldown, token validation and confirmed identity redirect", async () => {
   const calls = []
   const user = { id: "student-id", email: "student@virginia.edu", email_confirmed_at: "2026-01-01" }
-  const { render, window } = setup({
-    signInWithOtp: async input => { calls.push(input); return { error: null } },
-    verifyOtp: async input => { calls.push(input); return { data: { session: { user } }, error: null } },
-    getUser: async () => ({ data: { user }, error: null }),
-  })
-  render().onEmailChange("Student@virginia.edu")
-  await render().onRequestCode()
-  assert.deepEqual(calls[0], { email: "student@virginia.edu", options: { shouldCreateUser: false } })
-  assert.equal(render().step, "verify")
-  assert.equal(render().resendSeconds, 60)
-  await render().onRequestCode()
-  assert.equal(calls.length, 1)
-  render().onCodeChange("12a345678")
-  assert.equal(render().code, "123456")
-  await render().onVerifyCode(submit)
-  assert.deepEqual(calls[1], { email: "student@virginia.edu", token: "123456", type: "email" })
-  assert.equal(window.location.href, "/login")
-  render().onDifferentEmail()
-  assert.equal(render().emailExpanded, true)
-  assert.equal(render().step, "email")
-  assert.equal(render().code, "")
+  const route = confirmRoute(() => ({ success: true, firstConfirmation: false, passwordSaved: false }))
+  try {
+    const { render, window } = setup({
+      signInWithOtp: async input => { calls.push(input); return { error: null } },
+      verifyOtp: async () => assert.fail("the browser does not verify codes itself"),
+      getUser: async () => ({ data: { user }, error: null }),
+      getSession: async () => ({ data: { session: { user } } }),
+    })
+    render().onEmailChange("Student@virginia.edu")
+    await render().onRequestCode()
+    assert.deepEqual(calls[0], { email: "student@virginia.edu", options: { shouldCreateUser: false } })
+    assert.equal(render().step, "verify")
+    assert.equal(render().resendSeconds, 60)
+    await render().onRequestCode()
+    assert.equal(calls.length, 1)
+    render().onCodeChange("12a345678")
+    assert.equal(render().code, "123456")
+    await render().onVerifyCode(submit)
+    assert.deepEqual(route.requests, [["/api/auth/confirm-email", { email: "student@virginia.edu", code: "123456" }]])
+    assert.equal(window.location.href, "/login")
+    render().onDifferentEmail()
+    assert.equal(render().emailExpanded, true)
+    assert.equal(render().step, "email")
+    assert.equal(render().code, "")
+  } finally { route.restore() }
+})
+
+test("a password typed before the code is sent with it and then cleared", async () => {
+  const user = { id: "student-id", email: "student@virginia.edu", email_confirmed_at: "2026-11-10" }
+  const route = confirmRoute(() => ({ success: true, firstConfirmation: true, passwordSaved: true }))
+  try {
+    const { render } = setup({
+      signInWithOtp: async () => ({ error: null }),
+      getUser: async () => ({ data: { user }, error: null }),
+      getSession: async () => ({ data: { session: { user } } }),
+    })
+    render().onEmailChange("student@virginia.edu")
+    render().onPasswordChange("Chosen-Pass-1!")
+    await render().onRequestCode()
+    render().onCodeChange("123456")
+    await render().onVerifyCode(submit)
+    assert.deepEqual(route.requests[0][1], { email: "student@virginia.edu", code: "123456", password: "Chosen-Pass-1!" })
+    assert.equal(render().password, "")
+  } finally { route.restore() }
 })
 
 test("expired OTP and identity mismatch cannot redirect, and mismatched sessions sign out", async () => {
   let mismatch = false, signedOut = false
-  const { render, window } = setup({
-    signInWithOtp: async () => ({ error: null }),
-    verifyOtp: async () => mismatch ? { data: { session: { user: { id: "other" } } }, error: null } : { error: { code: "otp_expired" } },
-    getUser: async () => ({ data: { user: { id: "student-id", email: "student@virginia.edu", email_confirmed_at: "2026-01-01" } } }),
-    signOut: async () => { signedOut = true },
-  })
-  render().onEmailChange("student@virginia.edu")
-  await render().onRequestCode()
-  render().onCodeChange("123456")
-  await render().onVerifyCode(submit)
-  assert.match(render().error, /expired/)
-  mismatch = true
-  await render().onVerifyCode(submit)
-  assert.equal(signedOut, true)
-  assert.equal(render().error, "Unable to confirm your sign-in. Please try again.")
-  assert.equal(window.location.href, "")
+  const route = confirmRoute(() => mismatch ? { success: true, firstConfirmation: false, passwordSaved: false } : { error: "That code isn't valid or has expired. Check it or send yourself a new one." })
+  try {
+    const { render, window } = setup({
+      signInWithOtp: async () => ({ error: null }),
+      getUser: async () => ({ data: { user: { id: "student-id", email: "student@virginia.edu", email_confirmed_at: "2026-01-01" } } }),
+      getSession: async () => ({ data: { session: { user: { id: "other" } } } }),
+      signOut: async () => { signedOut = true },
+    })
+    render().onEmailChange("student@virginia.edu")
+    await render().onRequestCode()
+    render().onCodeChange("123456")
+    await render().onVerifyCode(submit)
+    assert.match(render().error, /expired/)
+    mismatch = true
+    await render().onVerifyCode(submit)
+    assert.equal(signedOut, true)
+    assert.equal(render().error, "Unable to confirm your sign-in. Please try again.")
+    assert.equal(window.location.href, "")
+  } finally { route.restore() }
 })
 
 test("auth presentation keeps collapsed controls inert and callback errors announced", () => {

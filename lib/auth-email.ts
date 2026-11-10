@@ -28,3 +28,26 @@ export function confirmedEmailSession(data: {
     data.user.email?.toLowerCase() === email.trim().toLowerCase() && isUvaEmail(data.user.email) &&
     Number.isFinite(Date.parse(data.user.email_confirmed_at || ""))
 }
+
+export type EmailCodeResult =
+  | { ok: true; firstConfirmation: boolean; passwordSaved: boolean }
+  | { ok: false; error: string }
+
+/** Verifies an email code through /api/auth/confirm-email, which attaches the session to this browser. */
+export async function confirmEmailCode(email: string, code: string, password?: string, request: typeof fetch = fetch): Promise<EmailCodeResult> {
+  try {
+    const response = await request("/api/auth/confirm-email", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({ email: email.trim().toLowerCase(), code, ...(password ? { password } : {}) }),
+    })
+    const body = await response.json().catch(() => ({}))
+    if (!response.ok || body.success !== true) {
+      return { ok: false, error: typeof body.error === "string" ? body.error : "Unable to verify this code. Please try again." }
+    }
+    return { ok: true, firstConfirmation: body.firstConfirmation === true, passwordSaved: body.passwordSaved === true }
+  } catch {
+    return { ok: false, error: "Unable to verify this code. Check your connection and try again." }
+  }
+}
