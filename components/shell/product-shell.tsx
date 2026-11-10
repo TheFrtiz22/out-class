@@ -44,6 +44,7 @@ import { cn } from "@/lib/utils"
 import { handleClubLink } from "@/lib/workspace-navigation"
 import { TERMS } from "@/lib/copy/terms"
 import { countShellStart } from "@/lib/shell-metrics"
+import { RouteChildren } from "@/components/route-content"
 
 const navigationIcons: Record<string, typeof Home> = { rejected: Users2, resumes: FileText, reviews: FileText, "scheduled-decisions": CheckCircle2, users: Users2, reports: FileText, events: CalendarDays, claims: Shield, "school-requests": FileText, onboarding: Users2, support: Shield, activity: FileText, permissions: Shield, audit: FileText, "student-dashboard": Home, "club-home": Home, "club-meetings": CalendarDays, "club-tasks": ListChecks, explore: Compass, categories: Compass, status: CheckCircle2, inbox: Bell, "student-profile": UserRound, corkboard: Bookmark, calendar: CalendarDays, applications: FileText, interviews: Video, decisions: CheckCircle2, clubs: Users2, overview: Home, meetings: CalendarDays, tasks: ListChecks, applicants: Users2, members: Users2, announcements: Megaphone, settings: Settings, rounds: Shield, rules: SlidersHorizontal, cycles: RefreshCw }
 
@@ -207,7 +208,7 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
       </div>
     </header>
     <div><NavigationRail sections={railSections} active={current} renderItem={(item, surface) => navLink(item, surface === "rail")} onHome={() => navigate("student-dashboard")} /><main data-tour="workspace" id="workspace-content" ref={main} tabIndex={-1} aria-label={title} className="oc-workspace-content w-full min-w-0 max-w-[var(--oc-content-width)] outline-none">
-      {!allowed ? <LoadingState label="Checking workspace access…" layout="inline" rows={3} /> : <>{demo.isDemoEnabled && <p className="oc-demo-note mb-6 text-xs text-muted-foreground">Fictional demo data · changes stay in this browser; no messages are sent.</p>}{children}</>}
+      {!allowed ? <LoadingState label="Checking workspace access…" layout="inline" rows={3} /> : <>{demo.isDemoEnabled && <p className="oc-demo-note mb-6 text-xs text-muted-foreground">Fictional demo data · changes stay in this browser; no messages are sent.</p>}<RouteChildren>{children}</RouteChildren></>}
     </main></div>
     <MobileNavigation items={allowed ? bottomBarItems(railSections, mode === "preview" ? "preview" : workspace, current) : []} groups={allowed ? items : []} active={current} onSelect={select} onLink={event => { if (!canLeaveWorkspace()) event.preventDefault() }} onMore={() => { mobileOrigin.current = document.activeElement as HTMLElement; setMobile(true) }} />
     {/* No key: the walkthrough stays mounted across navigation and reloads only when its experience or club changes. */}
