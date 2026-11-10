@@ -843,7 +843,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                 <form data-autosave-editor="true" className="oc-quick-evaluation" onBlur={canEvaluate ? draftSave.onBlur : undefined} onSubmit={(event) => { event.preventDefault(); if (canEvaluate) void mutate("review") }}>
                   <Label htmlFor="review-score" className="sr-only">Score (1–10)</Label>
                   <DisabledReason field reason={evaluateReason}>
-                    <Input id="review-score" aria-description={activeRound ? `Your review for ${activeRound.name}` : undefined} type="number" required min={1} max={10} step="any" placeholder="Score" className="oc-quick-score" value={score} disabled={!canEvaluate || busy || !draftSave.ready || draftSave.recovery != null} onChange={(event) => setScore(event.target.value)} />
+                    <Input id="review-score" type="number" required min={1} max={10} step="any" placeholder="Score" className="oc-quick-score" value={score} disabled={!canEvaluate || busy || !draftSave.ready || draftSave.recovery != null} onChange={(event) => setScore(event.target.value)} />
                   </DisabledReason>
                   <Label htmlFor="review-notes" className="sr-only">Overall evaluation feedback</Label>
                   <DisabledReason field reason={evaluateReason}>
