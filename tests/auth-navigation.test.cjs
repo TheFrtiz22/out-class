@@ -186,3 +186,28 @@ test('OAuth callback preserves signup, invitations and claims on both success an
     assert.equal(signedOut, true)
   }
 })
+
+test('return paths stay on this site: valid same-site paths are kept', () => {
+  for (const path of [
+    '/', '/home', '/login', '/invitations/a', '/club-claims/a', '/club/club-one',
+    '/voting/00000000-0000-4000-8000-000000000001/join?demo=1',
+    '/signup?next=%2Finvitations%2Fa', '/signup?next=%2Finvitations%2Fa&intent=leader',
+    '/settings/interviews?clubId=a&roundId=b#panel', '/clubs/Name%20With%20Spaces', '/a/b/', '/files/report.v2',
+    '/search?q=a%2Fb%5Cc%2E', '/discount/100%25',
+  ]) assert.equal(policy.safeReturnPath(path), path, path)
+  assert.equal(policy.safeReturnPath('  /home  '), '/home')
+  for (const empty of [undefined, null, '', '   ']) assert.equal(policy.safeReturnPath(empty), '/')
+})
+
+test('return paths stay on this site: other sites, parent segments and encoded separators fall back to /', () => {
+  for (const path of [
+    'https://elsewhere.test', 'elsewhere.test/home', '//elsewhere.test', '/\\elsewhere.test', '/home/../platform',
+    '/..', '/../elsewhere', '/a/./b', '/a/..', '/a/..?x=1',
+    '/%2felsewhere.test', '/%2Felsewhere.test', '/a%2fb', '/%5celsewhere.test', '/a%5Cb',
+    '/%2e%2e/platform', '/a/%2E%2E/b', '/a/%2e/b', '/a/.%2e/b',
+    '/%252felsewhere.test', '/%25252e%25252e/platform', '/a/%255cb',
+    '/%09/elsewhere.test', '/a%00b', '/a%zz', '/a\tb', '/a b', '/x?next=https://elsewhere.test',
+  ]) assert.equal(policy.safeReturnPath(path), '/', path)
+  assert.equal(policy.loginReturnPath('/%2f%2felsewhere.test'), '/login')
+  assert.equal(policy.signInReturnPath('/home/../platform'), '/home')
+})
