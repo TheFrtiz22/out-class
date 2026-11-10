@@ -81,27 +81,33 @@ test('settings and authenticated navigation across roles, saves, history and res
     await studentPage.screenshot({ path: path.join(artifacts, 'desktop-account.png'), fullPage: true });
   });
   await t.test('notification preferences open from the Inbox, save through the existing action and survive refresh/history', async () => {
-    // The Inbox header's gear opens the same preferences form in a sheet; Escape returns focus to the gear.
+    // The Inbox header's gear opens the same preferences form in a sheet with local state only (no URL change, no
+    // history entry); Escape closes it and returns focus to the gear.
     await open(studentPage, '/inbox');
     const gear = studentPage.getByRole('button', { name: 'Notification settings', exact: true });
-    await gear.click(); await studentPage.waitForURL(url => url.pathname + url.search === '/inbox?tab=preferences');
     const sheet = studentPage.getByRole('dialog', { name: 'Notification settings', exact: true });
     const checkbox = sheet.getByRole('checkbox', { name: 'Club announcements', exact: true });
+    const entries = await studentPage.evaluate(() => history.length);
+    await gear.click(); await sheet.waitFor();
+    assert.equal(new URL(studentPage.url()).search, '', 'the gear changes no URL');
+    assert.equal(await studentPage.evaluate(() => history.length), entries, 'the gear adds no history entry');
     await checkbox.uncheck();
     await sheet.getByRole('button', { name: 'Save preferences', exact: true }).click();
     await sheet.getByText('Preferences saved.', { exact: true }).waitFor();
     assert.equal((await db.userNotificationPreference.findUniqueOrThrow({ where: { userId: student.user.id } })).emailAnnouncements, false);
-    await studentPage.reload(); await checkbox.waitFor(); assert.equal(await checkbox.isChecked(), false);
     await studentPage.keyboard.press('Escape'); await sheet.waitFor({ state: 'hidden' });
-    assert.equal(new URL(studentPage.url()).search, '');
     assert.equal(await gear.evaluate(node => node === document.activeElement), true, 'focus returns to the gear');
+    // A deep link (emails, the old Settings URL) opens it from the URL; the save survived a full load; closing clears the param.
+    await open(studentPage, '/inbox?tab=preferences'); await checkbox.waitFor(); assert.equal(await checkbox.isChecked(), false);
+    await studentPage.keyboard.press('Escape'); await sheet.waitFor({ state: 'hidden' });
+    await studentPage.waitForURL(url => url.pathname + url.search === '/inbox');
     // Settings keeps a Notifications entry that leads to the same place; history moves between them.
     await open(studentPage, '/settings/account');
     await studentPage.getByRole('navigation', { name: 'Personal settings', exact: true }).getByRole('link', { name: 'Notifications', exact: true }).click();
     await sheet.waitFor();
     await studentPage.goBack(); await studentPage.getByRole('heading', { name: 'Account & Security', exact: true }).waitFor();
     await studentPage.goForward(); await sheet.waitFor();
-    // Unsaved edits: closing asks inline (focus on Keep editing); browser Back keeps the edits and asks too.
+    // Unsaved edits: Escape asks inline (focus on Keep editing); Discard closes without saving.
     await open(studentPage, '/inbox'); await gear.click(); await sheet.waitFor();
     await checkbox.check();
     await studentPage.keyboard.press('Escape');
@@ -109,10 +115,8 @@ test('settings and authenticated navigation across roles, saves, history and res
     await sheet.getByText('Discard changes?', { exact: true }).waitFor();
     assert.equal(await keep.evaluate(node => node === document.activeElement), true, 'focus moves to Keep editing');
     await keep.click(); assert.equal(await checkbox.isChecked(), true);
-    await studentPage.goBack(); await sheet.getByText('Discard changes?', { exact: true }).waitFor();
-    assert.equal(await checkbox.isChecked(), true, 'Back does not drop unsaved edits');
+    await studentPage.keyboard.press('Escape'); await sheet.getByText('Discard changes?', { exact: true }).waitFor();
     await sheet.getByRole('button', { name: 'Discard', exact: true }).click(); await sheet.waitFor({ state: 'hidden' });
-    assert.equal(new URL(studentPage.url()).search, '', 'Discard steps back to the Inbox entry');
     assert.equal((await db.userNotificationPreference.findUniqueOrThrow({ where: { userId: student.user.id } })).emailAnnouncements, false, 'discarded edits are not saved');
     // Profile has one Edit profile entry point with sections.
     await open(studentPage, '/profile');

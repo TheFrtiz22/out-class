@@ -40,7 +40,7 @@ test("the Inbox header shows the Notification settings entry point", () => {
   assert.doesNotMatch(control, /window\.confirm/)
   assert.match(control, />Discard changes\?</)
   assert.match(control, /<Button ref=\{keep\} size="sm" variant="ghost" onClick=\{keepEditing\}>Keep editing<\/Button>/)
-  assert.match(control, /onClick=\{\(\) => requestClose\(true\)\}>Discard<\/Button>/)
+  assert.match(control, /onClick=\{\(\) => close\(true\)\}>Discard<\/Button>/)
   assert.match(control, /if \(confirming\) keep\.current\?\.focus\(\)/)
   assert.match(control, /onCloseAutoFocus=[^\n]*target\.focus\(\)/)
   // Close stays enabled during a save: "Saving…" shows, and a save still in flight on close finishes with a toast.
@@ -76,20 +76,23 @@ test("the old Settings URL, Settings navigation, Cmd-K and the notification cent
     assert.doesNotMatch(read(file), /"\/settings\/notifications"/, file)
 })
 
-test("history: the gear's push closes with Back, a deep link closes in place, unsaved edits ask first", () => {
-  const state = (over = {}) => ({ openedInApp: false, dirty: false, saving: false, ...over })
-  assert.equal(sheet.closeStep(state({ openedInApp: true })), "back")
-  assert.equal(sheet.closeStep(state()), "replace")
-  assert.equal(sheet.closeStep(state({ openedInApp: true, dirty: true })), "confirm")
+test("history: the gear opens without a history entry; a deep link closes by clearing its param once", () => {
+  const state = (over = {}) => ({ fromUrl: false, dirty: false, saving: false, ...over })
+  assert.equal(sheet.closeStep(state()), "close")
+  assert.equal(sheet.closeStep(state({ fromUrl: true })), "clear-url")
+  // Unsaved edits ask first (inline bar); Discard then closes the same way.
   assert.equal(sheet.closeStep(state({ dirty: true })), "confirm")
-  assert.equal(sheet.closeStep(state({ openedInApp: true, dirty: true }), true), "back", "Discard")
-  assert.equal(sheet.closeStep(state({ dirty: true }), true), "replace", "Discard after a deep link")
+  assert.equal(sheet.closeStep(state({ fromUrl: true, dirty: true })), "confirm")
+  assert.equal(sheet.closeStep(state({ dirty: true }), true), "close")
+  assert.equal(sheet.closeStep(state({ fromUrl: true, dirty: true }), true), "clear-url")
   // A save in flight never blocks closing; it finishes in the background.
-  assert.equal(sheet.closeStep(state({ openedInApp: true, dirty: true, saving: true })), "back")
-  // Browser Back/Forward removed the param: restore and ask only when edits would be lost.
-  assert.equal(sheet.urlClosedStep({ dirty: true, saving: false }), "restore")
-  assert.equal(sheet.urlClosedStep({ dirty: false, saving: false }), "close")
-  assert.equal(sheet.urlClosedStep({ dirty: true, saving: true }), "close")
+  assert.equal(sheet.closeStep(state({ dirty: true, saving: true })), "close")
+  const control = read("components/inbox/inbox-notification-settings.tsx")
+  assert.match(control, /onClick=\{\(\) => setOpen\(true\)\}/, "the gear changes no URL")
+  assert.doesNotMatch(control, /router\.(push|back)\(/, "no pushed entries and no Back interception")
+  assert.equal(control.match(/router\.replace\(/g).length, 1)
+  // Closing is a state change first; the URL is cleared afterwards, only for a deep link.
+  assert.match(control, /setOpen\(false\); setConfirming\(false\); fromUrl\.current = false[\s\S]*step === "clear-url"[\s\S]*router\.replace/)
 })
 
 test("Settings: Notifications is never the active Settings page, and Demo Mode hides it", () => {
