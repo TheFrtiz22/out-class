@@ -1,7 +1,7 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { formatAverage, formatScore, scoredEvaluationsLabel } from "@/lib/interview-review-summary";
-import { interviewFeedbackEmpty, interviewFeedbackPending, type InterviewFeedback as Feedback } from "@/lib/interview-feedback";
+import { evidenceSourceLabels, interviewFeedbackEmpty, interviewFeedbackPending, type EarlierRound, type InterviewFeedback as Feedback } from "@/lib/interview-feedback";
 
 // Presentation only: no data access, so the Voting room slide can import it without the API graph.
 // Same 150-character excerpt as the slide fields; several interviewers share one cell, so each gets a shorter preview.
@@ -23,8 +23,21 @@ export function InterviewFeedbackSection({ feedback, compact = false, onReadFull
   </section>;
 }
 
-/** Earlier authorized rounds as labelled references only, never merged into the section. */
-export function EarlierFeedbackRounds({ feedback }: { feedback: Feedback }) {
-  if (!feedback.earlierRounds.length) return null;
-  return <p className="text-xs text-muted-foreground" aria-label="Earlier interview rounds">Earlier rounds: {feedback.earlierRounds.map(r => `${r.roundName} · ${r.submitted} submitted review${r.submitted === 1 ? "" : "s"}`).join("; ")}</p>;
+/** Earlier authorized rounds, each in its own labelled group with its round, interviewer and source.
+ * Never merged into the current round. `compact` (voting slide) lists only each round's line. */
+export function EarlierFeedbackRounds({ feedback, rounds, compact = false, onReadFull }: { feedback?: Feedback; rounds?: EarlierRound[]; compact?: boolean; onReadFull?: (e: React.MouseEvent<HTMLButtonElement>) => void }) {
+  const list = rounds ?? feedback?.earlierRounds ?? [];
+  if (!list.length) return null;
+  const line = (r: EarlierRound) => r.average !== null ? `${formatAverage(r.average)} / 10 · ${scoredEvaluationsLabel(r.submitted)}` : `${r.submitted} submitted review${r.submitted === 1 ? "" : "s"}`;
+  return <section aria-label="Earlier rounds" data-earlier-rounds className={compact ? "space-y-1" : "space-y-2 border-t pt-3"}>
+    <h3 className={compact ? "text-sm font-medium" : "font-medium"}>Earlier rounds</h3>
+    {list.map(r => <article key={r.roundId} data-earlier-round={r.roundId} className="space-y-1">
+      <p className="text-sm"><span className="font-medium">{r.roundName}</span><span className="text-muted-foreground"> · {line(r)}</span></p>
+      {!compact && r.entries.length > 0 && <ul className="divide-y">{r.entries.map(e => <li key={e.id} className="space-y-1 py-2">
+        <p className="flex flex-wrap items-baseline justify-between gap-x-3 text-sm"><span><span className="font-medium">{e.interviewer}</span><span className="text-muted-foreground"> · {r.roundName} · {evidenceSourceLabels[e.source]}</span></span>{e.score !== null && <span className="tabular-nums"><strong>{formatScore(e.score)}</strong><span className="text-muted-foreground"> / 10</span></span>}</p>
+        {e.summary && <p className="whitespace-pre-wrap break-words text-sm">{e.summary}</p>}
+      </li>)}</ul>}
+    </article>)}
+    {compact && onReadFull && list.some(r => r.entries.length > 0) && <Button type="button" variant="link" className="h-auto min-h-11 p-0" onClick={onReadFull}>Read earlier rounds</Button>}
+  </section>;
 }

@@ -3,6 +3,7 @@ import { demoStore, demoMember } from "./store";
 import { interviewCapabilities } from "@/lib/interview-access";
 import { hasPermission } from "@/lib/permissions";
 import { buildInterviewFeedback, feedbackRound, type InterviewFeedback, type InterviewFeedbackResult } from "@/lib/interview-feedback";
+import { roundScopedEvidence, type RoundScopedEvidence } from "@/lib/voting-interview-evidence";
 
 type State = ReturnType<typeof demoStore.get>;
 type Club = State["clubs"][number];
@@ -33,18 +34,37 @@ const memberName = (state: State, memberId: string) => {
   return profile ? `${profile.firstName} ${profile.lastName}` : "Interviewer";
 };
 
+/** Finalized material for authorized rounds: named submitted reviews, final summaries and kit-record sources. Drafts never leave here. */
+function demoFinalized(state: State, club: Club, a: App, allowed: readonly { id: string }[]) {
+  const reviews = demoSubmittedReviews(state, club, a, allowed);
+  const completed = state.interviews.filter(r => r.applicationId === a.id && r.clubId === club.id && r.completedAt && !r.anonymousReview && reviews.some(e => e.roundId === r.roundId && e.interviewerId === r.interviewerId));
+  const summaries = completed.flatMap(r => r.draft.finalInterviewThoughts?.trim() ? [{ roundId: r.roundId, interviewerId: r.interviewerId, text: r.draft.finalInterviewThoughts }] : []);
+  const kitRecords = completed.map(r => ({ roundId: r.roundId, interviewerId: r.interviewerId }));
+  const mapped = reviews.map(e => ({ id: e.id, roundId: e.roundId ?? null, interviewerId: e.interviewerId, score: e.score, submittedAt: e.submittedAt ?? null, interviewer: memberName(state, e.interviewerId) }));
+  return { mapped, summaries, kitRecords };
+}
+// Pending is a count of current, interview-capable assignees only; never names or scores.
+const demoPending = (state: State, club: Club, a: App, roundId: string) => state.interviewFoundation.assignments.filter(g => g.applicationId === a.id && g.roundId === roundId && !g.revokedAt && state.memberships.some(m => m.id === g.memberId && m.clubId === club.id && interviewCapabilities(m).participate)).map(g => g.memberId);
+
 export function demoInterviewFeedback(state: State, club: Club, a: App, allowed: readonly { id: string; name: string }[], requestedRoundId: string | undefined, includeScores: boolean): InterviewFeedback | null {
   if (!allowed.length) return null;
-  const reviews = demoSubmittedReviews(state, club, a, allowed);
-  const summaries = state.interviews.flatMap(r => {
-    const submitted = reviews.some(e => e.roundId === r.roundId && e.interviewerId === r.interviewerId);
-    return r.applicationId === a.id && r.clubId === club.id && r.completedAt && !r.anonymousReview && submitted && r.draft.finalInterviewThoughts?.trim() ? [{ roundId: r.roundId, interviewerId: r.interviewerId, text: r.draft.finalInterviewThoughts }] : [];
-  });
-  const mapped = reviews.map(e => ({ id: e.id, roundId: e.roundId ?? null, interviewerId: e.interviewerId, score: e.score, submittedAt: e.submittedAt ?? null, interviewer: memberName(state, e.interviewerId) }));
+  const { mapped, summaries, kitRecords } = demoFinalized(state, club, a, allowed);
   const round = feedbackRound(allowed, requestedRoundId, mapped);
-  // Pending is a count of current, interview-capable assignees only; never names or scores.
-  const pendingMemberIds = round ? state.interviewFoundation.assignments.filter(g => g.applicationId === a.id && g.roundId === round.id && !g.revokedAt && state.memberships.some(m => m.id === g.memberId && m.clubId === club.id && interviewCapabilities(m).participate)).map(g => g.memberId) : [];
-  return buildInterviewFeedback({ allowed, requestedRoundId, includeScores, summaries, reviews: mapped, pendingMemberIds });
+  const pendingMemberIds = round ? demoPending(state, club, a, round.id) : [];
+  return buildInterviewFeedback({ allowed, requestedRoundId, includeScores, summaries, reviews: mapped, pendingMemberIds, kitRecords });
+}
+
+/** Demo mirror of the round-scoped voting read (votingSelectedEvidence with a current round). */
+export function demoRoundScopedEvidence(state: State, club: Club, m: Member, a: App, fields: readonly string[]): RoundScopedEvidence {
+  const score = fields.includes("interviewScore"), thoughts = fields.includes("finalInterviewThoughts");
+  const current = club.rounds.find(r => r.id === a.roundId);
+  if (!current || current.anonymousReview || (!score && !thoughts)) return {};
+  const allowed = demoAuthorizedInterviewRounds(state, club, m, a, a.roundId);
+  const { mapped, summaries, kitRecords } = demoFinalized(state, club, a, allowed);
+  const authorizedCurrent = allowed.some(r => r.id === current.id);
+  return roundScopedEvidence({ current: { id: current.id, name: current.name, order: current.order, interview: ["INTERVIEW", "GROUP_INTERVIEW"].includes(current.type ?? "") },
+    allowed, reviews: mapped, summaries, kitRecords, pendingMemberIds: authorizedCurrent && thoughts ? demoPending(state, club, a, current.id) : [],
+    score, thoughts, peerScores: interviewCapabilities(m).readClosing });
 }
 
 /** Demo implementation of actions/interview-feedback getInterviewFeedback. Never calls the server. */

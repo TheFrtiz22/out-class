@@ -143,6 +143,21 @@ export function tieCrossesBoundary(ranked: readonly { rank: number }[], bands: R
   return out;
 }
 
+/**
+ * Everything the ranked list derives from one scope, in linear time after the
+ * sort: ranks, bands, tie notes, the set of tied ranks and per-band members.
+ */
+export function rankedReviewView<T extends RankInput>(rows: readonly T[], bands: RankedBands | null) {
+  const { ranked, notScored, hidden } = rankApplicants(rows);
+  const banded = assignBands(ranked, bands);
+  const counts = new Map<number, number>();
+  for (const row of ranked) counts.set(row.rank, (counts.get(row.rank) ?? 0) + 1);
+  const tiedRanks = new Set([...counts].filter(([, count]) => count > 1).map(([rankValue]) => rankValue));
+  const byBand: Record<RankedBand, typeof banded> = { green: [], yellow: [], red: [] };
+  if (bands) for (const row of banded) byBand[row.band!].push(row);
+  return { ranked, notScored, hidden, banded, byBand, tiedRanks, ties: tieCrossesBoundary(ranked, bands) };
+}
+
 /** Compares what the ranking observes, so unrelated reads do not prompt a refresh. */
 export function rankingSignature(rows: readonly (RankInput & { label?: string; photo?: string | null; status?: string; cycle?: string | null })[]) {
   return JSON.stringify([...rows].sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0)

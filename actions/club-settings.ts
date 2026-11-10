@@ -3,6 +3,7 @@
 import { finalRecruitmentStatuses, isInterviewRecruitmentRound } from "@/lib/recruitment-lifecycle";
 import { lockOperationalClub } from "@/lib/club-suspension";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { prisma, type AppTransactionClient } from "@/utils/prisma";
 import { requireClubPermission } from "@/utils/auth";
 import { hasPermission, type ClubPermission } from "@/lib/permissions";
@@ -51,6 +52,7 @@ export async function getApplicationSettings(clubId: string) {
           required: true,
           wordLimit: true,
           options: true,
+          showIf: true,
         },
       },
     },
@@ -77,7 +79,7 @@ export async function saveApplicationSettings(input: unknown) {
       });
       for (const q of data.questions) {
         if (
-          q.type === "MULTIPLE_CHOICE" &&
+          (q.type === "MULTIPLE_CHOICE" || q.type === "MULTI_SELECT") &&
           q.options.length === 0 &&
           !current.some(
             (saved) =>
@@ -107,7 +109,8 @@ export async function saveApplicationSettings(input: unknown) {
           type: q.type,
           required: q.required,
           wordLimit: q.type === "ESSAY" ? q.wordLimit : null,
-          options: q.type === "MULTIPLE_CHOICE" ? q.options : [],
+          options: q.type === "MULTIPLE_CHOICE" || q.type === "MULTI_SELECT" ? q.options : [],
+          showIf: q.showIf ?? Prisma.DbNull,
           order,
         };
         if (saved) {
@@ -122,8 +125,8 @@ export async function saveApplicationSettings(input: unknown) {
           if (
             Object.entries(fields).some(
               ([key, value]) =>
-                JSON.stringify(saved[key as keyof typeof saved]) !==
-                JSON.stringify(value),
+                JSON.stringify(saved[key as keyof typeof saved] ?? null) !==
+                JSON.stringify(value === Prisma.DbNull ? null : value),
             )
           )
             await tx.applicationQuestion.update({

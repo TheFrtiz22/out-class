@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { readPipelinePage } from "@/lib/pipeline-page-read";
 import { pipelineSummarySelect, pipelineSummaryProjection } from "@/lib/pipeline-summary";
 import { pipelineDetailInclude, pipelineDetailProjection } from "@/lib/pipeline-detail";
+import { rankedReviewSelect, rankedReviewProjection } from "@/lib/ranked-review-read";
 import { readPipelineSelection } from "@/lib/pipeline-selection-read";
 import { pipelinePageQuery, pipelineSelectionKey, type PipelinePageQuery } from "@/lib/pipeline-page";
 import {decisionPublicationGuard} from "@/lib/decision-publication-guard";
@@ -46,6 +47,20 @@ export async function getClubPipelinePage(clubId: string, input: PipelinePageQue
     return readPipelinePage(tx, where, membership, rounds, query, scope, ids => loadPipelineDetails(tx, { ...where, id: { in: ids } }, membership), roundPrivacy);
   });
   return { ...pipeline.applications, rounds: pipeline.rounds, genderCounts: pipeline.genderCounts };
+}
+
+/**
+ * Ranked review rows for one round: the same live authority, round scoping and
+ * identity/score projection as getClubPipeline, but only the fields the ranked
+ * list renders. Decided applicants are included, as in the full read.
+ */
+export async function getRankedReviewRound(clubId: string, roundId: string) {
+  z.string().uuid().parse(roundId);
+  const { pipeline } = await readPipeline(clubId, { roundId }, async (tx, where, membership) => {
+    const applications = await tx.application.findMany({ where, select: rankedReviewSelect });
+    return applications.map(app => rankedReviewProjection(app, membership));
+  });
+  return { applications: pipeline.applications };
 }
 
 /** Explicit whole-selection read for quick review and voting, without identities. */
