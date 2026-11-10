@@ -15,7 +15,8 @@ export const roomExternalBookingSchema = z.object({ clubId: z.string().uuid(), r
 
 export const roomInputSchema = z.object({
   clubId: z.string().uuid(), roundId: z.string().uuid(),
-  name: roomName,
+  // Rooms created before the 60-character rename cap may hold up to 100; "Add dates" copies them.
+  name: z.string().trim().min(1, "Name your room.").max(100),
   location: z.string().trim().min(1, "Add a room location or meeting link.").max(2000),
   kind: z.enum(["IN_PERSON", "VIRTUAL"]),
   timezone: z.string().default(SCHEDULING_TIMEZONE).refine(v => { try { new Intl.DateTimeFormat("en", { timeZone: v }); return true } catch { return false } }, "Choose a valid time zone.").transform(() => SCHEDULING_TIMEZONE),

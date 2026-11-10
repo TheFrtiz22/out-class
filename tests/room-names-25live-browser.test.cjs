@@ -26,25 +26,35 @@ test('browser: 25Live notice, post-save reminder, inline rename (Enter/Escape/bl
   await shot(page,'room-25live-notice-desktop')
 
   // Click the name, type, Enter saves (trimmed).
-  await page.getByRole('button',{name:'Rename room Synthetic Hall A',exact:true}).click()
+  await page.getByRole('button',{name:'Synthetic Hall A (rename)',exact:true}).click()
   const input=page.getByRole('textbox',{name:'Room name',exact:true});await input.fill('  Rice Hall 340  ');await input.press('Enter')
-  await page.getByRole('button',{name:'Rename room Rice Hall 340',exact:true}).waitFor()
+  await page.getByRole('button',{name:'Rice Hall 340 (rename)',exact:true}).waitFor()
   assert.equal(room().name,'Rice Hall 340')
   // Escape cancels.
   await page.getByRole('button',{name:'Edit name of Rice Hall 340',exact:true}).click();await input.fill('Discarded');await input.press('Escape')
-  await page.getByRole('button',{name:'Rename room Rice Hall 340',exact:true}).waitFor();assert.equal(room().name,'Rice Hall 340')
+  await page.getByRole('button',{name:'Rice Hall 340 (rename)',exact:true}).waitFor();assert.equal(room().name,'Rice Hall 340')
   // Blank reverts.
-  await page.getByRole('button',{name:'Rename room Rice Hall 340',exact:true}).click();await input.fill('   ');await input.press('Enter')
-  await page.getByRole('button',{name:'Rename room Rice Hall 340',exact:true}).waitFor();assert.equal(room().name,'Rice Hall 340')
+  await page.getByRole('button',{name:'Rice Hall 340 (rename)',exact:true}).click();await input.fill('   ');await input.press('Enter')
+  await page.getByRole('button',{name:'Rice Hall 340 (rename)',exact:true}).waitFor();assert.equal(room().name,'Rice Hall 340')
   // Blur saves; length is capped.
-  await page.getByRole('button',{name:'Rename room Rice Hall 340',exact:true}).click();assert.equal(await input.getAttribute('maxlength'),'60')
+  await page.getByRole('button',{name:'Rice Hall 340 (rename)',exact:true}).click();assert.equal(await input.getAttribute('maxlength'),'60')
   await input.fill('Clark Library Study Room B');await page.getByRole('heading',{name:'Interview times',exact:true}).click()
-  await page.getByRole('button',{name:'Rename room Clark Library Study Room B',exact:true}).waitFor()
+  await page.getByRole('button',{name:'Clark Library Study Room B (rename)',exact:true}).waitFor()
   assert.equal(room().name,'Clark Library Study Room B')
   assert.equal(room().location,'Synthetic Hall A','renaming never changes the location')
 
-  await page.getByRole('checkbox',{name:'Booked on 25Live'}).click()
-  await page.getByText('Not booked on 25Live yet',{exact:true}).waitFor({state:'detached'})
+  // A rejected rename (same name as another open room with overlapping times) keeps the typed name and the editor open.
+  f.asLeader();const first=room().slots[0],day=new Date(first.startTime).toLocaleDateString('en-CA',{timeZone:'America/New_York'}),hm=v=>new Date(v).toLocaleTimeString('en-GB',{timeZone:'America/New_York',hour:'2-digit',minute:'2-digit'})
+  await f.api.createInterviewRoom({clubId:f.scope.clubId,roundId:f.scope.roundId,name:'Overflow room',location:'Overflow room',kind:'IN_PERSON',timezone:'America/New_York',dates:[day],start:hm(first.startTime),end:hm(first.endTime),duration:room().duration,buffer:0,capacity:1,interviewersNeeded:1,panelMemberIds:[]})
+  await page.reload();await page.getByRole('button',{name:'Overflow room (rename)',exact:true}).click()
+  await input.fill('clark library study room b');await input.press('Enter')
+  await page.getByRole('alert').filter({hasText:'overlapping interview times'}).waitFor()
+  assert.equal(await input.inputValue(),'clark library study room b');assert.equal(f.state().interviewRooms.find(r=>r.name==='Overflow room')?.name,'Overflow room')
+  await input.press('Escape');await page.getByRole('button',{name:'Overflow room (rename)',exact:true}).waitFor()
+  // The pencil is a pointer shortcut; keyboard users get one tab stop per name.
+  assert.equal(await page.getByRole('button',{name:'Edit name of Overflow room',exact:true}).getAttribute('tabindex'),'-1')
+  await page.locator('#room-25live-'+roomId).click()
+  await page.waitForFunction(id=>document.getElementById(id)?.checked===true,'room-25live-'+roomId)
   assert.ok(room().externallyBookedAt)
   await shot(page,'room-25live-booked-desktop')
   await page.setViewportSize({width:390,height:844});await shot(page,'room-25live-mobile')

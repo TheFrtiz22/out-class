@@ -134,8 +134,9 @@ export async function renameInterviewRoom(raw: unknown) {
 export async function setInterviewRoomExternallyBooked(raw: unknown) {
   const input = roomExternalBookingSchema.parse(raw)
   const { user } = await requireAuth()
-  const result = await prisma.$transaction(async tx => {
+  const result = await atomic(async tx => {
     await authorizeClubTransaction(tx, input.clubId, user.id, ["interviews.manage"])
+    await lockOperationalClub(tx, input.clubId)
     const room = await tx.interviewRoom.findFirst({ where: { id: input.roomId, clubId: input.clubId }, select: { id: true, externallyBookedAt: true } })
     if (!room) throw new Error("Room unavailable.")
     if (!!room.externallyBookedAt === input.booked) return { externallyBookedAt: room.externallyBookedAt?.toISOString() ?? null }
@@ -143,7 +144,7 @@ export async function setInterviewRoomExternallyBooked(raw: unknown) {
     await tx.interviewRoom.update({ where: { id: room.id }, data: { externallyBookedAt } })
     await tx.auditLog.create({ data: { actorId: user.id, clubId: input.clubId, targetId: room.id, action: input.booked ? "interview.room.external_booking.mark" : "interview.room.external_booking.clear" } })
     return { externallyBookedAt: externallyBookedAt?.toISOString() ?? null }
-  })
+  }, true)
   revalidatePath(`/club/${input.clubId}/workspace`)
   return result
 }

@@ -37,11 +37,14 @@ export function EditableRoomName({ room, disabled, onRename, className = "text-s
   async function commit(refocus: boolean) {
     if (settled.current) return
     settled.current = true
+    // An untouched legacy name (longer than the cap) is never silently truncated.
+    if (draft === room.name) { finish(refocus); return }
     const name = normalizeRoomName(draft, room.name)
     if (name === room.name) { finish(refocus); return }
     setSaving(true); setError("")
     try { await onRename(name); finish(refocus) }
-    catch (e) { setError(e instanceof Error ? e.message : "Could not rename room."); setDraft(room.name); finish(refocus) }
+    // Keep the editor open with the typed name so the user can fix it, retry, or press Escape.
+    catch (e) { setError(e instanceof Error ? e.message : "Could not rename room."); settled.current = false; requestAnimationFrame(() => input.current?.focus()) }
     finally { setSaving(false) }
   }
   function key(event: KeyboardEvent<HTMLInputElement>) {
@@ -51,7 +54,7 @@ export function EditableRoomName({ room, disabled, onRename, className = "text-s
   return <span className="inline-flex min-w-0 flex-col">
     {editing
       ? <Input ref={input} aria-label="Room name" maxLength={ROOM_NAME_MAX_LENGTH} disabled={saving} value={draft} onChange={e => setDraft(e.target.value)} onKeyDown={key} onBlur={() => void commit(false)} className="h-8 px-2" />
-      : <span className="inline-flex min-w-0 items-center gap-1"><button ref={trigger} type="button" disabled={disabled || saving} onClick={start} title="Rename room" aria-label={`Rename room ${room.name}`} className={`${className} min-w-0 cursor-text break-words text-left hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default`}>{room.name}</button><IconButton size="icon-sm" disabled={disabled || saving} onClick={start} aria-label={`Edit name of ${room.name}`} className="text-muted-foreground"><Pencil size={14} aria-hidden /></IconButton></span>}
+      : <span className="inline-flex min-w-0 items-center gap-1"><button ref={trigger} type="button" disabled={disabled || saving} onClick={start} title="Rename room" className={`${className} min-w-0 cursor-text break-words text-left hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default`}>{room.name}<span className="sr-only"> (rename)</span></button><IconButton size="icon-sm" tabIndex={-1} disabled={disabled || saving} onClick={start} aria-label={`Edit name of ${room.name}`} className="text-muted-foreground"><Pencil size={14} aria-hidden /></IconButton></span>}
     {error && <span role="alert" className="mt-1 text-xs text-destructive">{error}</span>}
   </span>
 }
