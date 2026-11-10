@@ -26,8 +26,10 @@ test("three elevation levels; older shadow names are aliases, hover is a state o
   assert.equal(value("oc-elevation-modal"), "var(--oc-shadow-modal)")
   const levels = [...tokens.matchAll(/--oc-elevation-([a-z-]+):/g)].map(m => m[1]).filter(name => !name.endsWith("-hover"))
   assert.deepEqual([...new Set(levels)].sort(), ["modal", "popover", "surface"])
-  for (const alias of ["oc-shadow-surface", "oc-content-shadow"]) assert.equal(value(alias), "var(--oc-elevation-surface)", `--${alias}`)
-  assert.equal(value("oc-shadow-surface-hover"), "var(--oc-elevation-surface-hover)")
+  assert.equal(value("oc-content-shadow"), "var(--oc-elevation-surface)")
+  // Raised controls keep today's 1px contact shadow (not an elevation level; review finding, 2026-11-09).
+  assert.match(value("oc-shadow-surface"), /^0 1px 3px /)
+  assert.match(value("oc-shadow-surface-hover"), /^0 4px 12px /)
   const config = fs.readFileSync("tailwind.config.js", "utf8")
   for (const level of ["popover", "modal"]) assert.match(config, new RegExp(`${level}: 'var\\(--oc-elevation-${level}\\)'`))
 })
@@ -58,8 +60,25 @@ test("browser: the projector theme resolves every surface-shadow alias to the so
     await page.setContent(`<style>${css}</style><div id="app"></div><div data-theme="present"><div id="projector"></div></div>`)
     const read = id => page.evaluate(id => { const s = getComputedStyle(document.getElementById(id)); return ["--oc-elevation-surface", "--oc-content-shadow", "--oc-shadow-surface", "--oc-content-shadow-solid", "--oc-surface-glass-depth"].map(name => s.getPropertyValue(name).trim()) }, id)
     const [app, projector] = [await read("app"), await read("projector")]
-    assert.ok(app[0] && app[0] === app[1] && app[1] === app[2], "app: surface level and both aliases agree")
+    assert.ok(app[0] && app[0] === app[1], "app: the surface level and --oc-content-shadow agree")
     assert.equal(app[0], app[4], "app: the surface level is the glass depth")
-    assert.deepEqual(projector.slice(0, 3), [projector[3], projector[3], projector[3]], "projector: the level and both aliases are the solid shadow")
+    assert.deepEqual(projector.slice(0, 2), [projector[3], projector[3]], "projector: the level and --oc-content-shadow are the solid shadow")
+    assert.match(app[2], /^0 1px 3px/, "raised controls keep the hairline")
+    await page.emulateMedia({ forcedColors: "active" })
+    const forced = await read("app")
+    assert.equal(forced[0], forced[4], "forced colours: the surface level follows the glass depth override")
+    assert.match(forced[2], /^0 1px 3px/, "forced colours: raised controls keep their hairline cue")
   } finally { await browser.close() }
+})
+
+test("every --oc-* custom property used without a fallback is defined somewhere (removed tokens leave no dangling var())", () => {
+  const files = execSync("git ls-files '*.css' '*.tsx' '*.ts'", { encoding: "utf8" }).split("\n").filter(file => file && !file.startsWith("tests/"))
+  const defined = new Set(), used = new Map()
+  for (const file of files) {
+    const source = fs.readFileSync(file, "utf8")
+    for (const m of source.matchAll(/(--oc-[a-z0-9-]+)\s*:/g)) defined.add(m[1])
+    for (const m of source.matchAll(/["'`{,\s](--oc-[a-z0-9-]+)["'`]\s*:/g)) defined.add(m[1])
+    for (const m of source.matchAll(/var\(\s*(--oc-[a-z0-9-]+)\s*\)/g)) if (!used.has(m[1])) used.set(m[1], file)
+  }
+  assert.deepEqual([...used].filter(([name]) => !defined.has(name)).map(([name, file]) => `${name} (${file})`), [])
 })

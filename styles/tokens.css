@@ -95,16 +95,18 @@
   --oc-radius-2xl: 1.5rem;   /* 24px dialogs, overlays, editorial blocks */
   --oc-radius-full: 999px;   /* pills, avatars, capsules */
   --radius: var(--oc-radius-md);
-  /* Three elevation levels: surface (panels and raised controls; the glass depth), popover (menus,
-     popovers, toasts), modal (dialogs, sheets). Hover is a state of the surface level, not a level. */
+  /* Three elevation levels: surface (panels and cards; the glass depth), popover (menus, popovers,
+     toasts), modal (dialogs, sheets). Hover is a state of the surface level, not a level. Raised controls
+     inside a surface (active tab, board cards, list rows) keep a 1px contact shadow (--oc-shadow-surface),
+     a hairline edge cue, not an elevation, and it stays visible when the glass depth is turned off. */
   --oc-elevation-surface: var(--oc-surface-glass-depth);
   --oc-elevation-surface-hover: var(--oc-content-shadow-hover);
   --oc-elevation-popover: var(--oc-shadow-popover);
   --oc-elevation-modal: var(--oc-shadow-modal);
-  --oc-shadow-surface: var(--oc-elevation-surface);
+  --oc-shadow-surface: 0 1px 3px color-mix(in srgb, var(--school-primary) 5%, transparent);
   --oc-shadow-popover: 0 6px 12px color-mix(in srgb, var(--school-primary) 6%, transparent), 0 20px 56px color-mix(in srgb, var(--school-primary) 12%, transparent);
   --oc-shadow-modal: 0 24px 100px color-mix(in srgb, var(--school-primary) 22%, transparent);
-  --oc-shadow-surface-hover: var(--oc-elevation-surface-hover);
+  --oc-shadow-surface-hover: 0 4px 12px color-mix(in srgb, var(--school-primary) 9%, transparent);
   --oc-control-height: 2.5rem;
   --oc-control-height-compact: 2.25rem;
   --oc-control-height-large: 2.75rem;
@@ -242,7 +244,6 @@
   --oc-elevation-surface: var(--oc-content-shadow-solid);
   /* Aliases resolve where they are declared, so redeclare them in this scope to pick up the solid level. */
   --oc-content-shadow: var(--oc-elevation-surface);
-  --oc-shadow-surface: var(--oc-elevation-surface);
 }
 
 /* Another school's colours override only the school layer. Set data-school on <html>: the semantic tokens
