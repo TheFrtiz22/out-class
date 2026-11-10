@@ -120,6 +120,17 @@ deploy dpl_HCbKqFuC85KMysoQanp1KDZ2fF7U READY yes | new runtime error classes 0 
 ```
 - PR CI on head bc715296: 14/15 green. `Local Auth, settings and navigation` failed once at tests/pipeline-release-e2e.test.cjs:67 (one RSC request to the workspace path after the same-workspace "All applicants" CTA, expected 0); the same application code passed that job on 24534c26 (run 233). The CTA itself uses history.pushState (lib/workspace-navigation.ts), so the extra request is a Link prefetch or refresh elsewhere on the page; suspected timing, not proven. The owner merged with it red. This docs PR re-runs the suite on the merged code.
 - WATCH reasons: ~8 minutes of production traffic at check time; invitation-delivery and notification-delivery crons log nothing on success; the intermittent E2E above. Security advisors unchanged; first performance-advisor counts recorded in baseline-log.md.
+## 2026-11-05/06 FE-1 perf/demo-split-workspace-api (#138; base 60aef457, rebased locally onto 00840eea as 85b9f461, not yet pushed)
+- Bundle (audit gzip script, prod builds of 4d531bdf vs FE-1): demo-seed marker on 15 of 61 routes → 0; `/club/[clubId]/workspace` 464 → 387 kB gz; meetings, booking, decision letter, voting join −85 to −90 kB; root layout 164 → 164.
+- Unit, `node --test --test-timeout=120000 tests/*.test.cjs` on the final tree: 1728 total, 1668 pass, 0 fail, 60 skipped (58 env-gated + `student-paths-e2e` + new `demo-browser-e2e`). Repeat full runs on this machine: 4 clean; 1 file-level failure of `scheduling-simplification-browser` (2 of 3 tests reported, then "test failed"; passes 4/4 alone; exit code/signal not captured by the spec reporter); 2 runs slowed by machine load (load average ~30), with browser timeouts in unrelated files that pass alone. Main 60aef457: 2/2 full runs clean (1711 tests).
+- Targeted (every test referencing workspace-api or lib/demo): 84 files main 538/0/5 → FE-1 554/0/5; after rebase onto 00840eea, 85 files 555/0/6 (+`focus-frame-e2e`, gated). `test:migrations` 70 applied, RLS on 84 tables; typecheck 0; lint 0 errors, 412 warnings (same as main); build ok.
+- Disposable stack (`run-onboarding-e2e --club-integration --selected-navigation`, prod build, demo enabled for one test address): onboarding 54/54; selected navigation 16/16 incl. "Phase 1 GET reads preserve live authority, no-store, Demo isolation…"; `demo-browser-e2e` 4/4 (non-demo leader: 8 routes, 330 scripts, 0 demo chunks; demo routes: 0 flashed empty states, 0 live requests; blocked chunk → error + Try again → recovered; stalled chunk → alert at 10.5 s → recovered).
+- 2026-11-06 rerun on 85b9f461 with the OPS-5 fixture fix applied locally (uncommitted) and a stale fixture planted: onboarding 59/59; selected navigation 16/16 incl. Demo isolation; `demo-browser-e2e` 5/5 with the positive control: Demo Mode loaded demo chunks 2243 (seed/store) and 9982 (implementations); non-demo leader 322 scripts, 0 demo chunks; 0 flashed empty states on 4 demo routes; blocked chunk recovered; stalled-chunk alert at 10.45 s, recovered.
+- Earlier attempts (superseded): `demo-browser-e2e` with the added chunk-scan positive control was blocked. Two stack reruns failed for environment reasons: (1) `navigation-audit.cjs:36` reused a navigation fixture from a stopped stack → "Invalid login credentials" in all 7 selected-navigation tests; (2) Mailpit SMTP timeout in admin bootstrap ("Error sending confirmation email"). Stopped per the two-attempt rule.
+- Reviewers: nextjs (no high), failure-path (1 high + 3 medium, all fixed, re-review CONFIRMED), test-gap (2 high + 2 medium, all closed on re-review).
+
+## 2026-11-06 OPS-4 tests/onboarding-port-prefix (#139; base 4d531bdf)
+- Unit 1704 total, 1645 pass, 0 fail, 59 skipped; typecheck 0; lint 0 errors (412 warnings, same as main). Build not rerun (script-only change).
 
 ## 2026-11-08 · SHELL-1 · ui/shell-persistence-and-dashboard-split (local, not pushed)
 ```
@@ -160,4 +171,22 @@ not run: *-browser suites (each >2 min), next build, full pnpm run test
 2026-11-09 SEC-HEADERS-1 (security/frame-ancestors from main 318b5e31): app gates: test 1990/1923/0 fail/67 skipped (env-gated) lint ok types ok build ok | targeted: frame-ancestors-headers 2/2
 next start (local, no Supabase env): both headers present on / 200, /explore 307, /privacy 404 (rewrite), /preview 404 (middleware), /robots.txt 200, /api/recruiting-resumes 400, /api/club-assets 404, unknown path 404, malformed path 400, /login and /signup 500 (no env)
 not verified: a 200 from club-assets/decision-letter-assets, which set their own Content-Security-Policy
+
+## 2026-11-08 · Post-merge release check · #138 FE-1 (b4cd90e8), #149 FE-3 (2ac4efca), #165 FE-6 (6801a2c8)
+#138 b4cd90e8 app gates: test 1875/1814/0/61 (after merging 5f50339a) | CI 16/16 green
+deploy dpl_4rQtzY7FKXNfXuDgh297fBjU4fz9 READY yes
+#149 2ac4efca app gates: test 1887/1825/0/62 | CI 16/16 green after one rerun of the settings job (React #418, pre-existing on main, BUG-1)
+deploy dpl_5Mpw9h3W3NGzAcChC5nqvEUYSoum READY yes
+#165 6801a2c8 app gates: test 1875/1814/0/61 | CI 16/16 green
+deploy dpl_8B3cAEH6efVNkrgAx3JpdSXuy2ye READY yes (production at check time)
+new runtime error classes 0 (none since 18:20Z; the two classes in the prior 24 h predate these merges) | rollback target dpl_GAbgrcXkPkMfwCRmmJv4QWH6U7yt (3e779e55, #166); before #138 dpl_CweCYcA8R6hSXo3FyV1UbhBv3MNW (5f50339a)
+crons: owner confirmed scheduled-communications ran every minute for 3 h with 0 failures; the other two log nothing when idle
+advisors: security advisor counts unchanged vs baseline; no migrations in these PRs. Performance advisors unchanged vs baseline.
+verdict WATCH (release-verifier; not a rollback candidate)
+
+## 2026-11-08 · FE-7 #167 design-guard fix
+cause: halo box-shadows with px literals in page CSS counted as css-shadow by scripts/check-ui-controls.cjs (6 files over allowlist)
+fix: --focus-halo-outset / --focus-halo-inset-4/5/6 tokens in styles/tokens.css, 22 rules use them; allowlist ratcheted down (10 entries shrunk, 3 removed); merged origin/main 928dcb27 (one new focus rule converted to var(--ring); active segmented-tab focus rules moved after main's measured-indicator rule, which cleared the halo)
+app gates: test 1920/1854/0/66 lint ok (0 errors, 23 baseline warnings; ui-controls OK) types ok build ok
+first full run: 2 fails (focus-ring active-tab halo, fixed; club-home-browser hover transform under load, then 3/3 in isolation, flake)
 ```
