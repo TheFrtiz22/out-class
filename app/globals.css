@@ -8,6 +8,7 @@
 @import "../styles/interface-primitives.css";
 @import "../styles/filter-controls.css";
 @import "../styles/workspace-composition.css";
+@import "../styles/data-table.css";
 @import "../styles/editorial.css";
 @import "../styles/navigation-glass.css";
 /* Shared dashboard pieces (components/product/dashboard), global like the other primitives. */

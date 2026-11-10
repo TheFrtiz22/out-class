@@ -21,8 +21,18 @@ import { saveCommunicationSchedule } from "@/actions/communication-schedules";
 import { ScheduledCommunications, ScheduleFields, initialTiming, type ScheduledItem } from "@/components/communication-schedules";
 import { NativeSelect } from "@/components/ui/native-select"
 import { useSearchParams } from "next/navigation"
-import { formatDateTime } from "@/lib/copy/terms"
+import { formatDateTime, formatShortDate } from "@/lib/copy/terms"
+import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
+import { DataTable, DataTableSecondary } from "@/components/ui/data-table"
+import { joinFacts } from "@/lib/join-facts"
+import { SortControl } from "@/components/ui/sort-control"
+import { useListSort } from "@/hooks/use-list-sort"
 type Item = Awaited<ReturnType<typeof getClubAnnouncements>>[number];
+const sortKeys = ["published", "title", "notified"] as const;
+type AnnouncementSort = (typeof sortKeys)[number];
+const sortOptions: { key: AnnouncementSort; label: string }[] = [{ key: "published", label: "Published" }, { key: "title", label: "Title" }, { key: "notified", label: "Notified" }];
+const sortsDescending = (key: AnnouncementSort) => key !== "title";
+const audienceLabel = (item: Item) => item.audience === "MEMBERS" ? "Members" : item.audience === "CUSTOM" ? "Custom audience" : "Active applicants";
 
 export function ClubAnnouncements({ clubId, initialItems }: { clubId: string; initialItems?: Item[] }) {
  const demo = useDemoMode();
@@ -32,6 +42,10 @@ export function ClubAnnouncements({ clubId, initialItems }: { clubId: string; in
  const [scheduleRefresh,setScheduleRefresh]=useState(0);
  const requestKey = useRef<string | null>(null);
  const [items, setItems] = useState<Item[]>(initialItems ?? []);
+ const listSort = useListSort(sortKeys, "published", sortsDescending);
+ const [reading, setReading] = useState<Item | null>(null);
+ const readingOrigin = useRef<HTMLElement | null>(null);
+ const sorted = [...items].sort((a, b) => { const compared = listSort.key === "title" ? a.title.localeCompare(b.title) : listSort.key === "notified" ? a._count.notifications - b._count.notifications : new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime(); return (listSort.descending ? -compared : compared) || a.id.localeCompare(b.id); });
  const firstRead = useRef(initialItems !== undefined);
  const [busy, setBusy] = useState(false);
  const [compose, setCompose] = useState(false);
@@ -93,7 +107,25 @@ export function ClubAnnouncements({ clubId, initialItems }: { clubId: string; in
   </div>
   {error && <p role="alert" className="oc-feedback">{error}</p>}
   {success && <p role="status" className="text-sm">{success}</p>}
-  {items.length ? <ul className="oc-workspace-stack">{items.map(item=><li key={item.id} className="oc-content-panel space-y-2"><div className="flex flex-wrap items-center justify-between gap-3"><h3 className="oc-announcement-title">{item.title}</h3><span className="text-xs text-muted-foreground">{item.audience === "MEMBERS" ? "Members" : item.audience==="CUSTOM"?"Custom audience":"Active applicants"} · {item._count.notifications} notified</span></div><p className="whitespace-pre-wrap break-words text-sm leading-7">{item.body}</p><time className="block text-xs text-muted-foreground">{formatDateTime(item.publishedAt)}</time></li>)}</ul> : <p className="oc-content-panel text-sm text-muted-foreground">No announcements published yet.</p>}
+  {items.length > 0 && <div className="oc-list-toolbar justify-end"><SortControl label="Sort announcements" options={sortOptions} value={listSort.key} descending={listSort.descending} descendingByDefault={sortsDescending} onChange={listSort.set} /></div>}
+  {items.length ? <DataTable caption="Published announcements" rows={sorted} rowKey={item => item.id}
+   sort={{ key: listSort.key, descending: listSort.descending, toggle: key => listSort.toggle(key as AnnouncementSort) }}
+   openLabel={item => `Read ${item.title}`}
+   onOpen={(item, origin) => { readingOrigin.current = origin; setReading(item); }}
+   columns={[
+    { id: "title", header: "Announcement", sortKey: "title", primary: true, className: "oc-dt-fill", cell: item => <><span className="oc-dt-name">{item.title}</span><DataTableSecondary from="md">{item.body}</DataTableSecondary></> },
+    { id: "audience", header: "Audience", showFrom: "md", cell: audienceLabel },
+    { id: "notified", header: "Notified", sortKey: "notified", align: "end", cell: item => item._count.notifications },
+    { id: "published", header: "Published", sortKey: "published", cell: item => <time dateTime={new Date(item.publishedAt).toISOString()} title={formatDateTime(item.publishedAt, { timeZone: SCHEDULING_TIMEZONE })}>{formatShortDate(item.publishedAt, { timeZone: SCHEDULING_TIMEZONE })}</time> },
+   ]}
+   card={{ title: item => item.title, preview: item => item.body, meta: item => joinFacts(formatShortDate(item.publishedAt, { timeZone: SCHEDULING_TIMEZONE }), audienceLabel(item), `${item._count.notifications} notified`) }} /> : <p className="oc-content-panel text-sm text-muted-foreground">No announcements published yet.</p>}
+  <Sheet open={!!reading} onOpenChange={open => { if (!open) setReading(null); }}>
+   <SheetContent className="oc-workspace-drawer w-full overflow-y-auto sm:max-w-xl" onCloseAutoFocus={e => { if (readingOrigin.current?.isConnected) { e.preventDefault(); readingOrigin.current.focus(); } }}>
+    <SheetTitle>{reading?.title}</SheetTitle>
+    <SheetDescription>{reading && joinFacts(formatDateTime(reading.publishedAt, { timeZone: SCHEDULING_TIMEZONE }), audienceLabel(reading), `${reading._count.notifications} notified`)}</SheetDescription>
+    {reading && <p className="mt-6 whitespace-pre-wrap break-words text-sm leading-7">{reading.body}</p>}
+   </SheetContent>
+  </Sheet>
   <Sheet open={compose} onOpenChange={open=>{if(busy) return;if(!open){void draftSave.flush().then(()=>setCompose(false)).catch(()=>{});return;}setCompose(open);}}>
    <SheetContent className="oc-workspace-drawer w-full overflow-y-auto sm:max-w-xl"><SheetTitle>{editing?"Edit scheduled announcement":"New announcement"}</SheetTitle><SheetDescription>Choose the audience and publish a permanent in-app update.</SheetDescription>
    <AutosaveStatus save={draftSave} />
