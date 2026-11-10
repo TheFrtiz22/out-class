@@ -63,9 +63,12 @@ test('applicants whose round, cycle or status changed are listed individually an
  assert.deepEqual(h.state().apps,snapshot,'no applicant changed');assert.equal(h.state().sessions[0].finalizedAt,null);
 });
 
-test('early-round slides omit interview evidence instead of showing zero',async()=>{
+test('early-round slides say there are no interview scores instead of showing zero',async()=>{
  const helper=load('utils/voting-room-presentation.ts',{'@/utils/interview-access':{authorizeInterview:async()=>{throw Error('unexpected')}}});
  // No interview round has submitted evaluations and the current round is application review.
- const tx={pipelineRound:{findMany:async args=>{assert.deepEqual(args.where.type.in,['INTERVIEW','GROUP_INTERVIEW']);return[]}}};
- assert.deepEqual(await helper.votingSelectedEvidence(tx,clubId,apps[0],leaderId,['interviewScore','finalInterviewThoughts'],false,roundId),{});
+ const tx={pipelineRound:{findMany:async args=>{assert.deepEqual(args.where.type.in,['INTERVIEW','GROUP_INTERVIEW']);return[]},findFirst:async({where})=>{assert.equal(where.clubId,clubId);return{id:roundId,name:'Application review',order:0,type:'APPLICATION_REVIEW',anonymousReview:false}}}};
+ const r=await helper.votingSelectedEvidence(tx,clubId,apps[0],leaderId,['interviewScore','finalInterviewThoughts'],false,roundId);
+ assert.deepEqual(r.interviewScore.current,{roundId,roundName:'Application review',status:'none',average:null,submitted:0});
+ assert.equal(r.interviewScore.average,null);assert.deepEqual(r.interviewScore.byRound,[]);assert.equal('interviewFeedback'in r,false);assert.deepEqual(r.earlierInterviewRounds,[]);
+ assert.doesNotMatch(JSON.stringify(r),/"average":0|"score":0/);
 });
