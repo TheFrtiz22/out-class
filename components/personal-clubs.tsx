@@ -1,4 +1,5 @@
 "use client"
+import { PillSelect } from "@/components/ui/pill-select"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { ArrowRight } from "@/components/icons"
@@ -17,7 +18,6 @@ import { memberDate, type MemberOverviewData } from "@/components/member-overvie
 import { DEFAULT_CLUB_COLOR } from "@/lib/club-colors"
 import { membershipRoleLabel } from "@/lib/copy/terms"
 import { OrganizationOwnershipRequests } from "@/components/organization-ownership-requests"
-import { NativeSelect } from "@/components/ui/native-select"
 
 export function PersonalClubs({ section }: { section: PersonalSection }) {
   const { user, loading } = useAuth()
@@ -29,7 +29,7 @@ export function PersonalClubs({ section }: { section: PersonalSection }) {
   if (section !== "meetings" && section !== "tasks") return <div className="oc-personal-clubs space-y-7"><div className="flex flex-wrap gap-4 text-sm"><Link href="/clubs/tasks" className="inline-flex min-h-11 items-center underline underline-offset-4">Your tasks across clubs</Link></div><OrganizationOwnershipRequests enabled includeDismissed /><ul className="oc-membership-grid">{memberships.map(m => <MembershipRow key={m.id} member={m} />)}</ul><FindOrClaimClub /></div>
   // Meetings and Tasks cover every club by default; the club filter is optional.
   const shown = selected ? memberships.filter(m => m.clubId === selected) : memberships
-  return <div className="space-y-4"><label className="block max-w-sm text-sm">Club<NativeSelect aria-label="Filter by club" className="mt-2 block min-h-11 w-full" value={selected} onChange={e => { if (canLeaveWorkspace()) setSelected(e.target.value) }}><option value="">All clubs</option>{memberships.map(m => <option key={m.id} value={m.clubId}>{m.club.name}</option>)}</NativeSelect></label>
+  return <div className="space-y-4"><PillSelect label="Filter by club" allLabel="All clubs" value={selected} onChange={value => { if (canLeaveWorkspace()) setSelected(value) }} options={memberships.map(m => ({ value: m.clubId, label: m.club.name }))} />
     {shown.map(m => <section key={m.clubId} aria-label={m.club.name} className="space-y-2">{shown.length > 1 && <h2 className="oc-section-heading">{m.club.name}</h2>}{section === "meetings" ? <MeetingList clubId={m.clubId} embedded personalOnly initialAudience="MEMBERS" /> : <ClubTasks clubId={m.clubId} embedded personalOnly />}</section>)}
   </div>
 }

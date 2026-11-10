@@ -43,7 +43,7 @@ test("every phone bar link has an accessible name and the bar marks Recruiting a
 test("one SectionTabs look for Decisions, phone Recruiting tabs and Interviews", () => {
   assert.match(fs.readFileSync("components/live-voting/decisions-navigation.tsx", "utf8"), /<SectionTabs label="Decisions navigation"/)
   assert.match(fs.readFileSync("components/club-workspace.tsx", "utf8"), /<SectionTabs label="Recruiting sections"/)
-  assert.match(fs.readFileSync("components/interview-management-tabs.tsx", "utf8"), /sectionTabsListClass/)
+  assert.match(fs.readFileSync("components/interview-management-tabs.tsx", "utf8"), /<TabsList variant="segmented" aria-label="Interview management">/, "Interviews tabs use the same segmented pill track")
 })
 
 test("Settings is configuration only and Members has one Add members menu", () => {

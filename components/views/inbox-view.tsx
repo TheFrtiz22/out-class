@@ -8,13 +8,13 @@ import { canLeaveWorkspace } from "@/lib/product-navigation"
 import { CommunicationsInbox } from "@/components/communications-inbox"
 import { CommunicationsPreferences } from "@/components/communications-preferences"
 import { useEffect, useMemo, useState, useRef } from "react"
-import { Search, Bell, Trash2, Mail, MailOpen, ArrowLeft, MapPin, CalendarDays, SlidersHorizontal } from "@/components/icons"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Bell, Trash2, Mail, MailOpen, ArrowLeft, MapPin, CalendarDays } from "@/components/icons"
 import { ClubLogo } from "@/components/club-logo"
 import { Button } from "@/components/ui/button"
 import { SegmentedControl } from "@/components/ui/segmented-control"
-import { Input } from "@/components/ui/input"
-import { NativeSelectField } from "@/components/ui/native-select"
+import { SearchField } from "@/components/ui/search-field"
+import { PillSelect } from "@/components/ui/pill-select"
+import { FilterPopover } from "@/components/ui/filter-popover"
 import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
 import { useApplicationState } from "@/lib/application-state"
@@ -127,34 +127,15 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
       {showFilters && <Panel className="space-y-4">
         <div className="flex flex-wrap items-center gap-3">
           <SegmentedControl label="Read status" size="compact" value={readFilter === "unread" ? "unread" : "all"} onChange={value => setReadFilter(value)} options={[{ value: "all", label: "All" }, { value: "unread", label: unread ? `Unread · ${unread}` : "Unread" }]} />
-          <NativeSelectField aria-label="Filter by club" className="max-w-full sm:max-w-60" value={club} onChange={(event) => setClub(event.target.value)}>
-            <option value="all">All clubs</option>
-            {clubs.map((name) => (<option key={name}>{name}</option>))}
-            {club !== "all" && !clubs.includes(club) && <option>{club}</option>}
-          </NativeSelectField>
-          <Popover>
-            <PopoverTrigger asChild><Button variant="outline" size="sm"><SlidersHorizontal className="size-4" aria-hidden="true" />Filter{filter !== "All" || readFilter === "read" || sort !== "priority" || query ? " · on" : ""}</Button></PopoverTrigger>
-            <PopoverContent align="start" className="w-[min(22rem,calc(100vw-2rem))] space-y-3">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input aria-label="Search notifications" placeholder="Search notifications, clubs, or keywords" value={query} onChange={(event) => setQuery(event.target.value)} className="pl-9" />
-              </div>
-              <SegmentedControl label="Notification type" size="compact" value={filter} onChange={setFilter} options={filters.map((value) => ({ value, label: value }))} />
-              <NativeSelectField aria-label="Filter by read status" value={readFilter} onChange={(event) => setReadFilter(event.target.value)}>
-                <option value="all">All read statuses</option>
-                <option value="unread">Unread</option>
-                <option value="read">Read</option>
-              </NativeSelectField>
-              <NativeSelectField aria-label="Sort notifications" value={sort} onChange={(event) => setSort(event.target.value)}>
-                <option value="priority">Recruiting priority</option>
-                <option value="newest">Newest first</option>
-                <option value="oldest">Oldest first</option>
-                <option value="unread">Unread first</option>
-                <option value="urgent">Urgent first</option>
-                <option value="club">Club A–Z</option>
-              </NativeSelectField>
-            </PopoverContent>
-          </Popover>
+          <PillSelect label="Filter by club" value={club} active={club !== "all"} onChange={setClub}
+            options={[{ value: "all", label: "All clubs" }, ...clubs.map((name) => ({ value: name, label: name })), ...(club !== "all" && !clubs.includes(club) ? [{ value: club, label: club }] : [])]} />
+          <FilterPopover label="Filter" title="Notification filters" align="start" count={[filter !== "All", readFilter === "read", sort !== "priority", !!query].filter(Boolean).length}>
+            <SearchField aria-label="Search notifications" placeholder="Search notifications, clubs, or keywords" value={query} onChange={(event) => setQuery(event.target.value)} onClear={() => setQuery("")} />
+            <SegmentedControl label="Notification type" size="compact" value={filter} onChange={setFilter} options={filters.map((value) => ({ value, label: value }))} />
+            <SegmentedControl label="Filter by read status" size="compact" value={readFilter} onChange={setReadFilter} options={[{ value: "all", label: "All read statuses" }, { value: "unread", label: "Unread" }, { value: "read", label: "Read" }]} />
+            <PillSelect label="Sort notifications" prefix="Sort" value={sort} active={sort !== "priority"} onChange={setSort}
+              options={[{ value: "priority", label: "Recruiting priority" }, { value: "newest", label: "Newest first" }, { value: "oldest", label: "Oldest first" }, { value: "unread", label: "Unread first" }, { value: "urgent", label: "Urgent first" }, { value: "club", label: "Club A–Z" }]} />
+          </FilterPopover>
           {filtering && (<Button variant="ghost" size="sm" onClick={() => { resetFilters(); setSort("priority") }}>Clear filters</Button>)}
         </div>
       </Panel>}

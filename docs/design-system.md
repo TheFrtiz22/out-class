@@ -41,7 +41,8 @@ Public marketing and authentication pages use Source Sans 3 for body text and Li
 | Choice | `SegmentedControl` (`components/ui/segmented-control.tsx`): both modes are `aria-pressed` toggle buttons in a labelled group with roving focus; single-select adds a sliding navy indicator, `multiple` makes filter chips. Use it for every toggle group and filter chip row; use segmented `Tabs` only for tab panels. |
 | Icon action | `IconButton`: required `aria-label`, defaults to `type="button"`. |
 | Form fields | `Input`, `Textarea`, Radix `Select`, native `NativeSelect`; associate visible labels and error descriptions. |
-| Search | `Search`: required accessible name, normal input props, no filtering state ownership. |
+| Search | `SearchField` (`components/ui/search-field.tsx`; `Search` delegates to it): pill track, leading icon, clear (×) with `onClear`, optional `shortcut="/"` hint. Required accessible name; callers own the query. |
+| Filters | See "Filter, search and view controls" below: `PillGroup`, `FilterChips`, `PillSelect`, `Toggle`, `RangeSlider`, `FilterButton`/`FilterPopover`, `DateField`, `Stepper`, `SectionTabs`. |
 | Label/status | `Badge` semantic variants for general labels. Application states use `StatusPill` (`components/ui/status-pill.tsx`): one filled pill per state (Draft, Submitted, In review, Interview, Accepted, Not selected, Waitlisted) from semantic tokens; it accepts stored codes and legacy labels without changing stored values. |
 | Identity | `Avatar`, `AvatarImage`, `AvatarFallback`; provide an accessible name or adjacent identity. |
 | Grouping | Plain sections and `Divider` first. `Panel` (`components/ui/panel.tsx`) is the one content container (`.oc-content-panel`, `tone="subtle"` for a muted fill); semantic elements such as `form`, `li` and `fieldset` may carry the same class. |
@@ -56,6 +57,27 @@ Public marketing and authentication pages use Source Sans 3 for body text and Li
 | Empty state | `EmptyState`: title, description, optional icon/action; compact/roomy density, start/center alignment, plain/subtle/outlined tone; no default card. |
 | Progress | `Progress`: numeric value/max or indeterminate null; supply aria-label/aria-labelledby. Values are bounded and passed to Radix for accessible reporting. |
 | Heading | `SectionHeading`: explicit h1/h2/h3, optional eyebrow, description, action, and editorial style. |
+
+### Filter, search and view controls
+
+Everything that narrows, sorts or switches a view uses one pill language: the segmented control's glass track,
+fully rounded (999px), navy active fill (`--oc-glass-pill-navy`) with cream text (`--oc-glass-cream`), 44px
+targets. Styles live in `styles/filter-controls.css` (tokens only); `/design-system` shows each one.
+
+| Need | Component | Notes |
+| --- | --- | --- |
+| Single choice, view switch, short lists | `PillGroup` = `SegmentedControl` | Options take `count` ("Pending 1") and `icon`; `aria-pressed` toggles in a labelled group with roving arrow keys; sliding indicator up to four options; scrolls sideways on narrow screens. Each segment carries `data-value`. |
+| Multi-select or long chip rows | `FilterChips` | Chip mode of the same control; `visible` collapses the rest behind an inline "+N more" chip (selected chips stay visible). Single or `multiple`. |
+| Long lists that must stay a dropdown | `PillSelect` | Radix Select with a pill trigger and card-style menu; `allLabel` maps to `""`; `active` when the default is not `""`; `prefix` for a short visible label ("Sort"). No native `<select>` chrome. |
+| Boolean filter or setting | `Toggle` | Labelled pill switch, `role="switch"`. |
+| Numeric minimums or ranges | `RangeSlider` | One or two thumbs; value bubble is a button that opens an exact-value box; `null` = "No minimum". `nullAtMin={false}` where a floor at the scale minimum is a real saved setting (rule thresholds). Keep each field's existing step. |
+| "Filters" trigger and panel | `FilterButton`, `FilterPopover` | Count badge, named "Filters, N active". The panel flips/shifts inside the viewport (16px padding), scrolls internally, and is a bottom sheet under 640px. Radix gives Escape, outside press and focus return. |
+| Date filter | `DateField` | The `DatePicker` with `variant="pill"`; YYYY-MM-DD or `""`. |
+| Numbered workflow | `Stepper` | Pills with step numbers in an ordered list; `aria-current="step"`. |
+| Section tabs | `SectionTabs` (links) / `TabsList variant="segmented"` (panels) | Same track and sliding indicator. |
+| Bulk-select rows | `Checkbox`, or `className="oc-checkbox"` on a native checkbox | Stay real checkboxes. |
+| Text filter field | `Input className="oc-pill-input"` | e.g. Location. |
+| One-line filter bar | `className="oc-filter-bar"` | No wrapping; scrolls sideways on narrow screens. |
 
 ### Glass surfaces
 

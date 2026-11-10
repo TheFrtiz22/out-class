@@ -1,4 +1,5 @@
 "use client"
+import { PillGroup } from "@/components/ui/segmented-control"
 import { LoadingState } from "@/components/ui/loading-state"
 
 import { useEffect, useState } from "react"
@@ -51,7 +52,7 @@ export function SchoolRequestReview() {
   }, [status, page, refresh])
   return <section className="space-y-5">
     <p className="text-sm text-muted-foreground">These are expressions of interest. Reviewing or closing a request never approves a university or grants account access.</p>
-    <label className="block space-y-1"><span>Filter by status</span><NativeSelect className="block" value={status} onChange={event => { setStatus(event.target.value); setPage(0) }}><option value="">All requests</option>{schoolRequestStatuses.map(value => <option key={value} value={value}>{value.replaceAll("_", " ")}</option>)}</NativeSelect></label>
+    <div className="space-y-1"><span className="block">Filter by status</span><PillGroup label="Filter by status" size="compact" value={status} onChange={value => { setStatus(value); setPage(0) }} options={[{ value: "", label: "All requests" }, ...schoolRequestStatuses.map(value => ({ value, label: value.replaceAll("_", " ") }))]} /></div>
     {error && <div role="alert"><p>{error}</p><Button variant="outline" onClick={() => setRefresh(value => value + 1)}>Try again</Button></div>}
     {loading ? <LoadingState label="Loading school requests…" layout="table" rows={3} /> : !error && <>
       {result.rows.length ? result.rows.map(row => <RequestReview key={`${row.id}:${row.revision}`} row={row} onReviewed={() => setRefresh(value => value + 1)} />) : <p>No matching school requests.</p>}

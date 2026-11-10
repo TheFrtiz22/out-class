@@ -26,7 +26,7 @@ test('task workspace keeps Team gated and opens a shared detail drawer without c
  const personal=harness(true,true);personal.render();await flush();tree=personal.render();assert.equal(scope(tree,'Manage'),undefined);assert.doesNotMatch(text(tree),/Team project/)
 })
 test('submitted filter separates work awaiting review from outstanding assignments',async()=>{
- const h=harness();h.render();await flush();let tree=h.render();nodes(tree).find(n=>['select','NativeSelect'].includes(n.type?.name??n.type)&&n.props.value==='open').props.onChange({target:{value:'submitted'}});tree=h.render();assert.match(text(tree),/Submitted paper/);assert.doesNotMatch(text(tree),/Your research/)
+ const h=harness();h.render();await flush();let tree=h.render();nodes(tree).find(n=>n.type==='PillSelect'&&n.props.label==='Status'&&n.props.value==='open').props.onChange('submitted');tree=h.render();assert.match(text(tree),/Submitted paper/);assert.doesNotMatch(text(tree),/Your research/)
 })
 
 test('personal task counts separate due, missing and submitted work inside the Status filter',async()=>{
@@ -40,21 +40,21 @@ test('personal task counts separate due, missing and submitted work inside the S
  h.render();await flush();let tree=h.render()
  // Counts live in the Status options (no separate counter boxes).
  assert.equal(nodes(tree).some(n=>typeof n.props?.className==='string'&&n.props.className.includes('oc-task-total')),false)
- const status=()=>nodes(tree).find(n=>n.props?.['aria-label']==='Status')
- const labels=nodes(status()).filter(n=>n.type==='option').map(text)
+ const status=()=>nodes(tree).find(n=>n.type==='PillSelect'&&n.props.label==='Status')
+ const labels=status().props.options.map(o=>o.label)
  assert.ok(labels.includes('Due (1)'));assert.ok(labels.includes('Missing (1)'));assert.ok(labels.includes('Submitted (2)'))
- status().props.onChange({target:{value:'overdue'}});tree=h.render()
+ status().props.onChange('overdue');tree=h.render()
  assert.match(text(tree),/Missing exercise/);assert.doesNotMatch(text(tree),/Your research|Reviewed exercise|Closed exercise/)
- status().props.onChange({target:{value:'submitted'}});tree=h.render()
+ status().props.onChange('submitted');tree=h.render()
  assert.match(text(tree),/Submitted paper/);assert.match(text(tree),/Reviewed exercise/);assert.doesNotMatch(text(tree),/Missing exercise/)
- status().props.onChange({target:{value:'due'}});tree=h.render()
+ status().props.onChange('due');tree=h.render()
  assert.match(text(tree),/Your research/);assert.doesNotMatch(text(tree),/Submitted paper|Missing exercise/)
 })
 
 test('personal empty states distinguish no assignments from filtered or completed work',async()=>{
  const h=harness(false,true);h.workspace.tasks=[];h.render();await flush();let tree=h.render()
  assert.match(text(tree),/You're all caught up\./);assert.doesNotMatch(text(tree),/No matching work/)
- const search=nodes(tree).find(n=>n.type==='Input'&&n.props['aria-label']==='Search tasks');search.props.onChange({target:{value:'research'}});tree=h.render();assert.match(text(tree),/No tasks match your filters\./)
+ const search=nodes(tree).find(n=>n.type==='SearchField'&&n.props['aria-label']==='Search tasks');search.props.onChange({target:{value:'research'}});tree=h.render();assert.match(text(tree),/No tasks match your filters\./)
  button(tree,'Clear filters').props.onClick();tree=h.render();assert.match(text(tree),/You're all caught up\./)
  const saved=harness(false,true);saved.workspace.tasks=saved.workspace.tasks.filter(task=>task.id==='submitted');saved.render();await flush();tree=saved.render();assert.match(text(tree),/You're all caught up\./);button(tree,'View all tasks').props.onClick();assert.match(text(saved.render()),/Submitted paper/)
 })
