@@ -38,7 +38,7 @@ export function ProfileFieldSettings({ clubId }: { clubId: string }) {
     <section aria-labelledby="profile-fields-heading" className="oc-form-section space-y-4">
       <div className="space-y-1">
         <h2 id="profile-fields-heading" className="oc-section-heading">Applicant profile fields</h2>
-        <p className="text-sm text-muted-foreground">Choose what leaders see on applicant profiles and voting slides.</p>
+        <p className="text-sm text-muted-foreground">Choose what leaders see on applicant profiles, the member roster, exports and voting slides.</p>
       </div>
       {error && <div role="alert" className="oc-feedback flex flex-wrap items-center gap-3">{error}{!fields && <Button variant="outline" size="sm" onClick={() => setRetry(n => n + 1)}>Retry</Button>}</div>}
       {!fields && !error ? <LoadingState label="Loading profile fields…" layout="form" rows={4} /> : fields && (
