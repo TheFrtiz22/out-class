@@ -9,6 +9,7 @@ import { requireAuth } from "@/utils/auth"
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization"
 import { loadPanelPlanningScene, publicPanelScene } from "@/utils/panel-planning"
 import { assignmentKey, generatePanelAssignments, panelAssignmentsSchema, panelDocumentSchema, panelOptionsSchema, panelScopeSchema, panelWindowSchema, panelDraftScene, sameSessionTime, validatePanelDocument, type PanelAssignment, type PanelDocument, type PanelProposalView, type PanelScene, type PanelValidation, type PanelWorkspace } from "@/lib/panel-proposals"
+import { boundedParse } from "@/lib/bounded-input"
 
 const changed = "The draft changed in another tab. Reload before editing again."
 const editSchema = panelScopeSchema.extend({ proposalId: z.string().uuid(), revision: z.number().int().positive(), assignments: panelAssignmentsSchema, requirements: z.array(z.object({slotId:z.string().uuid(),required:z.number().int().min(1).max(8)}).strict()).max(500).optional() }).strict()
@@ -57,7 +58,7 @@ export async function getPanelProposalWorkspace(raw: unknown): Promise<PanelWork
   })
 }
 export async function generatePanelProposal(raw: unknown): Promise<PanelWorkspace> {
-  const input = generateSchema.parse(raw)
+  const input = boundedParse(generateSchema, raw)
   return previewTransaction(input.clubId, async (tx, actorId) => {
     const old = await savedProposal(tx, input)
     if ((old?.revision ?? 0) !== input.revision) throw new Error(changed)
@@ -94,7 +95,7 @@ export async function generatePanelProposal(raw: unknown): Promise<PanelWorkspac
   })
 }
 async function editPreview(raw: unknown, persist: boolean) {
-  const input = editSchema.parse(raw)
+  const input = boundedParse(editSchema, raw)
   return previewTransaction(input.clubId, async (tx, actorId) => {
     const old = await savedProposal(tx, input)
     if (!old || old.id !== input.proposalId || old.revision !== input.revision) throw new Error(changed)

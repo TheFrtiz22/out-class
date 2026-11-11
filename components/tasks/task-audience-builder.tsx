@@ -7,7 +7,7 @@ import { Shuffle, Users, UserRound, GraduationCap, Shield, Layers, SlidersHorizo
 import { taskAudienceSchema, resolveTaskRecipients, type TaskAudience } from "@/lib/tasks"
 import { taskAudienceMode, taskMemberName, taskRoleLabels, type TaskWorkspace, type TaskMember } from "@/lib/task-presentation"
 import { Button } from "@/components/ui/button"
-import { SegmentedControl } from "@/components/ui/segmented-control"
+import { PillSelect } from "@/components/ui/pill-select"
 import { Input } from "@/components/ui/input"
 const choices=[{id:"everyone",label:"Everyone",icon:Users},{id:"boys",label:"Boys",icon:Users},{id:"girls",label:"Girls",icon:Users},{id:"members",label:"Choose members",icon:UserRound},{id:"years",label:"Class year",icon:GraduationCap},{id:"groups",label:"Groups & cohorts",icon:Layers},{id:"roles",label:"Role",icon:Shield},{id:"random",label:"Random",icon:Shuffle},{id:"advanced",label:"Advanced",icon:SlidersHorizontal}]
 export function TaskMemberList({members,selected,onChange,label="Choose members"}:{members:TaskMember[];selected:string[];onChange:(ids:string[])=>void;label?:string}) {
@@ -36,7 +36,7 @@ export function TaskAudienceBuilder({workspace,value,onChange,mode:initialMode,o
   let recipients:{member:TaskMember;groupLabel:string|null}[]=[],previewError=""
   try{recipients=resolveTaskRecipients(members,value,excluded)}catch(error){previewError=error instanceof Error?error.message:"Check your selection."}
   return <div className="oc-audience-builder">
-    <SegmentedControl label="Who should receive this?" value={mode} onChange={choose} options={choices.map(choice=>({value:choice.id,label:<span className="inline-flex items-center gap-2"><choice.icon size={17} aria-hidden="true"/>{choice.label}</span>}))}/>
+    <PillSelect label="Send to" prefix="Send to" active={false} value={mode} onChange={choose} options={choices.map(choice=>({value:choice.id,label:choice.label}))}/>
     {mode==="everyone" && <p className="text-sm text-muted-foreground">Everyone on the current club roster. Each person receives their own copy of the task.</p>}
     {(mode==="boys" || mode==="girls") && <p className="text-sm text-muted-foreground">Members assigned to the “{mode === "boys" ? "Boys" : "Girls"}” group in Members.</p>}
     {mode==="members" && <TaskMemberList members={members} selected={value.members} onChange={ids=>patch({members:ids})}/>}

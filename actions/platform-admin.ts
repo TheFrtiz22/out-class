@@ -14,6 +14,7 @@ import { prisma } from "@/utils/prisma";
 import { requirePlatformAdmin } from "@/utils/platform-admin";
 import { readDemoTemplate } from "@/lib/demo/validate";
 import { clubPermissions } from "@/lib/permissions";
+import { boundedParse } from "@/lib/bounded-input";
 
 const resources = z.enum(platformResources);
 export type PlatformResource = z.infer<typeof resources>;
@@ -452,7 +453,7 @@ const operations = z.discriminatedUnion("kind", [
 ]);
 export async function changePlatformResource(input: unknown, reason: string) {
   const actor = await requirePlatformAdmin({ fresh: true });
-  const data = operations.parse(input);
+  const data = boundedParse(operations, input);
   const justification = z.string().trim().min(10).max(1000).parse(reason);
   if (data.kind === "content" && JSON.stringify(data.value).length > 4_000_000)
     throw new Error("Content exceeds the 4 MB limit.");

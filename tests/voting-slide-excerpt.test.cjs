@@ -53,3 +53,20 @@ test("line budget cuts after the allowed number of lines", () => {
   assert.equal(out.split("\n").length, 3)
   assert.ok(out.endsWith("…"))
 })
+
+test("short projectors (1280×720) use smaller budgets than the normal slide, never larger, and keep the per-entry floor", () => {
+  const { evidenceExcerpt, SLIDE_SHORT_QUERY, SLIDE_SHORT_EVIDENCE_CHARS, SLIDE_SHORT_EVIDENCE_LINES, SLIDE_EVIDENCE_CHARS, SLIDE_EVIDENCE_LINES } = slide
+  assert.equal(SLIDE_SHORT_QUERY, "(min-width: 1100px) and (min-height: 650px) and (max-height: 767.98px)")
+  const css = fs.readFileSync(path.resolve(__dirname, "../components/live-voting/room.css"), "utf8")
+  assert.ok(css.includes("@media(min-width:1100px) and (min-height:650px) and (max-height:767.98px)"), "room.css uses the same query")
+  assert.equal(evidenceExcerpt(long), slideExcerpt(long), "normal budget unchanged")
+  assert.ok(Array.from(evidenceExcerpt(long, true)).length <= SLIDE_SHORT_EVIDENCE_CHARS)
+  assert.equal(evidenceExcerpt(lines, true).split("\n").length, SLIDE_SHORT_EVIDENCE_LINES)
+  assert.equal(evidenceExcerpt("Short and complete.", true), "Short and complete.")
+  for (let n = 1; n <= 12; n++) {
+    const normal = feedbackBudget(n), short = feedbackBudget(n, true)
+    assert.ok(short.chars <= normal.chars && short.lines <= normal.lines, `${n} entries`)
+    assert.ok(short.chars >= (n > 1 ? SLIDE_FEEDBACK_MIN_CHARS : 1) && short.lines >= (n > 1 ? SLIDE_FEEDBACK_MIN_LINES : 1))
+  }
+  assert.ok(SLIDE_SHORT_EVIDENCE_CHARS < SLIDE_EVIDENCE_CHARS && SLIDE_SHORT_EVIDENCE_LINES < SLIDE_EVIDENCE_LINES)
+})

@@ -160,7 +160,7 @@ test("route loader uses the branded mark with a stable image box and accessible 
   assert.equal(OutClassLoadingScreen({ variant: "navy" }).props["data-variant"], "navy")
   // Workspace routes keep the persistent shell on screen: their loaders are content-area placeholders, never the
   // full-screen cover (that stays for the first session restore, demo setup and /preview). Public routes have none.
-  for (const route of ["app/(workspace)/home", "app/(workspace)/platform/events", "app/(workspace)/calendar", "app/(workspace)/profile", "app/(workspace)/explore/categories", "app/(workspace)/settings/notifications", "app/(workspace)/meetings"]) {
+  for (const route of ["app/(workspace)/home", "app/(workspace)/platform/events", "app/(workspace)/calendar", "app/(workspace)/profile", "app/(workspace)/explore/categories", "app/(workspace)/settings/account", "app/(workspace)/meetings"]) {
     const Loading = load(`${route}/loading.tsx`, { "@/components/outclass-loading-screen": { OutClassLoadingScreen }, "@/components/workspace-loading": { WorkspaceLoading: "WorkspaceLoading" }, "@/components/shell/workspace-route-loading": { WorkspaceRouteLoading: "WorkspaceRouteLoading" }, "@/components/ui/loading-state": { LoadingState: "LoadingState" } }).default
     assert.notEqual(Loading().type, OutClassLoadingScreen, route)
     assert.ok(["WorkspaceLoading", "WorkspaceRouteLoading", "LoadingState"].includes(Loading().type), route)

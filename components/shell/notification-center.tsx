@@ -18,6 +18,7 @@ import type { Notification } from "@/lib/data"
 import type { ViewId } from "@/lib/views"
 import "./notification-center.css"
 import { TERMS } from "@/lib/copy/terms"
+import { notificationSettingsHref } from "@/lib/settings-navigation"
 
 const icons = { Announcement: Megaphone, "Interview Invite": CalendarDays, "Application Update": FileText, "Club Invitation": Users2, Task: ListChecks, "Decision Available": FileText, "Offer Confirmation": CheckCheck, "OutClass Update": Bell, "Private Message": Mail }
 
@@ -117,7 +118,7 @@ export function NotificationCenter({ unread, pendingInvitations, loadState, onRe
               <DropdownMenu><DropdownMenuTrigger asChild><button tabIndex={0} type="button" className="oc-notification-more" aria-label={`Actions for ${item.title}`} disabled={busy}><MoreHorizontal size={18} aria-hidden="true" /></button></DropdownMenuTrigger><DropdownMenuContent className="oc-notification-item-menu" align="end" collisionPadding={12} onCloseAutoFocus={event => { if (!panel.current?.querySelector(`[data-notification-id="${CSS.escape(item.id)}"]`)) { event.preventDefault(); filterButton.current?.focus({ preventScroll: true }) } }}><DropdownMenuItem onSelect={() => void run(() => state.setNotificationsRead([item.id], !item.read))}>{item.read ? <Mail /> : <Check />}{item.read ? "Mark unread" : "Mark read"}</DropdownMenuItem>{item.durableId && <DropdownMenuItem onSelect={() => void run(() => state.deleteNotifications([item.id]))}><Archive />Dismiss</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>
             </div></li>
           })}</ul>
-          {!feed.length && !invitations.invitations.length && !loadState.loading && !invitations.loading && !loadState.failed && !invitations.failed && <div className="oc-notification-empty"><CheckCheck size={24} aria-hidden="true" /><p>You’re all caught up</p><span>{filter === "unread" ? "You’ve read every update." : "Nothing has been sent to you yet."}</span>{filter === "unread" ? <button type="button" className="oc-notification-empty-action" onClick={() => setFilter("all")}>Show all updates</button> : <Link className="oc-notification-empty-action" href="/settings/notifications" onClick={() => setOpen(false)}>Choose email updates</Link>}</div>}
+          {!feed.length && !invitations.invitations.length && !loadState.loading && !invitations.loading && !loadState.failed && !invitations.failed && <div className="oc-notification-empty"><CheckCheck size={24} aria-hidden="true" /><p>You’re all caught up</p><span>{filter === "unread" ? "You’ve read every update." : "Nothing has been sent to you yet."}</span>{filter === "unread" ? <button type="button" className="oc-notification-empty-action" onClick={() => setFilter("all")}>Show all updates</button> : <Link className="oc-notification-empty-action" href={notificationSettingsHref} onClick={() => setOpen(false)}>Choose email updates</Link>}</div>}
         </>}
       </div>
       <footer><button tabIndex={0} type="button" onClick={expand}>{TERMS.openInbox}<ArrowUpRight size={15} aria-hidden="true" /></button></footer>
