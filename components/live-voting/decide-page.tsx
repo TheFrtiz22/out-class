@@ -69,7 +69,8 @@ export function DecidePage({ clubId, member }: { clubId: string; member: ClubAcc
   const setRound = (value: string) => {
     const next = new URLSearchParams(search);
     if (value) next.set("roundId", value); else next.delete("roundId");
-    go(`/club/${encodeURIComponent(clubId)}/workspace?${next}`, true);
+    // Pushed, not replaced: Back and Forward restore the round as well as the tab.
+    go(`/club/${encodeURIComponent(clubId)}/workspace?${next}`);
   };
   if (!tab) return <p role="alert">Decide is unavailable with your current access.</p>;
   const label = (step: DecideStep) => {
@@ -89,7 +90,7 @@ export function DecidePage({ clubId, member }: { clubId: string; member: ClubAcc
           </TabsTrigger>;
         })}
       </TabsList>
-      <TabsContent value="overview" className="mt-5">{tab === "overview" && <DecideOverview clubId={clubId} member={member} access={access} rows={rows} failed={roomsFailed} onRetry={() => setRetry(n => n + 1)} roundId={roundId} cycleId={cycleId} onOpen={step => go(decisionsHref(clubId, step, search))} />}</TabsContent>
+      <TabsContent value="overview" className="mt-5">{tab === "overview" && <DecideOverview clubId={clubId} member={member} access={access} rows={rows} failed={roomsFailed} onRetry={() => setRetry(n => n + 1)} roundId={roundId} cycleId={cycleId} stepHref={step => decisionsHref(clubId, step, search)} />}</TabsContent>
       {access.canVote && <TabsContent value="voting" className="mt-5">{tab === "voting" && <VotingRoomLanding clubId={clubId} />}</TabsContent>}
       {access.canSend && <TabsContent value="letters" className="mt-5 space-y-6">{tab === "letters" && <SendStep clubId={clubId} member={member} rows={rows} failed={roomsFailed} onRetry={() => setRetry(n => n + 1)} canVote={access.canVote} canScheduled={access.canScheduled} roundId={roundId} />}</TabsContent>}
     </Tabs>

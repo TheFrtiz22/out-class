@@ -65,9 +65,29 @@ export function overviewSessionAction(room: OverviewRoom): "Resume" | "Join" | "
   return room.view === "leader" ? "Resume" : room.view === "member" ? "Join" : "View details"
 }
 
-/** Sessions ready to send and already sent (LIVE only), each with its applicant count. */
+/**
+ * Closed live sessions in the selected round: ready to send (unpublished) and sent. Sessions, never applicants:
+ * one applicant can sit in several sessions, and none of this is a letter count.
+ */
 export function overviewSendCounts(rooms: DecideRoom[]) {
-  const ready = rooms.filter(readyToSend), sent = rooms.filter(room => room.mode !== "LEGACY" && room.state === "COMPLETED" && !!room.publishedAt)
-  const applicants = (list: DecideRoom[]) => list.reduce((total, room) => total + room.applicantCount, 0)
-  return { ready: { sessions: ready.length, applicants: applicants(ready) }, sent: { sessions: sent.length, applicants: applicants(sent) } }
+  return {
+    ready: rooms.filter(readyToSend).length,
+    sent: rooms.filter(room => room.mode !== "LEGACY" && room.state === "COMPLETED" && !!room.publishedAt).length,
+  }
+}
+
+/** A read keyed by its scope (club, cycle, round, demo, access): a response for another scope is never shown. */
+export type ScopedRead<T> = { scope: string; value: T | null }
+export type OverviewSummaryState<T> = { kind: "choose" } | { kind: "loading" } | { kind: "denied" } | { kind: "failed" } | { kind: "ready"; value: T }
+
+/**
+ * What Overview's decision totals show. The round read refuses identified rounds to members without
+ * applicants.identify; the Voting room list only gives such members anonymous-round sessions, so a failure for a
+ * round with none of their sessions listed is that refusal (quiet, no Retry), and any other failure is an outage.
+ */
+export function overviewSummaryState<T>(input: { roundId: string; scope: string; loaded: ScopedRead<T> | null; canIdentify: boolean; rooms: Pick<DecideRoom, "roundId">[] | null }): OverviewSummaryState<T> {
+  if (!input.roundId) return { kind: "choose" }
+  if (!input.loaded || input.loaded.scope !== input.scope) return { kind: "loading" }
+  if (input.loaded.value !== null) return { kind: "ready", value: input.loaded.value }
+  return !input.canIdentify && !input.rooms?.some(room => room.roundId === input.roundId) ? { kind: "denied" } : { kind: "failed" }
 }
