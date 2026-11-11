@@ -12,7 +12,21 @@ PDF.js is Apache-2.0; the adapted text-layer CSS retains attribution. Its releas
 
 `scripts/copy-pdfjs-assets.cjs` copies the matching worker, CMaps, fonts, codecs, color profiles and license into ignored `public/pdfjs/`. `postinstall`, `predev` and `prebuild` generate them. Deployments must include that generated directory and allow same-origin module workers and local assets under their CSP. No CDN, external viewer or OCR service receives a document. Only library files and fictional demo PDFs are public.
 
-Scanned/image-only pages render safely but explicitly disable text highlighting. General notes and freshly authorized download remain available. Encrypted/damaged/unsupported PDFs show a clear text-viewing failure and retain general notes/download. There is no password collection or OCR. External URLs and non-PDF legacy references cannot be securely version-pinned by the existing backend; the panel explains that an authorized private PDF upload is required. They are never fetched, publicly exposed or passed to another viewer. There are no annotations for a missing document version.
+Scanned/image-only pages render safely but explicitly disable text highlighting; interviewers mark them with area highlights instead (see below). General notes and freshly authorized download remain available. Encrypted/damaged/unsupported PDFs show a clear text-viewing failure and retain general notes/download. There is no password collection or OCR. External URLs and non-PDF legacy references cannot be securely version-pinned by the existing backend; the panel explains that an authorized private PDF upload is required. They are never fetched, publicly exposed or passed to another viewer. There are no annotations for a missing document version.
+
+## Area highlights (November 11 branch `feature/scanned-resume-area-highlights`)
+
+Scanned pages have no text layer, so an interviewer can draw a rectangle on any page and attach a note. It is the existing annotation row with `kind = AREA_HIGHLIGHT` and `anchor = {"page": n, "rect": {x, y, width, height}}`, page-relative 0–1 values on a 1/10,000 grid; it renders as page percentages, so it lines up at any zoom, viewport or pixel ratio. Mouse, pen and touch draw, move (drag the box) and resize (drag the corners). Keyboard: **Add area highlight**, arrows move, Shift+arrows resize, Alt for finer steps, Enter adds the note, Escape cancels. Saved regions are labelled "Area highlight · Page N" with their note and are never shown as quoted text.
+
+Permissions, revisions, moderation, audit, access-loss clearing and applicant exclusion are the text-highlight paths unchanged; the save action also checks the page exists in the pinned PDF. Migration `20261111180000_resume_area_highlights` widens the two foundation checks (rect within 0–1, positive size, no quote/offset keys); it is additive and **not applied anywhere** yet. Until it is applied, area writes fail at the database check and nothing else changes.
+
+Prepare slides offers each area highlight as a **Résumé area highlight** source (label "Area highlight · Page N", the note, its author), summary-only: a QUOTE is refused on save and dropped on read, so it can never become an "Original quotation". The live "Leader-selected résumé excerpt" field stays text-only. When the club hides résumés, no résumé highlight of either kind is offered or shown in voting setup, preparation or slides. As before, the interview room's own résumé viewer does not apply the club résumé setting (for the document, text or area highlights).
+
+OCR: not added. Browser OCR (e.g. Tesseract.js) needs a new dependency, several MB of self-hosted WASM and language data, and CSP changes, and its defaults fetch from third-party CDNs; server OCR would need a native engine in the serverless runtime. Neither fits "no third party, no large bundle" without owner approval.
+
+Rollback: application code before this branch parses annotation rows strictly, so a document that already has area highlights would show "Access could not be verified" in an older viewer. The new viewer skips rows it cannot read instead. Roll back only to a build that contains this branch once area highlights exist.
+
+Demo: some fictional applicants now have the bundled image-only `public/demo/sample-scanned-resume.pdf`, and Demo pins it for them.
 
 ## Interaction and access
 

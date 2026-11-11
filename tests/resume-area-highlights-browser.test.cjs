@@ -22,7 +22,7 @@ const pdf={numPages:1,getPage:async()=>page};
 exports.GlobalWorkerOptions={};exports.getDocument=()=>({promise:Promise.resolve(pdf),destroy:async()=>{}});
 exports.TextLayer=class{constructor(){}render(){return Promise.resolve()}cancel(){}};`
 const api = `const rows=[];window.__areaStore=rows;
-exports.getInterviewResumeAnnotations=async()=>({document:{id:${JSON.stringify(documentId)}},annotations:rows.filter(r=>!r.deletedAt).map(r=>({...r,authorName:'Avery Panel',canEdit:true}))});
+exports.getInterviewResumeAnnotations=async()=>window.__deny?Promise.reject(Error('Interview access unavailable.')):({document:{id:${JSON.stringify(documentId)}},annotations:rows.filter(r=>!r.deletedAt).map(r=>({...r,authorName:'Avery Panel',canEdit:true}))});
 exports.saveInterviewResumeAnnotation=async input=>{const old=rows.find(r=>r.id===input.id);if(old){if(old.revision!==input.revision)throw Error('changed');Object.assign(old,input.content,{revision:old.revision+1});return {id:old.id,revision:old.revision}}rows.push({id:input.id,revision:0,deletedAt:null,...input.content});return {id:input.id,revision:0}};
 exports.deleteInterviewResumeAnnotation=async input=>{const old=rows.find(r=>r.id===input.id);old.deletedAt=new Date().toISOString();old.revision++;return {id:old.id,deleted:true}};`
 const mocks = { 'pdfjs-dist': pdfjs, '@/lib/workspace-api': api, '@/contexts/auth-context': `exports.useAuth=()=>({user:{id:'00000000-0000-4000-8000-000000000009'}})` }
@@ -104,6 +104,12 @@ test('browser: draw an area with the mouse, note it, and it stays aligned after 
     await page.getByRole('button', { name: 'Document', exact: true }).click()
     await assertAligned(page, row.id, row.anchor.rect, '390px viewport')
     p = await pageBox(page); assert.ok(p.width < 320)
+    // Access removal clears the open view: the region and its note disappear on the next check.
+    await page.evaluate(() => { window.__deny = true; window.dispatchEvent(new Event('focus')) })
+    await page.getByRole('button', { name: 'Retry access' }).waitFor()
+    assert.equal(await page.locator('[data-area-id]').count(), 0)
+    assert.equal(await page.getByText('Scholarship seal').count(), 0)
+    assert.equal(await page.evaluate(() => window.__lost), true)
   })
 })
 
