@@ -17,15 +17,17 @@ import type { ReactNode } from "react"
 import { AuthSessionBoundary } from "@/components/auth-session-boundary"
 import { OutClassLoadingScreen } from "@/components/outclass-loading-screen"
 import { WorkspaceLoading } from "@/components/workspace-loading"
-import { LandingPageView } from "@/components/views/landing-page-view"
 import { resolveStudentView, sectionForStudentView, canonicalStudentParams } from "@/lib/student-navigation"
 import { STUDENT_HOME, studentPath, studentRouteForPath } from "@/lib/navigation"
-import { FocusFrame } from "@/components/shell/focus-frame"
 import { Button } from "@/components/ui/button"
 import type { ExploreDirectory } from "@/components/views/explore-view"
 
 const renderDestinationLoading = () => <OutClassLoadingScreen />
 
+// Never on a student route's first paint (reached only through setView("landing") or the legacy interview
+// view), so they stay out of those routes' first-load JS. DashboardLayout wraps every student view: static.
+const LandingPageView = dynamic(() => import("@/components/views/landing-page-view").then(module => module.LandingPageView), { loading: renderDestinationLoading })
+const FocusFrame = dynamic(() => import("@/components/shell/focus-frame").then(module => module.FocusFrame), { loading: () => <WorkspaceLoading label="Preparing interview workspace…" layout="interview" /> })
 const OrganizationOwnershipRequests = dynamic(() => import("@/components/organization-ownership-requests").then(module => module.OrganizationOwnershipRequests), { loading: () => <WorkspaceLoading label="Checking organization invitations…" layout="feed" rows={2} /> })
 const PersonalClubs = dynamic(() => import("@/components/personal-clubs").then(module => module.PersonalClubs), { loading: () => <WorkspaceLoading label="Loading your clubs…" layout="cards" /> })
 const DemoClubSettings = dynamic(() => import("@/components/demo-workspace").then(module => module.DemoClubSettings), { loading: () => <WorkspaceLoading label="Loading club settings…" layout="form" /> })

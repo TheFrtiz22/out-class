@@ -127,3 +127,13 @@ test('the shell renders a route\'s static first view and keeps the other views l
   // Without static views (the homepage and /preview), the views stay lazy.
   assert.deepEqual(render(undefined).filter(type => type?.lazy).map(type => type.lazy), ['@/components/organization-ownership-requests', '@/components/views/student-dashboard-view'])
 })
+
+test('views a student route never paints first stay out of its first-load JS', () => {
+  const shell = fs.readFileSync('components/app-shell.tsx', 'utf8')
+  for (const [name, module] of [['LandingPageView', 'views/landing-page-view'], ['FocusFrame', 'shell/focus-frame']]) {
+    assert.doesNotMatch(shell, new RegExp(`^import [^\\n]*from "@/components/${escape(module)}"$`, 'm'), `${name} is not a static import`)
+    assert.match(shell, new RegExp(`const ${name} = dynamic\\(\\(\\) => import\\("@/components/${escape(module)}"\\)`), `${name} loads on demand`)
+  }
+  // Every student view renders inside DashboardLayout, so it stays static.
+  assert.match(shell, /^import \{ DashboardLayout \} from "@\/components\/dashboard-layout"$/m)
+})
