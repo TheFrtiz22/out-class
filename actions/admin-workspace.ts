@@ -204,6 +204,12 @@ export async function changeAdminDesignatedLeader(input: unknown) {
   await resendAdminClubInvitation(d.clubId, next.id, d.reason);
   return next;
 }
+/** Picker read for "Change designated leader": only the invitations that action can replace,
+ * with the fields Inspect club already shows. Same fresh check as the write it feeds. */
+export async function listAdminPendingOwnerInvitations(clubId: string) {
+  await requirePlatformAdmin({ fresh: true }); uuid.parse(clubId);
+  return prisma.clubInvitation.findMany({ where: { clubId, status: "PENDING", requestedRole: "OWNER", authoritySource: "PLATFORM_ADMIN" }, select: { id: true, email: true, invitedName: true, expiresAt: true }, orderBy: { createdAt: "desc" }, take: 20 });
+}
 
 export async function inspectAdminStudent(userId: string, reason: string) {
   await requirePlatformAdmin({ fresh: true }); uuid.parse(userId); reasonSchema.parse(reason);
