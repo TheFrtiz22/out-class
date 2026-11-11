@@ -148,7 +148,7 @@ export function OutClassQRCode({
         {title && <h3 className="oc-card-heading text-lg font-bold text-foreground">{title}</h3>}
         {qrElement}
         {description && <p className="text-xs text-muted-foreground max-w-xs">{description}</p>}
-        {value && <p className="font-mono text-[11px] text-muted-foreground break-all">{value}</p>}
+        {value && <p className="font-mono text-xs text-muted-foreground break-all">{value}</p>}
       </div>
     );
   }
@@ -186,7 +186,7 @@ export function OutClassQRCode({
                   size="sm"
                   disabled={downloadBusy || !svgContent}
                   onClick={() => handleDownload("png")}
-                  className="h-9 gap-1.5 border-border text-xs text-foreground shadow-none hover:bg-muted"
+                  className="h-9 gap-1.5 border-border text-control text-foreground shadow-none hover:bg-muted"
                 >
                   <Download className="size-3.5" />
                   Download PNG
@@ -196,7 +196,7 @@ export function OutClassQRCode({
                   size="sm"
                   disabled={downloadBusy || !svgContent}
                   onClick={() => handleDownload("svg")}
-                  className="h-9 gap-1.5 border-border text-xs text-foreground shadow-none hover:bg-muted"
+                  className="h-9 gap-1.5 border-border text-control text-foreground shadow-none hover:bg-muted"
                 >
                   <Download className="size-3.5" />
                   Download SVG
@@ -209,7 +209,7 @@ export function OutClassQRCode({
               size="sm"
               disabled={!value}
               onClick={handleCopy}
-              className="h-9 gap-1.5 border-border text-xs text-foreground shadow-none hover:bg-muted"
+              className="h-9 gap-1.5 border-border text-control text-foreground shadow-none hover:bg-muted"
             >
               {copied ? <Check className="size-3.5 text-emerald-600" /> : <Copy className="size-3.5" />}
               {copied ? "Copied" : "Copy link"}

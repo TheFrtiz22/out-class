@@ -10,6 +10,7 @@ import { DEMO_COOKIE } from "@/lib/demo/access";
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
 import { authTurnstile, captchaFailed, turnstileMessage, turnstileRemoteIp } from "@/lib/turnstile";
 import { authRedirectOrigin } from "@/lib/site-origin";
+import { RATE_LIMITS, limitRequest } from "@/lib/rate-limit";
 import { passwordIssue } from "@/lib/password-policy";
 
 const reply = (body: object, status = 200) =>
@@ -21,6 +22,8 @@ const reply = (body: object, status = 200) =>
 export async function POST(request: NextRequest) {
   if (request.headers.get("origin") !== request.nextUrl.origin)
     return reply({ error: "Request not allowed." }, 403);
+  const limited = limitRequest(request, RATE_LIMITS.passwordRecovery);
+  if (limited) return limited;
   if (
     request.cookies.get(DEMO_COOKIE)?.value === "1" ||
     request.cookies.has(PLATFORM_VIEW_COOKIE)
