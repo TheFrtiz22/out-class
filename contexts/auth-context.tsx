@@ -7,7 +7,8 @@ import type { User, StudentProfile, Application, ClubMember } from '@prisma/clie
 import type { AccountClub } from '@/lib/account-data';
 
 export type ExtendedApplication = Omit<Application, "anonymousReviewText"> & { club: AccountClub };
-export type ExtendedMembership = ClubMember & { club: AccountClub };
+// `features` (pilot switches) is present on live account memberships; demo data omits it.
+export type ExtendedMembership = ClubMember & { club: AccountClub & { features?: unknown } };
 
 export type PopulatedUser = User & {
   impersonating?: boolean;
