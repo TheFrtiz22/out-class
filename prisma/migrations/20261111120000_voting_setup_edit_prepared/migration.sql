@@ -13,9 +13,15 @@ SET LOCAL lock_timeout = '5s';
 --      locked slide exists for it.
 -- Every other refusal is unchanged. Function bodies otherwise match the
 -- current definitions; SECURITY INVOKER and search_path=pg_catalog, public are
--- kept, and CREATE OR REPLACE keeps owners and grants. No tables, columns,
--- constraints, grants, policies or rows are changed; the RESTRICT foreign key
--- from VotingSlidePreparation to VotingCandidate stays.
+-- kept, and CREATE OR REPLACE keeps owners and grants.
+--
+-- The bounded runtime role gets DELETE on VotingSlidePreparation and one DELETE
+-- policy, in the same shape as its existing read/insert/update grants and
+-- policies (20261105150000), so the server action can discard a removed
+-- applicant's working copy. The guard trigger above stays the real gate. Nothing
+-- is granted to anon, authenticated or PUBLIC, and no other grant or policy
+-- changes. No tables, columns, constraints or rows are changed; the RESTRICT
+-- foreign key from VotingSlidePreparation to VotingCandidate stays.
 
 CREATE OR REPLACE FUNCTION outclass_voting_candidate_setup_guard() RETURNS trigger LANGUAGE plpgsql SET search_path=pg_catalog,public AS $$
 DECLARE s "VotingSession";
@@ -55,4 +61,12 @@ BEGIN
  IF TG_OP='INSERT' AND NEW.revision<>1 THEN RAISE EXCEPTION 'Slide preparation starts at revision 1'; END IF;
  RETURN NEW;
 END $$;
+
+DO $runtime$
+BEGIN
+ IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname='outclass_production_app') THEN
+  GRANT DELETE ON "VotingSlidePreparation" TO outclass_production_app;
+  CREATE POLICY voting_slide_preparation_runtime_delete ON "VotingSlidePreparation" FOR DELETE TO outclass_production_app USING (true);
+ END IF;
+END $runtime$;
 COMMIT;

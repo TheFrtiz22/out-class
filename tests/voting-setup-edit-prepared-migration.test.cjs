@@ -41,16 +41,23 @@ test('a confirmed unstarted setup edit can renumber kept applicants and discard 
   const constraints=`SELECT conname,confdeltype,confupdtype FROM pg_constraint WHERE conrelid='"VotingSlidePreparation"'::regclass ORDER BY conname`;
   const triggers=`SELECT tgname,tgrelid::regclass::text rel,tgtype FROM pg_trigger WHERE NOT tgisinternal AND tgrelid IN ('"VotingCandidate"'::regclass,'"VotingSlidePreparation"'::regclass) ORDER BY tgname`;
   const snapshot=async()=>{const f=(await db.query(fns)).rows;return {fn:f.map(({prosrc,...r})=>r),acl:(await db.query(acl)).rows,policies:(await db.query(policies)).rows,constraints:(await db.query(constraints)).rows,triggers:(await db.query(triggers)).rows};};
-  const before=await snapshot(),bodies=(await db.query(fns)).rows.map(r=>r.prosrc);
+  const privs=`SELECT r.rolname,t.relname,p.priv,has_table_privilege(r.rolname,format('%I',t.relname),p.priv) ok FROM (VALUES ('anon'),('authenticated'),('outclass_production_app')) r(rolname) CROSS JOIN (VALUES ('VotingCandidate'),('VotingSlidePreparation'),('VotingSlideLock')) t(relname) CROSS JOIN (VALUES ('SELECT'),('INSERT'),('UPDATE'),('DELETE'),('TRUNCATE'),('REFERENCES'),('TRIGGER')) p(priv) ORDER BY 1,2,3`;
+  const granted=async()=>(await db.query(privs)).rows.filter(r=>r.ok).map(r=>`${r.rolname}:${r.relname}:${r.priv}`);
+  const before=await snapshot(),bodies=(await db.query(fns)).rows.map(r=>r.prosrc),grantsBefore=await granted();
 
   await db.exec(sql(target));
-  const after=await snapshot();
-  assert.deepEqual(after,before,'SECURITY, search_path, owners, function/table ACLs, RLS, policies, FK actions and triggers unchanged');
+  const after=await snapshot(),grantsAfter=await granted();
+  const runtimeDelete={tablename:'VotingSlidePreparation',policyname:'voting_slide_preparation_runtime_delete',cmd:'DELETE',roles:'{outclass_production_app}',qual:'true',with_check:null};
+  assert.deepEqual(after.policies,[...before.policies,runtimeDelete].sort((a,b)=>a.tablename.localeCompare(b.tablename)||a.policyname.localeCompare(b.policyname)),'exactly one new policy: runtime DELETE on VotingSlidePreparation');
+  assert.deepEqual(grantsAfter,[...grantsBefore,'outclass_production_app:VotingSlidePreparation:DELETE'].sort(),'exactly one new grant: runtime DELETE on VotingSlidePreparation');
+  assert.ok(!grantsAfter.some(g=>/^(anon|authenticated):/.test(g)),'nothing for browser roles');
+  assert.equal((await db.query(`SELECT has_table_privilege('public','"VotingSlidePreparation"','DELETE') d`).catch(()=>({rows:[{d:false}]}))).rows[0].d,false);
+  const prepAcl=a=>a.acl.find(r=>r.relname==='VotingSlidePreparation');
+  assert.deepEqual({...after,policies:null,acl:after.acl.filter(r=>r.relname!=='VotingSlidePreparation')},{...before,policies:null,acl:before.acl.filter(r=>r.relname!=='VotingSlidePreparation')},'SECURITY, search_path, owners, function ACLs, other table ACLs, RLS, FK actions and triggers unchanged');
+  assert.deepEqual({...prepAcl(after),acl:null},{...prepAcl(before),acl:null},'owner and RLS of VotingSlidePreparation unchanged');
   for(const f of after.fn){assert.equal(f.prosecdef,false,f.proname);assert.deepEqual(f.proconfig,['search_path=pg_catalog, public'],f.proname);}
   assert.notDeepEqual((await db.query(fns)).rows.map(r=>r.prosrc),bodies,'bodies replaced');
   assert.deepEqual(after.constraints.filter(c=>c.confdeltype!==' ').map(c=>c.confdeltype),['r'],'RESTRICT foreign key kept');
-  // The bounded runtime role still has no DELETE grant on preparations (unchanged; see report).
-  assert.equal((await db.query(`SELECT has_table_privilege('outclass_production_app','"VotingSlidePreparation"','DELETE') d`)).rows[0].d,false);
   assert.equal((await db.query(`SELECT has_table_privilege('anon','"VotingSlidePreparation"','DELETE') d`)).rows[0].d,false);
 
   // Under the flag, unstarted: discard a removed applicant's slide and candidate, renumber and re-snapshot the kept ones.
@@ -66,7 +73,14 @@ test('a confirmed unstarted setup edit can renumber kept applicants and discard 
   await db.exec(`ALTER TABLE "VotingSession" OWNER TO outclass_production_app; ALTER TABLE "VotingCandidate" OWNER TO outclass_production_app; ALTER TABLE "VotingPass" OWNER TO outclass_production_app;`);
   await db.exec(`BEGIN; SET LOCAL ROLE outclass_production_app; ${flag} ${reorder('edit',r[0])}; COMMIT;`);
   assert.equal((await candidates('edit'))[0].applicationId,r[0],'the runtime role can renumber kept applicants');
-  await rejectsTx(`SET LOCAL ROLE outclass_production_app; ${flag} ${discard('edit',r[2])}`,/permission denied/);
+  // The runtime role can discard a removed applicant's preparation only through the guard's narrow path.
+  const asApp=body=>`SET LOCAL ROLE outclass_production_app; ${body}`;
+  await rejectsTx(asApp(discard('edit',r[2])),/history is retained/);
+  await db.exec(`BEGIN; ${asApp(`${flag} ${discard('edit',r[2])}; DELETE FROM "VotingCandidate" WHERE "sessionId"='edit' AND "applicationId"='${r[2]}'`)}; COMMIT;`);
+  assert.deepEqual((await prepared('edit')).map(p=>p.applicationId),[r[0]],'runtime discard removed only that applicant');
+  const ra=await room('runtime_started');await start('runtime_started');
+  await rejectsTx(asApp(`${flag} ${discard('runtime_started',ra[0])}`),/history is retained/);
+  assert.equal((await prepared('runtime_started')).length,3);
 
   // Under the flag the candidate's identity and publication stay fixed.
   await rejectsTx(`${flag} UPDATE "VotingCandidate" SET "publishedStatus"='ACCEPTED' WHERE "sessionId"='edit' AND "applicationId"='${r[0]}'`,/Replace the unstarted candidate selection explicitly/);
